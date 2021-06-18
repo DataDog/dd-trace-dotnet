@@ -34,8 +34,11 @@ partial class Build : NukeBuild
     [Parameter("The TargetFramework to execute when running or building a sample app, or linux integration tests")] 
     readonly TargetFramework Framework;
 
-    [Parameter("Should all versions of integration NuGet packages be tested, or just the defaults")]
-    readonly bool TestAllPackageVersions;
+    [Parameter("Should all versions of integration NuGet packages be tested, or just the defaults. Default is true.")]
+    readonly bool TestAllPackageVersions = true;
+
+    [Parameter("Should comprehensive versions of integration NuGet packages be tested, or just minor versions? Default is false (minors only)")]
+    readonly bool PerformComprehensiveTesting;
 
     [Parameter("The location to create the tracer home directory. Default is ./bin/tracer-home ")]
     readonly AbsolutePath TracerHome;

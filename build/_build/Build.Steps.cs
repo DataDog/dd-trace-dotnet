@@ -901,6 +901,7 @@ partial class Build
                     .SetNoWarnDotNetCore3()
                     .SetProperty("ManagedProfilerOutputDirectory", TracerHomeDirectory)
                     .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
+                    .When(PerformComprehensiveTesting, o => o.SetProperty("PerformComprehensiveTesting", "true"))
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
                     .CombineWith(projectsToBuild, (c, project) => c
                         .SetProjectFile(project)));
@@ -916,6 +917,7 @@ partial class Build
                     .SetNoWarnDotNetCore3()
                     .SetProperty("ManagedProfilerOutputDirectory", TracerHomeDirectory)
                     .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
+                    .When(PerformComprehensiveTesting, o => o.SetProperty("PerformComprehensiveTesting", "true"))
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
                     .CombineWith(projectsToBuild, (c, project) => c
                         .SetProject(project)));
@@ -937,6 +939,11 @@ partial class Build
             // Annoyingly this rebuilds everything again and again.
             var targets = new [] { "RestoreSamplesForPackageVersionsOnly", "RestoreAndBuildSamplesForPackageVersionsOnly" };
 
+            Logger.Info(
+                PerformComprehensiveTesting
+                    ? "Testing all package version"
+                    :  (TestAllPackageVersions ? "Testing minor package versions": "Testing default package version only"));
+
             // /nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
             DotNetMSBuild(x => x
                 .SetTargetPath(MsBuildProject)
@@ -946,8 +953,8 @@ partial class Build
                 .SetProperty("ManagedProfilerOutputDirectory", TracerHomeDirectory)
                 .SetProperty("BuildInParallel", "true")
                 .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
-                .AddProcessEnvironmentVariable("TestAllPackageVersions", "true")
                 .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
+                .When(PerformComprehensiveTesting, o => o.SetProperty("PerformComprehensiveTesting", "true"))
                 .CombineWith(targets, (c, target) => c.SetTargets(target))
             );
         });
