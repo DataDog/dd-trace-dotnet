@@ -11,26 +11,28 @@
 #undef major
 #undef minor
 
-namespace trace {
+namespace trace
+{
 
 const size_t kPublicKeySize = 8;
 
 // PublicKey represents an Assembly Public Key token, which is an 8 byte binary
 // RSA key.
-struct PublicKey {
+struct PublicKey
+{
     const BYTE data[kPublicKeySize];
 
     PublicKey() : data{0}
-    {
-    }
+    {}
     PublicKey(const BYTE (&arr)[kPublicKeySize]) : data{arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7]}
-    {
-    }
+    {}
 
     inline bool operator==(const PublicKey& other) const
     {
-        for (int i = 0; i < kPublicKeySize; i++) {
-            if (data[i] != other.data[i]) {
+        for (int i = 0; i < kPublicKeySize; i++)
+        {
+            if (data[i] != other.data[i])
+            {
                 return false;
             }
         }
@@ -40,7 +42,8 @@ struct PublicKey {
     inline WSTRING str() const
     {
         std::stringstream ss;
-        for (int i = 0; i < kPublicKeySize; i++) {
+        for (int i = 0; i < kPublicKeySize; i++)
+        {
             ss << std::setfill('0') << std::setw(2) << std::hex << static_cast<int>(data[i]);
         }
         return ToWSTRING(ss.str());
@@ -49,20 +52,19 @@ struct PublicKey {
 
 // Version is an Assembly version in the form Major.Minor.Build.Revision
 // (1.0.0.0)
-struct Version {
+struct Version
+{
     const unsigned short major;
     const unsigned short minor;
     const unsigned short build;
     const unsigned short revision;
 
     Version() : major(0), minor(0), build(0), revision(0)
-    {
-    }
+    {}
     Version(const unsigned short major, const unsigned short minor, const unsigned short build,
-            const unsigned short revision)
-        : major(major), minor(minor), build(build), revision(revision)
-    {
-    }
+            const unsigned short revision) :
+        major(major), minor(minor), build(build), revision(revision)
+    {}
 
     inline bool operator==(const Version& other) const
     {
@@ -78,13 +80,16 @@ struct Version {
 
     inline bool operator<(const Version& other) const
     {
-        if (major < other.major) {
+        if (major < other.major)
+        {
             return true;
         }
-        if (major == other.major && minor < other.minor) {
+        if (major == other.major && minor < other.minor)
+        {
             return true;
         }
-        if (major == other.major && minor == other.minor && build < other.build) {
+        if (major == other.major && minor == other.minor && build < other.build)
+        {
             return true;
         }
         return false;
@@ -92,13 +97,16 @@ struct Version {
 
     inline bool operator>(const Version& other) const
     {
-        if (major > other.major) {
+        if (major > other.major)
+        {
             return true;
         }
-        if (major == other.major && minor > other.minor) {
+        if (major == other.major && minor > other.minor)
+        {
             return true;
         }
-        if (major == other.major && minor == other.minor && build > other.build) {
+        if (major == other.major && minor == other.minor && build > other.build)
+        {
             return true;
         }
         return false;
@@ -109,15 +117,15 @@ struct Version {
 // look like:
 //     Some.Assembly.Name, Version=1.0.0.0, Culture=neutral,
 //     PublicKeyToken=abcdef0123456789
-struct AssemblyReference {
+struct AssemblyReference
+{
     const WSTRING name;
     const Version version;
     const WSTRING locale;
     const PublicKey public_key;
 
     AssemblyReference()
-    {
-    }
+    {}
     AssemblyReference(const WSTRING& str);
 
     inline bool operator==(const AssemblyReference& other) const
@@ -137,16 +145,15 @@ struct AssemblyReference {
 // A MethodSignature is a byte array. The format is:
 // [calling convention, number of parameters, return type, parameter type...]
 // For types see CorElementType
-struct MethodSignature {
-  public:
+struct MethodSignature
+{
+public:
     const std::vector<BYTE> data;
 
     MethodSignature()
-    {
-    }
+    {}
     MethodSignature(const std::vector<BYTE>& data) : data(data)
-    {
-    }
+    {}
 
     inline bool operator==(const MethodSignature& other) const
     {
@@ -160,7 +167,8 @@ struct MethodSignature {
 
     size_t NumberOfTypeArguments() const
     {
-        if (data.size() > 1 && (CallingConvention() & IMAGE_CEE_CS_CALLCONV_GENERIC) != 0) {
+        if (data.size() > 1 && (CallingConvention() & IMAGE_CEE_CS_CALLCONV_GENERIC) != 0)
+        {
             return data[1];
         }
         return 0;
@@ -168,10 +176,12 @@ struct MethodSignature {
 
     size_t NumberOfArguments() const
     {
-        if (data.size() > 2 && (CallingConvention() & IMAGE_CEE_CS_CALLCONV_GENERIC) != 0) {
+        if (data.size() > 2 && (CallingConvention() & IMAGE_CEE_CS_CALLCONV_GENERIC) != 0)
+        {
             return data[2];
         }
-        if (data.size() > 1) {
+        if (data.size() > 1)
+        {
             return data[1];
         }
         return 0;
@@ -179,10 +189,12 @@ struct MethodSignature {
 
     bool ReturnTypeIsObject() const
     {
-        if (data.size() > 2 && (CallingConvention() & IMAGE_CEE_CS_CALLCONV_GENERIC) != 0) {
+        if (data.size() > 2 && (CallingConvention() & IMAGE_CEE_CS_CALLCONV_GENERIC) != 0)
+        {
             return data[3] == ELEMENT_TYPE_OBJECT;
         }
-        if (data.size() > 1) {
+        if (data.size() > 1)
+        {
             return data[2] == ELEMENT_TYPE_OBJECT;
         }
 
@@ -191,10 +203,12 @@ struct MethodSignature {
 
     size_t IndexOfReturnType() const
     {
-        if (data.size() > 2 && (CallingConvention() & IMAGE_CEE_CS_CALLCONV_GENERIC) != 0) {
+        if (data.size() > 2 && (CallingConvention() & IMAGE_CEE_CS_CALLCONV_GENERIC) != 0)
+        {
             return 3;
         }
-        if (data.size() > 1) {
+        if (data.size() > 1)
+        {
             return 2;
         }
         return 0;
@@ -203,7 +217,8 @@ struct MethodSignature {
     WSTRING str() const
     {
         std::stringstream ss;
-        for (auto& b : data) {
+        for (auto& b : data)
+        {
             ss << std::hex << std::setfill('0') << std::setw(2) << static_cast<int>(b);
         }
         return ToWSTRING(ss.str());
@@ -215,7 +230,8 @@ struct MethodSignature {
     }
 };
 
-struct MethodReference {
+struct MethodReference
+{
     const AssemblyReference assembly;
     const WSTRING type_name;
     const WSTRING method_name;
@@ -225,19 +241,22 @@ struct MethodReference {
     const Version max_version;
     const std::vector<WSTRING> signature_types;
 
-    MethodReference()
-        : min_version(Version(0, 0, 0, 0)), max_version(Version(USHRT_MAX, USHRT_MAX, USHRT_MAX, USHRT_MAX))
-    {
-    }
+    MethodReference() :
+        min_version(Version(0, 0, 0, 0)), max_version(Version(USHRT_MAX, USHRT_MAX, USHRT_MAX, USHRT_MAX))
+    {}
 
     MethodReference(const WSTRING& assembly_name, WSTRING type_name, WSTRING method_name, WSTRING action,
                     Version min_version, Version max_version, const std::vector<BYTE>& method_signature,
-                    const std::vector<WSTRING>& signature_types)
-        : assembly(assembly_name), type_name(type_name), method_name(method_name), action(action),
-          method_signature(method_signature), min_version(min_version), max_version(max_version),
-          signature_types(signature_types)
-    {
-    }
+                    const std::vector<WSTRING>& signature_types) :
+        assembly(assembly_name),
+        type_name(type_name),
+        method_name(method_name),
+        action(action),
+        method_signature(method_signature),
+        min_version(min_version),
+        max_version(max_version),
+        signature_types(signature_types)
+    {}
 
     inline WSTRING get_type_cache_key() const
     {
@@ -259,19 +278,18 @@ struct MethodReference {
     }
 };
 
-struct MethodReplacement {
+struct MethodReplacement
+{
     const MethodReference caller_method;
     const MethodReference target_method;
     const MethodReference wrapper_method;
 
     MethodReplacement()
-    {
-    }
+    {}
 
-    MethodReplacement(MethodReference caller_method, MethodReference target_method, MethodReference wrapper_method)
-        : caller_method(caller_method), target_method(target_method), wrapper_method(wrapper_method)
-    {
-    }
+    MethodReplacement(MethodReference caller_method, MethodReference target_method, MethodReference wrapper_method) :
+        caller_method(caller_method), target_method(target_method), wrapper_method(wrapper_method)
+    {}
 
     inline bool operator==(const MethodReplacement& other) const
     {
@@ -280,18 +298,17 @@ struct MethodReplacement {
     }
 };
 
-struct Integration {
+struct Integration
+{
     const WSTRING integration_name;
     std::vector<MethodReplacement> method_replacements;
 
     Integration() : integration_name(WStr("")), method_replacements({})
-    {
-    }
+    {}
 
-    Integration(WSTRING integration_name, std::vector<MethodReplacement> method_replacements)
-        : integration_name(integration_name), method_replacements(method_replacements)
-    {
-    }
+    Integration(WSTRING integration_name, std::vector<MethodReplacement> method_replacements) :
+        integration_name(integration_name), method_replacements(method_replacements)
+    {}
 
     inline bool operator==(const Integration& other) const
     {
@@ -299,18 +316,17 @@ struct Integration {
     }
 };
 
-struct IntegrationMethod {
+struct IntegrationMethod
+{
     const WSTRING integration_name;
     MethodReplacement replacement;
 
     IntegrationMethod() : integration_name(WStr("")), replacement({})
-    {
-    }
+    {}
 
-    IntegrationMethod(WSTRING integration_name, MethodReplacement replacement)
-        : integration_name(integration_name), replacement(replacement)
-    {
-    }
+    IntegrationMethod(WSTRING integration_name, MethodReplacement replacement) :
+        integration_name(integration_name), replacement(replacement)
+    {}
 
     inline bool operator==(const IntegrationMethod& other) const
     {
@@ -318,12 +334,13 @@ struct IntegrationMethod {
     }
 };
 
-namespace {
+namespace
+{
 
-WSTRING GetNameFromAssemblyReferenceString(const WSTRING& wstr);
-Version GetVersionFromAssemblyReferenceString(const WSTRING& wstr);
-WSTRING GetLocaleFromAssemblyReferenceString(const WSTRING& wstr);
-PublicKey GetPublicKeyFromAssemblyReferenceString(const WSTRING& wstr);
+    WSTRING GetNameFromAssemblyReferenceString(const WSTRING& wstr);
+    Version GetVersionFromAssemblyReferenceString(const WSTRING& wstr);
+    WSTRING GetLocaleFromAssemblyReferenceString(const WSTRING& wstr);
+    PublicKey GetPublicKeyFromAssemblyReferenceString(const WSTRING& wstr);
 
 } // namespace
 

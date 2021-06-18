@@ -1,11 +1,13 @@
 #include "sig_helpers.h"
 
-namespace trace {
+namespace trace
+{
 
 bool ParseNumber(PCCOR_SIGNATURE* p_sig, ULONG* number)
 {
     ULONG result = CorSigUncompressData(*p_sig, number);
-    if (result == -1) {
+    if (result == -1)
+    {
         return false;
     }
 
@@ -18,7 +20,8 @@ bool ParseTypeDefOrRefEncoded(PCCOR_SIGNATURE* p_sig)
     mdToken type_token;
     ULONG result;
     result = CorSigUncompressToken(*p_sig, &type_token);
-    if (result == -1) {
+    if (result == -1)
+    {
         return false;
     }
 
@@ -28,7 +31,8 @@ bool ParseTypeDefOrRefEncoded(PCCOR_SIGNATURE* p_sig)
 
 bool ParseCustomMod(PCCOR_SIGNATURE* p_sig)
 {
-    if (**p_sig == ELEMENT_TYPE_CMOD_OPT || **p_sig == ELEMENT_TYPE_CMOD_REQD) {
+    if (**p_sig == ELEMENT_TYPE_CMOD_OPT || **p_sig == ELEMENT_TYPE_CMOD_REQD)
+    {
         *p_sig += 1;
         return ParseTypeDefOrRefEncoded(p_sig);
     }
@@ -38,11 +42,14 @@ bool ParseCustomMod(PCCOR_SIGNATURE* p_sig)
 
 bool ParseOptionalCustomMods(PCCOR_SIGNATURE* p_sig)
 {
-    while (true) {
-        switch (**p_sig) {
+    while (true)
+    {
+        switch (**p_sig)
+        {
         case ELEMENT_TYPE_CMOD_OPT:
         case ELEMENT_TYPE_CMOD_REQD:
-            if (!ParseCustomMod(p_sig)) {
+            if (!ParseCustomMod(p_sig))
+            {
                 return false;
             }
             break;
@@ -56,16 +63,19 @@ bool ParseOptionalCustomMods(PCCOR_SIGNATURE* p_sig)
 
 bool ParseRetType(PCCOR_SIGNATURE* p_sig)
 {
-    if (!ParseOptionalCustomMods(p_sig)) {
+    if (!ParseOptionalCustomMods(p_sig))
+    {
         return false;
     }
 
-    if (**p_sig == ELEMENT_TYPE_TYPEDBYREF || **p_sig == ELEMENT_TYPE_VOID) {
+    if (**p_sig == ELEMENT_TYPE_TYPEDBYREF || **p_sig == ELEMENT_TYPE_VOID)
+    {
         *p_sig += 1;
         return true;
     }
 
-    if (**p_sig == ELEMENT_TYPE_BYREF) {
+    if (**p_sig == ELEMENT_TYPE_BYREF)
+    {
         *p_sig += 1;
     }
 
@@ -74,16 +84,19 @@ bool ParseRetType(PCCOR_SIGNATURE* p_sig)
 
 bool ParseParam(PCCOR_SIGNATURE* p_sig)
 {
-    if (!ParseOptionalCustomMods(p_sig)) {
+    if (!ParseOptionalCustomMods(p_sig))
+    {
         return false;
     }
 
-    if (**p_sig == ELEMENT_TYPE_TYPEDBYREF) {
+    if (**p_sig == ELEMENT_TYPE_TYPEDBYREF)
+    {
         *p_sig += 1;
         return true;
     }
 
-    if (**p_sig == ELEMENT_TYPE_BYREF) {
+    if (**p_sig == ELEMENT_TYPE_BYREF)
+    {
         *p_sig += 1;
     }
 
@@ -94,28 +107,35 @@ bool ParseMethod(PCCOR_SIGNATURE* p_sig)
 {
     // Format:  [[HASTHIS] [EXPLICITTHIS]] (DEFAULT|VARARG|GENERIC GenParamCount)
     //                    ParamCount RetType Param* [SENTINEL Param+]
-    if (**p_sig == IMAGE_CEE_CS_CALLCONV_GENERIC) {
+    if (**p_sig == IMAGE_CEE_CS_CALLCONV_GENERIC)
+    {
         *p_sig += 1;
 
         ULONG generic_count = 0;
-        if (!ParseNumber(p_sig, &generic_count)) {
+        if (!ParseNumber(p_sig, &generic_count))
+        {
             return false;
         }
     }
 
     ULONG param_count = 0;
-    if (!ParseNumber(p_sig, &param_count)) {
+    if (!ParseNumber(p_sig, &param_count))
+    {
         return false;
     }
 
-    if (!ParseRetType(p_sig)) {
+    if (!ParseRetType(p_sig))
+    {
         return false;
     }
 
     bool sentinel_found = false;
-    for (ULONG i = 0; i < param_count; i++) {
-        if (**p_sig == ELEMENT_TYPE_SENTINEL) {
-            if (sentinel_found) {
+    for (ULONG i = 0; i < param_count; i++)
+    {
+        if (**p_sig == ELEMENT_TYPE_SENTINEL)
+        {
+            if (sentinel_found)
+            {
                 return false;
             }
 
@@ -123,7 +143,8 @@ bool ParseMethod(PCCOR_SIGNATURE* p_sig)
             *p_sig += 1;
         }
 
-        if (!ParseParam(p_sig)) {
+        if (!ParseParam(p_sig))
+        {
             return false;
         }
     }
@@ -135,22 +156,28 @@ bool ParseArrayShape(PCCOR_SIGNATURE* p_sig)
 {
     // Format: Rank NumSizes Size* NumLoBounds LoBound*
     ULONG rank = 0, numsizes = 0, size = 0;
-    if (!ParseNumber(p_sig, &rank) || !ParseNumber(p_sig, &numsizes)) {
+    if (!ParseNumber(p_sig, &rank) || !ParseNumber(p_sig, &numsizes))
+    {
         return false;
     }
 
-    for (ULONG i = 0; i < numsizes; i++) {
-        if (!ParseNumber(p_sig, &size)) {
+    for (ULONG i = 0; i < numsizes; i++)
+    {
+        if (!ParseNumber(p_sig, &size))
+        {
             return false;
         }
     }
 
-    if (!ParseNumber(p_sig, &numsizes)) {
+    if (!ParseNumber(p_sig, &numsizes))
+    {
         return false;
     }
 
-    for (ULONG i = 0; i < numsizes; i++) {
-        if (!ParseNumber(p_sig, &size)) {
+    for (ULONG i = 0; i < numsizes; i++)
+    {
+        if (!ParseNumber(p_sig, &size))
+        {
             return false;
         }
     }
@@ -182,7 +209,8 @@ bool ParseType(PCCOR_SIGNATURE* p_sig)
     ULONG number = 0;
     *p_sig += 1;
 
-    switch (cor_element_type) {
+    switch (cor_element_type)
+    {
     case ELEMENT_TYPE_VOID:
     case ELEMENT_TYPE_BOOLEAN:
     case ELEMENT_TYPE_CHAR:
@@ -203,14 +231,18 @@ bool ParseType(PCCOR_SIGNATURE* p_sig)
     case ELEMENT_TYPE_PTR:
         // Format: PTR CustomMod* VOID
         // Format: PTR CustomMod* Type
-        if (!ParseOptionalCustomMods(p_sig)) {
+        if (!ParseOptionalCustomMods(p_sig))
+        {
             return false;
         }
 
-        if (**p_sig == ELEMENT_TYPE_VOID) {
+        if (**p_sig == ELEMENT_TYPE_VOID)
+        {
             *p_sig += 1;
             return true;
-        } else {
+        }
+        else
+        {
             return ParseType(p_sig);
         }
 
@@ -227,34 +259,41 @@ bool ParseType(PCCOR_SIGNATURE* p_sig)
 
     case ELEMENT_TYPE_ARRAY:
         // Format: ARRAY Type ArrayShape
-        if (!ParseType(p_sig)) {
+        if (!ParseType(p_sig))
+        {
             return false;
         }
         return ParseArrayShape(p_sig);
 
     case ELEMENT_TYPE_SZARRAY:
         // Format: SZARRAY CustomMod* Type
-        if (!ParseOptionalCustomMods(p_sig)) {
+        if (!ParseOptionalCustomMods(p_sig))
+        {
             return false;
         }
         return ParseType(p_sig);
 
     case ELEMENT_TYPE_GENERICINST:
-        if (**p_sig != ELEMENT_TYPE_VALUETYPE && **p_sig != ELEMENT_TYPE_CLASS) {
+        if (**p_sig != ELEMENT_TYPE_VALUETYPE && **p_sig != ELEMENT_TYPE_CLASS)
+        {
             return false;
         }
 
         *p_sig += 1;
-        if (!ParseTypeDefOrRefEncoded(p_sig)) {
+        if (!ParseTypeDefOrRefEncoded(p_sig))
+        {
             return false;
         }
 
-        if (!ParseNumber(p_sig, &number)) {
+        if (!ParseNumber(p_sig, &number))
+        {
             return false;
         }
 
-        for (ULONG i = 0; i < number; i++) {
-            if (!ParseType(p_sig)) {
+        for (ULONG i = 0; i < number; i++)
+        {
+            if (!ParseType(p_sig))
+            {
                 return false;
             }
         }

@@ -9,7 +9,8 @@
 typedef struct stat Stat;
 #endif
 
-namespace trace {
+namespace trace
+{
 
 bool debug_logging_enabled = false;
 bool dump_il_rewrite_enabled = false;
@@ -20,7 +21,8 @@ std::string getPathName(const std::string& s)
 {
     char sep = '/';
     size_t i = s.rfind(sep, s.length());
-    if (i != std::string::npos) {
+    if (i != std::string::npos)
+    {
         return s.substr(0, i);
     }
     return "";
@@ -36,10 +38,12 @@ std::string Logger::GetLogPath(const std::string& file_name_suffix)
     // create directory if missing
     const auto log_path = std::filesystem::path(path);
 
-    if (log_path.has_parent_path()) {
+    if (log_path.has_parent_path())
+    {
         const auto parent_path = log_path.parent_path();
 
-        if (!std::filesystem::exists(parent_path)) {
+        if (!std::filesystem::exists(parent_path))
+        {
             std::filesystem::create_directories(parent_path);
         }
     }
@@ -47,7 +51,8 @@ std::string Logger::GetLogPath(const std::string& file_name_suffix)
     // on linux and osx we use the basic C approach
     const auto log_path = getPathName(path);
     Stat st;
-    if (log_path != "" && stat(log_path.c_str(), &st) != 0) {
+    if (log_path != "" && stat(log_path.c_str(), &st) != 0)
+    {
         mkdir(log_path.c_str(), 0777);
     }
 #endif
@@ -73,9 +78,12 @@ Logger::Logger()
 
     static auto file_name_suffix = "-" + current_process_without_extension + "-" + std::to_string(current_process_id);
 
-    try {
+    try
+    {
         m_fileout = spdlog::rotating_logger_mt("Logger", GetLogPath(file_name_suffix), 1048576 * 5, 10);
-    } catch (...) {
+    }
+    catch (...)
+    {
         std::cerr << "Logger Handler: Error creating native log file." << std::endl;
         m_fileout = spdlog::null_logger_mt("Logger");
     }
@@ -95,7 +103,8 @@ Logger::~Logger()
 
 void Logger::Debug(const std::string& str)
 {
-    if (debug_logging_enabled) {
+    if (debug_logging_enabled)
+    {
         m_fileout->debug(str);
     }
 }

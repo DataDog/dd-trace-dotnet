@@ -8,16 +8,15 @@
 #include "version.h"
 
 ClassFactory::ClassFactory() : refCount(0)
-{
-}
+{}
 
 ClassFactory::~ClassFactory()
-{
-}
+{}
 
 HRESULT STDMETHODCALLTYPE ClassFactory::QueryInterface(REFIID riid, void** ppvObject)
 {
-    if (riid == IID_IUnknown || riid == IID_IClassFactory) {
+    if (riid == IID_IUnknown || riid == IID_IClassFactory)
+    {
         *ppvObject = this;
         this->AddRef();
         return S_OK;
@@ -35,7 +34,8 @@ ULONG STDMETHODCALLTYPE ClassFactory::AddRef()
 ULONG STDMETHODCALLTYPE ClassFactory::Release()
 {
     int count = std::atomic_fetch_sub(&this->refCount, 1) - 1;
-    if (count <= 0) {
+    if (count <= 0)
+    {
         delete this;
     }
 
@@ -45,7 +45,8 @@ ULONG STDMETHODCALLTYPE ClassFactory::Release()
 // profiler entry point
 HRESULT STDMETHODCALLTYPE ClassFactory::CreateInstance(IUnknown* pUnkOuter, REFIID riid, void** ppvObject)
 {
-    if (pUnkOuter != nullptr) {
+    if (pUnkOuter != nullptr)
+    {
         *ppvObject = nullptr;
         return CLASS_E_NOAGGREGATION;
     }

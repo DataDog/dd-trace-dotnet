@@ -11,7 +11,8 @@
 #include "util.h"
 #include <set>
 
-namespace trace {
+namespace trace
+{
 class ModuleMetadata;
 
 const size_t kNameMaxSize = 1024;
@@ -41,19 +42,21 @@ const auto SystemReflectionMethodBaseName = WStr("System.Reflection.MethodBase")
 const auto GetMethodFromHandleMethodName = WStr("GetMethodFromHandle");
 const auto RuntimeMethodHandleTypeName = WStr("System.RuntimeMethodHandle");
 
-template <typename T> class EnumeratorIterator;
+template <typename T>
+class EnumeratorIterator;
 
-template <typename T> class Enumerator {
-  private:
+template <typename T>
+class Enumerator
+{
+private:
     const std::function<HRESULT(HCORENUM*, T[], ULONG, ULONG*)> callback_;
     const std::function<void(HCORENUM)> close_;
     mutable HCORENUM ptr_;
 
-  public:
-    Enumerator(std::function<HRESULT(HCORENUM*, T[], ULONG, ULONG*)> callback, std::function<void(HCORENUM)> close)
-        : callback_(callback), close_(close), ptr_(nullptr)
-    {
-    }
+public:
+    Enumerator(std::function<HRESULT(HCORENUM*, T[], ULONG, ULONG*)> callback, std::function<void(HCORENUM)> close) :
+        callback_(callback), close_(close), ptr_(nullptr)
+    {}
 
     Enumerator(const Enumerator& other) = default;
 
@@ -80,23 +83,29 @@ template <typename T> class Enumerator {
     }
 };
 
-template <typename T> class EnumeratorIterator {
-  private:
+template <typename T>
+class EnumeratorIterator
+{
+private:
     const Enumerator<T>* enumerator_;
     HRESULT status_ = S_FALSE;
     T arr_[kEnumeratorMax]{};
     ULONG idx_ = 0;
     ULONG sz_ = 0;
 
-  public:
+public:
     EnumeratorIterator(const Enumerator<T>* enumerator, HRESULT status) : enumerator_(enumerator)
     {
-        if (status == S_OK) {
+        if (status == S_OK)
+        {
             status_ = enumerator_->Next(arr_, kEnumeratorMax, &sz_);
-            if (status_ == S_OK && sz_ == 0) {
+            if (status_ == S_OK && sz_ == 0)
+            {
                 status_ = S_FALSE;
             }
-        } else {
+        }
+        else
+        {
             status_ = status;
         }
     }
@@ -113,12 +122,16 @@ template <typename T> class EnumeratorIterator {
 
     EnumeratorIterator<T>& operator++()
     {
-        if (idx_ < sz_ - 1) {
+        if (idx_ < sz_ - 1)
+        {
             idx_++;
-        } else {
+        }
+        else
+        {
             idx_ = 0;
             status_ = enumerator_->Next(arr_, kEnumeratorMax, &sz_);
-            if (status_ == S_OK && sz_ == 0) {
+            if (status_ == S_OK && sz_ == 0)
+            {
                 status_ = S_FALSE;
             }
         }
@@ -181,24 +194,26 @@ static Enumerator<mdAssemblyRef> EnumAssemblyRefs(const ComPtr<IMetaDataAssembly
         [assembly_import](HCORENUM ptr) -> void { assembly_import->CloseEnum(ptr); });
 }
 
-struct RuntimeInformation {
+struct RuntimeInformation
+{
     COR_PRF_RUNTIME_TYPE runtime_type;
     USHORT major_version;
     USHORT minor_version;
     USHORT build_version;
     USHORT qfe_version;
 
-    RuntimeInformation()
-        : runtime_type((COR_PRF_RUNTIME_TYPE)0x0), major_version(0), minor_version(0), build_version(0), qfe_version(0)
-    {
-    }
+    RuntimeInformation() :
+        runtime_type((COR_PRF_RUNTIME_TYPE) 0x0), major_version(0), minor_version(0), build_version(0), qfe_version(0)
+    {}
 
     RuntimeInformation(COR_PRF_RUNTIME_TYPE runtime_type, USHORT major_version, USHORT minor_version,
-                       USHORT build_version, USHORT qfe_version)
-        : runtime_type(runtime_type), major_version(major_version), minor_version(minor_version),
-          build_version(build_version), qfe_version(qfe_version)
-    {
-    }
+                       USHORT build_version, USHORT qfe_version) :
+        runtime_type(runtime_type),
+        major_version(major_version),
+        minor_version(minor_version),
+        build_version(build_version),
+        qfe_version(qfe_version)
+    {}
 
     RuntimeInformation& operator=(const RuntimeInformation& other)
     {
@@ -220,7 +235,8 @@ struct RuntimeInformation {
     }
 };
 
-struct AssemblyInfo {
+struct AssemblyInfo
+{
     const AssemblyID id;
     const WSTRING name;
     const ModuleID manifest_module_id;
@@ -228,15 +244,16 @@ struct AssemblyInfo {
     const WSTRING app_domain_name;
 
     AssemblyInfo() : id(0), name(WStr("")), manifest_module_id(0), app_domain_id(0), app_domain_name(WStr(""))
-    {
-    }
+    {}
 
     AssemblyInfo(AssemblyID id, WSTRING name, ModuleID manifest_module_id, AppDomainID app_domain_id,
-                 WSTRING app_domain_name)
-        : id(id), name(name), manifest_module_id(manifest_module_id), app_domain_id(app_domain_id),
-          app_domain_name(app_domain_name)
-    {
-    }
+                 WSTRING app_domain_name) :
+        id(id),
+        name(name),
+        manifest_module_id(manifest_module_id),
+        app_domain_id(app_domain_id),
+        app_domain_name(app_domain_name)
+    {}
 
     bool IsValid() const
     {
@@ -244,22 +261,23 @@ struct AssemblyInfo {
     }
 };
 
-struct AssemblyMetadata {
+struct AssemblyMetadata
+{
     const ModuleID module_id;
     const WSTRING name;
     const mdAssembly assembly_token;
     const Version version;
 
     AssemblyMetadata() : module_id(0), name(WStr("")), assembly_token(mdTokenNil)
-    {
-    }
+    {}
 
     AssemblyMetadata(ModuleID module_id, WSTRING name, mdAssembly assembly_token, USHORT major, USHORT minor,
-                     USHORT build, USHORT revision)
-        : module_id(module_id), name(name), assembly_token(assembly_token),
-          version(Version(major, minor, build, revision))
-    {
-    }
+                     USHORT build, USHORT revision) :
+        module_id(module_id),
+        name(name),
+        assembly_token(assembly_token),
+        version(Version(major, minor, build, revision))
+    {}
 
     bool IsValid() const
     {
@@ -267,7 +285,8 @@ struct AssemblyMetadata {
     }
 };
 
-struct AssemblyProperty {
+struct AssemblyProperty
+{
     const void* ppbPublicKey;
     ULONG pcbPublicKey;
     ULONG pulHashAlgId;
@@ -276,23 +295,21 @@ struct AssemblyProperty {
     DWORD assemblyFlags = 0;
 
     AssemblyProperty() : ppbPublicKey(nullptr), pcbPublicKey(0), pulHashAlgId(0), szName(WStr(""))
-    {
-    }
+    {}
 };
 
-struct ModuleInfo {
+struct ModuleInfo
+{
     const ModuleID id;
     const WSTRING path;
     const AssemblyInfo assembly;
     const DWORD flags;
 
     ModuleInfo() : id(0), path(WStr("")), assembly({}), flags(0)
-    {
-    }
-    ModuleInfo(ModuleID id, WSTRING path, AssemblyInfo assembly, DWORD flags)
-        : id(id), path(path), assembly(assembly), flags(flags)
-    {
-    }
+    {}
+    ModuleInfo(ModuleID id, WSTRING path, AssemblyInfo assembly, DWORD flags) :
+        id(id), path(path), assembly(assembly), flags(flags)
+    {}
 
     bool IsValid() const
     {
@@ -305,7 +322,8 @@ struct ModuleInfo {
     }
 };
 
-struct TypeInfo {
+struct TypeInfo
+{
     const mdToken id;
     const WSTRING name;
     const mdTypeSpec type_spec;
@@ -315,17 +333,27 @@ struct TypeInfo {
     const bool isGeneric;
     const TypeInfo* parent_type;
 
-    TypeInfo()
-        : id(0), name(WStr("")), type_spec(0), token_type(0), extend_from(nullptr), valueType(false), isGeneric(false),
-          parent_type(nullptr)
-    {
-    }
+    TypeInfo() :
+        id(0),
+        name(WStr("")),
+        type_spec(0),
+        token_type(0),
+        extend_from(nullptr),
+        valueType(false),
+        isGeneric(false),
+        parent_type(nullptr)
+    {}
     TypeInfo(mdToken id, WSTRING name, mdTypeSpec type_spec, ULONG32 token_type, const TypeInfo* extend_from,
-             bool valueType, bool isGeneric, const TypeInfo* parent_type)
-        : id(id), name(name), type_spec(type_spec), token_type(token_type), extend_from(extend_from),
-          valueType(valueType), isGeneric(isGeneric), parent_type(parent_type)
-    {
-    }
+             bool valueType, bool isGeneric, const TypeInfo* parent_type) :
+        id(id),
+        name(name),
+        type_spec(type_spec),
+        token_type(token_type),
+        extend_from(extend_from),
+        valueType(valueType),
+        isGeneric(isGeneric),
+        parent_type(parent_type)
+    {}
 
     bool IsValid() const
     {
@@ -340,7 +368,8 @@ enum MethodArgumentTypeFlag
     TypeFlagBoxedType = 0x04
 };
 
-struct FunctionMethodArgument {
+struct FunctionMethodArgument
+{
     ULONG offset;
     ULONG length;
     PCCOR_SIGNATURE pbBase;
@@ -350,8 +379,9 @@ struct FunctionMethodArgument {
     ULONG GetSignature(PCCOR_SIGNATURE& data) const;
 };
 
-struct FunctionMethodSignature {
-  private:
+struct FunctionMethodSignature
+{
+private:
     PCCOR_SIGNATURE pbBase;
     unsigned len;
     ULONG numberOfTypeArguments = 0;
@@ -359,10 +389,9 @@ struct FunctionMethodSignature {
     FunctionMethodArgument ret{};
     std::vector<FunctionMethodArgument> params;
 
-  public:
+public:
     FunctionMethodSignature() : pbBase(nullptr), len(0)
-    {
-    }
+    {}
     FunctionMethodSignature(PCCOR_SIGNATURE pb, unsigned cbBuffer)
     {
         pbBase = pb;
@@ -403,7 +432,8 @@ struct FunctionMethodSignature {
     }
 };
 
-struct FunctionInfo {
+struct FunctionInfo
+{
     const mdToken id;
     const WSTRING name;
     const TypeInfo type;
@@ -414,24 +444,31 @@ struct FunctionInfo {
     FunctionMethodSignature method_signature;
 
     FunctionInfo() : id(0), name(WStr("")), type({}), is_generic(false), method_def_id(0), method_signature({})
-    {
-    }
+    {}
 
     FunctionInfo(mdToken id, WSTRING name, TypeInfo type, MethodSignature signature,
                  MethodSignature function_spec_signature, mdToken method_def_id,
-                 FunctionMethodSignature method_signature)
-        : id(id), name(name), type(type), is_generic(true), signature(signature),
-          function_spec_signature(function_spec_signature), method_def_id(method_def_id),
-          method_signature(method_signature)
-    {
-    }
+                 FunctionMethodSignature method_signature) :
+        id(id),
+        name(name),
+        type(type),
+        is_generic(true),
+        signature(signature),
+        function_spec_signature(function_spec_signature),
+        method_def_id(method_def_id),
+        method_signature(method_signature)
+    {}
 
     FunctionInfo(mdToken id, WSTRING name, TypeInfo type, MethodSignature signature,
-                 FunctionMethodSignature method_signature)
-        : id(id), name(name), type(type), is_generic(false), signature(signature), method_def_id(0),
-          method_signature(method_signature)
-    {
-    }
+                 FunctionMethodSignature method_signature) :
+        id(id),
+        name(name),
+        type(type),
+        is_generic(false),
+        signature(signature),
+        method_def_id(0),
+        method_signature(method_signature)
+    {}
 
     bool IsValid() const
     {
@@ -479,8 +516,9 @@ std::vector<IntegrationMethod> FilterIntegrationsByTarget(const std::vector<Inte
 
 // FilterIntegrationsByTargetAssemblyName removes any integrations which target any
 // of the specified assemblies
-std::vector<IntegrationMethod> FilterIntegrationsByTargetAssemblyName(
-    const std::vector<IntegrationMethod>& integration_methods, const std::vector<WSTRING>& excluded_assembly_names);
+std::vector<IntegrationMethod>
+FilterIntegrationsByTargetAssemblyName(const std::vector<IntegrationMethod>& integration_methods,
+                                       const std::vector<WSTRING>& excluded_assembly_names);
 
 mdMethodSpec DefineMethodSpec(const ComPtr<IMetaDataEmit2>& metadata_emit, const mdToken& token,
                               const MethodSignature& signature);

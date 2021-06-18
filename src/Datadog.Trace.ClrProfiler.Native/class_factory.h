@@ -8,11 +8,12 @@
 #include "unknwn.h"
 #include <atomic>
 
-class ClassFactory : public IClassFactory {
-  private:
+class ClassFactory : public IClassFactory
+{
+private:
     std::atomic<int> refCount;
 
-  public:
+public:
     ClassFactory();
     virtual ~ClassFactory();
     HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override;

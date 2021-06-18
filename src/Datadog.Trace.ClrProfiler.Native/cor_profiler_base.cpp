@@ -1,15 +1,16 @@
 ﻿#include "cor_profiler_base.h"
 #include "logging.h"
 
-namespace trace {
+namespace trace
+{
 
 CorProfilerBase::CorProfilerBase() : ref_count_(0), info_(nullptr)
-{
-}
+{}
 
 CorProfilerBase::~CorProfilerBase()
 {
-    if (this->info_ != nullptr) {
+    if (this->info_ != nullptr)
+    {
         this->info_->Release();
         this->info_ = nullptr;
     }
