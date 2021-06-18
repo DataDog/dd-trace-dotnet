@@ -1095,7 +1095,8 @@ partial class Build
                              .Add("RunConfiguration.DisableAppDomain=true") // https://github.com/coverlet-coverage/coverlet/issues/347
                              .Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.SkipAutoProps=true")
                              .Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura")
-                             .Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude=[*]Datadog.Trace.Vendors.*"));
+                             .Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude=[*]Datadog.Trace.Vendors.*,")
+                             .Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include=\"[Datadog.Trace.ClrProfiler.*]*,[Datadog.Trace]*,[Datadog.Trace.AspNet]*\""));
     }
 
     protected override void OnTargetStart(string target)
