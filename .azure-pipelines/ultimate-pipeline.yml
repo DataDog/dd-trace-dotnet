@@ -484,7 +484,7 @@ stages:
       name: $(poolName)
       vmImage: $(vmImage)
 
-    timeoutInMinutes: 360
+    timeoutInMinutes: 0
     steps:
     # Doing a clean of obj files _before_ restore to remove build output from previous runs
     # Can't do a full clean, as otherwise restore-working-directory fails
