@@ -5,6 +5,7 @@
 
 using System;
 using System.Linq.Expressions;
+using System.Reflection;
 using Datadog.Trace.Logging.LogProviders;
 
 namespace Datadog.Trace.Logging
@@ -27,15 +28,20 @@ namespace Datadog.Trace.Logging
 
         internal static Type GetLogEnricherType() => Type.GetType("Serilog.Core.ILogEventEnricher, Serilog");
 
-        private static Func<object, IDisposable> GetPush()
+        internal static new bool IsLoggerAvailable() =>
+            SerilogLogProvider.IsLoggerAvailable() && GetPushMethodInfo() != null;
+
+        private static MethodInfo GetPushMethodInfo()
         {
             var ndcContextType = Type.GetType("Serilog.Context.LogContext, Serilog");
+            return ndcContextType?.GetMethod("Push", GetLogEnricherType());
+        }
 
-            var logEventEnricherType = GetLogEnricherType();
-
-            var pushPropertyMethod = ndcContextType.GetMethod("Push", logEventEnricherType);
+        private static Func<object, IDisposable> GetPush()
+        {
+            var pushPropertyMethod = GetPushMethodInfo();
             var enricherParam = Expression.Parameter(typeof(object), "enricher");
-            var castEnricherParam = Expression.Convert(enricherParam, logEventEnricherType);
+            var castEnricherParam = Expression.Convert(enricherParam, GetLogEnricherType());
             var pushMethodCall = Expression.Call(null, pushPropertyMethod, castEnricherParam);
             var push = Expression.Lambda<Func<object, IDisposable>>(
                     pushMethodCall,
