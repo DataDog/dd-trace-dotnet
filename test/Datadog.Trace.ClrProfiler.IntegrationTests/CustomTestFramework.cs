@@ -68,7 +68,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #elif NET45_OR_GREATER
             return "net45";
 #else
-            throw new InvalidOperationException("Unexpected TFM");
+#error Unexpected TFM
 #endif
         }
 
