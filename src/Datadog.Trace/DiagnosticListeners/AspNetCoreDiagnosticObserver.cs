@@ -173,6 +173,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
         }
+
 #else
         protected override void OnNext(string eventName, object arg)
         {
@@ -268,21 +269,6 @@ namespace Datadog.Trace.DiagnosticListeners
             }
         }
 #endif
-
-        private static string GetUrl(HttpRequest request)
-        {
-            if (request.Host.HasValue)
-            {
-                return $"{request.Scheme}://{request.Host.Value}{request.PathBase.Value}{request.Path.Value}";
-            }
-
-            // HTTP 1.0 requests are not required to provide a Host to be valid
-            // Since this is just for display, we can provide a string that is
-            // not an actual Uri with only the fields that are specified.
-            // request.GetDisplayUrl(), used above, will throw an exception
-            // if request.Host is null.
-            return $"{request.Scheme}://{NoHostSpecified}{request.PathBase.Value}{request.Path.Value}";
-        }
 
         private static SpanContext ExtractPropagatedContext(HttpRequest request)
         {
@@ -507,7 +493,7 @@ namespace Datadog.Trace.DiagnosticListeners
             if (isFirstExecution)
             {
                 trackingFeature.IsFirstPipelineExecution = false;
-                var url = GetUrl(httpContext.Request);
+                var url = httpContext.Request.GetUrl();
                 if (!string.Equals(url, trackingFeature.OriginalUrl))
                 {
                     // URL has changed from original, so treat this execution as a "subsequent" request
@@ -599,7 +585,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             string host = request.Host.Value;
             string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
-            string url = GetUrl(request);
+            string url = request.GetUrl();
 
             if (tracer.Settings.RouteTemplateResourceNamesEnabled)
             {
@@ -663,18 +649,10 @@ namespace Datadog.Trace.DiagnosticListeners
             }
         }
 
-        private void RaiseIntrumentationEvent(IDatadogSecurity security, HttpContext context, HttpRequest request)
+        private void RaiseIntrumentationEvent(IDatadogSecurity security, HttpContext context, HttpRequest request, RouteData routeData = null)
         {
-            string url = GetUrl(request);
-
-            var dict = new Dictionary<string, object>()
-            {
-                { "server.request.method", request.Method },
-                { "server.request.uri.raw", url },
-                { "server.request.query", request.QueryString.ToString() },
-            };
-
-            security.InstrumentationGateway.RaiseEvent(dict, new HttpTransport(context));
+            var dic = request.PrepareArgsForWaf(routeData);
+            security.InstrumentationGateway.RaiseEvent(dic, new HttpTransport(context));
         }
 
         private void OnRoutingEndpointMatched(object arg)
@@ -706,7 +684,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     trackingFeature.IsUsingEndpointRouting = true;
                     trackingFeature.IsFirstPipelineExecution = false;
 
-                    var url = GetUrl(httpContext.Request);
+                    var url = httpContext.Request.GetUrl();
                     if (!string.Equals(url, trackingFeature.OriginalUrl))
                     {
                         // URL has changed from original, so treat this execution as a "subsequent" request
@@ -834,7 +812,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (shouldSecure)
                 {
-                    RaiseIntrumentationEvent(security, httpContext, request);
+                    RaiseIntrumentationEvent(security, httpContext, request, typedArg.RouteData);
                 }
             }
         }
@@ -937,6 +915,9 @@ namespace Datadog.Trace.DiagnosticListeners
 
             [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
             public ActionDescriptor ActionDescriptor;
+
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+            public RouteData RouteData;
         }
 
         [DuckCopy]
