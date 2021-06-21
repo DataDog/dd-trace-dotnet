@@ -18,8 +18,18 @@ namespace Datadog.Trace.DuckTyping.Tests
             var targetObject = new TargetObject();
             var proxy = targetObject.DuckCast<IProxyDefinition>();
 
-            proxy.SayHi().Should().Equals("Hello World");
-            proxy.SayHiWithWildcard().Should().Equals("Hello World (*)");
+            proxy.SayHi().Should().Be("Hello World");
+            proxy.SayHiWithWildcard().Should().Be("Hello World (*)");
+        }
+
+        [Fact]
+        public void GenericTest()
+        {
+            var targetObject = new TargetGenericObject();
+            var proxy = targetObject.DuckCast<IGenericProxyDefinition>();
+
+            proxy.Sum(1, 1).Should().Be(2);
+            proxy.Sum(1.0f, 1.0f).Should().Be(2.0f);
         }
 
         public class TargetObject : ITarget
@@ -35,11 +45,33 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        public class TargetGenericObject : IGenericTarget
+        {
+            T IGenericTarget.Sum<T>(T a, T b)
+            {
+                if (a is int aInt && b is int bInt)
+                {
+                    return (T)(object)(aInt + bInt);
+                }
+                else if (a is float aFloat && b is float bFloat)
+                {
+                    return (T)(object)(aFloat + bFloat);
+                }
+
+                return default;
+            }
+        }
+
         public interface ITarget
         {
             string SayHi();
 
             string SayHiWithWildcard();
+        }
+
+        public interface IGenericTarget
+        {
+            T Sum<T>(T a, T b);
         }
 
         public interface IProxyDefinition
@@ -49,6 +81,12 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             [Duck(ExplicitInterfaceTypeName = "*")]
             string SayHiWithWildcard();
+        }
+
+        public interface IGenericProxyDefinition
+        {
+            [Duck(ExplicitInterfaceTypeName = "*")]
+            T Sum<T>(T a, T b);
         }
     }
 }

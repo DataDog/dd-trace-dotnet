@@ -384,7 +384,8 @@ namespace Datadog.Trace.DuckTyping
                     }
 
                     // Method call
-                    if (targetMethod.IsPublic)
+                    // A generic method cannot be called using calli (throws System.InvalidOperationException)
+                    if (targetMethod.IsPublic || targetMethod.IsGenericMethod)
                     {
                         // We can emit a normal call if we have a public instance with a public target method.
                         il.EmitCall(targetMethod.IsStatic || targetMethod.DeclaringType.IsValueType ? OpCodes.Call : OpCodes.Callvirt, targetMethod, null);
