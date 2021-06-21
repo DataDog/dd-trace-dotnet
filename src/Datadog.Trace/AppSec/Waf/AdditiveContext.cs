@@ -6,11 +6,13 @@
 using System;
 using System.Collections.Generic;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.AppSec.Waf
 {
     internal class AdditiveContext : IAdditiveContext
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AdditiveContext>();
         private readonly IntPtr contextHandle;
         private bool disposed = false;
 
@@ -50,7 +52,6 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             disposed = true;
-
             Native.pw_clearAdditive(contextHandle);
         }
 

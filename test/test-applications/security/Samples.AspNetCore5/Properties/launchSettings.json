@@ -37,7 +37,15 @@
         "DD_INTEGRATIONS": "$(ProjectDir)$(OutputPath)profiler-lib\\integrations.json",
         "CORECLR_PROFILER_PATH": "$(ProjectDir)$(OutputPath)profiler-lib\\Datadog.Trace.ClrProfiler.Native.dll",
         "DD_VERSION": "1.0.0",
-        "DD_TRACE_HEADER_TAGS": "sample.correlation.identifier, Server"
+        "DD_TRACE_HEADER_TAGS": "sample.correlation.identifier, Server",
+        "DD_TRACE_DEBUG": "0"
+      },
+      "Logging": {
+        "LogLevel": {
+          "Default": "Warning",
+          "Microsoft": "Warning",
+          "Microsoft.Hosting.Lifetime": "Warning"
+        }
       },
       "nativeDebugging": true,
       "use64Bit": false,

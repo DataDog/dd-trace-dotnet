@@ -4,6 +4,7 @@
 // </copyright>
 
 #if !NETFRAMEWORK
+using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.DiagnosticListeners;
 using Microsoft.AspNetCore.Http;
 
@@ -28,6 +29,17 @@ namespace Datadog.Trace.AppSec.Transport.Http
             {
                 context.Items[SecurityConstants.KillKey] = true;
             }
+        }
+
+        public IAdditiveContext GetAdditiveContext()
+        {
+            return context.Features.Get<IAdditiveContext>();
+        }
+
+        public void SetAdditiveContext(IAdditiveContext additiveContext)
+        {
+            context.Features.Set(additiveContext);
+            context.Response.RegisterForDispose(additiveContext);
         }
     }
 }
