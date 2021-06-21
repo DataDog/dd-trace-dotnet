@@ -7,7 +7,6 @@ using System;
 using Datadog.Trace.AspNetCore;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 {
@@ -35,12 +34,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
     public class ILoggerIntegration
     {
         private const string IntegrationName = nameof(IntegrationIds.AspNetCore);
-        private static readonly Type ILoggerType;
-
-        static ILoggerIntegration()
-        {
-            ILoggerType = Type.GetType("Microsoft.Extensions.Logging.ILogger, Microsoft.Extensions.Logging.Abstractions", throwOnError: false);
-        }
 
         /// <summary>
         /// OnMethodBegin callback
@@ -56,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
             IDisposable disposable = null;
             if (Tracer.Instance.Settings.LogsInjectionEnabled)
             {
-                var logger = (ILogger)DuckType.Create(typeof(ILogger), instance.Diagnostics.Logger, ILoggerType);
+                var logger = instance.Diagnostics.Logger;
                 disposable = logger.BeginScope(new DatadogLoggingScope());
             }
 

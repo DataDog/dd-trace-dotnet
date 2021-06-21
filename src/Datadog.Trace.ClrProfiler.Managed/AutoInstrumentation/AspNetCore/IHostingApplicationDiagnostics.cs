@@ -16,6 +16,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         /// Gets the logger field
         /// </summary>
         [Duck(Name = "_logger", Kind = DuckKind.Field)]
-        object Logger { get; }
+        ILogger Logger { get; }
     }
 }

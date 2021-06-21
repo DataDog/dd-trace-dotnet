@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 {
@@ -17,6 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         /// </summary>
         /// <param name="state">The identifier for the scope.</param>
         /// <returns>An IDisposable that ends the logical operation scope on dispose.</returns>
+        [Duck(ExplicitInterfaceTypeName = "*")]
         IDisposable BeginScope<TState>(TState state);
     }
 }
