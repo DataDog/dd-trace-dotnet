@@ -5,16 +5,18 @@
 #include <corhlpr.h>
 #include <corprof.h>
 
-namespace trace {
+namespace trace
+{
 
-class CorProfilerBase : public ICorProfilerCallback10 {
-  private:
+class CorProfilerBase : public ICorProfilerCallback10
+{
+private:
     std::atomic<int> ref_count_;
 
-  protected:
+protected:
     ICorProfilerInfo4* info_;
 
-  public:
+public:
     CorProfilerBase();
     virtual ~CorProfilerBase();
 
@@ -150,7 +152,8 @@ class CorProfilerBase : public ICorProfilerCallback10 {
             riid == __uuidof(ICorProfilerCallback8) || riid == __uuidof(ICorProfilerCallback7) ||
             riid == __uuidof(ICorProfilerCallback6) || riid == __uuidof(ICorProfilerCallback5) ||
             riid == __uuidof(ICorProfilerCallback4) || riid == __uuidof(ICorProfilerCallback3) ||
-            riid == __uuidof(ICorProfilerCallback2) || riid == __uuidof(ICorProfilerCallback) || riid == IID_IUnknown) {
+            riid == __uuidof(ICorProfilerCallback2) || riid == __uuidof(ICorProfilerCallback) || riid == IID_IUnknown)
+        {
             *ppvObject = this;
             this->AddRef();
             return S_OK;

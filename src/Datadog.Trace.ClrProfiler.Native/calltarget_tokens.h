@@ -15,14 +15,16 @@
 
 #define FASTPATH_COUNT 9
 
-namespace trace {
+namespace trace
+{
 
 /// <summary>
 /// Class to control all the token references of the module where the calltarget will be called.
 /// Also provides useful helpers for the rewriting process
 /// </summary>
-class CallTargetTokens {
-  private:
+class CallTargetTokens
+{
+private:
     void* module_metadata_ptr = nullptr;
 
     // CallTarget constants
@@ -70,7 +72,7 @@ class CallTargetTokens {
 
     inline ModuleMetadata* GetMetadata()
     {
-        return (ModuleMetadata*)module_metadata_ptr;
+        return (ModuleMetadata*) module_metadata_ptr;
     }
     HRESULT EnsureCorLibTokens();
     HRESULT EnsureBaseCalltargetTokens();
@@ -90,11 +92,12 @@ class CallTargetTokens {
     HRESULT WriteBeginMethodWithArgumentsArray(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
                                                const TypeInfo* currentType, ILInstr** instruction);
 
-  public:
+public:
     CallTargetTokens(void* module_metadata_ptr)
     {
         this->module_metadata_ptr = module_metadata_ptr;
-        for (int i = 0; i < FASTPATH_COUNT; i++) {
+        for (int i = 0; i < FASTPATH_COUNT; i++)
+        {
             beginMethodFastPathRefs[i] = mdMemberRefNil;
         }
     }

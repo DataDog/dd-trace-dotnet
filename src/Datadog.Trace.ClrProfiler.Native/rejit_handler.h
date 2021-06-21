@@ -12,9 +12,11 @@
 #include "logging.h"
 #include "module_metadata.h"
 
-namespace trace {
+namespace trace
+{
 
-struct RejitItem {
+struct RejitItem
+{
     int length_ = 0;
     ModuleID* moduleIds_ = nullptr;
     mdMethodDef* methodDefs_ = nullptr;
@@ -26,8 +28,9 @@ struct RejitItem {
 /// <summary>
 /// Rejit handler representation of a method
 /// </summary>
-class RejitHandlerModuleMethod {
-  private:
+class RejitHandlerModuleMethod
+{
+private:
     mdMethodDef methodDef;
     ICorProfilerFunctionControl* pFunctionControl;
     FunctionInfo* functionInfo;
@@ -36,7 +39,7 @@ class RejitHandlerModuleMethod {
     std::unordered_set<FunctionID> functionsIds;
     void* module;
 
-  public:
+public:
     RejitHandlerModuleMethod(mdMethodDef methodDef, void* module)
     {
         this->methodDef = methodDef;
@@ -84,15 +87,16 @@ class RejitHandlerModuleMethod {
 /// <summary>
 /// Rejit handler representation of a module
 /// </summary>
-class RejitHandlerModule {
-  private:
+class RejitHandlerModule
+{
+private:
     ModuleID moduleId;
     ModuleMetadata* metadata;
     std::mutex methods_lock;
     std::unordered_map<mdMethodDef, RejitHandlerModuleMethod*> methods;
     void* handler;
 
-  public:
+public:
     RejitHandlerModule(ModuleID moduleId, void* handler)
     {
         this->moduleId = moduleId;
@@ -123,8 +127,9 @@ class RejitHandlerModule {
 /// Class to control the ReJIT mechanism and to make sure all the required
 /// information is present before calling a method rewrite
 /// </summary>
-class RejitHandler {
-  private:
+class RejitHandler
+{
+private:
     std::mutex modules_lock;
     std::unordered_map<ModuleID, RejitHandlerModule*> modules;
     std::mutex methodByFunctionId_lock;
@@ -137,7 +142,7 @@ class RejitHandler {
 
     RejitHandlerModuleMethod* GetModuleMethodFromFunctionId(FunctionID functionId);
 
-  public:
+public:
     RejitHandler(ICorProfilerInfo4* pInfo,
                  std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> rewriteCallback)
     {
@@ -157,18 +162,19 @@ class RejitHandler {
 
     void EnqueueForRejit(size_t length, ModuleID* moduleIds, mdMethodDef* methodDefs)
     {
-        rejit_queue_->push(RejitItem((int)length, moduleIds, methodDefs));
+        rejit_queue_->push(RejitItem((int) length, moduleIds, methodDefs));
     }
 
     void Shutdown()
     {
         rejit_queue_->push(RejitItem(-1, nullptr, nullptr));
-        if (rejit_queue_thread_->joinable()) {
+        if (rejit_queue_thread_->joinable())
+        {
             rejit_queue_thread_->join();
         }
     }
 
-  private:
+private:
     static void enqueue_thread(RejitHandler* handler)
     {
         auto queue = handler->rejit_queue_;
@@ -176,21 +182,27 @@ class RejitHandler {
 
         Info("Initializing ReJIT request thread.");
         HRESULT hr = profilerInfo->InitializeCurrentThread();
-        if (FAILED(hr)) {
+        if (FAILED(hr))
+        {
             Warn("Call to InitializeCurrentThread fail.");
         }
 
-        while (true) {
+        while (true)
+        {
             RejitItem item = queue->pop();
 
-            if (item.length_ == -1) {
+            if (item.length_ == -1)
+            {
                 break;
             }
 
-            hr = profilerInfo->RequestReJIT((ULONG)item.length_, item.moduleIds_, item.methodDefs_);
-            if (SUCCEEDED(hr)) {
+            hr = profilerInfo->RequestReJIT((ULONG) item.length_, item.moduleIds_, item.methodDefs_);
+            if (SUCCEEDED(hr))
+            {
                 Info("Request ReJIT done for ", item.length_, " methods");
-            } else {
+            }
+            else
+            {
                 Warn("Error requesting ReJIT for ", item.length_, " methods");
             }
 
