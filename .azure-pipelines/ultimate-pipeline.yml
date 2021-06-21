@@ -83,23 +83,11 @@ stages:
     strategy:
       matrix:
         debian:
-          matrixName: debian
-          poolName: Azure Pipelines
-          vmImage: ubuntu-18.04
           baseImage: debian
         alpine:
-          matrixName: alpine
-          poolName: Azure Pipelines
-          vmImage: ubuntu-18.04
           baseImage: alpine
-        arm64:
-          matrixName: arm64
-          poolName: Arm64
-          vmImage:
-          baseImage: debian
     pool:
-      name: $(poolName)
-      vmImage: $(vmImage)
+      vmImage: ubuntu-18.04
 
     steps:
     - template: steps/run-in-docker.yml
@@ -111,21 +99,43 @@ stages:
 
     - publish: $(tracerHome)
       displayName: Uploading linux tracer home artifact
-      artifact: linux-tracer-home-$(matrixName)
+      artifact: linux-tracer-home-$(baseImage)
 
     - publish: $(artifacts)/linux-x64
-      condition: ne(variables['matrixName'], 'arm64')
       displayName: Upload linux-x64 packages
-      artifact: linux-packages-$(matrixName)
-
-    - publish: $(artifacts)/linux-arm64
-      condition: eq(variables['matrixName'], 'arm64')
-      displayName: Upload linux-arm64 packages
-      artifact: linux-packages-$(matrixName)
+      artifact: linux-packages-$(baseImage)
 
     - publish: $(System.DefaultWorkingDirectory)
       displayName: Upload working directory after the build
-      artifact: build-linux-$(matrixName)-working-directory
+      artifact: build-linux-$(baseImage)-working-directory
+
+- stage: build_arm64
+  dependsOn: []
+  jobs:
+  - job: build
+    dependsOn: []
+    pool:
+      name: Arm64
+
+    steps:
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: debian
+        command: "Clean BuildTracerHome ZipTracerHome"
+
+    - publish: $(tracerHome)
+      displayName: Uploading linux tracer home artifact
+      artifact: linux-tracer-home-arm64
+
+    - publish: $(artifacts)/linux-arm64
+      displayName: Upload linux-arm64 packages
+      artifact: linux-packages-arm64
+
+    - publish: $(System.DefaultWorkingDirectory)
+      displayName: Upload working directory after the build
+      artifact: build-linux-arm64-working-directory
 
 - stage: build_macos
   condition: and(succeeded(), eq(variables['benchmarksOnly'], 'False'))
@@ -254,28 +264,16 @@ stages:
     strategy:
       matrix:
         debian:
-          matrixName: debian
-          poolName: Azure Pipelines
-          vmImage: ubuntu-18.04
           baseImage: debian
         alpine:
-          matrixName: alpine
-          poolName: Azure Pipelines
-          vmImage: ubuntu-18.04
           baseImage: alpine
-        arm64:
-          matrixName: arm64
-          poolName: Arm64
-          vmImage:
-          baseImage: debian
     pool:
-      name: $(poolName)
-      vmImage: $(vmImage)
+      vmImage: ubuntu-18.04
 
     steps:
     - template: steps/restore-working-directory.yml
       parameters:
-        artifact: build-linux-$(matrixName)-working-directory
+        artifact: build-linux-$(baseImage)-working-directory
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -293,6 +291,36 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: build_data/results/**/*.trx
       condition: succeededOrFailed()
+
+- stage: unit_tests_arm64
+  condition: and(succeeded(), eq(variables['benchmarksOnly'], 'False'))
+  dependsOn: [build_arm64]
+  jobs:
+    - job: test
+      pool:
+        name: Arm64
+
+      steps:
+        - template: steps/restore-working-directory.yml
+          parameters:
+            artifact: build-linux-arm64-working-directory
+
+        - template: steps/run-in-docker.yml
+          parameters:
+            build: true
+            baseImage: debian
+            command: "BuildAndRunManagedUnitTests"
+
+        - publish: build_data
+          artifact: profiler-logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt)
+          condition: succeededOrFailed()
+
+        - task: PublishTestResults@2
+          displayName: publish test results
+          inputs:
+            testResultsFormat: VSTest
+            testResultsFiles: build_data/results/**/*.trx
+          condition: succeededOrFailed()
 
 - stage: integration_tests_windows
   condition: and(succeeded(), eq(variables['benchmarksOnly'], 'False'))
@@ -414,82 +442,33 @@ stages:
         debian_netcoreapp2_1:
           publishTargetFramework: netcoreapp2.1
           baseImage: debian
-          matrixName: debian
-          poolName: Azure Pipelines
-          vmImage: ubuntu-18.04
-          dockerComposeTask: NukeIntegrationTests
-          dockerComposeDependenciesTask: StartDependencies
         debian_netcoreapp3_0:
           publishTargetFramework: netcoreapp3.0
           baseImage: debian
-          matrixName: debian
-          poolName: Azure Pipelines
-          vmImage: ubuntu-18.04
-          dockerComposeTask: NukeIntegrationTests
-          dockerComposeDependenciesTask: StartDependencies
         debian_netcoreapp3_1:
           publishTargetFramework: netcoreapp3.1
           baseImage: debian
-          matrixName: debian
-          poolName: Azure Pipelines
-          vmImage: ubuntu-18.04
-          dockerComposeTask: NukeIntegrationTests
-          dockerComposeDependenciesTask: StartDependencies
         debian_net5_0:
           publishTargetFramework: net5.0
           baseImage: debian
-          matrixName: debian
-          poolName: Azure Pipelines
-          vmImage: ubuntu-18.04
-          dockerComposeTask: NukeIntegrationTests
-          dockerComposeDependenciesTask: StartDependencies
         alpine_netcoreapp2_1:
           publishTargetFramework: netcoreapp2.1
           baseImage: alpine
-          matrixName: alpine
-          poolName: Azure Pipelines
-          vmImage: ubuntu-18.04
-          dockerComposeTask: NukeIntegrationTests
-          dockerComposeDependenciesTask: StartDependencies
         alpine_netcoreapp3_0:
           publishTargetFramework: netcoreapp3.0
           baseImage: alpine
-          matrixName: alpine
-          poolName: Azure Pipelines
-          vmImage: ubuntu-18.04
-          dockerComposeTask: NukeIntegrationTests
-          dockerComposeDependenciesTask: StartDependencies
         alpine_netcoreapp3_1:
           publishTargetFramework: netcoreapp3.1
           baseImage: alpine
-          matrixName: alpine
-          poolName: Azure Pipelines
-          vmImage: ubuntu-18.04
-          dockerComposeTask: NukeIntegrationTests
-          dockerComposeDependenciesTask: StartDependencies
         alpine_net5_0:
           publishTargetFramework: net5.0
           baseImage: alpine
-          matrixName: alpine
-          poolName: Azure Pipelines
-          vmImage: ubuntu-18.04
-          dockerComposeTask: NukeIntegrationTests
-          dockerComposeDependenciesTask: StartDependencies
-        arm64_net5_0:
-          publishTargetFramework: net5.0
-          baseImage: debian
-          matrixName: arm64
-          poolName: Arm64
-          vmImage:
-          dockerComposeTask: NukeIntegrationTests.ARM64
-          dockerComposeDependenciesTask: StartDependencies.ARM64
 
     variables:
       TestAllPackageVersions: true
 
     pool:
-      name: $(poolName)
-      vmImage: $(vmImage)
+      vmImage: ubuntu-18.04
 
     steps:
     # Doing a clean of obj files _before_ restore to remove build output from previous runs
@@ -504,7 +483,7 @@ stages:
 
     - template: steps/restore-working-directory.yml
       parameters:
-        artifact: build-linux-$(matrixName)-working-directory
+        artifact: build-linux-$(baseImage)-working-directory
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -516,13 +495,13 @@ stages:
       displayName: docker-compose build NukeIntegrationTests
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) $(dockerComposeTask)
+        dockerComposeCommand: build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) NukeIntegrationTests
 
     - task: DockerCompose@0
       displayName: docker-compose start dependencies
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: run --rm $(dockerComposeDependenciesTask)
+        dockerComposeCommand: run --rm StartDependencies
 
     - task: DockerCompose@0
       displayName: docker-compose run NukeIntegrationTests
@@ -531,7 +510,7 @@ stages:
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
-        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) $(dockerComposeTask)
+        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) NukeIntegrationTests
 
     - task: DockerCompose@0
       displayName: docker-compose stop services
@@ -541,7 +520,7 @@ stages:
       condition: succeededOrFailed()
 
     - publish: build_data
-      artifact: profiler-logs_integration_tests_linux_$(matrixName)_$(publishTargetFramework)_$(System.JobAttempt)
+      artifact: profiler-logs_integration_tests_linux_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
       condition: succeededOrFailed()
 
     - task: PublishTestResults@2
@@ -550,6 +529,79 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: build_data/results/**/*.trx
       condition: succeededOrFailed()
+
+- stage: integration_tests_arm64
+  condition: and(succeeded(), eq(variables['benchmarksOnly'], 'False'))
+  dependsOn: [build_arm64]
+  jobs:
+    - job: Test
+      variables:
+        TestAllPackageVersions: true
+        publishTargetFramework: net5.0
+        baseImage: debian
+
+      pool:
+        name: Arm64
+
+      steps:
+        # Doing a clean of obj files _before_ restore to remove build output from previous runs
+        # Can't do a full clean, as otherwise restore-working-directory fails
+        # Only necessary for ARM64, but shouldn't cause any harm on others
+        # Can't ifdef it as depends on a matrix variable
+        - template: steps/run-in-docker.yml
+          parameters:
+            build: true
+            baseImage: $(baseImage)
+            command: "CleanObjFiles"
+
+        - template: steps/restore-working-directory.yml
+          parameters:
+            artifact: build-linux-arm64-working-directory
+
+        - template: steps/run-in-docker.yml
+          parameters:
+            build: true
+            baseImage: $(baseImage)
+            command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework)"
+
+        - task: DockerCompose@0
+          displayName: docker-compose build NukeIntegrationTests
+          inputs:
+            containerregistrytype: Container Registry
+            dockerComposeCommand: build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) NukeIntegrationTests.ARM64
+
+        - task: DockerCompose@0
+          displayName: docker-compose start dependencies
+          inputs:
+            containerregistrytype: Container Registry
+            dockerComposeCommand: run --rm StartDependencies.ARM64
+
+        - task: DockerCompose@0
+          displayName: docker-compose run NukeIntegrationTests
+          inputs:
+            containerregistrytype: Container Registry
+            dockerComposeFileArgs: |
+              baseImage=$(baseImage)
+              framework=$(publishTargetFramework)
+            dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) NukeIntegrationTests.ARM64
+
+        - task: DockerCompose@0
+          displayName: docker-compose stop services
+          inputs:
+            containerregistrytype: Container Registry
+            dockerComposeCommand: down
+          condition: succeededOrFailed()
+
+        - publish: build_data
+          artifact: profiler-logs_integration_tests_linux_arm64_$(publishTargetFramework)_$(System.JobAttempt)
+          condition: succeededOrFailed()
+
+        - task: PublishTestResults@2
+          displayName: publish test results
+          inputs:
+            testResultsFormat: VSTest
+            testResultsFiles: build_data/results/**/*.trx
+          condition: succeededOrFailed()
 
 - stage: benchmarks
   condition: and(succeeded(), ne(variables['skip_benchmarks'], 'true'))
