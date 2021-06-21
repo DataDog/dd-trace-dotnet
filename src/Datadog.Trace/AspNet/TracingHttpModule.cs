@@ -253,13 +253,7 @@ namespace Datadog.Trace.AspNet
             }
         private void RaiseIntrumentationEvent(IDatadogSecurity security, HttpContext context, HttpRequest request)
         {
-            var dict = new Dictionary<string, object>()
-            {
-                { "server.request.method", request.HttpMethod },
-                { "server.request.uri.raw", request.Url },
-                { "server.request.query", request.QueryString.ToString() },
-            };
-
+            var dict = request.PrepareArgsForWaf();
             security.InstrumentationGateway.RaiseEvent(dict, new HttpTransport(context));
         }
     }

@@ -53,6 +53,7 @@ rem Enable .NET Core Profiling API
 SET CORECLR_ENABLE_PROFILING=1
 SET CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}
 SET CORECLR_PROFILER_PATH=%~dp0\src\Datadog.Trace.ClrProfiler.Native\bin\%profiler_configuration%\%profiler_platform%\Datadog.Trace.ClrProfiler.Native.dll
+set DD_TRACE_CALLTARGET_ENABLED=0
 
 rem Enable Security features
 SET DD_ENABLE_SECURITY=true
@@ -99,4 +100,3 @@ set profiler_configuration=
 set start_visual_studio=
 set vs_sln_name=
 set devenv_arg1=
-set devenv_arg1_sub7=

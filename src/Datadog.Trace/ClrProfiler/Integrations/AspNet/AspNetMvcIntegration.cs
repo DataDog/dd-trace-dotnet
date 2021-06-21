@@ -9,6 +9,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.Routing;
+using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Transport.Http;
 using Datadog.Trace.AspNet;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.Integrations.AspNet;
@@ -51,16 +53,22 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             try
             {
-                if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
-                {
-                    // integration disabled, don't create a scope, skip this trace
-                    return null;
-                }
-
                 var httpContext = controllerContext.HttpContext;
 
                 if (httpContext == null)
                 {
+                    return null;
+                }
+
+                var security = Security.Instance;
+                if (security.Enabled)
+                {
+                    RaiseIntrumentationEvent(security, HttpContext.Current, controllerContext.RouteData);
+                }
+
+                if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
+                {
+                    // integration disabled, don't create a scope, skip this trace
                     return null;
                 }
 
@@ -196,6 +204,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
 
             return scope;
+        }
+
+        /// <summary>
+        /// Raising instrumentation event
+        /// </summary>
+        /// <param name="security">security></param>
+        /// <param name="context">context</param>
+        /// <param name="routeDatas">routeDatas</param>
+        internal static void RaiseIntrumentationEvent(IDatadogSecurity security, HttpContext context, RouteData routeDatas)
+        {
+            var dic = context.Request.PrepareArgsForWaf(routeDatas);
+            security.InstrumentationGateway.RaiseEvent(dic, new HttpTransport(context));
         }
 
         /// <summary>

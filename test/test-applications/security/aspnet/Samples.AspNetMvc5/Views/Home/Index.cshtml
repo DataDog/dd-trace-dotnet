@@ -34,12 +34,12 @@
 
     <div>
         <p>
-            @Html.ActionLink("GET /posts/{str}", "Index", "Posts", new { str = "1" }, null)
+            @Html.ActionLink("GET /posts/{id}", "Index", "Posts", new { id = "1" }, null)
 
         </p>
         <ul>
             <li>
-                @Html.ActionLink("GET /posts/{str}", "Index", "Posts", new { str = "1 OR 1=1" }, null)
+                @Html.ActionLink("GET /posts/{id}", "Index", "Posts", new { id = "1 OR 1=1" }, null)
             </li>
             <li><a href="/posts/1 UNION SELECT 1, [UserName], [PasswordHash] FROM [AspNetUsers]">GET /posts/1 UNION SELECT 1, [UserName], [PasswordHash] FROM [AspNetUsers]</a></li>
             <li><a href="/posts/1?xss_message=%22value%22">GET /posts/1?xss_message="value"</a></li>
@@ -48,9 +48,8 @@
 
     <div><a href="javascript:postData()">POST /data</a></div>
 
-    <div><a href="/?arg=database()">GET /?arg=database()</a></div>
-
-    <div><a href=""></a></div>
+    <div>@Html.ActionLink("GET /?arg=database()", "Index", new { arg = "database()" });</div>
+    <a href="@(Url.Action("Index", "Home"))?arg=[$slice]">GET /?arg=[$slice]</a>
 
     <div>
         @Html.Raw(Context.Request["q"])
