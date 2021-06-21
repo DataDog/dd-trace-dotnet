@@ -36,12 +36,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 if (Directory.Exists(finalDirectory))
                 {
                     var file = typeof(Datadog.Trace.ClrProfiler.Instrumentation).Assembly.Location;
-                    File.Copy(file, Path.Combine(finalDirectory, Path.GetFileName(file)), true);
+                    var destination = Path.Combine(finalDirectory, Path.GetFileName(file));
+                    File.Copy(file, destination, true);
+
+                    messageSink.OnMessage(new DiagnosticMessage("Replaced {0} with {1} to setup code coverage", file, destination));
+
                     return;
                 }
             }
 
-            throw new DirectoryNotFoundException($"Could not find the {targetFrameworkDirectory} folder. Tried: {string.Join("; ", paths)}");
+            var message = $"Could not find the {targetFrameworkDirectory} folder. Tried: {string.Join("; ", paths)}";
+
+            messageSink.OnMessage(new DiagnosticMessage(message));
+
+            throw new DirectoryNotFoundException(message);
         }
 
         protected override ITestFrameworkExecutor CreateExecutor(AssemblyName assemblyName)
