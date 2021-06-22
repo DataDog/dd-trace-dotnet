@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     var destination = Path.Combine(finalDirectory, Path.GetFileName(file));
                     File.Copy(file, destination, true);
 
-                    messageSink.OnMessage(new DiagnosticMessage("Replaced {0} with {1} to setup code coverage", file, destination));
+                    messageSink.OnMessage(new DiagnosticMessage("Replaced {0} with {1} to setup code coverage", destination, file));
 
                     return;
                 }
