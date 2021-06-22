@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using System.Runtime.Versioning;
-using System.Threading.Tasks;
 
 namespace Datadog.AutoInstrumentation.ManagedLoader
 {
@@ -82,18 +80,28 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             {
                 try
                 {
-                    LogConfigurator.SetupLogger();
+                    bool isLoggerSetupDone = false;
 
                     try
                     {
-                        var assemblyLoader = new AssemblyLoader(assemblyNamesToLoadIntoDefaultAppDomain, assemblyNamesToLoadIntoNonDefaultAppDomains);
-                        assemblyLoader.Execute();
+                        LogConfigurator.SetupLogger();
+                        isLoggerSetupDone = true;
+
+                        try
+                        {
+                            var assemblyLoader = new AssemblyLoader(assemblyNamesToLoadIntoDefaultAppDomain, assemblyNamesToLoadIntoNonDefaultAppDomains);
+                            assemblyLoader.Execute();
+                        }
+                        catch (Exception ex)
+                        {
+                            // An exception escaped from the loader. We are about to return to the caller, which is likely the IL-generated code in the module cctor.
+                            // So all we can do is log the error and swallow it to avoid crashing things.
+                            Log.Error(LoggingComponentMoniker, ex);
+                        }
                     }
-                    catch (Exception ex)
+                    finally
                     {
-                        // An exception escaped from the loader. We are about to return to the caller, which is likely the IL-generated code in the module cctor.
-                        // So all we can do is log the error and swallow it to avoid crashing things.
-                        Log.Error(LoggingComponentMoniker, ex);
+                        CleanSideEffects(isLoggerSetupDone);  // must NOT throw!
                     }
                 }
                 catch (Exception ex)
@@ -103,8 +111,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
 #pragma warning disable CS0162 // Unreachable code detected (deliberately using const bool for compile settings)
                     if (UseConsoleLoggingIfFileLoggingFails)
                     {
-                        Console.WriteLine($"{Environment.NewLine}An exception occurred in {LoggingComponentMoniker}. Assemblies may not be loded or started."
-
+                        Console.WriteLine($"{Environment.NewLine}{LoggingComponentMoniker}: An exception occurred. Assemblies may not be loaded or started."
                                         + $"{Environment.NewLine}{ex}");
                     }
 #pragma warning restore CS0162 // Unreachable code detected
@@ -116,7 +123,6 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                 // Our last choise is to let it excpe and potentially crash the process or swallow it. We prefer the later.
             }
         }
-
 
         /// <summary>
         /// Loads the assemblied specified for this <c>AssemblyLoader</c> instance and executes their entry point.
@@ -569,14 +575,150 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             }
         }
 
+
+        /// <summary>
+        /// The assembly loader is executed very early in the applicaiton life cycle, earlier that user code normally runs.
+        /// This may cause side effects. This method is intended to undo all side effects,
+        /// so that the user app is not affected by the presence of the loader.
+        /// </summary>
+        /// <param name="canUseLog">Whether the Log initialization has been completed and the Log can be used safely.</param>
+        private static void CleanSideEffects(bool canUseLog)
+        {
+            try
+            {
+                // One method per know side-effect:
+                // (each method should catch/log/swallow its exceptions so that other side-effects can be undone)
+
+                ClearAppDomainTargetFrameworkNameCache(canUseLog);
+            }
+            catch (Exception ex)
+            {
+                LogErrorOrWriteLine(canUseLog, "An exception occurred while cleaning up side effects.", ex);
+            }
+        }
+
+        /// <summary>
+        /// Clears the AppDomainSetup.TargetFrameworkName cache.
+        /// The logger used by this loader uses the Array.Sort(..) API when choosing the log file index.
+        /// The behaviour of the sort API is Framework version dependent.
+        /// It transitively uses the internal AppDomain.GetTargetFrameworkName() API.
+        /// Its value is determined by examining the TargetFrameworkAttribute on Assembly.GetEntryAssembly()
+        /// and then caching the result in AppDomainSetup.TargetFrameworkName.
+        /// However, because the Loader runs so early in the app lifecycle, the entry assembly may not yet be initialized (i.e. null).
+        /// In such case, the value cached in AppDomainSetup.TargetFrameworkName is also null, and it does not get updated when the
+        /// entry assembly becomes known later. This can break applications that use the target framework name to guide their behaviour
+        /// (e.g., this is known to break some WCF applications).
+        /// This method attempts to clear the respective internal cache in AppDomainSetup.
+        /// It must be resilient to the internal API being accessed not being present (in fact, it is known not to be present on some Net Core versions).
+        /// </summary>
+        private static void ClearAppDomainTargetFrameworkNameCache(bool canUseLog)
+        {
+            const string ThisCleanupMoniker = "side effects to the AppDomain.GetTargetFrameworkName() cache";
+
+            try
+            {
+                AppDomain appDomain = AppDomain.CurrentDomain;
+
+                // Failing to clean up may or may NOT be an error:
+                // On .NET versions where the AppDomain TargetFrameworkName cache is not present,
+                // we expect for some of the reflection in this method to fail.
+                // WeakReference will log such cases as Debug lines, not as errors, and bail out gracefully.
+                // Actual exceptions, however, are certain to be errors.
+
+                if (appDomain == null)
+                {
+                    LogDebugOrWriteLine(canUseLog, $"Cannot clean up {ThisCleanupMoniker}: CurrentDomain is null.");
+                    return;
+                }
+
+                const string FusionStorePropertyName = "FusionStore";
+                Type appDomainType = appDomain.GetType();
+                PropertyInfo fusionStoreProperty = appDomainType.GetProperty(FusionStorePropertyName, BindingFlags.NonPublic | BindingFlags.Instance);
+
+                if (fusionStoreProperty == null)
+                {
+                    LogDebugOrWriteLine(canUseLog,
+                                        $"Cannot clean up {ThisCleanupMoniker}:"
+                                      + $" Did not find property \"{FusionStorePropertyName}\" on type \"{appDomainType.FullName}\""
+                                      + $" in assembly \"{appDomainType.Assembly?.FullName}\".");
+                    return;
+                }
+
+                object appDomainFusionStoreObject = fusionStoreProperty.GetValue(appDomain);
+
+                if (appDomainFusionStoreObject == null)
+                {
+                    LogDebugOrWriteLine(canUseLog,
+                                        $"Cannot clean up {ThisCleanupMoniker}:"
+                                      + $" The value of the property \"{FusionStorePropertyName}\" on type \"{appDomainType.FullName}\""
+                                      + $" in assembly \"{appDomainType.Assembly?.FullName}\" was retrieved, but found to be null.");
+                    return;
+                }
+
+                const string CheckedForTargetFrameworkNamePropertyName = "CheckedForTargetFrameworkName";
+                Type appDomainSetupType = appDomainFusionStoreObject.GetType();
+                PropertyInfo checkedForTargetFrameworkNameProperty = appDomainSetupType.GetProperty(CheckedForTargetFrameworkNamePropertyName,
+                                                                                                    BindingFlags.NonPublic | BindingFlags.Instance);
+
+                if (checkedForTargetFrameworkNameProperty == null)
+                {
+                    LogDebugOrWriteLine(canUseLog,
+                                        $"Cannot clean up {ThisCleanupMoniker}:"
+                                      + $" Did not find property \"{CheckedForTargetFrameworkNamePropertyName}\" on type \"{appDomainSetupType.FullName}\""
+                                      + $" in assembly \"{appDomainType.Assembly?.FullName}\".");
+                    return;
+                }
+
+                checkedForTargetFrameworkNameProperty.SetValue(appDomainFusionStoreObject, false);
+
+                LogDebugOrWriteLine(canUseLog, $"Completed clening up {ThisCleanupMoniker}.");
+            }
+            catch (Exception ex)
+            {
+                LogErrorOrWriteLine(canUseLog, $"An exception occurred while cleaning up {ThisCleanupMoniker}.", ex);
+            }
+        }
+
+        private static void LogErrorOrWriteLine(bool canUseLog, string message, Exception ex = null)
+        {
+            if (canUseLog)
+            {
+                Log.Error(LoggingComponentMoniker, message, ex);
+            }
+            else if (UseConsoleLoggingIfFileLoggingFails)
+            {
+#pragma warning disable CS0162 // Unreachable code detected (deliberately using const bool for compile settings)
+                Console.WriteLine($"{Environment.NewLine}{LoggingComponentMoniker}: {message}"
+                                + (ex == null ? "" : $"{Environment.NewLine}{ex}"));
+#pragma warning restore CS0162 // Unreachable code detected
+            }
+        }
+
+        private static void LogDebugOrWriteLine(bool canUseLog, string message)
+        {
+            if (canUseLog)
+            {
+                Log.Debug(LoggingComponentMoniker, message);
+            }
+            else if (UseConsoleLoggingIfFileLoggingFails)
+            {
+#pragma warning disable CS0162 // Unreachable code detected (deliberately using const bool for compile settings)
+                Console.WriteLine($"{Environment.NewLine}{LoggingComponentMoniker}: {message}");
+#pragma warning restore CS0162 // Unreachable code detected
+            }
+        }
+
         private void AnalyzeAppDomain()
         {
             AppDomain currAD = AppDomain.CurrentDomain;
             _isDefaultAppDomain = currAD.IsDefaultAppDomain();
 
+            Log.Info(LoggingComponentMoniker,
+                    "Will load and start assemblies listed for " + (_isDefaultAppDomain ? "the Default AppDomain" : "Non-default AppDomains") + ".");
+
             Log.Info(
                     LoggingComponentMoniker,
-                    "Will load and start assemblies listed for " + (_isDefaultAppDomain ? "the Default AppDomain" : "Non-default AppDomains") + "; listing current AppDomain info",
+                    "Listing current AppDomain info",
                     "IsDefaultAppDomain",
                     _isDefaultAppDomain,
                     "Id",
@@ -595,6 +737,15 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                     currAD.RelativeSearchPath,
                     "ShadowCopyFiles",
                     currAD.ShadowCopyFiles);
+
+            Assembly entryAssembly = Assembly.GetEntryAssembly();
+            Log.Info(
+                    LoggingComponentMoniker,
+                    "Listing Entry Assembly info",
+                    "FullName",
+                    entryAssembly?.FullName,
+                    "Location",
+                    entryAssembly?.Location);
         }
 
         private AssemblyResolveEventHandler CreateAssemblyResolveEventHandler()
