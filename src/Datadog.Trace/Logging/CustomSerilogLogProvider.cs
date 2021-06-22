@@ -13,35 +13,37 @@ namespace Datadog.Trace.Logging
 {
     internal class CustomSerilogLogProvider : SerilogLogProvider, ILogProviderWithEnricher
     {
-        private static ConditionalWeakTable<object, object> _enricherToArrayConditionalWeakTable;
         private static Func<object, IDisposable> _pushMethod;
-        private static Func<object, IDisposable> _openContext;
+        private static NoOpDisposable _cachedDisposable;
+        private readonly bool _wrapEnricher;
 
         public CustomSerilogLogProvider()
         {
-            _enricherToArrayConditionalWeakTable = new();
-
             var logEnricherType = GetLogEnricherType();
-            if (GetPushMethodInfo() != null)
+            if (GetPushMethodInfo() is MethodInfo pushMethodInfo)
             {
-                _openContext = _pushMethod = GeneratePushDelegate(GetPushMethodInfo(), logEnricherType);
+                _wrapEnricher = false;
+                _pushMethod = GeneratePushDelegate(pushMethodInfo, logEnricherType);
+            }
+            else if (GetPushPropertiesMethodInfo() is MethodInfo pushPropertiesMethodInfo)
+            {
+                _wrapEnricher = true;
+                _pushMethod = GeneratePushDelegate(pushPropertiesMethodInfo, logEnricherType.MakeArrayType());
             }
             else
             {
-                _pushMethod = GeneratePushDelegate(GetPushPropertiesMethodInfo(), logEnricherType.MakeArrayType());
-                _openContext = (enricher) =>
-                {
-                    // Use a conditional weak table to cache a map between the enricher and an array of size 1 containing the enricher,
-                    // since the API requires an argument of type ILogEventEnricher[]
-                    object properties = _enricherToArrayConditionalWeakTable.GetValue(key: enricher, createValueCallback: ConditionalWeakTableCallback);
-                    return _pushMethod(properties);
-                };
+                _wrapEnricher = false;
+                _cachedDisposable = new NoOpDisposable();
+                _pushMethod = (enricher) => { return _cachedDisposable; };
             }
         }
 
-        public IDisposable OpenContext(object enricher) => _openContext(enricher);
+        public IDisposable OpenContext(object enricher)
+        {
+            return _pushMethod(enricher);
+        }
 
-        public ILogEnricher CreateEnricher() => new SerilogEnricher(this);
+        public ILogEnricher CreateEnricher() => new SerilogEnricher(this, _wrapEnricher);
 
         internal static Type GetLogEnricherType() => Type.GetType("Serilog.Core.ILogEventEnricher, Serilog");
 
@@ -74,11 +76,12 @@ namespace Datadog.Trace.Logging
             return push;
         }
 
-        private static object ConditionalWeakTableCallback(object key)
+        internal class NoOpDisposable : IDisposable
         {
-            var array = Array.CreateInstance(GetLogEnricherType(), 1);
-            array.SetValue(key, 0);
-            return array;
+            public void Dispose()
+            {
+                // Do nothing
+            }
         }
     }
 }
