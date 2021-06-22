@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace;
-using Datadog.Trace.ClrProfiler;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Core.Clusters;
@@ -21,7 +20,24 @@ namespace Samples.MongoDB
 
         public static void Main(string[] args)
         {
-            Console.WriteLine($"Profiler attached: {Instrumentation.ProfilerAttached}");
+            bool IsProfilerAttached()
+            {
+                var instrumentationType = Type.GetType("Datadog.Trace.ClrProfiler.Instrumentation", throwOnError: false);
+
+                if (instrumentationType == null)
+                {
+                    return false;
+                }
+
+                var property = instrumentationType.GetProperty("ProfilerAttached");
+
+                var isAttached = property?.GetValue(null) as bool?;
+
+                return isAttached ?? false;
+            }
+
+
+            Console.WriteLine($"Profiler attached: {IsProfilerAttached()}");
             Console.WriteLine($"Platform: {(Environment.Is64BitProcess ? "x64" : "x32")}");
 
             var newDocument = new BsonDocument

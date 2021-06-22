@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-using Datadog.Trace.ClrProfiler;
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -29,7 +28,8 @@ namespace Samples.GraphQL
                 .Build();
 
             var logger = host.Services.GetRequiredService<ILogger<Program>>();
-            logger.LogInformation($"Instrumentation.ProfilerAttached = {Instrumentation.ProfilerAttached}");
+
+                        logger.LogInformation($"Instrumentation.ProfilerAttached = {IsProfilerAttached()}");
 
             var prefixes = new[] { "COR_", "CORECLR_", "DD_", "DATADOG_" };
             var envVars = from envVar in Environment.GetEnvironmentVariables().Cast<DictionaryEntry>()
@@ -46,6 +46,22 @@ namespace Samples.GraphQL
             }
 
             host.Run();
+        }
+
+        private static bool IsProfilerAttached()
+        {
+            var instrumentationType = Type.GetType("Datadog.Trace.ClrProfiler.Instrumentation", throwOnError: false);
+
+            if (instrumentationType == null)
+            {
+                return false;
+            }
+
+            var property = instrumentationType.GetProperty("ProfilerAttached");
+
+            var isAttached = property?.GetValue(null) as bool?;
+
+            return isAttached ?? false;
         }
     }
 }
