@@ -14,7 +14,6 @@ namespace Datadog.Trace.Logging
     internal class CustomSerilogLogProvider : SerilogLogProvider, ILogProviderWithEnricher
     {
         private static Func<object, IDisposable> _pushMethod;
-        private static NoOpDisposable _cachedDisposable;
         private readonly bool _wrapEnricher;
 
         public CustomSerilogLogProvider()
@@ -33,8 +32,8 @@ namespace Datadog.Trace.Logging
             else
             {
                 _wrapEnricher = false;
-                _cachedDisposable = new NoOpDisposable();
-                _pushMethod = (enricher) => { return _cachedDisposable; };
+                IDisposable cachedDisposable = new NoOpDisposable();
+                _pushMethod = (enricher) => { return cachedDisposable; };
             }
         }
 
