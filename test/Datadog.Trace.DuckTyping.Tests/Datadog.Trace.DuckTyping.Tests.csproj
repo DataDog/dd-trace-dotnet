@@ -13,4 +13,9 @@
     <DefineConstants>$(DefineConstants);INTERFACE_DEFAULTS</DefineConstants>
   </PropertyGroup>
 
+  <!-- For testing edge case duck typing scenarios (ILogger)-->
+  <ItemGroup Condition=" !$(TargetFramework.StartsWith('net4')) ">
+    <PackageReference Include="Microsoft.AspNetCore" Version="2.2.0" />
+  </ItemGroup>
+
 </Project>
