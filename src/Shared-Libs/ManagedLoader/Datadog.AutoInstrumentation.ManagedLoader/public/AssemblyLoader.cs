@@ -599,17 +599,21 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
 
         /// <summary>
         /// Clears the AppDomainSetup.TargetFrameworkName cache.
-        /// The logger used by this loader uses the Array.Sort(..) API when choosing the log file index.
-        /// The behaviour of the sort API is Framework version dependent.
-        /// It transitively uses the internal AppDomain.GetTargetFrameworkName() API.
-        /// Its value is determined by examining the TargetFrameworkAttribute on Assembly.GetEntryAssembly()
+        /// The logger used by this loader loader uses the Array.Sort(..) API when choosing the log file index.
+        /// The behavior of the sort API is Framework version dependent.
+        ///
+        /// To get the Framework version, it transitively uses the internal AppDomain.GetTargetFrameworkName() API.
+        /// The respective value is determined by examining the TargetFrameworkAttribute on Assembly.GetEntryAssembly()
         /// and then caching the result in AppDomainSetup.TargetFrameworkName.
+        ///
         /// However, because the Loader runs so early in the app lifecycle, the entry assembly may not yet be initialized (i.e. null).
-        /// In such case, the value cached in AppDomainSetup.TargetFrameworkName is also null, and it does not get updated when the
-        /// entry assembly becomes known later. This can break applications that use the target framework name to guide their behaviour
+        /// In such cases, the value cached in AppDomainSetup.TargetFrameworkName is also null, and it does not get updated when the
+        /// entry assembly becomes known later.This can break applications that use the target framework name to guide their behavior
         /// (e.g., this is known to break some WCF applications).
+        /// 
         /// This method attempts to clear the respective internal cache in AppDomainSetup.
-        /// It must be resilient to the internal API being accessed not being present (in fact, it is known not to be present on some Net Core versions).
+        /// It must be resilient to the internal API being accessed not being present
+        /// (in fact, it is known not to be present on some Net Core versions).
         /// </summary>
         private static void ClearAppDomainTargetFrameworkNameCache(bool canUseLog)
         {
