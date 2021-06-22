@@ -42,7 +42,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             public T_HostingApplicationDiagnostics()
             {
-                _logger = new T_Logger<T_PrivateObject>();
+                _logger = new T_Logger<T_InternalObject>();
             }
         }
 
@@ -57,13 +57,28 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         public class T_Logger<T> : T_ILogger<T>
         {
+            private readonly T_ILogger _logger;
+
+            public T_Logger()
+            {
+                _logger = new T_Logger();
+            }
+
+            IDisposable T_ILogger.BeginScope<TState>(TState state)
+            {
+                return _logger.BeginScope(state);
+            }
+        }
+
+        public class T_Logger : T_ILogger
+        {
             IDisposable T_ILogger.BeginScope<TState>(TState state)
             {
                 return new T_DisposableObject();
             }
         }
 
-        private class T_PrivateObject
+        internal class T_InternalObject
         {
         }
 
