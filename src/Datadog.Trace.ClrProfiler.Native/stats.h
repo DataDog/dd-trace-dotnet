@@ -5,13 +5,15 @@
 
 #include "util.h"
 
-namespace trace {
+namespace trace
+{
 
-class SWStat {
+class SWStat
+{
     std::atomic_ullong* _value;
     std::chrono::steady_clock::time_point _startTime;
 
-  public:
+public:
     SWStat(std::atomic_ullong* value)
     {
         _value = value;
@@ -24,10 +26,11 @@ class SWStat {
     }
 };
 
-class Stats : public Singleton<Stats> {
+class Stats : public Singleton<Stats>
+{
     friend class Singleton<Stats>;
 
-  private:
+private:
     std::atomic_ullong callTargetRequestRejit = {0};
     std::atomic_ullong callTargetRewriter = {0};
     std::atomic_ullong jitInlining = {0};
@@ -46,7 +49,7 @@ class Stats : public Singleton<Stats> {
     std::atomic_uint moduleLoadFinishedCount = {0};
     std::atomic_uint assemblyLoadFinishedCount = {0};
 
-  public:
+public:
     Stats()
     {
         callTargetRequestRejit = 0;

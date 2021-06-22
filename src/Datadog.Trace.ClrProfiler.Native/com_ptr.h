@@ -6,13 +6,17 @@
 
 // https://msdn.microsoft.com/en-us/magazine/dn904668.aspx
 
-template <typename Interface> class RemoveAddRefRelease : public Interface {
+template <typename Interface>
+class RemoveAddRefRelease : public Interface
+{
     ULONG __stdcall AddRef();
     ULONG __stdcall Release();
 };
 
-template <typename Interface> class ComPtr {
-  public:
+template <typename Interface>
+class ComPtr
+{
+public:
     ComPtr() noexcept = default;
 
     ComPtr(ComPtr const& other) noexcept : m_ptr(other.m_ptr)
@@ -20,14 +24,17 @@ template <typename Interface> class ComPtr {
         InternalAddRef();
     }
 
-    template <typename T> friend class ComPtr;
+    template <typename T>
+    friend class ComPtr;
 
-    template <typename T> ComPtr(ComPtr<T> const& other) noexcept : m_ptr(other.m_ptr)
+    template <typename T>
+    ComPtr(ComPtr<T> const& other) noexcept : m_ptr(other.m_ptr)
     {
         InternalAddRef();
     }
 
-    template <typename T> ComPtr(ComPtr<T>&& other) noexcept : m_ptr(other.m_ptr)
+    template <typename T>
+    ComPtr(ComPtr<T>&& other) noexcept : m_ptr(other.m_ptr)
     {
         other.m_ptr = nullptr;
     }
@@ -84,7 +91,8 @@ template <typename Interface> class ComPtr {
         *other = m_ptr;
     }
 
-    template <typename T> ComPtr<T> As(IID iid) const noexcept
+    template <typename T>
+    ComPtr<T> As(IID iid) const noexcept
     {
         ComPtr<T> temp;
         m_ptr->QueryInterface(iid, reinterpret_cast<void**>(temp.GetAddressOf()));
@@ -102,13 +110,15 @@ template <typename Interface> class ComPtr {
         return *this;
     }
 
-    template <typename T> ComPtr& operator=(ComPtr<T> const& other) noexcept
+    template <typename T>
+    ComPtr& operator=(ComPtr<T> const& other) noexcept
     {
         InternalCopy(other.m_ptr);
         return *this;
     }
 
-    template <typename T> ComPtr& operator=(ComPtr<T>&& other) noexcept
+    template <typename T>
+    ComPtr& operator=(ComPtr<T>&& other) noexcept
     {
         InternalMove(other);
         return *this;
@@ -124,12 +134,13 @@ template <typename Interface> class ComPtr {
         return nullptr != m_ptr;
     }
 
-  private:
+private:
     Interface* m_ptr = nullptr;
 
     void InternalAddRef() const noexcept
     {
-        if (m_ptr) {
+        if (m_ptr)
+        {
             m_ptr->AddRef();
         }
     }
@@ -137,7 +148,8 @@ template <typename Interface> class ComPtr {
     void InternalRelease() noexcept
     {
         Interface* temp = m_ptr;
-        if (temp) {
+        if (temp)
+        {
             m_ptr = nullptr;
             temp->Release();
         }
@@ -145,16 +157,19 @@ template <typename Interface> class ComPtr {
 
     void InternalCopy(Interface* other) noexcept
     {
-        if (m_ptr != other) {
+        if (m_ptr != other)
+        {
             InternalRelease();
             m_ptr = other;
             InternalAddRef();
         }
     }
 
-    template <typename T> void InternalMove(ComPtr<T>& other) noexcept
+    template <typename T>
+    void InternalMove(ComPtr<T>& other) noexcept
     {
-        if (m_ptr != other.m_ptr) {
+        if (m_ptr != other.m_ptr)
+        {
             InternalRelease();
             m_ptr = other.m_ptr;
             other.m_ptr = nullptr;
@@ -162,7 +177,8 @@ template <typename Interface> class ComPtr {
     }
 };
 
-template <typename Interface> void swap(ComPtr<Interface>& left, ComPtr<Interface>& right) noexcept
+template <typename Interface>
+void swap(ComPtr<Interface>& left, ComPtr<Interface>& right) noexcept
 {
     left.Swap(right);
 }

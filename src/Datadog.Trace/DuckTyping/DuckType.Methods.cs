@@ -384,7 +384,8 @@ namespace Datadog.Trace.DuckTyping
                     }
 
                     // Method call
-                    if (targetMethod.IsPublic)
+                    // A generic method cannot be called using calli (throws System.InvalidOperationException)
+                    if (targetMethod.IsPublic || targetMethod.IsGenericMethod)
                     {
                         // We can emit a normal call if we have a public instance with a public target method.
                         il.EmitCall(targetMethod.IsStatic || targetMethod.DeclaringType.IsValueType ? OpCodes.Call : OpCodes.Callvirt, targetMethod, null);
@@ -554,10 +555,35 @@ namespace Datadog.Trace.DuckTyping
             MethodInfo[] allTargetMethods = targetType.GetMethods(DuckAttribute.DefaultFlags);
             foreach (MethodInfo candidateMethod in allTargetMethods)
             {
-                // We omit target methods with different names.
-                if (candidateMethod.Name != proxyMethodDuckAttribute.Name)
+                string name = proxyMethodDuckAttribute.Name;
+                bool useRelaxedNameComparison = false;
+
+                // If there is an explicit interface type name we add it to the name
+                if (!string.IsNullOrEmpty(proxyMethodDuckAttribute.ExplicitInterfaceTypeName))
                 {
-                    continue;
+                    string interfaceTypeName = proxyMethodDuckAttribute.ExplicitInterfaceTypeName;
+
+                    if (interfaceTypeName == "*")
+                    {
+                        // If a wildcard is use, then we relax the name comparison so it can be an implicit or explicity implementation
+                        useRelaxedNameComparison = true;
+                    }
+                    else
+                    {
+                        // Nested types are separated with a "." on explicit implementation.
+                        interfaceTypeName = interfaceTypeName.Replace("+", ".");
+
+                        name = interfaceTypeName + "." + name;
+                    }
+                }
+
+                // We omit target methods with different names.
+                if (candidateMethod.Name != name)
+                {
+                    if (!useRelaxedNameComparison || !candidateMethod.Name.EndsWith("." + name))
+                    {
+                        continue;
+                    }
                 }
 
                 // Check if the candidate method is a reverse mapped method

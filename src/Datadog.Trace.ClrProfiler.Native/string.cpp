@@ -6,7 +6,8 @@
 #include "miniutf.hpp"
 #endif
 
-namespace trace {
+namespace trace
+{
 
 std::string ToString(const std::string& str)
 {
@@ -23,18 +24,18 @@ std::string ToString(const uint64_t i)
 std::string ToString(const WSTRING& wstr)
 {
 #ifdef _WIN32
-    if (wstr.empty())
-        return std::string();
+    if (wstr.empty()) return std::string();
 
     std::string tmpStr(tmp_buffer_size, 0);
     int size_needed =
-        WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), &tmpStr[0], tmp_buffer_size, NULL, NULL);
-    if (size_needed < tmp_buffer_size) {
+        WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int) wstr.size(), &tmpStr[0], tmp_buffer_size, NULL, NULL);
+    if (size_needed < tmp_buffer_size)
+    {
         return tmpStr.substr(0, size_needed);
     }
 
     std::string strTo(size_needed, 0);
-    WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), &strTo[0], size_needed, NULL, NULL);
+    WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int) wstr.size(), &strTo[0], size_needed, NULL, NULL);
     return strTo;
 #else
     std::u16string ustr(reinterpret_cast<const char16_t*>(wstr.c_str()));
@@ -45,17 +46,17 @@ std::string ToString(const WSTRING& wstr)
 WSTRING ToWSTRING(const std::string& str)
 {
 #ifdef _WIN32
-    if (str.empty())
-        return std::wstring();
+    if (str.empty()) return std::wstring();
 
     std::wstring tmpStr(tmp_buffer_size, 0);
-    int size_needed = MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), &tmpStr[0], tmp_buffer_size);
-    if (size_needed < tmp_buffer_size) {
+    int size_needed = MultiByteToWideChar(CP_UTF8, 0, &str[0], (int) str.size(), &tmpStr[0], tmp_buffer_size);
+    if (size_needed < tmp_buffer_size)
+    {
         return tmpStr.substr(0, size_needed);
     }
 
     std::wstring wstrTo(size_needed, 0);
-    MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), &wstrTo[0], size_needed);
+    MultiByteToWideChar(CP_UTF8, 0, &str[0], (int) str.size(), &wstrTo[0], size_needed);
     return wstrTo;
 #else
     auto ustr = miniutf::to_utf16(str);

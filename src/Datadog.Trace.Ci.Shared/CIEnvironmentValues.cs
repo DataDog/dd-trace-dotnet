@@ -185,13 +185,40 @@ namespace Datadog.Trace.Ci
             // Merge commits have a different commit hash from the one reported by the CI.
             if (gitInfo.Commit == Commit)
             {
-                AuthorName = gitInfo.AuthorName;
-                AuthorEmail = gitInfo.AuthorEmail;
-                AuthorDate = gitInfo.AuthorDate;
-                CommitterName = gitInfo.CommitterName;
-                CommitterEmail = gitInfo.CommitterEmail;
-                CommitterDate = gitInfo.CommitterDate;
-                Message = gitInfo.Message;
+                if (string.IsNullOrEmpty(AuthorName))
+                {
+                    AuthorName = gitInfo.AuthorName;
+                }
+
+                if (string.IsNullOrEmpty(AuthorEmail))
+                {
+                    AuthorEmail = gitInfo.AuthorEmail;
+                }
+
+                if (AuthorDate is null)
+                {
+                    AuthorDate = gitInfo.AuthorDate;
+                }
+
+                if (string.IsNullOrEmpty(CommitterName))
+                {
+                    CommitterName = gitInfo.CommitterName;
+                }
+
+                if (string.IsNullOrEmpty(CommitterEmail))
+                {
+                    CommitterEmail = gitInfo.CommitterEmail;
+                }
+
+                if (CommitterDate is null)
+                {
+                    CommitterDate = gitInfo.CommitterDate;
+                }
+
+                if (string.IsNullOrEmpty(Message))
+                {
+                    Message = gitInfo.Message;
+                }
             }
 
             // **********
@@ -246,6 +273,8 @@ namespace Datadog.Trace.Ci
             PipelineName = repoSlug;
             PipelineUrl = EnvironmentHelpers.GetEnvironmentVariable("TRAVIS_BUILD_WEB_URL");
             JobUrl = EnvironmentHelpers.GetEnvironmentVariable("TRAVIS_JOB_WEB_URL");
+
+            Message = EnvironmentHelpers.GetEnvironmentVariable("TRAVIS_COMMIT_MESSAGE");
         }
 
         private static void SetupCircleCiEnvironment()
@@ -357,6 +386,8 @@ namespace Datadog.Trace.Ci
             JobName = EnvironmentHelpers.GetEnvironmentVariable("CI_JOB_NAME");
             StageName = EnvironmentHelpers.GetEnvironmentVariable("CI_JOB_STAGE");
 
+            Message = EnvironmentHelpers.GetEnvironmentVariable("CI_COMMIT_MESSAGE");
+
             // Clean pipeline url
             PipelineUrl = PipelineUrl?.Replace("/-/pipelines/", "/pipelines/");
         }
@@ -389,6 +420,10 @@ namespace Datadog.Trace.Ci
             {
                 Branch = EnvironmentHelpers.GetEnvironmentVariable("APPVEYOR_REPO_BRANCH");
             }
+
+            Message = EnvironmentHelpers.GetEnvironmentVariable("APPVEYOR_REPO_COMMIT_MESSAGE_EXTENDED");
+            AuthorName = EnvironmentHelpers.GetEnvironmentVariable("APPVEYOR_REPO_COMMIT_AUTHOR");
+            AuthorEmail = EnvironmentHelpers.GetEnvironmentVariable("APPVEYOR_REPO_COMMIT_AUTHOR_EMAIL");
         }
 
         private static void SetupAzurePipelinesEnvironment()
@@ -426,6 +461,10 @@ namespace Datadog.Trace.Ci
             {
                 Branch = EnvironmentHelpers.GetEnvironmentVariable("BUILD_SOURCEBRANCHNAME");
             }
+
+            Message = EnvironmentHelpers.GetEnvironmentVariable("BUILD_SOURCEVERSIONMESSAGE");
+            AuthorName = EnvironmentHelpers.GetEnvironmentVariable("BUILD_REQUESTEDFORID");
+            AuthorEmail = EnvironmentHelpers.GetEnvironmentVariable("BUILD_REQUESTEDFOREMAIL");
         }
 
         private static void SetupBitbucketEnvironment()
@@ -511,6 +550,10 @@ namespace Datadog.Trace.Ci
             PipelineName = EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_PIPELINE_SLUG");
             PipelineUrl = EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_BUILD_URL");
             JobUrl = string.Format("{0}#{1}", EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_BUILD_URL"), EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_JOB_ID"));
+
+            Message = EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_MESSAGE");
+            AuthorName = EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_BUILD_AUTHOR");
+            AuthorEmail = EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_BUILD_AUTHOR_EMAIL");
         }
 
         private static void SetupBitriseEnvironment()
@@ -532,6 +575,8 @@ namespace Datadog.Trace.Ci
             PipelineNumber = EnvironmentHelpers.GetEnvironmentVariable("BITRISE_BUILD_NUMBER");
             PipelineName = EnvironmentHelpers.GetEnvironmentVariable("BITRISE_APP_TITLE");
             PipelineUrl = EnvironmentHelpers.GetEnvironmentVariable("BITRISE_BUILD_URL");
+
+            Message = EnvironmentHelpers.GetEnvironmentVariable("BITRISE_GIT_MESSAGE");
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

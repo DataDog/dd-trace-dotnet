@@ -4,12 +4,13 @@
 #include "il_rewriter.h"
 #include "module_metadata.h"
 
-class ILRewriterWrapper {
-  private:
+class ILRewriterWrapper
+{
+private:
     ILRewriter* const m_ILRewriter;
     ILInstr* m_ILInstr;
 
-  public:
+public:
     ILRewriterWrapper(ILRewriter* const il_rewriter) : m_ILRewriter(il_rewriter), m_ILInstr(nullptr)
     {
     }

@@ -11,16 +11,18 @@
 #include "integration.h"
 #include "string.h"
 
-namespace trace {
+namespace trace
+{
 
-class ModuleMetadata {
-  private:
+class ModuleMetadata
+{
+private:
     std::unordered_map<WSTRING, mdMemberRef> wrapper_refs{};
     std::unordered_map<WSTRING, mdTypeRef> wrapper_parent_type{};
     std::unordered_set<WSTRING> failed_wrapper_keys{};
     CallTargetTokens* calltargetTokens = nullptr;
 
-  public:
+public:
     const ComPtr<IMetaDataImport2> metadata_import{};
     const ComPtr<IMetaDataEmit2> metadata_emit{};
     const ComPtr<IMetaDataAssemblyImport> assembly_import{};
@@ -34,10 +36,16 @@ class ModuleMetadata {
     ModuleMetadata(ComPtr<IMetaDataImport2> metadata_import, ComPtr<IMetaDataEmit2> metadata_emit,
                    ComPtr<IMetaDataAssemblyImport> assembly_import, ComPtr<IMetaDataAssemblyEmit> assembly_emit,
                    WSTRING assembly_name, AppDomainID app_domain_id, GUID module_version_id,
-                   std::vector<IntegrationMethod> integrations, AssemblyProperty* corAssemblyProperty)
-        : metadata_import(metadata_import), metadata_emit(metadata_emit), assembly_import(assembly_import),
-          assembly_emit(assembly_emit), assemblyName(assembly_name), app_domain_id(app_domain_id),
-          module_version_id(module_version_id), integrations(integrations), corAssemblyProperty(corAssemblyProperty)
+                   std::vector<IntegrationMethod> integrations, AssemblyProperty* corAssemblyProperty) :
+        metadata_import(metadata_import),
+        metadata_emit(metadata_emit),
+        assembly_import(assembly_import),
+        assembly_emit(assembly_emit),
+        assemblyName(assembly_name),
+        app_domain_id(app_domain_id),
+        module_version_id(module_version_id),
+        integrations(integrations),
+        corAssemblyProperty(corAssemblyProperty)
     {
     }
 
@@ -45,7 +53,8 @@ class ModuleMetadata {
     {
         const auto search = wrapper_refs.find(keyIn);
 
-        if (search != wrapper_refs.end()) {
+        if (search != wrapper_refs.end())
+        {
             valueOut = search->second;
             return true;
         }
@@ -57,7 +66,8 @@ class ModuleMetadata {
     {
         const auto search = wrapper_parent_type.find(keyIn);
 
-        if (search != wrapper_parent_type.end()) {
+        if (search != wrapper_parent_type.end())
+        {
             valueOut = search->second;
             return true;
         }
@@ -69,7 +79,8 @@ class ModuleMetadata {
     {
         const auto search = failed_wrapper_keys.find(key);
 
-        if (search != failed_wrapper_keys.end()) {
+        if (search != failed_wrapper_keys.end())
+        {
             return true;
         }
 
@@ -94,11 +105,13 @@ class ModuleMetadata {
     inline std::vector<MethodReplacement> GetMethodReplacementsForCaller(const trace::FunctionInfo& caller)
     {
         std::vector<MethodReplacement> enabled;
-        for (auto& i : integrations) {
+        for (auto& i : integrations)
+        {
             if ((i.replacement.caller_method.type_name.empty() ||
                  i.replacement.caller_method.type_name == caller.type.name) &&
                 (i.replacement.caller_method.method_name.empty() ||
-                 i.replacement.caller_method.method_name == caller.name)) {
+                 i.replacement.caller_method.method_name == caller.name))
+            {
                 enabled.push_back(i.replacement);
             }
         }
@@ -107,7 +120,8 @@ class ModuleMetadata {
 
     inline CallTargetTokens* GetCallTargetTokens()
     {
-        if (calltargetTokens == nullptr) {
+        if (calltargetTokens == nullptr)
+        {
             calltargetTokens = new CallTargetTokens(this);
         }
         return calltargetTokens;

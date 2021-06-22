@@ -47,12 +47,17 @@ void ILRewriterWrapper::LoadInt32(const INT32 value) const
 
     ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
 
-    if (value >= 0 && value <= 8) {
+    if (value >= 0 && value <= 8)
+    {
         pNewInstr->m_opcode = opcodes[value];
-    } else if (-128 <= value && value <= 127) {
+    }
+    else if (-128 <= value && value <= 127)
+    {
         pNewInstr->m_opcode = CEE_LDC_I4_S;
         pNewInstr->m_Arg8 = static_cast<INT8>(value);
-    } else {
+    }
+    else
+    {
         pNewInstr->m_opcode = CEE_LDC_I4;
         pNewInstr->m_Arg32 = value;
     }
@@ -71,12 +76,17 @@ ILInstr* ILRewriterWrapper::LoadArgument(const UINT16 index) const
 
     ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
 
-    if (index >= 0 && index <= 3) {
+    if (index >= 0 && index <= 3)
+    {
         pNewInstr->m_opcode = opcodes[index];
-    } else if (index <= 255) {
+    }
+    else if (index <= 255)
+    {
         pNewInstr->m_opcode = CEE_LDARG_S;
         pNewInstr->m_Arg8 = static_cast<UINT8>(index);
-    } else {
+    }
+    else
+    {
         pNewInstr->m_opcode = CEE_LDARG;
         pNewInstr->m_Arg16 = index;
     }
@@ -166,9 +176,11 @@ bool ILRewriterWrapper::ReplaceMethodCalls(const mdMemberRef old_method_ref, con
     bool modified = false;
 
     for (ILInstr* pInstr = m_ILRewriter->GetILList()->m_pNext; pInstr != m_ILRewriter->GetILList();
-         pInstr = pInstr->m_pNext) {
+         pInstr = pInstr->m_pNext)
+    {
         if ((pInstr->m_opcode == CEE_CALL || pInstr->m_opcode == CEE_CALLVIRT) &&
-            pInstr->m_Arg32 == static_cast<INT32>(old_method_ref)) {
+            pInstr->m_Arg32 == static_cast<INT32>(old_method_ref))
+        {
             pInstr->m_opcode = CEE_CALL;
             pInstr->m_Arg32 = new_method_ref;
 
@@ -207,12 +219,17 @@ ILInstr* ILRewriterWrapper::StLocal(unsigned index) const
     };
 
     ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
-    if (index <= 3) {
+    if (index <= 3)
+    {
         pNewInstr->m_opcode = opcodes[index];
-    } else if (index <= 255) {
+    }
+    else if (index <= 255)
+    {
         pNewInstr->m_opcode = CEE_STLOC_S;
         pNewInstr->m_Arg8 = static_cast<UINT8>(index);
-    } else {
+    }
+    else
+    {
         pNewInstr->m_opcode = CEE_STLOC;
         pNewInstr->m_Arg16 = index;
     }
@@ -230,12 +247,17 @@ ILInstr* ILRewriterWrapper::LoadLocal(unsigned index) const
     };
 
     ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
-    if (index <= 3) {
+    if (index <= 3)
+    {
         pNewInstr->m_opcode = opcodes[index];
-    } else if (index <= 255) {
+    }
+    else if (index <= 255)
+    {
         pNewInstr->m_opcode = CEE_LDLOC_S;
         pNewInstr->m_Arg8 = static_cast<UINT8>(index);
-    } else {
+    }
+    else
+    {
         pNewInstr->m_opcode = CEE_LDLOC;
         pNewInstr->m_Arg16 = index;
     }
@@ -246,10 +268,13 @@ ILInstr* ILRewriterWrapper::LoadLocal(unsigned index) const
 ILInstr* ILRewriterWrapper::LoadLocalAddress(unsigned index) const
 {
     ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
-    if (index <= 255) {
+    if (index <= 255)
+    {
         pNewInstr->m_opcode = CEE_LDLOCA_S;
         pNewInstr->m_Arg8 = static_cast<UINT8>(index);
-    } else {
+    }
+    else
+    {
         pNewInstr->m_opcode = CEE_LDLOCA;
         pNewInstr->m_Arg16 = index;
     }

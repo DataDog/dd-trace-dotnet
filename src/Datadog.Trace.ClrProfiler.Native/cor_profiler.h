@@ -17,10 +17,12 @@
 #include "pal.h"
 #include "rejit_handler.h"
 
-namespace trace {
+namespace trace
+{
 
-class CorProfiler : public CorProfilerBase {
-  private:
+class CorProfiler : public CorProfilerBase
+{
+private:
     std::atomic_bool is_attached_ = {false};
     RuntimeInformation runtime_information_;
     std::vector<IntegrationMethod> integration_methods_;
@@ -86,7 +88,7 @@ class CorProfiler : public CorProfilerBase {
                                             const std::vector<IntegrationMethod>& filtered_integrations);
     HRESULT CallTarget_RewriterCallback(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler);
 
-  public:
+public:
     CorProfiler() = default;
 
     bool IsAttached() const;
