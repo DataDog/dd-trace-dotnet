@@ -152,19 +152,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                 Log.Error(LoggingComponentMoniker, "Error while registering an AssemblyResolve event handler", ex);
             }
 
-            var logEntryDetails = new List<object>();
-            logEntryDetails.Add("Number of assemblies");
-            logEntryDetails.Add(assemblyResolveEventHandler.AssemblyNamesToLoad.Count);
-            logEntryDetails.Add("Number of product binaries directories");
-            logEntryDetails.Add(assemblyResolveEventHandler.ManagedProductBinariesDirectories.Count);
-
-            for (int i = 0; i < assemblyResolveEventHandler.ManagedProductBinariesDirectories.Count; i++)
-            {
-                logEntryDetails.Add($"managedProductBinariesDirectories[{i}]");
-                logEntryDetails.Add(assemblyResolveEventHandler.ManagedProductBinariesDirectories[i]);
-            }
-
-            Log.Info(LoggingComponentMoniker, "Starting to load assemblies", logEntryDetails);
+            LogStartingToLoadAssembliesInfo(assemblyResolveEventHandler);
 
             for (int i = 0; i < assemblyResolveEventHandler.AssemblyNamesToLoad.Count; i++)
             {
@@ -179,6 +167,23 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                     Log.Error(LoggingComponentMoniker, "Error loading or starting a managed assembly", ex, "assemblyName", assemblyName);
                 }
             }
+        }
+
+        private static void LogStartingToLoadAssembliesInfo(AssemblyResolveEventHandler assemblyResolveEventHandler)
+        {
+            var logEntryDetails = new List<object>();
+            logEntryDetails.Add("Number of assemblies");
+            logEntryDetails.Add(assemblyResolveEventHandler.AssemblyNamesToLoad.Count);
+            logEntryDetails.Add("Number of product binaries directories");
+            logEntryDetails.Add(assemblyResolveEventHandler.ManagedProductBinariesDirectories.Count);
+
+            for (int i = 0; i < assemblyResolveEventHandler.ManagedProductBinariesDirectories.Count; i++)
+            {
+                logEntryDetails.Add($"managedProductBinariesDirectories[{i}]");
+                logEntryDetails.Add(assemblyResolveEventHandler.ManagedProductBinariesDirectories[i]);
+            }
+
+            Log.Info(LoggingComponentMoniker, "Starting to load assemblies", logEntryDetails);
         }
 
         private static void LoadAndStartAssembly(string assemblyName)
