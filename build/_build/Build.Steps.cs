@@ -954,6 +954,8 @@ partial class Build
                 .SetProperty("TargetFramework", Framework.ToString())
                 .SetProperty("ManagedProfilerOutputDirectory", TracerHomeDirectory)
                 .SetProperty("BuildInParallel", "true")
+                .SetProperty("ExcludeManagedProfiler", "true")
+                .SetProperty("ExcludeNativeProfiler", "true")
                 .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
                 .AddProcessEnvironmentVariable("TestAllPackageVersions", "true")
                 .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
