@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
@@ -108,5 +109,29 @@ internal static partial class DotNetSettingsExtensions
         return settings
             .When(!string.IsNullOrEmpty(vsRoot),
                 c => c.SetProcessToolPath(Path.Combine(vsRoot, "MSBuild", "Current", "Bin", "MSBuild.exe")));
+    }
+
+    /// <summary>
+    /// Conditionally set the dotnet.exe location, using the 32-bit dll when targeting x86
+    /// </summary>
+    public static T SetDotnetPath<T>(this T settings, MSBuildTargetPlatform platform)
+        where T : ToolSettings
+    {
+        if (platform != MSBuildTargetPlatform.x86 && platform != MSBuildTargetPlatform.Win32)
+        {
+            return settings;
+        }
+
+
+        // assume it's installed where we expect
+        var dotnetPath = EnvironmentInfo.GetVariable<string>("DOTNET_EXE_32")
+                      ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "dotnet", "dotnet.exe");
+
+        if (!File.Exists(dotnetPath))
+        {
+            throw new Exception($"Error locating 32-bit dotnet process. Expected at '{dotnetPath}'");
+        }
+
+        return settings.SetProcessToolPath(dotnetPath);
     }
 }
