@@ -18,14 +18,16 @@ typedef enum
     // special internal instructions
 } OPCODE;
 
-struct ILInstr {
+struct ILInstr
+{
     ILInstr* m_pNext;
     ILInstr* m_pPrev;
 
     unsigned m_opcode;
     unsigned m_offset;
 
-    union {
+    union
+    {
         ILInstr* m_pTarget;
         INT8 m_Arg8;
         INT16 m_Arg16;
@@ -34,21 +36,24 @@ struct ILInstr {
     };
 };
 
-struct EHClause {
+struct EHClause
+{
     CorExceptionFlag m_Flags;
     ILInstr* m_pTryBegin;
     ILInstr* m_pTryEnd;
     ILInstr* m_pHandlerBegin; // First instruction inside the handler
     ILInstr* m_pHandlerEnd;   // Last instruction inside the handler
-    union {
+    union
+    {
         DWORD m_ClassToken; // use for type-based exception handlers
         ILInstr* m_pFilter; // use for filter-based exception handlers
                             // (COR_ILEXCEPTION_CLAUSE_FILTER is set)
     };
 };
 
-class ILRewriter {
-  private:
+class ILRewriter
+{
+private:
     ICorProfilerInfo* m_pICorProfilerInfo;
     ICorProfilerFunctionControl* m_pICorProfilerFunctionControl;
 
@@ -78,7 +83,7 @@ class ILRewriter {
 
     IMethodMalloc* m_pIMethodMalloc;
 
-  public:
+public:
     ILRewriter(ICorProfilerInfo* pICorProfilerInfo, ICorProfilerFunctionControl* pICorProfilerFunctionControl,
                ModuleID moduleID, mdToken tkMethod);
 

@@ -13,7 +13,8 @@
 #define WStrLen(value) (size_t) std::char_traits<char16_t>::length(value)
 #endif
 
-namespace trace {
+namespace trace
+{
 
 typedef std::basic_string<WCHAR> WSTRING;
 

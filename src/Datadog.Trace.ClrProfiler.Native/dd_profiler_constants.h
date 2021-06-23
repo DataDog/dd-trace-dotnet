@@ -6,7 +6,8 @@
 #include "environment_variables.h"
 #include "logging.h"
 
-namespace trace {
+namespace trace
+{
 
 inline WSTRING env_vars_to_display[]{environment::tracing_enabled,
                                      environment::debug_enabled,

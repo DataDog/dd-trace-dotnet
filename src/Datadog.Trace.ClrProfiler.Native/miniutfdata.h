@@ -932,8 +932,7 @@ static const uint16_t decomp_idx_t2[] = {
 
 int32_t decomp_idx(int32_t codepoint)
 {
-    if (codepoint >= 195102)
-        return 0;
+    if (codepoint >= 195102) return 0;
     return decomp_idx_t2[(decomp_idx_t1[codepoint >> 6] << 6) + (codepoint & 63)];
 }
 static const uint8_t comp_idx_t1[] = {
@@ -1110,8 +1109,7 @@ static const uint16_t comp_idx_t2[] = {
 
 int32_t comp_idx(int32_t codepoint)
 {
-    if (codepoint >= 69939)
-        return 0;
+    if (codepoint >= 69939) return 0;
     return comp_idx_t2[(comp_idx_t1[codepoint >> 5] << 5) + (codepoint & 31)];
 }
 static const uint8_t ccc_t1[] = {
@@ -1383,8 +1381,7 @@ static const uint8_t ccc_t2[] = {
 
 int32_t ccc(int32_t codepoint)
 {
-    if (codepoint >= 119365)
-        return 0;
+    if (codepoint >= 119365) return 0;
     return ccc_t2[(ccc_t1[codepoint >> 6] << 6) + (codepoint & 63)];
 }
 static const int32_t lowercase_offset_values[] = {
@@ -1524,8 +1521,7 @@ static const uint8_t lowercase_offset_t2[] = {
 int32_t lowercase_offset(int32_t codepoint)
 {
     int offset_index;
-    if (codepoint >= 66600)
-        return 0;
+    if (codepoint >= 66600) return 0;
     offset_index = lowercase_offset_t2[(lowercase_offset_t1[codepoint >> 6] << 6) + (codepoint & 63)];
     return lowercase_offset_values[offset_index];
 }

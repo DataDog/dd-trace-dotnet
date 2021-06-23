@@ -15,6 +15,7 @@ namespace Datadog.Trace.Logging
     internal class SerilogEnricher : ILogEnricher
     {
         private readonly CustomSerilogLogProvider _logProvider;
+        private readonly bool _wrapEnricher;
         private readonly Func<object, object> _valueFactory;
         private readonly Func<string, object, object> _propertyFactory;
 
@@ -25,9 +26,10 @@ namespace Datadog.Trace.Logging
 
         private object _serilogEventEnricher;
 
-        public SerilogEnricher(CustomSerilogLogProvider logProvider)
+        public SerilogEnricher(CustomSerilogLogProvider logProvider, bool wrapEnricher)
         {
             _logProvider = logProvider;
+            _wrapEnricher = wrapEnricher;
 
             var logEventPropertyType = Type.GetType("Serilog.Events.LogEventProperty, Serilog");
 
@@ -62,7 +64,15 @@ namespace Datadog.Trace.Logging
             _versionProperty = _propertyFactory(CorrelationIdentifier.SerilogVersionKey, _valueFactory(tracer.Settings.ServiceVersion));
             _environmentProperty = _propertyFactory(CorrelationIdentifier.SerilogEnvKey, _valueFactory(tracer.Settings.Environment));
 
-            _serilogEventEnricher = this.DuckCast(CustomSerilogLogProvider.GetLogEnricherType());
+            var logEnricherType = CustomSerilogLogProvider.GetLogEnricherType();
+            _serilogEventEnricher = this.DuckCast(logEnricherType);
+
+            if (_wrapEnricher)
+            {
+                var array = Array.CreateInstance(logEnricherType, 1);
+                array.SetValue(_serilogEventEnricher, 0);
+                _serilogEventEnricher = array;
+            }
         }
 
         public IDisposable Register()

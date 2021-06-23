@@ -23,7 +23,8 @@
 
 #include <string>
 
-namespace miniutf {
+namespace miniutf
+{
 
 /*
  * Character-at-a-time encoding. Convert pt to UTF-8/16 and append to out.

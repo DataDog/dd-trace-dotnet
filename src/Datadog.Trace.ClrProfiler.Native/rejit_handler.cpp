@@ -1,11 +1,13 @@
 #include "rejit_handler.h"
 
-namespace trace {
+namespace trace
+{
 
 RejitItem::RejitItem(int length, ModuleID* modulesId, mdMethodDef* methodDefs)
 {
     length_ = length;
-    if (length > 0) {
+    if (length > 0)
+    {
         ModuleID* myModulesIds = new ModuleID[length];
         memcpy(myModulesIds, modulesId, length * sizeof(ModuleID));
         moduleIds_ = myModulesIds;
@@ -18,11 +20,13 @@ RejitItem::RejitItem(int length, ModuleID* modulesId, mdMethodDef* methodDefs)
 
 void RejitItem::DeleteArray()
 {
-    if (moduleIds_ != nullptr) {
+    if (moduleIds_ != nullptr)
+    {
         delete[] moduleIds_;
         moduleIds_ = nullptr;
     }
-    if (methodDefs_ != nullptr) {
+    if (methodDefs_ != nullptr)
+    {
         delete[] methodDefs_;
         methodDefs_ = nullptr;
     }
@@ -31,8 +35,8 @@ void RejitItem::DeleteArray()
 void RejitHandlerModuleMethod::AddFunctionId(FunctionID functionId)
 {
     std::lock_guard<std::mutex> guard(functionsIds_lock);
-    auto moduleHandler = (RejitHandlerModule*)module;
-    auto rejitHandler = (RejitHandler*)moduleHandler->GetHandler();
+    auto moduleHandler = (RejitHandlerModule*) module;
+    auto rejitHandler = (RejitHandler*) moduleHandler->GetHandler();
     functionsIds.insert(functionId);
     rejitHandler->_addFunctionToSet(functionId, this);
 }
@@ -47,7 +51,8 @@ RejitHandlerModuleMethod* RejitHandlerModule::GetOrAddMethod(mdMethodDef methodD
     std::lock_guard<std::mutex> guard(methods_lock);
 
     auto find_res = methods.find(methodDef);
-    if (find_res != methods.end()) {
+    if (find_res != methods.end())
+    {
         return find_res->second;
     }
 
@@ -60,7 +65,8 @@ bool RejitHandlerModule::TryGetMethod(mdMethodDef methodDef, RejitHandlerModuleM
     std::lock_guard<std::mutex> guard(methods_lock);
 
     auto find_res = methods.find(methodDef);
-    if (find_res != methods.end()) {
+    if (find_res != methods.end())
+    {
         *methodHandler = find_res->second;
         return true;
     }
@@ -73,7 +79,8 @@ RejitHandlerModuleMethod* RejitHandler::GetModuleMethodFromFunctionId(FunctionID
     {
         std::lock_guard<std::mutex> guard(methodByFunctionId_lock);
         auto find_res = methodByFunctionId.find(functionId);
-        if (find_res != methodByFunctionId.end()) {
+        if (find_res != methodByFunctionId.end())
+        {
             return find_res->second;
         }
     }
@@ -83,7 +90,8 @@ RejitHandlerModuleMethod* RejitHandler::GetModuleMethodFromFunctionId(FunctionID
 
     HRESULT hr = profilerInfo->GetFunctionInfo(functionId, nullptr, &moduleId, &function_token);
 
-    if (FAILED(hr)) {
+    if (FAILED(hr))
+    {
         Warn("RejitHandler::GetModuleMethodFromFunctionId: Call to "
              "ICorProfilerInfo4.GetFunctionInfo() "
              "failed for ",
@@ -103,7 +111,8 @@ RejitHandlerModule* RejitHandler::GetOrAddModule(ModuleID moduleId)
     std::lock_guard<std::mutex> guard(modules_lock);
 
     auto find_res = modules.find(moduleId);
-    if (find_res != modules.end()) {
+    if (find_res != modules.end())
+    {
         return find_res->second;
     }
 
@@ -117,7 +126,8 @@ bool RejitHandler::TryGetModule(ModuleID moduleId, RejitHandlerModule** moduleHa
     std::lock_guard<std::mutex> guard(modules_lock);
 
     auto find_res = modules.find(moduleId);
-    if (find_res != modules.end()) {
+    if (find_res != modules.end())
+    {
         *moduleHandler = find_res->second;
         return true;
     }
@@ -133,14 +143,16 @@ HRESULT RejitHandler::NotifyReJITParameters(ModuleID moduleId, mdMethodDef metho
     auto methodHandler = moduleHandler->GetOrAddMethod(methodId);
     methodHandler->SetFunctionControl(pFunctionControl);
 
-    if (methodHandler->GetMethodDef() == mdMethodDefNil) {
+    if (methodHandler->GetMethodDef() == mdMethodDefNil)
+    {
         Warn("NotifyReJITCompilationStarted: mdMethodDef is missing for "
              "MethodDef: ",
              methodId);
         return S_FALSE;
     }
 
-    if (methodHandler->GetFunctionControl() == nullptr) {
+    if (methodHandler->GetFunctionControl() == nullptr)
+    {
         Warn("NotifyReJITCompilationStarted: ICorProfilerFunctionControl is missing "
              "for "
              "MethodDef: ",
@@ -148,28 +160,32 @@ HRESULT RejitHandler::NotifyReJITParameters(ModuleID moduleId, mdMethodDef metho
         return S_FALSE;
     }
 
-    if (methodHandler->GetFunctionInfo() == nullptr) {
+    if (methodHandler->GetFunctionInfo() == nullptr)
+    {
         Warn("NotifyReJITCompilationStarted: FunctionInfo is missing for "
              "MethodDef: ",
              methodId);
         return S_FALSE;
     }
 
-    if (methodHandler->GetMethodReplacement() == nullptr) {
+    if (methodHandler->GetMethodReplacement() == nullptr)
+    {
         Warn("NotifyReJITCompilationStarted: MethodReplacement is missing for "
              "MethodDef: ",
              methodId);
         return S_FALSE;
     }
 
-    if (moduleHandler->GetModuleId() == 0) {
+    if (moduleHandler->GetModuleId() == 0)
+    {
         Warn("NotifyReJITCompilationStarted: ModuleID is missing for "
              "MethodDef: ",
              methodId);
         return S_FALSE;
     }
 
-    if (moduleHandler->GetModuleMetadata() == nullptr) {
+    if (moduleHandler->GetModuleMetadata() == nullptr)
+    {
         Warn("NotifyReJITCompilationStarted: ModuleMetadata is missing for "
              "MethodDef: ",
              methodId);

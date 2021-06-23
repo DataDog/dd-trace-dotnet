@@ -5,6 +5,8 @@
 
 using System;
 using System.Linq.Expressions;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.Logging.LogProviders;
 
 namespace Datadog.Trace.Logging
@@ -12,10 +14,27 @@ namespace Datadog.Trace.Logging
     internal class CustomSerilogLogProvider : SerilogLogProvider, ILogProviderWithEnricher
     {
         private static Func<object, IDisposable> _pushMethod;
+        private readonly bool _wrapEnricher;
 
         public CustomSerilogLogProvider()
         {
-            _pushMethod = GetPush();
+            var logEnricherType = GetLogEnricherType();
+            if (GetPushMethodInfo() is MethodInfo pushMethodInfo)
+            {
+                _wrapEnricher = false;
+                _pushMethod = GeneratePushDelegate(pushMethodInfo, logEnricherType);
+            }
+            else if (GetPushPropertiesMethodInfo() is MethodInfo pushPropertiesMethodInfo)
+            {
+                _wrapEnricher = true;
+                _pushMethod = GeneratePushDelegate(pushPropertiesMethodInfo, logEnricherType.MakeArrayType());
+            }
+            else
+            {
+                _wrapEnricher = false;
+                IDisposable cachedDisposable = new NoOpDisposable();
+                _pushMethod = (enricher) => { return cachedDisposable; };
+            }
         }
 
         public IDisposable OpenContext(object enricher)
@@ -23,26 +42,45 @@ namespace Datadog.Trace.Logging
             return _pushMethod(enricher);
         }
 
-        public ILogEnricher CreateEnricher() => new SerilogEnricher(this);
+        public ILogEnricher CreateEnricher() => new SerilogEnricher(this, _wrapEnricher);
 
         internal static Type GetLogEnricherType() => Type.GetType("Serilog.Core.ILogEventEnricher, Serilog");
 
-        private static Func<object, IDisposable> GetPush()
+        internal static new bool IsLoggerAvailable() =>
+            SerilogLogProvider.IsLoggerAvailable() && (GetPushMethodInfo() != null || GetPushPropertiesMethodInfo() != null);
+
+        private static MethodInfo GetPushMethodInfo()
         {
             var ndcContextType = Type.GetType("Serilog.Context.LogContext, Serilog");
+            return ndcContextType?.GetMethod("Push", GetLogEnricherType());
+        }
 
-            var logEventEnricherType = GetLogEnricherType();
+        private static MethodInfo GetPushPropertiesMethodInfo()
+        {
+            var ndcContextType = FindType("Serilog.Context.LogContext", new[] { "Serilog", "Serilog.FullNetFx" });
+            return ndcContextType?.GetMethod("PushProperties", GetLogEnricherType().MakeArrayType());
+        }
 
-            var pushPropertyMethod = ndcContextType.GetMethod("Push", logEventEnricherType);
+        private static Func<object, IDisposable> GeneratePushDelegate(MethodInfo methodInfo, Type argumentTargetType)
+        {
             var enricherParam = Expression.Parameter(typeof(object), "enricher");
-            var castEnricherParam = Expression.Convert(enricherParam, logEventEnricherType);
-            var pushMethodCall = Expression.Call(null, pushPropertyMethod, castEnricherParam);
+            var castEnricherParam = Expression.Convert(enricherParam, argumentTargetType);
+            var pushMethodCall = Expression.Call(null, methodInfo, castEnricherParam);
+
             var push = Expression.Lambda<Func<object, IDisposable>>(
                     pushMethodCall,
                     enricherParam)
                 .Compile();
 
             return push;
+        }
+
+        internal class NoOpDisposable : IDisposable
+        {
+            public void Dispose()
+            {
+                // Do nothing
+            }
         }
     }
 }
