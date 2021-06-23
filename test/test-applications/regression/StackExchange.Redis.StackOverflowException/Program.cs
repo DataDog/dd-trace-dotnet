@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Datadog.Trace.ClrProfiler;
 
 namespace StackExchange.Redis.StackOverflowException
 {
@@ -12,7 +11,7 @@ namespace StackExchange.Redis.StackOverflowException
         {
             try
             {
-                Console.WriteLine($"Profiler attached: {Instrumentation.ProfilerAttached}");
+                Console.WriteLine($"Profiler attached: {IsProfilerAttached()}");
 
                 string host = Environment.GetEnvironmentVariable("STACKEXCHANGE_REDIS_HOST") ?? "localhost:6389";
                 const int database = 1;
@@ -64,6 +63,22 @@ namespace StackExchange.Redis.StackOverflowException
                 yield return new KeyValuePair<RedisKey, RedisValue>($"StackOverflowExceptionKey{count}", $"value{count}");
                 count++;
             }
+        }
+
+        private static bool IsProfilerAttached()
+        {
+            var instrumentationType = Type.GetType("Datadog.Trace.ClrProfiler.Instrumentation", throwOnError: false);
+
+            if (instrumentationType == null)
+            {
+                return false;
+            }
+
+            var property = instrumentationType.GetProperty("ProfilerAttached");
+
+            var isAttached = property?.GetValue(null) as bool?;
+
+            return isAttached ?? false;
         }
     }
 
