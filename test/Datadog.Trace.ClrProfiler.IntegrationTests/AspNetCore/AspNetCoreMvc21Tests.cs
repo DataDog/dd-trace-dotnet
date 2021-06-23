@@ -4,7 +4,9 @@
 // </copyright>
 
 #if NETCOREAPP2_1
+using System.Net;
 using System.Threading.Tasks;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -12,18 +14,32 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
     public class AspNetCoreMvc21Tests : AspNetCoreMvcTestBase
     {
-        public AspNetCoreMvc21Tests(ITestOutputHelper output)
-            : base("AspNetCoreMvc21", output, serviceVersion: "1.0.0")
+        private readonly string _testName;
+
+        public AspNetCoreMvc21Tests(ITestOutputHelper output, AspNetCoreTestFixture fixture)
+            : base("AspNetCoreMvc21", fixture, output, enableCallTarget: false, enableRouteTemplateResourceNames: false)
         {
+            _testName = GetTestName(nameof(AspNetCoreMvc21Tests));
         }
 
-        [Fact]
+        [Theory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task MeetsAllAspNetCoreMvcExpectations()
+        [MemberData(nameof(Data))]
+        public async Task MeetsAllAspNetCoreMvcExpectations(string path, HttpStatusCode statusCode)
         {
-            // No package versions are relevant because this is built-in
-            await RunTraceTestOnSelfHosted(string.Empty);
+            await Fixture.TryStartApp(this, Output);
+
+            var spans = await Fixture.WaitForSpans(Output, path);
+
+            var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
+
+            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, statusCode);
+
+            // Overriding the type name here as we have multiple test classes in the file
+            // Ensures that we get nice file nesting in Solution Explorer
+            await Verifier.Verify(spans, settings)
+                          .UseTypeName(_testName);
         }
     }
 }
