@@ -64,14 +64,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private static Dictionary<string, string> ScrubStackTraceForErrors(
             MockTracerAgent.Span span, Dictionary<string, string> tags)
         {
-            var replacementTags = tags;
-            if (span.Error > 0 && tags.ContainsKey(Tags.ErrorStack))
-            {
-                replacementTags = tags.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-                replacementTags[Tags.ErrorStack] = Scrubbers.ScrubStackTrace(replacementTags[Tags.ErrorStack]);
-            }
-
-            return replacementTags;
+            return tags
+                  .Select(
+                       kvp => kvp.Key switch
+                       {
+                           Tags.ErrorStack => new KeyValuePair<string, string>(kvp.Key, Scrubbers.ScrubStackTrace(kvp.Value)),
+                           _ => kvp
+                       })
+                  .OrderBy(x => x.Key)
+                  .ToDictionary(x => x.Key, x => x.Value);
         }
     }
 }
