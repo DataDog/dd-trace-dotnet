@@ -72,7 +72,10 @@ namespace Samples.GraphQL
                 builder.Run(async context =>
                 {
                     await context.Response.WriteAsync("Shutting down");
+
+#pragma warning disable CS0618 // Type or member is obsolete
                     _ = Task.Run(() => builder.ApplicationServices.GetService<IApplicationLifetime>().StopApplication());
+#pragma warning restore CS0618 // Type or member is obsolete
                 });
             });
 
