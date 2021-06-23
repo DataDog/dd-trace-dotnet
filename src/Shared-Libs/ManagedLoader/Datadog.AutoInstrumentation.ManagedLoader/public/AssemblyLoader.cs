@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using System.Threading.Tasks;
 
 namespace Datadog.AutoInstrumentation.ManagedLoader
 {
@@ -77,19 +76,16 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
         /// <param name="assemblyNamesToLoadIntoNonDefaultAppDomains">List of assemblies to load and start if the curret App Domain is the NOT default App Domain.</param>
         public static void Run(string[] assemblyNamesToLoadIntoDefaultAppDomain, string[] assemblyNamesToLoadIntoNonDefaultAppDomains)
         {
-            /*
-             * Here we delay (by rescheduling) the loading of the assemblies to prevent a crash due to some unknown (yet) race.
-             * The case has been seen with a WCF application.
-
-             * This is a short-term fix to secure and ensure clients onboarding.
-             */
-            Task.Run(() =>
+            try
             {
                 try
                 {
+                    bool isLoggerSetupDone = false;
+
                     try
                     {
                         LogConfigurator.SetupLogger();
+                        isLoggerSetupDone = true;
 
                         try
                         {
@@ -103,28 +99,31 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                             Log.Error(LoggingComponentMoniker, ex);
                         }
                     }
-                    catch (Exception ex)
+                    finally
                     {
-                        // We still have an exception, despite the above catch-all. Likely the exception came out of the logger.
-                        // We can log it to console it as a backup (if enabled).
-#pragma warning disable CS0162 // Unreachable code detected (deliberately using const bool for compile settings)
-                        if (UseConsoleLoggingIfFileLoggingFails)
-                        {
-                            Console.WriteLine($"{Environment.NewLine}An exception occurred in {LoggingComponentMoniker}. Assemblies may not be loded or started."
-
-                                            + $"{Environment.NewLine}{ex}");
-                        }
-#pragma warning restore CS0162 // Unreachable code detected
+                        CleanSideEffects(isLoggerSetupDone);  // must NOT throw!
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // We still have an exception passing through the above double-catch-all. Could not even write to console.
-                    // Our last choise is to let it excpe and potentially crash the process or swallow it. We prefer the later.
+                    // We still have an exception, despite the above catch-all. Likely the exception came out of the logger.
+                    // We can log it to console it as a backup (if enabled).
+#pragma warning disable CS0162 // Unreachable code detected (deliberately using const bool for compile settings)
+                    if (UseConsoleLoggingIfFileLoggingFails)
+                    {
+                        Console.WriteLine($"{Environment.NewLine}{LoggingComponentMoniker}: An exception occurred. Assemblies may not be loaded or started."
+                                        + $"{Environment.NewLine}{ex}");
+                    }
+#pragma warning restore CS0162 // Unreachable code detected
                 }
-            });
-        }
+            }
+            catch
+            {
+                // We still have an exception passing through the above double-catch-all. Could not even write to console.
+                // Our last choice is to let it escape and potentially crash the process or swallow it. We prefer the latter.
 
+            }
+        }
 
         /// <summary>
         /// Loads the assemblied specified for this <c>AssemblyLoader</c> instance and executes their entry point.
@@ -160,19 +159,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                 Log.Error(LoggingComponentMoniker, "Error while registering an AssemblyResolve event handler", ex);
             }
 
-            var logEntryDetails = new List<object>();
-            logEntryDetails.Add("Number of assemblies");
-            logEntryDetails.Add(assemblyResolveEventHandler.AssemblyNamesToLoad.Count);
-            logEntryDetails.Add("Number of product binaries directories");
-            logEntryDetails.Add(assemblyResolveEventHandler.ManagedProductBinariesDirectories.Count);
-
-            for (int i = 0; i < assemblyResolveEventHandler.ManagedProductBinariesDirectories.Count; i++)
-            {
-                logEntryDetails.Add($"managedProductBinariesDirectories[{i}]");
-                logEntryDetails.Add(assemblyResolveEventHandler.ManagedProductBinariesDirectories[i]);
-            }
-
-            Log.Info(LoggingComponentMoniker, "Starting to load assemblies", logEntryDetails);
+            LogStartingToLoadAssembliesInfo(assemblyResolveEventHandler);
 
             for (int i = 0; i < assemblyResolveEventHandler.AssemblyNamesToLoad.Count; i++)
             {
@@ -187,6 +174,23 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                     Log.Error(LoggingComponentMoniker, "Error loading or starting a managed assembly", ex, "assemblyName", assemblyName);
                 }
             }
+        }
+
+        private static void LogStartingToLoadAssembliesInfo(AssemblyResolveEventHandler assemblyResolveEventHandler)
+        {
+            var logEntryDetails = new List<object>();
+            logEntryDetails.Add("Number of assemblies");
+            logEntryDetails.Add(assemblyResolveEventHandler.AssemblyNamesToLoad.Count);
+            logEntryDetails.Add("Number of product binaries directories");
+            logEntryDetails.Add(assemblyResolveEventHandler.ManagedProductBinariesDirectories.Count);
+
+            for (int i = 0; i < assemblyResolveEventHandler.ManagedProductBinariesDirectories.Count; i++)
+            {
+                logEntryDetails.Add($"managedProductBinariesDirectories[{i}]");
+                logEntryDetails.Add(assemblyResolveEventHandler.ManagedProductBinariesDirectories[i]);
+            }
+
+            Log.Info(LoggingComponentMoniker, "Starting to load assemblies", logEntryDetails);
         }
 
         private static void LoadAndStartAssembly(string assemblyName)
@@ -572,14 +576,155 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             }
         }
 
+
+        /// <summary>
+        /// The assembly loader is executed very early in the applicaiton life cycle, earlier that user code normally runs.
+        /// This may cause side effects. This method is intended to undo all side effects,
+        /// so that the user app is not affected by the presence of the loader.
+        /// </summary>
+        /// <param name="canUseLog">Whether the Log initialization has been completed and the Log can be used safely.</param>
+        private static void CleanSideEffects(bool canUseLog)
+        {
+            try
+            {
+                // One method per know side-effect:
+                // (each method should catch/log/swallow its exceptions so that other side-effects can be undone)
+
+                ClearAppDomainTargetFrameworkNameCache(canUseLog);
+            }
+            catch (Exception ex)
+            {
+                LogErrorOrWriteLine(canUseLog, "An exception occurred while cleaning up side effects.", ex);
+            }
+        }
+
+        /// <summary>
+        /// Clears the AppDomainSetup.TargetFrameworkName cache.
+        /// The logger used by this loader uses the Array.Sort(..) API when choosing the log file index.
+
+        /// The behavior of the sort API is Framework version dependent.
+        ///
+        /// To get the Framework version, it transitively uses the internal AppDomain.GetTargetFrameworkName() API.
+        /// The respective value is determined by examining the TargetFrameworkAttribute on Assembly.GetEntryAssembly()
+        /// and then caching the result in AppDomainSetup.TargetFrameworkName.
+        ///
+        /// However, because the Loader runs so early in the app lifecycle, the entry assembly may not yet be initialized (i.e. null).
+        /// In such cases, the value cached in AppDomainSetup.TargetFrameworkName is also null, and it does not get updated when the
+        /// entry assembly becomes known later.This can break applications that use the target framework name to guide their behavior
+        /// (e.g., this is known to break some WCF applications).
+        /// 
+        /// This method attempts to clear the respective internal cache in AppDomainSetup.
+        /// It must be resilient to the internal API being accessed not being present
+        /// (in fact, it is known not to be present on some Net Core versions).
+        /// </summary>
+        private static void ClearAppDomainTargetFrameworkNameCache(bool canUseLog)
+        {
+            const string ThisCleanupMoniker = "side effects to the AppDomain.GetTargetFrameworkName() cache";
+
+            try
+            {
+                AppDomain appDomain = AppDomain.CurrentDomain;
+
+                // Failing to clean up may or may NOT be an error:
+                // On .NET versions where the AppDomain TargetFrameworkName cache is not present,
+                // we expect for some of the reflection in this method to fail.
+                // WeakReference will log such cases as Debug lines, not as errors, and bail out gracefully.
+                // Actual exceptions, however, are certain to be errors.
+
+                if (appDomain == null)
+                {
+                    LogDebugOrWriteLine(canUseLog, $"Cannot clean up {ThisCleanupMoniker}: CurrentDomain is null.");
+                    return;
+                }
+
+                const string FusionStorePropertyName = "FusionStore";
+                Type appDomainType = appDomain.GetType();
+                PropertyInfo fusionStoreProperty = appDomainType.GetProperty(FusionStorePropertyName, BindingFlags.NonPublic | BindingFlags.Instance);
+
+                if (fusionStoreProperty == null)
+                {
+                    LogDebugOrWriteLine(canUseLog,
+                                        $"Cannot clean up {ThisCleanupMoniker}:"
+                                      + $" Did not find non-public property \"{FusionStorePropertyName}\" on type \"{appDomainType.FullName}\""
+                                      + $" in assembly \"{appDomainType.Assembly?.FullName}\".");
+                    return;
+                }
+
+                object appDomainFusionStoreObject = fusionStoreProperty.GetValue(appDomain);
+
+                if (appDomainFusionStoreObject == null)
+                {
+                    LogDebugOrWriteLine(canUseLog,
+                                        $"Cannot clean up {ThisCleanupMoniker}:"
+                                      + $" The value of the non-public property \"{FusionStorePropertyName}\" on type \"{appDomainType.FullName}\""
+                                      + $" in assembly \"{appDomainType.Assembly?.FullName}\" was retrieved, but found to be null.");
+                    return;
+                }
+
+                const string CheckedForTargetFrameworkNamePropertyName = "CheckedForTargetFrameworkName";
+                Type appDomainSetupType = appDomainFusionStoreObject.GetType();
+                PropertyInfo checkedForTargetFrameworkNameProperty = appDomainSetupType.GetProperty(CheckedForTargetFrameworkNamePropertyName,
+                                                                                                    BindingFlags.NonPublic | BindingFlags.Instance);
+
+                if (checkedForTargetFrameworkNameProperty == null)
+                {
+                    LogDebugOrWriteLine(canUseLog,
+                                        $"Cannot clean up {ThisCleanupMoniker}:"
+                                      + $" Did not find non-public property \"{CheckedForTargetFrameworkNamePropertyName}\" on type \"{appDomainSetupType.FullName}\""
+                                      + $" in assembly \"{appDomainType.Assembly?.FullName}\".");
+                    return;
+                }
+
+                checkedForTargetFrameworkNameProperty.SetValue(appDomainFusionStoreObject, false);
+
+                LogDebugOrWriteLine(canUseLog, $"Completed clening up {ThisCleanupMoniker}.");
+            }
+            catch (Exception ex)
+            {
+                LogErrorOrWriteLine(canUseLog, $"An exception occurred while cleaning up {ThisCleanupMoniker}.", ex);
+            }
+        }
+
+        private static void LogErrorOrWriteLine(bool canUseLog, string message, Exception ex = null)
+        {
+            if (canUseLog)
+            {
+                Log.Error(LoggingComponentMoniker, message, ex);
+            }
+            else if (UseConsoleLoggingIfFileLoggingFails)
+            {
+#pragma warning disable CS0162 // Unreachable code detected (deliberately using const bool for compile settings)
+                Console.WriteLine($"{Environment.NewLine}{LoggingComponentMoniker}: {message}"
+                                + (ex == null ? "" : $"{Environment.NewLine}{ex}"));
+#pragma warning restore CS0162 // Unreachable code detected
+            }
+        }
+
+        private static void LogDebugOrWriteLine(bool canUseLog, string message)
+        {
+            if (canUseLog)
+            {
+                Log.Debug(LoggingComponentMoniker, message);
+            }
+            else if (UseConsoleLoggingIfFileLoggingFails)
+            {
+#pragma warning disable CS0162 // Unreachable code detected (deliberately using const bool for compile settings)
+                Console.WriteLine($"{Environment.NewLine}{LoggingComponentMoniker}: {message}");
+#pragma warning restore CS0162 // Unreachable code detected
+            }
+        }
+
         private void AnalyzeAppDomain()
         {
             AppDomain currAD = AppDomain.CurrentDomain;
             _isDefaultAppDomain = currAD.IsDefaultAppDomain();
 
+            Log.Info(LoggingComponentMoniker,
+                    "Will load and start assemblies listed for " + (_isDefaultAppDomain ? "the Default AppDomain" : "Non-default AppDomains") + ".");
+
             Log.Info(
                     LoggingComponentMoniker,
-                    "Will load and start assemblies listed for " + (_isDefaultAppDomain ? "the Default AppDomain" : "Non-default AppDomains") + "; listing current AppDomain info",
+                    "Listing current AppDomain info",
                     "IsDefaultAppDomain",
                     _isDefaultAppDomain,
                     "Id",
@@ -598,6 +743,15 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                     currAD.RelativeSearchPath,
                     "ShadowCopyFiles",
                     currAD.ShadowCopyFiles);
+
+            Assembly entryAssembly = Assembly.GetEntryAssembly();
+            Log.Info(
+                    LoggingComponentMoniker,
+                    "Listing Entry Assembly info",
+                    "FullName",
+                    entryAssembly?.FullName,
+                    "Location",
+                    entryAssembly?.Location);
         }
 
         private AssemblyResolveEventHandler CreateAssemblyResolveEventHandler()
