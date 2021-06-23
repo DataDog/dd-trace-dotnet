@@ -120,7 +120,8 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             catch
             {
                 // We still have an exception passing through the above double-catch-all. Could not even write to console.
-                // Our last choise is to let it excpe and potentially crash the process or swallow it. We prefer the later.
+                // Our last choice is to let it escape and potentially crash the process or swallow it. We prefer the latter.
+
             }
         }
 
