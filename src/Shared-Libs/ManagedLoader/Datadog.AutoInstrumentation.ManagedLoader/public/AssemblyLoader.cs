@@ -643,7 +643,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                 {
                     LogDebugOrWriteLine(canUseLog,
                                         $"Cannot clean up {ThisCleanupMoniker}:"
-                                      + $" Did not find property \"{FusionStorePropertyName}\" on type \"{appDomainType.FullName}\""
+                                      + $" Did not find non-public property \"{FusionStorePropertyName}\" on type \"{appDomainType.FullName}\""
                                       + $" in assembly \"{appDomainType.Assembly?.FullName}\".");
                     return;
                 }
@@ -654,7 +654,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                 {
                     LogDebugOrWriteLine(canUseLog,
                                         $"Cannot clean up {ThisCleanupMoniker}:"
-                                      + $" The value of the property \"{FusionStorePropertyName}\" on type \"{appDomainType.FullName}\""
+                                      + $" The value of the non-public property \"{FusionStorePropertyName}\" on type \"{appDomainType.FullName}\""
                                       + $" in assembly \"{appDomainType.Assembly?.FullName}\" was retrieved, but found to be null.");
                     return;
                 }
@@ -668,7 +668,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                 {
                     LogDebugOrWriteLine(canUseLog,
                                         $"Cannot clean up {ThisCleanupMoniker}:"
-                                      + $" Did not find property \"{CheckedForTargetFrameworkNamePropertyName}\" on type \"{appDomainSetupType.FullName}\""
+                                      + $" Did not find non-public property \"{CheckedForTargetFrameworkNamePropertyName}\" on type \"{appDomainSetupType.FullName}\""
                                       + $" in assembly \"{appDomainType.Assembly?.FullName}\".");
                     return;
                 }
