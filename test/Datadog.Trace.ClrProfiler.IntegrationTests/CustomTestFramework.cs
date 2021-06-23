@@ -24,6 +24,28 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public CustomTestFramework(IMessageSink messageSink)
             : base(messageSink)
         {
+            var targetPath = GetProfilerTargetFolder();
+
+            if (targetPath != null)
+            {
+                var file = typeof(Instrumentation).Assembly.Location;
+                var destination = Path.Combine(targetPath, Path.GetFileName(file));
+                File.Copy(file, destination, true);
+
+                messageSink.OnMessage(new DiagnosticMessage("Replaced {0} with {1} to setup code coverage", destination, file));
+
+                return;
+            }
+
+            var message = "Could not find the target framework directory";
+
+            messageSink.OnMessage(new DiagnosticMessage(message));
+
+            throw new DirectoryNotFoundException(message);
+        }
+
+        internal static string GetProfilerTargetFolder()
+        {
             var targetFrameworkDirectory = GetTargetFrameworkDirectory();
 
             var paths = EnvironmentHelper.GetProfilerPathCandidates(null).ToArray();
@@ -35,21 +57,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 if (Directory.Exists(finalDirectory))
                 {
-                    var file = typeof(Datadog.Trace.ClrProfiler.Instrumentation).Assembly.Location;
-                    var destination = Path.Combine(finalDirectory, Path.GetFileName(file));
-                    File.Copy(file, destination, true);
-
-                    messageSink.OnMessage(new DiagnosticMessage("Replaced {0} with {1} to setup code coverage", destination, file));
-
-                    return;
+                    return finalDirectory;
                 }
             }
 
-            var message = $"Could not find the {targetFrameworkDirectory} folder. Tried: {string.Join("; ", paths)}";
-
-            messageSink.OnMessage(new DiagnosticMessage(message));
-
-            throw new DirectoryNotFoundException(message);
+            return null;
         }
 
         protected override ITestFrameworkExecutor CreateExecutor(AssemblyName assemblyName)

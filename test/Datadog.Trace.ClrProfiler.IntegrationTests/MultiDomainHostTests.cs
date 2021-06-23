@@ -18,11 +18,14 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class MultiDomainHostTests : TestHelper
+    public class MultiDomainHostTests : TestHelper, IClassFixture<GacFixture>
     {
-        public MultiDomainHostTests(ITestOutputHelper output)
+        private readonly GacFixture _gacFixture;
+
+        public MultiDomainHostTests(GacFixture gacFixture, ITestOutputHelper output)
             : base("MultiDomainHost.Runner", output)
         {
+            _gacFixture = gacFixture;
             SetServiceVersion("1.0.0");
         }
 
@@ -71,20 +74,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("LoadFromGAC", "True")]
         public void WorksInsideTheGAC(string targetFramework)
         {
-            Assert.True(typeof(Instrumentation).Assembly.GlobalAssemblyCache, "Datadog.Trace.ClrProfiler.Managed was not loaded from the GAC. Ensure that the assembly and its dependencies are installed in the GAC when running this test.");
+            _gacFixture.AddAssembliesToGac();
 
-            var expectedMap = new Dictionary<string, int>()
+            try
             {
-                { "Samples.MultiDomainHost.App.FrameworkHttpNoRedirects-http-client", 2 },
-                { "Samples.MultiDomainHost.App.NuGetHttpNoRedirects-http-client", 2 },
-                { "Samples.MultiDomainHost.App.NuGetJsonWithRedirects-http-client", 2 },
-            };
-            if (!targetFramework.StartsWith("net45"))
-            {
-                expectedMap.Add("Samples.MultiDomainHost.App.NuGetHttpWithRedirects-http-client", 2);
+                var expectedMap = new Dictionary<string, int>()
+                {
+                    { "Samples.MultiDomainHost.App.FrameworkHttpNoRedirects-http-client", 2 },
+                    { "Samples.MultiDomainHost.App.NuGetHttpNoRedirects-http-client", 2 },
+                    { "Samples.MultiDomainHost.App.NuGetJsonWithRedirects-http-client", 2 },
+                };
+                if (!targetFramework.StartsWith("net45"))
+                {
+                    expectedMap.Add("Samples.MultiDomainHost.App.NuGetHttpWithRedirects-http-client", 2);
+                }
+
+                RunSampleAndAssertAgainstExpectations(targetFramework, expectedMap);
             }
-
-            RunSampleAndAssertAgainstExpectations(targetFramework, expectedMap);
+            finally
+            {
+                _gacFixture.RemoveAssembliesFromGac();
+            }
         }
 
         [Theory]
