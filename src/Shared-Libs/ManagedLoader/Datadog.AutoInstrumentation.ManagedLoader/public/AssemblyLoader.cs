@@ -599,7 +599,8 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
 
         /// <summary>
         /// Clears the AppDomainSetup.TargetFrameworkName cache.
-        /// The logger used by this loader loader uses the Array.Sort(..) API when choosing the log file index.
+        /// The logger used by this loader uses the Array.Sort(..) API when choosing the log file index.
+
         /// The behavior of the sort API is Framework version dependent.
         ///
         /// To get the Framework version, it transitively uses the internal AppDomain.GetTargetFrameworkName() API.
