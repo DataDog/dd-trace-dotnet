@@ -16,6 +16,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     internal static class VerifyHelper
     {
+        public const string SnapshotDirectory = "Snapshots";
         private static readonly Regex LocalhostRegex = new(@"localhost\:\d+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex KeepRateRegex = new(@"_dd.tracer_kr: \d\.\d+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
@@ -35,7 +36,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static VerifySettings GetSpanVerifierSettings(params object[] parameters)
         {
             var settings = new VerifySettings();
-            settings.UseParameters(parameters);
+            settings.UseDirectory(SnapshotDirectory);
+            if (parameters.Length > 0)
+            {
+                settings.UseParameters(parameters);
+            }
+
             settings.ModifySerialization(_ =>
             {
                 _.IgnoreMember<MockTracerAgent.Span>(s => s.Duration);
