@@ -2,6 +2,8 @@ trigger:
   branches:
     include:
       - master
+      - release/*
+      - hotfix/*
       - refs/tags/*
     exclude:
       - refs/pull/*/head
@@ -17,6 +19,8 @@ schedules:
     branches:
       include:
         - master
+        - release/*
+        - hotfix/*
         - /benchmarks/*
     always: true
 
@@ -548,7 +552,7 @@ stages:
   dependsOn: build_windows
   jobs:
 
-  #### Windows 
+  #### Windows
 
   - job: Windows
     timeoutInMinutes: 100

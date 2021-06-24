@@ -22,11 +22,11 @@ stages:
 - stage: build
   jobs:
 
-  #### Windows 
+  #### Windows
 
   - job: Windows
     pool: Benchmarks
-    
+
     workspace:
       clean: all
 

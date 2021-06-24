@@ -3,7 +3,6 @@ pr: none
 
 jobs:
 
-
 - job: windows_profiler
   pool:
     vmImage: windows-2019
