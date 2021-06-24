@@ -8,17 +8,17 @@
     Type: web,
     ParentId: Id_3,
     Tags: {
+      aspnet.action: optionalidentifier,
+      aspnet.controller: home,
+      aspnet.route: {controller}/{action}/{id},
       env: integration_tests,
-      version: 1.0.0,
-      span.kind: server,
-      http.status_code: 200,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.status_code: 200,
       http.url: /home/optionalidentifier/badvalue,
       language: dotnet,
-      aspnet.route: {controller}/{action}/{id},
-      aspnet.controller: home,
-      aspnet.action: optionalidentifier
+      span.kind: server,
+      version: 1.0.0
     }
   },
   {
@@ -30,14 +30,14 @@
     Type: web,
     Tags: {
       env: integration_tests,
-      version: 1.0.0,
-      span.kind: server,
-      http.status_code: 200,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.status_code: 200,
       http.url: /home/optionalidentifier/badvalue,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
     },
     Metrics: {
       _sampling_priority_v1: 1.0,

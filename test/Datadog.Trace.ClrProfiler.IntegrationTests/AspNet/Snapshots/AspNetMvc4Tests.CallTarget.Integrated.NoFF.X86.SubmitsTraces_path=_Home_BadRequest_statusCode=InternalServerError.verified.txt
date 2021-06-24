@@ -8,6 +8,7 @@
     Type: web,
     Error: 1,
     Tags: {
+      env: integration_tests,
       error.msg: Oops, it broke.,
       error.stack: 
 System.Exception: Oops, it broke.
@@ -58,15 +59,14 @@ at System.Web.HttpApplication.CallHandlerExecutionStep.System.Web.HttpApplicatio
 at System.Web.HttpApplication.ExecuteStepImpl(IExecutionStep step)
 at System.Web.HttpApplication.ExecuteStep(IExecutionStep step, Boolean& completedSynchronously),
       error.type: System.Exception,
-      env: integration_tests,
-      version: 1.0.0,
-      span.kind: server,
-      http.status_code: 500,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.status_code: 500,
       http.url: /home/badrequest,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
     },
     Metrics: {
       _sampling_priority_v1: 1.0,
@@ -84,6 +84,10 @@ at System.Web.HttpApplication.ExecuteStep(IExecutionStep step, Boolean& complete
     ParentId: Id_2,
     Error: 1,
     Tags: {
+      aspnet.action: badrequest,
+      aspnet.controller: home,
+      aspnet.route: {controller}/{action}/{id},
+      env: integration_tests,
       error.msg: Oops, it broke.,
       error.stack: 
 System.Exception: Oops, it broke.
@@ -112,17 +116,13 @@ at System.Web.Mvc.Async.AsyncControllerActionInvoker.EndInvokeAction(IAsyncResul
 at EndInvokeAction(Object , Object )
 at Datadog.Trace.ClrProfiler.Integrations.AspNetMvcIntegration.EndInvokeAction(Object asyncControllerActionInvoker, Object asyncResult, Int32 opCode, Int32 mdToken, Int64 moduleVersionPtr),
       error.type: System.Exception,
-      env: integration_tests,
-      version: 1.0.0,
-      span.kind: server,
-      http.status_code: 500,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.status_code: 500,
       http.url: /home/badrequest,
       language: dotnet,
-      aspnet.route: {controller}/{action}/{id},
-      aspnet.controller: home,
-      aspnet.action: badrequest
+      span.kind: server,
+      version: 1.0.0
     }
   }
 ]

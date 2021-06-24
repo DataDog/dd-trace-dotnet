@@ -8,6 +8,7 @@
     Type: web,
     Error: 1,
     Tags: {
+      env: integration_tests,
       error.msg: 
 The parameters dictionary contains a null entry for parameter 'id' of non-nullable type 'System.Int32' for method 'System.Web.Mvc.ActionResult Get(Int32)' in 'Samples.AspNetMvc5.Controllers.HomeController'. An optional parameter must be a reference type, a nullable type, or be declared as an optional parameter.
 Parameter name: parameters,
@@ -50,15 +51,14 @@ at System.Web.HttpApplication.CallHandlerExecutionStep.System.Web.HttpApplicatio
 at System.Web.HttpApplication.ExecuteStepImpl(IExecutionStep step)
 at System.Web.HttpApplication.ExecuteStep(IExecutionStep step, Boolean& completedSynchronously),
       error.type: System.ArgumentException,
-      env: integration_tests,
-      version: 1.0.0,
-      span.kind: server,
-      http.status_code: 200,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.status_code: 200,
       http.url: /home/get,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
     },
     Metrics: {
       _sampling_priority_v1: 1.0,
@@ -76,6 +76,10 @@ at System.Web.HttpApplication.ExecuteStep(IExecutionStep step, Boolean& complete
     ParentId: Id_2,
     Error: 1,
     Tags: {
+      aspnet.action: get,
+      aspnet.controller: home,
+      aspnet.route: {controller}/{action}/{id},
+      env: integration_tests,
       error.msg: 
 The parameters dictionary contains a null entry for parameter 'id' of non-nullable type 'System.Int32' for method 'System.Web.Mvc.ActionResult Get(Int32)' in 'Samples.AspNetMvc5.Controllers.HomeController'. An optional parameter must be a reference type, a nullable type, or be declared as an optional parameter.
 Parameter name: parameters,
@@ -118,17 +122,13 @@ at System.Web.HttpApplication.CallHandlerExecutionStep.System.Web.HttpApplicatio
 at System.Web.HttpApplication.ExecuteStepImpl(IExecutionStep step)
 at System.Web.HttpApplication.ExecuteStep(IExecutionStep step, Boolean& completedSynchronously),
       error.type: System.ArgumentException,
-      env: integration_tests,
-      version: 1.0.0,
-      span.kind: server,
-      http.status_code: 200,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.status_code: 200,
       http.url: /home/get,
       language: dotnet,
-      aspnet.route: {controller}/{action}/{id},
-      aspnet.controller: home,
-      aspnet.action: get
+      span.kind: server,
+      version: 1.0.0
     }
   }
 ]

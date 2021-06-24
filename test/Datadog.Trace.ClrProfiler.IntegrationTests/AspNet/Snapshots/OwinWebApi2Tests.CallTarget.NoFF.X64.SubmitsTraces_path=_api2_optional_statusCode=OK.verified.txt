@@ -7,18 +7,18 @@
     Service: Samples.Owin.WebApi2,
     Type: web,
     Tags: {
+      aspnet.action: optional,
+      aspnet.controller: conventions,
+      aspnet.route: api2/{action}/{value},
       env: integration_tests,
-      version: 1.0.0,
-      span.kind: server,
-      http.status_code: 200,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.status_code: 200,
       http.url: http://localhost:00000/api2/optional,
       language: dotnet,
-      aspnet.route: api2/{action}/{value},
-      aspnet.controller: conventions,
-      aspnet.action: optional,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
     },
     Metrics: {
       _sampling_priority_v1: 1.0,

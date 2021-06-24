@@ -8,15 +8,15 @@
     Type: web,
     ParentId: Id_3,
     Tags: {
+      aspnet.route: api/statuscode/{value},
       env: integration_tests,
-      version: 1.0.0,
-      span.kind: server,
-      http.status_code: 201,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.status_code: 201,
       http.url: http://localhost:00000/api/statuscode/201,
       language: dotnet,
-      aspnet.route: api/statuscode/{value}
+      span.kind: server,
+      version: 1.0.0
     }
   },
   {
@@ -28,14 +28,14 @@
     Type: web,
     Tags: {
       env: integration_tests,
-      version: 1.0.0,
-      span.kind: server,
-      http.status_code: 201,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.status_code: 201,
       http.url: /api/statuscode/201,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
     },
     Metrics: {
       _sampling_priority_v1: 1.0,

@@ -8,6 +8,8 @@
     Type: web,
     Error: 1,
     Tags: {
+      aspnet.route: api/transient-failure/{value},
+      env: integration_tests,
       error.msg: Passed in value was not 'true': false,
       error.stack: 
 System.ArgumentException: Passed in value was not 'true': false
@@ -23,15 +25,13 @@ at System.Web.Http.Controllers.ActionFilterResult.<ExecuteAsync>d__5.MoveNext()
 at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
 at Datadog.Trace.ClrProfiler.Integrations.AspNetWebApi2Integration.<ExecuteAsyncInternal>d__9`1.MoveNext(),
       error.type: System.ArgumentException,
-      env: integration_tests,
-      version: 1.0.0,
-      span.kind: server,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.url: http://localhost:00000/api/transient-failure/false,
       language: dotnet,
-      aspnet.route: api/transient-failure/{value},
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
     },
     Metrics: {
       _sampling_priority_v1: 1.0,

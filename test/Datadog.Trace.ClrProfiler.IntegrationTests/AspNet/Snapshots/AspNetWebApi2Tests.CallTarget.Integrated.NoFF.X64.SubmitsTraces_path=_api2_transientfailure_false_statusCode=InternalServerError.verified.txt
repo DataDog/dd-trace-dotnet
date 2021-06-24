@@ -8,16 +8,16 @@
     Type: web,
     Error: 1,
     Tags: {
-      error.msg: The HTTP response has status code 500.,
       env: integration_tests,
-      version: 1.0.0,
-      span.kind: server,
-      http.status_code: 500,
+      error.msg: The HTTP response has status code 500.,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.status_code: 500,
       http.url: /api2/transientfailure/false,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
     },
     Metrics: {
       _sampling_priority_v1: 1.0,
@@ -35,6 +35,10 @@
     ParentId: Id_2,
     Error: 1,
     Tags: {
+      aspnet.action: transientfailure,
+      aspnet.controller: conventions,
+      aspnet.route: api2/{action}/{value},
+      env: integration_tests,
       error.msg: Passed in value was not 'true': false,
       error.stack: 
 System.ArgumentException: Passed in value was not 'true': false
@@ -49,17 +53,13 @@ at System.Web.Http.Controllers.ActionFilterResult.<ExecuteAsync>d__2.MoveNext()
 at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
 at Datadog.Trace.ClrProfiler.Integrations.AspNetWebApi2Integration.<ExecuteAsyncInternal>d__9`1.MoveNext(),
       error.type: System.ArgumentException,
-      env: integration_tests,
-      version: 1.0.0,
-      span.kind: server,
-      http.status_code: 500,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.status_code: 500,
       http.url: http://localhost:00000/api2/transientfailure/false,
       language: dotnet,
-      aspnet.route: api2/{action}/{value},
-      aspnet.controller: conventions,
-      aspnet.action: transientfailure
+      span.kind: server,
+      version: 1.0.0
     }
   }
 ]

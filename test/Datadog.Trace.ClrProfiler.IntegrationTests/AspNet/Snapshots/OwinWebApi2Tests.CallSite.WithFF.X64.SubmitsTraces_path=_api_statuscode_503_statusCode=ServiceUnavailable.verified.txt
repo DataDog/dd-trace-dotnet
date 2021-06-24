@@ -8,17 +8,17 @@
     Type: web,
     Error: 1,
     Tags: {
-      error.msg: The HTTP response has status code 503.,
+      aspnet.route: api/statuscode/{value},
       env: integration_tests,
-      version: 1.0.0,
-      span.kind: server,
-      http.status_code: 503,
+      error.msg: The HTTP response has status code 503.,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.status_code: 503,
       http.url: http://localhost:00000/api/statuscode/503,
       language: dotnet,
-      aspnet.route: api/statuscode/{value},
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
     },
     Metrics: {
       _sampling_priority_v1: 1.0,
