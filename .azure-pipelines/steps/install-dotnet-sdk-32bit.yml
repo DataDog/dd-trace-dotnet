@@ -1,0 +1,30 @@
+parameters:
+  - name: sdkVersion
+    type: string
+    default: ''
+
+  - name: channel
+    type: string
+    default: ''
+
+steps:
+  - ${{if ne(parameters.sdkVersion, '') }}:
+    - powershell: |
+        echo "Downloading dotnet-install.ps1"
+        Invoke-WebRequest -Uri "https://dot.net/v1/dotnet-install.ps1" -OutFile dotnet-install.ps1
+        $path = "C:\Users\VssAdministrator\AppData\Local\Microsoft\dotnet_32"
+        echo "Installing dotnet (x86) to $path"
+        ./dotnet-install.ps1 -version ${{ parameters.sdkVersion }} -Architecture x86 -NoPath -InstallDir $path
+        echo "Exporting path to DOTNET_EXE_32"
+        echo "##vso[task.setvariable variable=DOTNET_EXE_32]$path\dotnet.exe"
+      displayName: install dotnet core sdk ${{ parameters.sdkVersion }} (x86)
+  - ${{if ne(parameters.channel, '') }}:
+    - powershell: |
+        echo "Downloading dotnet-install.ps1"
+        Invoke-WebRequest -Uri "https://dot.net/v1/dotnet-install.ps1" -OutFile dotnet-install.ps1
+        $path = "C:\Users\VssAdministrator\AppData\Local\Microsoft\dotnet_32"
+        echo "Installing dotnet (x86) to $path"
+        ./dotnet-install.ps1 -Channel ${{ parameters.channel }} -Architecture x86 -NoPath -InstallDir $path
+        echo "Exporting path to DOTNET_EXE_32"
+        echo "##vso[task.setvariable variable=DOTNET_EXE_32]$path\dotnet.exe"
+      displayName: install dotnet core sdk ${{ parameters.channel }} (x86)

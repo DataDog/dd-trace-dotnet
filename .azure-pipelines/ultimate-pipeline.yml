@@ -312,6 +312,8 @@ stages:
 
     steps:
     - template: steps/install-dotnet-sdks.yml
+      parameters:
+        includeX86: true
     - template: steps/restore-working-directory.yml
 
     - powershell: |
@@ -353,6 +355,8 @@ stages:
     steps:
 
     - template: steps/install-dotnet-sdks.yml
+      parameters:
+        includeX86: true
     - template: steps/restore-working-directory.yml
 
     - task: DownloadPipelineArtifact@2
