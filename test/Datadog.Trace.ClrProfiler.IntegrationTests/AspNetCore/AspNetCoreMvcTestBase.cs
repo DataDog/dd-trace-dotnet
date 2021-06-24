@@ -65,6 +65,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             { "/status-code/500", 500 },
             { "/bad-request", 500 },
             { "/status-code/402", 402 },
+            { "/ping", 200 },
+            { "/branch/ping", 200 },
+            { "/branch/not-found", 404 },
         };
 
         protected string GetTestName(string testName)
