@@ -102,6 +102,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         return E_FAIL;
     }
 
+  // get ICorProfilerInfo6 for net46+
+  ICorProfilerInfo6* info6;
+  hr = cor_profiler_info_unknown->QueryInterface(__uuidof(ICorProfilerInfo6), (void**)&info6);
+
+  if (SUCCEEDED(hr)) {
+    Debug("Interface ICorProfilerInfo6 found.");
+    is_net46_or_greater = true;
+  }
+
     Info("Environment variables:");
     for (auto&& env_var : env_vars_to_display)
     {
@@ -147,7 +156,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         return E_FAIL;
     }
 
-    const auto is_calltarget_enabled = IsCallTargetEnabled();
+  const auto is_calltarget_enabled = IsCallTargetEnabled(is_net46_or_greater);
 
     // Initialize ReJIT handler and define the Rewriter Callback
     if (is_calltarget_enabled)
@@ -230,15 +239,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         instrument_domain_neutral_assemblies = true;
     }
 
-    // set event mask to subscribe to events and disable NGEN images
-    // get ICorProfilerInfo6 for net452+
-    ICorProfilerInfo6* info6;
-    hr = cor_profiler_info_unknown->QueryInterface(__uuidof(ICorProfilerInfo6), (void**) &info6);
 
-    if (SUCCEEDED(hr))
-    {
-        Debug("Interface ICorProfilerInfo6 found.");
-        is_net46_or_greater = true;
+  // set event mask to subscribe to events and disable NGEN images
+  if (is_net46_or_greater) 
+  {
         hr = info6->SetEventMask2(event_mask, COR_PRF_HIGH_ADD_ASSEMBLY_REFERENCES);
 
         if (instrument_domain_neutral_assemblies)
@@ -504,9 +508,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         }
     }
 
-    std::vector<IntegrationMethod> filtered_integrations =
-        IsCallTargetEnabled() ? integration_methods_
-                              : FilterIntegrationsByCaller(integration_methods_, module_info.assembly);
+  std::vector<IntegrationMethod> filtered_integrations = IsCallTargetEnabled(is_net46_or_greater) ?
+      integration_methods_ : FilterIntegrationsByCaller(integration_methods_, module_info.assembly);
 
     if (filtered_integrations.empty())
     {
@@ -535,7 +538,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
     // don't skip Dapper: it makes ADO.NET calls even though it doesn't reference
     // System.Data or System.Data.Common
     if (module_info.assembly.name != WStr("Microsoft.AspNetCore.Hosting") &&
-        module_info.assembly.name != WStr("Dapper") && !IsCallTargetEnabled())
+        module_info.assembly.name != WStr("Dapper") && !IsCallTargetEnabled(is_net46_or_greater))
     {
         filtered_integrations = FilterIntegrationsByTarget(filtered_integrations, assembly_import);
 
@@ -575,7 +578,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
           module_info.assembly.app_domain_id, " ", module_info.assembly.app_domain_name);
 
     // We call the function to analyze the module and request the ReJIT of integrations defined in this module.
-    if (IsCallTargetEnabled())
+    if (IsCallTargetEnabled(is_net46_or_greater))
     {
         CallTarget_RequestRejitForModule(module_id, module_metadata, filtered_integrations);
     }
@@ -725,11 +728,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
         return S_OK;
     }
 
-    // We check if we are in CallTarget mode and the loader was already injected.
-    const bool is_calltarget_enabled = IsCallTargetEnabled();
-    const bool has_loader_injected_in_appdomain =
-        first_jit_compilation_app_domains.find(module_metadata->app_domain_id) !=
-        first_jit_compilation_app_domains.end();
+  // We check if we are in CallTarget mode and the loader was already injected.
+  const bool is_calltarget_enabled = IsCallTargetEnabled(is_net46_or_greater);
+  const bool has_loader_injected_in_appdomain =
+      first_jit_compilation_app_domains.find(module_metadata->app_domain_id) !=
+      first_jit_compilation_app_domains.end();
 
     if (is_calltarget_enabled && has_loader_injected_in_appdomain)
     {

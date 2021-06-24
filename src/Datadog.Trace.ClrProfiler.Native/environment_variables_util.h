@@ -56,15 +56,14 @@ bool EnableInlining(bool defaultValue)
     ToBooleanWithDefault(GetEnvironmentValue(environment::clr_enable_inlining), defaultValue);
 }
 
-bool IsCallTargetEnabled()
-{
+bool IsCallTargetEnabled(bool defaultValue) {
 #if defined(ARM64) || defined(ARM)
     //
     // If the architecture is ARM64 or ARM, we enable CallTarget instrumentation by default
     //
     ToBooleanWithDefault(GetEnvironmentValue(environment::calltarget_enabled), true);
 #else
-    ToBooleanWithDefault(GetEnvironmentValue(environment::calltarget_enabled), false);
+  ToBooleanWithDefault(GetEnvironmentValue(environment::calltarget_enabled), defaultValue);
 #endif
 }
 
