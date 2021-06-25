@@ -30,18 +30,16 @@ extern "C"
             return E_FAIL;
         }
 
-        auto ret = instance->DllGetClassObject(riid, ppv);
-        Debug("   Return: ", HexStr(ppv, sizeof(LPVOID)));
-        return ret;
+        instance->LoadClassFactory(riid);
 
-        /*auto factory = new ClassFactory;
+        auto factory = new ClassFactory;
 
         if (factory == NULL)
         {
             return E_FAIL;
         }
 
-        return factory->QueryInterface(riid, ppv);*/
+        return factory->QueryInterface(riid, ppv);
     }
 
     HRESULT STDMETHODCALLTYPE DllCanUnloadNow()
