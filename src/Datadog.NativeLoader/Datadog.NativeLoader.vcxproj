@@ -195,6 +195,8 @@
     <ClInclude Include="logging.h" />
     <ClInclude Include="miniutf.hpp" />
     <ClInclude Include="miniutfdata.h" />
+    <ClInclude Include="pal.h" />
+    <ClInclude Include="proxy.h" />
     <ClInclude Include="string.h" />
   </ItemGroup>
   <ItemGroup>
@@ -202,6 +204,7 @@
     <ClCompile Include="cor_profiler.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="miniutf.cpp" />
+    <ClCompile Include="pal.cpp" />
     <ClCompile Include="string.cpp" />
   </ItemGroup>
   <ItemGroup>

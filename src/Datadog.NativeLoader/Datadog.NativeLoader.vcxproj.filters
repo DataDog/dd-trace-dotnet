@@ -33,6 +33,12 @@
     <ClInclude Include="miniutfdata.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="pal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="proxy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -48,6 +54,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="miniutf.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pal.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

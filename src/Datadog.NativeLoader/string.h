@@ -27,4 +27,6 @@ std::string ToString(const WSTRING& wstr);
 WSTRING ToWSTRING(const std::string& str);
 WSTRING ToWSTRING(const uint64_t i);
 
+WSTRING HexStr(const void* data, int len);
+
 #endif // STRING_H_
