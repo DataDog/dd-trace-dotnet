@@ -10,13 +10,40 @@ extern "C"
 {
     BOOL STDMETHODCALLTYPE DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
     {
-        Debug("DllMain");
+        // Perform actions based on the reason for calling.
+        switch (ul_reason_for_call)
+        {
+            case DLL_PROCESS_ATTACH:
+                // Initialize once for each new process.
+                // Return FALSE to fail DLL load.
 
-        instance = new DynamicInstance(
-            "C:\\github\\dd-trace-dotnet\\src\\bin\\windows-tracer-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll",
-            {0x846f5f1c, 0xf9ae, 0x4b07, {0x96, 0x9e, 0x5, 0xc2, 0x6b, 0xc0, 0x60, 0xd8}});
+                Debug("DllMain - DLL_PROCESS_ATTACH");
 
-        return TRUE;
+                instance =
+                    new DynamicInstance("C:\\github\\dd-trace-dotnet\\src\\bin\\windows-tracer-home\\win-x64\\Datadog."
+                                        "Trace.ClrProfiler.Native.dll",
+                                        {0x846f5f1c, 0xf9ae, 0x4b07, {0x96, 0x9e, 0x5, 0xc2, 0x6b, 0xc0, 0x60, 0xd8}});
+                break;
+
+            case DLL_THREAD_ATTACH:
+                // Do thread-specific initialization.
+                Debug("DllMain - DLL_THREAD_ATTACH");
+
+                break;
+
+            case DLL_THREAD_DETACH:
+                // Do thread-specific cleanup.
+                Debug("DllMain - DLL_THREAD_DETACH");
+
+                break;
+
+            case DLL_PROCESS_DETACH:
+                // Perform any necessary cleanup.
+                Debug("DllMain - DLL_PROCESS_DETACH");
+
+                break;
+        }
+        return TRUE; // Successful DLL_PROCESS_ATTACH.
     }
 
     HRESULT STDMETHODCALLTYPE DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID* ppv)
@@ -37,13 +64,7 @@ extern "C"
             return E_FAIL;
         }
 
-        HRESULT res = factory->QueryInterface(riid, ppv);
-        if (SUCCEEDED(res))
-        {
-            instance->LoadClassFactory(riid);
-        }
-
-        return res;
+        return factory->QueryInterface(riid, ppv);
     }
 
     HRESULT STDMETHODCALLTYPE DllCanUnloadNow()

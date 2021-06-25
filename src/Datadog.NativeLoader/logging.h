@@ -4,8 +4,6 @@
 #include <iostream>
 #include <mutex>
 
-static std::mutex log_mutex_;
-
 template <typename Arg>
 std::string LogToString(Arg const& arg)
 {
@@ -23,20 +21,17 @@ std::string LogToString(Args const&... args)
 template <typename... Args>
 void Debug(const Args... args)
 {
-    std::lock_guard<std::mutex> guard(log_mutex_);
-    std::cout << "[DBG] : " << LogToString(args...) << std::endl;
+    // std::cout << "[DBG] : " << LogToString(args...) << std::endl;
 }
 
 template <typename... Args>
 void Info(const Args... args)
 {
-    std::lock_guard<std::mutex> guard(log_mutex_);
     std::cout << "[WRN] : " << LogToString(args...) << std::endl;
 }
 
 template <typename... Args>
 void Warn(const Args... args)
 {
-    std::lock_guard<std::mutex> guard(log_mutex_);
     std::cout << "[INF] : " << LogToString(args...) << std::endl;
 }

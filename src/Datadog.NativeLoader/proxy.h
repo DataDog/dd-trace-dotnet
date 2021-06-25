@@ -19,26 +19,11 @@ private:
     dllGetClassObjectPtr m_getClassObjectPtr;
     dllCanUnloadNow m_canUnloadNow;
     IClassFactory* m_classFactory;
-    LPVOID m_corProfilerCallback;
-
-    void EnsureInstance()
-    {
-        if (!m_loaded)
-        {
-            m_instance = datadog::nativeloader::LoadDynamicLibrary(m_filepath);
-        }
-    }
+    ICorProfilerCallback10* m_corProfilerCallback;
 
     HRESULT DllGetClassObject(REFIID riid, LPVOID* ppv)
     {
-        EnsureInstance();
-
-        if (m_getClassObjectPtr == nullptr)
-        {
-            m_getClassObjectPtr =
-                (dllGetClassObjectPtr) datadog::nativeloader::GetExternalFunction(m_instance, "DllGetClassObject");
-        }
-
+        m_getClassObjectPtr = (dllGetClassObjectPtr) datadog::nativeloader::GetExternalFunction(m_instance, "DllGetClassObject");
         return m_getClassObjectPtr(m_clsid, riid, ppv);
     }
 
@@ -50,6 +35,8 @@ public:
         m_loaded = false;
         m_getClassObjectPtr = nullptr;
         m_canUnloadNow = nullptr;
+
+        m_instance = datadog::nativeloader::LoadDynamicLibrary(m_filepath);
     }
 
     HRESULT LoadClassFactory(REFIID riid)
@@ -71,9 +58,10 @@ public:
 
     HRESULT LoadInstance(IUnknown* pUnkOuter, REFIID riid)
     {
-        Debug("Running LoadInstance");
+        Debug("Running LoadInstance: ");
+        Debug("m_clasFactory: ", HexStr(m_classFactory, sizeof(IClassFactory*)));
 
-        HRESULT res = m_classFactory->CreateInstance(pUnkOuter, riid, &m_corProfilerCallback);
+        HRESULT res = m_classFactory->CreateInstance(nullptr, __uuidof(ICorProfilerCallback10), (void**)&m_corProfilerCallback);
         if (FAILED(res))
         {
             m_corProfilerCallback = nullptr;
@@ -86,13 +74,12 @@ public:
 
     HRESULT STDMETHODCALLTYPE DllCanUnloadNow()
     {
-        EnsureInstance();
-
-        if (m_canUnloadNow == nullptr)
-        {
-            m_canUnloadNow = (dllCanUnloadNow) datadog::nativeloader::GetExternalFunction(m_instance, "DllCanUnloadNow");
-        }
-
+        m_canUnloadNow = (dllCanUnloadNow) datadog::nativeloader::GetExternalFunction(m_instance, "DllCanUnloadNow");
         return m_canUnloadNow();
+    }
+
+    ICorProfilerCallback10* GetProfilerCallback()
+    {
+        return  m_corProfilerCallback;
     }
 };

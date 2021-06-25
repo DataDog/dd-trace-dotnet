@@ -16,7 +16,7 @@
     <ExcludeLegacyRedisProject Remove="test/test-applications/regression/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj" />
     <CsharpTestHelperProject Include="test\**\*.TestHelpers.csproj"/>
     <CsharpToolsProject Include="tools\Datadog.Core.Tools\Datadog.Core.Tools.csproj"/>
-    <CppProject Include="src\**\*.vcxproj"/>
+    <CppProject Include="src\Datadog.Trace.ClrProfiler.Native\*.vcxproj"/>
     <CppTestProject Include="test\**\*.vcxproj"/>
     <SampleProject Include="test\test-applications\integrations\**\*.csproj" Exclude="test\test-applications\integrations\dependency-libs\**\*.csproj" />
     <VbSampleLibProject Include="test\test-applications\integrations\**\*.vbproj" />
