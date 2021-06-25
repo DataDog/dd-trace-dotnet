@@ -56,178 +56,178 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk)
     {
         Debug("CorProfiler::Initialize");
-        return S_OK;
+        return instance->GetProfilerCallback()->Initialize(pICorProfilerInfoUnk);
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
     {
         Debug("CorProfiler::Shutdown");
-        return S_OK;
+        return instance->GetProfilerCallback()->Shutdown();
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainCreationStarted(AppDomainID appDomainId)
     {
         Debug("CorProfiler::AppDomainCreationStarted");
-        return S_OK;
+        return instance->GetProfilerCallback()->AppDomainCreationStarted(appDomainId);
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainCreationFinished(AppDomainID appDomainId, HRESULT hrStatus)
     {
         Debug("CorProfiler::AppDomainCreationFinished");
-        return S_OK;
+        return instance->GetProfilerCallback()->AppDomainCreationFinished(appDomainId, hrStatus);
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainShutdownStarted(AppDomainID appDomainId)
     {
         Debug("CorProfiler::AppDomainShutdownStarted");
-        return S_OK;
+        return instance->GetProfilerCallback()->AppDomainShutdownStarted(appDomainId);
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainShutdownFinished(AppDomainID appDomainId, HRESULT hrStatus)
     {
         Debug("CorProfiler::AppDomainShutdownFinished");
-        return S_OK;
+        return instance->GetProfilerCallback()->AppDomainShutdownFinished(appDomainId, hrStatus);
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadStarted(AssemblyID assemblyId)
     {
         Debug("CorProfiler::AssemblyLoadStarted");
-        return S_OK;
+        return instance->GetProfilerCallback()->AssemblyLoadStarted(assemblyId);
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assemblyId, HRESULT hrStatus)
     {
         Debug("CorProfiler::AssemblyLoadFinished");
-        return S_OK;
+        return instance->GetProfilerCallback()->AssemblyLoadFinished(assemblyId, hrStatus);
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyUnloadStarted(AssemblyID assemblyId)
     {
         Debug("CorProfiler::AssemblyUnloadStarted");
-        return S_OK;
+        return instance->GetProfilerCallback()->AssemblyUnloadStarted(assemblyId);
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyUnloadFinished(AssemblyID assemblyId, HRESULT hrStatus)
     {
         Debug("CorProfiler::AssemblyUnloadFinished");
-        return S_OK;
+        return instance->GetProfilerCallback()->AssemblyUnloadFinished(assemblyId, hrStatus);
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadStarted(ModuleID moduleId)
     {
         Debug("CorProfiler::ModuleLoadStarted");
-        return S_OK;
+        return instance->GetProfilerCallback()->ModuleLoadStarted(moduleId);
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRESULT hrStatus)
     {
         Debug("CorProfiler::ModuleLoadFinished");
-        return S_OK;
+        return instance->GetProfilerCallback()->ModuleLoadFinished(moduleId, hrStatus);
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID moduleId)
     {
         Debug("CorProfiler::ModuleUnloadStarted");
-        return S_OK;
+        return instance->GetProfilerCallback()->ModuleUnloadStarted(moduleId);
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadFinished(ModuleID moduleId, HRESULT hrStatus)
     {
         Debug("CorProfiler::ModuleUnloadFinished");
-        return S_OK;
+        return instance->GetProfilerCallback()->ModuleUnloadFinished(moduleId, hrStatus);
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ModuleAttachedToAssembly(ModuleID moduleId, AssemblyID AssemblyId)
     {
         Debug("CorProfiler::ModuleAttachedToAssembly");
-        return S_OK;
+        return instance->GetProfilerCallback()->ModuleAttachedToAssembly(moduleId, AssemblyId);
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ClassLoadStarted(ClassID classId)
     {
         Debug("CorProfiler::ClassLoadStarted");
-        return S_OK;
+        return instance->GetProfilerCallback()->ClassLoadStarted(classId);
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ClassLoadFinished(ClassID classId, HRESULT hrStatus)
     {
         Debug("CorProfiler::ClassLoadFinished");
-        return S_OK;
+        return instance->GetProfilerCallback()->ClassLoadFinished(classId, hrStatus);
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ClassUnloadStarted(ClassID classId)
     {
         Debug("CorProfiler::ClassUnloadStarted");
-        return S_OK;
+        return instance->GetProfilerCallback()->ClassUnloadStarted(classId);
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ClassUnloadFinished(ClassID classId, HRESULT hrStatus)
     {
         Debug("CorProfiler::ClassUnloadFinished");
-        return S_OK;
+        return instance->GetProfilerCallback()->ClassUnloadFinished(classId, hrStatus);
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::FunctionUnloadStarted(FunctionID functionId)
     {
         Debug("CorProfiler::FunctionUnloadStarted");
-        return S_OK;
+        return instance->GetProfilerCallback()->FunctionUnloadStarted(functionId);
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID functionId, BOOL fIsSafeToBlock)
     {
         Debug("CorProfiler::JITCompilationStarted");
-        return S_OK;
+        return instance->GetProfilerCallback()->JITCompilationStarted(functionId, fIsSafeToBlock);
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationFinished(FunctionID functionId, HRESULT hrStatus,
                                                                   BOOL fIsSafeToBlock)
     {
         Debug("CorProfiler::JITCompilationFinished");
-        return S_OK;
+        return instance->GetProfilerCallback()->JITCompilationFinished(functionId, hrStatus, fIsSafeToBlock);
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID functionId,
                                                                           BOOL* pbUseCachedFunction)
     {
         Debug("CorProfiler::JITCachedFunctionSearchStarted");
-        return S_OK;
+        return instance->GetProfilerCallback()->JITCachedFunctionSearchStarted(functionId, pbUseCachedFunction);
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchFinished(FunctionID functionId,
                                                                            COR_PRF_JIT_CACHE result)
     {
         Debug("CorProfiler::JITCachedFunctionSearchFinished");
-        return S_OK;
+        return instance->GetProfilerCallback()->JITCachedFunctionSearchFinished(functionId, result);
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::JITFunctionPitched(FunctionID functionId)
     {
         Debug("CorProfiler::JITFunctionPitched");
-        return S_OK;
+        return instance->GetProfilerCallback()->JITFunctionPitched(functionId);
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId, FunctionID calleeId, BOOL* pfShouldInline)
     {
         Debug("CorProfiler::JITInlining");
-        return S_OK;
+        return instance->GetProfilerCallback()->JITInlining(callerId, calleeId, pfShouldInline);
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ThreadCreated(ThreadID threadId)
     {
         Debug("CorProfiler::ThreadCreated");
-        return S_OK;
+        return instance->GetProfilerCallback()->ThreadCreated(threadId);
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ThreadDestroyed(ThreadID threadId)
     {
         Debug("CorProfiler::ThreadDestroyed");
-        return S_OK;
+        return instance->GetProfilerCallback()->ThreadDestroyed(threadId);
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ThreadAssignedToOSThread(ThreadID managedThreadId, DWORD osThreadId)
     {
         Debug("CorProfiler::ThreadAssignedToOSThread");
-        return S_OK;
+        return instance->GetProfilerCallback()->ThreadAssignedToOSThread(managedThreadId, osThreadId);
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RemotingClientInvocationStarted()
@@ -535,47 +535,47 @@ namespace nativeloader
                                                                UINT cbClientData)
     {
         Debug("CorProfiler::InitializeForAttach");
-        return S_OK;
+        return instance->GetProfilerCallback()->InitializeForAttach(pCorProfilerInfoUnk, pvClientData, cbClientData);
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ProfilerAttachComplete()
     {
         Debug("CorProfiler::ProfilerAttachComplete");
-        return S_OK;
+        return instance->GetProfilerCallback()->ProfilerAttachComplete();
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ProfilerDetachSucceeded()
     {
         Debug("CorProfiler::ProfilerDetachSucceeded");
-        return S_OK;
+        return instance->GetProfilerCallback()->ProfilerDetachSucceeded();
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ReJITCompilationStarted(FunctionID functionId, ReJITID rejitId,
                                                                    BOOL fIsSafeToBlock)
     {
         Debug("CorProfiler::ReJITCompilationStarted");
-        return S_OK;
+        return instance->GetProfilerCallback()->ReJITCompilationStarted(functionId, rejitId, fIsSafeToBlock);
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::GetReJITParameters(ModuleID moduleId, mdMethodDef methodId,
                                                               ICorProfilerFunctionControl* pFunctionControl)
     {
         Debug("CorProfiler::GetReJITParameters");
-        return S_OK;
+        return instance->GetProfilerCallback()->GetReJITParameters(moduleId, methodId, pFunctionControl);
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ReJITCompilationFinished(FunctionID functionId, ReJITID rejitId,
                                                                     HRESULT hrStatus, BOOL fIsSafeToBlock)
     {
         Debug("CorProfiler::ReJITCompilationFinished");
-        return S_OK;
+        return instance->GetProfilerCallback()->ReJITCompilationFinished(functionId, rejitId, hrStatus, fIsSafeToBlock);
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ReJITError(ModuleID moduleId, mdMethodDef methodId, FunctionID functionId,
                                                       HRESULT hrStatus)
     {
         Debug("CorProfiler::ReJITError");
-        return S_OK;
+        return instance->GetProfilerCallback()->ReJITError(moduleId, methodId, functionId, hrStatus);
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::MovedReferences2(ULONG cMovedObjectIDRanges,
