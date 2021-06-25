@@ -22,6 +22,7 @@ extern "C"
     HRESULT STDMETHODCALLTYPE DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID* ppv)
     {
         Debug("DllGetClassObject");
+
         // {50DA5EED-F1ED-B00B-1055-5AFE55A1ADE5}
         const GUID CLSID_CorProfiler = {0x50da5eed, 0xf1ed, 0xb00b, {0x10, 0x55, 0x5a, 0xfe, 0x55, 0xa1, 0xad, 0xe5}};
 
@@ -30,16 +31,19 @@ extern "C"
             return E_FAIL;
         }
 
-        instance->LoadClassFactory(riid);
-
-        auto factory = new ClassFactory;
-
+        auto factory = new ClassFactory(instance);
         if (factory == NULL)
         {
             return E_FAIL;
         }
 
-        return factory->QueryInterface(riid, ppv);
+        HRESULT res = factory->QueryInterface(riid, ppv);
+        if (SUCCEEDED(res))
+        {
+            instance->LoadClassFactory(riid);
+        }
+
+        return res;
     }
 
     HRESULT STDMETHODCALLTYPE DllCanUnloadNow()

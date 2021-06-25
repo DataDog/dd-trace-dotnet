@@ -4,6 +4,7 @@
 #include <atomic>
 #include <corhlpr.h>
 #include <corprof.h>
+#include "proxy.h"
 
 namespace datadog
 {
@@ -14,9 +15,10 @@ namespace nativeloader
     {
     private:
         std::atomic<int> ref_count_;
+        DynamicInstance* instance;
 
     public:
-        CorProfiler();
+        CorProfiler(DynamicInstance* instance);
         ~CorProfiler();
 
         HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override;

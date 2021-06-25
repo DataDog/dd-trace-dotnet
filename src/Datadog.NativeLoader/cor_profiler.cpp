@@ -7,7 +7,7 @@ namespace datadog
 namespace nativeloader
 {
 
-    CorProfiler::CorProfiler() : ref_count_(0)
+    CorProfiler::CorProfiler(DynamicInstance* instance) : ref_count_(0), instance(instance)
     {
         Debug("CorProfiler::.ctor");
     }
