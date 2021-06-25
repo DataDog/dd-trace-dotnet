@@ -8,6 +8,19 @@ parameters:
     default: ''
 
 steps:
+  - bash: |
+      if [ -n "$CHANNEL" ] && [ -n "$SDKVERSION" ]; then
+        echo "##vso[task.logissue type=error;]You can't provide both \"channel\" and \"sdkVersion\". Pick one."
+        echo "##vso[task.complete result=Failed;]"
+      elif [ -z "$CHANNEL" ] && [ -z "$SDKVERSION" ]; then
+        echo "##vso[task.logissue type=error;]You must provide either \"channel\" or \"sdkVersion\"."
+        echo "##vso[task.complete result=Failed;]"
+      fi
+    env:
+      CHANNEL: ${{ parameters.channel }}
+      SDKVERSION: ${{ parameters.sdkVersion }}
+    displayName: Validate parameters
+
   - ${{if ne(parameters.sdkVersion, '') }}:
     - powershell: |
         echo "Downloading dotnet-install.ps1"
