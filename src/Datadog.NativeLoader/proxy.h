@@ -4,7 +4,7 @@
 typedef HRESULT(STDMETHODCALLTYPE* dllGetClassObjectPtr)(REFCLSID, REFIID, LPVOID*);
 typedef HRESULT(STDMETHODCALLTYPE* dllCanUnloadNow)();
 
-class DllInstance
+class DynamicInstance
 {
 private:
     const IID IID_IUnknown = {0x00000000, 0x0000, 0x0000, {0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}};
@@ -24,7 +24,7 @@ private:
     }
 
 public:
-    DllInstance(std::string filePath, REFCLSID clsid)
+    DynamicInstance(std::string filePath, REFCLSID clsid)
     {
         m_filepath = filePath;
         m_clsid = clsid;
