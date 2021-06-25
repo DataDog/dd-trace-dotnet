@@ -392,6 +392,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.Analyze
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.Analyzers.Tests", "test\Datadog.Trace.Tools.Analyzers.Tests\Datadog.Trace.Tools.Analyzers.Tests.csproj", "{6BB875B5-9FA7-4FB4-9224-B0FA2245CE0B}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "shared", "shared", "{550362BF-A3A7-4F20-9590-24F4F8C380FF}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.NativeLoader", "src\Datadog.NativeLoader\Datadog.NativeLoader.vcxproj", "{48D12C26-6E63-419C-BFE2-E668E8550613}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		src\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems*{1f146d40-8b21-4630-8049-14fa4bbbb217}*SharedItemsImports = 5
@@ -1589,6 +1593,16 @@ Global
 		{6BB875B5-9FA7-4FB4-9224-B0FA2245CE0B}.Release|x64.Build.0 = Release|Any CPU
 		{6BB875B5-9FA7-4FB4-9224-B0FA2245CE0B}.Release|x86.ActiveCfg = Release|Any CPU
 		{6BB875B5-9FA7-4FB4-9224-B0FA2245CE0B}.Release|x86.Build.0 = Release|Any CPU
+		{48D12C26-6E63-419C-BFE2-E668E8550613}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{48D12C26-6E63-419C-BFE2-E668E8550613}.Debug|x64.ActiveCfg = Debug|x64
+		{48D12C26-6E63-419C-BFE2-E668E8550613}.Debug|x64.Build.0 = Debug|x64
+		{48D12C26-6E63-419C-BFE2-E668E8550613}.Debug|x86.ActiveCfg = Debug|Win32
+		{48D12C26-6E63-419C-BFE2-E668E8550613}.Debug|x86.Build.0 = Debug|Win32
+		{48D12C26-6E63-419C-BFE2-E668E8550613}.Release|Any CPU.ActiveCfg = Release|Win32
+		{48D12C26-6E63-419C-BFE2-E668E8550613}.Release|x64.ActiveCfg = Release|x64
+		{48D12C26-6E63-419C-BFE2-E668E8550613}.Release|x64.Build.0 = Release|x64
+		{48D12C26-6E63-419C-BFE2-E668E8550613}.Release|x86.ActiveCfg = Release|Win32
+		{48D12C26-6E63-419C-BFE2-E668E8550613}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1714,6 +1728,8 @@ Global
 		{BF1E5BA6-C0E5-4472-9D5D-2622231DD275} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{5450EA0B-56D3-4E29-932E-094AD037B345} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{6BB875B5-9FA7-4FB4-9224-B0FA2245CE0B} = {8CEC2042-F11C-49F5-A674-2355793B600A}
+		{550362BF-A3A7-4F20-9590-24F4F8C380FF} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
+		{48D12C26-6E63-419C-BFE2-E668E8550613} = {550362BF-A3A7-4F20-9590-24F4F8C380FF}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
