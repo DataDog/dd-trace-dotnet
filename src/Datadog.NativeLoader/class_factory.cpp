@@ -9,7 +9,7 @@
 const IID IID_IUnknown = {0x00000000, 0x0000, 0x0000, {0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}};
 const IID IID_IClassFactory = {0x00000001, 0x0000, 0x0000, {0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}};
 
-ClassFactory::ClassFactory() : refCount(0)
+ClassFactory::ClassFactory(DynamicInstance* instance) : refCount(0), instance(instance)
 {
     Debug("ClassFactory::.ctor");
 }
@@ -60,8 +60,15 @@ HRESULT STDMETHODCALLTYPE ClassFactory::CreateInstance(IUnknown* pUnkOuter, REFI
         return CLASS_E_NOAGGREGATION;
     }
 
-    auto profiler = new datadog::nativeloader::CorProfiler();
-    return profiler->QueryInterface(riid, ppvObject);
+    auto profiler = new datadog::nativeloader::CorProfiler(instance);
+    HRESULT res = profiler->QueryInterface(riid, ppvObject);
+    instance->LoadInstance(pUnkOuter, riid);
+
+    /*if (SUCCEEDED(res))
+    {
+    }*/
+
+    return res;
 }
 
 HRESULT STDMETHODCALLTYPE ClassFactory::LockServer(BOOL fLock)

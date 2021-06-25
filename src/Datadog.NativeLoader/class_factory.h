@@ -5,16 +5,18 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full
 // license information.
 
-#include "unknwn.h"
 #include <atomic>
+#include "unknwn.h"
+#include "proxy.h"
 
 class ClassFactory : public IClassFactory
 {
 private:
     std::atomic<int> refCount;
+    DynamicInstance* instance;
 
 public:
-    ClassFactory();
+    ClassFactory(DynamicInstance* instance);
     virtual ~ClassFactory();
     HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override;
     ULONG STDMETHODCALLTYPE AddRef(void) override;
