@@ -1,6 +1,8 @@
 #pragma once
 #include "pal.h"
 
+#include "logging.h"
+
 typedef HRESULT(STDMETHODCALLTYPE* dllGetClassObjectPtr)(REFCLSID, REFIID, LPVOID*);
 typedef HRESULT(STDMETHODCALLTYPE* dllCanUnloadNow)();
 
@@ -14,6 +16,7 @@ private:
     HINSTANCE m_instance;
     dllGetClassObjectPtr m_getClassObjectPtr;
     dllCanUnloadNow m_canUnloadNow;
+    IClassFactory* m_classFactory;
 
     void EnsureInstance()
     {
@@ -43,6 +46,15 @@ public:
         }
 
         return m_getClassObjectPtr(m_clsid, riid, ppv);
+    }
+
+    void LoadClassFactory(REFIID riid)
+    {
+        LPVOID ppv;
+        if (SUCCEEDED(DllGetClassObject(riid, &ppv)))
+        {
+            m_classFactory = (IClassFactory*) ppv;
+        }
     }
 
     HRESULT STDMETHODCALLTYPE DllCanUnloadNow()
