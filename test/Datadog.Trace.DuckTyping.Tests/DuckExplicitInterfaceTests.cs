@@ -32,6 +32,46 @@ namespace Datadog.Trace.DuckTyping.Tests
             proxy.Sum(1.0f, 1.0f).Should().Be(2.0f);
         }
 
+        [Fact]
+        public void NormalGenericInstanceTest()
+        {
+            var targetObject = new TargetObject<object>();
+            var proxy = targetObject.DuckCast<IProxyDefinition>();
+
+            proxy.SayHi().Should().Be("Hello World");
+            proxy.SayHiWithWildcard().Should().Be("Hello World (*)");
+        }
+
+        [Fact]
+        public void GenericWithGenericInstanceTest()
+        {
+            var targetObject = new TargetGenericObject<object>();
+            var proxy = targetObject.DuckCast<IGenericProxyDefinition>();
+
+            proxy.Sum(1, 1).Should().Be(2);
+            proxy.Sum(1.0f, 1.0f).Should().Be(2.0f);
+        }
+
+        [Fact]
+        public void NormalGenericPrivateInstanceTest()
+        {
+            var targetObject = new TargetObject<PrivateObject>();
+            var proxy = targetObject.DuckCast<IProxyDefinition>();
+
+            proxy.SayHi().Should().Be("Hello World");
+            proxy.SayHiWithWildcard().Should().Be("Hello World (*)");
+        }
+
+        [Fact]
+        public void GenericWithGenericPrivateInstanceTest()
+        {
+            var targetObject = new TargetGenericObject<PrivateObject>();
+            var proxy = targetObject.DuckCast<IGenericProxyDefinition>();
+
+            proxy.Sum(1, 1).Should().Be(2);
+            proxy.Sum(1.0f, 1.0f).Should().Be(2.0f);
+        }
+
         public class TargetObject : ITarget
         {
             string ITarget.SayHi()
@@ -62,6 +102,36 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        public class TargetObject<TInstance> : ITarget<TInstance>
+        {
+            string ITarget.SayHi()
+            {
+                return "Hello World";
+            }
+
+            string ITarget.SayHiWithWildcard()
+            {
+                return "Hello World (*)";
+            }
+        }
+
+        public class TargetGenericObject<TInstance> : IGenericTarget<TInstance>
+        {
+            T IGenericTarget.Sum<T>(T a, T b)
+            {
+                if (a is int aInt && b is int bInt)
+                {
+                    return (T)(object)(aInt + bInt);
+                }
+                else if (a is float aFloat && b is float bFloat)
+                {
+                    return (T)(object)(aFloat + bFloat);
+                }
+
+                return default;
+            }
+        }
+
         public interface ITarget
         {
             string SayHi();
@@ -69,9 +139,17 @@ namespace Datadog.Trace.DuckTyping.Tests
             string SayHiWithWildcard();
         }
 
+        public interface ITarget<out TCategoryName> : ITarget
+        {
+        }
+
         public interface IGenericTarget
         {
             T Sum<T>(T a, T b);
+        }
+
+        public interface IGenericTarget<out TCategoryName> : IGenericTarget
+        {
         }
 
         public interface IProxyDefinition
@@ -87,6 +165,10 @@ namespace Datadog.Trace.DuckTyping.Tests
         {
             [Duck(ExplicitInterfaceTypeName = "*")]
             T Sum<T>(T a, T b);
+        }
+
+        private class PrivateObject
+        {
         }
     }
 }

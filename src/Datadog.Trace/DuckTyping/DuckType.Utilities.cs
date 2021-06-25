@@ -48,18 +48,44 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="type">Type to gain internals visibility</param>
         private static void EnsureTypeVisibility(ModuleBuilder builder, Type type)
         {
-            string name = type.Assembly.GetName().Name;
-            lock (_ignoresAccessChecksToAssembliesSetDictionary)
+            EnsureAssemblyNameVisibility(builder, type.Assembly.GetName().Name);
+
+            if (type.IsGenericType && !type.IsGenericTypeDefinition)
             {
-                if (!_ignoresAccessChecksToAssembliesSetDictionary.TryGetValue(builder, out var hashSet))
+                foreach (Type t in type.GetGenericArguments())
                 {
-                    hashSet = new HashSet<string>();
-                    _ignoresAccessChecksToAssembliesSetDictionary[builder] = hashSet;
+                    if (!t.IsVisible)
+                    {
+                        EnsureAssemblyNameVisibility(builder, t.Assembly.GetName().Name);
+                    }
+                }
+            }
+
+            while (type.IsNested)
+            {
+                if (!type.IsNestedPublic)
+                {
+                    EnsureAssemblyNameVisibility(builder, type.Assembly.GetName().Name);
                 }
 
-                if (hashSet.Add(name))
+                // this should be null for non-nested types.
+                type = type.DeclaringType;
+            }
+
+            static void EnsureAssemblyNameVisibility(ModuleBuilder builder, string assemblyName)
+            {
+                lock (_ignoresAccessChecksToAssembliesSetDictionary)
                 {
-                    ((AssemblyBuilder)builder.Assembly).SetCustomAttribute(new CustomAttributeBuilder(_ignoresAccessChecksToAttributeCtor, new object[] { name }));
+                    if (!_ignoresAccessChecksToAssembliesSetDictionary.TryGetValue(builder, out var hashSet))
+                    {
+                        hashSet = new HashSet<string>();
+                        _ignoresAccessChecksToAssembliesSetDictionary[builder] = hashSet;
+                    }
+
+                    if (hashSet.Add(assemblyName))
+                    {
+                        ((AssemblyBuilder)builder.Assembly).SetCustomAttribute(new CustomAttributeBuilder(_ignoresAccessChecksToAttributeCtor, new object[] { assemblyName }));
+                    }
                 }
             }
         }
