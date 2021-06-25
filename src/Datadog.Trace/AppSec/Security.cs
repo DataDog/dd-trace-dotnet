@@ -37,14 +37,16 @@ namespace Datadog.Trace.AppSec
 
         internal Security(InstrumentationGateway instrumentationGateway = null, IPowerWaf powerWaf = null)
         {
-            _instrumentationGateway = instrumentationGateway ?? new InstrumentationGateway();
-
-            _powerWaf = powerWaf ?? new PowerWaf();
-
-            _instrumentationGateway.InstrumentationGetwayEvent += InstrumentationGateway_InstrumentationGetwayEvent;
-
             var found = bool.TryParse(Environment.GetEnvironmentVariable("DD_ENABLE_SECURITY"), out var enabled);
             Enabled = found && enabled;
+
+            Log.Information($"Security.Enabled: {Enabled} ");
+
+            _instrumentationGateway = instrumentationGateway ?? new InstrumentationGateway();
+
+            _powerWaf = powerWaf ?? (Enabled ? new PowerWaf() : new NullPowerWaf());
+
+            _instrumentationGateway.InstrumentationGetwayEvent += InstrumentationGateway_InstrumentationGetwayEvent;
         }
 
         /// <summary>
@@ -82,7 +84,7 @@ namespace Datadog.Trace.AppSec
         /// </summary>
         public void Dispose()
         {
-            _powerWaf.Dispose();
+            _powerWaf?.Dispose();
         }
 
         private void RunWafAndReact(IDictionary<string, object> args, ITransport transport)
