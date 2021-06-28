@@ -12,7 +12,7 @@
     <BaseOutputPath Condition="'$(ApiVersion)'==''">$(SolutionDir)bin\bin\test\$(MSBuildProjectName)</BaseOutputPath>
     <BaseIntermediateOutputPath Condition="'$(ApiVersion)'==''">$(SolutionDir)bin\obj\test\$(MSBuildProjectName)</BaseIntermediateOutputPath>
 
-    <BaseOutputPath Condition="'$(ApiVersion)'=!=''">$(SolutionDir)bin\bin\test\$(MSBuildProjectName)\$(ApiVersion)</BaseOutputPath>
+    <BaseOutputPath Condition="'$(ApiVersion)'!=''">$(SolutionDir)bin\bin\test\$(MSBuildProjectName)\$(ApiVersion)</BaseOutputPath>
     <BaseIntermediateOutputPath Condition="'$(ApiVersion)'!=''">$(SolutionDir)bin\obj\test\$(MSBuildProjectName)\$(ApiVersion)</BaseIntermediateOutputPath>
 
     <IsPackable>false</IsPackable>
