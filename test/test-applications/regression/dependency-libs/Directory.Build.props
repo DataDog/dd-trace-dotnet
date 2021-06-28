@@ -8,7 +8,7 @@
 
   <!--  Move bin and obj folders to root -->
   <PropertyGroup>
-    <BaseOutputPath>$(MSBuildThisFileDirectory)..\..\..\..\bin\bin\test\test-applications\regression\dependency-libs\$(MSBuildProjectName)</BaseOutputPath>
-    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)..\..\..\..\bin\obj\test\test-applications\regression\dependency-libs\$(MSBuildProjectName)</BaseIntermediateOutputPath>
+    <BaseOutputPath>$(SolutionDir)bin\bin\test\test-applications\regression\dependency-libs\$(MSBuildProjectName)</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(SolutionDir)bin\obj\test\test-applications\regression\dependency-libs\$(MSBuildProjectName)</BaseIntermediateOutputPath>
   </PropertyGroup>
 </Project>

@@ -23,8 +23,8 @@
 
   <!--  Move bin and obj folders to parent -->
   <PropertyGroup>
-    <BaseOutputPath>$(MSBuildThisFileDirectory)..\bin\bin\src\$(MSBuildProjectName)</BaseOutputPath>
-    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)..\bin\obj\src\$(MSBuildProjectName)</BaseIntermediateOutputPath>
+    <BaseOutputPath>$(SolutionDir)bin\bin\src\$(MSBuildProjectName)</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(SolutionDir)bin\obj\src\$(MSBuildProjectName)</BaseIntermediateOutputPath>
   </PropertyGroup>
 
   <ItemGroup>

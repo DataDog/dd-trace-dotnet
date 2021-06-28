@@ -8,8 +8,8 @@
 
   <!--  Move bin and obj folders to parent -->
   <PropertyGroup>
-    <BaseOutputPath>$(MSBuildThisFileDirectory)..\bin\bin\tools\$(MSBuildProjectName)</BaseOutputPath>
-    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)..\bin\obj\tools\$(MSBuildProjectName)</BaseIntermediateOutputPath>
+    <BaseOutputPath>$(SolutionDir)bin\bin\tools\$(MSBuildProjectName)</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(SolutionDir)bin\obj\tools\$(MSBuildProjectName)</BaseIntermediateOutputPath>
   </PropertyGroup>
 
   <!-- StyleCop -->
