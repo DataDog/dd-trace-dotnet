@@ -36,12 +36,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "net451" },
                 new object[] { "net452" },
                 new object[] { "net46" },
+#if !NET45 && !NET451 && !NET452 && !NET46
                 new object[] { "net461" },
                 new object[] { "net462" },
                 new object[] { "net47" },
                 new object[] { "net471" },
                 new object[] { "net472" },
                 new object[] { "net48" },
+#endif
             };
 
         [Theory]
