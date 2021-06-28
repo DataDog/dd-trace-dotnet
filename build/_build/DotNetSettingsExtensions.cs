@@ -128,4 +128,13 @@ internal static partial class DotNetSettingsExtensions
     {
         return settings.SetProperty("SolutionDir", $"{rootDirectory}\\");
     }
+
+    /// <summary>
+    /// Set the SolutionDir parameter explicitly. Necessary to correctly find bin/obj output folders
+    /// Required when the "base" directory.build.props file is not inherited.
+    /// </summary>
+    public static DotNetPublishSettings SetSolutionDir(this DotNetPublishSettings settings, AbsolutePath rootDirectory)
+    {
+        return settings.SetProperty("SolutionDir", $"{rootDirectory}\\");
+    }
 }

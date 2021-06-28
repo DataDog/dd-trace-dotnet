@@ -910,6 +910,7 @@ partial class Build
                     // .SetTargetPlatform(Platform)
                     .SetNoWarnDotNetCore3()
                     .SetProperty("ManagedProfilerOutputDirectory", TracerHomeDirectory)
+                    .SetSolutionDir(RootDirectory)
                     .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
                     .CombineWith(projectsToBuild, (c, project) => c
@@ -924,6 +925,7 @@ partial class Build
                     .SetFramework(Framework)
                     // .SetTargetPlatform(Platform)
                     .SetNoWarnDotNetCore3()
+                    .SetSolutionDir(RootDirectory)
                     .SetProperty("ManagedProfilerOutputDirectory", TracerHomeDirectory)
                     .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
@@ -952,6 +954,7 @@ partial class Build
                 .SetTargetPath(MsBuildProject)
                 .SetConfiguration(BuildConfiguration)
                 .EnableNoDependencies()
+                .SetSolutionDir(RootDirectory)
                 .SetProperty("TargetFramework", Framework.ToString())
                 .SetProperty("ManagedProfilerOutputDirectory", TracerHomeDirectory)
                 .SetProperty("BuildInParallel", "true")
