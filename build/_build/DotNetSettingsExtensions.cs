@@ -109,4 +109,23 @@ internal static partial class DotNetSettingsExtensions
             .When(!string.IsNullOrEmpty(vsRoot),
                 c => c.SetProcessToolPath(Path.Combine(vsRoot, "MSBuild", "Current", "Bin", "MSBuild.exe")));
     }
+
+    /// <summary>
+    /// Set the SolutionDir parameter explicitly. Necessary to correctly find bin/obj output folders
+    /// Required when the "base" directory.build.props file is not inherited.
+    /// </summary>
+    public static T SetSolutionDir<T>(this T settings, AbsolutePath rootDirectory)
+        where T : MSBuildSettings
+    {
+        return settings.SetProperty("SolutionDir", $"{rootDirectory}\\");
+    }
+
+    /// <summary>
+    /// Set the SolutionDir parameter explicitly. Necessary to correctly find bin/obj output folders
+    /// Required when the "base" directory.build.props file is not inherited.
+    /// </summary>
+    public static DotNetBuildSettings SetSolutionDir(this DotNetBuildSettings settings, AbsolutePath rootDirectory)
+    {
+        return settings.SetProperty("SolutionDir", $"{rootDirectory}\\");
+    }
 }

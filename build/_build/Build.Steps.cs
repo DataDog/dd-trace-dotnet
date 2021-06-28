@@ -41,6 +41,7 @@ partial class Build
     AbsolutePath SourceDirectory => RootDirectory / "src";
     AbsolutePath TestsDirectory => RootDirectory / "test";
     AbsolutePath ToolsDirectory => RootDirectory / "tools";
+    AbsolutePath BinDirectory => OutputDirectory / "bin";
 
     string TempDirectory => IsWin ? Path.GetTempPath() : "/tmp/";
     string TracerLogDirectory => IsWin
@@ -221,6 +222,7 @@ partial class Build
                 .SetTargets("BuildCppTests")
                 .DisableRestore()
                 .SetMaxCpuCount(null)
+                .SetSolutionDir(RootDirectory)
                 .CombineWith(platforms, (m, platform) => m
                     .SetTargetPlatform(platform)));
         });
@@ -282,7 +284,7 @@ partial class Build
         {
             foreach (var architecture in ArchitecturesForPlatform)
             {
-                var source = NativeProfilerProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
+                var source = BinDirectory / "src" / NativeProfilerProject.Name / BuildConfiguration / architecture.ToString() /
                              $"{NativeProfilerProject.Name}.dll";
                 var dest = TracerHomeDirectory / $"win-{architecture}";
                 Logger.Info($"Copying '{source}' to '{dest}'");
@@ -382,7 +384,7 @@ partial class Build
 
 
     /// <summary>
-    /// This target is a bit of a hack, but means that we actually use the All CPU builds in intgration tests etc
+    /// This target is a bit of a hack, but means that we actually use the All CPU builds in integration tests etc
     /// </summary>
     Target CreatePlatformlessSymlinks => _ => _
         .Description("Copies the build output from 'All CPU' platforms to platform-specific folders")
@@ -393,11 +395,11 @@ partial class Build
         .Executes(() =>
         {
             // create junction for each directory
-            var directories = RootDirectory.GlobDirectories(
-                $"src/**/bin/{BuildConfiguration}",
-                $"tools/**/bin/{BuildConfiguration}",
-                $"test/Datadog.Trace.TestHelpers/**/bin/{BuildConfiguration}",
-                $"test/test-applications/integrations/dependency-libs/**/bin/{BuildConfiguration}"
+            var directories = BinDirectory.GlobDirectories(
+                $"src/**/{BuildConfiguration}",
+                $"tools/**/{BuildConfiguration}",
+                $"test/Datadog.Trace.TestHelpers/**/{BuildConfiguration}",
+                $"test/test-applications/integrations/dependency-libs/**/{BuildConfiguration}"
             );
 
             directories.ForEach(existingDir =>
@@ -540,7 +542,7 @@ partial class Build
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
-            var workingDirectory = TestsDirectory / "Datadog.Trace.ClrProfiler.Native.Tests" / "bin" / BuildConfiguration.ToString() / Platform.ToString();
+            var workingDirectory = BinDirectory / "test"  / "Datadog.Trace.ClrProfiler.Native.Tests" / BuildConfiguration.ToString() / Platform.ToString();
             var exePath = workingDirectory / "Datadog.Trace.ClrProfiler.Native.Tests.exe";
             var testExe = ToolResolver.GetLocalTool(exePath);
             testExe("--gtest_output=xml", workingDirectory: workingDirectory);
@@ -571,6 +573,7 @@ partial class Build
             DotNetMSBuild(x => x
                 .SetTargetPath(MsBuildProject)
                 .SetConfiguration(BuildConfiguration)
+                .SetSolutionDir(RootDirectory)
                 .SetTargetPlatformAnyCPU()
                 .DisableRestore()
                 .EnableNoDependencies()
@@ -589,7 +592,7 @@ partial class Build
 
             DotNetMSBuild(x => x
                 .SetTargetPath(MsBuildProject)
-                .SetTargetPlatformAnyCPU()
+                .SetSolutionDir(RootDirectory)
                 .DisableRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
@@ -613,6 +616,7 @@ partial class Build
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatform(Platform)
                 .SetNoWarnDotNetCore3()
+                .SetSolutionDir(RootDirectory)
                 .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
                     o.SetPackageDirectory(NugetPackageDirectory)));
 
@@ -631,6 +635,7 @@ partial class Build
                  .EnableNoDependencies()
                  .SetConfiguration(BuildConfiguration)
                  .SetTargetPlatform(Platform)
+                 .SetSolutionDir(RootDirectory)
                  .SetNoWarnDotNetCore3()
                  .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
                      o.SetPackageDirectory(NugetPackageDirectory))
@@ -655,6 +660,7 @@ partial class Build
                 .DisableRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
+                .SetSolutionDir(RootDirectory)
                 .SetTargetPlatform(Platform)
                 .SetTargets("BuildFrameworkReproductions")
                 .SetMaxCpuCount(null));
@@ -675,6 +681,7 @@ partial class Build
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatform(Platform)
+                .SetSolutionDir(RootDirectory)
                 .SetProperty("ManagedProfilerOutputDirectory", TracerHomeDirectory)
                 .SetTargets("BuildCsharpIntegrationTests")
                 .SetMaxCpuCount(null));
@@ -705,6 +712,7 @@ partial class Build
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatform(Platform)
                 .EnableNoDependencies()
+                .SetSolutionDir(RootDirectory)
                 .SetProperty("BuildInParallel", "false")
                 .SetProperty("ManagedProfilerOutputDirectory", TracerHomeDirectory)
                 .SetProperty("ExcludeManagedProfiler", true)
@@ -731,6 +739,7 @@ partial class Build
                 // .DisableRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
+                .SetSolutionDir(RootDirectory)
                 .SetProperty("DeployOnBuild", true)
                 .SetProperty("PublishProfile", publishProfile)
                 .SetMaxCpuCount(null)
