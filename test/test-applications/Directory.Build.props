@@ -9,8 +9,11 @@
     <PlatformTarget>$(Platform)</PlatformTarget>
     <LangVersion>latest</LangVersion>
 
-    <BaseIntermediateOutputPath Condition="'$(ApiVersion)'!=''">obj\$(ApiVersion)\</BaseIntermediateOutputPath>
-    <BaseOutputPath Condition="'$(ApiVersion)'!=''">bin\$(ApiVersion)\</BaseOutputPath>
+    <BaseOutputPath Condition="'$(ApiVersion)'==''">$(SolutionDir)bin\bin\test\$(MSBuildProjectName)</BaseOutputPath>
+    <BaseIntermediateOutputPath Condition="'$(ApiVersion)'==''">$(SolutionDir)bin\obj\test\$(MSBuildProjectName)</BaseIntermediateOutputPath>
+
+    <BaseOutputPath Condition="'$(ApiVersion)'=!=''">$(SolutionDir)bin\bin\test\$(MSBuildProjectName)\$(ApiVersion)</BaseOutputPath>
+    <BaseIntermediateOutputPath Condition="'$(ApiVersion)'!=''">$(SolutionDir)bin\obj\test\$(MSBuildProjectName)\$(ApiVersion)</BaseIntermediateOutputPath>
 
     <IsPackable>false</IsPackable>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
