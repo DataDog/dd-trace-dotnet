@@ -85,9 +85,11 @@ partial class Build : NukeBuild
                 // when deleting directories otherwise
                 DeleteReparsePoints(SourceDirectory);
                 DeleteReparsePoints(TestsDirectory);
+                DeleteReparsePoints(ToolsDirectory);
             }
             SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => DeleteDirectory(x));
             TestsDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => DeleteDirectory(x));
+            ToolsDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => DeleteDirectory(x));
             EnsureCleanDirectory(OutputDirectory);
             EnsureCleanDirectory(TracerHomeDirectory);
             EnsureCleanDirectory(DDTracerHomeDirectory);

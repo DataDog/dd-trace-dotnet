@@ -40,6 +40,7 @@ partial class Build
 
     AbsolutePath SourceDirectory => RootDirectory / "src";
     AbsolutePath TestsDirectory => RootDirectory / "test";
+    AbsolutePath ToolsDirectory => RootDirectory / "tools";
 
     string TempDirectory => IsWin ? Path.GetTempPath() : "/tmp/";
     string TracerLogDirectory => IsWin
