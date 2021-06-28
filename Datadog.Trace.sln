@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.28803.452
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31423.177
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.Trace.ClrProfiler.Native", "src\Datadog.Trace.ClrProfiler.Native\Datadog.Trace.ClrProfiler.Native.vcxproj", "{91B6272F-5780-4C94-8071-DBBA7B4F67F3}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -421,6 +421,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DuplicateTypeProxy", "test\
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		src\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems*{1f146d40-8b21-4630-8049-14fa4bbbb217}*SharedItemsImports = 5
+		src\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems*{3c493248-f1d1-4948-bba9-76beb5dfa9ff}*SharedItemsImports = 5
 		src\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems*{85f35aaf-d102-4960-8b41-3bd9cbd0e77f}*SharedItemsImports = 5
 		src\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems*{a1d7653a-c409-414a-b9b0-7879953ebcdd}*SharedItemsImports = 13
 		src\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems*{c00d8070-a38a-4267-9730-e9985cae77df}*SharedItemsImports = 5
