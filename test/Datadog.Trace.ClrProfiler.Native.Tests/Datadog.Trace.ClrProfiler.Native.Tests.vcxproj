@@ -46,20 +46,20 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>bin\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir>obj\$(Configuration)\$(Platform)\</IntDir>
+    <OutDir>..\..\bin\bin\test\Datadog.Trace.ClrProfiler.Native.Tests\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>..\..\bin\obj\test\Datadog.Trace.ClrProfiler.Native.Tests\$(Configuration)\$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>bin\$(Configuration)\x86\</OutDir>
-    <IntDir>obj\$(Configuration)\x86\</IntDir>
+    <OutDir>..\..\bin\bin\test\Datadog.Trace.ClrProfiler.Native.Tests\$(Configuration)\x86\</OutDir>
+    <IntDir>..\..\bin\obj\test\Datadog.Trace.ClrProfiler.Native.Tests\$(Configuration)\x86\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>bin\$(Configuration)\x86\</OutDir>
-    <IntDir>obj\$(Configuration)\x86\</IntDir>
+    <OutDir>..\..\bin\bin\test\Datadog.Trace.ClrProfiler.Native.Tests\$(Configuration)\x86\</OutDir>
+    <IntDir>..\..\bin\obj\test\Datadog.Trace.ClrProfiler.Native.Tests\$(Configuration)\x86\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>bin\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir>obj\$(Configuration)\$(Platform)\</IntDir>
+    <OutDir>..\..\bin\bin\test\Datadog.Trace.ClrProfiler.Native.Tests\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>..\..\bin\obj\test\Datadog.Trace.ClrProfiler.Native.Tests\$(Configuration)\$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup>
     <LocalDebuggerWorkingDirectory>$(OutDir)</LocalDebuggerWorkingDirectory>
