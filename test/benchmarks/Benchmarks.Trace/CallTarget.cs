@@ -28,14 +28,14 @@ namespace Benchmarks.Trace
                 {
                     state = CallTargetInvoker.BeginMethod<TIntegration, TTarget>(targetInstance);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     CallTargetInvoker.LogException<TIntegration, TTarget>(ex);
                     throw;
                 }
                 result = bodyCallback();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 exception = ex;
                 throw;
