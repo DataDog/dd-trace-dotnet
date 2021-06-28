@@ -17,7 +17,7 @@ namespace Samples.RuntimeMetrics
 
             new Thread(GenerateEvents) { IsBackground = true }.Start();
 
-            Thread.Sleep(20000);
+            Thread.Sleep(30000);
         }
 
         private static void GenerateEvents()
