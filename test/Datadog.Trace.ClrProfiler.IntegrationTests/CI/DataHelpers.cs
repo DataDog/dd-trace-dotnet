@@ -5,6 +5,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
@@ -17,23 +18,31 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         /// <returns>The path to the CI/Data directory</returns>
         public static string GetCiDataDirectory()
         {
-            static string BuildPath(string basePath) => Path.Combine(basePath, "CI", "Data");
-
-            var currentDirectory = Environment.CurrentDirectory;
-
-            while (!Directory.Exists(BuildPath(currentDirectory)))
+            var solutionFolder = TryGetSolutionDirectoryInfo(Environment.CurrentDirectory);
+            if (solutionFolder is null)
             {
-                var parent = Directory.GetParent(currentDirectory);
-                if (parent == null)
-                {
-                    // Walked all the way up
-                    throw new DirectoryNotFoundException($"CI/Data path not found: {BuildPath(Environment.CurrentDirectory)}");
-                }
-
-                currentDirectory = parent.FullName;
+                throw new DirectoryNotFoundException("Unable to find solution directory to locate CI/Data data");
             }
 
-            return BuildPath(currentDirectory);
+            var ciDataPath = Path.Combine(solutionFolder.FullName, "test", "Datadog.Trace.ClrProfiler.IntegrationTests", "CI", "Data");
+
+            if (!Directory.Exists(ciDataPath))
+            {
+                throw new DirectoryNotFoundException($"Unable to find CI/Data at {ciDataPath}");
+            }
+
+            return ciDataPath;
+
+            static DirectoryInfo TryGetSolutionDirectoryInfo(string currentPath)
+            {
+                var directory = new DirectoryInfo(currentPath);
+                while (directory is not null && !directory.GetFiles("*.sln").Any())
+                {
+                    directory = directory.Parent;
+                }
+
+                return directory;
+            }
         }
     }
 }
