@@ -9,7 +9,7 @@
     <!-- benchmarkdotnet only support numberic values, not "latest"-->
     <LangVersion>9</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-
+    
     <!-- Strong name signature -->
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\..\..\Datadog.Trace.snk</AssemblyOriginatorKeyFile>
