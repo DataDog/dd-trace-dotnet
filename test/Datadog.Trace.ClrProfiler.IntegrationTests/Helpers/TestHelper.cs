@@ -47,6 +47,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Output.WriteLine($"TargetFramework: {EnvironmentHelper.GetTargetFramework()}");
             Output.WriteLine($".NET Core: {EnvironmentHelper.IsCoreClr()}");
             Output.WriteLine($"Profiler DLL: {EnvironmentHelper.GetProfilerPath()}");
+            Output.WriteLine($"Home Directory: {Path.GetDirectoryName(EnvironmentHelper.GetIntegrationsFilePath())}");
         }
 
         protected EnvironmentHelper EnvironmentHelper { get; }

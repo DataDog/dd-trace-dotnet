@@ -161,6 +161,7 @@ namespace Datadog.Trace.TestHelpers
             var processName = processPath;
             string profilerEnabled = _requiresProfiling ? "1" : "0";
             string profilerPath;
+            string integrations = GetIntegrationsFilePath();
 
             if (IsCoreClr())
             {
@@ -169,7 +170,7 @@ namespace Datadog.Trace.TestHelpers
 
                 profilerPath = GetProfilerPath();
                 environmentVariables["CORECLR_PROFILER_PATH"] = profilerPath;
-                environmentVariables["DD_DOTNET_TRACER_HOME"] = Path.GetDirectoryName(profilerPath);
+                environmentVariables["DD_DOTNET_TRACER_HOME"] = Path.GetDirectoryName(integrations);
             }
             else
             {
@@ -178,7 +179,7 @@ namespace Datadog.Trace.TestHelpers
 
                 profilerPath = GetProfilerPath();
                 environmentVariables["COR_PROFILER_PATH"] = profilerPath;
-                environmentVariables["DD_DOTNET_TRACER_HOME"] = Path.GetDirectoryName(profilerPath);
+                environmentVariables["DD_DOTNET_TRACER_HOME"] = Path.GetDirectoryName(integrations);
 
                 processName = Path.GetFileName(processPath);
             }
@@ -193,7 +194,6 @@ namespace Datadog.Trace.TestHelpers
                 environmentVariables["DD_PROFILER_PROCESSES"] = processName;
             }
 
-            string integrations = string.Join(";", GetIntegrationsFilePaths());
             environmentVariables["DD_INTEGRATIONS"] = integrations;
             environmentVariables["DD_TRACE_AGENT_HOSTNAME"] = "127.0.0.1";
             environmentVariables["DD_TRACE_AGENT_PORT"] = agentPort.ToString();
@@ -224,54 +224,26 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        public string[] GetIntegrationsFilePaths()
+        public string GetIntegrationsFilePath()
         {
             if (_integrationsFileLocation == null)
             {
                 string fileName = "integrations.json";
 
-                var directory = GetSampleApplicationOutputDirectory();
-
-                var relativePath = Path.Combine(
+                _integrationsFileLocation = Path.Combine(
+                    GetExecutingProjectBin(),
                     "profiler-lib",
                     fileName);
 
-                _integrationsFileLocation = Path.Combine(
-                    directory,
-                    relativePath);
-
-                // TODO: get rid of the fallback options when we have a consistent convention
-
                 if (!File.Exists(_integrationsFileLocation))
                 {
-                    _output?.WriteLine($"Attempt 1: Unable to find integrations at {_integrationsFileLocation}.");
-                    // Let's try the executing directory, as dotnet publish ignores the Copy attributes we currently use
-                    _integrationsFileLocation = Path.Combine(
-                        GetExecutingProjectBin(),
-                        relativePath);
-                }
-
-                if (!File.Exists(_integrationsFileLocation))
-                {
-                    _output?.WriteLine($"Attempt 2: Unable to find integrations at {_integrationsFileLocation}.");
-                    // One last attempt at the solution root
-                    _integrationsFileLocation = Path.Combine(
-                        GetSolutionDirectory(),
-                        fileName);
-                }
-
-                if (!File.Exists(_integrationsFileLocation))
-                {
-                    throw new Exception($"Attempt 3: Unable to find integrations at {_integrationsFileLocation}");
+                    throw new Exception($"Unable to find integrations at {_integrationsFileLocation}");
                 }
 
                 _output?.WriteLine($"Found integrations at {_integrationsFileLocation}.");
             }
 
-            return new[]
-            {
-                _integrationsFileLocation
-            };
+            return _integrationsFileLocation;
         }
 
         public string GetProfilerPath()
@@ -288,39 +260,18 @@ namespace Datadog.Trace.TestHelpers
 
                 string fileName = $"Datadog.Trace.ClrProfiler.Native.{extension}";
 
-                var directory = GetSampleApplicationOutputDirectory();
-
-                var relativePath = Path.Combine(
-                    "profiler-lib",
-                    fileName);
+                var relativePath =
+                    EnvironmentTools.GetOS() is "win"
+                        ? Path.Combine("profiler-lib", $"win-{EnvironmentTools.GetPlatform()}", fileName)
+                        : Path.Combine("profiler-lib", fileName);
 
                 _profilerFileLocation = Path.Combine(
-                    directory,
+                    GetExecutingProjectBin(),
                     relativePath);
 
-                // TODO: get rid of the fallback options when we have a consistent convention
-
                 if (!File.Exists(_profilerFileLocation))
                 {
-                    _output?.WriteLine($"Attempt 1: Unable to find profiler at {_profilerFileLocation}.");
-                    // Let's try the executing directory, as dotnet publish ignores the Copy attributes we currently use
-                    _profilerFileLocation = Path.Combine(
-                        GetExecutingProjectBin(),
-                        relativePath);
-                }
-
-                if (!File.Exists(_profilerFileLocation))
-                {
-                    _output?.WriteLine($"Attempt 2: Unable to find profiler at {_profilerFileLocation}.");
-                    // One last attempt at the actual native project directory
-                    _profilerFileLocation = Path.Combine(
-                        GetProfilerProjectBin(),
-                        fileName);
-                }
-
-                if (!File.Exists(_profilerFileLocation))
-                {
-                    throw new Exception($"Attempt 3: Unable to find profiler at {_profilerFileLocation}");
+                    throw new Exception($"Unable to find profiler at {_profilerFileLocation}");
                 }
 
                 _output?.WriteLine($"Found profiler at {_profilerFileLocation}.");
