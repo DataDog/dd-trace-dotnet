@@ -1,3 +1,9 @@
 ﻿<Project>
   <!-- Only here so that the default Directory.Build.props will not be used. -->
+
+  <!--  Move bin and obj folders to root -->
+  <PropertyGroup>
+    <BaseOutputPath>$(SolutionDir)bin\bin\test\benchmarks\$(MSBuildProjectName)</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(SolutionDir)bin\obj\test\benchmarks\$(MSBuildProjectName)</BaseIntermediateOutputPath>
+  </PropertyGroup>
 </Project>

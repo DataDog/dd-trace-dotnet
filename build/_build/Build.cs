@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Nuke.Common;
@@ -254,21 +256,21 @@ partial class Build : NukeBuild
                 .SetProjectFile(Solution.GetProject(Projects.BenchmarksTrace))
                 .SetConfiguration(BuildConfiguration)
                 .SetFramework(TargetFramework.NETCOREAPP3_1)
+                .EnableNoRestore()
                 .EnableNoDependencies()
+                .SetSolutionDir(RootDirectory)
                 .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
             );
 
-            DotNetRun(s => s
-                .SetProjectFile(Solution.GetProject(Projects.BenchmarksTrace))
-                .SetConfiguration(BuildConfiguration)
-                .SetFramework(TargetFramework.NETCOREAPP3_1)
-                .EnableNoRestore()
-                .EnableNoBuild()
-                .SetApplicationArguments("-r net472 netcoreapp3.1 -m -f * --iterationTime 2000")
-                .SetProcessEnvironmentVariable("DD_SERVICE", "dd-trace-dotnet")
-                .SetProcessEnvironmentVariable("DD_ENV", "CI")
-                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
-            );
+            // TODO: this is a hacky workaround for the fact that dotnet run doesn't seem to
+            // understand custom bin/obj files
+            var workDir = BinDirectory / "test" / "benchmarks" / Projects.BenchmarksTrace / BuildConfiguration / TargetFramework.NETCOREAPP3_1 ;
+            var dll = workDir / $"{Projects.BenchmarksTrace}.dll";
+            var args = $"{dll} -r net472 netcoreapp3.1 -m -f * --iterationTime 2000";
+            var envVars = new Dictionary<string, string>(new ProcessStartInfo().Environment);
+            envVars["DD_SERVICE"] = "dd-trace-dotnet";
+            envVars["DD_ENV"] = "CI";
+            DotNet(args, workDir, envVars);
         });
 
     /// <summary>
