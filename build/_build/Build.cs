@@ -256,7 +256,6 @@ partial class Build : NukeBuild
                 .SetProjectFile(Solution.GetProject(Projects.BenchmarksTrace))
                 .SetConfiguration(BuildConfiguration)
                 .SetFramework(TargetFramework.NETCOREAPP3_1)
-                .EnableNoRestore()
                 .EnableNoDependencies()
                 .SetSolutionDir(RootDirectory)
                 .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
