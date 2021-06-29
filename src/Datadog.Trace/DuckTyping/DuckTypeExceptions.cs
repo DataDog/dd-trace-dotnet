@@ -57,23 +57,6 @@ namespace Datadog.Trace.DuckTyping
     }
 
     /// <summary>
-    /// DuckType target type instance is null
-    /// </summary>
-    public class DuckTypeTargetTypeDefinitionIsNull : DuckTypeException
-    {
-        private DuckTypeTargetTypeDefinitionIsNull()
-            : base("The target type definition is null.")
-        {
-        }
-
-        [DebuggerHidden]
-        internal static void Throw()
-        {
-            throw new DuckTypeTargetTypeDefinitionIsNull();
-        }
-    }
-
-    /// <summary>
     /// DuckType invalid type conversion exception
     /// </summary>
     public class DuckTypeInvalidTypeConversionException : DuckTypeException
