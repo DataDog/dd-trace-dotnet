@@ -4,6 +4,9 @@
   <!--  Move bin and obj folders to root -->
   <PropertyGroup>
     <BaseOutputPath>$(SolutionDir)bin\bin\test\test-applications\integrations\$(MSBuildProjectName)</BaseOutputPath>
-    <BaseIntermediateOutputPath>$(SolutionDir)bin\obj\test\test-applications\integrations\$(MSBuildProjectName)</BaseIntermediateOutputPath>
+    <BaseIntermediateOutputPath >$(SolutionDir)bin\obj\test\test-applications\integrations\$(MSBuildProjectName)</BaseIntermediateOutputPath>
+
+    <BaseOutputPath Condition="'$(ApiVersion)'!=''">$(BaseOutputPath)\$(ApiVersion)</BaseOutputPath>
+    <BaseIntermediateOutputPath Condition="'$(ApiVersion)'!=''">$(BaseIntermediateOutputPath)\$(ApiVersion)</BaseIntermediateOutputPath>
   </PropertyGroup>
 </Project>

@@ -9,12 +9,6 @@
     <PlatformTarget>$(Platform)</PlatformTarget>
     <LangVersion>latest</LangVersion>
 
-    <BaseOutputPath Condition="'$(ApiVersion)'==''">$(SolutionDir)bin\bin\test\$(MSBuildProjectName)</BaseOutputPath>
-    <BaseIntermediateOutputPath Condition="'$(ApiVersion)'==''">$(SolutionDir)bin\obj\test\$(MSBuildProjectName)</BaseIntermediateOutputPath>
-
-    <BaseOutputPath Condition="'$(ApiVersion)'!=''">$(SolutionDir)bin\bin\test\$(MSBuildProjectName)\$(ApiVersion)</BaseOutputPath>
-    <BaseIntermediateOutputPath Condition="'$(ApiVersion)'!=''">$(SolutionDir)bin\obj\test\$(MSBuildProjectName)\$(ApiVersion)</BaseIntermediateOutputPath>
-
     <IsPackable>false</IsPackable>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <ProfilerOutputDirectory>$(MSBuildThisFileDirectory)\..\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$(Platform)</ProfilerOutputDirectory>
