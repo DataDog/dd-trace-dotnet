@@ -260,14 +260,10 @@ namespace Datadog.Trace.TestHelpers
 
                 string fileName = $"Datadog.Trace.ClrProfiler.Native.{extension}";
 
-                var relativePath =
-                    EnvironmentTools.GetOS() is "win"
-                        ? Path.Combine("profiler-lib", $"win-{EnvironmentTools.GetPlatform()}", fileName)
-                        : Path.Combine("profiler-lib", fileName);
-
                 _profilerFileLocation = Path.Combine(
                     GetExecutingProjectBin(),
-                    relativePath);
+                    "profiler-lib",
+                    fileName);
 
                 if (!File.Exists(_profilerFileLocation))
                 {
