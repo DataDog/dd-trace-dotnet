@@ -250,7 +250,7 @@ partial class Build
             var dest = TracerHomeDirectory;
 
             Logger.Info($"Copying '{source}' to '{dest}'");
-            CopyFileToDirectory(source, dest, FileExistsPolicy.OverwriteIfNewer);
+            CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
         });
 
     Target PublishManagedProfiler => _ => _
@@ -285,7 +285,7 @@ partial class Build
                              $"{NativeProfilerProject.Name}.dll";
                 var dest = TracerHomeDirectory / $"win-{architecture}";
                 Logger.Info($"Copying '{source}' to '{dest}'");
-                CopyFileToDirectory(source, dest, FileExistsPolicy.OverwriteIfNewer);
+                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
             }
         });
 
@@ -299,7 +299,7 @@ partial class Build
             CopyFileToDirectory(
                 RootDirectory / "build" / "artifacts" / "createLogPath.sh",
                 TracerHomeDirectory,
-                FileExistsPolicy.OverwriteIfNewer);
+                FileExistsPolicy.Overwrite);
 
             // Copy Native file
             CopyFileToDirectory(
@@ -318,7 +318,7 @@ partial class Build
             CopyFileToDirectory(
                 RootDirectory / "build" / "artifacts" / "createLogPath.sh",
                 TracerHomeDirectory,
-                FileExistsPolicy.OverwriteIfNewer);
+                FileExistsPolicy.Overwrite);
 
             // Create home directory
             CopyFileToDirectory(
@@ -339,7 +339,7 @@ partial class Build
        .Executes(() =>
        {
            // start by copying everything from the tracer home dir
-           CopyDirectoryRecursively(TracerHomeDirectory, DDTracerHomeDirectory, DirectoryExistsPolicy.Merge);
+           CopyDirectoryRecursively(TracerHomeDirectory, DDTracerHomeDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
 
            if (IsWin)
            {
@@ -986,12 +986,12 @@ partial class Build
             var src = TracerHomeDirectory;
             var testProject = Solution.GetProject(Projects.ClrProfilerIntegrationTests).Directory;
             var dest = testProject / "bin" / BuildConfiguration / Framework / "profiler-lib";
-            CopyDirectoryRecursively(src, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.OverwriteIfNewer);
+            CopyDirectoryRecursively(src, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
 
             // not sure exactly where this is supposed to go, may need to change the original build
             foreach (var linuxDir in TracerHomeDirectory.GlobDirectories("linux-*"))
             {
-                CopyDirectoryRecursively(linuxDir, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.OverwriteIfNewer);
+                CopyDirectoryRecursively(linuxDir, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
             }
         });
 
