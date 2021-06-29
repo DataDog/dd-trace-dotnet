@@ -7,7 +7,6 @@ using System;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
-using Datadog.Core.Tools;
 
 namespace PrepareRelease
 {
@@ -17,6 +16,8 @@ namespace PrepareRelease
         public static Version TracerVersion { get; } = new("1.27.1");
 
         public static bool IsPrerelease => false;
+
+        public static string SolutionDirectory { get; set; }
 
         public static void Run()
         {
@@ -213,8 +214,7 @@ namespace PrepareRelease
 
         private static void SynchronizeVersion(string path, Func<string, string> transform)
         {
-            var solutionDirectory = EnvironmentTools.GetSolutionDirectory();
-            var fullPath = Path.Combine(solutionDirectory, path);
+            var fullPath = Path.Combine(SolutionDirectory, path);
 
             Console.WriteLine($"Updating version instances for {path}");
 
