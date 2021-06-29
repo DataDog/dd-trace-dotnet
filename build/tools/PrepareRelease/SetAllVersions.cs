@@ -12,11 +12,23 @@ namespace PrepareRelease
 {
     public static class SetAllVersions
     {
-        // major.minor[.build[.revision]]
+        /// <summary>
+        /// Gets the current tracer version.
+        /// This is the single source of truth for current tracer version.
+        /// Update this value before calling <see cref="Run"/>.
+        /// </summary>
         public static Version TracerVersion { get; } = new("1.27.1");
 
+        /// <summary>
+        /// Gets a value indicating whether the <see cref="TracerVersion"/> is a prerelease version.
+        /// Update this value before calling <see cref="Run"/>.
+        /// </summary>
         public static bool IsPrerelease => false;
 
+        /// <summary>
+        /// Gets or sets root solution directory, where "Datadog.Trace.sln" can be found.
+        /// Set this value before calling <see cref="Run"/>.
+        /// </summary>
         public static string SolutionDirectory { get; set; }
 
         public static void Run()
