@@ -6,9 +6,7 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Runtime.Versioning;
 
 namespace Datadog.Core.Tools
 {
@@ -58,13 +56,6 @@ namespace Datadog.Core.Tools
             return _solutionDirectory;
         }
 
-        public static string GetTracerVersion()
-        {
-            // ReSharper disable once ConditionIsAlwaysTrueOrFalse
-            // ReSharper disable once UnreachableCode
-            return $"{TracerVersion.Major}.{TracerVersion.Minor}.{TracerVersion.Patch}{(TracerVersion.IsPreRelease ? "-prerelease" : string.Empty)}";
-        }
-
         public static string GetOS()
         {
             return IsWindows()                                       ? "win" :
@@ -90,44 +81,6 @@ namespace Datadog.Core.Tools
 #else
             return "Release";
 #endif
-        }
-
-        public static bool IsConfiguredToProfile(Type anchorType)
-        {
-            var anchorAssembly = Assembly.GetAssembly(anchorType);
-            var targetFramework = anchorAssembly.GetCustomAttribute<TargetFrameworkAttribute>();
-
-            var parts = targetFramework.FrameworkName.Split(',');
-            var runtime = parts[0];
-            var isCoreClr = runtime.Equals(CoreFramework);
-
-            var environmentVariables = Environment.GetEnvironmentVariables();
-
-            var prefix = "COR";
-
-            if (isCoreClr)
-            {
-                prefix = "CORECLR";
-            }
-
-            if ((string)environmentVariables[$"{prefix}_ENABLE_PROFILING"] != "1")
-            {
-                return false;
-            }
-
-            if ((string)environmentVariables[$"{prefix}_PROFILER"] != ProfilerClsId)
-            {
-                return false;
-            }
-
-            var profilerPath = (string)environmentVariables[$"{prefix}_PROFILER_PATH"];
-
-            if (!File.Exists(profilerPath))
-            {
-                return false;
-            }
-
-            return true;
         }
     }
 }
