@@ -959,7 +959,6 @@ partial class Build
                 .SetProperty("ManagedProfilerOutputDirectory", TracerHomeDirectory)
                 .SetProperty("BuildInParallel", "true")
                 .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
-                .AddProcessEnvironmentVariable("TestAllPackageVersions", "true")
                 .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
                 .CombineWith(targets, (c, target) => c.SetTargets(target))
             );
@@ -986,9 +985,7 @@ partial class Build
                     .SetFramework(Framework)
                     // .SetTargetPlatform(Platform)
                     .SetNoWarnDotNetCore3()
-                    .When(TestAllPackageVersions, o => o
-                        .SetProperty("TestAllPackageVersions", "true"))
-                    .AddProcessEnvironmentVariable("TestAllPackageVersions", "true")
+                    .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
                     .AddProcessEnvironmentVariable("ManagedProfilerOutputDirectory", TracerHomeDirectory)
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
                         o.SetPackageDirectory(NugetPackageDirectory))
