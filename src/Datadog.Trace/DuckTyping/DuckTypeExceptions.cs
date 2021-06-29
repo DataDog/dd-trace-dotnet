@@ -62,7 +62,7 @@ namespace Datadog.Trace.DuckTyping
     public class DuckTypeTargetTypeDefinitionIsNull : DuckTypeException
     {
         private DuckTypeTargetTypeDefinitionIsNull()
-            : base($"The target type definition is null.")
+            : base("The target type definition is null.")
         {
         }
 
