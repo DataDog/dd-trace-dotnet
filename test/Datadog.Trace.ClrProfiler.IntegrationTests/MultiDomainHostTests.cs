@@ -18,6 +18,8 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    // Not actually an IIS test but it shouldn't run concurrently with them
+    [Collection("IisTests")]
     public class MultiDomainHostTests : TestHelper, IClassFixture<GacFixture>
     {
         private readonly GacFixture _gacFixture;

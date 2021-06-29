@@ -106,6 +106,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             _iisFixture = iisFixture;
+            _iisFixture.ShutdownPath = "/home/shutdown";
             _iisFixture.TryStartIis(this, classicMode);
             _testName = nameof(AspNetMvc5Tests)
                       + (enableCallTarget ? ".CallSite" : ".CallTarget")
