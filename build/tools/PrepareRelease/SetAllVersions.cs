@@ -13,6 +13,11 @@ namespace PrepareRelease
 {
     public static class SetAllVersions
     {
+        // major.minor[.build[.revision]]
+        public static Version TracerVersion { get; } = new("1.27.1");
+
+        public static bool IsPrerelease => false;
+
         public static void Run()
         {
             Console.WriteLine($"Updating version instances to {VersionString()}");
@@ -226,7 +231,7 @@ namespace PrepareRelease
 
         private static string FourPartVersionString(string split = ".")
         {
-            return $"{TracerVersion.Major}{split}{TracerVersion.Minor}{split}{TracerVersion.Patch}{split}0";
+            return $"{TracerVersion.Major}{split}{TracerVersion.Minor}{split}{TracerVersion.Build}{split}0";
         }
 
         private static string MajorVersionString(string split = ".")
@@ -236,10 +241,10 @@ namespace PrepareRelease
 
         private static string VersionString(string split = ".", bool withPrereleasePostfix = false)
         {
-            var newVersion = $"{TracerVersion.Major}{split}{TracerVersion.Minor}{split}{TracerVersion.Patch}";
+            var newVersion = $"{TracerVersion.Major}{split}{TracerVersion.Minor}{split}{TracerVersion.Build}";
 
             // this gets around a compiler warning about unreachable code below
-            var isPreRelease = TracerVersion.IsPreRelease;
+            var isPreRelease = IsPrerelease;
 
             // ReSharper disable once ConditionIsAlwaysTrueOrFalse
             if (withPrereleasePostfix && isPreRelease)
