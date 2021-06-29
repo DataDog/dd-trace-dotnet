@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\test\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
+    <ProjectReference Include="..\Datadog.Core.Tools\Datadog.Core.Tools.csproj" />
   </ItemGroup>
 
 </Project>

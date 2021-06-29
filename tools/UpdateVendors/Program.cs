@@ -9,7 +9,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net;
-using Datadog.Trace.TestHelpers;
+using Datadog.Core.Tools;
 
 namespace UpdateVendors
 {
@@ -35,7 +35,7 @@ namespace UpdateVendors
 
             var honeypotProjTemplate = GetHoneyPotProjTemplate();
             honeypotProjTemplate = honeypotProjTemplate.Replace("##PACKAGE_REFS##", fakeRefs);
-            var projLocation = Path.Combine(EnvironmentHelper.GetSolutionDirectory(), "honeypot", "Datadog.Dependabot.Honeypot.csproj");
+            var projLocation = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "honeypot", "Datadog.Dependabot.Honeypot.csproj");
             File.WriteAllText(projLocation, honeypotProjTemplate);
         }
 
