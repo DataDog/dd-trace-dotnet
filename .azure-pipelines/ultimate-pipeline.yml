@@ -735,7 +735,7 @@ stages:
       displayName: Uploading runner standalone osx-x64 artifact
       artifact: runner-standalone-osx-x64
 
-- stage: upload
+- stage: upload_to_s3
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: [package_windows, build_linux]
   jobs:
@@ -831,6 +831,87 @@ stages:
 
 
 
+
+- stage: upload_to_feed
+  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  dependsOn: [package_windows, build_linux, build_arm64, dotnet_tool]
+  jobs:
+    - job: upload
+
+      pool:
+        vmImage: ubuntu-18.04
+
+      steps:
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download NuGet packages
+          inputs:
+            artifact: nuget-packages
+            path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download x64 MSI
+          inputs:
+            artifact: windows-msi-x64
+            path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download x86 MSI
+          inputs:
+            artifact: windows-msi-x86
+            path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download Windows tracer home
+          inputs:
+            artifact: windows-tracer-home.zip
+            path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download linux Debian packages
+          inputs:
+            artifact: linux-packages-debian
+            path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download linux Alpine packages
+          inputs:
+            artifact: linux-packages-alpine
+            path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download linux Arm64 packages
+          inputs:
+            artifact: linux-packages-arm64
+            path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download runner dotnet tool
+          inputs:
+            artifact: runner-dotnet-tool
+            patterns: "*.nupkg"
+            path: $(Build.ArtifactStagingDirectory)
+
+        # set the version from the package name
+        - bash: |
+            ls "$(Build.ArtifactStagingDirectory)"
+            MSI_NAME=$(ls $(Build.ArtifactStagingDirectory)/*-x64.msi)
+            VERSION_NUMBER=${MSI_NAME:19:-8}
+            echo "detected version: $VERSION_NUMBER"
+            echo "##vso[task.setvariable variable=tracer_version]$VERSION_NUMBER"
+          displayName: Extract version number
+
+        # Publish a Universal Package
+        - task: UniversalPackages@0
+          displayName: Publish to Feed
+          inputs:
+            command: publish
+            publishDirectory: '$(Build.ArtifactStagingDirectory)'
+            vstsFeedPublish: 'dd-trace-dotnet/Main'
+            vstsFeedPackagePublish: 'dd-trace-dotnet'
+            packagePublishDescription: 'The output artifacts from the consolidated pipeline'
+            versionOption: custom
+            versionPublish: "$(tracer_version)-ci-$(Build.BuildId)-$(Build.SourceBranchName)"
 - stage: throughput
   dependsOn: [build_linux, build_windows]
   jobs:
