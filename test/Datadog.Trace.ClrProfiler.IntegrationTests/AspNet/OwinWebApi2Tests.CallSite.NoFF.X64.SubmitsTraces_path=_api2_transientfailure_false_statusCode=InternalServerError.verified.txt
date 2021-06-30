@@ -29,7 +29,8 @@ at System.Web.Http.Controllers.ActionFilterResult.<ExecuteAsync>d__5.MoveNext(),
       language: dotnet,
       aspnet.route: api2/{action}/{value},
       aspnet.controller: conventions,
-      aspnet.action: transientfailure
+      aspnet.action: transientfailure,
+      runtime-id: Guid_1
     },
     Metrics: {
       _sampling_priority_v1: 1.0,

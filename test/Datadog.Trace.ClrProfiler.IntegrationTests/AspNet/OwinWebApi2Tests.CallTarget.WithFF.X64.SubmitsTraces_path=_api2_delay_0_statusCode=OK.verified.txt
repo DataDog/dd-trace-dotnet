@@ -17,7 +17,8 @@
       language: dotnet,
       aspnet.route: api2/{action}/{value},
       aspnet.controller: conventions,
-      aspnet.action: delay
+      aspnet.action: delay,
+      runtime-id: Guid_1
     },
     Metrics: {
       _sampling_priority_v1: 1.0,

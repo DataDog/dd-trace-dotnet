@@ -15,7 +15,8 @@
       http.request.headers.host: localhost:00000,
       http.url: http://localhost:00000/api/environment,
       language: dotnet,
-      aspnet.route: api/environment
+      aspnet.route: api/environment,
+      runtime-id: Guid_1
     },
     Metrics: {
       _sampling_priority_v1: 1.0,
