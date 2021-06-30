@@ -10,28 +10,32 @@ using System.Text.RegularExpressions;
 
 namespace PrepareRelease
 {
-    public static class SetAllVersions
+    public class SetAllVersions
     {
+        public SetAllVersions(string solutionDirectory)
+        {
+            SolutionDirectory = solutionDirectory;
+        }
+
+        /// <summary>
+        /// Gets the root solution directory, where "Datadog.Trace.sln" can be found.
+        /// </summary>
+        public string SolutionDirectory { get; }
+
         /// <summary>
         /// Gets the current tracer version.
-        /// This is the single source of truth for current tracer version.
-        /// Update this value before calling <see cref="Run"/>.
+        /// This is the single source of truth for the current tracer version.
+        /// When changing the tracer version, update this value and <see cref="IsPrerelease">,
+        /// then run the "PrepareRelease" tool to update the entire solution.
         /// </summary>
-        public static Version TracerVersion { get; } = new("1.27.1");
+        public Version TracerVersion { get; } = new("1.27.1");
 
         /// <summary>
-        /// Gets a value indicating whether the <see cref="TracerVersion"/> is a prerelease version.
-        /// Update this value before calling <see cref="Run"/>.
+        /// Gets a value indicating whether the current tracer version is a prerelease.
         /// </summary>
-        public static bool IsPrerelease => false;
+        public bool IsPrerelease { get; } = false;
 
-        /// <summary>
-        /// Gets or sets root solution directory, where "Datadog.Trace.sln" can be found.
-        /// Set this value before calling <see cref="Run"/>.
-        /// </summary>
-        public static string SolutionDirectory { get; set; }
-
-        public static void Run()
+        public void Run()
         {
             Console.WriteLine($"Updating version instances to {VersionString()}");
 
@@ -172,42 +176,42 @@ namespace PrepareRelease
             Console.WriteLine($"Completed synchronizing versions to {VersionString()}");
         }
 
-        private static string FourPartVersionReplace(string text)
+        private string FourPartVersionReplace(string text)
         {
             return Regex.Replace(text, VersionPattern(fourPartVersion: true), FourPartVersionString(), RegexOptions.Singleline);
         }
 
-        private static string FullVersionReplace(string text, string split, string prefix = "")
+        private string FullVersionReplace(string text, string split, string prefix = "")
         {
             return Regex.Replace(text, prefix + VersionPattern(split), prefix + VersionString(split), RegexOptions.Singleline);
         }
 
-        private static string FullAssemblyNameReplace(string text)
+        private string FullAssemblyNameReplace(string text)
         {
             return Regex.Replace(text, AssemblyString(VersionPattern()), AssemblyString(VersionString()), RegexOptions.Singleline);
         }
 
-        private static string MajorAssemblyVersionReplace(string text, string split)
+        private string MajorAssemblyVersionReplace(string text, string split)
         {
             return Regex.Replace(text, VersionPattern(fourPartVersion: true), MajorVersionString(split), RegexOptions.Singleline);
         }
 
-        private static string DatadogTraceNugetDependencyVersionReplace(string text)
+        private string DatadogTraceNugetDependencyVersionReplace(string text)
         {
             return Regex.Replace(text, $"<PackageReference Include=\"Datadog.Trace\" Version=\"{VersionPattern(withPrereleasePostfix: true)}\" />", $"<PackageReference Include=\"Datadog.Trace\" Version=\"{VersionString(withPrereleasePostfix: true)}\" />", RegexOptions.Singleline);
         }
 
-        private static string NugetVersionReplace(string text)
+        private string NugetVersionReplace(string text)
         {
             return Regex.Replace(text, $"<Version>{VersionPattern(withPrereleasePostfix: true)}</Version>", $"<Version>{VersionString(withPrereleasePostfix: true)}</Version>", RegexOptions.Singleline);
         }
 
-        private static string NuspecVersionReplace(string text)
+        private string NuspecVersionReplace(string text)
         {
             return Regex.Replace(text, $"<version>{VersionPattern(withPrereleasePostfix: true)}</version>", $"<version>{VersionString(withPrereleasePostfix: true)}</version>", RegexOptions.Singleline);
         }
 
-        private static string WixProjReplace(string text)
+        private string WixProjReplace(string text)
         {
             text = Regex.Replace(
                 text,
@@ -224,7 +228,7 @@ namespace PrepareRelease
             return text;
         }
 
-        private static void SynchronizeVersion(string path, Func<string, string> transform)
+        private void SynchronizeVersion(string path, Func<string, string> transform)
         {
             var fullPath = Path.Combine(SolutionDirectory, path);
 
@@ -241,17 +245,17 @@ namespace PrepareRelease
             File.WriteAllText(fullPath, newFileContent, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
         }
 
-        private static string FourPartVersionString(string split = ".")
+        private string FourPartVersionString(string split = ".")
         {
             return $"{TracerVersion.Major}{split}{TracerVersion.Minor}{split}{TracerVersion.Build}{split}0";
         }
 
-        private static string MajorVersionString(string split = ".")
+        private string MajorVersionString(string split = ".")
         {
             return $"{TracerVersion.Major}{split}0{split}0{split}0";
         }
 
-        private static string VersionString(string split = ".", bool withPrereleasePostfix = false)
+        private string VersionString(string split = ".", bool withPrereleasePostfix = false)
         {
             var newVersion = $"{TracerVersion.Major}{split}{TracerVersion.Minor}{split}{TracerVersion.Build}";
 
@@ -267,7 +271,7 @@ namespace PrepareRelease
             return newVersion;
         }
 
-        private static string VersionPattern(string split = ".", bool withPrereleasePostfix = false, bool fourPartVersion = false)
+        private string VersionPattern(string split = ".", bool withPrereleasePostfix = false, bool fourPartVersion = false)
         {
             if (split == ".")
             {
@@ -289,7 +293,7 @@ namespace PrepareRelease
             return pattern;
         }
 
-        private static string AssemblyString(string versionText)
+        private string AssemblyString(string versionText)
         {
             return $"Datadog.Trace.ClrProfiler.Managed, Version={versionText}.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
         }

@@ -35,8 +35,7 @@ namespace PrepareRelease
             if (JobShouldRun(Versions, args))
             {
                 Console.WriteLine("--------------- Versions Job Started ---------------");
-                SetAllVersions.SolutionDirectory = solutionDir;
-                SetAllVersions.Run();
+                new SetAllVersions(solutionDir).Run();
                 Console.WriteLine("--------------- Versions Job Complete ---------------");
             }
 
