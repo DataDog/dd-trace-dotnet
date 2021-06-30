@@ -753,6 +753,7 @@ partial class Build
             try
             {
                 DotNetTest(config => config
+                    .SetDotnetPath(Platform)
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatform(Platform)
                     .EnableNoRestore()
@@ -766,6 +767,7 @@ partial class Build
                 // TODO: I think we should change this filter to run on Windows by default
                 // (RunOnWindows!=False|Category=Smoke)&LoadFromGAC!=True&IIS!=True
                 DotNetTest(config => config
+                    .SetDotnetPath(Platform)
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatform(Platform)
                     .EnableNoRestore()
@@ -795,6 +797,7 @@ partial class Build
             {
                 // Different filter from RunWindowsIntegrationTests
                 DotNetTest(config => config
+                    .SetDotnetPath(Platform)
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatform(Platform)
                     .EnableNoRestore()
