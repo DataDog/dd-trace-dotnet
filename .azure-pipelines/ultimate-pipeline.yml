@@ -632,7 +632,7 @@ stages:
 
 - stage: dotnet_tool
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_windows, build_linux, build_macos]
+  dependsOn: [build_windows, build_linux, build_arm64, build_macos]
   jobs:
   - job: build_runner_tool_and_standalone
 
@@ -737,7 +737,7 @@ stages:
 
 - stage: upload_to_s3
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [package_windows, build_linux]
+  dependsOn: [package_windows, build_linux, build_arm64]
   jobs:
   - job: s3_upload
 
@@ -913,7 +913,7 @@ stages:
             versionOption: custom
             versionPublish: "$(tracer_version)-ci-$(Build.BuildId)-$(Build.SourceBranchName)"
 - stage: throughput
-  dependsOn: [build_linux, build_windows]
+  dependsOn: [build_linux, build_arm64, build_windows]
   jobs:
 
   #### Linux
