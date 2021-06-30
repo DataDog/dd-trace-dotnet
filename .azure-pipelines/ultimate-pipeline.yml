@@ -895,7 +895,7 @@ stages:
         # set the version from the package name
         - bash: |
             ls "$(Build.ArtifactStagingDirectory)"
-            MSI_NAME=$(ls $(Build.ArtifactStagingDirectory)/*-x64.msi)
+            MSI_NAME=$(basename $(Build.ArtifactStagingDirectory)/*-x64.msi)
             VERSION_NUMBER=${MSI_NAME:19:-8}
             echo "detected version: $VERSION_NUMBER"
             echo "##vso[task.setvariable variable=tracer_version]$VERSION_NUMBER"
