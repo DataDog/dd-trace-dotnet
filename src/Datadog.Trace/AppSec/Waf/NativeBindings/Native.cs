@@ -25,57 +25,15 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         static Native()
         {
-#if NETFRAMEWORK
-            var libName = DllName;
-            var runtimeIdPart1 = "win";
-#else
-            var (runtimeIdPart1, libPrefix, libExt) =
-                Environment.OSVersion.Platform switch
-                {
-                    PlatformID.MacOSX => ("osx", "lib", "dylib"),
-                    PlatformID.Unix => ("linux", "lib", "so"),
-                    PlatformID.Win32NT => ("win", string.Empty, "dll"),
-                    PlatformID.Win32S => ("win", string.Empty, "dll"),
-                    PlatformID.Win32Windows => ("win", string.Empty, "dll"),
-                    PlatformID.WinCE => ("win", string.Empty, "dll"),
-                    PlatformID.Xbox => throw new NotSupportedException(),
-                    _ => throw new NotSupportedException(),
-                };
-            var libName = libPrefix + DllName + "." + libExt;
-#endif
+            string libName, runtimeId;
+            GetLibNameAndRuntimeId(out libName, out runtimeId);
 
-            var runtimeId = Environment.Is64BitProcess ? runtimeIdPart1 + "-x64" : runtimeIdPart1 + "-x32";
-
-            var paths = GetDataDogNativeFolders(runtimeId);
-            var success = false;
-
-            foreach (var path in paths)
+            // libName or runtimeId being null means platform is not supported
+            // no point attempting to load the library
+            if (libName != null && runtimeId != null)
             {
-                var libFullPath = Path.Combine(path, libName);
-
-                if (!File.Exists(libFullPath))
-                {
-                    continue;
-                }
-
-                // loading the library is sufficient, once in memory the p/invokes will just work
-                var loaded = NativeLibrary.TryLoad(libFullPath, out var _);
-
-                if (loaded)
-                {
-                    success = true;
-                    Log.Information($"Loaded library '{libName}' from '{path}'");
-                    break;
-                }
-                else
-                {
-                    Log.Warning($"Failed to load library '{libName}' from '{path}'");
-                }
-            }
-
-            if (!success)
-            {
-                Log.Warning($"Failed to load library '{libName}' from any of the following '{string.Join(", ", paths)}'");
+                var paths = GetDataDogNativeFolders(runtimeId);
+                SearchPathsAndLoadLibrary(libName, paths);
             }
         }
 
@@ -160,7 +118,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                 "COR_PROFILER_PATH",
             };
 
-            // it is unlikely that the security library would be in a sub fold from
+            // it is unlikely that the security library would be in a sub folder from
             // where the profiler lives, so just use this paths directly
             var profilerFolders =
                 profilerPathsEnvVars
@@ -213,6 +171,86 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                     .ToList();
 
             return paths;
+        }
+
+        private static void SearchPathsAndLoadLibrary(string libName, List<string> paths)
+        {
+            var success = false;
+            foreach (var path in paths)
+            {
+                var libFullPath = Path.Combine(path, libName);
+
+                if (!File.Exists(libFullPath))
+                {
+                    continue;
+                }
+
+                // loading the library is sufficient, once in memory the p/invokes will just work
+                var loaded = NativeLibrary.TryLoad(libFullPath, out var _);
+
+                if (loaded)
+                {
+                    success = true;
+                    Log.Information($"Loaded library '{libName}' from '{path}'");
+                    break;
+                }
+                else
+                {
+                    Log.Warning($"Failed to load library '{libName}' from '{path}'");
+                }
+            }
+
+            if (!success)
+            {
+                Log.Warning($"Failed to load library '{libName}' from any of the following '{string.Join(", ", paths)}'");
+            }
+        }
+
+        private static void GetLibNameAndRuntimeId(out string libName, out string runtimeId)
+        {
+            string runtimeIdPart1, libPrefix, libExt;
+
+            switch (Environment.OSVersion.Platform)
+            {
+                case PlatformID.MacOSX:
+                    runtimeIdPart1 = "osx";
+                    libPrefix = "lib";
+                    libExt = "dylib";
+                    break;
+                case PlatformID.Unix:
+                    runtimeIdPart1 = "linux";
+                    libPrefix = "lib";
+                    libExt = "so";
+                    break;
+                case PlatformID.Win32NT:
+                case PlatformID.Win32S:
+                case PlatformID.Win32Windows:
+                case PlatformID.WinCE:
+                    runtimeIdPart1 = "win";
+                    libPrefix = string.Empty;
+                    libExt = "dll";
+                    break;
+                case PlatformID.Xbox:
+                default:
+                    // unsupported platform
+                    runtimeIdPart1 = null;
+                    libPrefix = null;
+                    libExt = null;
+                    break;
+            }
+
+            if (runtimeIdPart1 != null && libPrefix != null && libExt != null)
+            {
+                libName = libPrefix + DllName + "." + libExt;
+                runtimeId = Environment.Is64BitProcess ? runtimeIdPart1 + "-x64" : runtimeIdPart1 + "-x32";
+            }
+            else
+            {
+                Log.Warning($"Unsupported platform: " + Environment.OSVersion.Platform);
+
+                libName = null;
+                runtimeId = null;
+            }
         }
     }
 }

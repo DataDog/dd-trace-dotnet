@@ -26,11 +26,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="AppSec\Waf\rule-set.txt" />
+    <None Remove="AppSec\Waf\rule-set.json" />
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="AppSec\Waf\rule-set.txt" />
+    <EmbeddedResource Include="AppSec\Waf\rule-set.json" />
   </ItemGroup>
 
   <ItemGroup>

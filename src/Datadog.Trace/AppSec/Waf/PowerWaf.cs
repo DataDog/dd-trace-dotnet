@@ -77,7 +77,7 @@ namespace Datadog.Trace.AppSec.Waf
                 PWConfig args = default;
 
                 var assembly = GetType().Assembly;
-                var resource = assembly.GetManifestResourceStream("Datadog.Trace.AppSec.Waf.rule-set.txt");
+                var resource = assembly.GetManifestResourceStream("Datadog.Trace.AppSec.Waf.rule-set.json");
                 var reader = new StreamReader(resource);
                 var rules = reader.ReadToEnd();
 
