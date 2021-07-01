@@ -214,6 +214,10 @@ namespace Datadog.Trace.Configuration
 
             KafkaCreateConsumerScopeEnabled = source?.GetBool(ConfigurationKeys.KafkaCreateConsumerScopeEnabled)
                                            ?? true; // default
+
+            DbClientSplitByInscance = source?.GetBool(ConfigurationKeys.DbClientSplitByInscance) ??
+                                        // Default value
+                                        false;    
         }
 
         /// <summary>
@@ -417,6 +421,11 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets a value indicating whether the diagnostic log at startup is enabled
         /// </summary>
         public bool StartupDiagnosticLogEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether db spans get assigned the instance name as the service name.
+        /// </summary>
+        public bool DbClientSplitByInscance { get; set; }
 
         /// <summary>
         /// Gets or sets the comma separated list of url patterns to skip tracing.

@@ -73,7 +73,16 @@ namespace Datadog.Trace.ClrProfiler
                     return null;
                 }
 
-                string serviceName = tracer.Settings.GetServiceName(tracer, _dbTypeName);
+                string serviceName;
+
+                if (tracer.Settings.DbClientSplitByInscance)
+                {
+                    serviceName = command.Connection.Database;
+                }
+                else
+                {
+                    serviceName = tracer.Settings.GetServiceName(tracer, _dbTypeName);
+                }
 
                 var tags = new SqlTags();
                 scope = tracer.StartActiveWithTags(_operationName, tags: tags, serviceName: serviceName);

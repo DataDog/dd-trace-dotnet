@@ -334,6 +334,11 @@ namespace Datadog.Trace.Configuration
         public const string KafkaCreateConsumerScopeEnabled = "DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED";
 
         /// <summary>
+        /// Configuration key to enable db spans get assigned the instance name as the service name.
+        /// </summary>
+        public const string DbClientSplitByInscance = "DD_TRACE_DB_CLIENT_SPLIT_BY_INSTANCE";
+
+        /// <summary>
         /// String format patterns used to match integration-specific configuration keys.
         /// </summary>
         public static class Integrations
