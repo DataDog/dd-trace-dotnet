@@ -849,6 +849,50 @@ stages:
             artifact: nuget-packages
             path: $(Build.ArtifactStagingDirectory)
 
+        # set the version from the package name
+        - bash: |
+            NUGET_NAME=$(basename $(Build.ArtifactStagingDirectory)/Datadog.Trace.OpenTracing.*.nupkg)
+            VERSION_NUMBER=${NUGET_NAME:26:-6}
+            echo "detected version: $VERSION_NUMBER"
+            echo "##vso[task.setvariable variable=tracer_version]$VERSION_NUMBER"
+          displayName: Extract version number
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download linux Alpine packages
+          inputs:
+            artifact: linux-packages-alpine
+            path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download linux Debian packages
+          inputs:
+            artifact: linux-packages-debian
+            path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download linux Arm64 packages
+          inputs:
+            artifact: linux-packages-arm64
+            path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download Windows tracer home
+          inputs:
+            artifact: windows-tracer-home.zip
+            path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download runner dotnet tool
+          inputs:
+            artifact: runner-dotnet-tool
+            patterns: "*.nupkg"
+            path: $(Build.ArtifactStagingDirectory)
+
+        - publish: "$(Build.ArtifactStagingDirectory)"
+          displayName: Publish release artifacts
+          artifact: $(VERSION_NUMBER)-release-artifacts
+        
+        # We don't include the MSI artifacts as they're not signed
         - task: DownloadPipelineArtifact@2
           displayName: Download x64 MSI
           inputs:
@@ -860,46 +904,6 @@ stages:
           inputs:
             artifact: windows-msi-x86
             path: $(Build.ArtifactStagingDirectory)
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download Windows tracer home
-          inputs:
-            artifact: windows-tracer-home.zip
-            path: $(Build.ArtifactStagingDirectory)
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux Debian packages
-          inputs:
-            artifact: linux-packages-debian
-            path: $(Build.ArtifactStagingDirectory)
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux Alpine packages
-          inputs:
-            artifact: linux-packages-alpine
-            path: $(Build.ArtifactStagingDirectory)
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download linux Arm64 packages
-          inputs:
-            artifact: linux-packages-arm64
-            path: $(Build.ArtifactStagingDirectory)
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download runner dotnet tool
-          inputs:
-            artifact: runner-dotnet-tool
-            patterns: "*.nupkg"
-            path: $(Build.ArtifactStagingDirectory)
-
-        # set the version from the package name
-        - bash: |
-            ls "$(Build.ArtifactStagingDirectory)"
-            MSI_NAME=$(basename $(Build.ArtifactStagingDirectory)/*-x64.msi)
-            VERSION_NUMBER=${MSI_NAME:19:-8}
-            echo "detected version: $VERSION_NUMBER"
-            echo "##vso[task.setvariable variable=tracer_version]$VERSION_NUMBER"
-          displayName: Extract version number
 
         # Publish a Universal Package
         - task: UniversalPackages@0
