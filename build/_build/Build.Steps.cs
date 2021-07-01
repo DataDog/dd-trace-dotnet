@@ -805,6 +805,7 @@ partial class Build
                     .SetDotnetPath(Platform)
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatform(Platform)
+                    .When(Framework != null, o => o.SetFramework(Framework))
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "(RunOnWindows=True|Category=Smoke)&LoadFromGAC=True")
