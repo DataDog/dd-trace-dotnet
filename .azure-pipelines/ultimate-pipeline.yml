@@ -890,7 +890,7 @@ stages:
 
         - publish: "$(Build.ArtifactStagingDirectory)"
           displayName: Publish release artifacts
-          artifact: $(VERSION_NUMBER)-release-artifacts
+          artifact: $(tracer_version)-release-artifacts
         
         # We don't include the MSI artifacts as they're not signed
         - task: DownloadPipelineArtifact@2
