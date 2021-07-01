@@ -15,7 +15,7 @@ using Xunit.Sdk;
 
 [assembly: TestFramework("Datadog.Trace.Tests.CustomTestFramework", "Datadog.Trace.Tests")]
 
-namespace Datadog.Trace.ClrProfiler.IntegrationTests
+namespace Datadog.Trace.Tests
 {
     public class CustomTestFramework : XunitTestFramework
     {
