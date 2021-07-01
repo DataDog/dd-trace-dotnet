@@ -11,7 +11,6 @@ using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Vendors.StatsdClient;
 using FluentAssertions;
 using Moq;
-using Moq.Protected;
 using Xunit;
 
 namespace Datadog.Trace.Tests.RuntimeMetrics
@@ -84,7 +83,8 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
 
         private class TestPerformanceCounterListener : PerformanceCountersListener
         {
-            private readonly Action _callback;
+            // The field needs to be volatile because it's used concurrently from two threads
+            private volatile Action _callback;
 
             public TestPerformanceCounterListener(IDogStatsd statsd, Action callback)
                 : base(statsd)
@@ -94,6 +94,13 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
 
             protected override void InitializePerformanceCounters()
             {
+                while (_callback == null)
+                {
+                    // There is a subtle race condition because InitializePerformanceCounters is virtual
+                    // and called from the base constructor
+                    Thread.SpinWait(1);
+                }
+
                 _callback();
 
                 base.InitializePerformanceCounters();
@@ -101,6 +108,5 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
         }
     }
 }
-
 
 #endif
