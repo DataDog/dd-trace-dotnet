@@ -217,7 +217,7 @@ namespace Datadog.Trace.Configuration
 
             DbClientSplitByInscance = source?.GetBool(ConfigurationKeys.DbClientSplitByInscance) ??
                                         // Default value
-                                        false;    
+                                        false;
         }
 
         /// <summary>
