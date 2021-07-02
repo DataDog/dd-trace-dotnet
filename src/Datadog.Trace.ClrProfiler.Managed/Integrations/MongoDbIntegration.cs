@@ -385,7 +385,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 Log.Warning(ex, "Unable to access IWireProtocol.Command properties.");
             }
 
-            string serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
+            string serviceName;
+
+            if (tracer.Settings.DbClientSplitByInscance)
+            {
+                serviceName = databaseName ?? tracer.Settings.GetServiceName(tracer, ServiceName);
+            }
+            else
+            {
+                serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
+            }
 
             Scope scope = null;
 
