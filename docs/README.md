@@ -13,10 +13,11 @@ Windows and Linux Installers|[See releases](https://github.com/DataDog/dd-trace-
 
 ## Build Status on `master`
 
-Pipeline          | Build Status
-------------------|-------------
-Unit tests        | [![Build Status](https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/status/unit-tests?branchName=master)](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/latest?definitionId=28&branchName=master)
-Integration tests | [![Build Status](https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/status/integration-tests?branchName=master)](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/latest?definitionId=27&branchName=master)
+Pipeline Stage         | Windows     |Linux   |  
+-----------------------|-------------|--------|
+Build                  | [![Build Windows](https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/status/consolidated-pipeline?branchName=master&stageName=build_windows)](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/latest?definitionId=54&branchName=master) | [![Build Linux](https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/status/consolidated-pipeline?branchName=master&stageName=build_linux)](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/latest?definitionId=54&branchName=master) 
+Unit Tests             | [![Build Status](https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/status/consolidated-pipeline?branchName=master&stageName=build_windows)](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/latest?definitionId=54&branchName=master) | [![Build Status](https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/status/consolidated-pipeline?branchName=master&stageName=unit_tests_linux)](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/latest?definitionId=54&branchName=master) 
+Integration Tests       | [![Build Status](https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/status/consolidated-pipeline?branchName=master&stageName=integration_tests_windows_iis)](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/latest?definitionId=54&branchName=master) [![Build Status](https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/status/consolidated-pipeline?branchName=master&stageName=integration_tests_windows)](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/latest?definitionId=54&branchName=master) | [![Build Status](https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/status/consolidated-pipeline?branchName=master&stageName=integration_tests_linux)](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/latest?definitionId=54&branchName=master)
 
 # Development
 
@@ -39,12 +40,12 @@ Integration tests | [![Build Status](https://dev.azure.com/datadoghq/dd-trace-do
   - Individual components
     - .NET Framework 4.7 targeting pack
 - [.NET 5.0 SDK](https://dotnet.microsoft.com/download/dotnet/5.0)
-- Optional: [.NET Core 2.1 Runtime](https://dotnet.microsoft.com/download/dotnet-core/2.1) to test in .NET Core 2.1 locally.
-- Optional: [.NET Core 3.0 Runtime](https://dotnet.microsoft.com/download/dotnet-core/3.0) to test in .NET Core 3.0 locally.
-- Optional: [.NET Core 3.1 Runtime](https://dotnet.microsoft.com/download/dotnet-core/3.1) to test in .NET Core 3.1 locally.
+- [.NET 5.0 x86 SDK](https://dotnet.microsoft.com/download/dotnet/5.0) to run 32-bit tests locally
+- Optional: [ASP.NET Core 2.1 Runtime](https://dotnet.microsoft.com/download/dotnet-core/2.1) to test in .NET Core 2.1 locally.
+- Optional: [ASP.NET Core 3.0 Runtime](https://dotnet.microsoft.com/download/dotnet-core/3.0) to test in .NET Core 3.0 locally.
+- Optional: [ASP.NET Core 3.1 Runtime](https://dotnet.microsoft.com/download/dotnet-core/3.1) to test in .NET Core 3.1 locally.
 - Optional: [nuget.exe CLI](https://www.nuget.org/downloads) v5.3 or newer
 - Optional: [WiX Toolset 3.11.1](http://wixtoolset.org/releases/) or newer to build Windows installer (msi)
-  - Requires .NET Framework 3.5 SP2 (install from Windows Features control panel: `OptionalFeatures.exe`)
   - [WiX Toolset Visual Studio Extension](https://wixtoolset.org/releases/) to build installer from Visual Studio
 - Optional: [Docker for Windows](https://docs.docker.com/docker-for-windows/) to build Linux binaries and run integration tests on Linux containers. See [section on Docker Compose](#building-and-running-tests-with-docker-compose).
   - Requires Windows 10 (1607 Anniversary Update, Build 14393 or newer)
@@ -53,63 +54,41 @@ Microsoft provides [evaluation developer VMs](https://developer.microsoft.com/en
 
 ### Building from a command line
 
-From a _Developer Command Prompt for VS 2019_:
+This repository uses [Nuke](https://nuke.build/) for build automation. To see a list of possible targets run:
 
 ```cmd
-rem Restore NuGet packages
-rem nuget.exe is required for command line restore because msbuild doesn't support packages.config
-rem (see https://github.com/NuGet/Home/issues/7386)
-nuget restore Datadog.Trace.sln
+.\build.cmd --help
+```
 
-rem Build C# projects (Platform: always AnyCPU)
-msbuild Datadog.Trace.proj /t:BuildCsharp /p:Configuration=Release
+For example:
 
-rem Build NuGet packages
-dotnet pack src\Datadog.Trace\Datadog.Trace.csproj
-dotnet pack src\Datadog.Trace.OpenTracing\Datadog.Trace.OpenTracing.csproj
+```powershell
+# Clean and build the main tracer project
+.\build.cmd Clean BuildTracerHome
 
-rem Build C++ projects
-rem The native profiler depends on the Datadog.Trace.ClrProfiler.Managed.Loader C# project so be sure that is built first
-msbuild Datadog.Trace.proj /t:BuildCpp /p:Configuration=Release;Platform=x64
-msbuild Datadog.Trace.proj /t:BuildCpp /p:Configuration=Release;Platform=x86
+# Build and run managed and native unit tests. Requires BuildTracerHome to have previously been run
+.\build.cmd BuildAndRunManagedUnitTests BuildAndRunNativeUnitTests 
 
-rem Build MSI installer for Windows x64 (supports both x64 and x86 apps)
-msbuild Datadog.Trace.proj /t:msi /p:Configuration=Release;Platform=x64
+# Build NuGet packages and MSIs. Requires BuildTracerHome to have previously been run
+.\build.cmd PackageTracerHome 
 
-rem Build MSI installer for Windows x86 (supports x86 apps only)
-msbuild Datadog.Trace.proj /t:msi /p:Configuration=Release;Platform=x86
-
-rem Build tracer home directory for Windows.
-rem Valid values for property `Platform` are `x64`, `x86`, and `All`.
-msbuild Datadog.Trace.proj /t:CreateHomeDirectory /p:Configuration=Release;Platform=All
+# Build and run integration tests. Requires BuildTracerHome to have previously been run
+.\build.cmd BuildAndRunWindowsIntegrationTests
 ```
 
 ## Linux
 
-### Minimum requirements
-
-To build C# projects and NuGet packages only
-- [.NET 5.0 SDK](https://dotnet.microsoft.com/download/dotnet/5.0)
-- Optional: [.NET Core 2.1 Runtime](https://dotnet.microsoft.com/download/dotnet-core/2.1) to test in .NET Core 2.1 locally.
-- Optional: [.NET Core 3.0 Runtime](https://dotnet.microsoft.com/download/dotnet-core/3.0) to test in .NET Core 3.0 locally.
-- Optional: [.NET Core 3.1 Runtime](https://dotnet.microsoft.com/download/dotnet-core/3.1) to test in .NET Core 3.1 locally.
-
-To build everything and run integration tests
-- [Docker Compose](https://docs.docker.com/compose/install/)
-
-### Building and running tests with Docker Compose
-
-You can use [Docker Compose](https://docs.docker.com/compose/) with Linux containers to build Linux binaries and run the test suites. This works on both Linux and Windows hosts.
+The recommended approach for Linux is to build using Docker. You can use this approach for both Windows and Linux hosts. The _build_in_docker.sh_ script automates building a Docker image with the required dependencies, and running the specified Nuke targets. For example:
 
 ```bash
-# build C# projects
-docker-compose run build
+# Clean and build the main tracer project
+./build_in_docker.sh Clean BuildTracerHome
 
-# build C++ project
-docker-compose run Profiler
+# Build and run managed unit tests. Requires BuildTracerHome to have previously been run
+./build_in_docker.sh BuildAndRunManagedUnitTests 
 
-# run integration tests
-docker-compose run IntegrationTests
+# Build and run integration tests. Requires BuildTracerHome to have previously been run
+./build_in_docker.sh BuildAndRunLinuxIntegrationTests
 ```
 
 ## Further Reading
