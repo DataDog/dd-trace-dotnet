@@ -322,7 +322,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             string path,
             MockTracerAgent agent,
             int httpPort,
-            HttpStatusCode expectedHttpStatusCode)
+            HttpStatusCode expectedHttpStatusCode,
+            int expectedSpanCount = 2)
         {
             using var httpClient = new HttpClient();
 
@@ -337,7 +338,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             agent.SpanFilters.Add(IsServerSpan);
 
             return agent.WaitForSpans(
-                count: 2,
+                count: expectedSpanCount,
                 minDateTime: testStart,
                 returnAllOperations: true);
         }
