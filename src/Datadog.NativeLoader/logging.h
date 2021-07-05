@@ -27,11 +27,11 @@ void Debug(const Args... args)
 template <typename... Args>
 void Info(const Args... args)
 {
-    std::cout << "[WRN] : " << LogToString(args...) << std::endl;
+    std::cout << "[INF] : " << LogToString(args...) << std::endl;
 }
 
 template <typename... Args>
 void Warn(const Args... args)
 {
-    std::cout << "[INF] : " << LogToString(args...) << std::endl;
+    std::cout << "[WRN] : " << LogToString(args...) << std::endl;
 }

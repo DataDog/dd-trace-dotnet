@@ -56,9 +56,62 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk)
     {
         Debug("CorProfiler::Initialize");
-        return dispatcher->Execute([pICorProfilerInfoUnk](ICorProfilerCallback10* pCallback) {
-            return pCallback->Initialize(pICorProfilerInfoUnk);
+
+        // get Profiler interface ICorProfilerInfo6 for net46+
+        ICorProfilerInfo6* info6 = nullptr;
+        HRESULT hr = pICorProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo6), (void**) &info6);
+        if (FAILED(hr))
+        {
+            Warn("Failed to attach profiler: interface ICorProfilerInfo6 not found.");
+            return E_FAIL;
+        }
+
+        // Gets the initial value for the event mask
+        DWORD mask_low;
+        DWORD mask_hi;
+        hr = info6->GetEventMask2(&mask_low, &mask_hi);
+        if (FAILED(hr))
+        {
+            Warn("Error getting the event mask.");
+            return E_FAIL;
+        }
+
+        Debug("MaskLow: ", mask_low);
+        Debug("MaskHi: ", mask_hi);
+
+        // Execute all Initialize functions from the dispatcher and collect each event mask
+        HRESULT dispatcherResult = dispatcher->Execute([info6, &mask_low, &mask_hi, pICorProfilerInfoUnk](ICorProfilerCallback10* pCallback) {
+            HRESULT localResult = pCallback->Initialize(pICorProfilerInfoUnk);
+            if (SUCCEEDED(localResult))
+            {
+                DWORD local_mask_low;
+                DWORD local_mask_hi;
+                HRESULT hr = info6->GetEventMask2(&local_mask_low, &local_mask_hi);
+                if (SUCCEEDED(hr))
+                {
+                    mask_low = mask_low | local_mask_low;
+                    mask_hi = mask_hi | local_mask_low;
+                }
+                else
+                {
+                    Warn("Error getting the event mask.");
+                }
+            }
+            return localResult;
         });
+
+        Debug("*MaskLow: ", mask_low);
+        Debug("*MaskHi: ", mask_hi);
+
+        // Sets the final event mask for the profiler
+        hr = info6->SetEventMask2(mask_low, mask_hi);
+        if (FAILED(hr))
+        {
+            Warn("Error setting the event mask.");
+            return E_FAIL;
+        }
+
+        return dispatcherResult;
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
