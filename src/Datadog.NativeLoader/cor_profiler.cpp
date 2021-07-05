@@ -634,19 +634,25 @@ namespace nativeloader
                                                            COR_PRF_GC_ROOT_FLAGS rootFlags[], UINT_PTR rootIds[])
     {
         Debug("CorProfiler::RootReferences2");
-        return S_OK;
+        return dispatcher->Execute(
+            [cRootRefs, rootRefIds, rootKinds, rootFlags, rootIds](ICorProfilerCallback10* pCallback) {
+                return pCallback->RootReferences2(cRootRefs, rootRefIds, rootKinds, rootFlags, rootIds);
+            });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::HandleCreated(GCHandleID handleId, ObjectID initialObjectId)
     {
         Debug("CorProfiler::HandleCreated");
-        return S_OK;
+        return dispatcher->Execute([handleId, initialObjectId](ICorProfilerCallback10* pCallback) {
+            return pCallback->HandleCreated(handleId, initialObjectId);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::HandleDestroyed(GCHandleID handleId)
     {
         Debug("CorProfiler::HandleDestroyed");
-        return S_OK;
+        return dispatcher->Execute(
+            [handleId](ICorProfilerCallback10* pCallback) { return pCallback->HandleDestroyed(handleId); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::InitializeForAttach(IUnknown* pCorProfilerInfoUnk, void* pvClientData,
@@ -715,7 +721,11 @@ namespace nativeloader
                                                             SIZE_T cObjectIDRangeLength[])
     {
         Debug("CorProfiler::MovedReferences2");
-        return S_OK;
+        return dispatcher->Execute([cMovedObjectIDRanges, oldObjectIDRangeStart, newObjectIDRangeStart,
+                                    cObjectIDRangeLength](ICorProfilerCallback10* pCallback) {
+            return pCallback->MovedReferences2(cMovedObjectIDRanges, oldObjectIDRangeStart, newObjectIDRangeStart,
+                                               cObjectIDRangeLength);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::SurvivingReferences2(ULONG cSurvivingObjectIDRanges,
@@ -723,7 +733,10 @@ namespace nativeloader
                                                                 SIZE_T cObjectIDRangeLength[])
     {
         Debug("CorProfiler::SurvivingReferences2");
-        return S_OK;
+        return dispatcher->Execute([cSurvivingObjectIDRanges, objectIDRangeStart,
+                                    cObjectIDRangeLength](ICorProfilerCallback10* pCallback) {
+            return pCallback->SurvivingReferences2(cSurvivingObjectIDRanges, objectIDRangeStart, cObjectIDRangeLength);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ConditionalWeakTableElementReferences(ULONG cRootRefs, ObjectID keyRefIds[],
@@ -731,20 +744,26 @@ namespace nativeloader
                                                                                  GCHandleID rootIds[])
     {
         Debug("CorProfiler::ConditionalWeakTableElementReferences");
-        return S_OK;
+        return dispatcher->Execute([cRootRefs, keyRefIds, valueRefIds, rootIds](ICorProfilerCallback10* pCallback) {
+            return pCallback->ConditionalWeakTableElementReferences(cRootRefs, keyRefIds, valueRefIds, rootIds);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(const WCHAR* wszAssemblyPath,
                                                                  ICorProfilerAssemblyReferenceProvider* pAsmRefProvider)
     {
         Debug("CorProfiler::GetAssemblyReferences");
-        return S_OK;
+        return dispatcher->Execute([wszAssemblyPath, pAsmRefProvider](ICorProfilerCallback10* pCallback) {
+            return pCallback->GetAssemblyReferences(wszAssemblyPath, pAsmRefProvider);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ModuleInMemorySymbolsUpdated(ModuleID moduleId)
     {
         Debug("CorProfiler::ModuleInMemorySymbolsUpdated");
-        return S_OK;
+        return dispatcher->Execute([moduleId](ICorProfilerCallback10* pCallback) {
+            return pCallback->ModuleInMemorySymbolsUpdated(moduleId);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::DynamicMethodJITCompilationStarted(FunctionID functionId,
@@ -752,20 +771,26 @@ namespace nativeloader
                                                                               ULONG cbILHeader)
     {
         Debug("CorProfiler::DynamicMethodJITCompilationStarted");
-        return S_OK;
+        return dispatcher->Execute(
+            [functionId, fIsSafeToBlock, ilHeader, cbILHeader](ICorProfilerCallback10* pCallback) {
+                return pCallback->DynamicMethodJITCompilationStarted(functionId, fIsSafeToBlock, ilHeader, cbILHeader);
+            });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::DynamicMethodJITCompilationFinished(FunctionID functionId, HRESULT hrStatus,
                                                                                BOOL fIsSafeToBlock)
     {
         Debug("CorProfiler::DynamicMethodJITCompilationFinished");
-        return S_OK;
+        return dispatcher->Execute([functionId, hrStatus, fIsSafeToBlock](ICorProfilerCallback10* pCallback) {
+            return pCallback->DynamicMethodJITCompilationFinished(functionId, hrStatus, fIsSafeToBlock);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::DynamicMethodUnloaded(FunctionID functionId)
     {
         Debug("CorProfiler::DynamicMethodUnloaded");
-        return S_OK;
+        return dispatcher->Execute(
+            [functionId](ICorProfilerCallback10* pCallback) { return pCallback->DynamicMethodUnloaded(functionId); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::EventPipeEventDelivered(EVENTPIPE_PROVIDER provider, DWORD eventId,
@@ -776,13 +801,20 @@ namespace nativeloader
                                                                    ULONG numStackFrames, UINT_PTR stackFrames[])
     {
         Debug("CorProfiler::EventPipeEventDelivered");
-        return S_OK;
+        return dispatcher->Execute([provider, eventId, eventVersion, cbMetadataBlob, metadataBlob, cbEventData,
+                                    eventData, pActivityId, pRelatedActivityId, eventThread, numStackFrames,
+                                    stackFrames](ICorProfilerCallback10* pCallback) {
+            return pCallback->EventPipeEventDelivered(provider, eventId, eventVersion, cbMetadataBlob, metadataBlob,
+                                                      cbEventData, eventData, pActivityId, pRelatedActivityId,
+                                                      eventThread, numStackFrames, stackFrames);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::EventPipeProviderCreated(EVENTPIPE_PROVIDER provider)
     {
         Debug("CorProfiler::EventPipeProviderCreated");
-        return S_OK;
+        return dispatcher->Execute(
+            [provider](ICorProfilerCallback10* pCallback) { return pCallback->EventPipeProviderCreated(provider); });
     }
 
 } // namespace nativeloader
