@@ -16,4 +16,7 @@
     <Content Include="..\Samples.AspNetCoreMvc21\Views\**\*.*" Link="Views\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="..\Samples.AspNetCoreMvc21\web.config" Link="web.config" CopyToOutputDirectory="Always" />
+  </ItemGroup>
 </Project>
