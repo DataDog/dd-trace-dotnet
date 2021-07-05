@@ -8,9 +8,9 @@ namespace datadog
 namespace nativeloader
 {
 
-    HINSTANCE LoadDynamicLibrary(std::string filePath);
+    void* LoadDynamicLibrary(std::string filePath);
 
-    void* GetExternalFunction(HINSTANCE instance, std::string funcName);
+    void* GetExternalFunction(void* instance, std::string funcName);
 
 } // namespace nativeloader
 } // namespace datadog
