@@ -75,14 +75,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Output.WriteLine("ApplicationPath: " + appPath);
             return ProfilerHelper.StartProcessWithProfiler(
                 exec,
-                appPath,
                 EnvironmentHelper,
-                integrationPaths,
-                arguments,
+                $"{appPath} {arguments ?? string.Empty}",
                 traceAgentPort: traceAgentPort,
                 statsdPort: statsdPort,
                 aspNetCorePort: aspNetCorePort,
-                forceExecutable: true);
+                processToProfile: exec);
         }
 
         public ProcessResult RunDotnetTestSampleAndWaitForExit(int traceAgentPort, int? statsdPort = null, string arguments = null, string packageVersion = "", string framework = "")
@@ -128,15 +126,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             IEnumerable<string> integrationPaths = Directory.EnumerateFiles(".", "*integrations.json").Select(Path.GetFullPath);
 
             Output.WriteLine($"Starting Application: {sampleAppPath}");
+            var executable = EnvironmentHelper.IsCoreClr() ? EnvironmentHelper.GetSampleExecutionSource() : sampleAppPath;
+            var args = EnvironmentHelper.IsCoreClr() ? $"{sampleAppPath} {arguments ?? string.Empty}" : arguments;
+
             return ProfilerHelper.StartProcessWithProfiler(
-                EnvironmentHelper.GetSampleExecutionSource(),
-                sampleAppPath,
+                executable,
                 EnvironmentHelper,
-                integrationPaths,
-                arguments,
+                args,
                 traceAgentPort: traceAgentPort,
                 statsdPort: statsdPort,
-                aspNetCorePort: aspNetCorePort);
+                aspNetCorePort: aspNetCorePort,
+                processToProfile: executable);
         }
 
         public ProcessResult RunSampleAndWaitForExit(int traceAgentPort, int? statsdPort = null, string arguments = null, string packageVersion = "", string framework = "")
@@ -174,7 +174,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // get full paths to integration definitions
             IEnumerable<string> integrationPaths = Directory.EnumerateFiles(".", "*integrations.json").Select(Path.GetFullPath);
 
-            var exe = EnvironmentHelper.GetSampleExecutionSource();
+            var iisExpress = EnvironmentHelper.GetSampleExecutionSource();
 
             var configTemplate = File.ReadAllText("applicationHost.config");
 
@@ -195,16 +195,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     "/trace:info"
                 };
 
-            Output.WriteLine($"[webserver] starting {exe} {string.Join(" ", args)}");
+            Output.WriteLine($"[webserver] starting {iisExpress} {string.Join(" ", args)}");
 
             var process = ProfilerHelper.StartProcessWithProfiler(
-                EnvironmentHelper.GetSampleExecutionSource(),
-                EnvironmentHelper.GetSampleExecutionSource(),
+                iisExpress,
                 EnvironmentHelper,
-                integrationPaths,
                 arguments: string.Join(" ", args),
                 redirectStandardInput: true,
-                traceAgentPort: traceAgentPort);
+                traceAgentPort: traceAgentPort,
+                processToProfile: iisExpress);
 
             var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
 

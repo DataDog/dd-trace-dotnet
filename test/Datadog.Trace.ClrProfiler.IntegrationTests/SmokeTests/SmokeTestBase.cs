@@ -78,7 +78,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
                 {
                     // Initialize StartInfo
                     process.StartInfo.FileName = executable;
-                    EnvironmentHelper.SetEnvironmentVariables(agentPort, aspNetCorePort, statsdPort: null, executable, process.StartInfo.EnvironmentVariables);
+                    EnvironmentHelper.SetEnvironmentVariables(agentPort, aspNetCorePort, statsdPort: null, process.StartInfo.EnvironmentVariables, processToProfile: executable);
                     if (EnvironmentHelper.IsCoreClr())
                     {
                         // Command becomes: dotnet.exe <applicationPath>
