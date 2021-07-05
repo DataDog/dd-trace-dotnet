@@ -7,7 +7,7 @@ namespace datadog
 namespace nativeloader
 {
 
-    CorProfiler::CorProfiler(DynamicInstance* instance) : ref_count_(0), instance(instance)
+    CorProfiler::CorProfiler(DynamicDispatcher* dispatcher) : ref_count_(0), dispatcher(dispatcher)
     {
         Debug("CorProfiler::.ctor");
     }
@@ -56,282 +56,351 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk)
     {
         Debug("CorProfiler::Initialize");
-        return instance->GetProfilerCallback()->Initialize(pICorProfilerInfoUnk);
+        return dispatcher->Execute([pICorProfilerInfoUnk](ICorProfilerCallback10* pCallback) {
+            return pCallback->Initialize(pICorProfilerInfoUnk);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
     {
         Debug("CorProfiler::Shutdown");
-        return instance->GetProfilerCallback()->Shutdown();
+        return dispatcher->Execute([](ICorProfilerCallback10* pCallback) { return pCallback->Shutdown(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainCreationStarted(AppDomainID appDomainId)
     {
         Debug("CorProfiler::AppDomainCreationStarted");
-        return instance->GetProfilerCallback()->AppDomainCreationStarted(appDomainId);
+        return dispatcher->Execute([appDomainId](ICorProfilerCallback10* pCallback) {
+            return pCallback->AppDomainCreationStarted(appDomainId);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainCreationFinished(AppDomainID appDomainId, HRESULT hrStatus)
     {
         Debug("CorProfiler::AppDomainCreationFinished");
-        return instance->GetProfilerCallback()->AppDomainCreationFinished(appDomainId, hrStatus);
+        return dispatcher->Execute([appDomainId, hrStatus](ICorProfilerCallback10* pCallback) {
+            return pCallback->AppDomainCreationFinished(appDomainId, hrStatus);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainShutdownStarted(AppDomainID appDomainId)
     {
         Debug("CorProfiler::AppDomainShutdownStarted");
-        return instance->GetProfilerCallback()->AppDomainShutdownStarted(appDomainId);
+        return dispatcher->Execute([appDomainId](ICorProfilerCallback10* pCallback) {
+            return pCallback->AppDomainShutdownStarted(appDomainId);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainShutdownFinished(AppDomainID appDomainId, HRESULT hrStatus)
     {
         Debug("CorProfiler::AppDomainShutdownFinished");
-        return instance->GetProfilerCallback()->AppDomainShutdownFinished(appDomainId, hrStatus);
+        return dispatcher->Execute([appDomainId, hrStatus](ICorProfilerCallback10* pCallback) {
+            return pCallback->AppDomainShutdownFinished(appDomainId, hrStatus);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadStarted(AssemblyID assemblyId)
     {
         Debug("CorProfiler::AssemblyLoadStarted");
-        return instance->GetProfilerCallback()->AssemblyLoadStarted(assemblyId);
+        return dispatcher->Execute(
+            [assemblyId](ICorProfilerCallback10* pCallback) { return pCallback->AssemblyLoadStarted(assemblyId); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assemblyId, HRESULT hrStatus)
     {
         Debug("CorProfiler::AssemblyLoadFinished");
-        return instance->GetProfilerCallback()->AssemblyLoadFinished(assemblyId, hrStatus);
+        return dispatcher->Execute([assemblyId, hrStatus](ICorProfilerCallback10* pCallback) {
+            return pCallback->AssemblyLoadFinished(assemblyId, hrStatus);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyUnloadStarted(AssemblyID assemblyId)
     {
         Debug("CorProfiler::AssemblyUnloadStarted");
-        return instance->GetProfilerCallback()->AssemblyUnloadStarted(assemblyId);
+        return dispatcher->Execute(
+            [assemblyId](ICorProfilerCallback10* pCallback) { return pCallback->AssemblyUnloadStarted(assemblyId); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyUnloadFinished(AssemblyID assemblyId, HRESULT hrStatus)
     {
         Debug("CorProfiler::AssemblyUnloadFinished");
-        return instance->GetProfilerCallback()->AssemblyUnloadFinished(assemblyId, hrStatus);
+        return dispatcher->Execute([assemblyId, hrStatus](ICorProfilerCallback10* pCallback) {
+            return pCallback->AssemblyUnloadFinished(assemblyId, hrStatus);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadStarted(ModuleID moduleId)
     {
         Debug("CorProfiler::ModuleLoadStarted");
-        return instance->GetProfilerCallback()->ModuleLoadStarted(moduleId);
+        return dispatcher->Execute(
+            [moduleId](ICorProfilerCallback10* pCallback) { return pCallback->ModuleLoadStarted(moduleId); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRESULT hrStatus)
     {
         Debug("CorProfiler::ModuleLoadFinished");
-        return instance->GetProfilerCallback()->ModuleLoadFinished(moduleId, hrStatus);
+        return dispatcher->Execute([moduleId, hrStatus](ICorProfilerCallback10* pCallback) {
+            return pCallback->ModuleLoadFinished(moduleId, hrStatus);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID moduleId)
     {
         Debug("CorProfiler::ModuleUnloadStarted");
-        return instance->GetProfilerCallback()->ModuleUnloadStarted(moduleId);
+        return dispatcher->Execute(
+            [moduleId](ICorProfilerCallback10* pCallback) { return pCallback->ModuleUnloadStarted(moduleId); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadFinished(ModuleID moduleId, HRESULT hrStatus)
     {
         Debug("CorProfiler::ModuleUnloadFinished");
-        return instance->GetProfilerCallback()->ModuleUnloadFinished(moduleId, hrStatus);
+        return dispatcher->Execute([moduleId, hrStatus](ICorProfilerCallback10* pCallback) {
+            return pCallback->ModuleUnloadFinished(moduleId, hrStatus);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ModuleAttachedToAssembly(ModuleID moduleId, AssemblyID AssemblyId)
     {
         Debug("CorProfiler::ModuleAttachedToAssembly");
-        return instance->GetProfilerCallback()->ModuleAttachedToAssembly(moduleId, AssemblyId);
+        return dispatcher->Execute([moduleId, AssemblyId](ICorProfilerCallback10* pCallback) {
+            return pCallback->ModuleAttachedToAssembly(moduleId, AssemblyId);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ClassLoadStarted(ClassID classId)
     {
         Debug("CorProfiler::ClassLoadStarted");
-        return instance->GetProfilerCallback()->ClassLoadStarted(classId);
+        return dispatcher->Execute(
+            [classId](ICorProfilerCallback10* pCallback) { return pCallback->ClassLoadStarted(classId); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ClassLoadFinished(ClassID classId, HRESULT hrStatus)
     {
         Debug("CorProfiler::ClassLoadFinished");
-        return instance->GetProfilerCallback()->ClassLoadFinished(classId, hrStatus);
+        return dispatcher->Execute([classId, hrStatus](ICorProfilerCallback10* pCallback) {
+            return pCallback->ClassLoadFinished(classId, hrStatus);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ClassUnloadStarted(ClassID classId)
     {
         Debug("CorProfiler::ClassUnloadStarted");
-        return instance->GetProfilerCallback()->ClassUnloadStarted(classId);
+        return dispatcher->Execute(
+            [classId](ICorProfilerCallback10* pCallback) { return pCallback->ClassUnloadStarted(classId); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ClassUnloadFinished(ClassID classId, HRESULT hrStatus)
     {
         Debug("CorProfiler::ClassUnloadFinished");
-        return instance->GetProfilerCallback()->ClassUnloadFinished(classId, hrStatus);
+        return dispatcher->Execute([classId, hrStatus](ICorProfilerCallback10* pCallback) {
+            return pCallback->ClassUnloadFinished(classId, hrStatus);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::FunctionUnloadStarted(FunctionID functionId)
     {
         Debug("CorProfiler::FunctionUnloadStarted");
-        return instance->GetProfilerCallback()->FunctionUnloadStarted(functionId);
+        return dispatcher->Execute(
+            [functionId](ICorProfilerCallback10* pCallback) { return pCallback->FunctionUnloadStarted(functionId); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID functionId, BOOL fIsSafeToBlock)
     {
         Debug("CorProfiler::JITCompilationStarted");
-        return instance->GetProfilerCallback()->JITCompilationStarted(functionId, fIsSafeToBlock);
+        return dispatcher->Execute([functionId, fIsSafeToBlock](ICorProfilerCallback10* pCallback) {
+            return pCallback->JITCompilationStarted(functionId, fIsSafeToBlock);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationFinished(FunctionID functionId, HRESULT hrStatus,
                                                                   BOOL fIsSafeToBlock)
     {
         Debug("CorProfiler::JITCompilationFinished");
-        return instance->GetProfilerCallback()->JITCompilationFinished(functionId, hrStatus, fIsSafeToBlock);
+        return dispatcher->Execute([functionId, hrStatus, fIsSafeToBlock](ICorProfilerCallback10* pCallback) {
+            return pCallback->JITCompilationFinished(functionId, hrStatus, fIsSafeToBlock);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID functionId,
                                                                           BOOL* pbUseCachedFunction)
     {
         Debug("CorProfiler::JITCachedFunctionSearchStarted");
-        return instance->GetProfilerCallback()->JITCachedFunctionSearchStarted(functionId, pbUseCachedFunction);
+        return dispatcher->Execute([functionId, pbUseCachedFunction](ICorProfilerCallback10* pCallback) {
+            return pCallback->JITCachedFunctionSearchStarted(functionId, pbUseCachedFunction);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchFinished(FunctionID functionId,
                                                                            COR_PRF_JIT_CACHE result)
     {
         Debug("CorProfiler::JITCachedFunctionSearchFinished");
-        return instance->GetProfilerCallback()->JITCachedFunctionSearchFinished(functionId, result);
+        return dispatcher->Execute([functionId, result](ICorProfilerCallback10* pCallback) {
+            return pCallback->JITCachedFunctionSearchFinished(functionId, result);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::JITFunctionPitched(FunctionID functionId)
     {
         Debug("CorProfiler::JITFunctionPitched");
-        return instance->GetProfilerCallback()->JITFunctionPitched(functionId);
+        return dispatcher->Execute(
+            [functionId](ICorProfilerCallback10* pCallback) { return pCallback->JITFunctionPitched(functionId); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId, FunctionID calleeId, BOOL* pfShouldInline)
     {
         Debug("CorProfiler::JITInlining");
-        return instance->GetProfilerCallback()->JITInlining(callerId, calleeId, pfShouldInline);
+        return dispatcher->Execute([callerId, calleeId, pfShouldInline](ICorProfilerCallback10* pCallback) {
+            return pCallback->JITInlining(callerId, calleeId, pfShouldInline);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ThreadCreated(ThreadID threadId)
     {
         Debug("CorProfiler::ThreadCreated");
-        return instance->GetProfilerCallback()->ThreadCreated(threadId);
+        return dispatcher->Execute(
+            [threadId](ICorProfilerCallback10* pCallback) { return pCallback->ThreadCreated(threadId); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ThreadDestroyed(ThreadID threadId)
     {
         Debug("CorProfiler::ThreadDestroyed");
-        return instance->GetProfilerCallback()->ThreadDestroyed(threadId);
+        return dispatcher->Execute(
+            [threadId](ICorProfilerCallback10* pCallback) { return pCallback->ThreadDestroyed(threadId); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ThreadAssignedToOSThread(ThreadID managedThreadId, DWORD osThreadId)
     {
         Debug("CorProfiler::ThreadAssignedToOSThread");
-        return instance->GetProfilerCallback()->ThreadAssignedToOSThread(managedThreadId, osThreadId);
+        return dispatcher->Execute([managedThreadId, osThreadId](ICorProfilerCallback10* pCallback) {
+            return pCallback->ThreadAssignedToOSThread(managedThreadId, osThreadId);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RemotingClientInvocationStarted()
     {
         Debug("CorProfiler::RemotingClientInvocationStarted");
-        return S_OK;
+        return dispatcher->Execute(
+            [](ICorProfilerCallback10* pCallback) { return pCallback->RemotingClientInvocationStarted(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RemotingClientSendingMessage(GUID* pCookie, BOOL fIsAsync)
     {
         Debug("CorProfiler::RemotingClientSendingMessage");
-        return S_OK;
+        return dispatcher->Execute([pCookie, fIsAsync](ICorProfilerCallback10* pCallback) {
+            return pCallback->RemotingClientSendingMessage(pCookie, fIsAsync);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RemotingClientReceivingReply(GUID* pCookie, BOOL fIsAsync)
     {
         Debug("CorProfiler::RemotingClientReceivingReply");
-        return S_OK;
+        return dispatcher->Execute([pCookie, fIsAsync](ICorProfilerCallback10* pCallback) {
+            return pCallback->RemotingClientReceivingReply(pCookie, fIsAsync);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RemotingClientInvocationFinished()
     {
         Debug("CorProfiler::RemotingClientInvocationFinished");
-        return S_OK;
+        return dispatcher->Execute(
+            [](ICorProfilerCallback10* pCallback) { return pCallback->RemotingClientInvocationFinished(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RemotingServerReceivingMessage(GUID* pCookie, BOOL fIsAsync)
     {
         Debug("CorProfiler::RemotingServerReceivingMessage");
-        return S_OK;
+        return dispatcher->Execute([pCookie, fIsAsync](ICorProfilerCallback10* pCallback) {
+            return pCallback->RemotingServerReceivingMessage(pCookie, fIsAsync);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RemotingServerInvocationStarted()
     {
         Debug("CorProfiler::RemotingServerInvocationStarted");
-        return S_OK;
+        return dispatcher->Execute(
+            [](ICorProfilerCallback10* pCallback) { return pCallback->RemotingServerInvocationStarted(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RemotingServerInvocationReturned()
     {
         Debug("CorProfiler::RemotingServerInvocationReturned");
-        return S_OK;
+        return dispatcher->Execute(
+            [](ICorProfilerCallback10* pCallback) { return pCallback->RemotingServerInvocationReturned(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RemotingServerSendingReply(GUID* pCookie, BOOL fIsAsync)
     {
         Debug("CorProfiler::RemotingServerSendingReply");
-        return S_OK;
+        return dispatcher->Execute([pCookie, fIsAsync](ICorProfilerCallback10* pCallback) {
+            return pCallback->RemotingServerSendingReply(pCookie, fIsAsync);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::UnmanagedToManagedTransition(FunctionID functionId,
                                                                         COR_PRF_TRANSITION_REASON reason)
     {
         Debug("CorProfiler::UnmanagedToManagedTransition");
-        return S_OK;
+        return dispatcher->Execute([functionId, reason](ICorProfilerCallback10* pCallback) {
+            return pCallback->UnmanagedToManagedTransition(functionId, reason);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ManagedToUnmanagedTransition(FunctionID functionId,
                                                                         COR_PRF_TRANSITION_REASON reason)
     {
         Debug("CorProfiler::ManagedToUnmanagedTransition");
-        return S_OK;
+        return dispatcher->Execute([functionId, reason](ICorProfilerCallback10* pCallback) {
+            return pCallback->ManagedToUnmanagedTransition(functionId, reason);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RuntimeSuspendStarted(COR_PRF_SUSPEND_REASON suspendReason)
     {
         Debug("CorProfiler::RuntimeSuspendStarted");
-        return S_OK;
+        return dispatcher->Execute([suspendReason](ICorProfilerCallback10* pCallback) {
+            return pCallback->RuntimeSuspendStarted(suspendReason);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RuntimeSuspendFinished()
     {
         Debug("CorProfiler::RuntimeSuspendFinished");
-        return S_OK;
+        return dispatcher->Execute(
+            [](ICorProfilerCallback10* pCallback) { return pCallback->RuntimeSuspendFinished(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RuntimeSuspendAborted()
     {
         Debug("CorProfiler::RuntimeSuspendAborted");
-        return S_OK;
+        return dispatcher->Execute(
+            [](ICorProfilerCallback10* pCallback) { return pCallback->RuntimeSuspendAborted(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RuntimeResumeStarted()
     {
         Debug("CorProfiler::RuntimeResumeStarted");
-        return S_OK;
+        return dispatcher->Execute([](ICorProfilerCallback10* pCallback) { return pCallback->RuntimeResumeStarted(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RuntimeResumeFinished()
     {
         Debug("CorProfiler::RuntimeResumeFinished");
-        return S_OK;
+        return dispatcher->Execute(
+            [](ICorProfilerCallback10* pCallback) { return pCallback->RuntimeResumeFinished(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RuntimeThreadSuspended(ThreadID threadId)
     {
         Debug("CorProfiler::RuntimeThreadSuspended");
-        return S_OK;
+        return dispatcher->Execute(
+            [threadId](ICorProfilerCallback10* pCallback) { return pCallback->RuntimeThreadSuspended(threadId); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RuntimeThreadResumed(ThreadID threadId)
     {
         Debug("CorProfiler::RuntimeThreadResumed");
-        return S_OK;
+        return dispatcher->Execute(
+            [threadId](ICorProfilerCallback10* pCallback) { return pCallback->RuntimeThreadResumed(threadId); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::MovedReferences(ULONG cMovedObjectIDRanges, ObjectID oldObjectIDRangeStart[],
@@ -339,156 +408,199 @@ namespace nativeloader
                                                            ULONG cObjectIDRangeLength[])
     {
         Debug("CorProfiler::MovedReferences");
-        return S_OK;
+        return dispatcher->Execute([cMovedObjectIDRanges, oldObjectIDRangeStart, newObjectIDRangeStart,
+                                    cObjectIDRangeLength](ICorProfilerCallback10* pCallback) {
+            return pCallback->MovedReferences(cMovedObjectIDRanges, oldObjectIDRangeStart, newObjectIDRangeStart,
+                                              cObjectIDRangeLength);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ObjectAllocated(ObjectID objectId, ClassID classId)
     {
         Debug("CorProfiler::ObjectAllocated");
-        return S_OK;
+        return dispatcher->Execute([objectId, classId](ICorProfilerCallback10* pCallback) {
+            return pCallback->ObjectAllocated(objectId, classId);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ObjectsAllocatedByClass(ULONG cClassCount, ClassID classIds[],
                                                                    ULONG cObjects[])
     {
         Debug("CorProfiler::ObjectsAllocatedByClass");
-        return S_OK;
+        return dispatcher->Execute([cClassCount, classIds, cObjects](ICorProfilerCallback10* pCallback) {
+            return pCallback->ObjectsAllocatedByClass(cClassCount, classIds, cObjects);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ObjectReferences(ObjectID objectId, ClassID classId, ULONG cObjectRefs,
                                                             ObjectID objectRefIds[])
     {
         Debug("CorProfiler::ObjectReferences");
-        return S_OK;
+        return dispatcher->Execute([objectId, classId, cObjectRefs, objectRefIds](ICorProfilerCallback10* pCallback) {
+            return pCallback->ObjectReferences(objectId, classId, cObjectRefs, objectRefIds);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RootReferences(ULONG cRootRefs, ObjectID rootRefIds[])
     {
         Debug("CorProfiler::RootReferences");
-        return S_OK;
+        return dispatcher->Execute([cRootRefs, rootRefIds](ICorProfilerCallback10* pCallback) {
+            return pCallback->RootReferences(cRootRefs, rootRefIds);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionThrown(ObjectID thrownObjectId)
     {
         Debug("CorProfiler::ExceptionThrown");
-        return S_OK;
+        return dispatcher->Execute(
+            [thrownObjectId](ICorProfilerCallback10* pCallback) { return pCallback->ExceptionThrown(thrownObjectId); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionSearchFunctionEnter(FunctionID functionId)
     {
         Debug("CorProfiler::ExceptionSearchFunctionEnter");
-        return S_OK;
+        return dispatcher->Execute([functionId](ICorProfilerCallback10* pCallback) {
+            return pCallback->ExceptionSearchFunctionEnter(functionId);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionSearchFunctionLeave()
     {
         Debug("CorProfiler::ExceptionSearchFunctionLeave");
-        return S_OK;
+        return dispatcher->Execute(
+            [](ICorProfilerCallback10* pCallback) { return pCallback->ExceptionSearchFunctionLeave(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionSearchFilterEnter(FunctionID functionId)
     {
         Debug("CorProfiler::ExceptionSearchFilterEnter");
-        return S_OK;
+        return dispatcher->Execute([functionId](ICorProfilerCallback10* pCallback) {
+            return pCallback->ExceptionSearchFilterEnter(functionId);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionSearchFilterLeave()
     {
         Debug("CorProfiler::ExceptionSearchFilterLeave");
-        return S_OK;
+        return dispatcher->Execute(
+            [](ICorProfilerCallback10* pCallback) { return pCallback->ExceptionSearchFilterLeave(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionSearchCatcherFound(FunctionID functionId)
     {
         Debug("CorProfiler::ExceptionSearchCatcherFound");
-        return S_OK;
+        return dispatcher->Execute([functionId](ICorProfilerCallback10* pCallback) {
+            return pCallback->ExceptionSearchCatcherFound(functionId);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionOSHandlerEnter(UINT_PTR __unused)
     {
         Debug("CorProfiler::ExceptionOSHandlerEnter");
-        return S_OK;
+        return dispatcher->Execute(
+            [__unused](ICorProfilerCallback10* pCallback) { return pCallback->ExceptionOSHandlerEnter(__unused); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionOSHandlerLeave(UINT_PTR __unused)
     {
         Debug("CorProfiler::ExceptionOSHandlerLeave");
-        return S_OK;
+        return dispatcher->Execute(
+            [__unused](ICorProfilerCallback10* pCallback) { return pCallback->ExceptionOSHandlerLeave(__unused); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionUnwindFunctionEnter(FunctionID functionId)
     {
         Debug("CorProfiler::ExceptionUnwindFunctionEnter");
-        return S_OK;
+        return dispatcher->Execute([functionId](ICorProfilerCallback10* pCallback) {
+            return pCallback->ExceptionUnwindFunctionEnter(functionId);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionUnwindFunctionLeave()
     {
         Debug("CorProfiler::ExceptionUnwindFunctionLeave");
-        return S_OK;
+        return dispatcher->Execute(
+            [](ICorProfilerCallback10* pCallback) { return pCallback->ExceptionUnwindFunctionLeave(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionUnwindFinallyEnter(FunctionID functionId)
     {
         Debug("CorProfiler::ExceptionUnwindFinallyEnter");
-        return S_OK;
+        return dispatcher->Execute([functionId](ICorProfilerCallback10* pCallback) {
+            return pCallback->ExceptionUnwindFinallyEnter(functionId);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionUnwindFinallyLeave()
     {
         Debug("CorProfiler::ExceptionUnwindFinallyLeave");
-        return S_OK;
+        return dispatcher->Execute(
+            [](ICorProfilerCallback10* pCallback) { return pCallback->ExceptionUnwindFinallyLeave(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionCatcherEnter(FunctionID functionId, ObjectID objectId)
     {
         Debug("CorProfiler::ExceptionCatcherEnter");
-        return S_OK;
+        return dispatcher->Execute([functionId, objectId](ICorProfilerCallback10* pCallback) {
+            return pCallback->ExceptionCatcherEnter(functionId, objectId);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionCatcherLeave()
     {
         Debug("CorProfiler::ExceptionCatcherLeave");
-        return S_OK;
+        return dispatcher->Execute(
+            [](ICorProfilerCallback10* pCallback) { return pCallback->ExceptionCatcherLeave(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::COMClassicVTableCreated(ClassID wrappedClassId, REFGUID implementedIID,
                                                                    void* pVTable, ULONG cSlots)
     {
         Debug("CorProfiler::COMClassicVTableCreated");
-        return S_OK;
+        return dispatcher->Execute(
+            [wrappedClassId, implementedIID, pVTable, cSlots](ICorProfilerCallback10* pCallback) {
+                return pCallback->COMClassicVTableCreated(wrappedClassId, implementedIID, pVTable, cSlots);
+            });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::COMClassicVTableDestroyed(ClassID wrappedClassId, REFGUID implementedIID,
                                                                      void* pVTable)
     {
         Debug("CorProfiler::COMClassicVTableDestroyed");
-        return S_OK;
+        return dispatcher->Execute([wrappedClassId, implementedIID, pVTable](ICorProfilerCallback10* pCallback) {
+            return pCallback->COMClassicVTableDestroyed(wrappedClassId, implementedIID, pVTable);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionCLRCatcherFound()
     {
         Debug("CorProfiler::ExceptionCLRCatcherFound");
-        return S_OK;
+        return dispatcher->Execute(
+            [](ICorProfilerCallback10* pCallback) { return pCallback->ExceptionCLRCatcherFound(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionCLRCatcherExecute()
     {
         Debug("CorProfiler::ExceptionCLRCatcherExecute");
-        return S_OK;
+        return dispatcher->Execute(
+            [](ICorProfilerCallback10* pCallback) { return pCallback->ExceptionCLRCatcherExecute(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ThreadNameChanged(ThreadID threadId, ULONG cchName, WCHAR name[])
     {
         Debug("CorProfiler::ThreadNameChanged");
-        return S_OK;
+        return dispatcher->Execute([threadId, cchName, name](ICorProfilerCallback10* pCallback) {
+            return pCallback->ThreadNameChanged(threadId, cchName, name);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::GarbageCollectionStarted(int cGenerations, BOOL generationCollected[],
                                                                     COR_PRF_GC_REASON reason)
     {
         Debug("CorProfiler::GarbageCollectionStarted");
-        return S_OK;
+        return dispatcher->Execute([cGenerations, generationCollected, reason](ICorProfilerCallback10* pCallback) {
+            return pCallback->GarbageCollectionStarted(cGenerations, generationCollected, reason);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::SurvivingReferences(ULONG cSurvivingObjectIDRanges,
@@ -496,19 +608,25 @@ namespace nativeloader
                                                                ULONG cObjectIDRangeLength[])
     {
         Debug("CorProfiler::SurvivingReferences");
-        return S_OK;
+        return dispatcher->Execute([cSurvivingObjectIDRanges, objectIDRangeStart,
+                                    cObjectIDRangeLength](ICorProfilerCallback10* pCallback) {
+            return pCallback->SurvivingReferences(cSurvivingObjectIDRanges, objectIDRangeStart, cObjectIDRangeLength);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::GarbageCollectionFinished()
     {
         Debug("CorProfiler::GarbageCollectionFinished");
-        return S_OK;
+        return dispatcher->Execute(
+            [](ICorProfilerCallback10* pCallback) { return pCallback->GarbageCollectionFinished(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::FinalizeableObjectQueued(DWORD finalizerFlags, ObjectID objectID)
     {
         Debug("CorProfiler::FinalizeableObjectQueued");
-        return S_OK;
+        return dispatcher->Execute([finalizerFlags, objectID](ICorProfilerCallback10* pCallback) {
+            return pCallback->FinalizeableObjectQueued(finalizerFlags, objectID);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RootReferences2(ULONG cRootRefs, ObjectID rootRefIds[],
@@ -535,47 +653,60 @@ namespace nativeloader
                                                                UINT cbClientData)
     {
         Debug("CorProfiler::InitializeForAttach");
-        return instance->GetProfilerCallback()->InitializeForAttach(pCorProfilerInfoUnk, pvClientData, cbClientData);
+        return dispatcher->Execute(
+            [pCorProfilerInfoUnk, pvClientData, cbClientData](ICorProfilerCallback10* pCallback) {
+                return pCallback->InitializeForAttach(pCorProfilerInfoUnk, pvClientData, cbClientData);
+            });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ProfilerAttachComplete()
     {
         Debug("CorProfiler::ProfilerAttachComplete");
-        return instance->GetProfilerCallback()->ProfilerAttachComplete();
+        return dispatcher->Execute(
+            [](ICorProfilerCallback10* pCallback) { return pCallback->ProfilerAttachComplete(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ProfilerDetachSucceeded()
     {
         Debug("CorProfiler::ProfilerDetachSucceeded");
-        return instance->GetProfilerCallback()->ProfilerDetachSucceeded();
+        return dispatcher->Execute(
+            [](ICorProfilerCallback10* pCallback) { return pCallback->ProfilerDetachSucceeded(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ReJITCompilationStarted(FunctionID functionId, ReJITID rejitId,
                                                                    BOOL fIsSafeToBlock)
     {
         Debug("CorProfiler::ReJITCompilationStarted");
-        return instance->GetProfilerCallback()->ReJITCompilationStarted(functionId, rejitId, fIsSafeToBlock);
+        return dispatcher->Execute([functionId, rejitId, fIsSafeToBlock](ICorProfilerCallback10* pCallback) {
+            return pCallback->ReJITCompilationStarted(functionId, rejitId, fIsSafeToBlock);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::GetReJITParameters(ModuleID moduleId, mdMethodDef methodId,
                                                               ICorProfilerFunctionControl* pFunctionControl)
     {
         Debug("CorProfiler::GetReJITParameters");
-        return instance->GetProfilerCallback()->GetReJITParameters(moduleId, methodId, pFunctionControl);
+        return dispatcher->Execute([moduleId, methodId, pFunctionControl](ICorProfilerCallback10* pCallback) {
+            return pCallback->GetReJITParameters(moduleId, methodId, pFunctionControl);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ReJITCompilationFinished(FunctionID functionId, ReJITID rejitId,
                                                                     HRESULT hrStatus, BOOL fIsSafeToBlock)
     {
         Debug("CorProfiler::ReJITCompilationFinished");
-        return instance->GetProfilerCallback()->ReJITCompilationFinished(functionId, rejitId, hrStatus, fIsSafeToBlock);
+        return dispatcher->Execute([functionId, rejitId, hrStatus, fIsSafeToBlock](ICorProfilerCallback10* pCallback) {
+            return pCallback->ReJITCompilationFinished(functionId, rejitId, hrStatus, fIsSafeToBlock);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ReJITError(ModuleID moduleId, mdMethodDef methodId, FunctionID functionId,
                                                       HRESULT hrStatus)
     {
         Debug("CorProfiler::ReJITError");
-        return instance->GetProfilerCallback()->ReJITError(moduleId, methodId, functionId, hrStatus);
+        return dispatcher->Execute([moduleId, methodId, functionId, hrStatus](ICorProfilerCallback10* pCallback) {
+            return pCallback->ReJITError(moduleId, methodId, functionId, hrStatus);
+        });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::MovedReferences2(ULONG cMovedObjectIDRanges,

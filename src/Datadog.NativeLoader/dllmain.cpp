@@ -4,7 +4,7 @@
 #include "logging.h"
 #include "proxy.h"
 
-datadog::nativeloader::DynamicInstance* instance = nullptr;
+datadog::nativeloader::DynamicDispatcher* dispatcher;
 
 extern "C"
 {
@@ -19,10 +19,12 @@ extern "C"
 
                 Debug("DllMain - DLL_PROCESS_ATTACH");
 
-                instance = new datadog::nativeloader::DynamicInstance(
+                dispatcher = new datadog::nativeloader::DynamicDispatcher();
+                dispatcher->Add(new datadog::nativeloader::DynamicInstance(
                     "C:\\github\\dd-trace-dotnet\\src\\bin\\windows-tracer-home\\win-x64\\Datadog."
                     "Trace.ClrProfiler.Native.dll",
-                    {0x846f5f1c, 0xf9ae, 0x4b07, {0x96, 0x9e, 0x5, 0xc2, 0x6b, 0xc0, 0x60, 0xd8}});
+                    {0x846f5f1c, 0xf9ae, 0x4b07, {0x96, 0x9e, 0x5, 0xc2, 0x6b, 0xc0, 0x60, 0xd8}}));
+
                 break;
 
             case DLL_THREAD_ATTACH:
@@ -58,7 +60,7 @@ extern "C"
             return E_FAIL;
         }
 
-        auto factory = new ClassFactory(instance);
+        auto factory = new ClassFactory(dispatcher);
         if (factory == NULL)
         {
             return E_FAIL;
@@ -71,6 +73,6 @@ extern "C"
     {
         Debug("DllCanUnloadNow");
 
-        return instance->DllCanUnloadNow();
+        return dispatcher->DllCanUnloadNow();
     }
 }

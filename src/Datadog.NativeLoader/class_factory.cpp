@@ -3,13 +3,13 @@
 // license information.
 #include "class_factory.h"
 
-#include "logging.h"
 #include "cor_profiler.h"
+#include "logging.h"
 
 const IID IID_IUnknown = {0x00000000, 0x0000, 0x0000, {0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}};
 const IID IID_IClassFactory = {0x00000001, 0x0000, 0x0000, {0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}};
 
-ClassFactory::ClassFactory(datadog::nativeloader::DynamicInstance* instance) : refCount(0), instance(instance)
+ClassFactory::ClassFactory(datadog::nativeloader::DynamicDispatcher* dispatcher) : refCount(0), dispatcher(dispatcher)
 {
     Debug("ClassFactory::.ctor");
 }
@@ -21,7 +21,7 @@ ClassFactory::~ClassFactory()
 HRESULT STDMETHODCALLTYPE ClassFactory::QueryInterface(REFIID riid, void** ppvObject)
 {
     Debug("ClassFactory::QueryInterface");
-    HRESULT res = instance->LoadClassFactory(riid);
+    HRESULT res = dispatcher->LoadClassFactory(riid);
 
     if ((riid == IID_IUnknown || riid == IID_IClassFactory) && SUCCEEDED(res))
     {
@@ -63,11 +63,11 @@ HRESULT STDMETHODCALLTYPE ClassFactory::CreateInstance(IUnknown* pUnkOuter, REFI
         return CLASS_E_NOAGGREGATION;
     }
 
-    auto profiler = new datadog::nativeloader::CorProfiler(instance);
+    auto profiler = new datadog::nativeloader::CorProfiler(dispatcher);
     HRESULT res = profiler->QueryInterface(riid, ppvObject);
     if (SUCCEEDED(res))
     {
-        instance->LoadInstance(pUnkOuter, riid);
+        dispatcher->LoadInstance(pUnkOuter, riid);
     }
     Debug("ClassFactory::CreateInstance: ", res);
     return res;

@@ -1,8 +1,10 @@
 #pragma once
 
+#include "string.h"
 #include <corhlpr.h>
 #include <corprof.h>
-#include "string.h"
+#include <vector>
+#include <functional>
 
 namespace datadog
 {
@@ -30,11 +32,25 @@ namespace nativeloader
 
     public:
         DynamicInstance(std::string filePath, REFCLSID clsid);
-
         HRESULT LoadClassFactory(REFIID riid);
         HRESULT LoadInstance(IUnknown* pUnkOuter, REFIID riid);
         HRESULT STDMETHODCALLTYPE DllCanUnloadNow();
         ICorProfilerCallback10* GetProfilerCallback();
+        std::string GetFilePath();
+    };
+
+    class DynamicDispatcher
+    {
+    private:
+        std::vector<DynamicInstance*> m_instances;
+
+    public:
+        DynamicDispatcher();
+        void Add(DynamicInstance* instance);
+        HRESULT LoadClassFactory(REFIID riid);
+        HRESULT LoadInstance(IUnknown* pUnkOuter, REFIID riid);
+        HRESULT STDMETHODCALLTYPE DllCanUnloadNow();
+        HRESULT Execute(std::function<HRESULT(ICorProfilerCallback10*)> func);
     };
 
 } // namespace nativeloader
