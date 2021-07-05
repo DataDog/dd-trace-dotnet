@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             _iisFixture = iisFixture;
             _iisFixture.ShutdownPath = "/account/login?shutdown=1";
-            _iisFixture.TryStartIis(this, classicMode: false);
+            _iisFixture.TryStartIis(this, IisAppType.AspNetIntegrated);
         }
 
         [Theory]
