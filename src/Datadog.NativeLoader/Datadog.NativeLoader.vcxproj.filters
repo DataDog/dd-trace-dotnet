@@ -59,6 +59,9 @@
     <ClCompile Include="pal.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="proxy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Datadog.NativeLoader.def">

@@ -9,7 +9,7 @@
 const IID IID_IUnknown = {0x00000000, 0x0000, 0x0000, {0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}};
 const IID IID_IClassFactory = {0x00000001, 0x0000, 0x0000, {0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}};
 
-ClassFactory::ClassFactory(DynamicInstance* instance) : refCount(0), instance(instance)
+ClassFactory::ClassFactory(datadog::nativeloader::DynamicInstance* instance) : refCount(0), instance(instance)
 {
     Debug("ClassFactory::.ctor");
 }
