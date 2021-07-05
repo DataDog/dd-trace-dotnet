@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public string ShutdownPath { get; set; }
 
-        public void TryStartIis(TestHelper helper, bool classicMode)
+        public void TryStartIis(TestHelper helper, IisAppType appType)
         {
             lock (this)
             {
@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     Agent = new MockTracerAgent(initialAgentPort);
 
                     HttpPort = TcpPortProvider.GetOpenPort();
-                    _iisExpress = helper.StartIISExpress(Agent.Port, HttpPort, classicMode);
+                    _iisExpress = helper.StartIISExpress(Agent.Port, HttpPort, appType);
                 }
             }
         }
