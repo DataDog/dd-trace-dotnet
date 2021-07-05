@@ -15,10 +15,10 @@ namespace nativeloader
     {
     private:
         std::atomic<int> ref_count_;
-        DynamicInstance* instance;
+        DynamicDispatcher* dispatcher;
 
     public:
-        CorProfiler(DynamicInstance* instance);
+        CorProfiler(DynamicDispatcher* dispatcher);
         ~CorProfiler();
 
         HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override;

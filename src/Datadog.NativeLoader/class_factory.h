@@ -13,10 +13,10 @@ class ClassFactory : public IClassFactory
 {
 private:
     std::atomic<int> refCount;
-    datadog::nativeloader::DynamicInstance* instance;
+    datadog::nativeloader::DynamicDispatcher* dispatcher;
 
 public:
-    ClassFactory(datadog::nativeloader::DynamicInstance* instance);
+    ClassFactory(datadog::nativeloader::DynamicDispatcher* dispatcher);
     virtual ~ClassFactory();
     HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override;
     ULONG STDMETHODCALLTYPE AddRef(void) override;

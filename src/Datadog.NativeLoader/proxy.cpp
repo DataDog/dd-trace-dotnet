@@ -8,6 +8,8 @@ namespace datadog
 namespace nativeloader
 {
 
+    // ************************************************************************
+
     //
     // private
     //
@@ -91,6 +93,91 @@ namespace nativeloader
     ICorProfilerCallback10* DynamicInstance::GetProfilerCallback()
     {
         return m_corProfilerCallback;
+    }
+
+    std::string DynamicInstance::GetFilePath()
+    {
+        return m_filepath;
+    }
+
+
+    // ************************************************************************
+
+    //
+    // public
+    //
+
+    DynamicDispatcher::DynamicDispatcher()
+    {
+        m_instances = std::vector<DynamicInstance*>();
+    }
+
+    void DynamicDispatcher::Add(DynamicInstance* instance)
+    {
+        m_instances.push_back(instance);
+    }
+
+    HRESULT DynamicDispatcher::LoadClassFactory(REFIID riid)
+    {
+        HRESULT result = S_OK;
+        for (DynamicInstance* dynIns : m_instances)
+        {
+            HRESULT localResult = dynIns->LoadClassFactory(riid);
+            if (FAILED(localResult))
+            {
+                result = localResult;
+            }
+        }
+        return result;
+    }
+
+    HRESULT DynamicDispatcher::LoadInstance(IUnknown* pUnkOuter, REFIID riid)
+    {
+        HRESULT result = S_OK;
+        for (DynamicInstance* dynIns : m_instances)
+        {
+            HRESULT localResult = dynIns->LoadInstance(pUnkOuter, riid);
+            if (FAILED(localResult))
+            {
+                result = localResult;
+            }
+        }
+        return result;
+    }
+
+    HRESULT STDMETHODCALLTYPE DynamicDispatcher::DllCanUnloadNow()
+    {
+        HRESULT result = S_OK;
+        for (DynamicInstance* dynIns : m_instances)
+        {
+            HRESULT localResult = dynIns->DllCanUnloadNow();
+            if (FAILED(localResult))
+            {
+                result = localResult;
+            }
+        }
+        return result;
+    }
+
+    HRESULT DynamicDispatcher::Execute(std::function<HRESULT(ICorProfilerCallback10*)> func)
+    {
+        HRESULT result = S_OK;
+        for (DynamicInstance* dynIns : m_instances)
+        {
+            ICorProfilerCallback10* profilerCallback = dynIns->GetProfilerCallback();
+            if (profilerCallback == nullptr)
+            {
+                Warn("Error trying to execute in: ", dynIns->GetFilePath());
+                continue;
+            }
+
+            HRESULT localResult = func(profilerCallback);
+            if (FAILED(localResult))
+            {
+                result = localResult;
+            }
+        }
+        return result;
     }
 
 } // namespace nativeloader
