@@ -2,6 +2,8 @@
 
 #if _WIN32
 #include <Windows.h>
+#else
+#include "dlfcn.h"
 #endif
 
 #include "logging.h"
@@ -27,13 +29,13 @@ namespace nativeloader
     void* LoadDynamicLibrary(std::string filePath)
     {
         Debug("LoadLibrary: ", filePath);
-        return nullptr;
+        return dlopen(filePath.c_str(), RTLD_LOCAL | RTLD_LAZY);
     }
 
     void* GetExternalFunction(void* instance, std::string funcName)
     {
         Debug("GetExternalFunction: ", funcName);
-        return nullptr;
+        return dlsym(instance, funcName.c_str());
     }
 #endif
 
