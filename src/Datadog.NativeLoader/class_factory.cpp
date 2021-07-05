@@ -21,9 +21,9 @@ ClassFactory::~ClassFactory()
 HRESULT STDMETHODCALLTYPE ClassFactory::QueryInterface(REFIID riid, void** ppvObject)
 {
     Debug("ClassFactory::QueryInterface");
-    instance->LoadClassFactory(riid);
+    HRESULT res = instance->LoadClassFactory(riid);
 
-    if (riid == IID_IUnknown || riid == IID_IClassFactory)
+    if ((riid == IID_IUnknown || riid == IID_IClassFactory) && SUCCEEDED(res))
     {
         *ppvObject = this;
         this->AddRef();
@@ -65,7 +65,10 @@ HRESULT STDMETHODCALLTYPE ClassFactory::CreateInstance(IUnknown* pUnkOuter, REFI
 
     auto profiler = new datadog::nativeloader::CorProfiler(instance);
     HRESULT res = profiler->QueryInterface(riid, ppvObject);
-    instance->LoadInstance(pUnkOuter, riid);
+    if (SUCCEEDED(res))
+    {
+        instance->LoadInstance(pUnkOuter, riid);
+    }
     Debug("ClassFactory::CreateInstance: ", res);
     return res;
 }
