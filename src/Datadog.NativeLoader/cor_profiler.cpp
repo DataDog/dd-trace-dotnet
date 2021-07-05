@@ -551,14 +551,14 @@ namespace nativeloader
     {
         Debug("CorProfiler::ExceptionOSHandlerEnter");
         return dispatcher->Execute(
-            [__unused](ICorProfilerCallback10* pCallback) { return pCallback->ExceptionOSHandlerEnter(__unused); });
+            [](ICorProfilerCallback10* pCallback) { return pCallback->ExceptionOSHandlerEnter(NULL); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionOSHandlerLeave(UINT_PTR __unused)
     {
         Debug("CorProfiler::ExceptionOSHandlerLeave");
         return dispatcher->Execute(
-            [__unused](ICorProfilerCallback10* pCallback) { return pCallback->ExceptionOSHandlerLeave(__unused); });
+            [](ICorProfilerCallback10* pCallback) { return pCallback->ExceptionOSHandlerLeave(NULL); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionUnwindFunctionEnter(FunctionID functionId)

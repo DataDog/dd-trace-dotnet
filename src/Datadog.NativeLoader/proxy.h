@@ -21,7 +21,7 @@ namespace nativeloader
         std::string m_filepath;
         IID m_clsid = IID_IUnknown;
         bool m_loaded;
-        HINSTANCE m_instance;
+        void* m_instance;
         dllGetClassObjectPtr m_getClassObjectPtr;
         dllCanUnloadNow m_canUnloadNow;
         IClassFactory* m_classFactory;
