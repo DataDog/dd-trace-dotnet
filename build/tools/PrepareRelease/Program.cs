@@ -7,7 +7,6 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using Datadog.Core.Tools;
 
 namespace PrepareRelease
 {
@@ -24,7 +23,7 @@ namespace PrepareRelease
                 throw new ArgumentException($@"You must specify at least one job name from [""{Versions}"", ""{Integrations}, ""{Msi}""].");
             }
 
-            var solutionDir = EnvironmentTools.GetSolutionDirectory();
+            var solutionDir = GetSolutionDirectory();
 
             if (JobShouldRun(Integrations, args))
             {
@@ -36,7 +35,7 @@ namespace PrepareRelease
             if (JobShouldRun(Versions, args))
             {
                 Console.WriteLine("--------------- Versions Job Started ---------------");
-                SetAllVersions.Run();
+                new SetAllVersions(solutionDir).Run();
                 Console.WriteLine("--------------- Versions Job Complete ---------------");
             }
 
@@ -68,6 +67,32 @@ namespace PrepareRelease
             process.WaitForExit(120_000);
             Console.WriteLine("Publish ExitCode: " + process.ExitCode, "ExecuteCommand");
             process?.Close();
+        }
+
+        private static string GetSolutionDirectory()
+        {
+            var startDirectory = Environment.CurrentDirectory;
+            var currentDirectory = Directory.GetParent(startDirectory);
+            const string searchItem = @"Datadog.Trace.sln";
+
+            while (true)
+            {
+                var slnFile = currentDirectory.GetFiles(searchItem).SingleOrDefault();
+
+                if (slnFile != null)
+                {
+                    break;
+                }
+
+                currentDirectory = currentDirectory.Parent;
+
+                if (currentDirectory == null || !currentDirectory.Exists)
+                {
+                    throw new Exception($"Unable to find solution directory from: {startDirectory}");
+                }
+            }
+
+            return currentDirectory.FullName;
         }
     }
 }

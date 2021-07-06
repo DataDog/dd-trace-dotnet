@@ -17,7 +17,6 @@ namespace Datadog.Trace.TestHelpers
 {
     public class EnvironmentHelper
     {
-        private static readonly Assembly EntryAssembly = Assembly.GetEntryAssembly();
         private static readonly Assembly ExecutingAssembly = Assembly.GetExecutingAssembly();
         private static readonly string RuntimeFrameworkDescription = RuntimeInformation.FrameworkDescription.ToLower();
 
@@ -30,8 +29,6 @@ namespace Datadog.Trace.TestHelpers
         private readonly string _runtime;
         private readonly bool _isCoreClr;
         private readonly string _samplesDirectory;
-        private readonly Type _anchorType;
-        private readonly Assembly _anchorAssembly;
         private readonly TargetFrameworkAttribute _targetFramework;
 
         private bool _requiresProfiling;
@@ -48,8 +45,6 @@ namespace Datadog.Trace.TestHelpers
         {
             SampleName = sampleName;
             _samplesDirectory = samplesDirectory ?? "test/test-applications/integrations";
-            _anchorType = anchorType;
-            _anchorAssembly = Assembly.GetAssembly(_anchorType);
             _targetFramework = Assembly.GetAssembly(anchorType).GetCustomAttribute<TargetFrameworkAttribute>();
             _output = output;
             _requiresProfiling = requiresProfiling;
@@ -80,22 +75,6 @@ namespace Datadog.Trace.TestHelpers
 
         public string FullSampleName => $"{_appNamePrepend}{SampleName}";
 
-        public static EnvironmentHelper NonProfiledHelper(Type anchor, string appName, string directory)
-        {
-            return new EnvironmentHelper(
-                sampleName: appName,
-                anchorType: anchor,
-                output: null,
-                samplesDirectory: directory,
-                prependSamplesToAppName: false,
-                requiresProfiling: false);
-        }
-
-        public static string GetExecutingAssembly()
-        {
-            return ExecutingAssembly.Location;
-        }
-
         public static bool IsNet5()
         {
             return Environment.Version.Major >= 5;
@@ -104,18 +83,6 @@ namespace Datadog.Trace.TestHelpers
         public static bool IsCoreClr()
         {
             return RuntimeFrameworkDescription.Contains("core") || IsNet5();
-        }
-
-        public static string GetRuntimeIdentifier()
-        {
-            return IsCoreClr()
-                       ? string.Empty
-                       : $"{EnvironmentTools.GetOS()}-{EnvironmentTools.GetPlatform()}";
-        }
-
-        public static string GetSolutionDirectory()
-        {
-            return EnvironmentTools.GetSolutionDirectory();
         }
 
         public static void ClearProfilerEnvironmentVariables()
@@ -256,7 +223,7 @@ namespace Datadog.Trace.TestHelpers
                     _output?.WriteLine($"Attempt 2: Unable to find integrations at {_integrationsFileLocation}.");
                     // One last attempt at the solution root
                     _integrationsFileLocation = Path.Combine(
-                        GetSolutionDirectory(),
+                        EnvironmentTools.GetSolutionDirectory(),
                         fileName);
                 }
 
@@ -333,7 +300,7 @@ namespace Datadog.Trace.TestHelpers
         {
             string extension = "exe";
 
-            if (EnvironmentHelper.IsCoreClr() || _samplesDirectory.Contains("aspnet"))
+            if (IsCoreClr() || _samplesDirectory.Contains("aspnet"))
             {
                 extension = "dll";
             }
@@ -411,7 +378,7 @@ namespace Datadog.Trace.TestHelpers
 
         public string GetSampleProjectDirectory()
         {
-            var solutionDirectory = GetSolutionDirectory();
+            var solutionDirectory = EnvironmentTools.GetSolutionDirectory();
             var projectDir = Path.Combine(
                 solutionDirectory,
                 _samplesDirectory,
@@ -483,7 +450,7 @@ namespace Datadog.Trace.TestHelpers
         private string GetProfilerProjectBin()
         {
             return Path.Combine(
-                GetSolutionDirectory(),
+                EnvironmentTools.GetSolutionDirectory(),
                 "src",
                 "Datadog.Trace.ClrProfiler.Native",
                 "bin",
