@@ -7,7 +7,15 @@
 
 #include <atomic>
 #include "unknwn.h"
-#include "proxy.h"
+
+
+namespace datadog
+{
+namespace nativeloader
+{
+    class DynamicDispatcher;
+} // namespace nativeloader
+} // namespace datadog
 
 class ClassFactory : public IClassFactory
 {

@@ -4,12 +4,12 @@
 #include <atomic>
 #include <corhlpr.h>
 #include <corprof.h>
-#include "proxy.h"
 
 namespace datadog
 {
 namespace nativeloader
 {
+    class DynamicDispatcher;
 
     class CorProfiler : public ICorProfilerCallback10
     {
