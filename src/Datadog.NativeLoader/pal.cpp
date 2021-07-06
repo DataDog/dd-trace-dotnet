@@ -29,13 +29,25 @@ namespace nativeloader
     void* LoadDynamicLibrary(std::string filePath)
     {
         Debug("LoadLibrary: ", filePath);
-        return dlopen(filePath.c_str(), RTLD_LOCAL | RTLD_LAZY);
+        void* dynLibPtr = dlopen(filePath.c_str(), RTLD_LOCAL | RTLD_LAZY);
+        if (dynLibPtr == nullptr)
+        {
+            char* errorMessage = dlerror();
+            Warn("Error loading dynamic library: ", errorMessage);
+        }
+        return dynLibPtr;
     }
 
     void* GetExternalFunction(void* instance, std::string funcName)
     {
         Debug("GetExternalFunction: ", funcName);
-        return dlsym(instance, funcName.c_str());
+        void* dynFunc = dlsym(instance, funcName.c_str());
+        if (dynFunc == nullptr)
+        {
+            char* errorMessage = dlerror();
+            Warn("Error loading dynamic function: ", errorMessage);
+        }
+        return dynFunc;
     }
 #endif
 
