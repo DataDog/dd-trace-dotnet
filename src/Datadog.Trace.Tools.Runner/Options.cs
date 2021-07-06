@@ -44,9 +44,6 @@ namespace Datadog.Trace.Tools.Runner
         [Option("crank-import", HelpText = "Import crank Json results file.")]
         public string CrankImportFile { get; set; }
 
-        [Option("merge-spans", Required = false, Default = false, HelpText = "Merges automatic instrumentation spans and test spans into single traces when possible")]
-        public bool MergeTestSpans { get; set; }
-
         [Value(0, Required = false, Hidden = true, HelpText = "Command to be wrapped by the cli tool.")]
         public IEnumerable<string> Value { get; set; }
     }
