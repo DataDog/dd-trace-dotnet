@@ -22,18 +22,21 @@ extern "C"
 
                 dispatcher = new datadog::nativeloader::DynamicDispatcher();
 
+#if _WIN32
+                std::string instancePath = "C:\\github\\dd-trace-dotnet\\src\\bin\\windows-tracer-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll";
+#elif LINUX
+                std::string instancePath = "/Users/tony.redondo/repos/github/DataDog/dd-trace-dotnet/bin/tracer-home/Datadog.Trace.ClrProfiler.Native.so";
+#elif MACOS
+                std::string instancePath = "/Users/tony.redondo/repos/github/DataDog/dd-trace-dotnet/bin/tracer-home/Datadog.Trace.ClrProfiler.Native.dylib";
+#endif
+
                 const GUID instanceGUID = {0x846f5f1c, 0xf9ae, 0x4b07, {0x96, 0x9e, 0x5, 0xc2, 0x6b, 0xc0, 0x60, 0xd8}};
+
                 std::unique_ptr<datadog::nativeloader::DynamicInstance> instance =
-                        std::make_unique<datadog::nativeloader::DynamicInstance>(
-                                "/Users/tony.redondo/repos/github/DataDog/dd-trace-dotnet/bin/tracer-home/Datadog.Trace.ClrProfiler.Native.dylib",
-                                instanceGUID
-                        );
+                        std::make_unique<datadog::nativeloader::DynamicInstance>(instancePath, instanceGUID);
 
                 std::unique_ptr<datadog::nativeloader::DynamicInstance> instance2 =
-                        std::make_unique<datadog::nativeloader::DynamicInstance>(
-                                "/Users/tony.redondo/repos/github/DataDog/dd-trace-dotnet/bin/tracer-home/Datadog.Trace.ClrProfiler.Native.dylib",
-                                instanceGUID
-                        );
+                        std::make_unique<datadog::nativeloader::DynamicInstance>(instancePath, instanceGUID);
 
                 dispatcher->Add(instance);
                 dispatcher->Add(instance2);
