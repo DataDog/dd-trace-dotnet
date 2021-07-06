@@ -378,7 +378,16 @@ namespace Datadog.Trace.TestHelpers
         }
 
         public string GetDotnetExe()
-            => EnvironmentTools.IsWindows() ? "dotnet.exe" : "dotnet";
+            => (EnvironmentTools.IsWindows(), Environment.Is64BitProcess) switch
+            {
+                (true, true) => "dotnet.exe",
+                (true, false) => Environment.GetEnvironmentVariable("DOTNET_EXE_32") ??
+                                 Path.Combine(
+                                     Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
+                                     "dotnet",
+                                     "dotnet.exe"),
+                _ =>  "dotnet",
+            };
 
         public string GetSampleProjectDirectory()
         {

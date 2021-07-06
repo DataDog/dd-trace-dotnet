@@ -207,6 +207,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 var hostingModel = appType == IisAppType.AspNetCoreInProcess ? "inprocess" : "outofprocess";
                 configTemplate = configTemplate
+                                .Replace("[DOTNET]", EnvironmentHelper.GetDotnetExe())
                                 .Replace("[RELATIVE_SAMPLE_PATH]", $".\\{EnvironmentHelper.GetSampleApplicationFileName()}")
                                 .Replace("[HOSTING_MODEL]", hostingModel);
             }
