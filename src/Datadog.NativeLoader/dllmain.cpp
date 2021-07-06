@@ -8,6 +8,14 @@
 #include "pal.h"
 #include "proxy.h"
 
+#if _WIN32
+const std::string dynExtension = ".dll";
+#elif LINUX
+const std::string dynExtension = ".so";
+#elif MACOS
+const std::string dynExtension = ".dylib";
+#endif
+
 datadog::nativeloader::DynamicDispatcher* dispatcher;
 
 extern "C"
@@ -73,14 +81,7 @@ extern "C"
                         std::string filepath = line.substr(delimiter + 1);
                         std::string clsid = line.substr(0, delimiter);
 
-#if _WIN32
-                        filepath = std::filesystem::path(filepath).replace_extension(".dll").string();
-#elif LINUX
-                        filepath = std::filesystem::path(filepath).replace_extension(".so").string();
-#elif MACOS
-                        filepath = std::filesystem::path(filepath).replace_extension(".dylib").string();
-#endif
-
+                        filepath = std::filesystem::path(filepath).replace_extension(dynExtension).string();
                         if (std::filesystem::exists(filepath))
                         {
                             std::unique_ptr<datadog::nativeloader::DynamicInstance> instance =
