@@ -145,18 +145,18 @@ namespace nativeloader
 
     DynamicDispatcher::DynamicDispatcher()
     {
-        m_instances = std::vector<DynamicInstance*>();
+        m_instances = std::vector<std::unique_ptr<DynamicInstance>>();
     }
 
-    void DynamicDispatcher::Add(DynamicInstance* instance)
+    void DynamicDispatcher::Add(std::unique_ptr<DynamicInstance>& instance)
     {
-        m_instances.push_back(instance);
+        m_instances.push_back(std::move(instance));
     }
 
     HRESULT DynamicDispatcher::LoadClassFactory(REFIID riid)
     {
         HRESULT result = S_OK;
-        for (DynamicInstance* dynIns : m_instances)
+        for (const auto& dynIns : m_instances)
         {
             if (dynIns != nullptr)
             {
@@ -173,7 +173,7 @@ namespace nativeloader
     HRESULT DynamicDispatcher::LoadInstance(IUnknown* pUnkOuter, REFIID riid)
     {
         HRESULT result = S_OK;
-        for (DynamicInstance* dynIns : m_instances)
+        for (const auto& dynIns : m_instances)
         {
             if (dynIns != nullptr)
             {
@@ -190,7 +190,7 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE DynamicDispatcher::DllCanUnloadNow()
     {
         HRESULT result = S_OK;
-        for (DynamicInstance* dynIns : m_instances)
+        for (const auto& dynIns : m_instances)
         {
             if (dynIns != nullptr)
             {
@@ -212,7 +212,7 @@ namespace nativeloader
         }
 
         HRESULT result = S_OK;
-        for (DynamicInstance* dynIns : m_instances)
+        for (const auto& dynIns : m_instances)
         {
             if (dynIns != nullptr)
             {

@@ -42,11 +42,11 @@ namespace nativeloader
     class DynamicDispatcher
     {
     private:
-        std::vector<DynamicInstance*> m_instances;
+        std::vector<std::unique_ptr<DynamicInstance>> m_instances;
 
     public:
         DynamicDispatcher();
-        void Add(DynamicInstance* instance);
+        void Add(std::unique_ptr<DynamicInstance>& instance);
         HRESULT LoadClassFactory(REFIID riid);
         HRESULT LoadInstance(IUnknown* pUnkOuter, REFIID riid);
         HRESULT STDMETHODCALLTYPE DllCanUnloadNow();
