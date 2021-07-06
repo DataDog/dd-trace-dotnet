@@ -69,10 +69,29 @@ extern "C"
                     {
                         Debug(line);
 
-                        std::unique_ptr<datadog::nativeloader::DynamicInstance> instance =
-                            std::make_unique<datadog::nativeloader::DynamicInstance>(line);
+                        size_t delimiter = line.find("=");
+                        std::string filepath = line.substr(delimiter + 1);
+                        std::string clsid = line.substr(0, delimiter);
 
-                        dispatcher->Add(instance);
+#if _WIN32
+                        filepath = std::filesystem::path(filepath).replace_extension(".dll").string();
+#elif LINUX
+                        filepath = std::filesystem::path(filepath).replace_extension(".so").string();
+#elif MACOS
+                        filepath = std::filesystem::path(filepath).replace_extension(".dylib").string();
+#endif
+
+                        if (std::filesystem::exists(filepath))
+                        {
+                            std::unique_ptr<datadog::nativeloader::DynamicInstance> instance =
+                                std::make_unique<datadog::nativeloader::DynamicInstance>(filepath, clsid);
+
+                            dispatcher->Add(instance);
+                        }
+                        else
+                        {
+                            Warn("Dynamic library doesn't exists: ", filepath);
+                        }
                     }
                 }
                 t.close();

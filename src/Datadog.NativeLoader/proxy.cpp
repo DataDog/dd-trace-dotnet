@@ -56,31 +56,13 @@ namespace nativeloader
     // public
     //
 
-    DynamicInstance::DynamicInstance(std::string filePath, REFCLSID clsid)
+    DynamicInstance::DynamicInstance(std::string filePath, std::string clsid)
     {
         m_filepath = filePath;
-        m_clsid = clsid;
+        m_clsid = guid_parse::make_guid(clsid);
         m_loaded = false;
         m_getClassObjectPtr = nullptr;
         m_canUnloadNow = nullptr;
-    }
-
-    DynamicInstance::DynamicInstance(std::string str)
-    {
-        size_t delimiter = str.find("=");
-        m_filepath = str.substr(delimiter + 1);
-        m_clsid = guid_parse::make_guid(str.substr(0, delimiter));
-        m_loaded = false;
-        m_getClassObjectPtr = nullptr;
-        m_canUnloadNow = nullptr;
-
-#if _WIN32
-        m_filepath = std::filesystem::path(m_filepath).replace_extension(".dll").string();
-#elif LINUX
-        m_filepath = std::filesystem::path(m_filepath).replace_extension(".so").string();
-#elif MACOS
-        m_filepath = std::filesystem::path(m_filepath).replace_extension(".dylib").string();
-#endif
     }
 
     HRESULT DynamicInstance::LoadClassFactory(REFIID riid)
