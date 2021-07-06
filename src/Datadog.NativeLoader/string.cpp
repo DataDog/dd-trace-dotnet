@@ -79,3 +79,73 @@ WSTRING HexStr(const void* dataPtr, int len)
     }
     return s;
 }
+
+WSTRING Trim(const WSTRING& str)
+{
+    if (str.length() == 0)
+    {
+        return WStr("");
+    }
+
+    WSTRING trimmed = str;
+
+    auto lpos = trimmed.find_first_not_of(WStr(" \t"));
+    if (lpos != WSTRING::npos && lpos > 0)
+    {
+        trimmed = trimmed.substr(lpos);
+    }
+
+    auto rpos = trimmed.find_last_not_of(WStr(" \t"));
+    if (rpos != WSTRING::npos)
+    {
+        trimmed = trimmed.substr(0, rpos + 1);
+    }
+
+    return trimmed;
+}
+
+std::string Trim(const std::string& str)
+{
+    if (str.length() == 0)
+    {
+        return "";
+    }
+
+    std::string trimmed = str;
+
+    auto lpos = trimmed.find_first_not_of(" \t");
+    if (lpos != std::string::npos && lpos > 0)
+    {
+        trimmed = trimmed.substr(lpos);
+    }
+
+    auto rpos = trimmed.find_last_not_of(" \t");
+    if (rpos != std::string::npos)
+    {
+        trimmed = trimmed.substr(0, rpos + 1);
+    }
+
+    return trimmed;
+}
+
+template <typename Out>
+void Split(const WSTRING& s, wchar_t delim, Out result)
+{
+    size_t lpos = 0;
+    for (size_t i = 0; i < s.length(); i++)
+    {
+        if (s[i] == delim)
+        {
+            *(result++) = s.substr(lpos, (i - lpos));
+            lpos = i + 1;
+        }
+    }
+    *(result++) = s.substr(lpos);
+}
+
+std::vector<WSTRING> Split(const WSTRING& s, wchar_t delim)
+{
+    std::vector<WSTRING> elems;
+    Split(s, delim, std::back_inserter(elems));
+    return elems;
+}

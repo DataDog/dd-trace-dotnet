@@ -71,4 +71,7 @@
       <Filter>Source Files</Filter>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="loader.conf" />
+  </ItemGroup>
 </Project>
