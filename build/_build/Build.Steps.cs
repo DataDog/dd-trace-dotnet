@@ -356,7 +356,7 @@ partial class Build
            EnsureCleanDirectory(outputDir);
            MoveFile(
                DDTracerHomeDirectory / fileName,
-               outputDir / architecture);
+               outputDir / fileName);
        });
 
     Target BuildMsi => _ => _
