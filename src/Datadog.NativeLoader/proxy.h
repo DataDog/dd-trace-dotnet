@@ -27,7 +27,7 @@ namespace nativeloader
         IClassFactory* m_classFactory;
         ICorProfilerCallback10* m_corProfilerCallback;
 
-        void EnsureDynamicLibrary();
+        HRESULT EnsureDynamicLibrary();
         HRESULT DllGetClassObject(REFIID riid, LPVOID* ppv);
 
     public:

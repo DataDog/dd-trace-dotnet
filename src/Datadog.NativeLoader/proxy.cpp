@@ -14,23 +14,39 @@ namespace nativeloader
     // private
     //
 
-    void DynamicInstance::EnsureDynamicLibrary()
+    HRESULT DynamicInstance::EnsureDynamicLibrary()
     {
         if (!m_loaded)
         {
             m_instance = LoadDynamicLibrary(m_filepath);
             m_loaded = true;
         }
+
+        return m_instance != nullptr ? S_OK : E_FAIL;
     }
 
     HRESULT DynamicInstance::DllGetClassObject(REFIID riid, LPVOID* ppv)
     {
-        EnsureDynamicLibrary();
+        // Check if the library is loaded
+        if (FAILED(EnsureDynamicLibrary()))
+        {
+            return E_FAIL;
+        }
+
+        // Check if the function pointer needs to be loaded
         if (m_getClassObjectPtr == nullptr)
         {
             m_getClassObjectPtr = (dllGetClassObjectPtr) GetExternalFunction(m_instance, "DllGetClassObject");
         }
-        return m_getClassObjectPtr(m_clsid, riid, ppv);
+
+        // If we have the function pointer we call the function
+        if (m_getClassObjectPtr != nullptr)
+        {
+            return m_getClassObjectPtr(m_clsid, riid, ppv);
+        }
+
+        // The function cannot be loaded.
+        return E_FAIL;
     }
 
     //
@@ -66,10 +82,16 @@ namespace nativeloader
     HRESULT DynamicInstance::LoadInstance(IUnknown* pUnkOuter, REFIID riid)
     {
         Debug("Running LoadInstance: ");
-        Debug("m_clasFactory: ", HexStr(m_classFactory, sizeof(IClassFactory*)));
 
-        HRESULT res =
-            m_classFactory->CreateInstance(nullptr, __uuidof(ICorProfilerCallback10), (void**) &m_corProfilerCallback);
+        // Check if the class factory instance is loaded.
+        if (m_classFactory == nullptr)
+        {
+            return E_FAIL;
+        }
+
+        // Creates the profiler callback instance from the class factory
+        Debug("m_classFactory: ", HexStr(m_classFactory, sizeof(IClassFactory*)));
+        HRESULT res = m_classFactory->CreateInstance(nullptr, __uuidof(ICorProfilerCallback10), (void**) &m_corProfilerCallback);
         if (FAILED(res))
         {
             m_corProfilerCallback = nullptr;
@@ -82,12 +104,26 @@ namespace nativeloader
 
     HRESULT STDMETHODCALLTYPE DynamicInstance::DllCanUnloadNow()
     {
-        EnsureDynamicLibrary();
+        // Check if the library is loaded
+        if (FAILED(EnsureDynamicLibrary()))
+        {
+            return E_FAIL;
+        }
+
+        // Check if the function pointer needs to be loaded
         if (m_canUnloadNow == nullptr)
         {
             m_canUnloadNow = (dllCanUnloadNow) GetExternalFunction(m_instance, "DllCanUnloadNow");
         }
-        return m_canUnloadNow();
+
+        // If we have the function pointer we call the function
+        if (m_canUnloadNow != nullptr)
+        {
+            return m_canUnloadNow();
+        }
+
+        // The function cannot be loaded.
+        return E_FAIL;
     }
 
     ICorProfilerCallback10* DynamicInstance::GetProfilerCallback()
@@ -122,10 +158,13 @@ namespace nativeloader
         HRESULT result = S_OK;
         for (DynamicInstance* dynIns : m_instances)
         {
-            HRESULT localResult = dynIns->LoadClassFactory(riid);
-            if (FAILED(localResult))
+            if (dynIns != nullptr)
             {
-                result = localResult;
+                HRESULT localResult = dynIns->LoadClassFactory(riid);
+                if (FAILED(localResult))
+                {
+                    result = localResult;
+                }
             }
         }
         return result;
@@ -136,10 +175,13 @@ namespace nativeloader
         HRESULT result = S_OK;
         for (DynamicInstance* dynIns : m_instances)
         {
-            HRESULT localResult = dynIns->LoadInstance(pUnkOuter, riid);
-            if (FAILED(localResult))
+            if (dynIns != nullptr)
             {
-                result = localResult;
+                HRESULT localResult = dynIns->LoadInstance(pUnkOuter, riid);
+                if (FAILED(localResult))
+                {
+                    result = localResult;
+                }
             }
         }
         return result;
@@ -150,10 +192,13 @@ namespace nativeloader
         HRESULT result = S_OK;
         for (DynamicInstance* dynIns : m_instances)
         {
-            HRESULT localResult = dynIns->DllCanUnloadNow();
-            if (FAILED(localResult))
+            if (dynIns != nullptr)
             {
-                result = localResult;
+                HRESULT localResult = dynIns->DllCanUnloadNow();
+                if (FAILED(localResult))
+                {
+                    result = localResult;
+                }
             }
         }
         return result;
@@ -161,20 +206,28 @@ namespace nativeloader
 
     HRESULT DynamicDispatcher::Execute(std::function<HRESULT(ICorProfilerCallback10*)> func)
     {
+        if (func == nullptr)
+        {
+            return E_FAIL;
+        }
+
         HRESULT result = S_OK;
         for (DynamicInstance* dynIns : m_instances)
         {
-            ICorProfilerCallback10* profilerCallback = dynIns->GetProfilerCallback();
-            if (profilerCallback == nullptr)
+            if (dynIns != nullptr)
             {
-                Warn("Error trying to execute in: ", dynIns->GetFilePath());
-                continue;
-            }
+                ICorProfilerCallback10* profilerCallback = dynIns->GetProfilerCallback();
+                if (profilerCallback == nullptr)
+                {
+                    Warn("Error trying to execute in: ", dynIns->GetFilePath());
+                    continue;
+                }
 
-            HRESULT localResult = func(profilerCallback);
-            if (FAILED(localResult))
-            {
-                result = localResult;
+                HRESULT localResult = func(profilerCallback);
+                if (FAILED(localResult))
+                {
+                    result = localResult;
+                }
             }
         }
         return result;
