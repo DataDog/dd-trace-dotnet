@@ -192,6 +192,7 @@
   <ItemGroup>
     <ClInclude Include="class_factory.h" />
     <ClInclude Include="cor_profiler.h" />
+    <ClInclude Include="guid.h" />
     <ClInclude Include="logging.h" />
     <ClInclude Include="miniutf.hpp" />
     <ClInclude Include="miniutfdata.h" />
