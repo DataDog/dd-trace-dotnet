@@ -1,6 +1,7 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
 #include "class_factory.h"
 
+#include "guid.h"
 #include "logging.h"
 #include "proxy.h"
 
@@ -30,7 +31,7 @@ extern "C"
                 std::string instancePath = "/Users/tony.redondo/repos/github/DataDog/dd-trace-dotnet/bin/tracer-home/Datadog.Trace.ClrProfiler.Native.dylib";
 #endif
 
-                const GUID instanceGUID = {0x846f5f1c, 0xf9ae, 0x4b07, {0x96, 0x9e, 0x5, 0xc2, 0x6b, 0xc0, 0x60, 0xd8}};
+                const GUID instanceGUID = guid_parse::make_guid("{846F5F1C-F9AE-4B07-969E-05C26BC060D8}");
 
                 std::unique_ptr<datadog::nativeloader::DynamicInstance> instance =
                         std::make_unique<datadog::nativeloader::DynamicInstance>(instancePath, instanceGUID);
