@@ -84,6 +84,24 @@ namespace guid_parse
 
             return make_guid_helper(str + (N == (long_guid_form_length + 1) ? 1 : 0));
         }
+
+        GUID make_guid(const std::string str)
+        {
+            size_t currentLength = str.length();
+
+            if (currentLength == long_guid_form_length || currentLength == short_guid_form_length)
+            {
+                if (currentLength == long_guid_form_length)
+                {
+                    if (str[0] != '{' || str[long_guid_form_length - 1] != '}')
+                        throw std::domain_error{"Missing opening or closing brace"};
+                }
+
+                return make_guid_helper(str.c_str() + (currentLength == long_guid_form_length ? 1 : 0));
+            }
+
+            throw std::domain_error{"String GUID of the form {XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX} or XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX is expected"};
+        }
     }
     using details::make_guid;
 

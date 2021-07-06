@@ -1,7 +1,6 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
 #include "class_factory.h"
 
-#include "guid.h"
 #include "logging.h"
 #include "proxy.h"
 
@@ -24,23 +23,18 @@ extern "C"
                 dispatcher = new datadog::nativeloader::DynamicDispatcher();
 
 #if _WIN32
-                std::string instancePath = "C:\\github\\dd-trace-dotnet\\src\\bin\\windows-tracer-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll";
+                std::string instanceDef = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}=C:\\github\\dd-trace-dotnet\\src\\bin\\windows-tracer-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll";
 #elif LINUX
-                std::string instancePath = "/Users/tony.redondo/repos/github/DataDog/dd-trace-dotnet/bin/tracer-home/Datadog.Trace.ClrProfiler.Native.so";
+                std::string instanceDef = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}=/Users/tony.redondo/repos/github/DataDog/dd-trace-dotnet/bin/tracer-home/Datadog.Trace.ClrProfiler.Native.so";
 #elif MACOS
-                std::string instancePath = "/Users/tony.redondo/repos/github/DataDog/dd-trace-dotnet/bin/tracer-home/Datadog.Trace.ClrProfiler.Native.dylib";
+                std::string instanceDef = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}=/Users/tony.redondo/repos/github/DataDog/dd-trace-dotnet/bin/tracer-home/Datadog.Trace.ClrProfiler.Native.dylib";
 #endif
 
-                const GUID instanceGUID = guid_parse::make_guid("{846F5F1C-F9AE-4B07-969E-05C26BC060D8}");
-
-                std::unique_ptr<datadog::nativeloader::DynamicInstance> instance =
-                        std::make_unique<datadog::nativeloader::DynamicInstance>(instancePath, instanceGUID);
-
-                std::unique_ptr<datadog::nativeloader::DynamicInstance> instance2 =
-                        std::make_unique<datadog::nativeloader::DynamicInstance>(instancePath, instanceGUID);
-
+                std::unique_ptr<datadog::nativeloader::DynamicInstance> instance = std::make_unique<datadog::nativeloader::DynamicInstance>(instanceDef);
                 dispatcher->Add(instance);
-                dispatcher->Add(instance2);
+
+                // std::unique_ptr<datadog::nativeloader::DynamicInstance> instance2 = std::make_unique<datadog::nativeloader::DynamicInstance>(instanceDef);
+                // dispatcher->Add(instance2);
 
                 break;
             }

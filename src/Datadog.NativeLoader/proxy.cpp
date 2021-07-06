@@ -1,5 +1,6 @@
 #include "proxy.h"
 
+#include "guid.h"
 #include "logging.h"
 #include "pal.h"
 
@@ -57,6 +58,16 @@ namespace nativeloader
     {
         m_filepath = filePath;
         m_clsid = clsid;
+        m_loaded = false;
+        m_getClassObjectPtr = nullptr;
+        m_canUnloadNow = nullptr;
+    }
+
+    DynamicInstance::DynamicInstance(std::string str)
+    {
+        size_t delimiter = str.find("=");
+        m_filepath = str.substr(delimiter + 1);
+        m_clsid = guid_parse::make_guid(str.substr(0, delimiter));
         m_loaded = false;
         m_getClassObjectPtr = nullptr;
         m_canUnloadNow = nullptr;
