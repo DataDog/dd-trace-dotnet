@@ -214,7 +214,6 @@ namespace Datadog.Trace.Configuration
 
             KafkaCreateConsumerScopeEnabled = source?.GetBool(ConfigurationKeys.KafkaCreateConsumerScopeEnabled)
                                            ?? true; // default
-            MergeTestSpans = source?.GetBool(ConfigurationKeys.FeatureFlags.MergeTestSpans) ?? false;
         }
 
         /// <summary>
@@ -457,12 +456,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled"/>
         internal bool RouteTemplateResourceNamesEnabled { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether test spans and automatic instrumentation spans should be merged
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.FeatureFlags.MergeTestSpans"/>
-        internal bool MergeTestSpans { get; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources

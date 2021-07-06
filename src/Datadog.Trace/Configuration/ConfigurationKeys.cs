@@ -384,11 +384,6 @@ namespace Datadog.Trace.Configuration
             /// Feature Flag: enables instrumenting calls to netstandard.dll (only applies to CallSite instrumentation)
             /// </summary>
             public const string NetStandardEnabled = "DD_TRACE_NETSTANDARD_ENABLED";
-
-            /// <summary>
-            /// Feature Flag: Merges automatic instrumentation spans and test spans
-            /// </summary>
-            public const string MergeTestSpans = "DD_TRACE_MERGE_TEST_SPANS";
         }
     }
 }
