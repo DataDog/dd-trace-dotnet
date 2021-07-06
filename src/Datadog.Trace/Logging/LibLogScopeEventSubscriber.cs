@@ -258,12 +258,18 @@ namespace Datadog.Trace.Logging
 
         private static void InitResolvers()
         {
-            // Register the custom Serilog provider
+            // Note: for retrocompatibility, the order in which the providers are resolved is important
+            // Make sure to respect the order:
+            //  - Serilog
+            //  - NLog
+            //  - Log4net
+
+            // Register the custom log4net provider
             LogProvider.LogProviderResolvers.Insert(
                 0,
                 Tuple.Create<LogProvider.IsLoggerAvailable, LogProvider.CreateLogProvider>(
-                    CustomSerilogLogProvider.IsLoggerAvailable,
-                    () => new CustomSerilogLogProvider()));
+                    CustomLog4NetLogProvider.IsLoggerAvailable,
+                    () => new CustomLog4NetLogProvider()));
 
             // Register the custom NLog provider
             LogProvider.LogProviderResolvers.Insert(
@@ -272,12 +278,12 @@ namespace Datadog.Trace.Logging
                     CustomNLogLogProvider.IsLoggerAvailable,
                     () => new CustomNLogLogProvider()));
 
-            // Register the custom log4net provider
+            // Register the custom Serilog provider
             LogProvider.LogProviderResolvers.Insert(
                 0,
                 Tuple.Create<LogProvider.IsLoggerAvailable, LogProvider.CreateLogProvider>(
-                    CustomLog4NetLogProvider.IsLoggerAvailable,
-                    () => new CustomLog4NetLogProvider()));
+                    CustomSerilogLogProvider.IsLoggerAvailable,
+                    () => new CustomSerilogLogProvider()));
         }
 
         private void SetDefaultValues()
