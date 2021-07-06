@@ -80,11 +80,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     {
                     }
 
-#if NETFRAMEWORK
                     // If the operation fails, it could leave files in the GAC and impact the next tests
                     // Therefore, we don't wrap this in a try/catch
                     RemoveAssembliesFromGac();
-#endif
                 }
             }
         }

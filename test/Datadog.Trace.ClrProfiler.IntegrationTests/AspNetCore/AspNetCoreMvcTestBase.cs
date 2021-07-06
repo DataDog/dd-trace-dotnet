@@ -299,7 +299,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 return true;
             }
 
-            return !url.Contains("alive-check");
+            return !url.Contains("alive-check") && !url.Contains("shutdown");
         }
     }
 }

@@ -277,8 +277,6 @@ namespace Datadog.Trace.TestHelpers
         {
             if (_profilerFileLocation == null)
             {
-                int attempt = 1;
-
                 var paths = GetProfilerPathCandidates(GetSampleApplicationOutputDirectory()).ToArray();
 
                 foreach (var candidate in paths)
@@ -289,12 +287,9 @@ namespace Datadog.Trace.TestHelpers
                         _output?.WriteLine($"Found profiler at {_profilerFileLocation}.");
                         return candidate;
                     }
-
-                    _output?.WriteLine($"Attempt {attempt}: Unable to find profiler at {candidate}.");
-                    attempt++;
                 }
 
-                throw new Exception($"Unable to find profiler in any of the paths: {string.Join("; ", _profilerFileLocation)}");
+                throw new Exception($"Unable to find profiler in any of the paths: {string.Join("; ", paths)}");
             }
 
             return _profilerFileLocation;
