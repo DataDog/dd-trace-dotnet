@@ -12,8 +12,8 @@
 class ClassFactory : public IClassFactory
 {
 private:
-    std::atomic<int> refCount;
-    datadog::nativeloader::DynamicDispatcher* dispatcher;
+    std::atomic<int> m_refCount;
+    datadog::nativeloader::DynamicDispatcher* m_dispatcher;
 
 public:
     ClassFactory(datadog::nativeloader::DynamicDispatcher* dispatcher);

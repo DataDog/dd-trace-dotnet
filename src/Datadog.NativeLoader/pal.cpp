@@ -23,7 +23,7 @@ namespace nativeloader
     void* GetExternalFunction(void* instance, std::string funcName)
     {
         Debug("GetExternalFunction: ", funcName);
-        return (void*)GetProcAddress(instance, funcName.c_str());
+        return (void*)GetProcAddress((HMODULE)instance, funcName.c_str());
     }
 #else
     void* LoadDynamicLibrary(std::string filePath)
