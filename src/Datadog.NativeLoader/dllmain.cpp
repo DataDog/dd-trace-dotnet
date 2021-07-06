@@ -1,7 +1,11 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
 #include "class_factory.h"
 
+#include <filesystem>
+#include <fstream>
+
 #include "logging.h"
+#include "pal.h"
 #include "proxy.h"
 
 datadog::nativeloader::DynamicDispatcher* dispatcher;
@@ -22,20 +26,58 @@ extern "C"
 
                 dispatcher = new datadog::nativeloader::DynamicDispatcher();
 
-#if _WIN32
-                std::string instanceDef = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}=C:\\github\\dd-trace-dotnet\\src\\bin\\windows-tracer-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll";
-#elif LINUX
-                std::string instanceDef = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}=/Users/tony.redondo/repos/github/DataDog/dd-trace-dotnet/bin/tracer-home/Datadog.Trace.ClrProfiler.Native.so";
-#elif MACOS
-                std::string instanceDef = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}=/Users/tony.redondo/repos/github/DataDog/dd-trace-dotnet/bin/tracer-home/Datadog.Trace.ClrProfiler.Native.dylib";
+                // *****************************************************************************************************************
+
+                WSTRING profiler_path;
+                profiler_path = datadog::nativeloader::GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH"));
+                if (profiler_path.length() == 0)
+                {
+                    profiler_path = datadog::nativeloader::GetEnvironmentValue(WStr("COR_PROFILER_PATH"));
+                }
+
+#if BIT64
+                if (profiler_path.length() == 0)
+                {
+                    profiler_path = datadog::nativeloader::GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_64"));
+                }
+                if (profiler_path.length() == 0)
+                {
+                    profiler_path = datadog::nativeloader::GetEnvironmentValue(WStr("COR_PROFILER_PATH_64"));
+                }
+#else
+                if (profiler_path.length() == 0)
+                {
+                    profiler_path = datadog::nativeloader::GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_32"));
+                }
+                if (profiler_path.length() == 0)
+                {
+                    profiler_path = datadog::nativeloader::GetEnvironmentValue(WStr("COR_PROFILER_PATH_32"));
+                }
 #endif
 
-                std::unique_ptr<datadog::nativeloader::DynamicInstance> instance = std::make_unique<datadog::nativeloader::DynamicInstance>(instanceDef);
-                dispatcher->Add(instance);
+                // *****************************************************************************************************************
 
-                // std::unique_ptr<datadog::nativeloader::DynamicInstance> instance2 = std::make_unique<datadog::nativeloader::DynamicInstance>(instanceDef);
-                // dispatcher->Add(instance2);
+                auto path = std::filesystem::path(profiler_path).remove_filename().append("loader.conf").string();
+                std::ifstream t;
+                t.open(path);
+                while (t)
+                {
+                    std::string line;
+                    std::getline(t, line);
+                    line = Trim(line);
+                    if (line.length() != 0)
+                    {
+                        Debug(line);
 
+                        std::unique_ptr<datadog::nativeloader::DynamicInstance> instance =
+                            std::make_unique<datadog::nativeloader::DynamicInstance>(line);
+
+                        dispatcher->Add(instance);
+                    }
+                }
+                t.close();
+
+                // *****************************************************************************************************************
                 break;
             }
             case DLL_THREAD_ATTACH:

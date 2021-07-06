@@ -1,5 +1,7 @@
 #include "proxy.h"
 
+#include <filesystem>
+
 #include "guid.h"
 #include "logging.h"
 #include "pal.h"
@@ -71,6 +73,14 @@ namespace nativeloader
         m_loaded = false;
         m_getClassObjectPtr = nullptr;
         m_canUnloadNow = nullptr;
+
+#if _WIN32
+        m_filepath = std::filesystem::path(m_filepath).replace_extension(".dll").string();
+#elif LINUX
+        m_filepath = std::filesystem::path(m_filepath).replace_extension(".so").string();
+#elif MACOS
+        m_filepath = std::filesystem::path(m_filepath).replace_extension(".dylib").string();
+#endif
     }
 
     HRESULT DynamicInstance::LoadClassFactory(REFIID riid)
