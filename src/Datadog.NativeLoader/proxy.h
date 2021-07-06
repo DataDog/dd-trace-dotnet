@@ -32,6 +32,7 @@ namespace nativeloader
 
     public:
         DynamicInstance(std::string filePath, REFCLSID clsid);
+        DynamicInstance(std::string str);
         HRESULT LoadClassFactory(REFIID riid);
         HRESULT LoadInstance(IUnknown* pUnkOuter, REFIID riid);
         HRESULT STDMETHODCALLTYPE DllCanUnloadNow();
