@@ -74,4 +74,7 @@
   <ItemGroup>
     <CopyFileToFolders Include="loader.conf" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="CMakeLists.txt" />
+  </ItemGroup>
 </Project>
