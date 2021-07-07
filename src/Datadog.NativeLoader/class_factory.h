@@ -1,10 +1,8 @@
-#ifndef CLASS_FACTORY_H_
-#define CLASS_FACTORY_H_
-
 // Copyright (c) .NET Foundation and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full
 // license information.
 
+#pragma once
 #include <atomic>
 #include "unknwn.h"
 
@@ -29,5 +27,3 @@ public:
     HRESULT STDMETHODCALLTYPE CreateInstance(IUnknown* pUnkOuter, REFIID riid, void** ppvObject) override;
     HRESULT STDMETHODCALLTYPE LockServer(BOOL fLock) override;
 };
-
-#endif

@@ -1,8 +1,8 @@
 #pragma once
-
-#include "string.h"
 #include <iostream>
 #include <mutex>
+
+#include "string.h"
 
 template <typename Arg>
 std::string LogToString(Arg const& arg)

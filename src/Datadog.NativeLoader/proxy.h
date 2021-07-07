@@ -1,10 +1,10 @@
 #pragma once
-
-#include "string.h"
 #include <corhlpr.h>
 #include <corprof.h>
 #include <vector>
 #include <functional>
+
+#include "string.h"
 
 namespace datadog
 {
