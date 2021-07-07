@@ -33,8 +33,8 @@ WSTRING Trim(const WSTRING& str);
 // Trim removes space from the beginning and end of a string.
 std::string Trim(const std::string& str);
 
-template <typename Out>
-void Split(const WSTRING& s, wchar_t delim, Out result);
-
 // Split splits a string by the given delimiter.
 std::vector<WSTRING> Split(const WSTRING& s, wchar_t delim);
+
+// Split splits a string by the given delimiter.
+std::vector<std::string> Split(const std::string& s, char delim);
