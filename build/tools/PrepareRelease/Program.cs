@@ -43,9 +43,7 @@ namespace PrepareRelease
             {
                 Environment.SetEnvironmentVariable("SOLUTION_DIR", solutionDir);
 
-                var outputDir = Path.Combine(solutionDir, "src", "bin", "windows-tracer-home");
-                Environment.SetEnvironmentVariable("OUTPUT_DIR", outputDir);
-
+                var outputDir = Path.Combine(solutionDir, "bin", "tracer-home");
                 var publishBatch = Path.Combine(solutionDir, "build", "tools", "PrepareRelease", "publish-all.bat");
                 ExecuteCommand(publishBatch);
 
