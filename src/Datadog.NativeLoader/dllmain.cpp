@@ -71,14 +71,14 @@ extern "C"
 
                 dispatcher = new DynamicDispatcher();
 
-                WSTRING profiler_path = GetProfilerPath();
-                std::string path =
-                    std::filesystem::path(profiler_path).remove_filename().append(conf_filename).string();
+                WSTRING profilerPath = GetProfilerPath();
+                std::string configFilePath =
+                    std::filesystem::path(profilerPath).remove_filename().append(conf_filename).string();
 
                 std::unordered_map<std::string, bool> guidBoolMap;
 
                 std::ifstream t;
-                t.open(path);
+                t.open(configFilePath);
                 while (t)
                 {
                     std::string line;
@@ -88,7 +88,7 @@ extern "C"
                     {
                         Debug(line);
 
-                        if (line.substr(0, 1) == "#")
+                        if (line[0] == '#')
                         {
                             continue;
                         }
