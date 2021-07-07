@@ -2105,21 +2105,30 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     WSTRING native_profiler_file = WStr("DATADOG.TRACE.CLRPROFILER.NATIVE.DLL");
 #else // _WIN32
 
+    WSTRING native_profiler_file = GetEnvironmentValue(WStr("PROFID_{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"));
+    Debug("GenerateVoidILStartupMethod: PROFID_{846F5F1C-F9AE-4B07-969E-05C26BC060D8} defined as: ", native_profiler_file);
+
 #ifdef BIT64
-    WSTRING native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_64"));
-    Debug("GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH_64 defined as: ", native_profiler_file);
     if (native_profiler_file == WStr(""))
     {
-        native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH"));
-        Debug("GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH defined as: ", native_profiler_file);
+        native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_64"));
+        Debug("GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH_64 defined as: ", native_profiler_file);
+        if (native_profiler_file == WStr(""))
+        {
+            native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH"));
+            Debug("GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH defined as: ", native_profiler_file);
+        }
     }
 #else // BIT64
-    WSTRING native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_32"));
-    Debug("GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH_32 defined as: ", native_profiler_file);
     if (native_profiler_file == WStr(""))
     {
-        native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH"));
-        Debug("GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH defined as: ", native_profiler_file);
+        native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_32"));
+        Debug("GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH_32 defined as: ", native_profiler_file);
+        if (native_profiler_file == WStr(""))
+        {
+            native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH"));
+            Debug("GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH defined as: ", native_profiler_file);
+        }
     }
 #endif // BIT64
     Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler library path to ",
