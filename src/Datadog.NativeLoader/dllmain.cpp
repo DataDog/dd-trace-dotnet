@@ -8,6 +8,9 @@
 #include "pal.h"
 #include "proxy.h"
 
+using namespace datadog::nativeloader;
+
+const std::string conf_filename = "loader.conf";
 #if _WIN32
 const std::string dynExtension = ".dll";
 #elif LINUX
@@ -16,7 +19,40 @@ const std::string dynExtension = ".so";
 const std::string dynExtension = ".dylib";
 #endif
 
-datadog::nativeloader::DynamicDispatcher* dispatcher;
+DynamicDispatcher* dispatcher;
+
+// Gets the profiler path
+static WSTRING GetProfilerPath()
+{
+    WSTRING profiler_path;
+    profiler_path = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH"));
+    if (profiler_path.length() == 0)
+    {
+        profiler_path = GetEnvironmentValue(WStr("COR_PROFILER_PATH"));
+    }
+
+#if BIT64
+    if (profiler_path.length() == 0)
+    {
+        profiler_path = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_64"));
+    }
+    if (profiler_path.length() == 0)
+    {
+        profiler_path = GetEnvironmentValue(WStr("COR_PROFILER_PATH_64"));
+    }
+#else
+    if (profiler_path.length() == 0)
+    {
+        profiler_path = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_32"));
+    }
+    if (profiler_path.length() == 0)
+    {
+        profiler_path = GetEnvironmentValue(WStr("COR_PROFILER_PATH_32"));
+    }
+#endif
+
+    return profiler_path;
+}
 
 extern "C"
 {
@@ -32,40 +68,14 @@ extern "C"
 
                 Debug("DllMain - DLL_PROCESS_ATTACH");
 
-                dispatcher = new datadog::nativeloader::DynamicDispatcher();
+                dispatcher = new DynamicDispatcher();
 
-                // *****************************************************************************************************************
+                WSTRING profiler_path = GetProfilerPath();
+                std::string path =
+                    std::filesystem::path(profiler_path).remove_filename().append(conf_filename).string();
 
-                WSTRING profiler_path;
-                profiler_path = datadog::nativeloader::GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH"));
-                if (profiler_path.length() == 0)
-                {
-                    profiler_path = datadog::nativeloader::GetEnvironmentValue(WStr("COR_PROFILER_PATH"));
-                }
+                std::unordered_map<std::string, bool> guidBoolMap;
 
-#if BIT64
-                if (profiler_path.length() == 0)
-                {
-                    profiler_path = datadog::nativeloader::GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_64"));
-                }
-                if (profiler_path.length() == 0)
-                {
-                    profiler_path = datadog::nativeloader::GetEnvironmentValue(WStr("COR_PROFILER_PATH_64"));
-                }
-#else
-                if (profiler_path.length() == 0)
-                {
-                    profiler_path = datadog::nativeloader::GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_32"));
-                }
-                if (profiler_path.length() == 0)
-                {
-                    profiler_path = datadog::nativeloader::GetEnvironmentValue(WStr("COR_PROFILER_PATH_32"));
-                }
-#endif
-
-                // *****************************************************************************************************************
-
-                auto path = std::filesystem::path(profiler_path).remove_filename().append("loader.conf").string();
                 std::ifstream t;
                 t.open(path);
                 while (t)
@@ -77,6 +87,11 @@ extern "C"
                     {
                         Debug(line);
 
+                        if (line.substr(0, 1) == "#")
+                        {
+                            continue;
+                        }
+
                         size_t delimiter = line.find("=");
                         std::string filepath = line.substr(delimiter + 1);
                         std::string clsid = line.substr(0, delimiter);
@@ -84,18 +99,26 @@ extern "C"
                         filepath = std::filesystem::path(filepath).replace_extension(dynExtension).string();
                         if (std::filesystem::exists(filepath))
                         {
-                            std::unique_ptr<datadog::nativeloader::DynamicInstance> instance =
-                                std::make_unique<datadog::nativeloader::DynamicInstance>(filepath, clsid);
-
+                            guidBoolMap[clsid] = true;
+                            std::unique_ptr<DynamicInstance> instance = std::make_unique<DynamicInstance>(filepath, clsid);
                             dispatcher->Add(instance);
+
                         }
-                        else
+                        else if (guidBoolMap.find(clsid) == guidBoolMap.end())
                         {
-                            Warn("Dynamic library doesn't exists: ", filepath);
+                            guidBoolMap[clsid] = false;
                         }
                     }
                 }
                 t.close();
+
+                for (const auto item : guidBoolMap)
+                {
+                    if (!item.second)
+                    {
+                        Warn("Dynamic library for '", item.first, "' cannot be loaded");
+                    }
+                }
 
                 // *****************************************************************************************************************
                 break;
