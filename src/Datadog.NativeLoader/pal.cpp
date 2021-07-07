@@ -75,15 +75,7 @@ namespace nativeloader
 #ifdef _WIN32
         return SetEnvironmentVariable(Trim(name).c_str(), value.c_str());
 #else
-        /*auto cstr = std::getenv(ToString(name).c_str());
-        if (cstr == nullptr)
-        {
-            return WStr("");
-        }
-        std::string str(cstr);
-        auto wstr = ToWSTRING(str);
-        return Trim(wstr);*/
-        return false;
+        return setenv(ToString(name).c_str(), ToString(value).c_str(), 1) == 1;
 #endif
     }
 
