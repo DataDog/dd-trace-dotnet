@@ -149,3 +149,25 @@ std::vector<WSTRING> Split(const WSTRING& s, wchar_t delim)
     Split(s, delim, std::back_inserter(elems));
     return elems;
 }
+
+template <typename Out>
+void Split(const std::string& s, char delim, Out result)
+{
+    size_t lpos = 0;
+    for (size_t i = 0; i < s.length(); i++)
+    {
+        if (s[i] == delim)
+        {
+            *(result++) = s.substr(lpos, (i - lpos));
+            lpos = i + 1;
+        }
+    }
+    *(result++) = s.substr(lpos);
+}
+
+std::vector<std::string> Split(const std::string& s, char delim)
+{
+    std::vector<std::string> elems;
+    Split(s, delim, std::back_inserter(elems));
+    return elems;
+}

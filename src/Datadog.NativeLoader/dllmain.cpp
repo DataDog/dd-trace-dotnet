@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <fstream>
 #include <unordered_map>
+#include <vector>
 
 #include "logging.h"
 #include "pal.h"
@@ -49,9 +50,9 @@ extern "C"
                             continue;
                         }
 
-                        size_t delimiter = line.find("=");
-                        std::string filepath = line.substr(delimiter + 1);
-                        std::string clsid = line.substr(0, delimiter);
+                        std::vector<std::string> lineArray = Split(line, ';');
+                        std::string clsid = lineArray[0];
+                        std::string filepath = lineArray[1];
 
                         if (!std::filesystem::exists(filepath))
                         {
