@@ -22,6 +22,7 @@ variables:
   DD_DOTNET_TRACER_MSBUILD:
   NugetPackageDirectory: $(System.DefaultWorkingDirectory)/packages
   relativeNugetPackageDirectory: packages
+  DD_TRACE_CALLTARGET_ENABLED: 0
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
