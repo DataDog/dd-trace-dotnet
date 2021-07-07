@@ -25,7 +25,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Npgsql.NpgsqlC
  ********************************************************************************/
 
 // Task<NpgsqlDataReader> Npgsql.NpgsqlCommand.ExecuteReaderAsync(CommandBehavior, CancellationToken)
-[assembly: CommandExecuteReaderWithBehaviorAsync(typeof(NpgsqlClientData))]
+[assembly: CommandExecuteReaderWithBehaviorAndCancellationAsync(typeof(NpgsqlClientData))]
 
 /********************************************************************************
  * Task<DbDataReader> .ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
