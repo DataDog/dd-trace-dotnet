@@ -117,7 +117,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         WSTRING env_var_value = GetEnvironmentValue(env_var);
         if (debug_logging_enabled || !env_var_value.empty())
         {
-            Info("  ", env_var, "=", env_var_value);
+            Info("  ", ToString(env_var), "=", ToString(env_var_value));
         }
     }
 
