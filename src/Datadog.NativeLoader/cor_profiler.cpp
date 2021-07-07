@@ -8,7 +8,7 @@ namespace datadog
 namespace nativeloader
 {
 
-    CorProfiler::CorProfiler(DynamicDispatcher* dispatcher) : ref_count_(0), dispatcher(dispatcher)
+    CorProfiler::CorProfiler(DynamicDispatcher* dispatcher) : m_refCount(0), m_dispatcher(dispatcher)
     {
         Debug("CorProfiler::.ctor");
     }
@@ -38,13 +38,13 @@ namespace nativeloader
     ULONG STDMETHODCALLTYPE CorProfiler::AddRef(void)
     {
         Debug("CorProfiler::AddRef");
-        return std::atomic_fetch_add(&this->ref_count_, 1) + 1;
+        return std::atomic_fetch_add(&this->m_refCount, 1) + 1;
     }
 
     ULONG STDMETHODCALLTYPE CorProfiler::Release(void)
     {
         Debug("CorProfiler::Release");
-        int count = std::atomic_fetch_sub(&this->ref_count_, 1) - 1;
+        int count = std::atomic_fetch_sub(&this->m_refCount, 1) - 1;
 
         if (count <= 0)
         {
@@ -81,7 +81,7 @@ namespace nativeloader
         Debug("MaskHi: ", mask_hi);
 
         // Execute all Initialize functions from the dispatcher and collect each event mask
-        HRESULT dispatcherResult = dispatcher->Execute([info6, &mask_low, &mask_hi, pICorProfilerInfoUnk](ICorProfilerCallback10* pCallback) {
+        HRESULT dispatcherResult = m_dispatcher->Execute([info6, &mask_low, &mask_hi, pICorProfilerInfoUnk](ICorProfilerCallback10* pCallback) {
             HRESULT localResult = pCallback->Initialize(pICorProfilerInfoUnk);
             if (SUCCEEDED(localResult))
             {
@@ -118,13 +118,13 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
     {
         Debug("CorProfiler::Shutdown");
-        return dispatcher->Execute([](ICorProfilerCallback10* pCallback) { return pCallback->Shutdown(); });
+        return m_dispatcher->Execute([](ICorProfilerCallback10* pCallback) { return pCallback->Shutdown(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainCreationStarted(AppDomainID appDomainId)
     {
         Verbose("CorProfiler::AppDomainCreationStarted");
-        return dispatcher->Execute([appDomainId](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([appDomainId](ICorProfilerCallback10* pCallback) {
             return pCallback->AppDomainCreationStarted(appDomainId);
         });
     }
@@ -132,7 +132,7 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainCreationFinished(AppDomainID appDomainId, HRESULT hrStatus)
     {
         Verbose("CorProfiler::AppDomainCreationFinished");
-        return dispatcher->Execute([appDomainId, hrStatus](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([appDomainId, hrStatus](ICorProfilerCallback10* pCallback) {
             return pCallback->AppDomainCreationFinished(appDomainId, hrStatus);
         });
     }
@@ -140,7 +140,7 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainShutdownStarted(AppDomainID appDomainId)
     {
         Verbose("CorProfiler::AppDomainShutdownStarted");
-        return dispatcher->Execute([appDomainId](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([appDomainId](ICorProfilerCallback10* pCallback) {
             return pCallback->AppDomainShutdownStarted(appDomainId);
         });
     }
@@ -148,7 +148,7 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainShutdownFinished(AppDomainID appDomainId, HRESULT hrStatus)
     {
         Verbose("CorProfiler::AppDomainShutdownFinished");
-        return dispatcher->Execute([appDomainId, hrStatus](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([appDomainId, hrStatus](ICorProfilerCallback10* pCallback) {
             return pCallback->AppDomainShutdownFinished(appDomainId, hrStatus);
         });
     }
@@ -156,14 +156,14 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadStarted(AssemblyID assemblyId)
     {
         Verbose("CorProfiler::AssemblyLoadStarted");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [assemblyId](ICorProfilerCallback10* pCallback) { return pCallback->AssemblyLoadStarted(assemblyId); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assemblyId, HRESULT hrStatus)
     {
         Verbose("CorProfiler::AssemblyLoadFinished");
-        return dispatcher->Execute([assemblyId, hrStatus](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([assemblyId, hrStatus](ICorProfilerCallback10* pCallback) {
             return pCallback->AssemblyLoadFinished(assemblyId, hrStatus);
         });
     }
@@ -171,14 +171,14 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyUnloadStarted(AssemblyID assemblyId)
     {
         Verbose("CorProfiler::AssemblyUnloadStarted");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [assemblyId](ICorProfilerCallback10* pCallback) { return pCallback->AssemblyUnloadStarted(assemblyId); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyUnloadFinished(AssemblyID assemblyId, HRESULT hrStatus)
     {
         Verbose("CorProfiler::AssemblyUnloadFinished");
-        return dispatcher->Execute([assemblyId, hrStatus](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([assemblyId, hrStatus](ICorProfilerCallback10* pCallback) {
             return pCallback->AssemblyUnloadFinished(assemblyId, hrStatus);
         });
     }
@@ -186,14 +186,14 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadStarted(ModuleID moduleId)
     {
         Verbose("CorProfiler::ModuleLoadStarted");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [moduleId](ICorProfilerCallback10* pCallback) { return pCallback->ModuleLoadStarted(moduleId); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRESULT hrStatus)
     {
         Verbose("CorProfiler::ModuleLoadFinished");
-        return dispatcher->Execute([moduleId, hrStatus](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([moduleId, hrStatus](ICorProfilerCallback10* pCallback) {
             return pCallback->ModuleLoadFinished(moduleId, hrStatus);
         });
     }
@@ -201,14 +201,14 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID moduleId)
     {
         Verbose("CorProfiler::ModuleUnloadStarted");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [moduleId](ICorProfilerCallback10* pCallback) { return pCallback->ModuleUnloadStarted(moduleId); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadFinished(ModuleID moduleId, HRESULT hrStatus)
     {
         Verbose("CorProfiler::ModuleUnloadFinished");
-        return dispatcher->Execute([moduleId, hrStatus](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([moduleId, hrStatus](ICorProfilerCallback10* pCallback) {
             return pCallback->ModuleUnloadFinished(moduleId, hrStatus);
         });
     }
@@ -216,7 +216,7 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::ModuleAttachedToAssembly(ModuleID moduleId, AssemblyID AssemblyId)
     {
         Verbose("CorProfiler::ModuleAttachedToAssembly");
-        return dispatcher->Execute([moduleId, AssemblyId](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([moduleId, AssemblyId](ICorProfilerCallback10* pCallback) {
             return pCallback->ModuleAttachedToAssembly(moduleId, AssemblyId);
         });
     }
@@ -224,14 +224,14 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::ClassLoadStarted(ClassID classId)
     {
         Verbose("CorProfiler::ClassLoadStarted");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [classId](ICorProfilerCallback10* pCallback) { return pCallback->ClassLoadStarted(classId); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ClassLoadFinished(ClassID classId, HRESULT hrStatus)
     {
         Verbose("CorProfiler::ClassLoadFinished");
-        return dispatcher->Execute([classId, hrStatus](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([classId, hrStatus](ICorProfilerCallback10* pCallback) {
             return pCallback->ClassLoadFinished(classId, hrStatus);
         });
     }
@@ -239,14 +239,14 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::ClassUnloadStarted(ClassID classId)
     {
         Verbose("CorProfiler::ClassUnloadStarted");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [classId](ICorProfilerCallback10* pCallback) { return pCallback->ClassUnloadStarted(classId); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ClassUnloadFinished(ClassID classId, HRESULT hrStatus)
     {
         Verbose("CorProfiler::ClassUnloadFinished");
-        return dispatcher->Execute([classId, hrStatus](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([classId, hrStatus](ICorProfilerCallback10* pCallback) {
             return pCallback->ClassUnloadFinished(classId, hrStatus);
         });
     }
@@ -254,14 +254,14 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::FunctionUnloadStarted(FunctionID functionId)
     {
         Verbose("CorProfiler::FunctionUnloadStarted");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [functionId](ICorProfilerCallback10* pCallback) { return pCallback->FunctionUnloadStarted(functionId); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID functionId, BOOL fIsSafeToBlock)
     {
         Verbose("CorProfiler::JITCompilationStarted");
-        return dispatcher->Execute([functionId, fIsSafeToBlock](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([functionId, fIsSafeToBlock](ICorProfilerCallback10* pCallback) {
             return pCallback->JITCompilationStarted(functionId, fIsSafeToBlock);
         });
     }
@@ -270,7 +270,7 @@ namespace nativeloader
                                                                   BOOL fIsSafeToBlock)
     {
         Verbose("CorProfiler::JITCompilationFinished");
-        return dispatcher->Execute([functionId, hrStatus, fIsSafeToBlock](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([functionId, hrStatus, fIsSafeToBlock](ICorProfilerCallback10* pCallback) {
             return pCallback->JITCompilationFinished(functionId, hrStatus, fIsSafeToBlock);
         });
     }
@@ -279,7 +279,7 @@ namespace nativeloader
                                                                           BOOL* pbUseCachedFunction)
     {
         Verbose("CorProfiler::JITCachedFunctionSearchStarted");
-        return dispatcher->Execute([functionId, pbUseCachedFunction](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([functionId, pbUseCachedFunction](ICorProfilerCallback10* pCallback) {
             return pCallback->JITCachedFunctionSearchStarted(functionId, pbUseCachedFunction);
         });
     }
@@ -288,7 +288,7 @@ namespace nativeloader
                                                                            COR_PRF_JIT_CACHE result)
     {
         Verbose("CorProfiler::JITCachedFunctionSearchFinished");
-        return dispatcher->Execute([functionId, result](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([functionId, result](ICorProfilerCallback10* pCallback) {
             return pCallback->JITCachedFunctionSearchFinished(functionId, result);
         });
     }
@@ -296,14 +296,14 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::JITFunctionPitched(FunctionID functionId)
     {
         Verbose("CorProfiler::JITFunctionPitched");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [functionId](ICorProfilerCallback10* pCallback) { return pCallback->JITFunctionPitched(functionId); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId, FunctionID calleeId, BOOL* pfShouldInline)
     {
         Verbose("CorProfiler::JITInlining");
-        return dispatcher->Execute([callerId, calleeId, pfShouldInline](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([callerId, calleeId, pfShouldInline](ICorProfilerCallback10* pCallback) {
             return pCallback->JITInlining(callerId, calleeId, pfShouldInline);
         });
     }
@@ -311,21 +311,21 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::ThreadCreated(ThreadID threadId)
     {
         Verbose("CorProfiler::ThreadCreated");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [threadId](ICorProfilerCallback10* pCallback) { return pCallback->ThreadCreated(threadId); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ThreadDestroyed(ThreadID threadId)
     {
         Verbose("CorProfiler::ThreadDestroyed");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [threadId](ICorProfilerCallback10* pCallback) { return pCallback->ThreadDestroyed(threadId); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ThreadAssignedToOSThread(ThreadID managedThreadId, DWORD osThreadId)
     {
         Verbose("CorProfiler::ThreadAssignedToOSThread");
-        return dispatcher->Execute([managedThreadId, osThreadId](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([managedThreadId, osThreadId](ICorProfilerCallback10* pCallback) {
             return pCallback->ThreadAssignedToOSThread(managedThreadId, osThreadId);
         });
     }
@@ -333,14 +333,14 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::RemotingClientInvocationStarted()
     {
         Verbose("CorProfiler::RemotingClientInvocationStarted");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [](ICorProfilerCallback10* pCallback) { return pCallback->RemotingClientInvocationStarted(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RemotingClientSendingMessage(GUID* pCookie, BOOL fIsAsync)
     {
         Verbose("CorProfiler::RemotingClientSendingMessage");
-        return dispatcher->Execute([pCookie, fIsAsync](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([pCookie, fIsAsync](ICorProfilerCallback10* pCallback) {
             return pCallback->RemotingClientSendingMessage(pCookie, fIsAsync);
         });
     }
@@ -348,7 +348,7 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::RemotingClientReceivingReply(GUID* pCookie, BOOL fIsAsync)
     {
         Verbose("CorProfiler::RemotingClientReceivingReply");
-        return dispatcher->Execute([pCookie, fIsAsync](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([pCookie, fIsAsync](ICorProfilerCallback10* pCallback) {
             return pCallback->RemotingClientReceivingReply(pCookie, fIsAsync);
         });
     }
@@ -356,14 +356,14 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::RemotingClientInvocationFinished()
     {
         Verbose("CorProfiler::RemotingClientInvocationFinished");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [](ICorProfilerCallback10* pCallback) { return pCallback->RemotingClientInvocationFinished(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RemotingServerReceivingMessage(GUID* pCookie, BOOL fIsAsync)
     {
         Verbose("CorProfiler::RemotingServerReceivingMessage");
-        return dispatcher->Execute([pCookie, fIsAsync](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([pCookie, fIsAsync](ICorProfilerCallback10* pCallback) {
             return pCallback->RemotingServerReceivingMessage(pCookie, fIsAsync);
         });
     }
@@ -371,21 +371,21 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::RemotingServerInvocationStarted()
     {
         Verbose("CorProfiler::RemotingServerInvocationStarted");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [](ICorProfilerCallback10* pCallback) { return pCallback->RemotingServerInvocationStarted(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RemotingServerInvocationReturned()
     {
         Verbose("CorProfiler::RemotingServerInvocationReturned");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [](ICorProfilerCallback10* pCallback) { return pCallback->RemotingServerInvocationReturned(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RemotingServerSendingReply(GUID* pCookie, BOOL fIsAsync)
     {
         Verbose("CorProfiler::RemotingServerSendingReply");
-        return dispatcher->Execute([pCookie, fIsAsync](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([pCookie, fIsAsync](ICorProfilerCallback10* pCallback) {
             return pCallback->RemotingServerSendingReply(pCookie, fIsAsync);
         });
     }
@@ -394,7 +394,7 @@ namespace nativeloader
                                                                         COR_PRF_TRANSITION_REASON reason)
     {
         Verbose("CorProfiler::UnmanagedToManagedTransition");
-        return dispatcher->Execute([functionId, reason](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([functionId, reason](ICorProfilerCallback10* pCallback) {
             return pCallback->UnmanagedToManagedTransition(functionId, reason);
         });
     }
@@ -403,7 +403,7 @@ namespace nativeloader
                                                                         COR_PRF_TRANSITION_REASON reason)
     {
         Verbose("CorProfiler::ManagedToUnmanagedTransition");
-        return dispatcher->Execute([functionId, reason](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([functionId, reason](ICorProfilerCallback10* pCallback) {
             return pCallback->ManagedToUnmanagedTransition(functionId, reason);
         });
     }
@@ -411,7 +411,7 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::RuntimeSuspendStarted(COR_PRF_SUSPEND_REASON suspendReason)
     {
         Verbose("CorProfiler::RuntimeSuspendStarted");
-        return dispatcher->Execute([suspendReason](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([suspendReason](ICorProfilerCallback10* pCallback) {
             return pCallback->RuntimeSuspendStarted(suspendReason);
         });
     }
@@ -419,41 +419,41 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::RuntimeSuspendFinished()
     {
         Verbose("CorProfiler::RuntimeSuspendFinished");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [](ICorProfilerCallback10* pCallback) { return pCallback->RuntimeSuspendFinished(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RuntimeSuspendAborted()
     {
         Verbose("CorProfiler::RuntimeSuspendAborted");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [](ICorProfilerCallback10* pCallback) { return pCallback->RuntimeSuspendAborted(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RuntimeResumeStarted()
     {
         Verbose("CorProfiler::RuntimeResumeStarted");
-        return dispatcher->Execute([](ICorProfilerCallback10* pCallback) { return pCallback->RuntimeResumeStarted(); });
+        return m_dispatcher->Execute([](ICorProfilerCallback10* pCallback) { return pCallback->RuntimeResumeStarted(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RuntimeResumeFinished()
     {
         Verbose("CorProfiler::RuntimeResumeFinished");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [](ICorProfilerCallback10* pCallback) { return pCallback->RuntimeResumeFinished(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RuntimeThreadSuspended(ThreadID threadId)
     {
         Verbose("CorProfiler::RuntimeThreadSuspended");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [threadId](ICorProfilerCallback10* pCallback) { return pCallback->RuntimeThreadSuspended(threadId); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RuntimeThreadResumed(ThreadID threadId)
     {
         Debug("CorProfiler::RuntimeThreadResumed");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [threadId](ICorProfilerCallback10* pCallback) { return pCallback->RuntimeThreadResumed(threadId); });
     }
 
@@ -462,7 +462,7 @@ namespace nativeloader
                                                            ULONG cObjectIDRangeLength[])
     {
         Verbose("CorProfiler::MovedReferences");
-        return dispatcher->Execute([cMovedObjectIDRanges, oldObjectIDRangeStart, newObjectIDRangeStart,
+        return m_dispatcher->Execute([cMovedObjectIDRanges, oldObjectIDRangeStart, newObjectIDRangeStart,
                                     cObjectIDRangeLength](ICorProfilerCallback10* pCallback) {
             return pCallback->MovedReferences(cMovedObjectIDRanges, oldObjectIDRangeStart, newObjectIDRangeStart,
                                               cObjectIDRangeLength);
@@ -472,7 +472,7 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::ObjectAllocated(ObjectID objectId, ClassID classId)
     {
         Verbose("CorProfiler::ObjectAllocated");
-        return dispatcher->Execute([objectId, classId](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([objectId, classId](ICorProfilerCallback10* pCallback) {
             return pCallback->ObjectAllocated(objectId, classId);
         });
     }
@@ -481,7 +481,7 @@ namespace nativeloader
                                                                    ULONG cObjects[])
     {
         Verbose("CorProfiler::ObjectsAllocatedByClass");
-        return dispatcher->Execute([cClassCount, classIds, cObjects](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([cClassCount, classIds, cObjects](ICorProfilerCallback10* pCallback) {
             return pCallback->ObjectsAllocatedByClass(cClassCount, classIds, cObjects);
         });
     }
@@ -490,7 +490,7 @@ namespace nativeloader
                                                             ObjectID objectRefIds[])
     {
         Verbose("CorProfiler::ObjectReferences");
-        return dispatcher->Execute([objectId, classId, cObjectRefs, objectRefIds](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([objectId, classId, cObjectRefs, objectRefIds](ICorProfilerCallback10* pCallback) {
             return pCallback->ObjectReferences(objectId, classId, cObjectRefs, objectRefIds);
         });
     }
@@ -498,7 +498,7 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::RootReferences(ULONG cRootRefs, ObjectID rootRefIds[])
     {
         Verbose("CorProfiler::RootReferences");
-        return dispatcher->Execute([cRootRefs, rootRefIds](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([cRootRefs, rootRefIds](ICorProfilerCallback10* pCallback) {
             return pCallback->RootReferences(cRootRefs, rootRefIds);
         });
     }
@@ -506,14 +506,14 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionThrown(ObjectID thrownObjectId)
     {
         Verbose("CorProfiler::ExceptionThrown");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [thrownObjectId](ICorProfilerCallback10* pCallback) { return pCallback->ExceptionThrown(thrownObjectId); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionSearchFunctionEnter(FunctionID functionId)
     {
         Verbose("CorProfiler::ExceptionSearchFunctionEnter");
-        return dispatcher->Execute([functionId](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([functionId](ICorProfilerCallback10* pCallback) {
             return pCallback->ExceptionSearchFunctionEnter(functionId);
         });
     }
@@ -521,14 +521,14 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionSearchFunctionLeave()
     {
         Verbose("CorProfiler::ExceptionSearchFunctionLeave");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [](ICorProfilerCallback10* pCallback) { return pCallback->ExceptionSearchFunctionLeave(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionSearchFilterEnter(FunctionID functionId)
     {
         Verbose("CorProfiler::ExceptionSearchFilterEnter");
-        return dispatcher->Execute([functionId](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([functionId](ICorProfilerCallback10* pCallback) {
             return pCallback->ExceptionSearchFilterEnter(functionId);
         });
     }
@@ -536,14 +536,14 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionSearchFilterLeave()
     {
         Verbose("CorProfiler::ExceptionSearchFilterLeave");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [](ICorProfilerCallback10* pCallback) { return pCallback->ExceptionSearchFilterLeave(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionSearchCatcherFound(FunctionID functionId)
     {
         Verbose("CorProfiler::ExceptionSearchCatcherFound");
-        return dispatcher->Execute([functionId](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([functionId](ICorProfilerCallback10* pCallback) {
             return pCallback->ExceptionSearchCatcherFound(functionId);
         });
     }
@@ -551,21 +551,21 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionOSHandlerEnter(UINT_PTR __unused)
     {
         Verbose("CorProfiler::ExceptionOSHandlerEnter");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [](ICorProfilerCallback10* pCallback) { return pCallback->ExceptionOSHandlerEnter(NULL); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionOSHandlerLeave(UINT_PTR __unused)
     {
         Verbose("CorProfiler::ExceptionOSHandlerLeave");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [](ICorProfilerCallback10* pCallback) { return pCallback->ExceptionOSHandlerLeave(NULL); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionUnwindFunctionEnter(FunctionID functionId)
     {
         Verbose("CorProfiler::ExceptionUnwindFunctionEnter");
-        return dispatcher->Execute([functionId](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([functionId](ICorProfilerCallback10* pCallback) {
             return pCallback->ExceptionUnwindFunctionEnter(functionId);
         });
     }
@@ -573,14 +573,14 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionUnwindFunctionLeave()
     {
         Verbose("CorProfiler::ExceptionUnwindFunctionLeave");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [](ICorProfilerCallback10* pCallback) { return pCallback->ExceptionUnwindFunctionLeave(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionUnwindFinallyEnter(FunctionID functionId)
     {
         Verbose("CorProfiler::ExceptionUnwindFinallyEnter");
-        return dispatcher->Execute([functionId](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([functionId](ICorProfilerCallback10* pCallback) {
             return pCallback->ExceptionUnwindFinallyEnter(functionId);
         });
     }
@@ -588,14 +588,14 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionUnwindFinallyLeave()
     {
         Verbose("CorProfiler::ExceptionUnwindFinallyLeave");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [](ICorProfilerCallback10* pCallback) { return pCallback->ExceptionUnwindFinallyLeave(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionCatcherEnter(FunctionID functionId, ObjectID objectId)
     {
         Verbose("CorProfiler::ExceptionCatcherEnter");
-        return dispatcher->Execute([functionId, objectId](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([functionId, objectId](ICorProfilerCallback10* pCallback) {
             return pCallback->ExceptionCatcherEnter(functionId, objectId);
         });
     }
@@ -603,7 +603,7 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionCatcherLeave()
     {
         Verbose("CorProfiler::ExceptionCatcherLeave");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [](ICorProfilerCallback10* pCallback) { return pCallback->ExceptionCatcherLeave(); });
     }
 
@@ -611,7 +611,7 @@ namespace nativeloader
                                                                    void* pVTable, ULONG cSlots)
     {
         Verbose("CorProfiler::COMClassicVTableCreated");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [wrappedClassId, implementedIID, pVTable, cSlots](ICorProfilerCallback10* pCallback) {
                 return pCallback->COMClassicVTableCreated(wrappedClassId, implementedIID, pVTable, cSlots);
             });
@@ -621,7 +621,7 @@ namespace nativeloader
                                                                      void* pVTable)
     {
         Verbose("CorProfiler::COMClassicVTableDestroyed");
-        return dispatcher->Execute([wrappedClassId, implementedIID, pVTable](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([wrappedClassId, implementedIID, pVTable](ICorProfilerCallback10* pCallback) {
             return pCallback->COMClassicVTableDestroyed(wrappedClassId, implementedIID, pVTable);
         });
     }
@@ -629,21 +629,21 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionCLRCatcherFound()
     {
         Verbose("CorProfiler::ExceptionCLRCatcherFound");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [](ICorProfilerCallback10* pCallback) { return pCallback->ExceptionCLRCatcherFound(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionCLRCatcherExecute()
     {
         Verbose("CorProfiler::ExceptionCLRCatcherExecute");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [](ICorProfilerCallback10* pCallback) { return pCallback->ExceptionCLRCatcherExecute(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ThreadNameChanged(ThreadID threadId, ULONG cchName, WCHAR name[])
     {
         Verbose("CorProfiler::ThreadNameChanged");
-        return dispatcher->Execute([threadId, cchName, name](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([threadId, cchName, name](ICorProfilerCallback10* pCallback) {
             return pCallback->ThreadNameChanged(threadId, cchName, name);
         });
     }
@@ -652,7 +652,7 @@ namespace nativeloader
                                                                     COR_PRF_GC_REASON reason)
     {
         Verbose("CorProfiler::GarbageCollectionStarted");
-        return dispatcher->Execute([cGenerations, generationCollected, reason](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([cGenerations, generationCollected, reason](ICorProfilerCallback10* pCallback) {
             return pCallback->GarbageCollectionStarted(cGenerations, generationCollected, reason);
         });
     }
@@ -662,7 +662,7 @@ namespace nativeloader
                                                                ULONG cObjectIDRangeLength[])
     {
         Verbose("CorProfiler::SurvivingReferences");
-        return dispatcher->Execute([cSurvivingObjectIDRanges, objectIDRangeStart,
+        return m_dispatcher->Execute([cSurvivingObjectIDRanges, objectIDRangeStart,
                                     cObjectIDRangeLength](ICorProfilerCallback10* pCallback) {
             return pCallback->SurvivingReferences(cSurvivingObjectIDRanges, objectIDRangeStart, cObjectIDRangeLength);
         });
@@ -671,14 +671,14 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::GarbageCollectionFinished()
     {
         Verbose("CorProfiler::GarbageCollectionFinished");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [](ICorProfilerCallback10* pCallback) { return pCallback->GarbageCollectionFinished(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::FinalizeableObjectQueued(DWORD finalizerFlags, ObjectID objectID)
     {
         Verbose("CorProfiler::FinalizeableObjectQueued");
-        return dispatcher->Execute([finalizerFlags, objectID](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([finalizerFlags, objectID](ICorProfilerCallback10* pCallback) {
             return pCallback->FinalizeableObjectQueued(finalizerFlags, objectID);
         });
     }
@@ -688,7 +688,7 @@ namespace nativeloader
                                                            COR_PRF_GC_ROOT_FLAGS rootFlags[], UINT_PTR rootIds[])
     {
         Verbose("CorProfiler::RootReferences2");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [cRootRefs, rootRefIds, rootKinds, rootFlags, rootIds](ICorProfilerCallback10* pCallback) {
                 return pCallback->RootReferences2(cRootRefs, rootRefIds, rootKinds, rootFlags, rootIds);
             });
@@ -697,7 +697,7 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::HandleCreated(GCHandleID handleId, ObjectID initialObjectId)
     {
         Verbose("CorProfiler::HandleCreated");
-        return dispatcher->Execute([handleId, initialObjectId](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([handleId, initialObjectId](ICorProfilerCallback10* pCallback) {
             return pCallback->HandleCreated(handleId, initialObjectId);
         });
     }
@@ -705,7 +705,7 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::HandleDestroyed(GCHandleID handleId)
     {
         Verbose("CorProfiler::HandleDestroyed");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [handleId](ICorProfilerCallback10* pCallback) { return pCallback->HandleDestroyed(handleId); });
     }
 
@@ -713,7 +713,7 @@ namespace nativeloader
                                                                UINT cbClientData)
     {
         Verbose("CorProfiler::InitializeForAttach");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [pCorProfilerInfoUnk, pvClientData, cbClientData](ICorProfilerCallback10* pCallback) {
                 return pCallback->InitializeForAttach(pCorProfilerInfoUnk, pvClientData, cbClientData);
             });
@@ -722,14 +722,14 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::ProfilerAttachComplete()
     {
         Verbose("CorProfiler::ProfilerAttachComplete");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [](ICorProfilerCallback10* pCallback) { return pCallback->ProfilerAttachComplete(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ProfilerDetachSucceeded()
     {
         Verbose("CorProfiler::ProfilerDetachSucceeded");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [](ICorProfilerCallback10* pCallback) { return pCallback->ProfilerDetachSucceeded(); });
     }
 
@@ -737,7 +737,7 @@ namespace nativeloader
                                                                    BOOL fIsSafeToBlock)
     {
         Verbose("CorProfiler::ReJITCompilationStarted");
-        return dispatcher->Execute([functionId, rejitId, fIsSafeToBlock](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([functionId, rejitId, fIsSafeToBlock](ICorProfilerCallback10* pCallback) {
             return pCallback->ReJITCompilationStarted(functionId, rejitId, fIsSafeToBlock);
         });
     }
@@ -746,7 +746,7 @@ namespace nativeloader
                                                               ICorProfilerFunctionControl* pFunctionControl)
     {
         Verbose("CorProfiler::GetReJITParameters");
-        return dispatcher->Execute([moduleId, methodId, pFunctionControl](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([moduleId, methodId, pFunctionControl](ICorProfilerCallback10* pCallback) {
             return pCallback->GetReJITParameters(moduleId, methodId, pFunctionControl);
         });
     }
@@ -755,7 +755,7 @@ namespace nativeloader
                                                                     HRESULT hrStatus, BOOL fIsSafeToBlock)
     {
         Verbose("CorProfiler::ReJITCompilationFinished");
-        return dispatcher->Execute([functionId, rejitId, hrStatus, fIsSafeToBlock](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([functionId, rejitId, hrStatus, fIsSafeToBlock](ICorProfilerCallback10* pCallback) {
             return pCallback->ReJITCompilationFinished(functionId, rejitId, hrStatus, fIsSafeToBlock);
         });
     }
@@ -764,7 +764,7 @@ namespace nativeloader
                                                       HRESULT hrStatus)
     {
         Verbose("CorProfiler::ReJITError");
-        return dispatcher->Execute([moduleId, methodId, functionId, hrStatus](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([moduleId, methodId, functionId, hrStatus](ICorProfilerCallback10* pCallback) {
             return pCallback->ReJITError(moduleId, methodId, functionId, hrStatus);
         });
     }
@@ -775,7 +775,7 @@ namespace nativeloader
                                                             SIZE_T cObjectIDRangeLength[])
     {
         Verbose("CorProfiler::MovedReferences2");
-        return dispatcher->Execute([cMovedObjectIDRanges, oldObjectIDRangeStart, newObjectIDRangeStart,
+        return m_dispatcher->Execute([cMovedObjectIDRanges, oldObjectIDRangeStart, newObjectIDRangeStart,
                                     cObjectIDRangeLength](ICorProfilerCallback10* pCallback) {
             return pCallback->MovedReferences2(cMovedObjectIDRanges, oldObjectIDRangeStart, newObjectIDRangeStart,
                                                cObjectIDRangeLength);
@@ -787,7 +787,7 @@ namespace nativeloader
                                                                 SIZE_T cObjectIDRangeLength[])
     {
         Verbose("CorProfiler::SurvivingReferences2");
-        return dispatcher->Execute([cSurvivingObjectIDRanges, objectIDRangeStart,
+        return m_dispatcher->Execute([cSurvivingObjectIDRanges, objectIDRangeStart,
                                     cObjectIDRangeLength](ICorProfilerCallback10* pCallback) {
             return pCallback->SurvivingReferences2(cSurvivingObjectIDRanges, objectIDRangeStart, cObjectIDRangeLength);
         });
@@ -798,7 +798,7 @@ namespace nativeloader
                                                                                  GCHandleID rootIds[])
     {
         Verbose("CorProfiler::ConditionalWeakTableElementReferences");
-        return dispatcher->Execute([cRootRefs, keyRefIds, valueRefIds, rootIds](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([cRootRefs, keyRefIds, valueRefIds, rootIds](ICorProfilerCallback10* pCallback) {
             return pCallback->ConditionalWeakTableElementReferences(cRootRefs, keyRefIds, valueRefIds, rootIds);
         });
     }
@@ -807,7 +807,7 @@ namespace nativeloader
                                                                  ICorProfilerAssemblyReferenceProvider* pAsmRefProvider)
     {
         Verbose("CorProfiler::GetAssemblyReferences");
-        return dispatcher->Execute([wszAssemblyPath, pAsmRefProvider](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([wszAssemblyPath, pAsmRefProvider](ICorProfilerCallback10* pCallback) {
             return pCallback->GetAssemblyReferences(wszAssemblyPath, pAsmRefProvider);
         });
     }
@@ -815,7 +815,7 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::ModuleInMemorySymbolsUpdated(ModuleID moduleId)
     {
         Verbose("CorProfiler::ModuleInMemorySymbolsUpdated");
-        return dispatcher->Execute([moduleId](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([moduleId](ICorProfilerCallback10* pCallback) {
             return pCallback->ModuleInMemorySymbolsUpdated(moduleId);
         });
     }
@@ -825,7 +825,7 @@ namespace nativeloader
                                                                               ULONG cbILHeader)
     {
         Verbose("CorProfiler::DynamicMethodJITCompilationStarted");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [functionId, fIsSafeToBlock, ilHeader, cbILHeader](ICorProfilerCallback10* pCallback) {
                 return pCallback->DynamicMethodJITCompilationStarted(functionId, fIsSafeToBlock, ilHeader, cbILHeader);
             });
@@ -835,7 +835,7 @@ namespace nativeloader
                                                                                BOOL fIsSafeToBlock)
     {
         Verbose("CorProfiler::DynamicMethodJITCompilationFinished");
-        return dispatcher->Execute([functionId, hrStatus, fIsSafeToBlock](ICorProfilerCallback10* pCallback) {
+        return m_dispatcher->Execute([functionId, hrStatus, fIsSafeToBlock](ICorProfilerCallback10* pCallback) {
             return pCallback->DynamicMethodJITCompilationFinished(functionId, hrStatus, fIsSafeToBlock);
         });
     }
@@ -843,7 +843,7 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::DynamicMethodUnloaded(FunctionID functionId)
     {
         Verbose("CorProfiler::DynamicMethodUnloaded");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [functionId](ICorProfilerCallback10* pCallback) { return pCallback->DynamicMethodUnloaded(functionId); });
     }
 
@@ -855,7 +855,7 @@ namespace nativeloader
                                                                    ULONG numStackFrames, UINT_PTR stackFrames[])
     {
         Verbose("CorProfiler::EventPipeEventDelivered");
-        return dispatcher->Execute([provider, eventId, eventVersion, cbMetadataBlob, metadataBlob, cbEventData,
+        return m_dispatcher->Execute([provider, eventId, eventVersion, cbMetadataBlob, metadataBlob, cbEventData,
                                     eventData, pActivityId, pRelatedActivityId, eventThread, numStackFrames,
                                     stackFrames](ICorProfilerCallback10* pCallback) {
             return pCallback->EventPipeEventDelivered(provider, eventId, eventVersion, cbMetadataBlob, metadataBlob,
@@ -867,7 +867,7 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::EventPipeProviderCreated(EVENTPIPE_PROVIDER provider)
     {
         Verbose("CorProfiler::EventPipeProviderCreated");
-        return dispatcher->Execute(
+        return m_dispatcher->Execute(
             [provider](ICorProfilerCallback10* pCallback) { return pCallback->EventPipeProviderCreated(provider); });
     }
 

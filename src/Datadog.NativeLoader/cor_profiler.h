@@ -14,8 +14,8 @@ namespace nativeloader
     class CorProfiler : public ICorProfilerCallback10
     {
     private:
-        std::atomic<int> ref_count_;
-        DynamicDispatcher* dispatcher;
+        std::atomic<int> m_refCount;
+        DynamicDispatcher* m_dispatcher;
 
     public:
         CorProfiler(DynamicDispatcher* dispatcher);
