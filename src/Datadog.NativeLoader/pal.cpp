@@ -68,6 +68,25 @@ namespace nativeloader
 #endif
     }
 
+    bool SetEnvironmentValue(const WSTRING& name, const WSTRING& value)
+    {
+        Debug("SetEnvironmentValue: ", name, "=", value);
+
+#ifdef _WIN32
+        return SetEnvironmentVariable(Trim(name).c_str(), value.c_str());
+#else
+        /*auto cstr = std::getenv(ToString(name).c_str());
+        if (cstr == nullptr)
+        {
+            return WStr("");
+        }
+        std::string str(cstr);
+        auto wstr = ToWSTRING(str);
+        return Trim(wstr);*/
+        return false;
+#endif
+    }
+
     std::vector<WSTRING> GetEnvironmentValues(const WSTRING& name, const wchar_t delim)
     {
         std::vector<WSTRING> values;
