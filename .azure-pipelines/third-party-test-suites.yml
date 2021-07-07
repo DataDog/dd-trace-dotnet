@@ -189,11 +189,11 @@ stages:
         Ubuntu_Major5:
           imageName: ubuntu-20.04
           os: ubuntu
-          tagName: v5.0.4
+          tagName: v5.0.7
         Windows_Major5:
           imageName: windows-2019
           os: windows
-          tagName: v5.0.4
+          tagName: v5.0.7
           serverDirectory: npgsql/.build
         Ubuntu_Major4:
           imageName: ubuntu-20.04
