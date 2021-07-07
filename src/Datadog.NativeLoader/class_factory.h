@@ -9,13 +9,10 @@
 #include "unknwn.h"
 
 
-namespace datadog
-{
-namespace nativeloader
+namespace datadog::nativeloader
 {
     class DynamicDispatcher;
-} // namespace nativeloader
-} // namespace datadog
+} // namespace datadog::nativeloader
 
 class ClassFactory : public IClassFactory
 {
