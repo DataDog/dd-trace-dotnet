@@ -117,7 +117,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         WSTRING env_var_value = GetEnvironmentValue(env_var);
         if (debug_logging_enabled || !env_var_value.empty())
         {
-            Info("  ", env_var, "=", env_var_value);
+            Info("  ", ToString(env_var), "=", ToString(env_var_value));
         }
     }
 
@@ -241,7 +241,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
 
 
   // set event mask to subscribe to events and disable NGEN images
-  if (is_net46_or_greater) 
+  if (is_net46_or_greater)
   {
         hr = info6->SetEventMask2(event_mask, COR_PRF_HIGH_ADD_ASSEMBLY_REFERENCES);
 
