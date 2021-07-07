@@ -53,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.SqlClient
 
             public string MinimumVersion => "1.0.0";
 
-            public string MaximumVersion => "2.*.*";
+            public string MaximumVersion => "3.*.*";
 
             public string DataReaderType => "Microsoft.Data.SqlClient.SqlDataReader";
 
