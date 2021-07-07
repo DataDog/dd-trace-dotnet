@@ -199,6 +199,7 @@
     <ClInclude Include="pal.h" />
     <ClInclude Include="proxy.h" />
     <ClInclude Include="string.h" />
+    <ClInclude Include="util.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="class_factory.cpp" />
