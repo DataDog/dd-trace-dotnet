@@ -3,6 +3,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <unordered_map>
 
 #include "logging.h"
 #include "pal.h"
