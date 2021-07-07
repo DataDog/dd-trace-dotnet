@@ -65,11 +65,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: ExpectedOperationName);
                 spans.Count.Should().BeGreaterOrEqualTo(expectedSpanCount, $"Expecting at least {expectedSpanCount} spans, only received {spans.Count}");
 
-                Console.WriteLine($"spans.Count: {spans.Count}");
+                Output.WriteLine($"spans.Count: {spans.Count}");
 
                 foreach (var span in spans)
                 {
-                    Console.WriteLine(span);
+                    Output.WriteLine(span.ToString());
                 }
 
                 var dbTags = 0;

@@ -356,7 +356,7 @@ partial class Build
            EnsureCleanDirectory(outputDir);
            MoveFile(
                DDTracerHomeDirectory / fileName,
-               outputDir / architecture);
+               outputDir / fileName);
        });
 
     Target BuildMsi => _ => _
@@ -730,6 +730,7 @@ partial class Build
                 // .DisableRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
+                .SetTargetPlatform(Platform)
                 .SetProperty("DeployOnBuild", true)
                 .SetProperty("PublishProfile", publishProfile)
                 .SetMaxCpuCount(null)
