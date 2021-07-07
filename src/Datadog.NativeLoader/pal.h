@@ -16,6 +16,8 @@ namespace nativeloader
     // name. Space is trimmed.
     WSTRING GetEnvironmentValue(const WSTRING& name);
 
+    bool SetEnvironmentValue(const WSTRING& name, const WSTRING& value);
+
     // GetEnvironmentValues returns environment variable values for the given name
     // split by the delimiter. Space is trimmed and empty values are ignored.
     std::vector<WSTRING> GetEnvironmentValues(const WSTRING& name, const wchar_t delim);
