@@ -1,6 +1,4 @@
-#ifndef COR_PROFILER_H_
-#define COR_PROFILER_H_
-
+#pragma once
 #include <atomic>
 #include <corhlpr.h>
 #include <corprof.h>
@@ -160,5 +158,3 @@ namespace nativeloader
 
 } // namespace nativeloader
 } // namespace datadog
-
-#endif

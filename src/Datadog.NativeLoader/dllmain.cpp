@@ -8,52 +8,11 @@
 #include "logging.h"
 #include "pal.h"
 #include "proxy.h"
+#include "util.h"
 
 using namespace datadog::nativeloader;
 
-const std::string conf_filename = "loader.conf";
-#if _WIN32
-const std::string dynExtension = ".dll";
-#elif LINUX
-const std::string dynExtension = ".so";
-#elif MACOS
-const std::string dynExtension = ".dylib";
-#endif
-
 DynamicDispatcher* dispatcher;
-
-// Gets the profiler path
-static WSTRING GetProfilerPath()
-{
-    WSTRING profiler_path;
-    profiler_path = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH"));
-    if (profiler_path.length() == 0)
-    {
-        profiler_path = GetEnvironmentValue(WStr("COR_PROFILER_PATH"));
-    }
-
-#if BIT64
-    if (profiler_path.length() == 0)
-    {
-        profiler_path = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_64"));
-    }
-    if (profiler_path.length() == 0)
-    {
-        profiler_path = GetEnvironmentValue(WStr("COR_PROFILER_PATH_64"));
-    }
-#else
-    if (profiler_path.length() == 0)
-    {
-        profiler_path = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_32"));
-    }
-    if (profiler_path.length() == 0)
-    {
-        profiler_path = GetEnvironmentValue(WStr("COR_PROFILER_PATH_32"));
-    }
-#endif
-
-    return profiler_path;
-}
 
 extern "C"
 {
@@ -71,12 +30,9 @@ extern "C"
 
                 dispatcher = new DynamicDispatcher();
 
-                WSTRING profilerPath = GetProfilerPath();
-                std::string configFilePath =
-                    std::filesystem::path(profilerPath).remove_filename().append(conf_filename).string();
+                std::string configFilePath = GetConfigurationFilePath();
 
                 std::unordered_map<std::string, bool> guidBoolMap;
-
                 std::ifstream t;
                 t.open(configFilePath);
                 while (t)
@@ -97,7 +53,11 @@ extern "C"
                         std::string filepath = line.substr(delimiter + 1);
                         std::string clsid = line.substr(0, delimiter);
 
-                        filepath = std::filesystem::path(filepath).replace_extension(dynExtension).string();
+                        if (!std::filesystem::exists(filepath))
+                        {
+                            filepath = std::filesystem::path(filepath).replace_extension(dynExtension).string();
+                        }
+
                         if (std::filesystem::exists(filepath))
                         {
                             guidBoolMap[clsid] = true;

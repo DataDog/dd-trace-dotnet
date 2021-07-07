@@ -1,6 +1,4 @@
-#ifndef STRING_H_
-#define STRING_H_
-
+#pragma once
 #include <corhlpr.h>
 #include <sstream>
 #include <string>
@@ -40,5 +38,3 @@ void Split(const WSTRING& s, wchar_t delim, Out result);
 
 // Split splits a string by the given delimiter.
 std::vector<WSTRING> Split(const WSTRING& s, wchar_t delim);
-
-#endif // STRING_H_

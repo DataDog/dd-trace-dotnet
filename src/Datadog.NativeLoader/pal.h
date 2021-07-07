@@ -1,6 +1,4 @@
-#ifndef PAL_H_
-#define PAL_H_
-
+#pragma once
 #include "string.h"
 
 namespace datadog
@@ -27,5 +25,3 @@ namespace nativeloader
 
 } // namespace nativeloader
 } // namespace datadog
-
-#endif
