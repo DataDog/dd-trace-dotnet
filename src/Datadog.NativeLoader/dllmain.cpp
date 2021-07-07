@@ -103,7 +103,7 @@ extern "C"
                             guidBoolMap[clsid] = true;
                             std::unique_ptr<DynamicInstance> instance = std::make_unique<DynamicInstance>(filepath, clsid);
                             dispatcher->Add(instance);
-
+                            SetEnvironmentValue(WStr("ID_") + ToWSTRING(clsid), ToWSTRING(filepath));
                         }
                         else if (guidBoolMap.find(clsid) == guidBoolMap.end())
                         {
