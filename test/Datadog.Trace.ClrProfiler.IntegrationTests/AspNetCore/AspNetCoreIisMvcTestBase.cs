@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             SetServiceVersion("1.0.0");
 
-            SetCallTargetSettings(inProcess);
+            SetCallTargetSettings(true);
             if (enableRouteTemplateResourceNames)
             {
                 SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, "true");
