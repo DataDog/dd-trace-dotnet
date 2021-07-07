@@ -196,42 +196,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.M
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssemblyLoad.FileNotFoundException", "test\test-applications\regression\AssemblyLoad.FileNotFoundException\AssemblyLoad.FileNotFoundException.csproj", "{1A5E9F40-F3A5-4B59-9898-3DCD65C459C3}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{6ABAD006-E206-488E-ACA1-1AA73F9B5146}"
-	ProjectSection(SolutionItems) = preProject
-		build\docker\build.arm64.sh = build\docker\build.arm64.sh
-		build\docker\build.sh = build\docker\build.sh
-		build\docker\Datadog.Trace.ClrProfiler.IntegrationTests.arm64.sh = build\docker\Datadog.Trace.ClrProfiler.IntegrationTests.arm64.sh
-		build\docker\Datadog.Trace.ClrProfiler.IntegrationTests.sh = build\docker\Datadog.Trace.ClrProfiler.IntegrationTests.sh
-		build\docker\Datadog.Trace.ClrProfiler.Native.sh = build\docker\Datadog.Trace.ClrProfiler.Native.sh
-		build\docker\dotnet.alpine.core21.dockerfile = build\docker\dotnet.alpine.core21.dockerfile
-		build\docker\dotnet.alpine.core30.dockerfile = build\docker\dotnet.alpine.core30.dockerfile
-		build\docker\dotnet.alpine.core31.dockerfile = build\docker\dotnet.alpine.core31.dockerfile
-		build\docker\dotnet.alpine.core50.dockerfile = build\docker\dotnet.alpine.core50.dockerfile
-		build\docker\dotnet.arm64.core50.dockerfile = build\docker\dotnet.arm64.core50.dockerfile
-		build\docker\dotnet.arm64.dockerfile = build\docker\dotnet.arm64.dockerfile
-		build\docker\dotnet.dockerfile = build\docker\dotnet.dockerfile
-		build\docker\linux-build.bash = build\docker\linux-build.bash
-		build\docker\linux-build.dockerfile = build\docker\linux-build.dockerfile
-		build\docker\native.alpine.dockerfile = build\docker\native.alpine.dockerfile
-		build\docker\native.dockerfile = build\docker\native.dockerfile
-		build\docker\package.alpine.dockerfile = build\docker\package.alpine.dockerfile
-		build\docker\package.dockerfile = build\docker\package.dockerfile
-		build\docker\package.sh = build\docker\package.sh
-		build\docker\with-profiler-logs.bash = build\docker\with-profiler-logs.bash
-		build\docker\with-profiler.bash = build\docker\with-profiler.bash
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".azure-pipelines", ".azure-pipelines", "{C52D6695-4E05-4930-88F8-0EFF8056A967}"
-	ProjectSection(SolutionItems) = preProject
-		.azure-pipelines\benchmarks.yml = .azure-pipelines\benchmarks.yml
-		.azure-pipelines\crank.yml = .azure-pipelines\crank.yml
-		.azure-pipelines\integration-tests.yml = .azure-pipelines\integration-tests.yml
-		.azure-pipelines\packages.yml = .azure-pipelines\packages.yml
-		.azure-pipelines\runner.yml = .azure-pipelines\runner.yml
-		.azure-pipelines\setup_tracer.ps1 = .azure-pipelines\setup_tracer.ps1
-		.azure-pipelines\unit-tests.yml = .azure-pipelines\unit-tests.yml
-	EndProjectSection
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MySql", "test\test-applications\integrations\Samples.MySql\Samples.MySql.csproj", "{42FA33DD-AEA3-4FF3-8319-F30244A666A4}"
 	ProjectSection(ProjectDependencies) = postProject
 		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
@@ -1736,8 +1700,6 @@ Global
 		{BB3F7D85-7E20-4AEB-A32A-8AF150CC37B2} = {EFE48691-1FBA-41D5-9BFD-676771973F0C}
 		{AB8596C1-CFDA-4A5E-9E9C-74A3DF9AED77} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{1A5E9F40-F3A5-4B59-9898-3DCD65C459C3} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
-		{6ABAD006-E206-488E-ACA1-1AA73F9B5146} = {A0C5FBBB-CFB2-4FB9-B8F0-55676E9DCF06}
-		{C52D6695-4E05-4930-88F8-0EFF8056A967} = {FEBCE7DC-9FD1-48A6-B911-71ABB240A030}
 		{42FA33DD-AEA3-4FF3-8319-F30244A666A4} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{DF923186-5397-4E15-A95B-F15C8327ED53} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
 		{E1706893-D3A5-43B9-9036-AEF49DB9600B} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
