@@ -22,6 +22,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
     {
         private const string Major1 = "1";
         private const string Major2 = "2";
+        private const string Major3 = "3";
         private const string Major4 = "4";
 
         private const string SqlCommandTypeName = "SqlCommand";
@@ -84,7 +85,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetMethod = AdoNetConstants.MethodNames.ExecuteReader,
             TargetSignatureTypes = new[] { MicrosoftSqlDataReaderTypeName },
             TargetMinimumVersion = Major1,
-            TargetMaximumVersion = Major2)]
+            TargetMaximumVersion = Major3)]
         public static object MicrosoftSqlClientExecuteReader(
             object command,
             int opCode,
@@ -191,7 +192,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetMethod = AdoNetConstants.MethodNames.ExecuteReader,
             TargetSignatureTypes = new[] { MicrosoftSqlDataReaderTypeName, AdoNetConstants.TypeNames.CommandBehavior },
             TargetMinimumVersion = Major1,
-            TargetMaximumVersion = Major2)]
+            TargetMaximumVersion = Major3)]
         public static object MicrosoftSqlClientExecuteReaderWithBehavior(
             object command,
             int behavior,
@@ -298,7 +299,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetMethod = AdoNetConstants.MethodNames.ExecuteReaderAsync,
             TargetSignatureTypes = new[] { "System.Threading.Tasks.Task`1<Microsoft.Data.SqlClient.SqlDataReader>", AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken },
             TargetMinimumVersion = Major1,
-            TargetMaximumVersion = Major2)]
+            TargetMaximumVersion = Major3)]
         public static object MicrosoftSqlClientExecuteReaderAsync(
             object command,
             int behavior,
@@ -450,7 +451,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetMethod = AdoNetConstants.MethodNames.ExecuteNonQuery,
             TargetSignatureTypes = new[] { ClrNames.Int32 },
             TargetMinimumVersion = Major1,
-            TargetMaximumVersion = Major2)]
+            TargetMaximumVersion = Major3)]
         public static int MicrosoftSqlClientExecuteNonQuery(
             object command,
             int opCode,
@@ -557,7 +558,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetMethod = AdoNetConstants.MethodNames.ExecuteNonQueryAsync,
             TargetSignatureTypes = new[] { ClrNames.Int32Task, ClrNames.CancellationToken },
             TargetMinimumVersion = Major1,
-            TargetMaximumVersion = Major2)]
+            TargetMaximumVersion = Major3)]
         public static object MicrosoftSqlClientExecuteNonQueryAsync(
             object command,
             object boxedCancellationToken,
@@ -669,7 +670,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetMethod = AdoNetConstants.MethodNames.ExecuteScalar,
             TargetSignatureTypes = new[] { ClrNames.Object },
             TargetMinimumVersion = Major1,
-            TargetMaximumVersion = Major2)]
+            TargetMaximumVersion = Major3)]
         public static object MicrosoftSqlClientExecuteScalar(
             object command,
             int opCode,
@@ -776,7 +777,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
             TargetMethod = AdoNetConstants.MethodNames.ExecuteScalarAsync,
             TargetSignatureTypes = new[] { ClrNames.ObjectTask, ClrNames.CancellationToken },
             TargetMinimumVersion = Major1,
-            TargetMaximumVersion = Major2)]
+            TargetMaximumVersion = Major3)]
         public static object MicrosoftSqlClientExecuteScalarAsync(
             object command,
             object boxedCancellationToken,

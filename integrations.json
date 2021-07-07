@@ -6958,7 +6958,7 @@
           "minimum_major": 1,
           "minimum_minor": 0,
           "minimum_patch": 0,
-          "maximum_major": 2,
+          "maximum_major": 3,
           "maximum_minor": 65535,
           "maximum_patch": 65535
         },
@@ -7033,7 +7033,7 @@
           "minimum_major": 1,
           "minimum_minor": 0,
           "minimum_patch": 0,
-          "maximum_major": 2,
+          "maximum_major": 3,
           "maximum_minor": 65535,
           "maximum_patch": 65535
         },
@@ -7111,7 +7111,7 @@
           "minimum_major": 1,
           "minimum_minor": 0,
           "minimum_patch": 0,
-          "maximum_major": 2,
+          "maximum_major": 3,
           "maximum_minor": 65535,
           "maximum_patch": 65535
         },
@@ -7183,7 +7183,7 @@
           "minimum_major": 1,
           "minimum_minor": 0,
           "minimum_patch": 0,
-          "maximum_major": 2,
+          "maximum_major": 3,
           "maximum_minor": 65535,
           "maximum_patch": 65535
         },
@@ -7258,7 +7258,7 @@
           "minimum_major": 1,
           "minimum_minor": 0,
           "minimum_patch": 0,
-          "maximum_major": 2,
+          "maximum_major": 3,
           "maximum_minor": 65535,
           "maximum_patch": 65535
         },
@@ -7330,7 +7330,7 @@
           "minimum_major": 1,
           "minimum_minor": 0,
           "minimum_patch": 0,
-          "maximum_major": 2,
+          "maximum_major": 3,
           "maximum_minor": 65535,
           "maximum_patch": 65535
         },
@@ -7405,7 +7405,7 @@
           "minimum_major": 1,
           "minimum_minor": 0,
           "minimum_patch": 0,
-          "maximum_major": 2,
+          "maximum_major": 3,
           "maximum_minor": 65535,
           "maximum_patch": 65535
         },
