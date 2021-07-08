@@ -47,6 +47,7 @@ namespace nativeloader
     public:
         DynamicDispatcher();
         void Add(std::unique_ptr<DynamicInstance>& instance);
+        void LoadConfiguration(std::string configFilePath);
         HRESULT LoadClassFactory(REFIID riid);
         HRESULT LoadInstance(IUnknown* pUnkOuter, REFIID riid);
         HRESULT STDMETHODCALLTYPE DllCanUnloadNow();

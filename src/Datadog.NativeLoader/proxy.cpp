@@ -1,10 +1,54 @@
 #include "proxy.h"
 
 #include <filesystem>
+#include <fstream>
+#include <unordered_map>
 
 #include "guid.h"
 #include "logging.h"
 #include "pal.h"
+
+#if AMD64
+
+#if _WINDOWS
+const std::string currentOsArch = "win-x64";
+#elif LINUX
+const std::string currentOsArch = "linux-x64";
+#elif MACOS
+const std::string currentOsArch = "osx-x64";
+#endif
+
+#elif X86
+
+#if _WINDOWS
+const std::string currentOsArch = "win-x86";
+#elif LINUX
+const std::string currentOsArch = "linux-x86";
+#elif MACOS
+const std::string currentOsArch = "osx-x86";
+#endif
+
+#elif ARM64
+
+#if _WINDOWS
+const std::string currentOsArch = "win-arm64";
+#elif LINUX
+const std::string currentOsArch = "linux-arm64";
+#elif MACOS
+const std::string currentOsArch = "osx-arm64";
+#endif
+
+#elif ARM
+
+#if _WINDOWS
+const std::string currentOsArch = "win-arm";
+#elif LINUX
+const std::string currentOsArch = "linux-arm";
+#elif MACOS
+const std::string currentOsArch = "osx-arm";
+#endif
+
+#endif
 
 namespace datadog
 {
@@ -154,6 +198,60 @@ namespace nativeloader
     void DynamicDispatcher::Add(std::unique_ptr<DynamicInstance>& instance)
     {
         m_instances.push_back(std::move(instance));
+    }
+
+    void DynamicDispatcher::LoadConfiguration(std::string configFilePath)
+    {
+        std::unordered_map<std::string, bool> guidBoolMap;
+        std::ifstream t;
+        t.open(configFilePath);
+        while (t)
+        {
+            std::string line;
+            std::getline(t, line);
+            line = Trim(line);
+            if (line.length() != 0)
+            {
+                Debug(line);
+
+                if (line[0] == '#')
+                {
+                    continue;
+                }
+
+                std::vector<std::string> lineArray = Split(line, ';');
+                std::string idValue = lineArray[0];
+                std::string osArchValue = lineArray[1];
+                std::string filepathValue = lineArray[2];
+
+                if (osArchValue == currentOsArch)
+                {
+                    if (std::filesystem::exists(filepathValue))
+                    {
+                        guidBoolMap[idValue] = true;
+                        std::unique_ptr<DynamicInstance> instance = std::make_unique<DynamicInstance>(filepathValue, idValue);
+                        this->Add(instance);
+                        WSTRING env_key = WStr("PROFID_") + ToWSTRING(idValue);
+                        WSTRING env_value = ToWSTRING(filepathValue);
+                        bool envVal = SetEnvironmentValue(env_key, env_value);
+                        Debug("SetEnvVal: ", envVal, "; ", env_key, "=", env_value);
+                    }
+                    else if (guidBoolMap.find(idValue) == guidBoolMap.end())
+                    {
+                        guidBoolMap[idValue] = false;
+                    }
+                }
+            }
+        }
+        t.close();
+
+        for (const auto item : guidBoolMap)
+        {
+            if (!item.second)
+            {
+                Warn("Dynamic library for '", item.first, "' cannot be loaded");
+            }
+        }
     }
 
     HRESULT DynamicDispatcher::LoadClassFactory(REFIID riid)
