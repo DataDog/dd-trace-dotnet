@@ -202,9 +202,25 @@ namespace nativeloader
 
     void DynamicDispatcher::LoadConfiguration(std::string configFilePath)
     {
+        if (!std::filesystem::exists(configFilePath))
+        {
+            Warn("Configuration file doesn't exist.");
+            return;
+        }
+
         std::unordered_map<std::string, bool> guidBoolMap;
         std::ifstream t;
         t.open(configFilePath);
+
+        // Gets the configuration file folder
+        std::filesystem::path configFolder = std::filesystem::path(configFilePath).remove_filename();
+
+        // Get the current path
+        std::filesystem::path oldCurrentPath = std::filesystem::current_path();
+
+        // Set the current path to the configuration folder (to allow relative paths)
+        std::filesystem::current_path(configFolder);
+
         while (t)
         {
             std::string line;
@@ -226,6 +242,8 @@ namespace nativeloader
 
                 if (osArchValue == currentOsArch)
                 {
+                    // Convert possible relative paths to absolute paths using the configuration file folder as base (current_path)
+                    filepathValue = std::filesystem::absolute(filepathValue).string();
                     if (std::filesystem::exists(filepathValue))
                     {
                         guidBoolMap[idValue] = true;
@@ -244,6 +262,9 @@ namespace nativeloader
             }
         }
         t.close();
+
+        // Set the current path to the original one
+        std::filesystem::current_path(oldCurrentPath);
 
         for (const auto item : guidBoolMap)
         {
