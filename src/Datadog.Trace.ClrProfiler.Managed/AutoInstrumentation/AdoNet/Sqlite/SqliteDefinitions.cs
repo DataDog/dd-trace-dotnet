@@ -25,14 +25,14 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Sqlite.SqliteC
  ********************************************************************************/
 
 // Task<SqliteDataReader> Microsoft.Data.Sqlite.SqliteCommand.ExecuteReaderAsync(CommandBehavior, CancellationToken)
-[assembly: CommandExecuteReaderWithBehaviorAsync(typeof(MicrosoftDataSqliteClientData))]
+[assembly: CommandExecuteReaderWithBehaviorAndCancellationAsync(typeof(MicrosoftDataSqliteClientData))]
 
 /********************************************************************************
  * Task<DbDataReader> .ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
  ********************************************************************************/
 
 // Task<DbDataReader> Microsoft.Data.Sqlite.SqliteCommand.ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
-[assembly: CommandExecuteDbDataReaderWithBehaviorAsync(typeof(MicrosoftDataSqliteClientData))]
+[assembly: CommandExecuteDbDataReaderWithBehaviorAndCancellationAsync(typeof(MicrosoftDataSqliteClientData))]
 
 /********************************************************************************
  * [*]DataReader .ExecuteReader()

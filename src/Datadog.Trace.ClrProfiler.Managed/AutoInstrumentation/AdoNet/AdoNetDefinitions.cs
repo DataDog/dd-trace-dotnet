@@ -19,8 +19,8 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstant
  ********************************************************************************/
 
 // Task<DbDataReader> System.Data.Common.DBCommand.ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
-[assembly: CommandExecuteDbDataReaderWithBehaviorAsync(typeof(SystemDataClientData))]
-[assembly: CommandExecuteDbDataReaderWithBehaviorAsync(typeof(SystemDataCommonClientData))]
+[assembly: CommandExecuteDbDataReaderWithBehaviorAndCancellationAsync(typeof(SystemDataClientData))]
+[assembly: CommandExecuteDbDataReaderWithBehaviorAndCancellationAsync(typeof(SystemDataCommonClientData))]
 
 /********************************************************************************
  * Task<object> .ExecuteScalarAsync(CancellationToken)

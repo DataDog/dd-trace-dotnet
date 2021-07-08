@@ -29,21 +29,21 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.MySql.MySqlCon
  ********************************************************************************/
 
 // Task<MySqlDataReader> MySqlConnector.MySqlCommand.ExecuteReaderAsync(CancellationToken)
-[assembly: CommandExecuteReaderAsync(typeof(MySqlConnectorClientData))]
+[assembly: CommandExecuteReaderWithCancellationAsync(typeof(MySqlConnectorClientData))]
 
 /********************************************************************************
  * Task<[*]DataReader> .ExecuteReaderAsync(CommandBehavior, CancellationToken)
  ********************************************************************************/
 
 // Task<MySqlDataReader> MySqlConnector.MySqlCommand.ExecuteReaderAsync(CommandBehavior, CancellationToken)
-[assembly: CommandExecuteReaderWithBehaviorAsync(typeof(MySqlConnectorClientData))]
+[assembly: CommandExecuteReaderWithBehaviorAndCancellationAsync(typeof(MySqlConnectorClientData))]
 
 /********************************************************************************
  * Task<DbDataReader> .ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
  ********************************************************************************/
 
 // Task<DbDataReader> MySqlConnector.MySqlCommand.ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
-[assembly: CommandExecuteDbDataReaderWithBehaviorAsync(typeof(MySqlConnectorClientData))]
+[assembly: CommandExecuteDbDataReaderWithBehaviorAndCancellationAsync(typeof(MySqlConnectorClientData))]
 
 /********************************************************************************
  * [*]DataReader .ExecuteReader()

@@ -55,7 +55,7 @@
     "SampleProjectName": "Samples.Microsoft.Data.SqlClient",
     "NugetPackageSearchName": "Microsoft.Data.SqlClient",
     "MinVersion": "1.0.0",
-    "MaxVersionExclusive": "3.0.0"
+    "MaxVersionExclusive": "4.0.0"
   },
   {
     "IntegrationName": "StackExchangeRedis",

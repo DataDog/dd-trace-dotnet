@@ -27,7 +27,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         {
             foreach (object[] item in PackageVersions.MicrosoftDataSqlClient)
             {
-                yield return item.Concat(false);
+                // Callsite instrumentation is not supported with 3.*
+                if (!item.Cast<string>().First().StartsWith("3"))
+                {
+                    yield return item.Concat(false);
+                }
+
                 yield return item.Concat(true);
             }
         }

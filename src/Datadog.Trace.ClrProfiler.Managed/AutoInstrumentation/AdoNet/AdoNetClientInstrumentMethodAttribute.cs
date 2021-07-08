@@ -64,8 +64,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             {
                 MethodName = AdoNetConstants.MethodNames.ExecuteReaderAsync;
                 ReturnTypeName = AdoNetClientData.DataReaderTaskType;
-                ParameterTypeNames = new[] { ClrNames.CancellationToken };
                 CallTargetType = typeof(CommandExecuteReaderAsyncIntegration);
+            }
+        }
+
+        internal class CommandExecuteReaderWithCancellationAsyncAttribute : AdoNetClientInstrumentMethodAttribute
+        {
+            public CommandExecuteReaderWithCancellationAsyncAttribute(Type adoNetClientDataType)
+                : base(adoNetClientDataType)
+            {
+                MethodName = AdoNetConstants.MethodNames.ExecuteReaderAsync;
+                ReturnTypeName = AdoNetClientData.DataReaderTaskType;
+                ParameterTypeNames = new[] { ClrNames.CancellationToken };
+                CallTargetType = typeof(CommandExecuteReaderWithCancellationAsyncIntegration);
             }
         }
 
@@ -76,20 +87,32 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             {
                 MethodName = AdoNetConstants.MethodNames.ExecuteReaderAsync;
                 ReturnTypeName = AdoNetClientData.DataReaderTaskType;
-                ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken };
+                ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior };
                 CallTargetType = typeof(CommandExecuteReaderWithBehaviorAsyncIntegration);
             }
         }
 
-        internal class CommandExecuteDbDataReaderWithBehaviorAsyncAttribute : AdoNetClientInstrumentMethodAttribute
+        internal class CommandExecuteReaderWithBehaviorAndCancellationAsyncAttribute : AdoNetClientInstrumentMethodAttribute
         {
-            public CommandExecuteDbDataReaderWithBehaviorAsyncAttribute(Type adoNetClientDataType)
+            public CommandExecuteReaderWithBehaviorAndCancellationAsyncAttribute(Type adoNetClientDataType)
+                : base(adoNetClientDataType)
+            {
+                MethodName = AdoNetConstants.MethodNames.ExecuteReaderAsync;
+                ReturnTypeName = AdoNetClientData.DataReaderTaskType;
+                ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken };
+                CallTargetType = typeof(CommandExecuteReaderWithBehaviorAndCancellationAsyncIntegration);
+            }
+        }
+
+        internal class CommandExecuteDbDataReaderWithBehaviorAndCancellationAsyncAttribute : AdoNetClientInstrumentMethodAttribute
+        {
+            public CommandExecuteDbDataReaderWithBehaviorAndCancellationAsyncAttribute(Type adoNetClientDataType)
                 : base(adoNetClientDataType)
             {
                 MethodName = AdoNetConstants.MethodNames.ExecuteDbDataReaderAsync;
                 ReturnTypeName = AdoNetConstants.TypeNames.DbDataReaderTaskType;
                 ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken };
-                CallTargetType = typeof(CommandExecuteReaderWithBehaviorAsyncIntegration);
+                CallTargetType = typeof(CommandExecuteReaderWithBehaviorAndCancellationAsyncIntegration);
             }
         }
 

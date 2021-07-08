@@ -12,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 {
     /// <summary>
     /// CallTarget instrumentation for:
-    /// Task[*DataReader] [Command].ExecuteReaderAsync(CancellationToken)
+    /// Task[*DataReader] [Command].ExecuteReaderAsync()
     /// </summary>
     public class CommandExecuteReaderAsyncIntegration
     {
@@ -21,9 +21,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         /// </summary>
         /// <typeparam name="TTarget">Type of the target</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="cancellationToken">CancellationToken value</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget>(TTarget instance, CancellationToken cancellationToken)
+        public static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         {
             return new CallTargetState(ScopeDBFactory<TTarget>.CreateDbCommandScope(Tracer.Instance, (IDbCommand)instance));
         }
