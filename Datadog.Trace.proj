@@ -10,6 +10,7 @@
     <CsharpUnitTestProject Include="test\**\*.Tests.csproj"/>
     <CsharpIntegrationTestProject Include="test\*.IntegrationTests\*.IntegrationTests.csproj"/>
     <CsharpIntegrationTestRegressionProject Include="test\tests-applications\regression\*.IntegrationTests.csproj" />
+    <RazorPagesProject Include="test/test-applications/**/Samples.AspNetCoreRazorPages.csproj" />
     <ExcludeExpenseItDemoProject Remove="test/test-applications/regression/**/ExpenseItDemo*.csproj" />
     <ExcludeEF6DemoProject Remove="test/test-applications/regression/**/EntityFramework6x*.csproj" />
     <ExcludeLegacyRedisProject Remove="test/test-applications/regression/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj" />
@@ -50,7 +51,7 @@
 
   <!-- Used by CompileIntegrationTests-->
   <Target Name="BuildCsharpIntegrationTests">
-    <MSBuild Targets="Build" Projects="@(CsharpIntegrationTestProject);@(CsharpIntegrationTestRegressionProject);@(ExcludeExpenseItDemoProject);@(ExcludeEF6DemoProject);@(ExcludeLegacyRedisProject)">
+    <MSBuild Targets="Build" Projects="@(RazorPagesProject);@(CsharpIntegrationTestProject);@(CsharpIntegrationTestRegressionProject);@(ExcludeExpenseItDemoProject);@(ExcludeEF6DemoProject);@(ExcludeLegacyRedisProject)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
