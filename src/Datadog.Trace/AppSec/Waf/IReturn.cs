@@ -10,5 +10,7 @@ namespace Datadog.Trace.AppSec.Waf
     internal interface IReturn : IDisposable
     {
         ReturnCode ReturnCode { get; }
+
+        string Data { get; }
     }
 }

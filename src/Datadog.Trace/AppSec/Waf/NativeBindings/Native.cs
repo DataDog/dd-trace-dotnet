@@ -287,6 +287,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                     AppDomain.CurrentDomain.BaseDirectory : AppDomain.CurrentDomain.RelativeSearchPath;
             integrationsPaths.Add(currentDir);
 
+            Log.Warning($"current dir is {currentDir}'");
+
             // the home folder could contain the native dll directly, but it could also
             // be under a runtime specific folder
             var paths =

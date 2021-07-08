@@ -5,6 +5,8 @@
 
 #if NETCOREAPP3_0_OR_GREATER
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Xunit;
@@ -26,9 +28,13 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("Category", "ArmUnsupported")]
         public async Task TestBlockedRequestAsync(bool enableSecurity, HttpStatusCode expectedStatusCode)
         {
-            await RunOnSelfHosted(enableSecurity);
-            var (statusCode, _) = await SubmitRequest("/Home?arg=[$slice]");
-            Assert.Equal(expectedStatusCode, statusCode);
+            using var agent = await RunOnSelfHosted(enableSecurity);
+            await TestBlockedRequestAsync(agent, enableSecurity, expectedStatusCode, 5, new Action<TestHelpers.MockTracerAgent.Span>[]
+            {
+             s => Assert.Equal("aspnet_core.request", s.Name),
+             s  => Assert.Equal("Samples.AspNetCore5", s.Service),
+             s  =>  Assert.Equal("web", s.Type)
+            });
         }
     }
 }

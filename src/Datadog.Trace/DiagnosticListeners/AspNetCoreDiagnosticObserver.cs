@@ -478,7 +478,7 @@ namespace Datadog.Trace.DiagnosticListeners
             span.ResourceName = resourceName;
         }
 
-        private static void StartMvcCoreSpan(Tracer tracer, Span parentSpan, BeforeActionStruct typedArg, HttpContext httpContext, HttpRequest request)
+        private static Span StartMvcCoreSpan(Tracer tracer, Span parentSpan, BeforeActionStruct typedArg, HttpContext httpContext, HttpRequest request)
         {
             // Create a child span for the MVC action
             var mvcSpanTags = new AspNetCoreEndpointTags();
@@ -579,9 +579,11 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 parentSpan.ResourceName = span.ResourceName;
             }
+
+            return span;
         }
 
-        private void StartCoreSpan(Tracer tracer, HttpContext httpContext, HttpRequest request)
+        private Span StartCoreSpan(Tracer tracer, HttpContext httpContext, HttpRequest request)
         {
             string host = request.Host.Value;
             string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
@@ -617,6 +619,8 @@ namespace Datadog.Trace.DiagnosticListeners
             scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, tags, tagsFromHeaders);
 
             tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
+            Log.Warning($"Created span {scope.Span.SpanId} with {resourceName}, {scope.Span.ResourceName}");
+            return scope.Span;
         }
 
         private void OnHostingHttpRequestInStart(object arg)
@@ -636,23 +640,23 @@ namespace Datadog.Trace.DiagnosticListeners
             {
                 HttpContext httpContext = requestStruct.HttpContext;
                 HttpRequest request = httpContext.Request;
-
+                Span span = null;
                 if (shouldTrace)
                 {
-                    StartCoreSpan(tracer, httpContext, request);
+                    span = StartCoreSpan(tracer, httpContext, request);
                 }
 
                 if (shouldSecure)
                 {
-                    RaiseIntrumentationEvent(security, httpContext, request);
+                    RaiseIntrumentationEvent(security, httpContext, request, span);
                 }
             }
         }
 
-        private void RaiseIntrumentationEvent(IDatadogSecurity security, HttpContext context, HttpRequest request, RouteData routeData = null)
+        private void RaiseIntrumentationEvent(IDatadogSecurity security, HttpContext context, HttpRequest request, Span span, RouteData routeData = null)
         {
             var dic = request.PrepareArgsForWaf(routeData);
-            security.InstrumentationGateway.RaiseEvent(dic, new HttpTransport(context));
+            security.InstrumentationGateway.RaiseEvent(dic, new HttpTransport(context), span);
         }
 
         private void OnRoutingEndpointMatched(object arg)
@@ -797,7 +801,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 // NOTE: This event is the start of the action pipeline. The action has been selected, the route
                 //       has been selected but no filters have run and model binding hasn't occurred.
-
+                Span span = null;
                 if (shouldTrace)
                 {
                     if (!tracer.Settings.RouteTemplateResourceNamesEnabled)
@@ -806,13 +810,13 @@ namespace Datadog.Trace.DiagnosticListeners
                     }
                     else
                     {
-                        StartMvcCoreSpan(tracer, parentSpan, typedArg, httpContext, request);
+                        span = StartMvcCoreSpan(tracer, parentSpan, typedArg, httpContext, request);
                     }
                 }
 
                 if (shouldSecure)
                 {
-                    RaiseIntrumentationEvent(security, httpContext, request, typedArg.RouteData);
+                    RaiseIntrumentationEvent(security, httpContext, request, span ?? parentSpan, typedArg.RouteData);
                 }
             }
         }

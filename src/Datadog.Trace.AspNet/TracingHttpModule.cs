@@ -133,7 +133,7 @@ namespace Datadog.Trace.AspNet
                 var security = Security.Instance;
                 if (security.Enabled)
                 {
-                    RaiseIntrumentationEvent(security, httpContext, httpRequest);
+                    RaiseIntrumentationEvent(security, httpContext, httpRequest, scope.Span);
                 }
             }
             catch (Exception ex)
@@ -234,10 +234,10 @@ namespace Datadog.Trace.AspNet
             }
         }
 
-        private void RaiseIntrumentationEvent(IDatadogSecurity security, HttpContext context, HttpRequest request)
+        private void RaiseIntrumentationEvent(IDatadogSecurity security, HttpContext context, HttpRequest request, Span relatedSpan)
         {
             var dict = request.PrepareArgsForWaf();
-            security.InstrumentationGateway.RaiseEvent(dict, new HttpTransport(context));
+            security.InstrumentationGateway.RaiseEvent(dict, new HttpTransport(context), relatedSpan);
         }
     }
 }
