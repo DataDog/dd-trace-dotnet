@@ -81,28 +81,29 @@ namespace nativeloader
         Debug("MaskHi : ", mask_hi);
 
         // Execute all Initialize functions from the dispatcher and collect each event mask
-        HRESULT dispatcherResult = m_dispatcher->Execute([info6, &mask_low, &mask_hi, pICorProfilerInfoUnk](ICorProfilerCallback10* pCallback) {
-            HRESULT localResult = pCallback->Initialize(pICorProfilerInfoUnk);
-            if (SUCCEEDED(localResult))
-            {
-                DWORD local_mask_low;
-                DWORD local_mask_hi;
-                HRESULT hr = info6->GetEventMask2(&local_mask_low, &local_mask_hi);
-                if (SUCCEEDED(hr))
+        HRESULT dispatcherResult = m_dispatcher->Execute(
+            [info6, &mask_low, &mask_hi, pICorProfilerInfoUnk](ICorProfilerCallback10* pCallback) {
+                HRESULT localResult = pCallback->Initialize(pICorProfilerInfoUnk);
+                if (SUCCEEDED(localResult))
                 {
-                    mask_low = mask_low | local_mask_low;
-                    mask_hi = mask_hi | local_mask_hi;
+                    DWORD local_mask_low;
+                    DWORD local_mask_hi;
+                    HRESULT hr = info6->GetEventMask2(&local_mask_low, &local_mask_hi);
+                    if (SUCCEEDED(hr))
+                    {
+                        mask_low = mask_low | local_mask_low;
+                        mask_hi = mask_hi | local_mask_hi;
 
-                    Debug("*LocalMaskLow: ", local_mask_low);
-                    Debug("*LocalMaskHi : ", local_mask_hi);
+                        Debug("*LocalMaskLow: ", local_mask_low);
+                        Debug("*LocalMaskHi : ", local_mask_hi);
+                    }
+                    else
+                    {
+                        Warn("Error getting the event mask.");
+                    }
                 }
-                else
-                {
-                    Warn("Error getting the event mask.");
-                }
-            }
-            return localResult;
-        });
+                return localResult;
+            });
 
         Debug("*MaskLow: ", mask_low);
         Debug("*MaskHi : ", mask_hi);
@@ -436,7 +437,8 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::RuntimeResumeStarted()
     {
         Verbose("CorProfiler::RuntimeResumeStarted");
-        return m_dispatcher->Execute([](ICorProfilerCallback10* pCallback) { return pCallback->RuntimeResumeStarted(); });
+        return m_dispatcher->Execute(
+            [](ICorProfilerCallback10* pCallback) { return pCallback->RuntimeResumeStarted(); });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RuntimeResumeFinished()
@@ -466,7 +468,7 @@ namespace nativeloader
     {
         Verbose("CorProfiler::MovedReferences");
         return m_dispatcher->Execute([cMovedObjectIDRanges, oldObjectIDRangeStart, newObjectIDRangeStart,
-                                    cObjectIDRangeLength](ICorProfilerCallback10* pCallback) {
+                                      cObjectIDRangeLength](ICorProfilerCallback10* pCallback) {
             return pCallback->MovedReferences(cMovedObjectIDRanges, oldObjectIDRangeStart, newObjectIDRangeStart,
                                               cObjectIDRangeLength);
         });
@@ -666,7 +668,7 @@ namespace nativeloader
     {
         Verbose("CorProfiler::SurvivingReferences");
         return m_dispatcher->Execute([cSurvivingObjectIDRanges, objectIDRangeStart,
-                                    cObjectIDRangeLength](ICorProfilerCallback10* pCallback) {
+                                      cObjectIDRangeLength](ICorProfilerCallback10* pCallback) {
             return pCallback->SurvivingReferences(cSurvivingObjectIDRanges, objectIDRangeStart, cObjectIDRangeLength);
         });
     }
@@ -758,9 +760,10 @@ namespace nativeloader
                                                                     HRESULT hrStatus, BOOL fIsSafeToBlock)
     {
         Verbose("CorProfiler::ReJITCompilationFinished");
-        return m_dispatcher->Execute([functionId, rejitId, hrStatus, fIsSafeToBlock](ICorProfilerCallback10* pCallback) {
-            return pCallback->ReJITCompilationFinished(functionId, rejitId, hrStatus, fIsSafeToBlock);
-        });
+        return m_dispatcher->Execute(
+            [functionId, rejitId, hrStatus, fIsSafeToBlock](ICorProfilerCallback10* pCallback) {
+                return pCallback->ReJITCompilationFinished(functionId, rejitId, hrStatus, fIsSafeToBlock);
+            });
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ReJITError(ModuleID moduleId, mdMethodDef methodId, FunctionID functionId,
@@ -779,7 +782,7 @@ namespace nativeloader
     {
         Verbose("CorProfiler::MovedReferences2");
         return m_dispatcher->Execute([cMovedObjectIDRanges, oldObjectIDRangeStart, newObjectIDRangeStart,
-                                    cObjectIDRangeLength](ICorProfilerCallback10* pCallback) {
+                                      cObjectIDRangeLength](ICorProfilerCallback10* pCallback) {
             return pCallback->MovedReferences2(cMovedObjectIDRanges, oldObjectIDRangeStart, newObjectIDRangeStart,
                                                cObjectIDRangeLength);
         });
@@ -791,7 +794,7 @@ namespace nativeloader
     {
         Verbose("CorProfiler::SurvivingReferences2");
         return m_dispatcher->Execute([cSurvivingObjectIDRanges, objectIDRangeStart,
-                                    cObjectIDRangeLength](ICorProfilerCallback10* pCallback) {
+                                      cObjectIDRangeLength](ICorProfilerCallback10* pCallback) {
             return pCallback->SurvivingReferences2(cSurvivingObjectIDRanges, objectIDRangeStart, cObjectIDRangeLength);
         });
     }
@@ -859,8 +862,8 @@ namespace nativeloader
     {
         Verbose("CorProfiler::EventPipeEventDelivered");
         return m_dispatcher->Execute([provider, eventId, eventVersion, cbMetadataBlob, metadataBlob, cbEventData,
-                                    eventData, pActivityId, pRelatedActivityId, eventThread, numStackFrames,
-                                    stackFrames](ICorProfilerCallback10* pCallback) {
+                                      eventData, pActivityId, pRelatedActivityId, eventThread, numStackFrames,
+                                      stackFrames](ICorProfilerCallback10* pCallback) {
             return pCallback->EventPipeEventDelivered(provider, eventId, eventVersion, cbMetadataBlob, metadataBlob,
                                                       cbEventData, eventData, pActivityId, pRelatedActivityId,
                                                       eventThread, numStackFrames, stackFrames);

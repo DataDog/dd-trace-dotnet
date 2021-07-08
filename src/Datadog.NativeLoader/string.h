@@ -30,6 +30,7 @@ WSTRING HexStr(const void* data, int len);
 
 // Trim removes space from the beginning and end of a string.
 WSTRING Trim(const WSTRING& str);
+
 // Trim removes space from the beginning and end of a string.
 std::string Trim(const std::string& str);
 

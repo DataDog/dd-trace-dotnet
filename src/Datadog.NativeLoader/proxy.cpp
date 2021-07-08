@@ -138,7 +138,8 @@ namespace nativeloader
 
         // Creates the profiler callback instance from the class factory
         Debug("m_classFactory: ", HexStr(m_classFactory, sizeof(IClassFactory*)));
-        HRESULT res = m_classFactory->CreateInstance(nullptr, __uuidof(ICorProfilerCallback10), (void**) &m_corProfilerCallback);
+        HRESULT res =
+            m_classFactory->CreateInstance(nullptr, __uuidof(ICorProfilerCallback10), (void**) &m_corProfilerCallback);
         if (FAILED(res))
         {
             m_corProfilerCallback = nullptr;
@@ -182,7 +183,6 @@ namespace nativeloader
     {
         return m_filepath;
     }
-
 
     // ************************************************************************
 
@@ -242,12 +242,14 @@ namespace nativeloader
 
                 if (osArchValue == currentOsArch)
                 {
-                    // Convert possible relative paths to absolute paths using the configuration file folder as base (current_path)
+                    // Convert possible relative paths to absolute paths using the configuration file folder as base
+                    // (current_path)
                     filepathValue = std::filesystem::absolute(filepathValue).string();
                     if (std::filesystem::exists(filepathValue))
                     {
                         guidBoolMap[idValue] = true;
-                        std::unique_ptr<DynamicInstance> instance = std::make_unique<DynamicInstance>(filepathValue, idValue);
+                        std::unique_ptr<DynamicInstance> instance =
+                            std::make_unique<DynamicInstance>(filepathValue, idValue);
                         this->Add(instance);
                         WSTRING env_key = WStr("PROFID_") + ToWSTRING(idValue);
                         WSTRING env_value = ToWSTRING(filepathValue);

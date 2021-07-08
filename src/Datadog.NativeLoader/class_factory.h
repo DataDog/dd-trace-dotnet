@@ -3,13 +3,12 @@
 // license information.
 
 #pragma once
-#include <atomic>
 #include "unknwn.h"
-
+#include <atomic>
 
 namespace datadog::nativeloader
 {
-    class DynamicDispatcher;
+class DynamicDispatcher;
 } // namespace datadog::nativeloader
 
 class ClassFactory : public IClassFactory
