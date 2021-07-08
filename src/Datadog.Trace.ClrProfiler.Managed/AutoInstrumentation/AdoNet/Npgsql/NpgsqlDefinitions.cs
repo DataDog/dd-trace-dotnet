@@ -32,7 +32,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Npgsql.NpgsqlC
  ********************************************************************************/
 
 // Task<DbDataReader> Npgsql.NpgsqlCommand.ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
-[assembly: CommandExecuteDbDataReaderWithBehaviorAsync(typeof(NpgsqlClientData))]
+[assembly: CommandExecuteDbDataReaderWithBehaviorAndCancellationAsync(typeof(NpgsqlClientData))]
 
 /********************************************************************************
  * [*]DataReader .ExecuteReader()

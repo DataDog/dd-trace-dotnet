@@ -65,11 +65,11 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.SqlClient.SqlC
  ********************************************************************************/
 
 // Task<DbDataReader> System.Data.SqlClient.SqlCommand.ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
-[assembly: CommandExecuteDbDataReaderWithBehaviorAsync(typeof(SystemDataAdoNetClientData))]
-[assembly: CommandExecuteDbDataReaderWithBehaviorAsync(typeof(SystemDataSqlClientAdoNetClientData))]
+[assembly: CommandExecuteDbDataReaderWithBehaviorAndCancellationAsync(typeof(SystemDataAdoNetClientData))]
+[assembly: CommandExecuteDbDataReaderWithBehaviorAndCancellationAsync(typeof(SystemDataSqlClientAdoNetClientData))]
 
 // Task<DbDataReader> Microsoft.Data.SqlClient.SqlCommand.ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
-[assembly: CommandExecuteDbDataReaderWithBehaviorAsync(typeof(MicrosoftDataAdoNetClientData))]
+[assembly: CommandExecuteDbDataReaderWithBehaviorAndCancellationAsync(typeof(MicrosoftDataAdoNetClientData))]
 
 /********************************************************************************
  * [*]DataReader .ExecuteReader()

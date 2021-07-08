@@ -43,7 +43,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.MySql.MySqlCon
  ********************************************************************************/
 
 // Task<DbDataReader> MySqlConnector.MySqlCommand.ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
-[assembly: CommandExecuteDbDataReaderWithBehaviorAsync(typeof(MySqlConnectorClientData))]
+[assembly: CommandExecuteDbDataReaderWithBehaviorAndCancellationAsync(typeof(MySqlConnectorClientData))]
 
 /********************************************************************************
  * [*]DataReader .ExecuteReader()

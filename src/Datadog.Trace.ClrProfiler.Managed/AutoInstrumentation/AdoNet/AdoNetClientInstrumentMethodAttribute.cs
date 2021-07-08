@@ -104,15 +104,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             }
         }
 
-        internal class CommandExecuteDbDataReaderWithBehaviorAsyncAttribute : AdoNetClientInstrumentMethodAttribute
+        internal class CommandExecuteDbDataReaderWithBehaviorAndCancellationAsyncAttribute : AdoNetClientInstrumentMethodAttribute
         {
-            public CommandExecuteDbDataReaderWithBehaviorAsyncAttribute(Type adoNetClientDataType)
+            public CommandExecuteDbDataReaderWithBehaviorAndCancellationAsyncAttribute(Type adoNetClientDataType)
                 : base(adoNetClientDataType)
             {
                 MethodName = AdoNetConstants.MethodNames.ExecuteDbDataReaderAsync;
                 ReturnTypeName = AdoNetConstants.TypeNames.DbDataReaderTaskType;
                 ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior, ClrNames.CancellationToken };
-                CallTargetType = typeof(CommandExecuteReaderWithBehaviorAsyncIntegration);
+                CallTargetType = typeof(CommandExecuteReaderWithBehaviorAndCancellationAsyncIntegration);
             }
         }
 
