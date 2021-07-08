@@ -1,8 +1,8 @@
 #pragma once
 #include <corhlpr.h>
 #include <corprof.h>
-#include <vector>
 #include <functional>
+#include <vector>
 
 #include "string.h"
 
