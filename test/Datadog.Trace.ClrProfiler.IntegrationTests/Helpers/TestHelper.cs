@@ -212,8 +212,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                 .Replace("[HOSTING_MODEL]", hostingModel);
             }
 
-            // If running a .NET Core app, need to set
-
             File.WriteAllText(newConfig, configTemplate);
 
             var args = new[]
