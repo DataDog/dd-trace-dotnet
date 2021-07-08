@@ -32,6 +32,8 @@ namespace Samples.Kafka
                             ReplicationFactor = replicationFactor
                         }
                     });
+
+                    Console.WriteLine($"Topic created");
                     return true;
                 }
                 catch (CreateTopicsException e)

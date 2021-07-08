@@ -24,34 +24,48 @@ namespace Samples.Kafka
         }
 
 
-        public void Consume(int retries, int timeoutMilliSeconds)
+        public bool Consume(int retries, int timeoutMilliSeconds)
         {
             try
             {
                 for (int i = 0; i < retries; i++)
                 {
-                    // will block until a message is available
-                    var consumeResult = _consumer.Consume(timeoutMilliSeconds);
-                    if (consumeResult is null)
+                    try
                     {
-                        Console.WriteLine($"{_consumerName}: Null consume result");
-                        continue;
+                        // will block until a message is available
+                        // on 1.5.3 this will throw if the topic doesn't exist
+                        var consumeResult = _consumer.Consume(timeoutMilliSeconds);
+                        if (consumeResult is null)
+                        {
+                            Console.WriteLine($"{_consumerName}: Null consume result");
+                            return true;
+                        }
+
+                        if (consumeResult.IsPartitionEOF)
+                        {
+                            Console.WriteLine($"{_consumerName}: Reached EOF");
+                            return true;
+                        }
+                        else
+                        {
+                            HandleMessage(consumeResult);
+                            return true;
+                        }
+                    }
+                    catch (ConsumeException ex)
+                    {
+                        Console.WriteLine($"Consume Exception in manual consume: {ex}");
                     }
 
-                    if (consumeResult.IsPartitionEOF)
-                    {
-                        Console.WriteLine($"{_consumerName}: Reached EOF");
-                    }
-                    else
-                    {
-                        HandleMessage(consumeResult);
-                    }
+                    Task.Delay(500);
                 }
             }
             catch (TaskCanceledException)
             {
                 Console.WriteLine($"{_consumerName}: Cancellation requested, exiting.");
             }
+
+            return false;
         }
 
         public void Consume(CancellationToken cancellationToken = default)
