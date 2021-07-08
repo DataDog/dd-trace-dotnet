@@ -22,6 +22,7 @@ variables:
   DD_DOTNET_TRACER_MSBUILD:
   NugetPackageDirectory: $(System.DefaultWorkingDirectory)/packages
   relativeNugetPackageDirectory: packages
+  dotnetToolTag: build-dotnet-tool
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
@@ -35,153 +36,8 @@ resources:
       DD_INSIDE_CI: true
 
 stages:
-- stage: build_windows
-  dependsOn: []
-  jobs:
-  - job: build
-    pool:
-      vmImage: windows-2019
-    steps:
-    - template: steps/install-dotnet-5-sdk.yml
-
-    - script: build.cmd BuildTracerHome
-      displayName: Build tracer home
-
-    - publish: $(tracerHome)
-      displayName: Upload Windows tracer home directory
-      artifact: windows-tracer-home
-
-    - publish: $(System.DefaultWorkingDirectory)
-      displayName: Upload working directory after the managed build
-      artifact: build-windows-working-directory
-
-- stage: build_linux
-  dependsOn: []
-  jobs:
-  - job: build
-    dependsOn: []
-    strategy:
-      matrix:
-        debian:
-          matrixName: debian
-          poolName: Azure Pipelines
-          vmImage: ubuntu-18.04
-          baseImage: debian
-    pool:
-      name: $(poolName)
-      vmImage: $(vmImage)
-
-    steps:
-    - template: steps/run-in-docker.yml
-      parameters:
-        build: true
-        target: builder
-        baseImage: $(baseImage)
-        command: "Clean BuildTracerHome ZipTracerHome"
-
-    - publish: $(tracerHome)
-      displayName: Uploading linux tracer home artifact
-      artifact: linux-tracer-home-$(matrixName)
-
-    - publish: $(artifacts)/linux-x64
-      condition: ne(variables['matrixName'], 'arm64')
-      displayName: Upload linux-x64 packages
-      artifact: linux-packages-$(matrixName)
-
-    - publish: $(artifacts)/linux-arm64
-      condition: eq(variables['matrixName'], 'arm64')
-      displayName: Upload linux-arm64 packages
-      artifact: linux-packages-$(matrixName)
-
-    - publish: $(System.DefaultWorkingDirectory)
-      displayName: Upload working directory after the build
-      artifact: build-linux-$(matrixName)-working-directory
-
-- stage: dotnet_tool
-  dependsOn: [build_windows, build_linux]
-  jobs:
-  - job: build_runner_tool_and_standalone
-
-    pool:
-      vmImage: windows-2019
-
-    # Enable the Datadog Agent service for this job
-    services:
-      dd_agent: dd_agent
-
-    steps:
-    - template: steps/install-dotnet-5-sdk.yml
-    - template: steps/restore-working-directory.yml
-
-    - task: DownloadPipelineArtifact@2
-      displayName: Download windows tracer home
-      inputs:
-        artifact: windows-tracer-home
-        patterns: "!integrations.json"
-        path: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home
-
-    - task: DownloadPipelineArtifact@2
-      displayName: Download linux tracer home
-      inputs:
-        artifact: linux-tracer-home-debian
-        patterns: "**/*.so"
-        path: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home/linux-x64
-
-    # Skip task "Download alpine tracer home"
-
-    # Skip task "Download arm64 tracer home"
-
-    # Skip task "Download osx tracer home"
-
-    # Install the tracer latest stable release to attach the profiler to the build and test steps.
-    # The script exposes the required environment variables to the following steps
-    - task: PowerShell@2
-      displayName: Install profiler latest release
-      inputs:
-        filePath: ./.azure-pipelines/setup_tracer.ps1
-
-    - script: build.cmd BuildRunnerTool --skip
-      displayName: Build Runner tool
-
-    - script: build.cmd BuildStandaloneTool --skip
-      displayName: Build Standalone tool
-
-    - task: DeleteFiles@1
-      displayName: 'Remove unneeded files'
-      inputs:
-        Contents: |
-          $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Tool/!(*.nupkg)
-          $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/win-x64/home*
-          $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/win-x86/home*
-          $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-x64/home*
-          $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-musl-x64/home*
-          $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-arm64/home*
-          $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/osx-x64/home*
-
-    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Tool
-      displayName: Uploading runner dotnet tool artifact
-      artifact: runner-dotnet-tool
-
-    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/win-x64
-      displayName: Uploading runner standalone win-x64 artifact
-      artifact: runner-standalone-win-x64
-
-    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/win-x86
-      displayName: Uploading runner standalone win-x86 artifact
-      artifact: runner-standalone-win-x86
-
-    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-x64
-      displayName: Uploading runner standalone linux-x64 artifact
-      artifact: runner-standalone-linux-x64
-
-    # Skip task "Uploading runner standalone linux-musl-x64 artifact"
-
-    # Skip task "Uploading runner standalone linux-arm64 artifact"
-
-    # Skip task "Uploading runner standalone osx-x64 artifact"
-
 - stage: run_tests
-  dependsOn: dotnet_tool
+  dependsOn: []
   jobs:
   - job: Postgres
     strategy:
@@ -220,9 +76,21 @@ stages:
 
     - checkout: none
 
-    - download: current
-      artifact: runner-dotnet-tool
-      patterns: '**/*.nupkg'
+    # Download the latest runner tool from the 'consolidated-pipeline' pipeline, from the master branch
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        source: 'specific'
+        project: 'dd-trace-dotnet'
+        pipeline: 54
+        runVersion: 'latestFromBranch'
+        # runBranch: 'refs/heads/master' # Restore once this is tested
+        runBranch: 'refs/heads/zach/test/third-party-npgsql'
+        tags: '$(dotnetToolTag)'
+        allowFailedBuilds: true # The consolidated pipeline may fail on test runs. Maybe we could break them up into a cascading set of jobs?
+
+        artifact: runner-dotnet-tool
+        patterns: '**/*.nupkg'
+        path: $(Pipeline.Workspace)/runner-dotnet-tool
 
     - script: dotnet tool install --global --add-source $(Pipeline.Workspace)/runner-dotnet-tool dd-trace
       displayName: Install dd-trace tool
