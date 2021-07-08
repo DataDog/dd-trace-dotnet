@@ -107,13 +107,6 @@ namespace nativeloader
         Debug("*MaskLow: ", mask_low);
         Debug("*MaskHi : ", mask_hi);
 
-        //mask_low = COR_PRF_MONITOR_JIT_COMPILATION | COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
-        //           COR_PRF_MONITOR_MODULE_LOADS | COR_PRF_MONITOR_ASSEMBLY_LOADS | COR_PRF_DISABLE_ALL_NGEN_IMAGES |
-        //           COR_PRF_MONITOR_THREADS | COR_PRF_ENABLE_STACK_SNAPSHOT | COR_PRF_ENABLE_REJIT |
-        //           COR_PRF_MONITOR_CACHE_SEARCHES;
-
-        //mask_hi = COR_PRF_HIGH_ADD_ASSEMBLY_REFERENCES;
-
         // Sets the final event mask for the profiler
         hr = info6->SetEventMask2(mask_low, mask_hi);
         if (FAILED(hr))
