@@ -55,6 +55,7 @@ namespace shared
 
     void Loader::CreateNewSingeltonInstance(
         ICorProfilerInfo4* pCorProfilerInfo,
+        bool logDebugIsEnabled,
         std::function<void(const std::string& str)> logDebugCallback,
         std::function<void(const std::string& str)> logInfoCallback,
         std::function<void(const std::string& str)> logErrorCallback,
@@ -66,15 +67,16 @@ namespace shared
         const std::vector<WSTRING>& iisAssemblyStringNonDefaultAppDomainVector)
     {
         Loader* newSingeltonInstance = Loader::CreateNewLoaderInstance(pCorProfilerInfo,
-            logDebugCallback,
-            logInfoCallback,
-            logErrorCallback,
-            resourceMonikerIDs,
-            pNativeProfilerLibraryFilename,
-            nonIISAssemblyStringDefaultAppDomainVector,
-            nonIISAssemblyStringNonDefaultAppDomainVector,
-            iisAssemblyStringDefaultAppDomainVector,
-            iisAssemblyStringNonDefaultAppDomainVector);
+                                                                       logDebugIsEnabled,
+                                                                       logDebugCallback,
+                                                                       logInfoCallback,
+                                                                       logErrorCallback,
+                                                                       resourceMonikerIDs,
+                                                                       pNativeProfilerLibraryFilename,
+                                                                       nonIISAssemblyStringDefaultAppDomainVector,
+                                                                       nonIISAssemblyStringNonDefaultAppDomainVector,
+                                                                       iisAssemblyStringDefaultAppDomainVector,
+                                                                       iisAssemblyStringNonDefaultAppDomainVector);
 
         Loader::DeleteSingeltonInstance();
         Loader::s_singeltonInstance = newSingeltonInstance;
@@ -103,6 +105,7 @@ namespace shared
 
     Loader* Loader::CreateNewLoaderInstance(
         ICorProfilerInfo4* pCorProfilerInfo,
+        bool logDebugIsEnabled,
         std::function<void(const std::string& str)> logDebugCallback,
         std::function<void(const std::string& str)> logInfoCallback,
         std::function<void(const std::string& str)> logErrorCallback,
@@ -127,24 +130,28 @@ namespace shared
         }
 
         return new Loader(pCorProfilerInfo,
-            isIIS ? iisAssemblyStringDefaultAppDomainVector : nonIISAssemblyStringDefaultAppDomainVector,
-            isIIS ? iisAssemblyStringNonDefaultAppDomainVector : nonIISAssemblyStringNonDefaultAppDomainVector,
-            logDebugCallback,
-            logInfoCallback,
-            logErrorCallback,
-            resourceMonikerIDs,
-            pNativeProfilerLibraryFilename);
+                          isIIS ? iisAssemblyStringDefaultAppDomainVector : nonIISAssemblyStringDefaultAppDomainVector,
+                          isIIS ? iisAssemblyStringNonDefaultAppDomainVector : nonIISAssemblyStringNonDefaultAppDomainVector,
+                          logDebugIsEnabled,
+                          logDebugCallback,
+                          logInfoCallback,
+                          logErrorCallback,
+                          resourceMonikerIDs,
+                          pNativeProfilerLibraryFilename);
     }
 
     Loader::Loader(
         ICorProfilerInfo4* pCorProfilerInfo,
         const std::vector<WSTRING>& assemblyStringDefaultAppDomainVector,
         const std::vector<WSTRING>& assemblyStringNonDefaultAppDomainVector,
+        bool logDebugIsEnabled,
         std::function<void(const std::string& str)> logDebugCallback,
         std::function<void(const std::string& str)> logInfoCallback,
         std::function<void(const std::string& str)> logErrorCallback,
         const LoaderResourceMonikerIDs& resourceMonikerIDs,
         const WCHAR* pNativeProfilerLibraryFilename)
+        :
+        _logDebugIsEnabled{ logDebugIsEnabled }
     {
         _resourceMonikerIDs = LoaderResourceMonikerIDs(resourceMonikerIDs);
         _pCorProfilerInfo = pCorProfilerInfo;
@@ -209,7 +216,11 @@ namespace shared
         //
         if (assemblyNameString == _managedLoaderAssemblyName)
         {
-            Debug("Loader::InjectLoaderToModuleInitializer: The module is the loader itself, skipping it.");
+            if (_logDebugIsEnabled)
+            {
+                Debug("Loader::InjectLoaderToModuleInitializer: The module is the loader itself, skipping it.");
+            }
+
             return E_FAIL;
         }
 
@@ -218,7 +229,11 @@ namespace shared
         //
         if (_loadersLoadedSet.find(appDomainId) != _loadersLoadedSet.end())
         {
-            Debug("Loader::InjectLoaderToModuleInitializer: The loader was already loaded in the AppDomain.  [AppDomainID=" + appDomainIdHex + "]");
+            if (_logDebugIsEnabled)
+            {
+                Debug("Loader::InjectLoaderToModuleInitializer: The loader was already loaded in the AppDomain.  [AppDomainID=" + appDomainIdHex + "]");
+            }
+
             return S_OK;
         }
 
@@ -229,7 +244,11 @@ namespace shared
         {
             if (assemblyNameString == asm_name)
             {
-                Debug("Loader::InjectLoaderToModuleInitializer: Skipping " + ToString(assemblyNameString) + " [AppDomainID=" + appDomainIdHex + "]");
+                if (_logDebugIsEnabled)
+                {
+                    Debug("Loader::InjectLoaderToModuleInitializer: Skipping " + ToString(assemblyNameString) + " [AppDomainID=" + appDomainIdHex + "]");
+                }
+
                 return E_FAIL;
             }
         }
@@ -258,7 +277,10 @@ namespace shared
         //
         if (assemblyNameString == WStr("mscorlib") || assemblyNameString == WStr("System.Private.CoreLib"))
         {
-            Debug("Loader::InjectLoaderToModuleInitializer: extracting metadata of the corlib assembly: " + ToString(assemblyNameString));
+            if (_logDebugIsEnabled)
+            {
+                Debug("Loader::InjectLoaderToModuleInitializer: extracting metadata of the corlib assembly: " + ToString(assemblyNameString));
+            }
 
             mdAssembly corLibAssembly;
             assemblyImport->GetAssemblyFromScope(&corLibAssembly);
@@ -288,13 +310,17 @@ namespace shared
             }
 
             _corlibMetadata.Name = WSTRING(name);
-            Debug("Loader::InjectLoaderToModuleInitializer: [" +
-                ToString(_corlibMetadata.Name) + ", " +
-                ToString(_corlibMetadata.Metadata.usMajorVersion) + ", " +
-                ToString(_corlibMetadata.Metadata.usMinorVersion) + ", " +
-                ToString(_corlibMetadata.Metadata.usRevisionNumber) + ", " +
-                ToString(_corlibMetadata.Metadata.usBuildNumber) +
-                "]");
+
+            if (_logDebugIsEnabled)
+            {
+                Debug("Loader::InjectLoaderToModuleInitializer: [" +
+                      ToString(_corlibMetadata.Name) + ", " +
+                      ToString(_corlibMetadata.Metadata.usMajorVersion) + ", " +
+                      ToString(_corlibMetadata.Metadata.usMinorVersion) + ", " +
+                      ToString(_corlibMetadata.Metadata.usRevisionNumber) + ", " +
+                      ToString(_corlibMetadata.Metadata.usBuildNumber) +
+                      "]");
+            }
 
             mdTypeDef appDomainTypeDef;
             hr = metadataImport->FindTypeDefByName(_specificTypeToInject.c_str(), mdTokenNil, &appDomainTypeDef);
@@ -415,7 +441,7 @@ namespace shared
         return S_OK;
     }
 
-    HRESULT Loader::HandleFunctionSearch(FunctionID functionId, BOOL* pbUseCachedFunction)
+    HRESULT Loader::HandleJitCachedFunctionSearchStarted(FunctionID functionId, BOOL* pbUseCachedFunction)
     {
         HRESULT hr;
 
@@ -441,7 +467,7 @@ namespace shared
         WCHAR functionName[1024]{};
         DWORD functionNameLength = 0;
         hr = metadataImport->GetMemberProps(functionToken, &functionParentToken, functionName, 1024, &functionNameLength,
-            nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+                nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
         if (FAILED(hr))
         {
             return S_FALSE;
@@ -458,13 +484,21 @@ namespace shared
         {
             return S_FALSE;
         }
+
         auto typeNameString = WSTRING(typeName);
 
-        // Debug("  * " + ToString(typeNameString) + "." + ToString(functionNameString) + "()");
+        bool disableNGenForFunction = (typeNameString == _specificTypeToInject) && (functionNameString == _specificMethodToInject);
 
-        bool disableNGEN = typeNameString == _specificTypeToInject && functionNameString == _specificMethodToInject;
+        if (_logDebugIsEnabled)
+        {
+            Debug("Loader::HandleJitCachedFunctionSearchStarted:"
+                " (functionId=" + ToString(functionId) + ","
+                " typeName=\"" + ToString(typeNameString) + "\","
+                " functionName=\"" + ToString(functionNameString) + "\")"
+                " resulted in disableNGenForFunction=" + (disableNGenForFunction ? "True" : "False"));
+        }
 
-        *pbUseCachedFunction = *pbUseCachedFunction && !disableNGEN;
+        *pbUseCachedFunction = *pbUseCachedFunction && !disableNGenForFunction;
         return S_OK;
     }
 
@@ -942,7 +976,10 @@ namespace shared
             return hr;
         }
 
-        Debug("Loader::EmitDDLoadInitializationAssemblies: Creating " + ToString(typeNameString) + "." + ToString(loaderMethodName) + "() in ModuleID = " + moduleIdHex);
+        if (_logDebugIsEnabled)
+        {
+            Debug("Loader::EmitDDLoadInitializationAssemblies: Creating " + ToString(typeNameString) + "." + ToString(loaderMethodName) + "() in ModuleID = " + moduleIdHex);
+        }
 
         //
         // If the loader method cannot be found we create [Type].DD_LoadInitializationAssemblies() mdMethodDef
@@ -1270,8 +1307,11 @@ namespace shared
         hr = metadataImport->FindMethod(typeDef, cctorName, cctorSignature, sizeof(cctorSignature), &cctorMethodDef);
         if (FAILED(hr))
         {
-            Debug("Loader::EmitModuleCCtor: failed fetching <Module>..ctor mdMethodDef, creating new .ctor [ModuleID=" +
-                moduleIdHex + ", AppDomainID=" + appDomainIdHex + "]");
+            if (_logDebugIsEnabled)
+            {
+                Debug("Loader::EmitModuleCCtor: failed fetching <Module>..ctor mdMethodDef, creating new .ctor [ModuleID=" +
+                    moduleIdHex + ", AppDomainID=" + appDomainIdHex + "]");
+            }
 
             //
             // Define a new ..ctor for the <Module> type
@@ -1356,7 +1396,11 @@ namespace shared
         //
         if (_loadersLoadedSet.find(appDomainId) != _loadersLoadedSet.end())
         {
-            Debug("Loader::GetAssemblyAndSymbolsBytes: The loader was already loaded. " + trait);
+            if (_logDebugIsEnabled)
+            {
+                Debug("Loader::GetAssemblyAndSymbolsBytes: The loader was already loaded. " + trait);
+            }
+
             return false;
         }
 
@@ -1389,17 +1433,19 @@ namespace shared
         *pSymbolsSize = SizeofResource(hInstance, hResSymbolsInfo);
         *ppSymbolsArray = (LPBYTE)LockResource(hResSymbols);
 
-        Debug("Loader::GetAssemblyAndSymbolsBytes: Loaded resouces for " + trait + " (platform=_WIN32)."
-              " *assemblySize=" + ToString(*pAssemblySize) + ","
-              " *pAssemblyArray=" + HexStr(reinterpret_cast<std::uint64_t>(*ppAssemblyArray)) + ","
-              " *symbolsSize=" + ToString(*pSymbolsSize) + ","
-              " *pSymbolsArray=" + HexStr(reinterpret_cast<std::uint64_t>(*ppSymbolsArray)) + ".");
+        if (_logDebugIsEnabled)
+        {
+            Debug("Loader::GetAssemblyAndSymbolsBytes: Loaded resouces for " + trait + " (platform=_WIN32)."
+                  " *assemblySize=" + ToString(*pAssemblySize) + ","
+                  " *pAssemblyArray=" + HexStr(reinterpret_cast<std::uint64_t>(*ppAssemblyArray)) + ","
+                  " *symbolsSize=" + ToString(*pSymbolsSize) + ","
+                  " *pSymbolsArray=" + HexStr(reinterpret_cast<std::uint64_t>(*ppSymbolsArray)) + ".");
 
-        Debug("Loader::GetAssemblyAndSymbolsBytes: resourceMonikerIDs_: _.Net45_Datadog_AutoInstrumentation_ManagedLoader_dll=" + ToString(_resourceMonikerIDs.Net45_Datadog_AutoInstrumentation_ManagedLoader_dll) + ","
-            " _.Net45_Datadog_AutoInstrumentation_ManagedLoader_pdb=" + ToString(_resourceMonikerIDs.Net45_Datadog_AutoInstrumentation_ManagedLoader_pdb) + ","
-            " _.NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_dll=" + ToString(_resourceMonikerIDs.NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_dll) + ","
-            " _.NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_pdb=" + ToString(_resourceMonikerIDs.NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_pdb) + ".");
-
+            Debug("Loader::GetAssemblyAndSymbolsBytes: resourceMonikerIDs_: _.Net45_Datadog_AutoInstrumentation_ManagedLoader_dll=" + ToString(_resourceMonikerIDs.Net45_Datadog_AutoInstrumentation_ManagedLoader_dll) + ","
+                " _.Net45_Datadog_AutoInstrumentation_ManagedLoader_pdb=" + ToString(_resourceMonikerIDs.Net45_Datadog_AutoInstrumentation_ManagedLoader_pdb) + ","
+                " _.NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_dll=" + ToString(_resourceMonikerIDs.NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_dll) + ","
+                " _.NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_pdb=" + ToString(_resourceMonikerIDs.NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_pdb) + ".");
+        }
 
 #elif LINUX
         *pAssemblySize = dll_end - dll_start;
@@ -1408,11 +1454,14 @@ namespace shared
         *pSymbolsSize = pdb_end - pdb_start;
         *ppSymbolsArray = (void*)pdb_start;
 
-        Debug("Loader::GetAssemblyAndSymbolsBytes: Loaded resouces for " + trait + " (platform=LINUX)."
-            " *assemblySize=" + ToString(*pAssemblySize) + ", "
-            " *pAssemblyArray=" + HexStr(reinterpret_cast<std::uint64_t>(*ppAssemblyArray)) + ", "
-            " *symbolsSize=" + ToString(*pSymbolsSize) + ", "
-            " *pSymbolsArray=" + HexStr(reinterpret_cast<std::uint64_t>(*ppSymbolsArray)) + ".");
+        if (_logDebugIsEnabled)
+        {
+            Debug("Loader::GetAssemblyAndSymbolsBytes: Loaded resouces for " + trait + " (platform=LINUX)."
+                  " *assemblySize=" + ToString(*pAssemblySize) + ", "
+                  " *pAssemblyArray=" + HexStr(reinterpret_cast<std::uint64_t>(*ppAssemblyArray)) + ", "
+                  " *symbolsSize=" + ToString(*pSymbolsSize) + ", "
+                  " *pSymbolsArray=" + HexStr(reinterpret_cast<std::uint64_t>(*ppSymbolsArray)) + ".");
+        }
 #elif MACOS
         const unsigned int imgCount = _dyld_image_count();
 
@@ -1439,11 +1488,14 @@ namespace shared
             }
         }
 
-        Debug("Loader::GetAssemblyAndSymbolsBytes: Loaded resouces for " + trait + " (platform=MACOS)."
-            " *assemblySize=" + ToString(*pAssemblySize) + ", "
-            " *pAssemblyArray=" + HexStr(reinterpret_cast<std::uint64_t>(*ppAssemblyArray)) + ", "
-            " *symbolsSize=" + ToString(*pSymbolsSize) + ", "
-            " *pSymbolsArray=" + HexStr(reinterpret_cast<std::uint64_t>(*ppSymbolsArray)) + ".");
+        if (_logDebugIsEnabled)
+        {
+            Debug("Loader::GetAssemblyAndSymbolsBytes: Loaded resouces for " + trait + " (platform=MACOS)."
+                " *assemblySize=" + ToString(*pAssemblySize) + ", "
+                " *pAssemblyArray=" + HexStr(reinterpret_cast<std::uint64_t>(*ppAssemblyArray)) + ", "
+                " *symbolsSize=" + ToString(*pSymbolsSize) + ", "
+                " *pSymbolsArray=" + HexStr(reinterpret_cast<std::uint64_t>(*ppSymbolsArray)) + ".");
+        }
 #else
         Error("Loader::GetAssemblyAndSymbolsBytes. Platform not supported.");
         return false;

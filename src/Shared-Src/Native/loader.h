@@ -107,6 +107,7 @@ namespace shared
         std::vector<WSTRING> _assemblyStringDefaultAppDomainVector;
         std::vector<WSTRING> _assemblyStringNonDefaultAppDomainVector;
 
+        const bool _logDebugIsEnabled;
         std::function<void(const std::string& str)> _logDebugCallback = nullptr;
         std::function<void(const std::string& str)> _logInfoCallback = nullptr;
         std::function<void(const std::string& str)> _logErrorCallback = nullptr;
@@ -119,6 +120,7 @@ namespace shared
 
         static Loader* CreateNewLoaderInstance(
                     ICorProfilerInfo4* pCorProfilerInfo,
+                    bool logDebugIsEnabled,
                     std::function<void(const std::string& str)> logDebugCallback,
                     std::function<void(const std::string& str)> logInfoCallback,
                     std::function<void(const std::string& str)> logErrorCallback,
@@ -133,6 +135,7 @@ namespace shared
                     ICorProfilerInfo4* pCorProfilerInfo,
                     const std::vector<WSTRING>& assemblyStringDefaultAppDomainVector,
                     const std::vector<WSTRING>& assemblyStringNonDefaultAppDomainVector,
+                    bool logDebugIsEnabled,
                     std::function<void(const std::string& str)> logDebugCallback,
                     std::function<void(const std::string& str)> logInfoCallback,
                     std::function<void(const std::string& str)> logErrorCallback,
@@ -140,7 +143,7 @@ namespace shared
                     const WCHAR* pNativeProfilerLibraryFilename);
 
         inline void Debug(const std::string& value) {
-            if (_logDebugCallback != nullptr) {
+            if (_logDebugIsEnabled && _logDebugCallback != nullptr) {
                 _logDebugCallback(value);
             }
         }
@@ -210,6 +213,7 @@ namespace shared
 
         static void CreateNewSingeltonInstance(
                     ICorProfilerInfo4* pCorProfilerInfo,
+                    bool logDebugIsEnabled,
                     std::function<void(const std::string& str)> logDebugCallback,
                     std::function<void(const std::string& str)> logInfoCallback,
                     std::function<void(const std::string& str)> logErrorCallback,
@@ -224,7 +228,7 @@ namespace shared
         static void DeleteSingeltonInstance(void);
 
         HRESULT InjectLoaderToModuleInitializer(const ModuleID moduleId);
-        HRESULT HandleFunctionSearch(FunctionID functionId, BOOL* pbUseCachedFunction);
+        HRESULT HandleJitCachedFunctionSearchStarted(FunctionID functionId, BOOL* pbUseCachedFunction);
 
         bool GetAssemblyAndSymbolsBytes(void** ppAssemblyArray, int* pAssemblySize, void** ppSymbolsArray, int* pSymbolsSize, WCHAR* pModuleName);
     };
