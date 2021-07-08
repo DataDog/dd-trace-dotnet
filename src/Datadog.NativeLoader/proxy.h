@@ -19,6 +19,7 @@ namespace nativeloader
     {
     private:
         std::string m_filepath;
+        std::string m_clsid_string;
         IID m_clsid = IID_IUnknown;
         bool m_loaded;
         void* m_instance;
@@ -37,6 +38,7 @@ namespace nativeloader
         HRESULT STDMETHODCALLTYPE DllCanUnloadNow();
         ICorProfilerCallback10* GetProfilerCallback();
         std::string GetFilePath();
+        std::string GetClsId();
     };
 
     class DynamicDispatcher
@@ -52,6 +54,8 @@ namespace nativeloader
         HRESULT LoadInstance(IUnknown* pUnkOuter, REFIID riid);
         HRESULT STDMETHODCALLTYPE DllCanUnloadNow();
         HRESULT Execute(std::function<HRESULT(ICorProfilerCallback10*)> func);
+        std::unique_ptr<DynamicInstance>* GetInstances();
+        size_t GetLength();
     };
 
 } // namespace nativeloader

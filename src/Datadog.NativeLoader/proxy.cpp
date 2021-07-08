@@ -103,6 +103,7 @@ namespace nativeloader
     DynamicInstance::DynamicInstance(std::string filePath, std::string clsid)
     {
         m_filepath = filePath;
+        m_clsid_string = clsid;
         m_clsid = guid_parse::make_guid(clsid);
         m_loaded = false;
         m_getClassObjectPtr = nullptr;
@@ -182,6 +183,11 @@ namespace nativeloader
     std::string DynamicInstance::GetFilePath()
     {
         return m_filepath;
+    }
+
+    std::string DynamicInstance::GetClsId()
+    {
+        return m_clsid_string;
     }
 
     // ************************************************************************
@@ -355,6 +361,16 @@ namespace nativeloader
             }
         }
         return result;
+    }
+
+    std::unique_ptr<DynamicInstance>* DynamicDispatcher::GetInstances()
+    {
+        return &m_instances[0];
+    }
+
+    size_t DynamicDispatcher::GetLength()
+    {
+        return m_instances.size();
     }
 
 } // namespace nativeloader
