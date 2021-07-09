@@ -37,8 +37,9 @@ namespace shared
         WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
     };
 
-    const WSTRING _specificTypeToInject = WStr("System.AppDomain");
-    const WSTRING _specificMethodToInject = WStr("IsCompatibilitySwitchSet");
+    constexpr const WCHAR* SpecificTypeToInjectName = WStr("System.AppDomain");
+    constexpr const WCHAR* SpecificMethodToInjectName = WStr("IsCompatibilitySwitchSet");
+    
 
     static Enumerator<mdMethodDef> EnumMethodsWithName(
         const ComPtr<IMetaDataImport2>& metadata_import,
@@ -151,7 +152,8 @@ namespace shared
         const LoaderResourceMonikerIDs& resourceMonikerIDs,
         const WCHAR* pNativeProfilerLibraryFilename)
         :
-        _logDebugIsEnabled{ logDebugIsEnabled }
+        _logDebugIsEnabled{ logDebugIsEnabled },
+        _specificMethodToInjectFunctionId { 0 }
     {
         _resourceMonikerIDs = LoaderResourceMonikerIDs(resourceMonikerIDs);
         _pCorProfilerInfo = pCorProfilerInfo;
@@ -323,13 +325,13 @@ namespace shared
             }
 
             mdTypeDef appDomainTypeDef;
-            hr = metadataImport->FindTypeDefByName(_specificTypeToInject.c_str(), mdTokenNil, &appDomainTypeDef);
+            hr = metadataImport->FindTypeDefByName(SpecificTypeToInjectName, mdTokenNil, &appDomainTypeDef);
             if (FAILED(hr))
             {
                 return hr;
             }
 
-            auto enumMethods = EnumMethodsWithName(metadataImport, appDomainTypeDef, _specificMethodToInject.c_str());
+            auto enumMethods = EnumMethodsWithName(metadataImport, appDomainTypeDef, SpecificMethodToInjectName);
             auto enumIterator = enumMethods.begin();
             if (enumIterator != enumMethods.end()) {
                 auto methodDef = *enumIterator;
@@ -371,13 +373,13 @@ namespace shared
                 if (SUCCEEDED(hr))
                 {
                     Info("Loader::InjectLoaderToModuleInitializer: Loader injected successfully (in " +
-                        ToString(_specificTypeToInject) + "." + ToString(_specificMethodToInject) + "). [ModuleID=" + moduleIdHex +
-                        ", AssemblyID=" + assemblyIdHex +
-                        ", AssemblyName=" + ToString(assemblyNameString) +
-                        ", AppDomainID=" + appDomainIdHex +
-                        ", methodDef=" + HexStr(methodDef) +
-                        ", loaderMethodDef=" + HexStr(loaderMethodDef) +
-                        "]");
+                         ToString(SpecificTypeToInjectName) + "." + ToString(SpecificMethodToInjectName) + "). [ModuleID=" + moduleIdHex +
+                         ", AssemblyID=" + assemblyIdHex +
+                         ", AssemblyName=" + ToString(assemblyNameString) +
+                         ", AppDomainID=" + appDomainIdHex +
+                         ", methodDef=" + HexStr(methodDef) +
+                         ", loaderMethodDef=" + HexStr(loaderMethodDef) +
+                         "]");
                 }
             }
 
@@ -443,6 +445,30 @@ namespace shared
 
     HRESULT Loader::HandleJitCachedFunctionSearchStarted(FunctionID functionId, BOOL* pbUseCachedFunction)
     {
+        // Some of the logging in this method is a little too verbode even for debug.
+        // Turn it on here if you need it for investigations.
+        constexpr bool ExtraVerboseLogging = false;
+
+        if (nullptr == pbUseCachedFunction)
+        {
+            return S_FALSE;
+        }
+
+        if (0 != _specificMethodToInjectFunctionId)
+        {
+            bool disableNGenForFunction = (functionId == _specificMethodToInjectFunctionId);
+
+            if (ExtraVerboseLogging && _logDebugIsEnabled)
+            {
+                Debug("Loader::HandleJitCachedFunctionSearchStarted:"
+                      " (functionId=" + ToString(functionId) + ")"
+                      " executed the fast path and resulted in disableNGenForFunction=" + (disableNGenForFunction ? "True" : "False") + ".");
+            }
+
+            *pbUseCachedFunction = *pbUseCachedFunction && !disableNGenForFunction;
+            return S_OK;
+        }
+
         HRESULT hr;
 
         ModuleID moduleId;
@@ -450,6 +476,7 @@ namespace shared
         hr = _pCorProfilerInfo->GetFunctionInfo(functionId, NULL, &moduleId, &functionToken);
         if (FAILED(hr))
         {
+            Error("Loader::HandleJitCachedFunctionSearchStarted: Call to GetFunctionInfo(..) returned a FAILED HResult: " + ToString(hr) + ".");
             return S_FALSE;
         }
 
@@ -457,45 +484,51 @@ namespace shared
         hr = _pCorProfilerInfo->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataImport2, metadataInterfaces.GetAddressOf());
         if (FAILED(hr))
         {
+            Error("Loader::HandleJitCachedFunctionSearchStarted: Call to GetModuleMetaData(..) returned a FAILED HResult: " + ToString(hr) + ".");
             return S_FALSE;
         }
 
         const ComPtr<IMetaDataImport2> metadataImport = metadataInterfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
         const ComPtr<IMetaDataAssemblyImport> assemblyImport = metadataInterfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
 
+        constexpr DWORD NameBuffSize = 1024;
+
         mdToken functionParentToken;
-        WCHAR functionName[1024]{};
+        WCHAR functionName[NameBuffSize]{};
         DWORD functionNameLength = 0;
-        hr = metadataImport->GetMemberProps(functionToken, &functionParentToken, functionName, 1024, &functionNameLength,
+        hr = metadataImport->GetMemberProps(functionToken, &functionParentToken, functionName, NameBuffSize, &functionNameLength,
                 nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
         if (FAILED(hr))
         {
+            Error("Loader::HandleJitCachedFunctionSearchStarted: Call to GetMemberProps(..) returned a FAILED HResult: " + ToString(hr) + ".");
             return S_FALSE;
         }
-
-        auto functionNameString = WSTRING(functionName);
 
         mdToken typeParentToken = mdTokenNil;
-        WCHAR typeName[1024]{};
+        WCHAR typeName[NameBuffSize]{};
         DWORD typeNameLength = 0;
         DWORD typeFlags;
-        hr = metadataImport->GetTypeDefProps(functionParentToken, typeName, 1024, &typeNameLength, &typeFlags, NULL);
+        hr = metadataImport->GetTypeDefProps(functionParentToken, typeName, NameBuffSize, &typeNameLength, &typeFlags, NULL);
         if (FAILED(hr))
         {
+            Error("Loader::HandleJitCachedFunctionSearchStarted: Call to GetTypeDefProps(..) returned a FAILED HResult: " + ToString(hr) + ".");
             return S_FALSE;
         }
 
-        auto typeNameString = WSTRING(typeName);
+        bool disableNGenForFunction = (0 == memcmp(functionName, SpecificMethodToInjectName, sizeof(WCHAR) * (std::min)(NameBuffSize, functionNameLength)))
+                                        && (0 == memcmp(typeName, SpecificTypeToInjectName, sizeof(WCHAR) * (std::min)(NameBuffSize, typeNameLength)));
 
-        bool disableNGenForFunction = (typeNameString == _specificTypeToInject) && (functionNameString == _specificMethodToInject);
+        if (disableNGenForFunction)
+        {
+            _specificMethodToInjectFunctionId = functionId;
+        }
 
-        if (_logDebugIsEnabled)
+        if ((ExtraVerboseLogging || disableNGenForFunction) && _logDebugIsEnabled)
         {
             Debug("Loader::HandleJitCachedFunctionSearchStarted:"
-                " (functionId=" + ToString(functionId) + ","
-                " typeName=\"" + ToString(typeNameString) + "\","
-                " functionName=\"" + ToString(functionNameString) + "\")"
-                " resulted in disableNGenForFunction=" + (disableNGenForFunction ? "True" : "False"));
+                  " (functionId=" + ToString(functionId) + ","
+                  " functionMoniker=\"" + ToString(typeName) + "." + ToString(functionName) + "\")"
+                  " resulted in disableNGenForFunction=" + (disableNGenForFunction ? "True" : "False") + ".");
         }
 
         *pbUseCachedFunction = *pbUseCachedFunction && !disableNGenForFunction;

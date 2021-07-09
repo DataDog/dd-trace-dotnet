@@ -112,6 +112,8 @@ namespace shared
         std::function<void(const std::string& str)> _logInfoCallback = nullptr;
         std::function<void(const std::string& str)> _logErrorCallback = nullptr;
 
+        FunctionID _specificMethodToInjectFunctionId;
+
         LoaderResourceMonikerIDs _resourceMonikerIDs;
 
         const WCHAR* _pNativeProfilerLibraryFilename;
