@@ -893,29 +893,7 @@ stages:
           artifact: $(tracer_version)-release-artifacts
         
         # We don't include the MSI artifacts as they're not signed
-        - task: DownloadPipelineArtifact@2
-          displayName: Download x64 MSI
-          inputs:
-            artifact: windows-msi-x64
-            path: $(Build.ArtifactStagingDirectory)
 
-        - task: DownloadPipelineArtifact@2
-          displayName: Download x86 MSI
-          inputs:
-            artifact: windows-msi-x86
-            path: $(Build.ArtifactStagingDirectory)
-
-        # Publish a Universal Package
-        - task: UniversalPackages@0
-          displayName: Publish to Feed
-          inputs:
-            command: publish
-            publishDirectory: '$(Build.ArtifactStagingDirectory)'
-            vstsFeedPublish: 'dd-trace-dotnet/Main'
-            vstsFeedPackagePublish: 'dd-trace-dotnet'
-            packagePublishDescription: 'The output artifacts from the consolidated pipeline'
-            versionOption: custom
-            versionPublish: "$(tracer_version)-ci-$(Build.BuildId)-$(Build.SourceBranchName)"
 - stage: throughput
   dependsOn: [build_linux, build_arm64, build_windows]
   jobs:
