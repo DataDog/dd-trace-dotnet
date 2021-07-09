@@ -217,13 +217,13 @@ stages:
       condition: startsWith(variables['imageName'], 'windows')
 
     - script: |
-        dd-trace --dd-env=CI --dd-service=npgsql.tests --dd-version=v4.1.9 -- dotnet "test npgsql/test/Npgsql.Tests --logger trx;LogFileName=npgsql.tests.$(tagName).trx --results-directory npgsql/test/results"
+        dd-trace --dd-env=CI --dd-service=npgsql.tests.$(os) --dd-version=$(tagName) -- dotnet "test npgsql/test/Npgsql.Tests --logger trx;LogFileName=npgsql.tests.$(tagName).trx --results-directory npgsql/test/results"
       env:
         DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
       displayName: Test
 
     - script: |
-        dd-trace --dd-env=CI --dd-service=npgsql.plugintests --dd-version=v4.1.9 -- dotnet "test npgsql/test/Npgsql.PluginTests --logger trx;LogFileName=npgsql.plugintests.$(os).$(tagName).trx --results-directory npgsql/test/results"
+        dd-trace --dd-env=CI --dd-service=npgsql.plugintests.$(os) --dd-version=$(tagName) -- dotnet "test npgsql/test/Npgsql.PluginTests --logger trx;LogFileName=npgsql.plugintests.$(os).$(tagName).trx --results-directory npgsql/test/results"
       env:
         DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
       displayName: Test Plugins
