@@ -64,7 +64,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var allProducerSpans = allSpans.Where(x => x.Name == "kafka.produce").ToList();
             var successfulProducerSpans = allProducerSpans.Where(x => x.Error == 0).ToList();
             var errorProducerSpans = allProducerSpans.Where(x => x.Error > 0).ToList();
+
             var allConsumerSpans = allSpans.Where(x => x.Name == "kafka.consume").ToList();
+            var successfulConsumerSpans = allConsumerSpans.Where(x => x.Error == 0).ToList();
+            var errorConsumerSpans = allConsumerSpans.Where(x => x.Error > 0).ToList();
 
             VerifyProducerSpanProperties(successfulProducerSpans, GetSuccessfulResourceName("Produce", topic), ExpectedSuccessProducerSpans + ExpectedTombstoneProducerSpans);
             VerifyProducerSpanProperties(errorProducerSpans, ErrorProducerResourceName, ExpectedErrorProducerSpans);
@@ -105,21 +108,33 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                  .OnlyHaveUniqueItems()
                                  .And.Subject.ToImmutableHashSet();
 
-            VerifyConsumerSpanProperties(allConsumerSpans, GetSuccessfulResourceName("Consume", topic), ExpectedConsumerSpans);
+            VerifyConsumerSpanProperties(successfulConsumerSpans, GetSuccessfulResourceName("Consume", topic), ExpectedConsumerSpans);
 
             // every consumer span should be a child of a producer span.
-            allConsumerSpans
+            successfulConsumerSpans
                .Should()
                .OnlyContain(span => span.ParentId.HasValue)
                .And.OnlyContain(span => producerSpanIds.Contains(span.ParentId.Value));
 
             // HaveCountGreaterOrEqualTo because same message may be consumed by both
-            allConsumerSpans
+            successfulConsumerSpans
                .Where(span => span.Tags.ContainsKey(Tags.KafkaTombstone))
                .Select(span => span.Tags[Tags.KafkaTombstone])
                .Should()
                .HaveCountGreaterOrEqualTo(ExpectedTombstoneProducerSpans)
                .And.OnlyContain(tag => tag == "true");
+
+            // Error spans are created in 1.5.3 when the broker doesn't exist yet
+            // Other package versions don't error, so won't create a span,
+            // so no fixed number requirement
+            if (errorConsumerSpans.Count > 0)
+            {
+                errorConsumerSpans
+                   .Should()
+                   .OnlyContain(x => x.Tags.ContainsKey(Tags.ErrorType))
+                   .And.OnlyContain(x => x.Tags[Tags.ErrorMsg] == "Broker: Unknown topic or partition")
+                   .And.OnlyContain(x => x.Tags[Tags.ErrorType] == "Confluent.Kafka.ConsumeException");
+            }
         }
 
         private void VerifyProducerSpanProperties(List<MockTracerAgent.Span> producerSpans, string resourceName, int expectedCount)

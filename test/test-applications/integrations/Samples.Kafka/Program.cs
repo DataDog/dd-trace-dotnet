@@ -19,15 +19,35 @@ namespace Samples.Kafka
 
             await TopicHelpers.TryDeleteTopic(topic, config);
 
-            await TopicHelpers.TryCreateTopic(
-                topic,
-                numPartitions: 3,
-                replicationFactor: 1,
-                config);
+            await ConsumeAgainstNonExistentTopic(topic, config);
 
             await ConsumeAndProduceMessages(topic, config);
 
             Console.WriteLine($"Shut down complete");
+        }
+
+        private static async Task ConsumeAgainstNonExistentTopic(string topic, ClientConfig config)
+        {
+            using var consumer = Consumer.Create(enableAutoCommit: true, topic, consumerName: "FailingConsumer 1");
+
+            Console.WriteLine($"Manually consuming non-existent topic...");
+
+            // On Kafka.Confluent 1.5.3 this will throw, so success will be false
+            // That creates an exception Span
+            // On other versions, this _won't_ throw, and _won't_ create a span
+            var success = consumer.Consume(retries: 1, timeoutMilliSeconds: 300);
+            Console.WriteLine($"Manual consume complete, success {success}");
+
+            // Create the topic and try again
+            await TopicHelpers.TryCreateTopic(topic, numPartitions: 3, replicationFactor: 1, config);
+
+            Console.WriteLine($"Manually consuming topic...");
+
+            // manually try and consume. Should _not_ generate any spans, as nothing to consume
+            // but on 1.5.3 this may generate some error spans
+            success = consumer.Consume(retries: 5, timeoutMilliSeconds: 300);
+
+            Console.WriteLine($"Manual consume finished, success {success}");
         }
 
         private static async Task ConsumeAndProduceMessages(string topic, ClientConfig config)
@@ -39,11 +59,12 @@ namespace Samples.Kafka
             using var consumer1 = Consumer.Create(enableAutoCommit: true, topic, consumerName: "AutoCommitConsumer1");
             using var consumer2 = Consumer.Create(enableAutoCommit: false, topic, consumerName: "ManualCommitConsumer2");
 
-            // manually try and consume. Should _not_ generate any spans, as nothing to consume
-            consumer1.Consume(retries: 3, timeoutMilliSeconds: 300);
+            Console.WriteLine("Starting consumers...");
 
             var consumeTask1 = Task.Run(() => consumer1.Consume(cts.Token));
             var consumeTask2 = Task.Run(() => consumer2.ConsumeWithExplicitCommit(commitEveryXMessages: commitPeriod, cts.Token));
+
+            Console.WriteLine($"Producing messages");
 
             var messagesProduced = await ProduceMessages(topic, config);
 
