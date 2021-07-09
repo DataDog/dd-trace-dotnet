@@ -1,0 +1,128 @@
+[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: aspnet.request,
+    Resource: GET /home/badrequest,
+    Service: sample,
+    Type: web,
+    Error: 1,
+    Tags: {
+      env: integration_tests,
+      error.msg: Oops, it broke.,
+      error.stack: 
+System.Exception: Oops, it broke.
+at Samples.AspNetMvc4.Controllers.HomeController.BadRequest()
+at lambda_method(Closure , ControllerBase , Object[] )
+at System.Web.Mvc.ActionMethodDispatcher.Execute(ControllerBase controller, Object[] parameters)
+at System.Web.Mvc.ReflectedActionDescriptor.Execute(ControllerContext controllerContext, IDictionary`2 parameters)
+at System.Web.Mvc.ControllerActionInvoker.InvokeActionMethod(ControllerContext controllerContext, ActionDescriptor actionDescriptor, IDictionary`2 parameters)
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.InvokeSynchronousActionMethod(ControllerContext controllerContext, ActionDescriptor actionDescriptor, IDictionary`2 parameters)
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.<>c__DisplayClass42.<BeginInvokeSynchronousActionMethod>b__41()
+at System.Web.Mvc.Async.AsyncResultWrapper.<>c__DisplayClass8`1.<BeginSynchronous>b__7(IAsyncResult _)
+at System.Web.Mvc.Async.AsyncResultWrapper.WrappedAsyncResult`1.End()
+at System.Web.Mvc.Async.AsyncResultWrapper.End[TResult](IAsyncResult asyncResult, Object tag)
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.EndInvokeActionMethod(IAsyncResult asyncResult)
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.<>c__DisplayClass37.<>c__DisplayClass39.<BeginInvokeActionMethodWithFilters>b__33()
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.<>c__DisplayClass4f.<InvokeActionMethodFilterAsynchronously>b__49()
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.<>c__DisplayClass37.<BeginInvokeActionMethodWithFilters>b__36(IAsyncResult asyncResult)
+at System.Web.Mvc.Async.AsyncResultWrapper.WrappedAsyncResult`1.End()
+at System.Web.Mvc.Async.AsyncResultWrapper.End[TResult](IAsyncResult asyncResult, Object tag)
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.EndInvokeActionMethodWithFilters(IAsyncResult asyncResult)
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.<>c__DisplayClass25.<>c__DisplayClass2a.<BeginInvokeAction>b__20()
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.<>c__DisplayClass25.<BeginInvokeAction>b__22(IAsyncResult asyncResult)
+at System.Web.Mvc.Async.AsyncResultWrapper.WrappedAsyncResult`1.End()
+at System.Web.Mvc.Async.AsyncResultWrapper.End[TResult](IAsyncResult asyncResult, Object tag)
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.EndInvokeAction(IAsyncResult asyncResult)
+at EndInvokeAction(Object , Object )
+at Datadog.Trace.ClrProfiler.Integrations.AspNetMvcIntegration.EndInvokeAction(Object asyncControllerActionInvoker, Object asyncResult, Int32 opCode, Int32 mdToken, Int64 moduleVersionPtr)
+at System.Web.Mvc.Controller.<>c__DisplayClass1d.<BeginExecuteCore>b__18(IAsyncResult asyncResult)
+at System.Web.Mvc.Async.AsyncResultWrapper.<>c__DisplayClass4.<MakeVoidDelegate>b__3(IAsyncResult ar)
+at System.Web.Mvc.Async.AsyncResultWrapper.WrappedAsyncResult`1.End()
+at System.Web.Mvc.Async.AsyncResultWrapper.End[TResult](IAsyncResult asyncResult, Object tag)
+at System.Web.Mvc.Async.AsyncResultWrapper.End(IAsyncResult asyncResult, Object tag)
+at System.Web.Mvc.Controller.EndExecuteCore(IAsyncResult asyncResult)
+at System.Web.Mvc.Async.AsyncResultWrapper.<>c__DisplayClass4.<MakeVoidDelegate>b__3(IAsyncResult ar)
+at System.Web.Mvc.Async.AsyncResultWrapper.WrappedAsyncResult`1.End()
+at System.Web.Mvc.Async.AsyncResultWrapper.End[TResult](IAsyncResult asyncResult, Object tag)
+at System.Web.Mvc.Async.AsyncResultWrapper.End(IAsyncResult asyncResult, Object tag)
+at System.Web.Mvc.Controller.EndExecute(IAsyncResult asyncResult)
+at System.Web.Mvc.Controller.System.Web.Mvc.Async.IAsyncController.EndExecute(IAsyncResult asyncResult)
+at System.Web.Mvc.MvcHandler.<>c__DisplayClass8.<BeginProcessRequest>b__3(IAsyncResult asyncResult)
+at System.Web.Mvc.Async.AsyncResultWrapper.<>c__DisplayClass4.<MakeVoidDelegate>b__3(IAsyncResult ar)
+at System.Web.Mvc.Async.AsyncResultWrapper.WrappedAsyncResult`1.End()
+at System.Web.Mvc.Async.AsyncResultWrapper.End[TResult](IAsyncResult asyncResult, Object tag)
+at System.Web.Mvc.Async.AsyncResultWrapper.End(IAsyncResult asyncResult, Object tag)
+at System.Web.Mvc.MvcHandler.EndProcessRequest(IAsyncResult asyncResult)
+at System.Web.Mvc.MvcHandler.System.Web.IHttpAsyncHandler.EndProcessRequest(IAsyncResult result)
+at System.Web.HttpApplication.CallHandlerExecutionStep.System.Web.HttpApplication.IExecutionStep.Execute()
+at System.Web.HttpApplication.ExecuteStepImpl(IExecutionStep step)
+at System.Web.HttpApplication.ExecuteStep(IExecutionStep step, Boolean& completedSynchronously),
+      error.type: System.Exception,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.status_code: 200,
+      http.url: /home/badrequest,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      _sampling_priority_v1: 1.0,
+      _dd.tracer_kr: 1.0,
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: aspnet-mvc.request,
+    Resource: GET /home/badrequest,
+    Service: sample,
+    Type: web,
+    ParentId: Id_2,
+    Error: 1,
+    Tags: {
+      aspnet.action: badrequest,
+      aspnet.controller: home,
+      aspnet.route: {controller}/{action}/{id},
+      env: integration_tests,
+      error.msg: Oops, it broke.,
+      error.stack: 
+System.Exception: Oops, it broke.
+at Samples.AspNetMvc4.Controllers.HomeController.BadRequest()
+at lambda_method(Closure , ControllerBase , Object[] )
+at System.Web.Mvc.ActionMethodDispatcher.Execute(ControllerBase controller, Object[] parameters)
+at System.Web.Mvc.ReflectedActionDescriptor.Execute(ControllerContext controllerContext, IDictionary`2 parameters)
+at System.Web.Mvc.ControllerActionInvoker.InvokeActionMethod(ControllerContext controllerContext, ActionDescriptor actionDescriptor, IDictionary`2 parameters)
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.InvokeSynchronousActionMethod(ControllerContext controllerContext, ActionDescriptor actionDescriptor, IDictionary`2 parameters)
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.<>c__DisplayClass42.<BeginInvokeSynchronousActionMethod>b__41()
+at System.Web.Mvc.Async.AsyncResultWrapper.<>c__DisplayClass8`1.<BeginSynchronous>b__7(IAsyncResult _)
+at System.Web.Mvc.Async.AsyncResultWrapper.WrappedAsyncResult`1.End()
+at System.Web.Mvc.Async.AsyncResultWrapper.End[TResult](IAsyncResult asyncResult, Object tag)
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.EndInvokeActionMethod(IAsyncResult asyncResult)
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.<>c__DisplayClass37.<>c__DisplayClass39.<BeginInvokeActionMethodWithFilters>b__33()
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.<>c__DisplayClass4f.<InvokeActionMethodFilterAsynchronously>b__49()
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.<>c__DisplayClass37.<BeginInvokeActionMethodWithFilters>b__36(IAsyncResult asyncResult)
+at System.Web.Mvc.Async.AsyncResultWrapper.WrappedAsyncResult`1.End()
+at System.Web.Mvc.Async.AsyncResultWrapper.End[TResult](IAsyncResult asyncResult, Object tag)
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.EndInvokeActionMethodWithFilters(IAsyncResult asyncResult)
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.<>c__DisplayClass25.<>c__DisplayClass2a.<BeginInvokeAction>b__20()
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.<>c__DisplayClass25.<BeginInvokeAction>b__22(IAsyncResult asyncResult)
+at System.Web.Mvc.Async.AsyncResultWrapper.WrappedAsyncResult`1.End()
+at System.Web.Mvc.Async.AsyncResultWrapper.End[TResult](IAsyncResult asyncResult, Object tag)
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.EndInvokeAction(IAsyncResult asyncResult)
+at EndInvokeAction(Object , Object )
+at Datadog.Trace.ClrProfiler.Integrations.AspNetMvcIntegration.EndInvokeAction(Object asyncControllerActionInvoker, Object asyncResult, Int32 opCode, Int32 mdToken, Int64 moduleVersionPtr),
+      error.type: System.Exception,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.status_code: 200,
+      http.url: /home/badrequest,
+      language: dotnet,
+      span.kind: server,
+      version: 1.0.0
+    }
+  }
+]

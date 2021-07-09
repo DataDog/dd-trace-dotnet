@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using Datadog.Core.Tools;
@@ -129,41 +130,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
                 throw new Exception($"Load test file does not exist: {applicationPath}");
             }
 
-            ProcessStartInfo startInfo;
-
-            int agentPort = loadTestPart.Agent?.Port ?? 0;
-            int aspNetPort = loadTestPart.Port ?? 0;
-
-            string commandLineArgs = string.Empty;
-
-            if (loadTestPart.CommandLineArgs != null)
-            {
-                commandLineArgs = string.Join(" ", loadTestPart.CommandLineArgs);
-            }
-
-            if (EnvironmentHelper.IsCoreClr())
-            {
-                // .NET Core
-                startInfo = new ProcessStartInfo(executable, $"{applicationPath} {commandLineArgs}");
-            }
-            else
-            {
-                // .NET Framework
-                startInfo = new ProcessStartInfo(executable, $"{commandLineArgs}");
-            }
-
-            environmentHelper.SetEnvironmentVariables(agentPort, aspNetPort, statsdPort: null, executable, startInfo.EnvironmentVariables);
-            startInfo.UseShellExecute = false;
-            startInfo.CreateNoWindow = true;
-            startInfo.RedirectStandardOutput = true;
-            startInfo.RedirectStandardError = true;
-            startInfo.RedirectStandardInput = false;
+            var commandLineArgs = loadTestPart.CommandLineArgs is not null
+                                      ? string.Join(" ", loadTestPart.CommandLineArgs)
+                                      : string.Empty;
 
             Output.WriteLine($"Starting load test part:{environmentHelper.SampleName}");
             Process process = null;
             try
             {
-                process = Process.Start(startInfo);
+                process = ProfilerHelper.StartProcessWithProfiler(
+                    executable,
+                    environmentHelper,
+                    EnvironmentHelper.IsCoreClr() ? $"{applicationPath} {commandLineArgs}" : commandLineArgs,
+                    redirectStandardInput: false,
+                    traceAgentPort: loadTestPart.Agent?.Port ?? 0,
+                    aspNetCorePort: loadTestPart.Port ?? 0,
+                    statsdPort: null,
+                    processToProfile: Path.GetFileName(executable));
 
                 if (process == null)
                 {

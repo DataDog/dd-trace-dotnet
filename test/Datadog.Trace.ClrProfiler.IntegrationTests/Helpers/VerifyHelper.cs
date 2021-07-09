@@ -16,6 +16,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     internal static class VerifyHelper
     {
+        public const string SnapshotDirectory = "Snapshots";
         private static readonly Regex LocalhostRegex = new(@"localhost\:\d+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex KeepRateRegex = new(@"_dd.tracer_kr: \d\.\d+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
@@ -35,7 +36,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static VerifySettings GetSpanVerifierSettings(params object[] parameters)
         {
             var settings = new VerifySettings();
-            settings.UseParameters(parameters);
+            settings.UseDirectory(SnapshotDirectory);
+            if (parameters.Length > 0)
+            {
+                settings.UseParameters(parameters);
+            }
+
             settings.ModifySerialization(_ =>
             {
                 _.IgnoreMember<MockTracerAgent.Span>(s => s.Duration);
@@ -64,14 +70,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private static Dictionary<string, string> ScrubStackTraceForErrors(
             MockTracerAgent.Span span, Dictionary<string, string> tags)
         {
-            var replacementTags = tags;
-            if (span.Error > 0 && tags.ContainsKey(Tags.ErrorStack))
-            {
-                replacementTags = tags.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-                replacementTags[Tags.ErrorStack] = Scrubbers.ScrubStackTrace(replacementTags[Tags.ErrorStack]);
-            }
-
-            return replacementTags;
+            return tags
+                  .Select(
+                       kvp => kvp.Key switch
+                       {
+                           Tags.ErrorStack => new KeyValuePair<string, string>(kvp.Key, Scrubbers.ScrubStackTrace(kvp.Value)),
+                           _ => kvp
+                       })
+                  .OrderBy(x => x.Key)
+                  .ToDictionary(x => x.Key, x => x.Value);
         }
     }
 }

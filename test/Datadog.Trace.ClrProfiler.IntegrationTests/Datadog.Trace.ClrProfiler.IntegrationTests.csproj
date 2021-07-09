@@ -27,9 +27,6 @@
 
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
 
-    <!-- Add file nesting for Verify   -->
-    <None Update="**\*.verified.txt" DependentUpon="$([System.String]::Copy('%(Filename)').Split('.').GetValue(0)).cs" />
-    <None Update="**\*.received.txt" DependentUpon="$([System.String]::Copy('%(Filename)').Split('.').GetValue(0)).cs" />
   </ItemGroup>
 
   <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">

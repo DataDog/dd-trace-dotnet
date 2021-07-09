@@ -1,0 +1,29 @@
+[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: aspnet-webapi.request,
+    Resource: GET api2/optional/{value},
+    Service: Samples.Owin.WebApi2,
+    Type: web,
+    Tags: {
+      aspnet.action: optional,
+      aspnet.controller: conventions,
+      aspnet.route: api2/{action}/{value},
+      env: integration_tests,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.status_code: 200,
+      http.url: http://localhost:00000/api2/optional/1,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      _sampling_priority_v1: 1.0,
+      _dd.tracer_kr: 1.0,
+      _dd.top_level: 1.0
+    }
+  }
+]

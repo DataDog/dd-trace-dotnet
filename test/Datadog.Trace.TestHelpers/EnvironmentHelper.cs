@@ -39,12 +39,12 @@ namespace Datadog.Trace.TestHelpers
             string sampleName,
             Type anchorType,
             ITestOutputHelper output,
-            string samplesDirectory = "test/test-applications/integrations",
+            string samplesDirectory = null,
             bool prependSamplesToAppName = true,
             bool requiresProfiling = true)
         {
             SampleName = sampleName;
-            _samplesDirectory = samplesDirectory ?? "test/test-applications/integrations";
+            _samplesDirectory = samplesDirectory ?? Path.Combine("test", "test-applications", "integrations");
             _targetFramework = Assembly.GetAssembly(anchorType).GetCustomAttribute<TargetFrameworkAttribute>();
             _output = output;
             _requiresProfiling = requiresProfiling;
@@ -121,11 +121,9 @@ namespace Datadog.Trace.TestHelpers
             int agentPort,
             int aspNetCorePort,
             int? statsdPort,
-            string processPath,
             StringDictionary environmentVariables,
-            bool ignoreProfilerProcesses = false)
+            string processToProfile = null)
         {
-            var processName = processPath;
             string profilerEnabled = _requiresProfiling ? "1" : "0";
             string profilerPath;
 
@@ -146,8 +144,6 @@ namespace Datadog.Trace.TestHelpers
                 profilerPath = GetProfilerPath();
                 environmentVariables["COR_PROFILER_PATH"] = profilerPath;
                 environmentVariables["DD_DOTNET_TRACER_HOME"] = Path.GetDirectoryName(profilerPath);
-
-                processName = Path.GetFileName(processPath);
             }
 
             if (DebugModeEnabled)
@@ -155,9 +151,9 @@ namespace Datadog.Trace.TestHelpers
                 environmentVariables["DD_TRACE_DEBUG"] = "1";
             }
 
-            if (!ignoreProfilerProcesses)
+            if (!string.IsNullOrEmpty(processToProfile))
             {
-                environmentVariables["DD_PROFILER_PROCESSES"] = processName;
+                environmentVariables["DD_PROFILER_PROCESSES"] = Path.GetFileName(processToProfile);
             }
 
             string integrations = string.Join(";", GetIntegrationsFilePaths());

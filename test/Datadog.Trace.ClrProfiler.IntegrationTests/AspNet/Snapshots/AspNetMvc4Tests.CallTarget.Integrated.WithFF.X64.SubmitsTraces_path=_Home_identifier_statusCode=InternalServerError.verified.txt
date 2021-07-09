@@ -1,0 +1,98 @@
+[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: aspnet.request,
+    Resource: GET /home/identifier,
+    Service: sample,
+    Type: web,
+    Error: 1,
+    Tags: {
+      env: integration_tests,
+      error.msg: 
+The parameters dictionary contains a null entry for parameter 'id' of non-nullable type 'System.Int32' for method 'System.Web.Mvc.ActionResult Identifier(Int32)' in 'Samples.AspNetMvc4.Controllers.HomeController'. An optional parameter must be a reference type, a nullable type, or be declared as an optional parameter.
+Parameter name: parameters,
+      error.stack: 
+System.ArgumentException: The parameters dictionary contains a null entry for parameter 'id' of non-nullable type 'System.Int32' for method 'System.Web.Mvc.ActionResult Identifier(Int32)' in 'Samples.AspNetMvc4.Controllers.HomeController'. An optional parameter must be a reference type, a nullable type, or be declared as an optional parameter.
+Parameter name: parameters
+at System.Web.Mvc.ActionDescriptor.ExtractParameterFromDictionary(ParameterInfo parameterInfo, IDictionary`2 parameters, MethodInfo methodInfo)
+at System.Linq.Enumerable.WhereSelectArrayIterator`2.MoveNext()
+at System.Linq.Buffer`1..ctor(IEnumerable`1 source)
+at System.Linq.Enumerable.ToArray[TSource](IEnumerable`1 source)
+at System.Web.Mvc.ReflectedActionDescriptor.Execute(ControllerContext controllerContext, IDictionary`2 parameters)
+at System.Web.Mvc.ControllerActionInvoker.InvokeActionMethod(ControllerContext controllerContext, ActionDescriptor actionDescriptor, IDictionary`2 parameters)
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.<>c__DisplayClass37.<>c__DisplayClass39.<BeginInvokeActionMethodWithFilters>b__33()
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.<>c__DisplayClass4f.<InvokeActionMethodFilterAsynchronously>b__49()
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.<>c__DisplayClass25.<>c__DisplayClass2a.<BeginInvokeAction>b__20()
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.<>c__DisplayClass25.<BeginInvokeAction>b__22(IAsyncResult asyncResult)
+at Datadog.Trace.ClrProfiler.Integrations.AspNetMvcIntegration.EndInvokeAction(Object asyncControllerActionInvoker, Object asyncResult, Int32 opCode, Int32 mdToken, Int64 moduleVersionPtr)
+at System.Web.Mvc.Controller.<>c__DisplayClass1d.<BeginExecuteCore>b__18(IAsyncResult asyncResult)
+at System.Web.Mvc.Async.AsyncResultWrapper.<>c__DisplayClass4.<MakeVoidDelegate>b__3(IAsyncResult ar)
+at System.Web.Mvc.Async.AsyncResultWrapper.End(IAsyncResult asyncResult, Object tag)
+at System.Web.Mvc.Controller.EndExecuteCore(IAsyncResult asyncResult)
+at System.Web.Mvc.Async.AsyncResultWrapper.<>c__DisplayClass4.<MakeVoidDelegate>b__3(IAsyncResult ar)
+at System.Web.Mvc.Async.AsyncResultWrapper.End(IAsyncResult asyncResult, Object tag)
+at System.Web.Mvc.MvcHandler.<>c__DisplayClass8.<BeginProcessRequest>b__3(IAsyncResult asyncResult)
+at System.Web.Mvc.Async.AsyncResultWrapper.<>c__DisplayClass4.<MakeVoidDelegate>b__3(IAsyncResult ar)
+at System.Web.Mvc.Async.AsyncResultWrapper.End(IAsyncResult asyncResult, Object tag)
+at System.Web.HttpApplication.CallHandlerExecutionStep.System.Web.HttpApplication.IExecutionStep.Execute()
+at System.Web.HttpApplication.ExecuteStepImpl(IExecutionStep step)
+at System.Web.HttpApplication.ExecuteStep(IExecutionStep step, Boolean& completedSynchronously),
+      error.type: System.ArgumentException,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.status_code: 500,
+      http.url: /home/identifier,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      _sampling_priority_v1: 1.0,
+      _dd.tracer_kr: 1.0,
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: aspnet-mvc.request,
+    Resource: GET /home/identifier,
+    Service: sample,
+    Type: web,
+    ParentId: Id_2,
+    Error: 1,
+    Tags: {
+      aspnet.action: identifier,
+      aspnet.controller: home,
+      aspnet.route: {controller}/{action}/{id},
+      env: integration_tests,
+      error.msg: 
+The parameters dictionary contains a null entry for parameter 'id' of non-nullable type 'System.Int32' for method 'System.Web.Mvc.ActionResult Identifier(Int32)' in 'Samples.AspNetMvc4.Controllers.HomeController'. An optional parameter must be a reference type, a nullable type, or be declared as an optional parameter.
+Parameter name: parameters,
+      error.stack: 
+System.ArgumentException: The parameters dictionary contains a null entry for parameter 'id' of non-nullable type 'System.Int32' for method 'System.Web.Mvc.ActionResult Identifier(Int32)' in 'Samples.AspNetMvc4.Controllers.HomeController'. An optional parameter must be a reference type, a nullable type, or be declared as an optional parameter.
+Parameter name: parameters
+at System.Web.Mvc.ActionDescriptor.ExtractParameterFromDictionary(ParameterInfo parameterInfo, IDictionary`2 parameters, MethodInfo methodInfo)
+at System.Linq.Enumerable.WhereSelectArrayIterator`2.MoveNext()
+at System.Linq.Buffer`1..ctor(IEnumerable`1 source)
+at System.Linq.Enumerable.ToArray[TSource](IEnumerable`1 source)
+at System.Web.Mvc.ReflectedActionDescriptor.Execute(ControllerContext controllerContext, IDictionary`2 parameters)
+at System.Web.Mvc.ControllerActionInvoker.InvokeActionMethod(ControllerContext controllerContext, ActionDescriptor actionDescriptor, IDictionary`2 parameters)
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.<>c__DisplayClass37.<>c__DisplayClass39.<BeginInvokeActionMethodWithFilters>b__33()
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.<>c__DisplayClass4f.<InvokeActionMethodFilterAsynchronously>b__49()
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.<>c__DisplayClass25.<>c__DisplayClass2a.<BeginInvokeAction>b__20()
+at System.Web.Mvc.Async.AsyncControllerActionInvoker.<>c__DisplayClass25.<BeginInvokeAction>b__22(IAsyncResult asyncResult)
+at Datadog.Trace.ClrProfiler.Integrations.AspNetMvcIntegration.EndInvokeAction(Object asyncControllerActionInvoker, Object asyncResult, Int32 opCode, Int32 mdToken, Int64 moduleVersionPtr),
+      error.type: System.ArgumentException,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.status_code: 500,
+      http.url: /home/identifier,
+      language: dotnet,
+      span.kind: server,
+      version: 1.0.0
+    }
+  }
+]
