@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using GeneratePackageVersions;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.Tooling;
@@ -168,4 +169,15 @@ partial class Build
                 .SetProcessEnvironmentVariables(envVars));
 
         });
+
+    Target GeneratePackageVersions => _ => _
+       .Description("Regenerate the PackageVersions props and .cs files")
+       .Executes(async () =>
+       {
+           var testDir = Solution.GetProject(Projects.ClrProfilerIntegrationTests).Directory;
+
+           var versionGenerator = new PackageVersionGenerator(RootDirectory, testDir);
+           await versionGenerator.GenerateVersions();
+       });
+
 }
