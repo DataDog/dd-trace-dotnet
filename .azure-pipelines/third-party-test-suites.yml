@@ -235,4 +235,5 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: npgsql/test/**/*.trx
         testRunTitle: Postgres-$(os)-$(tagName)
+        failTaskOnFailedTests: true
       condition: succeededOrFailed()
