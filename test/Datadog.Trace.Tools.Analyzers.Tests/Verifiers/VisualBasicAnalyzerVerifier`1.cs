@@ -16,15 +16,15 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
     {
         /// <inheritdoc cref="AnalyzerVerifier{TAnalyzer, TTest, TVerifier}.Diagnostic()"/>
         public static DiagnosticResult Diagnostic()
-            => VisualBasicAnalyzerVerifier<TAnalyzer, MSTestVerifier>.Diagnostic();
+            => VisualBasicAnalyzerVerifier<TAnalyzer, XUnitVerifier>.Diagnostic();
 
         /// <inheritdoc cref="AnalyzerVerifier{TAnalyzer, TTest, TVerifier}.Diagnostic(string)"/>
         public static DiagnosticResult Diagnostic(string diagnosticId)
-            => VisualBasicAnalyzerVerifier<TAnalyzer, MSTestVerifier>.Diagnostic(diagnosticId);
+            => VisualBasicAnalyzerVerifier<TAnalyzer, XUnitVerifier>.Diagnostic(diagnosticId);
 
         /// <inheritdoc cref="AnalyzerVerifier{TAnalyzer, TTest, TVerifier}.Diagnostic(DiagnosticDescriptor)"/>
         public static DiagnosticResult Diagnostic(DiagnosticDescriptor descriptor)
-            => VisualBasicAnalyzerVerifier<TAnalyzer, MSTestVerifier>.Diagnostic(descriptor);
+            => VisualBasicAnalyzerVerifier<TAnalyzer, XUnitVerifier>.Diagnostic(descriptor);
 
         /// <inheritdoc cref="AnalyzerVerifier{TAnalyzer, TTest, TVerifier}.VerifyAnalyzerAsync(string, DiagnosticResult[])"/>
         public static async Task VerifyAnalyzerAsync(string source, params DiagnosticResult[] expected)

@@ -12,7 +12,7 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
         where TAnalyzer : DiagnosticAnalyzer, new()
         where TCodeFix : CodeFixProvider, new()
     {
-        public class Test : VisualBasicCodeFixTest<TAnalyzer, TCodeFix, MSTestVerifier>
+        public class Test : VisualBasicCodeFixTest<TAnalyzer, TCodeFix, XUnitVerifier>
         {
         }
     }

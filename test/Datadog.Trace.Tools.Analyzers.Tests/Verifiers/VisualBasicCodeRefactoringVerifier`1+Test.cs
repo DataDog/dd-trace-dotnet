@@ -10,7 +10,7 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
     public static partial class VisualBasicCodeRefactoringVerifier<TCodeRefactoring>
         where TCodeRefactoring : CodeRefactoringProvider, new()
     {
-        public class Test : VisualBasicCodeRefactoringTest<TCodeRefactoring, MSTestVerifier>
+        public class Test : VisualBasicCodeRefactoringTest<TCodeRefactoring, XUnitVerifier>
         {
         }
     }
