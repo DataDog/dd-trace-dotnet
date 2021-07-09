@@ -166,6 +166,10 @@ namespace PrepareRelease
                 FullAssemblyNameReplace);
 
             SynchronizeVersion(
+                "build/docker/package.sh",
+                text => Regex.Replace(text, $"VERSION={VersionPattern()}", $"VERSION={VersionString()}"));
+
+            SynchronizeVersion(
                 "src/WindowsInstaller/WindowsInstaller.wixproj",
                 WixProjReplace);
 
