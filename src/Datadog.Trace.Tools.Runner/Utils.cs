@@ -119,6 +119,31 @@ namespace Datadog.Trace.Tools.Runner
                 envVars["DD_TRACE_AGENT_URL"] = options.AgentUrl;
             }
 
+            if (!string.IsNullOrWhiteSpace(options.AgentHost))
+            {
+                envVars["DD_AGENT_HOST"] = options.AgentHost;
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.AgentPort))
+            {
+                envVars["DD_TRACE_AGENT_PORT"] = options.AgentPort;
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.EnvironmentValues))
+            {
+                foreach (var keyValue in options.EnvironmentValues.Split(','))
+                {
+                    if (!string.IsNullOrWhiteSpace(keyValue))
+                    {
+                        var kvArray = keyValue.Split('=');
+                        if (kvArray.Length == 2)
+                        {
+                            envVars[kvArray[0]] = kvArray[1];
+                        }
+                    }
+                }
+            }
+
             return envVars;
         }
 
