@@ -1066,6 +1066,7 @@ stages:
       displayName: Crank
       env:
         DD_SERVICE: dd-trace-dotnet
+        DD_ENV: CI
 
 - stage: coverage
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
