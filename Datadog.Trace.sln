@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.28803.452
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31423.177
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.Trace.ClrProfiler.Native", "src\Datadog.Trace.ClrProfiler.Native\Datadog.Trace.ClrProfiler.Native.vcxproj", "{91B6272F-5780-4C94-8071-DBBA7B4F67F3}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -229,6 +229,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".azure-pipelines", ".azure-
 		.azure-pipelines\packages.yml = .azure-pipelines\packages.yml
 		.azure-pipelines\runner.yml = .azure-pipelines\runner.yml
 		.azure-pipelines\setup_tracer.ps1 = .azure-pipelines\setup_tracer.ps1
+		.azure-pipelines\ultimate-pipeline.yml = .azure-pipelines\ultimate-pipeline.yml
 		.azure-pipelines\unit-tests.yml = .azure-pipelines\unit-tests.yml
 	EndProjectSection
 EndProject
@@ -720,6 +721,18 @@ Global
 		{B4AE8B0F-C2B2-41DF-88BB-D97E267D8964}.Release|x64.Build.0 = Release|Any CPU
 		{B4AE8B0F-C2B2-41DF-88BB-D97E267D8964}.Release|x86.ActiveCfg = Release|Any CPU
 		{B4AE8B0F-C2B2-41DF-88BB-D97E267D8964}.Release|x86.Build.0 = Release|Any CPU
+		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Debug|Any CPU.Build.0 = Debug|x86
+		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Debug|x64.ActiveCfg = Debug|x64
+		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Debug|x64.Build.0 = Debug|x64
+		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Debug|x86.ActiveCfg = Debug|x86
+		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Debug|x86.Build.0 = Debug|x86
+		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Release|Any CPU.ActiveCfg = Release|x86
+		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Release|Any CPU.Build.0 = Release|x86
+		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Release|x64.ActiveCfg = Release|x64
+		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Release|x64.Build.0 = Release|x64
+		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Release|x86.ActiveCfg = Release|x86
+		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Release|x86.Build.0 = Release|x86
 		{D1729F17-99A5-45AF-AB38-72FA6ECCE609}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D1729F17-99A5-45AF-AB38-72FA6ECCE609}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D1729F17-99A5-45AF-AB38-72FA6ECCE609}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -1680,18 +1693,6 @@ Global
 		{BF1E5BA6-C0E5-4472-9D5D-2622231DD275}.Release|x64.Build.0 = Release|x64
 		{BF1E5BA6-C0E5-4472-9D5D-2622231DD275}.Release|x86.ActiveCfg = Release|x86
 		{BF1E5BA6-C0E5-4472-9D5D-2622231DD275}.Release|x86.Build.0 = Release|x86
-		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Debug|Any CPU.ActiveCfg = Debug|x86
-		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Debug|Any CPU.Build.0 = Debug|x86
-		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Debug|x64.ActiveCfg = Debug|x64
-		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Debug|x64.Build.0 = Debug|x64
-		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Debug|x86.ActiveCfg = Debug|x86
-		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Debug|x86.Build.0 = Debug|x86
-		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Release|Any CPU.ActiveCfg = Release|x86
-		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Release|Any CPU.Build.0 = Release|x86
-		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Release|x64.ActiveCfg = Release|x64
-		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Release|x64.Build.0 = Release|x64
-		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Release|x86.ActiveCfg = Release|x86
-		{99A62CCF-8E7F-4D57-8383-D38C371C8087}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
