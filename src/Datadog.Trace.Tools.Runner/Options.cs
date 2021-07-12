@@ -41,6 +41,9 @@ namespace Datadog.Trace.Tools.Runner
         [Option("tracer-home", Required = false, HelpText = "Sets the tracer home folder path.")]
         public string TracerHomeFolder { get; set; }
 
+        [Option("env-vars", Required = false, HelpText = "Sets environment variables to the target command.")]
+        public string EnvironmentValues { get; set; }
+
         [Option("crank-import", HelpText = "Import crank Json results file.")]
         public string CrankImportFile { get; set; }
 
