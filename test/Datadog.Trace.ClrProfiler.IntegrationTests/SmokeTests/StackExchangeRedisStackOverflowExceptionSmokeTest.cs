@@ -4,7 +4,6 @@
 // </copyright>
 
 #if !NET452
-using Datadog.Core.Tools;
 using Datadog.Trace.ClrProfiler.IntegrationTests.TestCollections;
 using Datadog.Trace.TestHelpers;
 using Xunit;
