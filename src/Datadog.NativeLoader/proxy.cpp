@@ -110,6 +110,35 @@ namespace nativeloader
         m_canUnloadNow = nullptr;
     }
 
+    DynamicInstance::~DynamicInstance()
+    {
+        m_getClassObjectPtr = nullptr;
+        m_canUnloadNow = nullptr;
+        m_loaded = false;
+
+        if (m_classFactory != nullptr)
+        {
+            delete m_classFactory;
+            m_classFactory = nullptr;
+        }
+
+        if (m_corProfilerCallback != nullptr)
+        {
+            delete m_corProfilerCallback;
+            m_corProfilerCallback = nullptr;
+        }
+
+        if (m_instance != nullptr)
+        {
+            if (!FreeDynamicLibrary(m_instance))
+            {
+                Warn("Error unloading: ", m_filepath, " dynamic library.");
+            }
+            m_instance = nullptr;
+        }
+    }
+
+
     HRESULT DynamicInstance::LoadClassFactory(REFIID riid)
     {
         LPVOID ppv;

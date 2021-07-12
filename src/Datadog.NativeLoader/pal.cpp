@@ -47,6 +47,17 @@ namespace nativeloader
 #endif
     }
 
+    bool FreeDynamicLibrary(void* handle)
+    {
+        Debug("FreeDynamicLibrary.");
+
+#if _WIN32
+        return FreeLibrary((HMODULE)handle);
+#else
+        return dlclose(handle) == 0;
+#endif
+    }
+
     WSTRING GetEnvironmentValue(const WSTRING& name)
     {
         Debug("GetEnvironmentValue: ", name);
