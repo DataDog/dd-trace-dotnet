@@ -8,7 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 
-namespace Datadog.Core.Tools
+namespace Datadog.Trace.TestHelpers
 {
     /// <summary>
     /// General use utility methods for all tests and tools.
