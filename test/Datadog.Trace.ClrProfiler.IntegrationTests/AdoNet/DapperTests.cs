@@ -4,7 +4,6 @@
 // </copyright>
 
 #if !NET452
-using Datadog.Core.Tools;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;

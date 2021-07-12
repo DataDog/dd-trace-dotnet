@@ -11,7 +11,6 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
-using Datadog.Core.Tools;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers

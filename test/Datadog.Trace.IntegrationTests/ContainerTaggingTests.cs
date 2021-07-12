@@ -5,7 +5,6 @@
 
 using System;
 using System.Threading.Tasks;
-using Datadog.Core.Tools;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers;
