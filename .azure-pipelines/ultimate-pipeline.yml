@@ -400,13 +400,13 @@ stages:
       displayName: docker-compose build IIS containers
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS.LoaderOptimizationRegKey
+        dockerComposeCommand: build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS
 
     - task: DockerCompose@0
       displayName: docker-compose start IIS containers
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: up -d IntegrationTests.IIS.LoaderOptimizationRegKey
+        dockerComposeCommand: up -d IntegrationTests.IIS
 
     - powershell: |
         [System.Reflection.Assembly]::Load("System.EnterpriseServices, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a")
@@ -491,10 +491,10 @@ stages:
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework)"
 
     - task: DockerCompose@0
-      displayName: docker-compose build NukeIntegrationTests
+      displayName: docker-compose build IntegrationTests
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) NukeIntegrationTests
+        dockerComposeCommand: build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests
 
     - task: DockerCompose@0
       displayName: docker-compose start dependencies
@@ -503,13 +503,13 @@ stages:
         dockerComposeCommand: run --rm StartDependencies
 
     - task: DockerCompose@0
-      displayName: docker-compose run NukeIntegrationTests
+      displayName: docker-compose run IntegrationTests
       inputs:
         containerregistrytype: Container Registry
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
-        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) NukeIntegrationTests
+        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) IntegrationTests
 
     - task: DockerCompose@0
       displayName: docker-compose stop services
@@ -564,10 +564,10 @@ stages:
             command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework)"
 
         - task: DockerCompose@0
-          displayName: docker-compose build NukeIntegrationTests
+          displayName: docker-compose build IntegrationTests
           inputs:
             containerregistrytype: Container Registry
-            dockerComposeCommand: build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) NukeIntegrationTests.ARM64
+            dockerComposeCommand: build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests.ARM64
 
         - task: DockerCompose@0
           displayName: docker-compose start dependencies
@@ -576,13 +576,13 @@ stages:
             dockerComposeCommand: run --rm StartDependencies.ARM64
 
         - task: DockerCompose@0
-          displayName: docker-compose run NukeIntegrationTests
+          displayName: docker-compose run IntegrationTests
           inputs:
             containerregistrytype: Container Registry
             dockerComposeFileArgs: |
               baseImage=$(baseImage)
               framework=$(publishTargetFramework)
-            dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) NukeIntegrationTests.ARM64
+            dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) IntegrationTests.ARM64
 
         - task: DockerCompose@0
           displayName: docker-compose stop services
@@ -891,7 +891,7 @@ stages:
         - publish: "$(Build.ArtifactStagingDirectory)"
           displayName: Publish release artifacts
           artifact: $(tracer_version)-release-artifacts
-        
+
         # We don't include the MSI artifacts as they're not signed
 
 - stage: throughput
