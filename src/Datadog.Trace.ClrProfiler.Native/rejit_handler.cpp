@@ -35,8 +35,7 @@ void RejitItem::DeleteArray()
 void RejitHandlerModuleMethod::AddFunctionId(FunctionID functionId)
 {
     std::lock_guard<std::mutex> guard(functionsIds_lock);
-    auto moduleHandler = (RejitHandlerModule*) module;
-    auto rejitHandler = (RejitHandler*) moduleHandler->GetHandler();
+    auto rejitHandler = module->GetHandler();
     functionsIds.insert(functionId);
     rejitHandler->_addFunctionToSet(functionId, this);
 }
@@ -133,6 +132,18 @@ bool RejitHandler::TryGetModule(ModuleID moduleId, RejitHandlerModule** moduleHa
     }
     *moduleHandler = nullptr;
     return false;
+}
+
+void RejitHandler::ReleaseModule(ModuleID moduleId)
+{
+    std::lock_guard<std::mutex> guard(modules_lock);
+    auto find_res = modules.find(moduleId);
+    if (find_res != modules.end())
+    {
+        auto moduleHandler = find_res->second;
+        delete[] moduleHandler;
+        modules.erase(moduleId);
+    }
 }
 
 HRESULT RejitHandler::NotifyReJITParameters(ModuleID moduleId, mdMethodDef methodId,

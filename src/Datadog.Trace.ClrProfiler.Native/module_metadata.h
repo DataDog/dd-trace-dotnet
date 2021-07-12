@@ -48,6 +48,14 @@ public:
         corAssemblyProperty(corAssemblyProperty)
     {
     }
+    ~ModuleMetadata()
+    {
+        if (calltargetTokens != nullptr)
+        {
+            delete[] calltargetTokens;
+            calltargetTokens = nullptr;
+        }
+    }
 
     bool TryGetWrapperMemberRef(const WSTRING& keyIn, mdMemberRef& valueOut) const
     {
@@ -102,7 +110,7 @@ public:
         failed_wrapper_keys.insert(key);
     }
 
-    inline std::vector<MethodReplacement> GetMethodReplacementsForCaller(const trace::FunctionInfo& caller)
+    std::vector<MethodReplacement> GetMethodReplacementsForCaller(const trace::FunctionInfo& caller)
     {
         std::vector<MethodReplacement> enabled;
         for (auto& i : integrations)
@@ -118,7 +126,7 @@ public:
         return enabled;
     }
 
-    inline CallTargetTokens* GetCallTargetTokens()
+    CallTargetTokens* GetCallTargetTokens()
     {
         if (calltargetTokens == nullptr)
         {

@@ -241,7 +241,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
 
 
   // set event mask to subscribe to events and disable NGEN images
-  if (is_net46_or_greater) 
+  if (is_net46_or_greater)
   {
         hr = info6->SetEventMask2(event_mask, COR_PRF_HIGH_ADD_ASSEMBLY_REFERENCES);
 
@@ -634,6 +634,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
         }
 
         module_id_to_info_map_.erase(module_id);
+        if (rejit_handler != nullptr)
+        {
+            rejit_handler->ReleaseModule(module_id);
+        }
         delete metadata;
     }
 
@@ -651,6 +655,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
     if (rejit_handler != nullptr)
     {
         rejit_handler->Shutdown();
+        delete[] rejit_handler;
+        rejit_handler = nullptr;
     }
     Warn("Exiting. Stats: ", Stats::Instance()->ToString());
     is_attached_.store(false);
@@ -1769,7 +1775,7 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
             }
             else if (cInstr->m_opcode == CEE_LDSTR)
             {
-                LPWSTR szString = new WCHAR[1024];
+                WCHAR szString[1024];
                 ULONG szStringLength;
                 auto hr = module_metadata->metadata_import->GetUserString((mdString) cInstr->m_Arg32, szString, 1024,
                                                                           &szStringLength);
@@ -3478,6 +3484,8 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
     }
 
     hr = rewriter.Export();
+
+    delete[] newEHClauses;
 
     if (FAILED(hr))
     {

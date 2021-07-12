@@ -25,6 +25,9 @@ struct RejitItem
     void DeleteArray();
 };
 
+class RejitHandlerModule;
+class RejitHandler;
+
 /// <summary>
 /// Rejit handler representation of a method
 /// </summary>
@@ -37,10 +40,10 @@ private:
     MethodReplacement* methodReplacement;
     std::mutex functionsIds_lock;
     std::unordered_set<FunctionID> functionsIds;
-    void* module;
+    RejitHandlerModule* module;
 
 public:
-    RejitHandlerModuleMethod(mdMethodDef methodDef, void* module)
+    RejitHandlerModuleMethod(mdMethodDef methodDef, RejitHandlerModule* module)
     {
         this->methodDef = methodDef;
         this->pFunctionControl = nullptr;
@@ -48,35 +51,47 @@ public:
         this->functionInfo = nullptr;
         this->methodReplacement = nullptr;
     }
-    inline mdMethodDef GetMethodDef()
+    ~RejitHandlerModuleMethod()
+    {
+        this->pFunctionControl = nullptr;
+        this->module = nullptr;
+        if (this->functionInfo != nullptr)
+        {
+            delete[] this->functionInfo;
+            this->functionInfo = nullptr;
+        }
+        this->methodReplacement = nullptr;
+        this->functionsIds.empty();
+    }
+    mdMethodDef GetMethodDef()
     {
         return this->methodDef;
     }
-    inline ICorProfilerFunctionControl* GetFunctionControl()
+    ICorProfilerFunctionControl* GetFunctionControl()
     {
         return this->pFunctionControl;
     }
-    inline void SetFunctionControl(ICorProfilerFunctionControl* pFunctionControl)
+    void SetFunctionControl(ICorProfilerFunctionControl* pFunctionControl)
     {
         this->pFunctionControl = pFunctionControl;
     }
-    inline FunctionInfo* GetFunctionInfo()
+    FunctionInfo* GetFunctionInfo()
     {
         return this->functionInfo;
     }
-    inline void SetFunctionInfo(FunctionInfo* functionInfo)
+    void SetFunctionInfo(FunctionInfo* functionInfo)
     {
         this->functionInfo = functionInfo;
     }
-    inline MethodReplacement* GetMethodReplacement()
+    MethodReplacement* GetMethodReplacement()
     {
         return this->methodReplacement;
     }
-    inline void SetMethodReplacement(MethodReplacement* methodReplacement)
+    void SetMethodReplacement(MethodReplacement* methodReplacement)
     {
         this->methodReplacement = methodReplacement;
     }
-    inline void* GetModule()
+    RejitHandlerModule* GetModule()
     {
         return this->module;
     }
@@ -94,28 +109,38 @@ private:
     ModuleMetadata* metadata;
     std::mutex methods_lock;
     std::unordered_map<mdMethodDef, RejitHandlerModuleMethod*> methods;
-    void* handler;
+    RejitHandler* handler;
 
 public:
-    RejitHandlerModule(ModuleID moduleId, void* handler)
+    RejitHandlerModule(ModuleID moduleId, RejitHandler* handler)
     {
         this->moduleId = moduleId;
         this->metadata = nullptr;
         this->handler = handler;
     }
-    inline ModuleID GetModuleId()
+    ~RejitHandlerModule()
+    {
+        this->metadata = nullptr;
+        this->handler = nullptr;
+        for (auto moduleMethod : methods)
+        {
+            delete[] moduleMethod.second;
+        }
+        this->methods.empty();
+    }
+    ModuleID GetModuleId()
     {
         return this->moduleId;
     }
-    inline ModuleMetadata* GetModuleMetadata()
+    ModuleMetadata* GetModuleMetadata()
     {
         return this->metadata;
     }
-    inline void SetModuleMetadata(ModuleMetadata* metadata)
+    void SetModuleMetadata(ModuleMetadata* metadata)
     {
         this->metadata = metadata;
     }
-    inline void* GetHandler()
+    RejitHandler* GetHandler()
     {
         return this->handler;
     }
@@ -151,9 +176,23 @@ public:
         this->rejit_queue_ = new BlockingQueue<RejitItem>();
         this->rejit_queue_thread_ = new std::thread(enqueue_thread, this);
     }
+    ~RejitHandler()
+    {
+        if (this->rejit_queue_ != nullptr)
+        {
+            delete[] this->rejit_queue_;
+            this->rejit_queue_ = nullptr;
+        }
+        if (this->rejit_queue_thread_ != nullptr)
+        {
+            delete[] this->rejit_queue_thread_;
+            this->rejit_queue_thread_ = nullptr;
+        }
+    }
     RejitHandlerModule* GetOrAddModule(ModuleID moduleId);
 
     bool TryGetModule(ModuleID moduleId, RejitHandlerModule** moduleHandler);
+    void ReleaseModule(ModuleID moduleId);
 
     HRESULT NotifyReJITParameters(ModuleID moduleId, mdMethodDef methodId,
                                   ICorProfilerFunctionControl* pFunctionControl, ModuleMetadata* metadata);
