@@ -158,6 +158,7 @@ partial class Build
                 .SetProperty("platform", Platform));
             
             DotNetRun(s => s
+                .SetDotnetPath(Platform)
                 .SetFramework(Framework)
                 .EnableNoLaunchProfile()
                 .SetProjectFile(project)

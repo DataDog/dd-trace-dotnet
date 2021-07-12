@@ -125,7 +125,8 @@ namespace Datadog.Trace.Tests.Tagging
 
             var deserializedSpan = MessagePack.MessagePackSerializer.Deserialize<FakeSpan>(buffer);
 
-            Assert.Equal(16, deserializedSpan.Tags.Count);
+            // For top-level spans, there is one tag added during serialization
+            Assert.Equal(topLevelSpan ? 17 : 16, deserializedSpan.Tags.Count);
 
             // For top-level spans, there is one metric added during serialization
             Assert.Equal(topLevelSpan ? 17 : 16, deserializedSpan.Metrics.Count);
@@ -141,6 +142,7 @@ namespace Datadog.Trace.Tests.Tagging
 
             if (topLevelSpan)
             {
+                Assert.Equal(Tracer.RuntimeId, deserializedSpan.Tags[Tags.RuntimeId]);
                 Assert.Equal(1.0, deserializedSpan.Metrics[Metrics.TopLevelSpan]);
             }
         }

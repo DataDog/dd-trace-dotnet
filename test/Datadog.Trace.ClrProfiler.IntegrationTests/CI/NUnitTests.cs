@@ -100,6 +100,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         // check the version
                         AssertTargetSpanEqual(targetSpan, "version", "1.0.0");
 
+                        // checks the runtime id tag
+                        AssertTargetSpanExists(targetSpan, Tags.RuntimeId);
+
                         // checks the origin tag
                         CheckOriginTag(targetSpan);
 
@@ -238,6 +241,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         private static void AssertTargetSpanEqual(MockTracerAgent.Span targetSpan, string key, string value)
         {
             Assert.Equal(value, targetSpan.Tags[key]);
+            targetSpan.Tags.Remove(key);
+        }
+
+        private static void AssertTargetSpanExists(MockTracerAgent.Span targetSpan, string key)
+        {
+            Assert.True(targetSpan.Tags.ContainsKey(key));
             targetSpan.Tags.Remove(key);
         }
 

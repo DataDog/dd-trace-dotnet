@@ -306,12 +306,14 @@ stages:
     strategy:
       matrix:
         x64:
-          buildPlatform: x64
+          platform: x64
         x86:
-          buildPlatform: x86
+          platform: x86
 
     steps:
     - template: steps/install-dotnet-sdks.yml
+      parameters:
+        includeX86: true
     - template: steps/restore-working-directory.yml
 
     - powershell: |
@@ -340,25 +342,27 @@ stages:
     strategy:
       matrix:
         x64:
-          buildPlatform: x64
+          platform: x64
           enable32bit: false
         x86:
-          buildPlatform: x86
+          platform: x86
           enable32bit: true
     pool:
       vmImage: windows-2019
     variables:
-      relativeMsiOutputDirectory: $(relativeArtifacts)/$(buildPlatform)/en-us
+      relativeMsiOutputDirectory: $(relativeArtifacts)/$(platform)/en-us
 
     steps:
 
     - template: steps/install-dotnet-sdks.yml
+      parameters:
+        includeX86: true
     - template: steps/restore-working-directory.yml
 
     - task: DownloadPipelineArtifact@2
       displayName: Download MSI
       inputs:
-        artifact: windows-msi-$(buildPlatform)
+        artifact: windows-msi-$(platform)
         patterns: '**/*.msi'
         path: $(System.DefaultWorkingDirectory)/$(relativeMsiOutputDirectory)
 

@@ -1,11 +1,8 @@
 using System;
 using System.Data;
-using System.Runtime.InteropServices;
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
-using Datadog.Trace.ClrProfiler.Emit;
-using Datadog.Trace.ClrProfiler.Integrations.AdoNet;
 using Datadog.Trace.Configuration;
 
 namespace Benchmarks.Trace
@@ -13,9 +10,6 @@ namespace Benchmarks.Trace
     [MemoryDiagnoser]
     public class DbCommandBenchmark
     {
-        private static readonly int MdToken;
-        private static readonly IntPtr GuidPtr;
-        private static readonly IDbCommand DbCommand = new CustomDbCommand();
         private static readonly CustomDbCommand CustomCommand = new CustomDbCommand();
 
         static DbCommandBenchmark()
@@ -27,28 +21,12 @@ namespace Benchmarks.Trace
 
             Tracer.Instance = new Tracer(settings, new DummyAgentWriter(), null, null, null);
 
-            var methodInfo = typeof(IDbCommand).GetMethod("ExecuteNonQuery", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-
-            MdToken = methodInfo.MetadataToken;
-            var guid = typeof(IDbCommand).Module.ModuleVersionId;
-
-            GuidPtr = Marshal.AllocHGlobal(Marshal.SizeOf(guid));
-
-            Marshal.StructureToPtr(guid, GuidPtr, false);
-
             var bench = new DbCommandBenchmark();
             bench.ExecuteNonQuery();
-            bench.CallTargetExecuteNonQuery();
         }
 
         [Benchmark]
-        public int ExecuteNonQuery()
-        {
-            return IDbCommandIntegration.ExecuteNonQuery(DbCommand, (int)OpCodeValue.Callvirt, MdToken, (long)GuidPtr);
-        }
-
-        [Benchmark]
-        public unsafe int CallTargetExecuteNonQuery()
+        public unsafe int ExecuteNonQuery()
         {
             return CallTarget.Run<CommandExecuteNonQueryIntegration, CustomDbCommand, int>(CustomCommand, &InternalExecuteNonQuery);
 

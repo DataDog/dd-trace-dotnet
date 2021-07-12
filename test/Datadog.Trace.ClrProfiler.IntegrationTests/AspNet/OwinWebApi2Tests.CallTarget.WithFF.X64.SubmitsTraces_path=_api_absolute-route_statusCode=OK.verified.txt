@@ -15,7 +15,8 @@
       http.request.headers.host: localhost:00000,
       http.url: http://localhost:00000/api/absolute-route,
       language: dotnet,
-      aspnet.route: api/absolute-route
+      aspnet.route: api/absolute-route,
+      runtime-id: Guid_1
     },
     Metrics: {
       _sampling_priority_v1: 1.0,

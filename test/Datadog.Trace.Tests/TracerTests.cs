@@ -400,6 +400,18 @@ namespace Datadog.Trace.Tests
             _tracer.ShouldLogPartialFlushWarning(agentVersion).Should().BeFalse();
         }
 
+        [Fact]
+        public void RuntimeId()
+        {
+            var runtimeId = Tracer.RuntimeId;
+
+            // Runtime id should be stable for a given process
+            Tracer.RuntimeId.Should().Be(runtimeId);
+
+            // Runtime id should be a UUID
+            Guid.TryParse(runtimeId, out _).Should().BeTrue();
+        }
+
 #if NET452
 
         // Test that storage in the Logical Call Context does not expire

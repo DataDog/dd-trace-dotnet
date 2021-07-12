@@ -6,17 +6,21 @@ namespace Samples.RuntimeMetrics
 {
     internal static class Program
     {
+        private static readonly object SyncRoot = new object();
+
         private static void Main()
         {
             // Force the tracer to be loaded
             _ = WebRequest.CreateHttp("http://localhost/");
 
-            new Thread(ThrowExceptions) { IsBackground = true }.Start();
+            Monitor.Enter(SyncRoot);
 
-            Thread.Sleep(20000);
+            new Thread(GenerateEvents) { IsBackground = true }.Start();
+
+            Thread.Sleep(30000);
         }
 
-        private static void ThrowExceptions()
+        private static void GenerateEvents()
         {
             while (true)
             {
@@ -28,7 +32,8 @@ namespace Samples.RuntimeMetrics
                 {
                 }
 
-                Thread.Sleep(500);
+                // Sleep for 500ms while creating contention
+                Monitor.TryEnter(SyncRoot, 500);                
             }
         }
     }

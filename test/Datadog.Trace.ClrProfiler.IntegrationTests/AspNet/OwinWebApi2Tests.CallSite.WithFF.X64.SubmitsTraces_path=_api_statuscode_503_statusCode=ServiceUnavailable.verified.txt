@@ -17,7 +17,8 @@
       http.request.headers.host: localhost:00000,
       http.url: http://localhost:00000/api/statuscode/503,
       language: dotnet,
-      aspnet.route: api/statuscode/{value}
+      aspnet.route: api/statuscode/{value},
+      runtime-id: Guid_1
     },
     Metrics: {
       _sampling_priority_v1: 1.0,

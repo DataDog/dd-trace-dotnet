@@ -45,7 +45,8 @@ at System.Web.HttpApplication.ExecuteStep(IExecutionStep step, Boolean& complete
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.url: /home/get,
-      language: dotnet
+      language: dotnet,
+      runtime-id: Guid_1
     },
     Metrics: {
       _sampling_priority_v1: 1.0,

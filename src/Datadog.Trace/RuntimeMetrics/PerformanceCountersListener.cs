@@ -7,6 +7,9 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
 
@@ -17,13 +20,15 @@ namespace Datadog.Trace.RuntimeMetrics
         private const string MemoryCategoryName = ".NET CLR Memory";
         private const string ThreadingCategoryName = ".NET CLR LocksAndThreads";
 
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<PerformanceCountersListener>();
+
         private readonly IDogStatsd _statsd;
-        private readonly PerformanceCounterCategory _memoryCategory;
-        private readonly bool _fullInstanceName;
         private readonly string _processName;
         private readonly int _processId;
 
         private string _instanceName;
+        private PerformanceCounterCategory _memoryCategory;
+        private bool _fullInstanceName;
 
         private PerformanceCounterWrapper _gen0Size;
         private PerformanceCounterWrapper _gen1Size;
@@ -37,32 +42,46 @@ namespace Datadog.Trace.RuntimeMetrics
 
         private double? _lastContentionCount;
 
+        private Task _initializationTask;
+
         public PerformanceCountersListener(IDogStatsd statsd)
         {
             _statsd = statsd;
 
             ProcessHelpers.GetCurrentProcessInformation(out _processName, out _, out _processId);
 
-            _memoryCategory = new PerformanceCounterCategory(MemoryCategoryName);
-
-            var instanceName = GetInstanceName();
-            _fullInstanceName = instanceName.Item2;
-            _instanceName = instanceName.Item1;
-
-            InitializePerformanceCounters(_instanceName);
+            // To prevent a potential deadlock when hosted in a service, performance counter initialization must be asynchronous
+            // That's because performance counters may rely on wmiApSrv being started,
+            // and the windows service manager only allows one service at a time to be starting: https://docs.microsoft.com/en-us/windows/win32/services/service-startup
+            _initializationTask = Task.Run(InitializePerformanceCounters);
+            _initializationTask.ContinueWith(
+                t =>
+                {
+                    Log.Error(t.Exception, "An error occured while initializing the performance counters");
+                },
+                CancellationToken.None,
+                TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default);
         }
+
+        public Task WaitForInitialization() => _initializationTask;
 
         public void Dispose()
         {
-            _gen0Size.Dispose();
-            _gen1Size.Dispose();
-            _gen2Size.Dispose();
-            _lohSize.Dispose();
-            _contentionCount.Dispose();
+            _gen0Size?.Dispose();
+            _gen1Size?.Dispose();
+            _gen2Size?.Dispose();
+            _lohSize?.Dispose();
+            _contentionCount?.Dispose();
         }
 
         public void Refresh()
         {
+            if (!_initializationTask.IsCompleted)
+            {
+                return;
+            }
+
             if (!_fullInstanceName)
             {
                 _instanceName = GetSimpleInstanceName();
@@ -99,13 +118,19 @@ namespace Datadog.Trace.RuntimeMetrics
             _previousGen2Count = gen2;
         }
 
-        private void InitializePerformanceCounters(string instanceName)
+        protected virtual void InitializePerformanceCounters()
         {
-            _gen0Size = new PerformanceCounterWrapper(MemoryCategoryName, "Gen 0 heap size", instanceName);
-            _gen1Size = new PerformanceCounterWrapper(MemoryCategoryName, "Gen 1 heap size", instanceName);
-            _gen2Size = new PerformanceCounterWrapper(MemoryCategoryName, "Gen 2 heap size", instanceName);
-            _lohSize = new PerformanceCounterWrapper(MemoryCategoryName, "Large Object Heap size", instanceName);
-            _contentionCount = new PerformanceCounterWrapper(ThreadingCategoryName, "Total # of Contentions", instanceName);
+            _memoryCategory = new PerformanceCounterCategory(MemoryCategoryName);
+
+            var instanceName = GetInstanceName();
+            _fullInstanceName = instanceName.Item2;
+            _instanceName = instanceName.Item1;
+
+            _gen0Size = new PerformanceCounterWrapper(MemoryCategoryName, "Gen 0 heap size", _instanceName);
+            _gen1Size = new PerformanceCounterWrapper(MemoryCategoryName, "Gen 1 heap size", _instanceName);
+            _gen2Size = new PerformanceCounterWrapper(MemoryCategoryName, "Gen 2 heap size", _instanceName);
+            _lohSize = new PerformanceCounterWrapper(MemoryCategoryName, "Large Object Heap size", _instanceName);
+            _contentionCount = new PerformanceCounterWrapper(ThreadingCategoryName, "Total # of Contentions", _instanceName);
         }
 
         private void TryUpdateGauge(string path, PerformanceCounterWrapper counter)
