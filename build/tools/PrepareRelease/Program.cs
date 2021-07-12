@@ -62,7 +62,7 @@ namespace PrepareRelease
         {
             var processInfo = new ProcessStartInfo("cmd.exe", "/c " + command) { CreateNoWindow = true, UseShellExecute = true };
             var process = Process.Start(processInfo);
-            process.WaitForExit(120_000);
+            process.WaitForExit(240_000);
             Console.WriteLine("Publish ExitCode: " + process.ExitCode, "ExecuteCommand");
             process?.Close();
         }

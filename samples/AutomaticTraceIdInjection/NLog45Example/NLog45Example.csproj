@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Datadog.Trace" Version="1.27.1" />
+    <PackageReference Include="Datadog.Trace" Version="1.28.0" />
     <PackageReference Include="NLog" Version="4.5.11" />
   </ItemGroup>
 

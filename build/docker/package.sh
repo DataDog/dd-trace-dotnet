@@ -2,7 +2,7 @@
 set -euxo pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-VERSION=1.27.1
+VERSION=1.28.0
 BUILD_TYPE=${buildConfiguration:-Debug}
 ARCH=${ARCHITECTURE:-x64}
 

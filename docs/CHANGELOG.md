@@ -1,5 +1,80 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
+## [Release 1.28.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.28.0)
+
+## Changes
+* Add support for NestedTypes and GenericParameters to EnsureTypeVisibility (#1561)
+* Add support for Microsoft.Data.SqlClient 3.* (#1579)
+* Enable calltarget by default on .NET 4.6+ runtimes (#1542)
+* Utilize lower-overhead CustomSerilogLogProvider for older LogContext.PushProperties API when LogContext.Push API is not present (#1560)
+* Ducktype - Explicit interface method implementation support (#1555)
+* NUnit integration improvements (#1533)
+* Add automatic instrumentation for AWS SQS (#1471)
+* Upgrade spdlog to 1.4 and move to Static lib version (#1507)
+* Cosmos Db support (#1473)
+* Add net5.0 support to dd-trace (#1516)
+* Avoid the trace copy when flushing spans (#1502)
+* CIApp: Update CircleCI spec (#1503)
+
+## Fixes
+* Initialize performance counters asynchronously (#1564)
+* Use a UUID for runtime-id instead of container id (#1548)
+* Revert the order in which the log providers are resolved (#1578)
+* Fixes environment values in the logs on non windows platforms (#1581)
+* Ducktyping - Replace "calli" call over generic methods (#1557)
+* Fix spans flushing on Testing framework instrumentations (#1535)
+* Adds CorLib detection for assembly ref (#1522)
+* Modify GetReJITParameters callback method to never return E_FAIL HRESULT (#1517)
+* Flush both span buffers in a FlushTracesAsync() call (#1514)
+* CIApp: Correctness and stability fixes. (#1504)
+* AgentWriter FlushTracesAsync changes (#1501)
+
+## Build / Test
+* Remove callsite benchmarks and set iteration time back to 2 seconds (#1511)
+* Nuke build: overwrite files when copying trace home directory (#1567)
+* Wait 10 more seconds on runtime metrics tests (#1566)
+* Hide warnings for EOL .NET Core targets (#1569)
+* Fix x86 builds in consolidated pipeline (#1563)
+* Fix race condition in PerformanceCountersListenerTests (#1573)
+* Update README (#1576)
+* Reduce dependencies between build tools and helper projects (#1568)
+* CI tweaks (#1570)
+* Fix "PrepareRelease msi" command (#1583)
+* Fix flaky Kafka test (#1585)
+* Small ASP.NET Snapshot refactoring (#1580)
+* Don't create an azure artifact (#1589)
+* Change native format to custom style (#1553, #1544)
+* Update ci provider extractor according to specs (#1554)
+* Add small CI fix and docker optimization (#1551)
+* Upgrade non windows native builds to C++17 (#1543)
+* Fix Enable32Bit flag for IIS container (#1536)
+* Add an OWIN test application to the integration-tests pipeline (#1525)
+* Small build improvements (#1531, #1524)
+* Downgrade the version of cmake used for MacOs builds (#1529)
+* Fix xUnit 2.2.0 test flakyness (#1526)
+* Fix CosomsDb tests and disable PR triggers for old pipelines (#1523)
+* Fix Nuke pipeline and remove some unused sample projects (#1521)
+* Convert GitLab package signing build to use Nuke targets (#1512)
+* Enable ultimate pipeline for PRs (#1515)
+* Delete project NugetProfilerVersionMismatch (#1520)
+* Crank sample app profiler detector. (#1518)
+* Fix race condition in runner pipeline (#1510)
+* Include Nuke build project in the sln (#1508)
+* Add Nuke build project and update consolidated pipeline (#1476)
+* Cleanup project files (redux) (#1499)
+
+[Changes since 1.27.1](https://github.com/DataDog/dd-trace-dotnet/compare/v1.27.1...v1.28.0)
+
+## [Release 1.27.1](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.27.1)
+
+## Fixes
+* Fix possible crash condition in .NET Framework 4.5, 4.5.1, and 4.5.2 (#1528, #1539)
+
+## Build
+* Update build pipelines to run in release/* and hotfix/* branches where appropriate (#1545, #1546)
+
+[Changes since 1.27.0](https://github.com/DataDog/dd-trace-dotnet/compare/v1.27.0...v1.27.1)
+
 ## [Release 1.27.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.27.0)
 
 ## Changes
