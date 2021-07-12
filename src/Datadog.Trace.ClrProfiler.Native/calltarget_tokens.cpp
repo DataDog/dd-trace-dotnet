@@ -490,7 +490,7 @@ mdToken CallTargetTokens::GetCurrentTypeRef(const TypeInfo* currentType, bool& i
                 return cType->id;
             }
 
-            cType = const_cast<TypeInfo*>(cType->parent_type);
+            cType = const_cast<TypeInfo*>(cType->parent_type.get());
         }
 
         isValueType = false;
