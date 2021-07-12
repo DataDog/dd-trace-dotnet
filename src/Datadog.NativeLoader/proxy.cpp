@@ -116,18 +116,6 @@ namespace nativeloader
         m_canUnloadNow = nullptr;
         m_loaded = false;
 
-        if (m_classFactory != nullptr)
-        {
-            delete m_classFactory;
-            m_classFactory = nullptr;
-        }
-
-        if (m_corProfilerCallback != nullptr)
-        {
-            delete m_corProfilerCallback;
-            m_corProfilerCallback = nullptr;
-        }
-
         if (m_instance != nullptr)
         {
             if (!FreeDynamicLibrary(m_instance))
