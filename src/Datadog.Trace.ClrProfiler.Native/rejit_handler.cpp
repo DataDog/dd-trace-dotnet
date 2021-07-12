@@ -141,7 +141,7 @@ void RejitHandler::ReleaseModule(ModuleID moduleId)
     if (find_res != modules.end())
     {
         auto moduleHandler = find_res->second;
-        delete[] moduleHandler;
+        delete moduleHandler;
         modules.erase(moduleId);
     }
 }

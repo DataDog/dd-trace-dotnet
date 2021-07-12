@@ -52,7 +52,7 @@ public:
     {
         if (calltargetTokens != nullptr)
         {
-            delete[] calltargetTokens;
+            delete calltargetTokens;
             calltargetTokens = nullptr;
         }
     }

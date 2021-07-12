@@ -655,7 +655,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
     if (rejit_handler != nullptr)
     {
         rejit_handler->Shutdown();
-        delete[] rejit_handler;
+        delete rejit_handler;
         rejit_handler = nullptr;
     }
     Warn("Exiting. Stats: ", Stats::Instance()->ToString());
@@ -3484,8 +3484,6 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
     }
 
     hr = rewriter.Export();
-
-    delete[] newEHClauses;
 
     if (FAILED(hr))
     {

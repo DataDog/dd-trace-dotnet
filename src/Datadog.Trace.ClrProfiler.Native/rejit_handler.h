@@ -57,7 +57,7 @@ public:
         this->module = nullptr;
         if (this->functionInfo != nullptr)
         {
-            delete[] this->functionInfo;
+            delete this->functionInfo;
             this->functionInfo = nullptr;
         }
         this->methodReplacement = nullptr;
@@ -124,7 +124,7 @@ public:
         this->handler = nullptr;
         for (auto moduleMethod : methods)
         {
-            delete[] moduleMethod.second;
+            delete moduleMethod.second;
         }
         this->methods.empty();
     }
@@ -180,12 +180,12 @@ public:
     {
         if (this->rejit_queue_ != nullptr)
         {
-            delete[] this->rejit_queue_;
+            delete this->rejit_queue_;
             this->rejit_queue_ = nullptr;
         }
         if (this->rejit_queue_thread_ != nullptr)
         {
-            delete[] this->rejit_queue_thread_;
+            delete this->rejit_queue_thread_;
             this->rejit_queue_thread_ = nullptr;
         }
     }
