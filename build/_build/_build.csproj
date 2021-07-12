@@ -25,4 +25,9 @@
     <Content Include="..\..\.azure-pipelines\ultimate-pipeline.yml" Link="ci\ultimate-pipeline.yml" />
     <Content Include="..\..\build_in_docker.sh" Link="boot\build_in_docker.sh" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="UpdateVendors\Datadog.Dependabot.Honeypot.template" />
+    <EmbeddedResource Include="UpdateVendors\Datadog.Dependabot.Honeypot.template" />
+  </ItemGroup>
 </Project>

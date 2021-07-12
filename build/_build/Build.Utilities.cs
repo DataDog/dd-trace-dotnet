@@ -9,7 +9,9 @@ using Nuke.Common.Tooling;
 using Nuke.Common.Tools.Docker;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.MSBuild;
+using UpdateVendors;
 using static Nuke.Common.EnvironmentInfo;
+using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
 
@@ -178,6 +180,19 @@ partial class Build
 
            var versionGenerator = new PackageVersionGenerator(RootDirectory, testDir);
            await versionGenerator.GenerateVersions();
+       });
+
+    Target UpdateVendors => _ => _
+       .Description("Updates the vendored dependency code and dependabot template")
+       .Executes(() =>
+       {
+            var honeypotProject = RootDirectory / "honeypot"  /  "Datadog.Dependabot.Honeypot.csproj";
+            UpdateVendorsTool.UpdateHoneypotProject(honeypotProject);
+
+            var vendorDirectory = Solution.GetProject(Projects.DatadogTrace).Directory / "Vendors";
+            var downloadDirectory = TemporaryDirectory / "Downloads";
+            EnsureCleanDirectory(downloadDirectory);
+            UpdateVendorsTool.UpdateVendors(downloadDirectory, vendorDirectory);
        });
 
 }
