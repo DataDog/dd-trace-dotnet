@@ -10,6 +10,8 @@ namespace nativeloader
 
     void* GetExternalFunction(void* instance, std::string funcName);
 
+    bool FreeDynamicLibrary(void* handle);
+
     // GetEnvironmentValue returns the environment variable value for the given
     // name. Space is trimmed.
     WSTRING GetEnvironmentValue(const WSTRING& name);
