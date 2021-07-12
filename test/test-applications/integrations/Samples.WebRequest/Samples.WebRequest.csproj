@@ -5,7 +5,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
-    <ProjectReference Include="..\..\..\..\tools\Datadog.Core.Tools\Datadog.Core.Tools.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\..\Datadog.Trace.TestHelpers\TcpPortProvider.cs" Link="TcpPortProvider.cs" />
   </ItemGroup>
 
 </Project>
