@@ -20,7 +20,7 @@ private:
     std::unordered_map<WSTRING, mdMemberRef> wrapper_refs{};
     std::unordered_map<WSTRING, mdTypeRef> wrapper_parent_type{};
     std::unordered_set<WSTRING> failed_wrapper_keys{};
-    CallTargetTokens* calltargetTokens = nullptr;
+    std::unique_ptr<CallTargetTokens> calltargetTokens = nullptr;
 
 public:
     const ComPtr<IMetaDataImport2> metadata_import{};
@@ -102,7 +102,7 @@ public:
         failed_wrapper_keys.insert(key);
     }
 
-    inline std::vector<MethodReplacement> GetMethodReplacementsForCaller(const trace::FunctionInfo& caller)
+    std::vector<MethodReplacement> GetMethodReplacementsForCaller(const trace::FunctionInfo& caller)
     {
         std::vector<MethodReplacement> enabled;
         for (auto& i : integrations)
@@ -118,13 +118,13 @@ public:
         return enabled;
     }
 
-    inline CallTargetTokens* GetCallTargetTokens()
+    CallTargetTokens* GetCallTargetTokens()
     {
         if (calltargetTokens == nullptr)
         {
-            calltargetTokens = new CallTargetTokens(this);
+            calltargetTokens = std::make_unique<CallTargetTokens>(this);
         }
-        return calltargetTokens;
+        return calltargetTokens.get();
     }
 };
 

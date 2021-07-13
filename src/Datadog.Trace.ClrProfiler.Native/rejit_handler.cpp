@@ -57,22 +57,22 @@ void RejitHandlerModuleMethod::SetFunctionControl(ICorProfilerFunctionControl* p
 
 FunctionInfo* RejitHandlerModuleMethod::GetFunctionInfo()
 {
-    return m_functionInfo;
+    return m_functionInfo.get();
 }
 
-void RejitHandlerModuleMethod::SetFunctionInfo(FunctionInfo* functionInfo)
+void RejitHandlerModuleMethod::SetFunctionInfo(const FunctionInfo& functionInfo)
 {
-    m_functionInfo = functionInfo;
+    m_functionInfo = std::make_unique<FunctionInfo>(functionInfo);
 }
 
 MethodReplacement* RejitHandlerModuleMethod::GetMethodReplacement()
 {
-    return m_methodReplacement;
+    return m_methodReplacement.get();
 }
 
-void RejitHandlerModuleMethod::SetMethodReplacement(MethodReplacement* methodReplacement)
+void RejitHandlerModuleMethod::SetMethodReplacement(const MethodReplacement& methodReplacement)
 {
-    m_methodReplacement = methodReplacement;
+    m_methodReplacement = std::make_unique<MethodReplacement>(methodReplacement);
 }
 
 

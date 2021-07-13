@@ -36,10 +36,8 @@ class RejitHandlerModuleMethod
 private:
     mdMethodDef m_methodDef;
     ICorProfilerFunctionControl* m_pFunctionControl;
-    FunctionInfo* m_functionInfo;
-    MethodReplacement* m_methodReplacement;
-    std::mutex m_functionsIds_lock;
-    std::unordered_set<FunctionID> m_functionsIds;
+    std::unique_ptr<FunctionInfo> m_functionInfo;
+    std::unique_ptr<MethodReplacement> m_methodReplacement;
     RejitHandlerModule* m_module;
 
 public:
@@ -51,10 +49,10 @@ public:
     void SetFunctionControl(ICorProfilerFunctionControl* pFunctionControl);
 
     FunctionInfo* GetFunctionInfo();
-    void SetFunctionInfo(FunctionInfo* functionInfo);
+    void SetFunctionInfo(const FunctionInfo& functionInfo);
 
     MethodReplacement* GetMethodReplacement();
-    void SetMethodReplacement(MethodReplacement* methodReplacement);
+    void SetMethodReplacement(const MethodReplacement& methodReplacement);
 };
 
 /// <summary>
