@@ -17,7 +17,7 @@ docker build \
 docker run -it --rm \
     --mount type=bind,source="$ROOT_DIR",target=/project \
     --env NugetPackageDirectory=/project/packages \
-    --env tracerHome=/project/src/bin/windows-tracer-home \
-    --env artifacts=/project/src/bin/artifacts \
+    --env tracerHome=/project/bin/tracer-home \
+    --env artifacts=/project/bin/artifacts \
     $IMAGE_NAME \
     dotnet /build/bin/Debug/_build.dll "$@"

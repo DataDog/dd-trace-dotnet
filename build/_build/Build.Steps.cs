@@ -446,7 +446,7 @@ partial class Build
                         $"-t {packageType}",
                         $"-n {packageName}",
                         $"-v {Version}",
-                        packageType == "tar" ? "--prefix /opt/datadog" : "",
+                        packageType == "tar" ? "" : "--prefix /opt/datadog",
                         $"--chdir {TracerHomeDirectory}",
                         "netstandard2.0/",
                         "netcoreapp3.1/",
