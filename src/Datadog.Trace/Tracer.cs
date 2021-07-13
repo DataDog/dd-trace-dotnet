@@ -373,6 +373,13 @@ namespace Datadog.Trace
         }
 
         /// <summary>
+        /// Forces the tracer to immediately flush pending traces and send them to the agent.
+        /// To be called when the appdomain or the process is about to be killed in a non-graceful way.
+        /// </summary>
+        /// <returns>Task used to track the async flush operation</returns>
+        public Task ForceFlush() => FlushAsync();
+
+        /// <summary>
         /// Writes the specified <see cref="Span"/> collection to the agent writer.
         /// </summary>
         /// <param name="trace">The <see cref="Span"/> collection to write.</param>
