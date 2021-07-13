@@ -12,9 +12,11 @@ namespace PrepareRelease
 {
     public class SetAllVersions
     {
-        public SetAllVersions(string solutionDirectory)
+        public SetAllVersions(string solutionDirectory, Version version, bool? isPreRelease)
         {
             SolutionDirectory = solutionDirectory;
+            TracerVersion = version ?? new("1.28.1");
+            IsPrerelease = isPreRelease ?? false;
         }
 
         /// <summary>
@@ -28,12 +30,12 @@ namespace PrepareRelease
         /// When changing the tracer version, update this value and <see cref="IsPrerelease">,
         /// then run the "PrepareRelease" tool to update the entire solution.
         /// </summary>
-        public Version TracerVersion { get; } = new("1.28.1");
+        public Version TracerVersion { get; }
 
         /// <summary>
         /// Gets a value indicating whether the current tracer version is a prerelease.
         /// </summary>
-        public bool IsPrerelease { get; } = true;
+        public bool IsPrerelease { get; }
 
         public void Run()
         {
