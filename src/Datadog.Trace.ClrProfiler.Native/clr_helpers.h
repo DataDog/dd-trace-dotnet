@@ -338,10 +338,10 @@ struct TypeInfo
     const WSTRING name;
     const mdTypeSpec type_spec;
     const ULONG32 token_type;
-    const TypeInfo* extend_from;
+    std::shared_ptr<TypeInfo> extend_from;
     const bool valueType;
     const bool isGeneric;
-    const TypeInfo* parent_type;
+    std::shared_ptr<TypeInfo> parent_type;
 
     TypeInfo() :
         id(0),
@@ -354,8 +354,8 @@ struct TypeInfo
         parent_type(nullptr)
     {
     }
-    TypeInfo(mdToken id, WSTRING name, mdTypeSpec type_spec, ULONG32 token_type, const TypeInfo* extend_from,
-             bool valueType, bool isGeneric, const TypeInfo* parent_type) :
+    TypeInfo(mdToken id, WSTRING name, mdTypeSpec type_spec, ULONG32 token_type, std::shared_ptr<TypeInfo> extend_from,
+             bool valueType, bool isGeneric, std::shared_ptr<TypeInfo> parent_type) :
         id(id),
         name(name),
         type_spec(type_spec),

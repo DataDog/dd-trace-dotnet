@@ -209,12 +209,12 @@ ModuleInfo GetModuleInfo(ICorProfilerInfo4* info, const ModuleID& module_id)
 TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdToken& token)
 {
     mdToken parent_token = mdTokenNil;
-    TypeInfo* parentTypeInfo = nullptr;
+    std::shared_ptr<TypeInfo> parentTypeInfo = nullptr;
     mdToken parent_type_token = mdTokenNil;
     WCHAR type_name[kNameMaxSize]{};
     DWORD type_name_len = 0;
     DWORD type_flags;
-    TypeInfo* extendsInfo = nullptr;
+    std::shared_ptr<TypeInfo> extendsInfo = nullptr;
     mdToken type_extends = mdTokenNil;
     bool type_valueType = false;
     bool type_isGeneric = false;
@@ -231,12 +231,12 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdTo
             metadata_import->GetNestedClassProps(token, &parent_type_token);
             if (parent_type_token != mdTokenNil)
             {
-                parentTypeInfo = new TypeInfo(GetTypeInfo(metadata_import, parent_type_token));
+                parentTypeInfo = std::make_shared<TypeInfo>(GetTypeInfo(metadata_import, parent_type_token));
             }
 
             if (type_extends != mdTokenNil)
             {
-                extendsInfo = new TypeInfo(GetTypeInfo(metadata_import, type_extends));
+                extendsInfo = std::make_shared<TypeInfo>(GetTypeInfo(metadata_import, type_extends));
                 type_valueType =
                     extendsInfo->name == WStr("System.ValueType") || extendsInfo->name == WStr("System.Enum");
             }
