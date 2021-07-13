@@ -425,7 +425,7 @@ namespace Datadog.Trace.Tests
 
             var tracer = new Tracer(settings, agent.Object, Mock.Of<ISampler>(), Mock.Of<IScopeManager>(), Mock.Of<IDogStatsd>());
 
-            await tracer.ForceFlush();
+            await tracer.ForceFlushAsync();
 
             agent.Verify(a => a.FlushTracesAsync(), Times.Once);
         }

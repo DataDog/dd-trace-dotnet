@@ -377,7 +377,7 @@ namespace Datadog.Trace
         /// To be called when the appdomain or the process is about to be killed in a non-graceful way.
         /// </summary>
         /// <returns>Task used to track the async flush operation</returns>
-        public Task ForceFlush() => FlushAsync();
+        public Task ForceFlushAsync() => FlushAsync();
 
         /// <summary>
         /// Writes the specified <see cref="Span"/> collection to the agent writer.
