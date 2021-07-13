@@ -12,11 +12,8 @@ namespace trace
 RejitItem::RejitItem(int length, std::unique_ptr<ModuleID>&& modulesId, std::unique_ptr<mdMethodDef>&& methodDefs)
 {
     m_length = length;
-    if (length > 0)
-    {
-        m_modulesId = std::move(modulesId);
-        m_methodDefs = std::move(m_methodDefs);
-    }
+    m_modulesId = std::move(modulesId);
+    m_methodDefs = std::move(methodDefs);
 }
 
 std::unique_ptr<RejitItem> RejitItem::CreateEndRejitThread()
@@ -28,7 +25,6 @@ std::unique_ptr<RejitItem> RejitItem::CreateEndRejitThread()
 //
 // RejitHandlerModuleMethod
 //
-
 
 RejitHandlerModuleMethod::RejitHandlerModuleMethod(mdMethodDef methodDef, RejitHandlerModule* module)
 {
@@ -79,23 +75,10 @@ void RejitHandlerModuleMethod::SetMethodReplacement(MethodReplacement* methodRep
     m_methodReplacement = methodReplacement;
 }
 
-void RejitHandlerModuleMethod::AddFunctionId(FunctionID functionId)
-{
-    std::lock_guard<std::mutex> guard(m_functionsIds_lock);
-    m_functionsIds.insert(functionId);
-    m_module->GetHandler()->_addFunctionToSet(functionId, this);
-}
-bool RejitHandlerModuleMethod::ExistFunctionId(FunctionID functionId)
-{
-    std::lock_guard<std::mutex> guard(m_functionsIds_lock);
-    return m_functionsIds.find(functionId) != m_functionsIds.end();
-}
-
 
 //
 // RejitHandlerModule
 //
-
 
 RejitHandlerModule::RejitHandlerModule(ModuleID moduleId, RejitHandler* handler)
 {
@@ -131,13 +114,14 @@ RejitHandlerModuleMethod* RejitHandlerModule::GetOrAddMethod(mdMethodDef methodD
     auto find_res = m_methods.find(methodDef);
     if (find_res != m_methods.end())
     {
-        return find_res->second;
+        return find_res->second.get();
     }
 
     RejitHandlerModuleMethod* methodHandler = new RejitHandlerModuleMethod(methodDef, this);
-    m_methods[methodDef] = methodHandler;
+    m_methods[methodDef] = std::unique_ptr<RejitHandlerModuleMethod>(methodHandler);
     return methodHandler;
 }
+
 bool RejitHandlerModule::TryGetMethod(mdMethodDef methodDef, RejitHandlerModuleMethod** methodHandler)
 {
     std::lock_guard<std::mutex> guard(m_methods_lock);
@@ -145,52 +129,27 @@ bool RejitHandlerModule::TryGetMethod(mdMethodDef methodDef, RejitHandlerModuleM
     auto find_res = m_methods.find(methodDef);
     if (find_res != m_methods.end())
     {
-        *methodHandler = find_res->second;
+        *methodHandler = find_res->second.get();
         return true;
     }
     *methodHandler = nullptr;
     return false;
 }
 
+bool RejitHandlerModule::ContainsMethod(mdMethodDef methodDef)
+{
+    std::lock_guard<std::mutex> guard(m_methods_lock);
+    return m_methods.find(methodDef) != m_methods.end();
+}
+
+
 //
 // RejitHandler
 //
 
-RejitHandlerModuleMethod* RejitHandler::GetModuleMethodFromFunctionId(FunctionID functionId)
-{
-    {
-        std::lock_guard<std::mutex> guard(m_methodByFunctionId_lock);
-        auto find_res = m_methodByFunctionId.find(functionId);
-        if (find_res != m_methodByFunctionId.end())
-        {
-            return find_res->second;
-        }
-    }
-
-    ModuleID moduleId;
-    mdToken function_token = mdTokenNil;
-
-    HRESULT hr = m_profilerInfo->GetFunctionInfo(functionId, nullptr, &moduleId, &function_token);
-
-    if (FAILED(hr))
-    {
-        Warn("RejitHandler::GetModuleMethodFromFunctionId: Call to "
-             "ICorProfilerInfo4.GetFunctionInfo() "
-             "failed for ",
-             functionId);
-        m_methodByFunctionId[functionId] = nullptr;
-        return nullptr;
-    }
-
-    auto moduleHandler = GetOrAddModule(moduleId);
-    auto methodHandler = moduleHandler->GetOrAddMethod(function_token);
-    methodHandler->AddFunctionId(functionId);
-    return methodHandler;
-}
-
 void RejitHandler::EnqueueThreadLoop(RejitHandler* handler)
 {
-    auto queue = handler->m_rejit_queue_;
+    auto queue = handler->m_rejit_queue.get();
     auto profilerInfo = handler->m_profilerInfo;
 
     Info("Initializing ReJIT request thread.");
@@ -227,8 +186,8 @@ RejitHandler::RejitHandler(ICorProfilerInfo4* pInfo,
 {
     m_profilerInfo = pInfo;
     m_rewriteCallback = rewriteCallback;
-    m_rejit_queue_ = new UniqueBlockingQueue<RejitItem>();
-    m_rejit_queue_thread_ = new std::thread(EnqueueThreadLoop, this);
+    m_rejit_queue = std::make_unique<UniqueBlockingQueue<RejitItem>>();
+    m_rejit_queue_thread = std::make_unique<std::thread>(EnqueueThreadLoop, this);
 }
 
 
@@ -239,11 +198,11 @@ RejitHandlerModule* RejitHandler::GetOrAddModule(ModuleID moduleId)
     auto find_res = m_modules.find(moduleId);
     if (find_res != m_modules.end())
     {
-        return find_res->second;
+        return find_res->second.get();
     }
 
     RejitHandlerModule* moduleHandler = new RejitHandlerModule(moduleId, this);
-    m_modules[moduleId] = moduleHandler;
+    m_modules[moduleId] = std::unique_ptr<RejitHandlerModule>(moduleHandler);
     return moduleHandler;
 }
 
@@ -254,32 +213,44 @@ bool RejitHandler::TryGetModule(ModuleID moduleId, RejitHandlerModule** moduleHa
     auto find_res = m_modules.find(moduleId);
     if (find_res != m_modules.end())
     {
-        *moduleHandler = find_res->second;
+        *moduleHandler = find_res->second.get();
         return true;
     }
     *moduleHandler = nullptr;
     return false;
 }
 
-void RejitHandler::_addFunctionToSet(FunctionID functionId, RejitHandlerModuleMethod* method)
+void RejitHandler::RemoveModule(ModuleID moduleId)
 {
-    std::lock_guard<std::mutex> guard(m_methodByFunctionId_lock);
-    m_methodByFunctionId[functionId] = method;
+    std::lock_guard<std::mutex> guard(m_modules_lock);
+    m_modules.erase(moduleId);
 }
 
-void RejitHandler::EnqueueForRejit(size_t length, ModuleID* moduleIds, mdMethodDef* methodDefs)
+void RejitHandler::EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef)
 {
-    m_rejit_queue_->push(std::make_unique<RejitItem>((int) length, std::unique_ptr<ModuleID>(moduleIds),
-                                                     std::unique_ptr<mdMethodDef>(methodDefs)));
+    const size_t length = modulesMethodDef.size();
+
+    auto moduleIds = new ModuleID[length];
+    std::copy(modulesVector.begin(), modulesVector.end(), moduleIds);
+
+    auto mDefs = new mdMethodDef[length];
+    std::copy(modulesMethodDef.begin(), modulesMethodDef.end(), mDefs);
+
+    m_rejit_queue->push(std::make_unique<RejitItem>((int) length, std::unique_ptr<ModuleID>(moduleIds),
+                                                    std::unique_ptr<mdMethodDef>(mDefs)));
 }
 
 void RejitHandler::Shutdown()
 {
-    m_rejit_queue_->push(RejitItem::CreateEndRejitThread());
-    if (m_rejit_queue_thread_->joinable())
+    m_rejit_queue->push(RejitItem::CreateEndRejitThread());
+    if (m_rejit_queue_thread->joinable())
     {
-        m_rejit_queue_thread_->join();
+        m_rejit_queue_thread->join();
     }
+
+    m_modules.clear();
+    m_profilerInfo = nullptr;
+    m_rewriteCallback = nullptr;
 }
 
 

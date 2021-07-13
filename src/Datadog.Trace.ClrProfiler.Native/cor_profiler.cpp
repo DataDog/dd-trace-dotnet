@@ -241,7 +241,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
 
 
   // set event mask to subscribe to events and disable NGEN images
-  if (is_net46_or_greater) 
+  if (is_net46_or_greater)
   {
         hr = info6->SetEventMask2(event_mask, COR_PRF_HIGH_ADD_ASSEMBLY_REFERENCES);
 
@@ -634,6 +634,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
         }
 
         module_id_to_info_map_.erase(module_id);
+
+        if (rejit_handler != nullptr)
+        {
+            rejit_handler->RemoveModule(module_id);
+        }
         delete metadata;
     }
 
@@ -651,6 +656,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
     if (rejit_handler != nullptr)
     {
         rejit_handler->Shutdown();
+        delete rejit_handler;
+        rejit_handler = nullptr;
     }
     Warn("Exiting. Stats: ", Stats::Instance()->ToString());
     is_attached_.store(false);
@@ -856,7 +863,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId, Function
 {
     auto _ = trace::Stats::Instance()->JITInliningMeasure();
 
-    if (!is_attached_)
+    if (!is_attached_ || rejit_handler == nullptr)
     {
         return S_OK;
     }
@@ -873,16 +880,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId, Function
         return S_OK;
     }
 
-    if (rejit_handler == nullptr)
-    {
-        return S_OK;
-    }
 
     RejitHandlerModule* handlerModule = nullptr;
     if (rejit_handler->TryGetModule(calleeModuleId, &handlerModule))
     {
-        RejitHandlerModuleMethod* handlerMethod = nullptr;
-        if (handlerModule->TryGetMethod(calleFunctionToken, &handlerMethod))
+        if (handlerModule->ContainsMethod(calleFunctionToken))
         {
             Debug("*** JITInlining: Inlining disabled for [ModuleId=", calleeModuleId,
                   ", MethodDef=", TokenStr(&calleFunctionToken), "]");
@@ -1769,7 +1771,7 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
             }
             else if (cInstr->m_opcode == CEE_LDSTR)
             {
-                LPWSTR szString = new WCHAR[1024];
+                WCHAR szString[1024];
                 ULONG szStringLength;
                 auto hr = module_metadata->metadata_import->GetUserString((mdString) cInstr->m_Arg32, szString, 1024,
                                                                           &szStringLength);
@@ -2986,7 +2988,7 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
     // Request the ReJIT for all integrations found in the module.
     if (!vtMethodDefs.empty())
     {
-        this->rejit_handler->EnqueueForRejit(vtMethodDefs.size(), vtModules.data(), vtMethodDefs.data());
+        this->rejit_handler->EnqueueForRejit(vtModules, vtMethodDefs);
     }
 
     // We return the number of ReJIT requests

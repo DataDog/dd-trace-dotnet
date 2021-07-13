@@ -55,9 +55,6 @@ public:
 
     MethodReplacement* GetMethodReplacement();
     void SetMethodReplacement(MethodReplacement* methodReplacement);
-
-    void AddFunctionId(FunctionID functionId);
-    bool ExistFunctionId(FunctionID functionId);
 };
 
 /// <summary>
@@ -69,7 +66,7 @@ private:
     ModuleID m_moduleId;
     ModuleMetadata* m_metadata;
     std::mutex m_methods_lock;
-    std::unordered_map<mdMethodDef, RejitHandlerModuleMethod*> m_methods;
+    std::unordered_map<mdMethodDef, std::unique_ptr<RejitHandlerModuleMethod>> m_methods;
     RejitHandler* m_handler;
 
 public:
@@ -82,6 +79,7 @@ public:
 
     RejitHandlerModuleMethod* GetOrAddMethod(mdMethodDef methodDef);
     bool TryGetMethod(mdMethodDef methodDef, RejitHandlerModuleMethod** methodHandler);
+    bool ContainsMethod(mdMethodDef methodDef);
 };
 
 /// <summary>
@@ -92,18 +90,14 @@ class RejitHandler
 {
 private:
     std::mutex m_modules_lock;
-    std::unordered_map<ModuleID, RejitHandlerModule*> m_modules;
-
-    std::mutex m_methodByFunctionId_lock;
-    std::unordered_map<FunctionID, RejitHandlerModuleMethod*> m_methodByFunctionId;
+    std::unordered_map<ModuleID, std::unique_ptr<RejitHandlerModule>> m_modules;
 
     ICorProfilerInfo4* m_profilerInfo;
     std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> m_rewriteCallback;
 
-    UniqueBlockingQueue<RejitItem>* m_rejit_queue_;
-    std::thread* m_rejit_queue_thread_;
+    std::unique_ptr<UniqueBlockingQueue<RejitItem>> m_rejit_queue;
+    std::unique_ptr<std::thread> m_rejit_queue_thread;
 
-    RejitHandlerModuleMethod* GetModuleMethodFromFunctionId(FunctionID functionId);
     static void EnqueueThreadLoop(RejitHandler* handler);
 
 public:
@@ -113,10 +107,9 @@ public:
     RejitHandlerModule* GetOrAddModule(ModuleID moduleId);
 
     bool TryGetModule(ModuleID moduleId, RejitHandlerModule** moduleHandler);
+    void RemoveModule(ModuleID moduleId);
 
-    void _addFunctionToSet(FunctionID functionId, RejitHandlerModuleMethod* method);
-
-    void EnqueueForRejit(size_t length, ModuleID* moduleIds, mdMethodDef* methodDefs);
+    void EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef);
     void Shutdown();
 
     HRESULT NotifyReJITParameters(ModuleID moduleId, mdMethodDef methodId,
