@@ -241,7 +241,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
 
 
   // set event mask to subscribe to events and disable NGEN images
-  if (is_net46_or_greater) 
+  if (is_net46_or_greater)
   {
         hr = info6->SetEventMask2(event_mask, COR_PRF_HIGH_ADD_ASSEMBLY_REFERENCES);
 
@@ -634,6 +634,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
         }
 
         module_id_to_info_map_.erase(module_id);
+
+        if (rejit_handler != nullptr)
+        {
+            rejit_handler->RemoveModule(module_id);
+        }
         delete metadata;
     }
 
@@ -651,6 +656,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
     if (rejit_handler != nullptr)
     {
         rejit_handler->Shutdown();
+        delete rejit_handler;
+        rejit_handler = nullptr;
     }
     Warn("Exiting. Stats: ", Stats::Instance()->ToString());
     is_attached_.store(false);
@@ -856,7 +863,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId, Function
 {
     auto _ = trace::Stats::Instance()->JITInliningMeasure();
 
-    if (!is_attached_)
+    if (!is_attached_ || rejit_handler == nullptr)
     {
         return S_OK;
     }
@@ -873,16 +880,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId, Function
         return S_OK;
     }
 
-    if (rejit_handler == nullptr)
-    {
-        return S_OK;
-    }
 
     RejitHandlerModule* handlerModule = nullptr;
     if (rejit_handler->TryGetModule(calleeModuleId, &handlerModule))
     {
-        RejitHandlerModuleMethod* handlerMethod = nullptr;
-        if (handlerModule->TryGetMethod(calleFunctionToken, &handlerMethod))
+        if (handlerModule->ContainsMethod(calleFunctionToken))
         {
             Debug("*** JITInlining: Inlining disabled for [ModuleId=", calleeModuleId,
                   ", MethodDef=", TokenStr(&calleFunctionToken), "]");
@@ -1769,7 +1771,7 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
             }
             else if (cInstr->m_opcode == CEE_LDSTR)
             {
-                LPWSTR szString = new WCHAR[1024];
+                WCHAR szString[1024];
                 ULONG szStringLength;
                 auto hr = module_metadata->metadata_import->GetUserString((mdString) cInstr->m_Arg32, szString, 1024,
                                                                           &szStringLength);
@@ -2915,30 +2917,28 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
 
             // We create a new function info into the heap from the caller functionInfo in the stack, to be used later
             // in the ReJIT process
-            auto functionInfo = new FunctionInfo(caller);
-            auto hr = functionInfo->method_signature.TryParse();
+            auto functionInfo = FunctionInfo(caller);
+            auto hr = functionInfo.method_signature.TryParse();
             if (FAILED(hr))
             {
-                Warn("The method signature: ", functionInfo->method_signature.str(), " cannot be parsed.");
-                delete functionInfo;
+                Warn("The method signature: ", functionInfo.method_signature.str(), " cannot be parsed.");
                 enumIterator = ++enumIterator;
                 continue;
             }
 
             // Compare if the current mdMethodDef contains the same number of arguments as the instrumentation target
-            const auto numOfArgs = functionInfo->method_signature.NumberOfArguments();
+            const auto numOfArgs = functionInfo.method_signature.NumberOfArguments();
             if (numOfArgs != integration.replacement.target_method.signature_types.size() - 1)
             {
                 Debug("The caller for the methoddef: ", integration.replacement.target_method.method_name,
                       " doesn't have the right number of arguments.");
-                delete functionInfo;
                 enumIterator = ++enumIterator;
                 continue;
             }
 
             // Compare each mdMethodDef argument type to the instrumentation target
             bool argumentsMismatch = false;
-            const auto methodArguments = functionInfo->method_signature.GetMethodArguments();
+            const auto methodArguments = functionInfo.method_signature.GetMethodArguments();
             Debug("Comparing signature for method: ", integration.replacement.target_method.type_name, ".",
                   integration.replacement.target_method.method_name);
             for (unsigned int i = 0; i < numOfArgs; i++)
@@ -2956,7 +2956,6 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
             {
                 Debug("The caller for the methoddef: ", integration.replacement.target_method.method_name,
                       " doesn't have the right type of arguments.");
-                delete functionInfo;
                 enumIterator = ++enumIterator;
                 continue;
             }
@@ -2966,7 +2965,7 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
             moduleHandler->SetModuleMetadata(module_metadata);
             auto methodHandler = moduleHandler->GetOrAddMethod(methodDef);
             methodHandler->SetFunctionInfo(functionInfo);
-            methodHandler->SetMethodReplacement(new MethodReplacement(integration.replacement));
+            methodHandler->SetMethodReplacement(integration.replacement);
 
             // Store module_id and methodDef to request the ReJIT after analyzing all integrations.
             vtModules.push_back(module_id);
@@ -2986,7 +2985,7 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
     // Request the ReJIT for all integrations found in the module.
     if (!vtMethodDefs.empty())
     {
-        this->rejit_handler->EnqueueForRejit(vtMethodDefs.size(), vtModules.data(), vtMethodDefs.data());
+        this->rejit_handler->EnqueueForRejit(vtModules, vtMethodDefs);
     }
 
     // We return the number of ReJIT requests
@@ -3457,10 +3456,11 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
     // Update and Add exception clauses
     // ***
     auto ehCount = rewriter.GetEHCount();
+    auto ehPointer = rewriter.GetEHPointer();
     auto newEHClauses = new EHClause[ehCount + 4];
     for (unsigned i = 0; i < ehCount; i++)
     {
-        newEHClauses[i] = rewriter.GetEHPointer()[i];
+        newEHClauses[i] = ehPointer[i];
     }
 
     // *** Add the new EH clauses
