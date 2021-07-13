@@ -573,7 +573,7 @@ namespace Datadog.Trace.Ci
             WorkspacePath = EnvironmentHelpers.GetEnvironmentVariable("BITRISE_SOURCE_DIR");
             PipelineId = EnvironmentHelpers.GetEnvironmentVariable("BITRISE_BUILD_SLUG");
             PipelineNumber = EnvironmentHelpers.GetEnvironmentVariable("BITRISE_BUILD_NUMBER");
-            PipelineName = EnvironmentHelpers.GetEnvironmentVariable("BITRISE_APP_TITLE");
+            PipelineName = EnvironmentHelpers.GetEnvironmentVariable("BITRISE_TRIGGERED_WORKFLOW_ID");
             PipelineUrl = EnvironmentHelpers.GetEnvironmentVariable("BITRISE_BUILD_URL");
 
             Message = EnvironmentHelpers.GetEnvironmentVariable("BITRISE_GIT_MESSAGE");
