@@ -37,14 +37,22 @@ namespace Datadog.Trace.AppSec
 
         internal Security(InstrumentationGateway instrumentationGateway = null, IPowerWaf powerWaf = null)
         {
-            _instrumentationGateway = instrumentationGateway ?? new InstrumentationGateway();
-
-            _powerWaf = powerWaf ?? new PowerWaf();
-
-            _instrumentationGateway.InstrumentationGetwayEvent += InstrumentationGateway_InstrumentationGetwayEvent;
-
             var found = bool.TryParse(Environment.GetEnvironmentVariable("DD_ENABLE_SECURITY"), out var enabled);
             Enabled = found && enabled;
+
+            if (Enabled)
+            {
+                _instrumentationGateway = instrumentationGateway ?? new InstrumentationGateway();
+
+                _powerWaf = powerWaf ?? new PowerWaf();
+
+                _instrumentationGateway.InstrumentationGetwayEvent += InstrumentationGateway_InstrumentationGetwayEvent;
+            }
+            else
+            {
+                _instrumentationGateway = null;
+                _powerWaf = null;
+            }
         }
 
         /// <summary>
