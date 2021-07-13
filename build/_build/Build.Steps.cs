@@ -430,10 +430,6 @@ partial class Build
                 var gzip = GZip.Value;
                 var packageName = "datadog-dotnet-apm";
 
-                var suffix = RuntimeInformation.ProcessArchitecture == Architecture.X64
-                    ? string.Empty
-                    : RuntimeInformation.ProcessArchitecture.ToString().ToLower();
-
                 var workingDirectory = ArtifactsDirectory / $"linux-{LinuxArchitectureIdentifier}";
                 EnsureCleanDirectory(workingDirectory);
 
@@ -459,6 +455,11 @@ partial class Build
                 }
 
                 gzip($"-f {packageName}.tar", workingDirectory: workingDirectory);
+
+
+                var suffix = RuntimeInformation.ProcessArchitecture == Architecture.X64
+                    ? string.Empty
+                    : $".{RuntimeInformation.ProcessArchitecture.ToString().ToLower()}";
 
                 var versionedName = IsAlpine
                     ? $"{packageName}-{Version}-musl{suffix}.tar.gz"
