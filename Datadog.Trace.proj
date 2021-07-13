@@ -7,7 +7,6 @@
 
   <ItemGroup>
     <CsharpProject Include="src\**\*.csproj" Exclude="src/Datadog.Trace.Tools.Runner/*.csproj" />
-    <CsharpTestProject Include="test\*\*.csproj" Exclude="test\Datadog.Trace.ClrProfiler.IntegrationTests\*.csproj" />
     <CsharpUnitTestProject Include="test\**\*.Tests.csproj"/>
     <CsharpIntegrationTestProject Include="test\*.IntegrationTests\*.IntegrationTests.csproj"/>
     <CsharpIntegrationTestRegressionProject Include="test\tests-applications\regression\*.IntegrationTests.csproj" />
@@ -18,170 +17,80 @@
     <CsharpToolsProject Include="tools\Datadog.Core.Tools\Datadog.Core.Tools.csproj"/>
     <CppProject Include="src\**\*.vcxproj"/>
     <CppTestProject Include="test\**\*.vcxproj"/>
-    <SampleProject Include="test\test-applications\integrations\**\*.csproj" Exclude="test\test-applications\integrations\dependency-libs\**\*.csproj" />
     <VbSampleLibProject Include="test\test-applications\integrations\**\*.vbproj" />
     <SampleLibProject Include="test\test-applications\integrations\dependency-libs\**\*.csproj" Exclude="test\test-applications\integrations\dependency-libs\**\Samples.MultiDomainHost.App.*.csproj" />
     <RegressionSampleLibProject Include="test\test-applications\regression\dependency-libs\**\Datadog.StackExchange.Redis*.csproj" />
-    <WindowsInstallerProject Include="src\**\*.wixproj"/>
   </ItemGroup>
-
-  <Target Name="BuildCsharpSrc">
-    <MSBuild Targets="Build" Projects="@(CsharpProject)" Properties="Platform=AnyCPU">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
-
-  <Target Name="BuildCsharpTestHelpers">
-    <MSBuild Targets="Build" Projects="@(CsharpToolsProject);@(CsharpTestHelperProject)">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
-
-  <Target Name="BuildCsharpUnitTests">
-    <MSBuild Targets="Build" Projects="@(CsharpToolsProject);@(CsharpTestHelperProject);@(CsharpUnitTestProject)">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
-
-  <Target Name="BuildCsharpIntegrationTests">
-    <MSBuild Targets="Build" Projects="@(CsharpIntegrationTestProject);@(CsharpIntegrationTestRegressionProject);@(ExcludeExpenseItDemoProject);@(ExcludeEF6DemoProject);@(ExcludeLegacyRedisProject)">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
-
-  <Target Name="BuildCppSrc">
-    <MSBuild Targets="Build" Projects="@(CppProject)">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
-
-  <Target Name="BuildDependencyLibs">
-    <MSBuild Targets="Build" Projects="@(SampleLibProject);@(VbSampleLibProject)">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
-
-  <Target Name="BuildRegressionDependencyLibs">
-    <MSBuild Targets="Build" Projects="@(RegressionSampleLibProject)">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
-
-  <Target Name="BuildSampleLibs">
-    <MSBuild Targets="Build" Projects="@(SampleProject)">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
 
   <ItemGroup>
     <FrameworkReproduction Include="test\test-applications\regression\EntityFramework6x.MdTokenLookupFailure\EntityFramework6x.MdTokenLookupFailure.csproj" />
     <FrameworkReproduction Include="test\test-applications\regression\StackExchange.Redis.AssemblyConflict.LegacyProject\StackExchange.Redis.AssemblyConflict.LegacyProject.csproj" />
   </ItemGroup>
 
-  <Import Condition="'$(PerformComprehensiveTesting)'=='true'" Project="build\PackageVersionsComprehensive.g.props" />
-  <Import Condition="'$(PerformComprehensiveTesting)'!='true'" Project="build\PackageVersionsLatestMinors.g.props" />
-
-  <Target Name="Restore">
-    <MSBuild Targets="Restore" Projects="@(CsharpProject);@(CsharpTestProject);@(CppProject);@(CppTestProject);@(SampleProject)"/>
-  </Target>
-
-  <Target Name="Clean">
-    <MSBuild Targets="Clean" Projects="@(CsharpProject);@(CsharpTestProject);@(CppProject);@(CppTestProject);@(SampleProject);@(WindowsInstallerProject)"/>
-  </Target>
-
-  <!-- default target -->
-  <Target Name="Build">
-    <MSBuild Targets="Build" Projects="@(CsharpProject);@(CsharpTestProject);@(CppProject);@(CppTestProject)">
+  <!--  Used by CompileManagedSrc-->
+  <Target Name="BuildCsharpSrc">
+    <MSBuild Targets="Build" Projects="@(CsharpProject)" Properties="Platform=AnyCPU">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
 
+  <!--  Used by CompileManagedTestHelpers-->
+  <Target Name="BuildCsharpTestHelpers">
+    <MSBuild Targets="Build" Projects="@(CsharpToolsProject);@(CsharpTestHelperProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
+  <!--  Used by CompileManagedUnitTests-->
+  <Target Name="BuildCsharpUnitTests">
+    <MSBuild Targets="Build" Projects="@(CsharpToolsProject);@(CsharpTestHelperProject);@(CsharpUnitTestProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
+  <!-- Used by CompileIntegrationTests-->
+  <Target Name="BuildCsharpIntegrationTests">
+    <MSBuild Targets="Build" Projects="@(CsharpIntegrationTestProject);@(CsharpIntegrationTestRegressionProject);@(ExcludeExpenseItDemoProject);@(ExcludeEF6DemoProject);@(ExcludeLegacyRedisProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
+  <!--  Used by CompileNativeSrcWindows-->
+  <Target Name="BuildCppSrc">
+    <MSBuild Targets="Build" Projects="@(CppProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
+  <!--  Used by CompileDependencyLibs-->
+  <Target Name="BuildDependencyLibs">
+    <MSBuild Targets="Build" Projects="@(SampleLibProject);@(VbSampleLibProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
+  <!--  Used by CompileRegressionDependencyLibs-->
+  <Target Name="BuildRegressionDependencyLibs">
+    <MSBuild Targets="Build" Projects="@(RegressionSampleLibProject)">
+      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
+    </MSBuild>
+  </Target>
+
+  <!--  Used by CompileFrameworkReproductions-->
   <Target Name="BuildFrameworkReproductions">
     <MSBuild Targets="Build" Projects="@(FrameworkReproduction)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
 
-  <Target Name="BuildCsharp">
-    <MSBuild Targets="Restore" Projects="@(CsharpProject)" Properties="Platform=AnyCPU">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-
-    <MSBuild Targets="Build" Projects="@(CsharpProject)" Properties="Platform=AnyCPU">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
-
-  <Target Name="BuildCsharpTests">
-    <MSBuild Targets="Restore" Projects="@(CsharpTestProject)" Properties="Platform=AnyCPU">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-
-    <MSBuild Targets="Build" Projects="@(CsharpTestProject)">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
-
-  <Target Name="BuildCpp">
-    <MSBuild Targets="Build" Projects="@(CppProject)" Condition="'$(Platform)' == 'x64' OR '$(Platform)' == 'All'" Properties="Platform=x64">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-
-    <MSBuild Targets="Build" Projects="@(CppProject)" Condition="'$(Platform)' == 'x86' OR '$(Platform)' == 'All' OR '$(Buildx86Profiler)' == 'true'" Properties="Platform=x86">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
-
+  <!--  Used by CompileNativeTestsWindows-->
   <Target Name="BuildCppTests">
     <MSBuild Targets="Build" Projects="@(CppTestProject)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
 
-  <Target Name="RestoreAndBuildCsharpProjects">
-    <!-- Build the core C# projects first, so that the sample project builds do not need to build them and can be run
-         concurrently -->
-    <MSBuild Targets="Restore" Projects="@(CsharpProject)" BuildInParallel="false" RemoveProperties="TargetFramework;Platform">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-    <MSBuild Targets="Build" Projects="@(CsharpProject)" BuildInParallel="false" RemoveProperties="TargetFramework;Platform">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-
-    <!-- Build the sample-libs projects next in case any sample projects rely on them -->
-    <MSBuild Targets="Restore" Projects="@(SampleLibProject)" BuildInParallel="false" RemoveProperties="TargetFramework">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-    <MSBuild Targets="Build" Projects="@(SampleLibProject)" BuildInParallel="false" RemoveProperties="TargetFramework">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
-
-  <Target Name="RestoreSamplesForPackageVersions" Condition="'$(TestAllPackageVersions)'=='true'" DependsOnTargets="RestoreAndBuildCsharpProjects">
-    <!-- Filter the sample projects by TargetFramework -->
-    <ItemGroup>
-      <PackageVersionSampleCompile Include="@(PackageVersionSample)" Condition="'%(PackageVersionSample.TargetFramework)' == '' or '%(PackageVersionSample.TargetFramework)'=='$(TargetFramework)'" />
-    </ItemGroup>
-
-    <!-- Build the sample projects concurrently -->
-    <MSBuild Targets="Restore" Projects="@(PackageVersionSampleCompile)" BuildInParallel="$(BuildInParallel)">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
-
-  <Target Name="PublishSamplesForPackageVersions" Condition="'$(TestAllPackageVersions)'=='true'" DependsOnTargets="RestoreSamplesForPackageVersions">
-    <!-- Filter the sample projects by TargetFramework -->
-    <ItemGroup>
-      <PackageVersionSampleCompile Include="@(PackageVersionSample)" Condition="'%(PackageVersionSample.TargetFramework)' == '' or '%(PackageVersionSample.TargetFramework)'=='$(TargetFramework)'" />
-    </ItemGroup>
-
-    <!-- Publish the sample projects concurrently -->
-    <MSBuild Targets="Publish" Projects="@(PackageVersionSampleCompile)" BuildInParallel="$(BuildInParallel)">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
-
-
+  <!-- Used by CompileMultiApiPackageVersionSamples -->
   <Target Name="RestoreSamplesForPackageVersionsOnly" Condition="'$(TestAllPackageVersions)'=='true'">
     <!-- Filter the sample projects by TargetFramework -->
     <ItemGroup>
@@ -194,6 +103,7 @@
     </MSBuild>
   </Target>
 
+  <!-- Used by CompileMultiApiPackageVersionSamples -->
   <Target Name="RestoreAndBuildSamplesForPackageVersionsOnly" Condition="'$(TestAllPackageVersions)'=='true'" DependsOnTargets="RestoreSamplesForPackageVersionsOnly">
 
     <!-- Assumes that the core C# projects are already built first -->
@@ -208,108 +118,7 @@
     </MSBuild>
   </Target>
 
-  <Target Name="BuildSamples" DependsOnTargets="RestoreAndBuildSamplesForPackageVersions">
-    <MSBuild Targets="Build" Projects="@(SampleProject)">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
+  <Import Condition="'$(PerformComprehensiveTesting)'=='true'" Project="build\PackageVersionsComprehensive.g.props" />
+  <Import Condition="'$(PerformComprehensiveTesting)'!='true'" Project="build\PackageVersionsLatestMinors.g.props" />
 
-  <Target Name="PublishManagedProfilerOnDisk">
-    <ItemGroup>
-      <TargetFramework Include="net45;net461;netstandard2.0;netcoreapp3.1" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <ManagedProfilerPublishProject Include="src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
-    </ItemGroup>
-
-    <MSBuild Targets="Publish" Projects="@(ManagedProfilerPublishProject)" BuildInParallel="false" Properties="Platform=AnyCPU;TargetFramework=%(TargetFramework.Identity);PublishDir=$(TracerHomeDirectory)\%(TargetFramework.Identity)">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
-
-  <Target Name="PublishBuildLoggerOnDisk">
-    <ItemGroup>
-      <BuildLoggerPublishProject Include="src\Datadog.Trace.MSBuild\Datadog.Trace.MSBuild.csproj">
-        <Properties>Platform=AnyCPU;TargetFramework=net45;PublishDir=$(TracerHomeDirectory)\net45</Properties>
-      </BuildLoggerPublishProject>
-
-      <BuildLoggerPublishProject Include="src\Datadog.Trace.MSBuild\Datadog.Trace.MSBuild.csproj">
-        <Properties>Platform=AnyCPU;TargetFramework=net461;PublishDir=$(TracerHomeDirectory)\net461</Properties>
-      </BuildLoggerPublishProject>
-
-      <BuildLoggerPublishProject Include="src\Datadog.Trace.MSBuild\Datadog.Trace.MSBuild.csproj">
-        <Properties>Platform=AnyCPU;TargetFramework=netstandard2.0;PublishDir=$(TracerHomeDirectory)\netstandard2.0</Properties>
-      </BuildLoggerPublishProject>
-
-      <BuildLoggerPublishProject Include="src\Datadog.Trace.MSBuild\Datadog.Trace.MSBuild.csproj">
-        <Properties>Platform=AnyCPU;TargetFramework=netcoreapp3.1;PublishDir=$(TracerHomeDirectory)\netcoreapp3.1</Properties>
-      </BuildLoggerPublishProject>
-    </ItemGroup>
-
-    <MSBuild Targets="Publish" Projects="@(BuildLoggerPublishProject)" BuildInParallel="false">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
-
-  <Target Name="BuildLoader">
-    <ItemGroup>
-      <ManagedLoaderProject Include="src\Datadog.Trace.ClrProfiler.Managed.Loader\Datadog.Trace.ClrProfiler.Managed.Loader.csproj"/>
-    </ItemGroup>
-
-    <MSBuild Targets="Build" Projects="@(ManagedLoaderProject)" Properties="Platform=AnyCPU">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
-
-  <Target Name="PublishNativeProfilerOnDisk" DependsOnTargets="BuildLoader;BuildCpp">
-    <Copy Condition="'$(Platform)' == 'x64' OR '$(Platform)' == 'All'"
-        SourceFiles="$(MSBuildThisFileDirectory)src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\x64\Datadog.Trace.ClrProfiler.Native.dll"
-        DestinationFolder="$(TracerHomeDirectory)\win-x64"
-        SkipUnchangedFiles="true"
-        Retries="3"
-        RetryDelayMilliseconds="300"/>
-    <Copy Condition="'$(Platform)' == 'x86' OR '$(Platform)' == 'All' OR '$(Buildx86Profiler)' == 'true'"
-        SourceFiles="$(MSBuildThisFileDirectory)src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\x86\Datadog.Trace.ClrProfiler.Native.dll"
-        DestinationFolder="$(TracerHomeDirectory)\win-x86"
-        SkipUnchangedFiles="true"
-        Retries="3"
-        RetryDelayMilliseconds="300"/>
-  </Target>
-
-  <Target Name="SetMsiProperties">
-    <PropertyGroup>
-      <!-- we need to build both x64 and x86 profilers to build the x64 msi -->
-      <Buildx86Profiler Condition="'$(Platform)' == 'x64' OR '$(Platform)' == 'All'">true</Buildx86Profiler>
-    </PropertyGroup>
-  </Target>
-
-  <Target Name="Msi" DependsOnTargets="SetMsiProperties;CreateHomeDirectory;MsiOnly">
-  </Target>
-
-  <Target Name="MsiOnly" DependsOnTargets="SetMsiProperties">
-    <MSBuild Targets="Build" Projects="@(WindowsInstallerProject)" Condition="'$(Platform)' == 'x64' OR '$(Platform)' == 'All'" Properties="Platform=x64">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-
-    <MSBuild Targets="Build" Projects="@(WindowsInstallerProject)" Condition="'$(Platform)' == 'x86' OR '$(Platform)' == 'All'" Properties="Platform=x86">
-      <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
-    </MSBuild>
-  </Target>
-
-  <Target Name="CreateHomeDirectory" DependsOnTargets="PublishNativeProfilerOnDisk;PublishManagedProfilerOnDisk;PublishBuildLoggerOnDisk">
-    <Copy
-      SourceFiles="$(MSBuildThisFileDirectory)integrations.json"
-      DestinationFolder="$(TracerHomeDirectory)"
-      SkipUnchangedFiles="true"
-      Retries="3"
-      RetryDelayMilliseconds="300"/>
-
-    <Delete Condition="'$(ZipHomeDirectory)' == 'true'" Files="$(TracerHomeDirectory).zip" />
-
-    <ZipDirectory
-        Condition="'$(ZipHomeDirectory)' == 'true'"
-        SourceDirectory="$(TracerHomeDirectory)"
-        DestinationFile="$(TracerHomeDirectory).zip" />
-  </Target>
 </Project>
