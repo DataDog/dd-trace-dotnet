@@ -28,12 +28,12 @@ namespace PrepareRelease
         /// When changing the tracer version, update this value and <see cref="IsPrerelease">,
         /// then run the "PrepareRelease" tool to update the entire solution.
         /// </summary>
-        public Version TracerVersion { get; } = new("1.28.0");
+        public Version TracerVersion { get; } = new("1.28.1");
 
         /// <summary>
         /// Gets a value indicating whether the current tracer version is a prerelease.
         /// </summary>
-        public bool IsPrerelease { get; } = false;
+        public bool IsPrerelease { get; } = true;
 
         public void Run()
         {
