@@ -13,17 +13,18 @@ namespace Datadog.Trace.Agent.MessagePack
     {
         public static readonly IFormatterResolver Instance = new SpanFormatterResolver();
 
-        private static readonly IMessagePackFormatter<Span> Formatter = new SpanMessagePackFormatter();
+        private readonly IMessagePackFormatter<Span> _formatter;
 
         private SpanFormatterResolver()
         {
+            _formatter = SpanMessagePackFormatter.Instance;
         }
 
         public IMessagePackFormatter<T> GetFormatter<T>()
         {
             if (typeof(T) == typeof(Span))
             {
-                return (IMessagePackFormatter<T>)Formatter;
+                return (IMessagePackFormatter<T>)_formatter;
             }
 
             return StandardResolver.Instance.GetFormatter<T>();

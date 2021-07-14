@@ -12,16 +12,22 @@ namespace Datadog.Trace.Agent.MessagePack
 {
     internal class SpanMessagePackFormatter : IMessagePackFormatter<Span>
     {
-        private static byte[] _traceIdBytes = StringEncoding.UTF8.GetBytes("trace_id");
-        private static byte[] _spanIdBytes = StringEncoding.UTF8.GetBytes("span_id");
-        private static byte[] _nameBytes = StringEncoding.UTF8.GetBytes("name");
-        private static byte[] _resourceBytes = StringEncoding.UTF8.GetBytes("resource");
-        private static byte[] _serviceBytes = StringEncoding.UTF8.GetBytes("service");
-        private static byte[] _typeBytes = StringEncoding.UTF8.GetBytes("type");
-        private static byte[] _startBytes = StringEncoding.UTF8.GetBytes("start");
-        private static byte[] _durationBytes = StringEncoding.UTF8.GetBytes("duration");
-        private static byte[] _parentIdBytes = StringEncoding.UTF8.GetBytes("parent_id");
-        private static byte[] _errorBytes = StringEncoding.UTF8.GetBytes("error");
+        public static readonly IMessagePackFormatter<Span> Instance = new SpanMessagePackFormatter();
+
+        private byte[] _traceIdBytes = StringEncoding.UTF8.GetBytes("trace_id");
+        private byte[] _spanIdBytes = StringEncoding.UTF8.GetBytes("span_id");
+        private byte[] _nameBytes = StringEncoding.UTF8.GetBytes("name");
+        private byte[] _resourceBytes = StringEncoding.UTF8.GetBytes("resource");
+        private byte[] _serviceBytes = StringEncoding.UTF8.GetBytes("service");
+        private byte[] _typeBytes = StringEncoding.UTF8.GetBytes("type");
+        private byte[] _startBytes = StringEncoding.UTF8.GetBytes("start");
+        private byte[] _durationBytes = StringEncoding.UTF8.GetBytes("duration");
+        private byte[] _parentIdBytes = StringEncoding.UTF8.GetBytes("parent_id");
+        private byte[] _errorBytes = StringEncoding.UTF8.GetBytes("error");
+
+        private SpanMessagePackFormatter()
+        {
+        }
 
         public int Serialize(ref byte[] bytes, int offset, Span value, IFormatterResolver formatterResolver)
         {
