@@ -7,7 +7,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.TypeChaining.ProxiesDefinitions
 {
     public interface IObscureStaticReadonlyErrorDuckType
     {
-        [Duck(Name = "_publicStaticReadonlySelfTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_publicStaticReadonlySelfTypeField")]
         IDummyFieldObject PublicStaticReadonlySelfTypeField { get; set; }
     }
 }

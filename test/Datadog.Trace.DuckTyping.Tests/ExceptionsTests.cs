@@ -133,7 +133,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         public interface IFieldIsReadonlyException
         {
-            [Duck(Name = "_name", Kind = DuckKind.Field)]
+            [DuckField(Name = "_name")]
             string Name { get; set; }
         }
 
@@ -191,7 +191,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         public interface IPropertyOrFieldNotFound2Exception
         {
-            [Duck(Kind = DuckKind.Field)]
+            [DuckField]
             string Name { get; set; }
         }
 
@@ -207,7 +207,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         public struct PropertyOrFieldNotFound2ExceptionStruct
         {
-            [Duck(Kind = DuckKind.Field)]
+            [DuckField]
             public string Name;
         }
 
@@ -287,7 +287,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         public interface IStructMembersCannotBeChanged2Exception
         {
-            [Duck(Kind = DuckKind.Field)]
+            [DuckField]
             string Name { get; set; }
         }
 
@@ -580,7 +580,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         public interface IObjectInvalidTypeConversion3Exception
         {
-            [Duck(Kind = DuckKind.Field)]
+            [DuckField]
             int Value { get; }
         }
 

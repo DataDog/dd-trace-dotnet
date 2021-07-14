@@ -7,7 +7,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ReferenceType.ProxiesDefinitions
 {
     public interface IObscureStaticReadonlyErrorDuckType
     {
-        [Duck(Name = "_publicStaticReadonlyReferenceTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_publicStaticReadonlyReferenceTypeField")]
         string PublicStaticReadonlyReferenceTypeField { get; set; }
     }
 }
