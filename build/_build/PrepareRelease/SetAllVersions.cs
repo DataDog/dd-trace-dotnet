@@ -7,14 +7,17 @@ using System;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
+using Nuke.Common.IO;
 
 namespace PrepareRelease
 {
     public class SetAllVersions
     {
-        public SetAllVersions(string solutionDirectory)
+        public SetAllVersions(string solutionDirectory, string tracerVersion, bool isPrerelease)
         {
             SolutionDirectory = solutionDirectory;
+            TracerVersion = new Version(tracerVersion);
+            IsPrerelease = isPrerelease;
         }
 
         /// <summary>
@@ -28,12 +31,12 @@ namespace PrepareRelease
         /// When changing the tracer version, update this value and <see cref="IsPrerelease">,
         /// then run the "PrepareRelease" tool to update the entire solution.
         /// </summary>
-        public Version TracerVersion { get; } = new("1.28.1");
+        public Version TracerVersion { get; }
 
         /// <summary>
         /// Gets a value indicating whether the current tracer version is a prerelease.
         /// </summary>
-        public bool IsPrerelease { get; } = true;
+        public bool IsPrerelease { get; }
 
         public void Run()
         {
@@ -81,6 +84,10 @@ namespace PrepareRelease
             SynchronizeVersion(
                 "build/_build/Build.cs",
                 text => Regex.Replace(text, $"readonly string Version = \"{VersionPattern()}\"", $"readonly string Version = \"{VersionString()}\""));
+
+            SynchronizeVersion(
+                "build/_build/Build.cs",
+                text => Regex.Replace(text, "readonly bool IsPrerelease = (true|false)", $"readonly bool IsPrerelease = {(IsPrerelease ? "true" : "false")}"));
 
             // Managed project / NuGet package updates
             SynchronizeVersion(

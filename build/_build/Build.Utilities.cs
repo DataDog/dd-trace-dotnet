@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using GeneratePackageVersions;
 using Nuke.Common;
 using Nuke.Common.IO;
@@ -9,6 +10,7 @@ using Nuke.Common.Tooling;
 using Nuke.Common.Tools.Docker;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.MSBuild;
+using PrepareRelease;
 using UpdateVendors;
 using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.FileSystemTasks;
@@ -194,5 +196,36 @@ partial class Build
             EnsureCleanDirectory(downloadDirectory);
             UpdateVendorsTool.UpdateVendors(downloadDirectory, vendorDirectory);
        });
+
+    Target UpdateIntegrationsJson => _ => _
+       .Description("Update the integrations.json file")
+       .DependsOn(Clean, Restore, CreateRequiredDirectories, CompileManagedSrc, PublishManagedProfiler) // We load the dlls from the output, so need to do a clean build
+       .Before(CopyIntegrationsJson)
+       .Executes(() =>
+        {
+            var assemblies = TracerHomeDirectory
+                            .GlobFiles("**/Datadog.Trace.ClrProfiler.Managed.dll")
+                            .Select(x => x.ToString())
+                            .ToList();
+
+            GenerateIntegrationDefinitions.Run(assemblies, RootDirectory);
+        });
+
+    Target SetVersion => _ => _
+       .Description("Update the version number for the tracer")
+       .Before(Clean, BuildTracerHome)
+       .Requires(() => Version)
+       .Executes(() =>
+        {
+            new SetAllVersions(RootDirectory, Version, IsPrerelease).Run();
+        });
+
+    Target SyncMsiContents => _ => _
+       .Description("Update the version number for the tracer")
+       .DependsOn(Clean, BuildTracerHome)
+       .Executes(() =>
+        {
+            SyncMsiContent.Run(RootDirectory, TracerHomeDirectory);
+        });
 
 }
