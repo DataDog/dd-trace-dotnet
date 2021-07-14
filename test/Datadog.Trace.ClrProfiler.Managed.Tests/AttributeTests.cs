@@ -26,8 +26,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         {
             List<string> invalidAttributeUsages = new();
             var coreAssembly = typeof(object).Assembly;
+
+            var tracerAssembly = typeof(Tracer).Assembly;
             var managedAssembly = typeof(Instrumentation).Assembly;
-            var types = coreAssembly.GetTypes().Concat(managedAssembly.GetTypes());
+            var types = tracerAssembly.GetTypes().Concat(managedAssembly.GetTypes());
 
             foreach (var type in types)
             {
