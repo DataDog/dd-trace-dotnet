@@ -4,7 +4,7 @@
 
 ## Changes
 * Add a public ForceFlushAsync API on the Tracer (#1599)
-*  CIApp: Update Bitrise spec (#1593)
+* CIApp: Update Bitrise spec (#1593)
 
 ## Fixes
 * Fix memory leak in native code (#1564, #1600)
