@@ -67,7 +67,7 @@ const WSTRING skip_assemblies[]{WStr("mscorlib"),
                                 WStr("ISymWrapper")};
 
 const WSTRING managed_profiler_full_assembly_version =
-    WStr("Datadog.Trace.ClrProfiler.Managed, Version=1.28.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
+    WStr("Datadog.Trace.ClrProfiler.Managed, Version=1.28.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
 
 const WSTRING calltarget_modification_action = WStr("CallTargetModification");
 

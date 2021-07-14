@@ -1,5 +1,20 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
+## [Release 1.28.1-prerelease](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.28.1-prerelease)
+
+## Changes
+* Add a public ForceFlushAsync API on the Tracer (#1599)
+* CIApp: Update Bitrise spec (#1593)
+
+## Fixes
+* Fix memory leak in native code (#1564, #1600)
+
+## Build / Test
+* Switch to Nuke consolidated pipeline (#1595, #1587, #1598)
+* Add a custom test framework to monitor execution of unit tests (#1572)
+
+[Changes since 1.28.0](https://github.com/DataDog/dd-trace-dotnet/compare/v1.29.1...v1.28.1-prerelease)
+
 ## [Release 1.28.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.28.0)
 
 ## Changes
