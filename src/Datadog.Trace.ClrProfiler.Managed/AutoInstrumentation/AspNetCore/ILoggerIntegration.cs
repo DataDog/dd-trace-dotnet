@@ -33,7 +33,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         IntegrationName = IntegrationName)]
     public class ILoggerIntegration
     {
-        private const string IntegrationName = nameof(IntegrationIds.AspNetCore);
+        private const string IntegrationName = nameof(IntegrationIds.ILogger);
+        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
 
         /// <summary>
         /// OnMethodBegin callback
@@ -47,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
             where TTarget : IHostingApplication
         {
             IDisposable disposable = null;
-            if (Tracer.Instance.Settings.LogsInjectionEnabled)
+            if (Tracer.Instance.Settings.LogsInjectionEnabled && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 var logger = instance.Diagnostics.Logger;
                 disposable = logger.BeginScope(new DatadogLoggingScope());
