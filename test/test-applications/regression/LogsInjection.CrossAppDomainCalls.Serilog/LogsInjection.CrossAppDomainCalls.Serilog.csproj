@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net452;net461</TargetFrameworks>
+    <IsPackable>false</IsPackable>
+    <ExcludeManagedProfiler>true</ExcludeManagedProfiler>
+    <ExcludeNativeProfiler>true</ExcludeNativeProfiler>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Serilog" Version="2.9.0" />
+    <PackageReference Include="Serilog.Formatting.Compact" Version="1.1.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="4.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\dependency-libs\PluginApplication\PluginApplication.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
+  </ItemGroup>
+
+  <Target Name="AfterBuildMovePluginApplication" AfterTargets="AfterBuild">
+    <ItemGroup>
+      <!-- Subfolders of the output directory should each be a target framework -->
+      <OtherApplicationFiles Include="$(OutputPath)PluginApplication.dll" />
+      <OtherApplicationFiles Include="$(OutputPath)PluginApplication.pdb" />
+    </ItemGroup>
+
+    <Move SourceFiles="@(OtherApplicationFiles)" DestinationFolder="$(OutputPath)ApplicationFiles" />
+  </Target>
+
+</Project>
