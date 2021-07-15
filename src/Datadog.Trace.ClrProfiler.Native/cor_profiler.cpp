@@ -383,15 +383,28 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
 
         if (is_instrumentation_assembly)
         {
-            // Configure a version string to compare with the profiler version
+            const auto expected_assembly_reference = AssemblyReference(managed_profiler_full_assembly_version);
+            bool is_viable_version;
+
+            if (runtime_information_.is_core())
+            {
+                is_viable_version = (assembly_metadata.version >= expected_assembly_reference.version);
+            }
+            else
+            {
+                is_viable_version = (assembly_metadata.version == expected_assembly_reference.version);
+            }
+
+            // Configure a version string for logging
             std::stringstream ss;
             ss << assembly_metadata.version.major << '.' << assembly_metadata.version.minor << '.'
                << assembly_metadata.version.build;
 
             auto assembly_version = ToWSTRING(ss.str());
 
-            // Check that Major.Minor.Build match the profiler version
-            if (assembly_version == ToWSTRING(PROFILER_VERSION))
+            // Check that Major.Minor.Build matches the profiler version.
+            // On .NET Core, allow managed library to be a higher version than the native library.
+            if (is_viable_version)
             {
                 Logger::Info("AssemblyLoadFinished: Datadog.Trace v", assembly_version,
                              " matched profiler version v", PROFILER_VERSION);
