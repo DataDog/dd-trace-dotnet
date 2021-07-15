@@ -19,7 +19,7 @@
     <PackageReference Include="MessagePack" Version="1.9.3" />
 
     <!-- https://www.nuget.org/packages/Newtonsoft.Json/12.0.1 -->
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
 
   </ItemGroup>
 
