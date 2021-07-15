@@ -49,6 +49,7 @@ at Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker.InvokeFilterPipelineAsync()
 at Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker.InvokeAsync()
 at Microsoft.AspNetCore.Builder.RouterMiddleware.Invoke(HttpContext httpContext)
 at Microsoft.AspNetCore.Builder.Extensions.MapMiddleware.Invoke(HttpContext context)
+at Microsoft.AspNetCore.Builder.Extensions.MapMiddleware.Invoke(HttpContext context)
 at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol.ProcessRequests[TContext](IHttpApplication`1 application),
       error.type: System.Exception,
       http.method: GET,

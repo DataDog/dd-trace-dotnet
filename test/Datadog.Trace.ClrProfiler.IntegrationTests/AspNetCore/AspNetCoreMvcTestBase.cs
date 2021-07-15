@@ -83,6 +83,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         {
             private readonly HttpClient _httpClient;
             private Process _process;
+            private bool _enableLogging = true;
 
             public AspNetCoreTestFixture()
             {
@@ -122,32 +123,28 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             public void Dispose()
             {
-                lock (this)
+                _enableLogging = false;
+                var request = WebRequest.CreateHttp($"http://localhost:{HttpPort}/shutdown");
+                request.GetResponse().Close();
+
+                if (_process is not null)
                 {
-                    if (_process is not null)
+                    try
                     {
-                        try
+                        if (!_process.HasExited)
                         {
-                            if (!_process.HasExited)
+                            if (!_process.WaitForExit(5000))
                             {
-                                // Try shutting down gracefully
-                                SubmitRequest(output: null, "/shutdown").GetAwaiter().GetResult();
-
-                                if (!_process.WaitForExit(5000))
-                                {
-                                    _process.Kill();
-                                }
-
                                 _process.Kill();
                             }
                         }
-                        catch
-                        {
-                            // in some circumstances the HasExited property throws, this means the process probably hasn't even started correctly
-                        }
-
-                        _process.Dispose();
                     }
+                    catch
+                    {
+                        // in some circumstances the HasExited property throws, this means the process probably hasn't even started correctly
+                    }
+
+                    _process.Dispose();
                 }
 
                 Agent?.Dispose();
@@ -174,7 +171,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                             wh.Set();
                         }
 
-                        output.WriteLine($"[webserver][stdout] {args.Data}");
+                        if (_enableLogging)
+                        {
+                            output.WriteLine($"[webserver][stdout] {args.Data}");
+                        }
                     }
                 };
                 _process.BeginOutputReadLine();
@@ -183,7 +183,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 {
                     if (args.Data != null)
                     {
-                        output.WriteLine($"[webserver][stderr] {args.Data}");
+                        if (_enableLogging)
+                        {
+                            output.WriteLine($"[webserver][stderr] {args.Data}");
+                        }
                     }
                 };
 
@@ -230,7 +233,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                     return true;
                 }
 
-            return !url.Contains("alive-check") && !url.Contains("shutdown");
+                return !url.Contains("alive-check") && !url.Contains("shutdown");
             }
 
             private async Task<HttpStatusCode> SubmitRequest(ITestOutputHelper output, string path)
