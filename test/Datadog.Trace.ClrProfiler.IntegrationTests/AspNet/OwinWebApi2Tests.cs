@@ -176,6 +176,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         {
                             if (!_process.HasExited)
                             {
+                                SubmitRequest(null, "/shutdown").GetAwaiter().GetResult();
+
                                 _process.Kill();
                             }
                         }
@@ -268,14 +270,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     return true;
                 }
 
-                return !url.Contains("alive-check");
+                return !url.Contains("alive-check") && !url.Contains("shutdown");
             }
 
             private async Task<HttpStatusCode> SubmitRequest(ITestOutputHelper output, string path)
             {
                 HttpResponseMessage response = await _httpClient.GetAsync($"http://localhost:{HttpPort}{path}");
                 string responseText = await response.Content.ReadAsStringAsync();
-                output.WriteLine($"[http] {response.StatusCode} {responseText}");
+                output?.WriteLine($"[http] {response.StatusCode} {responseText}");
                 return response.StatusCode;
             }
         }

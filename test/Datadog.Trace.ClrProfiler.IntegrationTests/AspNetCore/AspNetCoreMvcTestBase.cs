@@ -224,7 +224,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
                 if (!process.HasExited)
                 {
-                    process.Kill();
+                    // Try shutting down gracefully
+                    await SubmitRequest(aspNetCorePort, "/shutdown");
+
+                    if (!process.WaitForExit(5000))
+                    {
+                        process.Kill();
+                    }
                 }
 
                 SpanTestHelpers.AssertExpectationsMet(Expectations, spans);
@@ -248,9 +254,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                                   resourceName,
                                   httpStatus,
                                   httpMethod)
-                              {
-                                  OriginalUri = url,
-                              };
+            {
+                OriginalUri = url,
+            };
 
             expectation.RegisterDelegateExpectation(additionalCheck);
 
@@ -293,7 +299,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 return true;
             }
 
-            return !url.Contains("alive-check");
+            return !url.Contains("alive-check") && !url.Contains("shutdown");
         }
     }
 }

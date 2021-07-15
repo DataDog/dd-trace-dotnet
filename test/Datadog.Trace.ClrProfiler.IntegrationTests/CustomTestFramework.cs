@@ -5,10 +5,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
@@ -22,11 +24,66 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public CustomTestFramework(IMessageSink messageSink)
             : base(messageSink)
         {
+            var targetPath = GetProfilerTargetFolder();
+
+            if (targetPath != null)
+            {
+                var file = typeof(Instrumentation).Assembly.Location;
+                var destination = Path.Combine(targetPath, Path.GetFileName(file));
+                File.Copy(file, destination, true);
+
+                messageSink.OnMessage(new DiagnosticMessage("Replaced {0} with {1} to setup code coverage", destination, file));
+
+                return;
+            }
+
+            var message = "Could not find the target framework directory";
+
+            messageSink.OnMessage(new DiagnosticMessage(message));
+
+            throw new DirectoryNotFoundException(message);
+        }
+
+        internal static string GetProfilerTargetFolder()
+        {
+            var targetFrameworkDirectory = GetTargetFrameworkDirectory();
+
+            var paths = EnvironmentHelper.GetProfilerPathCandidates(null).ToArray();
+
+            foreach (var path in paths)
+            {
+                var baseDirectory = Path.GetDirectoryName(path);
+                var finalDirectory = Path.Combine(baseDirectory, targetFrameworkDirectory);
+
+                if (Directory.Exists(finalDirectory))
+                {
+                    return finalDirectory;
+                }
+            }
+
+            return null;
         }
 
         protected override ITestFrameworkExecutor CreateExecutor(AssemblyName assemblyName)
         {
             return new CustomExecutor(assemblyName, SourceInformationProvider, DiagnosticMessageSink);
+        }
+
+        private static string GetTargetFrameworkDirectory()
+        {
+            // The conditions looks weird, but it seems like _OR_GREATER is not supported yet in all environments
+            // We can trim all the additional conditions when this is fixed
+#if NETCOREAPP3_1_OR_GREATER || NETCOREAPP3_1 || NET50
+            return "netcoreapp3.1";
+#elif NETCOREAPP || NETSTANDARD
+            return "netstandard2.0";
+#elif NET461_OR_GREATER || NET461 || NET47 || NET471 || NET472 || NET48
+            return "net461";
+#elif NET45_OR_GREATER || NET45 || NET451 || NET452 || NET46
+            return "net45";
+#else
+#error Unexpected TFM
+#endif
         }
 
         private class CustomExecutor : XunitTestFrameworkExecutor

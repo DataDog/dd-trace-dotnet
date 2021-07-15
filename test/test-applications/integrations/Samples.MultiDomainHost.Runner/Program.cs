@@ -57,6 +57,8 @@ namespace Samples.MultiDomainHost.Runner
 
         private static void CreateAndRunAppDomain(string appName)
         {
+            AppDomain domain = null;
+
             try
             {
                 // Construct and initialize settings for a second AppDomain.
@@ -69,7 +71,7 @@ namespace Samples.MultiDomainHost.Runner
                     Path.Combine(ads.ApplicationBase, appName + ".exe.config");
 
                 PermissionSet ps = new PermissionSet(PermissionState.Unrestricted);
-                System.AppDomain appDomain1 = System.AppDomain.CreateDomain(
+                domain = System.AppDomain.CreateDomain(
                     appName,
                     System.AppDomain.CurrentDomain.Evidence,
                     ads,
@@ -77,7 +79,7 @@ namespace Samples.MultiDomainHost.Runner
 
                 Console.WriteLine("**********************************************");
                 Console.WriteLine($"Starting code execution in AppDomain {appName}");
-                appDomain1.ExecuteAssemblyByName(
+                domain.ExecuteAssemblyByName(
                     appName,
                     new string[0]);
             }
@@ -90,6 +92,13 @@ namespace Samples.MultiDomainHost.Runner
                 Console.WriteLine($"Finished code execution in AppDomain {appName}");
                 Console.WriteLine("**********************************************");
                 Console.WriteLine();
+
+                if (domain != null)
+                {
+                    // Wait for traces to be flushed, then unload the domain
+                    Thread.Sleep(2000);
+                    AppDomain.Unload(domain);
+                }
             }
         }
     }

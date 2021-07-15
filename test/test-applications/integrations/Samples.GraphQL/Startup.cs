@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using GraphQL.StarWars;
 using GraphQL.StarWars.Types;
+using System.Threading.Tasks;
 
 namespace Samples.GraphQL
 {
@@ -58,13 +59,25 @@ namespace Samples.GraphQL
             var starWarsSchema = (StarWarsSchema)app.ApplicationServices.GetService(typeof(ISchema));
 
             // Get StarWarsSubscription Singleton
-            var starWarsSubscription = (StarWarsExtensions.StarWarsSubscription) app.ApplicationServices.GetService(typeof(StarWarsExtensions.StarWarsSubscription));
+            var starWarsSubscription = (StarWarsExtensions.StarWarsSubscription)app.ApplicationServices.GetService(typeof(StarWarsExtensions.StarWarsSubscription));
 
             // Set the subscription
             // We do this roundabout mechanism to keep using the GraphQL.StarWars NuGet package
             starWarsSchema.Subscription = starWarsSubscription;
             app.UseDeveloperExceptionPage();
             app.UseWelcomePage("/alive-check");
+
+            app.Map("/shutdown", builder =>
+            {
+                builder.Run(async context =>
+                {
+                    await context.Response.WriteAsync("Shutting down");
+
+#pragma warning disable CS0618 // Type or member is obsolete
+                    _ = Task.Run(() => builder.ApplicationServices.GetService<IApplicationLifetime>().StopApplication());
+#pragma warning restore CS0618 // Type or member is obsolete
+                });
+            });
 
             // add http for Schema at default url /graphql
             app.UseGraphQL<ISchema>("/graphql");

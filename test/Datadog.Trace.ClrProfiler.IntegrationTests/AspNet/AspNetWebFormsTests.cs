@@ -28,6 +28,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
 
             _iisFixture = iisFixture;
+            _iisFixture.ShutdownPath = "/account/login?shutdown=1";
             _iisFixture.TryStartIis(this, classicMode: false);
         }
 

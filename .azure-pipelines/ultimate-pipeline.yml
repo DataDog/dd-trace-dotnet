@@ -200,7 +200,7 @@ stages:
       - template: steps/install-dotnet.yml
       - template: steps/restore-working-directory.yml
 
-      - script: build.cmd BuildAndRunManagedUnitTests
+      - script: build.cmd BuildAndRunManagedUnitTests --code-coverage
         displayName: Build and Test
 
       - publish: build_data
@@ -213,7 +213,7 @@ stages:
           testResultsFormat: VSTest
           testResultsFiles: build_data/results/**/*.trx
         condition: succeededOrFailed()
-
+        
     - job: native
       steps:
       - template: steps/install-dotnet.yml
@@ -241,7 +241,7 @@ stages:
         parameters:
           artifact: build-macos-working-directory
 
-      - script: ./build.sh BuildAndRunManagedUnitTests
+      - script: ./build.sh BuildAndRunManagedUnitTests --code-coverage
         displayName: Build and Test
 
       - publish: build_data
@@ -254,6 +254,8 @@ stages:
           testResultsFormat: VSTest
           testResultsFiles: build_data/results/**/*.trx
         condition: succeededOrFailed()
+        
+
 
 - stage: unit_tests_linux
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
@@ -278,7 +280,7 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "BuildAndRunManagedUnitTests"
+        command: "BuildAndRunManagedUnitTests --code-coverage"
 
     - publish: build_data
       artifact: profiler-logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt)
@@ -290,6 +292,11 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: build_data/results/**/*.trx
       condition: succeededOrFailed()
+      
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: 'build_data/results/'
+      continueOnError: true
 
 - stage: unit_tests_arm64
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
@@ -350,7 +357,7 @@ stages:
       displayName: 'Start CosmosDB Emulator'
       workingDirectory: $(Pipeline.Workspace)
 
-    - script: build.cmd BuildAndRunWindowsIntegrationTests --PrintDriveSpace
+    - script: build.cmd BuildAndRunWindowsIntegrationTests --PrintDriveSpace --code-coverage
       displayName: Run integration tests
 
     - task: PublishTestResults@2
@@ -359,6 +366,11 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: build_data/results/**/*.trx
       condition: succeededOrFailed()
+      
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: 'build_data/results/'
+      continueOnError: true
 
 - stage: integration_tests_windows_iis
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
@@ -408,13 +420,7 @@ stages:
         containerregistrytype: Container Registry
         dockerComposeCommand: up -d IntegrationTests.IIS
 
-    - powershell: |
-        [System.Reflection.Assembly]::Load("System.EnterpriseServices, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a")
-        $publish = New-Object System.EnterpriseServices.Internal.Publish
-        Get-ChildItem $(tracerHome)/net45 -Filter *.dll | Foreach-Object { $publish.GacInstall($_.FullName) }
-      displayName: Add net45 Datadog.Trace.ClrProfiler.Managed assets to the GAC
-
-    - script: build.cmd RunWindowsIisIntegrationTests
+    - script: build.cmd RunWindowsIisIntegrationTests --code-coverage
       displayName: RunWindowsIisIntegrationTests
 
     - task: PublishTestResults@2
@@ -423,6 +429,11 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: build_data/results/**/*.trx
       condition: succeededOrFailed()
+
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: 'build_data/results/'
+      continueOnError: true
 
     - task: DockerCompose@0
       displayName: docker-compose stop services
@@ -932,3 +943,33 @@ stages:
       displayName: Crank
       env:
         DD_SERVICE: dd-trace-dotnet
+- stage: coverage
+  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  dependsOn: [integration_tests_windows, integration_tests_windows_iis, integration_tests_linux, unit_tests_linux, unit_tests_macos, unit_tests_windows]
+  jobs:
+    - job: Windows
+      timeoutInMinutes: 30
+
+      pool:
+        vmImage: windows-2019
+
+      steps:
+      - template: steps/restore-working-directory.yml
+    
+      - task: DownloadPipelineArtifact@2
+        inputs:
+          patterns: '**/coverage.cobertura.xml'
+          path: $(Build.SourcesDirectory)/cover
+
+      - task: reportgenerator@4
+        inputs:
+          reports: '$(Build.SourcesDirectory)\cover\**\coverage.cobertura.xml'
+          targetdir: '$(Build.SourcesDirectory)\coveragereport'
+          sourcedirs: '$(Build.SourcesDirectory);..'
+          reporttypes: 'Cobertura'
+     
+      - task: PublishCodeCoverageResults@1
+        inputs:
+          codeCoverageTool: 'Cobertura'
+          summaryFileLocation: '$(Build.SourcesDirectory)/coveragereport/Cobertura.xml'
+          pathToSources: '$(Build.SourcesDirectory)'

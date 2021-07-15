@@ -6,12 +6,13 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
 using Datadog.Core.Tools;
 using Datadog.Trace.TestHelpers;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public sealed class IisFixture : IDisposable
+    public sealed class IisFixture : GacFixture, IDisposable
     {
         private (Process Process, string ConfigFile) _iisExpress;
 
@@ -19,17 +20,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public int HttpPort { get; private set; }
 
+        public string ShutdownPath { get; set; }
+
         public void TryStartIis(TestHelper helper, bool classicMode)
         {
             lock (this)
             {
                 if (_iisExpress.Process == null)
                 {
+                    AddAssembliesToGac();
+
                     var initialAgentPort = TcpPortProvider.GetOpenPort();
                     Agent = new MockTracerAgent(initialAgentPort);
 
                     HttpPort = TcpPortProvider.GetOpenPort();
-
                     _iisExpress = helper.StartIISExpress(Agent.Port, HttpPort, classicMode);
                 }
             }
@@ -37,6 +41,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public void Dispose()
         {
+            if (ShutdownPath != null)
+            {
+                var request = WebRequest.CreateHttp($"http://localhost:{HttpPort}{ShutdownPath}");
+                request.GetResponse().Close();
+            }
+
             Agent?.Dispose();
 
             lock (this)
@@ -69,6 +79,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     catch
                     {
                     }
+
+                    // If the operation fails, it could leave files in the GAC and impact the next tests
+                    // Therefore, we don't wrap this in a try/catch
+                    RemoveAssembliesFromGac();
                 }
             }
         }

@@ -3,7 +3,6 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace;
-using Datadog.Trace.ClrProfiler;
 
 namespace HttpMessageHandler.StackOverflowException
 {
@@ -13,7 +12,7 @@ namespace HttpMessageHandler.StackOverflowException
         {
             try
             {
-                Console.WriteLine($"Profiler attached: {Instrumentation.ProfilerAttached}");
+                Console.WriteLine($"Profiler attached: {IsProfilerAttached()}");
 
                 var baseAddress = new Uri("https://www.example.com/");
                 var regularHttpClient = new HttpClient { BaseAddress = baseAddress };
@@ -46,6 +45,22 @@ namespace HttpMessageHandler.StackOverflowException
 #endif
 
             return (int)ExitCode.Success;
+        }
+
+        private static bool IsProfilerAttached()
+        {
+            var instrumentationType = Type.GetType("Datadog.Trace.ClrProfiler.Instrumentation", throwOnError: false);
+
+            if (instrumentationType == null)
+            {
+                return false;
+            }
+
+            var property = instrumentationType.GetProperty("ProfilerAttached");
+
+            var isAttached = property?.GetValue(null) as bool?;
+
+            return isAttached ?? false;
         }
     }
 

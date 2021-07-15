@@ -155,7 +155,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 if (!process.HasExited)
                 {
-                    process.Kill();
+                    // Try shutting down gracefully
+                    var shutdownRequest = new RequestInfo() { HttpMethod = "GET", Url = "/shutdown" };
+                    SubmitRequest(aspNetCorePort, shutdownRequest);
+
+                    if (!process.WaitForExit(5000))
+                    {
+                        process.Kill();
+                    }
                 }
 
                 var spans = graphQLValidateSpans.Concat(graphQLExecuteSpans).ToList();

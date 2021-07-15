@@ -4,6 +4,11 @@
     <PackageReference Include="Npgsql" Version="4.0.10" />
     <PackageReference Include="Mysql.Data" Version="8.0.17" />
     <PackageReference Include="Confluent.Kafka" Version="1.4.3" />
+
+    <PackageReference Include="coverlet.collector" Version="3.0.4-preview.32">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
