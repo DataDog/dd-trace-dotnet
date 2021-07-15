@@ -1,4 +1,4 @@
-// <copyright file="CustomNLogLogProvider.cs" company="Datadog">
+// <copyright file="FallbackNLogLogProvider.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,17 +9,16 @@ using Datadog.Trace.Logging.LogProviders;
 
 namespace Datadog.Trace.Logging
 {
-    internal class CustomNLogLogProvider : NLogLogProvider, ILogProviderWithEnricher
+    /// <summary>
+    /// Log provider for all versions of NLog lower than 4.1. This is required
+    /// because the built-in NLogLogProvider does not have the required interface
+    /// for NLog 1.0.
+    /// </summary>
+    internal class FallbackNLogLogProvider : NLogLogProvider
     {
-        public ILogEnricher CreateEnricher() => new LogEnricher(this);
-
-        internal static new bool IsLoggerAvailable() =>
-            NLogLogProvider.IsLoggerAvailable() && IsSetObjectAvailable();
-
         protected override OpenMdc GetOpenMdcMethod()
         {
-            // This is a copy/paste of the base GetOpenMdcMethod, but calling Set(string, object) instead of Set(string, string)
-
+            // This is a copy/paste of the base GetOpenMdcMethod, with an additional NLog 1.x fallback
             var keyParam = Expression.Parameter(typeof(string), "key");
 
             var ndlcContextType = FindType("NLog.NestedDiagnosticsLogicalContext", "NLog");
@@ -45,14 +44,20 @@ namespace Datadog.Trace.Logging
             }
 
             var mdcContextType = FindType("NLog.MappedDiagnosticsContext", "NLog");
-            var setMethod = mdcContextType.GetMethod("Set", typeof(string), typeof(object));
+            if (mdcContextType is null)
+            {
+                // Modification: Add fallback for NLog version 1.x
+                mdcContextType = FindType("NLog.MDC", "NLog");
+            }
+
+            var setMethod = mdcContextType.GetMethod("Set", typeof(string), typeof(string));
             var removeMethod = mdcContextType.GetMethod("Remove", typeof(string));
-            var valueParam = Expression.Parameter(typeof(object), "value");
+            var valueParam = Expression.Parameter(typeof(string), "value");
             var setMethodCall = Expression.Call(null, setMethod, keyParam, valueParam);
             var removeMethodCall = Expression.Call(null, removeMethod, keyParam);
 
             var set = Expression
-                .Lambda<Action<string, object>>(setMethodCall, keyParam, valueParam)
+                .Lambda<Action<string, string>>(setMethodCall, keyParam, valueParam)
                 .Compile();
             var remove = Expression
                 .Lambda<Action<string>>(removeMethodCall, keyParam)
@@ -60,15 +65,9 @@ namespace Datadog.Trace.Logging
 
             return (key, value, _) =>
             {
-                set(key, value);
+                set(key, value.ToString());
                 return new DisposableAction(() => remove(key));
             };
-        }
-
-        private static bool IsSetObjectAvailable()
-        {
-            var mdcContextType = FindType("NLog.MappedDiagnosticsContext", "NLog");
-            return mdcContextType?.GetMethod("Set", typeof(string), typeof(object)) != null;
         }
     }
 }
