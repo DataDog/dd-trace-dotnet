@@ -7,7 +7,7 @@ using Datadog.Trace.Configuration;
 using log4net;
 using log4net.Config;
 
-namespace Log4Net.SerializationException
+namespace LogsInjection.CrossAppDomainCalls.Log4Net
 {
     public class Program
     {
@@ -43,6 +43,11 @@ namespace Log4Net.SerializationException
                 using (var scope = Tracer.Instance.StartActive("transaction"))
                 {
                     // In the middle of the trace, make a call across AppDomains
+                    // Unless handled properly, this can cause the following error due
+                    // to the way log4net stores "AsyncLocal" state in the
+                    // System.Runtime.Remoting.Messaging.CallContext:
+                    // System.Runtime.Serialization.SerializationException: Type is not resolved for member 'log4net.Util.PropertiesDictionary,log4net, Version=2.0.12.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a'.
+
                     log.Info("Calling the PluginApplication.Program in a separate AppDomain");
                     AppDomainProxy.Call(applicationAppDomain, "PluginApplication", "PluginApplication.Program", "Invoke", null);
                     log.Info("Returned the PluginApplication.Program call");
