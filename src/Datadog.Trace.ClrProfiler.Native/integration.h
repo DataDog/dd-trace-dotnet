@@ -101,19 +101,17 @@ struct Version
 
     inline bool operator>(const Version& other) const
     {
-        if (major > other.major)
-        {
-            return true;
-        }
-        if (major == other.major && minor > other.minor)
-        {
-            return true;
-        }
-        if (major == other.major && minor == other.minor && build > other.build)
-        {
-            return true;
-        }
-        return false;
+        return other < *this;
+    }
+
+    inline bool operator<=(const Version& other) const
+    {
+        return !(*this > other);
+    }
+
+    inline bool operator>=(const Version& other) const
+    {
+        return !(*this < other);
     }
 };
 
