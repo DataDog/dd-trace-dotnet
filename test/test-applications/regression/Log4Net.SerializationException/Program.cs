@@ -2,27 +2,52 @@
 using System;
 using System.IO;
 using System.Reflection;
-using System.Security.Policy;
+using Datadog.Trace;
+using Datadog.Trace.Configuration;
+using log4net;
+using log4net.Config;
 
 namespace Log4Net.SerializationException
 {
     public class Program
     {
+        private static readonly ILog log = LogManager.GetLogger(typeof(Program));
+
         public static int Main(string[] args)
         {
-            // The library we want to run was built and copied to the ApplicationFiles subdirectory
+            // Set up the secondary AppDomain first
+            // The plugin application we'll call was built and copied to the ApplicationFiles subdirectory
             // Create an AppDomain with that directory as the appBasePath
             var entryDirectory = Directory.GetParent(Assembly.GetEntryAssembly().Location);
             var applicationFilesDirectory = Path.Combine(entryDirectory.FullName, "ApplicationFiles");
             var applicationAppDomain = AppDomain.CreateDomain("ApplicationAppDomain", null, applicationFilesDirectory, applicationFilesDirectory, false);
 
+            // Initialize log4net
+            var logRepository = LogManager.GetRepository(typeof(Program).Assembly);
+            XmlConfigurator.Configure(logRepository, new FileInfo("log4net.config"));
+            log.Info("Configured logger");
+
+            // Set up Tracer and start a trace
+            var settings = new TracerSettings()
+            {
+                LogsInjectionEnabled = true,
+                // Set Environment=null, resulting in dd.env=null
+                // Set ServiceVersion=null, resulting in dd.service=null
+                Environment = "dev",
+                ServiceVersion = "1.0.0"
+            };
+            Tracer.Instance = new Tracer(settings);
+
             try
             {
-                // Test that when transition back to this AppDomain, there are no serialization problems
-                // This would happen if any values were stored in data slots
-                Console.WriteLine("Calling the ApplicationWithLog4Net.Program in a separate AppDomain");
+                using (var scope = Tracer.Instance.StartActive("transaction"))
+                {
+                    // In the middle of the trace, make a call across AppDomains
+                    log.Info("Calling the PluginApplication.Program in a separate AppDomain");
+                    AppDomainProxy.Call(applicationAppDomain, "PluginApplication", "PluginApplication.Program", "Invoke", null);
+                    log.Info("Returned the PluginApplication.Program call");
+                }
 
-                AppDomainProxy.Call(applicationAppDomain, "ApplicationWithLog4Net", "ApplicationWithLog4Net.Program", "Invoke", null);
                 AppDomain.Unload(applicationAppDomain);
             }
             catch (Exception ex)

@@ -8,16 +8,26 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\dependency-libs\ApplicationWithLog4Net\ApplicationWithLog4Net.csproj" />
+    <PackageReference Include="log4net" Version="2.0.12" />
+    <PackageReference Include="log4net.Ext.Json" Version="2.0.8.3" />
   </ItemGroup>
 
-  <Target Name="AfterBuildMoveApplicationWithLog4Net" AfterTargets="AfterBuild">
+  <ItemGroup>
+    <ProjectReference Include="..\dependency-libs\PluginApplication\PluginApplication.csproj" />    
+    <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="log4net.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <Target Name="AfterBuildMovePluginApplication" AfterTargets="AfterBuild">
     <ItemGroup>
       <!-- Subfolders of the output directory should each be a target framework -->
-      <OtherApplicationFiles Include="$(OutputPath)*.dll" />
-      <OtherApplicationFiles Include="$(OutputPath)*.xml" />
-      <OtherApplicationFiles Include="$(OutputPath)*.pdb" Exclude="$(OutputPath)Log4Net.SerializationException.pdb" />
-      <OtherApplicationFiles Include="$(OutputPath)log4net.config" />
+      <OtherApplicationFiles Include="$(OutputPath)PluginApplication.dll" />
+      <OtherApplicationFiles Include="$(OutputPath)PluginApplication.pdb" />
     </ItemGroup>
 
     <Move SourceFiles="@(OtherApplicationFiles)" DestinationFolder="$(OutputPath)ApplicationFiles" />

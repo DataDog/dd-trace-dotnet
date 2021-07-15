@@ -201,7 +201,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.DatabaseHelper", "t
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Log4Net.SerializationException", "test\test-applications\regression\Log4Net.SerializationException\Log4Net.SerializationException.csproj", "{35F581E9-3D7C-4E80-8DFF-D437B0D86710}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ApplicationWithLog4Net", "test\test-applications\regression\dependency-libs\ApplicationWithLog4Net\ApplicationWithLog4Net.csproj", "{1C34D970-6081-4EFA-8F2F-5AD2B146AC58}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PluginApplication", "test\test-applications\regression\dependency-libs\PluginApplication\PluginApplication.csproj", "{1C34D970-6081-4EFA-8F2F-5AD2B146AC58}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssemblyResolveMscorlibResources.InfiniteRecursionCrash", "test\test-applications\regression\AssemblyResolveMscorlibResources.InfiniteRecursionCrash\AssemblyResolveMscorlibResources.InfiniteRecursionCrash.csproj", "{EEA89ACD-CFBB-4F60-A150-74F0A84DF028}"
 EndProject
