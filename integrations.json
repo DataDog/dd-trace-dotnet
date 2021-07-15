@@ -1101,6 +1101,58 @@
     ]
   },
   {
+    "name": "Gauge",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Gauge.Dotnet",
+          "type": "Gauge.Dotnet.HookExecutor",
+          "method": "ExecuteHook",
+          "signature_types": [
+            "System.Void",
+            "System.Reflection.MethodInfo",
+            "_"
+          ],
+          "minimum_major": 0,
+          "minimum_minor": 4,
+          "minimum_patch": 0,
+          "maximum_major": 0,
+          "maximum_minor": 5,
+          "maximum_patch": 0
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.28.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.Gauge.HookExecutorExecuteHookIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Gauge.Dotnet",
+          "type": "Gauge.Dotnet.Models.HookRegistry",
+          "method": ".ctor",
+          "signature_types": [
+            "System.Void",
+            "Gauge.Dotnet.IAssemblyLoader"
+          ],
+          "minimum_major": 0,
+          "minimum_minor": 4,
+          "minimum_patch": 0,
+          "maximum_major": 0,
+          "maximum_minor": 5,
+          "maximum_patch": 0
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.28.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.Gauge.HookRegistryCtorIntegration",
+          "action": "CallTargetModification"
+        }
+      }
+    ]
+  },
+  {
     "name": "GraphQL",
     "method_replacements": [
       {
