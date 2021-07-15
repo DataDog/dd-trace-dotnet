@@ -103,6 +103,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.Gauge
                 if (context.CurrentScenario.IsFailing)
                 {
                     spanScenario.SetTag(TestTags.Status, TestTags.StatusFail);
+                    spanStep.Error = true;
                 }
                 else
                 {
@@ -165,6 +166,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.Gauge
                 if (context.CurrentStep.IsFailing)
                 {
                     spanStep.SetTag(TestTags.Status, TestTags.StatusFail);
+                    spanStep.Error = true;
                 }
                 else
                 {
