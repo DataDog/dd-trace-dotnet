@@ -7,7 +7,7 @@ using Datadog.Trace.Configuration;
 using log4net;
 using log4net.Config;
 
-namespace LogsInjection.CrossAppDomainCalls.Log4Net
+namespace LogsInjection.CrossAppDomainCalls.log4net
 {
     public class Program
     {
