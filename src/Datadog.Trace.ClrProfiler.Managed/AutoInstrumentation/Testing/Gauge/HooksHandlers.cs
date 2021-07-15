@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci;
@@ -72,6 +73,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.Gauge
                 span.SetTag(CommonTags.OSArchitecture, framework.OSArchitecture);
                 span.SetTag(CommonTags.OSPlatform, framework.OSPlatform);
                 span.SetTag(CommonTags.OSVersion, Environment.OSVersion.VersionString);
+
+                // Get traits
+                var tags = context.GetAllTags();
+                if (tags?.Count > 0)
+                {
+                    Dictionary<string, List<string>> testTraits = new Dictionary<string, List<string>>
+                    {
+                        ["tags"] = context.GetAllTags()
+                    };
+                    span.SetTag(TestTags.Traits, Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(testTraits));
+                }
 
                 ScenarioSpan = span;
             }
