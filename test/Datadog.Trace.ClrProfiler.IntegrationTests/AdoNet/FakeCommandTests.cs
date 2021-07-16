@@ -4,7 +4,6 @@
 // </copyright>
 
 using System.Linq;
-using Datadog.Core.Tools;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Xunit;

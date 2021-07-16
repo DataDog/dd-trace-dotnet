@@ -11,10 +11,12 @@
 
   <ItemGroup>
     <PackageReference Include="AWSSDK.SimpleSystemsManagement" Version="3.7.3.11" />
+    <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="16.170.0" />
     <PackageReference Include="NuGet.CommandLine" Version="5.8.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="NuGet.Protocol" Version="5.10.0" />
     <PackageReference Include="Nuke.Common" Version="5.0.2" />
     <PackageReference Include="Colorful.Console" Version="1.2.15" />
   </ItemGroup>
@@ -23,5 +25,10 @@
     <Content Include="..\..\.azure-pipelines\steps\*" Link="ci\steps\%(Filename)%(Extension)" />
     <Content Include="..\..\.azure-pipelines\ultimate-pipeline.yml" Link="ci\ultimate-pipeline.yml" />
     <Content Include="..\..\build_in_docker.sh" Link="boot\build_in_docker.sh" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="UpdateVendors\Datadog.Dependabot.Honeypot.template" />
+    <EmbeddedResource Include="UpdateVendors\Datadog.Dependabot.Honeypot.template" />
   </ItemGroup>
 </Project>

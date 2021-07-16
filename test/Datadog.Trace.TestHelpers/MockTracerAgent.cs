@@ -14,7 +14,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using Datadog.Core.Tools;
 using Datadog.Trace.ExtensionMethods;
 using MessagePack;
 
