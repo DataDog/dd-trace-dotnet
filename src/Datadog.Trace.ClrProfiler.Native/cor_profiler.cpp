@@ -596,7 +596,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         if (foundType)
         {
             // Define the actual profiler file path as a ModuleRef
-            WSTRING native_profiler_file = GetProfilerFilePath();
+            WSTRING native_profiler_file = GetCoreCLRProfilerPath();
             mdModuleRef profiler_ref;
             hr = metadata_emit->DefineModuleRef(native_profiler_file.c_str(), &profiler_ref);
             if (SUCCEEDED(hr))
@@ -631,12 +631,21 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
                                                                  WSTRING(importName).c_str(), profiler_ref);
                             if (FAILED(hr))
                             {
-                                Warn("ModuleLoadFinished: DefinePinvokeMap failed");
-                                return hr;
+                                Warn("ModuleLoadFinished: DefinePinvokeMap to the actual profiler file path failed, trying to restore the previous one.");
+                                hr = metadata_emit->DefinePinvokeMap(methodDef, pdwMappingFlags,
+                                                                     WSTRING(importName).c_str(), importModule);
+                                if (FAILED(hr))
+                                {
+                                    // We only warn that we cannot rewrite the PInvokeMap but we still continue the module load.
+                                    // These errors must be handled on the caller with a try/catch.
+                                    Warn("ModuleLoadFinished: Error trying to restore the previous PInvokeMap.");
+                                }
                             }
                         }
                         else
                         {
+                            // We only warn that we cannot rewrite the PInvokeMap but we still continue the module load.
+                            // These errors must be handled on the caller with a try/catch.
                             Warn("ModuleLoadFinished: DeletePinvokeMap failed");
                         }
                     }
@@ -646,6 +655,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
             }
             else
             {
+                // We only warn that we cannot rewrite the PInvokeMap but we still continue the module load.
+                // These errors must be handled on the caller with a try/catch.
                 Warn("ModuleLoadFinished: Native Profiler DefineModuleRef failed");
             }
         }
@@ -1076,7 +1087,7 @@ bool CorProfiler::IsAttached() const
 //
 // Helper methods
 //
-WSTRING CorProfiler::GetProfilerFilePath()
+WSTRING CorProfiler::GetCoreCLRProfilerPath()
 {
     WSTRING native_profiler_file;
 #ifdef BIT64
@@ -2198,7 +2209,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
 #ifdef _WIN32
     WSTRING native_profiler_file = WStr("DATADOG.TRACE.CLRPROFILER.NATIVE.DLL");
 #else // _WIN32
-    WSTRING native_profiler_file = GetProfilerFilePath();
+    WSTRING native_profiler_file = GetCoreCLRProfilerPath();
     Debug("GenerateVoidILStartupMethod: Setting the PInvoke native profiler library path to ",
           native_profiler_file);
 #endif // _WIN32
