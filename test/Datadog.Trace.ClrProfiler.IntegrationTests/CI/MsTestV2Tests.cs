@@ -18,7 +18,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
     public class MsTestV2Tests : TestHelper
     {
         private const string TestSuiteName = "Samples.MSTestTests.TestSuite";
-        private const int ExpectedSpanCount = 13;
 
         public MsTestV2Tests(ITestOutputHelper output)
             : base("MSTestTests", output)
@@ -33,6 +32,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         public void SubmitTraces(string packageVersion)
         {
             List<MockTracerAgent.Span> spans = null;
+            var expectedSpanCount = new Version(packageVersion).CompareTo(new Version("2.2.5")) < 0 ? 13 : 15;
+
             try
             {
                 SetCallTargetSettings(true);
@@ -44,12 +45,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 using (var agent = new MockTracerAgent(agentPort))
                 using (ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
                 {
-                    spans = agent.WaitForSpans(ExpectedSpanCount)
+                    spans = agent.WaitForSpans(expectedSpanCount)
                         .Where(s => !(s.Tags.TryGetValue(Tags.InstrumentationName, out var sValue) && sValue == "HttpMessageHandler"))
                         .ToList();
 
                     // Check the span count
-                    Assert.Equal(ExpectedSpanCount, spans.Count);
+                    Assert.Equal(expectedSpanCount, spans.Count);
 
                     foreach (var targetSpan in spans)
                     {

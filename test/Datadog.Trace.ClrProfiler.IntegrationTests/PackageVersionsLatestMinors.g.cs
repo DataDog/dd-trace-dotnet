@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
                 new object[] { "3.3.103.26" },
                 new object[] { "3.5.1.28" },
-                new object[] { "3.7.0.27" },
+                new object[] { "3.7.0.40" },
 #endif
             };
 
@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.9.3" },
                 new object[] { "2.10.4" },
                 new object[] { "2.11.6" },
-                new object[] { "2.12.3" },
+                new object[] { "2.12.4" },
 #endif
             };
 
@@ -77,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "6.5.1" },
                 new object[] { "6.6.0" },
                 new object[] { "6.7.0" },
-                new object[] { "6.8.8" },
+                new object[] { "6.8.9" },
 #endif
             };
 
@@ -128,7 +128,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "5.2.0" },
                 new object[] { "6.0.0" },
                 new object[] { "6.1.0" },
-                new object[] { "6.2.1" },
+                new object[] { "6.2.2" },
 #endif
             };
 
@@ -238,8 +238,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.1.14" },
                 new object[] { "2.2.6" },
                 new object[] { "3.0.3" },
-                new object[] { "3.1.15" },
-                new object[] { "5.0.6" },
+                new object[] { "3.1.16" },
+                new object[] { "5.0.7" },
 #endif
             };
 
@@ -289,7 +289,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
                 new object[] { "2.0.0" },
                 new object[] { "2.1.2" },
-                new object[] { "2.2.3" },
+                new object[] { "2.2.5" },
 #endif
             };
 
@@ -331,6 +331,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.16.0" },
                 new object[] { "3.17.1" },
                 new object[] { "3.18.0" },
+                new object[] { "3.19.0" },
+                new object[] { "3.20.1" },
 #endif
             };
 
