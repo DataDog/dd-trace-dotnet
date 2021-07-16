@@ -84,8 +84,7 @@ stages:
         project: 'dd-trace-dotnet'
         pipeline: 54
         runVersion: 'latestFromBranch'
-        # runBranch: 'refs/heads/master' # Restore once this is tested
-        runBranch: 'refs/heads/zach/test/third-party-npgsql'
+        runBranch: 'refs/heads/master'
         tags: '$(dotnetToolTag)'
         allowFailedBuilds: true # The consolidated pipeline may fail on test runs. Maybe we could break them up into a cascading set of jobs?
 
