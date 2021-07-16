@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <!-- NuGet -->
@@ -23,6 +23,14 @@
     <PackageReference Include="Microsoft.AspNetCore.Routing" Version="2.0.0" PrivateAssets="All" />
 
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="4.4.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="AppSec\Waf\rule-set.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="AppSec\Waf\rule-set.json" />
   </ItemGroup>
 
   <ItemGroup>
