@@ -34,7 +34,6 @@ const WSTRING env_vars_to_display[]{environment::tracing_enabled,
                                     environment::azure_app_services_cli_telemetry_profile_value};
 
 const WSTRING skip_assembly_prefixes[]{
-    WStr("Datadog.Trace"),
     WStr("MessagePack"),
     WStr("Microsoft.AI"),
     WStr("Microsoft.ApplicationInsights"),
@@ -68,6 +67,10 @@ const WSTRING skip_assemblies[]{WStr("mscorlib"),
 
 const WSTRING managed_profiler_full_assembly_version =
     WStr("Datadog.Trace.ClrProfiler.Managed, Version=1.28.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
+
+const WSTRING managed_profiler_name = WStr("Datadog.Trace.ClrProfiler.Managed");
+
+const WSTRING nonwindows_nativemethods_type = WStr("Datadog.Trace.ClrProfiler.NativeMethods+NonWindows");
 
 const WSTRING calltarget_modification_action = WStr("CallTargetModification");
 
