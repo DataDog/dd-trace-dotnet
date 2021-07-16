@@ -72,6 +72,15 @@ namespace Datadog.Trace.ClrProfiler
                 // ignore
             }
 
+            try
+            {
+                Log.Information($"IsProfilerAttached: {NativeMethods.IsProfilerAttached()}");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, ex.Message);
+            }
+
 #if !NETFRAMEWORK
             try
             {
