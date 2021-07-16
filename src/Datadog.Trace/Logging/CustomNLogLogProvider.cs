@@ -13,6 +13,9 @@ namespace Datadog.Trace.Logging
     {
         public ILogEnricher CreateEnricher() => new LogEnricher(this);
 
+        internal static new bool IsLoggerAvailable() =>
+            NLogLogProvider.IsLoggerAvailable() && IsSetObjectAvailable();
+
         protected override OpenMdc GetOpenMdcMethod()
         {
             // This is a copy/paste of the base GetOpenMdcMethod, but calling Set(string, object) instead of Set(string, string)
@@ -60,6 +63,12 @@ namespace Datadog.Trace.Logging
                 set(key, value);
                 return new DisposableAction(() => remove(key));
             };
+        }
+
+        private static bool IsSetObjectAvailable()
+        {
+            var mdcContextType = FindType("NLog.MappedDiagnosticsContext", "NLog");
+            return mdcContextType.GetMethod("Set", typeof(string), typeof(object)) != null;
         }
     }
 }
