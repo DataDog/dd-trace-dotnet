@@ -9,19 +9,17 @@
   <PropertyGroup Condition="'$(BuildingInsideVisualStudio)'=='true' AND ('$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'netcoreapp3.1')">
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
-  
+
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0' OR '$(TargetFramework)' == 'netcoreapp3.1'">
     <PackageReference Include="Microsoft.Build.Framework" Version="14.3.0" />
   </ItemGroup>
-  
+
   <ItemGroup Condition="'$(TargetFramework)' != 'netstandard2.0' AND '$(TargetFramework)' != 'netcoreapp3.1'">
     <Reference Include="Microsoft.Build.Framework" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
-
-  <Import Project="..\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems" Label="Shared" />
 
 </Project>

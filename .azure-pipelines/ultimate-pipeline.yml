@@ -215,7 +215,7 @@ stages:
           testResultsFormat: VSTest
           testResultsFiles: build_data/results/**/*.trx
         condition: succeededOrFailed()
-        
+
     - job: native
       steps:
       - template: steps/install-dotnet.yml
@@ -256,7 +256,7 @@ stages:
           testResultsFormat: VSTest
           testResultsFiles: build_data/results/**/*.trx
         condition: succeededOrFailed()
-        
+
 
 
 - stage: unit_tests_linux
@@ -294,7 +294,7 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: build_data/results/**/*.trx
       condition: succeededOrFailed()
-      
+
     - task: PublishPipelineArtifact@1
       inputs:
         targetPath: 'build_data/results/'
@@ -368,7 +368,7 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: build_data/results/**/*.trx
       condition: succeededOrFailed()
-      
+
     - task: PublishPipelineArtifact@1
       inputs:
         targetPath: 'build_data/results/'
@@ -962,7 +962,7 @@ stages:
 
       steps:
       - template: steps/restore-working-directory.yml
-    
+
       - task: DownloadPipelineArtifact@2
         inputs:
           patterns: '**/coverage.cobertura.xml'
@@ -974,7 +974,7 @@ stages:
           targetdir: '$(Build.SourcesDirectory)\coveragereport'
           sourcedirs: '$(Build.SourcesDirectory);..'
           reporttypes: 'Cobertura'
-     
+
       - task: PublishCodeCoverageResults@1
         inputs:
           codeCoverageTool: 'Cobertura'

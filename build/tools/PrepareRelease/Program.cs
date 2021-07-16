@@ -35,7 +35,11 @@ namespace PrepareRelease
             if (JobShouldRun(Versions, args))
             {
                 Console.WriteLine("--------------- Versions Job Started ---------------");
-                new SetAllVersions(solutionDir).Run();
+
+                Version version = ParseVersionArgument(args);
+                bool? isPreRelease = ParseIsPrereleaseArgument(args);
+                new SetAllVersions(solutionDir, version, isPreRelease).Run();
+
                 Console.WriteLine("--------------- Versions Job Complete ---------------");
             }
 
@@ -53,6 +57,50 @@ namespace PrepareRelease
             }
         }
 
+        private static Version ParseVersionArgument(string[] args)
+        {
+            foreach (var arg in args)
+            {
+                if (arg.StartsWith("--Version:", StringComparison.OrdinalIgnoreCase))
+                {
+                    var versionString = arg.Substring(arg.IndexOf(':') + 1);
+
+                    if (Version.TryParse(versionString, out var version))
+                    {
+                        return version;
+                    }
+                    else
+                    {
+                        throw new ArgumentException("Invalid value for --Version");
+                    }
+                }
+            }
+
+            return default;
+        }
+
+        private static bool? ParseIsPrereleaseArgument(string[] args)
+        {
+            foreach (var arg in args)
+            {
+                if (arg.StartsWith("--IsPreRelease:", StringComparison.OrdinalIgnoreCase))
+                {
+                    var isPreReleaseString = arg.Substring(arg.IndexOf(':') + 1);
+
+                    if (bool.TryParse(isPreReleaseString, out var isPreRelease))
+                    {
+                        return isPreRelease;
+                    }
+                    else
+                    {
+                        throw new ArgumentException("Invalid value for --IsPreRelease");
+                    }
+                }
+            }
+
+            return default;
+        }
+
         private static bool JobShouldRun(string jobName, string[] args)
         {
             return args.Any(a => string.Equals(a, jobName, StringComparison.OrdinalIgnoreCase));
@@ -62,7 +110,7 @@ namespace PrepareRelease
         {
             var processInfo = new ProcessStartInfo("cmd.exe", "/c " + command) { CreateNoWindow = true, UseShellExecute = true };
             var process = Process.Start(processInfo);
-            process.WaitForExit(240_000);
+            process.WaitForExit(120_000);
             Console.WriteLine("Publish ExitCode: " + process.ExitCode, "ExecuteCommand");
             process?.Close();
         }

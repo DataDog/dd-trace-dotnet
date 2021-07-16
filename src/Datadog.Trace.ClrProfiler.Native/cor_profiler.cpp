@@ -322,7 +322,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
         return S_OK;
     }
 
-    const auto is_instrumentation_assembly = assembly_info.name == WStr("Datadog.Trace.ClrProfiler.Managed");
+    const auto is_instrumentation_assembly = assembly_info.name == WStr("Datadog.Trace");
 
     if (is_instrumentation_assembly || debug_logging_enabled)
     {
@@ -354,18 +354,31 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
 
         if (is_instrumentation_assembly)
         {
-            // Configure a version string to compare with the profiler version
+            const auto expected_assembly_reference = AssemblyReference(managed_profiler_full_assembly_version);
+            bool is_viable_version;
+
+            if (runtime_information_.is_core())
+            {
+                is_viable_version = (assembly_metadata.version >= expected_assembly_reference.version);
+            }
+            else
+            {
+                is_viable_version = (assembly_metadata.version == expected_assembly_reference.version);
+            }
+
+            // Configure a version string for logging
             std::stringstream ss;
             ss << assembly_metadata.version.major << '.' << assembly_metadata.version.minor << '.'
                << assembly_metadata.version.build;
 
             auto assembly_version = ToWSTRING(ss.str());
 
-            // Check that Major.Minor.Build match the profiler version
-            if (assembly_version == ToWSTRING(PROFILER_VERSION))
+            // Check that Major.Minor.Build matches the profiler version.
+            // On .NET Core, allow managed library to be a higher version than the native library.
+            if (is_viable_version)
             {
-                Info("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed v", assembly_version,
-                     " matched profiler version v", PROFILER_VERSION);
+                Info("AssemblyLoadFinished: Managed library v", assembly_version,
+                     " matched native library v", PROFILER_VERSION);
                 managed_profiler_loaded_app_domains.insert(assembly_info.app_domain_id);
 
                 if (runtime_information_.is_desktop() && corlib_module_loaded)
@@ -374,19 +387,19 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
                     // managed profiler is loaded shared
                     if (assembly_info.app_domain_id == corlib_app_domain_id)
                     {
-                        Info("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed was loaded domain-neutral");
+                        Info("AssemblyLoadFinished: Datadog.Trace was loaded domain-neutral");
                         managed_profiler_loaded_domain_neutral = true;
                     }
                     else
                     {
-                        Info("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed was not loaded domain-neutral");
+                        Info("AssemblyLoadFinished: Datadog.Trace was not loaded domain-neutral");
                     }
                 }
             }
             else
             {
-                Warn("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed v", assembly_version,
-                     " did not match profiler version v", PROFILER_VERSION);
+                Warn("AssemblyLoadFinished: Managed library v", assembly_version, " did not match native library v",
+                     PROFILER_VERSION);
             }
         }
     }
@@ -783,7 +796,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
 
     // The first time a method is JIT compiled in an AppDomain, insert our startup
     // hook which, at a minimum, must add an AssemblyResolve event so we can find
-    // Datadog.Trace.ClrProfiler.Managed.dll and its dependencies on-disk since it
+    // Datadog.Trace.dll and its dependencies on-disk since it
     // is no longer provided in a NuGet package
     if (valid_startup_hook_callsite && !has_loader_injected_in_appdomain)
     {

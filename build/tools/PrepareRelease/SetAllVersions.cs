@@ -12,9 +12,11 @@ namespace PrepareRelease
 {
     public class SetAllVersions
     {
-        public SetAllVersions(string solutionDirectory)
+        public SetAllVersions(string solutionDirectory, Version version, bool? isPreRelease)
         {
             SolutionDirectory = solutionDirectory;
+            TracerVersion = version ?? new("1.28.1");
+            IsPrerelease = isPreRelease ?? false;
         }
 
         /// <summary>
@@ -28,12 +30,12 @@ namespace PrepareRelease
         /// When changing the tracer version, update this value and <see cref="IsPrerelease">,
         /// then run the "PrepareRelease" tool to update the entire solution.
         /// </summary>
-        public Version TracerVersion { get; } = new("1.28.1");
+        public Version TracerVersion { get; }
 
         /// <summary>
         /// Gets a value indicating whether the current tracer version is a prerelease.
         /// </summary>
-        public bool IsPrerelease { get; } = true;
+        public bool IsPrerelease { get; }
 
         public void Run()
         {
@@ -88,18 +90,6 @@ namespace PrepareRelease
                 NugetVersionReplace);
 
             SynchronizeVersion(
-                "src/Datadog.Trace.AspNet/Datadog.Trace.AspNet.csproj",
-                NugetVersionReplace);
-
-            SynchronizeVersion(
-                "src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj",
-                NugetVersionReplace);
-
-            SynchronizeVersion(
-                "src/Datadog.Trace.ClrProfiler.Managed.Core/Datadog.Trace.ClrProfiler.Managed.Core.csproj",
-                NugetVersionReplace);
-
-            SynchronizeVersion(
                 "src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj",
                 NugetVersionReplace);
 
@@ -132,15 +122,6 @@ namespace PrepareRelease
             SynchronizeVersion(
                 "src/Datadog.Trace/TracerConstants.cs",
                 FourPartVersionReplace);
-
-            // Locked AssemblyVersion #.0.0.0 updates
-            SynchronizeVersion(
-                "src/Datadog.Trace.AspNet/AssemblyInfo.cs",
-                text => MajorAssemblyVersionReplace(text, "."));
-
-            SynchronizeVersion(
-                "src/Datadog.Trace.ClrProfiler.Managed.Core/AssemblyInfo.cs",
-                text => MajorAssemblyVersionReplace(text, "."));
 
             // Native profiler updates
             SynchronizeVersion(
@@ -291,7 +272,7 @@ namespace PrepareRelease
 
         private string AssemblyString(string versionText)
         {
-            return $"Datadog.Trace.ClrProfiler.Managed, Version={versionText}.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
+            return $"Datadog.Trace, Version={versionText}.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
         }
     }
 }
