@@ -169,21 +169,49 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             return new ProcessResult(process, standardOutput, standardError, exitCode);
         }
 
-        public (Process Process, string ConfigFile) StartIISExpress(int traceAgentPort, int iisPort, bool classicMode)
+        public (Process Process, string ConfigFile) StartIISExpress(int traceAgentPort, int iisPort, IisAppType appType)
         {
             // get full paths to integration definitions
             IEnumerable<string> integrationPaths = Directory.EnumerateFiles(".", "*integrations.json").Select(Path.GetFullPath);
 
-            var iisExpress = EnvironmentHelper.GetSampleExecutionSource();
+            var iisExpress = EnvironmentHelper.GetIisExpressPath();
+
+            var appPool = appType switch
+            {
+                IisAppType.AspNetClassic => "Clr4ClassicAppPool",
+                IisAppType.AspNetIntegrated => "Clr4IntegratedAppPool",
+                IisAppType.AspNetCoreInProcess => "UnmanagedClassicAppPool",
+                IisAppType.AspNetCoreOutOfProcess => "UnmanagedClassicAppPool",
+                _ => throw new InvalidOperationException($"Unknown {nameof(IisAppType)} '{appType}'"),
+            };
+
+            var appPath = appType switch
+            {
+                IisAppType.AspNetClassic => EnvironmentHelper.GetSampleProjectDirectory(),
+                IisAppType.AspNetIntegrated => EnvironmentHelper.GetSampleProjectDirectory(),
+                IisAppType.AspNetCoreInProcess => EnvironmentHelper.GetSampleApplicationOutputDirectory(),
+                IisAppType.AspNetCoreOutOfProcess => EnvironmentHelper.GetSampleApplicationOutputDirectory(),
+                _ => throw new InvalidOperationException($"Unknown {nameof(IisAppType)} '{appType}'"),
+            };
 
             var configTemplate = File.ReadAllText("applicationHost.config");
 
             var newConfig = Path.GetTempFileName();
 
             configTemplate = configTemplate
-                            .Replace("[PATH]", EnvironmentHelper.GetSampleProjectDirectory())
+                            .Replace("[PATH]", appPath)
                             .Replace("[PORT]", iisPort.ToString())
-                            .Replace("[POOL]", classicMode ? "Clr4ClassicAppPool" : "Clr4IntegratedAppPool");
+                            .Replace("[POOL]", appPool);
+
+            var isAspNetCore = appType == IisAppType.AspNetCoreInProcess || appType == IisAppType.AspNetCoreOutOfProcess;
+            if (isAspNetCore)
+            {
+                var hostingModel = appType == IisAppType.AspNetCoreInProcess ? "inprocess" : "outofprocess";
+                configTemplate = configTemplate
+                                .Replace("[DOTNET]", EnvironmentHelper.GetDotnetExe())
+                                .Replace("[RELATIVE_SAMPLE_PATH]", $".\\{EnvironmentHelper.GetSampleApplicationFileName()}")
+                                .Replace("[HOSTING_MODEL]", hostingModel);
+            }
 
             File.WriteAllText(newConfig, configTemplate);
 
@@ -203,7 +231,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 arguments: string.Join(" ", args),
                 redirectStandardInput: true,
                 traceAgentPort: traceAgentPort,
-                processToProfile: iisExpress);
+                processToProfile: appType == IisAppType.AspNetCoreOutOfProcess ? "dotnet.exe" : iisExpress);
 
             var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
 

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Samples.AspNetCoreMvc.Shared;
 
 namespace Samples.AspNetCoreMvc
 {
@@ -30,6 +31,9 @@ namespace Samples.AspNetCoreMvc
             {
                 app.UseDeveloperExceptionPage();
             }
+
+            app.UseMiddleware<PingMiddleware>();
+            app.Map("/branch", x => x.UseMiddleware<PingMiddleware>());
 
             app.Map("/shutdown", builder =>
             {

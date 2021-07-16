@@ -4,27 +4,76 @@
 // </copyright>
 
 #if NETCOREAPP3_1
+#pragma warning disable SA1402 // File may only contain a single class
+#pragma warning disable SA1649 // File name must match first type name
+using System.Net;
 using System.Threading.Tasks;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
-    public class AspNetCoreMvc31Tests : AspNetCoreMvcTestBase
+    public class AspNetCoreMvc31TestsCallsite : AspNetCoreMvc31Tests
     {
-        public AspNetCoreMvc31Tests(ITestOutputHelper output)
-            : base("AspNetCoreMvc31", output, serviceVersion: "1.0.0")
+        public AspNetCoreMvc31TestsCallsite(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, enableCallTarget: false, enableRouteTemplateResourceNames: false)
         {
-            // EnableDebugMode();
+        }
+    }
+
+    public class AspNetCoreMvc31TestsCallsiteWithFeatureFlag : AspNetCoreMvc31Tests
+    {
+        public AspNetCoreMvc31TestsCallsiteWithFeatureFlag(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, enableCallTarget: false, enableRouteTemplateResourceNames: true)
+        {
+        }
+    }
+
+    public class AspNetCoreMvc31TestsCallTarget : AspNetCoreMvc31Tests
+    {
+        public AspNetCoreMvc31TestsCallTarget(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, enableCallTarget: true, enableRouteTemplateResourceNames: false)
+        {
+        }
+    }
+
+    public class AspNetCoreMvc31TestsCallTargetWithFeatureFlag : AspNetCoreMvc31Tests
+    {
+        public AspNetCoreMvc31TestsCallTargetWithFeatureFlag(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, enableCallTarget: true, enableRouteTemplateResourceNames: true)
+        {
+        }
+    }
+
+    public abstract class AspNetCoreMvc31Tests : AspNetCoreMvcTestBase
+    {
+        private readonly string _testName;
+
+        protected AspNetCoreMvc31Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output, bool enableCallTarget, bool enableRouteTemplateResourceNames)
+            : base("AspNetCoreMvc31", fixture, output, enableCallTarget, enableRouteTemplateResourceNames)
+        {
+            _testName = GetTestName(nameof(AspNetCoreMvc31Tests));
         }
 
-        [Fact]
+        [Theory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task MeetsAllAspNetCoreMvcExpectations()
+        [MemberData(nameof(Data))]
+        public async Task MeetsAllAspNetCoreMvcExpectations(string path, HttpStatusCode statusCode)
         {
-            // No package versions are relevant because this is built-in
-            await RunTraceTestOnSelfHosted(string.Empty);
+            await Fixture.TryStartApp(this, Output);
+
+            var spans = await Fixture.WaitForSpans(Output, path);
+
+            var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
+
+            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, statusCode);
+
+            // Overriding the type name here as we have multiple test classes in the file
+            // Ensures that we get nice file nesting in Solution Explorer
+            await Verifier.Verify(spans, settings)
+                          .UseTypeName(_testName);
         }
     }
 }

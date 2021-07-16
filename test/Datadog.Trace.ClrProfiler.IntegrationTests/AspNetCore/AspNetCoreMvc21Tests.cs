@@ -4,26 +4,76 @@
 // </copyright>
 
 #if NETCOREAPP2_1
+#pragma warning disable SA1402 // File may only contain a single class
+#pragma warning disable SA1649 // File name must match first type name
+using System.Net;
 using System.Threading.Tasks;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
-    public class AspNetCoreMvc21Tests : AspNetCoreMvcTestBase
+    public class AspNetCoreMvc21TestsCallsite : AspNetCoreMvc21Tests
     {
-        public AspNetCoreMvc21Tests(ITestOutputHelper output)
-            : base("AspNetCoreMvc21", output, serviceVersion: "1.0.0")
+        public AspNetCoreMvc21TestsCallsite(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, enableCallTarget: false, enableRouteTemplateResourceNames: false)
         {
         }
+    }
 
-        [Fact]
+    public class AspNetCoreMvc21TestsCallsiteWithFeatureFlag : AspNetCoreMvc21Tests
+    {
+        public AspNetCoreMvc21TestsCallsiteWithFeatureFlag(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, enableCallTarget: false, enableRouteTemplateResourceNames: true)
+        {
+        }
+    }
+
+    public class AspNetCoreMvc21TestsCallTarget : AspNetCoreMvc21Tests
+    {
+        public AspNetCoreMvc21TestsCallTarget(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, enableCallTarget: true, enableRouteTemplateResourceNames: false)
+        {
+        }
+    }
+
+    public class AspNetCoreMvc21TestsCallTargetWithFeatureFlag : AspNetCoreMvc21Tests
+    {
+        public AspNetCoreMvc21TestsCallTargetWithFeatureFlag(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base(fixture, output, enableCallTarget: true, enableRouteTemplateResourceNames: true)
+        {
+        }
+    }
+
+    public abstract class AspNetCoreMvc21Tests : AspNetCoreMvcTestBase
+    {
+        private readonly string _testName;
+
+        protected AspNetCoreMvc21Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output, bool enableCallTarget, bool enableRouteTemplateResourceNames)
+            : base("AspNetCoreMvc21", fixture, output, enableCallTarget, enableRouteTemplateResourceNames)
+        {
+            _testName = GetTestName(nameof(AspNetCoreMvc21Tests));
+        }
+
+        [Theory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task MeetsAllAspNetCoreMvcExpectations()
+        [MemberData(nameof(Data))]
+        public async Task MeetsAllAspNetCoreMvcExpectations(string path, HttpStatusCode statusCode)
         {
-            // No package versions are relevant because this is built-in
-            await RunTraceTestOnSelfHosted(string.Empty);
+            await Fixture.TryStartApp(this, Output);
+
+            var spans = await Fixture.WaitForSpans(Output, path);
+
+            var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
+
+            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, statusCode);
+
+            // Overriding the type name here as we have multiple test classes in the file
+            // Ensures that we get nice file nesting in Solution Explorer
+            await Verifier.Verify(spans, settings)
+                          .UseTypeName(_testName);
         }
     }
 }
