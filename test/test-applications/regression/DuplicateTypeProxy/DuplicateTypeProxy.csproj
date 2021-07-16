@@ -9,7 +9,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\..\..\tools\Datadog.Core.Tools\Datadog.Core.Tools.csproj" />
+      <Compile Include="..\..\..\Datadog.Trace.TestHelpers\TcpPortProvider.cs" Link="TcpPortProvider.cs" />
     </ItemGroup>
   
   </Project>

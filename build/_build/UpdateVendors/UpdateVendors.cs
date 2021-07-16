@@ -9,61 +9,48 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net;
-using Datadog.Core.Tools;
+using Nuke.Common.IO;
 
 namespace UpdateVendors
 {
-    public class Program
+    public static class UpdateVendorsTool
     {
-        private static readonly string DownloadDirectory = Path.Combine(Environment.CurrentDirectory, "downloads");
-        private static string _vendorProjectDirectory;
-
-        public static void Main()
+        public static void UpdateHoneypotProject(AbsolutePath honeypotProject)
         {
-            InitializeCleanDirectory(DownloadDirectory);
-            var solutionDirectory = GetSolutionDirectory();
-            _vendorProjectDirectory = Path.Combine(solutionDirectory, "src", "Datadog.Trace", "Vendors");
-
             var fakeRefs = string.Empty;
 
             foreach (var dependency in VendoredDependency.All)
             {
                 fakeRefs += $@"{Environment.NewLine}    <!-- https://www.nuget.org/packages/{dependency.LibraryName}/{dependency.Version} -->";
                 fakeRefs += $@"{Environment.NewLine}    <PackageReference Include=""{dependency.LibraryName}"" Version=""{dependency.Version}"" />{Environment.NewLine}";
-                UpdateVendor(dependency);
             }
 
             var honeypotProjTemplate = GetHoneyPotProjTemplate();
             honeypotProjTemplate = honeypotProjTemplate.Replace("##PACKAGE_REFS##", fakeRefs);
-            var projLocation = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "honeypot", "Datadog.Dependabot.Honeypot.csproj");
-            File.WriteAllText(projLocation, honeypotProjTemplate);
+
+            File.WriteAllText(honeypotProject, honeypotProjTemplate);
+        }
+
+        public static void UpdateVendors(
+            AbsolutePath downloadDirectory,
+            AbsolutePath vendorDirectory)
+        {
+            foreach (var dependency in VendoredDependency.All)
+            {
+                UpdateVendor(dependency, downloadDirectory, vendorDirectory);
+            }
         }
 
         private static string GetHoneyPotProjTemplate()
         {
-            var templateName = "Datadog.Dependabot.Honeypot.template";
-            var directory = Directory.GetCurrentDirectory();
-            string template = null;
-            var levelLimit = 4;
+            var thisAssembly = typeof(UpdateVendorsTool).Assembly;
+            var resourceStream = thisAssembly.GetManifestResourceStream("UpdateVendors.Datadog.Dependabot.Honeypot.template");
+            using var reader = new StreamReader(resourceStream);
 
-            while (template == null && --levelLimit >= 0)
-            {
-                foreach (var filePath in Directory.EnumerateFiles(directory))
-                {
-                    if (filePath.Contains(templateName))
-                    {
-                        template = File.ReadAllText(filePath);
-                        break;
-                    }
-                }
-
-                directory = Directory.GetParent(directory).FullName;
-            }
-
-            return template;
+            return reader.ReadToEnd();
         }
 
-        private static void UpdateVendor(VendoredDependency dependency)
+        private static void UpdateVendor(VendoredDependency dependency, AbsolutePath downloadDirectory, AbsolutePath vendorDirectory)
         {
             var libraryName = dependency.LibraryName;
             var downloadUrl = dependency.DownloadUrl;
@@ -71,9 +58,9 @@ namespace UpdateVendors
 
             Console.WriteLine($"Starting {libraryName} upgrade.");
 
-            var zipLocation = Path.Combine(DownloadDirectory, $"{libraryName}.zip");
-            var extractLocation = Path.Combine(DownloadDirectory, $"{libraryName}");
-            var vendorFinalPath = Path.Combine(_vendorProjectDirectory, libraryName);
+            var zipLocation = Path.Combine(downloadDirectory, $"{libraryName}.zip");
+            var extractLocation = Path.Combine(downloadDirectory, $"{libraryName}");
+            var vendorFinalPath = Path.Combine(vendorDirectory, libraryName);
             var sourceUrlLocation = Path.Combine(vendorFinalPath, "_last_downloaded_source_url.txt");
 
             // Ensure the url has changed, or don't bother upgrading
@@ -155,44 +142,12 @@ namespace UpdateVendors
             return false;
         }
 
-        private static void InitializeCleanDirectory(string directoryPath)
-        {
-            SafeDeleteDirectory(directoryPath);
-            Directory.CreateDirectory(directoryPath);
-        }
-
         private static void SafeDeleteDirectory(string directoryPath)
         {
             if (Directory.Exists(directoryPath))
             {
                 Directory.Delete(directoryPath, recursive: true);
             }
-        }
-
-        private static string GetSolutionDirectory()
-        {
-            var startDirectory = Environment.CurrentDirectory;
-            var currentDirectory = Directory.GetParent(startDirectory);
-            const string searchItem = @"Datadog.Trace.sln";
-
-            while (true)
-            {
-                var slnFile = currentDirectory.GetFiles(searchItem).SingleOrDefault();
-
-                if (slnFile != null)
-                {
-                    break;
-                }
-
-                currentDirectory = currentDirectory.Parent;
-
-                if (currentDirectory == null || !currentDirectory.Exists)
-                {
-                    throw new Exception($"Unable to find solution directory from: {startDirectory}");
-                }
-            }
-
-            return currentDirectory.FullName;
         }
     }
 }

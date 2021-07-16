@@ -6,7 +6,6 @@
 #if NET461
 
 using System.Collections.Generic;
-using Datadog.Core.Tools;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
