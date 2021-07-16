@@ -1,0 +1,42 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the workflow will run
+on:
+  check_run:
+    action: [ completed ]
+    check_run[name]: [ consolidated_pipeline ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      # Runs a single command using the runners shell
+      - name: Run a one-line script
+        run: echo Hello, world!
+        
+      - name: Sticky Pull Request Comment
+        # You may pin to the exact commit or the version.
+        # uses: marocchino/sticky-pull-request-comment@322a2451dae6c7831d1a8b931275a7f78147c888
+        uses: marocchino/sticky-pull-request-comment@v2.1.0
+        with:
+          # Header to determine if the comment is to be updated, not shown on screen. It can be used when you want to add multiple comments independently at the same time.
+          header: benchmarks
+          # Indicate if previous comment should be removed before creating a new comment. Only `true` is allowed. Just skip this item when you don't need it.
+          #recreate: # optional, default is false
+          # delete the previously created comment. Only `true` is allowed. Just skip this item when you don't need it.
+          #delete: # optional, default is false
+          # comment message
+          message: This is a test ${{ github.head_ref }}
