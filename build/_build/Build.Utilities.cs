@@ -221,7 +221,7 @@ partial class Build
         });
 
     Target SyncMsiContents => _ => _
-       .Description("Update the version number for the tracer")
+       .Description("Update the contents of the MSI")
        .DependsOn(Clean, BuildTracerHome)
        .Executes(() =>
         {
