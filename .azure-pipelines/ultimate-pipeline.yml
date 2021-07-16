@@ -614,7 +614,7 @@ stages:
           condition: succeededOrFailed()
 
 - stage: benchmarks
-  dependsOn: build_windows
+  dependsOn: build_windows  
   jobs:
 
   #### Windows
@@ -633,6 +633,7 @@ stages:
     - template: steps/restore-working-directory.yml
 
     - script: build.cmd RunBenchmarks
+      continueOnError: true
       displayName: RunBenchmarks
 
     ## Is this really necessary?
