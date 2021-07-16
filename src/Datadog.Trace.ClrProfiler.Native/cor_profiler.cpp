@@ -583,6 +583,86 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         CallTarget_RequestRejitForModule(module_id, module_metadata, filtered_integrations);
     }
 
+#ifndef _WIN32
+    // Fix PInvokeMap (Non windows only)
+    if (module_info.assembly.name == managed_profiler_name)
+    {
+        Info("ModuleLoadFinished: ", managed_profiler_name," - Fix PInvoke maps");
+
+        // We are in the right module, so we try to load the mdTypeDef from the target type name.
+        mdTypeDef nativeMethodsTypeDef = mdTypeDefNil;
+        auto foundType = FindTypeDefByName(nonwindows_nativemethods_type,
+                                           module_metadata->assemblyName, metadata_import, nativeMethodsTypeDef);
+        if (foundType)
+        {
+            // Define the actual profiler file path as a ModuleRef
+            WSTRING native_profiler_file = GetCoreCLRProfilerPath();
+            mdModuleRef profiler_ref;
+            hr = metadata_emit->DefineModuleRef(native_profiler_file.c_str(), &profiler_ref);
+            if (SUCCEEDED(hr))
+            {
+                // Enumerate all methods inside the native methods type with the PInvokes
+                Enumerator<mdMethodDef> enumMethods = Enumerator<mdMethodDef>(
+                    [metadata_import, nativeMethodsTypeDef](HCORENUM* ptr, mdMethodDef arr[], ULONG max, ULONG* cnt) -> HRESULT
+                    {
+                        return metadata_import->EnumMethods(ptr, nativeMethodsTypeDef, arr, max, cnt);
+                    }, [metadata_import](HCORENUM ptr) -> void { metadata_import->CloseEnum(ptr); });
+
+                EnumeratorIterator<mdMethodDef> enumIterator = enumMethods.begin();
+                while (enumIterator != enumMethods.end())
+                {
+                    auto methodDef = *enumIterator;
+
+                    // Get the current PInvoke map to extract the flags and the entrypoint name
+                    DWORD pdwMappingFlags;
+                    WCHAR importName[kNameMaxSize]{};
+                    DWORD importNameLength = 0;
+                    mdModuleRef importModule;
+                    hr = metadata_import->GetPinvokeMap(methodDef, &pdwMappingFlags, importName, kNameMaxSize,
+                                                        &importNameLength, &importModule);
+                    if (SUCCEEDED(hr))
+                    {
+                        // Delete the current PInvoke map
+                        hr = metadata_emit->DeletePinvokeMap(methodDef);
+                        if (SUCCEEDED(hr))
+                        {
+                            // Define a new PInvoke map with the new ModuleRef of the actual profiler file path
+                            hr = metadata_emit->DefinePinvokeMap(methodDef, pdwMappingFlags,
+                                                                 WSTRING(importName).c_str(), profiler_ref);
+                            if (FAILED(hr))
+                            {
+                                Warn("ModuleLoadFinished: DefinePinvokeMap to the actual profiler file path failed, trying to restore the previous one.");
+                                hr = metadata_emit->DefinePinvokeMap(methodDef, pdwMappingFlags,
+                                                                     WSTRING(importName).c_str(), importModule);
+                                if (FAILED(hr))
+                                {
+                                    // We only warn that we cannot rewrite the PInvokeMap but we still continue the module load.
+                                    // These errors must be handled on the caller with a try/catch.
+                                    Warn("ModuleLoadFinished: Error trying to restore the previous PInvokeMap.");
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // We only warn that we cannot rewrite the PInvokeMap but we still continue the module load.
+                            // These errors must be handled on the caller with a try/catch.
+                            Warn("ModuleLoadFinished: DeletePinvokeMap failed");
+                        }
+                    }
+
+                    enumIterator = ++enumIterator;
+                }
+            }
+            else
+            {
+                // We only warn that we cannot rewrite the PInvokeMap but we still continue the module load.
+                // These errors must be handled on the caller with a try/catch.
+                Warn("ModuleLoadFinished: Native Profiler DefineModuleRef failed");
+            }
+        }
+    }
+#endif
+
     return S_OK;
 }
 
@@ -1007,6 +1087,29 @@ bool CorProfiler::IsAttached() const
 //
 // Helper methods
 //
+WSTRING CorProfiler::GetCoreCLRProfilerPath()
+{
+    WSTRING native_profiler_file;
+#ifdef BIT64
+    native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_64"));
+    Debug("GetProfilerFilePath: CORECLR_PROFILER_PATH_64 defined as: ", native_profiler_file);
+    if (native_profiler_file == WStr(""))
+    {
+        native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH"));
+        Debug("GetProfilerFilePath: CORECLR_PROFILER_PATH defined as: ", native_profiler_file);
+    }
+#else // BIT64
+    native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_32"));
+    Debug("GetProfilerFilePath: CORECLR_PROFILER_PATH_32 defined as: ", native_profiler_file);
+    if (native_profiler_file == WStr(""))
+    {
+        native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH"));
+        Debug("GetProfilerFilePath: CORECLR_PROFILER_PATH defined as: ", native_profiler_file);
+    }
+#endif // BIT64
+    return native_profiler_file;
+}
+
 HRESULT CorProfiler::ProcessReplacementCalls(ModuleMetadata* module_metadata, const FunctionID function_id,
                                              const ModuleID module_id, const mdToken function_token,
                                              const FunctionInfo& caller,
@@ -2106,27 +2209,9 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
 #ifdef _WIN32
     WSTRING native_profiler_file = WStr("DATADOG.TRACE.CLRPROFILER.NATIVE.DLL");
 #else // _WIN32
-
-#ifdef BIT64
-    WSTRING native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_64"));
-    Debug("GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH_64 defined as: ", native_profiler_file);
-    if (native_profiler_file == WStr(""))
-    {
-        native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH"));
-        Debug("GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH defined as: ", native_profiler_file);
-    }
-#else // BIT64
-    WSTRING native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_32"));
-    Debug("GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH_32 defined as: ", native_profiler_file);
-    if (native_profiler_file == WStr(""))
-    {
-        native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH"));
-        Debug("GenerateVoidILStartupMethod: Linux: CORECLR_PROFILER_PATH defined as: ", native_profiler_file);
-    }
-#endif // BIT64
-    Debug("GenerateVoidILStartupMethod: Linux: Setting the PInvoke native profiler library path to ",
+    WSTRING native_profiler_file = GetCoreCLRProfilerPath();
+    Debug("GenerateVoidILStartupMethod: Setting the PInvoke native profiler library path to ",
           native_profiler_file);
-
 #endif // _WIN32
 
     mdModuleRef profiler_ref;
