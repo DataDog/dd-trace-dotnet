@@ -159,11 +159,19 @@ partial class Build : NukeBuild
         .DependsOn(CompileDependencyLibs)
         .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CreatePlatformlessSymlinks)
+        .DependsOn(CompileSamples)
+        .DependsOn(PublishIisSamples)
+        .DependsOn(CompileIntegrationTests);
+
+    Target BuildWindowsRegressionIntegrationTests => _ => _
+        .Unlisted()
+        .Requires(() => IsWin)
+        .Description("Builds the integration tests for Windows")
+        .DependsOn(CompileManagedTestHelpers)
+        .DependsOn(CreatePlatformlessSymlinks)
         .DependsOn(CompileRegressionDependencyLibs)
         .DependsOn(CompileRegressionSamples)
         .DependsOn(CompileFrameworkReproductions)
-        .DependsOn(CompileSamples)
-        .DependsOn(PublishIisSamples)
         .DependsOn(CompileIntegrationTests);
 
     Target BuildAndRunWindowsIntegrationTests => _ => _
@@ -171,6 +179,12 @@ partial class Build : NukeBuild
         .Description("Builds and runs the Windows (non-IIS) integration tests")
         .DependsOn(BuildWindowsIntegrationTests)
         .DependsOn(RunWindowsIntegrationTests);
+
+    Target BuildAndRunWindowsRegressionTests => _ => _
+        .Requires(() => IsWin)
+        .Description("Builds and runs the Windows regression tests")
+        .DependsOn(BuildWindowsRegressionIntegrationTests)
+        .DependsOn(RunWindowsRegressionTests);
 
     Target BuildAndRunWindowsIisIntegrationTests => _ => _
         .Requires(() => IsWin)

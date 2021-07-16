@@ -777,7 +777,38 @@ partial class Build
                     .SetTargetPlatform(Platform)
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetFilter(Filter ?? "(RunOnWindows=True|Category=Smoke)&LoadFromGAC!=True&IIS!=True")
+                    .SetFilter(Filter ?? "RunOnWindows=True&LoadFromGAC!=True&IIS!=True")
+                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
+                        .EnableTrxLogOutput(GetResultsDirectory(project))
+                        .SetProjectFile(project)));
+            }
+            finally
+            {
+                MoveLogsToBuildData();
+            }
+        });
+
+    Target RunWindowsRegressionTests => _ => _
+        .Unlisted()
+        .After(BuildTracerHome)
+        .After(CompileIntegrationTests)
+        .After(CompileRegressionSamples)
+        .After(CompileFrameworkReproductions)
+        .Requires(() => IsWin)
+        .Executes(() =>
+        {
+            ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
+
+            try
+            {
+                DotNetTest(config => config
+                    .SetDotnetPath(Platform)
+                    .SetConfiguration(BuildConfiguration)
+                    .SetTargetPlatform(Platform)
+                    .EnableNoRestore()
+                    .EnableNoBuild()
+                    .SetFilter(Filter ?? "Category=Smoke&LoadFromGAC!=True")
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
@@ -809,7 +840,7 @@ partial class Build
                     .When(Framework != null, o => o.SetFramework(Framework))
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetFilter(Filter ?? "(RunOnWindows=True|Category=Smoke)&LoadFromGAC=True")
+                    .SetFilter(Filter ?? "(RunOnWindows=True)&LoadFromGAC=True")
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
