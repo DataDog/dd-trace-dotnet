@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Builder;
@@ -23,7 +24,9 @@ namespace Samples.AspNetCoreMvc
 
         public static IWebHost BuildWebHost(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
-                .UseStartup<Startup>()
+                   .UseContentRoot(AppContext.BaseDirectory)
+                   .ConfigureLogging(LogHelpers.ConfigureCustomLogging)
+                   .UseStartup<Startup>()
                 .Build();
 
         public IConfiguration Configuration { get; }
@@ -36,12 +39,16 @@ namespace Samples.AspNetCoreMvc
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILogger<Startup> startupLog)
         {
+            LogHelpers.WriteUnTracedLog(startupLog);
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
+
+            app.UseMiddleware<LogHelpers.LogMiddleware>();
 
             app.Map("/shutdown", builder =>
             {

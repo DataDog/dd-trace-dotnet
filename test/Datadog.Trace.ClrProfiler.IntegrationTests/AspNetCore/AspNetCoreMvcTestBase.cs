@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -14,6 +15,8 @@ using Datadog.Core.Tools;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
+using FluentAssertions.Execution;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
@@ -42,6 +45,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             SetEnvironmentVariable(ConfigurationKeys.HttpServerErrorStatusCodes, "400-403, 500-503");
 
             SetServiceVersion(ServiceVersion);
+
+            SetEnvironmentVariable(ConfigurationKeys.LogsInjectionEnabled, "1");
+            SetCallTargetSettings(enableCallTarget: true);
 
             CreateTopLevelExpectation(url: "/", httpMethod: "GET", httpStatus: "200", resourceUrl: "Home/Index", serviceVersion: ServiceVersion);
             CreateTopLevelExpectation(url: "/delay/0", httpMethod: "GET", httpStatus: "200", resourceUrl: "delay/{seconds}", serviceVersion: ServiceVersion);
@@ -141,7 +147,28 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
         protected List<AspNetCoreMvcSpanExpectation> Expectations { get; set; } = new List<AspNetCoreMvcSpanExpectation>();
 
-        public async Task RunTraceTestOnSelfHosted(string packageVersion)
+        public async Task<List<MockTracerAgent.Span>> RunTraceTestOnSelfHosted(string packageVersion)
+        {
+            var spans = await RunTraceTestOnSelfHosted(packageVersion, WaitForSpans);
+            SpanTestHelpers.AssertExpectationsMet(Expectations, spans);
+            return spans;
+
+            List<MockTracerAgent.Span> WaitForSpans(MockTracerAgent agent, DateTimeOffset testStart)
+            {
+                var list =
+                    agent.WaitForSpans(
+                              Expectations.Count,
+                              operationName: TopLevelOperationName,
+                              minDateTime: testStart)
+                         .OrderBy(s => s.Start)
+                         .ToList();
+                return list;
+            }
+        }
+
+        public async Task<T> RunTraceTestOnSelfHosted<T>(
+            string packageVersion,
+            Func<MockTracerAgent, DateTimeOffset, T> waitForResults)
         {
             var agentPort = TcpPortProvider.GetOpenPort();
             var aspNetCorePort = TcpPortProvider.GetOpenPort();
@@ -209,18 +236,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                     throw new Exception("Couldn't verify the application is ready to receive requests.");
                 }
 
-                var testStart = DateTime.Now;
+                var testStart = DateTime.UtcNow;
 
                 var paths = Expectations.Select(e => e.OriginalUri).ToArray();
                 await SubmitRequests(aspNetCorePort, paths);
 
-                var spans =
-                    agent.WaitForSpans(
-                              Expectations.Count,
-                              operationName: TopLevelOperationName,
-                              minDateTime: testStart)
-                         .OrderBy(s => s.Start)
-                         .ToList();
+                var results = waitForResults(agent, testStart);
 
                 if (!process.HasExited)
                 {
@@ -229,12 +250,78 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
                     if (!process.WaitForExit(5000))
                     {
+                        process.CloseMainWindow();
                         process.Kill();
                     }
                 }
 
-                SpanTestHelpers.AssertExpectationsMet(Expectations, spans);
+                return results;
             }
+        }
+
+        public void RunLogInjectionTest(List<MockTracerAgent.Span> spans)
+        {
+            var logs = GetLogFileContents();
+            logs.Should().NotBeNullOrEmpty();
+
+            using var s = new AssertionScope();
+
+            // Assumes we _only_ have logs for logs within traces + our startup log
+            var tracedLogs = logs.Where(log => !log.Contains("Building pipeline")).ToList();
+
+            // all spans should be represented in the traced logs
+            var traceIds = spans.Select(x => x.TraceId.ToString()).Distinct().ToList();
+            if (traceIds.Any())
+            {
+                string.Join(",", tracedLogs).Should().ContainAll(traceIds);
+            }
+
+            foreach (var log in tracedLogs)
+            {
+                log.Should().MatchRegex($@"""dd_version"":""{ServiceVersion}""");
+                log.Should().MatchRegex($@"""dd_env"":""integration_tests""");
+                log.Should().MatchRegex($@"""dd_service"":""{EnvironmentHelper.FullSampleName}""");
+                log.Should().NotMatchRegex($@"""dd_trace_id"":""0""");
+            }
+
+            var unTracedLogs = logs.Where(log => log.Contains("Building pipeline")).ToList();
+
+            foreach (var log in unTracedLogs)
+            {
+                log.Should()
+                   .NotMatchRegex("dd_version")
+                   .And.NotMatchRegex("dd_env")
+                   .And.NotMatchRegex("dd_service")
+                   .And.NotMatchRegex("dd_trace_id");
+            }
+        }
+
+        public string[] GetLogFileContents()
+        {
+            // direct ILogger output log file
+            var logFile = Path.Combine(EnvironmentHelper.GetSampleApplicationOutputDirectory(), "log", "Karambolo", "log.txt");
+            File.Exists(logFile).Should().BeTrue($"'{logFile}' should exist");
+
+            // may have a lingering lock, so retry
+            var retryCount = 5;
+            var millisecondsToWait = 15_000 / retryCount;
+            Exception ex = null;
+            while (retryCount > 0)
+            {
+                try
+                {
+                    return File.ReadAllLines(logFile);
+                }
+                catch (Exception e)
+                {
+                    ex = e;
+                    Thread.Sleep(millisecondsToWait);
+                }
+
+                retryCount--;
+            }
+
+            throw new Exception("Unable to Fetch Log File Contents", ex);
         }
 
         protected void CreateTopLevelExpectation(

@@ -24,7 +24,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         public async Task MeetsAllAspNetCoreMvcExpectations()
         {
             // No package versions are relevant because this is built-in
-            await RunTraceTestOnSelfHosted(string.Empty);
+            var spans = await RunTraceTestOnSelfHosted(string.Empty);
+
+            RunLogInjectionTest(spans);
         }
     }
 }

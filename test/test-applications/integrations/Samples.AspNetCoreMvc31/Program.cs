@@ -1,5 +1,9 @@
+using System;
+using System.Diagnostics;
+using Karambolo.Extensions.Logging.File;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace Samples.AspNetCoreMvc
 {
@@ -14,7 +18,10 @@ namespace Samples.AspNetCoreMvc
             Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
-                    webBuilder.UseStartup<Startup>();
+                    webBuilder
+                       .UseContentRoot(AppContext.BaseDirectory)
+                       .ConfigureLogging(LogHelpers.ConfigureCustomLogging)
+                        .UseStartup<Startup>();
                 });
     }
 }

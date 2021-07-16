@@ -25,10 +25,11 @@
         "DD_DOTNET_TRACER_HOME": "$(ProjectDir)$(OutputPath)profiler-lib",
         "DD_INTEGRATIONS": "$(ProjectDir)$(OutputPath)profiler-lib\\integrations.json",
         "DD_VERSION": "1.0.0",
-        "DD_TRACE_HEADER_TAGS": "sample.correlation.identifier, Server"
+        "DD_TRACE_HEADER_TAGS": "sample.correlation.identifier, Server",
+        "DD_LOGS_INJECTION": "true"
       },
       "use64Bit": true,
-      "nativeDebugging": true
+      "nativeDebugging": false
     },
     "Samples.AspNetCoreMvc2": {
       "commandName": "Project",
@@ -47,10 +48,11 @@
         "DD_DOTNET_TRACER_HOME": "$(ProjectDir)$(OutputPath)profiler-lib",
         "DD_INTEGRATIONS": "$(ProjectDir)$(OutputPath)profiler-lib\\integrations.json",
         "DD_VERSION": "1.0.0",
-        "DD_TRACE_HEADER_TAGS": "sample.correlation.identifier, Server"
+        "DD_TRACE_HEADER_TAGS": "sample.correlation.identifier, Server",
+        "DD_LOGS_INJECTION": "true"
       },
       "applicationUrl": "http://localhost:54566/",
-      "nativeDebugging": true
+      "nativeDebugging": false
     }
   }
 }

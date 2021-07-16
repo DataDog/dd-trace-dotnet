@@ -18,6 +18,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Karambolo.Extensions.Logging.File" Version="3.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Include="..\..\..\Datadog.Trace.IntegrationTests\DiagnosticListeners\ErrorHandlingHelper.cs" Link="ErrorHandlingHelper.cs" />
   </ItemGroup>
 </Project>
