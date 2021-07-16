@@ -54,6 +54,7 @@ resources:
 
 # Stages
 stages:
+
 - stage: build_windows
   dependsOn: []
   jobs:
@@ -640,6 +641,12 @@ stages:
       inputs:
         targetType: 'inline'
         script: 'Start-Sleep -s 120'
+
+    - task: GitHubComment@0
+      inputs:
+        gitHubConnection: 'kevingosse'
+        repositoryName: '$(Build.Repository.Name)'
+        comment: 'Please check [the benchmarks dashboard](https://ddstaging.datadoghq.com/dashboard/j8k-aab-keb?tpl_var_branch=%22$(System.PullRequest.SourceBranch)%22) for any regression.'
 
 - stage: dotnet_tool
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
