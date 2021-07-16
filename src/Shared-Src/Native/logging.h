@@ -60,7 +60,7 @@ namespace shared {
 
         public:
             template <typename... Args>
-            static void Debug(const Args... args) { Logger<TLoggerPolicy>::Instance()->Debug(LogToString(args...)); }
+            static void Debug(const Args... args) { if (Logger<TLoggerPolicy>::IsDebugEnabled()) Logger<TLoggerPolicy>::Instance()->Debug(LogToString(args...)); }
             template <typename... Args>
             static void Info(const Args... args) { Logger<TLoggerPolicy>::Instance()->Info(LogToString(args...)); }
             template <typename... Args>
