@@ -182,7 +182,7 @@ partial class Build : NukeBuild
 
     Target BuildAndRunWindowsRegressionTests => _ => _
         .Requires(() => IsWin)
-        .Description("Builds and runs the Windows (non-IIS) integration tests")
+        .Description("Builds and runs the Windows regression tests")
         .DependsOn(BuildWindowsRegressionIntegrationTests)
         .DependsOn(RunWindowsRegressionTests);
 
