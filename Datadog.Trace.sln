@@ -131,12 +131,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Elasticsearch", "te
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNetMvc4", "test\test-applications\aspnet\Samples.AspNetMvc4\Samples.AspNetMvc4.csproj", "{6D86109F-B7C9-477D-86D7-45735A3A0818}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{5D8E1F81-B820-4736-B797-271B0FE787EE}"
-	ProjectSection(SolutionItems) = preProject
-		tools\Directory.Build.props = tools\Directory.Build.props
-		tools\GlobalSuppressions.cs = tools\GlobalSuppressions.cs
-	EndProjectSection
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.Managed.Tests", "test\Datadog.Trace.ClrProfiler.Managed.Tests\Datadog.Trace.ClrProfiler.Managed.Tests.csproj", "{5B52C0C0-A554-4E53-9D17-B121E78FF919}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MongoDB", "test\test-applications\integrations\Samples.MongoDB\Samples.MongoDB.csproj", "{3493346B-44F6-4F50-8FB4-51D0090DF544}"
@@ -255,8 +249,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MultiDomainHost.App.NuGetJsonWithRedirects", "test\test-applications\integrations\dependency-libs\Samples.MultiDomainHost.App.NuGetJsonWithRedirects\Samples.MultiDomainHost.App.NuGetJsonWithRedirects.csproj", "{AED23FC5-46D9-4990-B5AB-9D287A0A7BD6}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.DatabaseHelper.netstandard", "test\test-applications\integrations\dependency-libs\Samples.DatabaseHelper.netstandard\Samples.DatabaseHelper.netstandard.csproj", "{8D949A40-5F4B-4EB0-B8FD-301B472C96AE}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StartDistributedTrace", "tools\StartDistributedTrace\StartDistributedTrace.csproj", "{7DF988E6-4F60-44A4-B3E7-89BC6EB4D3D1}"
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Datadog.Trace.Ci.Shared", "src\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.shproj", "{A1D7653A-C409-414A-B9B0-7879953EBCDD}"
 EndProject
@@ -1120,18 +1112,6 @@ Global
 		{8D949A40-5F4B-4EB0-B8FD-301B472C96AE}.Release|x64.Build.0 = Release|Any CPU
 		{8D949A40-5F4B-4EB0-B8FD-301B472C96AE}.Release|x86.ActiveCfg = Release|Any CPU
 		{8D949A40-5F4B-4EB0-B8FD-301B472C96AE}.Release|x86.Build.0 = Release|Any CPU
-		{7DF988E6-4F60-44A4-B3E7-89BC6EB4D3D1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7DF988E6-4F60-44A4-B3E7-89BC6EB4D3D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7DF988E6-4F60-44A4-B3E7-89BC6EB4D3D1}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{7DF988E6-4F60-44A4-B3E7-89BC6EB4D3D1}.Debug|x64.Build.0 = Debug|Any CPU
-		{7DF988E6-4F60-44A4-B3E7-89BC6EB4D3D1}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{7DF988E6-4F60-44A4-B3E7-89BC6EB4D3D1}.Debug|x86.Build.0 = Debug|Any CPU
-		{7DF988E6-4F60-44A4-B3E7-89BC6EB4D3D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7DF988E6-4F60-44A4-B3E7-89BC6EB4D3D1}.Release|Any CPU.Build.0 = Release|Any CPU
-		{7DF988E6-4F60-44A4-B3E7-89BC6EB4D3D1}.Release|x64.ActiveCfg = Release|Any CPU
-		{7DF988E6-4F60-44A4-B3E7-89BC6EB4D3D1}.Release|x64.Build.0 = Release|Any CPU
-		{7DF988E6-4F60-44A4-B3E7-89BC6EB4D3D1}.Release|x86.ActiveCfg = Release|Any CPU
-		{7DF988E6-4F60-44A4-B3E7-89BC6EB4D3D1}.Release|x86.Build.0 = Release|Any CPU
 		{E02B141F-E7C0-46CF-B9F6-39427218E714}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E02B141F-E7C0-46CF-B9F6-39427218E714}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E02B141F-E7C0-46CF-B9F6-39427218E714}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -1653,7 +1633,6 @@ Global
 		{77EAF70B-4C16-499D-8096-91AC84E12EC4} = {8683D82A-2BBE-4199-9C36-C59F48804F90}
 		{AED23FC5-46D9-4990-B5AB-9D287A0A7BD6} = {8683D82A-2BBE-4199-9C36-C59F48804F90}
 		{8D949A40-5F4B-4EB0-B8FD-301B472C96AE} = {8683D82A-2BBE-4199-9C36-C59F48804F90}
-		{7DF988E6-4F60-44A4-B3E7-89BC6EB4D3D1} = {5D8E1F81-B820-4736-B797-271B0FE787EE}
 		{A1D7653A-C409-414A-B9B0-7879953EBCDD} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{E02B141F-E7C0-46CF-B9F6-39427218E714} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{C00D8070-A38A-4267-9730-E9985CAE77DF} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
