@@ -10,4 +10,7 @@
   <PropertyGroup />
   <Import Project="Datadog.Trace.Ci.Shared.projitems" Label="Shared" />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\CodeSharing\Microsoft.CodeSharing.CSharp.targets" />
+  <ItemGroup>
+    <ProjectReference Remove="..\Datadog.Trace.Tools.Analyzers\Datadog.Trace.Tools.Analyzers.csproj" OutputItemType="Analyzer" PrivateAssets="All" />
+  </ItemGroup>
 </Project>

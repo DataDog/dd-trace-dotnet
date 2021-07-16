@@ -215,7 +215,7 @@ stages:
           testResultsFormat: VSTest
           testResultsFiles: build_data/results/**/*.trx
         condition: succeededOrFailed()
-        
+
     - job: native
       steps:
       - template: steps/install-dotnet.yml
@@ -256,7 +256,7 @@ stages:
           testResultsFormat: VSTest
           testResultsFiles: build_data/results/**/*.trx
         condition: succeededOrFailed()
-        
+
 
 
 - stage: unit_tests_linux
@@ -294,7 +294,7 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: build_data/results/**/*.trx
       condition: succeededOrFailed()
-      
+
     - task: PublishPipelineArtifact@1
       inputs:
         targetPath: 'build_data/results/'
@@ -341,10 +341,22 @@ stages:
     timeoutInMinutes: 100
     strategy:
       matrix:
-        x64:
+        x64_integration:
           platform: x64
-        x86:
+          target: BuildAndRunWindowsIntegrationTests
+          requiresCosmos: true
+        x86_interation:
           platform: x86
+          target: BuildAndRunWindowsIntegrationTests
+          requiresCosmos: true
+        x64_regression:
+          platform: x64
+          target: BuildAndRunWindowsRegressionTests
+          requiresCosmos: false
+        x86_regression:
+          platform: x86
+          target: BuildAndRunWindowsRegressionTests
+          requiresCosmos: false
 
     steps:
     - template: steps/install-dotnet-sdks.yml
@@ -357,9 +369,10 @@ stages:
         Import-Module "C:/Program Files/Azure Cosmos DB Emulator/PSModules/Microsoft.Azure.CosmosDB.Emulator"
         Start-CosmosDbEmulator -Timeout 300
       displayName: 'Start CosmosDB Emulator'
+      condition: eq(variables.requiresCosmos, true)
       workingDirectory: $(Pipeline.Workspace)
 
-    - script: build.cmd BuildAndRunWindowsIntegrationTests --PrintDriveSpace --code-coverage
+    - script: build.cmd $(target) --PrintDriveSpace --code-coverage
       displayName: Run integration tests
 
     - task: PublishTestResults@2
@@ -368,7 +381,7 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: build_data/results/**/*.trx
       condition: succeededOrFailed()
-      
+
     - task: PublishPipelineArtifact@1
       inputs:
         targetPath: 'build_data/results/'
@@ -962,7 +975,7 @@ stages:
 
       steps:
       - template: steps/restore-working-directory.yml
-    
+
       - task: DownloadPipelineArtifact@2
         inputs:
           patterns: '**/coverage.cobertura.xml'
@@ -974,7 +987,7 @@ stages:
           targetdir: '$(Build.SourcesDirectory)\coveragereport'
           sourcedirs: '$(Build.SourcesDirectory);..'
           reporttypes: 'Cobertura'
-     
+
       - task: PublishCodeCoverageResults@1
         inputs:
           codeCoverageTool: 'Cobertura'
