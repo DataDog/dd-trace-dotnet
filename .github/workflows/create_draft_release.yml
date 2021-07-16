@@ -1,0 +1,48 @@
+name: Create draft release from latest tag
+
+on:
+  workflow_dispatch:
+
+jobs:
+  create_draft_release:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      AZURE_DEVOPS_TOKEN: "${{ secrets.AZURE_DEVOPS_TOKEN }}"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '5.0.x'
+
+      - name: "Get current version"
+        id: version
+        run: ./build.sh OutputCurrentVersionToGitHub
+
+      - name: "Download assets from Azure Pipelines"
+        id: assets
+        run: ./build.sh DownloadAzurePipelineArtifacts
+
+      - name: "Extract release notes from changelog"
+        id: release_notes
+        run: ./build.sh ExtractReleaseNotes
+        env:
+          PIPELINE_ARTIFACTS_LINK: ${{steps.assets.outputs.artifacts_link}}
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          draft: true
+          name: "${{steps.version.outputs.full_version}}"
+          tag_name: "v${{steps.version.outputs.full_version}}"
+          prerelease: ${{steps.version.outputs.isprerelease}}
+          body: ${{steps.release_notes.outputs.release_notes}}
+          fail_on_unmatched_files: true
+          files: |
+            ${{steps.assets.outputs.artifacts_path}}/*.deb
+            ${{steps.assets.outputs.artifacts_path}}/*.rpm
+            ${{steps.assets.outputs.artifacts_path}}/*.tar.gz
+            ${{steps.assets.outputs.artifacts_path}}/*.zip
