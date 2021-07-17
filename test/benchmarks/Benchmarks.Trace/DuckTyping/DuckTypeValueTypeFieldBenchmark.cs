@@ -174,30 +174,30 @@ namespace Benchmarks.Trace.DuckTyping
 
         public interface IObscureDuckType
         {
-            [Duck(Name = "_publicStaticValueTypeField", Kind = DuckKind.Field)]
+            [DuckField(Name = "_publicStaticValueTypeField")]
             int PublicStaticValueTypeField { get; set; }
 
-            [Duck(Name = "_internalStaticValueTypeField", Kind = DuckKind.Field)]
+            [DuckField(Name = "_internalStaticValueTypeField")]
             int InternalStaticValueTypeField { get; set; }
 
-            [Duck(Name = "_protectedStaticValueTypeField", Kind = DuckKind.Field)]
+            [DuckField(Name = "_protectedStaticValueTypeField")]
             int ProtectedStaticValueTypeField { get; set; }
 
-            [Duck(Name = "_privateStaticValueTypeField", Kind = DuckKind.Field)]
+            [DuckField(Name = "_privateStaticValueTypeField")]
             int PrivateStaticValueTypeField { get; set; }
 
             // *
 
-            [Duck(Name = "_publicValueTypeField", Kind = DuckKind.Field)]
+            [DuckField(Name = "_publicValueTypeField")]
             int PublicValueTypeField { get; set; }
 
-            [Duck(Name = "_internalValueTypeField", Kind = DuckKind.Field)]
+            [DuckField(Name = "_internalValueTypeField")]
             int InternalValueTypeField { get; set; }
 
-            [Duck(Name = "_protectedValueTypeField", Kind = DuckKind.Field)]
+            [DuckField(Name = "_protectedValueTypeField")]
             int ProtectedValueTypeField { get; set; }
 
-            [Duck(Name = "_privateValueTypeField", Kind = DuckKind.Field)]
+            [DuckField(Name = "_privateValueTypeField")]
             int PrivateValueTypeField { get; set; }
 
             string ToString();

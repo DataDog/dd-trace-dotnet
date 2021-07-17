@@ -88,7 +88,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         public interface IPrivateDuckChainingTarget
         {
-            [Duck(Kind = DuckKind.Field)]
+            [DuckField]
             IPrivateTarget ChainingTestField { get; }
 
             IPrivateTarget ChainingTest { get; }
@@ -98,7 +98,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         public interface IPrivateTarget
         {
-            [Duck(Kind = DuckKind.Field)]
+            [DuckField]
             public string Name { get; }
         }
 

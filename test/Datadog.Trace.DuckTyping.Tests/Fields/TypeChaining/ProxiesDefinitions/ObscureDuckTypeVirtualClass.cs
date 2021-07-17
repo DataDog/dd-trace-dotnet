@@ -7,58 +7,58 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.TypeChaining.ProxiesDefinitions
 {
     public class ObscureDuckTypeVirtualClass
     {
-        [Duck(Name = "_publicStaticReadonlySelfTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_publicStaticReadonlySelfTypeField")]
         public virtual IDummyFieldObject PublicStaticReadonlySelfTypeField { get; }
 
-        [Duck(Name = "_internalStaticReadonlySelfTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_internalStaticReadonlySelfTypeField")]
         public virtual IDummyFieldObject InternalStaticReadonlySelfTypeField { get; }
 
-        [Duck(Name = "_protectedStaticReadonlySelfTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_protectedStaticReadonlySelfTypeField")]
         public virtual IDummyFieldObject ProtectedStaticReadonlySelfTypeField { get; }
 
-        [Duck(Name = "_privateStaticReadonlySelfTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_privateStaticReadonlySelfTypeField")]
         public virtual IDummyFieldObject PrivateStaticReadonlySelfTypeField { get; }
 
         // *
 
-        [Duck(Name = "_publicStaticSelfTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_publicStaticSelfTypeField")]
         public virtual IDummyFieldObject PublicStaticSelfTypeField { get; set; }
 
-        [Duck(Name = "_internalStaticSelfTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_internalStaticSelfTypeField")]
         public virtual IDummyFieldObject InternalStaticSelfTypeField { get; set; }
 
-        [Duck(Name = "_protectedStaticSelfTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_protectedStaticSelfTypeField")]
         public virtual IDummyFieldObject ProtectedStaticSelfTypeField { get; set; }
 
-        [Duck(Name = "_privateStaticSelfTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_privateStaticSelfTypeField")]
         public virtual IDummyFieldObject PrivateStaticSelfTypeField { get; set; }
 
         // *
 
-        [Duck(Name = "_publicReadonlySelfTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_publicReadonlySelfTypeField")]
         public virtual IDummyFieldObject PublicReadonlySelfTypeField { get; }
 
-        [Duck(Name = "_internalReadonlySelfTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_internalReadonlySelfTypeField")]
         public virtual IDummyFieldObject InternalReadonlySelfTypeField { get; }
 
-        [Duck(Name = "_protectedReadonlySelfTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_protectedReadonlySelfTypeField")]
         public virtual IDummyFieldObject ProtectedReadonlySelfTypeField { get; }
 
-        [Duck(Name = "_privateReadonlySelfTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_privateReadonlySelfTypeField")]
         public virtual IDummyFieldObject PrivateReadonlySelfTypeField { get; }
 
         // *
 
-        [Duck(Name = "_publicSelfTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_publicSelfTypeField")]
         public virtual IDummyFieldObject PublicSelfTypeField { get; set; }
 
-        [Duck(Name = "_internalSelfTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_internalSelfTypeField")]
         public virtual IDummyFieldObject InternalSelfTypeField { get; set; }
 
-        [Duck(Name = "_protectedSelfTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_protectedSelfTypeField")]
         public virtual IDummyFieldObject ProtectedSelfTypeField { get; set; }
 
-        [Duck(Name = "_privateSelfTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_privateSelfTypeField")]
         public virtual IDummyFieldObject PrivateSelfTypeField { get; set; }
     }
 }
