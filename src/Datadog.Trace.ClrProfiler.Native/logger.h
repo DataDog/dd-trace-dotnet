@@ -10,8 +10,6 @@
 namespace trace
 {
 
-extern bool dump_il_rewrite_enabled;
-
 struct TracerLoggerPolicy
 {
     inline static const std::string file_name = "dotnet-tracer-native";
