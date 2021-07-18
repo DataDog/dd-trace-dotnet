@@ -64,7 +64,7 @@ private:
 
 #ifndef _WIN32
 // for linux and osx we need a function to get the path from a filepath
-std::string getPathName(const std::string& s)
+inline std::string getPathName(const std::string& s)
 {
     char sep = '/';
     size_t i = s.rfind(sep, s.length());
@@ -79,8 +79,7 @@ std::string getPathName(const std::string& s)
 template <typename TLoggerPolicy>
 std::string LoggerImpl<TLoggerPolicy>::GetLogPath(const std::string& file_name_suffix)
 {
-    const auto file_name = TLoggerPolicy::file_name + file_name_suffix + ".log";
-    const auto path = ToString(GetDatadogLogFilePath<TLoggerPolicy>(file_name));
+    const auto path = ToString(GetDatadogLogFilePath<TLoggerPolicy>(file_name_suffix));
 
 #ifdef _WIN32
     // on VC++, use std::filesystem (C++ 17) to

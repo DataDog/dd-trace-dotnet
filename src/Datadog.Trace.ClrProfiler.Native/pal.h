@@ -26,8 +26,10 @@ namespace trace
 {
 
 template <class TLoggerPolicy>
-inline WSTRING GetDatadogLogFilePath(const std::string& file_name)
+inline WSTRING GetDatadogLogFilePath(const std::string& file_name_suffix)
 {
+    const auto file_name = TLoggerPolicy::file_name + file_name_suffix + ".log";
+
     WSTRING directory = GetEnvironmentValue(environment::log_directory);
 
     if (directory.length() > 0)
