@@ -4,7 +4,7 @@
 #include <stdexcept>
 
 #include "environment_variables.h"
-#include "logging.h"
+#include "logger.h"
 #include "util.h"
 
 namespace trace
@@ -17,7 +17,7 @@ std::vector<Integration> LoadIntegrationsFromEnvironment()
     std::vector<Integration> integrations;
     for (const auto f : GetEnvironmentValues(environment::integrations_path))
     {
-        Debug("Loading integrations from file: ", f);
+        Logger::Debug("Loading integrations from file: ", f);
         auto is = LoadIntegrationsFromFile(f);
         for (auto& i : is)
         {
@@ -42,7 +42,7 @@ std::vector<Integration> LoadIntegrationsFromFile(const WSTRING& file_path)
         }
         else
         {
-            Warn("Failed to load integrations from file ", file_path);
+            Logger::Warn("Failed to load integrations from file ", file_path);
         }
 
         stream.close();
@@ -59,7 +59,7 @@ std::vector<Integration> LoadIntegrationsFromFile(const WSTRING& file_path)
         }
         catch (const std::exception& ex)
         {
-            Warn("Failed to load integrations: ", ex.what());
+            Logger::Warn("Failed to load integrations: ", ex.what());
         }
     }
 
@@ -85,15 +85,15 @@ std::vector<Integration> LoadIntegrationsFromStream(std::istream& stream)
             }
         }
 
-        // Debug("Loaded integrations: ", j.dump());
+        // Logger::Debug("Loaded integrations: ", j.dump());
     }
     catch (const json::parse_error& e)
     {
-        Warn("Invalid integrations:", e.what());
+        Logger::Warn("Invalid integrations:", e.what());
     }
     catch (const json::type_error& e)
     {
-        Warn("Invalid integrations:", e.what());
+        Logger::Warn("Invalid integrations:", e.what());
     }
     catch (...)
     {
@@ -107,7 +107,7 @@ std::vector<Integration> LoadIntegrationsFromStream(std::istream& stream)
         }
         catch (const std::exception& ex)
         {
-            Warn("Failed to load integrations: ", ex.what());
+            Logger::Warn("Failed to load integrations: ", ex.what());
         }
     }
 
@@ -128,7 +128,7 @@ namespace
         const auto name = ToWSTRING(src.value("name", ""));
         if (name.empty())
         {
-            Warn("Integration name is missing for integration: ", src.dump());
+            Logger::Warn("Integration name is missing for integration: ", src.dump());
             return std::make_pair<Integration, bool>({}, false);
         }
 

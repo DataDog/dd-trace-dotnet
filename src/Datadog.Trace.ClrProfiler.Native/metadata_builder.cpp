@@ -2,7 +2,7 @@
 #include <string>
 
 #include "clr_helpers.h"
-#include "logging.h"
+#include "logger.h"
 #include "macros.h"
 #include "metadata_builder.h"
 
@@ -45,7 +45,7 @@ HRESULT MetadataBuilder::EmitAssemblyRef(const trace::AssemblyReference& assembl
 
     if (FAILED(hr))
     {
-        Warn("DefineAssemblyRef failed");
+        Logger::Warn("DefineAssemblyRef failed");
     }
     return S_OK;
 }
@@ -79,7 +79,7 @@ HRESULT MetadataBuilder::FindWrapperTypeRef(const MethodReplacement& method_repl
         if (assembly_ref == mdAssemblyRefNil)
         {
             // TODO: emit assembly reference if not found?
-            Warn("Assembly reference for", method_replacement.wrapper_method.assembly.name, " not found");
+            Logger::Warn("Assembly reference for", method_replacement.wrapper_method.assembly.name, " not found");
             return E_FAIL;
         }
 

@@ -4,7 +4,7 @@
 #include <string>
 
 #include "environment_variables.h"
-#include "logging.h"
+#include "logger.h"
 
 namespace trace
 {

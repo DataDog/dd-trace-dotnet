@@ -4,7 +4,7 @@
 
 #include "dd_profiler_constants.h"
 #include "environment_variables.h"
-#include "logging.h"
+#include "logger.h"
 #include "macros.h"
 #include "pal.h"
 #include "sig_helpers.h"
@@ -160,7 +160,7 @@ FunctionInfo GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import, co
         }
         break;
         default:
-            Warn("[trace::GetFunctionInfo] unknown token type: {}", token_type);
+            Logger::Warn("[trace::GetFunctionInfo] unknown token type: {}", token_type);
             return {};
     }
     if (FAILED(hr) || function_name_len == 0)
@@ -469,7 +469,7 @@ mdMethodSpec DefineMethodSpec(const ComPtr<IMetaDataEmit2>& metadata_emit, const
     auto hr = metadata_emit->DefineMethodSpec(token, signature.data.data(), ULONG(signature.data.size()), &spec);
     if (FAILED(hr))
     {
-        Warn("[DefineMethodSpec] failed to define method spec");
+        Logger::Warn("[DefineMethodSpec] failed to define method spec");
     }
     return spec;
 }
@@ -795,7 +795,7 @@ HRESULT GetCorLibAssemblyRef(const ComPtr<IMetaDataAssemblyEmit>& assembly_emit,
     if (corAssemblyProperty.ppbPublicKey != nullptr)
     {
         // the corlib module is already loaded, use that information to create the assembly ref
-        Debug("Using existing corlib reference: ", corAssemblyProperty.szName);
+        Logger::Debug("Using existing corlib reference: ", corAssemblyProperty.szName);
         return assembly_emit->DefineAssemblyRef(corAssemblyProperty.ppbPublicKey, corAssemblyProperty.pcbPublicKey,
                                                 corAssemblyProperty.szName.c_str(), &corAssemblyProperty.pMetaData,
                                                 NULL, 0, 0, corlib_ref);
@@ -829,9 +829,9 @@ bool ReturnTypeTokenforValueTypeElementType(PCCOR_SIGNATURE p_sig, const ComPtr<
             result = CorSigUncompressToken(p_sig + 1, ret_type_token);
             if (result == -1)
             {
-                Warn("[trace::ReturnTypeTokenforElementType] ELEMENT_TYPE_VALUETYPE failed to find uncompress TypeRef "
-                     "or "
-                     "TypeDef");
+                Logger::Warn("[trace::ReturnTypeTokenforElementType] ELEMENT_TYPE_VALUETYPE failed to find uncompress TypeRef "
+                             "or "
+                             "TypeDef");
                 return false;
             }
 
@@ -897,14 +897,14 @@ bool ReturnTypeTokenforValueTypeElementType(PCCOR_SIGNATURE p_sig, const ComPtr<
 
     if (FAILED(hr))
     {
-        Warn("[trace::ReturnTypeTokenforElementType] failed to define AssemblyRef to mscorlib");
+        Logger::Warn("[trace::ReturnTypeTokenforElementType] failed to define AssemblyRef to mscorlib");
         return false;
     }
 
     // Create/Get TypeRef to the listed type
     if (managed_type_name == WStr(""))
     {
-        Warn("[trace::ReturnTypeTokenforElementType] no managed type name given");
+        Logger::Warn("[trace::ReturnTypeTokenforElementType] no managed type name given");
         return false;
     }
 
@@ -912,8 +912,8 @@ bool ReturnTypeTokenforValueTypeElementType(PCCOR_SIGNATURE p_sig, const ComPtr<
 
     if (FAILED(hr))
     {
-        Warn("[trace::ReturnTypeTokenforElementType] unable to create type ref for managed_type_name=",
-             managed_type_name);
+        Logger::Warn("[trace::ReturnTypeTokenforElementType] unable to create type ref for managed_type_name=",
+                     managed_type_name);
         return false;
     }
 
@@ -973,8 +973,8 @@ bool ReturnTypeIsValueTypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
             if (CorSigUncompressData(PCCOR_SIGNATURE(&targetFunctionSignature.data[method_def_sig_index]),
                                      &generic_type_index) == -1)
             {
-                Warn("[trace::ReturnTypeIsValueTypeOrGeneric] element_type=", ret_type,
-                     ": unable to read VAR|MVAR index");
+                Logger::Warn("[trace::ReturnTypeIsValueTypeOrGeneric] element_type=", ret_type,
+                             ": unable to read VAR|MVAR index");
                 return false;
             }
 
@@ -1030,15 +1030,15 @@ bool ReturnTypeIsValueTypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
                                                              &spec_signature_length);
                     break;
                 default:
-                    Warn("[trace::ReturnTypeIsValueTypeOrGeneric] element_type=", ret_type,
-                         ": function token was not a MemberRef, MethodDef, or MethodSpec");
+                    Logger::Warn("[trace::ReturnTypeIsValueTypeOrGeneric] element_type=", ret_type,
+                                 ": function token was not a MemberRef, MethodDef, or MethodSpec");
                     return false;
             }
 
             if (FAILED(hr))
             {
-                Warn("[trace::ReturnTypeIsValueTypeOrGeneric] element_type=", ret_type,
-                     ": failed to get parent token or signature");
+                Logger::Warn("[trace::ReturnTypeIsValueTypeOrGeneric] element_type=", ret_type,
+                             ": failed to get parent token or signature");
                 return false;
             }
 
@@ -1060,8 +1060,8 @@ bool ReturnTypeIsValueTypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
             }
             else
             {
-                Warn("[trace::ReturnTypeIsValueTypeOrGeneric] element_type=", ret_type, ": token_type (", token_type,
-                     ") not recognized");
+                Logger::Warn("[trace::ReturnTypeIsValueTypeOrGeneric] element_type=", ret_type, ": token_type (", token_type,
+                             ") not recognized");
                 return false;
             }
 
@@ -1079,10 +1079,10 @@ bool ReturnTypeIsValueTypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_imp
                 {
                     if (!ParseType(&p_current_byte))
                     {
-                        Warn("[trace::ReturnTypeIsValueTypeOrGeneric] element_type=", ret_type,
-                             ": Unable to parse "
-                             "generic type argument ",
-                             i, "from signature of parent_token:", parent_token);
+                        Logger::Warn("[trace::ReturnTypeIsValueTypeOrGeneric] element_type=", ret_type,
+                                     ": Unable to parse "
+                                     "generic type argument ",
+                                     i, "from signature of parent_token:", parent_token);
                         return false;
                     }
                 }
@@ -1720,7 +1720,7 @@ bool FindTypeDefByName(const trace::WSTRING instrumentationTargetMethodTypeName,
             // This can happen between .NET framework and .NET core, not all apis are
             // available in both. Eg: WinHttpHandler, CurlHandler, and some methods in
             // System.Data
-            Debug("Can't load the parent TypeDef: ", nameParts[0],
+            Logger::Debug("Can't load the parent TypeDef: ", nameParts[0],
                   " for nested class: ", instrumentationTargetMethodTypeName, ", Module: ", assemblyName);
             return false;
         }
@@ -1728,7 +1728,7 @@ bool FindTypeDefByName(const trace::WSTRING instrumentationTargetMethodTypeName,
     }
     else if (nameParts.size() > 2)
     {
-        Warn("Invalid TypeDef-only one layer of nested classes are supported: ", instrumentationTargetMethodTypeName,
+        Logger::Warn("Invalid TypeDef-only one layer of nested classes are supported: ", instrumentationTargetMethodTypeName,
              ", Module: ", assemblyName);
         return false;
     }
@@ -1740,7 +1740,7 @@ bool FindTypeDefByName(const trace::WSTRING instrumentationTargetMethodTypeName,
         // This can happen between .NET framework and .NET core, not all apis are
         // available in both. Eg: WinHttpHandler, CurlHandler, and some methods in
         // System.Data
-        Debug("Can't load the TypeDef for: ", instrumentedMethodTypeName, ", Module: ", assemblyName);
+        Logger::Debug("Can't load the TypeDef for: ", instrumentedMethodTypeName, ", Module: ", assemblyName);
         return false;
     }
 

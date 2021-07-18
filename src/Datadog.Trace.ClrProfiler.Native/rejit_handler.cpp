@@ -1,6 +1,6 @@
 #include "rejit_handler.h"
 
-#include "logging.h"
+#include "logger.h"
 
 namespace trace
 {
@@ -152,11 +152,11 @@ void RejitHandler::EnqueueThreadLoop(RejitHandler* handler)
     auto queue = handler->m_rejit_queue.get();
     auto profilerInfo = handler->m_profilerInfo;
 
-    Info("Initializing ReJIT request thread.");
+    Logger::Info("Initializing ReJIT request thread.");
     HRESULT hr = profilerInfo->InitializeCurrentThread();
     if (FAILED(hr))
     {
-        Warn("Call to InitializeCurrentThread fail.");
+        Logger::Warn("Call to InitializeCurrentThread fail.");
     }
 
     while (true)
@@ -171,14 +171,14 @@ void RejitHandler::EnqueueThreadLoop(RejitHandler* handler)
         hr = profilerInfo->RequestReJIT((ULONG) item->m_length, item->m_modulesId.get(), item->m_methodDefs.get());
         if (SUCCEEDED(hr))
         {
-            Info("Request ReJIT done for ", item->m_length, " methods");
+            Logger::Info("Request ReJIT done for ", item->m_length, " methods");
         }
         else
         {
-            Warn("Error requesting ReJIT for ", item->m_length, " methods");
+            Logger::Warn("Error requesting ReJIT for ", item->m_length, " methods");
         }
     }
-    Info("Exiting ReJIT request thread.");
+    Logger::Info("Exiting ReJIT request thread.");
 }
 
 RejitHandler::RejitHandler(ICorProfilerInfo4* pInfo,
@@ -264,50 +264,50 @@ HRESULT RejitHandler::NotifyReJITParameters(ModuleID moduleId, mdMethodDef metho
 
     if (methodHandler->GetMethodDef() == mdMethodDefNil)
     {
-        Warn("NotifyReJITCompilationStarted: mdMethodDef is missing for "
-             "MethodDef: ",
-             methodId);
+        Logger::Warn("NotifyReJITCompilationStarted: mdMethodDef is missing for "
+                     "MethodDef: ",
+                     methodId);
         return S_FALSE;
     }
 
     if (methodHandler->GetFunctionControl() == nullptr)
     {
-        Warn("NotifyReJITCompilationStarted: ICorProfilerFunctionControl is missing "
-             "for "
-             "MethodDef: ",
-             methodId);
+        Logger::Warn("NotifyReJITCompilationStarted: ICorProfilerFunctionControl is missing "
+                     "for "
+                     "MethodDef: ",
+                     methodId);
         return S_FALSE;
     }
 
     if (methodHandler->GetFunctionInfo() == nullptr)
     {
-        Warn("NotifyReJITCompilationStarted: FunctionInfo is missing for "
-             "MethodDef: ",
-             methodId);
+        Logger::Warn("NotifyReJITCompilationStarted: FunctionInfo is missing for "
+                     "MethodDef: ",
+                     methodId);
         return S_FALSE;
     }
 
     if (methodHandler->GetMethodReplacement() == nullptr)
     {
-        Warn("NotifyReJITCompilationStarted: MethodReplacement is missing for "
-             "MethodDef: ",
-             methodId);
+        Logger::Warn("NotifyReJITCompilationStarted: MethodReplacement is missing for "
+                     "MethodDef: ",
+                     methodId);
         return S_FALSE;
     }
 
     if (moduleHandler->GetModuleId() == 0)
     {
-        Warn("NotifyReJITCompilationStarted: ModuleID is missing for "
-             "MethodDef: ",
-             methodId);
+        Logger::Warn("NotifyReJITCompilationStarted: ModuleID is missing for "
+                     "MethodDef: ",
+                     methodId);
         return S_FALSE;
     }
 
     if (moduleHandler->GetModuleMetadata() == nullptr)
     {
-        Warn("NotifyReJITCompilationStarted: ModuleMetadata is missing for "
-             "MethodDef: ",
-             methodId);
+        Logger::Warn("NotifyReJITCompilationStarted: ModuleMetadata is missing for "
+                     "MethodDef: ",
+                     methodId);
         return S_FALSE;
     }
 

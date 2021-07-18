@@ -3,7 +3,7 @@
 #include <corhlpr.h>
 
 #include "com_ptr.h"
-#include "logging.h"
+#include "logger.h"
 #include "module_metadata.h"
 
 namespace trace

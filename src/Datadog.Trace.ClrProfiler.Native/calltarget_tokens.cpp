@@ -2,7 +2,7 @@
 
 #include "dd_profiler_constants.h"
 #include "il_rewriter_wrapper.h"
-#include "logging.h"
+#include "logger.h"
 #include "module_metadata.h"
 
 namespace trace
@@ -28,7 +28,7 @@ HRESULT CallTargetTokens::EnsureCorLibTokens()
             corAssemblyProperty.assemblyFlags, &corLibAssemblyRef);
         if (corLibAssemblyRef == mdAssemblyRefNil)
         {
-            Warn("Wrapper corLibAssemblyRef could not be defined.");
+            Logger::Warn("Wrapper corLibAssemblyRef could not be defined.");
             return hr;
         }
     }
@@ -39,7 +39,7 @@ HRESULT CallTargetTokens::EnsureCorLibTokens()
         auto hr = module_metadata->metadata_emit->DefineTypeRefByName(corLibAssemblyRef, SystemObject, &objectTypeRef);
         if (FAILED(hr))
         {
-            Warn("Wrapper objectTypeRef could not be defined.");
+            Logger::Warn("Wrapper objectTypeRef could not be defined.");
             return hr;
         }
     }
@@ -50,7 +50,7 @@ HRESULT CallTargetTokens::EnsureCorLibTokens()
         auto hr = module_metadata->metadata_emit->DefineTypeRefByName(corLibAssemblyRef, SystemException, &exTypeRef);
         if (FAILED(hr))
         {
-            Warn("Wrapper exTypeRef could not be defined.");
+            Logger::Warn("Wrapper exTypeRef could not be defined.");
             return hr;
         }
     }
@@ -61,7 +61,7 @@ HRESULT CallTargetTokens::EnsureCorLibTokens()
         auto hr = module_metadata->metadata_emit->DefineTypeRefByName(corLibAssemblyRef, SystemTypeName, &typeRef);
         if (FAILED(hr))
         {
-            Warn("Wrapper typeRef could not be defined.");
+            Logger::Warn("Wrapper typeRef could not be defined.");
             return hr;
         }
     }
@@ -73,7 +73,7 @@ HRESULT CallTargetTokens::EnsureCorLibTokens()
                                                                       &runtimeTypeHandleRef);
         if (FAILED(hr))
         {
-            Warn("Wrapper runtimeTypeHandleRef could not be defined.");
+            Logger::Warn("Wrapper runtimeTypeHandleRef could not be defined.");
             return hr;
         }
     }
@@ -103,7 +103,7 @@ HRESULT CallTargetTokens::EnsureCorLibTokens()
                                                                   offset, &getTypeFromHandleToken);
         if (FAILED(hr))
         {
-            Warn("Wrapper getTypeFromHandleToken could not be defined.");
+            Logger::Warn("Wrapper getTypeFromHandleToken could not be defined.");
             return hr;
         }
     }
@@ -115,7 +115,7 @@ HRESULT CallTargetTokens::EnsureCorLibTokens()
                                                                       &runtimeMethodHandleRef);
         if (FAILED(hr))
         {
-            Warn("Wrapper runtimeMethodHandleRef could not be defined.");
+            Logger::Warn("Wrapper runtimeMethodHandleRef could not be defined.");
             return hr;
         }
     }
@@ -166,7 +166,7 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens()
 
         if (FAILED(hr))
         {
-            Warn("Wrapper profilerAssemblyRef could not be defined.");
+            Logger::Warn("Wrapper profilerAssemblyRef could not be defined.");
             return hr;
         }
     }
@@ -178,7 +178,7 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens()
             profilerAssemblyRef, managed_profiler_calltarget_type.data(), &callTargetTypeRef);
         if (FAILED(hr))
         {
-            Warn("Wrapper callTargetTypeRef could not be defined.");
+            Logger::Warn("Wrapper callTargetTypeRef could not be defined.");
             return hr;
         }
     }
@@ -190,7 +190,7 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens()
             profilerAssemblyRef, managed_profiler_calltarget_statetype.data(), &callTargetStateTypeRef);
         if (FAILED(hr))
         {
-            Warn("Wrapper callTargetStateTypeRef could not be defined.");
+            Logger::Warn("Wrapper callTargetStateTypeRef could not be defined.");
             return hr;
         }
     }
@@ -217,7 +217,7 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens()
             signatureLength, &callTargetStateTypeGetDefault);
         if (FAILED(hr))
         {
-            Warn("Wrapper callTargetStateTypeGetDefault could not be defined.");
+            Logger::Warn("Wrapper callTargetStateTypeGetDefault could not be defined.");
             return hr;
         }
     }
@@ -252,7 +252,7 @@ mdTypeRef CallTargetTokens::GetTargetVoidReturnTypeRef()
             profilerAssemblyRef, managed_profiler_calltarget_returntype.data(), &callTargetReturnVoidTypeRef);
         if (FAILED(hr))
         {
-            Warn("Wrapper callTargetReturnVoidTypeRef could not be defined.");
+            Logger::Warn("Wrapper callTargetReturnVoidTypeRef could not be defined.");
             return mdTypeRefNil;
         }
     }
@@ -278,7 +278,7 @@ mdTypeSpec CallTargetTokens::GetTargetReturnValueTypeRef(FunctionMethodArgument*
             profilerAssemblyRef, managed_profiler_calltarget_returntype_generics.data(), &callTargetReturnTypeRef);
         if (FAILED(hr))
         {
-            Warn("Wrapper callTargetReturnTypeRef could not be defined.");
+            Logger::Warn("Wrapper callTargetReturnTypeRef could not be defined.");
             return mdTypeSpecNil;
         }
     }
@@ -305,7 +305,7 @@ mdTypeSpec CallTargetTokens::GetTargetReturnValueTypeRef(FunctionMethodArgument*
     hr = module_metadata->metadata_emit->GetTokenFromTypeSpec(signature, signatureLength, &returnValueTypeSpec);
     if (FAILED(hr))
     {
-        Warn("Error creating return value type spec");
+        Logger::Warn("Error creating return value type spec");
         return mdTypeSpecNil;
     }
 
@@ -355,7 +355,7 @@ mdMemberRef CallTargetTokens::GetCallTargetReturnVoidDefaultMemberRef()
             signatureLength, &callTargetReturnVoidTypeGetDefault);
         if (FAILED(hr))
         {
-            Warn("Wrapper callTargetReturnVoidTypeGetDefault could not be defined.");
+            Logger::Warn("Wrapper callTargetReturnVoidTypeGetDefault could not be defined.");
             return mdMemberRefNil;
         }
     }
@@ -372,7 +372,7 @@ mdMemberRef CallTargetTokens::GetCallTargetReturnValueDefaultMemberRef(mdTypeSpe
     }
     if (callTargetReturnTypeRef == mdTypeRefNil)
     {
-        Warn("Wrapper callTargetReturnTypeGetDefault could not be defined because callTargetReturnTypeRef is null.");
+        Logger::Warn("Wrapper callTargetReturnTypeGetDefault could not be defined because callTargetReturnTypeRef is null.");
         return mdMemberRefNil;
     }
 
@@ -403,7 +403,7 @@ mdMemberRef CallTargetTokens::GetCallTargetReturnValueDefaultMemberRef(mdTypeSpe
                                                          signature, signatureLength, &callTargetReturnTypeGetDefault);
     if (FAILED(hr))
     {
-        Warn("Wrapper callTargetReturnTypeGetDefault could not be defined.");
+        Logger::Warn("Wrapper callTargetReturnTypeGetDefault could not be defined.");
         return mdMemberRefNil;
     }
 
@@ -440,7 +440,7 @@ mdMethodSpec CallTargetTokens::GetCallTargetDefaultValueMethodSpec(FunctionMetho
             &getDefaultMemberRef);
         if (FAILED(hr))
         {
-            Warn("Wrapper getDefaultMemberRef could not be defined.");
+            Logger::Warn("Wrapper getDefaultMemberRef could not be defined.");
             return hr;
         }
     }
@@ -465,7 +465,7 @@ mdMethodSpec CallTargetTokens::GetCallTargetDefaultValueMethodSpec(FunctionMetho
                                                           &getDefaultMethodSpec);
     if (FAILED(hr))
     {
-        Warn("Error creating getDefaultMethodSpec.");
+        Logger::Warn("Error creating getDefaultMethodSpec.");
         return mdMethodSpecNil;
     }
 
@@ -531,7 +531,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, FunctionMethodArg
             {
                 if (memcmp(&originalSignature[originalSignatureSize - len], &temp, len) == 0)
                 {
-                    Warn("The signature for this method has been already modified.");
+                    Logger::Warn("The signature for this method has been already modified.");
                     return E_FAIL;
                 }
             }
@@ -662,7 +662,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, FunctionMethodArg
     hr = module_metadata->metadata_emit->GetTokenFromSig(newSignatureBuffer, newSignatureSize, &newLocalVarSig);
     if (FAILED(hr))
     {
-        Warn("Error creating new locals var signature.");
+        Logger::Warn("Error creating new locals var signature.");
         return hr;
     }
 
@@ -724,7 +724,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArgumentsArray(void* rewriterWrapp
                                                                   signature, signatureLength, &beginArrayMemberRef);
         if (FAILED(hr))
         {
-            Warn("Wrapper beginArrayMemberRef could not be defined.");
+            Logger::Warn("Wrapper beginArrayMemberRef could not be defined.");
             return hr;
         }
     }
@@ -765,7 +765,7 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArgumentsArray(void* rewriterWrapp
                                                           &beginArrayMethodSpec);
     if (FAILED(hr))
     {
-        Warn("Error creating begin method spec.");
+        Logger::Warn("Error creating begin method spec.");
         return hr;
     }
 
@@ -807,7 +807,7 @@ HRESULT CallTargetTokens::ModifyLocalSigAndInitialize(void* rewriterWrapperPtr, 
 
     if (FAILED(hr))
     {
-        Warn("ModifyLocalSig() failed.");
+        Logger::Warn("ModifyLocalSig() failed.");
         return hr;
     }
 
@@ -889,7 +889,7 @@ HRESULT CallTargetTokens::WriteBeginMethod(void* rewriterWrapperPtr, mdTypeRef i
             &beginMethodFastPathRefs[numArguments]);
         if (FAILED(hr))
         {
-            Warn("Wrapper beginMethod for ", numArguments, " arguments could not be defined.");
+            Logger::Warn("Wrapper beginMethod for ", numArguments, " arguments could not be defined.");
             return hr;
         }
     }
@@ -947,7 +947,7 @@ HRESULT CallTargetTokens::WriteBeginMethod(void* rewriterWrapperPtr, mdTypeRef i
                                                           signatureLength, &beginMethodSpec);
     if (FAILED(hr))
     {
-        Warn("Error creating begin method spec.");
+        Logger::Warn("Error creating begin method spec.");
         return hr;
     }
 
@@ -1006,7 +1006,7 @@ HRESULT CallTargetTokens::WriteEndVoidReturnMemberRef(void* rewriterWrapperPtr, 
                                                                   signature, signatureLength, &endVoidMemberRef);
         if (FAILED(hr))
         {
-            Warn("Wrapper endVoidMemberRef could not be defined.");
+            Logger::Warn("Wrapper endVoidMemberRef could not be defined.");
             return hr;
         }
     }
@@ -1047,7 +1047,7 @@ HRESULT CallTargetTokens::WriteEndVoidReturnMemberRef(void* rewriterWrapperPtr, 
                                                           &endVoidMethodSpec);
     if (FAILED(hr))
     {
-        Warn("Error creating end void method method spec.");
+        Logger::Warn("Error creating end void method method spec.");
         return hr;
     }
 
@@ -1117,7 +1117,7 @@ HRESULT CallTargetTokens::WriteEndReturnMemberRef(void* rewriterWrapperPtr, mdTy
                                                          signatureLength, &endMethodMemberRef);
     if (FAILED(hr))
     {
-        Warn("Wrapper endMethodMemberRef could not be defined.");
+        Logger::Warn("Wrapper endMethodMemberRef could not be defined.");
         return hr;
     }
 
@@ -1165,7 +1165,7 @@ HRESULT CallTargetTokens::WriteEndReturnMemberRef(void* rewriterWrapperPtr, mdTy
                                                           &endMethodSpec);
     if (FAILED(hr))
     {
-        Warn("Error creating end method member spec.");
+        Logger::Warn("Error creating end method member spec.");
         return hr;
     }
 
@@ -1208,7 +1208,7 @@ HRESULT CallTargetTokens::WriteLogException(void* rewriterWrapperPtr, mdTypeRef 
                                                                   signature, signatureLength, &logExceptionRef);
         if (FAILED(hr))
         {
-            Warn("Wrapper logExceptionRef could not be defined.");
+            Logger::Warn("Wrapper logExceptionRef could not be defined.");
             return hr;
         }
     }
@@ -1249,7 +1249,7 @@ HRESULT CallTargetTokens::WriteLogException(void* rewriterWrapperPtr, mdTypeRef 
                                                           &logExceptionMethodSpec);
     if (FAILED(hr))
     {
-        Warn("Error creating log exception method spec.");
+        Logger::Warn("Error creating log exception method spec.");
         return hr;
     }
 
@@ -1285,7 +1285,7 @@ HRESULT CallTargetTokens::WriteCallTargetReturnGetReturnValue(void* rewriterWrap
         signatureLength, &callTargetReturnGetValueMemberRef);
     if (FAILED(hr))
     {
-        Warn("Wrapper callTargetReturnGetValueMemberRef could not be defined.");
+        Logger::Warn("Wrapper callTargetReturnGetValueMemberRef could not be defined.");
         return mdMemberRefNil;
     }
 

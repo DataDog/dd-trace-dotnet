@@ -25,7 +25,8 @@
 namespace trace
 {
 
-inline WSTRING DatadogLogFilePath(const std::string& file_name_suffix)
+template <class TLoggerPolicy>
+inline WSTRING GetDatadogLogFilePath(const std::string& file_name)
 {
     WSTRING directory = GetEnvironmentValue(environment::log_directory);
 
@@ -37,10 +38,10 @@ inline WSTRING DatadogLogFilePath(const std::string& file_name_suffix)
 #else
                WStr('/') +
 #endif
-               ToWSTRING("dotnet-tracer-native" + file_name_suffix + ".log");
+               ToWSTRING(file_name);
     }
 
-    WSTRING path = GetEnvironmentValue(environment::log_path);
+    WSTRING path = GetEnvironmentValue(TLoggerPolicy::logging_environment::log_path);
 
     if (path.length() > 0)
     {
@@ -48,23 +49,18 @@ inline WSTRING DatadogLogFilePath(const std::string& file_name_suffix)
     }
 
 #ifdef _WIN32
-    char* p_program_data;
-    size_t length;
-    const errno_t result = _dupenv_s(&p_program_data, &length, "PROGRAMDATA");
-    std::string program_data;
-
-    if (SUCCEEDED(result) && p_program_data != nullptr && length > 0)
+    WSTRING program_data = GetEnvironmentValue(WStr("PROGRAMDATA"));
+    std::filesystem::path program_data_path;
+    if (program_data.length() == 0)
     {
-        program_data = std::string(p_program_data);
-    }
-    else
-    {
-        program_data = R"(C:\ProgramData)";
+        program_data_path = WStr(R"(C:\ProgramData)");
     }
 
-    return ToWSTRING(program_data + R"(\Datadog .NET Tracer\logs\dotnet-tracer-native)" + file_name_suffix + ".log");
+    // on Windows WSTRING == wstring
+    return (program_data_path / TLoggerPolicy::product_folder_name / WStr("logs") / file_name).wstring();
 #else
-    return ToWSTRING("/var/log/datadog/dotnet/dotnet-tracer-native" + file_name_suffix + ".log");
+    // TODO: should we consider having a logs folder on non-Windows ?
+    return ToWSTRING("/var/log/datadog/dotnet/" + file_name);
 #endif
 }
 

@@ -4,7 +4,7 @@
 
 #include "class_factory.h"
 #include "cor_profiler.h"
-#include "logging.h"
+#include "logger.h"
 #include "version.h"
 
 ClassFactory::ClassFactory() : refCount(0)
@@ -53,7 +53,7 @@ HRESULT STDMETHODCALLTYPE ClassFactory::CreateInstance(IUnknown* pUnkOuter, REFI
         return CLASS_E_NOAGGREGATION;
     }
 
-    trace::Info("Datadog CLR Profiler ", PROFILER_VERSION, " on",
+    trace::Logger::Info("Datadog CLR Profiler ", PROFILER_VERSION, " on",
 
 #ifdef _WIN32
                 " Windows"
@@ -76,7 +76,7 @@ HRESULT STDMETHODCALLTYPE ClassFactory::CreateInstance(IUnknown* pUnkOuter, REFI
                 , " (arm)"
 #endif
     );
-    trace::Debug("ClassFactory::CreateInstance");
+    trace::Logger::Debug("ClassFactory::CreateInstance");
 
     auto profiler = new trace::CorProfiler();
     return profiler->QueryInterface(riid, ppvObject);

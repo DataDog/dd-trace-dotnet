@@ -193,7 +193,8 @@
     <ClInclude Include="integration.h" />
     <ClInclude Include="integration_loader.h" />
     <ClInclude Include="clr_helpers.h" />
-    <ClInclude Include="logging.h" />
+    <ClInclude Include="logger.h" />
+    <ClInclude Include="logger_impl.h" />
     <ClInclude Include="macros.h" />
     <ClInclude Include="metadata_builder.h" />
     <ClInclude Include="miniutf.hpp" />
@@ -218,7 +219,6 @@
     <ClCompile Include="integration.cpp" />
     <ClCompile Include="integration_loader.cpp" />
     <ClCompile Include="lib\spdlog\src\spdlog.cpp" />
-    <ClCompile Include="logging.cpp" />
     <ClCompile Include="metadata_builder.cpp" />
     <ClCompile Include="miniutf.cpp" />
     <ClCompile Include="rejit_handler.cpp" />
