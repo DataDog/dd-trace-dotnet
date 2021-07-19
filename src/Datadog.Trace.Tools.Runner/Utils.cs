@@ -121,7 +121,7 @@ namespace Datadog.Trace.Tools.Runner
 
             if (!string.IsNullOrWhiteSpace(options.EnvironmentValues))
             {
-                foreach (var keyValue in options.EnvironmentValues.Split(','))
+                foreach (var keyValue in options.EnvironmentValues.Split(',', StringSplitOptions.TrimEntries))
                 {
                     if (!string.IsNullOrWhiteSpace(keyValue))
                     {
