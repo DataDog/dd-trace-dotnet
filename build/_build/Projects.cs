@@ -16,7 +16,7 @@
 
     public const string ApplicationWithLog4Net = "ApplicationWithLog4Net";
     public const string EntityFramework6xMdTokenLookupFailure = "EntityFramework6x.MdTokenLookupFailure";
-    
+
     public const string RunnerTool = "Datadog.Trace.Tools.Runner.Tool";
     public const string StandaloneTool = "Datadog.Trace.Tools.Runner.Standalone";
 }
