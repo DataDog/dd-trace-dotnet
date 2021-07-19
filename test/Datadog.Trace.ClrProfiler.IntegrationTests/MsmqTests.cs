@@ -6,7 +6,6 @@
 #if NETFRAMEWORK
 using System;
 using System.Linq;
-using Datadog.Core.Tools;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;

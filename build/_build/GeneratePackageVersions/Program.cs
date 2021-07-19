@@ -9,53 +9,41 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Nuke.Common.IO;
 
 namespace GeneratePackageVersions
 {
-    public class Program
+    public class PackageVersionGenerator
     {
-        private static string _solutionDirectory;
-        private static string _baseXunitPath;
-        private static PackageGroup _latestMinors;
-        private static PackageGroup _comprehensive;
-        private static XunitStrategyFileGenerator _strategyGenerator;
+        private readonly AbsolutePath _definitionsFilePath;
+        private readonly PackageGroup _latestMinors;
+        private readonly PackageGroup _comprehensive;
+        private readonly XunitStrategyFileGenerator _strategyGenerator;
 
-        public static async Task Main(string[] args)
+        public PackageVersionGenerator(
+            AbsolutePath solutionDirectory,
+            AbsolutePath testProjectDirectory)
         {
-            if (args.Length < 1 || string.IsNullOrWhiteSpace(args[0]))
+            var propsDirectory = solutionDirectory / "build";
+            _definitionsFilePath = solutionDirectory / "build" / "PackageVersionsGeneratorDefinitions.json";
+            _latestMinors = new PackageGroup(propsDirectory, testProjectDirectory, "LatestMinors");
+            _comprehensive = new PackageGroup(propsDirectory, testProjectDirectory, "Comprehensive");
+            _strategyGenerator = new XunitStrategyFileGenerator(testProjectDirectory / "PackageVersions.g.cs");
+
+            if (!File.Exists(_definitionsFilePath))
             {
-                Console.Error.WriteLine("error: You must specify the solution directory. Exiting.");
-                return;
+                throw new Exception($"Definitions file {_definitionsFilePath} does not exist. Exiting.");
             }
+        }
 
-            _solutionDirectory = args[0];
-
-            _baseXunitPath = Path.Combine(
-                _solutionDirectory,
-                "test",
-                "Datadog.Trace.ClrProfiler.IntegrationTests");
-
-            _latestMinors = new PackageGroup("LatestMinors");
-            _comprehensive = new PackageGroup("Comprehensive");
-
-            _strategyGenerator = new XunitStrategyFileGenerator(
-                Path.Combine(
-                    _baseXunitPath,
-                    "PackageVersions.g.cs"));
-
-            var definitionsFilename = Path.Combine(args[0], "build", "PackageVersionsGeneratorDefinitions.json");
-
-            if (!File.Exists(definitionsFilename))
-            {
-                Console.Error.WriteLine($"error: Definitions file {definitionsFilename} does not exist. Exiting.");
-                return;
-            }
-
-            var entries = JsonConvert.DeserializeObject<PackageVersionEntry[]>(File.ReadAllText(definitionsFilename));
+        public async Task GenerateVersions()
+        {
+            var definitions = File.ReadAllText(_definitionsFilePath);
+            var entries = JsonConvert.DeserializeObject<PackageVersionEntry[]>(definitions);
             await RunFileGeneratorWithPackageEntries(entries);
         }
 
-        private static async Task RunFileGeneratorWithPackageEntries(IEnumerable<PackageVersionEntry> entries)
+        private async Task RunFileGeneratorWithPackageEntries(IEnumerable<PackageVersionEntry> entries)
         {
             _latestMinors.Start();
             _comprehensive.Start();
@@ -114,18 +102,15 @@ namespace GeneratePackageVersions
         private class PackageGroup
         {
             private readonly MSBuildPropsFileGenerator _msBuildPropsFileGenerator;
-
             private readonly XUnitFileGenerator _xUnitFileGenerator;
 
-            public PackageGroup(string postfix)
+            public PackageGroup(string propsDirectory, string testDirectoryPath, string postfix)
             {
                 var className = $"PackageVersions{postfix}";
 
-                var outputPackageVersionsPropsFilename = Path.Combine(_solutionDirectory, "build", $"PackageVersions{postfix}.g.props");
+                var outputPackageVersionsPropsFilename = Path.Combine(propsDirectory, $"PackageVersions{postfix}.g.props");
 
-                var outputPackageVersionsXunitFilename = Path.Combine(
-                    _baseXunitPath,
-                    $"PackageVersions{postfix}.g.cs");
+                var outputPackageVersionsXunitFilename = Path.Combine(testDirectoryPath, $"PackageVersions{postfix}.g.cs");
 
                 _msBuildPropsFileGenerator = new MSBuildPropsFileGenerator(outputPackageVersionsPropsFilename);
 

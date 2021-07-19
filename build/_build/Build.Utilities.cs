@@ -2,13 +2,18 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
+using GeneratePackageVersions;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.Docker;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.MSBuild;
+using PrepareRelease;
+using UpdateVendors;
 using static Nuke.Common.EnvironmentInfo;
+using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
 
@@ -168,4 +173,91 @@ partial class Build
                 .SetProcessEnvironmentVariables(envVars));
 
         });
+
+    Target GeneratePackageVersions => _ => _
+       .Description("Regenerate the PackageVersions props and .cs files")
+       .Executes(async () =>
+       {
+           var testDir = Solution.GetProject(Projects.ClrProfilerIntegrationTests).Directory;
+
+           var versionGenerator = new PackageVersionGenerator(RootDirectory, testDir);
+           await versionGenerator.GenerateVersions();
+       });
+
+    Target UpdateVendoredCode => _ => _
+       .Description("Updates the vendored dependency code and dependabot template")
+       .Executes(() =>
+       {
+            var honeypotProject = RootDirectory / "honeypot"  /  "Datadog.Dependabot.Honeypot.csproj";
+            UpdateVendorsTool.UpdateHoneypotProject(honeypotProject);
+
+            var vendorDirectory = Solution.GetProject(Projects.DatadogTrace).Directory / "Vendors";
+            var downloadDirectory = TemporaryDirectory / "Downloads";
+            EnsureCleanDirectory(downloadDirectory);
+            UpdateVendorsTool.UpdateVendors(downloadDirectory, vendorDirectory);
+       });
+
+    Target UpdateIntegrationsJson => _ => _
+       .Description("Update the integrations.json file")
+       .DependsOn(Clean, Restore, CreateRequiredDirectories, CompileManagedSrc, PublishManagedProfiler) // We load the dlls from the output, so need to do a clean build
+       .Before(CopyIntegrationsJson)
+       .Executes(() =>
+        {
+            var assemblies = TracerHomeDirectory
+                            .GlobFiles("**/Datadog.Trace.ClrProfiler.Managed.dll")
+                            .Select(x => x.ToString())
+                            .ToList();
+
+            GenerateIntegrationDefinitions.Run(assemblies, RootDirectory);
+        });
+
+    Target UpdateVersion => _ => _
+       .Description("Update the version number for the tracer")
+       .Before(Clean, BuildTracerHome)
+       .Requires(() => Version)
+       .Executes(() =>
+        {
+            new SetAllVersions(RootDirectory, Version, IsPrerelease).Run();
+        });
+
+    Target UpdateMsiContents => _ => _
+       .Description("Update the contents of the MSI")
+       .DependsOn(Clean, BuildTracerHome)
+       .Executes(() =>
+        {
+            SyncMsiContent.Run(RootDirectory, TracerHomeDirectory);
+        });
+
+    Target CiAppFeatureTracking => _ => _
+       .Description("Generate the CIApp FeatureTracking JSON")
+       .DependsOn(Clean, Restore, CreateRequiredDirectories, CompileManagedSrc, PublishManagedProfiler) // We load the dlls from the output, so need to do a clean build
+       .Executes(() =>
+        {
+            // Just grab the first one for now
+            var assemblyPath = TracerHomeDirectory
+                            .GlobFiles("**/netcoreapp*/Datadog.Trace.ClrProfiler.Managed.dll")
+                            .Select(x => x.ToString())
+                            .First();
+
+            var assembly = Assembly.LoadFrom(assemblyPath);
+            var featureTrackingAttribute = assembly.GetType("Datadog.Trace.Ci.FeatureTrackingAttribute");
+            var types = new[] { "Datadog.Trace.Ci.CommonTags", "Datadog.Trace.Ci.TestTags" }
+                       .Select(type => assembly.GetType(type))
+                       .ToArray();
+
+            var values = GetFeatureTrackingValueFromType(types);
+
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(values);
+            Console.WriteLine(json);
+
+            IEnumerable<string> GetFeatureTrackingValueFromType(params Type[] types)
+            {
+                return types
+                      .SelectMany(type => type.GetFields())
+                      .Where(f => f.GetCustomAttributes(featureTrackingAttribute, true).Length > 0)
+                      .Select(f => f.GetValue(null).ToString())
+                      .OrderBy(v => v);
+            }
+        });
+
 }

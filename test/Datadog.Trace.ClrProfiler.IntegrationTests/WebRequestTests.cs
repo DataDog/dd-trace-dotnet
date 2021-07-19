@@ -5,7 +5,6 @@
 
 using System.Globalization;
 using System.Linq;
-using Datadog.Core.Tools;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.TestHelpers;
 using Xunit;

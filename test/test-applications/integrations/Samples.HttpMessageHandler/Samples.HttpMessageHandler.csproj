@@ -5,15 +5,19 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
-    <ProjectReference Include="..\..\..\..\tools\Datadog.Core.Tools\Datadog.Core.Tools.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
     <Reference Include="System.Net.Http" />
+    <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
   </ItemGroup>
   
   <ItemGroup Condition=" !$(TargetFramework.StartsWith('net45')) ">
     <PackageReference Include="System.Net.Http.WinHttpHandler" Version="5.0.0" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Compile Include="..\..\..\Datadog.Trace.TestHelpers\TcpPortProvider.cs" Link="TcpPortProvider.cs" />
   </ItemGroup>
 
 </Project>

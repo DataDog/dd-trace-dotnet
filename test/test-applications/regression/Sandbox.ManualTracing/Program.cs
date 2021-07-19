@@ -9,7 +9,6 @@ using System.Security.Policy;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Core.Tools;
 using Datadog.Trace;
 
 namespace Sandbox.ManualTracing

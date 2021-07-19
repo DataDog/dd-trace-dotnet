@@ -50,8 +50,11 @@ partial class Build : NukeBuild
     [Parameter("Is the build running on Alpine linux? Default is 'false'")]
     readonly bool IsAlpine = false;
 
-    [Parameter("The build version (for packaging purposes). Default is latest")]
+    [Parameter("The build version. Default is latest")]
     readonly string Version = "1.28.1";
+
+    [Parameter("Whether the build version is a prerelease(for packaging purposes). Default is latest")]
+    readonly bool IsPrerelease = true;
 
     [Parameter("Prints the available drive space before executing each target. Defaults to false")]
     readonly bool PrintDriveSpace = false;
