@@ -1,0 +1,41 @@
+name: Auto tag version bump commit
+
+on:
+  push:
+    branches: [ master, main ]
+    tags-ignore:
+      - '**'
+
+jobs:
+  add_to_milestone:
+    if: startsWith(github.event.head_commit.message, '[Version Bump]')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '5.0.x'
+
+      - name: "Output current version"
+        id: versions
+        run: ./build.sh OutputCurrentVersionToGitHub
+
+      - name: "Configure Git Credentials"
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: "Create and push git tag"
+        id: version
+        run: |
+          git tag "v${{steps.versions.outputs.full_version}}"
+          git push origin "v${{steps.versions.outputs.full_version}}"
+
+      - name: Create benchmarks branch
+        uses: peterjgrainger/action-create-branch@v2.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          branch: 'benchmarks/${{steps.versions.outputs.full_version}}'

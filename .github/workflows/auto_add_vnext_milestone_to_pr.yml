@@ -1,0 +1,26 @@
+name: Auto add PR to vNext milestone
+
+on:
+  pull_request:
+    branches:
+      - master
+      - main
+    types: [closed]
+
+jobs:
+  add_to_milestone:
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.title, '[Version Bump]') == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '5.0.x'
+
+      - name: "Assign to vNext Milestone"
+        run: ./build.sh AssignPullRequestToMilestone
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          PullRequestNumber: "${{ github.event.pull_request.number }}"
