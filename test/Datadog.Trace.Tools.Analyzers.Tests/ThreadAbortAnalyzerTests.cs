@@ -4,8 +4,10 @@
 // </copyright>
 
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Testing;
 using Xunit;
-using VerifyCS = Datadog.Trace.Tools.Analyzers.Tests.CSharpCodeFixVerifier<
+using Verifier = Microsoft.CodeAnalysis.CSharp.Testing.XUnit.CodeFixVerifier<
     Datadog.Trace.Tools.Analyzers.ThreadAbortAnalyzer.ThreadAbortAnalyzer,
     Datadog.Trace.Tools.Analyzers.ThreadAbortAnalyzer.ThreadAbortCodeFixProvider>;
 
@@ -23,7 +25,7 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
         {
             var test = string.Empty;
 
-            await VerifyCS.VerifyAnalyzerAsync(test);
+            await Verifier.VerifyAnalyzerAsync(test);
         }
 
         [Theory]
@@ -47,7 +49,7 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
                         Console.WriteLine(""Finally"");
                     }
                 }");
-            await VerifyCS.VerifyAnalyzerAsync(code);
+            await Verifier.VerifyAnalyzerAsync(code);
         }
 
         [Theory]
@@ -75,7 +77,7 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
                         Console.WriteLine(""Finally"");
                     }
                 }");
-            await VerifyCS.VerifyAnalyzerAsync(code);
+            await Verifier.VerifyAnalyzerAsync(code);
         }
 
         [Theory]
@@ -96,7 +98,7 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
                     }
                 }");
 
-            await VerifyCS.VerifyAnalyzerAsync(code);
+            await Verifier.VerifyAnalyzerAsync(code);
         }
 
         [Theory]
@@ -129,8 +131,10 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
                     throw;
                 }
                 }");
-            var expected = VerifyCS.Diagnostic(DiagnosticId).WithLocation(0);
-            await VerifyCS.VerifyCodeFixAsync(code, expected, fix);
+
+            var expected = new DiagnosticResult(DiagnosticId, DiagnosticSeverity.Error)
+               .WithLocation(0);
+            await Verifier.VerifyCodeFixAsync(code, expected, fix);
         }
 
         [Theory]
@@ -170,8 +174,9 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
                         Console.WriteLine(""Finally"");
                     }
                 }");
-            var expected = VerifyCS.Diagnostic(DiagnosticId).WithLocation(0);
-            await VerifyCS.VerifyCodeFixAsync(code, expected, fix);
+            var expected = new DiagnosticResult(DiagnosticId, DiagnosticSeverity.Error)
+               .WithLocation(0);
+            await Verifier.VerifyCodeFixAsync(code, expected, fix);
         }
 
         private static string GetTestCode(string testFragment)
