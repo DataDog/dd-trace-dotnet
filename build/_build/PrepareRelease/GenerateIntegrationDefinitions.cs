@@ -20,6 +20,7 @@ namespace PrepareRelease
     {
         const string InstrumentMethodAttributeName = "Datadog.Trace.ClrProfiler.InstrumentMethodAttribute";
         const string InterceptMethodAttributeName = "Datadog.Trace.ClrProfiler.InterceptMethodAttribute";
+
         public static void Run(ICollection<string> assemblyPaths, params string[] outputDirectories)
         {
             Console.WriteLine("Updating the integrations definitions");
