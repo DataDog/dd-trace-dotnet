@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="log4net" Version="2.0.12" />
-    <PackageReference Include="log4net.Ext.Json" Version="2.0.8.3" />
+    <PackageReference Include="log4net.Ext.Json" Version="1.2.15.14586" />
   </ItemGroup>
 
   <ItemGroup>

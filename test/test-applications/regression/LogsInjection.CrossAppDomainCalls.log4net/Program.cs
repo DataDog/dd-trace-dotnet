@@ -40,6 +40,7 @@ namespace LogsInjection.CrossAppDomainCalls.log4net
 
             try
             {
+                log.Info("Entering Datadog scope.");
                 using (var scope = Tracer.Instance.StartActive("transaction"))
                 {
                     // In the middle of the trace, make a call across AppDomains
@@ -49,10 +50,11 @@ namespace LogsInjection.CrossAppDomainCalls.log4net
                     // System.Runtime.Serialization.SerializationException: Type is not resolved for member 'log4net.Util.PropertiesDictionary,log4net, Version=2.0.12.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a'.
 
                     log.Info("Calling the PluginApplication.Program in a separate AppDomain");
-                    AppDomainProxy.Call(applicationAppDomain, "PluginApplication", "PluginApplication.Program", "Invoke", null);
-                    log.Info("Returned the PluginApplication.Program call");
+                    // AppDomainProxy.Call(applicationAppDomain, "PluginApplication", "PluginApplication.Program", "Invoke", null);
+                    log.Info("Returned from the PluginApplication.Program call");
                 }
 
+                log.Info("Exited Datadog scope.");
                 AppDomain.Unload(applicationAppDomain);
             }
             catch (Exception ex)
