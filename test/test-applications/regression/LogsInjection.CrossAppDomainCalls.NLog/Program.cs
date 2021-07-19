@@ -39,6 +39,7 @@ namespace LogsInjection.CrossAppDomainCalls.NLog
             {
                 using (var scope = Tracer.Instance.StartActive("transaction"))
                 {
+                    Logger.Info("Entered scope");
                     // In the middle of the trace, make a call across AppDomains.
                     // Historically, Serilog correctly handles "AsyncLocal" state in the
                     // System.Runtime.Remoting.Messaging.CallContext by wrapping it in
@@ -47,9 +48,10 @@ namespace LogsInjection.CrossAppDomainCalls.NLog
 
                     Logger.Info("Calling the PluginApplication.Program in a separate AppDomain");
                     AppDomainProxy.Call(applicationAppDomain, "PluginApplication", "PluginApplication.Program", "Invoke", null);
-                    Logger.Info("Returned the PluginApplication.Program call");
+                    Logger.Info("Returned from the PluginApplication.Program call");
                 }
 
+                Logger.Info("Exited scope");
                 AppDomain.Unload(applicationAppDomain);
             }
             catch (Exception ex)
