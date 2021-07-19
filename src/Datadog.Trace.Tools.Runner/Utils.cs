@@ -121,9 +121,9 @@ namespace Datadog.Trace.Tools.Runner
 
             if (!string.IsNullOrWhiteSpace(options.EnvironmentValues))
             {
-                foreach (var keyValue in options.EnvironmentValues.Split(',', StringSplitOptions.TrimEntries))
+                foreach (var keyValue in options.EnvironmentValues.Split(',', StringSplitOptions.RemoveEmptyEntries))
                 {
-                    if (!string.IsNullOrWhiteSpace(keyValue))
+                    if (!string.IsNullOrWhiteSpace(keyValue?.Trim()))
                     {
                         var kvArray = keyValue.Split('=');
                         if (kvArray.Length == 2)

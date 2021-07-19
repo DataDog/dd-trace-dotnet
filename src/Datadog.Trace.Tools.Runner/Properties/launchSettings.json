@@ -2,7 +2,7 @@
   "profiles": {
     "Datadog.Trace.Tools.Runner": {
       "commandName": "Project",
-      "commandLineArgs": "--dd-env=ci --env-vars=myVar1=myValue1,myVar2=myValue2 -- dotnet --info"
+      "commandLineArgs": "--dd-env ci --env-vars myVar1=myValue1,myVar2=myValue2 -- dotnet --info"
     }
   }
 }
