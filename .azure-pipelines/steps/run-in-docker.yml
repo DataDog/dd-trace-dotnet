@@ -15,6 +15,10 @@ parameters:
     type: boolean
     default: false
 
+  - name: ddTraceAgentUrl
+    type: string
+    default: ''
+
   - name: command
     type: string
 
@@ -36,8 +40,27 @@ steps:
           --env tracerHome=/project/$(relativeTracerHome) \
           --env artifacts=/project/$(relativeArtifacts) \
           --env DD_CLR_ENABLE_NGEN=$(DD_CLR_ENABLE_NGEN) \
+          --env DD_SERVICE \
+          --env DD_ENV \
+          --env TF_BUILD \
+          --env BUILD_DEFINITIONNAME \
+          --env BUILD_BUILDID \
+          --env BUILD_SOURCESDIRECTORY \
+          --env BUILD_REPOSITORY_URI \
+          --env BUILD_SOURCEBRANCH \
+          --env BUILD_SOURCEVERSION \
+          --env BUILD_SOURCEBRANCH \
+          --env BUILD_SOURCEVERSION \
+          --env SYSTEM_TEAMFOUNDATIONSERVERURI \
+          --env SYSTEM_TEAMPROJECT \
+          --env SYSTEM_JOBID \
+          --env SYSTEM_TASKINSTANCEID \
+          --env SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI \
+          --env SYSTEM_PULLREQUEST_SOURCEBRANCH \
+          --env SYSTEM_PULLREQUEST_SOURCECOMMITID \
+          --env SYSTEM_PULLREQUEST_SOURCECOMMITID \
           dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }} \
-          dd-trace dotnet /build/bin/Debug/_build.dll ${{ parameters.command }}
+          dd-trace --agent-url={{ parameters.ddTraceAgentUrl}} -- dotnet /build/bin/Debug/_build.dll ${{ parameters.command }}
     displayName: Run '${{ parameters.command }}' in Docker
 - ${{ if ne(parameters.ddTraceEnabled, true) }}:
     - script: |

@@ -295,6 +295,7 @@ stages:
       parameters:
         build: true
         ddTraceEnabled: true
+        ddTraceAgentUrl: $(resources.container.dd_agent.URI)
         baseImage: $(baseImage)
         command: "BuildAndRunManagedUnitTests --code-coverage"
 
