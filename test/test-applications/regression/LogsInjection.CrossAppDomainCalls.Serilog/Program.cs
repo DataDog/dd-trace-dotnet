@@ -47,6 +47,7 @@ namespace LogsInjection.CrossAppDomainCalls.Serilog
 
             try
             {
+                log.Information("Entering Datadog scope.");
                 using (var scope = Tracer.Instance.StartActive("transaction"))
                 {
                     // In the middle of the trace, make a call across AppDomains.
@@ -57,9 +58,10 @@ namespace LogsInjection.CrossAppDomainCalls.Serilog
 
                     log.Information("Calling the PluginApplication.Program in a separate AppDomain");
                     AppDomainProxy.Call(applicationAppDomain, "PluginApplication", "PluginApplication.Program", "Invoke", null);
-                    log.Information("Returned the PluginApplication.Program call");
+                    log.Information("Returned from the PluginApplication.Program call");
                 }
 
+                log.Information("Exited Datadog scope.");
                 AppDomain.Unload(applicationAppDomain);
             }
             catch (Exception ex)
