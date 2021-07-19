@@ -245,7 +245,11 @@ stages:
           DD_AGENT_MAJOR_VERSION=7 \
           DD_API_KEY=$(ddApiKey) \
           DD_SITE="datadoghq.com" \
+          DD_HOSTNAME="none" \
+          DD_INSTALL_ONLY="true" \
           bash -c "$(curl -L https://s3.amazonaws.com/dd-agent/scripts/install_mac_os.sh)"
+          sudo find /etc/datadog-agent/conf.d/ -iname "*.yaml.default" -delete
+          sudo service datadog-agent start
         displayName: Install Datadog agent
 
       - template: steps/install-dotnet.yml
