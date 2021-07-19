@@ -184,7 +184,7 @@ partial class Build
            await versionGenerator.GenerateVersions();
        });
 
-    Target UpdateVendors => _ => _
+    Target UpdateVendoredCode => _ => _
        .Description("Updates the vendored dependency code and dependabot template")
        .Executes(() =>
        {
@@ -211,7 +211,7 @@ partial class Build
             GenerateIntegrationDefinitions.Run(assemblies, RootDirectory);
         });
 
-    Target SetVersion => _ => _
+    Target UpdateVersion => _ => _
        .Description("Update the version number for the tracer")
        .Before(Clean, BuildTracerHome)
        .Requires(() => Version)
@@ -220,7 +220,7 @@ partial class Build
             new SetAllVersions(RootDirectory, Version, IsPrerelease).Run();
         });
 
-    Target SyncMsiContents => _ => _
+    Target UpdateMsiContents => _ => _
        .Description("Update the contents of the MSI")
        .DependsOn(Clean, BuildTracerHome)
        .Executes(() =>
