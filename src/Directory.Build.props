@@ -30,7 +30,7 @@
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' != 'net45' ">
-    <ProjectReference Include="$(MSBuildThisFileDirectory)Datadog.Trace.Tools.Analyzers\Datadog.Trace.Tools.Analyzers.csproj" OutputItemType="Analyzer" PrivateAssets="All" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)Datadog.Trace.Tools.Analyzers\Datadog.Trace.Tools.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>
