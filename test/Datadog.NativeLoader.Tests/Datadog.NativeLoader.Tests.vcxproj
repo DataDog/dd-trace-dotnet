@@ -140,7 +140,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Datadog.NativeLoader.Tests.cpp" />
+    <ClCompile Include="guid_test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
