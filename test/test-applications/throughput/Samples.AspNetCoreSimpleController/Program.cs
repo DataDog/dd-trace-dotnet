@@ -40,18 +40,19 @@ namespace Samples.AspNetCoreSimpleController
 
         private static bool IsProfilerAttached()
         {
-            var instrumentationType = Type.GetType("Datadog.Trace.ClrProfiler.Instrumentation", throwOnError: false);
-
-            if (instrumentationType == null)
+            Assembly managedAssembly = typeof(Datadog.Trace.ClrProfiler.Instrumentation).Assembly;
+            Type nativeMethodsType = managedAssembly.GetType("Datadog.Trace.ClrProfiler.NativeMethods");
+            MethodInfo profilerAttachedMethodInfo = nativeMethodsType.GetMethod("IsProfilerAttached");
+            try
             {
-                return false;
+                return (bool)profilerAttachedMethodInfo.Invoke(null, null);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
             }
 
-            var property = instrumentationType.GetProperty("ProfilerAttached");
-
-            var isAttached = property?.GetValue(null) as bool?;
-
-            return isAttached ?? false;
+            return false;
         }
     }
 }
