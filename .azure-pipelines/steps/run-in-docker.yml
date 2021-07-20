@@ -56,7 +56,7 @@ steps:
           --env SYSTEM_PULLREQUEST_SOURCECOMMITID \
           --env SYSTEM_PULLREQUEST_SOURCECOMMITID \
           dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }} \
-          dd-trace -- dotnet /build/bin/Debug/_build.dll ${{ parameters.command }}
+          dd-trace -- dotnet /build/bin/Debug/_build.dll info ${{ parameters.command }}
     displayName: Run '${{ parameters.command }}' in Docker
 - ${{ if ne(parameters.ddTraceEnabled, true) }}:
     - script: |
