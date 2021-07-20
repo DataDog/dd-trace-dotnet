@@ -2,25 +2,24 @@
 
   <PropertyGroup>
     <TargetFrameworks>net452;net461</TargetFrameworks>
-    <IsPackable>false</IsPackable>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">2.10.0</ApiVersion>
+    <!-- Required to build multiple projects with the same Configuration|Platform -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+
     <ExcludeManagedProfiler>true</ExcludeManagedProfiler>
     <ExcludeNativeProfiler>true</ExcludeNativeProfiler>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="log4net" Version="2.0.12" />
-    <PackageReference Include="log4net.Ext.Json" Version="1.2.15.14586" />
+    <PackageReference Include="Serilog" Version="$(ApiVersion)" />
+    <PackageReference Include="Serilog.Formatting.Compact" Version="1.1.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="4.1.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\dependency-libs\PluginApplication\PluginApplication.csproj" />    
+    <ProjectReference Include="..\dependency-libs\PluginApplication\PluginApplication.csproj" />
     <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="log4net.config">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
   <Target Name="AfterBuildMovePluginApplication" AfterTargets="AfterBuild">

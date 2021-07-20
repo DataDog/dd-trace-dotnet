@@ -8,14 +8,19 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Serilog" Version="2.9.0" />
-    <PackageReference Include="Serilog.Formatting.Compact" Version="1.1.0" />
-    <PackageReference Include="Serilog.Sinks.File" Version="4.1.0" />
+    <PackageReference Include="log4net" Version="2.0.12" />
+    <PackageReference Include="log4net.Ext.Json" Version="1.2.15.14586" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\dependency-libs\PluginApplication\PluginApplication.csproj" />
     <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="log4net.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <Target Name="AfterBuildMovePluginApplication" AfterTargets="AfterBuild">

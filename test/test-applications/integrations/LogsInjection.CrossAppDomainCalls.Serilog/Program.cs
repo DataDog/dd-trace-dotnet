@@ -12,8 +12,15 @@ namespace LogsInjection.CrossAppDomainCalls.Serilog
 {
     public class Program
     {
+        /// <summary>
+        /// Prepend a string to log lines that should not be validated for logs injection.
+        /// In other words, they're not written within a Datadog scope 
+        /// </summary>
+        private static readonly string ExcludeMessagePrefix = "[ExcludeMessage]";
+
         public static int Main(string[] args)
         {
+
             // Set up the secondary AppDomain first
             // The plugin application we'll call was built and copied to the ApplicationFiles subdirectory
             // Create an AppDomain with that directory as the appBasePath
@@ -26,13 +33,13 @@ namespace LogsInjection.CrossAppDomainCalls.Serilog
                                         .Enrich.FromLogContext()
                                         .MinimumLevel.Is(LogEventLevel.Information)
                                         .WriteTo.File(
-                                            "log-Serilog-textFile.log",
+                                            "log-textFile.log",
                                             outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Properties} {Message:lj} {NewLine}{Exception}")
                                         .WriteTo.File(
                                             new JsonFormatter(),
-                                            "log-Serilog-jsonFile-allProperties.log")
+                                            "log-jsonFile.log")
                                         .CreateLogger();
-            log.Information("Configured logger");
+            log.Information($"{ExcludeMessagePrefix}Configured logger");
 
             // Set up Tracer and start a trace
             var settings = new TracerSettings()
@@ -47,7 +54,7 @@ namespace LogsInjection.CrossAppDomainCalls.Serilog
 
             try
             {
-                log.Information("Entering Datadog scope.");
+                log.Information($"{ExcludeMessagePrefix}Entering Datadog scope.");
                 using (var scope = Tracer.Instance.StartActive("transaction"))
                 {
                     // In the middle of the trace, make a call across AppDomains.
@@ -61,7 +68,7 @@ namespace LogsInjection.CrossAppDomainCalls.Serilog
                     log.Information("Returned from the PluginApplication.Program call");
                 }
 
-                log.Information("Exited Datadog scope.");
+                log.Information($"{ExcludeMessagePrefix}Exited Datadog scope.");
                 AppDomain.Unload(applicationAppDomain);
             }
             catch (Exception ex)
