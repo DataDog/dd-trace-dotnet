@@ -28,7 +28,7 @@ steps:
         --file "$(System.DefaultWorkingDirectory)/build/_build/docker/${{ parameters.baseImage }}.dockerfile" \
         "$(System.DefaultWorkingDirectory)/build/_build"
     displayName: Build ${{ parameters.baseImage }} Docker image
-- ${{ if eq(parameters.ddTraceEnabled, true) }}:
+- ${{ if eq(parameters.ddTraceEnabled, 'true') }}:
   - script: |
       docker run --rm \
           --mount type=bind,source="$(System.DefaultWorkingDirectory)",target=/project \
@@ -57,8 +57,8 @@ steps:
           --env SYSTEM_PULLREQUEST_SOURCECOMMITID \
           dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }} \
           dd-trace -- dotnet /build/bin/Debug/_build.dll info ${{ parameters.command }}
-    displayName: Run '${{ parameters.command }}' in Docker
-- ${{ if ne(parameters.ddTraceEnabled, true) }}:
+    displayName: Run dd-trace '${{ parameters.command }}' in Docker
+- ${{ if ne(parameters.ddTraceEnabled, 'true') }}:
     - script: |
         docker run --rm \
             --mount type=bind,source="$(System.DefaultWorkingDirectory)",target=/project \
