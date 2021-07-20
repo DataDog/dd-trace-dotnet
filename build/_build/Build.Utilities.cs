@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using GeneratePackageVersions;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.Tooling;
-using Nuke.Common.Tools.Docker;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.MSBuild;
 using PrepareRelease;
@@ -248,7 +248,10 @@ partial class Build
             var values = GetFeatureTrackingValueFromType(types);
 
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(values);
-            Console.WriteLine(json);
+            var output = OutputDirectory / "ci-app-spec.json";
+
+            Logger.Info($"Writing spec to '{output}'");
+            File.WriteAllText(output, json);
 
             IEnumerable<string> GetFeatureTrackingValueFromType(params Type[] types)
             {
