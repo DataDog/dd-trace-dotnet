@@ -118,7 +118,7 @@ namespace shared
 
         const WCHAR* _pNativeProfilerLibraryFilename;
 
-        static Loader* s_singeltonInstance;
+        static Loader* s_SingletonInstance;
 
         static Loader* CreateNewLoaderInstance(
                     ICorProfilerInfo4* pCorProfilerInfo,
@@ -213,7 +213,7 @@ namespace shared
     public:
         static const DWORD LoaderProfilerEventMask = COR_PRF_MONITOR_CACHE_SEARCHES | COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST;
 
-        static void CreateNewSingeltonInstance(
+        static void CreateNewSingletonInstance(
                     ICorProfilerInfo4* pCorProfilerInfo,
                     bool logDebugIsEnabled,
                     std::function<void(const std::string& str)> logDebugCallback,
@@ -226,8 +226,8 @@ namespace shared
                     const std::vector<WSTRING>& iisAssemblyStringDefaultAppDomainVector,
                     const std::vector<WSTRING>& iisAssemblyStringNonDefaultAppDomainVector);
 
-        static Loader* GetSingeltonInstance();
-        static void DeleteSingeltonInstance(void);
+        static Loader* GetSingletonInstance();
+        static void DeleteSingletonInstance(void);
 
         HRESULT InjectLoaderToModuleInitializer(const ModuleID moduleId);
         HRESULT HandleJitCachedFunctionSearchStarted(FunctionID functionId, BOOL* pbUseCachedFunction);

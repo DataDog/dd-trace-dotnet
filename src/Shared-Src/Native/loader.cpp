@@ -15,7 +15,7 @@
 
 namespace shared
 {
-    Loader* Loader::s_singeltonInstance = nullptr;
+    Loader* Loader::s_SingletonInstance = nullptr;
 
 #ifdef LINUX
     extern uint8_t dll_start[] asm("_binary_Datadog_AutoInstrumentation_ManagedLoader_dll_start");
@@ -54,7 +54,7 @@ namespace shared
             });
     }
 
-    void Loader::CreateNewSingeltonInstance(
+    void Loader::CreateNewSingletonInstance(
         ICorProfilerInfo4* pCorProfilerInfo,
         bool logDebugIsEnabled,
         std::function<void(const std::string& str)> logDebugCallback,
@@ -67,7 +67,7 @@ namespace shared
         const std::vector<WSTRING>& iisAssemblyStringDefaultAppDomainVector,
         const std::vector<WSTRING>& iisAssemblyStringNonDefaultAppDomainVector)
     {
-        Loader* newSingeltonInstance = Loader::CreateNewLoaderInstance(pCorProfilerInfo,
+        Loader* newSingletonInstance = Loader::CreateNewLoaderInstance(pCorProfilerInfo,
                                                                        logDebugIsEnabled,
                                                                        logDebugCallback,
                                                                        logInfoCallback,
@@ -79,28 +79,28 @@ namespace shared
                                                                        iisAssemblyStringDefaultAppDomainVector,
                                                                        iisAssemblyStringNonDefaultAppDomainVector);
 
-        Loader::DeleteSingeltonInstance();
-        Loader::s_singeltonInstance = newSingeltonInstance;
+        Loader::DeleteSingletonInstance();
+        Loader::s_SingletonInstance = newSingletonInstance;
     }
 
-    Loader* Loader::GetSingeltonInstance()
+    Loader* Loader::GetSingletonInstance()
     {
-        Loader* singeltonInstance = Loader::s_singeltonInstance;
-        if (singeltonInstance != nullptr)
+        Loader* SingletonInstance = Loader::s_SingletonInstance;
+        if (SingletonInstance != nullptr)
         {
-            return singeltonInstance;
+            return SingletonInstance;
         }
 
-        throw std::logic_error("No singelton instance of Loader has been created, or it has already been deleted.");
+        throw std::logic_error("No singleton instance of Loader has been created, or it has already been deleted.");
     }
 
-    void Loader::DeleteSingeltonInstance(void)
+    void Loader::DeleteSingletonInstance(void)
     {
-        Loader* singeltonInstance = Loader::s_singeltonInstance;
-        if (singeltonInstance != nullptr)
+        Loader* singletonInstance = Loader::s_SingletonInstance;
+        if (singletonInstance != nullptr)
         {
-            Loader::s_singeltonInstance = nullptr;
-            delete singeltonInstance;
+            Loader::s_SingletonInstance = nullptr;
+            delete singletonInstance;
         }
     }
 
