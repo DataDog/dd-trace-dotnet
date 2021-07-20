@@ -9,6 +9,8 @@ using System.Linq;
 using System.Threading;
 using Datadog.Trace.AppSec.Transport;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.AppSec
@@ -37,8 +39,8 @@ namespace Datadog.Trace.AppSec
 
         internal Security(InstrumentationGateway instrumentationGateway = null, IPowerWaf powerWaf = null)
         {
-            var found = bool.TryParse(Environment.GetEnvironmentVariable("DD_ENABLE_SECURITY"), out var enabled);
-            Enabled = found && enabled;
+            var found = Environment.GetEnvironmentVariable(ConfigurationKeys.AppSecEnabled)?.ToBoolean();
+            Enabled = found == true;
 
             Log.Information($"Security.Enabled: {Enabled} ");
 

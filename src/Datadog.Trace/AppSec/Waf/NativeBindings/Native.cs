@@ -25,14 +25,16 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         static Native()
         {
+            var fd = FrameworkDescription.Create();
+
             string libName, runtimeId;
-            GetLibNameAndRuntimeId(out libName, out runtimeId);
+            GetLibNameAndRuntimeId(fd, out libName, out runtimeId);
 
             // libName or runtimeId being null means platform is not supported
             // no point attempting to load the library
             if (libName != null && runtimeId != null)
             {
-                var paths = GetDataDogNativeFolders(runtimeId);
+                var paths = GetDatadogNativeFolders(fd, runtimeId);
                 SearchPathsAndLoadLibrary(libName, paths);
             }
         }
@@ -96,26 +98,29 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
 #pragma warning restore SA1300 // Element should begin with upper-case letter
 
-        private static List<string> GetDataDogNativeFolders(string runtimeId)
+        private static List<string> GetDatadogNativeFolders(FrameworkDescription frameworkDescription, string runtimeId)
         {
             // first get anything "home folder" like, then combine with the profiler's location
             // taking into account that this should be the same place
 
-            var homePaths = GetHomeFolders(runtimeId);
-            var profilerFolders = GetProfilerFolders();
-            var paths = homePaths.Concat(profilerFolders).Distinct().ToList();
+            var paths = GetHomeFolders(runtimeId);
+            var profilerFolder = GetProfilerFolder(frameworkDescription);
+            paths.Add(profilerFolder);
 
-            return paths;
+            return paths.Distinct().ToList();
         }
 
-        private static IEnumerable<string> GetProfilerFolders()
+        private static string GetProfilerFolder(FrameworkDescription frameworkDescription)
         {
+            var profilerEnvVar =
+                frameworkDescription.IsCoreClr() ? "CORECLR_PROFILER_PATH" : "COR_PROFILER_PATH";
+            var profilerEnvVarBitsExt =
+                profilerEnvVar + (Environment.Is64BitProcess ? "_64" : "_32");
+
             var profilerPathsEnvVars = new List<string>()
             {
-                "CORECLR_PROFILER_PATH",
-                "CORECLR_PROFILER_PATH_32",
-                "CORECLR_PROFILER_PATH_64",
-                "COR_PROFILER_PATH",
+                profilerEnvVarBitsExt,
+                profilerEnvVar
             };
 
             // it is unlikely that the security library would be in a sub folder from
@@ -124,7 +129,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                 profilerPathsEnvVars
                     .Select(Environment.GetEnvironmentVariable)
                     .Where(x => !string.IsNullOrWhiteSpace(x))
-                    .Select(Path.GetDirectoryName);
+                    .Select(Path.GetDirectoryName)
+                    .FirstOrDefault();
 
             return profilerFolders;
         }
@@ -206,31 +212,27 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             }
         }
 
-        private static void GetLibNameAndRuntimeId(out string libName, out string runtimeId)
+        private static void GetLibNameAndRuntimeId(FrameworkDescription frameworkDescription, out string libName, out string runtimeId)
         {
             string runtimeIdPart1, libPrefix, libExt;
 
-            switch (Environment.OSVersion.Platform)
+            switch (frameworkDescription.OSPlatform)
             {
-                case PlatformID.MacOSX:
+                case OSPlatforms.MacOS:
                     runtimeIdPart1 = "osx";
                     libPrefix = "lib";
                     libExt = "dylib";
                     break;
-                case PlatformID.Unix:
+                case OSPlatforms.Linux:
                     runtimeIdPart1 = "linux";
                     libPrefix = "lib";
                     libExt = "so";
                     break;
-                case PlatformID.Win32NT:
-                case PlatformID.Win32S:
-                case PlatformID.Win32Windows:
-                case PlatformID.WinCE:
+                case OSPlatforms.Windows:
                     runtimeIdPart1 = "win";
                     libPrefix = string.Empty;
                     libExt = "dll";
                     break;
-                case PlatformID.Xbox:
                 default:
                     // unsupported platform
                     runtimeIdPart1 = null;
@@ -241,7 +243,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
             if (runtimeIdPart1 != null && libPrefix != null && libExt != null)
             {
-                libName = libPrefix + DllName + "." + libExt;
+                libName = libPrefix + "Sqreen." + libExt;
                 runtimeId = Environment.Is64BitProcess ? runtimeIdPart1 + "-x64" : runtimeIdPart1 + "-x32";
             }
             else

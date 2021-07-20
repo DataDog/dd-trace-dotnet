@@ -47,7 +47,7 @@
       <ManagedProfilerFiles Include="$(ManagedProfilerOutputDirectory)\**\*.pdb" Exclude="$(ManagedProfilerOutputDirectory)\*\runtimes\**\*.pdb" />
       <SecurityLibraryFiles Include="$(Pkglibsqreen)\runtimes\**\*.*" />
     </ItemGroup>
-    
+
     <Copy SourceFiles="@(ManagedProfilerFiles)" DestinationFolder="$(OutputPath)profiler-lib\%(RecursiveDir)" />
     <Copy SourceFiles="@(SecurityLibraryFiles)" DestinationFolder="$(OutputPath)profiler-lib\%(RecursiveDir)" />
   </Target>
