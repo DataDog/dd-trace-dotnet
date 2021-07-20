@@ -607,7 +607,7 @@ partial class Build
                     .EnableNoBuild()
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatformAnyCPU()
-                    .SetDDEnvironmentVariables("dd-tracer-dotnet")
+                    .SetDDEnvironmentVariables("dd-trace-dotnet")
                     .EnableMemoryDumps()
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(testProjects, (x, project) => x
