@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.IO;
 using System.Linq;
 using Nuke.Common;
@@ -79,6 +80,26 @@ partial class Build : NukeBuild
             Logger.Info($"NugetPackageDirectory: {NugetPackageDirectory}");
             Logger.Info($"IsAlpine: {IsAlpine}");
             Logger.Info($"Version: {Version}");
+
+            var ddEnvVars = Environment.GetEnvironmentVariables()
+                                       .Cast<DictionaryEntry>()
+                                       .Where(x =>
+                                        {
+                                            var key = x.ToString().ToLowerInvariant();
+                                            return key switch
+                                            {
+                                                _ when key.StartsWith("dd_") => true,
+                                                _ when key.StartsWith("COR_") => true,
+                                                _ when key.StartsWith("CORECLR_") => true,
+                                                _ => false
+                                            };
+                                        })
+                                       .ToList();
+            Logger.Info("-------Environment-------");
+            foreach (var envVar in ddEnvVars)
+            {
+                Logger.Info($"{envVar.Key}: {envVar.Value}");
+            }
         });
 
     Target Clean => _ => _
