@@ -17,36 +17,33 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class SerilogTests : TestHelper
+    public class SerilogTests : LogsInjectionTestBase
     {
-        private readonly string _excludeMessagePrefix = "[ExcludeMessage]";
         private readonly LogFileTest[] _logFileTests =
             {
                 new LogFileTest()
                 {
                     FileName = "log-textFile.log",
                     RegexFormat = @"{0}: ""{1}""",
-                    PropertiesAlwaysPresent = true
+                    PropertiesAreAlwaysPresent = true,
+                    PropertiesUseSerilogNaming = true
                 },
                 new LogFileTest()
                 {
                     FileName = "log-jsonFile.log",
                     RegexFormat = @"""{0}"":""{1}""",
-                    PropertiesAlwaysPresent = false
+                    PropertiesAreAlwaysPresent = false,
+                    PropertiesUseSerilogNaming = true
                 }
             };
 
         public SerilogTests(ITestOutputHelper output)
-            : base(
-                new EnvironmentHelper(
-                    sampleName: "LogsInjection.CrossAppDomainCalls.Serilog",
-                    typeof(TestHelper),
-                    output,
-                    prependSamplesToAppName: false),
-                output)
+            : base(output, "LogsInjection.CrossAppDomainCalls.Serilog")
         {
             SetServiceVersion("1.0.0");
         }
+
+        public override LogFileTest[] LogFileTestCases { get => _logFileTests; }
 
         [Theory]
         [MemberData(nameof(PackageVersions.Serilog), MemberType = typeof(PackageVersions))]
@@ -65,82 +62,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var spans = agent.WaitForSpans(1, 2500);
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
 
-                foreach (var test in _logFileTests)
-                {
-                    var logFilePath = Path.Combine(EnvironmentHelper.GetSampleApplicationOutputDirectory(), test.FileName);
-                    var logs = GetLogFileContents(logFilePath);
-                    logs.Should().NotBeNullOrEmpty();
-
-                    using var s = new AssertionScope(test.FileName);
-
-                    // Assumes we _only_ have logs for logs within traces + our startup log
-                    var tracedLogs = logs.Where(log => !log.Contains(_excludeMessagePrefix)).ToList();
-
-                    // all spans should be represented in the traced logs
-                    var traceIds = spans.Select(x => x.TraceId.ToString()).Distinct().ToList();
-                    if (traceIds.Any())
-                    {
-                        string.Join(",", tracedLogs).Should().ContainAll(traceIds);
-                    }
-
-                    foreach (var log in tracedLogs)
-                    {
-                        log.Should().MatchRegex(string.Format(test.RegexFormat, "dd_version", "1.0.0"));
-                        log.Should().MatchRegex(string.Format(test.RegexFormat, "dd_env", "integration_tests"));
-                        log.Should().MatchRegex(string.Format(test.RegexFormat, "dd_service", EnvironmentHelper.FullSampleName));
-                        log.Should().NotMatchRegex(string.Format(test.RegexFormat, "dd_trace_id", "0"));
-                    }
-
-                    if (!test.PropertiesAlwaysPresent)
-                    {
-                        var unTracedLogs = logs.Where(log => log.Contains(_excludeMessagePrefix)).ToList();
-
-                        foreach (var log in unTracedLogs)
-                        {
-                            log.Should()
-                               .NotMatchRegex("dd_version")
-                               .And.NotMatchRegex("dd_env")
-                               .And.NotMatchRegex("dd_service")
-                               .And.NotMatchRegex("dd_trace_id");
-                        }
-                    }
-                }
+                ValidateLogCorrelation(spans);
             }
-        }
-
-        public string[] GetLogFileContents(string logFile)
-        {
-            File.Exists(logFile).Should().BeTrue($"'{logFile}' should exist");
-
-            // may have a lingering lock, so retry
-            var retryCount = 5;
-            var millisecondsToWait = 15_000 / retryCount;
-            Exception ex = null;
-            while (retryCount > 0)
-            {
-                try
-                {
-                    return File.ReadAllLines(logFile);
-                }
-                catch (Exception e)
-                {
-                    ex = e;
-                    Thread.Sleep(millisecondsToWait);
-                }
-
-                retryCount--;
-            }
-
-            throw new Exception("Unable to Fetch Log File Contents", ex);
-        }
-
-        internal class LogFileTest
-        {
-            public string FileName { get; set; }
-
-            public string RegexFormat { get; set; }
-
-            public bool PropertiesAlwaysPresent { get; set; }
         }
     }
 }
