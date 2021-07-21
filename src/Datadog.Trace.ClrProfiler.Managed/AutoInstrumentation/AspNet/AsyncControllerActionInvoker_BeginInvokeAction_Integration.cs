@@ -59,6 +59,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 if (HttpContext.Current != null)
                 {
                     var duckedControllerContext = controllerContext.DuckCast<ControllerContextStruct>();
+                    scope = AspNetMvcIntegration.CreateScope(duckedControllerContext);
                     HttpContext.Current.Items[AspNetMvcIntegration.HttpContextKey] = scope;
 
                     var security = Security.Instance;

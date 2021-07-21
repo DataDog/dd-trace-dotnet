@@ -11,6 +11,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
+using Datadog.Trace.Configuration;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers
@@ -144,7 +145,7 @@ namespace Datadog.Trace.TestHelpers
                 "DD_SERVICE",
                 "DD_VERSION",
                 "DD_TAGS",
-                "DD_ENABLE_SECURITY",
+                "DD_APPSEC_ENABLED",
                 "DD_TRACE_CALLTARGET_ENABLED"
             };
 
@@ -215,7 +216,7 @@ namespace Datadog.Trace.TestHelpers
 
             if (enableSecurity)
             {
-                environmentVariables["DD_ENABLE_SECURITY"] = enableSecurity.ToString();
+                environmentVariables[ConfigurationKeys.AppSecEnabled] = enableSecurity.ToString();
             }
 
             foreach (var name in new[] { "SERVICESTACK_REDIS_HOST", "STACKEXCHANGE_REDIS_HOST" })

@@ -174,6 +174,99 @@
     ]
   },
   {
+    "name": "AspNetMvc",
+    "method_replacements": [
+      {
+        "caller": {
+          "assembly": "System.Web.Mvc"
+        },
+        "target": {
+          "assembly": "System.Web.Mvc",
+          "type": "System.Web.Mvc.Async.IAsyncActionInvoker",
+          "method": "BeginInvokeAction",
+          "signature_types": [
+            "System.IAsyncResult",
+            "System.Web.Mvc.ControllerContext",
+            "System.String",
+            "System.AsyncCallback",
+            "System.Object"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 5,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.28.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetMvcIntegration",
+          "method": "BeginInvokeAction",
+          "signature": "00 08 1C 1C 1C 1C 1C 1C 08 08 0A",
+          "action": "ReplaceTargetMethod"
+        }
+      },
+      {
+        "caller": {
+          "assembly": "System.Web.Mvc"
+        },
+        "target": {
+          "assembly": "System.Web.Mvc",
+          "type": "System.Web.Mvc.Async.IAsyncActionInvoker",
+          "method": "EndInvokeAction",
+          "signature_types": [
+            "System.Boolean",
+            "System.IAsyncResult"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 5,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.28.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetMvcIntegration",
+          "method": "EndInvokeAction",
+          "signature": "00 05 02 1C 1C 08 08 0A",
+          "action": "ReplaceTargetMethod"
+        }
+      }
+    ]
+  },
+  {
+    "name": "AspNetWebApi2",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Web.Http",
+          "type": "System.Web.Http.Controllers.IHttpController",
+          "method": "ExecuteAsync",
+          "signature_types": [
+            "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>",
+            "System.Web.Http.Controllers.HttpControllerContext",
+            "System.Threading.CancellationToken"
+          ],
+          "minimum_major": 5,
+          "minimum_minor": 1,
+          "minimum_patch": 0,
+          "maximum_major": 5,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.28.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetWebApi2Integration",
+          "method": "ExecuteAsync",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "ReplaceTargetMethod"
+        }
+      }
+    ]
+  },
+  {
     "name": "AspNetCore",
     "method_replacements": [
       {
@@ -1022,6 +1115,361 @@
         },
         "wrapper": {
           "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.28.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.DatabaseQueryIteratorsIntegrations",
+          "action": "CallTargetModification"
+        }
+      }
+    ]
+  },
+  {
+    "name": "CosmosDb",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Microsoft.Azure.Cosmos.Client",
+          "type": "Microsoft.Azure.Cosmos.CosmosClient",
+          "method": "GetDatabaseQueryIterator",
+          "signature_types": [
+            "Microsoft.Azure.Cosmos.FeedIterator`1<T>",
+            "Microsoft.Azure.Cosmos.QueryDefinition",
+            "System.String",
+            "Microsoft.Azure.Cosmos.QueryRequestOptions"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 6,
+          "minimum_patch": 0,
+          "maximum_major": 3,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.28.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.ClientQueryIteratorsIntegrations",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Microsoft.Azure.Cosmos.Client",
+          "type": "Microsoft.Azure.Cosmos.CosmosClient",
+          "method": "GetDatabaseQueryIterator",
+          "signature_types": [
+            "Microsoft.Azure.Cosmos.FeedIterator`1<T>",
+            "System.String",
+            "System.String",
+            "Microsoft.Azure.Cosmos.QueryRequestOptions"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 6,
+          "minimum_patch": 0,
+          "maximum_major": 3,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.28.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.ClientQueryIteratorsIntegrations",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Microsoft.Azure.Cosmos.Client",
+          "type": "Microsoft.Azure.Cosmos.CosmosClient",
+          "method": "GetDatabaseQueryStreamIterator",
+          "signature_types": [
+            "Microsoft.Azure.Cosmos.FeedIterator`1<T>",
+            "Microsoft.Azure.Cosmos.QueryDefinition",
+            "System.String",
+            "Microsoft.Azure.Cosmos.QueryRequestOptions"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 6,
+          "minimum_patch": 0,
+          "maximum_major": 3,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.28.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.ClientQueryIteratorsIntegrations",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Microsoft.Azure.Cosmos.Client",
+          "type": "Microsoft.Azure.Cosmos.CosmosClient",
+          "method": "GetDatabaseQueryStreamIterator",
+          "signature_types": [
+            "Microsoft.Azure.Cosmos.FeedIterator`1<T>",
+            "System.String",
+            "System.String",
+            "Microsoft.Azure.Cosmos.QueryRequestOptions"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 6,
+          "minimum_patch": 0,
+          "maximum_major": 3,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.28.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.ClientQueryIteratorsIntegrations",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Microsoft.Azure.Cosmos.Client",
+          "type": "Microsoft.Azure.Cosmos.ContainerCore",
+          "method": "GetItemQueryIterator",
+          "signature_types": [
+            "Microsoft.Azure.Cosmos.FeedIterator`1<T>",
+            "Microsoft.Azure.Cosmos.QueryDefinition",
+            "System.String",
+            "Microsoft.Azure.Cosmos.QueryRequestOptions"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 6,
+          "minimum_patch": 0,
+          "maximum_major": 3,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.28.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.ContainerQueryIteratorsIntegrations",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Microsoft.Azure.Cosmos.Client",
+          "type": "Microsoft.Azure.Cosmos.ContainerCore",
+          "method": "GetItemQueryIterator",
+          "signature_types": [
+            "Microsoft.Azure.Cosmos.FeedIterator`1<T>",
+            "System.String",
+            "System.String",
+            "Microsoft.Azure.Cosmos.QueryRequestOptions"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 6,
+          "minimum_patch": 0,
+          "maximum_major": 3,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.28.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.ContainerQueryIteratorsIntegrations",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Microsoft.Azure.Cosmos.Client",
+          "type": "Microsoft.Azure.Cosmos.ContainerCore",
+          "method": "GetItemQueryStreamIterator",
+          "signature_types": [
+            "Microsoft.Azure.Cosmos.FeedIterator`1<T>",
+            "Microsoft.Azure.Cosmos.QueryDefinition",
+            "System.String",
+            "Microsoft.Azure.Cosmos.QueryRequestOptions"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 6,
+          "minimum_patch": 0,
+          "maximum_major": 3,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.28.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.ContainerQueryIteratorsIntegrations",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Microsoft.Azure.Cosmos.Client",
+          "type": "Microsoft.Azure.Cosmos.ContainerCore",
+          "method": "GetItemQueryStreamIterator",
+          "signature_types": [
+            "Microsoft.Azure.Cosmos.FeedIterator`1<T>",
+            "System.String",
+            "System.String",
+            "Microsoft.Azure.Cosmos.QueryRequestOptions"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 6,
+          "minimum_patch": 0,
+          "maximum_major": 3,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.28.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.ContainerQueryIteratorsIntegrations",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Microsoft.Azure.Cosmos.Client",
+          "type": "Microsoft.Azure.Cosmos.DatabaseCore",
+          "method": "GetUserQueryIterator",
+          "signature_types": [
+            "Microsoft.Azure.Cosmos.FeedIterator`1<T>",
+            "Microsoft.Azure.Cosmos.QueryDefinition",
+            "System.String",
+            "Microsoft.Azure.Cosmos.QueryRequestOptions"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 6,
+          "minimum_patch": 0,
+          "maximum_major": 3,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.28.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.DatabaseQueryIteratorsIntegrations",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Microsoft.Azure.Cosmos.Client",
+          "type": "Microsoft.Azure.Cosmos.DatabaseCore",
+          "method": "GetUserQueryIterator",
+          "signature_types": [
+            "Microsoft.Azure.Cosmos.FeedIterator`1<T>",
+            "System.String",
+            "System.String",
+            "Microsoft.Azure.Cosmos.QueryRequestOptions"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 6,
+          "minimum_patch": 0,
+          "maximum_major": 3,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.28.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.DatabaseQueryIteratorsIntegrations",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Microsoft.Azure.Cosmos.Client",
+          "type": "Microsoft.Azure.Cosmos.DatabaseCore",
+          "method": "GetContainerQueryStreamIterator",
+          "signature_types": [
+            "Microsoft.Azure.Cosmos.FeedIterator`1<T>",
+            "Microsoft.Azure.Cosmos.QueryDefinition",
+            "System.String",
+            "Microsoft.Azure.Cosmos.QueryRequestOptions"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 6,
+          "minimum_patch": 0,
+          "maximum_major": 3,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.28.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.DatabaseQueryIteratorsIntegrations",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Microsoft.Azure.Cosmos.Client",
+          "type": "Microsoft.Azure.Cosmos.DatabaseCore",
+          "method": "GetContainerQueryStreamIterator",
+          "signature_types": [
+            "Microsoft.Azure.Cosmos.FeedIterator`1<T>",
+            "System.String",
+            "System.String",
+            "Microsoft.Azure.Cosmos.QueryRequestOptions"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 6,
+          "minimum_patch": 0,
+          "maximum_major": 3,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.28.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.DatabaseQueryIteratorsIntegrations",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Microsoft.Azure.Cosmos.Client",
+          "type": "Microsoft.Azure.Cosmos.DatabaseCore",
+          "method": "GetContainerQueryIterator",
+          "signature_types": [
+            "Microsoft.Azure.Cosmos.FeedIterator`1<T>",
+            "Microsoft.Azure.Cosmos.QueryDefinition",
+            "System.String",
+            "Microsoft.Azure.Cosmos.QueryRequestOptions"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 6,
+          "minimum_patch": 0,
+          "maximum_major": 3,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.28.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.DatabaseQueryIteratorsIntegrations",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Microsoft.Azure.Cosmos.Client",
+          "type": "Microsoft.Azure.Cosmos.DatabaseCore",
+          "method": "GetContainerQueryIterator",
+          "signature_types": [
+            "Microsoft.Azure.Cosmos.FeedIterator`1<T>",
+            "System.String",
+            "System.String",
+            "Microsoft.Azure.Cosmos.QueryRequestOptions"
+          ],
+          "minimum_major": 3,
+          "minimum_minor": 6,
+          "minimum_patch": 0,
+          "maximum_major": 3,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.28.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.DatabaseQueryIteratorsIntegrations",
           "action": "CallTargetModification"
         }

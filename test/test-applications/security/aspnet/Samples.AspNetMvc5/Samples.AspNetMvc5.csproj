@@ -16,7 +16,7 @@
     <AssemblyName>Samples.AspNetMvc5</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <MvcBuildViews>false</MvcBuildViews>
-    <UseIISExpress>false</UseIISExpress>
+    <UseIISExpress>true</UseIISExpress>
     <Use64BitIISExpress>true</Use64BitIISExpress>
     <IISExpressSSLPort>44385</IISExpressSSLPort>
     <IISExpressAnonymousAuthentication />
@@ -198,6 +198,16 @@
       <Name>Datadog.Trace</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <SecurityLibraryFiles Include="..\..\..\..\..\packages\libsqreen.1.1.2.2\runtimes\**\*.*" />
+  </ItemGroup>
+  <Target Name="CopyFiles" AfterTargets="Build">
+    <Copy
+      SourceFiles="@(SecurityLibraryFiles)"
+      DestinationFolder="$(TargetDir)\%(RecursiveDir)"
+      SkipUnchangedFiles="true"
+      />
+  </Target>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
