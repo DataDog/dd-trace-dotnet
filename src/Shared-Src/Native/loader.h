@@ -118,7 +118,7 @@ namespace shared
 
         const WCHAR* _pNativeProfilerLibraryFilename;
 
-        static Loader* s_SingletonInstance;
+        static Loader* s_singletonInstance;
 
         static Loader* CreateNewLoaderInstance(
                     ICorProfilerInfo4* pCorProfilerInfo,

@@ -15,7 +15,7 @@
 
 namespace shared
 {
-    Loader* Loader::s_SingletonInstance = nullptr;
+    Loader* Loader::s_singletonInstance = nullptr;
 
 #ifdef LINUX
     extern uint8_t dll_start[] asm("_binary_Datadog_AutoInstrumentation_ManagedLoader_dll_start");
@@ -80,15 +80,15 @@ namespace shared
                                                                        iisAssemblyStringNonDefaultAppDomainVector);
 
         Loader::DeleteSingletonInstance();
-        Loader::s_SingletonInstance = newSingletonInstance;
+        Loader::s_singletonInstance = newSingletonInstance;
     }
 
     Loader* Loader::GetSingletonInstance()
     {
-        Loader* SingletonInstance = Loader::s_SingletonInstance;
-        if (SingletonInstance != nullptr)
+        Loader* singletonInstance = Loader::s_singletonInstance;
+        if (singletonInstance != nullptr)
         {
-            return SingletonInstance;
+            return singletonInstance;
         }
 
         throw std::logic_error("No singleton instance of Loader has been created, or it has already been deleted.");
@@ -96,10 +96,10 @@ namespace shared
 
     void Loader::DeleteSingletonInstance(void)
     {
-        Loader* singletonInstance = Loader::s_SingletonInstance;
+        Loader* singletonInstance = Loader::s_singletonInstance;
         if (singletonInstance != nullptr)
         {
-            Loader::s_SingletonInstance = nullptr;
+            Loader::s_singletonInstance = nullptr;
             delete singletonInstance;
         }
     }
