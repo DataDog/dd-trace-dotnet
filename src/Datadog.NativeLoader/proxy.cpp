@@ -16,6 +16,8 @@ const std::string currentOsArch = "win-x64";
 const std::string currentOsArch = "linux-x64";
 #elif MACOS
 const std::string currentOsArch = "osx-x64";
+#else
+#error "currentOsArch not defined."
 #endif
 
 #elif X86
@@ -26,6 +28,8 @@ const std::string currentOsArch = "win-x86";
 const std::string currentOsArch = "linux-x86";
 #elif MACOS
 const std::string currentOsArch = "osx-x86";
+#else
+#error "currentOsArch not defined."
 #endif
 
 #elif ARM64
@@ -36,6 +40,8 @@ const std::string currentOsArch = "win-arm64";
 const std::string currentOsArch = "linux-arm64";
 #elif MACOS
 const std::string currentOsArch = "osx-arm64";
+#else
+#error "currentOsArch not defined."
 #endif
 
 #elif ARM
@@ -46,9 +52,14 @@ const std::string currentOsArch = "win-arm";
 const std::string currentOsArch = "linux-arm";
 #elif MACOS
 const std::string currentOsArch = "osx-arm";
+#else
+#error "currentOsArch not defined."
 #endif
 
+#else
+#error "currentOsArch not defined."
 #endif
+
 
 namespace datadog
 {
