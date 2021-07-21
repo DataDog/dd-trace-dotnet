@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class NLogTests : LogsInjectionTestBase
     {
-        private readonly LogFileTest[] _logFileTests =
+        private readonly LogFileTest[] _nlogPre40LogFileTests =
             {
                 new LogFileTest()
                 {
@@ -25,14 +25,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     RegexFormat = @"{0}: ""{1}""",
                     PropertiesAreAlwaysPresent = true,
                     PropertiesUseSerilogNaming = false
-                }/*,
+                }
+            };
+
+        private readonly LogFileTest[] _nlog40LogFileTests =
+            {
+                new LogFileTest()
+                {
+                    FileName = "log-textFile.log",
+                    RegexFormat = @"{0}: ""{1}""",
+                    PropertiesAreAlwaysPresent = true,
+                    PropertiesUseSerilogNaming = false
+                },
                 new LogFileTest()
                 {
                     FileName = "log-jsonFile.log",
-                    RegexFormat = @"""{0}"":""{1}""",
-                    PropertiesAreAlwaysPresent = false,
-                    PropertiesUseSerilogNaming = true
-                }*/
+                    RegexFormat = @"""{0}"": ""{1}""",
+                    PropertiesAreAlwaysPresent = true,
+                    PropertiesUseSerilogNaming = false
+                }
             };
 
         public NLogTests(ITestOutputHelper output)
@@ -40,8 +51,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetServiceVersion("1.0.0");
         }
-
-        public override LogFileTest[] LogFileTestCases { get => _logFileTests; }
 
         [Theory]
         [MemberData(nameof(PackageVersions.NLog), MemberType = typeof(PackageVersions))]
@@ -60,7 +69,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var spans = agent.WaitForSpans(1, 2500);
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
 
-                ValidateLogCorrelation(spans);
+                if (string.IsNullOrWhiteSpace(packageVersion) || new Version(packageVersion) >= new Version("4.0.0"))
+                {
+                    ValidateLogCorrelation(spans, _nlog40LogFileTests);
+                }
+                else
+                {
+                    ValidateLogCorrelation(spans, _nlogPre40LogFileTests);
+                }
             }
         }
     }

@@ -3,6 +3,8 @@
   <PropertyGroup>
     <TargetFrameworks>net452;net461</TargetFrameworks>
     <ApiVersion Condition="'$(ApiVersion)' == ''">4.0.0</ApiVersion>
+    <DefineConstants Condition="'$(ApiVersion)'>='4.0.0'">$(DefineConstants);NLOG_4_0</DefineConstants>
+
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>

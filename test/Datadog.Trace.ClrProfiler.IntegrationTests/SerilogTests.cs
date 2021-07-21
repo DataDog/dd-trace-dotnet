@@ -43,8 +43,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        public override LogFileTest[] LogFileTestCases { get => _logFileTests; }
-
         [Theory]
         [MemberData(nameof(PackageVersions.Serilog), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
@@ -62,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var spans = agent.WaitForSpans(1, 2500);
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
 
-                ValidateLogCorrelation(spans);
+                ValidateLogCorrelation(spans, _logFileTests);
             }
         }
     }

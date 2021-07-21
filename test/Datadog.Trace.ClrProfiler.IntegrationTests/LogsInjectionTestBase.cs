@@ -32,8 +32,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
         }
 
-        public abstract LogFileTest[] LogFileTestCases { get; }
-
         public string[] GetLogFileContents(string logFile)
         {
             File.Exists(logFile).Should().BeTrue($"'{logFile}' should exist");
@@ -60,9 +58,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             throw new Exception("Unable to Fetch Log File Contents", ex);
         }
 
-        public void ValidateLogCorrelation(IEnumerable<MockTracerAgent.Span> spans)
+        public void ValidateLogCorrelation(IEnumerable<MockTracerAgent.Span> spans, IEnumerable<LogFileTest> logFileTestCases)
         {
-            foreach (var test in LogFileTestCases)
+            foreach (var test in logFileTestCases)
             {
                 var logFilePath = Path.Combine(EnvironmentHelper.GetSampleApplicationOutputDirectory(), test.FileName);
                 var logs = GetLogFileContents(logFilePath);

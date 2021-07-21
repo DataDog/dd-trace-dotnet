@@ -6,6 +6,7 @@ using Datadog.Trace;
 using Datadog.Trace.Configuration;
 using NLog;
 using NLog.Config;
+using NLog.Layouts;
 using NLog.Targets;
 
 namespace LogsInjection.CrossAppDomainCalls.NLog
@@ -37,14 +38,42 @@ namespace LogsInjection.CrossAppDomainCalls.NLog
 
             // Initialize NLog
             var config = new LoggingConfiguration();
+
             var textFile = new FileTarget()
             {
                 FileName = textFilePath,
                 Layout = "${longdate}|${uppercase:${level}}|${logger}|{dd.env: \"${mdc:item=dd.env}\",dd.service: \"${mdc:item=dd.service}\",dd.version: \"${mdc:item=dd.version}\",dd.trace_id: \"${mdc:item=dd.trace_id}\",dd.span_id: \"${mdc:item=dd.span_id}\"}|${message}"
             };
-
             config.AddTarget("textFile", textFile);
             config.LoggingRules.Add(new LoggingRule("*", LogLevel.Trace, textFile));
+#if NLOG_4_0
+            var jsonLayout = new JsonLayout
+            {
+                Attributes =
+                {
+                    new JsonAttribute("time", "${longdate}"),
+                    new JsonAttribute("level", "${level:upperCase=true}"),
+                    new JsonAttribute("message", "${message}"),
+                    new JsonAttribute("exception", "${exception:format=ToString}"),
+
+                    // Insert Datadog properties
+                    new JsonAttribute("dd.env", "${mdc:item=dd.env}"),
+                    new JsonAttribute("dd.service", "${mdc:item=dd.service}"),
+                    new JsonAttribute("dd.version", "${mdc:item=dd.version}"),
+                    new JsonAttribute("dd.trace_id", "${mdc:item=dd.trace_id}"),
+                    new JsonAttribute("dd.span_id", "${mdc:item=dd.span_id}")
+                }
+            };
+
+            var jsonFile = new FileTarget()
+            {
+                FileName = jsonFilePath,
+                Layout = jsonLayout
+            };
+
+            config.AddTarget("jsonFile", jsonFile);
+            config.LoggingRules[0].Targets.Add(jsonFile);
+#endif
             LogManager.Configuration = config;
 
             Logger Logger = LogManager.GetCurrentClassLogger();
