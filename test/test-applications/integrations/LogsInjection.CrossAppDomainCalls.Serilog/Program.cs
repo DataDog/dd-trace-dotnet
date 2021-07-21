@@ -28,28 +28,33 @@ namespace LogsInjection.CrossAppDomainCalls.Serilog
             var applicationFilesDirectory = Path.Combine(entryDirectory.FullName, "ApplicationFiles");
             var applicationAppDomain = AppDomain.CreateDomain("ApplicationAppDomain", null, applicationFilesDirectory, applicationFilesDirectory, false);
 
+            // Clean out previous logs
+            var appDirectory = Directory.GetParent(typeof(Program).Assembly.Location).FullName;
+            var textFilePath = Path.Combine(appDirectory, "log-textFile.log");
+            var jsonFilePath = Path.Combine(appDirectory, "log-jsonFile.log");
+
+            File.Delete(textFilePath);
+            File.Delete(jsonFilePath);
+
             // Initialize Serilog
+
             var log = new LoggerConfiguration()
                                         .Enrich.FromLogContext()
                                         .MinimumLevel.Is(LogEventLevel.Information)
                                         .WriteTo.File(
-                                            "log-textFile.log",
-                                            outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Properties} {Message:lj} {NewLine}{Exception}")
+                                            textFilePath,
+                                            outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {{ dd_service: \"{dd_service}\", dd_version: \"{dd_version}\", dd_env: \"{dd_env}\", dd_trace_id: \"{dd_trace_id}\", dd_span_id: \"{dd_span_id}\" }} {Message:lj} {NewLine}{Exception}")
                                         .WriteTo.File(
                                             new JsonFormatter(),
-                                            "log-jsonFile.log")
+                                            jsonFilePath)
                                         .CreateLogger();
             log.Information($"{ExcludeMessagePrefix}Configured logger");
 
             // Set up Tracer and start a trace
-            var settings = new TracerSettings()
-            {
-                LogsInjectionEnabled = true,
-                // Set Environment=null, resulting in dd.env=null
-                // Set ServiceVersion=null, resulting in dd.service=null
-                Environment = "dev",
-                ServiceVersion = "1.0.0"
-            };
+            var settings = TracerSettings.FromDefaultSources();
+            settings.LogsInjectionEnabled = true;
+            settings.Environment ??= "dev"; // Later we can test when Environment=null / dd.env=null
+            settings.ServiceVersion ??= "1.0.0"; // Later we can test when ServiceVersion=null / dd.service=null
             Tracer.Instance = new Tracer(settings);
 
             try
