@@ -26,7 +26,7 @@ namespace Datadog.Trace.AppSec.Waf
             Dispose(false);
         }
 
-        public Return Run(IDictionary<string, object> args)
+        public IReturn Run(IDictionary<string, object> args)
         {
             // do not add a using or call dispose in some other way here
             // when passing args to pw_runAdditive it will take ownership and free them

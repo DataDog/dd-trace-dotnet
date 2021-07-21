@@ -97,6 +97,8 @@ namespace Datadog.Trace.Security.IntegrationTests
             // get full paths to integration definitions
             var integrationPaths = Directory.EnumerateFiles(".", "*integrations.json").Select(Path.GetFullPath);
 
+            // EnvironmentHelper.DebugModeEnabled = true;
+
             process = ProfilerHelper.StartProcessWithProfiler(
                 EnvironmentHelper.GetSampleExecutionSource(),
                 EnvironmentHelper,

@@ -8,6 +8,7 @@
     <DefineConstants Condition="'$(PerformComprehensiveTesting)'=='true'">$(DefineConstants);COMPREHENSIVE_TESTS</DefineConstants>
 
     <ManagedProfilerOutputDirectory Condition="'$(ManagedProfilerOutputDirectory)' == ''">$(MSBuildThisFileDirectory)\..\src\Datadog.Trace.ClrProfiler.Managed\bin\$(Configuration)</ManagedProfilerOutputDirectory>
+    <NativeProfilerOutputDirectory Condition="'$(NativeProfilerOutputDirectory)' == ''">$(MSBuildThisFileDirectory)\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$()</NativeProfilerOutputDirectory>
 
   </PropertyGroup>
 
@@ -26,6 +27,7 @@
 
     <ProjectReference Include="..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
     <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
+    <PackageReference Include="libsqreen" Version="1.1.2.2" GeneratePathProperty="true" />
 
     <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
   </ItemGroup>
@@ -43,9 +45,11 @@
       <!-- Subfolders of the output directory should each be a target framework -->
       <ManagedProfilerFiles Include="$(ManagedProfilerOutputDirectory)\**\*.dll" Exclude="$(ManagedProfilerOutputDirectory)\*\runtimes\**\*.dll" />
       <ManagedProfilerFiles Include="$(ManagedProfilerOutputDirectory)\**\*.pdb" Exclude="$(ManagedProfilerOutputDirectory)\*\runtimes\**\*.pdb" />
+      <SecurityLibraryFiles Include="$(Pkglibsqreen)\runtimes\**\*.*" />
     </ItemGroup>
 
     <Copy SourceFiles="@(ManagedProfilerFiles)" DestinationFolder="$(OutputPath)profiler-lib\%(RecursiveDir)" />
+    <Copy SourceFiles="@(SecurityLibraryFiles)" DestinationFolder="$(OutputPath)profiler-lib\%(RecursiveDir)" />
   </Target>
 
   <ItemGroup>

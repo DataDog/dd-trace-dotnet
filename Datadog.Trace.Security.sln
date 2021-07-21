@@ -82,6 +82,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.DuckTyping.Tests", "test\Datadog.Trace.DuckTyping.Tests\Datadog.Trace.DuckTyping.Tests.csproj", "{6E635156-2BF9-471B-94A3-3BFE3D40169F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "security", "security", "{D33E0FBD-7B19-4F96-B414-F29147AE55B6}"
+	ProjectSection(SolutionItems) = preProject
+		test\test-applications\security\Directory.Build.props = test\test-applications\security\Directory.Build.props
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionItems", "{4A6AF297-653B-4176-A632-EC3E4FFBB841}"
 	ProjectSection(SolutionItems) = preProject

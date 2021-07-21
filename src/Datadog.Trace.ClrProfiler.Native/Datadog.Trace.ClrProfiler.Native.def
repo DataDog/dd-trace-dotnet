@@ -5,30 +5,3 @@ EXPORTS
     DllGetClassObject PRIVATE
     IsProfilerAttached
     GetAssemblyAndSymbolsBytes
-    pw_init
-    pw_initH
-    pw_clearRule
-    pw_clearRuleH
-    pw_clearAll
-    pw_run
-    pw_runH
-    pw_getVersion
-    pw_setupLogging
-    pw_freeDiagnotics
-    pw_getInvalid
-    pw_initString
-    pw_createStringWithLength
-    pw_createString
-    pw_createInt
-    pw_createUint
-    pw_createArray
-    pw_createMap
-    pw_addArray
-    pw_addMap
-    pw_addMapNoCopy
-    pw_freeArg
-    pw_freeReturn
-    pw_initAdditive
-    pw_initAdditiveH
-    pw_runAdditive
-    pw_clearAdditive

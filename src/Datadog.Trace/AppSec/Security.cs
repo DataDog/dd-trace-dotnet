@@ -9,6 +9,8 @@ using System.Linq;
 using System.Threading;
 using Datadog.Trace.AppSec.Transport;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.AppSec
@@ -37,14 +39,16 @@ namespace Datadog.Trace.AppSec
 
         internal Security(InstrumentationGateway instrumentationGateway = null, IPowerWaf powerWaf = null)
         {
+            var found = Environment.GetEnvironmentVariable(ConfigurationKeys.AppSecEnabled)?.ToBoolean();
+            Enabled = found == true;
+
+            Log.Information($"Security.Enabled: {Enabled} ");
+
             _instrumentationGateway = instrumentationGateway ?? new InstrumentationGateway();
 
-            _powerWaf = powerWaf ?? new PowerWaf();
+            _powerWaf = powerWaf ?? (Enabled ? new PowerWaf() : new NullPowerWaf());
 
             _instrumentationGateway.InstrumentationGetwayEvent += InstrumentationGateway_InstrumentationGetwayEvent;
-
-            var found = bool.TryParse(Environment.GetEnvironmentVariable("DD_ENABLE_SECURITY"), out var enabled);
-            Enabled = found && enabled;
         }
 
         /// <summary>
@@ -82,7 +86,7 @@ namespace Datadog.Trace.AppSec
         /// </summary>
         public void Dispose()
         {
-            _powerWaf.Dispose();
+            _powerWaf?.Dispose();
         }
 
         private void RunWafAndReact(IDictionary<string, object> args, ITransport transport)
