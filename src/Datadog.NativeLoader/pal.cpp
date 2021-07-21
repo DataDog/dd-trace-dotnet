@@ -18,13 +18,28 @@ namespace nativeloader
         Debug("LoadLibrary: ", filePath);
 
 #if _WIN32
-        return LoadLibrary(ToWSTRING(filePath).c_str());
+        HMODULE dynLibPtr = LoadLibrary(ToWSTRING(filePath).c_str());
+        if (dynLibPtr == NULL || dynLibPtr == nullptr)
+        {
+            LPVOID msgBuffer;
+            DWORD errorCode = GetLastError();
+
+            FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                          NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR) &msgBuffer, 0, NULL);
+
+            if (msgBuffer != NULL)
+            {
+                Warn("Error loading dynamic library '", filePath, "': ", (LPTSTR) msgBuffer);
+                LocalFree(msgBuffer);
+            }
+        }
+        return dynLibPtr;
 #else
         void* dynLibPtr = dlopen(filePath.c_str(), RTLD_LOCAL | RTLD_LAZY);
         if (dynLibPtr == nullptr)
         {
             char* errorMessage = dlerror();
-            Warn("Error loading dynamic library: ", errorMessage);
+            Warn("Error loading dynamic library '", filePath, "': ", errorMessage);
         }
         return dynLibPtr;
 #endif
@@ -35,13 +50,28 @@ namespace nativeloader
         Debug("GetExternalFunction: ", funcName);
 
 #if _WIN32
-        return (void*) GetProcAddress((HMODULE) instance, funcName.c_str());
+        FARPROC dynFunc = GetProcAddress((HMODULE) instance, funcName.c_str());
+        if (dynFunc == NULL || dynFunc == nullptr)
+        {
+            LPVOID msgBuffer;
+            DWORD errorCode = GetLastError();
+
+            FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                          NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR) &msgBuffer, 0, NULL);
+
+            if (msgBuffer != NULL)
+            {
+                Warn("Error loading dynamic function '", funcName, "': ", (LPTSTR) msgBuffer);
+                LocalFree(msgBuffer);
+            }
+        }
+        return dynFunc;
 #else
         void* dynFunc = dlsym(instance, funcName.c_str());
         if (dynFunc == nullptr)
         {
             char* errorMessage = dlerror();
-            Warn("Error loading dynamic function: ", errorMessage);
+            Warn("Error loading dynamic function '", funcName, "': ", errorMessage);
         }
         return dynFunc;
 #endif
@@ -52,7 +82,7 @@ namespace nativeloader
         Debug("FreeDynamicLibrary.");
 
 #if _WIN32
-        return FreeLibrary((HMODULE)handle);
+        return FreeLibrary((HMODULE) handle);
 #else
         return dlclose(handle) == 0;
 #endif

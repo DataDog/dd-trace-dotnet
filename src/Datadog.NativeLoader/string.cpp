@@ -39,6 +39,14 @@ std::string ToString(const WSTRING& wstr)
     return miniutf::to_utf8(ustr);
 #endif
 }
+std::string ToString(const LPTSTR& tstr)
+{
+#if defined(_UNICODE)
+    return ToString(WSTRING(tstr));
+#else
+    return std::string(tstr);
+#endif
+}
 
 WSTRING ToWSTRING(const std::string& str)
 {
