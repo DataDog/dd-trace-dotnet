@@ -268,8 +268,6 @@ stages:
   dependsOn: [build_linux]
   jobs:
   - job: test
-    services:
-      dd_agent: dd_agent
     strategy:
       matrix:
         debian:
@@ -278,8 +276,15 @@ stages:
           baseImage: alpine
     pool:
       vmImage: ubuntu-18.04
+    variables:
+      dockerNetwork: dd_agent_$(baseImage)_unit_tests
 
     steps:
+    - script: |
+        docker network create $(dockerNetwork)
+        docker run --rm -d --network $(dockerNetwork) --name dd_agent -p 8126:8126 -e "DD_API_KEY=$(ddApiKey)" -e "DD_INSIDE_CI=true" datadog/agent
+      displayName: Start dd_agent in Docker
+
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-linux-$(baseImage)-working-directory
@@ -293,6 +298,12 @@ stages:
 
     - publish: build_data
       artifact: profiler-logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+
+    - script: |
+        docker stop dd_agent
+        docker network rm $(dockerNetwork)
+      displayName: Stop dd_agent
       condition: succeededOrFailed()
 
     - task: PublishTestResults@2
