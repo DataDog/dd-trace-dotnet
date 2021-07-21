@@ -5,12 +5,18 @@ using System.Reflection;
 using Datadog.Trace;
 using Datadog.Trace.Configuration;
 using NLog;
+using NLog.Config;
+using NLog.Targets;
 
 namespace LogsInjection.CrossAppDomainCalls.NLog
 {
     public class Program
     {
-        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        /// <summary>
+        /// Prepend a string to log lines that should not be validated for logs injection.
+        /// In other words, they're not written within a Datadog scope 
+        /// </summary>
+        private static readonly string ExcludeMessagePrefix = "[ExcludeMessage]";
 
         public static int Main(string[] args)
         {
@@ -21,25 +27,41 @@ namespace LogsInjection.CrossAppDomainCalls.NLog
             var applicationFilesDirectory = Path.Combine(entryDirectory.FullName, "ApplicationFiles");
             var applicationAppDomain = AppDomain.CreateDomain("ApplicationAppDomain", null, applicationFilesDirectory, applicationFilesDirectory, false);
 
+            // Clean out previous logs
+            var appDirectory = Directory.GetParent(typeof(Program).Assembly.Location).FullName;
+            var textFilePath = Path.Combine(appDirectory, "log-textFile.log");
+            var jsonFilePath = Path.Combine(appDirectory, "log-jsonFile.log");
+
+            File.Delete(textFilePath);
+            File.Delete(jsonFilePath);
+
             // Initialize NLog
-            Logger.Info("Configured logger");
+            var config = new LoggingConfiguration();
+            var textFile = new FileTarget()
+            {
+                FileName = textFilePath,
+                Layout = "${longdate}|${uppercase:${level}}|${logger}|{dd.env: \"${mdc:item=dd.env}\",dd.service: \"${mdc:item=dd.service}\",dd.version: \"${mdc:item=dd.version}\",dd.trace_id: \"${mdc:item=dd.trace_id}\",dd.span_id: \"${mdc:item=dd.span_id}\"}|${message}"
+            };
+
+            config.AddTarget("textFile", textFile);
+            config.LoggingRules.Add(new LoggingRule("*", LogLevel.Trace, textFile));
+            LogManager.Configuration = config;
+
+            Logger Logger = LogManager.GetCurrentClassLogger();
+            Logger.Info($"{ExcludeMessagePrefix}Configured logger");
 
             // Set up Tracer and start a trace
-            var settings = new TracerSettings()
-            {
-                LogsInjectionEnabled = true,
-                // Set Environment=null, resulting in dd.env=null
-                // Set ServiceVersion=null, resulting in dd.service=null
-                Environment = "dev",
-                ServiceVersion = "1.0.0"
-            };
+            var settings = TracerSettings.FromDefaultSources();
+            settings.LogsInjectionEnabled = true;
+            settings.Environment ??= "dev"; // Later we can test when Environment=null / dd.env=null
+            settings.ServiceVersion ??= "1.0.0"; // Later we can test when ServiceVersion=null / dd.service=null
             Tracer.Instance = new Tracer(settings);
 
             try
             {
+                Logger.Info($"{ExcludeMessagePrefix}Entering Datadog scope.");
                 using (var scope = Tracer.Instance.StartActive("transaction"))
                 {
-                    Logger.Info("Entered scope");
                     // In the middle of the trace, make a call across AppDomains.
                     // Historically, Serilog correctly handles "AsyncLocal" state in the
                     // System.Runtime.Remoting.Messaging.CallContext by wrapping it in
@@ -51,7 +73,7 @@ namespace LogsInjection.CrossAppDomainCalls.NLog
                     Logger.Info("Returned from the PluginApplication.Program call");
                 }
 
-                Logger.Info("Exited scope");
+                Logger.Info($"{ExcludeMessagePrefix}Exited Datadog scope.");
                 AppDomain.Unload(applicationAppDomain);
             }
             catch (Exception ex)

@@ -60,5 +60,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static IEnumerable<object[]> CosmosDb => IsComprehensive ? PackageVersionsComprehensive.CosmosDb : PackageVersionsLatestMinors.CosmosDb;
 
         public static IEnumerable<object[]> Serilog => IsComprehensive ? PackageVersionsComprehensive.Serilog : PackageVersionsLatestMinors.Serilog;
+
+        public static IEnumerable<object[]> NLog => IsComprehensive ? PackageVersionsComprehensive.NLog : PackageVersionsLatestMinors.NLog;
     }
 }

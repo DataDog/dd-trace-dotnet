@@ -128,5 +128,12 @@
     "NugetPackageSearchName": "Serilog",
     "MinVersion": "2.0.0",
     "MaxVersionExclusive": "3.0.0"
+  },
+  {
+    "IntegrationName": "NLog",
+    "SampleProjectName": "LogsInjection.CrossAppDomainCalls.NLog",
+    "NugetPackageSearchName": "NLog",
+    "MinVersion": "1.0.0",
+    "MaxVersionExclusive": "5.0.0"
   }
 ]
