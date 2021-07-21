@@ -1,5 +1,5 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
-#include "class_factory.h"
+#include "cor_profiler_class_factory.h"
 
 #include "logging.h"
 #include "proxy.h"
@@ -62,7 +62,7 @@ extern "C"
             return E_FAIL;
         }
 
-        auto factory = new ClassFactory(dispatcher);
+        auto factory = new CorProfilerClassFactory(dispatcher);
         if (factory == NULL)
         {
             return E_FAIL;

@@ -1,7 +1,7 @@
 // Copyright (c) .NET Foundation and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full
 // license information.
-#include "class_factory.h"
+#include "cor_profiler_class_factory.h"
 
 #include "cor_profiler.h"
 #include "logging.h"
@@ -10,19 +10,19 @@
 const IID IID_IUnknown = {0x00000000, 0x0000, 0x0000, {0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}};
 const IID IID_IClassFactory = {0x00000001, 0x0000, 0x0000, {0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}};
 
-ClassFactory::ClassFactory(datadog::nativeloader::DynamicDispatcher* dispatcher) :
+CorProfilerClassFactory::CorProfilerClassFactory(datadog::nativeloader::DynamicDispatcher* dispatcher) :
     m_refCount(0), m_dispatcher(dispatcher)
 {
-    Debug("ClassFactory::.ctor");
+    Debug("CorProfilerClassFactory::.ctor");
 }
 
-ClassFactory::~ClassFactory()
+CorProfilerClassFactory::~CorProfilerClassFactory()
 {
 }
 
-HRESULT STDMETHODCALLTYPE ClassFactory::QueryInterface(REFIID riid, void** ppvObject)
+HRESULT STDMETHODCALLTYPE CorProfilerClassFactory::QueryInterface(REFIID riid, void** ppvObject)
 {
-    Debug("ClassFactory::QueryInterface");
+    Debug("CorProfilerClassFactory::QueryInterface");
     HRESULT res = m_dispatcher->LoadClassFactory(riid);
 
     if ((riid == IID_IUnknown || riid == IID_IClassFactory) && SUCCEEDED(res))
@@ -37,15 +37,15 @@ HRESULT STDMETHODCALLTYPE ClassFactory::QueryInterface(REFIID riid, void** ppvOb
     return E_NOINTERFACE;
 }
 
-ULONG STDMETHODCALLTYPE ClassFactory::AddRef()
+ULONG STDMETHODCALLTYPE CorProfilerClassFactory::AddRef()
 {
-    Debug("ClassFactory::AddRef");
+    Debug("CorProfilerClassFactory::AddRef");
     return std::atomic_fetch_add(&this->m_refCount, 1) + 1;
 }
 
-ULONG STDMETHODCALLTYPE ClassFactory::Release()
+ULONG STDMETHODCALLTYPE CorProfilerClassFactory::Release()
 {
-    Debug("ClassFactory::Release");
+    Debug("CorProfilerClassFactory::Release");
     int count = std::atomic_fetch_sub(&this->m_refCount, 1) - 1;
     if (count <= 0)
     {
@@ -56,9 +56,9 @@ ULONG STDMETHODCALLTYPE ClassFactory::Release()
 }
 
 // profiler entry point
-HRESULT STDMETHODCALLTYPE ClassFactory::CreateInstance(IUnknown* pUnkOuter, REFIID riid, void** ppvObject)
+HRESULT STDMETHODCALLTYPE CorProfilerClassFactory::CreateInstance(IUnknown* pUnkOuter, REFIID riid, void** ppvObject)
 {
-    Debug("ClassFactory::CreateInstance");
+    Debug("CorProfilerClassFactory::CreateInstance");
     if (pUnkOuter != nullptr)
     {
         *ppvObject = nullptr;
@@ -71,12 +71,12 @@ HRESULT STDMETHODCALLTYPE ClassFactory::CreateInstance(IUnknown* pUnkOuter, REFI
     {
         m_dispatcher->LoadInstance(pUnkOuter, riid);
     }
-    Debug("ClassFactory::CreateInstance: ", res);
+    Debug("CorProfilerClassFactory::CreateInstance: ", res);
     return res;
 }
 
-HRESULT STDMETHODCALLTYPE ClassFactory::LockServer(BOOL fLock)
+HRESULT STDMETHODCALLTYPE CorProfilerClassFactory::LockServer(BOOL fLock)
 {
-    Debug("ClassFactory::LockServer");
-    return S_OK;
+    Debug("CorProfilerClassFactory::LockServer");
+    return E_NOTIMPL;
 }

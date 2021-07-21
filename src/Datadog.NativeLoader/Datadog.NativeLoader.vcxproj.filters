@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="class_factory.h">
+    <ClInclude Include="cor_profiler_class_factory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="cor_profiler.h">
@@ -50,7 +50,7 @@
     <ClCompile Include="dllmain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="class_factory.cpp">
+    <ClCompile Include="cor_profiler_class_factory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="cor_profiler.cpp">

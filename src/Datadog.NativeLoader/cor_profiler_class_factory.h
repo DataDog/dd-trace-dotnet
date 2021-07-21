@@ -11,15 +11,15 @@ namespace datadog::nativeloader
 class DynamicDispatcher;
 } // namespace datadog::nativeloader
 
-class ClassFactory : public IClassFactory
+class CorProfilerClassFactory : public IClassFactory
 {
 private:
     std::atomic<int> m_refCount;
     datadog::nativeloader::DynamicDispatcher* m_dispatcher;
 
 public:
-    ClassFactory(datadog::nativeloader::DynamicDispatcher* dispatcher);
-    virtual ~ClassFactory();
+    CorProfilerClassFactory(datadog::nativeloader::DynamicDispatcher* dispatcher);
+    virtual ~CorProfilerClassFactory();
     HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override;
     ULONG STDMETHODCALLTYPE AddRef(void) override;
     ULONG STDMETHODCALLTYPE Release(void) override;
