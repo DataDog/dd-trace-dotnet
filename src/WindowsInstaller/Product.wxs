@@ -125,16 +125,24 @@
               Checksum="yes">
           <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
         </File>
+        <File Id="LibSqreen"
+              Source="$(var.LibSqreenDirectory)\runtimes\win-x64\native\Sqreen.dll"
+              Checksum="yes">
+        </File>
       </Component>
     </ComponentGroup>
 
-    <!-- For the 64-bit installer, also install the 32-bit profiler -->
+    <!-- For the 64-bit installer, also install the 32-bit binaries -->
     <ComponentGroup Id="Files.Native.32" Directory="INSTALLFOLDER.32">
       <Component Win64="no" Id="Datadog.Trace.ClrProfiler.Native.32">
         <File Id="Datadog.Trace.ClrProfiler.Native.32"
               Source="$(var.TracerHomeDirectory)\win-x86\Datadog.Trace.ClrProfiler.Native.dll"
               Checksum="yes">
           <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
+        </File>
+        <File Id="LibSqreen.32"
+              Source="$(var.LibSqreenDirectory)\runtimes\win-x86\native\Sqreen.dll"
+              Checksum="yes">
         </File>
       </Component>
     </ComponentGroup>
@@ -148,6 +156,10 @@
               Source="$(var.TracerHomeDirectory)\win-x86\Datadog.Trace.ClrProfiler.Native.dll"
               Checksum="yes">
           <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
+        </File>
+        <File Id="LibSqreen.32"
+              Source="$(var.LibSqreenDirectory)\runtimes\win-x86\native\Sqreen.dll"
+              Checksum="yes">
         </File>
       </Component>
     </ComponentGroup>
