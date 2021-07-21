@@ -85,15 +85,16 @@ partial class Build : NukeBuild
                                        .Cast<DictionaryEntry>()
                                        .Where(x =>
                                         {
-                                            var key = x.ToString().ToLowerInvariant();
+                                            var key = x.Key.ToString().ToLowerInvariant();
                                             return key switch
                                             {
                                                 _ when key.StartsWith("dd_") => true,
-                                                _ when key.StartsWith("COR_") => true,
-                                                _ when key.StartsWith("CORECLR_") => true,
+                                                _ when key.StartsWith("cor_") => true,
+                                                _ when key.StartsWith("coreclr_") => true,
                                                 _ => false
                                             };
                                         })
+                                        .OrderBy(x => x.Key)
                                        .ToList();
             Logger.Info("-------Environment-------");
             foreach (var envVar in ddEnvVars)
