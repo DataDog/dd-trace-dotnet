@@ -10,7 +10,7 @@ using Datadog.Trace.AppSec.Waf.NativeBindings;
 
 namespace Datadog.Trace.AppSec.Waf
 {
-    internal class Return : IDisposable
+    internal class Return : IReturn
     {
         private PWRet returnHandle;
         private bool disposed;

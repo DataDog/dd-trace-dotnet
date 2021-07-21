@@ -45,6 +45,12 @@ namespace Datadog.Trace.Configuration
         public const string TraceEnabled = "DD_TRACE_ENABLED";
 
         /// <summary>
+        /// Configuration key for enabling or disabling the Tracer.
+        /// Default is value is false (disabled).
+        /// </summary>
+        public const string AppSecEnabled = "DD_APPSEC_ENABLED";
+
+        /// <summary>
         /// Configuration key for enabling or disabling the Tracer's debug mode.
         /// Default is value is false (disabled).
         /// </summary>

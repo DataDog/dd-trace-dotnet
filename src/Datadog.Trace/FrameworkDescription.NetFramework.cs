@@ -45,6 +45,11 @@ namespace Datadog.Trace
                 processArchitecture: processArchitecture);
         }
 
+        public bool IsCoreClr()
+        {
+            return false;
+        }
+
         private static string GetNetFrameworkVersion()
         {
             string productVersion = null;
