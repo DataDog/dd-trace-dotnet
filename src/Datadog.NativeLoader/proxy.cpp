@@ -72,7 +72,7 @@ namespace nativeloader
     // private
     //
 
-    HRESULT DynamicInstance::EnsureDynamicLibrary()
+    HRESULT DynamicInstance::EnsureDynamicLibraryIsLoaded()
     {
         if (!m_loaded)
         {
@@ -86,7 +86,7 @@ namespace nativeloader
     HRESULT DynamicInstance::DllGetClassObject(REFIID riid, LPVOID* ppv)
     {
         // Check if the library is loaded
-        if (FAILED(EnsureDynamicLibrary()))
+        if (FAILED(EnsureDynamicLibraryIsLoaded()))
         {
             return E_FAIL;
         }
@@ -182,7 +182,7 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE DynamicInstance::DllCanUnloadNow()
     {
         // Check if the library is loaded
-        if (FAILED(EnsureDynamicLibrary()))
+        if (FAILED(EnsureDynamicLibraryIsLoaded()))
         {
             return E_FAIL;
         }
