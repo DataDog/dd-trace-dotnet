@@ -70,7 +70,7 @@ namespace Datadog.Trace.Tools.Runner
             });
 
             ParserResult<Options> result = parser.ParseArguments<Options>(args);
-            result.MapResult(ParsedOptions, errors => ParsedErrors(result, errors));
+            Environment.ExitCode = result.MapResult(ParsedOptions, errors => ParsedErrors(result, errors));
         }
 
         private static int ParsedOptions(Options options)
