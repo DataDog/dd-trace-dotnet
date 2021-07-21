@@ -117,14 +117,19 @@ namespace nativeloader
         m_clsid_string = clsid;
         m_clsid = guid_parse::make_guid(clsid);
         m_loaded = false;
+        m_instance = nullptr;
         m_getClassObjectPtr = nullptr;
         m_canUnloadNow = nullptr;
+        m_classFactory = nullptr;
+        m_corProfilerCallback = nullptr;
     }
 
     DynamicInstance::~DynamicInstance()
     {
-        m_getClassObjectPtr = nullptr;
+        m_corProfilerCallback = nullptr;
+        m_classFactory = nullptr;
         m_canUnloadNow = nullptr;
+        m_getClassObjectPtr = nullptr;
         m_loaded = false;
 
         if (m_instance != nullptr)
