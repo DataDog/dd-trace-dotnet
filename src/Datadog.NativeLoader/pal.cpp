@@ -95,16 +95,16 @@ namespace nativeloader
 #ifdef _WIN32
         const size_t max_buf_size = 4096;
         WSTRING buf(max_buf_size, 0);
-        auto len = GetEnvironmentVariable(name.data(), buf.data(), (DWORD)(buf.size()));
+        DWORD len = GetEnvironmentVariable(name.data(), buf.data(), (DWORD)(buf.size()));
         return Trim(buf.substr(0, len));
 #else
-        auto cstr = std::getenv(ToString(name).c_str());
+        char* cstr = std::getenv(ToString(name).c_str());
         if (cstr == nullptr)
         {
             return WStr("");
         }
         std::string str(cstr);
-        auto wstr = ToWSTRING(str);
+        WSTRING wstr = ToWSTRING(str);
         return Trim(wstr);
 #endif
     }
@@ -123,7 +123,7 @@ namespace nativeloader
     std::vector<WSTRING> GetEnvironmentValues(const WSTRING& name, const wchar_t delim)
     {
         std::vector<WSTRING> values;
-        for (auto s : Split(GetEnvironmentValue(name), delim))
+        for (WSTRING s : Split(GetEnvironmentValue(name), delim))
         {
             s = Trim(s);
             if (!s.empty())
