@@ -22,6 +22,7 @@ extern "C"
                 // Return FALSE to fail DLL load.
 
                 Debug("DllMain - DLL_PROCESS_ATTACH");
+                Debug("Pointer size: ", 8 * sizeof(void*), " bits.");
 
                 dispatcher = new DynamicDispatcher();
                 dispatcher->LoadConfiguration(GetConfigurationFilePath());
