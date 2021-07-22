@@ -271,6 +271,12 @@ namespace Datadog.Trace.Logging
                     CustomSerilogLogProvider.IsLoggerAvailable,
                     () => new CustomSerilogLogProvider()));
 
+            LogProvider.LogProviderResolvers.Insert(
+                1,
+                Tuple.Create<LogProvider.IsLoggerAvailable, LogProvider.CreateLogProvider>(
+                    NoOpSerilogLogProvider.IsLoggerAvailable,
+                    () => new NoOpSerilogLogProvider()));
+
             // Register the custom NLog providers
             LogProvider.LogProviderResolvers.Insert(
                 1,
