@@ -84,11 +84,5 @@ namespace Datadog.Trace.Logging
             var mdcContextType = FindType("NLog.MappedDiagnosticsContext", "NLog");
             return mdcContextType?.GetMethod("Set", typeof(string), typeof(object)) != null;
         }
-
-        private static bool IsSetObjectAvailable()
-        {
-            var mdcContextType = FindType("NLog.MappedDiagnosticsContext", "NLog");
-            return mdcContextType?.GetMethod("Set", typeof(string), typeof(object)) != null;
-        }
     }
 }

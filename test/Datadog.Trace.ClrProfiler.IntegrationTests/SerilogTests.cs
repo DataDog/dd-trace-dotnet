@@ -3,15 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NETFRAMEWORK
 using System;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using Datadog.Core.Tools;
 using Datadog.Trace.TestHelpers;
-using FluentAssertions;
-using FluentAssertions.Execution;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -85,4 +78,3 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
     }
 }
-#endif
