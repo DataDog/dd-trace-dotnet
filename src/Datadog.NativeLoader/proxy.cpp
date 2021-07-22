@@ -349,16 +349,22 @@ namespace nativeloader
 
     HRESULT STDMETHODCALLTYPE DynamicDispatcher::DllCanUnloadNow()
     {
+        HRESULT result = S_OK;
         for (const std::unique_ptr<DynamicInstance>& dynIns : m_instances)
         {
             HRESULT localResult = dynIns->DllCanUnloadNow();
             if (FAILED(localResult))
             {
                 Warn("Error calling DllCanUnloadNow in: ", dynIns->GetFilePath());
-                return localResult;
+                result = localResult;
+            }
+            else if (localResult != S_OK)
+            {
+                // If we get something different than S_OK then we keep that result because the DLL cannot be unloaded.
+                result = localResult;
             }
         }
-        return S_OK;
+        return result;
     }
 
     HRESULT DynamicDispatcher::Execute(std::function<HRESULT(ICorProfilerCallback10*)> func)
