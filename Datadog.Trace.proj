@@ -15,7 +15,7 @@
     <ExcludeEF6DemoProject Remove="test/test-applications/regression/**/EntityFramework6x*.csproj" />
     <ExcludeLegacyRedisProject Remove="test/test-applications/regression/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj" />
     <CsharpTestHelperProject Include="test\**\*.TestHelpers.csproj"/>
-    <CppProject Include="src\Datadog.Trace.ClrProfiler.Native\*.vcxproj"/>
+    <CppProject Include="src\**\*.vcxproj"/>
     <CppTestProject Include="test\**\*.vcxproj"/>
     <VbSampleLibProject Include="test\test-applications\integrations\**\*.vbproj" />
     <SampleLibProject Include="test\test-applications\integrations\dependency-libs\**\*.csproj" Exclude="test\test-applications\integrations\dependency-libs\**\Samples.MultiDomainHost.App.*.csproj" />
