@@ -1335,5 +1335,32 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
+        public static IEnumerable<object[]> log4net =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETFRAMEWORK
+#endif
+                new object[] { "1.2.10" },
+                new object[] { "1.2.11" },
+                new object[] { "2.0.0" },
+                new object[] { "2.0.1" },
+                new object[] { "2.0.2" },
+                new object[] { "2.0.3" },
+                new object[] { "2.0.4" },
+                new object[] { "2.0.5" },
+                new object[] { "2.0.6" },
+                new object[] { "2.0.7" },
+                new object[] { "2.0.8" },
+                new object[] { "2.0.9" },
+                new object[] { "2.0.10" },
+                new object[] { "2.0.11" },
+                new object[] { "2.0.12" },
+#endif
+            };
+
     }
 }

@@ -135,5 +135,12 @@
     "NugetPackageSearchName": "NLog",
     "MinVersion": "1.0.0",
     "MaxVersionExclusive": "5.0.0"
+  },
+  {
+    "IntegrationName": "log4net",
+    "SampleProjectName": "LogsInjection.CrossAppDomainCalls.Log4Net",
+    "NugetPackageSearchName": "log4net",
+    "MinVersion": "1.0.0",
+    "MaxVersionExclusive": "3.0.0"
   }
 ]
