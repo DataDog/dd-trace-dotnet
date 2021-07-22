@@ -1,4 +1,4 @@
-LIBRARY "Datadog.NativeLoader.dll"
+LIBRARY "Datadog.AutoInstrumentation.NativeLoader.dll"
 
 EXPORTS
     DllCanUnloadNow PRIVATE

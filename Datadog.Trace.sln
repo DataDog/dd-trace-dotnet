@@ -394,11 +394,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.Analyze
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "shared", "shared", "{550362BF-A3A7-4F20-9590-24F4F8C380FF}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.NativeLoader", "src\Datadog.NativeLoader\Datadog.NativeLoader.vcxproj", "{48D12C26-6E63-419C-BFE2-E668E8550613}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.AutoInstrumentation.NativeLoader", "src\Datadog.AutoInstrumentation.NativeLoader\Datadog.AutoInstrumentation.NativeLoader.vcxproj", "{48D12C26-6E63-419C-BFE2-E668E8550613}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "shared", "shared", "{7D231B65-AA8E-4917-85FF-BBBF7992B6FC}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.NativeLoader.Tests", "test\Datadog.NativeLoader.Tests\Datadog.NativeLoader.Tests.vcxproj", "{3FCBD2EB-ACBE-4DA1-850F-12BEE08B937B}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.AutoInstrumentation.NativeLoader.Tests", "test\Datadog.AutoInstrumentation.NativeLoader.Tests\Datadog.AutoInstrumentation.NativeLoader.Tests.vcxproj", "{3FCBD2EB-ACBE-4DA1-850F-12BEE08B937B}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution

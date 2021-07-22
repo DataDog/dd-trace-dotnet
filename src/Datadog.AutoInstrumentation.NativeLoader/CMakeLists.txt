@@ -5,7 +5,7 @@ cmake_policy(SET CMP0015 NEW)
 # Project definition
 # ******************************************************
 
-project("Datadog.NativeLoader" VERSION 0.1.0)
+project("Datadog.AutoInstrumentation.NativeLoader" VERSION 0.1.0)
 
 # ******************************************************
 # Environment detection
@@ -141,7 +141,7 @@ endif()
 # ******************************************************
 # Define target
 # ******************************************************
-add_library("Datadog.NativeLoader" SHARED
+add_library("Datadog.AutoInstrumentation.NativeLoader" SHARED
         cor_profiler.cpp
         cor_profiler_class_factory.cpp
         dllmain.cpp
@@ -154,10 +154,10 @@ add_library("Datadog.NativeLoader" SHARED
         ${GENERATED_OBJ_FILES}
         )
 
-set_target_properties("Datadog.NativeLoader" PROPERTIES PREFIX "")
+set_target_properties("Datadog.AutoInstrumentation.NativeLoader" PROPERTIES PREFIX "")
 
 # Define directories includes
-target_include_directories("Datadog.NativeLoader"
+target_include_directories("Datadog.AutoInstrumentation.NativeLoader"
         PUBLIC ../Datadog.Trace.ClrProfiler.Native/lib/coreclr/src/pal/inc/rt
         PUBLIC ../Datadog.Trace.ClrProfiler.Native/lib/coreclr/src/pal/prebuilt/inc
         PUBLIC ../Datadog.Trace.ClrProfiler.Native/lib/coreclr/src/pal/inc
@@ -166,7 +166,7 @@ target_include_directories("Datadog.NativeLoader"
 
 # Define linker libraries
 if(ISLINUX)
-    target_link_libraries("Datadog.NativeLoader"
+    target_link_libraries("Datadog.AutoInstrumentation.NativeLoader"
             -static-libgcc
             -static-libstdc++
             )

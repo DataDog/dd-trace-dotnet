@@ -1,9 +1,7 @@
-// Datadog.NativeLoader.Tests.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
 #define GTEST_LANG_CXX11 1
 
 #include "gtest/gtest.h"
-#include "../../src/Datadog.NativeLoader/guid.h"
+#include "../../src/Datadog.AutoInstrumentation.NativeLoader/guid.h"
 
 
 bool compare_guids(const GUID a, const GUID b)
