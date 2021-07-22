@@ -275,7 +275,7 @@ partial class Build
         .Unlisted()
         .After(Clean)
         .After(DownloadLibSqreen)
-        .OnlyWhenStatic(() => IsWin || LinuxArchitectureIdentifier != "arm64")
+        .OnlyWhenStatic(() => IsWin || !IsArm64)
         .Executes(() =>
         {
             if (IsWin)
