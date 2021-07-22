@@ -344,15 +344,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { string.Empty },
 #else
 #if NETFRAMEWORK
-                new object[] { "0.1.18" },
-                new object[] { "0.2.11" },
-                new object[] { "0.3.2" },
-                new object[] { "0.4.3" },
-                new object[] { "0.5.5" },
-                new object[] { "0.6.5" },
-                new object[] { "0.7.2" },
-                new object[] { "0.8.5" },
-                new object[] { "0.9.5" },
                 new object[] { "1.0.3" },
                 new object[] { "1.1.2" },
                 new object[] { "1.2.53" },
