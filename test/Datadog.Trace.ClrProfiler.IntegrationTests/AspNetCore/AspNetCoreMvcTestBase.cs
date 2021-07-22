@@ -2,25 +2,26 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-
+#if NETCOREAPP
 using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
+using VerifyXunit;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
-    public abstract class AspNetCoreMvcTestBase : TestHelper
+    [UsesVerify]
+    public abstract class AspNetCoreMvcTestBase : TestHelper, IClassFixture<AspNetCoreMvcTestBase.AspNetCoreTestFixture>
     {
-        protected const string TopLevelOperationName = "aspnet_core.request";
-
         protected const string HeaderName1WithMapping = "datadog-header-name";
         protected const string HeaderName1UpperWithMapping = "DATADOG-HEADER-NAME";
         protected const string HeaderTagName1WithMapping = "datadog-header-tag";
@@ -30,155 +31,169 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         protected const string HeaderName3 = "Server";
         protected const string HeaderValue3 = "Kestrel";
 
-        protected AspNetCoreMvcTestBase(string sampleAppName, ITestOutputHelper output, string serviceVersion)
-            : base(sampleAppName, output)
+        private readonly bool _enableCallTarget;
+        private readonly bool _enableRouteTemplateResourceNames;
+
+        protected AspNetCoreMvcTestBase(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper output, bool enableCallTarget, bool enableRouteTemplateResourceNames)
+            : base(sampleName, output)
         {
-            ServiceVersion = serviceVersion;
-            HttpClient = new HttpClient();
-            HttpClient.DefaultRequestHeaders.Add(HeaderName1WithMapping, HeaderValue1);
-            HttpClient.DefaultRequestHeaders.Add(HeaderName2, HeaderValue2);
+            _enableCallTarget = enableCallTarget;
+            _enableRouteTemplateResourceNames = enableRouteTemplateResourceNames;
             SetEnvironmentVariable(ConfigurationKeys.HeaderTags, $"{HeaderName1UpperWithMapping}:{HeaderTagName1WithMapping},{HeaderName2},{HeaderName3}");
             SetEnvironmentVariable(ConfigurationKeys.HttpServerErrorStatusCodes, "400-403, 500-503");
 
-            SetServiceVersion(ServiceVersion);
+            SetServiceVersion("1.0.0");
 
-            CreateTopLevelExpectation(url: "/", httpMethod: "GET", httpStatus: "200", resourceUrl: "Home/Index", serviceVersion: ServiceVersion);
-            CreateTopLevelExpectation(url: "/delay/0", httpMethod: "GET", httpStatus: "200", resourceUrl: "delay/{seconds}", serviceVersion: ServiceVersion);
-            CreateTopLevelExpectation(url: "/api/delay/0", httpMethod: "GET", httpStatus: "200", resourceUrl: "api/delay/{seconds}", serviceVersion: ServiceVersion);
-            CreateTopLevelExpectation(url: "/not-found", httpMethod: "GET", httpStatus: "404", resourceUrl: "/not-found", serviceVersion: ServiceVersion);
-            CreateTopLevelExpectation(url: "/status-code/203", httpMethod: "GET", httpStatus: "203", resourceUrl: "status-code/{statusCode}", serviceVersion: ServiceVersion);
+            SetCallTargetSettings(enableCallTarget);
+            if (enableRouteTemplateResourceNames)
+            {
+                SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, "true");
+            }
 
-            CreateTopLevelExpectation(
-                url: "/status-code/500",
-                httpMethod: "GET",
-                httpStatus: "500",
-                resourceUrl: "status-code/{statusCode}",
-                serviceVersion: ServiceVersion,
-                additionalCheck: span =>
-                                 {
-                                     var failures = new List<string>();
-
-                                     if (span.Error == 0)
-                                     {
-                                         failures.Add($"Expected Error flag set within {span.Resource}");
-                                     }
-
-                                     if (SpanExpectation.GetTag(span, Tags.ErrorType) != null)
-                                     {
-                                         failures.Add($"Did not expect exception type within {span.Resource}");
-                                     }
-
-                                     var errorMessage = SpanExpectation.GetTag(span, Tags.ErrorMsg);
-
-                                     if (errorMessage != "The HTTP response has status code 500.")
-                                     {
-                                         failures.Add($"Expected specific error message within {span.Resource}. Found \"{errorMessage}\"");
-                                     }
-
-                                     return failures;
-                                 });
-
-            CreateTopLevelExpectation(
-                url: "/bad-request",
-                httpMethod: "GET",
-                httpStatus: "500",
-                resourceUrl: "bad-request",
-                serviceVersion: ServiceVersion,
-                additionalCheck: span =>
-                {
-                    var failures = new List<string>();
-
-                    if (span.Error == 0)
-                    {
-                        failures.Add($"Expected Error flag set within {span.Resource}");
-                    }
-
-                    if (SpanExpectation.GetTag(span, Tags.ErrorType) != "System.Exception")
-                    {
-                        failures.Add($"Expected specific exception within {span.Resource}");
-                    }
-
-                    var errorMessage = SpanExpectation.GetTag(span, Tags.ErrorMsg);
-
-                    if (errorMessage != "This was a bad request.")
-                    {
-                        failures.Add($"Expected specific error message within {span.Resource}. Found \"{errorMessage}\"");
-                    }
-
-                    return failures;
-                });
-
-            CreateTopLevelExpectation(
-                url: "/status-code/402",
-                httpMethod: "GET",
-                httpStatus: "402",
-                resourceUrl: "status-code/{statusCode}",
-                serviceVersion: ServiceVersion,
-                additionalCheck: span =>
-                {
-                    var failures = new List<string>();
-
-                    if (span.Error == 0)
-                    {
-                        failures.Add($"Expected Error flag set within {span.Resource}");
-                    }
-
-                    var errorMessage = SpanExpectation.GetTag(span, Tags.ErrorMsg);
-
-                    if (errorMessage != "The HTTP response has status code 402.")
-                    {
-                        failures.Add($"Expected specific error message within {span.Resource}. Found \"{errorMessage}\"");
-                    }
-
-                    return failures;
-                });
+            Fixture = fixture;
         }
 
-        public string ServiceVersion { get; }
+        protected AspNetCoreTestFixture Fixture { get; }
 
-        protected HttpClient HttpClient { get; }
-
-        protected List<AspNetCoreMvcSpanExpectation> Expectations { get; set; } = new List<AspNetCoreMvcSpanExpectation>();
-
-        public async Task RunTraceTestOnSelfHosted(string packageVersion)
+        public static TheoryData<string, int> Data() => new()
         {
-            var agentPort = TcpPortProvider.GetOpenPort();
-            var aspNetCorePort = TcpPortProvider.GetOpenPort();
+            { "/", 200 },
+            { "/delay/0", 200 },
+            { "/api/delay/0", 200 },
+            { "/not-found", 404 },
+            { "/status-code/203", 203 },
+            { "/status-code/500", 500 },
+            { "/bad-request", 500 },
+            { "/status-code/402", 402 },
+            { "/ping", 200 },
+            { "/branch/ping", 200 },
+            { "/branch/not-found", 404 },
+        };
 
-            using (var agent = new MockTracerAgent(agentPort))
-            using (var process = StartSample(agent.Port, arguments: null, packageVersion: packageVersion, aspNetCorePort: aspNetCorePort))
+        protected string GetTestName(string testName)
+        {
+            return testName
+                 + (_enableCallTarget ? ".CallTarget" : ".CallSite")
+                 + (_enableRouteTemplateResourceNames ? ".WithFF" : ".NoFF")
+                 + (RuntimeInformation.ProcessArchitecture == Architecture.X64 ? ".X64" : ".X86"); // assume that arm is the same
+        }
+
+        public sealed class AspNetCoreTestFixture : IDisposable
+        {
+            private readonly HttpClient _httpClient;
+            private Process _process;
+            private bool _enableLogging = true;
+
+            public AspNetCoreTestFixture()
             {
-                agent.SpanFilters.Add(IsNotServerLifeCheck);
+                _httpClient = new HttpClient();
+                _httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
+                _httpClient.DefaultRequestHeaders.Add(HeaderName1WithMapping, HeaderValue1);
+                _httpClient.DefaultRequestHeaders.Add(HeaderName2, HeaderValue2);
+            }
 
+            public MockTracerAgent Agent { get; private set; }
+
+            public int HttpPort { get; private set; }
+
+            public async Task TryStartApp(TestHelper helper, ITestOutputHelper output)
+            {
+                if (_process is not null)
+                {
+                    return;
+                }
+
+                lock (this)
+                {
+                    if (_process is null)
+                    {
+                        var initialAgentPort = TcpPortProvider.GetOpenPort();
+                        HttpPort = TcpPortProvider.GetOpenPort();
+
+                        Agent = new MockTracerAgent(initialAgentPort);
+                        Agent.SpanFilters.Add(IsNotServerLifeCheck);
+                        output.WriteLine($"Starting aspnetcore sample, agentPort: {Agent.Port}, samplePort: {HttpPort}");
+                        _process = helper.StartSample(Agent.Port, arguments: null, packageVersion: string.Empty, aspNetCorePort: HttpPort);
+                    }
+                }
+
+                await EnsureServerStarted(output);
+            }
+
+            public void Dispose()
+            {
+                _enableLogging = false;
+                var request = WebRequest.CreateHttp($"http://localhost:{HttpPort}/shutdown");
+                request.GetResponse().Close();
+
+                if (_process is not null)
+                {
+                    try
+                    {
+                        if (!_process.HasExited)
+                        {
+                            if (!_process.WaitForExit(5000))
+                            {
+                                _process.Kill();
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // in some circumstances the HasExited property throws, this means the process probably hasn't even started correctly
+                    }
+
+                    _process.Dispose();
+                }
+
+                Agent?.Dispose();
+            }
+
+            public async Task<IImmutableList<MockTracerAgent.Span>> WaitForSpans(ITestOutputHelper output, string path)
+            {
+                var testStart = DateTime.UtcNow;
+
+                await SubmitRequest(output, path);
+                return Agent.WaitForSpans(count: 1, minDateTime: testStart, returnAllOperations: true);
+            }
+
+            private async Task EnsureServerStarted(ITestOutputHelper output)
+            {
                 var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
 
-                process.OutputDataReceived += (sender, args) =>
+                _process.OutputDataReceived += (sender, args) =>
                 {
                     if (args.Data != null)
                     {
-                        if (args.Data.Contains("Now listening on:") || args.Data.Contains("Unable to start Kestrel"))
+                        if (args.Data.Contains("Webserver started"))
                         {
                             wh.Set();
                         }
 
-                        Output.WriteLine($"[webserver][stdout] {args.Data}");
+                        if (_enableLogging)
+                        {
+                            output.WriteLine($"[webserver][stdout] {args.Data}");
+                        }
                     }
                 };
-                process.BeginOutputReadLine();
+                _process.BeginOutputReadLine();
 
-                process.ErrorDataReceived += (sender, args) =>
+                _process.ErrorDataReceived += (sender, args) =>
                 {
                     if (args.Data != null)
                     {
-                        Output.WriteLine($"[webserver][stderr] {args.Data}");
+                        if (_enableLogging)
+                        {
+                            output.WriteLine($"[webserver][stderr] {args.Data}");
+                        }
                     }
                 };
 
-                process.BeginErrorReadLine();
+                _process.BeginErrorReadLine();
 
                 wh.WaitOne(5000);
 
-                var maxMillisecondsToWait = 15_000;
+                var maxMillisecondsToWait = 30_000;
                 var intervalMilliseconds = 500;
                 var intervals = maxMillisecondsToWait / intervalMilliseconds;
                 var serverReady = false;
@@ -188,7 +203,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 {
                     try
                     {
-                        serverReady = await SubmitRequest(aspNetCorePort, "/alive-check") == HttpStatusCode.OK;
+                        serverReady = await SubmitRequest(output, "/alive-check") == HttpStatusCode.OK;
                     }
                     catch
                     {
@@ -207,98 +222,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 {
                     throw new Exception("Couldn't verify the application is ready to receive requests.");
                 }
+            }
 
-                var testStart = DateTime.Now;
-
-                var paths = Expectations.Select(e => e.OriginalUri).ToArray();
-                await SubmitRequests(aspNetCorePort, paths);
-
-                var spans =
-                    agent.WaitForSpans(
-                              Expectations.Count,
-                              operationName: TopLevelOperationName,
-                              minDateTime: testStart)
-                         .OrderBy(s => s.Start)
-                         .ToList();
-
-                if (!process.HasExited)
+            private bool IsNotServerLifeCheck(MockTracerAgent.Span span)
+            {
+                var url = SpanExpectation.GetTag(span, Tags.HttpUrl);
+                if (url == null)
                 {
-                    // Try shutting down gracefully
-                    await SubmitRequest(aspNetCorePort, "/shutdown");
-
-                    if (!process.WaitForExit(5000))
-                    {
-                        process.Kill();
-                    }
+                    return true;
                 }
 
-                SpanTestHelpers.AssertExpectationsMet(Expectations, spans);
-            }
-        }
-
-        protected void CreateTopLevelExpectation(
-            string url,
-            string httpMethod,
-            string httpStatus,
-            string resourceUrl,
-            string serviceVersion,
-            Func<MockTracerAgent.Span, List<string>> additionalCheck = null)
-        {
-            var resourceName = $"{httpMethod.ToUpper()} {resourceUrl}";
-
-            var expectation = new AspNetCoreMvcSpanExpectation(
-                                  EnvironmentHelper.FullSampleName,
-                                  serviceVersion,
-                                  TopLevelOperationName,
-                                  resourceName,
-                                  httpStatus,
-                                  httpMethod)
-            {
-                OriginalUri = url,
-            };
-
-            expectation.RegisterDelegateExpectation(additionalCheck);
-
-            _ = HeaderTagName1WithMapping.TryConvertToNormalizedHeaderTagName(out string normalizedHeaderTagName1WithMapping);
-            expectation.RegisterTagExpectation(normalizedHeaderTagName1WithMapping, HeaderValue1);
-
-            // For successful requests, assert that a header tag is present in both the request and response, with the prefixes "http.request.headers" and "http.response.headers", respectively
-            _ = HeaderName2.TryConvertToNormalizedHeaderTagName(out string normalizedHeaderTagName2);
-            expectation.RegisterTagExpectation($"{SpanContextPropagator.HttpRequestHeadersTagPrefix}.{normalizedHeaderTagName2}", HeaderValue2);
-            expectation.RegisterTagExpectation($"{SpanContextPropagator.HttpResponseHeadersTagPrefix}.{normalizedHeaderTagName2}", HeaderValue2, when: (span) => span.Resource != "GET /not-found" && span.Resource != "GET bad-request");
-
-            // Assert that a response header tag is set on successful requests and failing requests
-            _ = HeaderName3.TryConvertToNormalizedHeaderTagName(out string normalizedHeaderTagName3);
-            expectation.RegisterTagExpectation($"{SpanContextPropagator.HttpResponseHeadersTagPrefix}.{normalizedHeaderTagName3}", HeaderValue3, when: (span) => span.Resource != "GET bad-request");
-
-            Expectations.Add(expectation);
-        }
-
-        protected async Task SubmitRequests(int aspNetCorePort, string[] paths)
-        {
-            foreach (var path in paths)
-            {
-                await SubmitRequest(aspNetCorePort, path);
-            }
-        }
-
-        protected async Task<HttpStatusCode> SubmitRequest(int aspNetCorePort, string path)
-        {
-            HttpResponseMessage response = await HttpClient.GetAsync($"http://localhost:{aspNetCorePort}{path}");
-            string responseText = await response.Content.ReadAsStringAsync();
-            Output.WriteLine($"[http] {response.StatusCode} {responseText}");
-            return response.StatusCode;
-        }
-
-        private bool IsNotServerLifeCheck(MockTracerAgent.Span span)
-        {
-            var url = SpanExpectation.GetTag(span, Tags.HttpUrl);
-            if (url == null)
-            {
-                return true;
+                return !url.Contains("alive-check") && !url.Contains("shutdown");
             }
 
-            return !url.Contains("alive-check") && !url.Contains("shutdown");
+            private async Task<HttpStatusCode> SubmitRequest(ITestOutputHelper output, string path)
+            {
+                HttpResponseMessage response = await _httpClient.GetAsync($"http://localhost:{HttpPort}{path}");
+                string responseText = await response.Content.ReadAsStringAsync();
+                output?.WriteLine($"[http] {response.StatusCode} {responseText}");
+                return response.StatusCode;
+            }
         }
     }
 }
+#endif
