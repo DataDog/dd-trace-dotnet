@@ -127,6 +127,7 @@
     "SampleProjectName": "LogsInjection.CrossAppDomainCalls.Serilog",
     "NugetPackageSearchName": "Serilog",
     "MinVersion": "0.0.0",
+    "MinVersionNetCore": "2.0.0",
     "MaxVersionExclusive": "3.0.0"
   },
   {
@@ -134,6 +135,7 @@
     "SampleProjectName": "LogsInjection.CrossAppDomainCalls.NLog",
     "NugetPackageSearchName": "NLog",
     "MinVersion": "1.0.0",
+    "MinVersionNetCore": "4.5.0",
     "MaxVersionExclusive": "5.0.0"
   },
   {
@@ -141,6 +143,7 @@
     "SampleProjectName": "LogsInjection.CrossAppDomainCalls.Log4Net",
     "NugetPackageSearchName": "log4net",
     "MinVersion": "1.0.0",
+    "MinVersionNetCore": "2.0.6",
     "MaxVersionExclusive": "3.0.0"
   }
 ]

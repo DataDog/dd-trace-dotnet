@@ -358,6 +358,9 @@ stages:
           target: BuildAndRunWindowsRegressionTests
           requiresCosmos: false
 
+    variables:
+      TestAllPackageVersions: true
+
     steps:
     - template: steps/install-dotnet-sdks.yml
       parameters:
