@@ -105,14 +105,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         return E_FAIL;
     }
 
-  // get ICorProfilerInfo6 for net46+
-  ICorProfilerInfo6* info6;
-  hr = cor_profiler_info_unknown->QueryInterface(__uuidof(ICorProfilerInfo6), (void**)&info6);
+    // get ICorProfilerInfo6 for net46+
+    ICorProfilerInfo6* info6;
+    hr = cor_profiler_info_unknown->QueryInterface(__uuidof(ICorProfilerInfo6), (void**)&info6);
 
-  if (SUCCEEDED(hr)) {
-    Logger::Debug("Interface ICorProfilerInfo6 found.");
-    is_net46_or_greater = true;
-  }
+    if (SUCCEEDED(hr)) {
+        Logger::Debug("Interface ICorProfilerInfo6 found.");
+        is_net46_or_greater = true;
+    }
 
     Logger::Info("Environment variables:");
     for (auto&& env_var : env_vars_to_display)
@@ -159,7 +159,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         return E_FAIL;
     }
 
-  const auto is_calltarget_enabled = IsCallTargetEnabled(is_net46_or_greater);
+    const auto is_calltarget_enabled = IsCallTargetEnabled(is_net46_or_greater);
 
     // Initialize ReJIT handler and define the Rewriter Callback
     if (is_calltarget_enabled)
@@ -207,8 +207,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     }
 
     DWORD event_mask = COR_PRF_MONITOR_JIT_COMPILATION | COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
-                       COR_PRF_MONITOR_MODULE_LOADS | COR_PRF_MONITOR_ASSEMBLY_LOADS | COR_PRF_MONITOR_APPDOMAIN_LOADS |
-                       COR_PRF_DISABLE_ALL_NGEN_IMAGES;
+                       COR_PRF_MONITOR_MODULE_LOADS | COR_PRF_MONITOR_ASSEMBLY_LOADS | COR_PRF_MONITOR_APPDOMAIN_LOADS;
 
     if (is_calltarget_enabled)
     {
@@ -234,6 +233,17 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     {
         Logger::Info("Disabling all code optimizations.");
         event_mask |= COR_PRF_DISABLE_OPTIMIZATIONS;
+    }
+
+    if (!is_calltarget_enabled || !is_net46_or_greater || !IsNGENEnabled())
+    {
+        Info("NGEN is disabled.");
+        event_mask |= COR_PRF_DISABLE_ALL_NGEN_IMAGES;
+    }
+    else
+    {
+        Info("NGEN is enabled.");
+        event_mask |= COR_PRF_MONITOR_CACHE_SEARCHES;
     }
 
     const WSTRING domain_neutral_instrumentation = GetEnvironmentValue(environment::domain_neutral_instrumentation);
@@ -2946,6 +2956,74 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ReJITError(ModuleID moduleId, mdMethodDef
 
     Logger::Warn("ReJITError: [functionId: ", functionId, ", moduleId: ", moduleId, ", methodId: ", methodId,
                  ", hrStatus: ", hrStatus, "]");
+    return S_OK;
+}
+
+HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID functionId,
+                                                                      BOOL* pbUseCachedFunction)
+{
+    auto _ = trace::Stats::Instance()->JITCachedFunctionSearchStartedMeasure();
+    if (!is_attached_ || !pbUseCachedFunction)
+    {
+        return S_OK;
+    }
+
+    // keep this lock until we are done using the module,
+    // to prevent it from unloading while in use
+    std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
+
+    // Extract Module metadata
+    ModuleID module_id;
+    mdToken function_token = mdTokenNil;
+
+    HRESULT hr = this->info_->GetFunctionInfo(functionId, nullptr, &module_id, &function_token);
+
+    if (FAILED(hr))
+    {
+        Warn("JITCachedFunctionSearchStarted: Call to ICorProfilerInfo4.GetFunctionInfo() failed for ", functionId);
+        return S_OK;
+    }
+
+    // Verify that we have the metadata for this module
+    ModuleMetadata* module_metadata = nullptr;
+
+    auto findRes = module_id_to_info_map_.find(module_id);
+    if (findRes != module_id_to_info_map_.end())
+    {
+        module_metadata = findRes->second;
+    }
+
+    if (module_metadata == nullptr)
+    {
+        // we haven't stored a ModuleMetadata for this module,
+        // so we can't modify its IL
+        *pbUseCachedFunction = true;
+        return S_OK;
+    }
+
+    const bool has_loader_injected_in_appdomain =
+        first_jit_compilation_app_domains.find(module_metadata->app_domain_id) !=
+        first_jit_compilation_app_domains.end();
+
+    if (!has_loader_injected_in_appdomain)
+    {
+        *pbUseCachedFunction = false;
+        return S_OK;
+    }
+
+    RejitHandlerModule* handlerModule = nullptr;
+    if (rejit_handler->TryGetModule(module_id, &handlerModule))
+    {
+        if (handlerModule->ContainsMethod(function_token))
+        {
+            Info("*** JITCachedFunctionSearchStarted: NGEN disabled by ReJIT for [ModuleId=", module_id,
+                 ", MethodDef=", TokenStr(&function_token), "]");
+            *pbUseCachedFunction = false;
+            return S_OK;
+        }
+    }
+
+    *pbUseCachedFunction = true;
     return S_OK;
 }
 
