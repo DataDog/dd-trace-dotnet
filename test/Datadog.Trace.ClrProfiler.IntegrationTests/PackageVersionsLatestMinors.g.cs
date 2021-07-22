@@ -345,6 +345,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #else
 #if NETFRAMEWORK
 #endif
+                new object[] { "0.1.18" },
+                new object[] { "0.2.11" },
+                new object[] { "0.3.2" },
+                new object[] { "0.4.3" },
+                new object[] { "0.5.5" },
+                new object[] { "0.6.5" },
+                new object[] { "0.7.2" },
+                new object[] { "0.8.5" },
+                new object[] { "0.9.5" },
+                new object[] { "1.0.3" },
+                new object[] { "1.1.2" },
+                new object[] { "1.2.53" },
+                new object[] { "1.3.43" },
+                new object[] { "1.4.214" },
+                new object[] { "1.5.14" },
                 new object[] { "2.0.0" },
                 new object[] { "2.1.0" },
                 new object[] { "2.2.1" },
