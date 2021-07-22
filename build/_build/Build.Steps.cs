@@ -263,7 +263,7 @@ partial class Build
         {
             var wc = new WebClient();
             var libSqreenUri = new Uri("https://www.nuget.org/api/v2/package/libsqreen/1.1.2.2");
-            var libSqreenZip = RootDirectory / "libsqreen.zip";
+            var libSqreenZip = TempDirectory / "libsqreen.zip";
             wc.DownloadFile(libSqreenUri, libSqreenZip);
 
             Console.WriteLine($"{libSqreenZip} downloaded. Extracting to {LibSqreenDirectory}...");
