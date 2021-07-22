@@ -237,7 +237,10 @@ namespace nativeloader
 
     void DynamicDispatcher::Add(std::unique_ptr<DynamicInstance>& instance)
     {
-        m_instances.push_back(std::move(instance));
+        if (instance.get() != nullptr)
+        {
+            m_instances.push_back(std::move(instance));
+        }
     }
 
     void DynamicDispatcher::LoadConfiguration(std::string configFilePath)
@@ -307,8 +310,7 @@ namespace nativeloader
 
         // Set the current path to the original one
         std::filesystem::current_path(oldCurrentPath);
-
-        for (const auto item : guidBoolMap)
+        for (const std::pair<const std::string, bool> item : guidBoolMap)
         {
             if (!item.second)
             {
@@ -320,15 +322,12 @@ namespace nativeloader
     HRESULT DynamicDispatcher::LoadClassFactory(REFIID riid)
     {
         HRESULT result = S_OK;
-        for (const auto& dynIns : m_instances)
+        for (const std::unique_ptr<DynamicInstance>& dynIns : m_instances)
         {
-            if (dynIns != nullptr)
+            HRESULT localResult = dynIns->LoadClassFactory(riid);
+            if (FAILED(localResult))
             {
-                HRESULT localResult = dynIns->LoadClassFactory(riid);
-                if (FAILED(localResult))
-                {
-                    result = localResult;
-                }
+                result = localResult;
             }
         }
         return result;
@@ -337,15 +336,12 @@ namespace nativeloader
     HRESULT DynamicDispatcher::LoadInstance(IUnknown* pUnkOuter, REFIID riid)
     {
         HRESULT result = S_OK;
-        for (const auto& dynIns : m_instances)
+        for (const std::unique_ptr<DynamicInstance>& dynIns : m_instances)
         {
-            if (dynIns != nullptr)
+            HRESULT localResult = dynIns->LoadInstance(pUnkOuter, riid);
+            if (FAILED(localResult))
             {
-                HRESULT localResult = dynIns->LoadInstance(pUnkOuter, riid);
-                if (FAILED(localResult))
-                {
-                    result = localResult;
-                }
+                result = localResult;
             }
         }
         return result;
@@ -354,15 +350,12 @@ namespace nativeloader
     HRESULT STDMETHODCALLTYPE DynamicDispatcher::DllCanUnloadNow()
     {
         HRESULT result = S_OK;
-        for (const auto& dynIns : m_instances)
+        for (const std::unique_ptr<DynamicInstance>& dynIns : m_instances)
         {
-            if (dynIns != nullptr)
+            HRESULT localResult = dynIns->DllCanUnloadNow();
+            if (FAILED(localResult))
             {
-                HRESULT localResult = dynIns->DllCanUnloadNow();
-                if (FAILED(localResult))
-                {
-                    result = localResult;
-                }
+                result = localResult;
             }
         }
         return result;
@@ -376,22 +369,19 @@ namespace nativeloader
         }
 
         HRESULT result = S_OK;
-        for (const auto& dynIns : m_instances)
+        for (const std::unique_ptr<DynamicInstance>& dynIns : m_instances)
         {
-            if (dynIns != nullptr)
+            ICorProfilerCallback10* profilerCallback = dynIns->GetProfilerCallback();
+            if (profilerCallback == nullptr)
             {
-                ICorProfilerCallback10* profilerCallback = dynIns->GetProfilerCallback();
-                if (profilerCallback == nullptr)
-                {
-                    Warn("Error trying to execute in: ", dynIns->GetFilePath());
-                    continue;
-                }
+                Warn("Error trying to execute in: ", dynIns->GetFilePath());
+                continue;
+            }
 
-                HRESULT localResult = func(profilerCallback);
-                if (FAILED(localResult))
-                {
-                    result = localResult;
-                }
+            HRESULT localResult = func(profilerCallback);
+            if (FAILED(localResult))
+            {
+                result = localResult;
             }
         }
         return result;
