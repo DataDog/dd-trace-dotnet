@@ -679,14 +679,28 @@ partial class Build
         .Executes(() =>
         {
             // This does some "unnecessary" rebuilding and restoring
-            var include = RootDirectory.GlobFiles("test/test-applications/integrations/**/*.csproj");
-            var exclude = RootDirectory.GlobFiles("test/test-applications/integrations/dependency-libs/**/*.csproj");
+            var sampleProjects = RootDirectory.GlobFiles("test/test-applications/integrations/*/*.csproj");
 
-            var projects = include.Where(projectPath =>
+            // These sample projects are built using RestoreAndBuildSamplesForPackageVersions
+            // so no point building them now
+            // TODO: Load this list dynamically
+            var multiApiProjects = new[]
+            {
+                // First do a proof of concept with the logs injection samples
+                "LogsInjection.CrossAppDomainCalls.Log4Net",
+                "LogsInjection.CrossAppDomainCalls.NLog",
+                "LogsInjection.CrossAppDomainCalls.Serilog",
+                // "Samples.CosmosDb",
+                // "Samples.SqlServer",
+                // "Samples.Microsoft.Data.SqlClient",
+                // "Samples.Microsoft.Data.Sqlite",
+            };
+
+            var projects = sampleProjects.Where(projectPath =>
                 projectPath switch
                 {
-                    _ when exclude.Contains(projectPath) => false,
                     _ when projectPath.ToString().Contains("Samples.OracleMDA") => false,
+                    var name when multiApiProjects.Contains(name) => false,
                     _ => true,
                 }
             );
@@ -696,9 +710,9 @@ partial class Build
                 .SetTargetPlatform(Platform)
                 .EnableNoDependencies()
                 .SetProperty("BuildInParallel", "false")
-                .SetProperty("ManagedProfilerOutputDirectory", TracerHomeDirectory)
                 .SetProperty("ExcludeManagedProfiler", true)
                 .SetProperty("ExcludeNativeProfiler", true)
+                .SetProperty("ManagedProfilerOutputDirectory", TracerHomeDirectory)
                 .SetProperty("LoadManagedProfilerFromProfilerDirectory", false)
                 .CombineWith(projects, (s, project) => s
                     .SetProjectFile(project)));
@@ -954,6 +968,39 @@ partial class Build
                     .CombineWith(projectsToBuild, (c, project) => c
                         .SetProject(project)));
 
+        });
+
+    Target CompileWindowsMultiApiPackageVersionSamples => _ => _
+        .Unlisted()
+        .After(CompileManagedSrc)
+        .After(CompileRegressionDependencyLibs)
+        .After(CompileDependencyLibs)
+        .After(CompileManagedTestHelpers)
+        .After(CompileSamples)
+        .Requires(() => TracerHomeDirectory != null)
+        .Executes(() =>
+        {
+            // Build and restore for all versions
+            // Annoyingly this rebuilds everything again and again.
+            var targets = new[] { "RestoreSamplesForPackageVersionsOnly", "RestoreAndBuildSamplesForPackageVersionsOnly" };
+            var frameworks = new[] { "net452", "net461", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0" };
+
+            // /nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
+            DotNetMSBuild(x => x
+                .SetTargetPath(MsBuildProject)
+                .SetConfiguration(BuildConfiguration)
+                .EnableNoDependencies()
+                .SetProperty("ManagedProfilerOutputDirectory", TracerHomeDirectory)
+                .SetProperty("BuildInParallel", "true")
+                .SetProperty("ExcludeManagedProfiler", "true")
+                .SetProperty("ExcludeNativeProfiler", "true")
+                .SetProperty("RunOnWindows", "true")
+                .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
+                .AddProcessEnvironmentVariable("TestAllPackageVersions", "true")
+                .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
+                .CombineWith(frameworks, (c, framework) => c.SetProperty("TargetFramework", framework))
+                .CombineWith(targets, (c, target) => c.SetTargets(target))
+            );
         });
 
     Target CompileMultiApiPackageVersionSamples => _ => _

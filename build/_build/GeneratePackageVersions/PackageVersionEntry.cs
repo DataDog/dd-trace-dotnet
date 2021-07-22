@@ -20,5 +20,7 @@ namespace GeneratePackageVersions
         public string MaxVersionExclusive { get; set; }
 
         public string SampleTargetFramework { get; set; }
+
+        public bool RunOnWindows { get; set; }
     }
 }

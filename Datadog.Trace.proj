@@ -94,7 +94,10 @@
   <Target Name="RestoreSamplesForPackageVersionsOnly" Condition="'$(TestAllPackageVersions)'=='true'">
     <!-- Filter the sample projects by TargetFramework -->
     <ItemGroup>
-      <PackageVersionSampleCompile Include="@(PackageVersionSample)" Condition="'%(PackageVersionSample.TargetFramework)' == '' or '%(PackageVersionSample.TargetFramework)'=='$(TargetFramework)'" />
+      <PackageVersionSampleCompile
+        Include="@(PackageVersionSample)"
+        Condition="('%(PackageVersionSample.TargetFramework)' == '' or '%(PackageVersionSample.TargetFramework)'=='$(TargetFramework)') and
+                   ('$(RunOnWindows)' == '' or '$(RunOnWindows)' == '%(PackageVersionSample.RunOnWindows)')" />
     </ItemGroup>
 
     <!-- Build the sample projects concurrently -->
@@ -109,7 +112,10 @@
     <!-- Assumes that the core C# projects are already built first -->
     <!-- Filter the sample projects by TargetFramework -->
     <ItemGroup>
-      <PackageVersionSampleCompile Include="@(PackageVersionSample)" Condition="'%(PackageVersionSample.TargetFramework)' == '' or '%(PackageVersionSample.TargetFramework)'=='$(TargetFramework)'" />
+      <PackageVersionSampleCompile
+        Include="@(PackageVersionSample)"
+        Condition="('%(PackageVersionSample.TargetFramework)' == '' or '%(PackageVersionSample.TargetFramework)'=='$(TargetFramework)') and
+                   ('$(RunOnWindows)' == '' or '$(RunOnWindows)' == '%(PackageVersionSample.RunOnWindows)')" />
     </ItemGroup>
 
     <!-- Build the sample projects concurrently -->

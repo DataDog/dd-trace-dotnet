@@ -164,6 +164,7 @@ partial class Build : NukeBuild
         .DependsOn(CreatePlatformlessSymlinks)
         .DependsOn(CompileSamples)
         .DependsOn(PublishIisSamples)
+        .DependsOn(CompileWindowsMultiApiPackageVersionSamples)
         .DependsOn(CompileIntegrationTests);
 
     Target BuildWindowsRegressionIntegrationTests => _ => _

@@ -21,12 +21,14 @@ namespace LogsInjection.CrossAppDomainCalls.Log4Net
 
         public static int Main(string[] args)
         {
+#if NETFRAMEWORK
             // Set up the secondary AppDomain first
             // The plugin application we'll call was built and copied to the ApplicationFiles subdirectory
             // Create an AppDomain with that directory as the appBasePath
             var entryDirectory = Directory.GetParent(Assembly.GetEntryAssembly().Location);
             var applicationFilesDirectory = Path.Combine(entryDirectory.FullName, "ApplicationFiles");
             var applicationAppDomain = AppDomain.CreateDomain("ApplicationAppDomain", null, applicationFilesDirectory, applicationFilesDirectory, false);
+#endif
 
             // Clean out previous logs
             var appDirectory = Directory.GetParent(typeof(Program).Assembly.Location).FullName;
@@ -62,14 +64,19 @@ namespace LogsInjection.CrossAppDomainCalls.Log4Net
                     // to the way log4net stores "AsyncLocal" state in the
                     // System.Runtime.Remoting.Messaging.CallContext:
                     // System.Runtime.Serialization.SerializationException: Type is not resolved for member 'log4net.Util.PropertiesDictionary,log4net, Version=2.0.12.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a'.
-
+#if NETFRAMEWORK
                     log.Info("Calling the PluginApplication.Program in a separate AppDomain");
                     // AppDomainProxy.Call(applicationAppDomain, "PluginApplication", "PluginApplication.Program", "Invoke", null);
                     log.Info("Returned from the PluginApplication.Program call");
+#else
+                    log.Info("Skipping the cross-AppDomain call on .NET Core");
+#endif
                 }
 
                 log.Info($"{ExcludeMessagePrefix}Exited Datadog scope.");
+#if NETFRAMEWORK
                 AppDomain.Unload(applicationAppDomain);
+#endif
             }
             catch (Exception ex)
             {
@@ -92,6 +99,7 @@ namespace LogsInjection.CrossAppDomainCalls.Log4Net
             UnknownError = -10
         }
 
+#if NETFRAMEWORK
         public class AppDomainProxy : MarshalByRefObject
         {
             object CallInternal(string assemblyName, string typeName, string methodName, object[] parameters)
@@ -111,5 +119,6 @@ namespace LogsInjection.CrossAppDomainCalls.Log4Net
                 return result;
             }
         }
+#endif
     }
 }

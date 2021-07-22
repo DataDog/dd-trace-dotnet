@@ -20,13 +20,14 @@ namespace LogsInjection.CrossAppDomainCalls.Serilog
 
         public static int Main(string[] args)
         {
-
+#if NETFRAMEWORK
             // Set up the secondary AppDomain first
             // The plugin application we'll call was built and copied to the ApplicationFiles subdirectory
             // Create an AppDomain with that directory as the appBasePath
             var entryDirectory = Directory.GetParent(Assembly.GetEntryAssembly().Location);
             var applicationFilesDirectory = Path.Combine(entryDirectory.FullName, "ApplicationFiles");
             var applicationAppDomain = AppDomain.CreateDomain("ApplicationAppDomain", null, applicationFilesDirectory, applicationFilesDirectory, false);
+#endif
 
             // Clean out previous logs
             var appDirectory = Directory.GetParent(typeof(Program).Assembly.Location).FullName;
@@ -69,14 +70,19 @@ namespace LogsInjection.CrossAppDomainCalls.Serilog
                     // System.Runtime.Remoting.Messaging.CallContext by wrapping it in
                     // an object that will not be serialized/deserialized across AppDomains.
                     // This is a smoke test to ensure that is the case
-
+#if NETFRAMEWORK
                     log.Information("Calling the PluginApplication.Program in a separate AppDomain");
                     AppDomainProxy.Call(applicationAppDomain, "PluginApplication", "PluginApplication.Program", "Invoke", null);
                     log.Information("Returned from the PluginApplication.Program call");
+#else
+                    log.Information("Skipping the cross-AppDomain call on .NET Core");
+#endif
                 }
 
                 log.Information($"{ExcludeMessagePrefix}Exited Datadog scope.");
+#if NETFRAMEWORK
                 AppDomain.Unload(applicationAppDomain);
+#endif
             }
             catch (Exception ex)
             {
@@ -99,6 +105,7 @@ namespace LogsInjection.CrossAppDomainCalls.Serilog
             UnknownError = -10
         }
 
+#if NETFRAMEWORK
         public class AppDomainProxy : MarshalByRefObject
         {
             object CallInternal(string assemblyName, string typeName, string methodName, object[] parameters)
@@ -118,5 +125,6 @@ namespace LogsInjection.CrossAppDomainCalls.Serilog
                 return result;
             }
         }
+#endif
     }
 }
