@@ -321,44 +321,44 @@ namespace nativeloader
 
     HRESULT DynamicDispatcher::LoadClassFactory(REFIID riid)
     {
-        HRESULT result = S_OK;
         for (const std::unique_ptr<DynamicInstance>& dynIns : m_instances)
         {
             HRESULT localResult = dynIns->LoadClassFactory(riid);
             if (FAILED(localResult))
             {
-                result = localResult;
+                Warn("Error trying to load class factory in: ", dynIns->GetFilePath());
+                return localResult;
             }
         }
-        return result;
+        return S_OK;
     }
 
     HRESULT DynamicDispatcher::LoadInstance(IUnknown* pUnkOuter, REFIID riid)
     {
-        HRESULT result = S_OK;
         for (const std::unique_ptr<DynamicInstance>& dynIns : m_instances)
         {
             HRESULT localResult = dynIns->LoadInstance(pUnkOuter, riid);
             if (FAILED(localResult))
             {
-                result = localResult;
+                Warn("Error trying to load the instance in: ", dynIns->GetFilePath());
+                return localResult;
             }
         }
-        return result;
+        return S_OK;
     }
 
     HRESULT STDMETHODCALLTYPE DynamicDispatcher::DllCanUnloadNow()
     {
-        HRESULT result = S_OK;
         for (const std::unique_ptr<DynamicInstance>& dynIns : m_instances)
         {
             HRESULT localResult = dynIns->DllCanUnloadNow();
             if (FAILED(localResult))
             {
-                result = localResult;
+                Warn("Error calling DllCanUnloadNow in: ", dynIns->GetFilePath());
+                return localResult;
             }
         }
-        return result;
+        return S_OK;
     }
 
     HRESULT DynamicDispatcher::Execute(std::function<HRESULT(ICorProfilerCallback10*)> func)
