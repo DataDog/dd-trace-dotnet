@@ -265,6 +265,13 @@ namespace nativeloader
         // Set the current path to the configuration folder (to allow relative paths)
         std::filesystem::current_path(configFolder);
 
+        const std::string allOsArch[12] = {
+            "win-x64", "linux-x64", "osx-x64",
+            "win-x86", "linux-x86", "osx-x86",
+            "win-arm64", "linux-arm64", "osx-arm64",
+            "win-arm", "linux-arm", "osx-arm",
+        };
+
         while (t)
         {
             std::string line;
@@ -304,7 +311,15 @@ namespace nativeloader
                     }
                     else
                     {
-                        Warn("Dynamic library for '", absoluteFilepathValue, "' cannot be loaded");
+                        Warn("Dynamic library for '", absoluteFilepathValue, "' cannot be loadeds, file doesn't exist.");
+                    }
+                }
+                else
+                {
+                    const std::string* findRes = std::find(std::begin(allOsArch), std::end(allOsArch), osArchValue);
+                    if (findRes == std::end(allOsArch))
+                    {
+                        Warn("The OS and Architecture is invalid: ", osArchValue);
                     }
                 }
             }
