@@ -94,7 +94,8 @@ namespace nativeloader
         // Check if the function pointer needs to be loaded
         if (m_getClassObjectPtr == nullptr)
         {
-            m_getClassObjectPtr = (dllGetClassObjectPtr) GetExternalFunction(m_instance, "DllGetClassObject");
+            m_getClassObjectPtr =
+                static_cast<dllGetClassObjectPtr>(GetExternalFunction(m_instance, "DllGetClassObject"));
         }
 
         // If we have the function pointer we call the function
@@ -149,7 +150,7 @@ namespace nativeloader
         HRESULT res = DllGetClassObject(riid, &ppv);
         if (SUCCEEDED(res))
         {
-            m_classFactory = (IClassFactory*) ppv;
+            m_classFactory = static_cast<IClassFactory*>(ppv);
         }
         else
         {
@@ -195,7 +196,7 @@ namespace nativeloader
         // Check if the function pointer needs to be loaded
         if (m_canUnloadNow == nullptr)
         {
-            m_canUnloadNow = (dllCanUnloadNow) GetExternalFunction(m_instance, "DllCanUnloadNow");
+            m_canUnloadNow = static_cast<dllCanUnloadNow>(GetExternalFunction(m_instance, "DllCanUnloadNow"));
         }
 
         // If we have the function pointer we call the function
