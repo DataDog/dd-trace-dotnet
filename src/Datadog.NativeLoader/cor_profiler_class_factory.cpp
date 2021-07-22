@@ -10,7 +10,7 @@
 const IID IID_IUnknown = {0x00000000, 0x0000, 0x0000, {0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}};
 const IID IID_IClassFactory = {0x00000001, 0x0000, 0x0000, {0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}};
 
-CorProfilerClassFactory::CorProfilerClassFactory(datadog::nativeloader::DynamicDispatcher* dispatcher) :
+CorProfilerClassFactory::CorProfilerClassFactory(datadog::shared::nativeloader::DynamicDispatcher* dispatcher) :
     m_refCount(0), m_dispatcher(dispatcher)
 {
     Debug("CorProfilerClassFactory::.ctor");
@@ -65,7 +65,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerClassFactory::CreateInstance(IUnknown* pUnk
         return CLASS_E_NOAGGREGATION;
     }
 
-    auto profiler = new datadog::nativeloader::CorProfiler(m_dispatcher);
+    auto profiler = new datadog::shared::nativeloader::CorProfiler(m_dispatcher);
     HRESULT res = profiler->QueryInterface(riid, ppvObject);
     if (SUCCEEDED(res))
     {

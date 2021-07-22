@@ -6,9 +6,7 @@
 
 #include "string.h"
 
-namespace datadog
-{
-namespace nativeloader
+namespace datadog::shared::nativeloader
 {
     const IID IID_IUnknown = {0x00000000, 0x0000, 0x0000, {0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}};
 
@@ -42,5 +40,4 @@ namespace nativeloader
         std::string GetClsId();
     };
 
-} // namespace nativeloader
-} // namespace datadog
+} // namespace datadog::shared::nativeloader

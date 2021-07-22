@@ -59,9 +59,7 @@ const std::string currentOsArch = "osx-arm";
 #error "currentOsArch not defined."
 #endif
 
-namespace datadog
-{
-namespace nativeloader
+namespace datadog::shared::nativeloader
 {
 
     // ************************************************************************
@@ -254,5 +252,4 @@ namespace nativeloader
         return m_instances.size();
     }
 
-} // namespace nativeloader
-} // namespace datadog
+} // namespace datadog::shared::nativeloader

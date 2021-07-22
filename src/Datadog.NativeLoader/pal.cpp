@@ -8,9 +8,7 @@
 
 #include "logging.h"
 
-namespace datadog
-{
-namespace nativeloader
+namespace datadog::shared::nativeloader
 {
 
     void* LoadDynamicLibrary(std::string filePath)
@@ -139,5 +137,4 @@ namespace nativeloader
         return GetEnvironmentValues(name, L';');
     }
 
-} // namespace nativeloader
-} // namespace datadog
+} // namespace datadog::shared::nativeloader

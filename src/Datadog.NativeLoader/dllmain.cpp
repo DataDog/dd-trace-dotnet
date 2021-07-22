@@ -5,7 +5,7 @@
 #include "dynamic_dispatcher.h"
 #include "util.h"
 
-using namespace datadog::nativeloader;
+using namespace datadog::shared::nativeloader;
 
 DynamicDispatcher* dispatcher;
 

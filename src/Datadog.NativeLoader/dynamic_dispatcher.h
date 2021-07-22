@@ -7,9 +7,7 @@
 #include "dynamic_instance.h"
 #include "string.h"
 
-namespace datadog
-{
-namespace nativeloader
+namespace datadog::shared::nativeloader
 {
     class DynamicDispatcher
     {
@@ -28,5 +26,4 @@ namespace nativeloader
         size_t GetLength();
     };
 
-} // namespace nativeloader
-} // namespace datadog
+} // namespace datadog::shared::nativeloader

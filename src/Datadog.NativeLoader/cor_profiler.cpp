@@ -3,9 +3,7 @@
 #include "logging.h"
 #include "dynamic_dispatcher.h"
 
-namespace datadog
-{
-namespace nativeloader
+namespace datadog::shared::nativeloader
 {
 
     CorProfiler::CorProfiler(DynamicDispatcher* dispatcher) : m_refCount(0), m_dispatcher(dispatcher)
@@ -877,5 +875,4 @@ namespace nativeloader
             [provider](ICorProfilerCallback10* pCallback) { return pCallback->EventPipeProviderCreated(provider); });
     }
 
-} // namespace nativeloader
-} // namespace datadog
+} // namespace datadog::shared::nativeloader

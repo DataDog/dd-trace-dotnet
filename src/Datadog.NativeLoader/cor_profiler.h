@@ -3,10 +3,9 @@
 #include <corhlpr.h>
 #include <corprof.h>
 
-namespace datadog
+namespace datadog::shared::nativeloader
 {
-namespace nativeloader
-{
+
     class DynamicDispatcher;
 
     class CorProfiler : public ICorProfilerCallback10
@@ -156,5 +155,4 @@ namespace nativeloader
         HRESULT STDMETHODCALLTYPE EventPipeProviderCreated(EVENTPIPE_PROVIDER provider) override;
     };
 
-} // namespace nativeloader
-} // namespace datadog
+} // namespace datadog::shared::nativeloader

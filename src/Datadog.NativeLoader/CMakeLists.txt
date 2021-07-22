@@ -142,12 +142,13 @@ endif()
 # Define target
 # ******************************************************
 add_library("Datadog.NativeLoader" SHARED
-        class_factory.cpp
         cor_profiler.cpp
+        cor_profiler_class_factory.cpp
         dllmain.cpp
+        dynamic_dispatcher.cpp
+        dynamic_instance.cpp
         miniutf.cpp
         pal.cpp
-        proxy.cpp
         string.cpp
         ../Datadog.Trace.ClrProfiler.Native/lib/coreclr/src/pal/prebuilt/idl/corprof_i.cpp
         ${GENERATED_OBJ_FILES}

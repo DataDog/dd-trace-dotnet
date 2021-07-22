@@ -6,19 +6,19 @@
 #include "unknwn.h"
 #include <atomic>
 
-namespace datadog::nativeloader
+namespace datadog::shared::nativeloader
 {
 class DynamicDispatcher;
-} // namespace datadog::nativeloader
+} // namespace datadog::shared::nativeloader
 
 class CorProfilerClassFactory : public IClassFactory
 {
 private:
     std::atomic<int> m_refCount;
-    datadog::nativeloader::DynamicDispatcher* m_dispatcher;
+    datadog::shared::nativeloader::DynamicDispatcher* m_dispatcher;
 
 public:
-    CorProfilerClassFactory(datadog::nativeloader::DynamicDispatcher* dispatcher);
+    CorProfilerClassFactory(datadog::shared::nativeloader::DynamicDispatcher* dispatcher);
     virtual ~CorProfilerClassFactory();
     HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override;
     ULONG STDMETHODCALLTYPE AddRef(void) override;

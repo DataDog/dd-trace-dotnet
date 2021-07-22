@@ -4,9 +4,7 @@
 #include "logging.h"
 #include "pal.h"
 
-namespace datadog
-{
-namespace nativeloader
+namespace datadog::shared::nativeloader
 {
 
     // ************************************************************************
@@ -166,5 +164,4 @@ namespace nativeloader
         return m_clsid_string;
     }
 
-} // namespace nativeloader
-} // namespace datadog
+} // namespace datadog::shared::nativeloader
