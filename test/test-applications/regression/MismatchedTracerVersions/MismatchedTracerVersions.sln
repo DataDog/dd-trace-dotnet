@@ -5,7 +5,12 @@ VisualStudioVersion = 16.0.31424.327
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{84467A69-B29E-4500-81B3-2CBD38917209}"
 	ProjectSection(SolutionItems) = preProject
+		Build-Tracer.ps1 = Build-Tracer.ps1
 		Directory.Build.props = Directory.Build.props
+		Disable-Tracer.ps1 = Disable-Tracer.ps1
+		Enable-Tracer.ps1 = Enable-Tracer.ps1
+		Invoke-SampleApp.ps1 = Invoke-SampleApp.ps1
+		nuget.config = nuget.config
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MismatchedTracerVersions.Cli", "Mismatched.Cli\MismatchedTracerVersions.Cli.csproj", "{400F10BD-C446-4234-A56C-D27C7E737604}"
