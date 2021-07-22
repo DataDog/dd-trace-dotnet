@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <PackageReference Include="Serilog" Version="$(ApiVersion)" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(ApiVersion)' >= '2.0.0'">

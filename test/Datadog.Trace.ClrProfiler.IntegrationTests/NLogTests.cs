@@ -56,6 +56,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(PackageVersions.NLog), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("Category", "LinuxUnsupported")]
         public void InjectsLogs(string packageVersion)
         {
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");

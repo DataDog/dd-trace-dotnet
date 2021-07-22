@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <PackageReference Include="NLog" Version="$(ApiVersion)" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" />
   </ItemGroup>
 
   <ItemGroup>
