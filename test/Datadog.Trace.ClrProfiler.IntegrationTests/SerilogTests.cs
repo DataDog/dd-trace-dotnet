@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class SerilogTests : LogsInjectionTestBase
     {
-        private readonly LogFileTest[] _logFileTests =
+        private readonly LogFileTest[] _log200FileTests =
             {
                 new LogFileTest()
                 {
@@ -33,6 +33,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     FileName = "log-jsonFile.log",
                     RegexFormat = @"""{0}"":""{1}""",
                     PropertiesAreAlwaysPresent = false,
+                    PropertiesUseSerilogNaming = true
+                }
+            };
+
+        private readonly LogFileTest[] _logPre200FileTests =
+            {
+                new LogFileTest()
+                {
+                    FileName = "log-textFile.log",
+                    RegexFormat = @"{0}: ""{1}""",
+                    PropertiesAreAlwaysPresent = true,
                     PropertiesUseSerilogNaming = true
                 }
             };
@@ -61,7 +72,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var spans = agent.WaitForSpans(1, 2500);
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
 
-                ValidateLogCorrelation(spans, _logFileTests);
+                if (string.IsNullOrWhiteSpace(packageVersion) || new Version(packageVersion) >= new Version("2.0.0"))
+                {
+                    ValidateLogCorrelation(spans, _log200FileTests);
+                }
+                else
+                {
+                    // We do not expect logs injection for Serilog versions < 2.0.0 so filter out all logs
+                    ValidateLogCorrelation(spans, _logPre200FileTests, additionalInjectedLogFilter: (_) => false);
+                }
             }
         }
     }

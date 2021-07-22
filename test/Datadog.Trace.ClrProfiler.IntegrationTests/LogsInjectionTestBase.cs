@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             throw new Exception("Unable to Fetch Log File Contents", ex);
         }
 
-        public void ValidateLogCorrelation(IEnumerable<MockTracerAgent.Span> spans, IEnumerable<LogFileTest> logFileTestCases)
+        public void ValidateLogCorrelation(IEnumerable<MockTracerAgent.Span> spans, IEnumerable<LogFileTest> logFileTestCases, Func<string, bool> additionalInjectedLogFilter = null)
         {
             foreach (var test in logFileTestCases)
             {
@@ -69,13 +69,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 using var s = new AssertionScope(test.FileName);
 
                 // Assumes we _only_ have logs for logs within traces + our startup log
-                var tracedLogs = logs.Where(log => !log.Contains(_excludeMessagePrefix)).ToList();
+                additionalInjectedLogFilter ??= (_) => true;
+                var tracedLogs = logs.Where(log => !log.Contains(_excludeMessagePrefix)).Where(additionalInjectedLogFilter).ToList();
 
                 // all spans should be represented in the traced logs
-                var traceIds = spans.Select(x => x.TraceId.ToString()).Distinct().ToList();
-                if (traceIds.Any())
+                if (tracedLogs.Any())
                 {
-                    string.Join(",", tracedLogs).Should().ContainAll(traceIds);
+                    var traceIds = spans.Select(x => x.TraceId.ToString()).Distinct().ToList();
+                    if (traceIds.Any())
+                    {
+                        string.Join(",", tracedLogs).Should().ContainAll(traceIds);
+                    }
                 }
 
                 foreach (var log in tracedLogs)
