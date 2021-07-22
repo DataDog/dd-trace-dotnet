@@ -1,0 +1,170 @@
+#include "dynamic_instance.h"
+
+#include "guid.h"
+#include "logging.h"
+#include "pal.h"
+
+namespace datadog
+{
+namespace nativeloader
+{
+
+    // ************************************************************************
+
+    //
+    // private
+    //
+
+    HRESULT DynamicInstance::EnsureDynamicLibraryIsLoaded()
+    {
+        if (!m_loaded)
+        {
+            m_instance = LoadDynamicLibrary(m_filepath);
+            m_loaded = true;
+        }
+
+        return m_instance != nullptr ? S_OK : E_FAIL;
+    }
+
+    HRESULT DynamicInstance::DllGetClassObject(REFIID riid, LPVOID* ppv)
+    {
+        // Check if the library is loaded
+        if (FAILED(EnsureDynamicLibraryIsLoaded()))
+        {
+            return E_FAIL;
+        }
+
+        // Check if the function pointer needs to be loaded
+        if (m_getClassObjectPtr == nullptr)
+        {
+            m_getClassObjectPtr =
+                static_cast<dllGetClassObjectPtr>(GetExternalFunction(m_instance, "DllGetClassObject"));
+        }
+
+        // If we have the function pointer we call the function
+        if (m_getClassObjectPtr != nullptr)
+        {
+            return m_getClassObjectPtr(m_clsid, riid, ppv);
+        }
+
+        // The function cannot be loaded.
+        return E_FAIL;
+    }
+
+    //
+    // public
+    //
+
+    DynamicInstance::DynamicInstance(std::string filePath, std::string clsid)
+    {
+        m_filepath = filePath;
+        m_clsid_string = clsid;
+        m_clsid = guid_parse::make_guid(clsid);
+        m_loaded = false;
+        m_instance = nullptr;
+        m_getClassObjectPtr = nullptr;
+        m_canUnloadNow = nullptr;
+        m_classFactory = nullptr;
+        m_corProfilerCallback = nullptr;
+    }
+
+    DynamicInstance::~DynamicInstance()
+    {
+        m_corProfilerCallback = nullptr;
+        m_classFactory = nullptr;
+        m_canUnloadNow = nullptr;
+        m_getClassObjectPtr = nullptr;
+        m_loaded = false;
+
+        if (m_instance != nullptr)
+        {
+            if (!FreeDynamicLibrary(m_instance))
+            {
+                Warn("Error unloading: ", m_filepath, " dynamic library.");
+            }
+            m_instance = nullptr;
+        }
+    }
+
+    HRESULT DynamicInstance::LoadClassFactory(REFIID riid)
+    {
+        LPVOID ppv;
+        HRESULT res = DllGetClassObject(riid, &ppv);
+        if (SUCCEEDED(res))
+        {
+            m_classFactory = static_cast<IClassFactory*>(ppv);
+        }
+        else
+        {
+            Warn("Error getting IClassFactory from: ", m_filepath);
+        }
+
+        Debug("LoadClassFactory: ", res);
+        return res;
+    }
+
+    HRESULT DynamicInstance::LoadInstance(IUnknown* pUnkOuter, REFIID riid)
+    {
+        Debug("Running LoadInstance: ");
+
+        // Check if the class factory instance is loaded.
+        if (m_classFactory == nullptr)
+        {
+            return E_FAIL;
+        }
+
+        // Creates the profiler callback instance from the class factory
+        Debug("m_classFactory: ", HexStr(m_classFactory, sizeof(IClassFactory*)));
+        HRESULT res =
+            m_classFactory->CreateInstance(nullptr, __uuidof(ICorProfilerCallback10), (void**) &m_corProfilerCallback);
+        if (FAILED(res))
+        {
+            m_corProfilerCallback = nullptr;
+            Warn("Error getting ICorProfilerCallback10 from: ", m_filepath);
+        }
+
+        Debug("LoadInstance: ", res);
+        return res;
+    }
+
+    HRESULT STDMETHODCALLTYPE DynamicInstance::DllCanUnloadNow()
+    {
+        // Check if the library is loaded
+        if (FAILED(EnsureDynamicLibraryIsLoaded()))
+        {
+            return E_FAIL;
+        }
+
+        // Check if the function pointer needs to be loaded
+        if (m_canUnloadNow == nullptr)
+        {
+            m_canUnloadNow = static_cast<dllCanUnloadNow>(GetExternalFunction(m_instance, "DllCanUnloadNow"));
+        }
+
+        // If we have the function pointer we call the function
+        if (m_canUnloadNow != nullptr)
+        {
+            return m_canUnloadNow();
+        }
+
+        // The function cannot be loaded.
+        return E_FAIL;
+    }
+
+    ICorProfilerCallback10* DynamicInstance::GetProfilerCallback()
+    {
+        return m_corProfilerCallback;
+    }
+
+    std::string DynamicInstance::GetFilePath()
+    {
+        return m_filepath;
+    }
+
+    std::string DynamicInstance::GetClsId()
+    {
+        return m_clsid_string;
+    }
+
+} // namespace nativeloader
+} // namespace datadog

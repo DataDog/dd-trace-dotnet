@@ -36,13 +36,16 @@
     <ClInclude Include="pal.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="proxy.h">
+    <ClInclude Include="dynamic_dispatcher.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="guid.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dynamic_instance.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -65,7 +68,10 @@
     <ClCompile Include="pal.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="proxy.cpp">
+    <ClCompile Include="dynamic_dispatcher.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dynamic_instance.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

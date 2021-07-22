@@ -192,12 +192,13 @@
   <ItemGroup>
     <ClInclude Include="cor_profiler_class_factory.h" />
     <ClInclude Include="cor_profiler.h" />
+    <ClInclude Include="dynamic_instance.h" />
+    <ClInclude Include="dynamic_dispatcher.h" />
     <ClInclude Include="guid.h" />
     <ClInclude Include="logging.h" />
     <ClInclude Include="miniutf.hpp" />
     <ClInclude Include="miniutfdata.h" />
     <ClInclude Include="pal.h" />
-    <ClInclude Include="proxy.h" />
     <ClInclude Include="string.h" />
     <ClInclude Include="util.h" />
   </ItemGroup>
@@ -205,9 +206,10 @@
     <ClCompile Include="cor_profiler_class_factory.cpp" />
     <ClCompile Include="cor_profiler.cpp" />
     <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="dynamic_instance.cpp" />
+    <ClCompile Include="dynamic_dispatcher.cpp" />
     <ClCompile Include="miniutf.cpp" />
     <ClCompile Include="pal.cpp" />
-    <ClCompile Include="proxy.cpp" />
     <ClCompile Include="string.cpp" />
   </ItemGroup>
   <ItemGroup>

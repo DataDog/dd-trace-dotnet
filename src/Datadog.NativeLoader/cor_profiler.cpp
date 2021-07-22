@@ -1,7 +1,7 @@
 #include "cor_profiler.h"
 
 #include "logging.h"
-#include "proxy.h"
+#include "dynamic_dispatcher.h"
 
 namespace datadog
 {

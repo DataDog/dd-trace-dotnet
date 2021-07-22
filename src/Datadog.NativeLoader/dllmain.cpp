@@ -2,7 +2,7 @@
 #include "cor_profiler_class_factory.h"
 
 #include "logging.h"
-#include "proxy.h"
+#include "dynamic_dispatcher.h"
 #include "util.h"
 
 using namespace datadog::nativeloader;
