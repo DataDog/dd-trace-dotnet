@@ -739,7 +739,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
         delete rejit_handler;
         rejit_handler = nullptr;
     }
-    Warn("Exiting. Stats: ", Stats::Instance()->ToString());
+    Info("Exiting. Stats: ", Stats::Instance()->ToString());
     is_attached_.store(false);
     Logger::Shutdown();
     return S_OK;
@@ -763,7 +763,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ProfilerDetachSucceeded()
         return S_OK;
     }
 
-    Warn("Detaching profiler.");
+    Info("Detaching profiler.");
     Logger::Instance()->Flush();
     is_attached_.store(false);
     return S_OK;
@@ -3059,7 +3059,7 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
             bool caller_assembly_is_domain_neutral = runtime_information_.is_desktop() && corlib_module_loaded &&
                                                      module_metadata->app_domain_id == corlib_app_domain_id;
 
-            Info("Enqueue for ReJIT [ModuleId=", module_id, ", MethodDef=", TokenStr(&methodDef),
+            Debug("Enqueue for ReJIT [ModuleId=", module_id, ", MethodDef=", TokenStr(&methodDef),
                  ", AppDomainId=", module_metadata->app_domain_id,
                  ", IsDomainNeutral=", caller_assembly_is_domain_neutral, ", Assembly=", module_metadata->assemblyName,
                  ", Type=", caller.type.name, ", Method=", caller.name, ", Signature=", caller.signature.str(), "]");
