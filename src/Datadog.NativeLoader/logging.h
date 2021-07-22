@@ -27,7 +27,7 @@ void Verbose(const Args... args)
 template <typename... Args>
 void Debug(const Args... args)
 {
-    // std::cout << "[DBG] : " << LogToString(args...) << std::endl;
+    std::cout << "[DBG] : " << LogToString(args...) << std::endl;
 }
 
 template <typename... Args>

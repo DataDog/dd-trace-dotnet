@@ -251,15 +251,16 @@ namespace nativeloader
             return;
         }
 
-        std::unordered_map<std::string, bool> guidBoolMap;
         std::ifstream t;
         t.open(configFilePath);
 
         // Gets the configuration file folder
         std::filesystem::path configFolder = std::filesystem::path(configFilePath).remove_filename();
+        Debug("Config Folder: ", configFolder);
 
         // Get the current path
         std::filesystem::path oldCurrentPath = std::filesystem::current_path();
+        Debug("Current Path: ", oldCurrentPath);
 
         // Set the current path to the configuration folder (to allow relative paths)
         std::filesystem::current_path(configFolder);
@@ -287,21 +288,23 @@ namespace nativeloader
                 {
                     // Convert possible relative paths to absolute paths using the configuration file folder as base
                     // (current_path)
-                    filepathValue = std::filesystem::absolute(filepathValue).string();
-                    if (std::filesystem::exists(filepathValue))
+                    std::string absoluteFilepathValue = std::filesystem::absolute(filepathValue).string();
+                    Debug("Loading: ", filepathValue, " [AbsolutePath=", absoluteFilepathValue,"]");
+                    if (std::filesystem::exists(absoluteFilepathValue))
                     {
-                        guidBoolMap[idValue] = true;
+                        Debug("Creating a new DynamicInstance object");
                         std::unique_ptr<DynamicInstance> instance =
-                            std::make_unique<DynamicInstance>(filepathValue, idValue);
+                            std::make_unique<DynamicInstance>(absoluteFilepathValue, idValue);
                         this->Add(instance);
                         WSTRING env_key = WStr("PROFID_") + ToWSTRING(idValue);
-                        WSTRING env_value = ToWSTRING(filepathValue);
+                        WSTRING env_value = ToWSTRING(absoluteFilepathValue);
+                        Debug("Setting environment variable: ", env_key, "=", env_value);
                         bool envVal = SetEnvironmentValue(env_key, env_value);
-                        Debug("SetEnvVal: ", envVal, "; ", env_key, "=", env_value);
+                        Debug("SetEnvironmentValue result: ", envVal);
                     }
-                    else if (guidBoolMap.find(idValue) == guidBoolMap.end())
+                    else
                     {
-                        guidBoolMap[idValue] = false;
+                        Warn("Dynamic library for '", absoluteFilepathValue, "' cannot be loaded");
                     }
                 }
             }
@@ -310,13 +313,6 @@ namespace nativeloader
 
         // Set the current path to the original one
         std::filesystem::current_path(oldCurrentPath);
-        for (const std::pair<const std::string, bool> item : guidBoolMap)
-        {
-            if (!item.second)
-            {
-                Warn("Dynamic library for '", item.first, "' cannot be loaded");
-            }
-        }
     }
 
     HRESULT DynamicDispatcher::LoadClassFactory(REFIID riid)
