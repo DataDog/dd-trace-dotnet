@@ -37,7 +37,7 @@ partial class Build
     AbsolutePath ArtifactsDirectory => Artifacts ?? (OutputDirectory / "artifacts");
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath BuildDataDirectory => RootDirectory / "build_data";
-    AbsolutePath LibSqreenDirectory => RootDirectory / "packages" / "libsqreen.1.1.2.2";
+    AbsolutePath LibSqreenDirectory => (NugetPackageDirectory ?? (RootDirectory / "packages")) / "libsqreen.1.1.2.2";
 
     AbsolutePath SourceDirectory => RootDirectory / "src";
     AbsolutePath TestsDirectory => RootDirectory / "test";
