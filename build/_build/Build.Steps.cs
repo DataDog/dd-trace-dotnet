@@ -38,12 +38,14 @@ partial class Build
     AbsolutePath ArtifactsDirectory => Artifacts ?? (OutputDirectory / "artifacts");
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath BuildDataDirectory => RootDirectory / "build_data";
-    AbsolutePath LibSqreenDirectory => (NugetPackageDirectory ?? (RootDirectory / "packages")) / "libsqreen.1.1.2.2";
+
+    const string LibSqreenVersion = "1.1.2.2";
+    AbsolutePath LibSqreenDirectory => (NugetPackageDirectory ?? (RootDirectory / "packages")) / $"libsqreen.{LibSqreenVersion}";
 
     AbsolutePath SourceDirectory => RootDirectory / "src";
     AbsolutePath TestsDirectory => RootDirectory / "test";
 
-    string TempDirectory => IsWin ? Path.GetTempPath() : "/tmp/";
+    AbsolutePath TempDirectory => (AbsolutePath)(IsWin ? Path.GetTempPath() : "/tmp/");
     string TracerLogDirectory => IsWin
         ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
             "Datadog .NET Tracer", "logs")
@@ -258,12 +260,12 @@ partial class Build
     Target DownloadLibSqreen => _ => _
         .Unlisted()
         .After(CreateRequiredDirectories)
-        .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
             var wc = new WebClient();
-            var libSqreenUri = new Uri("https://www.nuget.org/api/v2/package/libsqreen/1.1.2.2");
+            var libSqreenUri = new Uri($"https://www.nuget.org/api/v2/package/libsqreen/{LibSqreenVersion}");
             var libSqreenZip = TempDirectory / "libsqreen.zip";
+
             wc.DownloadFile(libSqreenUri, libSqreenZip);
 
             Console.WriteLine($"{libSqreenZip} downloaded. Extracting to {LibSqreenDirectory}...");
@@ -275,7 +277,7 @@ partial class Build
         .Unlisted()
         .After(Clean)
         .After(DownloadLibSqreen)
-        .OnlyWhenStatic(() => IsWin || !IsArm64)
+        .OnlyWhenStatic(() => !IsArm64) // not supported yet
         .Executes(() =>
         {
             if (IsWin)
@@ -407,9 +409,15 @@ partial class Build
            MoveFile(
                DDTracerHomeDirectory / profilerFileName,
                outputDir / profilerFileName);
-           CopyFile(
-               LibSqreenDirectory / "runtimes" / architecture / "native" / sqreenFileName, 
-               DDTracerHomeDirectory / architecture / sqreenFileName);
+
+           // won't exist yet for arm64 builds
+           var srcSqreenFile = DDTracerHomeDirectory / sqreenFileName;
+           if (File.Exists(srcSqreenFile))
+           {
+               MoveFile(
+                   srcSqreenFile,
+                   DDTracerHomeDirectory / architecture / sqreenFileName);
+           }
        });
 
     Target BuildMsi => _ => _
@@ -489,7 +497,7 @@ partial class Build
 
                 foreach (var packageType in LinuxPackageTypes)
                 {
-                    var args = new[]
+                    var args = new List<string>()
                     {
                         "-f",
                         "-s dir",
@@ -501,10 +509,15 @@ partial class Build
                         "netstandard2.0/",
                         "netcoreapp3.1/",
                         "Datadog.Trace.ClrProfiler.Native.so",
-                        "libSqreen.so",
                         "integrations.json",
                         "createLogPath.sh",
                     };
+
+                    if (!IsArm64)
+                    {
+                        args.Add("libSqreen.so");
+                    }
+
                     var arguments = string.Join(" ", args);
                     fpm(arguments, workingDirectory: workingDirectory);
                 }
