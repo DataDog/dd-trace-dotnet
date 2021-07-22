@@ -606,17 +606,6 @@ partial class Build
         .After(CompileRegressionDependencyLibs)
         .Executes(() =>
         {
-            // explicitly build the other dependency (with restore to avoid runtime identifier dependency issues)
-            DotNetBuild(x => x
-                .SetProjectFile(Solution.GetProject(Projects.ApplicationWithLog4Net))
-                // .EnableNoRestore()
-                .EnableNoDependencies()
-                .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatform(Platform)
-                .SetNoWarnDotNetCore3()
-                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
-                    o.SetPackageDirectory(NugetPackageDirectory)));
-
             var regressionsDirectory = Solution.GetProject(Projects.EntityFramework6xMdTokenLookupFailure)
                 .Directory.Parent;
             var regressionLibs = GlobFiles(regressionsDirectory / "**" / "*.csproj")
@@ -883,8 +872,6 @@ partial class Build
                 "DogStatsD.RaceCondition",
                 "EntityFramework6x.MdTokenLookupFailure",
                 "LargePayload", // I think we _should_ run this one (assuming it has tests)
-                "Log4Net.SerializationException",
-                "NLog10LogsInjection.NullReferenceException",
                 "Sandbox.ManualTracing",
                 "StackExchange.Redis.AssemblyConflict.LegacyProject",
             };
@@ -894,6 +881,9 @@ partial class Build
             // TODO: Load this list dynamically
             var multiApiProjects = new[]
             {
+                "LogsInjection.CrossAppDomainCalls.Log4Net",
+                "LogsInjection.CrossAppDomainCalls.NLog",
+                "LogsInjection.CrossAppDomainCalls.Serilog",
                 "Samples.CosmosDb",
                 "Samples.MongoDB",
                 "Samples.Elasticsearch",
