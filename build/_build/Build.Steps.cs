@@ -693,10 +693,11 @@ partial class Build
         .Executes(() =>
         {
             // This does some "unnecessary" rebuilding and restoring
-            var include = RootDirectory.GlobFiles("test/test-applications/integrations/**/*.csproj");
-            var exclude = RootDirectory.GlobFiles("test/test-applications/integrations/dependency-libs/**/*.csproj");
+            var includeIntegration = RootDirectory.GlobFiles("test/test-applications/integrations/**/*.csproj");
+            var includeSecurity = RootDirectory.GlobFiles("test/test-applications/integrations/**/*.csproj");
+            var exclude = RootDirectory.GlobFiles("test/test-applications/security/dependency-libs/**/*.csproj");
 
-            var projects = include.Where(projectPath =>
+            var projects = includeIntegration.Concat(includeSecurity).Where(projectPath =>
                 projectPath switch
                 {
                     _ when exclude.Contains(projectPath) => false,
