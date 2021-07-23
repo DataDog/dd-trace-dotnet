@@ -760,16 +760,19 @@ partial class Build
         {
             // This does some "unnecessary" rebuilding and restoring
             var includeIntegration = RootDirectory.GlobFiles("test/test-applications/integrations/**/*.csproj");
-            var includeSecurity = RootDirectory.GlobFiles("test/test-applications/security/**/*.csproj");
-            var exclude = RootDirectory.GlobFiles("test/test-applications/security/dependency-libs/**/*.csproj");
+            var includeSecurity = RootDirectory.GlobFiles("test/test-applications/security/*/*.csproj");
 
-            var projects = includeIntegration.Concat(includeSecurity).Where(projectPath =>
-                projectPath switch
-                {
-                    _ when exclude.Contains(projectPath) => false,
-                    _ when projectPath.ToString().Contains("Samples.OracleMDA") => false,
-                    _ => true,
-                }
+            var exclude = RootDirectory.GlobFiles("test/test-applications/integrations/dependency-libs/**/*.csproj");
+
+            var projects = includeIntegration
+                .Concat(includeSecurity)
+                .Where(projectPath =>
+                    projectPath switch
+                    {
+                        _ when exclude.Contains(projectPath) => false,
+                        _ when projectPath.ToString().Contains("Samples.OracleMDA") => false,
+                        _ => true,
+                    }
             );
 
             DotNetBuild(config => config
@@ -938,6 +941,7 @@ partial class Build
             // There's nothing specifically linux-y here, it's just that we only build a subset of projects
             // for testing on linux.
             var sampleProjects = RootDirectory.GlobFiles("test/test-applications/integrations/*/*.csproj");
+            var securitySampleProjects = RootDirectory.GlobFiles("test/test-applications/security/*/*.csproj");
             var regressionProjects = RootDirectory.GlobFiles("test/test-applications/regression/*/*.csproj");
             var instrumentationProjects = RootDirectory.GlobFiles("test/test-applications/instrumentation/*/*.csproj");
 
@@ -988,6 +992,7 @@ partial class Build
             };
 
             var projectsToBuild = sampleProjects
+                .Concat(securitySampleProjects)
                 .Concat(regressionProjects)
                 .Concat(instrumentationProjects)
                 .Where(path =>
