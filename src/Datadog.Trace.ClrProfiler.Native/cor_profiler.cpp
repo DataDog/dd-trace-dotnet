@@ -114,6 +114,19 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         is_net46_or_greater = true;
     }
 
+    // get ICorProfilerInfo10 for >= .NET Core 3.0
+    ICorProfilerInfo10* info10 = nullptr;
+    hr = cor_profiler_info_unknown->QueryInterface(__uuidof(ICorProfilerInfo10), (void**) &info10);
+
+    if (SUCCEEDED(hr))
+    {
+        Logger::Debug("Interface ICorProfilerInfo10 found.");
+    }
+    else
+    {
+        info10 = nullptr;
+    }
+
     Logger::Info("Environment variables:");
     for (auto&& env_var : env_vars_to_display)
     {
@@ -164,10 +177,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     // Initialize ReJIT handler and define the Rewriter Callback
     if (is_calltarget_enabled)
     {
+        auto callback = [this](RejitHandlerModule* mod, RejitHandlerModuleMethod* method) {
+            return this->CallTarget_RewriterCallback(mod, method);
+        };
+
         rejit_handler =
-            new RejitHandler(this->info_, [this](RejitHandlerModule* mod, RejitHandlerModuleMethod* method) {
-                return this->CallTarget_RewriterCallback(mod, method);
-            });
+            info10 != nullptr ? new RejitHandler(info10, callback) :
+            is_net46_or_greater ? new RejitHandler(info6, callback) : new RejitHandler(this->info_, callback);
     }
     else
     {
@@ -440,11 +456,17 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
     {
         return S_OK;
     }
+    if (module_info.IsNGEN() && rejit_handler != nullptr)
+    {
+        // We check if the Module contains NGEN images and added to the
+        // rejit handler list to verify the inlines.
+        rejit_handler->AddNGenModule(module_id);
+    }
 
     if (Logger::IsDebugEnabled())
     {
         Logger::Debug("ModuleLoadFinished: ", module_id, " ", module_info.assembly.name, " AppDomain ",
-                      module_info.assembly.app_domain_id, " ", module_info.assembly.app_domain_name);
+                      module_info.assembly.app_domain_id, " ", module_info.assembly.app_domain_name, " | IsNGEN = ", (module_info.IsNGEN() ? "true" : "false"));
     }
 
     AppDomainID app_domain_id = module_info.assembly.app_domain_id;
@@ -522,7 +544,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         }
     }
 
-  std::vector<IntegrationMethod> filtered_integrations = IsCallTargetEnabled(is_net46_or_greater) ?
+    std::vector<IntegrationMethod> filtered_integrations = IsCallTargetEnabled(is_net46_or_greater) ?
       integration_methods_ : FilterIntegrationsByCaller(integration_methods_, module_info.assembly);
 
     if (filtered_integrations.empty())
@@ -2996,7 +3018,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     if (module_metadata == nullptr)
     {
         // we haven't stored a ModuleMetadata for this module,
-        // so we can't modify its IL
+        // so there's nothing to do here, we accept the NGEN image.
         *pbUseCachedFunction = true;
         return S_OK;
     }
@@ -3007,6 +3029,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
 
     if (!has_loader_injected_in_appdomain)
     {
+        // The loader is missing in this AppDomain, we skip the NGEN image to allow the JITCompilationStart inject it.
         *pbUseCachedFunction = false;
         return S_OK;
     }
@@ -3180,6 +3203,7 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
     if (!vtMethodDefs.empty())
     {
         this->rejit_handler->EnqueueForRejit(vtModules, vtMethodDefs);
+        this->rejit_handler->RequestRejitForNGenInliners();
     }
 
     // We return the number of ReJIT requests
