@@ -99,10 +99,14 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             // EnvironmentHelper.DebugModeEnabled = true;
 
+            Output.WriteLine($"Starting Application: {sampleAppPath}");
+            var executable = EnvironmentHelper.IsCoreClr() ? EnvironmentHelper.GetSampleExecutionSource() : sampleAppPath;
+            var args = EnvironmentHelper.IsCoreClr() ? $"{sampleAppPath} {arguments ?? string.Empty}" : arguments;
+
             process = ProfilerHelper.StartProcessWithProfiler(
-                EnvironmentHelper.GetSampleExecutionSource(),
+                executable,
                 EnvironmentHelper,
-                $"{sampleAppPath} {arguments ?? string.Empty}",
+                args,
                 traceAgentPort: traceAgentPort,
                 statsdPort: statsdPort,
                 aspNetCorePort: aspNetCorePort.GetValueOrDefault(5000),
