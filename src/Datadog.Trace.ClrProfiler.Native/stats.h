@@ -7,6 +7,7 @@
 
 namespace trace
 {
+
 class SWStat
 {
     std::atomic_ullong* _value;
