@@ -12,6 +12,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
+    [CollectionDefinition("IisTests", DisableParallelization = true)]
     [Collection("IisTests")]
     public class AspNetMvc5 : AspNetCoreBase
     {
