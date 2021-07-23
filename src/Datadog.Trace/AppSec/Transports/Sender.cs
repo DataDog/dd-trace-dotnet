@@ -23,8 +23,8 @@ namespace Datadog.Trace.AppSec.Transports
         {
             _apiRequestFactory = Api.CreateRequestFactory();
             var settings = Tracer.Instance.Settings;
-            // todo: read from configuration key
-            _uri = new Uri(settings.AgentUri, "appsec");
+            // todo: read from configuration key?
+            _uri = new Uri(settings.AgentUri, "appsec/proxy/api/v2/appsecevts");
         }
 
         internal Task Send(IEnumerable<IEvent> events)
