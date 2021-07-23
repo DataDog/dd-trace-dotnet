@@ -760,7 +760,7 @@ partial class Build
         {
             // This does some "unnecessary" rebuilding and restoring
             var includeIntegration = RootDirectory.GlobFiles("test/test-applications/integrations/**/*.csproj");
-            var includeSecurity = RootDirectory.GlobFiles("test/test-applications/integrations/**/*.csproj");
+            var includeSecurity = RootDirectory.GlobFiles("test/test-applications/security/**/*.csproj");
             var exclude = RootDirectory.GlobFiles("test/test-applications/security/dependency-libs/**/*.csproj");
 
             var projects = includeIntegration.Concat(includeSecurity).Where(projectPath =>
@@ -793,7 +793,10 @@ partial class Build
         .Executes(() =>
         {
             var aspnetFolder = TestsDirectory / "test-applications" / "aspnet";
+            var securityAspnetFolder = TestsDirectory / "security" / "aspnet";
+
             var aspnetProjects = aspnetFolder.GlobFiles("**/*.csproj");
+            var securityAspnetProjects = securityAspnetFolder.GlobFiles("**/*.csproj");
 
             var publishProfile = aspnetFolder / "PublishProfiles" / "FolderProfile.pubxml";
 
@@ -806,7 +809,7 @@ partial class Build
                 .SetProperty("DeployOnBuild", true)
                 .SetProperty("PublishProfile", publishProfile)
                 .SetMaxCpuCount(null)
-                .CombineWith(aspnetProjects, (c, project) => c
+                .CombineWith(aspnetProjects.Concat(securityAspnetProjects), (c, project) => c
                     .SetTargetPath(project))
             );
         });
