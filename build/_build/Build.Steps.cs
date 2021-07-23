@@ -1041,17 +1041,8 @@ partial class Build
                     .CombineWith(integrationTestProjects, (c, project) => c
                         .SetProjectFile(project)));
 
-            // Not sure if/why this is necessary, and we can't just point to the correct output location
-            var src = TracerHomeDirectory;
-            var testProject = Solution.GetProject(Projects.ClrProfilerIntegrationTests).Directory;
-            var dest = testProject / "bin" / BuildConfiguration / Framework / "profiler-lib";
-            CopyDirectoryRecursively(src, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
-
-            // not sure exactly where this is supposed to go, may need to change the original build
-            foreach (var linuxDir in TracerHomeDirectory.GlobDirectories("linux-*"))
-            {
-                CopyDirectoryRecursively(linuxDir, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
-            }
+            IntegrationTestLinuxProfilerDirFudge(Projects.ClrProfilerIntegrationTests);
+            IntegrationTestLinuxProfilerDirFudge(Projects.AppSecIntegrationTests);
         });
 
     Target RunLinuxIntegrationTests => _ => _
@@ -1118,6 +1109,23 @@ partial class Build
     private AbsolutePath GetResultsDirectory(Project proj) => BuildDataDirectory / "results" / proj.Name;
 
     private void EnsureResultsDirectory(Project proj) => EnsureCleanDirectory(GetResultsDirectory(proj));
+
+    // the integration tests need their own copy of the profiler, this achived through build.props on Windows, but doesn't seem to work under Linux 
+    private void IntegrationTestLinuxProfilerDirFudge(string project)
+    {
+            // Not sure if/why this is necessary, and we can't just point to the correct output location
+            var src = TracerHomeDirectory;
+            var testProject = Solution.GetProject(project).Directory;
+            var dest = testProject / "bin" / BuildConfiguration / Framework / "profiler-lib";
+            CopyDirectoryRecursively(src, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+
+            // not sure exactly where this is supposed to go, may need to change the original build
+            foreach (var linuxDir in TracerHomeDirectory.GlobDirectories("linux-*"))
+            {
+                CopyDirectoryRecursively(linuxDir, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+            }
+
+    }
 
     private void MoveLogsToBuildData()
     {
