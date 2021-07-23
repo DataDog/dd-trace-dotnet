@@ -7,7 +7,6 @@
 
 namespace trace
 {
-    // JITCachedFunctionSearchStarted
 class SWStat
 {
     std::atomic_ullong* _value;
