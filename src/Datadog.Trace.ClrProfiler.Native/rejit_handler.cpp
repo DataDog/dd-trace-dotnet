@@ -251,14 +251,19 @@ void RejitHandler::EnqueueThreadLoop(RejitHandler* handler)
 
         if (profilerInfo10 != nullptr)
         {
-            hr = profilerInfo10->RequestReJITWithInliners(COR_PRF_REJIT_INLINING_CALLBACKS, (ULONG) item->m_length,
+            // RequestReJITWithInliners is currently always failing...
+            // more research is required, meanwhile we fallback to the normal RequestReJIT and manual track of inliners.
+
+            /*hr = profilerInfo10->RequestReJITWithInliners(COR_PRF_REJIT_INLINING_CALLBACKS, (ULONG) item->m_length,
                                                           item->m_modulesId.get(), item->m_methodDefs.get());
             if (FAILED(hr))
             {
                 Warn("Error requesting ReJITWithInliners for ", item->m_length, " methods, falling back to a normal RequestReJIT");
                 hr = profilerInfo10->RequestReJIT((ULONG) item->m_length, item->m_modulesId.get(),
                                                   item->m_methodDefs.get());
-            }
+            }*/
+
+            hr = profilerInfo10->RequestReJIT((ULONG) item->m_length, item->m_modulesId.get(), item->m_methodDefs.get());
         }
         else
         {
