@@ -21,7 +21,8 @@ struct TracerLoggerPolicy
     inline static const std::string pattern = "%D %I:%M:%S.%e %p [%P|%t] [%l] %v";
     struct logging_environment
     {
-        inline static const WSTRING log_path = environment::log_path;
+        // cannot reuse environment::log_path variable. On alpine, test fails
+        inline static const WSTRING log_path = WStr("DD_TRACE_LOG_PATH");
     };
 };
 
