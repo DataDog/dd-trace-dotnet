@@ -130,6 +130,8 @@ partial class Build : NukeBuild
         .DependsOn(CompileNativeSrc)
         .DependsOn(PublishNativeProfiler)
         .DependsOn(CopyIntegrationsJson)
+        .DependsOn(DownloadLibSqreen)
+        .DependsOn(CopyLibSqreen)
         .DependsOn(CreateDdTracerHome);
 
 
