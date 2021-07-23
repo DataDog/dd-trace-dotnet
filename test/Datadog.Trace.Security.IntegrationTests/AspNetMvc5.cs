@@ -22,6 +22,9 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Theory]
         [InlineData(true, HttpStatusCode.Forbidden)]
         [InlineData(false, HttpStatusCode.OK)]
+        [Trait("RunOnWindows", "True")]
+        [Trait("Category", "LinuxUnsupported")]
+        [Trait("Category", "ArmUnsupported")]
         public async Task TestBlockedRequestAsync(bool enableSecurity, HttpStatusCode expectedStatusCode)
         {
             await RunOnIis("/Home", enableSecurity);
