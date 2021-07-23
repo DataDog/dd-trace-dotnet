@@ -102,28 +102,29 @@ void RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
                                                                     &incompleteData, &methodEnum);
         if (SUCCEEDED(hr))
         {
+            COR_PRF_METHOD method;
+            unsigned int total = 0;
+            std::vector<ModuleID> modules;
+            std::vector<mdMethodDef> methods;
+            while (methodEnum->Next(1, &method, NULL) == S_OK)
+            {
+                Debug("NGEN:: Asking rewrite for inliner [ModuleId=", method.moduleId, ",MethodDef=", method.methodId,
+                      "]");
+                modules.push_back(method.moduleId);
+                methods.push_back(method.methodId);
+                total++;
+            }
+            methodEnum->Release();
+            methodEnum = nullptr;
+            if (total > 0)
+            {
+                handler->EnqueueForRejit(modules, methods);
+                Info("NGEN:: Processed with ", total, " inliners [ModuleId=", currentModuleId,
+                     ",MethodDef=", currentMethodDef, "]");
+            }
+
             if (!incompleteData)
             {
-                COR_PRF_METHOD method;
-                unsigned int total = 0;
-                std::vector<ModuleID> modules;
-                std::vector<mdMethodDef> methods;
-                while (methodEnum->Next(1, &method, NULL) == S_OK)
-                {
-                    Debug("NGEN:: Asking rewrite for inliner [ModuleId=", method.moduleId,
-                         ",MethodDef=", method.methodId, "]");
-                    modules.push_back(method.moduleId);
-                    methods.push_back(method.methodId);
-                    total++;
-                }
-                methodEnum->Release();
-                methodEnum = nullptr;
-                if (total > 0)
-                {
-                    handler->EnqueueForRejit(modules, methods);
-                    Info("NGEN:: Processed with ", total, " inliners [ModuleId=", currentModuleId,
-                         ",MethodDef=", currentMethodDef, "]");
-                }
                 m_ngenModules[moduleId] = true;
             }
             else
@@ -258,12 +259,13 @@ void RejitHandler::EnqueueThreadLoop(RejitHandler* handler)
                                                           item->m_modulesId.get(), item->m_methodDefs.get());
             if (FAILED(hr))
             {
-                Warn("Error requesting ReJITWithInliners for ", item->m_length, " methods, falling back to a normal RequestReJIT");
-                hr = profilerInfo10->RequestReJIT((ULONG) item->m_length, item->m_modulesId.get(),
+                Warn("Error requesting ReJITWithInliners for ", item->m_length, " methods, falling back to a normal
+            RequestReJIT"); hr = profilerInfo10->RequestReJIT((ULONG) item->m_length, item->m_modulesId.get(),
                                                   item->m_methodDefs.get());
             }*/
 
-            hr = profilerInfo10->RequestReJIT((ULONG) item->m_length, item->m_modulesId.get(), item->m_methodDefs.get());
+            hr =
+                profilerInfo10->RequestReJIT((ULONG) item->m_length, item->m_modulesId.get(), item->m_methodDefs.get());
         }
         else
         {
