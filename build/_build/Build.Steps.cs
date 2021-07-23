@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Nuke.Common;
@@ -37,12 +38,14 @@ partial class Build
     AbsolutePath ArtifactsDirectory => Artifacts ?? (OutputDirectory / "artifacts");
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath BuildDataDirectory => RootDirectory / "build_data";
-    AbsolutePath LibSqreenDirectory => (NugetPackageDirectory ?? (RootDirectory / "packages")) / "libsqreen.1.1.2.2";
+
+    const string LibSqreenVersion = "1.1.2.2";
+    AbsolutePath LibSqreenDirectory => (NugetPackageDirectory ?? (RootDirectory / "packages")) / $"libsqreen.{LibSqreenVersion}";
 
     AbsolutePath SourceDirectory => RootDirectory / "src";
     AbsolutePath TestsDirectory => RootDirectory / "test";
 
-    string TempDirectory => IsWin ? Path.GetTempPath() : "/tmp/";
+    AbsolutePath TempDirectory => (AbsolutePath)(IsWin ? Path.GetTempPath() : "/tmp/");
     string TracerLogDirectory => IsWin
         ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
             "Datadog .NET Tracer", "logs")
@@ -254,6 +257,52 @@ partial class Build
             CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
         });
 
+    Target DownloadLibSqreen => _ => _
+        .Unlisted()
+        .After(CreateRequiredDirectories)
+        .Executes(() =>
+        {
+            var wc = new WebClient();
+            var libSqreenUri = new Uri($"https://www.nuget.org/api/v2/package/libsqreen/{LibSqreenVersion}");
+            var libSqreenZip = TempDirectory / "libsqreen.zip";
+
+            wc.DownloadFile(libSqreenUri, libSqreenZip);
+
+            Console.WriteLine($"{libSqreenZip} downloaded. Extracting to {LibSqreenDirectory}...");
+
+            UncompressZip(libSqreenZip, LibSqreenDirectory);
+        });
+
+    Target CopyLibSqreen => _ => _
+        .Unlisted()
+        .After(Clean)
+        .After(DownloadLibSqreen)
+        .OnlyWhenStatic(() => !IsArm64) // not supported yet
+        .Executes(() =>
+        {
+            if (IsWin)
+            {
+                foreach (var architecture in new[] {"win-x86", "win-x64"})
+                {
+                    var source = LibSqreenDirectory / "runtimes" / architecture / "native" / "Sqreen.dll";
+                    var dest = TracerHomeDirectory / architecture;
+                    Logger.Info($"Copying '{source}' to '{dest}'");
+                    CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+                }
+            }
+            else
+            {
+                var (architecture, ext) = GetUnixArchitectureAndExtention();
+                var sqreenFileName = $"libSqreen.{ext}";
+
+                var source = LibSqreenDirectory / "runtimes" / architecture / "native" / sqreenFileName;
+                var dest = TracerHomeDirectory;
+                Logger.Info($"Copying '{source}' to '{dest}'");
+                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+
+            }
+        });
+
     Target PublishManagedProfiler => _ => _
         .Unlisted()
         .After(CompileManagedSrc)
@@ -336,7 +385,7 @@ partial class Build
 
     Target CreateDdTracerHome => _ => _
        .Unlisted()
-       .After(PublishNativeProfiler, CopyIntegrationsJson, PublishManagedProfiler)
+       .After(PublishNativeProfiler, CopyIntegrationsJson, PublishManagedProfiler, CopyLibSqreen)
        .Executes(() =>
        {
            // start by copying everything from the tracer home dir
@@ -349,15 +398,26 @@ partial class Build
            }
 
            // Move the native file to the architecture-specific folder
-           var (architecture, fileName) = IsOsx
-               ? ("osx-x64", $"{NativeProfilerProject.Name}.dylib")
-               : ($"linux-{LinuxArchitectureIdentifier}", $"{NativeProfilerProject.Name}.so");
+           var (architecture, ext) = GetUnixArchitectureAndExtention();
+
+           var profilerFileName = $"{NativeProfilerProject.Name}.{ext}";
+           var sqreenFileName = $"libSqreen.{ext}";
 
            var outputDir = DDTracerHomeDirectory / architecture;
+
            EnsureCleanDirectory(outputDir);
            MoveFile(
-               DDTracerHomeDirectory / fileName,
-               outputDir / fileName);
+               DDTracerHomeDirectory / profilerFileName,
+               outputDir / profilerFileName);
+
+           // won't exist yet for arm64 builds
+           var srcSqreenFile = DDTracerHomeDirectory / sqreenFileName;
+           if (File.Exists(srcSqreenFile))
+           {
+               MoveFile(
+                   srcSqreenFile,
+                   DDTracerHomeDirectory / architecture / sqreenFileName);
+           }
        });
 
     Target BuildMsi => _ => _
@@ -437,7 +497,7 @@ partial class Build
 
                 foreach (var packageType in LinuxPackageTypes)
                 {
-                    var args = new[]
+                    var args = new List<string>()
                     {
                         "-f",
                         "-s dir",
@@ -452,6 +512,12 @@ partial class Build
                         "integrations.json",
                         "createLogPath.sh",
                     };
+
+                    if (!IsArm64)
+                    {
+                        args.Add("libSqreen.so");
+                    }
+
                     var arguments = string.Join(" ", args);
                     fpm(arguments, workingDirectory: workingDirectory);
                 }
@@ -1107,6 +1173,15 @@ partial class Build
     private AbsolutePath GetResultsDirectory(Project proj) => BuildDataDirectory / "results" / proj.Name;
 
     private void EnsureResultsDirectory(Project proj) => EnsureCleanDirectory(GetResultsDirectory(proj));
+
+    private (string, string) GetUnixArchitectureAndExtention()
+    {
+        var archExt = IsOsx
+            ? ("osx-x64", "dylib")
+            : ($"linux-{LinuxArchitectureIdentifier}", "so");
+
+        return archExt;
+    }
 
     private void MoveLogsToBuildData()
     {
