@@ -723,14 +723,13 @@ partial class Build
         });
 
     Target PublishIisSamples => _ => _
-        .Unlisted()
         .After(CompileManagedTestHelpers)
         .After(CompileRegressionSamples)
         .After(CompileFrameworkReproductions)
         .Executes(() =>
         {
             var aspnetFolder = TestsDirectory / "test-applications" / "aspnet";
-            var securityAspnetFolder = TestsDirectory / "security" / "aspnet";
+            var securityAspnetFolder = TestsDirectory / "test-applications" / "security" / "aspnet";
 
             var aspnetProjects = aspnetFolder.GlobFiles("**/*.csproj");
             var securityAspnetProjects = securityAspnetFolder.GlobFiles("**/*.csproj");
