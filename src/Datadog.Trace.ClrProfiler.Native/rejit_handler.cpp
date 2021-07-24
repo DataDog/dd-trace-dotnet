@@ -285,10 +285,13 @@ void RejitHandler::EnqueueThreadLoop(RejitHandler* handler)
 
 void RejitHandler::RequestRejitForInlinersInModule(ModuleID moduleId)
 {
-    std::lock_guard<std::mutex> guard(m_modules_lock);
-    for (const auto& mod : m_modules)
+    if (m_profilerInfo6 != nullptr)
     {
-        mod.second->RequestRejitForInlinersInModule(moduleId);
+        std::lock_guard<std::mutex> guard(m_modules_lock);
+        for (const auto& mod : m_modules)
+        {
+            mod.second->RequestRejitForInlinersInModule(moduleId);
+        }
     }
 }
 
@@ -478,10 +481,13 @@ ICorProfilerInfo6* RejitHandler::GetCorProfilerInfo6()
 
 void RejitHandler::RequestRejitForNGenInliners()
 {
-    std::lock_guard<std::mutex> guard(m_ngenModules_lock);
-    for (const auto& mod : m_ngenModules)
+    if (m_profilerInfo6 != nullptr)
     {
-        RequestRejitForInlinersInModule(mod);
+        std::lock_guard<std::mutex> guard(m_ngenModules_lock);
+        for (const auto& mod : m_ngenModules)
+        {
+            RequestRejitForInlinersInModule(mod);
+        }
     }
 }
 
