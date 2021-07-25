@@ -70,15 +70,9 @@ namespace datadog::shared::nativeloader
 
     DynamicDispatcher::DynamicDispatcher()
     {
-        m_instances = std::vector<std::unique_ptr<DynamicInstance>>();
-    }
-
-    void DynamicDispatcher::Add(std::unique_ptr<DynamicInstance>& instance)
-    {
-        if (instance.get() != nullptr)
-        {
-            m_instances.push_back(std::move(instance));
-        }
+        m_continuousProfilerInstance = nullptr;
+        m_tracerInstance = nullptr;
+        m_customInstance = nullptr;
     }
 
     void DynamicDispatcher::LoadConfiguration(std::string configFilePath)
@@ -125,40 +119,67 @@ namespace datadog::shared::nativeloader
                 }
 
                 std::vector<std::string> lineArray = Split(line, ';');
-                std::string idValue = lineArray[0];
-                std::string osArchValue = lineArray[1];
-                std::string filepathValue = lineArray[2];
-
-                if (osArchValue == currentOsArch)
+                if (lineArray.size() != 4)
                 {
-                    // Convert possible relative paths to absolute paths using the configuration file folder as base
-                    // (current_path)
-                    std::string absoluteFilepathValue = std::filesystem::absolute(filepathValue).string();
-                    Debug("Loading: ", filepathValue, " [AbsolutePath=", absoluteFilepathValue,"]");
-                    if (std::filesystem::exists(absoluteFilepathValue))
+                    Warn("Invalid line: ", line);
+                }
+
+                std::string type = lineArray[0];
+                std::string idValue = lineArray[1];
+                std::string osArchValue = lineArray[2];
+                std::string filepathValue = lineArray[3];
+
+                if (type == "TRACER" || type == "CP" || type == "CUSTOM")
+                {
+                    if (osArchValue == currentOsArch)
                     {
-                        Debug("Creating a new DynamicInstance object");
-                        std::unique_ptr<DynamicInstance> instance =
-                            std::make_unique<DynamicInstance>(absoluteFilepathValue, idValue);
-                        this->Add(instance);
-                        WSTRING env_key = WStr("PROFID_") + ToWSTRING(idValue);
-                        WSTRING env_value = ToWSTRING(absoluteFilepathValue);
-                        Debug("Setting environment variable: ", env_key, "=", env_value);
-                        bool envVal = SetEnvironmentValue(env_key, env_value);
-                        Debug("SetEnvironmentValue result: ", envVal);
+                        // Convert possible relative paths to absolute paths using the configuration file folder as base
+                        // (current_path)
+                        std::string absoluteFilepathValue = std::filesystem::absolute(filepathValue).string();
+                        Debug("Loading: ", filepathValue, " [AbsolutePath=", absoluteFilepathValue,"]");
+                        if (std::filesystem::exists(absoluteFilepathValue))
+                        {
+                            Debug("Creating a new DynamicInstance object");
+
+                            if (type == "TRACER")
+                            {
+                                this->m_tracerInstance =
+                                    std::make_unique<DynamicInstance>(absoluteFilepathValue, idValue);
+                            }
+                            else if (type == "CP")
+                            {
+                                this->m_continuousProfilerInstance =
+                                    std::make_unique<DynamicInstance>(absoluteFilepathValue, idValue);
+                            }
+                            else if (type == "CUSTOM")
+                            {
+                                this->m_customInstance =
+                                    std::make_unique<DynamicInstance>(absoluteFilepathValue, idValue);
+                            }
+
+                            WSTRING env_key = WStr("PROFID_") + ToWSTRING(idValue);
+                            WSTRING env_value = ToWSTRING(absoluteFilepathValue);
+                            Debug("Setting environment variable: ", env_key, "=", env_value);
+                            bool envVal = SetEnvironmentValue(env_key, env_value);
+                            Debug("SetEnvironmentValue result: ", envVal);
+                        }
+                        else
+                        {
+                            Warn("Dynamic library for '", absoluteFilepathValue, "' cannot be loadeds, file doesn't exist.");
+                        }
                     }
                     else
                     {
-                        Warn("Dynamic library for '", absoluteFilepathValue, "' cannot be loadeds, file doesn't exist.");
+                        const std::string* findRes = std::find(std::begin(allOsArch), std::end(allOsArch), osArchValue);
+                        if (findRes == std::end(allOsArch))
+                        {
+                            Warn("The OS and Architecture is invalid: ", osArchValue);
+                        }
                     }
                 }
                 else
                 {
-                    const std::string* findRes = std::find(std::begin(allOsArch), std::end(allOsArch), osArchValue);
-                    if (findRes == std::end(allOsArch))
-                    {
-                        Warn("The OS and Architecture is invalid: ", osArchValue);
-                    }
+                    Warn("COR Profiler Type is invalid: ", type);
                 }
             }
         }
@@ -170,86 +191,142 @@ namespace datadog::shared::nativeloader
 
     HRESULT DynamicDispatcher::LoadClassFactory(REFIID riid)
     {
-        for (const std::unique_ptr<DynamicInstance>& dynIns : m_instances)
+        if (m_continuousProfilerInstance != nullptr)
         {
-            HRESULT localResult = dynIns->LoadClassFactory(riid);
-            if (FAILED(localResult))
+            HRESULT result = m_continuousProfilerInstance->LoadClassFactory(riid);
+            if (FAILED(result))
             {
-                Warn("Error trying to load class factory in: ", dynIns->GetFilePath());
-                return localResult;
+                Warn("Error trying to load continuous profiler class factory in: ",
+                     m_continuousProfilerInstance->GetFilePath());
+                return result;
             }
         }
+
+        if (m_tracerInstance != nullptr)
+        {
+            HRESULT result = m_tracerInstance->LoadClassFactory(riid);
+            if (FAILED(result))
+            {
+                Warn("Error trying to load tracer class factory in: ", m_tracerInstance->GetFilePath());
+                return result;
+            }
+        }
+
+        if (m_customInstance != nullptr)
+        {
+            HRESULT result = m_customInstance->LoadClassFactory(riid);
+            if (FAILED(result))
+            {
+                Warn("Error trying to load custom class factory in: ", m_customInstance->GetFilePath());
+                return result;
+            }
+        }
+
         return S_OK;
     }
 
     HRESULT DynamicDispatcher::LoadInstance(IUnknown* pUnkOuter, REFIID riid)
     {
-        for (const std::unique_ptr<DynamicInstance>& dynIns : m_instances)
+        if (m_continuousProfilerInstance != nullptr)
         {
-            HRESULT localResult = dynIns->LoadInstance(pUnkOuter, riid);
-            if (FAILED(localResult))
+            HRESULT result = m_continuousProfilerInstance->LoadInstance(pUnkOuter, riid);
+            if (FAILED(result))
             {
-                Warn("Error trying to load the instance in: ", dynIns->GetFilePath());
-                return localResult;
+                Warn("Error trying to load the continuous profiler instance in: ",
+                     m_continuousProfilerInstance->GetFilePath());
+                return result;
             }
         }
+
+        if (m_tracerInstance != nullptr)
+        {
+            HRESULT result = m_tracerInstance->LoadInstance(pUnkOuter, riid);
+            if (FAILED(result))
+            {
+                Warn("Error trying to load the tracer instance in: ", m_tracerInstance->GetFilePath());
+                return result;
+            }
+        }
+
+        if (m_customInstance != nullptr)
+        {
+            HRESULT result = m_customInstance->LoadInstance(pUnkOuter, riid);
+            if (FAILED(result))
+            {
+                Warn("Error trying to load the custom instance in: ", m_customInstance->GetFilePath());
+                return result;
+            }
+        }
+
         return S_OK;
     }
 
     HRESULT STDMETHODCALLTYPE DynamicDispatcher::DllCanUnloadNow()
     {
         HRESULT result = S_OK;
-        for (const std::unique_ptr<DynamicInstance>& dynIns : m_instances)
+
+        if (m_continuousProfilerInstance != nullptr)
         {
-            HRESULT localResult = dynIns->DllCanUnloadNow();
-            if (FAILED(localResult))
+            HRESULT hr = m_continuousProfilerInstance->DllCanUnloadNow();
+            if (FAILED(hr))
             {
-                Warn("Error calling DllCanUnloadNow in: ", dynIns->GetFilePath());
-                result = localResult;
+                Warn("Error calling the continuous profiler DllCanUnloadNow in: ",
+                     m_continuousProfilerInstance->GetFilePath());
+                result = hr;
             }
-            else if (localResult != S_OK)
+            else if (hr != S_OK)
             {
                 // If we get something different than S_OK then we keep that result because the DLL cannot be unloaded.
-                result = localResult;
+                result = hr;
             }
         }
+
+        if (m_tracerInstance != nullptr)
+        {
+            HRESULT hr = m_tracerInstance->DllCanUnloadNow();
+            if (FAILED(hr))
+            {
+                Warn("Error calling the tracer DllCanUnloadNow in: ", m_tracerInstance->GetFilePath());
+                result = hr;
+            }
+            else if (hr != S_OK)
+            {
+                // If we get something different than S_OK then we keep that result because the DLL cannot be unloaded.
+                result = hr;
+            }
+        }
+
+        if (m_customInstance != nullptr)
+        {
+            HRESULT hr = m_customInstance->DllCanUnloadNow();
+            if (FAILED(hr))
+            {
+                Warn("Error calling the custom DllCanUnloadNow in: ", m_customInstance->GetFilePath());
+                result = hr;
+            }
+            else if (hr != S_OK)
+            {
+                // If we get something different than S_OK then we keep that result because the DLL cannot be unloaded.
+                result = hr;
+            }
+        }
+
         return result;
     }
 
-    HRESULT DynamicDispatcher::Execute(std::function<HRESULT(ICorProfilerCallback10*)> func)
+    DynamicInstance* DynamicDispatcher::GetContinuousProfilerInstance()
     {
-        if (func == nullptr)
-        {
-            return E_FAIL;
-        }
-
-        HRESULT result = S_OK;
-        for (const std::unique_ptr<DynamicInstance>& dynIns : m_instances)
-        {
-            ICorProfilerCallback10* profilerCallback = dynIns->GetProfilerCallback();
-            if (profilerCallback == nullptr)
-            {
-                Warn("Error trying to execute in: ", dynIns->GetFilePath());
-                continue;
-            }
-
-            HRESULT localResult = func(profilerCallback);
-            if (FAILED(localResult))
-            {
-                result = localResult;
-            }
-        }
-        return result;
+        return m_continuousProfilerInstance.get();
     }
 
-    std::unique_ptr<DynamicInstance>* DynamicDispatcher::GetInstances()
+    DynamicInstance* DynamicDispatcher::GetTracerInstance()
     {
-        return &m_instances[0];
+        return m_tracerInstance.get();
     }
 
-    size_t DynamicDispatcher::GetLength()
+    DynamicInstance* DynamicDispatcher::GetCustomInstance()
     {
-        return m_instances.size();
+        return m_customInstance.get();
     }
 
 } // namespace datadog::shared::nativeloader

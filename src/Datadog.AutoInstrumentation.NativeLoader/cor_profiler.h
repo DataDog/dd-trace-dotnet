@@ -13,6 +13,9 @@ namespace datadog::shared::nativeloader
     private:
         std::atomic<int> m_refCount;
         DynamicDispatcher* m_dispatcher;
+        ICorProfilerCallback10* m_cpProfiler;
+        ICorProfilerCallback10* m_tracerProfiler;
+        ICorProfilerCallback10* m_customProfiler;
 
     public:
         CorProfiler(DynamicDispatcher* dispatcher);

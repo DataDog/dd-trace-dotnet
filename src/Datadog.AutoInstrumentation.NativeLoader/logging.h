@@ -19,15 +19,9 @@ std::string LogToString(Args const&... args)
 }
 
 template <typename... Args>
-void Verbose(const Args... args)
-{
-    // std::cout << "[VER] : " << LogToString(args...) << std::endl;
-}
-
-template <typename... Args>
 void Debug(const Args... args)
 {
-    std::cout << "[DBG] : " << LogToString(args...) << std::endl;
+    // std::cout << "[DBG] : " << LogToString(args...) << std::endl;
 }
 
 template <typename... Args>
