@@ -1055,7 +1055,7 @@ partial class Build
             var filter = (string.IsNullOrEmpty(Filter), IsArm64) switch
             {
                 (true, false) => "Category!=LinuxUnsupported",
-                (true, true) => "(Category!=ArmUnsupported)&(Category!=LinuxUnsupported",
+                (true, true) => "(Category!=ArmUnsupported)&(Category!=LinuxUnsupported)",
                 _ => Filter
             };
 
