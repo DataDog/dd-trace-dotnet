@@ -4,7 +4,7 @@
     <!-- NuGet -->
     <Version>1.28.2</Version>
     <Title>Datadog APM</Title>
-    <Description>Manual instrumentation library for Datadog APM</Description>
+    <Description>Instrumentation library for Datadog APM.</Description>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <IncludeSymbols>true</IncludeSymbols>

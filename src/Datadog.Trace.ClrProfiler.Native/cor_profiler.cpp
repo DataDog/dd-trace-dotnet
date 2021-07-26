@@ -911,9 +911,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     }
 
     // The first time a method is JIT compiled in an AppDomain, insert our startup
-    // hook which, at a minimum, must add an AssemblyResolve event so we can find
-    // Datadog.Trace.dll and its dependencies on-disk since it
-    // is no longer provided in a NuGet package
+    // hook, which, at a minimum, must add an AssemblyResolve event so we can find
+    // Datadog.Trace.dll and its dependencies on disk.
     if (valid_startup_hook_callsite && !has_loader_injected_in_appdomain)
     {
         bool domain_neutral_assembly = runtime_information_.is_desktop() && corlib_module_loaded &&
