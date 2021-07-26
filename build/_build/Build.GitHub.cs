@@ -111,6 +111,7 @@ partial class Build
                 "samples/ConsoleApp/Debian.dockerfile",
                 "samples/WindowsContainer/Dockerfile",
                 "src/Datadog.Trace.AspNet/Datadog.Trace.AspNet.csproj",
+                "src/Datadog.Trace.AutoInstrumentation/Datadog.Trace.AutoInstrumentation.csproj",
                 "src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj",
                 "src/Datadog.Trace.ClrProfiler.Managed.Loader/Startup.cs",
                 "src/Datadog.Trace.ClrProfiler.Native/CMakeLists.txt",

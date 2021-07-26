@@ -692,35 +692,35 @@ stages:
       inputs:
         artifact: windows-tracer-home
         patterns: "!integrations.json"
-        path: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home
+        path: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.AutoInstrumentation/home
 
     - task: DownloadPipelineArtifact@2
       displayName: Download linux tracer home
       inputs:
         artifact: linux-tracer-home-debian
         patterns: "**/*.so"
-        path: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home/linux-x64
+        path: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.AutoInstrumentation/home/linux-x64
 
     - task: DownloadPipelineArtifact@2
       displayName: Download alpine tracer home
       inputs:
         artifact: linux-tracer-home-alpine
         patterns: "**/*.so"
-        path: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home/linux-musl-x64
+        path: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.AutoInstrumentation/home/linux-musl-x64
 
     - task: DownloadPipelineArtifact@2
       displayName: Download arm64 tracer home
       inputs:
         artifact: linux-tracer-home-arm64
         patterns: "**/*.so"
-        path: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home/linux-arm64
+        path: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.AutoInstrumentation/home/linux-arm64
 
     - task: DownloadPipelineArtifact@2
       displayName: Download osx tracer home
       inputs:
         artifact: macos-tracer-home
         patterns: "**/*.dylib"
-        path: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home/osx-x64
+        path: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.AutoInstrumentation/home/osx-x64
 
     # Install the tracer latest stable release to attach the profiler to the build and test steps.
     # The script exposes the required environment variables to the following steps
