@@ -6,6 +6,16 @@
   <Fragment>
     <ComponentGroup Id="Files.Managed.Net461" Directory="net461">
       <Component Win64="$(var.Win64)">
+        <File Id="net461_Datadog.Trace.AspNet.dll"
+              Source="$(var.TracerHomeDirectory)\net461\Datadog.Trace.AspNet.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_Datadog.Trace.AspNet.pdb"
+              Source="$(var.TracerHomeDirectory)\net461\Datadog.Trace.AspNet.pdb"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
         <File Id="net461_Datadog.Trace.dll"
               Source="$(var.TracerHomeDirectory)\net461\Datadog.Trace.dll"
               KeyPath="yes" Checksum="yes"/>

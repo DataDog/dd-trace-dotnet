@@ -7,6 +7,12 @@
     <ComponentGroup Id="Files.Managed.Net45.GAC" Directory="net45.GAC">
       <Component Win64="$(var.Win64)">
         <Condition>NOT WIX_IS_NETFRAMEWORK_461_OR_LATER_INSTALLED</Condition>
+        <File Id="net45_GAC_Datadog.Trace.AspNet.dll"
+              Source="$(var.TracerHomeDirectory)\net45\Datadog.Trace.AspNet.dll"
+              KeyPath="yes" Checksum="yes" Assembly=".net"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <Condition>NOT WIX_IS_NETFRAMEWORK_461_OR_LATER_INSTALLED</Condition>
         <File Id="net45_GAC_Datadog.Trace.dll"
               Source="$(var.TracerHomeDirectory)\net45\Datadog.Trace.dll"
               KeyPath="yes" Checksum="yes" Assembly=".net"/>
