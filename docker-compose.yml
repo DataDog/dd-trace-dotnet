@@ -301,6 +301,7 @@ services:
       - MYSQL_HOST=mysql
       - MYSQL_PORT=3306
       - RABBITMQ_HOST=rabbitmq
+      - AWS_SQS_HOST=aws_sqs:9324
     depends_on:
       - servicestackredis
       - stackexchangeredis
@@ -310,6 +311,7 @@ services:
       - postgres
       - mysql
       - rabbitmq
+      - aws_sqs
 
   StartDependencies.ARM64:
     image: andrewlock/wait-for-dependencies
@@ -322,6 +324,7 @@ services:
       - postgres
       - mysql
       - rabbitmq
+      - aws_sqs
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis:6379 stackexchangeredis:6379 elasticsearch7_arm64:9200 sqledge:1433 mongo:27017 postgres:5432 mysql:3306 rabbitmq:5672
+    command: servicestackredis:6379 stackexchangeredis:6379 elasticsearch7_arm64:9200 sqledge:1433 mongo:27017 postgres:5432 mysql:3306 rabbitmq:5672 aws_sqs:9324
