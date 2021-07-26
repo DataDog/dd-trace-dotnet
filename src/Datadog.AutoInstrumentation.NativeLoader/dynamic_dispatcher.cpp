@@ -136,10 +136,10 @@ namespace datadog::shared::nativeloader
                         // Convert possible relative paths to absolute paths using the configuration file folder as base
                         // (current_path)
                         std::string absoluteFilepathValue = std::filesystem::absolute(filepathValue).string();
-                        Debug("Loading: ", filepathValue, " [AbsolutePath=", absoluteFilepathValue,"]");
+                        Debug("[", type, "] Loading: ", filepathValue, " [AbsolutePath=", absoluteFilepathValue,"]");
                         if (std::filesystem::exists(absoluteFilepathValue))
                         {
-                            Debug("Creating a new DynamicInstance object");
+                            Debug("[", type, "] Creating a new DynamicInstance object");
 
                             if (type == "TRACER")
                             {
@@ -159,13 +159,14 @@ namespace datadog::shared::nativeloader
 
                             WSTRING env_key = WStr("PROFID_") + ToWSTRING(idValue);
                             WSTRING env_value = ToWSTRING(absoluteFilepathValue);
-                            Debug("Setting environment variable: ", env_key, "=", env_value);
+                            Debug("[", type, "] Setting environment variable: ", env_key, "=", env_value);
                             bool envVal = SetEnvironmentValue(env_key, env_value);
-                            Debug("SetEnvironmentValue result: ", envVal);
+                            Debug("[", type, "] SetEnvironmentValue result: ", envVal);
                         }
                         else
                         {
-                            Warn("Dynamic library for '", absoluteFilepathValue, "' cannot be loadeds, file doesn't exist.");
+                            Warn("[", type, "] Dynamic library for '", absoluteFilepathValue,
+                                 "' cannot be loadeds, file doesn't exist.");
                         }
                     }
                     else
@@ -173,7 +174,7 @@ namespace datadog::shared::nativeloader
                         const std::string* findRes = std::find(std::begin(allOsArch), std::end(allOsArch), osArchValue);
                         if (findRes == std::end(allOsArch))
                         {
-                            Warn("The OS and Architecture is invalid: ", osArchValue);
+                            Warn("[", type, "] The OS and Architecture is invalid: ", osArchValue);
                         }
                     }
                 }
