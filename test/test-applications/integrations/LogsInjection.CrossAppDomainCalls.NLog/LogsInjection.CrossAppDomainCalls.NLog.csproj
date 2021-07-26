@@ -38,7 +38,7 @@
       <OtherApplicationFiles Include="$(OutputPath)PluginApplication.pdb" />
     </ItemGroup>
 
-    <Move SourceFiles="@(OtherApplicationFiles)" DestinationFolder="$(OutputPath)ApplicationFiles" />
+    <Copy SourceFiles="@(OtherApplicationFiles)" DestinationFolder="$(OutputPath)ApplicationFiles" />
   </Target>
 
 </Project>
