@@ -57,8 +57,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         {
             return testName
                  + (_inProcess ? ".InProcess" : ".OutOfProcess")
-                 + (_enableRouteTemplateResourceNames ? ".WithFF" : ".NoFF")
-                 + (RuntimeInformation.ProcessArchitecture == Architecture.X64 ? ".X64" : ".X86"); // assume that arm is the same
+                 + (_enableRouteTemplateResourceNames ? ".WithFF" : ".NoFF");
         }
     }
 }
