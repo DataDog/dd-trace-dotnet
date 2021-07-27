@@ -7,7 +7,7 @@ using Serilog.Core;
 using Serilog.Formatting.Json;
 using LogEventLevel = Serilog.Events.LogEventLevel;
 
-namespace LogsInjection.CrossAppDomainCalls.Serilog
+namespace LogsInjection.Serilog
 {
     public class Program
     {

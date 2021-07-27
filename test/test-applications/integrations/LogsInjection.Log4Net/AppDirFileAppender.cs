@@ -1,7 +1,7 @@
 using System.IO;
 using log4net.Appender;
 
-namespace LogsInjection.CrossAppDomainCalls.Log4Net
+namespace LogsInjection.Log4Net
 {
     /// <summary>
     /// See the following StackOverflow link for overwriting built-in appenders: https://stackoverflow.com/questions/1922430/how-do-you-make-log4net-output-to-current-working-directory

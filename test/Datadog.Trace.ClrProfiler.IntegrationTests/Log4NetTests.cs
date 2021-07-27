@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             };
 
         public Log4NetTests(ITestOutputHelper output)
-            : base(output, "LogsInjection.CrossAppDomainCalls.Log4Net")
+            : base(output, "LogsInjection.Log4Net")
         {
             SetServiceVersion("1.0.0");
         }

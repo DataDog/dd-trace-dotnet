@@ -4,7 +4,7 @@ using log4net;
 using log4net.Config;
 using PluginApplication;
 
-namespace LogsInjection.CrossAppDomainCalls.Log4Net
+namespace LogsInjection.Log4Net
 {
     public class Program
     {

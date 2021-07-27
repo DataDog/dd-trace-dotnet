@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             };
 
         public SerilogTests(ITestOutputHelper output)
-            : base(output, "LogsInjection.CrossAppDomainCalls.Serilog")
+            : base(output, "LogsInjection.Serilog")
         {
             SetServiceVersion("1.0.0");
         }

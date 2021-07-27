@@ -4,7 +4,7 @@ using NLog;
 using NLog.Config;
 using PluginApplication;
 
-namespace LogsInjection.CrossAppDomainCalls.NLog
+namespace LogsInjection.NLog
 {
     public class Program
     {

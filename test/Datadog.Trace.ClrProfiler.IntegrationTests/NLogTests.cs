@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             };
 
         public NLogTests(ITestOutputHelper output)
-            : base(output, "LogsInjection.CrossAppDomainCalls.NLog")
+            : base(output, "LogsInjection.NLog")
         {
             SetServiceVersion("1.0.0");
         }

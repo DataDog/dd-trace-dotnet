@@ -384,11 +384,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.Analyze
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.Analyzers.Tests", "test\Datadog.Trace.Tools.Analyzers.Tests\Datadog.Trace.Tools.Analyzers.Tests.csproj", "{6BB875B5-9FA7-4FB4-9224-B0FA2245CE0B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LogsInjection.CrossAppDomainCalls.Log4Net", "test\test-applications\integrations\LogsInjection.CrossAppDomainCalls.Log4Net\LogsInjection.CrossAppDomainCalls.Log4Net.csproj", "{B93AD901-B761-486D-80AE-443742DB65E0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LogsInjection.Log4Net", "test\test-applications\integrations\LogsInjection.Log4Net\LogsInjection.Log4Net.csproj", "{B93AD901-B761-486D-80AE-443742DB65E0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LogsInjection.CrossAppDomainCalls.NLog", "test\test-applications\integrations\LogsInjection.CrossAppDomainCalls.NLog\LogsInjection.CrossAppDomainCalls.NLog.csproj", "{7203DD2B-739F-4223-AE50-D26A7FEEE1A4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LogsInjection.NLog", "test\test-applications\integrations\LogsInjection.NLog\LogsInjection.NLog.csproj", "{7203DD2B-739F-4223-AE50-D26A7FEEE1A4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LogsInjection.CrossAppDomainCalls.Serilog", "test\test-applications\integrations\LogsInjection.CrossAppDomainCalls.Serilog\LogsInjection.CrossAppDomainCalls.Serilog.csproj", "{83290961-40BF-48CB-B925-FBBE48E629F3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LogsInjection.Serilog", "test\test-applications\integrations\LogsInjection.Serilog\LogsInjection.Serilog.csproj", "{83290961-40BF-48CB-B925-FBBE48E629F3}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PluginApplication", "test\test-applications\integrations\dependency-libs\PluginApplication\PluginApplication.csproj", "{6E8D73F3-082C-455B-BBD5-03A156DCDD0F}"
 EndProject
