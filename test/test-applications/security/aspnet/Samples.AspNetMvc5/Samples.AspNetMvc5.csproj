@@ -219,28 +219,16 @@
     <Content Include="Scripts\jquery-3.4.1.min.map" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\..\src\Datadog.Trace.ClrProfiler.Managed.Core\Datadog.Trace.ClrProfiler.Managed.Core.csproj">
-      <Project>{934fe26d-885d-4fad-9afc-bfa975dfcbb5}</Project>
-      <Name>Datadog.Trace.ClrProfiler.Managed.Core</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\..\..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj">
       <Project>{85f35aaf-d102-4960-8b41-3bd9cbd0e77f}</Project>
       <Name>Datadog.Trace.ClrProfiler.Managed</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj">
-      <Project>{5dfdf781-f24c-45b1-82ef-9125875a80a4}</Project>
-      <Name>Datadog.Trace</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <SecurityLibraryFiles Include="..\..\..\..\..\packages\libsqreen.1.1.2.3\runtimes\**\*.*" />
   </ItemGroup>
   <Target Name="CopyFiles" AfterTargets="Build">
-    <Copy
-      SourceFiles="@(SecurityLibraryFiles)"
-      DestinationFolder="$(TargetDir)\%(RecursiveDir)"
-      SkipUnchangedFiles="true"
-      />
+    <Copy SourceFiles="@(SecurityLibraryFiles)" DestinationFolder="$(TargetDir)\%(RecursiveDir)" SkipUnchangedFiles="true" />
   </Target>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
