@@ -16,7 +16,12 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<NativeLibrary>();
 
-        private static bool isPosixLike = !RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+        private static bool isPosixLike =
+#if NETFRAMEWORK
+            false;
+#else
+            !RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+#endif
 
         internal static bool TryLoad(string libraryPath, out IntPtr handle)
         {
