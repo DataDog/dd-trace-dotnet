@@ -750,6 +750,10 @@ stages:
           $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-arm64/home*
           $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/osx-x64/home*
 
+    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.AutoInstrumentation/bin/$(buildConfiguration)/packages
+      displayName: Publish AutoInstrumentation package
+      artifact: nuget-packages
+
     - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Tool
       displayName: Uploading runner dotnet tool artifact
       artifact: runner-dotnet-tool
