@@ -80,8 +80,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             _output = output;
             _testName = nameof(OwinWebApi2Tests)
                       + (enableCallTarget ? ".CallSite" : ".CallTarget")
-                      + (enableRouteTemplateResourceNames ? ".NoFF" : ".WithFF")
-                      + (RuntimeInformation.ProcessArchitecture == Architecture.X64 ? ".X64" : ".X86"); // assume that arm is the same
+                      + (enableRouteTemplateResourceNames ? ".NoFF" : ".WithFF");
         }
 
         public static TheoryData<string, int> Data() => new()

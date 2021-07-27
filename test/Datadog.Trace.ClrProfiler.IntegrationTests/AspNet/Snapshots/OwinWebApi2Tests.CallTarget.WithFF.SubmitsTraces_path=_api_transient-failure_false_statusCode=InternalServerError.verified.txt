@@ -1,0 +1,32 @@
+[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: aspnet-webapi.request,
+    Resource: GET api/transient-failure/{value},
+    Service: Samples.Owin.WebApi2,
+    Type: web,
+    Error: 1,
+    Tags: {
+      aspnet.route: api/transient-failure/{value},
+      env: integration_tests,
+      error.msg: Passed in value was not 'true': false,
+      error.stack: 
+System.ArgumentException: Passed in value was not 'true': false
+at Samples.AspNetMvc5.Controllers.ApiController.TransientFailure(String value),
+      error.type: System.ArgumentException,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.url: http://localhost:00000/api/transient-failure/false,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      _sampling_priority_v1: 1.0,
+      _dd.tracer_kr: 1.0,
+      _dd.top_level: 1.0
+    }
+  }
+]

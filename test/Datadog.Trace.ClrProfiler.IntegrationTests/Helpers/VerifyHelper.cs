@@ -6,6 +6,7 @@
 #if !NET452
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -74,11 +75,34 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                   .Select(
                        kvp => kvp.Key switch
                        {
-                           Tags.ErrorStack => new KeyValuePair<string, string>(kvp.Key, Scrubbers.ScrubStackTrace(kvp.Value)),
+                           Tags.ErrorStack => new KeyValuePair<string, string>(kvp.Key, ScrubStackTrace(kvp.Value)),
                            _ => kvp
                        })
                   .OrderBy(x => x.Key)
                   .ToDictionary(x => x.Key, x => x.Value);
+        }
+
+        private static string ScrubStackTrace(string stackTrace)
+        {
+            // keep the message + the first (scrubbed) location
+            var sb = new StringBuilder();
+            using StringReader reader = new(Scrubbers.ScrubStackTrace(stackTrace));
+            string line;
+            while ((line = reader.ReadLine()) is not null)
+            {
+                if (line.StartsWith("at "))
+                {
+                    // add the first line of the stack trace
+                    sb.Append(line);
+                    break;
+                }
+
+                sb
+                   .Append(line)
+                   .Append('\n');
+            }
+
+            return sb.ToString();
         }
     }
 }
