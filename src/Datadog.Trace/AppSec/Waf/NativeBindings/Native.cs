@@ -24,6 +24,25 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Native));
 
+        private static GetVersionDelegate getVersion;
+        private static InitHDelegate initH;
+        private static ClearRuleHDelegate clearRuleH;
+        private static RunHDelegate runH;
+        private static FreeReturnDelegate freeReturn;
+        private static InitAdditiveHDelegate initAdditiveH;
+        private static RunAdditiveDelegate runAdditive;
+        private static ClearAdditiveDelegate clearAdditive;
+        private static GetInvalidDelegate getInvalid;
+        private static CreateStringWithLengthDelegate createStringWithLength;
+        private static CreateStringDelegate createString;
+        private static CreateIntDelegate createInt;
+        private static CreateUintDelegate createUint;
+        private static CreateArrayDelegate createArray;
+        private static CreateMapDelegate createMap;
+        private static AddArrayDelegate addArray;
+        private static AddMapDelegate addMap;
+        private static FreeArgDelegate freeArg;
+
         static Native()
         {
             var fd = FrameworkDescription.Create();
@@ -36,68 +55,167 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             if (libName != null && runtimeId != null)
             {
                 var paths = GetDatadogNativeFolders(fd, runtimeId);
-                SearchPathsAndLoadLibrary(libName, paths);
+                if (TryLoadLibraryFromPaths(libName, paths, out IntPtr handle))
+                {
+                    getVersion = GetDelegateForNativeFunction<GetVersionDelegate>(handle, "pw_getVersion");
+                    initH = GetDelegateForNativeFunction<InitHDelegate>(handle, "pw_initH");
+                    clearRuleH = GetDelegateForNativeFunction<ClearRuleHDelegate>(handle, "pw_clearRuleH");
+                    runH = GetDelegateForNativeFunction<RunHDelegate>(handle, "pw_runH");
+                    freeReturn = GetDelegateForNativeFunction<FreeReturnDelegate>(handle, "pw_freeReturn");
+                    initAdditiveH = GetDelegateForNativeFunction<InitAdditiveHDelegate>(handle, "pw_initAdditiveH");
+                    runAdditive = GetDelegateForNativeFunction<RunAdditiveDelegate>(handle, "pw_runAdditive");
+                    clearAdditive = GetDelegateForNativeFunction<ClearAdditiveDelegate>(handle, "pw_clearAdditive");
+                    getInvalid = GetDelegateForNativeFunction<GetInvalidDelegate>(handle, "pw_getInvalid");
+                    createStringWithLength = GetDelegateForNativeFunction<CreateStringWithLengthDelegate>(handle, "pw_createStringWithLength");
+                    createString = GetDelegateForNativeFunction<CreateStringDelegate>(handle, "pw_createString");
+                    createInt = GetDelegateForNativeFunction<CreateIntDelegate>(handle, "pw_createInt");
+                    createUint = GetDelegateForNativeFunction<CreateUintDelegate>(handle, "pw_createUint");
+                    createArray = GetDelegateForNativeFunction<CreateArrayDelegate>(handle, "pw_createArray");
+                    createMap = GetDelegateForNativeFunction<CreateMapDelegate>(handle, "pw_createMap");
+                    addArray = GetDelegateForNativeFunction<AddArrayDelegate>(handle, "pw_addArray");
+                    addMap = GetDelegateForNativeFunction<AddMapDelegate>(handle, "pw_addMap");
+                    freeArg = GetDelegateForNativeFunction<FreeArgDelegate>(handle, "pw_freeArg");
+                }
             }
         }
 
+        private delegate PWVersion GetVersionDelegate();
+
+        private delegate IntPtr InitHDelegate(string wafRule, ref PWConfig config, ref string errors);
+
+        private delegate void ClearRuleHDelegate(IntPtr wafHandle);
+
+        private delegate PWRet RunHDelegate(IntPtr wafHandle, PWArgs parameters, ulong timeLeftInUs);
+
+        private delegate void FreeReturnDelegate(PWRet output);
+
+        private delegate IntPtr InitAdditiveHDelegate(IntPtr powerwafHandle);
+
+        private delegate PWRet RunAdditiveDelegate(IntPtr context, PWArgs newArgs, ulong timeLeftInUs);
+
+        private delegate void ClearAdditiveDelegate(IntPtr context);
+
+        private delegate PWArgs GetInvalidDelegate();
+
+        private delegate PWArgs CreateStringWithLengthDelegate(string s, ulong length);
+
+        private delegate PWArgs CreateStringDelegate(string s);
+
+        private delegate PWArgs CreateIntDelegate(long value);
+
+        private delegate PWArgs CreateUintDelegate(ulong value);
+
+        private delegate PWArgs CreateArrayDelegate();
+
+        private delegate PWArgs CreateMapDelegate();
+
+        private delegate bool AddArrayDelegate(ref PWArgs array, PWArgs entry);
+
+        private delegate bool AddMapDelegate(ref PWArgs map, string entryName, ulong entryNameLength, PWArgs entry);
+
+        private delegate void FreeArgDelegate(ref PWArgs input);
+
 #pragma warning disable SA1300 // Element should begin with upper-case letter
 
-        [DllImport(DllName)]
-        internal static extern PWVersion pw_getVersion();
+        internal static PWVersion pw_getVersion()
+        {
+            return getVersion();
+        }
 
-        [DllImport(DllName)]
-        internal static extern IntPtr pw_initH(string wafRule, ref PWConfig config, ref string errors);
+        internal static IntPtr pw_initH(string wafRule, ref PWConfig config, ref string errors)
+        {
+            return initH(wafRule, ref config, ref errors);
+        }
 
-        [DllImport(DllName)]
-        internal static extern void pw_clearRuleH(IntPtr wafHandle);
+        internal static void pw_clearRuleH(IntPtr wafHandle)
+        {
+            clearRuleH(wafHandle);
+        }
 
-        [DllImport(DllName)]
-        internal static extern PWRet pw_runH(IntPtr wafHandle, PWArgs parameters, ulong timeLeftInUs);
+        internal static PWRet pw_runH(IntPtr wafHandle, PWArgs parameters, ulong timeLeftInUs)
+        {
+            return runH(wafHandle, parameters, timeLeftInUs);
+        }
 
-        [DllImport(DllName)]
-        internal static extern void pw_freeReturn(PWRet output);
+        internal static void pw_freeReturn(PWRet output)
+        {
+            freeReturn(output);
+        }
 
-        [DllImport(DllName)]
-        internal static extern IntPtr pw_initAdditiveH(IntPtr powerwafHandle);
+        internal static IntPtr pw_initAdditiveH(IntPtr powerwafHandle)
+        {
+            return initAdditiveH(powerwafHandle);
+        }
 
-        [DllImport(DllName)]
-        internal static extern PWRet pw_runAdditive(IntPtr context, PWArgs newArgs, ulong timeLeftInUs);
+        internal static PWRet pw_runAdditive(IntPtr context, PWArgs newArgs, ulong timeLeftInUs)
+        {
+            return runAdditive(context, newArgs, timeLeftInUs);
+        }
 
-        [DllImport(DllName)]
-        internal static extern void pw_clearAdditive(IntPtr context);
+        internal static void pw_clearAdditive(IntPtr context)
+        {
+            clearAdditive(context);
+        }
 
-        [DllImport(DllName)]
-        internal static extern PWArgs pw_getInvalid();
+        internal static PWArgs pw_getInvalid()
+        {
+            return getInvalid();
+        }
 
-        [DllImport(DllName)]
-        internal static extern PWArgs pw_createStringWithLength(string s, ulong length);
+        internal static PWArgs pw_createStringWithLength(string s, ulong length)
+        {
+            return createStringWithLength(s, length);
+        }
 
-        [DllImport(DllName)]
-        internal static extern PWArgs pw_createString(string s);
+        internal static PWArgs pw_createString(string s)
+        {
+            return createString(s);
+        }
 
-        [DllImport(DllName)]
-        internal static extern PWArgs pw_createInt(long value);
+        internal static PWArgs pw_createInt(long value)
+        {
+            return createInt(value);
+        }
 
-        [DllImport(DllName)]
-        internal static extern PWArgs pw_createUint(ulong value);
+        internal static PWArgs pw_createUint(ulong value)
+        {
+            return createUint(value);
+        }
 
-        [DllImport(DllName)]
-        internal static extern PWArgs pw_createArray();
+        internal static PWArgs pw_createArray()
+        {
+            return createArray();
+        }
 
-        [DllImport(DllName)]
-        internal static extern PWArgs pw_createMap();
+        internal static PWArgs pw_createMap()
+        {
+            return createMap();
+        }
 
-        [DllImport(DllName)]
-        internal static extern bool pw_addArray(ref PWArgs array, PWArgs entry);
+        internal static bool pw_addArray(ref PWArgs array, PWArgs entry)
+        {
+            return addArray(ref array, entry);
+        }
 
         // Setting entryNameLength to 0 will result in the entryName length being re-computed with strlen
-        [DllImport(DllName)]
-        internal static extern bool pw_addMap(ref PWArgs map, string entryName, ulong entryNameLength, PWArgs entry);
+        internal static bool pw_addMap(ref PWArgs map, string entryName, ulong entryNameLength, PWArgs entry)
+        {
+            return addMap(ref map, entryName, entryNameLength, entry);
+        }
 
-        [DllImport(DllName)]
-        internal static extern void pw_freeArg(ref PWArgs input);
+        internal static void pw_freeArg(ref PWArgs input)
+        {
+            freeArg(ref input);
+        }
 
 #pragma warning restore SA1300 // Element should begin with upper-case letter
+
+        private static T GetDelegateForNativeFunction<T>(IntPtr handle, string functionName)
+            where T : Delegate
+        {
+            var initHPtr = NativeLibrary.GetExport(handle, functionName);
+            return (T)Marshal.GetDelegateForFunctionPointer(initHPtr, typeof(T));
+        }
 
         private static List<string> GetDatadogNativeFolders(FrameworkDescription frameworkDescription, string runtimeId)
         {
@@ -180,9 +298,11 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             return paths;
         }
 
-        private static void SearchPathsAndLoadLibrary(string libName, List<string> paths)
+        private static bool TryLoadLibraryFromPaths(string libName, List<string> paths, out IntPtr handle)
         {
             var success = false;
+            handle = IntPtr.Zero;
+
             foreach (var path in paths)
             {
                 var libFullPath = Path.Combine(path, libName);
@@ -193,7 +313,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                 }
 
                 // loading the library is sufficient, once in memory the p/invokes will just work
-                var loaded = NativeLibrary.TryLoad(libFullPath, out var _);
+                var loaded = NativeLibrary.TryLoad(libFullPath, out handle);
 
                 if (loaded)
                 {
@@ -211,6 +331,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             {
                 Log.Warning($"Failed to load library '{libName}' from any of the following '{string.Join(", ", paths)}'");
             }
+
+            return success;
         }
 
         private static bool IsMuslBasedLinux()

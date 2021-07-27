@@ -35,6 +35,11 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             return handle != IntPtr.Zero;
         }
 
+        internal static IntPtr GetExport(IntPtr handle, string name)
+        {
+            return GetProcAddress(handle, name);
+        }
+
         private static IntPtr LoadPosixLibrary(string path)
         {
             const int RTLD_NOW = 2;
@@ -57,7 +62,13 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         [DllImport("libdl")]
         private static extern IntPtr dlerror();
 
+        [DllImport("libdl")]
+        private static extern IntPtr dlsym(IntPtr hModule, string lpProcName);
+
         [DllImport("kernel32.dll")]
         private static extern IntPtr LoadLibrary(string dllToLoad);
+
+        [DllImport("Kernel32.dll")]
+        private static extern IntPtr GetProcAddress(IntPtr hModule, string lpProcName);
     }
 }
