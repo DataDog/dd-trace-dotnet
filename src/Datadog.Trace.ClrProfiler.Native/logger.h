@@ -16,7 +16,7 @@ struct TracerLoggerPolicy
 #ifdef _WIN32
     // this field will be removed once merged with the profiler in order to have
     // the same product folder name
-    inline static const WSTRING folder_path = WStr("Datadog .NET Tracer\logs");
+    inline static const WSTRING folder_path = WStr(R"(Datadog .NET Tracer\logs)");
 #endif
     inline static const std::string pattern = "%D %I:%M:%S.%e %p [%P|%t] [%l] %v";
     struct logging_environment
