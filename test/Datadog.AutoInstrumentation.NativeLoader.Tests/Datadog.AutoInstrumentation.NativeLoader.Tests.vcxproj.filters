@@ -18,6 +18,9 @@
     <ClCompile Include="guid_test.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="string_test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

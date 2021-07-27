@@ -148,6 +148,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="guid_test.cpp" />
+    <ClCompile Include="string_test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Directory.Build.props" />
