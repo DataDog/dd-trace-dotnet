@@ -59,7 +59,7 @@ inline WSTRING GetDatadogLogFilePath(const std::string& file_name_suffix)
     }
 
     // on Windows WSTRING == wstring
-    return (program_data_path / TLoggerPolicy::product_folder_name / WStr("logs") / file_name).wstring();
+    return (program_data_path / TLoggerPolicy::folder_path  / file_name).wstring();
 #else
     return ToWSTRING("/var/log/datadog/dotnet/" + file_name);
 #endif
