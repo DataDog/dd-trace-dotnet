@@ -1,7 +1,9 @@
 
+using System;
 using System.IO;
 using PluginApplication;
 using Serilog;
+using Serilog.Core;
 using Serilog.Formatting.Json;
 using LogEventLevel = Serilog.Events.LogEventLevel;
 
@@ -31,7 +33,19 @@ namespace LogsInjection.CrossAppDomainCalls.Serilog
 #endif
                                         .CreateLogger();
 
-            return LoggingMethods.RunLoggingProcedure(log.Information);
+            return LoggingMethods.RunLoggingProcedure(LogWrapper(log));
         }
+
+#if SERILOG_2_0
+        public static Action<string> LogWrapper(Logger log)
+        {
+            return (string message) => log.Information(message);
+        }
+#else
+        public static Action<string> LogWrapper(ILogger log)
+        {
+            return (string message) => log.Information(message);
+        }
+#endif
     }
 }
