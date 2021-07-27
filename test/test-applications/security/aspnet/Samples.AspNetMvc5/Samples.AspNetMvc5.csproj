@@ -233,7 +233,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <SecurityLibraryFiles Include="..\..\..\..\..\packages\libsqreen.1.1.2.2\runtimes\**\*.*" />
+    <SecurityLibraryFiles Include="..\..\..\..\..\packages\libsqreen.1.1.2.3\runtimes\**\*.*" />
   </ItemGroup>
   <Target Name="CopyFiles" AfterTargets="Build">
     <Copy

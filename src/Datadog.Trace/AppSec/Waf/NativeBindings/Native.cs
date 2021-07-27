@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -212,6 +213,22 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             }
         }
 
+        private static bool IsMuslBasedLinux()
+        {
+            var muslDistros = new[] { "alpine" };
+
+            var files =
+                Directory.GetFiles("/etc", "*release")
+                    .Concat(Directory.GetFiles("/etc", "*version"))
+                    .ToList();
+
+            files.Add("/etc/issue");
+
+            return files
+                .Select(File.ReadAllText)
+                .Any(fileContents => muslDistros.Any(distroId => fileContents.ToLower(CultureInfo.InvariantCulture).Contains(distroId)));
+        }
+
         private static void GetLibNameAndRuntimeId(FrameworkDescription frameworkDescription, out string libName, out string runtimeId)
         {
             string runtimeIdPart1, libPrefix, libExt;
@@ -224,7 +241,10 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                     libExt = "dylib";
                     break;
                 case OSPlatforms.Linux:
-                    runtimeIdPart1 = "linux";
+                    runtimeIdPart1 =
+                        IsMuslBasedLinux() ?
+                            "linux-musl" :
+                            "linux";
                     libPrefix = "lib";
                     libExt = "so";
                     break;

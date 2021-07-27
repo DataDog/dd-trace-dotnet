@@ -27,7 +27,7 @@
 
     <ProjectReference Include="..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
     <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
-    <PackageReference Include="libsqreen" Version="1.1.2.2" GeneratePathProperty="true" />
+    <PackageReference Include="libsqreen" Version="1.1.2.3" GeneratePathProperty="true" />
 
     <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
   </ItemGroup>

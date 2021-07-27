@@ -26,6 +26,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("Category", "ArmUnsupported")]
         public async Task TestBlockedRequestAsync(bool enableSecurity, HttpStatusCode expectedStatusCode)
         {
+            Console.WriteLine("here!!!!");
             await RunOnSelfHosted(enableSecurity);
             var (statusCode, _) = await SubmitRequest("/Home?arg=[$slice]");
             Assert.Equal(expectedStatusCode, statusCode);

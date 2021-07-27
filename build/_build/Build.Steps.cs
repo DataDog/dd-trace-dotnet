@@ -39,7 +39,7 @@ partial class Build
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath BuildDataDirectory => RootDirectory / "build_data";
 
-    const string LibSqreenVersion = "1.1.2.2";
+    const string LibSqreenVersion = "1.1.2.3";
     AbsolutePath LibSqreenDirectory => (NugetPackageDirectory ?? (RootDirectory / "packages")) / $"libsqreen.{LibSqreenVersion}";
 
     AbsolutePath SourceDirectory => RootDirectory / "src";
