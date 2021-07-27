@@ -110,6 +110,8 @@ public:
 
     HRESULT STDMETHODCALLTYPE JITCompilationStarted(FunctionID function_id, BOOL is_safe_to_block) override;
 
+    HRESULT STDMETHODCALLTYPE AppDomainShutdownFinished(AppDomainID appDomainId, HRESULT hrStatus) override;
+
     HRESULT STDMETHODCALLTYPE Shutdown() override;
 
     HRESULT STDMETHODCALLTYPE ProfilerDetachSucceeded() override;
