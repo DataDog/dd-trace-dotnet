@@ -204,7 +204,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     }
 
     DWORD event_mask = COR_PRF_MONITOR_JIT_COMPILATION | COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
-                       COR_PRF_MONITOR_MODULE_LOADS | COR_PRF_MONITOR_ASSEMBLY_LOADS | COR_PRF_DISABLE_ALL_NGEN_IMAGES;
+                       COR_PRF_MONITOR_MODULE_LOADS | COR_PRF_MONITOR_ASSEMBLY_LOADS | COR_PRF_MONITOR_APPDOMAIN_LOADS |
+                       COR_PRF_DISABLE_ALL_NGEN_IMAGES;
 
     if (is_calltarget_enabled)
     {
@@ -935,6 +936,32 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
             return S_OK;
         }
     }
+
+    return S_OK;
+}
+
+HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainShutdownFinished(AppDomainID appDomainId, HRESULT hrStatus)
+{
+    if (!is_attached_)
+    {
+        return S_OK;
+    }
+
+    // take this lock so we block until the
+    // module metadata is not longer being used
+    std::lock_guard<std::mutex>
+        guard(module_id_to_info_map_lock_);
+
+    // double check if is_attached_ has changed to avoid possible race condition with shutdown function
+    if (!is_attached_)
+    {
+        return S_OK;
+    }
+
+    // remove appdomain metadata from map
+    auto count = first_jit_compilation_app_domains.erase(appDomainId);
+
+    Debug("AppDomainShutdownFinished: AppDomain: ", appDomainId, ", removed ", count, " elements");
 
     return S_OK;
 }
