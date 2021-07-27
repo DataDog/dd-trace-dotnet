@@ -10,9 +10,18 @@ using Datadog.Trace.Logging.LogProviders;
 namespace Datadog.Trace.Logging
 {
     /// <summary>
-    /// Log provider for all versions of NLog lower than 4.1. This is required
-    /// because the built-in NLogLogProvider does not have the required interface
-    /// for NLog 1.0.
+    /// <para>
+    /// Log provider that enhances the built-in LibLog NLogLogProvider by adding
+    /// MDC support for NLog 1.0. The built-in NLogLogProvider only looked for
+    /// API's present on NLog 2.0 and newer.
+    /// </para>
+    ///
+    /// <para>
+    /// Note: This logger is intended to be used when the application uses NLog &lt; 4.1.
+    /// When the application uses NLog versions 4.1 and newer, use
+    /// <see cref="CustomNLogLogProvider"/> which utilizes the Set(string, object)
+    /// API to perform logs injection more efficiently.
+    /// </para>
     /// </summary>
     internal class FallbackNLogLogProvider : NLogLogProvider
     {
