@@ -39,7 +39,7 @@ namespace shared
 
     constexpr const WCHAR* SpecificTypeToInjectName = WStr("System.AppDomain");
     constexpr const WCHAR* SpecificMethodToInjectName = WStr("IsCompatibilitySwitchSet");
-    
+
 
     static Enumerator<mdMethodDef> EnumMethodsWithName(
         const ComPtr<IMetaDataImport2>& metadata_import,
@@ -223,7 +223,7 @@ namespace shared
                 Debug("Loader::InjectLoaderToModuleInitializer: The module is the loader itself, skipping it.");
             }
 
-            return E_FAIL;
+            return S_OK;
         }
 
         //
@@ -251,7 +251,7 @@ namespace shared
                     Debug("Loader::InjectLoaderToModuleInitializer: Skipping " + ToString(assemblyNameString) + " [AppDomainID=" + appDomainIdHex + "]");
                 }
 
-                return E_FAIL;
+                return S_FALSE;
             }
         }
 
@@ -328,7 +328,8 @@ namespace shared
             hr = metadataImport->FindTypeDefByName(SpecificTypeToInjectName, mdTokenNil, &appDomainTypeDef);
             if (FAILED(hr))
             {
-                return hr;
+                Debug("Loader::InjectLoaderToModuleInitializer: " + ToString(SpecificTypeToInjectName) + " not found.");
+                return S_FALSE;
             }
 
             auto enumMethods = EnumMethodsWithName(metadataImport, appDomainTypeDef, SpecificMethodToInjectName);
@@ -343,6 +344,7 @@ namespace shared
                 hr = metadataEmit->DefineTypeRefByName(corLibAssembly, WStr("System.Object"), &systemObjectTypeRef);
                 if (FAILED(hr))
                 {
+                    Error("Loader::InjectLoaderToModuleInitializer: failed to define typeref: System.Object");
                     return hr;
                 }
 
@@ -352,6 +354,7 @@ namespace shared
                 mdTypeDef newTypeDef;
                 hr = metadataEmit->DefineTypeDef(WStr("DD_LoaderMethodsType"), tdAbstract | tdSealed, systemObjectTypeRef, NULL, &newTypeDef);
                 if (FAILED(hr)) {
+                    Error("Loader::InjectLoaderToModuleInitializer: failed to define typedef: DD_LoaderMethodsType");
                     return hr;
                 }
 
