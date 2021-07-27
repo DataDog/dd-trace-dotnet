@@ -729,6 +729,9 @@ stages:
       inputs:
         filePath: ./.azure-pipelines/setup_tracer.ps1
 
+    - script: build.cmd BuildAutoInstrumentation --skip
+      displayName: Build AutoInstrumentation package
+
     - script: build.cmd BuildRunnerTool --skip
       displayName: Build Runner tool
 

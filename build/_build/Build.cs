@@ -230,6 +230,20 @@ partial class Build : NukeBuild
                 degreeOfParallelism: 2);
         });
 
+    Target BuildAutoInstrumentation => _ => _
+        // Currently requires manual copying of files into expected locations
+        .Unlisted()
+        .Executes(() =>
+        {
+            DotNetBuild(x => x
+                .SetProjectFile(Solution.GetProject(Projects.DatadogTraceAutoInstrumentation))
+                .EnableNoRestore()
+                .EnableNoDependencies()
+                .SetConfiguration(BuildConfiguration)
+                .SetNoWarnDotNetCore3()
+                .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool"));
+        });
+
     Target BuildRunnerTool => _ => _
         // Currently requires manual copying of files into expected locations
         .Unlisted()
