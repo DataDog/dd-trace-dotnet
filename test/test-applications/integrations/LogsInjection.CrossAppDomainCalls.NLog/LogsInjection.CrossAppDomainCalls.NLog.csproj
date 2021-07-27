@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <ApiVersion Condition="'$(ApiVersion)' == ''">4.0.0</ApiVersion>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">4.5.0</ApiVersion>
     <DefineConstants Condition="'$(ApiVersion)'&gt;='4.0.0'">$(DefineConstants);NLOG_4_0</DefineConstants>
 
     <!-- Required to build multiple projects with the same Configuration|Platform -->
@@ -18,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\dependency-libs\LogsInjectionHelper\LogsInjectionHelper.csproj" />
     <ProjectReference Include="..\dependency-libs\PluginApplication\PluginApplication.csproj" />
     <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>

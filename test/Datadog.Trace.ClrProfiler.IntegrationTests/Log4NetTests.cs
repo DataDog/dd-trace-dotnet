@@ -48,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         [Theory]
-        [MemberData(nameof(PackageVersions.NLog), MemberType = typeof(PackageVersions))]
+        [MemberData(nameof(PackageVersions.log4net), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("Category", "LinuxUnsupported")]
@@ -65,6 +65,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var spans = agent.WaitForSpans(1, 2500);
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
 
+#if NETFRAMEWORK
                 if (string.IsNullOrWhiteSpace(packageVersion) || new Version(packageVersion) >= new Version("2.0.5"))
                 {
                     ValidateLogCorrelation(spans, _nlog205LogFileTests);
@@ -73,6 +74,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     ValidateLogCorrelation(spans, _nlogPre205LogFileTests);
                 }
+#else
+                // Regardless of package version, for .NET Core just assert against raw log lines
+                ValidateLogCorrelation(spans, _nlogPre205LogFileTests);
+#endif
             }
         }
     }
