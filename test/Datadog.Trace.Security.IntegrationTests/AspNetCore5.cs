@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NET5_0
+#if NETCOREAPP3_0_OR_GREATER
 using System;
 using System.Net;
 using System.Threading.Tasks;
@@ -26,7 +26,6 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("Category", "ArmUnsupported")]
         public async Task TestBlockedRequestAsync(bool enableSecurity, HttpStatusCode expectedStatusCode)
         {
-            Console.WriteLine("here!!!!");
             await RunOnSelfHosted(enableSecurity);
             var (statusCode, _) = await SubmitRequest("/Home?arg=[$slice]");
             Assert.Equal(expectedStatusCode, statusCode);

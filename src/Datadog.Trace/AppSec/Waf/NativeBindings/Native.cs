@@ -312,7 +312,6 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                     continue;
                 }
 
-                // loading the library is sufficient, once in memory the p/invokes will just work
                 var loaded = NativeLibrary.TryLoad(libFullPath, out handle);
 
                 if (loaded)
@@ -344,7 +343,10 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                     .Concat(Directory.GetFiles("/etc", "*version"))
                     .ToList();
 
-            files.Add("/etc/issue");
+            if (File.Exists("/etc/issue"))
+            {
+                files.Add("/etc/issue");
+            }
 
             return files
                 .Select(File.ReadAllText)
