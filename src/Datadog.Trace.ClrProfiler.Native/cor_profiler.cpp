@@ -965,7 +965,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainShutdownFinished(AppDomainID app
     // remove appdomain metadata from map
     auto count = first_jit_compilation_app_domains.erase(appDomainId);
 
-    Debug("AppDomainShutdownFinished: AppDomain: ", appDomainId, ", removed ", count, " elements");
+    Logger::Debug("AppDomainShutdownFinished: AppDomain: ", appDomainId, ", removed ", count, " elements");
 
     return S_OK;
 }
