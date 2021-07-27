@@ -852,9 +852,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
         return S_OK;
     }
 
-  // We check if we are in CallTarget mode and the loader was already injected.
-  const bool is_calltarget_enabled = IsCallTargetEnabled(is_net46_or_greater);
-  const bool has_loader_injected_in_appdomain =
+    // We check if we are in CallTarget mode and the loader was already injected.
+    const bool is_calltarget_enabled = IsCallTargetEnabled(is_net46_or_greater);
+    const bool has_loader_injected_in_appdomain =
       first_jit_compilation_app_domains.find(module_metadata->app_domain_id) !=
       first_jit_compilation_app_domains.end();
 
@@ -3029,21 +3029,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
 
     if (!has_loader_injected_in_appdomain)
     {
+        Debug("Disabling NGEN due missing loader...");
         // The loader is missing in this AppDomain, we skip the NGEN image to allow the JITCompilationStart inject it.
         *pbUseCachedFunction = false;
         return S_OK;
-    }
-
-    RejitHandlerModule* handlerModule = nullptr;
-    if (rejit_handler->TryGetModule(module_id, &handlerModule))
-    {
-        if (handlerModule->ContainsMethod(function_token))
-        {
-            Info("*** JITCachedFunctionSearchStarted: NGEN disabled by ReJIT for [ModuleId=", module_id,
-                 ", MethodDef=", TokenStr(&function_token), "]");
-            *pbUseCachedFunction = false;
-            return S_OK;
-        }
     }
 
     *pbUseCachedFunction = true;
