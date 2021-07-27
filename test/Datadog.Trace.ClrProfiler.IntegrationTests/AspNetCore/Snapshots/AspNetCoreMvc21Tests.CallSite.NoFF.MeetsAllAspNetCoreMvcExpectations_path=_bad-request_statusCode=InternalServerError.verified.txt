@@ -14,24 +14,7 @@
       error.msg: This was a bad request.,
       error.stack: 
 System.Exception: This was a bad request.
-at Samples.AspNetCoreMvc.Controllers.HomeController.ThrowException()
-at lambda_method(Closure , Object , Object[] )
-at Microsoft.Extensions.Internal.ObjectMethodExecutor.Execute(Object target, Object[] parameters)
-at Microsoft.AspNetCore.Mvc.Internal.ActionMethodExecutor.SyncActionResultExecutor.Execute(IActionResultTypeMapper mapper, ObjectMethodExecutor executor, Object controller, Object[] arguments)
-at Microsoft.AspNetCore.Mvc.Internal.ControllerActionInvoker.InvokeActionMethodAsync()
-at Microsoft.AspNetCore.Mvc.Internal.ControllerActionInvoker.InvokeNextActionFilterAsync()
-at Microsoft.AspNetCore.Mvc.Internal.ControllerActionInvoker.Rethrow(ActionExecutedContext context)
-at Microsoft.AspNetCore.Mvc.Internal.ControllerActionInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
-at Microsoft.AspNetCore.Mvc.Internal.ControllerActionInvoker.InvokeInnerFilterAsync()
-at Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker.InvokeNextResourceFilter()
-at Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker.Rethrow(ResourceExecutedContext context)
-at Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
-at Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker.InvokeFilterPipelineAsync()
-at Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker.InvokeAsync()
-at Microsoft.AspNetCore.Builder.RouterMiddleware.Invoke(HttpContext httpContext)
-at Microsoft.AspNetCore.Builder.Extensions.MapMiddleware.Invoke(HttpContext context)
-at Microsoft.AspNetCore.Builder.Extensions.MapMiddleware.Invoke(HttpContext context)
-at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol.ProcessRequests[TContext](IHttpApplication`1 application),
+at Samples.AspNetCoreMvc.Controllers.HomeController.ThrowException(),
       error.type: System.Exception,
       http.method: GET,
       http.request.headers.host: localhost:00000,

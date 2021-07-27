@@ -40,13 +40,7 @@
       error.msg: Passed in value was not 'true': false,
       error.stack: 
 System.ArgumentException: Passed in value was not 'true': false
-at Samples.AspNetMvc5.Controllers.ApiController.TransientFailure(String value)
-at lambda_method(Closure , Object , Object[] )
-at System.Web.Http.Controllers.ReflectedHttpActionDescriptor.ActionExecutor.<>c__DisplayClass10.<GetExecutor>b__9(Object instance, Object[] methodParameters)
-at System.Web.Http.Controllers.ReflectedHttpActionDescriptor.ActionExecutor.Execute(Object instance, Object[] arguments)
-at System.Web.Http.Controllers.ReflectedHttpActionDescriptor.ExecuteAsync(HttpControllerContext controllerContext, IDictionary`2 arguments, CancellationToken cancellationToken)
-at System.Web.Http.Controllers.ApiControllerActionInvoker.<InvokeActionAsyncCore>d__0.MoveNext()
-at System.Web.Http.Controllers.ActionFilterResult.<ExecuteAsync>d__2.MoveNext(),
+at Samples.AspNetMvc5.Controllers.ApiController.TransientFailure(String value),
       error.type: System.ArgumentException,
       http.method: GET,
       http.request.headers.host: localhost:00000,
