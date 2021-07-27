@@ -16,6 +16,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<NativeLibrary>();
 
+        private static bool isPosixLike = !RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+
         internal static bool TryLoad(string libraryPath, out IntPtr handle)
         {
             if (libraryPath == null)
@@ -23,13 +25,13 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                 throw new ArgumentNullException(nameof(libraryPath));
             }
 
-            if (libraryPath.EndsWith(".dll"))
+            if (isPosixLike)
             {
-                handle = LoadLibrary(libraryPath);
+                handle = LoadPosixLibrary(libraryPath);
             }
             else
             {
-                handle = LoadPosixLibrary(libraryPath);
+                handle = LoadLibrary(libraryPath);
             }
 
             return handle != IntPtr.Zero;
@@ -37,7 +39,14 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal static IntPtr GetExport(IntPtr handle, string name)
         {
-            return GetProcAddress(handle, name);
+            if (isPosixLike)
+            {
+                return dlsym(handle, name);
+            }
+            else
+            {
+                return GetProcAddress(handle, name);
+            }
         }
 
         private static IntPtr LoadPosixLibrary(string path)
