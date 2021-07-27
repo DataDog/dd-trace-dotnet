@@ -388,7 +388,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             if (runtimeIdPart1 != null && libPrefix != null && libExt != null)
             {
                 libName = libPrefix + "Sqreen." + libExt;
-                runtimeId = Environment.Is64BitProcess ? runtimeIdPart1 + "-x64" : runtimeIdPart1 + "-x32";
+                runtimeId = Environment.Is64BitProcess ? runtimeIdPart1 + "-x64" : runtimeIdPart1 + "-x86";
             }
             else
             {
