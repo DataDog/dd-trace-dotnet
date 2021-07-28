@@ -31,6 +31,7 @@ class Stats : public Singleton<Stats>
     friend class Singleton<Stats>;
 
 private:
+    std::atomic_ullong jitCachedFunctionSearchStarted = {0};
     std::atomic_ullong callTargetRequestRejit = {0};
     std::atomic_ullong callTargetRewriter = {0};
     std::atomic_ullong jitInlining = {0};
@@ -41,6 +42,7 @@ private:
     std::atomic_ullong initialize = {0};
 
     //
+    std::atomic_uint jitCachedFunctionSearchStartedCount = {0};
     std::atomic_uint callTargetRequestRejitCount = {0};
     std::atomic_uint callTargetRewriterCount = {0};
     std::atomic_uint jitInliningCount = {0};
@@ -52,6 +54,7 @@ private:
 public:
     Stats()
     {
+        jitCachedFunctionSearchStarted = 0;
         callTargetRequestRejit = 0;
         jitInlining = 0;
         jitCompilationStarted = 0;
@@ -60,12 +63,18 @@ public:
         assemblyLoadFinished = 0;
         initialize = 0;
 
+        jitCachedFunctionSearchStartedCount = 0;
         callTargetRequestRejitCount = 0;
         jitInliningCount = 0;
         jitCompilationStartedCount = 0;
         moduleUnloadStartedCount = 0;
         moduleLoadFinishedCount = 0;
         assemblyLoadFinishedCount = 0;
+    }
+    SWStat JITCachedFunctionSearchStartedMeasure()
+    {
+        jitCachedFunctionSearchStartedCount++;
+        return SWStat(&jitCachedFunctionSearchStarted);
     }
     SWStat CallTargetRequestRejitMeasure()
     {
@@ -132,6 +141,9 @@ public:
         ss << ", JitInlining=";
         ss << jitInlining.load() / 1000000 << "ms"
            << "/" << jitInliningCount.load();
+        ss << ", JitCacheFunctionSearchStarted=";
+        ss << jitCachedFunctionSearchStarted.load() / 1000000 << "ms"
+           << "/" << jitCachedFunctionSearchStartedCount.load();
         ss << "]";
         return ss.str();
     }

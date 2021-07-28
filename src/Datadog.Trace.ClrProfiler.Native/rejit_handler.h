@@ -38,6 +38,10 @@ private:
     ICorProfilerFunctionControl* m_pFunctionControl;
     std::unique_ptr<FunctionInfo> m_functionInfo;
     std::unique_ptr<MethodReplacement> m_methodReplacement;
+
+    std::mutex m_ngenModulesLock;
+    std::unordered_map<ModuleID, bool> m_ngenModules;
+
     RejitHandlerModule* m_module;
 
 public:
@@ -53,6 +57,8 @@ public:
 
     MethodReplacement* GetMethodReplacement();
     void SetMethodReplacement(const MethodReplacement& methodReplacement);
+
+    void RequestRejitForInlinersInModule(ModuleID moduleId);
 };
 
 /// <summary>
@@ -78,6 +84,8 @@ public:
     RejitHandlerModuleMethod* GetOrAddMethod(mdMethodDef methodDef);
     bool TryGetMethod(mdMethodDef methodDef, RejitHandlerModuleMethod** methodHandler);
     bool ContainsMethod(mdMethodDef methodDef);
+
+    void RequestRejitForInlinersInModule(ModuleID moduleId);
 };
 
 /// <summary>
@@ -91,15 +99,26 @@ private:
     std::unordered_map<ModuleID, std::unique_ptr<RejitHandlerModule>> m_modules;
 
     ICorProfilerInfo4* m_profilerInfo;
+    ICorProfilerInfo6* m_profilerInfo6;
+    ICorProfilerInfo10* m_profilerInfo10;
     std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> m_rewriteCallback;
 
     std::unique_ptr<UniqueBlockingQueue<RejitItem>> m_rejit_queue;
     std::unique_ptr<std::thread> m_rejit_queue_thread;
 
+    std::mutex m_ngenModules_lock;
+    std::vector<ModuleID> m_ngenModules;
+
     static void EnqueueThreadLoop(RejitHandler* handler);
+
+    void RequestRejitForInlinersInModule(ModuleID moduleId);
 
 public:
     RejitHandler(ICorProfilerInfo4* pInfo,
+                 std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> rewriteCallback);
+    RejitHandler(ICorProfilerInfo6* pInfo,
+                 std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> rewriteCallback);
+    RejitHandler(ICorProfilerInfo10* pInfo,
                  std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> rewriteCallback);
 
     RejitHandlerModule* GetOrAddModule(ModuleID moduleId);
@@ -107,12 +126,19 @@ public:
     bool TryGetModule(ModuleID moduleId, RejitHandlerModule** moduleHandler);
     void RemoveModule(ModuleID moduleId);
 
+    void AddNGenModule(ModuleID moduleId);
+
     void EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef);
     void Shutdown();
 
     HRESULT NotifyReJITParameters(ModuleID moduleId, mdMethodDef methodId,
                                   ICorProfilerFunctionControl* pFunctionControl, ModuleMetadata* metadata);
     HRESULT NotifyReJITCompilationStarted(FunctionID functionId, ReJITID rejitId);
+
+    ICorProfilerInfo4* GetCorProfilerInfo();
+    ICorProfilerInfo6* GetCorProfilerInfo6();
+
+    void RequestRejitForNGenInliners();
 };
 
 } // namespace trace

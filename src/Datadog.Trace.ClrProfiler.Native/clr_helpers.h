@@ -330,6 +330,11 @@ struct ModuleInfo
     {
         return ((flags & COR_PRF_MODULE_WINDOWS_RUNTIME) != 0);
     }
+
+    bool IsNGEN() const
+    {
+        return ((flags & COR_PRF_MODULE_NGEN) != 0);
+    }
 };
 
 struct TypeInfo

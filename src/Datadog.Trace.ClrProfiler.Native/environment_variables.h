@@ -110,6 +110,9 @@ namespace environment
     // Sets whether to enable the CallTarget instrumentation mode
     const WSTRING calltarget_enabled = WStr("DD_TRACE_CALLTARGET_ENABLED");
 
+    // Sets whether to enable NGEN images.
+    const WSTRING clr_enable_ngen = WStr("DD_CLR_ENABLE_NGEN");
+
 } // namespace environment
 } // namespace trace
 

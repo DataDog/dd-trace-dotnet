@@ -21,7 +21,6 @@ std::unique_ptr<RejitItem> RejitItem::CreateEndRejitThread()
     return std::make_unique<RejitItem>(RejitItem(-1, std::unique_ptr<ModuleID>(), std::unique_ptr<mdMethodDef>()));
 }
 
-
 //
 // RejitHandlerModuleMethod
 //
@@ -75,6 +74,79 @@ void RejitHandlerModuleMethod::SetMethodReplacement(const MethodReplacement& met
     m_methodReplacement = std::make_unique<MethodReplacement>(methodReplacement);
 }
 
+void RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId)
+{
+    Logger::Debug("RejitHandlerModuleMethod::RequestRejitForInlinersInModule: ", moduleId);
+    std::lock_guard<std::mutex> guard(m_ngenModulesLock);
+
+    // We check first if we already processed this module to skip it.
+    auto find_res = m_ngenModules.find(moduleId);
+    if (find_res != m_ngenModules.end())
+    {
+        return;
+    }
+
+    // Enumerate all inliners and request rejit
+    ModuleID currentModuleId = m_module->GetModuleId();
+    mdMethodDef currentMethodDef = m_methodDef;
+    RejitHandler* handler = m_module->GetHandler();
+    ICorProfilerInfo6* pInfo = handler->GetCorProfilerInfo6();
+
+    if (pInfo != nullptr)
+    {
+        // Now we enumerate all methods that inline the current methodDef
+        BOOL incompleteData = false;
+        ICorProfilerMethodEnum* methodEnum;
+
+        HRESULT hr = pInfo->EnumNgenModuleMethodsInliningThisMethod(moduleId, currentModuleId, currentMethodDef,
+                                                                    &incompleteData, &methodEnum);
+        if (SUCCEEDED(hr))
+        {
+            COR_PRF_METHOD method;
+            unsigned int total = 0;
+            std::vector<ModuleID> modules;
+            std::vector<mdMethodDef> methods;
+            while (methodEnum->Next(1, &method, NULL) == S_OK)
+            {
+                Logger::Debug("NGEN:: Asking rewrite for inliner [ModuleId=", method.moduleId,
+                              ",MethodDef=", method.methodId, "]");
+                modules.push_back(method.moduleId);
+                methods.push_back(method.methodId);
+                total++;
+            }
+            methodEnum->Release();
+            methodEnum = nullptr;
+            if (total > 0)
+            {
+                handler->EnqueueForRejit(modules, methods);
+                Logger::Info("NGEN:: Processed with ", total, " inliners [ModuleId=", currentModuleId,
+                             ",MethodDef=", currentMethodDef, "]");
+            }
+
+            if (!incompleteData)
+            {
+                m_ngenModules[moduleId] = true;
+            }
+            else
+            {
+                Logger::Warn("NGen inliner data for module '", moduleId, "' is incomplete.");
+            }
+        }
+        else if (hr == E_INVALIDARG)
+        {
+            Logger::Info("NGEN:: Error Invalid arguments in [ModuleId=", currentModuleId,
+                         ",MethodDef=", currentMethodDef, ", HR=", hr, "]");
+        }
+        else if (hr == CORPROF_E_DATAINCOMPLETE)
+        {
+            Logger::Info("NGEN:: Error Incomplete data in [ModuleId=", currentModuleId, ",MethodDef=", currentMethodDef, ", HR=", hr, "]");
+        }
+        else
+        {
+            Logger::Info("NGEN:: Error in [ModuleId=", currentModuleId, ",MethodDef=", currentMethodDef, ", HR=", hr, "]");
+        }
+    }
+}
 
 //
 // RejitHandlerModule
@@ -142,6 +214,14 @@ bool RejitHandlerModule::ContainsMethod(mdMethodDef methodDef)
     return m_methods.find(methodDef) != m_methods.end();
 }
 
+void RejitHandlerModule::RequestRejitForInlinersInModule(ModuleID moduleId)
+{
+    std::lock_guard<std::mutex> guard(m_methods_lock);
+    for (const auto& method : m_methods)
+    {
+        method.second.get()->RequestRejitForInlinersInModule(moduleId);
+    }
+}
 
 //
 // RejitHandler
@@ -151,6 +231,7 @@ void RejitHandler::EnqueueThreadLoop(RejitHandler* handler)
 {
     auto queue = handler->m_rejit_queue.get();
     auto profilerInfo = handler->m_profilerInfo;
+    auto profilerInfo10 = handler->m_profilerInfo10;
 
     Logger::Info("Initializing ReJIT request thread.");
     HRESULT hr = profilerInfo->InitializeCurrentThread();
@@ -168,7 +249,28 @@ void RejitHandler::EnqueueThreadLoop(RejitHandler* handler)
             break;
         }
 
-        hr = profilerInfo->RequestReJIT((ULONG) item->m_length, item->m_modulesId.get(), item->m_methodDefs.get());
+        if (profilerInfo10 != nullptr)
+        {
+            // RequestReJITWithInliners is currently always failing with `Fatal error. Internal CLR error. (0x80131506)`
+            // more research is required, meanwhile we fallback to the normal RequestReJIT and manual track of inliners.
+
+            /*hr = profilerInfo10->RequestReJITWithInliners(COR_PRF_REJIT_BLOCK_INLINING, (ULONG) item->m_length,
+                                                          item->m_modulesId.get(), item->m_methodDefs.get());
+            if (FAILED(hr))
+            {
+                Warn("Error requesting ReJITWithInliners for ", item->m_length,
+                     " methods, falling back to a normal RequestReJIT");
+                hr = profilerInfo10->RequestReJIT((ULONG) item->m_length, item->m_modulesId.get(),
+                                                  item->m_methodDefs.get());
+            }*/
+
+            hr =
+                profilerInfo10->RequestReJIT((ULONG) item->m_length, item->m_modulesId.get(), item->m_methodDefs.get());
+        }
+        else
+        {
+            hr = profilerInfo->RequestReJIT((ULONG) item->m_length, item->m_modulesId.get(), item->m_methodDefs.get());
+        }
         if (SUCCEEDED(hr))
         {
             Logger::Info("Request ReJIT done for ", item->m_length, " methods");
@@ -181,15 +283,50 @@ void RejitHandler::EnqueueThreadLoop(RejitHandler* handler)
     Logger::Info("Exiting ReJIT request thread.");
 }
 
+void RejitHandler::RequestRejitForInlinersInModule(ModuleID moduleId)
+{
+    if (m_profilerInfo6 != nullptr)
+    {
+        std::lock_guard<std::mutex> guard(m_modules_lock);
+        for (const auto& mod : m_modules)
+        {
+            mod.second->RequestRejitForInlinersInModule(moduleId);
+        }
+    }
+}
+
 RejitHandler::RejitHandler(ICorProfilerInfo4* pInfo,
-             std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> rewriteCallback)
+                           std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> rewriteCallback)
 {
     m_profilerInfo = pInfo;
+    m_profilerInfo6 = nullptr;
+    m_profilerInfo10 = nullptr;
     m_rewriteCallback = rewriteCallback;
     m_rejit_queue = std::make_unique<UniqueBlockingQueue<RejitItem>>();
     m_rejit_queue_thread = std::make_unique<std::thread>(EnqueueThreadLoop, this);
 }
 
+RejitHandler::RejitHandler(ICorProfilerInfo6* pInfo,
+                           std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> rewriteCallback)
+{
+    m_profilerInfo = pInfo;
+    m_profilerInfo6 = pInfo;
+    m_profilerInfo10 = nullptr;
+    m_rewriteCallback = rewriteCallback;
+    m_rejit_queue = std::make_unique<UniqueBlockingQueue<RejitItem>>();
+    m_rejit_queue_thread = std::make_unique<std::thread>(EnqueueThreadLoop, this);
+}
+
+RejitHandler::RejitHandler(ICorProfilerInfo10* pInfo,
+                           std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> rewriteCallback)
+{
+    m_profilerInfo = pInfo;
+    m_profilerInfo6 = pInfo;
+    m_profilerInfo10 = pInfo;
+    m_rewriteCallback = rewriteCallback;
+    m_rejit_queue = std::make_unique<UniqueBlockingQueue<RejitItem>>();
+    m_rejit_queue_thread = std::make_unique<std::thread>(EnqueueThreadLoop, this);
+}
 
 RejitHandlerModule* RejitHandler::GetOrAddModule(ModuleID moduleId)
 {
@@ -226,6 +363,13 @@ void RejitHandler::RemoveModule(ModuleID moduleId)
     m_modules.erase(moduleId);
 }
 
+void RejitHandler::AddNGenModule(ModuleID moduleId)
+{
+    std::lock_guard<std::mutex> guard(m_ngenModules_lock);
+    m_ngenModules.push_back(moduleId);
+    RequestRejitForInlinersInModule(moduleId);
+}
+
 void RejitHandler::EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef)
 {
     const size_t length = modulesMethodDef.size();
@@ -236,6 +380,13 @@ void RejitHandler::EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::ve
     auto mDefs = new mdMethodDef[length];
     std::copy(modulesMethodDef.begin(), modulesMethodDef.end(), mDefs);
 
+    // Create module and methods metadata.
+    for (int i = 0; i < length; i++)
+    {
+        GetOrAddModule(moduleIds[i])->GetOrAddMethod(mDefs[i]);
+    }
+
+    // Enqueue rejit
     m_rejit_queue->push(std::make_unique<RejitItem>((int) length, std::unique_ptr<ModuleID>(moduleIds),
                                                     std::unique_ptr<mdMethodDef>(mDefs)));
 }
@@ -252,7 +403,6 @@ void RejitHandler::Shutdown()
     m_profilerInfo = nullptr;
     m_rewriteCallback = nullptr;
 }
-
 
 HRESULT RejitHandler::NotifyReJITParameters(ModuleID moduleId, mdMethodDef methodId,
                                             ICorProfilerFunctionControl* pFunctionControl, ModuleMetadata* metadata)
@@ -317,6 +467,28 @@ HRESULT RejitHandler::NotifyReJITParameters(ModuleID moduleId, mdMethodDef metho
 HRESULT RejitHandler::NotifyReJITCompilationStarted(FunctionID functionId, ReJITID rejitId)
 {
     return S_OK;
+}
+
+ICorProfilerInfo4* RejitHandler::GetCorProfilerInfo()
+{
+    return m_profilerInfo;
+}
+
+ICorProfilerInfo6* RejitHandler::GetCorProfilerInfo6()
+{
+    return m_profilerInfo6;
+}
+
+void RejitHandler::RequestRejitForNGenInliners()
+{
+    if (m_profilerInfo6 != nullptr)
+    {
+        std::lock_guard<std::mutex> guard(m_ngenModules_lock);
+        for (const auto& mod : m_ngenModules)
+        {
+            RequestRejitForInlinersInModule(mod);
+        }
+    }
 }
 
 } // namespace trace
