@@ -251,15 +251,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         event_mask |= COR_PRF_DISABLE_OPTIMIZATIONS;
     }
 
-    if (!is_calltarget_enabled || !is_net46_or_greater || !IsNGENEnabled())
-    {
-        Info("NGEN is disabled.");
-        event_mask |= COR_PRF_DISABLE_ALL_NGEN_IMAGES;
-    }
-    else
+    if (is_calltarget_enabled && is_net46_or_greater && IsNGENEnabled())
     {
         Info("NGEN is enabled.");
         event_mask |= COR_PRF_MONITOR_CACHE_SEARCHES;
+    }
+    else
+    {
+        Info("NGEN is disabled.");
+        event_mask |= COR_PRF_DISABLE_ALL_NGEN_IMAGES;
     }
 
     const WSTRING domain_neutral_instrumentation = GetEnvironmentValue(environment::domain_neutral_instrumentation);
@@ -3029,7 +3029,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
 
     if (!has_loader_injected_in_appdomain)
     {
-        Debug("Disabling NGEN due missing loader...");
+        Debug("Disabling NGEN due to missing loader.");
         // The loader is missing in this AppDomain, we skip the NGEN image to allow the JITCompilationStart inject it.
         *pbUseCachedFunction = false;
         return S_OK;
