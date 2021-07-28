@@ -19,13 +19,14 @@
     <ItemGroup>
       <Content Include="..\..\integrations.json" Link="datadog\integrations.json" Pack="true" PackagePath="content\datadog;contentFiles\any\any\datadog">
         <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+        <PackageCopyToOutput>true</PackageCopyToOutput>
       </Content>
     </ItemGroup>
   
     <ItemGroup>
       <Content Include="home\**\*.*" Pack="true" PackagePath="content\datadog;contentFiles\any\any\datadog">
         <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-        <!-- <PackageCopyToOutput>true</PackageCopyToOutput> -->
+        <PackageCopyToOutput>true</PackageCopyToOutput>
       </Content>
     </ItemGroup>
   
