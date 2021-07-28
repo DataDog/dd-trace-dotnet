@@ -387,7 +387,7 @@ stages:
         targetPath: 'build_data/results/'
       continueOnError: true
 
-    - publish: $(env:ProgramData)\Datadog .NET Tracer\logs
+    - publish: $(ProgramData)\Datadog .NET Tracer\logs
       displayName: Uploading integration_tests_windows tracer logs
       artifact: integration_tests_windows_tracer_logs_$(platform)_$(target)
       condition: succeededOrFailed()
@@ -455,7 +455,7 @@ stages:
         targetPath: 'build_data/results/'
       continueOnError: true
 
-    - publish: $(env:ProgramData)\Datadog .NET Tracer\logs
+    - publish: $(ProgramData)\Datadog .NET Tracer\logs
       displayName: Uploading integration_tests_windows_iis tracer logs
       artifact: integration_tests_windows_iis_tracer_logs_$(platform)
       condition: succeededOrFailed()
