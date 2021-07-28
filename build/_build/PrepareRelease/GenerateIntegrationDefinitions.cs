@@ -334,6 +334,8 @@ namespace PrepareRelease
             }
             catch (ReflectionTypeLoadException e)
             {
+                // Ignore types that cannot be loaded. In particular, TracingHttpModule inherits from
+                // IHttpModule, which is not available to the nuke builds because they run on net5.0.
                 return e.Types.Where(t => t != null);
             }
         }
