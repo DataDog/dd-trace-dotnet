@@ -222,7 +222,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             catch (Exception ex)
             {
                 Log.Error(ex, "Error occurred raising instrumentation event");
-                throw;
             }
         }
 
