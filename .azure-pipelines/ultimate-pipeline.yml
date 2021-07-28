@@ -752,7 +752,7 @@ stages:
 
     - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.AutoInstrumentation/bin/$(buildConfiguration)/packages
       displayName: Publish AutoInstrumentation package
-      artifact: nuget-packages
+      artifact: autoinstrumentation-nuget-package
 
     - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Tool
       displayName: Uploading runner dotnet tool artifact
@@ -930,6 +930,12 @@ stages:
           displayName: Download Windows tracer home
           inputs:
             artifact: windows-tracer-home.zip
+            path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download autoinstrumentation nuget package
+          inputs:
+            artifact: autoinstrumentation-nuget-package
             path: $(Build.ArtifactStagingDirectory)
 
         - task: DownloadPipelineArtifact@2
