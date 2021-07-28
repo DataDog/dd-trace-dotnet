@@ -214,8 +214,16 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="routeDatas">routeDatas</param>
         internal static void RaiseIntrumentationEvent(IDatadogSecurity security, HttpContext context, RouteData routeDatas)
         {
-            var dic = context.Request.PrepareArgsForWaf(routeDatas);
-            security.InstrumentationGateway.RaiseEvent(dic, new HttpTransport(context));
+            try
+            {
+                var dic = context.Request.PrepareArgsForWaf(routeDatas);
+                security.InstrumentationGateway.RaiseEvent(dic, new HttpTransport(context));
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error occurred raising instrumentation event");
+                throw;
+            }
         }
 
         /// <summary>
