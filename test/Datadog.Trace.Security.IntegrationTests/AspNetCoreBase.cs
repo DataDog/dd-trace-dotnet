@@ -54,7 +54,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             var publish = new System.EnterpriseServices.Internal.Publish();
             var execPath = Path.Combine(sampleProjectDir, "bin\\");
-            foreach (var file in Directory.GetFiles(execPath, "Datadog.Trace.*.dll"))
+            foreach (var file in Directory.GetFiles(execPath, "Datadog.Trace*.dll"))
             {
                 publish.GacInstall(file);
             }
