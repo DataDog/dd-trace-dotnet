@@ -51,9 +51,10 @@ inline WSTRING GetDatadogLogFilePath(const std::string& file_name_suffix)
     }
 
 #ifdef _WIN32
-    WSTRING program_data = GetEnvironmentValue(WStr("PROGRAMDATA"));
     std::filesystem::path program_data_path;
-    if (program_data.length() == 0)
+    program_data_path = GetEnvironmentValue(WStr("PROGRAMDATA"));
+
+    if (program_data_path.empty())
     {
         program_data_path = WStr(R"(C:\ProgramData)");
     }
