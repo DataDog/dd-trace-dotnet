@@ -83,8 +83,7 @@ namespace datadog::shared::nativeloader
             return;
         }
 
-        std::ifstream t;
-        t.open(configFilePath);
+        std::ifstream t(configFilePath);
 
         // Gets the configuration file folder
         std::filesystem::path configFolder = std::filesystem::path(configFilePath).remove_filename();

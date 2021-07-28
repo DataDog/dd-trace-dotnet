@@ -44,7 +44,7 @@ static WSTRING GetProfilerPath()
 static std::string GetConfigurationFilePath()
 {
     WSTRING env_configfile = GetEnvironmentValue(cfg_filepath_env);
-    if (env_configfile != WStr(""))
+    if (!env_configfile.empty())
     {
         return ToString(env_configfile);
     }
