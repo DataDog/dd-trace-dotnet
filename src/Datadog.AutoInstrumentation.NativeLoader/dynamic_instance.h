@@ -13,7 +13,24 @@ namespace datadog::shared::nativeloader
     typedef HRESULT(STDMETHODCALLTYPE* dllGetClassObjectPtr)(REFCLSID, REFIID, LPVOID*);
     typedef HRESULT(STDMETHODCALLTYPE* dllCanUnloadNow)();
 
+    //
+    // DynamicInstance base class
+    //
     class DynamicInstance
+    {
+    public:
+        virtual HRESULT LoadClassFactory(REFIID riid) = 0;
+        virtual HRESULT LoadInstance(IUnknown* pUnkOuter, REFIID riid) = 0;
+        virtual HRESULT STDMETHODCALLTYPE DllCanUnloadNow() = 0;
+        virtual ICorProfilerCallback10* GetProfilerCallback() = 0;
+        virtual std::string GetFilePath() = 0;
+        virtual std::string GetClsId() = 0;
+    };
+
+    //
+    // Default implementation of the DynamicInstance
+    //
+    class DynamicInstanceImpl : public DynamicInstance
     {
     private:
         std::string m_filepath;
@@ -30,14 +47,14 @@ namespace datadog::shared::nativeloader
         HRESULT DllGetClassObject(REFIID riid, LPVOID* ppv);
 
     public:
-        DynamicInstance(std::string filePath, std::string clsid);
-        ~DynamicInstance();
-        HRESULT LoadClassFactory(REFIID riid);
-        HRESULT LoadInstance(IUnknown* pUnkOuter, REFIID riid);
-        HRESULT STDMETHODCALLTYPE DllCanUnloadNow();
-        ICorProfilerCallback10* GetProfilerCallback();
-        std::string GetFilePath();
-        std::string GetClsId();
+        DynamicInstanceImpl(std::string filePath, std::string clsid);
+        ~DynamicInstanceImpl();
+        HRESULT LoadClassFactory(REFIID riid) override;
+        HRESULT LoadInstance(IUnknown* pUnkOuter, REFIID riid) override;
+        HRESULT STDMETHODCALLTYPE DllCanUnloadNow() override;
+        ICorProfilerCallback10* GetProfilerCallback() override;
+        std::string GetFilePath() override;
+        std::string GetClsId() override;
     };
 
 } // namespace datadog::shared::nativeloader

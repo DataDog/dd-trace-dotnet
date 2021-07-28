@@ -13,7 +13,7 @@ namespace datadog::shared::nativeloader
     // private
     //
 
-    HRESULT DynamicInstance::EnsureDynamicLibraryIsLoaded()
+    HRESULT DynamicInstanceImpl::EnsureDynamicLibraryIsLoaded()
     {
         if (!m_loaded)
         {
@@ -24,7 +24,7 @@ namespace datadog::shared::nativeloader
         return m_instance != nullptr ? S_OK : E_FAIL;
     }
 
-    HRESULT DynamicInstance::DllGetClassObject(REFIID riid, LPVOID* ppv)
+    HRESULT DynamicInstanceImpl::DllGetClassObject(REFIID riid, LPVOID* ppv)
     {
         // Check if the library is loaded
         if (FAILED(EnsureDynamicLibraryIsLoaded()))
@@ -53,7 +53,7 @@ namespace datadog::shared::nativeloader
     // public
     //
 
-    DynamicInstance::DynamicInstance(std::string filePath, std::string clsid)
+    DynamicInstanceImpl::DynamicInstanceImpl(std::string filePath, std::string clsid)
     {
         m_filepath = filePath;
         m_clsid_string = clsid;
@@ -66,7 +66,7 @@ namespace datadog::shared::nativeloader
         m_corProfilerCallback = nullptr;
     }
 
-    DynamicInstance::~DynamicInstance()
+    DynamicInstanceImpl::~DynamicInstanceImpl()
     {
         m_corProfilerCallback = nullptr;
         m_classFactory = nullptr;
@@ -84,7 +84,7 @@ namespace datadog::shared::nativeloader
         }
     }
 
-    HRESULT DynamicInstance::LoadClassFactory(REFIID riid)
+    HRESULT DynamicInstanceImpl::LoadClassFactory(REFIID riid)
     {
         LPVOID ppv;
         HRESULT res = DllGetClassObject(riid, &ppv);
@@ -101,7 +101,7 @@ namespace datadog::shared::nativeloader
         return res;
     }
 
-    HRESULT DynamicInstance::LoadInstance(IUnknown* pUnkOuter, REFIID riid)
+    HRESULT DynamicInstanceImpl::LoadInstance(IUnknown* pUnkOuter, REFIID riid)
     {
         Debug("Running LoadInstance: ");
 
@@ -125,7 +125,7 @@ namespace datadog::shared::nativeloader
         return res;
     }
 
-    HRESULT STDMETHODCALLTYPE DynamicInstance::DllCanUnloadNow()
+    HRESULT STDMETHODCALLTYPE DynamicInstanceImpl::DllCanUnloadNow()
     {
         // Check if the library is loaded
         if (FAILED(EnsureDynamicLibraryIsLoaded()))
@@ -149,17 +149,17 @@ namespace datadog::shared::nativeloader
         return E_FAIL;
     }
 
-    ICorProfilerCallback10* DynamicInstance::GetProfilerCallback()
+    ICorProfilerCallback10* DynamicInstanceImpl::GetProfilerCallback()
     {
         return m_corProfilerCallback;
     }
 
-    std::string DynamicInstance::GetFilePath()
+    std::string DynamicInstanceImpl::GetFilePath()
     {
         return m_filepath;
     }
 
-    std::string DynamicInstance::GetClsId()
+    std::string DynamicInstanceImpl::GetClsId()
     {
         return m_clsid_string;
     }

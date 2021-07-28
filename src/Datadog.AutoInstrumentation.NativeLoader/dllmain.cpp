@@ -24,7 +24,7 @@ extern "C"
                 Debug("DllMain - DLL_PROCESS_ATTACH");
                 Debug("Pointer size: ", 8 * sizeof(void*), " bits.");
 
-                dispatcher = new DynamicDispatcher();
+                dispatcher = new DynamicDispatcherImpl();
                 dispatcher->LoadConfiguration(GetConfigurationFilePath());
 
                 // *****************************************************************************************************************

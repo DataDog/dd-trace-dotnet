@@ -68,14 +68,14 @@ namespace datadog::shared::nativeloader
     // public
     //
 
-    DynamicDispatcher::DynamicDispatcher()
+    DynamicDispatcherImpl::DynamicDispatcherImpl()
     {
         m_continuousProfilerInstance = nullptr;
         m_tracerInstance = nullptr;
         m_customInstance = nullptr;
     }
 
-    void DynamicDispatcher::LoadConfiguration(std::string configFilePath)
+    void DynamicDispatcherImpl::LoadConfiguration(std::string configFilePath)
     {
         if (!std::filesystem::exists(configFilePath))
         {
@@ -143,17 +143,17 @@ namespace datadog::shared::nativeloader
                             if (type == "TRACER")
                             {
                                 this->m_tracerInstance =
-                                    std::make_unique<DynamicInstance>(absoluteFilepathValue, idValue);
+                                    std::make_unique<DynamicInstanceImpl>(absoluteFilepathValue, idValue);
                             }
                             else if (type == "CP")
                             {
                                 this->m_continuousProfilerInstance =
-                                    std::make_unique<DynamicInstance>(absoluteFilepathValue, idValue);
+                                    std::make_unique<DynamicInstanceImpl>(absoluteFilepathValue, idValue);
                             }
                             else if (type == "CUSTOM")
                             {
                                 this->m_customInstance =
-                                    std::make_unique<DynamicInstance>(absoluteFilepathValue, idValue);
+                                    std::make_unique<DynamicInstanceImpl>(absoluteFilepathValue, idValue);
                             }
 
                             WSTRING env_key = WStr("PROFID_") + ToWSTRING(idValue);
@@ -189,7 +189,7 @@ namespace datadog::shared::nativeloader
         std::filesystem::current_path(oldCurrentPath);
     }
 
-    HRESULT DynamicDispatcher::LoadClassFactory(REFIID riid)
+    HRESULT DynamicDispatcherImpl::LoadClassFactory(REFIID riid)
     {
         if (m_continuousProfilerInstance != nullptr)
         {
@@ -225,7 +225,7 @@ namespace datadog::shared::nativeloader
         return S_OK;
     }
 
-    HRESULT DynamicDispatcher::LoadInstance(IUnknown* pUnkOuter, REFIID riid)
+    HRESULT DynamicDispatcherImpl::LoadInstance(IUnknown* pUnkOuter, REFIID riid)
     {
         if (m_continuousProfilerInstance != nullptr)
         {
@@ -261,7 +261,7 @@ namespace datadog::shared::nativeloader
         return S_OK;
     }
 
-    HRESULT STDMETHODCALLTYPE DynamicDispatcher::DllCanUnloadNow()
+    HRESULT STDMETHODCALLTYPE DynamicDispatcherImpl::DllCanUnloadNow()
     {
         HRESULT result = S_OK;
 
@@ -314,17 +314,17 @@ namespace datadog::shared::nativeloader
         return result;
     }
 
-    DynamicInstance* DynamicDispatcher::GetContinuousProfilerInstance()
+    DynamicInstance* DynamicDispatcherImpl::GetContinuousProfilerInstance()
     {
         return m_continuousProfilerInstance.get();
     }
 
-    DynamicInstance* DynamicDispatcher::GetTracerInstance()
+    DynamicInstance* DynamicDispatcherImpl::GetTracerInstance()
     {
         return m_tracerInstance.get();
     }
 
-    DynamicInstance* DynamicDispatcher::GetCustomInstance()
+    DynamicInstance* DynamicDispatcherImpl::GetCustomInstance()
     {
         return m_customInstance.get();
     }
