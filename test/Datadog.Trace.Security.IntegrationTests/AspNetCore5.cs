@@ -12,7 +12,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
-    public class AspNetCore5 : AspNetCoreBase, IDisposable
+    public class AspNetCore5 : AspNetBase, IDisposable
     {
         public AspNetCore5(ITestOutputHelper outputHelper)
             : base("AspNetCore5", outputHelper)
