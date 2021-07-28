@@ -70,7 +70,7 @@ namespace Datadog.Trace.Tools.Runner
             });
 
             ParserResult<Options> result = parser.ParseArguments<Options>(args);
-            result.MapResult(ParsedOptions, errors => ParsedErrors(result, errors));
+            Environment.ExitCode = result.MapResult(ParsedOptions, errors => ParsedErrors(result, errors));
         }
 
         private static int ParsedOptions(Options options)
@@ -117,9 +117,11 @@ namespace Datadog.Trace.Tools.Runner
         private static int ParsedErrors(ParserResult<Options> result, IEnumerable<Error> errors)
         {
             HelpText helpText = null;
+            int exitCode = 1;
             if (errors.IsVersion())
             {
                 helpText = HelpText.AutoBuild(result);
+                exitCode = 0;
             }
             else
             {
@@ -139,7 +141,7 @@ namespace Datadog.Trace.Tools.Runner
             }
 
             Console.WriteLine(helpText);
-            return 1;
+            return exitCode;
         }
 
         private static void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)

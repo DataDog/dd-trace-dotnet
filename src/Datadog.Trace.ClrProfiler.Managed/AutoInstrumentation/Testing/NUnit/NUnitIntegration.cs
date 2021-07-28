@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                 return null;
             }
 
-            string testFramework = "NUnit " + targetType?.Assembly?.GetName().Version;
+            string testFramework = "NUnit";
             string fullName = currentTest.FullName;
             string composedTestName = currentTest.Name;
 

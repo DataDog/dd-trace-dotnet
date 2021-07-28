@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations;
@@ -54,6 +55,34 @@ namespace Datadog.Trace.Tests.CallTarget
         }
 
         [Fact]
+        public async Task CancelledTest()
+        {
+            // Normal
+            var task = GetPreviousTask();
+            await Assert.ThrowsAsync<CustomCancellationException>(() => task);
+            Assert.Equal(TaskStatus.Canceled, task.Status);
+
+            // Using the continuation
+            var tcg = new TaskContinuationGenerator<TaskContinuationGeneratorTests, TaskContinuationGeneratorTests, Task>();
+            task = tcg.SetContinuation(this, GetPreviousTask(), null, CallTargetState.GetDefault());
+            await Assert.ThrowsAsync<CustomCancellationException>(() => task);
+            Assert.Equal(TaskStatus.Canceled, task.Status);
+
+            static Task GetPreviousTask()
+            {
+                var cts = new CancellationTokenSource();
+
+                return Task.FromResult(true).ContinueWith(
+                    _ =>
+                    {
+                        cts.Cancel();
+                        throw new CustomCancellationException(cts.Token);
+                    },
+                    cts.Token);
+            }
+        }
+
+        [Fact]
         public async Task SuccessGenericTest()
         {
             var tcg = new TaskContinuationGenerator<TaskContinuationGeneratorTests, TaskContinuationGeneratorTests, Task<bool>, bool>();
@@ -89,10 +118,46 @@ namespace Datadog.Trace.Tests.CallTarget
             }
         }
 
+        [Fact]
+        public async Task CancelledGenericTest()
+        {
+            // Normal
+            var task = GetPreviousTask();
+            await Assert.ThrowsAsync<CustomCancellationException>(() => task);
+            Assert.Equal(TaskStatus.Canceled, task.Status);
+
+            // Using the continuation
+            var tcg = new TaskContinuationGenerator<TaskContinuationGeneratorTests, TaskContinuationGeneratorTests, Task<bool>, bool>();
+            task = tcg.SetContinuation(this, GetPreviousTask(), null, CallTargetState.GetDefault());
+            await Assert.ThrowsAsync<CustomCancellationException>(() => task);
+            Assert.Equal(TaskStatus.Canceled, task.Status);
+
+            static Task<bool> GetPreviousTask()
+            {
+                var cts = new CancellationTokenSource();
+
+                return Task.FromResult(true).ContinueWith<bool>(
+                    _ =>
+                    {
+                        cts.Cancel();
+                        throw new CustomCancellationException(cts.Token);
+                    },
+                    cts.Token);
+            }
+        }
+
         internal class CustomException : Exception
         {
             public CustomException(string message)
                 : base(message)
+            {
+            }
+        }
+
+        internal class CustomCancellationException : OperationCanceledException
+        {
+            public CustomCancellationException(CancellationToken token)
+                : base(token)
             {
             }
         }

@@ -296,6 +296,13 @@ namespace Datadog.Trace.TestHelpers
 
         public string GetSampleApplicationPath(string packageVersion = "", string framework = "")
         {
+            var appFileName = GetSampleApplicationFileName();
+            var sampleAppPath = Path.Combine(GetSampleApplicationOutputDirectory(packageVersion: packageVersion, framework: framework), appFileName);
+            return sampleAppPath;
+        }
+
+        public string GetSampleApplicationFileName()
+        {
             string extension = "exe";
 
             if (IsCoreClr() || _samplesDirectory.Contains("aspnet"))
@@ -303,9 +310,7 @@ namespace Datadog.Trace.TestHelpers
                 extension = "dll";
             }
 
-            var appFileName = $"{FullSampleName}.{extension}";
-            var sampleAppPath = Path.Combine(GetSampleApplicationOutputDirectory(packageVersion: packageVersion, framework: framework), appFileName);
-            return sampleAppPath;
+            return $"{FullSampleName}.{extension}";
         }
 
         public string GetTestCommandForSampleApplicationPath(string packageVersion = "", string framework = "")
@@ -321,11 +326,11 @@ namespace Datadog.Trace.TestHelpers
 
             if (_samplesDirectory.Contains("aspnet"))
             {
-                executor = $"C:\\Program Files{(Environment.Is64BitProcess ? string.Empty : " (x86)")}\\IIS Express\\iisexpress.exe";
+                executor = GetIisExpressPath();
             }
             else if (IsCoreClr())
             {
-                executor = EnvironmentTools.IsWindows() ? "dotnet.exe" : "dotnet";
+                executor = GetDotnetExe();
             }
             else
             {
@@ -341,38 +346,48 @@ namespace Datadog.Trace.TestHelpers
             return executor;
         }
 
+        public string GetIisExpressPath()
+            => $"C:\\Program Files{(Environment.Is64BitProcess ? string.Empty : " (x86)")}\\IIS Express\\iisexpress.exe";
+
         public string GetDotNetTest()
         {
-            if (EnvironmentTools.IsWindows())
+            if (EnvironmentTools.IsWindows() && !IsCoreClr())
             {
-                if (!IsCoreClr())
+                string filePattern = @"C:\Program Files (x86)\Microsoft Visual Studio\{0}\{1}\Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe";
+                List<Tuple<string, string>> lstTuple = new List<Tuple<string, string>>
                 {
-                    string filePattern = @"C:\Program Files (x86)\Microsoft Visual Studio\{0}\{1}\Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe";
-                    List<Tuple<string, string>> lstTuple = new List<Tuple<string, string>>
-                    {
-                        Tuple.Create("2019", "Enterprise"),
-                        Tuple.Create("2019", "Professional"),
-                        Tuple.Create("2019", "Community"),
-                        Tuple.Create("2017", "Enterprise"),
-                        Tuple.Create("2017", "Professional"),
-                        Tuple.Create("2017", "Community"),
-                    };
+                    Tuple.Create("2019", "Enterprise"),
+                    Tuple.Create("2019", "Professional"),
+                    Tuple.Create("2019", "Community"),
+                    Tuple.Create("2017", "Enterprise"),
+                    Tuple.Create("2017", "Professional"),
+                    Tuple.Create("2017", "Community"),
+                };
 
-                    foreach (Tuple<string, string> tuple in lstTuple)
+                foreach (Tuple<string, string> tuple in lstTuple)
+                {
+                    var tryPath = string.Format(filePattern, tuple.Item1, tuple.Item2);
+                    if (File.Exists(tryPath))
                     {
-                        var tryPath = string.Format(filePattern, tuple.Item1, tuple.Item2);
-                        if (File.Exists(tryPath))
-                        {
-                            return tryPath;
-                        }
+                        return tryPath;
                     }
                 }
-
-                return "dotnet.exe";
             }
 
-            return "dotnet";
+            return GetDotnetExe();
         }
+
+        public string GetDotnetExe()
+            => (EnvironmentTools.IsWindows(), Environment.Is64BitProcess) switch
+            {
+                (true, true) => "dotnet.exe",
+                (true, false) => Environment.GetEnvironmentVariable("DOTNET_EXE_32") ??
+                                 Path.Combine(
+                                     Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
+                                     "dotnet",
+                                     "dotnet.exe"),
+                _ =>  "dotnet",
+            };
 
         public string GetSampleProjectDirectory()
         {

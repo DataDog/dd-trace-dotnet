@@ -15,6 +15,8 @@
 namespace trace
 {
 
+extern bool dump_il_rewrite_enabled;
+
 template <typename Out>
 void Split(const WSTRING& s, wchar_t delim, Out result);
 

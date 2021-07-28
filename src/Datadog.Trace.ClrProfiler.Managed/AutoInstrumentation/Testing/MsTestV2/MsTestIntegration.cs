@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
             MethodInfo testMethod = testMethodInfo.MethodInfo;
             object[] testMethodArguments = testMethodInfo.Arguments;
 
-            string testFramework = "MSTestV2 " + type.Assembly.GetName().Version;
+            string testFramework = "MSTestV2";
             string testSuite = testMethodInfo.TestClassName;
             string testName = testMethodInfo.TestMethodName;
 
