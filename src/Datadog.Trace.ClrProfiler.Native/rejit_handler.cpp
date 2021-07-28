@@ -76,7 +76,7 @@ void RejitHandlerModuleMethod::SetMethodReplacement(const MethodReplacement& met
 
 void RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId)
 {
-    Debug("RejitHandlerModuleMethod::RequestRejitForInlinersInModule: ", moduleId);
+    Logger::Debug("RejitHandlerModuleMethod::RequestRejitForInlinersInModule: ", moduleId);
     std::lock_guard<std::mutex> guard(m_ngenModulesLock);
 
     // We check first if we already processed this module to skip it.
@@ -108,8 +108,8 @@ void RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
             std::vector<mdMethodDef> methods;
             while (methodEnum->Next(1, &method, NULL) == S_OK)
             {
-                Debug("NGEN:: Asking rewrite for inliner [ModuleId=", method.moduleId, ",MethodDef=", method.methodId,
-                      "]");
+                Logger::Debug("NGEN:: Asking rewrite for inliner [ModuleId=", method.moduleId,
+                              ",MethodDef=", method.methodId, "]");
                 modules.push_back(method.moduleId);
                 methods.push_back(method.methodId);
                 total++;
@@ -119,8 +119,8 @@ void RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
             if (total > 0)
             {
                 handler->EnqueueForRejit(modules, methods);
-                Info("NGEN:: Processed with ", total, " inliners [ModuleId=", currentModuleId,
-                     ",MethodDef=", currentMethodDef, "]");
+                Logger::Info("NGEN:: Processed with ", total, " inliners [ModuleId=", currentModuleId,
+                             ",MethodDef=", currentMethodDef, "]");
             }
 
             if (!incompleteData)
@@ -129,22 +129,21 @@ void RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
             }
             else
             {
-                Warn("NGen inliner data for module '", moduleId, "' is incomplete.");
+                Logger::Warn("NGen inliner data for module '", moduleId, "' is incomplete.");
             }
         }
         else if (hr == E_INVALIDARG)
         {
-            Info("NGEN:: Error Invalid arguments in [ModuleId=", currentModuleId, ",MethodDef=", currentMethodDef,
-                 ", HR=", hr, "]");
+            Logger::Info("NGEN:: Error Invalid arguments in [ModuleId=", currentModuleId,
+                         ",MethodDef=", currentMethodDef, ", HR=", hr, "]");
         }
         else if (hr == CORPROF_E_DATAINCOMPLETE)
         {
-            Info("NGEN:: Error Incomplete data in [ModuleId=", currentModuleId, ",MethodDef=", currentMethodDef,
-                 ", HR=", hr, "]");
+            Logger::Info("NGEN:: Error Incomplete data in [ModuleId=", currentModuleId, ",MethodDef=", currentMethodDef, ", HR=", hr, "]");
         }
         else
         {
-            Info("NGEN:: Error in [ModuleId=", currentModuleId, ",MethodDef=", currentMethodDef, ", HR=", hr, "]");
+            Logger::Info("NGEN:: Error in [ModuleId=", currentModuleId, ",MethodDef=", currentMethodDef, ", HR=", hr, "]");
         }
     }
 }

@@ -253,12 +253,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
 
     if (is_calltarget_enabled && is_net46_or_greater && IsNGENEnabled())
     {
-        Info("NGEN is enabled.");
+        Logger::Info("NGEN is enabled.");
         event_mask |= COR_PRF_MONITOR_CACHE_SEARCHES;
     }
     else
     {
-        Info("NGEN is disabled.");
+        Logger::Info("NGEN is disabled.");
         event_mask |= COR_PRF_DISABLE_ALL_NGEN_IMAGES;
     }
 
@@ -269,10 +269,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         instrument_domain_neutral_assemblies = true;
     }
 
-
-  // set event mask to subscribe to events and disable NGEN images
-  if (is_net46_or_greater)
-  {
+    // set event mask to subscribe to events and disable NGEN images
+    if (is_net46_or_greater)
+    {
         hr = info6->SetEventMask2(event_mask, COR_PRF_HIGH_ADD_ASSEMBLY_REFERENCES);
 
         if (instrument_domain_neutral_assemblies)
@@ -3002,7 +3001,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
 
     if (FAILED(hr))
     {
-        Warn("JITCachedFunctionSearchStarted: Call to ICorProfilerInfo4.GetFunctionInfo() failed for ", functionId);
+        Logger::Warn("JITCachedFunctionSearchStarted: Call to ICorProfilerInfo4.GetFunctionInfo() failed for ", functionId);
         return S_OK;
     }
 
@@ -3029,7 +3028,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
 
     if (!has_loader_injected_in_appdomain)
     {
-        Debug("Disabling NGEN due to missing loader.");
+        Logger::Debug("Disabling NGEN due to missing loader.");
         // The loader is missing in this AppDomain, we skip the NGEN image to allow the JITCompilationStart inject it.
         *pbUseCachedFunction = false;
         return S_OK;
