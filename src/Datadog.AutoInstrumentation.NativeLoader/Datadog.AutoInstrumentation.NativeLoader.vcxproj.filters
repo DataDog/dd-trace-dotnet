@@ -76,14 +76,12 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Datadog.AutoInstrumentation.NativeLoader.def">
-      <Filter>Source Files</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
     <CopyFileToFolders Include="loader.conf" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Datadog.AutoInstrumentation.NativeLoader.def" />
   </ItemGroup>
 </Project>
