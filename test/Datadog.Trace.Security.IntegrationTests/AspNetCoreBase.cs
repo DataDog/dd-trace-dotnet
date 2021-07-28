@@ -42,16 +42,30 @@ namespace Datadog.Trace.Security.IntegrationTests
             return StartSample(agent.Port, arguments: null, aspNetCorePort: httpPort, enableSecurity: enableSecurity);
         }
 
-        public Task RunOnIis(string path, bool enableSecurity)
+        public async Task RunOnIis(string path, bool enableSecurity)
         {
             var initialAgentPort = TcpPortProvider.GetOpenPort();
             var agent = new MockTracerAgent(initialAgentPort);
             httpPort = TcpPortProvider.GetOpenPort();
-
-            var arguments = $"/clr:v4.0 /path:{EnvironmentHelper.GetSampleProjectDirectory()} /systray:false /port:{httpPort} /trace:verbose";
+            var sampleProjectDir = EnvironmentHelper.GetSampleProjectDirectory();
+            var arguments = $"/clr:v4.0 /path:{sampleProjectDir} /systray:false /port:{httpPort} /trace:verbose";
             Output.WriteLine($"[webserver] starting {path} {string.Join(" ", arguments)}");
+#if NETFRAMEWORK
 
-            return StartSample(agent.Port, arguments, httpPort, iisExpress: true, enableSecurity: enableSecurity);
+            var publish = new System.EnterpriseServices.Internal.Publish();
+            var execPath = Path.Combine(sampleProjectDir, "bin\\");
+            foreach (var file in Directory.GetFiles(execPath, "Datadog.Trace.*.dll"))
+            {
+                publish.GacInstall(file);
+            }
+#endif
+            await StartSample(agent.Port, arguments, httpPort, iisExpress: true, enableSecurity: enableSecurity);
+#if NETFRAMEWORK
+            foreach (var file in Directory.GetFiles(execPath, "Datadog.Trace.*.dll"))
+            {
+                publish.GacRemove(file);
+            }
+#endif
         }
 
         public void Dispose()
