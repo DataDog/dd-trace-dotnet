@@ -39,10 +39,28 @@ namespace Datadog.Trace.Util
 
             if (routeDatas != null && routeDatas.Values.Any())
             {
-                dict.Add(AddressesConstants.RequestPathParams, routeDatas.Values.ToDictionary(c => c.Key, c => c.Value));
+                var routeDataDict = ConvertRouteValueDictionary(routeDatas.Values);
+                dict.Add(AddressesConstants.RequestPathParams, routeDataDict);
             }
 
             return dict;
+        }
+
+        private static object ConvertRouteValueDictionary(RouteValueDictionary routeDataDict)
+        {
+            return routeDataDict.ToDictionary(
+                c => c.Key,
+                c =>
+                    c.Value switch
+                    {
+                        List<RouteData> routeDataList => ConvertRouteValueList(routeDataList),
+                        _ => c.Value
+                    });
+        }
+
+        private static object ConvertRouteValueList(List<RouteData> routeDataList)
+        {
+            return routeDataList.Select(x => ConvertRouteValueDictionary(x.Values)).ToList();
         }
     }
 }
