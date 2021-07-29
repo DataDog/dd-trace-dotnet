@@ -42,6 +42,7 @@ variables:
   isScheduledBuild: ${{ eq(variables['Build.Reason'], 'Schedule') }} # only works if you have a main branch
   # Allow forcing a benchmark/throughput run using run_benchmarks_only=true
   dotnetToolTag: build-dotnet-tool
+  DD_ENV: ci
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
