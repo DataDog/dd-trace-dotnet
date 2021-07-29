@@ -100,8 +100,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetServiceVersion("1.0.0");
             SetCallTargetSettings(enableCallTarget);
-            // todo remove
-            SetSecurity(true);
+
             if (enableRouteTemplateResourceNames)
             {
                 SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, "true");
