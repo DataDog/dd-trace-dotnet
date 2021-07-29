@@ -20,7 +20,7 @@
     <OutputName>datadog-dotnet-apm-1.28.2-$(Platform)</OutputName>
     <TracerHomeDirectory Condition="'$(TracerHomeDirectory)' == ''">$(MSBuildThisFileDirectory)..\bin\windows-tracer-home</TracerHomeDirectory>
     <DefineConstants>InstallerVersion=1.28.2;TracerHomeDirectory=$(TracerHomeDirectory);LibSqreenDirectory=$(LibSqreenDirectory)</DefineConstants>
-    <LibSqreenDirectory Condition="'$(LibSqreenDirectory)' == ''">$(LibSqreenDirectory)..\..\packages\libsqreen.1.1.2.2</LibSqreenDirectory>
+    <LibSqreenDirectory Condition="'$(LibSqreenDirectory)' == ''">$(LibSqreenDirectory)..\..\packages\libsqreen.1.1.2.3</LibSqreenDirectory>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <DefineConstants>$(DefineConstants);Debug</DefineConstants>

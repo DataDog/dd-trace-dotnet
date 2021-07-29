@@ -344,6 +344,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("DD_TRACE_CALLTARGET_ENABLED", enableCallTarget ? "true" : "false");
         }
 
+        protected void SetSecurity(bool security)
+        {
+            SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSecEnabled, security ? "true" : "false");
+        }
+
 #if !NET452
         protected async Task<IImmutableList<MockTracerAgent.Span>> GetWebServerSpans(
             string path,

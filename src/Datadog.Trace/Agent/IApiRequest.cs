@@ -5,6 +5,7 @@
 
 using System;
 using System.Threading.Tasks;
+using Datadog.Trace.Abstractions;
 
 namespace Datadog.Trace.Agent
 {
@@ -13,5 +14,7 @@ namespace Datadog.Trace.Agent
         void AddHeader(string name, string value);
 
         Task<IApiResponse> PostAsync(ArraySegment<byte> traces);
+
+        Task<IApiResponse> PostAsJsonAsync(IEvent events);
     }
 }

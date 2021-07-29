@@ -4,8 +4,10 @@
 // </copyright>
 
 #if !NETFRAMEWORK
+using System;
+using System.Threading.Tasks;
+using Datadog.Trace.AppSec.EventModel;
 using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.DiagnosticListeners;
 using Microsoft.AspNetCore.Http;
 
 namespace Datadog.Trace.AppSec.Transport.Http
@@ -14,10 +16,32 @@ namespace Datadog.Trace.AppSec.Transport.Http
     {
         private readonly HttpContext context;
 
-        public HttpTransport(HttpContext context)
+        public HttpTransport(HttpContext context) => this.context = context;
+
+        public Request Request()
         {
-            this.context = context;
+            var request = new Request
+            {
+                Method = context.Request.Method,
+                Path = context.Request.Path,
+                Scheme = context.Request.Scheme,
+                RemoteIp = context.Connection.RemoteIpAddress.ToString()
+            };
+
+            if (context.Request.Host.HasValue)
+            {
+                request.Host = context.Request.Host.ToString();
+                request.Port = context.Request.Host.Port.GetValueOrDefault();
+            }
+
+            return request;
         }
+
+        public Response Response(bool blocked) => new Response
+        {
+            Status = context.Response.StatusCode,
+            Blocked = blocked
+        };
 
         public void Block()
         {
@@ -41,6 +65,8 @@ namespace Datadog.Trace.AppSec.Transport.Http
             context.Features.Set(additiveContext);
             context.Response.RegisterForDispose(additiveContext);
         }
+
+        public void AddRequestScope(Guid guid) => context.Items.Add("Security", guid);
     }
 }
 #endif
