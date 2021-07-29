@@ -14,7 +14,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Samples.AspNetMvc5</RootNamespace>
     <AssemblyName>Samples.AspNetMvc5</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <MvcBuildViews>false</MvcBuildViews>
     <UseIISExpress>true</UseIISExpress>
     <Use64BitIISExpress>true</Use64BitIISExpress>
@@ -46,6 +46,40 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.CodeDom.Providers.DotNetCompilerPlatform, Version=2.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
@@ -185,8 +219,12 @@
     <Content Include="Scripts\jquery-3.4.1.min.map" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\..\src\Datadog.Trace.AspNet\Datadog.Trace.AspNet.csproj">
+      <Project>{b34edbc7-c5fb-409d-8472-bc7469d6f2bd}</Project>
+      <Name>Datadog.Trace.AspNet</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\..\..\src\Datadog.Trace.ClrProfiler.Managed.Core\Datadog.Trace.ClrProfiler.Managed.Core.csproj">
-      <Project>{934fe26d-885d-4fad-9afc-bfa975dfcbb5}</Project>
+      <Project>{d95d5e26-f32a-481d-a15a-ef7b3b56d2e0}</Project>
       <Name>Datadog.Trace.ClrProfiler.Managed.Core</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\..\..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj">
@@ -199,14 +237,10 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <SecurityLibraryFiles Include="..\..\..\..\..\packages\libsqreen.1.1.2.2\runtimes\**\*.*" />
+    <SecurityLibraryFiles Include="..\..\..\..\..\packages\libsqreen.1.1.2.3\runtimes\**\*.*" />
   </ItemGroup>
   <Target Name="CopyFiles" AfterTargets="Build">
-    <Copy
-      SourceFiles="@(SecurityLibraryFiles)"
-      DestinationFolder="$(TargetDir)\%(RecursiveDir)"
-      SkipUnchangedFiles="true"
-      />
+    <Copy SourceFiles="@(SecurityLibraryFiles)" DestinationFolder="$(TargetDir)\%(RecursiveDir)" SkipUnchangedFiles="true" />
   </Target>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

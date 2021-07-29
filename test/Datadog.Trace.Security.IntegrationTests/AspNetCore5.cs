@@ -3,8 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NET5_0
+#if NETCOREAPP3_0_OR_GREATER
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Xunit;
@@ -12,7 +14,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
-    public class AspNetCore5 : AspNetCoreBase, IDisposable
+    public class AspNetCore5 : AspNetBase, IDisposable
     {
         public AspNetCore5(ITestOutputHelper outputHelper)
             : base("AspNetCore5", outputHelper)
@@ -22,11 +24,17 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Theory]
         [InlineData(true, HttpStatusCode.Forbidden)]
         [InlineData(false, HttpStatusCode.OK)]
+        [Trait("RunOnWindows", "True")]
+        [Trait("Category", "ArmUnsupported")]
         public async Task TestBlockedRequestAsync(bool enableSecurity, HttpStatusCode expectedStatusCode)
         {
-            await RunOnSelfHosted(enableSecurity);
-            var (statusCode, _) = await SubmitRequest("/Home?arg=[$slice]");
-            Assert.Equal(expectedStatusCode, statusCode);
+            using var agent = await RunOnSelfHosted(enableSecurity);
+            await TestBlockedRequestAsync(agent, enableSecurity, expectedStatusCode, 5, new Action<TestHelpers.MockTracerAgent.Span>[]
+            {
+             s => Assert.Equal("aspnet_core.request", s.Name),
+             s  => Assert.Equal("Samples.AspNetCore5", s.Service),
+             s  =>  Assert.Equal("web", s.Type)
+            });
         }
     }
 }

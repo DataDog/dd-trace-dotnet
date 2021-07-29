@@ -9,6 +9,8 @@ namespace Datadog.Trace.AppSec.Waf
     {
         public ReturnCode ReturnCode => ReturnCode.Good;
 
+        public string Data => string.Empty;
+
         public void Dispose()
         {
         }

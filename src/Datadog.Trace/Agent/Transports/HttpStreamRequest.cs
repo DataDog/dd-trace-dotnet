@@ -6,6 +6,7 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using Datadog.Trace.Abstractions;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.HttpOverStreams.HttpContent;
 
@@ -36,6 +37,11 @@ namespace Datadog.Trace.Agent.Transports
         public void AddHeader(string name, string value)
         {
             _headers.Add(name, value);
+        }
+
+        public Task<IApiResponse> PostAsJsonAsync(IEvent events)
+        {
+            throw new NotImplementedException();
         }
 
         public async Task<IApiResponse> PostAsync(ArraySegment<byte> traces)
