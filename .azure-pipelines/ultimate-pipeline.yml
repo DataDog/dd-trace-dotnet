@@ -326,7 +326,14 @@ stages:
       pool:
         name: Arm64
 
+      variables:
+        dockerNetwork: dd_agent_arm64_unit_tests
       steps:
+        - script: |
+            docker network create $(dockerNetwork)
+            docker run --rm -d --network $(dockerNetwork) --name dd_agent -p 8126:8126 -e "DD_API_KEY=$(ddApiKey)" -e "DD_INSIDE_CI=true" datadog/agent
+          displayName: Start dd_agent in Docker
+
         - template: steps/restore-working-directory.yml
           parameters:
             artifact: build-linux-arm64-working-directory
@@ -339,6 +346,12 @@ stages:
 
         - publish: build_data
           artifact: profiler-logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt)
+          condition: succeededOrFailed()
+
+        - script: |
+            docker stop dd_agent
+            docker network rm $(dockerNetwork)
+          displayName: Stop dd_agent
           condition: succeededOrFailed()
 
         - task: PublishTestResults@2
@@ -509,11 +522,17 @@ stages:
 
     variables:
       TestAllPackageVersions: true
+      dockerNetwork: dd_agent_$(baseImage)_$(publishTargetFramework)_integration_tests
 
     pool:
       vmImage: ubuntu-18.04
 
     steps:
+    - script: |
+        docker network create $(dockerNetwork)
+        docker run --rm -d --network $(dockerNetwork) --name dd_agent -p 8126:8126 -e "DD_API_KEY=$(ddApiKey)" -e "DD_INSIDE_CI=true" datadog/agent
+      displayName: Start dd_agent in Docker
+
     # Doing a clean of obj files _before_ restore to remove build output from previous runs
     # Can't do a full clean, as otherwise restore-working-directory fails
     # Only necessary for ARM64, but shouldn't cause any harm on others
@@ -566,6 +585,12 @@ stages:
       artifact: profiler-logs_integration_tests_linux_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
       condition: succeededOrFailed()
 
+    - script: |
+        docker stop dd_agent
+        docker network rm $(dockerNetwork)
+      displayName: Stop dd_agent
+      condition: succeededOrFailed()
+
     - task: PublishTestResults@2
       displayName: publish test results
       inputs:
@@ -582,11 +607,17 @@ stages:
         TestAllPackageVersions: true
         publishTargetFramework: net5.0
         baseImage: debian
+        dockerNetwork: dd_agent_arm64_integration_tests
 
       pool:
         name: Arm64
 
       steps:
+        - script: |
+            docker network create $(dockerNetwork)
+            docker run --rm -d --network $(dockerNetwork) --name dd_agent -p 8126:8126 -e "DD_API_KEY=$(ddApiKey)" -e "DD_INSIDE_CI=true" datadog/agent
+          displayName: Start dd_agent in Docker
+
         # Doing a clean of obj files _before_ restore to remove build output from previous runs
         # Can't do a full clean, as otherwise restore-working-directory fails
         # Only necessary for ARM64, but shouldn't cause any harm on others
@@ -637,6 +668,12 @@ stages:
 
         - publish: build_data
           artifact: profiler-logs_integration_tests_linux_arm64_$(publishTargetFramework)_$(System.JobAttempt)
+          condition: succeededOrFailed()
+
+        - script: |
+            docker stop dd_agent
+            docker network rm $(dockerNetwork)
+          displayName: Stop dd_agent
           condition: succeededOrFailed()
 
         - task: PublishTestResults@2
