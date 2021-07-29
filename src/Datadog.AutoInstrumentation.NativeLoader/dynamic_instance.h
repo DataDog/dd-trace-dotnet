@@ -32,7 +32,7 @@ namespace datadog::shared::nativeloader
     //
     class DynamicInstanceImpl : public DynamicInstance
     {
-    private:
+    protected:
         std::string m_filepath;
         std::string m_clsid_string;
         IID m_clsid = IID_IUnknown;
@@ -49,12 +49,12 @@ namespace datadog::shared::nativeloader
     public:
         DynamicInstanceImpl(std::string filePath, std::string clsid);
         ~DynamicInstanceImpl();
-        HRESULT LoadClassFactory(REFIID riid) override;
-        HRESULT LoadInstance(IUnknown* pUnkOuter, REFIID riid) override;
-        HRESULT STDMETHODCALLTYPE DllCanUnloadNow() override;
-        ICorProfilerCallback10* GetProfilerCallback() override;
-        std::string GetFilePath() override;
-        std::string GetClsId() override;
+        virtual HRESULT LoadClassFactory(REFIID riid) override;
+        virtual HRESULT LoadInstance(IUnknown* pUnkOuter, REFIID riid) override;
+        virtual HRESULT STDMETHODCALLTYPE DllCanUnloadNow() override;
+        virtual ICorProfilerCallback10* GetProfilerCallback() override;
+        virtual std::string GetFilePath() override;
+        virtual std::string GetClsId() override;
     };
 
 } // namespace datadog::shared::nativeloader

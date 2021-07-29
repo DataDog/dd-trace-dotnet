@@ -29,20 +29,20 @@ namespace datadog::shared::nativeloader
     //
     class DynamicDispatcherImpl : public DynamicDispatcher
     {
-    private:
+    protected:
         std::unique_ptr<DynamicInstance> m_continuousProfilerInstance;
         std::unique_ptr<DynamicInstance> m_tracerInstance;
         std::unique_ptr<DynamicInstance> m_customInstance;
 
     public:
         DynamicDispatcherImpl();
-        void LoadConfiguration(std::string configFilePath) override;
-        HRESULT LoadClassFactory(REFIID riid) override;
-        HRESULT LoadInstance(IUnknown* pUnkOuter, REFIID riid) override;
-        HRESULT STDMETHODCALLTYPE DllCanUnloadNow() override;
-        DynamicInstance* GetContinuousProfilerInstance() override;
-        DynamicInstance* GetTracerInstance() override;
-        DynamicInstance* GetCustomInstance() override;
+        virtual void LoadConfiguration(std::string configFilePath) override;
+        virtual HRESULT LoadClassFactory(REFIID riid) override;
+        virtual HRESULT LoadInstance(IUnknown* pUnkOuter, REFIID riid) override;
+        virtual HRESULT STDMETHODCALLTYPE DllCanUnloadNow() override;
+        virtual DynamicInstance* GetContinuousProfilerInstance() override;
+        virtual DynamicInstance* GetTracerInstance() override;
+        virtual DynamicInstance* GetCustomInstance() override;
     };
 
 } // namespace datadog::shared::nativeloader
