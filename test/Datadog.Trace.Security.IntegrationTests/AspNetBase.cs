@@ -1,4 +1,4 @@
-// <copyright file="AspNetCoreBase.cs" company="Datadog">
+// <copyright file="AspNetBase.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -16,17 +16,17 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
-    public class AspNetCoreBase : IDisposable
+    public class AspNetBase : IDisposable
     {
         private readonly HttpClient httpClient;
         private int httpPort;
         private Process process;
 
-        public AspNetCoreBase(string sampleName, ITestOutputHelper outputHelper, string samplesDir = null)
+        public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string samplesDir = null)
         {
             Output = outputHelper;
             httpClient = new HttpClient();
-            EnvironmentHelper = new EnvironmentHelper(sampleName, typeof(AspNetCoreBase), Output, samplesDirectory: samplesDir ?? "test/test-applications/security");
+            EnvironmentHelper = new EnvironmentHelper(sampleName, typeof(AspNetBase), Output, samplesDirectory: samplesDir ?? "test/test-applications/security");
         }
 
         public EnvironmentHelper EnvironmentHelper { get; }
@@ -42,7 +42,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             return StartSample(agent.Port, arguments: null, aspNetCorePort: httpPort, enableSecurity: enableSecurity);
         }
 
-        public async Task RunOnIis(string path, bool enableSecurity)
+        public Task RunOnIis(string path, bool enableSecurity)
         {
             var initialAgentPort = TcpPortProvider.GetOpenPort();
             var agent = new MockTracerAgent(initialAgentPort);
@@ -59,13 +59,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 publish.GacInstall(file);
             }
 #endif
-            await StartSample(agent.Port, arguments, httpPort, iisExpress: true, enableSecurity: enableSecurity);
-#if NETFRAMEWORK
-            foreach (var file in Directory.GetFiles(execPath, "Datadog.Trace.*.dll"))
-            {
-                publish.GacRemove(file);
-            }
-#endif
+            return StartSample(agent.Port, arguments, httpPort, iisExpress: true, enableSecurity: enableSecurity);
         }
 
         public void Dispose()
@@ -76,6 +70,15 @@ namespace Datadog.Trace.Security.IntegrationTests
                 process.Kill();
                 process.Dispose();
             }
+#if NETFRAMEWORK
+            var sampleProjectDir = EnvironmentHelper.GetSampleProjectDirectory();
+            var publish = new System.EnterpriseServices.Internal.Publish();
+            var execPath = Path.Combine(sampleProjectDir, "bin\\");
+            foreach (var file in Directory.GetFiles(execPath, "Datadog.Trace*.dll"))
+            {
+                publish.GacRemove(file);
+            }
+#endif
         }
 
         protected async Task<(HttpStatusCode StatusCode, string ResponseText)> SubmitRequest(string path)

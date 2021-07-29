@@ -4,7 +4,6 @@
 // </copyright>
 
 #if NET461
-using System;
 using System.Net;
 using System.Threading.Tasks;
 using Xunit;
@@ -14,7 +13,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 {
     [CollectionDefinition("IisTests", DisableParallelization = true)]
     [Collection("IisTests")]
-    public class AspNetMvc5 : AspNetCoreBase
+    public class AspNetMvc5 : AspNetBase
     {
         public AspNetMvc5(ITestOutputHelper outputHelper)
            : base(nameof(AspNetMvc5), outputHelper, "test\\test-applications\\security\\aspnet")
