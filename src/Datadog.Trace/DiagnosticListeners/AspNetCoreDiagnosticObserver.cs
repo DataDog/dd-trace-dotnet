@@ -655,8 +655,15 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void RaiseIntrumentationEvent(IDatadogSecurity security, HttpContext context, HttpRequest request, Span span, RouteData routeData = null)
         {
-            var dic = request.PrepareArgsForWaf(routeData);
-            security.InstrumentationGateway.RaiseEvent(dic, new HttpTransport(context), span);
+            try
+            {
+                var dic = request.PrepareArgsForWaf(routeData);
+                security.InstrumentationGateway.RaiseEvent(dic, new HttpTransport(context), span);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error occurred raising instrumentation event");
+            }
         }
 
         private void OnRoutingEndpointMatched(object arg)

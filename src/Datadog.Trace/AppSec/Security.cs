@@ -44,16 +44,27 @@ namespace Datadog.Trace.AppSec
 
         internal Security(InstrumentationGateway instrumentationGateway = null, IPowerWaf powerWaf = null, IAgentWriter agentWriter = null)
         {
-            var found = Environment.GetEnvironmentVariable(ConfigurationKeys.AppSecEnabled)?.ToBoolean();
-            Enabled = found == true;
+            try
+            {
+                var found = Environment.GetEnvironmentVariable(ConfigurationKeys.AppSecEnabled)?.ToBoolean();
+                Enabled = found == true;
 
-            Log.Information($"Security.Enabled: {Enabled} ");
+                Log.Information($"Security.Enabled: {Enabled} ");
 
-            _instrumentationGateway = instrumentationGateway ?? new InstrumentationGateway();
+                _instrumentationGateway = instrumentationGateway ?? new InstrumentationGateway();
 
-            _powerWaf = powerWaf ?? (Enabled ? new PowerWaf() : new NullPowerWaf());
-            _agentWriter = agentWriter ?? new AgentWriter();
-            _instrumentationGateway.InstrumentationGetwayEvent += InstrumentationGateway_InstrumentationGetwayEvent;
+                _powerWaf = powerWaf ?? (Enabled ? new PowerWaf() : new NullPowerWaf());
+                _agentWriter = agentWriter ?? new AgentWriter();
+
+                if (Enabled)
+                {
+                    _instrumentationGateway.InstrumentationGetwayEvent += InstrumentationGateway_InstrumentationGetwayEvent;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Datadog AppSec failed to initialize, your application is NOT protected");
+            }
         }
 
         /// <summary>
@@ -141,7 +152,14 @@ namespace Datadog.Trace.AppSec
 
         private void InstrumentationGateway_InstrumentationGetwayEvent(object sender, InstrumentationGatewayEventArgs e)
         {
-            RunWafAndReact(e.EventData, e.Transport, e.RelatedSpan);
+            try
+            {
+                RunWafAndReact(e.EventData, e.Transport, e.RelatedSpan);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Call into the security module failed");
+            }
         }
     }
 }

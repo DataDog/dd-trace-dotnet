@@ -12,11 +12,6 @@
 
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net452|x64'">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DocumentationFile>C:\Repositories\dd-dotnet-trace\test\Datadog.Trace.Security.IntegrationTests\Datadog.Trace.Security.IntegrationTests.xml</DocumentationFile>
-  </PropertyGroup>
-
   <ItemGroup>
     <None Include="..\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$(Platform)\**" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" Link="profiler-lib\%(RecursiveDir)\%(Filename)%(Extension)" />
     <None Remove="xunit.runner.json" />

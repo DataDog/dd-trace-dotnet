@@ -236,8 +236,15 @@ namespace Datadog.Trace.AspNet
 
         private void RaiseIntrumentationEvent(IDatadogSecurity security, HttpContext context, HttpRequest request, Span relatedSpan)
         {
-            var dict = request.PrepareArgsForWaf();
-            security.InstrumentationGateway.RaiseEvent(dict, new HttpTransport(context), relatedSpan);
+            try
+            {
+                var dict = request.PrepareArgsForWaf();
+                security.InstrumentationGateway.RaiseEvent(dict, new HttpTransport(context), relatedSpan);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error occurred raising instrumentation event");
+            }
         }
     }
 }

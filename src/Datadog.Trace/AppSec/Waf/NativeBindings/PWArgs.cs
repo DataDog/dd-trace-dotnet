@@ -19,23 +19,19 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         [FieldOffset(8)]
         public ulong ParameterNameLength;
 
+        // The equivalent union in LibSqreen contains more cases, but they don't
+        // all map well to .NET types. It shouldn't be necessary to manipulate them
+        // they're just provided for debugging.
         // union
         // {
-        // TODO this needs to be marshalled to string, since an object type can't share the same spaces as value type
         [FieldOffset(16)]
-        public IntPtr StringValue;
+        public IntPtr RawHandle;
 
         [FieldOffset(16)]
         public ulong UintValue;
 
         [FieldOffset(16)]
         public long IntValue;
-
-        [FieldOffset(16)]
-        public IntPtr PWArgs32Array;
-
-        [FieldOffset(16)]
-        public IntPtr RawHandle;
         // };
 
         [FieldOffset(24)]
