@@ -963,6 +963,7 @@ stages:
       displayName: Crank
       env:
         DD_SERVICE: dd-trace-dotnet
+
 - stage: coverage
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: [integration_tests_windows, integration_tests_windows_iis, integration_tests_linux, unit_tests_linux, unit_tests_macos, unit_tests_windows]
