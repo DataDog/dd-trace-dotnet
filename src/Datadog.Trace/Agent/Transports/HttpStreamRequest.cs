@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Abstractions;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.HttpOverStreams.HttpContent;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Agent.Transports
 {
@@ -39,16 +40,26 @@ namespace Datadog.Trace.Agent.Transports
             _headers.Add(name, value);
         }
 
-        public Task<IApiResponse> PostAsJsonAsync(IEvent events)
+        public async Task<IApiResponse> PostAsJsonAsync(IEvent events)
         {
-            throw new NotImplementedException();
+            using var memoryStream = new MemoryStream();
+            using var streamWriter = new StreamWriter(memoryStream);
+            var json = JsonConvert.SerializeObject(events);
+            streamWriter.Write(json);
+            var buffer = memoryStream.GetBuffer();
+            return await PostSegmentAsync(new ArraySegment<byte>(buffer, 0, (int)memoryStream.Length)).ConfigureAwait(false);
         }
 
         public async Task<IApiResponse> PostAsync(ArraySegment<byte> traces)
         {
+            return await PostSegmentAsync(traces).ConfigureAwait(false);
+        }
+
+        private async Task<IApiResponse> PostSegmentAsync(ArraySegment<byte> segment)
+        {
             using (var bidirectionalStream = _streamFactory.GetBidirectionalStream())
             {
-                var content = new BufferContent(traces);
+                var content = new BufferContent(segment);
                 var request = new HttpRequest("POST", _uri.Host, _uri.PathAndQuery, _headers, content);
 
                 // send request, get response

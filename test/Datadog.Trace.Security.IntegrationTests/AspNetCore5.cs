@@ -26,7 +26,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         [InlineData(false, HttpStatusCode.OK)]
         [Trait("RunOnWindows", "True")]
         [Trait("Category", "ArmUnsupported")]
-        public async Task TestBlockedRequestAsync(bool enableSecurity, HttpStatusCode expectedStatusCode)
+        public async Task TestSecurity(bool enableSecurity, HttpStatusCode expectedStatusCode)
         {
             using var agent = await RunOnSelfHosted(enableSecurity);
             await TestBlockedRequestAsync(agent, enableSecurity, expectedStatusCode, 5, new Action<TestHelpers.MockTracerAgent.Span>[]
