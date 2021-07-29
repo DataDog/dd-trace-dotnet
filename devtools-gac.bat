@@ -9,3 +9,4 @@ gacutil -i %~dp0\src\Datadog.Trace\bin\%mode%\%fmk%\Datadog.Trace.dll
 gacutil -i %~dp0\src\Datadog.Trace.ClrProfiler.Managed\bin\%mode%\%fmk%\Datadog.Trace.ClrProfiler.Managed.dll
 gacutil -i %~dp0\src\Datadog.Trace.ClrProfiler.Managed.Core\bin\%mode%\%fmk%\Datadog.Trace.ClrProfiler.Managed.Core.dll
 gacutil -i %~dp0\src\Datadog.Trace.AspNet\bin\%mode%\net45\Datadog.Trace.AspNet.dll
+iisreset.exe

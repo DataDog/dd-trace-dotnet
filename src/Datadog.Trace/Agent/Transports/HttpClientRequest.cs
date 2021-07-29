@@ -8,6 +8,8 @@ using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
+using Datadog.Trace.Abstractions;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Agent.Transports
 {
@@ -25,6 +27,16 @@ namespace Datadog.Trace.Agent.Transports
         public void AddHeader(string name, string value)
         {
             _request.Headers.Add(name, value);
+        }
+
+        public async Task<IApiResponse> PostAsJsonAsync(IEvent events)
+        {
+            var json = JsonConvert.SerializeObject(events);
+            using var content = new System.Net.Http.StringContent(json);
+            content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+            _request.Content = content;
+            var response = await _client.SendAsync(_request).ConfigureAwait(false);
+            return new HttpClientResponse(response);
         }
 
         public async Task<IApiResponse> PostAsync(ArraySegment<byte> traces)

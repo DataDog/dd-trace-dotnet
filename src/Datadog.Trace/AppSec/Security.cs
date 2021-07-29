@@ -4,9 +4,12 @@
 // </copyright>
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Datadog.Trace.AppSec.Agent;
+using Datadog.Trace.AppSec.EventModel;
 using Datadog.Trace.AppSec.Transport;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Configuration;
@@ -26,8 +29,10 @@ namespace Datadog.Trace.AppSec
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
 
-        private InstrumentationGateway _instrumentationGateway;
-        private IPowerWaf _powerWaf;
+        private readonly IPowerWaf _powerWaf;
+        private readonly IAgentWriter _agentWriter;
+        private readonly InstrumentationGateway _instrumentationGateway;
+        private readonly ConcurrentDictionary<Guid, Action> toExecute = new ConcurrentDictionary<Guid, Action>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Security"/> class with default settings.
@@ -37,18 +42,29 @@ namespace Datadog.Trace.AppSec
         {
         }
 
-        internal Security(InstrumentationGateway instrumentationGateway = null, IPowerWaf powerWaf = null)
+        internal Security(InstrumentationGateway instrumentationGateway = null, IPowerWaf powerWaf = null, IAgentWriter agentWriter = null)
         {
-            var found = Environment.GetEnvironmentVariable(ConfigurationKeys.AppSecEnabled)?.ToBoolean();
-            Enabled = found == true;
+            try
+            {
+                var found = Environment.GetEnvironmentVariable(ConfigurationKeys.AppSecEnabled)?.ToBoolean();
+                Enabled = found == true;
 
-            Log.Information($"Security.Enabled: {Enabled} ");
+                Log.Information($"Security.Enabled: {Enabled} ");
 
-            _instrumentationGateway = instrumentationGateway ?? new InstrumentationGateway();
+                _instrumentationGateway = instrumentationGateway ?? new InstrumentationGateway();
 
-            _powerWaf = powerWaf ?? (Enabled ? new PowerWaf() : new NullPowerWaf());
+                _powerWaf = powerWaf ?? (Enabled ? new PowerWaf() : new NullPowerWaf());
+                _agentWriter = agentWriter ?? new AgentWriter();
 
-            _instrumentationGateway.InstrumentationGetwayEvent += InstrumentationGateway_InstrumentationGetwayEvent;
+                if (Enabled)
+                {
+                    _instrumentationGateway.InstrumentationGetwayEvent += InstrumentationGateway_InstrumentationGetwayEvent;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Datadog AppSec failed to initialize, your application is NOT protected");
+            }
         }
 
         /// <summary>
@@ -84,13 +100,24 @@ namespace Datadog.Trace.AppSec
         /// <summary>
         /// Frees resouces
         /// </summary>
-        public void Dispose()
+        public void Dispose() => _powerWaf?.Dispose();
+
+        internal void Execute(Guid guid)
         {
-            _powerWaf?.Dispose();
+            if (toExecute.TryRemove(guid, out var value))
+            {
+                value();
+            }
         }
 
-        private void RunWafAndReact(IDictionary<string, object> args, ITransport transport)
+        private void RunWafAndReact(IDictionary<string, object> args, ITransport transport, Span span)
         {
+            void Report(ITransport transport, Span span, Waf.ReturnTypes.Managed.Return result)
+            {
+                var attack = Attack.From(result, span, transport);
+                _agentWriter.AddEvent(attack);
+            }
+
             var additiveContext = transport.GetAdditiveContext();
 
             if (additiveContext == null)
@@ -100,21 +127,39 @@ namespace Datadog.Trace.AppSec
             }
 
             // run the WAF and execute the results
-            using var result = additiveContext.Run(args);
-            if (result.ReturnCode == ReturnCode.Monitor || result.ReturnCode == ReturnCode.Block)
+            using var wafResult = additiveContext.Run(args);
+            if (wafResult.ReturnCode == ReturnCode.Monitor || wafResult.ReturnCode == ReturnCode.Block)
             {
-                Log.Warning($"Attack detetected! Action: {result.ReturnCode} " + string.Join(", ", args.Select(x => $"{x.Key}: {x.Value}")));
-            }
-
-            if (result.ReturnCode == ReturnCode.Block)
-            {
-                transport.Block();
+                Log.Warning($"Attack detected! Action: {wafResult.ReturnCode} " + string.Join(", ", args.Select(x => $"{x.Key}: {x.Value}")));
+                var managedWafResult = Waf.ReturnTypes.Managed.Return.From(wafResult);
+                if (wafResult.ReturnCode == ReturnCode.Block)
+                {
+                    transport.Block();
+#if !NETFRAMEWORK
+                    var guid = Guid.NewGuid();
+                    toExecute.TryAdd(guid, () => Report(transport, span, managedWafResult));
+                    transport.AddRequestScope(guid);
+#else
+                    Report(transport, span, managedWafResult);
+#endif
+                }
+                else
+                {
+                    Report(transport, span, managedWafResult);
+                }
             }
         }
 
         private void InstrumentationGateway_InstrumentationGetwayEvent(object sender, InstrumentationGatewayEventArgs e)
         {
-            RunWafAndReact(e.EventData, e.Transport);
+            try
+            {
+                RunWafAndReact(e.EventData, e.Transport, e.RelatedSpan);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Call into the security module failed");
+            }
         }
     }
 }

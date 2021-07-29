@@ -46,6 +46,7 @@
     <ItemGroup>
       <!-- Subfolders of the output directory should each be a target framework -->
       <ManagedProfilerFiles Include="$(ManagedProfilerOutputDirectory)\**\*.dll" Exclude="$(ManagedProfilerOutputDirectory)\*\runtimes\**\*.dll" />
+      <ManagedProfilerFiles Include="$(ManagedProfilerOutputDirectory)\**\*.lib" Exclude="$(ManagedProfilerOutputDirectory)\*\runtimes\**\*.lib" />
       <ManagedProfilerFiles Include="$(ManagedProfilerOutputDirectory)\**\*.pdb" Exclude="$(ManagedProfilerOutputDirectory)\*\runtimes\**\*.pdb" />
     </ItemGroup>
 

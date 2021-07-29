@@ -42,7 +42,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         private const string AssemblyName = "Microsoft.AspNetCore.Http";
 
         private const string ApplicationBuilder = "Microsoft.AspNetCore.Builder.ApplicationBuilder";
-        private const string RequestDelegate = "Microsoft.AspNetCore.Http.RequestDelegate";
 
         /// <summary>
         /// OnMethodBegin callback

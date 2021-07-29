@@ -1,9 +1,10 @@
-// <copyright file="AspNetCoreBase.cs" company="Datadog">
+// <copyright file="AspNetBase.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -12,63 +13,120 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
-    public class AspNetCoreBase : IDisposable
+    public class AspNetBase : IDisposable
     {
         private readonly HttpClient httpClient;
         private int httpPort;
         private Process process;
 
-        public AspNetCoreBase(string sampleName, ITestOutputHelper outputHelper, string samplesDir = null)
+        public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string samplesDir = null)
         {
             Output = outputHelper;
             httpClient = new HttpClient();
-            EnvironmentHelper = new EnvironmentHelper(sampleName, typeof(AspNetCoreBase), Output, samplesDirectory: samplesDir ?? "test/test-applications/security");
+            EnvironmentHelper = new EnvironmentHelper(sampleName, typeof(AspNetBase), Output, samplesDirectory: samplesDir ?? "test/test-applications/security");
         }
 
         public EnvironmentHelper EnvironmentHelper { get; }
 
         protected ITestOutputHelper Output { get; }
 
-        public Task RunOnSelfHosted(bool enableSecurity)
+        public async Task<MockTracerAgent> RunOnSelfHosted(bool enableSecurity)
         {
             var agentPort = TcpPortProvider.GetOpenPort();
             httpPort = TcpPortProvider.GetOpenPort();
 
-            using var agent = new MockTracerAgent(agentPort);
-            return StartSample(agent.Port, arguments: null, aspNetCorePort: httpPort, enableSecurity: enableSecurity);
+            var agent = new MockTracerAgent(agentPort);
+            await StartSample(agent.Port, arguments: null, aspNetCorePort: httpPort, enableSecurity: enableSecurity);
+            return agent;
         }
 
-        public Task RunOnIis(string path, bool enableSecurity)
+        public async Task<MockTracerAgent> RunOnIis(string path, bool enableSecurity)
         {
             var initialAgentPort = TcpPortProvider.GetOpenPort();
             var agent = new MockTracerAgent(initialAgentPort);
             httpPort = TcpPortProvider.GetOpenPort();
+            var sampleProjectDir = EnvironmentHelper.GetSampleProjectDirectory();
+            var arguments = $"/clr:v4.0 /path:{sampleProjectDir} /systray:false /port:{httpPort} /trace:verbose";
+#if NETFRAMEWORK
 
-            var arguments = $"/clr:v4.0 /path:{EnvironmentHelper.GetSampleProjectDirectory()} /systray:false /port:{httpPort} /trace:verbose";
+            var publish = new System.EnterpriseServices.Internal.Publish();
+            var execPath = Path.Combine(sampleProjectDir, "bin\\");
+            foreach (var file in Directory.GetFiles(execPath, "Datadog.Trace*.dll"))
+            {
+                publish.GacInstall(file);
+            }
+#endif
             Output.WriteLine($"[webserver] starting {path} {string.Join(" ", arguments)}");
-
-            return StartSample(agent.Port, arguments, httpPort, iisExpress: true, enableSecurity: enableSecurity);
+            await StartSample(agent.Port, arguments, httpPort, iisExpress: true, enableSecurity: enableSecurity);
+            return agent;
         }
 
         public void Dispose()
         {
             if (process != null && !process.HasExited)
             {
-                Output.WriteLine("Killing process");
                 process.Kill();
                 process.Dispose();
             }
+#if NETFRAMEWORK
+            var sampleProjectDir = EnvironmentHelper.GetSampleProjectDirectory();
+            var publish = new System.EnterpriseServices.Internal.Publish();
+            var execPath = Path.Combine(sampleProjectDir, "bin\\");
+            foreach (var file in Directory.GetFiles(execPath, "Datadog.Trace*.dll"))
+            {
+                publish.GacRemove(file);
+            }
+#endif
+        }
+
+        public async Task TestBlockedRequestAsync(MockTracerAgent agent, bool enableSecurity, HttpStatusCode expectedStatusCode, int expectedSpans, IEnumerable<Action<TestHelpers.MockTracerAgent.Span>> assertOnSpans)
+        {
+            var mockTracerAgentAppSecWrapper = new MockTracerAgentAppSecWrapper(agent);
+            mockTracerAgentAppSecWrapper.SubscribeAppSecEvents();
+            Func<Task<(HttpStatusCode StatusCode, string ResponseText)>> attack = () => SubmitRequest("/Health/?arg=[$slice]");
+            var resultRequests = await Task.WhenAll(attack(), attack(), attack(), attack(), attack());
+            agent.SpanFilters.Add(s => s.Tags["http.url"].IndexOf("Health", StringComparison.InvariantCultureIgnoreCase) > 0);
+            var spans = agent.WaitForSpans(5);
+            Assert.Equal(expectedSpans, spans.Count());
+            foreach (var span in spans)
+            {
+                foreach (var assert in assertOnSpans)
+                {
+                    assert(span);
+                }
+            }
+
+            var expectedAppSecEvents = enableSecurity ? 5 : 0;
+            var appSecEvents = mockTracerAgentAppSecWrapper.WaitForAppSecEvents(expectedAppSecEvents);
+            Assert.Equal(expectedAppSecEvents, appSecEvents.Count);
+            Assert.All(resultRequests, r => Assert.Equal(r.StatusCode, expectedStatusCode));
+            var spanIds = spans.Select(s => s.SpanId);
+            var usedIds = new List<ulong>();
+            foreach (var item in appSecEvents)
+            {
+                Assert.IsType<AppSec.EventModel.Attack>(item);
+                var attackEvent = (AppSec.EventModel.Attack)item;
+                Assert.True(attackEvent.Blocked);
+                var spanId = spanIds.FirstOrDefault(s => s == attackEvent.Context.Span.Id);
+                Assert.NotEqual(0m, spanId);
+                Assert.DoesNotContain(spanId, usedIds);
+                Assert.Equal("nosql_injection-blocking", attackEvent.Rule.Name);
+                usedIds.Add(spanId);
+            }
+
+            mockTracerAgentAppSecWrapper.UnsubscribeAppSecEvents();
         }
 
         protected async Task<(HttpStatusCode StatusCode, string ResponseText)> SubmitRequest(string path)
         {
-            var response = await httpClient.GetAsync($"http://localhost:{this.httpPort}{path}");
+            Output.WriteLine("submitting request");
+            var response = await httpClient.GetAsync($"http://localhost:{httpPort}{path}");
             var responseText = await response.Content.ReadAsStringAsync();
-            Output.WriteLine($"[http] {response.StatusCode} {responseText}");
             return (response.StatusCode, responseText);
         }
 
@@ -99,10 +157,14 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             // EnvironmentHelper.DebugModeEnabled = true;
 
+            Output.WriteLine($"Starting Application: {sampleAppPath}");
+            var executable = EnvironmentHelper.IsCoreClr() ? EnvironmentHelper.GetSampleExecutionSource() : sampleAppPath;
+            var args = EnvironmentHelper.IsCoreClr() ? $"{sampleAppPath} {arguments ?? string.Empty}" : arguments;
+
             process = ProfilerHelper.StartProcessWithProfiler(
-                EnvironmentHelper.GetSampleExecutionSource(),
+                executable,
                 EnvironmentHelper,
-                $"{sampleAppPath} {arguments ?? string.Empty}",
+                args,
                 traceAgentPort: traceAgentPort,
                 statsdPort: statsdPort,
                 aspNetCorePort: aspNetCorePort.GetValueOrDefault(5000),
@@ -149,6 +211,10 @@ namespace Datadog.Trace.Security.IntegrationTests
                 var response = await SubmitRequest(path);
                 responseText = response.ResponseText;
                 serverReady = response.StatusCode == HttpStatusCode.OK;
+                if (!serverReady)
+                {
+                    Output.WriteLine(responseText);
+                }
 
                 if (serverReady)
                 {

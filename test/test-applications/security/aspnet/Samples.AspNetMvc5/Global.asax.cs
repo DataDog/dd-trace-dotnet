@@ -1,7 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Configuration;
-using System.Linq;
 using System.Web;
 using System.Web.Mvc;
 using System.Web.Optimization;
@@ -24,5 +22,15 @@ namespace Samples.AspNetMvc5
                 DatabaseHelper.CreateAndFeedDatabase(ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString);
             }
         }
+        protected void Application_BeginRequest(object sender, EventArgs e)
+        {
+            if (bool.TryParse(ConfigurationManager.AppSettings["dosomething-outside-mvc"], out bool res) && res)
+            {
+                HttpContext.Current.Response.Write($"do something before asp.net mvc cycle starts, with the request which query string is {HttpContext.Current.Request.QueryString}");
+            }
+        }
+
+
+
     }
 }
