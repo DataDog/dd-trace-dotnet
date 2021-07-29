@@ -11,8 +11,8 @@ docker build ^
     --build-arg DOTNETSDK_VERSION=5.0 ^
     --tag dd-trace-dotnet/debian-builder ^
     --target builder ^
-    --file "../../build/_build/docker/debian.dockerfile" ^
-    "../../build/_build"
+    --file "%RootDir%/build/_build/docker/debian.dockerfile" ^
+    "%RootDir%/build/_build"
 
 docker run --rm ^
     --mount type=bind,source="%RootDir%",target=/project ^
@@ -22,5 +22,5 @@ docker run --rm ^
     dd-trace-dotnet/debian-builder ^
     dotnet /build/bin/Debug/_build.dll Clean BuildTracerHome ZipTracerHome
 
-copy ..\..\src\bin\linux-tracer-home-debian\Datadog.Trace.ClrProfiler.Native.so .\home\linux-x64\Datadog.Trace.ClrProfiler.Native.so
+copy %RootDir%\src\bin\linux-tracer-home-debian\Datadog.Trace.ClrProfiler.Native.so %RootDir%\src\Datadog.Trace.AutoInstrumentation\home\linux-x64\Datadog.Trace.ClrProfiler.Native.so
 ENDLOCAL
