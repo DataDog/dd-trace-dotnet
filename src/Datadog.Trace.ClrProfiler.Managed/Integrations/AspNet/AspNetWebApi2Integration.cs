@@ -41,8 +41,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.AspNetWebApi2));
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AspNetWebApi2Integration));
 
-        private static bool CanReadResponseHeaders = true;
-
         /// <summary>
         /// Calls the underlying ExecuteAsync and traces the request.
         /// </summary>

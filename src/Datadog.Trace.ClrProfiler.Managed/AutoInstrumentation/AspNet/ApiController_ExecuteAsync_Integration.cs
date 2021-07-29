@@ -115,12 +115,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             }
             else
             {
-                var httpContext = HttpContext.Current;
-                if (httpContext != null && HttpRuntime.UsingIntegratedPipeline)
-                {
-                    scope.Span.SetHeaderTags<IHeadersCollection>(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
-                }
-                HttpContextHelpers.AddHeaderTagsFromHttpResponse(httpContext, scope);
+                HttpContextHelpers.AddHeaderTagsFromHttpResponse(HttpContext.Current, scope);
                 scope.Span.SetHttpStatusCode(responseMessage.DuckCast<HttpResponseMessageStruct>().StatusCode, isServer: true);
                 scope.Dispose();
             }
