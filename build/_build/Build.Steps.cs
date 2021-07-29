@@ -39,7 +39,7 @@ partial class Build
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath BuildDataDirectory => RootDirectory / "build_data";
 
-    const string LibSqreenVersion = "1.1.2.2";
+    const string LibSqreenVersion = "1.1.2.3";
     AbsolutePath LibSqreenDirectory => (NugetPackageDirectory ?? (RootDirectory / "packages")) / $"libsqreen.{LibSqreenVersion}";
 
     AbsolutePath SourceDirectory => RootDirectory / "src";
@@ -83,7 +83,8 @@ partial class Build
 
     Project[] ClrProfilerIntegrationTests => new[]
     {
-        Solution.GetProject(Projects.ClrProfilerIntegrationTests)
+        Solution.GetProject(Projects.ClrProfilerIntegrationTests),
+        Solution.GetProject(Projects.AppSecIntegrationTests),
     };
 
     readonly IEnumerable<TargetFramework> TargetFrameworks = new[]
@@ -758,16 +759,20 @@ partial class Build
         .Executes(() =>
         {
             // This does some "unnecessary" rebuilding and restoring
-            var include = RootDirectory.GlobFiles("test/test-applications/integrations/**/*.csproj");
+            var includeIntegration = RootDirectory.GlobFiles("test/test-applications/integrations/**/*.csproj");
+            var includeSecurity = RootDirectory.GlobFiles("test/test-applications/security/*/*.csproj");
+
             var exclude = RootDirectory.GlobFiles("test/test-applications/integrations/dependency-libs/**/*.csproj");
 
-            var projects = include.Where(projectPath =>
-                projectPath switch
-                {
-                    _ when exclude.Contains(projectPath) => false,
-                    _ when projectPath.ToString().Contains("Samples.OracleMDA") => false,
-                    _ => true,
-                }
+            var projects = includeIntegration
+                .Concat(includeSecurity)
+                .Where(projectPath =>
+                    projectPath switch
+                    {
+                        _ when exclude.Contains(projectPath) => false,
+                        _ when projectPath.ToString().Contains("Samples.OracleMDA") => false,
+                        _ => true,
+                    }
             );
 
             DotNetBuild(config => config
@@ -784,14 +789,16 @@ partial class Build
         });
 
     Target PublishIisSamples => _ => _
-        .Unlisted()
         .After(CompileManagedTestHelpers)
         .After(CompileRegressionSamples)
         .After(CompileFrameworkReproductions)
         .Executes(() =>
         {
             var aspnetFolder = TestsDirectory / "test-applications" / "aspnet";
+            var securityAspnetFolder = TestsDirectory / "test-applications" / "security" / "aspnet";
+
             var aspnetProjects = aspnetFolder.GlobFiles("**/*.csproj");
+            var securityAspnetProjects = securityAspnetFolder.GlobFiles("**/*.csproj");
 
             var publishProfile = aspnetFolder / "PublishProfiles" / "FolderProfile.pubxml";
 
@@ -804,7 +811,7 @@ partial class Build
                 .SetProperty("DeployOnBuild", true)
                 .SetProperty("PublishProfile", publishProfile)
                 .SetMaxCpuCount(null)
-                .CombineWith(aspnetProjects, (c, project) => c
+                .CombineWith(aspnetProjects.Concat(securityAspnetProjects), (c, project) => c
                     .SetTargetPath(project))
             );
         });
@@ -933,6 +940,7 @@ partial class Build
             // There's nothing specifically linux-y here, it's just that we only build a subset of projects
             // for testing on linux.
             var sampleProjects = RootDirectory.GlobFiles("test/test-applications/integrations/*/*.csproj");
+            var securitySampleProjects = RootDirectory.GlobFiles("test/test-applications/security/*/*.csproj");
             var regressionProjects = RootDirectory.GlobFiles("test/test-applications/regression/*/*.csproj");
             var instrumentationProjects = RootDirectory.GlobFiles("test/test-applications/instrumentation/*/*.csproj");
 
@@ -983,6 +991,7 @@ partial class Build
             };
 
             var projectsToBuild = sampleProjects
+                .Concat(securitySampleProjects)
                 .Concat(regressionProjects)
                 .Concat(instrumentationProjects)
                 .Where(path =>
@@ -993,6 +1002,7 @@ partial class Build
                         "Samples.AspNetCoreMvc21" => Framework == TargetFramework.NETCOREAPP2_1,
                         "Samples.AspNetCoreMvc30" => Framework == TargetFramework.NETCOREAPP3_0,
                         "Samples.AspNetCoreMvc31" => Framework == TargetFramework.NETCOREAPP3_1,
+                        "Samples.AspNetCore5" => Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NETCOREAPP3_0,
                         var name when projectsToSkip.Contains(name) => false,
                         var name when multiApiProjects.Contains(name) => false,
                         _ => true,
@@ -1096,17 +1106,8 @@ partial class Build
                     .CombineWith(integrationTestProjects, (c, project) => c
                         .SetProjectFile(project)));
 
-            // Not sure if/why this is necessary, and we can't just point to the correct output location
-            var src = TracerHomeDirectory;
-            var testProject = Solution.GetProject(Projects.ClrProfilerIntegrationTests).Directory;
-            var dest = testProject / "bin" / BuildConfiguration / Framework / "profiler-lib";
-            CopyDirectoryRecursively(src, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
-
-            // not sure exactly where this is supposed to go, may need to change the original build
-            foreach (var linuxDir in TracerHomeDirectory.GlobDirectories("linux-*"))
-            {
-                CopyDirectoryRecursively(linuxDir, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
-            }
+            IntegrationTestLinuxProfilerDirFudge(Projects.ClrProfilerIntegrationTests);
+            IntegrationTestLinuxProfilerDirFudge(Projects.AppSecIntegrationTests);
         });
 
     Target RunLinuxIntegrationTests => _ => _
@@ -1181,6 +1182,22 @@ partial class Build
             : ($"linux-{LinuxArchitectureIdentifier}", "so");
 
         return archExt;
+    }
+
+    // the integration tests need their own copy of the profiler, this achived through build.props on Windows, but doesn't seem to work under Linux 
+    private void IntegrationTestLinuxProfilerDirFudge(string project)
+    {
+            // Not sure if/why this is necessary, and we can't just point to the correct output location
+            var src = TracerHomeDirectory;
+            var testProject = Solution.GetProject(project).Directory;
+            var dest = testProject / "bin" / BuildConfiguration / Framework / "profiler-lib";
+            CopyDirectoryRecursively(src, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+
+            // not sure exactly where this is supposed to go, may need to change the original build
+            foreach (var linuxDir in TracerHomeDirectory.GlobDirectories("linux-*"))
+            {
+                CopyDirectoryRecursively(linuxDir, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+            }
     }
 
     private void MoveLogsToBuildData()

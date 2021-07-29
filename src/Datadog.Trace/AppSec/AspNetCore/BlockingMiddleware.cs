@@ -7,8 +7,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
@@ -34,7 +32,7 @@ namespace Datadog.Trace.AppSec.AspNetCore
 
         private static void InsertMiddlewares(List<Func<RequestDelegate, RequestDelegate>> components)
         {
-            Func<HttpContext, Func<Task>, Task> middleware = async (context, next) =>
+            static async Task Middleware(HttpContext context, Func<Task> next)
             {
                 if (context.Items.ContainsKey(SecurityConstants.KillKey) && context.Items[SecurityConstants.KillKey] is bool killKey && killKey)
                 {
@@ -52,22 +50,15 @@ namespace Datadog.Trace.AppSec.AspNetCore
                         await BlockRequest(context);
                     }
                 }
-            };
+            }
 
-            Func<RequestDelegate, RequestDelegate> middlewareWrapper = next =>
-            {
-                return context =>
-                {
-                    Func<Task> simpleNext = () => next(context);
-                    return middleware(context, simpleNext);
-                };
-            };
+            RequestDelegate MiddlewareWrapper(RequestDelegate next) => context => Middleware(context, () => next(context));
 
-            components.Insert(0, middlewareWrapper);
+            components.Insert(0, MiddlewareWrapper);
             if (components.Count > 2)
             {
                 // insert 2nd to last, making a guess that the last one will be the user action
-                components.Insert(components.Count - 2, middlewareWrapper);
+                components.Insert(components.Count - 2, MiddlewareWrapper);
             }
         }
 
@@ -76,6 +67,11 @@ namespace Datadog.Trace.AppSec.AspNetCore
             context.Response.StatusCode = 403;
             context.Response.ContentType = "text/html";
             await context.Response.WriteAsync(SecurityConstants.AttackBlockedHtml);
+            var callbackExists = context.Items.TryGetValue("Security", out var result);
+            if (callbackExists && result is Guid callbackId)
+            {
+                Security.Instance.Execute(callbackId);
+            }
         }
 
         /// <summary>
