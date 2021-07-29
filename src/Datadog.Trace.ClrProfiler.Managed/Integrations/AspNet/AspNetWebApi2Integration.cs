@@ -171,7 +171,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                     // some fields aren't set till after execution, so populate anything missing
                     UpdateSpan(controllerContext, scope.Span, tags, Enumerable.Empty<KeyValuePair<string, string>>());
-                    HttpContextHelpers.AddHeaderTagsFromHttpResponse(System.Web.HttpContext.Current, scope);
+                    HttpContextHelper.AddHeaderTagsFromHttpResponse(System.Web.HttpContext.Current, scope);
                     scope.Span.SetHttpStatusCode(responseMessage.DuckCast<HttpResponseMessageStruct>().StatusCode, isServer: true);
                     scope.Dispose();
                 }
@@ -348,7 +348,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static void OnRequestCompleted(System.Web.HttpContext httpContext, Scope scope, DateTimeOffset finishTime)
         {
-            HttpContextHelpers.AddHeaderTagsFromHttpResponse(httpContext, scope);
+            HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, scope);
             scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true);
             scope.Span.Finish(finishTime);
             scope.Dispose();

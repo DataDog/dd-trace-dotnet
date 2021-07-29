@@ -1,3 +1,8 @@
+// <copyright file="HttpContextHelper.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
 #if NETFRAMEWORK
 using System;
 using System.Web;
@@ -7,14 +12,14 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.Integrations.AspNet
 {
-    internal static class HttpContextHelpers
+    internal static class HttpContextHelper
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HttpContextHelpers));
-        private static bool CanReadHttpResponseHeaders = true;
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HttpContextHelper));
+        private static bool _canReadHttpResponseHeaders = true;
 
         internal static void AddHeaderTagsFromHttpResponse(System.Web.HttpContext httpContext, Scope scope)
         {
-            if (httpContext != null && HttpRuntime.UsingIntegratedPipeline && CanReadHttpResponseHeaders && !Tracer.Instance.Settings.HeaderTags.IsNullOrEmpty())
+            if (httpContext != null && HttpRuntime.UsingIntegratedPipeline && _canReadHttpResponseHeaders && !Tracer.Instance.Settings.HeaderTags.IsNullOrEmpty())
             {
                 try
                 {
@@ -24,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AspNet
                 {
                     // Despite the HttpRuntime.UsingIntegratedPipeline check, we can still fail to access response headers, for example when using Sitefinity: "This operation requires IIS integrated pipeline mode"
                     Log.Error(ex, "Unable to access response headers when creating header tags. Disabling for the rest of the application lifetime.");
-                    CanReadHttpResponseHeaders = false;
+                    _canReadHttpResponseHeaders = false;
                 }
                 catch (Exception ex)
                 {

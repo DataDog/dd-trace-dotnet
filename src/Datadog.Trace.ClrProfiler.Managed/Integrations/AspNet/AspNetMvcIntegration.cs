@@ -363,7 +363,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 if (scope != null)
                 {
-                    HttpContextHelpers.AddHeaderTagsFromHttpResponse(httpContext, scope);
+                    HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, scope);
                     scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true);
                     scope.Dispose();
                 }
@@ -395,7 +395,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         private static void OnRequestCompleted(HttpContext httpContext, Scope scope, DateTimeOffset finishTime)
         {
-            HttpContextHelpers.AddHeaderTagsFromHttpResponse(httpContext, scope);
+            HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, scope);
             scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true);
             scope.Span.Finish(finishTime);
             scope.Dispose();
