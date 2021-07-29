@@ -8,36 +8,86 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
+#pragma warning disable SA1402 // File may only contain a single class
+#pragma warning disable SA1649 // File name must match first type name
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
-    [CollectionDefinition("IisTests", DisableParallelization = true)]
     [Collection("IisTests")]
-    public class AspNetMvc5 : AspNetBase
+    public class AspNetMvc5CallTargetIntegratedWithSecurity : AspNetMvc5
     {
-        public AspNetMvc5(ITestOutputHelper outputHelper)
-           : base(nameof(AspNetMvc5), outputHelper, "test\\test-applications\\security\\aspnet")
+        public AspNetMvc5CallTargetIntegratedWithSecurity(IisFixture iisFixture, ITestOutputHelper output)
+            : base(iisFixture, output, classicMode: false, enableSecurity: true)
         {
         }
+    }
 
-        [Theory]
+    [Collection("IisTests")]
+    public class AspNetMvc5CallTargetIntegratedWithoutSecurity : AspNetMvc5
+    {
+        public AspNetMvc5CallTargetIntegratedWithoutSecurity(IisFixture iisFixture, ITestOutputHelper output)
+            : base(iisFixture, output, classicMode: false, enableSecurity: false)
+        {
+        }
+    }
+
+    [Collection("IisTests")]
+    public class AspNetMvc5CallTargetClassicWithSecurity : AspNetMvc5
+    {
+        public AspNetMvc5CallTargetClassicWithSecurity(IisFixture iisFixture, ITestOutputHelper output)
+            : base(iisFixture, output, classicMode: true, enableSecurity: true)
+        {
+        }
+    }
+
+    [Collection("IisTests")]
+    public class AspNetMvc5CallTargetClassicWithoutSecurity : AspNetMvc5
+    {
+        public AspNetMvc5CallTargetClassicWithoutSecurity(IisFixture iisFixture, ITestOutputHelper output)
+            : base(iisFixture, output, classicMode: true, enableSecurity: false)
+        {
+        }
+    }
+
+    public abstract class AspNetMvc5 : TestHelper, IClassFixture<IisFixture>
+    {
+        private readonly IisFixture _iisFixture;
+        private readonly bool _enableSecurity;
+        private readonly string _testName;
+
+        public AspNetMvc5(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)
+            : base(nameof(AspNetMvc5), @"test\test-applications\security\aspnet", output)
+        {
+            SetCallTargetSettings(true);
+            SetSecurity(enableSecurity);
+            _iisFixture = iisFixture;
+            _enableSecurity = enableSecurity;
+            _iisFixture.TryStartIis(this, classicMode);
+            _testName = nameof(AspNetMvc5)
+                     + (classicMode ? ".Classic" : ".Integrated")
+                     + (RuntimeInformation.ProcessArchitecture == Architecture.X64 ? ".X64" : ".X86"); // assume that arm is the same
+        }
+
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("LoadFromGAC", "True")]
-        [InlineData(true, HttpStatusCode.Forbidden)]
-        [InlineData(false, HttpStatusCode.OK)]
-        public async Task TestSecurity(bool enableSecurity, HttpStatusCode expectedStatusCode)
+        [Fact]
+        public async Task TestSecurity()
         {
-            var agent = await RunOnIis("/Home", enableSecurity);
-            await TestBlockedRequestAsync(agent, enableSecurity, expectedStatusCode, enableSecurity ? 5 : 10, new Action<TestHelpers.MockTracerAgent.Span>[]
-            {
-             s => Assert.Matches("aspnet(-mvc)?.request", s.Name),
-             s => Assert.Equal("Development Web Site", s.Service),
-             s => Assert.Equal("web", s.Type)
-            });
+            var path = "/Home?arg=[$slice]";
+            using var httpClient = new HttpClient();
+            var response = await httpClient.GetAsync($"http://localhost:{_iisFixture.HttpPort}{path}");
+            Output.WriteLine($"http://localhost:{_iisFixture.HttpPort}{path}");
+            var responseText = await response.Content.ReadAsStringAsync();
+            Output.WriteLine($"[http] {response.StatusCode} {responseText}");
+            var expectedStatusCode = _enableSecurity ? HttpStatusCode.Forbidden : HttpStatusCode.OK;
+            Assert.Equal(expectedStatusCode, response.StatusCode);
         }
     }
 }

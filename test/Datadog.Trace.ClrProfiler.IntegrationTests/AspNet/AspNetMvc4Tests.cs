@@ -10,6 +10,7 @@ using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.TestHelpers;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;

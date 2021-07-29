@@ -45,27 +45,6 @@ namespace Datadog.Trace.Security.IntegrationTests
             return agent;
         }
 
-        public async Task<MockTracerAgent> RunOnIis(string path, bool enableSecurity)
-        {
-            var initialAgentPort = TcpPortProvider.GetOpenPort();
-            var agent = new MockTracerAgent(initialAgentPort);
-            httpPort = TcpPortProvider.GetOpenPort();
-            var sampleProjectDir = EnvironmentHelper.GetSampleProjectDirectory();
-            var arguments = $"/clr:v4.0 /path:{sampleProjectDir} /systray:false /port:{httpPort} /trace:verbose";
-#if NETFRAMEWORK
-
-            var publish = new System.EnterpriseServices.Internal.Publish();
-            var execPath = Path.Combine(sampleProjectDir, "bin\\");
-            foreach (var file in Directory.GetFiles(execPath, "Datadog.Trace*.dll"))
-            {
-                publish.GacInstall(file);
-            }
-#endif
-            Output.WriteLine($"[webserver] starting {path} {string.Join(" ", arguments)}");
-            await StartSample(agent.Port, arguments, httpPort, iisExpress: true, enableSecurity: enableSecurity);
-            return agent;
-        }
-
         public void Dispose()
         {
             if (process != null && !process.HasExited)
@@ -73,15 +52,6 @@ namespace Datadog.Trace.Security.IntegrationTests
                 process.Kill();
                 process.Dispose();
             }
-#if NETFRAMEWORK
-            var sampleProjectDir = EnvironmentHelper.GetSampleProjectDirectory();
-            var publish = new System.EnterpriseServices.Internal.Publish();
-            var execPath = Path.Combine(sampleProjectDir, "bin\\");
-            foreach (var file in Directory.GetFiles(execPath, "Datadog.Trace*.dll"))
-            {
-                publish.GacRemove(file);
-            }
-#endif
         }
 
         public async Task TestBlockedRequestAsync(MockTracerAgent agent, bool enableSecurity, HttpStatusCode expectedStatusCode, int expectedSpans, IEnumerable<Action<TestHelpers.MockTracerAgent.Span>> assertOnSpans)
@@ -124,28 +94,17 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         protected async Task<(HttpStatusCode StatusCode, string ResponseText)> SubmitRequest(string path)
         {
-            Output.WriteLine("submitting request");
             var response = await httpClient.GetAsync($"http://localhost:{httpPort}{path}");
             var responseText = await response.Content.ReadAsStringAsync();
             return (response.StatusCode, responseText);
         }
 
-        private async Task StartSample(int traceAgentPort, string arguments, int? aspNetCorePort = null, string packageVersion = "", int? statsdPort = null, string framework = "", bool iisExpress = false, string path = "/Home", bool enableSecurity = true)
+        private async Task StartSample(int traceAgentPort, string arguments, int? aspNetCorePort = null, string packageVersion = "", int? statsdPort = null, string framework = "", string path = "/Home", bool enableSecurity = true)
         {
-            var sampleAppPath = string.Empty;
+            var sampleAppPath = EnvironmentHelper.GetSampleApplicationPath(packageVersion, framework);
             // get path to sample app that the profiler will attach to
             const int mstimeout = 5000;
             var message = "Now listening on:";
-
-            if (iisExpress)
-            {
-                message = "IIS Express is running.";
-                sampleAppPath = EnvironmentHelper.GetSampleExecutionSource();
-            }
-            else
-            {
-                sampleAppPath = EnvironmentHelper.GetSampleApplicationPath(packageVersion, framework);
-            }
 
             if (!File.Exists(sampleAppPath))
             {

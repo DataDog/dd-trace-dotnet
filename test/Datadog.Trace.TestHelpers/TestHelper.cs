@@ -22,7 +22,7 @@ using Xunit.Abstractions;
 using Datadog.Trace.ExtensionMethods; // needed for Dictionary<K,V>.GetValueOrDefault()
 #endif
 
-namespace Datadog.Trace.ClrProfiler.IntegrationTests
+namespace Datadog.Trace.TestHelpers
 {
     public abstract class TestHelper
     {
@@ -480,7 +480,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private bool IsServerSpan(MockTracerAgent.Span span) =>
             span.Tags.GetValueOrDefault(Tags.SpanKind) == SpanKinds.Server;
 
-        internal class TupleList<T1, T2> : List<Tuple<T1, T2>>
+        protected internal class TupleList<T1, T2> : List<Tuple<T1, T2>>
         {
             public void Add(T1 item, T2 item2)
             {
