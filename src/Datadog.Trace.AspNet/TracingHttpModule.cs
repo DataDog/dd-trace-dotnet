@@ -25,10 +25,10 @@ namespace Datadog.Trace.AspNet
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TracingHttpModule));
 
+        private static bool _canReadHttpResponseHeaders = true;
+
         private readonly string _httpContextScopeKey;
         private readonly string _requestOperationName;
-
-        private static bool CanReadHttpResponseHeaders = true;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="TracingHttpModule" /> class.
@@ -222,9 +222,9 @@ namespace Datadog.Trace.AspNet
             }
         }
 
-        private static void AddHeaderTagsFromHttpResponse(System.Web.HttpContext httpContext, Scope scope)
+        private void AddHeaderTagsFromHttpResponse(System.Web.HttpContext httpContext, Scope scope)
         {
-            if (httpContext != null && HttpRuntime.UsingIntegratedPipeline && CanReadHttpResponseHeaders && !Tracer.Instance.Settings.HeaderTags.IsNullOrEmpty())
+            if (httpContext != null && HttpRuntime.UsingIntegratedPipeline && _canReadHttpResponseHeaders && !Tracer.Instance.Settings.HeaderTags.IsNullOrEmpty())
             {
                 try
                 {
@@ -234,7 +234,7 @@ namespace Datadog.Trace.AspNet
                 {
                     // Despite the HttpRuntime.UsingIntegratedPipeline check, we can still fail to access response headers, for example when using Sitefinity: "This operation requires IIS integrated pipeline mode"
                     Log.Error(ex, "Unable to access response headers when creating header tags. Disabling for the rest of the application lifetime.");
-                    CanReadHttpResponseHeaders = false;
+                    _canReadHttpResponseHeaders = false;
                 }
                 catch (Exception ex)
                 {
