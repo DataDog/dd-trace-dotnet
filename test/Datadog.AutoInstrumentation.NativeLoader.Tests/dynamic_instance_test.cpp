@@ -3,7 +3,7 @@
 
 TEST(dynamic_instance, CreateInstance)
 {
-    DynamicInstance* instance = CreateTestDynamicInstance();
+    DynamicInstance* instance = CreateTestDynamicInstance(true);
 
     EXPECT_EQ(TestDynamicInstanceFilePath, instance->GetFilePath());
     EXPECT_EQ(TestDynamicInstanceIid, instance->GetClsId());

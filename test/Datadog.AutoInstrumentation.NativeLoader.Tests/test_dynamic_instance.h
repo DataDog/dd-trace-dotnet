@@ -78,7 +78,10 @@ const std::string TestDynamicInstanceFilePath = "Test";
 #endif
 const std::string TestDynamicInstanceIid = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
 
-inline DynamicInstance* CreateTestDynamicInstance()
+inline TestDynamicInstanceImpl* CreateTestDynamicInstance(bool useTracerFilePath)
 {
-    return new TestDynamicInstanceImpl(TestDynamicInstanceFilePath, TestDynamicInstanceIid);
+    if (useTracerFilePath)
+        return new TestDynamicInstanceImpl(TestDynamicInstanceFilePath, TestDynamicInstanceIid);
+
+    return new TestDynamicInstanceImpl("Test", TestDynamicInstanceIid);
 }

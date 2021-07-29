@@ -177,6 +177,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="test_cor_profiler.h" />
     <ClInclude Include="test_dynamic_dispatcher.h" />
     <ClInclude Include="test_dynamic_instance.h" />
   </ItemGroup>
