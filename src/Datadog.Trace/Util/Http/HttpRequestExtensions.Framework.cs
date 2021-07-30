@@ -10,9 +10,9 @@ using System.Web;
 using System.Web.Routing;
 using Datadog.Trace.AppSec;
 
-namespace Datadog.Trace.Util
+namespace Datadog.Trace.Util.Http
 {
-    internal static class HttpRequestExtensions
+    internal static partial class HttpRequestExtensions
     {
         internal static Dictionary<string, object> PrepareArgsForWaf(this HttpRequest request, RouteData routeDatas = null)
         {
@@ -44,23 +44,6 @@ namespace Datadog.Trace.Util
             }
 
             return dict;
-        }
-
-        private static object ConvertRouteValueDictionary(RouteValueDictionary routeDataDict)
-        {
-            return routeDataDict.ToDictionary(
-                c => c.Key,
-                c =>
-                    c.Value switch
-                    {
-                        List<RouteData> routeDataList => ConvertRouteValueList(routeDataList),
-                        _ => c.Value
-                    });
-        }
-
-        private static object ConvertRouteValueList(List<RouteData> routeDataList)
-        {
-            return routeDataList.Select(x => ConvertRouteValueDictionary(x.Values)).ToList();
         }
     }
 }
