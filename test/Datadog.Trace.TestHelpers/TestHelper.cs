@@ -321,6 +321,11 @@ namespace Datadog.Trace.TestHelpers
             SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSecEnabled, security ? "true" : "false");
         }
 
+        protected void SetAppSecBlockingEnabled(bool appSecBlockingEnabled)
+        {
+            SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSecBlockingEnabled, appSecBlockingEnabled ? "true" : "false");
+        }
+
 #if !NET452
         protected async Task<IImmutableList<MockTracerAgent.Span>> GetWebServerSpans(
             string path,

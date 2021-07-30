@@ -23,7 +23,16 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetMvc5CallTargetIntegratedWithSecurity : AspNetMvc5
     {
         public AspNetMvc5CallTargetIntegratedWithSecurity(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, classicMode: false, enableSecurity: true)
+            : base(iisFixture, output, classicMode: false, enableSecurity: true, blockingEnabled: true)
+        {
+        }
+    }
+
+    [Collection("IisTests")]
+    public class AspNetMvc5CallTargetIntegratedWithSecurityWithoutBlocking : AspNetMvc5
+    {
+        public AspNetMvc5CallTargetIntegratedWithSecurityWithoutBlocking(IisFixture iisFixture, ITestOutputHelper output)
+            : base(iisFixture, output, classicMode: false, enableSecurity: true, blockingEnabled: false)
         {
         }
     }
@@ -32,7 +41,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetMvc5CallTargetIntegratedWithoutSecurity : AspNetMvc5
     {
         public AspNetMvc5CallTargetIntegratedWithoutSecurity(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, classicMode: false, enableSecurity: false)
+            : base(iisFixture, output, classicMode: false, enableSecurity: false, blockingEnabled: false)
         {
         }
     }
@@ -41,7 +50,16 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetMvc5CallTargetClassicWithSecurity : AspNetMvc5
     {
         public AspNetMvc5CallTargetClassicWithSecurity(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, classicMode: true, enableSecurity: true)
+            : base(iisFixture, output, classicMode: true, enableSecurity: true, blockingEnabled: true)
+        {
+        }
+    }
+
+    [Collection("IisTests")]
+    public class AspNetMvc5CallTargetClassicWithSecurityWithoutBlocking : AspNetMvc5
+    {
+        public AspNetMvc5CallTargetClassicWithSecurityWithoutBlocking(IisFixture iisFixture, ITestOutputHelper output)
+            : base(iisFixture, output, classicMode: true, enableSecurity: true, blockingEnabled: false)
         {
         }
     }
@@ -50,24 +68,27 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetMvc5CallTargetClassicWithoutSecurity : AspNetMvc5
     {
         public AspNetMvc5CallTargetClassicWithoutSecurity(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, classicMode: true, enableSecurity: false)
+            : base(iisFixture, output, classicMode: true, enableSecurity: false, blockingEnabled: false)
         {
         }
     }
 
-    public abstract class AspNetMvc5 : TestHelper, IClassFixture<IisFixture>
+    public abstract class AspNetMvc5 : AspNetBase, IClassFixture<IisFixture>
     {
         private readonly IisFixture _iisFixture;
         private readonly bool _enableSecurity;
+        private readonly bool _blockingEnabled;
         private readonly string _testName;
 
-        public AspNetMvc5(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)
-            : base(nameof(AspNetMvc5), @"test\test-applications\security\aspnet", output)
+        public AspNetMvc5(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity, bool blockingEnabled)
+            : base(nameof(AspNetMvc5), output, @"test\test-applications\security\aspnet")
         {
             SetCallTargetSettings(true);
             SetSecurity(enableSecurity);
+            SetAppSecBlockingEnabled(blockingEnabled);
             _iisFixture = iisFixture;
             _enableSecurity = enableSecurity;
+            _blockingEnabled = blockingEnabled;
             _iisFixture.TryStartIis(this, classicMode);
             _testName = nameof(AspNetMvc5)
                      + (classicMode ? ".Classic" : ".Integrated")
@@ -78,16 +99,14 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [Trait("LoadFromGAC", "True")]
         [Fact]
-        public async Task TestSecurity()
+        public Task TestSecurity()
         {
-            var path = "/Home?arg=[$slice]";
-            using var httpClient = new HttpClient();
-            var response = await httpClient.GetAsync($"http://localhost:{_iisFixture.HttpPort}{path}");
-            Output.WriteLine($"http://localhost:{_iisFixture.HttpPort}{path}");
-            var responseText = await response.Content.ReadAsStringAsync();
-            Output.WriteLine($"[http] {response.StatusCode} {responseText}");
-            var expectedStatusCode = _enableSecurity ? HttpStatusCode.Forbidden : HttpStatusCode.OK;
-            Assert.Equal(expectedStatusCode, response.StatusCode);
+            return TestBlockedRequestAsync(_iisFixture.Agent, _enableSecurity, _enableSecurity && _blockingEnabled ? HttpStatusCode.Forbidden : HttpStatusCode.OK, _enableSecurity ? 5 : 10, new Action<TestHelpers.MockTracerAgent.Span>[]
+             {
+             s => Assert.Matches("aspnet(-mvc)?.request", s.Name),
+             s => Assert.Equal("Development Web Site", s.Service),
+             s => Assert.Equal("web", s.Type)
+             });
         }
     }
 }

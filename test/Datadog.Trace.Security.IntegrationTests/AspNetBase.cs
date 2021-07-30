@@ -18,30 +18,25 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
-    public class AspNetBase : IDisposable
+    public class AspNetBase : TestHelper
     {
         private readonly HttpClient httpClient;
         private int httpPort;
         private Process process;
 
         public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string samplesDir = null)
+            : base(sampleName, samplesDir ?? "test/test-applications/security", outputHelper)
         {
-            Output = outputHelper;
             httpClient = new HttpClient();
-            EnvironmentHelper = new EnvironmentHelper(sampleName, typeof(AspNetBase), Output, samplesDirectory: samplesDir ?? "test/test-applications/security");
         }
 
-        public EnvironmentHelper EnvironmentHelper { get; }
-
-        protected ITestOutputHelper Output { get; }
-
-        public async Task<MockTracerAgent> RunOnSelfHosted(bool enableSecurity)
+        public async Task<MockTracerAgent> RunOnSelfHosted(bool enableSecurity, bool enableBlocking)
         {
             var agentPort = TcpPortProvider.GetOpenPort();
             httpPort = TcpPortProvider.GetOpenPort();
 
             var agent = new MockTracerAgent(agentPort);
-            await StartSample(agent.Port, arguments: null, aspNetCorePort: httpPort, enableSecurity: enableSecurity);
+            await StartSample(agent.Port, arguments: null, aspNetCorePort: httpPort, enableSecurity: enableSecurity, enableBlocking: enableBlocking);
             return agent;
         }
 
@@ -52,9 +47,14 @@ namespace Datadog.Trace.Security.IntegrationTests
                 process.Kill();
                 process.Dispose();
             }
+
+            if (httpClient != null)
+            {
+                httpClient.Dispose();
+            }
         }
 
-        public async Task TestBlockedRequestAsync(MockTracerAgent agent, bool enableSecurity, HttpStatusCode expectedStatusCode, int expectedSpans, IEnumerable<Action<TestHelpers.MockTracerAgent.Span>> assertOnSpans)
+        public async Task TestBlockedRequestAsync(MockTracerAgent agent, bool enableSecurity, HttpStatusCode expectedStatusCode, int expectedSpans, IEnumerable<Action<MockTracerAgent.Span>> assertOnSpans)
         {
             var mockTracerAgentAppSecWrapper = new MockTracerAgentAppSecWrapper(agent);
             mockTracerAgentAppSecWrapper.SubscribeAppSecEvents();
@@ -99,7 +99,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             return (response.StatusCode, responseText);
         }
 
-        private async Task StartSample(int traceAgentPort, string arguments, int? aspNetCorePort = null, string packageVersion = "", int? statsdPort = null, string framework = "", string path = "/Home", bool enableSecurity = true)
+        private async Task StartSample(int traceAgentPort, string arguments, int? aspNetCorePort = null, string packageVersion = "", int? statsdPort = null, string framework = "", string path = "/Home", bool enableSecurity = true, bool enableBlocking = true)
         {
             var sampleAppPath = EnvironmentHelper.GetSampleApplicationPath(packageVersion, framework);
             // get path to sample app that the profiler will attach to
@@ -128,6 +128,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 statsdPort: statsdPort,
                 aspNetCorePort: aspNetCorePort.GetValueOrDefault(5000),
                 enableSecurity: enableSecurity,
+                enableBlocking: enableBlocking,
                 callTargetEnabled: true);
 
             // then wait server ready
