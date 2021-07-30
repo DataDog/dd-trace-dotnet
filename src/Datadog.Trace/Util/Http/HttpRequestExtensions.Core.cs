@@ -10,9 +10,9 @@ using Datadog.Trace.AppSec;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
-namespace Datadog.Trace.Util
+namespace Datadog.Trace.Util.Http
 {
-    internal static class HttpRequestExtensions
+    internal static partial class HttpRequestExtensions
     {
         private const string NoHostSpecified = "UNKNOWN_HOST";
 
@@ -43,7 +43,8 @@ namespace Datadog.Trace.Util
 
             if (routeDatas != null && routeDatas.Values.Any())
             {
-                dict.Add(AddressesConstants.RequestPathParams, routeDatas.Values.ToDictionary(c => c.Key, c => c.Value));
+                var routeDataDict = ConvertRouteValueDictionary(routeDatas.Values);
+                dict.Add(AddressesConstants.RequestPathParams, routeDataDict);
             }
 
             return dict;

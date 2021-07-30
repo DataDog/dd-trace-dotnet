@@ -386,7 +386,7 @@ partial class Build
 
     Target CreateDdTracerHome => _ => _
        .Unlisted()
-       .After(PublishNativeProfiler, CopyIntegrationsJson, PublishManagedProfiler, CopyLibSqreen)
+       .After(PublishNativeProfiler, CopyIntegrationsJson, PublishManagedProfiler, DownloadLibSqreen, CopyLibSqreen)
        .Executes(() =>
        {
            // start by copying everything from the tracer home dir
@@ -789,6 +789,7 @@ partial class Build
         });
 
     Target PublishIisSamples => _ => _
+        .Unlisted()
         .After(CompileManagedTestHelpers)
         .After(CompileRegressionSamples)
         .After(CompileFrameworkReproductions)
