@@ -1402,6 +1402,59 @@
     ]
   },
   {
+    "name": "ILogger",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Microsoft.Extensions.Logging.Abstractions",
+          "type": "Microsoft.Extensions.Logging.LoggerExternalScopeProvider",
+          "method": "ForEachScope",
+          "signature_types": [
+            "System.Void",
+            "System.Action`2[System.Object,!!0]",
+            "!!0"
+          ],
+          "minimum_major": 2,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 5,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.28.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ILogger.LoggerExternalScopeProviderForEachScopeIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "Microsoft.Extensions.Logging",
+          "type": "Microsoft.Extensions.Logging.LoggerFactoryScopeProvider",
+          "method": "ForEachScope",
+          "signature_types": [
+            "System.Void",
+            "System.Action`2[System.Object,!!0]",
+            "!!0"
+          ],
+          "minimum_major": 2,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 5,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace.ClrProfiler.Managed, Version=1.28.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ILogger.LoggerFactoryScopeProviderForEachScopeIntegration",
+          "action": "CallTargetModification"
+        }
+      }
+    ]
+  },
+  {
     "name": "Kafka",
     "method_replacements": [
       {
