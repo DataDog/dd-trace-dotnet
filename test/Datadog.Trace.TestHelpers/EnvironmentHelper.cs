@@ -217,6 +217,8 @@ namespace Datadog.Trace.TestHelpers
             if (enableSecurity)
             {
                 environmentVariables[ConfigurationKeys.AppSecEnabled] = enableSecurity.ToString();
+                // our tests require blocking to be activated to work, might add more fine grained control later
+                environmentVariables[ConfigurationKeys.AppSecBlockingEnabled] = enableSecurity.ToString();
             }
 
             foreach (var name in new[] { "SERVICESTACK_REDIS_HOST", "STACKEXCHANGE_REDIS_HOST" })
