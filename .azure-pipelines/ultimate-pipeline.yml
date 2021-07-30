@@ -957,12 +957,15 @@ stages:
         path: $(System.DefaultWorkingDirectory)/arm64
 
     - script: |
+        mv win-x64/*.dll ./
+        rmdir win-x64
         cd $(System.DefaultWorkingDirectory)/build/crank
         chmod +x ./run.sh
         ./run.sh
       displayName: Crank
       env:
         DD_SERVICE: dd-trace-dotnet
+
 - stage: coverage
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: [integration_tests_windows, integration_tests_windows_iis, integration_tests_linux, unit_tests_linux, unit_tests_macos, unit_tests_windows]
