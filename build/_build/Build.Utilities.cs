@@ -145,12 +145,20 @@ partial class Build
                 }
             }
 
-            Logger.Info($"Running sample '{SampleName}'");
-
-            var project = Solution.GetProject(SampleName)?.Path;
-            if (project is null)
+            string project = Solution.GetProject(SampleName)?.Path;
+            if (project is not null)
             {
-                throw new Exception($"Could not find project in solution with name '{SampleName}'");
+                Logger.Info($"Running sample '{SampleName}'");
+            }
+            else if(System.IO.File.Exists(SampleName))
+            {
+                project = SampleName;
+                Logger.Info($"Running project '{SampleName}'");
+            }
+            else
+            {
+                throw new Exception($"Could not find project in solution with name '{SampleName}', " +
+                                                    "and no project file with the provided path exists");
             }
 
             DotNetBuild(s => s
