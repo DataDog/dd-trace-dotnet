@@ -19,6 +19,7 @@ using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Routing;
