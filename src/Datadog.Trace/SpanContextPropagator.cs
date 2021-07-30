@@ -107,7 +107,10 @@ namespace Datadog.Trace
 
             var samplingPriority = (int?)(context.TraceContext?.SamplingPriority ?? context.SamplingPriority);
 
-            setter(carrier, HttpHeaderNames.SamplingPriority, samplingPriority?.ToString(InvariantCulture));
+            if (samplingPriority != null)
+            {
+                setter(carrier, HttpHeaderNames.SamplingPriority, samplingPriority?.ToString(InvariantCulture));
+            }
         }
 
         /// <summary>
