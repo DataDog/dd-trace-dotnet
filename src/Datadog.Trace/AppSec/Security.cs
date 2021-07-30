@@ -46,8 +46,11 @@ namespace Datadog.Trace.AppSec
         {
             try
             {
-                var found = Environment.GetEnvironmentVariable(ConfigurationKeys.AppSecEnabled)?.ToBoolean();
-                Enabled = found == true;
+                var enabled = Environment.GetEnvironmentVariable(ConfigurationKeys.AppSecEnabled)?.ToBoolean();
+                Enabled = enabled == true;
+
+                var blockingEnabled = Environment.GetEnvironmentVariable(ConfigurationKeys.AppSecBlockingEnabled)?.ToBoolean();
+                BlockingEnabled = blockingEnabled == true;
 
                 Log.Information($"Security.Enabled: {Enabled} ");
 
@@ -93,6 +96,11 @@ namespace Datadog.Trace.AppSec
         public bool Enabled { get; }
 
         /// <summary>
+        /// Gets a value indicating whether blocking is enabled
+        /// </summary>
+        public bool BlockingEnabled { get; }
+
+        /// <summary>
         /// Gets <see cref="InstrumentationGateway"/> instance
         /// </summary>
         InstrumentationGateway IDatadogSecurity.InstrumentationGateway => _instrumentationGateway;
@@ -132,7 +140,7 @@ namespace Datadog.Trace.AppSec
             {
                 Log.Warning($"Attack detected! Action: {wafResult.ReturnCode} " + string.Join(", ", args.Select(x => $"{x.Key}: {x.Value}")));
                 var managedWafResult = Waf.ReturnTypes.Managed.Return.From(wafResult);
-                if (wafResult.ReturnCode == ReturnCode.Block)
+                if (BlockingEnabled && wafResult.ReturnCode == ReturnCode.Block)
                 {
                     transport.Block();
 #if !NETFRAMEWORK
