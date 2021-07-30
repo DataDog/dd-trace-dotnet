@@ -115,12 +115,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             }
             else
             {
-                var httpContext = HttpContext.Current;
-                if (httpContext != null && HttpRuntime.UsingIntegratedPipeline)
-                {
-                    scope.Span.SetHeaderTags<IHeadersCollection>(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
-                }
-
+                HttpContextHelper.AddHeaderTagsFromHttpResponse(HttpContext.Current, scope);
                 scope.Span.SetHttpStatusCode(responseMessage.DuckCast<HttpResponseMessageStruct>().StatusCode, isServer: true);
                 scope.Dispose();
             }
@@ -130,11 +125,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
         private static void OnRequestCompleted(HttpContext httpContext, Scope scope, DateTimeOffset finishTime)
         {
-            if (HttpRuntime.UsingIntegratedPipeline)
-            {
-                scope.Span.SetHeaderTags<IHeadersCollection>(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
-            }
-
+            HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, scope);
             scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true);
             scope.Span.Finish(finishTime);
             scope.Dispose();

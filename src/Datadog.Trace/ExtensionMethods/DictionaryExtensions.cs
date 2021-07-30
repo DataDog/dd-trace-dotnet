@@ -79,5 +79,7 @@ namespace Datadog.Trace.ExtensionMethods
 
             return dictionary.Count == 0;
         }
+
+        public static bool IsNullOrEmpty<TKey, TValue>(this IDictionary<TKey, TValue> dictionary) => dictionary?.IsEmpty() ?? true;
     }
 }
