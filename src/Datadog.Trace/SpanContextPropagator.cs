@@ -241,11 +241,6 @@ namespace Datadog.Trace
 
             foreach (string headerValue in headerValues)
             {
-                if (string.IsNullOrWhiteSpace(headerValue))
-                {
-                    continue;
-                }
-
                 if (ulong.TryParse(headerValue, NumberStyles, InvariantCulture, out var result))
                 {
                     return result;
@@ -270,11 +265,6 @@ namespace Datadog.Trace
 
             foreach (string headerValue in headerValues)
             {
-                if (string.IsNullOrWhiteSpace(headerValue))
-                {
-                    continue;
-                }
-
                 if (ulong.TryParse(headerValue, NumberStyles, InvariantCulture, out var result))
                 {
                     return result;
@@ -300,11 +290,6 @@ namespace Datadog.Trace
 
             foreach (string headerValue in headerValues)
             {
-                if (string.IsNullOrWhiteSpace(headerValue))
-                {
-                    continue;
-                }
-
                 if (int.TryParse(headerValue, out var result))
                 {
                     if (MinimumSamplingPriority <= result && result <= MaximumSamplingPriority)
@@ -335,11 +320,6 @@ namespace Datadog.Trace
 
             foreach (string headerValue in headerValues)
             {
-                if (string.IsNullOrWhiteSpace(headerValue))
-                {
-                    continue;
-                }
-
                 if (int.TryParse(headerValue, out var result))
                 {
                     if (MinimumSamplingPriority <= result && result <= MaximumSamplingPriority)
