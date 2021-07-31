@@ -3,8 +3,8 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using Nuke.Common;
-using Nuke.Common.Execution;
 using Nuke.Common.Tooling;
+using Nuke.Common.Utilities;
 
 [TypeConverter(typeof(TargetFrameworkTypeConverter))]
 public class TargetFramework : Enumeration
@@ -25,7 +25,7 @@ public class TargetFramework : Enumeration
     public class TargetFrameworkTypeConverter : TypeConverter<TargetFramework>
     {
         private static readonly TargetFramework[] AllTargetFrameworks = typeof(TargetFramework)
-            .GetFields(ReflectionService.Static)
+            .GetFields(ReflectionUtility.Static)
             .Select(x => x.GetValue(null))
             .Cast<TargetFramework>()
             .ToArray();

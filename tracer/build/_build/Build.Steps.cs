@@ -15,7 +15,6 @@ using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.MSBuild;
 using Nuke.Common.Tools.NuGet;
 using Nuke.Common.Utilities.Collections;
-using static CustomDotNetTasks;
 using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.CompressionTasks;
 using static Nuke.Common.IO.FileSystemTasks;
@@ -1556,7 +1555,7 @@ partial class Build
                              .Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include=\"[Datadog.Trace.ClrProfiler.*]*,[Datadog.Trace]*,[Datadog.Trace.AspNet]*\""));
     }
 
-    protected override void OnTargetStart(string target)
+    protected override void OnTargetRunning(string target)
     {
         if (PrintDriveSpace)
         {
@@ -1565,7 +1564,7 @@ partial class Build
                 Logger.Info($"Drive space available on '{drive.Name}': {PrettyPrint(drive.AvailableFreeSpace)} / {PrettyPrint(drive.TotalSize)}");
             }
         }
-        base.OnTargetStart(target);
+        base.OnTargetRunning(target);
 
         static string PrettyPrint(long bytes)
         {
