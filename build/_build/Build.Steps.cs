@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text.RegularExpressions;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
@@ -18,7 +17,6 @@ using static Nuke.Common.IO.PathConstruction;
 using static Nuke.Common.IO.CompressionTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
-using static CustomDotNetTasks;
 
 // #pragma warning disable SA1306
 // #pragma warning disable SA1134
@@ -1139,7 +1137,7 @@ partial class Build
                              .Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include=\"[Datadog.Trace.ClrProfiler.*]*,[Datadog.Trace]*,[Datadog.Trace.AspNet]*\""));
     }
 
-    protected override void OnTargetStart(string target)
+    protected override void OnTargetRunning(string target)
     {
         if (PrintDriveSpace)
         {
@@ -1148,7 +1146,7 @@ partial class Build
                 Logger.Info($"Drive space available on '{drive.Name}': {PrettyPrint(drive.AvailableFreeSpace)} / {PrettyPrint(drive.TotalSize)}");
             }
         }
-        base.OnTargetStart(target);
+        base.OnTargetRunning(target);
 
         static string PrettyPrint(long bytes)
         {

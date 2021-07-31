@@ -20,8 +20,7 @@ internal static partial class DotNetSettingsExtensions
     public static DotNetPublishSettings SetTargetPlatformAnyCPU(this DotNetPublishSettings settings)
         => settings.SetTargetPlatform(MSBuildTargetPlatform.MSIL);
 
-    public static T SetTargetPlatformAnyCPU<T>(this T settings)
-        where T: MSBuildSettings
+    public static DotNetMSBuildSettings SetTargetPlatformAnyCPU(this DotNetMSBuildSettings settings)
         => settings.SetTargetPlatform(MSBuildTargetPlatform.MSIL);
 
     public static DotNetBuildSettings SetTargetPlatform(this DotNetBuildSettings settings, MSBuildTargetPlatform platform)
@@ -38,6 +37,13 @@ internal static partial class DotNetSettingsExtensions
     }
 
     public static DotNetPublishSettings SetTargetPlatform(this DotNetPublishSettings settings, MSBuildTargetPlatform platform)
+    {
+        return platform is null
+            ? settings
+            : settings.SetProperty("Platform", GetTargetPlatform(platform));
+    }
+
+    public static DotNetMSBuildSettings SetTargetPlatform(this DotNetMSBuildSettings settings, MSBuildTargetPlatform platform)
     {
         return platform is null
             ? settings
@@ -78,8 +84,12 @@ internal static partial class DotNetSettingsExtensions
         return settings;
     }
     
-    public static T EnableNoDependencies<T>(this T settings)
-        where T: MSBuildSettings
+    public static DotNetMSBuildSettings EnableNoDependencies(this DotNetMSBuildSettings settings)
+    {
+        return settings.SetProperty("BuildProjectReferences", false);
+    }
+
+    public static MSBuildSettings EnableNoDependencies(this MSBuildSettings settings)
     {
         return settings.SetProperty("BuildProjectReferences", false);
     }
