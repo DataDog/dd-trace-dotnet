@@ -234,7 +234,7 @@ partial class Build : NukeBuild
         .Executes(() =>
         {
             DotNetBuild(x => x
-                .SetProjectFile(Solution.GetProject(Projects.RunnerTool))
+                .SetProjectFile(Solution.src.Datadog_Trace_Tools_Runner_Tool)
                 .EnableNoRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
@@ -249,7 +249,7 @@ partial class Build : NukeBuild
         {
             var runtimes = new[] {"win-x86", "win-x64", "linux-x64", "linux-musl-x64", "osx-x64", "linux-arm64"};
             DotNetPublish(x => x
-                .SetProject(Solution.GetProject(Projects.StandaloneTool))
+                .SetProject(Solution.src.Datadog_Trace_Tools_Runner_Standalone)
                 // Have to do a restore currently as we're specifying specific runtime
                 // .EnableNoRestore()
                 .EnableNoDependencies()
@@ -268,7 +268,7 @@ partial class Build : NukeBuild
         .Executes(() =>
         {
             DotNetBuild(s => s
-                .SetProjectFile(Solution.GetProject(Projects.BenchmarksTrace))
+                .SetProjectFile(Solution.test.benchmarks.Benchmarks_Trace)
                 .SetConfiguration(BuildConfiguration)
                 .SetFramework(TargetFramework.NETCOREAPP3_1)
                 .EnableNoDependencies()
@@ -276,7 +276,7 @@ partial class Build : NukeBuild
             );
 
             DotNetRun(s => s
-                .SetProjectFile(Solution.GetProject(Projects.BenchmarksTrace))
+                .SetProjectFile(Solution.test.benchmarks.Benchmarks_Trace)
                 .SetConfiguration(BuildConfiguration)
                 .SetFramework(TargetFramework.NETCOREAPP3_1)
                 .EnableNoRestore()

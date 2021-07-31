@@ -28,7 +28,7 @@ using static CustomDotNetTasks;
 
 partial class Build
 {
-    [Solution("Datadog.Trace.sln")] readonly Solution Solution;
+    [Solution("Datadog.Trace.sln", GenerateProjects = true)] readonly Solution Solution;
     AbsolutePath MsBuildProject => RootDirectory / "Datadog.Trace.proj";
 
     AbsolutePath OutputDirectory => RootDirectory / "bin";
@@ -47,7 +47,7 @@ partial class Build
             "Datadog .NET Tracer", "logs")
         : "/var/log/datadog/dotnet/";
 
-    Project NativeProfilerProject => Solution.GetProject(Projects.ClrProfilerNative);
+    Project NativeProfilerProject => Solution.src.Datadog_Trace_ClrProfiler_Native;
 
     [LazyPathExecutable(name: "cmake")] readonly Lazy<Tool> CMake;
     [LazyPathExecutable(name: "make")] readonly Lazy<Tool> Make;
@@ -67,19 +67,19 @@ partial class Build
 
     IEnumerable<Project> ProjectsToPack => new[]
     {
-        Solution.GetProject(Projects.DatadogTrace),
-        Solution.GetProject(Projects.DatadogTraceOpenTracing),
+        Solution.src.Datadog_Trace,
+        Solution.src.Datadog_Trace_OpenTracing,
     };
 
     Project[] ParallelIntegrationTests => new[]
     {
-        Solution.GetProject(Projects.TraceIntegrationTests),
-        Solution.GetProject(Projects.OpenTracingIntegrationTests),
+        Solution.test.Datadog_Trace_IntegrationTests,
+        Solution.test.Datadog_Trace_OpenTracing_IntegrationTests,
     };
 
     Project[] ClrProfilerIntegrationTests => new[]
     {
-        Solution.GetProject(Projects.ClrProfilerIntegrationTests)
+        Solution.test.Datadog_Trace_ClrProfiler_IntegrationTests,
     };
 
     readonly IEnumerable<TargetFramework> TargetFrameworks = new[]
@@ -263,7 +263,7 @@ partial class Build
                 : TargetFrameworks.Where(framework => !framework.ToString().StartsWith("net4"));
 
             DotNetPublish(s => s
-                .SetProject(Solution.GetProject(Projects.ClrProfilerManaged))
+                .SetProject(Solution.src.Datadog_Trace_ClrProfiler_Managed)
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatformAnyCPU()
                 .EnableNoBuild()
@@ -367,7 +367,7 @@ partial class Build
         .Executes(() =>
         {
             MSBuild(s => s
-                    .SetTargetPath(Solution.GetProject(Projects.WindowsInstaller))
+                    .SetTargetPath(Solution.src.WindowsInstaller)
                     .SetConfiguration(BuildConfiguration)
                     .SetMSBuildPath()
                     .AddProperty("RunWixToolsOutOfProc", true)
@@ -608,7 +608,7 @@ partial class Build
         {
             // explicitly build the other dependency (with restore to avoid runtime identifier dependency issues)
             DotNetBuild(x => x
-                .SetProjectFile(Solution.GetProject(Projects.ApplicationWithLog4Net))
+                .SetProjectFile(Solution.test.test_applications.regression.dependency_libs.ApplicationWithLog4Net)
                 // .EnableNoRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
@@ -617,7 +617,7 @@ partial class Build
                 .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
                     o.SetPackageDirectory(NugetPackageDirectory)));
 
-            var regressionsDirectory = Solution.GetProject(Projects.EntityFramework6xMdTokenLookupFailure)
+            var regressionsDirectory = Solution.test.test_applications.regression.EntityFramework6x_MdTokenLookupFailure
                 .Directory.Parent;
             var regressionLibs = GlobFiles(regressionsDirectory / "**" / "*.csproj")
                 .Where(x => !x.Contains("EntityFramework6x.MdTokenLookupFailure")
@@ -1030,7 +1030,7 @@ partial class Build
 
             // Not sure if/why this is necessary, and we can't just point to the correct output location
             var src = TracerHomeDirectory;
-            var testProject = Solution.GetProject(Projects.ClrProfilerIntegrationTests).Directory;
+            var testProject = Solution.test.Datadog_Trace_ClrProfiler_IntegrationTests.Directory;
             var dest = testProject / "bin" / BuildConfiguration / Framework / "profiler-lib";
             CopyDirectoryRecursively(src, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
 

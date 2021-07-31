@@ -39,12 +39,12 @@ partial class Build
     AbsolutePath IisExpressApplicationConfig =>
         RootDirectory / ".vs" / Solution.Name / "config" / "applicationhost.config";
 
-    readonly IEnumerable<string> GacProjects = new []
+    IEnumerable<string> GacProjects => new []
     {
-        Projects.DatadogTrace,
-        Projects.DatadogTraceAspNet,
-        Projects.ClrProfilerManaged,
-        Projects.ClrProfilerManagedCore,
+        Solution.src.Datadog_Trace.Name,
+        Solution.src.Datadog_Trace_AspNet.Name,
+        Solution.src.Datadog_Trace_ClrProfiler_Managed.Name,
+        Solution.src.Datadog_Trace_ClrProfiler_Managed_Core.Name,
     };
 
     Target GacAdd => _ => _
@@ -178,7 +178,7 @@ partial class Build
        .Description("Regenerate the PackageVersions props and .cs files")
        .Executes(async () =>
        {
-           var testDir = Solution.GetProject(Projects.ClrProfilerIntegrationTests).Directory;
+           var testDir = Solution.test.Datadog_Trace_ClrProfiler_IntegrationTests.Directory;
 
            var versionGenerator = new PackageVersionGenerator(RootDirectory, testDir);
            await versionGenerator.GenerateVersions();
@@ -191,7 +191,7 @@ partial class Build
             var honeypotProject = RootDirectory / "honeypot"  /  "Datadog.Dependabot.Honeypot.csproj";
             UpdateVendorsTool.UpdateHoneypotProject(honeypotProject);
 
-            var vendorDirectory = Solution.GetProject(Projects.DatadogTrace).Directory / "Vendors";
+            var vendorDirectory = Solution.src.Datadog_Trace.Directory / "Vendors";
             var downloadDirectory = TemporaryDirectory / "Downloads";
             EnsureCleanDirectory(downloadDirectory);
             UpdateVendorsTool.UpdateVendors(downloadDirectory, vendorDirectory);
