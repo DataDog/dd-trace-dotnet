@@ -93,6 +93,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             _testName = nameof(AspNetMvc5)
                      + (classicMode ? ".Classic" : ".Integrated")
                      + (RuntimeInformation.ProcessArchitecture == Architecture.X64 ? ".X64" : ".X86"); // assume that arm is the same
+            SetHttpPort(iisFixture.HttpPort);
         }
 
         [Trait("Category", "EndToEnd")]
