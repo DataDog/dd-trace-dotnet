@@ -8,12 +8,12 @@ using System.Diagnostics;
 using System.Text;
 using System.Threading;
 
-namespace Datadog.Trace.ClrProfiler.IntegrationTests
+namespace Datadog.Trace.TestHelpers
 {
     /// <summary>
     /// Drains the standard and error output of a process
     /// </summary>
-    internal class ProcessHelper : IDisposable
+    public class ProcessHelper : IDisposable
     {
         private readonly ManualResetEventSlim _errorMutex = new();
         private readonly ManualResetEventSlim _outputMutex = new();

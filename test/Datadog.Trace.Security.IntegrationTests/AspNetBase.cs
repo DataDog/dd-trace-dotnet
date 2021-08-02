@@ -18,51 +18,25 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
-    public class AspNetBase : IDisposable
+    public class AspNetBase : TestHelper
     {
         private readonly HttpClient httpClient;
         private int httpPort;
         private Process process;
 
         public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string samplesDir = null)
+            : base(sampleName, samplesDir ?? "test/test-applications/security", outputHelper)
         {
-            Output = outputHelper;
             httpClient = new HttpClient();
-            EnvironmentHelper = new EnvironmentHelper(sampleName, typeof(AspNetBase), Output, samplesDirectory: samplesDir ?? "test/test-applications/security");
         }
 
-        public EnvironmentHelper EnvironmentHelper { get; }
-
-        protected ITestOutputHelper Output { get; }
-
-        public async Task<MockTracerAgent> RunOnSelfHosted(bool enableSecurity)
+        public async Task<MockTracerAgent> RunOnSelfHosted(bool enableSecurity, bool enableBlocking)
         {
             var agentPort = TcpPortProvider.GetOpenPort();
             httpPort = TcpPortProvider.GetOpenPort();
 
             var agent = new MockTracerAgent(agentPort);
-            await StartSample(agent.Port, arguments: null, aspNetCorePort: httpPort, enableSecurity: enableSecurity);
-            return agent;
-        }
-
-        public async Task<MockTracerAgent> RunOnIis(string path, bool enableSecurity)
-        {
-            var initialAgentPort = TcpPortProvider.GetOpenPort();
-            var agent = new MockTracerAgent(initialAgentPort);
-            httpPort = TcpPortProvider.GetOpenPort();
-            var sampleProjectDir = EnvironmentHelper.GetSampleProjectDirectory();
-            var arguments = $"/clr:v4.0 /path:{sampleProjectDir} /systray:false /port:{httpPort} /trace:verbose";
-#if NETFRAMEWORK
-
-            var publish = new System.EnterpriseServices.Internal.Publish();
-            var execPath = Path.Combine(sampleProjectDir, "bin\\");
-            foreach (var file in Directory.GetFiles(execPath, "Datadog.Trace*.dll"))
-            {
-                publish.GacInstall(file);
-            }
-#endif
-            Output.WriteLine($"[webserver] starting {path} {string.Join(" ", arguments)}");
-            await StartSample(agent.Port, arguments, httpPort, iisExpress: true, enableSecurity: enableSecurity);
+            await StartSample(agent.Port, arguments: null, aspNetCorePort: httpPort, enableSecurity: enableSecurity, enableBlocking: enableBlocking);
             return agent;
         }
 
@@ -73,18 +47,14 @@ namespace Datadog.Trace.Security.IntegrationTests
                 process.Kill();
                 process.Dispose();
             }
-#if NETFRAMEWORK
-            var sampleProjectDir = EnvironmentHelper.GetSampleProjectDirectory();
-            var publish = new System.EnterpriseServices.Internal.Publish();
-            var execPath = Path.Combine(sampleProjectDir, "bin\\");
-            foreach (var file in Directory.GetFiles(execPath, "Datadog.Trace*.dll"))
+
+            if (httpClient != null)
             {
-                publish.GacRemove(file);
+                httpClient.Dispose();
             }
-#endif
         }
 
-        public async Task TestBlockedRequestAsync(MockTracerAgent agent, bool enableSecurity, HttpStatusCode expectedStatusCode, int expectedSpans, IEnumerable<Action<TestHelpers.MockTracerAgent.Span>> assertOnSpans)
+        public async Task TestBlockedRequestAsync(MockTracerAgent agent, bool enableSecurity, HttpStatusCode expectedStatusCode, int expectedSpans, IEnumerable<Action<MockTracerAgent.Span>> assertOnSpans)
         {
             var mockTracerAgentAppSecWrapper = new MockTracerAgentAppSecWrapper(agent);
             mockTracerAgentAppSecWrapper.SubscribeAppSecEvents();
@@ -122,30 +92,25 @@ namespace Datadog.Trace.Security.IntegrationTests
             mockTracerAgentAppSecWrapper.UnsubscribeAppSecEvents();
         }
 
+        protected void SetHttpPort(int httpPort)
+        {
+            this.httpPort = httpPort;
+        }
+
         protected async Task<(HttpStatusCode StatusCode, string ResponseText)> SubmitRequest(string path)
         {
-            Output.WriteLine("submitting request");
-            var response = await httpClient.GetAsync($"http://localhost:{httpPort}{path}");
+            var url = $"http://localhost:{httpPort}{path}";
+            var response = await httpClient.GetAsync(url);
             var responseText = await response.Content.ReadAsStringAsync();
             return (response.StatusCode, responseText);
         }
 
-        private async Task StartSample(int traceAgentPort, string arguments, int? aspNetCorePort = null, string packageVersion = "", int? statsdPort = null, string framework = "", bool iisExpress = false, string path = "/Home", bool enableSecurity = true)
+        private async Task StartSample(int traceAgentPort, string arguments, int? aspNetCorePort = null, string packageVersion = "", int? statsdPort = null, string framework = "", string path = "/Home", bool enableSecurity = true, bool enableBlocking = true)
         {
-            var sampleAppPath = string.Empty;
+            var sampleAppPath = EnvironmentHelper.GetSampleApplicationPath(packageVersion, framework);
             // get path to sample app that the profiler will attach to
             const int mstimeout = 5000;
             var message = "Now listening on:";
-
-            if (iisExpress)
-            {
-                message = "IIS Express is running.";
-                sampleAppPath = EnvironmentHelper.GetSampleExecutionSource();
-            }
-            else
-            {
-                sampleAppPath = EnvironmentHelper.GetSampleApplicationPath(packageVersion, framework);
-            }
 
             if (!File.Exists(sampleAppPath))
             {
@@ -169,6 +134,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 statsdPort: statsdPort,
                 aspNetCorePort: aspNetCorePort.GetValueOrDefault(5000),
                 enableSecurity: enableSecurity,
+                enableBlocking: enableBlocking,
                 callTargetEnabled: true);
 
             // then wait server ready
