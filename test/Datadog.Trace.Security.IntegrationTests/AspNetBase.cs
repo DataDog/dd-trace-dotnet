@@ -100,7 +100,6 @@ namespace Datadog.Trace.Security.IntegrationTests
         protected async Task<(HttpStatusCode StatusCode, string ResponseText)> SubmitRequest(string path)
         {
             var url = $"http://localhost:{httpPort}{path}";
-            Console.WriteLine("submitting request: " + url);
             var response = await httpClient.GetAsync(url);
             var responseText = await response.Content.ReadAsStringAsync();
             return (response.StatusCode, responseText);
