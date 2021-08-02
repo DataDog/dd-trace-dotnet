@@ -102,10 +102,11 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Fact]
         public Task TestSecurity()
         {
-            return TestBlockedRequestAsync(_iisFixture.Agent, _enableSecurity, _enableSecurity && _blockingEnabled ? HttpStatusCode.Forbidden : HttpStatusCode.OK, _enableSecurity ? 5 : 10, new Action<TestHelpers.MockTracerAgent.Span>[]
+            // if blocking is enabled, request stops before reaching asp net mvc integrations intercepting before action methods, so no more spans are generated
+            return TestBlockedRequestAsync(_iisFixture.Agent, _enableSecurity, _enableSecurity && _blockingEnabled ? HttpStatusCode.Forbidden : HttpStatusCode.OK, _enableSecurity && _blockingEnabled ? 5 : 10, new Action<TestHelpers.MockTracerAgent.Span>[]
              {
              s => Assert.Matches("aspnet(-mvc)?.request", s.Name),
-             s => Assert.Equal("Development Web Site", s.Service),
+             s => Assert.Equal("sample", s.Service),
              s => Assert.Equal("web", s.Type)
              });
         }
