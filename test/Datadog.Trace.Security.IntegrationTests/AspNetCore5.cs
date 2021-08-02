@@ -22,13 +22,13 @@ namespace Datadog.Trace.Security.IntegrationTests
         }
 
         [Theory]
-        [InlineData(true, HttpStatusCode.Forbidden)]
-        [InlineData(false, HttpStatusCode.OK)]
+        [InlineData(true, true, HttpStatusCode.Forbidden)]
+        [InlineData(false, false, HttpStatusCode.OK)]
         [Trait("RunOnWindows", "True")]
         [Trait("Category", "ArmUnsupported")]
-        public async Task TestSecurity(bool enableSecurity, HttpStatusCode expectedStatusCode)
+        public async Task TestSecurity(bool enableSecurity, bool enableBlocking, HttpStatusCode expectedStatusCode)
         {
-            using var agent = await RunOnSelfHosted(enableSecurity);
+            using var agent = await RunOnSelfHosted(enableSecurity, enableBlocking);
             await TestBlockedRequestAsync(agent, enableSecurity, expectedStatusCode, 5, new Action<TestHelpers.MockTracerAgent.Span>[]
             {
              s => Assert.Equal("aspnet_core.request", s.Name),

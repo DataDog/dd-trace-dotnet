@@ -52,7 +52,7 @@ namespace Datadog.Trace.AppSec
                 var blockingEnabled = Environment.GetEnvironmentVariable(ConfigurationKeys.AppSecBlockingEnabled)?.ToBoolean();
                 BlockingEnabled = blockingEnabled == true;
 
-                Log.Information($"Security.Enabled: {Enabled} ");
+                Log.Information($"Security.Enabled: {Enabled}, Security.BlockingEnabled {BlockingEnabled}");
 
                 _instrumentationGateway = instrumentationGateway ?? new InstrumentationGateway();
 
