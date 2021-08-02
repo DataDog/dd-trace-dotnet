@@ -71,6 +71,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerClassFactory::CreateInstance(IUnknown* pUnk
     {
         m_dispatcher->LoadInstance(pUnkOuter, riid);
     }
+    else
+    {
+        delete profiler;
+    }
+
     Debug("CorProfilerClassFactory::CreateInstance: ", res);
     return res;
 }
