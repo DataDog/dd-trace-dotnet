@@ -78,7 +78,7 @@ namespace datadog::shared::nativeloader
         {
             if (!FreeDynamicLibrary(m_instance))
             {
-                Warn("Error unloading: ", m_filepath, " dynamic library.");
+                Warn("DynamicInstanceImpl::~DynamicInstanceImpl: Error unloading: ", m_filepath, " dynamic library.");
             }
             m_instance = nullptr;
         }
@@ -94,16 +94,16 @@ namespace datadog::shared::nativeloader
         }
         else
         {
-            Warn("Error getting IClassFactory from: ", m_filepath);
+            Warn("DynamicInstanceImpl::LoadClassFactory: Error getting IClassFactory from: ", m_filepath);
         }
 
-        Debug("LoadClassFactory: ", res);
+        Debug("DynamicInstanceImpl::LoadClassFactory: ", res);
         return res;
     }
 
     HRESULT DynamicInstanceImpl::LoadInstance(IUnknown* pUnkOuter, REFIID riid)
     {
-        Debug("Running LoadInstance: ");
+        Debug("DynamicInstanceImpl::LoadInstance");
 
         // Check if the class factory instance is loaded.
         if (m_classFactory == nullptr)
@@ -112,16 +112,16 @@ namespace datadog::shared::nativeloader
         }
 
         // Creates the profiler callback instance from the class factory
-        Debug("m_classFactory: ", HexStr(m_classFactory, sizeof(IClassFactory*)));
+        Debug("DynamicInstanceImpl::LoadInstance: m_classFactory: ", HexStr(m_classFactory, sizeof(IClassFactory*)));
         HRESULT res =
             m_classFactory->CreateInstance(nullptr, __uuidof(ICorProfilerCallback10), (void**) &m_corProfilerCallback);
         if (FAILED(res))
         {
             m_corProfilerCallback = nullptr;
-            Warn("Error getting ICorProfilerCallback10 from: ", m_filepath);
+            Warn("DynamicInstanceImpl::LoadInstance: Error getting ICorProfilerCallback10 from: ", m_filepath);
         }
 
-        Debug("LoadInstance: ", res);
+        Debug("DynamicInstanceImpl::LoadInstance: ", res);
         return res;
     }
 

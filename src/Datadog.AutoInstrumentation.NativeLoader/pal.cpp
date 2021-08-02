@@ -13,7 +13,7 @@ namespace datadog::shared::nativeloader
 
     void* LoadDynamicLibrary(std::string filePath)
     {
-        Debug("LoadLibrary: ", filePath);
+        Debug("LoadDynamicLibrary: ", filePath);
 
 #if _WIN32
         HMODULE dynLibPtr = LoadLibrary(ToWSTRING(filePath).c_str());
@@ -27,7 +27,7 @@ namespace datadog::shared::nativeloader
 
             if (msgBuffer != NULL)
             {
-                Warn("Error loading dynamic library '", filePath, "': ", (LPTSTR) msgBuffer);
+                Warn("LoadDynamicLibrary: Error loading dynamic library '", filePath, "': ", (LPTSTR) msgBuffer);
                 LocalFree(msgBuffer);
             }
         }
@@ -37,7 +37,7 @@ namespace datadog::shared::nativeloader
         if (dynLibPtr == nullptr)
         {
             char* errorMessage = dlerror();
-            Warn("Error loading dynamic library '", filePath, "': ", errorMessage);
+            Warn("LoadDynamicLibrary: Error loading dynamic library '", filePath, "': ", errorMessage);
         }
         return dynLibPtr;
 #endif
@@ -59,7 +59,7 @@ namespace datadog::shared::nativeloader
 
             if (msgBuffer != NULL)
             {
-                Warn("Error loading dynamic function '", funcName, "': ", (LPTSTR) msgBuffer);
+                Warn("GetExternalFunction: Error loading dynamic function '", funcName, "': ", (LPTSTR) msgBuffer);
                 LocalFree(msgBuffer);
             }
         }
@@ -69,7 +69,7 @@ namespace datadog::shared::nativeloader
         if (dynFunc == nullptr)
         {
             char* errorMessage = dlerror();
-            Warn("Error loading dynamic function '", funcName, "': ", errorMessage);
+            Warn("GetExternalFunction: Error loading dynamic function '", funcName, "': ", errorMessage);
         }
         return dynFunc;
 #endif
@@ -77,7 +77,7 @@ namespace datadog::shared::nativeloader
 
     bool FreeDynamicLibrary(void* handle)
     {
-        Debug("FreeDynamicLibrary.");
+        Debug("FreeDynamicLibrary");
 
 #if _WIN32
         return FreeLibrary((HMODULE) handle);

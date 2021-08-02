@@ -92,7 +92,7 @@ namespace datadog::shared::nativeloader
         HRESULT hr = pICorProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo6), (void**) &info6);
         if (FAILED(hr))
         {
-            Warn("Failed to attach profiler: interface ICorProfilerInfo6 not found.");
+            Warn("CorProfiler::Initialize: Failed to attach profiler, interface ICorProfilerInfo6 not found.");
             return E_FAIL;
         }
 
@@ -102,12 +102,12 @@ namespace datadog::shared::nativeloader
         hr = info6->GetEventMask2(&mask_low, &mask_hi);
         if (FAILED(hr))
         {
-            Warn("Error getting the event mask.");
+            Warn("CorProfiler::Initialize: Error getting the event mask.");
             return E_FAIL;
         }
 
-        Debug("MaskLow: ", mask_low);
-        Debug("MaskHi : ", mask_hi);
+        Debug("CorProfiler::Initialize: MaskLow: ", mask_low);
+        Debug("CorProfiler::Initialize: MaskHi : ", mask_hi);
 
         //
         // Continuous Profiler Initialization
@@ -126,17 +126,17 @@ namespace datadog::shared::nativeloader
                     mask_low = mask_low | local_mask_low;
                     mask_hi = mask_hi | local_mask_hi;
 
-                    Debug("*LocalMaskLow: ", local_mask_low);
-                    Debug("*LocalMaskHi : ", local_mask_hi);
+                    Debug("CorProfiler::Initialize: *LocalMaskLow: ", local_mask_low);
+                    Debug("CorProfiler::Initialize: *LocalMaskHi : ", local_mask_hi);
                 }
                 else
                 {
-                    Warn("Error getting the event mask.");
+                    Warn("CorProfiler::Initialize: Error getting the event mask.");
                 }
             }
             else
             {
-                Warn("Error Initializing the Continuous Profiler.");
+                Warn("CorProfiler::Initialize: Error Initializing the Continuous Profiler.");
                 return localResult;
             }
         }
@@ -158,17 +158,17 @@ namespace datadog::shared::nativeloader
                     mask_low = mask_low | local_mask_low;
                     mask_hi = mask_hi | local_mask_hi;
 
-                    Debug("*LocalMaskLow: ", local_mask_low);
-                    Debug("*LocalMaskHi : ", local_mask_hi);
+                    Debug("CorProfiler::Initialize: *LocalMaskLow: ", local_mask_low);
+                    Debug("CorProfiler::Initialize: *LocalMaskHi : ", local_mask_hi);
                 }
                 else
                 {
-                    Warn("Error getting the event mask.");
+                    Warn("CorProfiler::Initialize: Error getting the event mask.");
                 }
             }
             else
             {
-                Warn("Error Initializing the Tracer Profiler.");
+                Warn("CorProfiler::Initialize: Error Initializing the Tracer Profiler.");
                 return localResult;
             }
         }
@@ -190,17 +190,17 @@ namespace datadog::shared::nativeloader
                     mask_low = mask_low | local_mask_low;
                     mask_hi = mask_hi | local_mask_hi;
 
-                    Debug("*LocalMaskLow: ", local_mask_low);
-                    Debug("*LocalMaskHi : ", local_mask_hi);
+                    Debug("CorProfiler::Initialize: *LocalMaskLow: ", local_mask_low);
+                    Debug("CorProfiler::Initialize: *LocalMaskHi : ", local_mask_hi);
                 }
                 else
                 {
-                    Warn("Error getting the event mask.");
+                    Warn("CorProfiler::Initialize: Error getting the event mask.");
                 }
             }
             else
             {
-                Warn("Error Initializing the Custom Profiler.");
+                Warn("CorProfiler::Initialize: Error Initializing the Custom Profiler.");
                 return localResult;
             }
         }
@@ -208,14 +208,14 @@ namespace datadog::shared::nativeloader
         //
         // Sets final event mask as a combination of each cor profiler masks.
         //
-        Debug("*MaskLow: ", mask_low);
-        Debug("*MaskHi : ", mask_hi);
+        Debug("CorProfiler::Initialize: *MaskLow: ", mask_low);
+        Debug("CorProfiler::Initialize: *MaskHi : ", mask_hi);
 
         // Sets the final event mask for the profiler
         hr = info6->SetEventMask2(mask_low, mask_hi);
         if (FAILED(hr))
         {
-            Warn("Error setting the event mask.");
+            Warn("CorProfiler::Initialize: Error setting the event mask.");
             return E_FAIL;
         }
 
@@ -234,7 +234,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->Shutdown();
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in Shutdown() call.");
+                Warn("CorProfiler::Shutdown: [Continuous Profiler] Error in Shutdown() call.");
                 gHR = hr;
             }
         }
@@ -247,7 +247,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->Shutdown();
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in Shutdown() call.");
+                Warn("CorProfiler::Shutdown: [Tracer] Error in Shutdown() call.");
                 gHR = hr;
             }
         }
@@ -260,7 +260,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->Shutdown();
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in Shutdown() call.");
+                Warn("CorProfiler::Shutdown: [Custom] Error in Shutdown() call.");
                 gHR = hr;
             }
         }
@@ -281,7 +281,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->AppDomainCreationStarted(appDomainId);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in AppDomainCreationStarted() call.");
+                Warn("CorProfiler::AppDomainCreationStarted: [Continuous Profiler] Error in AppDomainCreationStarted() call.");
                 gHR = hr;
             }
         }
@@ -294,7 +294,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->AppDomainCreationStarted(appDomainId);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in AppDomainCreationStarted() call.");
+                Warn("CorProfiler::AppDomainCreationStarted: [Tracer] Error in AppDomainCreationStarted() call.");
                 gHR = hr;
             }
         }
@@ -307,7 +307,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->AppDomainCreationStarted(appDomainId);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in AppDomainCreationStarted() call.");
+                Warn("CorProfiler::AppDomainCreationStarted: [Custom] Error in AppDomainCreationStarted() call.");
                 gHR = hr;
             }
         }
@@ -327,7 +327,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->AppDomainCreationFinished(appDomainId, hrStatus);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in AppDomainCreationFinished() call.");
+                Warn("CorProfiler::AppDomainCreationFinished: [Continuous Profiler] Error in AppDomainCreationFinished() call.");
                 gHR = hr;
             }
         }
@@ -340,7 +340,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->AppDomainCreationFinished(appDomainId, hrStatus);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in AppDomainCreationFinished() call.");
+                Warn("CorProfiler::AppDomainCreationFinished: [Tracer] Error in AppDomainCreationFinished() call.");
                 gHR = hr;
             }
         }
@@ -353,7 +353,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->AppDomainCreationFinished(appDomainId, hrStatus);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in AppDomainCreationFinished() call.");
+                Warn("CorProfiler::AppDomainCreationFinished: [Custom] Error in AppDomainCreationFinished() call.");
                 gHR = hr;
             }
         }
@@ -373,7 +373,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->AppDomainShutdownStarted(appDomainId);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in AppDomainShutdownStarted() call.");
+                Warn("CorProfiler::AppDomainShutdownStarted: [Continuous Profiler] Error in AppDomainShutdownStarted() call.");
                 gHR = hr;
             }
         }
@@ -386,7 +386,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->AppDomainShutdownStarted(appDomainId);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in AppDomainShutdownStarted() call.");
+                Warn("CorProfiler::AppDomainShutdownStarted: [Tracer] Error in AppDomainShutdownStarted() call.");
                 gHR = hr;
             }
         }
@@ -399,7 +399,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->AppDomainShutdownStarted(appDomainId);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in AppDomainShutdownStarted() call.");
+                Warn("CorProfiler::AppDomainShutdownStarted: [Custom] Error in AppDomainShutdownStarted() call.");
                 gHR = hr;
             }
         }
@@ -419,7 +419,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->AppDomainShutdownFinished(appDomainId, hrStatus);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in AppDomainShutdownFinished() call.");
+                Warn("CorProfiler::AppDomainShutdownFinished: [Continuous Profiler] Error in AppDomainShutdownFinished() call.");
                 gHR = hr;
             }
         }
@@ -432,7 +432,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->AppDomainShutdownFinished(appDomainId, hrStatus);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in AppDomainShutdownFinished() call.");
+                Warn("CorProfiler::AppDomainShutdownFinished: [Tracer] Error in AppDomainShutdownFinished() call.");
                 gHR = hr;
             }
         }
@@ -445,7 +445,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->AppDomainShutdownFinished(appDomainId, hrStatus);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in AppDomainShutdownFinished() call.");
+                Warn("CorProfiler::AppDomainShutdownFinished: [Custom] Error in AppDomainShutdownFinished() call.");
                 gHR = hr;
             }
         }
@@ -466,7 +466,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->AssemblyLoadStarted(assemblyId);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in AssemblyLoadStarted() call.");
+                Warn("CorProfiler::AssemblyLoadStarted: [Continuous Profiler] Error in AssemblyLoadStarted() call.");
                 gHR = hr;
             }
         }
@@ -479,7 +479,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->AssemblyLoadStarted(assemblyId);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in AssemblyLoadStarted() call.");
+                Warn("CorProfiler::AssemblyLoadStarted: [Tracer] Error in AssemblyLoadStarted() call.");
                 gHR = hr;
             }
         }
@@ -492,7 +492,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->AssemblyLoadStarted(assemblyId);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in AssemblyLoadStarted() call.");
+                Warn("CorProfiler::AssemblyLoadStarted: [Custom] Error in AssemblyLoadStarted() call.");
                 gHR = hr;
             }
         }
@@ -512,7 +512,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->AssemblyLoadFinished(assemblyId, hrStatus);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in AssemblyLoadFinished() call.");
+                Warn("CorProfiler::AssemblyLoadFinished: [Continuous Profiler] Error in AssemblyLoadFinished() call.");
                 gHR = hr;
             }
         }
@@ -525,7 +525,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->AssemblyLoadFinished(assemblyId, hrStatus);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in AssemblyLoadFinished() call.");
+                Warn("CorProfiler::AssemblyLoadFinished: [Tracer] Error in AssemblyLoadFinished() call.");
                 gHR = hr;
             }
         }
@@ -538,7 +538,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->AssemblyLoadFinished(assemblyId, hrStatus);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in AssemblyLoadFinished() call.");
+                Warn("CorProfiler::AssemblyLoadFinished: [Custom] Error in AssemblyLoadFinished() call.");
                 gHR = hr;
             }
         }
@@ -558,7 +558,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->AssemblyUnloadStarted(assemblyId);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in AssemblyUnloadStarted() call.");
+                Warn("CorProfiler::AssemblyUnloadStarted: [Continuous Profiler] Error in AssemblyUnloadStarted() call.");
                 gHR = hr;
             }
         }
@@ -571,7 +571,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->AssemblyUnloadStarted(assemblyId);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in AssemblyUnloadStarted() call.");
+                Warn("CorProfiler::AssemblyUnloadStarted: [Tracer] Error in AssemblyUnloadStarted() call.");
                 gHR = hr;
             }
         }
@@ -584,7 +584,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->AssemblyUnloadStarted(assemblyId);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in AssemblyUnloadStarted() call.");
+                Warn("CorProfiler::AssemblyUnloadStarted: [Custom] Error in AssemblyUnloadStarted() call.");
                 gHR = hr;
             }
         }
@@ -604,7 +604,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->AssemblyUnloadFinished(assemblyId, hrStatus);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in AssemblyUnloadFinished() call.");
+                Warn("CorProfiler::AssemblyUnloadFinished: [Continuous Profiler] Error in AssemblyUnloadFinished() call.");
                 gHR = hr;
             }
         }
@@ -617,7 +617,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->AssemblyUnloadFinished(assemblyId, hrStatus);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in AssemblyUnloadFinished() call.");
+                Warn("CorProfiler::AssemblyUnloadFinished: [Tracer] Error in AssemblyUnloadFinished() call.");
                 gHR = hr;
             }
         }
@@ -630,7 +630,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->AssemblyUnloadFinished(assemblyId, hrStatus);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in AssemblyUnloadFinished() call.");
+                Warn("CorProfiler::AssemblyUnloadFinished: [Custom] Error in AssemblyUnloadFinished() call.");
                 gHR = hr;
             }
         }
@@ -651,7 +651,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ModuleLoadStarted(moduleId);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ModuleLoadStarted() call.");
+                Warn("CorProfiler::ModuleLoadStarted: [Continuous Profiler] Error in ModuleLoadStarted() call.");
                 gHR = hr;
             }
         }
@@ -664,7 +664,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ModuleLoadStarted(moduleId);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ModuleLoadStarted() call.");
+                Warn("CorProfiler::ModuleLoadStarted: [Tracer] Error in ModuleLoadStarted() call.");
                 gHR = hr;
             }
         }
@@ -677,7 +677,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ModuleLoadStarted(moduleId);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ModuleLoadStarted() call.");
+                Warn("CorProfiler::ModuleLoadStarted: [Custom] Error in ModuleLoadStarted() call.");
                 gHR = hr;
             }
         }
@@ -697,7 +697,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ModuleLoadFinished(moduleId, hrStatus);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ModuleLoadFinished() call.");
+                Warn("CorProfiler::ModuleLoadFinished: [Continuous Profiler] Error in ModuleLoadFinished() call.");
                 gHR = hr;
             }
         }
@@ -710,7 +710,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ModuleLoadFinished(moduleId, hrStatus);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ModuleLoadFinished() call.");
+                Warn("CorProfiler::ModuleLoadFinished: [Tracer] Error in ModuleLoadFinished() call.");
                 gHR = hr;
             }
         }
@@ -723,7 +723,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ModuleLoadFinished(moduleId, hrStatus);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ModuleLoadFinished() call.");
+                Warn("CorProfiler::ModuleLoadFinished: [Custom] Error in ModuleLoadFinished() call.");
                 gHR = hr;
             }
         }
@@ -743,7 +743,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ModuleUnloadStarted(moduleId);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ModuleUnloadStarted() call.");
+                Warn("CorProfiler::ModuleUnloadStarted: [Continuous Profiler] Error in ModuleUnloadStarted() call.");
                 gHR = hr;
             }
         }
@@ -756,7 +756,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ModuleUnloadStarted(moduleId);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ModuleUnloadStarted() call.");
+                Warn("CorProfiler::ModuleUnloadStarted: [Tracer] Error in ModuleUnloadStarted() call.");
                 gHR = hr;
             }
         }
@@ -769,7 +769,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ModuleUnloadStarted(moduleId);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ModuleUnloadStarted() call.");
+                Warn("CorProfiler::ModuleUnloadStarted: [Custom] Error in ModuleUnloadStarted() call.");
                 gHR = hr;
             }
         }
@@ -789,7 +789,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ModuleUnloadFinished(moduleId, hrStatus);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ModuleUnloadFinished() call.");
+                Warn("CorProfiler::ModuleUnloadFinished: [Continuous Profiler] Error in ModuleUnloadFinished() call.");
                 gHR = hr;
             }
         }
@@ -802,7 +802,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ModuleUnloadFinished(moduleId, hrStatus);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ModuleUnloadFinished() call.");
+                Warn("CorProfiler::ModuleUnloadFinished: [Tracer] Error in ModuleUnloadFinished() call.");
                 gHR = hr;
             }
         }
@@ -815,7 +815,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ModuleUnloadFinished(moduleId, hrStatus);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ModuleUnloadFinished() call.");
+                Warn("CorProfiler::ModuleUnloadFinished: [Custom] Error in ModuleUnloadFinished() call.");
                 gHR = hr;
             }
         }
@@ -836,7 +836,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ModuleAttachedToAssembly(moduleId, AssemblyId);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ModuleAttachedToAssembly() call.");
+                Warn("CorProfiler::ModuleAttachedToAssembly: [Continuous Profiler] Error in ModuleAttachedToAssembly() call.");
                 gHR = hr;
             }
         }
@@ -849,7 +849,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ModuleAttachedToAssembly(moduleId, AssemblyId);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ModuleAttachedToAssembly() call.");
+                Warn("CorProfiler::ModuleAttachedToAssembly: [Tracer] Error in ModuleAttachedToAssembly() call.");
                 gHR = hr;
             }
         }
@@ -862,7 +862,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ModuleAttachedToAssembly(moduleId, AssemblyId);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ModuleAttachedToAssembly() call.");
+                Warn("CorProfiler::ModuleAttachedToAssembly: [Custom] Error in ModuleAttachedToAssembly() call.");
                 gHR = hr;
             }
         }
@@ -883,7 +883,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ClassLoadStarted(classId);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ClassLoadStarted() call.");
+                Warn("CorProfiler::ClassLoadStarted: [Continuous Profiler] Error in ClassLoadStarted() call.");
                 gHR = hr;
             }
         }
@@ -896,7 +896,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ClassLoadStarted(classId);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ClassLoadStarted() call.");
+                Warn("CorProfiler::ClassLoadStarted: [Tracer] Error in ClassLoadStarted() call.");
                 gHR = hr;
             }
         }
@@ -909,7 +909,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ClassLoadStarted(classId);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ClassLoadStarted() call.");
+                Warn("CorProfiler::ClassLoadStarted: [Custom] Error in ClassLoadStarted() call.");
                 gHR = hr;
             }
         }
@@ -929,7 +929,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ClassLoadFinished(classId, hrStatus);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ClassLoadFinished() call.");
+                Warn("CorProfiler::ClassLoadFinished: [Continuous Profiler] Error in ClassLoadFinished() call.");
                 gHR = hr;
             }
         }
@@ -942,7 +942,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ClassLoadFinished(classId, hrStatus);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ClassLoadFinished() call.");
+                Warn("CorProfiler::ClassLoadFinished: [Tracer] Error in ClassLoadFinished() call.");
                 gHR = hr;
             }
         }
@@ -955,7 +955,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ClassLoadFinished(classId, hrStatus);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ClassLoadFinished() call.");
+                Warn("CorProfiler::ClassLoadFinished: [Custom] Error in ClassLoadFinished() call.");
                 gHR = hr;
             }
         }
@@ -975,7 +975,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ClassUnloadStarted(classId);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ClassUnloadStarted() call.");
+                Warn("CorProfiler::ClassUnloadStarted: [Continuous Profiler] Error in ClassUnloadStarted() call.");
                 gHR = hr;
             }
         }
@@ -988,7 +988,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ClassUnloadStarted(classId);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ClassUnloadStarted() call.");
+                Warn("CorProfiler::ClassUnloadStarted: [Tracer] Error in ClassUnloadStarted() call.");
                 gHR = hr;
             }
         }
@@ -1001,7 +1001,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ClassUnloadStarted(classId);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ClassUnloadStarted() call.");
+                Warn("CorProfiler::ClassUnloadStarted: [Custom] Error in ClassUnloadStarted() call.");
                 gHR = hr;
             }
         }
@@ -1021,7 +1021,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ClassUnloadFinished(classId, hrStatus);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ClassUnloadFinished() call.");
+                Warn("CorProfiler::ClassUnloadFinished: [Continuous Profiler] Error in ClassUnloadFinished() call.");
                 gHR = hr;
             }
         }
@@ -1034,7 +1034,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ClassUnloadFinished(classId, hrStatus);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ClassUnloadFinished() call.");
+                Warn("CorProfiler::ClassUnloadFinished: [Tracer] Error in ClassUnloadFinished() call.");
                 gHR = hr;
             }
         }
@@ -1047,7 +1047,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ClassUnloadFinished(classId, hrStatus);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ClassUnloadFinished() call.");
+                Warn("CorProfiler::ClassUnloadFinished: [Custom] Error in ClassUnloadFinished() call.");
                 gHR = hr;
             }
         }
@@ -1068,7 +1068,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->FunctionUnloadStarted(functionId);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in FunctionUnloadStarted() call.");
+                Warn("CorProfiler::FunctionUnloadStarted: [Continuous Profiler] Error in FunctionUnloadStarted() call.");
                 gHR = hr;
             }
         }
@@ -1081,7 +1081,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->FunctionUnloadStarted(functionId);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in FunctionUnloadStarted() call.");
+                Warn("CorProfiler::FunctionUnloadStarted: [Tracer] Error in FunctionUnloadStarted() call.");
                 gHR = hr;
             }
         }
@@ -1094,7 +1094,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->FunctionUnloadStarted(functionId);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in FunctionUnloadStarted() call.");
+                Warn("CorProfiler::FunctionUnloadStarted: [Custom] Error in FunctionUnloadStarted() call.");
                 gHR = hr;
             }
         }
@@ -1115,7 +1115,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->JITCompilationStarted(functionId, fIsSafeToBlock);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in JITCompilationStarted() call.");
+                Warn("CorProfiler::JITCompilationStarted: [Continuous Profiler] Error in JITCompilationStarted() call.");
                 gHR = hr;
             }
         }
@@ -1128,7 +1128,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->JITCompilationStarted(functionId, fIsSafeToBlock);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in JITCompilationStarted() call.");
+                Warn("CorProfiler::JITCompilationStarted: [Tracer] Error in JITCompilationStarted() call.");
                 gHR = hr;
             }
         }
@@ -1141,7 +1141,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->JITCompilationStarted(functionId, fIsSafeToBlock);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in JITCompilationStarted() call.");
+                Warn("CorProfiler::JITCompilationStarted: [Custom] Error in JITCompilationStarted() call.");
                 gHR = hr;
             }
         }
@@ -1162,7 +1162,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->JITCompilationFinished(functionId, hrStatus, fIsSafeToBlock);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in JITCompilationFinished() call.");
+                Warn("CorProfiler::JITCompilationFinished: [Continuous Profiler] Error in JITCompilationFinished() call.");
                 gHR = hr;
             }
         }
@@ -1175,7 +1175,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->JITCompilationFinished(functionId, hrStatus, fIsSafeToBlock);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in JITCompilationFinished() call.");
+                Warn("CorProfiler::JITCompilationFinished: [Tracer] Error in JITCompilationFinished() call.");
                 gHR = hr;
             }
         }
@@ -1188,7 +1188,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->JITCompilationFinished(functionId, hrStatus, fIsSafeToBlock);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in JITCompilationFinished() call.");
+                Warn("CorProfiler::JITCompilationFinished: [Custom] Error in JITCompilationFinished() call.");
                 gHR = hr;
             }
         }
@@ -1209,7 +1209,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->JITCachedFunctionSearchStarted(functionId, pbUseCachedFunction);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in JITCachedFunctionSearchStarted() call.");
+                Warn("CorProfiler::JITCachedFunctionSearchStarted: [Continuous Profiler] Error in JITCachedFunctionSearchStarted() call.");
                 gHR = hr;
             }
         }
@@ -1222,7 +1222,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->JITCachedFunctionSearchStarted(functionId, pbUseCachedFunction);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in JITCachedFunctionSearchStarted() call.");
+                Warn("CorProfiler::JITCachedFunctionSearchStarted: [Tracer] Error in JITCachedFunctionSearchStarted() call.");
                 gHR = hr;
             }
         }
@@ -1235,7 +1235,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->JITCachedFunctionSearchStarted(functionId, pbUseCachedFunction);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in JITCachedFunctionSearchStarted() call.");
+                Warn("CorProfiler::JITCachedFunctionSearchStarted: [Custom] Error in JITCachedFunctionSearchStarted() call.");
                 gHR = hr;
             }
         }
@@ -1256,7 +1256,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->JITCachedFunctionSearchFinished(functionId, result);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in JITCachedFunctionSearchFinished() call.");
+                Warn("CorProfiler::JITCachedFunctionSearchFinished: [Continuous Profiler] Error in JITCachedFunctionSearchFinished() call.");
                 gHR = hr;
             }
         }
@@ -1269,7 +1269,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->JITCachedFunctionSearchFinished(functionId, result);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in JITCachedFunctionSearchFinished() call.");
+                Warn("CorProfiler::JITCachedFunctionSearchFinished: [Tracer] Error in JITCachedFunctionSearchFinished() call.");
                 gHR = hr;
             }
         }
@@ -1282,7 +1282,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->JITCachedFunctionSearchFinished(functionId, result);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in JITCachedFunctionSearchFinished() call.");
+                Warn("CorProfiler::JITCachedFunctionSearchFinished: [Custom] Error in JITCachedFunctionSearchFinished() call.");
                 gHR = hr;
             }
         }
@@ -1302,7 +1302,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->JITFunctionPitched(functionId);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in JITFunctionPitched() call.");
+                Warn("CorProfiler::JITFunctionPitched: [Continuous Profiler] Error in JITFunctionPitched() call.");
                 gHR = hr;
             }
         }
@@ -1315,7 +1315,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->JITFunctionPitched(functionId);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in JITFunctionPitched() call.");
+                Warn("CorProfiler::JITFunctionPitched: [Tracer] Error in JITFunctionPitched() call.");
                 gHR = hr;
             }
         }
@@ -1328,7 +1328,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->JITFunctionPitched(functionId);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in JITFunctionPitched() call.");
+                Warn("CorProfiler::JITFunctionPitched: [Custom] Error in JITFunctionPitched() call.");
                 gHR = hr;
             }
         }
@@ -1348,7 +1348,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->JITInlining(callerId, calleeId, pfShouldInline);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in JITInlining() call.");
+                Warn("CorProfiler::JITInlining: [Continuous Profiler] Error in JITInlining() call.");
                 gHR = hr;
             }
         }
@@ -1361,7 +1361,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->JITInlining(callerId, calleeId, pfShouldInline);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in JITInlining() call.");
+                Warn("CorProfiler::JITInlining: [Tracer] Error in JITInlining() call.");
                 gHR = hr;
             }
         }
@@ -1374,7 +1374,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->JITInlining(callerId, calleeId, pfShouldInline);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in JITInlining() call.");
+                Warn("CorProfiler::JITInlining: [Custom] Error in JITInlining() call.");
                 gHR = hr;
             }
         }
@@ -1395,7 +1395,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ThreadCreated(threadId);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ThreadCreated() call.");
+                Warn("CorProfiler::ThreadCreated: [Continuous Profiler] Error in ThreadCreated() call.");
                 gHR = hr;
             }
         }
@@ -1408,7 +1408,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ThreadCreated(threadId);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ThreadCreated() call.");
+                Warn("CorProfiler::ThreadCreated: [Tracer] Error in ThreadCreated() call.");
                 gHR = hr;
             }
         }
@@ -1421,7 +1421,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ThreadCreated(threadId);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ThreadCreated() call.");
+                Warn("CorProfiler::ThreadCreated: [Custom] Error in ThreadCreated() call.");
                 gHR = hr;
             }
         }
@@ -1441,7 +1441,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ThreadDestroyed(threadId);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ThreadDestroyed() call.");
+                Warn("CorProfiler::ThreadDestroyed: [Continuous Profiler] Error in ThreadDestroyed() call.");
                 gHR = hr;
             }
         }
@@ -1454,7 +1454,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ThreadDestroyed(threadId);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ThreadDestroyed() call.");
+                Warn("CorProfiler::ThreadDestroyed: [Tracer] Error in ThreadDestroyed() call.");
                 gHR = hr;
             }
         }
@@ -1467,7 +1467,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ThreadDestroyed(threadId);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ThreadDestroyed() call.");
+                Warn("CorProfiler::ThreadDestroyed: [Custom] Error in ThreadDestroyed() call.");
                 gHR = hr;
             }
         }
@@ -1487,7 +1487,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ThreadAssignedToOSThread(managedThreadId, osThreadId);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ThreadAssignedToOSThread() call.");
+                Warn("CorProfiler::ThreadAssignedToOSThread: [Continuous Profiler] Error in ThreadAssignedToOSThread() call.");
                 gHR = hr;
             }
         }
@@ -1500,7 +1500,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ThreadAssignedToOSThread(managedThreadId, osThreadId);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ThreadAssignedToOSThread() call.");
+                Warn("CorProfiler::ThreadAssignedToOSThread: [Tracer] Error in ThreadAssignedToOSThread() call.");
                 gHR = hr;
             }
         }
@@ -1513,7 +1513,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ThreadAssignedToOSThread(managedThreadId, osThreadId);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ThreadAssignedToOSThread() call.");
+                Warn("CorProfiler::ThreadAssignedToOSThread: [Custom] Error in ThreadAssignedToOSThread() call.");
                 gHR = hr;
             }
         }
@@ -1538,7 +1538,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->RemotingClientInvocationStarted();
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in RemotingClientInvocationStarted() call.");
+                Warn("CorProfiler::RemotingClientInvocationStarted: [Continuous Profiler] Error in RemotingClientInvocationStarted() call.");
                 gHR = hr;
             }
         }
@@ -1551,7 +1551,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->RemotingClientInvocationStarted();
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in RemotingClientInvocationStarted() call.");
+                Warn("CorProfiler::RemotingClientInvocationStarted: [Tracer] Error in RemotingClientInvocationStarted() call.");
                 gHR = hr;
             }
         }
@@ -1564,7 +1564,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->RemotingClientInvocationStarted();
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in RemotingClientInvocationStarted() call.");
+                Warn("CorProfiler::RemotingClientInvocationStarted: [Custom] Error in RemotingClientInvocationStarted() call.");
                 gHR = hr;
             }
         }
@@ -1584,7 +1584,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->RemotingClientSendingMessage(pCookie, fIsAsync);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in RemotingClientSendingMessage() call.");
+                Warn("CorProfiler::RemotingClientSendingMessage: [Continuous Profiler] Error in RemotingClientSendingMessage() call.");
                 gHR = hr;
             }
         }
@@ -1597,7 +1597,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->RemotingClientSendingMessage(pCookie, fIsAsync);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in RemotingClientSendingMessage() call.");
+                Warn("CorProfiler::RemotingClientSendingMessage: [Tracer] Error in RemotingClientSendingMessage() call.");
                 gHR = hr;
             }
         }
@@ -1610,7 +1610,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->RemotingClientSendingMessage(pCookie, fIsAsync);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in RemotingClientSendingMessage() call.");
+                Warn("CorProfiler::RemotingClientSendingMessage: [Custom] Error in RemotingClientSendingMessage() call.");
                 gHR = hr;
             }
         }
@@ -1630,7 +1630,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->RemotingClientReceivingReply(pCookie, fIsAsync);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in RemotingClientReceivingReply() call.");
+                Warn("CorProfiler::RemotingClientReceivingReply: [Continuous Profiler] Error in RemotingClientReceivingReply() call.");
                 gHR = hr;
             }
         }
@@ -1643,7 +1643,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->RemotingClientReceivingReply(pCookie, fIsAsync);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in RemotingClientReceivingReply() call.");
+                Warn("CorProfiler::RemotingClientReceivingReply: [Tracer] Error in RemotingClientReceivingReply() call.");
                 gHR = hr;
             }
         }
@@ -1656,7 +1656,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->RemotingClientReceivingReply(pCookie, fIsAsync);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in RemotingClientReceivingReply() call.");
+                Warn("CorProfiler::RemotingClientReceivingReply: [Custom] Error in RemotingClientReceivingReply() call.");
                 gHR = hr;
             }
         }
@@ -1676,7 +1676,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->RemotingClientInvocationFinished();
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in RemotingClientInvocationFinished() call.");
+                Warn("CorProfiler::RemotingClientInvocationFinished: [Continuous Profiler] Error in RemotingClientInvocationFinished() call.");
                 gHR = hr;
             }
         }
@@ -1689,7 +1689,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->RemotingClientInvocationFinished();
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in RemotingClientInvocationFinished() call.");
+                Warn("CorProfiler::RemotingClientInvocationFinished: [Tracer] Error in RemotingClientInvocationFinished() call.");
                 gHR = hr;
             }
         }
@@ -1702,7 +1702,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->RemotingClientInvocationFinished();
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in RemotingClientInvocationFinished() call.");
+                Warn("CorProfiler::RemotingClientInvocationFinished: [Custom] Error in RemotingClientInvocationFinished() call.");
                 gHR = hr;
             }
         }
@@ -1722,7 +1722,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->RemotingServerReceivingMessage(pCookie, fIsAsync);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in RemotingServerReceivingMessage() call.");
+                Warn("CorProfiler::RemotingServerReceivingMessage: [Continuous Profiler] Error in RemotingServerReceivingMessage() call.");
                 gHR = hr;
             }
         }
@@ -1735,7 +1735,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->RemotingServerReceivingMessage(pCookie, fIsAsync);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in RemotingServerReceivingMessage() call.");
+                Warn("CorProfiler::RemotingServerReceivingMessage: [Tracer] Error in RemotingServerReceivingMessage() call.");
                 gHR = hr;
             }
         }
@@ -1748,7 +1748,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->RemotingServerReceivingMessage(pCookie, fIsAsync);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in RemotingServerReceivingMessage() call.");
+                Warn("CorProfiler::RemotingServerReceivingMessage: [Custom] Error in RemotingServerReceivingMessage() call.");
                 gHR = hr;
             }
         }
@@ -1768,7 +1768,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->RemotingServerInvocationStarted();
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in RemotingServerInvocationStarted() call.");
+                Warn("CorProfiler::RemotingServerInvocationStarted: [Continuous Profiler] Error in RemotingServerInvocationStarted() call.");
                 gHR = hr;
             }
         }
@@ -1781,7 +1781,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->RemotingServerInvocationStarted();
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in RemotingServerInvocationStarted() call.");
+                Warn("CorProfiler::RemotingServerInvocationStarted: [Tracer] Error in RemotingServerInvocationStarted() call.");
                 gHR = hr;
             }
         }
@@ -1794,7 +1794,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->RemotingServerInvocationStarted();
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in RemotingServerInvocationStarted() call.");
+                Warn("CorProfiler::RemotingServerInvocationStarted: [Custom] Error in RemotingServerInvocationStarted() call.");
                 gHR = hr;
             }
         }
@@ -1814,7 +1814,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->RemotingServerInvocationReturned();
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in RemotingServerInvocationReturned() call.");
+                Warn("CorProfiler::RemotingServerInvocationReturned: [Continuous Profiler] Error in RemotingServerInvocationReturned() call.");
                 gHR = hr;
             }
         }
@@ -1827,7 +1827,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->RemotingServerInvocationReturned();
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in RemotingServerInvocationReturned() call.");
+                Warn("CorProfiler::RemotingServerInvocationReturned: [Tracer] Error in RemotingServerInvocationReturned() call.");
                 gHR = hr;
             }
         }
@@ -1840,7 +1840,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->RemotingServerInvocationReturned();
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in RemotingServerInvocationReturned() call.");
+                Warn("CorProfiler::RemotingServerInvocationReturned: [Custom] Error in RemotingServerInvocationReturned() call.");
                 gHR = hr;
             }
         }
@@ -1860,7 +1860,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->RemotingServerSendingReply(pCookie, fIsAsync);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in RemotingServerSendingReply() call.");
+                Warn("CorProfiler::RemotingServerSendingReply: [Continuous Profiler] Error in RemotingServerSendingReply() call.");
                 gHR = hr;
             }
         }
@@ -1873,7 +1873,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->RemotingServerSendingReply(pCookie, fIsAsync);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in RemotingServerSendingReply() call.");
+                Warn("CorProfiler::RemotingServerSendingReply: [Tracer] Error in RemotingServerSendingReply() call.");
                 gHR = hr;
             }
         }
@@ -1886,7 +1886,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->RemotingServerSendingReply(pCookie, fIsAsync);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in RemotingServerSendingReply() call.");
+                Warn("CorProfiler::RemotingServerSendingReply: [Custom] Error in RemotingServerSendingReply() call.");
                 gHR = hr;
             }
         }
@@ -1908,7 +1908,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->UnmanagedToManagedTransition(functionId, reason);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in UnmanagedToManagedTransition() call.");
+                Warn("CorProfiler::UnmanagedToManagedTransition: [Continuous Profiler] Error in UnmanagedToManagedTransition() call.");
                 gHR = hr;
             }
         }
@@ -1921,7 +1921,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->UnmanagedToManagedTransition(functionId, reason);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in UnmanagedToManagedTransition() call.");
+                Warn("CorProfiler::UnmanagedToManagedTransition: [Tracer] Error in UnmanagedToManagedTransition() call.");
                 gHR = hr;
             }
         }
@@ -1934,7 +1934,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->UnmanagedToManagedTransition(functionId, reason);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in UnmanagedToManagedTransition() call.");
+                Warn("CorProfiler::UnmanagedToManagedTransition: [Custom] Error in UnmanagedToManagedTransition() call.");
                 gHR = hr;
             }
         }
@@ -1955,7 +1955,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ManagedToUnmanagedTransition(functionId, reason);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ManagedToUnmanagedTransition() call.");
+                Warn("CorProfiler::ManagedToUnmanagedTransition: [Continuous Profiler] Error in ManagedToUnmanagedTransition() call.");
                 gHR = hr;
             }
         }
@@ -1968,7 +1968,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ManagedToUnmanagedTransition(functionId, reason);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ManagedToUnmanagedTransition() call.");
+                Warn("CorProfiler::ManagedToUnmanagedTransition: [Tracer] Error in ManagedToUnmanagedTransition() call.");
                 gHR = hr;
             }
         }
@@ -1981,7 +1981,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ManagedToUnmanagedTransition(functionId, reason);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ManagedToUnmanagedTransition() call.");
+                Warn("CorProfiler::ManagedToUnmanagedTransition: [Custom] Error in ManagedToUnmanagedTransition() call.");
                 gHR = hr;
             }
         }
@@ -2002,7 +2002,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->RuntimeSuspendStarted(suspendReason);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in RuntimeSuspendStarted() call.");
+                Warn("CorProfiler::RuntimeSuspendStarted: [Continuous Profiler] Error in RuntimeSuspendStarted() call.");
                 gHR = hr;
             }
         }
@@ -2015,7 +2015,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->RuntimeSuspendStarted(suspendReason);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in RuntimeSuspendStarted() call.");
+                Warn("CorProfiler::RuntimeSuspendStarted: [Tracer] Error in RuntimeSuspendStarted() call.");
                 gHR = hr;
             }
         }
@@ -2028,7 +2028,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->RuntimeSuspendStarted(suspendReason);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in RuntimeSuspendStarted() call.");
+                Warn("CorProfiler::RuntimeSuspendStarted: [Custom] Error in RuntimeSuspendStarted() call.");
                 gHR = hr;
             }
         }
@@ -2048,7 +2048,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->RuntimeSuspendFinished();
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in RuntimeSuspendFinished() call.");
+                Warn("CorProfiler::RuntimeSuspendFinished: [Continuous Profiler] Error in RuntimeSuspendFinished() call.");
                 gHR = hr;
             }
         }
@@ -2061,7 +2061,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->RuntimeSuspendFinished();
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in RuntimeSuspendFinished() call.");
+                Warn("CorProfiler::RuntimeSuspendFinished: [Tracer] Error in RuntimeSuspendFinished() call.");
                 gHR = hr;
             }
         }
@@ -2074,7 +2074,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->RuntimeSuspendFinished();
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in RuntimeSuspendFinished() call.");
+                Warn("CorProfiler::RuntimeSuspendFinished: [Custom] Error in RuntimeSuspendFinished() call.");
                 gHR = hr;
             }
         }
@@ -2094,7 +2094,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->RuntimeSuspendAborted();
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in RuntimeSuspendAborted() call.");
+                Warn("CorProfiler::RuntimeSuspendAborted: [Continuous Profiler] Error in RuntimeSuspendAborted() call.");
                 gHR = hr;
             }
         }
@@ -2107,7 +2107,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->RuntimeSuspendAborted();
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in RuntimeSuspendAborted() call.");
+                Warn("CorProfiler::RuntimeSuspendAborted: [Tracer] Error in RuntimeSuspendAborted() call.");
                 gHR = hr;
             }
         }
@@ -2120,7 +2120,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->RuntimeSuspendAborted();
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in RuntimeSuspendAborted() call.");
+                Warn("CorProfiler::RuntimeSuspendAborted: [Custom] Error in RuntimeSuspendAborted() call.");
                 gHR = hr;
             }
         }
@@ -2140,7 +2140,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->RuntimeResumeStarted();
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in RuntimeResumeStarted() call.");
+                Warn("CorProfiler::RuntimeResumeStarted: [Continuous Profiler] Error in RuntimeResumeStarted() call.");
                 gHR = hr;
             }
         }
@@ -2153,7 +2153,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->RuntimeResumeStarted();
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in RuntimeResumeStarted() call.");
+                Warn("CorProfiler::RuntimeResumeStarted: [Tracer] Error in RuntimeResumeStarted() call.");
                 gHR = hr;
             }
         }
@@ -2166,7 +2166,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->RuntimeResumeStarted();
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in RuntimeResumeStarted() call.");
+                Warn("CorProfiler::RuntimeResumeStarted: [Custom] Error in RuntimeResumeStarted() call.");
                 gHR = hr;
             }
         }
@@ -2186,7 +2186,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->RuntimeResumeFinished();
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in RuntimeResumeFinished() call.");
+                Warn("CorProfiler::RuntimeResumeFinished: [Continuous Profiler] Error in RuntimeResumeFinished() call.");
                 gHR = hr;
             }
         }
@@ -2199,7 +2199,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->RuntimeResumeFinished();
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in RuntimeResumeFinished() call.");
+                Warn("CorProfiler::RuntimeResumeFinished: [Tracer] Error in RuntimeResumeFinished() call.");
                 gHR = hr;
             }
         }
@@ -2212,7 +2212,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->RuntimeResumeFinished();
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in RuntimeResumeFinished() call.");
+                Warn("CorProfiler::RuntimeResumeFinished: [Custom] Error in RuntimeResumeFinished() call.");
                 gHR = hr;
             }
         }
@@ -2232,7 +2232,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->RuntimeThreadSuspended(threadId);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in RuntimeThreadSuspended() call.");
+                Warn("CorProfiler::RuntimeThreadSuspended: [Continuous Profiler] Error in RuntimeThreadSuspended() call.");
                 gHR = hr;
             }
         }
@@ -2245,7 +2245,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->RuntimeThreadSuspended(threadId);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in RuntimeThreadSuspended() call.");
+                Warn("CorProfiler::RuntimeThreadSuspended: [Tracer] Error in RuntimeThreadSuspended() call.");
                 gHR = hr;
             }
         }
@@ -2258,7 +2258,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->RuntimeThreadSuspended(threadId);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in RuntimeThreadSuspended() call.");
+                Warn("CorProfiler::RuntimeThreadSuspended: [Custom] Error in RuntimeThreadSuspended() call.");
                 gHR = hr;
             }
         }
@@ -2278,7 +2278,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->RuntimeThreadResumed(threadId);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in RuntimeThreadResumed() call.");
+                Warn("CorProfiler::RuntimeThreadResumed: [Continuous Profiler] Error in RuntimeThreadResumed() call.");
                 gHR = hr;
             }
         }
@@ -2291,7 +2291,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->RuntimeThreadResumed(threadId);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in RuntimeThreadResumed() call.");
+                Warn("CorProfiler::RuntimeThreadResumed: [Tracer] Error in RuntimeThreadResumed() call.");
                 gHR = hr;
             }
         }
@@ -2304,7 +2304,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->RuntimeThreadResumed(threadId);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in RuntimeThreadResumed() call.");
+                Warn("CorProfiler::RuntimeThreadResumed: [Custom] Error in RuntimeThreadResumed() call.");
                 gHR = hr;
             }
         }
@@ -2328,7 +2328,7 @@ namespace datadog::shared::nativeloader
                                                        newObjectIDRangeStart, cObjectIDRangeLength);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in MovedReferences() call.");
+                Warn("CorProfiler::MovedReferences: [Continuous Profiler] Error in MovedReferences() call.");
                 gHR = hr;
             }
         }
@@ -2342,7 +2342,7 @@ namespace datadog::shared::nativeloader
                                                            newObjectIDRangeStart, cObjectIDRangeLength);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in MovedReferences() call.");
+                Warn("CorProfiler::MovedReferences: [Tracer] Error in MovedReferences() call.");
                 gHR = hr;
             }
         }
@@ -2356,7 +2356,7 @@ namespace datadog::shared::nativeloader
                                                            newObjectIDRangeStart, cObjectIDRangeLength);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in MovedReferences() call.");
+                Warn("CorProfiler::MovedReferences: [Custom] Error in MovedReferences() call.");
                 gHR = hr;
             }
         }
@@ -2376,7 +2376,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ObjectAllocated(objectId, classId);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ObjectAllocated() call.");
+                Warn("CorProfiler::ObjectAllocated: [Continuous Profiler] Error in ObjectAllocated() call.");
                 gHR = hr;
             }
         }
@@ -2389,7 +2389,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ObjectAllocated(objectId, classId);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ObjectAllocated() call.");
+                Warn("CorProfiler::ObjectAllocated: [Tracer] Error in ObjectAllocated() call.");
                 gHR = hr;
             }
         }
@@ -2402,7 +2402,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ObjectAllocated(objectId, classId);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ObjectAllocated() call.");
+                Warn("CorProfiler::ObjectAllocated: [Custom] Error in ObjectAllocated() call.");
                 gHR = hr;
             }
         }
@@ -2423,7 +2423,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ObjectsAllocatedByClass(cClassCount, classIds, cObjects);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ObjectsAllocatedByClass() call.");
+                Warn("CorProfiler::ObjectsAllocatedByClass: [Continuous Profiler] Error in ObjectsAllocatedByClass() call.");
                 gHR = hr;
             }
         }
@@ -2436,7 +2436,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ObjectsAllocatedByClass(cClassCount, classIds, cObjects);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ObjectsAllocatedByClass() call.");
+                Warn("CorProfiler::ObjectsAllocatedByClass: [Tracer] Error in ObjectsAllocatedByClass() call.");
                 gHR = hr;
             }
         }
@@ -2449,7 +2449,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ObjectsAllocatedByClass(cClassCount, classIds, cObjects);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ObjectsAllocatedByClass() call.");
+                Warn("CorProfiler::ObjectsAllocatedByClass: [Custom] Error in ObjectsAllocatedByClass() call.");
                 gHR = hr;
             }
         }
@@ -2470,7 +2470,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ObjectReferences(objectId, classId, cObjectRefs, objectRefIds);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ObjectReferences() call.");
+                Warn("CorProfiler::ObjectReferences: [Continuous Profiler] Error in ObjectReferences() call.");
                 gHR = hr;
             }
         }
@@ -2483,7 +2483,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ObjectReferences(objectId, classId, cObjectRefs, objectRefIds);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ObjectReferences() call.");
+                Warn("CorProfiler::ObjectReferences: [Tracer] Error in ObjectReferences() call.");
                 gHR = hr;
             }
         }
@@ -2496,7 +2496,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ObjectReferences(objectId, classId, cObjectRefs, objectRefIds);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ObjectReferences() call.");
+                Warn("CorProfiler::ObjectReferences: [Custom] Error in ObjectReferences() call.");
                 gHR = hr;
             }
         }
@@ -2516,7 +2516,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->RootReferences(cRootRefs, rootRefIds);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in RootReferences() call.");
+                Warn("CorProfiler::RootReferences: [Continuous Profiler] Error in RootReferences() call.");
                 gHR = hr;
             }
         }
@@ -2529,7 +2529,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->RootReferences(cRootRefs, rootRefIds);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in RootReferences() call.");
+                Warn("CorProfiler::RootReferences: [Tracer] Error in RootReferences() call.");
                 gHR = hr;
             }
         }
@@ -2542,7 +2542,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->RootReferences(cRootRefs, rootRefIds);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in RootReferences() call.");
+                Warn("CorProfiler::RootReferences: [Custom] Error in RootReferences() call.");
                 gHR = hr;
             }
         }
@@ -2563,7 +2563,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ExceptionThrown(thrownObjectId);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ExceptionThrown() call.");
+                Warn("CorProfiler::ExceptionThrown: [Continuous Profiler] Error in ExceptionThrown() call.");
                 gHR = hr;
             }
         }
@@ -2576,7 +2576,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ExceptionThrown(thrownObjectId);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ExceptionThrown() call.");
+                Warn("CorProfiler::ExceptionThrown: [Tracer] Error in ExceptionThrown() call.");
                 gHR = hr;
             }
         }
@@ -2589,7 +2589,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ExceptionThrown(thrownObjectId);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ExceptionThrown() call.");
+                Warn("CorProfiler::ExceptionThrown: [Custom] Error in ExceptionThrown() call.");
                 gHR = hr;
             }
         }
@@ -2609,7 +2609,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ExceptionSearchFunctionEnter(functionId);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ExceptionSearchFunctionEnter() call.");
+                Warn("CorProfiler::ExceptionSearchFunctionEnter: [Continuous Profiler] Error in ExceptionSearchFunctionEnter() call.");
                 gHR = hr;
             }
         }
@@ -2622,7 +2622,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ExceptionSearchFunctionEnter(functionId);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ExceptionSearchFunctionEnter() call.");
+                Warn("CorProfiler::ExceptionSearchFunctionEnter: [Tracer] Error in ExceptionSearchFunctionEnter() call.");
                 gHR = hr;
             }
         }
@@ -2635,7 +2635,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ExceptionSearchFunctionEnter(functionId);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ExceptionSearchFunctionEnter() call.");
+                Warn("CorProfiler::ExceptionSearchFunctionEnter: [Custom] Error in ExceptionSearchFunctionEnter() call.");
                 gHR = hr;
             }
         }
@@ -2655,7 +2655,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ExceptionSearchFunctionLeave();
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ExceptionSearchFunctionLeave() call.");
+                Warn("CorProfiler::ExceptionSearchFunctionLeave: [Continuous Profiler] Error in ExceptionSearchFunctionLeave() call.");
                 gHR = hr;
             }
         }
@@ -2668,7 +2668,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ExceptionSearchFunctionLeave();
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ExceptionSearchFunctionLeave() call.");
+                Warn("CorProfiler::ExceptionSearchFunctionLeave: [Tracer] Error in ExceptionSearchFunctionLeave() call.");
                 gHR = hr;
             }
         }
@@ -2681,7 +2681,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ExceptionSearchFunctionLeave();
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ExceptionSearchFunctionLeave() call.");
+                Warn("CorProfiler::ExceptionSearchFunctionLeave: [Custom] Error in ExceptionSearchFunctionLeave() call.");
                 gHR = hr;
             }
         }
@@ -2701,7 +2701,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ExceptionSearchFilterEnter(functionId);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ExceptionSearchFilterEnter() call.");
+                Warn("CorProfiler::ExceptionSearchFilterEnter: [Continuous Profiler] Error in ExceptionSearchFilterEnter() call.");
                 gHR = hr;
             }
         }
@@ -2714,7 +2714,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ExceptionSearchFilterEnter(functionId);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ExceptionSearchFilterEnter() call.");
+                Warn("CorProfiler::ExceptionSearchFilterEnter: [Tracer] Error in ExceptionSearchFilterEnter() call.");
                 gHR = hr;
             }
         }
@@ -2727,7 +2727,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ExceptionSearchFilterEnter(functionId);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ExceptionSearchFilterEnter() call.");
+                Warn("CorProfiler::ExceptionSearchFilterEnter: [Custom] Error in ExceptionSearchFilterEnter() call.");
                 gHR = hr;
             }
         }
@@ -2747,7 +2747,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ExceptionSearchFilterLeave();
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ExceptionSearchFilterLeave() call.");
+                Warn("CorProfiler::ExceptionSearchFilterLeave: [Continuous Profiler] Error in ExceptionSearchFilterLeave() call.");
                 gHR = hr;
             }
         }
@@ -2760,7 +2760,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ExceptionSearchFilterLeave();
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ExceptionSearchFilterLeave() call.");
+                Warn("CorProfiler::ExceptionSearchFilterLeave: [Tracer] Error in ExceptionSearchFilterLeave() call.");
                 gHR = hr;
             }
         }
@@ -2773,7 +2773,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ExceptionSearchFilterLeave();
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ExceptionSearchFilterLeave() call.");
+                Warn("CorProfiler::ExceptionSearchFilterLeave: [Custom] Error in ExceptionSearchFilterLeave() call.");
                 gHR = hr;
             }
         }
@@ -2793,7 +2793,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ExceptionSearchCatcherFound(functionId);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ExceptionSearchCatcherFound() call.");
+                Warn("CorProfiler::ExceptionSearchCatcherFound: [Continuous Profiler] Error in ExceptionSearchCatcherFound() call.");
                 gHR = hr;
             }
         }
@@ -2806,7 +2806,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ExceptionSearchCatcherFound(functionId);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ExceptionSearchCatcherFound() call.");
+                Warn("CorProfiler::ExceptionSearchCatcherFound: [Tracer] Error in ExceptionSearchCatcherFound() call.");
                 gHR = hr;
             }
         }
@@ -2819,7 +2819,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ExceptionSearchCatcherFound(functionId);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ExceptionSearchCatcherFound() call.");
+                Warn("CorProfiler::ExceptionSearchCatcherFound: [Custom] Error in ExceptionSearchCatcherFound() call.");
                 gHR = hr;
             }
         }
@@ -2839,7 +2839,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ExceptionOSHandlerEnter(NULL);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ExceptionOSHandlerEnter() call.");
+                Warn("CorProfiler::ExceptionOSHandlerEnter: [Continuous Profiler] Error in ExceptionOSHandlerEnter() call.");
                 gHR = hr;
             }
         }
@@ -2852,7 +2852,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ExceptionOSHandlerEnter(NULL);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ExceptionOSHandlerEnter() call.");
+                Warn("CorProfiler::ExceptionOSHandlerEnter: [Tracer] Error in ExceptionOSHandlerEnter() call.");
                 gHR = hr;
             }
         }
@@ -2865,7 +2865,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ExceptionOSHandlerEnter(NULL);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ExceptionOSHandlerEnter() call.");
+                Warn("CorProfiler::ExceptionOSHandlerEnter: [Custom] Error in ExceptionOSHandlerEnter() call.");
                 gHR = hr;
             }
         }
@@ -2885,7 +2885,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ExceptionOSHandlerLeave(NULL);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ExceptionOSHandlerLeave() call.");
+                Warn("CorProfiler::ExceptionOSHandlerLeave: [Continuous Profiler] Error in ExceptionOSHandlerLeave() call.");
                 gHR = hr;
             }
         }
@@ -2898,7 +2898,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ExceptionOSHandlerLeave(NULL);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ExceptionOSHandlerLeave() call.");
+                Warn("CorProfiler::ExceptionOSHandlerLeave: [Tracer] Error in ExceptionOSHandlerLeave() call.");
                 gHR = hr;
             }
         }
@@ -2911,7 +2911,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ExceptionOSHandlerLeave(NULL);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ExceptionOSHandlerLeave() call.");
+                Warn("CorProfiler::ExceptionOSHandlerLeave: [Custom] Error in ExceptionOSHandlerLeave() call.");
                 gHR = hr;
             }
         }
@@ -2931,7 +2931,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ExceptionUnwindFunctionEnter(functionId);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ExceptionUnwindFunctionEnter() call.");
+                Warn("CorProfiler::ExceptionUnwindFunctionEnter: [Continuous Profiler] Error in ExceptionUnwindFunctionEnter() call.");
                 gHR = hr;
             }
         }
@@ -2944,7 +2944,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ExceptionUnwindFunctionEnter(functionId);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ExceptionUnwindFunctionEnter() call.");
+                Warn("CorProfiler::ExceptionUnwindFunctionEnter: [Tracer] Error in ExceptionUnwindFunctionEnter() call.");
                 gHR = hr;
             }
         }
@@ -2957,7 +2957,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ExceptionUnwindFunctionEnter(functionId);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ExceptionUnwindFunctionEnter() call.");
+                Warn("CorProfiler::ExceptionUnwindFunctionEnter: [Custom] Error in ExceptionUnwindFunctionEnter() call.");
                 gHR = hr;
             }
         }
@@ -2977,7 +2977,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ExceptionUnwindFunctionLeave();
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ExceptionUnwindFunctionLeave() call.");
+                Warn("CorProfiler::ExceptionUnwindFunctionLeave: [Continuous Profiler] Error in ExceptionUnwindFunctionLeave() call.");
                 gHR = hr;
             }
         }
@@ -2990,7 +2990,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ExceptionUnwindFunctionLeave();
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ExceptionUnwindFunctionLeave() call.");
+                Warn("CorProfiler::ExceptionUnwindFunctionLeave: [Tracer] Error in ExceptionUnwindFunctionLeave() call.");
                 gHR = hr;
             }
         }
@@ -3003,7 +3003,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ExceptionUnwindFunctionLeave();
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ExceptionUnwindFunctionLeave() call.");
+                Warn("CorProfiler::ExceptionUnwindFunctionLeave: [Custom] Error in ExceptionUnwindFunctionLeave() call.");
                 gHR = hr;
             }
         }
@@ -3023,7 +3023,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ExceptionUnwindFinallyEnter(functionId);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ExceptionUnwindFinallyEnter() call.");
+                Warn("CorProfiler::ExceptionUnwindFinallyEnter: [Continuous Profiler] Error in ExceptionUnwindFinallyEnter() call.");
                 gHR = hr;
             }
         }
@@ -3036,7 +3036,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ExceptionUnwindFinallyEnter(functionId);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ExceptionUnwindFinallyEnter() call.");
+                Warn("CorProfiler::ExceptionUnwindFinallyEnter: [Tracer] Error in ExceptionUnwindFinallyEnter() call.");
                 gHR = hr;
             }
         }
@@ -3049,7 +3049,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ExceptionUnwindFinallyEnter(functionId);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ExceptionUnwindFinallyEnter() call.");
+                Warn("CorProfiler::ExceptionUnwindFinallyEnter: [Custom] Error in ExceptionUnwindFinallyEnter() call.");
                 gHR = hr;
             }
         }
@@ -3069,7 +3069,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ExceptionUnwindFinallyLeave();
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ExceptionUnwindFinallyLeave() call.");
+                Warn("CorProfiler::ExceptionUnwindFinallyLeave: [Continuous Profiler] Error in ExceptionUnwindFinallyLeave() call.");
                 gHR = hr;
             }
         }
@@ -3082,7 +3082,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ExceptionUnwindFinallyLeave();
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ExceptionUnwindFinallyLeave() call.");
+                Warn("CorProfiler::ExceptionUnwindFinallyLeave: [Tracer] Error in ExceptionUnwindFinallyLeave() call.");
                 gHR = hr;
             }
         }
@@ -3095,7 +3095,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ExceptionUnwindFinallyLeave();
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ExceptionUnwindFinallyLeave() call.");
+                Warn("CorProfiler::ExceptionUnwindFinallyLeave: [Custom] Error in ExceptionUnwindFinallyLeave() call.");
                 gHR = hr;
             }
         }
@@ -3115,7 +3115,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ExceptionCatcherEnter(functionId, objectId);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ExceptionCatcherEnter() call.");
+                Warn("CorProfiler::ExceptionCatcherEnter: [Continuous Profiler] Error in ExceptionCatcherEnter() call.");
                 gHR = hr;
             }
         }
@@ -3128,7 +3128,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ExceptionCatcherEnter(functionId, objectId);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ExceptionCatcherEnter() call.");
+                Warn("CorProfiler::ExceptionCatcherEnter: [Tracer] Error in ExceptionCatcherEnter() call.");
                 gHR = hr;
             }
         }
@@ -3141,7 +3141,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ExceptionCatcherEnter(functionId, objectId);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ExceptionCatcherEnter() call.");
+                Warn("CorProfiler::ExceptionCatcherEnter: [Custom] Error in ExceptionCatcherEnter() call.");
                 gHR = hr;
             }
         }
@@ -3161,7 +3161,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ExceptionCatcherLeave();
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ExceptionCatcherLeave() call.");
+                Warn("CorProfiler::ExceptionCatcherLeave: [Continuous Profiler] Error in ExceptionCatcherLeave() call.");
                 gHR = hr;
             }
         }
@@ -3174,7 +3174,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ExceptionCatcherLeave();
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ExceptionCatcherLeave() call.");
+                Warn("CorProfiler::ExceptionCatcherLeave: [Tracer] Error in ExceptionCatcherLeave() call.");
                 gHR = hr;
             }
         }
@@ -3187,7 +3187,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ExceptionCatcherLeave();
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ExceptionCatcherLeave() call.");
+                Warn("CorProfiler::ExceptionCatcherLeave: [Custom] Error in ExceptionCatcherLeave() call.");
                 gHR = hr;
             }
         }
@@ -3209,7 +3209,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->COMClassicVTableCreated(wrappedClassId, implementedIID, pVTable, cSlots);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in COMClassicVTableCreated() call.");
+                Warn("CorProfiler::COMClassicVTableCreated: [Continuous Profiler] Error in COMClassicVTableCreated() call.");
                 gHR = hr;
             }
         }
@@ -3222,7 +3222,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->COMClassicVTableCreated(wrappedClassId, implementedIID, pVTable, cSlots);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in COMClassicVTableCreated() call.");
+                Warn("CorProfiler::COMClassicVTableCreated: [Tracer] Error in COMClassicVTableCreated() call.");
                 gHR = hr;
             }
         }
@@ -3235,7 +3235,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->COMClassicVTableCreated(wrappedClassId, implementedIID, pVTable, cSlots);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in COMClassicVTableCreated() call.");
+                Warn("CorProfiler::COMClassicVTableCreated: [Custom] Error in COMClassicVTableCreated() call.");
                 gHR = hr;
             }
         }
@@ -3256,7 +3256,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->COMClassicVTableDestroyed(wrappedClassId, implementedIID, pVTable);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in COMClassicVTableDestroyed() call.");
+                Warn("CorProfiler::COMClassicVTableDestroyed: [Continuous Profiler] Error in COMClassicVTableDestroyed() call.");
                 gHR = hr;
             }
         }
@@ -3269,7 +3269,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->COMClassicVTableDestroyed(wrappedClassId, implementedIID, pVTable);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in COMClassicVTableDestroyed() call.");
+                Warn("CorProfiler::COMClassicVTableDestroyed: [Tracer] Error in COMClassicVTableDestroyed() call.");
                 gHR = hr;
             }
         }
@@ -3282,7 +3282,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->COMClassicVTableDestroyed(wrappedClassId, implementedIID, pVTable);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in COMClassicVTableDestroyed() call.");
+                Warn("CorProfiler::COMClassicVTableDestroyed: [Custom] Error in COMClassicVTableDestroyed() call.");
                 gHR = hr;
             }
         }
@@ -3303,7 +3303,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ExceptionCLRCatcherFound();
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ExceptionCLRCatcherFound() call.");
+                Warn("CorProfiler::ExceptionCLRCatcherFound: [Continuous Profiler] Error in ExceptionCLRCatcherFound() call.");
                 gHR = hr;
             }
         }
@@ -3316,7 +3316,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ExceptionCLRCatcherFound();
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ExceptionCLRCatcherFound() call.");
+                Warn("CorProfiler::ExceptionCLRCatcherFound: [Tracer] Error in ExceptionCLRCatcherFound() call.");
                 gHR = hr;
             }
         }
@@ -3329,7 +3329,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ExceptionCLRCatcherFound();
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ExceptionCLRCatcherFound() call.");
+                Warn("CorProfiler::ExceptionCLRCatcherFound: [Custom] Error in ExceptionCLRCatcherFound() call.");
                 gHR = hr;
             }
         }
@@ -3349,7 +3349,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ExceptionCLRCatcherExecute();
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ExceptionCLRCatcherExecute() call.");
+                Warn("CorProfiler::ExceptionCLRCatcherExecute: [Continuous Profiler] Error in ExceptionCLRCatcherExecute() call.");
                 gHR = hr;
             }
         }
@@ -3362,7 +3362,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ExceptionCLRCatcherExecute();
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ExceptionCLRCatcherExecute() call.");
+                Warn("CorProfiler::ExceptionCLRCatcherExecute: [Tracer] Error in ExceptionCLRCatcherExecute() call.");
                 gHR = hr;
             }
         }
@@ -3375,7 +3375,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ExceptionCLRCatcherExecute();
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ExceptionCLRCatcherExecute() call.");
+                Warn("CorProfiler::ExceptionCLRCatcherExecute: [Custom] Error in ExceptionCLRCatcherExecute() call.");
                 gHR = hr;
             }
         }
@@ -3396,7 +3396,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ThreadNameChanged(threadId, cchName, name);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ThreadNameChanged() call.");
+                Warn("CorProfiler::ThreadNameChanged: [Continuous Profiler] Error in ThreadNameChanged() call.");
                 gHR = hr;
             }
         }
@@ -3409,7 +3409,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ThreadNameChanged(threadId, cchName, name);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ThreadNameChanged() call.");
+                Warn("CorProfiler::ThreadNameChanged: [Tracer] Error in ThreadNameChanged() call.");
                 gHR = hr;
             }
         }
@@ -3422,7 +3422,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ThreadNameChanged(threadId, cchName, name);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ThreadNameChanged() call.");
+                Warn("CorProfiler::ThreadNameChanged: [Custom] Error in ThreadNameChanged() call.");
                 gHR = hr;
             }
         }
@@ -3444,7 +3444,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->GarbageCollectionStarted(cGenerations, generationCollected, reason);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in GarbageCollectionStarted() call.");
+                Warn("CorProfiler::GarbageCollectionStarted: [Continuous Profiler] Error in GarbageCollectionStarted() call.");
                 gHR = hr;
             }
         }
@@ -3457,7 +3457,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->GarbageCollectionStarted(cGenerations, generationCollected, reason);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in GarbageCollectionStarted() call.");
+                Warn("CorProfiler::GarbageCollectionStarted: [Tracer] Error in GarbageCollectionStarted() call.");
                 gHR = hr;
             }
         }
@@ -3470,7 +3470,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->GarbageCollectionStarted(cGenerations, generationCollected, reason);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in GarbageCollectionStarted() call.");
+                Warn("CorProfiler::GarbageCollectionStarted: [Custom] Error in GarbageCollectionStarted() call.");
                 gHR = hr;
             }
         }
@@ -3493,7 +3493,7 @@ namespace datadog::shared::nativeloader
                 m_cpProfiler->SurvivingReferences(cSurvivingObjectIDRanges, objectIDRangeStart, cObjectIDRangeLength);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in SurvivingReferences() call.");
+                Warn("CorProfiler::SurvivingReferences: [Continuous Profiler] Error in SurvivingReferences() call.");
                 gHR = hr;
             }
         }
@@ -3507,7 +3507,7 @@ namespace datadog::shared::nativeloader
                                                                cObjectIDRangeLength);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in SurvivingReferences() call.");
+                Warn("CorProfiler::SurvivingReferences: [Tracer] Error in SurvivingReferences() call.");
                 gHR = hr;
             }
         }
@@ -3521,7 +3521,7 @@ namespace datadog::shared::nativeloader
                                                                cObjectIDRangeLength);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in SurvivingReferences() call.");
+                Warn("CorProfiler::SurvivingReferences: [Custom] Error in SurvivingReferences() call.");
                 gHR = hr;
             }
         }
@@ -3541,7 +3541,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->GarbageCollectionFinished();
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in GarbageCollectionFinished() call.");
+                Warn("CorProfiler::GarbageCollectionFinished: [Continuous Profiler] Error in GarbageCollectionFinished() call.");
                 gHR = hr;
             }
         }
@@ -3554,7 +3554,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->GarbageCollectionFinished();
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in GarbageCollectionFinished() call.");
+                Warn("CorProfiler::GarbageCollectionFinished: [Tracer] Error in GarbageCollectionFinished() call.");
                 gHR = hr;
             }
         }
@@ -3567,7 +3567,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->GarbageCollectionFinished();
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in GarbageCollectionFinished() call.");
+                Warn("CorProfiler::GarbageCollectionFinished: [Custom] Error in GarbageCollectionFinished() call.");
                 gHR = hr;
             }
         }
@@ -3587,7 +3587,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->FinalizeableObjectQueued(finalizerFlags, objectID);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in FinalizeableObjectQueued() call.");
+                Warn("CorProfiler::FinalizeableObjectQueued: [Continuous Profiler] Error in FinalizeableObjectQueued() call.");
                 gHR = hr;
             }
         }
@@ -3600,7 +3600,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->FinalizeableObjectQueued(finalizerFlags, objectID);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in FinalizeableObjectQueued() call.");
+                Warn("CorProfiler::FinalizeableObjectQueued: [Tracer] Error in FinalizeableObjectQueued() call.");
                 gHR = hr;
             }
         }
@@ -3613,7 +3613,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->FinalizeableObjectQueued(finalizerFlags, objectID);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in FinalizeableObjectQueued() call.");
+                Warn("CorProfiler::FinalizeableObjectQueued: [Custom] Error in FinalizeableObjectQueued() call.");
                 gHR = hr;
             }
         }
@@ -3635,7 +3635,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->RootReferences2(cRootRefs, rootRefIds, rootKinds, rootFlags, rootIds);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in RootReferences2() call.");
+                Warn("CorProfiler::RootReferences2: [Continuous Profiler] Error in RootReferences2() call.");
                 gHR = hr;
             }
         }
@@ -3648,7 +3648,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->RootReferences2(cRootRefs, rootRefIds, rootKinds, rootFlags, rootIds);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in RootReferences2() call.");
+                Warn("CorProfiler::RootReferences2: [Tracer] Error in RootReferences2() call.");
                 gHR = hr;
             }
         }
@@ -3661,7 +3661,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->RootReferences2(cRootRefs, rootRefIds, rootKinds, rootFlags, rootIds);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in RootReferences2() call.");
+                Warn("CorProfiler::RootReferences2: [Custom] Error in RootReferences2() call.");
                 gHR = hr;
             }
         }
@@ -3682,7 +3682,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->HandleCreated(handleId, initialObjectId);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in HandleCreated() call.");
+                Warn("CorProfiler::HandleCreated: [Continuous Profiler] Error in HandleCreated() call.");
                 gHR = hr;
             }
         }
@@ -3695,7 +3695,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->HandleCreated(handleId, initialObjectId);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in HandleCreated() call.");
+                Warn("CorProfiler::HandleCreated: [Tracer] Error in HandleCreated() call.");
                 gHR = hr;
             }
         }
@@ -3708,7 +3708,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->HandleCreated(handleId, initialObjectId);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in HandleCreated() call.");
+                Warn("CorProfiler::HandleCreated: [Custom] Error in HandleCreated() call.");
                 gHR = hr;
             }
         }
@@ -3728,7 +3728,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->HandleDestroyed(handleId);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in HandleDestroyed() call.");
+                Warn("CorProfiler::HandleDestroyed: [Continuous Profiler] Error in HandleDestroyed() call.");
                 gHR = hr;
             }
         }
@@ -3741,7 +3741,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->HandleDestroyed(handleId);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in HandleDestroyed() call.");
+                Warn("CorProfiler::HandleDestroyed: [Tracer] Error in HandleDestroyed() call.");
                 gHR = hr;
             }
         }
@@ -3754,7 +3754,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->HandleDestroyed(handleId);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in HandleDestroyed() call.");
+                Warn("CorProfiler::HandleDestroyed: [Custom] Error in HandleDestroyed() call.");
                 gHR = hr;
             }
         }
@@ -3776,7 +3776,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->InitializeForAttach(pCorProfilerInfoUnk, pvClientData, cbClientData);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in InitializeForAttach() call.");
+                Warn("CorProfiler::InitializeForAttach: [Continuous Profiler] Error in InitializeForAttach() call.");
                 gHR = hr;
             }
         }
@@ -3789,7 +3789,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->InitializeForAttach(pCorProfilerInfoUnk, pvClientData, cbClientData);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in InitializeForAttach() call.");
+                Warn("CorProfiler::InitializeForAttach: [Tracer] Error in InitializeForAttach() call.");
                 gHR = hr;
             }
         }
@@ -3802,7 +3802,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->InitializeForAttach(pCorProfilerInfoUnk, pvClientData, cbClientData);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in InitializeForAttach() call.");
+                Warn("CorProfiler::InitializeForAttach: [Custom] Error in InitializeForAttach() call.");
                 gHR = hr;
             }
         }
@@ -3822,7 +3822,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ProfilerAttachComplete();
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ProfilerAttachComplete() call.");
+                Warn("CorProfiler::ProfilerAttachComplete: [Continuous Profiler] Error in ProfilerAttachComplete() call.");
                 gHR = hr;
             }
         }
@@ -3835,7 +3835,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ProfilerAttachComplete();
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ProfilerAttachComplete() call.");
+                Warn("CorProfiler::ProfilerAttachComplete: [Tracer] Error in ProfilerAttachComplete() call.");
                 gHR = hr;
             }
         }
@@ -3848,7 +3848,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ProfilerAttachComplete();
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ProfilerAttachComplete() call.");
+                Warn("CorProfiler::ProfilerAttachComplete: [Custom] Error in ProfilerAttachComplete() call.");
                 gHR = hr;
             }
         }
@@ -3868,7 +3868,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ProfilerDetachSucceeded();
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ProfilerDetachSucceeded() call.");
+                Warn("CorProfiler::ProfilerDetachSucceeded: [Continuous Profiler] Error in ProfilerDetachSucceeded() call.");
                 gHR = hr;
             }
         }
@@ -3881,7 +3881,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ProfilerDetachSucceeded();
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ProfilerDetachSucceeded() call.");
+                Warn("CorProfiler::ProfilerDetachSucceeded: [Tracer] Error in ProfilerDetachSucceeded() call.");
                 gHR = hr;
             }
         }
@@ -3894,7 +3894,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ProfilerDetachSucceeded();
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ProfilerDetachSucceeded() call.");
+                Warn("CorProfiler::ProfilerDetachSucceeded: [Custom] Error in ProfilerDetachSucceeded() call.");
                 gHR = hr;
             }
         }
@@ -3916,7 +3916,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ReJITCompilationStarted(functionId, rejitId, fIsSafeToBlock);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ReJITCompilationStarted() call.");
+                Warn("CorProfiler::ReJITCompilationStarted: [Continuous Profiler] Error in ReJITCompilationStarted() call.");
                 gHR = hr;
             }
         }
@@ -3929,7 +3929,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ReJITCompilationStarted(functionId, rejitId, fIsSafeToBlock);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ReJITCompilationStarted() call.");
+                Warn("CorProfiler::ReJITCompilationStarted: [Tracer] Error in ReJITCompilationStarted() call.");
                 gHR = hr;
             }
         }
@@ -3942,7 +3942,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ReJITCompilationStarted(functionId, rejitId, fIsSafeToBlock);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ReJITCompilationStarted() call.");
+                Warn("CorProfiler::ReJITCompilationStarted: [Custom] Error in ReJITCompilationStarted() call.");
                 gHR = hr;
             }
         }
@@ -3963,7 +3963,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->GetReJITParameters(moduleId, methodId, pFunctionControl);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in GetReJITParameters() call.");
+                Warn("CorProfiler::GetReJITParameters: [Continuous Profiler] Error in GetReJITParameters() call.");
                 gHR = hr;
             }
         }
@@ -3976,7 +3976,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->GetReJITParameters(moduleId, methodId, pFunctionControl);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in GetReJITParameters() call.");
+                Warn("CorProfiler::GetReJITParameters: [Tracer] Error in GetReJITParameters() call.");
                 gHR = hr;
             }
         }
@@ -3989,7 +3989,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->GetReJITParameters(moduleId, methodId, pFunctionControl);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in GetReJITParameters() call.");
+                Warn("CorProfiler::GetReJITParameters: [Custom] Error in GetReJITParameters() call.");
                 gHR = hr;
             }
         }
@@ -4010,7 +4010,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ReJITCompilationFinished(functionId, rejitId, hrStatus, fIsSafeToBlock);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ReJITCompilationFinished() call.");
+                Warn("CorProfiler::ReJITCompilationFinished: [Continuous Profiler] Error in ReJITCompilationFinished() call.");
                 gHR = hr;
             }
         }
@@ -4023,7 +4023,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ReJITCompilationFinished(functionId, rejitId, hrStatus, fIsSafeToBlock);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ReJITCompilationFinished() call.");
+                Warn("CorProfiler::ReJITCompilationFinished: [Tracer] Error in ReJITCompilationFinished() call.");
                 gHR = hr;
             }
         }
@@ -4036,7 +4036,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ReJITCompilationFinished(functionId, rejitId, hrStatus, fIsSafeToBlock);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ReJITCompilationFinished() call.");
+                Warn("CorProfiler::ReJITCompilationFinished: [Custom] Error in ReJITCompilationFinished() call.");
                 gHR = hr;
             }
         }
@@ -4057,7 +4057,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ReJITError(moduleId, methodId, functionId, hrStatus);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ReJITError() call.");
+                Warn("CorProfiler::ReJITError: [Continuous Profiler] Error in ReJITError() call.");
                 gHR = hr;
             }
         }
@@ -4070,7 +4070,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ReJITError(moduleId, methodId, functionId, hrStatus);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ReJITError() call.");
+                Warn("CorProfiler::ReJITError: [Tracer] Error in ReJITError() call.");
                 gHR = hr;
             }
         }
@@ -4083,7 +4083,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ReJITError(moduleId, methodId, functionId, hrStatus);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ReJITError() call.");
+                Warn("CorProfiler::ReJITError: [Custom] Error in ReJITError() call.");
                 gHR = hr;
             }
         }
@@ -4108,7 +4108,7 @@ namespace datadog::shared::nativeloader
                                                         newObjectIDRangeStart, cObjectIDRangeLength);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in MovedReferences2() call.");
+                Warn("CorProfiler::MovedReferences2: [Continuous Profiler] Error in MovedReferences2() call.");
                 gHR = hr;
             }
         }
@@ -4122,7 +4122,7 @@ namespace datadog::shared::nativeloader
                                                             newObjectIDRangeStart, cObjectIDRangeLength);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in MovedReferences2() call.");
+                Warn("CorProfiler::MovedReferences2: [Tracer] Error in MovedReferences2() call.");
                 gHR = hr;
             }
         }
@@ -4136,7 +4136,7 @@ namespace datadog::shared::nativeloader
                                                             newObjectIDRangeStart, cObjectIDRangeLength);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in MovedReferences2() call.");
+                Warn("CorProfiler::MovedReferences2: [Custom] Error in MovedReferences2() call.");
                 gHR = hr;
             }
         }
@@ -4159,7 +4159,7 @@ namespace datadog::shared::nativeloader
                                                             cObjectIDRangeLength);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in SurvivingReferences2() call.");
+                Warn("CorProfiler::SurvivingReferences2: [Continuous Profiler] Error in SurvivingReferences2() call.");
                 gHR = hr;
             }
         }
@@ -4173,7 +4173,7 @@ namespace datadog::shared::nativeloader
                                                                 cObjectIDRangeLength);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in SurvivingReferences2() call.");
+                Warn("CorProfiler::SurvivingReferences2: [Tracer] Error in SurvivingReferences2() call.");
                 gHR = hr;
             }
         }
@@ -4187,7 +4187,7 @@ namespace datadog::shared::nativeloader
                                                                 cObjectIDRangeLength);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in SurvivingReferences2() call.");
+                Warn("CorProfiler::SurvivingReferences2: [Custom] Error in SurvivingReferences2() call.");
                 gHR = hr;
             }
         }
@@ -4209,7 +4209,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ConditionalWeakTableElementReferences(cRootRefs, keyRefIds, valueRefIds, rootIds);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ConditionalWeakTableElementReferences() call.");
+                Warn("CorProfiler::ConditionalWeakTableElementReferences: [Continuous Profiler] Error in ConditionalWeakTableElementReferences() call.");
                 gHR = hr;
             }
         }
@@ -4223,7 +4223,7 @@ namespace datadog::shared::nativeloader
                 m_tracerProfiler->ConditionalWeakTableElementReferences(cRootRefs, keyRefIds, valueRefIds, rootIds);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ConditionalWeakTableElementReferences() call.");
+                Warn("CorProfiler::ConditionalWeakTableElementReferences: [Tracer] Error in ConditionalWeakTableElementReferences() call.");
                 gHR = hr;
             }
         }
@@ -4237,7 +4237,7 @@ namespace datadog::shared::nativeloader
                 m_customProfiler->ConditionalWeakTableElementReferences(cRootRefs, keyRefIds, valueRefIds, rootIds);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ConditionalWeakTableElementReferences() call.");
+                Warn("CorProfiler::ConditionalWeakTableElementReferences: [Custom] Error in ConditionalWeakTableElementReferences() call.");
                 gHR = hr;
             }
         }
@@ -4258,7 +4258,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->GetAssemblyReferences(wszAssemblyPath, pAsmRefProvider);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in GetAssemblyReferences() call.");
+                Warn("CorProfiler::GetAssemblyReferences: [Continuous Profiler] Error in GetAssemblyReferences() call.");
                 gHR = hr;
             }
         }
@@ -4271,7 +4271,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->GetAssemblyReferences(wszAssemblyPath, pAsmRefProvider);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in GetAssemblyReferences() call.");
+                Warn("CorProfiler::GetAssemblyReferences: [Tracer] Error in GetAssemblyReferences() call.");
                 gHR = hr;
             }
         }
@@ -4284,7 +4284,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->GetAssemblyReferences(wszAssemblyPath, pAsmRefProvider);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in GetAssemblyReferences() call.");
+                Warn("CorProfiler::GetAssemblyReferences: [Custom] Error in GetAssemblyReferences() call.");
                 gHR = hr;
             }
         }
@@ -4304,7 +4304,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->ModuleInMemorySymbolsUpdated(moduleId);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in ModuleInMemorySymbolsUpdated() call.");
+                Warn("CorProfiler::ModuleInMemorySymbolsUpdated: [Continuous Profiler] Error in ModuleInMemorySymbolsUpdated() call.");
                 gHR = hr;
             }
         }
@@ -4317,7 +4317,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->ModuleInMemorySymbolsUpdated(moduleId);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in ModuleInMemorySymbolsUpdated() call.");
+                Warn("CorProfiler::ModuleInMemorySymbolsUpdated: [Tracer] Error in ModuleInMemorySymbolsUpdated() call.");
                 gHR = hr;
             }
         }
@@ -4330,7 +4330,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->ModuleInMemorySymbolsUpdated(moduleId);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in ModuleInMemorySymbolsUpdated() call.");
+                Warn("CorProfiler::ModuleInMemorySymbolsUpdated: [Custom] Error in ModuleInMemorySymbolsUpdated() call.");
                 gHR = hr;
             }
         }
@@ -4354,7 +4354,7 @@ namespace datadog::shared::nativeloader
                 m_cpProfiler->DynamicMethodJITCompilationStarted(functionId, fIsSafeToBlock, ilHeader, cbILHeader);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in DynamicMethodJITCompilationStarted() call.");
+                Warn("CorProfiler::DynamicMethodJITCompilationStarted: [Continuous Profiler] Error in DynamicMethodJITCompilationStarted() call.");
                 gHR = hr;
             }
         }
@@ -4368,7 +4368,7 @@ namespace datadog::shared::nativeloader
                 m_tracerProfiler->DynamicMethodJITCompilationStarted(functionId, fIsSafeToBlock, ilHeader, cbILHeader);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in DynamicMethodJITCompilationStarted() call.");
+                Warn("CorProfiler::DynamicMethodJITCompilationStarted: [Tracer] Error in DynamicMethodJITCompilationStarted() call.");
                 gHR = hr;
             }
         }
@@ -4382,7 +4382,7 @@ namespace datadog::shared::nativeloader
                 m_customProfiler->DynamicMethodJITCompilationStarted(functionId, fIsSafeToBlock, ilHeader, cbILHeader);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in DynamicMethodJITCompilationStarted() call.");
+                Warn("CorProfiler::DynamicMethodJITCompilationStarted: [Custom] Error in DynamicMethodJITCompilationStarted() call.");
                 gHR = hr;
             }
         }
@@ -4403,7 +4403,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->DynamicMethodJITCompilationFinished(functionId, hrStatus, fIsSafeToBlock);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in DynamicMethodJITCompilationFinished() call.");
+                Warn("CorProfiler::DynamicMethodJITCompilationFinished: [Continuous Profiler] Error in DynamicMethodJITCompilationFinished() call.");
                 gHR = hr;
             }
         }
@@ -4416,7 +4416,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->DynamicMethodJITCompilationFinished(functionId, hrStatus, fIsSafeToBlock);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in DynamicMethodJITCompilationFinished() call.");
+                Warn("CorProfiler::DynamicMethodJITCompilationFinished: [Tracer] Error in DynamicMethodJITCompilationFinished() call.");
                 gHR = hr;
             }
         }
@@ -4429,7 +4429,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->DynamicMethodJITCompilationFinished(functionId, hrStatus, fIsSafeToBlock);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in DynamicMethodJITCompilationFinished() call.");
+                Warn("CorProfiler::DynamicMethodJITCompilationFinished: [Custom] Error in DynamicMethodJITCompilationFinished() call.");
                 gHR = hr;
             }
         }
@@ -4449,7 +4449,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->DynamicMethodUnloaded(functionId);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in DynamicMethodUnloaded() call.");
+                Warn("CorProfiler::DynamicMethodUnloaded: [Continuous Profiler] Error in DynamicMethodUnloaded() call.");
                 gHR = hr;
             }
         }
@@ -4462,7 +4462,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->DynamicMethodUnloaded(functionId);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in DynamicMethodUnloaded() call.");
+                Warn("CorProfiler::DynamicMethodUnloaded: [Tracer] Error in DynamicMethodUnloaded() call.");
                 gHR = hr;
             }
         }
@@ -4475,7 +4475,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->DynamicMethodUnloaded(functionId);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in DynamicMethodUnloaded() call.");
+                Warn("CorProfiler::DynamicMethodUnloaded: [Custom] Error in DynamicMethodUnloaded() call.");
                 gHR = hr;
             }
         }
@@ -4503,7 +4503,7 @@ namespace datadog::shared::nativeloader
                 pRelatedActivityId, eventThread, numStackFrames, stackFrames);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in EventPipeEventDelivered() call.");
+                Warn("CorProfiler::EventPipeEventDelivered: [Continuous Profiler] Error in EventPipeEventDelivered() call.");
                 gHR = hr;
             }
         }
@@ -4518,7 +4518,7 @@ namespace datadog::shared::nativeloader
                 pRelatedActivityId, eventThread, numStackFrames, stackFrames);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in EventPipeEventDelivered() call.");
+                Warn("CorProfiler::EventPipeEventDelivered: [Tracer] Error in EventPipeEventDelivered() call.");
                 gHR = hr;
             }
         }
@@ -4533,7 +4533,7 @@ namespace datadog::shared::nativeloader
                 pRelatedActivityId, eventThread, numStackFrames, stackFrames);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in EventPipeEventDelivered() call.");
+                Warn("CorProfiler::EventPipeEventDelivered: [Custom] Error in EventPipeEventDelivered() call.");
                 gHR = hr;
             }
         }
@@ -4553,7 +4553,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_cpProfiler->EventPipeProviderCreated(provider);
             if (FAILED(hr))
             {
-                Warn("[Continuous Profiler] Error in EventPipeProviderCreated() call.");
+                Warn("CorProfiler::EventPipeProviderCreated: [Continuous Profiler] Error in EventPipeProviderCreated() call.");
                 gHR = hr;
             }
         }
@@ -4566,7 +4566,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_tracerProfiler->EventPipeProviderCreated(provider);
             if (FAILED(hr))
             {
-                Warn("[Tracer] Error in EventPipeProviderCreated() call.");
+                Warn("CorProfiler::EventPipeProviderCreated: [Tracer] Error in EventPipeProviderCreated() call.");
                 gHR = hr;
             }
         }
@@ -4579,7 +4579,7 @@ namespace datadog::shared::nativeloader
             HRESULT hr = m_customProfiler->EventPipeProviderCreated(provider);
             if (FAILED(hr))
             {
-                Warn("[Custom] Error in EventPipeProviderCreated() call.");
+                Warn("CorProfiler::EventPipeProviderCreated: [Custom] Error in EventPipeProviderCreated() call.");
                 gHR = hr;
             }
         }

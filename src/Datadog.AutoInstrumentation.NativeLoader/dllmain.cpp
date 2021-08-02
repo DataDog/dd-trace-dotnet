@@ -21,8 +21,8 @@ extern "C"
                 // Initialize once for each new process.
                 // Return FALSE to fail DLL load.
 
-                Debug("DllMain - DLL_PROCESS_ATTACH");
-                Debug("Pointer size: ", 8 * sizeof(void*), " bits.");
+                Debug("DllMain: DLL_PROCESS_ATTACH");
+                Debug("DllMain: Pointer size: ", 8 * sizeof(void*), " bits.");
 
                 dispatcher = new DynamicDispatcherImpl();
                 dispatcher->LoadConfiguration(GetConfigurationFilePath());
@@ -32,19 +32,19 @@ extern "C"
             }
             case DLL_THREAD_ATTACH:
                 // Do thread-specific initialization.
-                Debug("DllMain - DLL_THREAD_ATTACH");
+                Debug("DllMain: DLL_THREAD_ATTACH");
 
                 break;
 
             case DLL_THREAD_DETACH:
                 // Do thread-specific cleanup.
-                Debug("DllMain - DLL_THREAD_DETACH");
+                Debug("DllMain: DLL_THREAD_DETACH");
 
                 break;
 
             case DLL_PROCESS_DETACH:
                 // Perform any necessary cleanup.
-                Debug("DllMain - DLL_PROCESS_DETACH");
+                Debug("DllMain: DLL_PROCESS_DETACH");
 
                 break;
         }
