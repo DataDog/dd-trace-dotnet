@@ -86,10 +86,10 @@ namespace datadog::shared::nativeloader
         }
 
         //
-        // Get Profiler interface ICorProfilerInfo6 for net46+
+        // Get Profiler interface ICorProfilerInfo5 for net46+
         //
-        ICorProfilerInfo6* info6 = nullptr;
-        HRESULT hr = pICorProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo6), (void**) &info6);
+        ICorProfilerInfo5* info5 = nullptr;
+        HRESULT hr = pICorProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo5), (void**) &info5);
         if (FAILED(hr))
         {
             Warn("CorProfiler::Initialize: Failed to attach profiler, interface ICorProfilerInfo6 not found.");
@@ -99,7 +99,7 @@ namespace datadog::shared::nativeloader
         // Gets the initial value for the event mask
         DWORD mask_low;
         DWORD mask_hi;
-        hr = info6->GetEventMask2(&mask_low, &mask_hi);
+        hr = info5->GetEventMask2(&mask_low, &mask_hi);
         if (FAILED(hr))
         {
             Warn("CorProfiler::Initialize: Error getting the event mask.");
@@ -120,7 +120,7 @@ namespace datadog::shared::nativeloader
                 // let's get the event mask set by the CP.
                 DWORD local_mask_low;
                 DWORD local_mask_hi;
-                HRESULT hr = info6->GetEventMask2(&local_mask_low, &local_mask_hi);
+                HRESULT hr = info5->GetEventMask2(&local_mask_low, &local_mask_hi);
                 if (SUCCEEDED(hr))
                 {
                     mask_low = mask_low | local_mask_low;
@@ -152,7 +152,7 @@ namespace datadog::shared::nativeloader
                 // let's get the event mask set by the CP.
                 DWORD local_mask_low;
                 DWORD local_mask_hi;
-                HRESULT hr = info6->GetEventMask2(&local_mask_low, &local_mask_hi);
+                HRESULT hr = info5->GetEventMask2(&local_mask_low, &local_mask_hi);
                 if (SUCCEEDED(hr))
                 {
                     mask_low = mask_low | local_mask_low;
@@ -184,7 +184,7 @@ namespace datadog::shared::nativeloader
                 // let's get the event mask set by the CP.
                 DWORD local_mask_low;
                 DWORD local_mask_hi;
-                HRESULT hr = info6->GetEventMask2(&local_mask_low, &local_mask_hi);
+                HRESULT hr = info5->GetEventMask2(&local_mask_low, &local_mask_hi);
                 if (SUCCEEDED(hr))
                 {
                     mask_low = mask_low | local_mask_low;
@@ -212,7 +212,7 @@ namespace datadog::shared::nativeloader
         Debug("CorProfiler::Initialize: *MaskHi : ", mask_hi);
 
         // Sets the final event mask for the profiler
-        hr = info6->SetEventMask2(mask_low, mask_hi);
+        hr = info5->SetEventMask2(mask_low, mask_hi);
         if (FAILED(hr))
         {
             Warn("CorProfiler::Initialize: Error setting the event mask.");
