@@ -9,7 +9,7 @@ using System.IO;
 using System.Net;
 using Datadog.Trace.TestHelpers;
 
-namespace Datadog.Trace.ClrProfiler.IntegrationTests
+namespace Datadog.Trace.TestHelpers
 {
     public sealed class IisFixture : GacFixture, IDisposable
     {

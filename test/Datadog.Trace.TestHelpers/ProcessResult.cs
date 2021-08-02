@@ -6,7 +6,7 @@
 using System;
 using System.Diagnostics;
 
-namespace Datadog.Trace.ClrProfiler.IntegrationTests
+namespace Datadog.Trace.TestHelpers
 {
     public class ProcessResult : IDisposable
     {

@@ -162,6 +162,7 @@ namespace Datadog.Trace.TestHelpers
             StringDictionary environmentVariables,
             string processToProfile = null,
             bool enableSecurity = false,
+            bool enableBlocking = false,
             bool callTargetEnabled = false)
         {
             string profilerEnabled = _requiresProfiling ? "1" : "0";
@@ -218,7 +219,7 @@ namespace Datadog.Trace.TestHelpers
             {
                 environmentVariables[ConfigurationKeys.AppSecEnabled] = enableSecurity.ToString();
                 // our tests require blocking to be activated to work, might add more fine grained control later
-                environmentVariables[ConfigurationKeys.AppSecBlockingEnabled] = enableSecurity.ToString();
+                environmentVariables[ConfigurationKeys.AppSecBlockingEnabled] = enableBlocking.ToString();
             }
 
             foreach (var name in new[] { "SERVICESTACK_REDIS_HOST", "STACKEXCHANGE_REDIS_HOST" })
