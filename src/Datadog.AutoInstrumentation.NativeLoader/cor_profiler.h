@@ -17,6 +17,9 @@ namespace datadog::shared::nativeloader
         ICorProfilerCallback10* m_tracerProfiler;
         ICorProfilerCallback10* m_customProfiler;
 
+        void InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk);
+        void InspectRuntimeVersion(ICorProfilerInfo4* pCorProfilerInfo);
+
     public:
         CorProfiler(DynamicDispatcher* dispatcher);
         ~CorProfiler();

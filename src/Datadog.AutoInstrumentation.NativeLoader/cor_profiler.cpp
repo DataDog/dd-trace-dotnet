@@ -62,6 +62,9 @@ namespace datadog::shared::nativeloader
 
     HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* pICorProfilerInfoUnk)
     {
+        Debug("CorProfiler::Initialize");
+        InspectRuntimeCompatibility(pICorProfilerInfoUnk);
+
         //
         // Get and set profiler pointers
         //
@@ -95,6 +98,7 @@ namespace datadog::shared::nativeloader
             Warn("CorProfiler::Initialize: Failed to attach profiler, interface ICorProfilerInfo6 not found.");
             return E_FAIL;
         }
+        InspectRuntimeVersion(info5);
 
         // Gets the initial value for the event mask
         DWORD mask_low;
@@ -4585,6 +4589,112 @@ namespace datadog::shared::nativeloader
         }
 
         return gHR;
+    }
+
+    void CorProfiler::InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk)
+    {
+        if (corProfilerInfoUnk == nullptr)
+        {
+            Info(
+                "No ICorProfilerInfoXxx available. Null pointer was passed to CorProfilerCallback for initialization."
+                " No compatible Profiling API is available.");
+            return;
+        }
+
+        IUnknown* tstVerProfilerInfo;
+        if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo11), (void**) &tstVerProfilerInfo))
+        {
+            Info("ICorProfilerInfo11 available. Profiling API compatibility: .NET Core 5.0 or later.");
+            tstVerProfilerInfo->Release();
+        }
+        else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo10), (void**) &tstVerProfilerInfo))
+        {
+            Info("ICorProfilerInfo10 available. Profiling API compatibility: .NET Core 3.0 or later.");
+            tstVerProfilerInfo->Release();
+        }
+        else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo9), (void**) &tstVerProfilerInfo))
+        {
+            Info("ICorProfilerInfo9 available. Profiling API compatibility: .NET Core 2.2 or later.");
+            tstVerProfilerInfo->Release();
+        }
+        else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo8), (void**) &tstVerProfilerInfo))
+        {
+            Info("ICorProfilerInfo8 available. Profiling API compatibility: .NET Fx 4.7.2 or later.");
+            tstVerProfilerInfo->Release();
+        }
+        else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo7), (void**) &tstVerProfilerInfo))
+        {
+            Info("ICorProfilerInfo7 available. Profiling API compatibility: .NET Fx 4.6.1 or later.");
+            tstVerProfilerInfo->Release();
+        }
+        else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo6), (void**) &tstVerProfilerInfo))
+        {
+            Info("ICorProfilerInfo6 available. Profiling API compatibility: .NET Fx 4.6 or later.");
+            tstVerProfilerInfo->Release();
+        }
+        else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo5), (void**) &tstVerProfilerInfo))
+        {
+            Info("ICorProfilerInfo5 available. Profiling API compatibility: .NET Fx 4.5.2 or later.");
+            tstVerProfilerInfo->Release();
+        }
+        else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo4), (void**) &tstVerProfilerInfo))
+        {
+            Info("ICorProfilerInfo4 available. Profiling API compatibility: .NET Fx 4.5 or later.");
+            tstVerProfilerInfo->Release();
+        }
+        else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo3), (void**) &tstVerProfilerInfo))
+        {
+            Info("ICorProfilerInfo3 available. Profiling API compatibility: .NET Fx 4.0 or later.");
+            tstVerProfilerInfo->Release();
+        }
+        else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo2), (void**) &tstVerProfilerInfo))
+        {
+            Info("ICorProfilerInfo2 available. Profiling API compatibility: .NET Fx 2.0 or later.");
+            tstVerProfilerInfo->Release();
+        }
+        else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo), (void**) &tstVerProfilerInfo))
+        {
+            Info("ICorProfilerInfo available. Profiling API compatibility: .NET Fx 2 or later.");
+            tstVerProfilerInfo->Release();
+        }
+        else
+        {
+            Info("No ICorProfilerInfoXxx available. A valid IUnknown pointer was passed to CorProfilerCallback"
+                 " for initialization, but QueryInterface(..) did not succeed for any of the known "
+                 "ICorProfilerInfoXxx ifaces."
+                 " No compatible Profiling API is available.");
+        }
+    }
+
+    void CorProfiler::InspectRuntimeVersion(ICorProfilerInfo4* pCorProfilerInfo)
+    {
+        USHORT clrInstanceId;
+        COR_PRF_RUNTIME_TYPE runtimeType;
+        USHORT majorVersion;
+        USHORT minorVersion;
+        USHORT buildNumber;
+        USHORT qfeVersion;
+
+        HRESULT hrGRI = pCorProfilerInfo->GetRuntimeInformation(
+            &clrInstanceId, &runtimeType, &majorVersion, &minorVersion, &buildNumber, &qfeVersion, 0, nullptr, nullptr);
+
+        if (FAILED(hrGRI))
+        {
+            std::ostringstream hex;
+            hex << std::hex << hrGRI;
+            Info("Initializing the Profiler: Exact runtime version could not be obtained (0x", hex.str(), ")");
+        }
+        else
+        {
+            Info("Initializing the Profiler: Reported runtime version : { clrInstanceId: ", clrInstanceId,
+                 ", runtimeType:",
+                 ((runtimeType == COR_PRF_DESKTOP_CLR) ? "DESKTOP_CLR"
+                  : (runtimeType == COR_PRF_CORE_CLR)
+                      ? "CORE_CLR"
+                      : (std::string("unknown(") + std::to_string(runtimeType) + std::string(")"))),
+                 ",", " majorVersion: ", majorVersion, ", minorVersion: ", minorVersion,
+                 ", buildNumber: ", buildNumber, ", qfeVersion: ", qfeVersion, " }.");
+        }
     }
 
 } // namespace datadog::shared::nativeloader
