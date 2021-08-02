@@ -698,7 +698,8 @@ partial class Build
                 {
                     _ when exclude.Contains(projectPath) => false,
                     _ when projectPath.ToString().Contains("Samples.OracleMDA") => false,
-                    _ => true,
+                    _ when !string.IsNullOrWhiteSpace(Filter) => projectPath.ToString().Contains(Filter),
+                     _ => true,
                 }
             );
 
