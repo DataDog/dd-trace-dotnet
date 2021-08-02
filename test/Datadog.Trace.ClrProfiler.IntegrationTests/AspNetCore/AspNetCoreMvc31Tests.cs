@@ -8,6 +8,7 @@
 #pragma warning disable SA1649 // File name must match first type name
 using System.Net;
 using System.Threading.Tasks;
+using Datadog.Trace.TestHelpers;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;

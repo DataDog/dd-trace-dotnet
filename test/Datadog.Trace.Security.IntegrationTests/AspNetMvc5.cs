@@ -89,7 +89,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             _iisFixture = iisFixture;
             _enableSecurity = enableSecurity;
             _blockingEnabled = blockingEnabled;
-            _iisFixture.TryStartIis(this, classicMode);
+            _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
             _testName = nameof(AspNetMvc5)
                      + (classicMode ? ".Classic" : ".Integrated")
                      + (RuntimeInformation.ProcessArchitecture == Architecture.X64 ? ".X64" : ".X86"); // assume that arm is the same
