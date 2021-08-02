@@ -926,6 +926,8 @@ stages:
         path: $(System.DefaultWorkingDirectory)/arm64
 
     - script: |
+        mv win-x64/*.dll ./
+        rmdir win-x64
         cd $(System.DefaultWorkingDirectory)/build/crank
         chmod +x ./run.sh
         ./run.sh
