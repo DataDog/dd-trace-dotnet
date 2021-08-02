@@ -6,12 +6,10 @@
 namespace datadog::shared::nativeloader
 {
 
-    CorProfiler::CorProfiler(DynamicDispatcher* dispatcher) : m_refCount(0), m_dispatcher(dispatcher)
+    CorProfiler::CorProfiler(DynamicDispatcher* dispatcher) :
+        m_refCount(0), m_dispatcher(dispatcher), m_cpProfiler(nullptr), m_tracerProfiler(nullptr), m_customProfiler(nullptr)
     {
         Debug("CorProfiler::.ctor");
-        m_cpProfiler = nullptr;
-        m_tracerProfiler = nullptr;
-        m_customProfiler = nullptr;
     }
 
     CorProfiler::~CorProfiler()
@@ -22,6 +20,11 @@ namespace datadog::shared::nativeloader
     HRESULT STDMETHODCALLTYPE CorProfiler::QueryInterface(REFIID riid, void** ppvObject)
     {
         Debug("CorProfiler::QueryInterface");
+        if (ppvObject == nullptr)
+        {
+            return E_POINTER;
+        }
+
         if (riid == __uuidof(ICorProfilerCallback10) || riid == __uuidof(ICorProfilerCallback9) ||
             riid == __uuidof(ICorProfilerCallback8) || riid == __uuidof(ICorProfilerCallback7) ||
             riid == __uuidof(ICorProfilerCallback6) || riid == __uuidof(ICorProfilerCallback5) ||
