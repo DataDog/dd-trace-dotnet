@@ -128,7 +128,7 @@ namespace datadog::shared::nativeloader
                 std::string osArchValue = lineArray[2];
                 std::string filepathValue = lineArray[3];
 
-                if (type == "TRACER" || type == "CP" || type == "CUSTOM")
+                if (type == "TRACER" || type == "PROFILER" || type == "CUSTOM")
                 {
                     if (osArchValue == currentOsArch)
                     {
@@ -145,7 +145,7 @@ namespace datadog::shared::nativeloader
                                 this->m_tracerInstance =
                                     std::make_unique<DynamicInstanceImpl>(absoluteFilepathValue, idValue);
                             }
-                            else if (type == "CP")
+                            else if (type == "PROFILER")
                             {
                                 this->m_continuousProfilerInstance =
                                     std::make_unique<DynamicInstanceImpl>(absoluteFilepathValue, idValue);
