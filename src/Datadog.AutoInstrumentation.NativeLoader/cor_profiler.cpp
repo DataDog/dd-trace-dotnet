@@ -5,6 +5,44 @@
 
 namespace datadog::shared::nativeloader
 {
+#define STR(x) #x
+#define RunInAllProfilers(EXPR)                                                                                        \
+    HRESULT gHR = S_OK;                                                                                                \
+    if (m_cpProfiler != nullptr)                                                                                       \
+    {                                                                                                                  \
+        HRESULT hr = m_cpProfiler->EXPR;                                                                               \
+        if (FAILED(hr))                                                                                                \
+        {                                                                                                              \
+            std::ostringstream hexValue;                                                                               \
+            hexValue << std::hex << hr;                                                                                \
+            Warn("CorProfiler::", STR(EXPR), ": [Continuous Profiler] Error in ", STR(EXPR),                           \
+                 " call: ", hexValue.str());                                                                           \
+            gHR = hr;                                                                                                  \
+        }                                                                                                              \
+    }                                                                                                                  \
+    if (m_tracerProfiler != nullptr)                                                                                   \
+    {                                                                                                                  \
+        HRESULT hr = m_tracerProfiler->EXPR;                                                                           \
+        if (FAILED(hr))                                                                                                \
+        {                                                                                                              \
+            std::ostringstream hexValue;                                                                               \
+            hexValue << std::hex << hr;                                                                                \
+            Warn("CorProfiler::", STR(EXPR), ": [Tracer] Error in ", STR(EXPR), " call: ", hexValue.str());            \
+            gHR = hr;                                                                                                  \
+        }                                                                                                              \
+    }                                                                                                                  \
+    if (m_customProfiler != nullptr)                                                                                   \
+    {                                                                                                                  \
+        HRESULT hr = m_customProfiler->EXPR;                                                                           \
+        if (FAILED(hr))                                                                                                \
+        {                                                                                                              \
+            std::ostringstream hexValue;                                                                               \
+            hexValue << std::hex << hr;                                                                                \
+            Warn("CorProfiler::", STR(EXPR), ": [Custom] Error in ", STR(EXPR), " call: ", hexValue.str());            \
+            gHR = hr;                                                                                                  \
+        }                                                                                                              \
+    }                                                                                                                  \
+    return gHR;
 
     CorProfiler::CorProfiler(DynamicDispatcher* dispatcher) :
         m_refCount(0), m_dispatcher(dispatcher), m_cpProfiler(nullptr), m_tracerProfiler(nullptr), m_customProfiler(nullptr)
@@ -95,7 +133,7 @@ namespace datadog::shared::nativeloader
         HRESULT hr = pICorProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo5), (void**) &info5);
         if (FAILED(hr))
         {
-            Warn("CorProfiler::Initialize: Failed to attach profiler, interface ICorProfilerInfo6 not found.");
+            Warn("CorProfiler::Initialize: Failed to attach profiler, interface ICorProfilerInfo5 not found.");
             return E_FAIL;
         }
         InspectRuntimeVersion(info5);
@@ -228,2092 +266,243 @@ namespace datadog::shared::nativeloader
 
     HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->Shutdown();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::Shutdown: [Continuous Profiler] Error in Shutdown() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->Shutdown();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::Shutdown: [Tracer] Error in Shutdown() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->Shutdown();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::Shutdown: [Custom] Error in Shutdown() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(Shutdown());
     }
 
 
     HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainCreationStarted(AppDomainID appDomainId)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->AppDomainCreationStarted(appDomainId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::AppDomainCreationStarted: [Continuous Profiler] Error in AppDomainCreationStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->AppDomainCreationStarted(appDomainId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::AppDomainCreationStarted: [Tracer] Error in AppDomainCreationStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->AppDomainCreationStarted(appDomainId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::AppDomainCreationStarted: [Custom] Error in AppDomainCreationStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(AppDomainCreationStarted(appDomainId));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainCreationFinished(AppDomainID appDomainId, HRESULT hrStatus)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->AppDomainCreationFinished(appDomainId, hrStatus);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::AppDomainCreationFinished: [Continuous Profiler] Error in AppDomainCreationFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->AppDomainCreationFinished(appDomainId, hrStatus);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::AppDomainCreationFinished: [Tracer] Error in AppDomainCreationFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->AppDomainCreationFinished(appDomainId, hrStatus);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::AppDomainCreationFinished: [Custom] Error in AppDomainCreationFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(AppDomainCreationFinished(appDomainId, hrStatus));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainShutdownStarted(AppDomainID appDomainId)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->AppDomainShutdownStarted(appDomainId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::AppDomainShutdownStarted: [Continuous Profiler] Error in AppDomainShutdownStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->AppDomainShutdownStarted(appDomainId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::AppDomainShutdownStarted: [Tracer] Error in AppDomainShutdownStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->AppDomainShutdownStarted(appDomainId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::AppDomainShutdownStarted: [Custom] Error in AppDomainShutdownStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(AppDomainShutdownStarted(appDomainId));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainShutdownFinished(AppDomainID appDomainId, HRESULT hrStatus)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->AppDomainShutdownFinished(appDomainId, hrStatus);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::AppDomainShutdownFinished: [Continuous Profiler] Error in AppDomainShutdownFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->AppDomainShutdownFinished(appDomainId, hrStatus);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::AppDomainShutdownFinished: [Tracer] Error in AppDomainShutdownFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->AppDomainShutdownFinished(appDomainId, hrStatus);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::AppDomainShutdownFinished: [Custom] Error in AppDomainShutdownFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(AppDomainShutdownFinished(appDomainId, hrStatus));
     }
 
 
     HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadStarted(AssemblyID assemblyId)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->AssemblyLoadStarted(assemblyId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::AssemblyLoadStarted: [Continuous Profiler] Error in AssemblyLoadStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->AssemblyLoadStarted(assemblyId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::AssemblyLoadStarted: [Tracer] Error in AssemblyLoadStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->AssemblyLoadStarted(assemblyId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::AssemblyLoadStarted: [Custom] Error in AssemblyLoadStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(AssemblyLoadStarted(assemblyId));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assemblyId, HRESULT hrStatus)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->AssemblyLoadFinished(assemblyId, hrStatus);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::AssemblyLoadFinished: [Continuous Profiler] Error in AssemblyLoadFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->AssemblyLoadFinished(assemblyId, hrStatus);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::AssemblyLoadFinished: [Tracer] Error in AssemblyLoadFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->AssemblyLoadFinished(assemblyId, hrStatus);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::AssemblyLoadFinished: [Custom] Error in AssemblyLoadFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(AssemblyLoadFinished(assemblyId, hrStatus));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyUnloadStarted(AssemblyID assemblyId)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->AssemblyUnloadStarted(assemblyId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::AssemblyUnloadStarted: [Continuous Profiler] Error in AssemblyUnloadStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->AssemblyUnloadStarted(assemblyId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::AssemblyUnloadStarted: [Tracer] Error in AssemblyUnloadStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->AssemblyUnloadStarted(assemblyId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::AssemblyUnloadStarted: [Custom] Error in AssemblyUnloadStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(AssemblyUnloadStarted(assemblyId));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyUnloadFinished(AssemblyID assemblyId, HRESULT hrStatus)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->AssemblyUnloadFinished(assemblyId, hrStatus);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::AssemblyUnloadFinished: [Continuous Profiler] Error in AssemblyUnloadFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->AssemblyUnloadFinished(assemblyId, hrStatus);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::AssemblyUnloadFinished: [Tracer] Error in AssemblyUnloadFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->AssemblyUnloadFinished(assemblyId, hrStatus);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::AssemblyUnloadFinished: [Custom] Error in AssemblyUnloadFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(AssemblyUnloadFinished(assemblyId, hrStatus));
     }
 
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadStarted(ModuleID moduleId)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ModuleLoadStarted(moduleId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ModuleLoadStarted: [Continuous Profiler] Error in ModuleLoadStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ModuleLoadStarted(moduleId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ModuleLoadStarted: [Tracer] Error in ModuleLoadStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ModuleLoadStarted(moduleId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ModuleLoadStarted: [Custom] Error in ModuleLoadStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ModuleLoadStarted(moduleId));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRESULT hrStatus)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ModuleLoadFinished(moduleId, hrStatus);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ModuleLoadFinished: [Continuous Profiler] Error in ModuleLoadFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ModuleLoadFinished(moduleId, hrStatus);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ModuleLoadFinished: [Tracer] Error in ModuleLoadFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ModuleLoadFinished(moduleId, hrStatus);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ModuleLoadFinished: [Custom] Error in ModuleLoadFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ModuleLoadFinished(moduleId, hrStatus));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID moduleId)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ModuleUnloadStarted(moduleId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ModuleUnloadStarted: [Continuous Profiler] Error in ModuleUnloadStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ModuleUnloadStarted(moduleId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ModuleUnloadStarted: [Tracer] Error in ModuleUnloadStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ModuleUnloadStarted(moduleId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ModuleUnloadStarted: [Custom] Error in ModuleUnloadStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ModuleUnloadStarted(moduleId));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadFinished(ModuleID moduleId, HRESULT hrStatus)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ModuleUnloadFinished(moduleId, hrStatus);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ModuleUnloadFinished: [Continuous Profiler] Error in ModuleUnloadFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ModuleUnloadFinished(moduleId, hrStatus);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ModuleUnloadFinished: [Tracer] Error in ModuleUnloadFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ModuleUnloadFinished(moduleId, hrStatus);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ModuleUnloadFinished: [Custom] Error in ModuleUnloadFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ModuleUnloadFinished(moduleId, hrStatus));
     }
 
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ModuleAttachedToAssembly(ModuleID moduleId, AssemblyID AssemblyId)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ModuleAttachedToAssembly(moduleId, AssemblyId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ModuleAttachedToAssembly: [Continuous Profiler] Error in ModuleAttachedToAssembly() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ModuleAttachedToAssembly(moduleId, AssemblyId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ModuleAttachedToAssembly: [Tracer] Error in ModuleAttachedToAssembly() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ModuleAttachedToAssembly(moduleId, AssemblyId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ModuleAttachedToAssembly: [Custom] Error in ModuleAttachedToAssembly() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ModuleAttachedToAssembly(moduleId, AssemblyId));
     }
 
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ClassLoadStarted(ClassID classId)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ClassLoadStarted(classId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ClassLoadStarted: [Continuous Profiler] Error in ClassLoadStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ClassLoadStarted(classId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ClassLoadStarted: [Tracer] Error in ClassLoadStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ClassLoadStarted(classId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ClassLoadStarted: [Custom] Error in ClassLoadStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ClassLoadStarted(classId));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ClassLoadFinished(ClassID classId, HRESULT hrStatus)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ClassLoadFinished(classId, hrStatus);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ClassLoadFinished: [Continuous Profiler] Error in ClassLoadFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ClassLoadFinished(classId, hrStatus);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ClassLoadFinished: [Tracer] Error in ClassLoadFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ClassLoadFinished(classId, hrStatus);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ClassLoadFinished: [Custom] Error in ClassLoadFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ClassLoadFinished(classId, hrStatus));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ClassUnloadStarted(ClassID classId)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ClassUnloadStarted(classId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ClassUnloadStarted: [Continuous Profiler] Error in ClassUnloadStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ClassUnloadStarted(classId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ClassUnloadStarted: [Tracer] Error in ClassUnloadStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ClassUnloadStarted(classId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ClassUnloadStarted: [Custom] Error in ClassUnloadStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ClassUnloadStarted(classId));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ClassUnloadFinished(ClassID classId, HRESULT hrStatus)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ClassUnloadFinished(classId, hrStatus);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ClassUnloadFinished: [Continuous Profiler] Error in ClassUnloadFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ClassUnloadFinished(classId, hrStatus);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ClassUnloadFinished: [Tracer] Error in ClassUnloadFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ClassUnloadFinished(classId, hrStatus);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ClassUnloadFinished: [Custom] Error in ClassUnloadFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ClassUnloadFinished(classId, hrStatus));
     }
 
 
     HRESULT STDMETHODCALLTYPE CorProfiler::FunctionUnloadStarted(FunctionID functionId)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->FunctionUnloadStarted(functionId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::FunctionUnloadStarted: [Continuous Profiler] Error in FunctionUnloadStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->FunctionUnloadStarted(functionId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::FunctionUnloadStarted: [Tracer] Error in FunctionUnloadStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->FunctionUnloadStarted(functionId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::FunctionUnloadStarted: [Custom] Error in FunctionUnloadStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(FunctionUnloadStarted(functionId));
     }
 
 
     HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID functionId, BOOL fIsSafeToBlock)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->JITCompilationStarted(functionId, fIsSafeToBlock);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::JITCompilationStarted: [Continuous Profiler] Error in JITCompilationStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->JITCompilationStarted(functionId, fIsSafeToBlock);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::JITCompilationStarted: [Tracer] Error in JITCompilationStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->JITCompilationStarted(functionId, fIsSafeToBlock);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::JITCompilationStarted: [Custom] Error in JITCompilationStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(JITCompilationStarted(functionId, fIsSafeToBlock));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationFinished(FunctionID functionId, HRESULT hrStatus,
                                                                   BOOL fIsSafeToBlock)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->JITCompilationFinished(functionId, hrStatus, fIsSafeToBlock);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::JITCompilationFinished: [Continuous Profiler] Error in JITCompilationFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->JITCompilationFinished(functionId, hrStatus, fIsSafeToBlock);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::JITCompilationFinished: [Tracer] Error in JITCompilationFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->JITCompilationFinished(functionId, hrStatus, fIsSafeToBlock);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::JITCompilationFinished: [Custom] Error in JITCompilationFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(JITCompilationFinished(functionId, hrStatus, fIsSafeToBlock));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID functionId,
                                                                           BOOL* pbUseCachedFunction)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->JITCachedFunctionSearchStarted(functionId, pbUseCachedFunction);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::JITCachedFunctionSearchStarted: [Continuous Profiler] Error in JITCachedFunctionSearchStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->JITCachedFunctionSearchStarted(functionId, pbUseCachedFunction);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::JITCachedFunctionSearchStarted: [Tracer] Error in JITCachedFunctionSearchStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->JITCachedFunctionSearchStarted(functionId, pbUseCachedFunction);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::JITCachedFunctionSearchStarted: [Custom] Error in JITCachedFunctionSearchStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(JITCachedFunctionSearchStarted(functionId, pbUseCachedFunction));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchFinished(FunctionID functionId,
                                                                            COR_PRF_JIT_CACHE result)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->JITCachedFunctionSearchFinished(functionId, result);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::JITCachedFunctionSearchFinished: [Continuous Profiler] Error in JITCachedFunctionSearchFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->JITCachedFunctionSearchFinished(functionId, result);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::JITCachedFunctionSearchFinished: [Tracer] Error in JITCachedFunctionSearchFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->JITCachedFunctionSearchFinished(functionId, result);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::JITCachedFunctionSearchFinished: [Custom] Error in JITCachedFunctionSearchFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(JITCachedFunctionSearchFinished(functionId, result));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::JITFunctionPitched(FunctionID functionId)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->JITFunctionPitched(functionId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::JITFunctionPitched: [Continuous Profiler] Error in JITFunctionPitched() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->JITFunctionPitched(functionId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::JITFunctionPitched: [Tracer] Error in JITFunctionPitched() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->JITFunctionPitched(functionId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::JITFunctionPitched: [Custom] Error in JITFunctionPitched() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(JITFunctionPitched(functionId));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId, FunctionID calleeId, BOOL* pfShouldInline)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->JITInlining(callerId, calleeId, pfShouldInline);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::JITInlining: [Continuous Profiler] Error in JITInlining() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->JITInlining(callerId, calleeId, pfShouldInline);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::JITInlining: [Tracer] Error in JITInlining() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->JITInlining(callerId, calleeId, pfShouldInline);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::JITInlining: [Custom] Error in JITInlining() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(JITInlining(callerId, calleeId, pfShouldInline));
     }
 
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ThreadCreated(ThreadID threadId)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ThreadCreated(threadId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ThreadCreated: [Continuous Profiler] Error in ThreadCreated() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ThreadCreated(threadId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ThreadCreated: [Tracer] Error in ThreadCreated() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ThreadCreated(threadId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ThreadCreated: [Custom] Error in ThreadCreated() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ThreadCreated(threadId));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ThreadDestroyed(ThreadID threadId)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ThreadDestroyed(threadId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ThreadDestroyed: [Continuous Profiler] Error in ThreadDestroyed() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ThreadDestroyed(threadId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ThreadDestroyed: [Tracer] Error in ThreadDestroyed() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ThreadDestroyed(threadId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ThreadDestroyed: [Custom] Error in ThreadDestroyed() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ThreadDestroyed(threadId));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ThreadAssignedToOSThread(ThreadID managedThreadId, DWORD osThreadId)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ThreadAssignedToOSThread(managedThreadId, osThreadId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ThreadAssignedToOSThread: [Continuous Profiler] Error in ThreadAssignedToOSThread() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ThreadAssignedToOSThread(managedThreadId, osThreadId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ThreadAssignedToOSThread: [Tracer] Error in ThreadAssignedToOSThread() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ThreadAssignedToOSThread(managedThreadId, osThreadId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ThreadAssignedToOSThread: [Custom] Error in ThreadAssignedToOSThread() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ThreadAssignedToOSThread(managedThreadId, osThreadId));
     }
-
-
-
-
 
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RemotingClientInvocationStarted()
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->RemotingClientInvocationStarted();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RemotingClientInvocationStarted: [Continuous Profiler] Error in RemotingClientInvocationStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->RemotingClientInvocationStarted();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RemotingClientInvocationStarted: [Tracer] Error in RemotingClientInvocationStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->RemotingClientInvocationStarted();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RemotingClientInvocationStarted: [Custom] Error in RemotingClientInvocationStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(RemotingClientInvocationStarted());
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RemotingClientSendingMessage(GUID* pCookie, BOOL fIsAsync)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->RemotingClientSendingMessage(pCookie, fIsAsync);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RemotingClientSendingMessage: [Continuous Profiler] Error in RemotingClientSendingMessage() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->RemotingClientSendingMessage(pCookie, fIsAsync);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RemotingClientSendingMessage: [Tracer] Error in RemotingClientSendingMessage() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->RemotingClientSendingMessage(pCookie, fIsAsync);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RemotingClientSendingMessage: [Custom] Error in RemotingClientSendingMessage() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(RemotingClientSendingMessage(pCookie, fIsAsync));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RemotingClientReceivingReply(GUID* pCookie, BOOL fIsAsync)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->RemotingClientReceivingReply(pCookie, fIsAsync);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RemotingClientReceivingReply: [Continuous Profiler] Error in RemotingClientReceivingReply() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->RemotingClientReceivingReply(pCookie, fIsAsync);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RemotingClientReceivingReply: [Tracer] Error in RemotingClientReceivingReply() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->RemotingClientReceivingReply(pCookie, fIsAsync);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RemotingClientReceivingReply: [Custom] Error in RemotingClientReceivingReply() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(RemotingClientReceivingReply(pCookie, fIsAsync));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RemotingClientInvocationFinished()
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->RemotingClientInvocationFinished();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RemotingClientInvocationFinished: [Continuous Profiler] Error in RemotingClientInvocationFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->RemotingClientInvocationFinished();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RemotingClientInvocationFinished: [Tracer] Error in RemotingClientInvocationFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->RemotingClientInvocationFinished();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RemotingClientInvocationFinished: [Custom] Error in RemotingClientInvocationFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(RemotingClientInvocationFinished());
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RemotingServerReceivingMessage(GUID* pCookie, BOOL fIsAsync)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->RemotingServerReceivingMessage(pCookie, fIsAsync);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RemotingServerReceivingMessage: [Continuous Profiler] Error in RemotingServerReceivingMessage() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->RemotingServerReceivingMessage(pCookie, fIsAsync);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RemotingServerReceivingMessage: [Tracer] Error in RemotingServerReceivingMessage() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->RemotingServerReceivingMessage(pCookie, fIsAsync);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RemotingServerReceivingMessage: [Custom] Error in RemotingServerReceivingMessage() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(RemotingServerReceivingMessage(pCookie, fIsAsync));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RemotingServerInvocationStarted()
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->RemotingServerInvocationStarted();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RemotingServerInvocationStarted: [Continuous Profiler] Error in RemotingServerInvocationStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->RemotingServerInvocationStarted();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RemotingServerInvocationStarted: [Tracer] Error in RemotingServerInvocationStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->RemotingServerInvocationStarted();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RemotingServerInvocationStarted: [Custom] Error in RemotingServerInvocationStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(RemotingServerInvocationStarted());
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RemotingServerInvocationReturned()
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->RemotingServerInvocationReturned();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RemotingServerInvocationReturned: [Continuous Profiler] Error in RemotingServerInvocationReturned() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->RemotingServerInvocationReturned();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RemotingServerInvocationReturned: [Tracer] Error in RemotingServerInvocationReturned() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->RemotingServerInvocationReturned();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RemotingServerInvocationReturned: [Custom] Error in RemotingServerInvocationReturned() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(RemotingServerInvocationReturned());
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RemotingServerSendingReply(GUID* pCookie, BOOL fIsAsync)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->RemotingServerSendingReply(pCookie, fIsAsync);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RemotingServerSendingReply: [Continuous Profiler] Error in RemotingServerSendingReply() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->RemotingServerSendingReply(pCookie, fIsAsync);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RemotingServerSendingReply: [Tracer] Error in RemotingServerSendingReply() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->RemotingServerSendingReply(pCookie, fIsAsync);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RemotingServerSendingReply: [Custom] Error in RemotingServerSendingReply() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(RemotingServerSendingReply(pCookie, fIsAsync));
     }
 
 
     HRESULT STDMETHODCALLTYPE CorProfiler::UnmanagedToManagedTransition(FunctionID functionId,
                                                                         COR_PRF_TRANSITION_REASON reason)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->UnmanagedToManagedTransition(functionId, reason);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::UnmanagedToManagedTransition: [Continuous Profiler] Error in UnmanagedToManagedTransition() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->UnmanagedToManagedTransition(functionId, reason);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::UnmanagedToManagedTransition: [Tracer] Error in UnmanagedToManagedTransition() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->UnmanagedToManagedTransition(functionId, reason);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::UnmanagedToManagedTransition: [Custom] Error in UnmanagedToManagedTransition() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(UnmanagedToManagedTransition(functionId, reason));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ManagedToUnmanagedTransition(FunctionID functionId,
                                                                         COR_PRF_TRANSITION_REASON reason)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ManagedToUnmanagedTransition(functionId, reason);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ManagedToUnmanagedTransition: [Continuous Profiler] Error in ManagedToUnmanagedTransition() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ManagedToUnmanagedTransition(functionId, reason);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ManagedToUnmanagedTransition: [Tracer] Error in ManagedToUnmanagedTransition() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ManagedToUnmanagedTransition(functionId, reason);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ManagedToUnmanagedTransition: [Custom] Error in ManagedToUnmanagedTransition() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ManagedToUnmanagedTransition(functionId, reason));
     }
 
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RuntimeSuspendStarted(COR_PRF_SUSPEND_REASON suspendReason)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->RuntimeSuspendStarted(suspendReason);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RuntimeSuspendStarted: [Continuous Profiler] Error in RuntimeSuspendStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->RuntimeSuspendStarted(suspendReason);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RuntimeSuspendStarted: [Tracer] Error in RuntimeSuspendStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->RuntimeSuspendStarted(suspendReason);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RuntimeSuspendStarted: [Custom] Error in RuntimeSuspendStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(RuntimeSuspendStarted(suspendReason));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RuntimeSuspendFinished()
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->RuntimeSuspendFinished();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RuntimeSuspendFinished: [Continuous Profiler] Error in RuntimeSuspendFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->RuntimeSuspendFinished();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RuntimeSuspendFinished: [Tracer] Error in RuntimeSuspendFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->RuntimeSuspendFinished();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RuntimeSuspendFinished: [Custom] Error in RuntimeSuspendFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(RuntimeSuspendFinished());
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RuntimeSuspendAborted()
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->RuntimeSuspendAborted();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RuntimeSuspendAborted: [Continuous Profiler] Error in RuntimeSuspendAborted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->RuntimeSuspendAborted();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RuntimeSuspendAborted: [Tracer] Error in RuntimeSuspendAborted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->RuntimeSuspendAborted();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RuntimeSuspendAborted: [Custom] Error in RuntimeSuspendAborted() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(RuntimeSuspendAborted());
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RuntimeResumeStarted()
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->RuntimeResumeStarted();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RuntimeResumeStarted: [Continuous Profiler] Error in RuntimeResumeStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->RuntimeResumeStarted();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RuntimeResumeStarted: [Tracer] Error in RuntimeResumeStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->RuntimeResumeStarted();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RuntimeResumeStarted: [Custom] Error in RuntimeResumeStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(RuntimeResumeStarted());
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RuntimeResumeFinished()
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->RuntimeResumeFinished();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RuntimeResumeFinished: [Continuous Profiler] Error in RuntimeResumeFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->RuntimeResumeFinished();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RuntimeResumeFinished: [Tracer] Error in RuntimeResumeFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->RuntimeResumeFinished();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RuntimeResumeFinished: [Custom] Error in RuntimeResumeFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(RuntimeResumeFinished());
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RuntimeThreadSuspended(ThreadID threadId)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->RuntimeThreadSuspended(threadId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RuntimeThreadSuspended: [Continuous Profiler] Error in RuntimeThreadSuspended() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->RuntimeThreadSuspended(threadId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RuntimeThreadSuspended: [Tracer] Error in RuntimeThreadSuspended() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->RuntimeThreadSuspended(threadId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RuntimeThreadSuspended: [Custom] Error in RuntimeThreadSuspended() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(RuntimeThreadSuspended(threadId));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RuntimeThreadResumed(ThreadID threadId)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->RuntimeThreadResumed(threadId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RuntimeThreadResumed: [Continuous Profiler] Error in RuntimeThreadResumed() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->RuntimeThreadResumed(threadId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RuntimeThreadResumed: [Tracer] Error in RuntimeThreadResumed() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->RuntimeThreadResumed(threadId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RuntimeThreadResumed: [Custom] Error in RuntimeThreadResumed() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(RuntimeThreadResumed(threadId));
     }
 
 
@@ -2321,1778 +510,215 @@ namespace datadog::shared::nativeloader
                                                            ObjectID newObjectIDRangeStart[],
                                                            ULONG cObjectIDRangeLength[])
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->MovedReferences(cMovedObjectIDRanges, oldObjectIDRangeStart,
-                                                       newObjectIDRangeStart, cObjectIDRangeLength);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::MovedReferences: [Continuous Profiler] Error in MovedReferences() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->MovedReferences(cMovedObjectIDRanges, oldObjectIDRangeStart,
-                                                           newObjectIDRangeStart, cObjectIDRangeLength);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::MovedReferences: [Tracer] Error in MovedReferences() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->MovedReferences(cMovedObjectIDRanges, oldObjectIDRangeStart,
-                                                           newObjectIDRangeStart, cObjectIDRangeLength);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::MovedReferences: [Custom] Error in MovedReferences() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(
+            MovedReferences(cMovedObjectIDRanges, oldObjectIDRangeStart, newObjectIDRangeStart, cObjectIDRangeLength));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ObjectAllocated(ObjectID objectId, ClassID classId)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ObjectAllocated(objectId, classId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ObjectAllocated: [Continuous Profiler] Error in ObjectAllocated() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ObjectAllocated(objectId, classId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ObjectAllocated: [Tracer] Error in ObjectAllocated() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ObjectAllocated(objectId, classId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ObjectAllocated: [Custom] Error in ObjectAllocated() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ObjectAllocated(objectId, classId));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ObjectsAllocatedByClass(ULONG cClassCount, ClassID classIds[],
                                                                    ULONG cObjects[])
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ObjectsAllocatedByClass(cClassCount, classIds, cObjects);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ObjectsAllocatedByClass: [Continuous Profiler] Error in ObjectsAllocatedByClass() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ObjectsAllocatedByClass(cClassCount, classIds, cObjects);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ObjectsAllocatedByClass: [Tracer] Error in ObjectsAllocatedByClass() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ObjectsAllocatedByClass(cClassCount, classIds, cObjects);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ObjectsAllocatedByClass: [Custom] Error in ObjectsAllocatedByClass() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ObjectsAllocatedByClass(cClassCount, classIds, cObjects));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ObjectReferences(ObjectID objectId, ClassID classId, ULONG cObjectRefs,
                                                             ObjectID objectRefIds[])
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ObjectReferences(objectId, classId, cObjectRefs, objectRefIds);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ObjectReferences: [Continuous Profiler] Error in ObjectReferences() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ObjectReferences(objectId, classId, cObjectRefs, objectRefIds);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ObjectReferences: [Tracer] Error in ObjectReferences() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ObjectReferences(objectId, classId, cObjectRefs, objectRefIds);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ObjectReferences: [Custom] Error in ObjectReferences() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ObjectReferences(objectId, classId, cObjectRefs, objectRefIds));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RootReferences(ULONG cRootRefs, ObjectID rootRefIds[])
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->RootReferences(cRootRefs, rootRefIds);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RootReferences: [Continuous Profiler] Error in RootReferences() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->RootReferences(cRootRefs, rootRefIds);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RootReferences: [Tracer] Error in RootReferences() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->RootReferences(cRootRefs, rootRefIds);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RootReferences: [Custom] Error in RootReferences() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(RootReferences(cRootRefs, rootRefIds));
     }
 
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionThrown(ObjectID thrownObjectId)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ExceptionThrown(thrownObjectId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionThrown: [Continuous Profiler] Error in ExceptionThrown() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ExceptionThrown(thrownObjectId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionThrown: [Tracer] Error in ExceptionThrown() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ExceptionThrown(thrownObjectId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionThrown: [Custom] Error in ExceptionThrown() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ExceptionThrown(thrownObjectId));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionSearchFunctionEnter(FunctionID functionId)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ExceptionSearchFunctionEnter(functionId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionSearchFunctionEnter: [Continuous Profiler] Error in ExceptionSearchFunctionEnter() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ExceptionSearchFunctionEnter(functionId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionSearchFunctionEnter: [Tracer] Error in ExceptionSearchFunctionEnter() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ExceptionSearchFunctionEnter(functionId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionSearchFunctionEnter: [Custom] Error in ExceptionSearchFunctionEnter() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ExceptionSearchFunctionEnter(functionId));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionSearchFunctionLeave()
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ExceptionSearchFunctionLeave();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionSearchFunctionLeave: [Continuous Profiler] Error in ExceptionSearchFunctionLeave() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ExceptionSearchFunctionLeave();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionSearchFunctionLeave: [Tracer] Error in ExceptionSearchFunctionLeave() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ExceptionSearchFunctionLeave();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionSearchFunctionLeave: [Custom] Error in ExceptionSearchFunctionLeave() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ExceptionSearchFunctionLeave());
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionSearchFilterEnter(FunctionID functionId)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ExceptionSearchFilterEnter(functionId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionSearchFilterEnter: [Continuous Profiler] Error in ExceptionSearchFilterEnter() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ExceptionSearchFilterEnter(functionId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionSearchFilterEnter: [Tracer] Error in ExceptionSearchFilterEnter() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ExceptionSearchFilterEnter(functionId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionSearchFilterEnter: [Custom] Error in ExceptionSearchFilterEnter() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ExceptionSearchFilterEnter(functionId));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionSearchFilterLeave()
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ExceptionSearchFilterLeave();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionSearchFilterLeave: [Continuous Profiler] Error in ExceptionSearchFilterLeave() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ExceptionSearchFilterLeave();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionSearchFilterLeave: [Tracer] Error in ExceptionSearchFilterLeave() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ExceptionSearchFilterLeave();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionSearchFilterLeave: [Custom] Error in ExceptionSearchFilterLeave() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ExceptionSearchFilterLeave());
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionSearchCatcherFound(FunctionID functionId)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ExceptionSearchCatcherFound(functionId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionSearchCatcherFound: [Continuous Profiler] Error in ExceptionSearchCatcherFound() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ExceptionSearchCatcherFound(functionId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionSearchCatcherFound: [Tracer] Error in ExceptionSearchCatcherFound() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ExceptionSearchCatcherFound(functionId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionSearchCatcherFound: [Custom] Error in ExceptionSearchCatcherFound() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ExceptionSearchCatcherFound(functionId));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionOSHandlerEnter(UINT_PTR __unused)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ExceptionOSHandlerEnter(NULL);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionOSHandlerEnter: [Continuous Profiler] Error in ExceptionOSHandlerEnter() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ExceptionOSHandlerEnter(NULL);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionOSHandlerEnter: [Tracer] Error in ExceptionOSHandlerEnter() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ExceptionOSHandlerEnter(NULL);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionOSHandlerEnter: [Custom] Error in ExceptionOSHandlerEnter() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ExceptionOSHandlerEnter(NULL));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionOSHandlerLeave(UINT_PTR __unused)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ExceptionOSHandlerLeave(NULL);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionOSHandlerLeave: [Continuous Profiler] Error in ExceptionOSHandlerLeave() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ExceptionOSHandlerLeave(NULL);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionOSHandlerLeave: [Tracer] Error in ExceptionOSHandlerLeave() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ExceptionOSHandlerLeave(NULL);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionOSHandlerLeave: [Custom] Error in ExceptionOSHandlerLeave() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ExceptionOSHandlerLeave(NULL));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionUnwindFunctionEnter(FunctionID functionId)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ExceptionUnwindFunctionEnter(functionId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionUnwindFunctionEnter: [Continuous Profiler] Error in ExceptionUnwindFunctionEnter() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ExceptionUnwindFunctionEnter(functionId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionUnwindFunctionEnter: [Tracer] Error in ExceptionUnwindFunctionEnter() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ExceptionUnwindFunctionEnter(functionId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionUnwindFunctionEnter: [Custom] Error in ExceptionUnwindFunctionEnter() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ExceptionUnwindFunctionEnter(functionId));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionUnwindFunctionLeave()
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ExceptionUnwindFunctionLeave();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionUnwindFunctionLeave: [Continuous Profiler] Error in ExceptionUnwindFunctionLeave() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ExceptionUnwindFunctionLeave();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionUnwindFunctionLeave: [Tracer] Error in ExceptionUnwindFunctionLeave() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ExceptionUnwindFunctionLeave();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionUnwindFunctionLeave: [Custom] Error in ExceptionUnwindFunctionLeave() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ExceptionUnwindFunctionLeave());
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionUnwindFinallyEnter(FunctionID functionId)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ExceptionUnwindFinallyEnter(functionId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionUnwindFinallyEnter: [Continuous Profiler] Error in ExceptionUnwindFinallyEnter() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ExceptionUnwindFinallyEnter(functionId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionUnwindFinallyEnter: [Tracer] Error in ExceptionUnwindFinallyEnter() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ExceptionUnwindFinallyEnter(functionId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionUnwindFinallyEnter: [Custom] Error in ExceptionUnwindFinallyEnter() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ExceptionUnwindFinallyEnter(functionId));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionUnwindFinallyLeave()
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ExceptionUnwindFinallyLeave();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionUnwindFinallyLeave: [Continuous Profiler] Error in ExceptionUnwindFinallyLeave() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ExceptionUnwindFinallyLeave();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionUnwindFinallyLeave: [Tracer] Error in ExceptionUnwindFinallyLeave() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ExceptionUnwindFinallyLeave();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionUnwindFinallyLeave: [Custom] Error in ExceptionUnwindFinallyLeave() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ExceptionUnwindFinallyLeave());
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionCatcherEnter(FunctionID functionId, ObjectID objectId)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ExceptionCatcherEnter(functionId, objectId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionCatcherEnter: [Continuous Profiler] Error in ExceptionCatcherEnter() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ExceptionCatcherEnter(functionId, objectId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionCatcherEnter: [Tracer] Error in ExceptionCatcherEnter() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ExceptionCatcherEnter(functionId, objectId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionCatcherEnter: [Custom] Error in ExceptionCatcherEnter() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ExceptionCatcherEnter(functionId, objectId));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionCatcherLeave()
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ExceptionCatcherLeave();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionCatcherLeave: [Continuous Profiler] Error in ExceptionCatcherLeave() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ExceptionCatcherLeave();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionCatcherLeave: [Tracer] Error in ExceptionCatcherLeave() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ExceptionCatcherLeave();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionCatcherLeave: [Custom] Error in ExceptionCatcherLeave() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ExceptionCatcherLeave());
     }
 
 
     HRESULT STDMETHODCALLTYPE CorProfiler::COMClassicVTableCreated(ClassID wrappedClassId, REFGUID implementedIID,
                                                                    void* pVTable, ULONG cSlots)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->COMClassicVTableCreated(wrappedClassId, implementedIID, pVTable, cSlots);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::COMClassicVTableCreated: [Continuous Profiler] Error in COMClassicVTableCreated() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->COMClassicVTableCreated(wrappedClassId, implementedIID, pVTable, cSlots);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::COMClassicVTableCreated: [Tracer] Error in COMClassicVTableCreated() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->COMClassicVTableCreated(wrappedClassId, implementedIID, pVTable, cSlots);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::COMClassicVTableCreated: [Custom] Error in COMClassicVTableCreated() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(COMClassicVTableCreated(wrappedClassId, implementedIID, pVTable, cSlots));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::COMClassicVTableDestroyed(ClassID wrappedClassId, REFGUID implementedIID,
                                                                      void* pVTable)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->COMClassicVTableDestroyed(wrappedClassId, implementedIID, pVTable);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::COMClassicVTableDestroyed: [Continuous Profiler] Error in COMClassicVTableDestroyed() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->COMClassicVTableDestroyed(wrappedClassId, implementedIID, pVTable);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::COMClassicVTableDestroyed: [Tracer] Error in COMClassicVTableDestroyed() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->COMClassicVTableDestroyed(wrappedClassId, implementedIID, pVTable);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::COMClassicVTableDestroyed: [Custom] Error in COMClassicVTableDestroyed() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(COMClassicVTableDestroyed(wrappedClassId, implementedIID, pVTable));
     }
 
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionCLRCatcherFound()
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ExceptionCLRCatcherFound();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionCLRCatcherFound: [Continuous Profiler] Error in ExceptionCLRCatcherFound() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ExceptionCLRCatcherFound();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionCLRCatcherFound: [Tracer] Error in ExceptionCLRCatcherFound() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ExceptionCLRCatcherFound();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionCLRCatcherFound: [Custom] Error in ExceptionCLRCatcherFound() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ExceptionCLRCatcherFound());
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ExceptionCLRCatcherExecute()
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ExceptionCLRCatcherExecute();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionCLRCatcherExecute: [Continuous Profiler] Error in ExceptionCLRCatcherExecute() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ExceptionCLRCatcherExecute();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionCLRCatcherExecute: [Tracer] Error in ExceptionCLRCatcherExecute() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ExceptionCLRCatcherExecute();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ExceptionCLRCatcherExecute: [Custom] Error in ExceptionCLRCatcherExecute() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ExceptionCLRCatcherExecute());
     }
 
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ThreadNameChanged(ThreadID threadId, ULONG cchName, WCHAR name[])
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ThreadNameChanged(threadId, cchName, name);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ThreadNameChanged: [Continuous Profiler] Error in ThreadNameChanged() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ThreadNameChanged(threadId, cchName, name);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ThreadNameChanged: [Tracer] Error in ThreadNameChanged() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ThreadNameChanged(threadId, cchName, name);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ThreadNameChanged: [Custom] Error in ThreadNameChanged() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ThreadNameChanged(threadId, cchName, name));
     }
 
 
     HRESULT STDMETHODCALLTYPE CorProfiler::GarbageCollectionStarted(int cGenerations, BOOL generationCollected[],
                                                                     COR_PRF_GC_REASON reason)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->GarbageCollectionStarted(cGenerations, generationCollected, reason);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::GarbageCollectionStarted: [Continuous Profiler] Error in GarbageCollectionStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->GarbageCollectionStarted(cGenerations, generationCollected, reason);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::GarbageCollectionStarted: [Tracer] Error in GarbageCollectionStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->GarbageCollectionStarted(cGenerations, generationCollected, reason);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::GarbageCollectionStarted: [Custom] Error in GarbageCollectionStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(GarbageCollectionStarted(cGenerations, generationCollected, reason));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::SurvivingReferences(ULONG cSurvivingObjectIDRanges,
                                                                ObjectID objectIDRangeStart[],
                                                                ULONG cObjectIDRangeLength[])
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr =
-                m_cpProfiler->SurvivingReferences(cSurvivingObjectIDRanges, objectIDRangeStart, cObjectIDRangeLength);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::SurvivingReferences: [Continuous Profiler] Error in SurvivingReferences() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->SurvivingReferences(cSurvivingObjectIDRanges, objectIDRangeStart,
-                                                               cObjectIDRangeLength);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::SurvivingReferences: [Tracer] Error in SurvivingReferences() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->SurvivingReferences(cSurvivingObjectIDRanges, objectIDRangeStart,
-                                                               cObjectIDRangeLength);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::SurvivingReferences: [Custom] Error in SurvivingReferences() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(SurvivingReferences(cSurvivingObjectIDRanges, objectIDRangeStart, cObjectIDRangeLength));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::GarbageCollectionFinished()
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->GarbageCollectionFinished();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::GarbageCollectionFinished: [Continuous Profiler] Error in GarbageCollectionFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->GarbageCollectionFinished();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::GarbageCollectionFinished: [Tracer] Error in GarbageCollectionFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->GarbageCollectionFinished();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::GarbageCollectionFinished: [Custom] Error in GarbageCollectionFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(GarbageCollectionFinished());
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::FinalizeableObjectQueued(DWORD finalizerFlags, ObjectID objectID)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->FinalizeableObjectQueued(finalizerFlags, objectID);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::FinalizeableObjectQueued: [Continuous Profiler] Error in FinalizeableObjectQueued() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->FinalizeableObjectQueued(finalizerFlags, objectID);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::FinalizeableObjectQueued: [Tracer] Error in FinalizeableObjectQueued() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->FinalizeableObjectQueued(finalizerFlags, objectID);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::FinalizeableObjectQueued: [Custom] Error in FinalizeableObjectQueued() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(FinalizeableObjectQueued(finalizerFlags, objectID));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::RootReferences2(ULONG cRootRefs, ObjectID rootRefIds[],
                                                            COR_PRF_GC_ROOT_KIND rootKinds[],
                                                            COR_PRF_GC_ROOT_FLAGS rootFlags[], UINT_PTR rootIds[])
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->RootReferences2(cRootRefs, rootRefIds, rootKinds, rootFlags, rootIds);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RootReferences2: [Continuous Profiler] Error in RootReferences2() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->RootReferences2(cRootRefs, rootRefIds, rootKinds, rootFlags, rootIds);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RootReferences2: [Tracer] Error in RootReferences2() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->RootReferences2(cRootRefs, rootRefIds, rootKinds, rootFlags, rootIds);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::RootReferences2: [Custom] Error in RootReferences2() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(RootReferences2(cRootRefs, rootRefIds, rootKinds, rootFlags, rootIds));
     }
 
 
     HRESULT STDMETHODCALLTYPE CorProfiler::HandleCreated(GCHandleID handleId, ObjectID initialObjectId)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->HandleCreated(handleId, initialObjectId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::HandleCreated: [Continuous Profiler] Error in HandleCreated() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->HandleCreated(handleId, initialObjectId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::HandleCreated: [Tracer] Error in HandleCreated() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->HandleCreated(handleId, initialObjectId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::HandleCreated: [Custom] Error in HandleCreated() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(HandleCreated(handleId, initialObjectId));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::HandleDestroyed(GCHandleID handleId)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->HandleDestroyed(handleId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::HandleDestroyed: [Continuous Profiler] Error in HandleDestroyed() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->HandleDestroyed(handleId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::HandleDestroyed: [Tracer] Error in HandleDestroyed() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->HandleDestroyed(handleId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::HandleDestroyed: [Custom] Error in HandleDestroyed() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(HandleDestroyed(handleId));
     }
 
 
     HRESULT STDMETHODCALLTYPE CorProfiler::InitializeForAttach(IUnknown* pCorProfilerInfoUnk, void* pvClientData,
                                                                UINT cbClientData)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->InitializeForAttach(pCorProfilerInfoUnk, pvClientData, cbClientData);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::InitializeForAttach: [Continuous Profiler] Error in InitializeForAttach() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->InitializeForAttach(pCorProfilerInfoUnk, pvClientData, cbClientData);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::InitializeForAttach: [Tracer] Error in InitializeForAttach() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->InitializeForAttach(pCorProfilerInfoUnk, pvClientData, cbClientData);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::InitializeForAttach: [Custom] Error in InitializeForAttach() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(InitializeForAttach(pCorProfilerInfoUnk, pvClientData, cbClientData));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ProfilerAttachComplete()
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ProfilerAttachComplete();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ProfilerAttachComplete: [Continuous Profiler] Error in ProfilerAttachComplete() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ProfilerAttachComplete();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ProfilerAttachComplete: [Tracer] Error in ProfilerAttachComplete() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ProfilerAttachComplete();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ProfilerAttachComplete: [Custom] Error in ProfilerAttachComplete() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ProfilerAttachComplete());
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ProfilerDetachSucceeded()
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ProfilerDetachSucceeded();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ProfilerDetachSucceeded: [Continuous Profiler] Error in ProfilerDetachSucceeded() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ProfilerDetachSucceeded();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ProfilerDetachSucceeded: [Tracer] Error in ProfilerDetachSucceeded() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ProfilerDetachSucceeded();
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ProfilerDetachSucceeded: [Custom] Error in ProfilerDetachSucceeded() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ProfilerDetachSucceeded());
     }
 
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ReJITCompilationStarted(FunctionID functionId, ReJITID rejitId,
                                                                    BOOL fIsSafeToBlock)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ReJITCompilationStarted(functionId, rejitId, fIsSafeToBlock);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ReJITCompilationStarted: [Continuous Profiler] Error in ReJITCompilationStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ReJITCompilationStarted(functionId, rejitId, fIsSafeToBlock);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ReJITCompilationStarted: [Tracer] Error in ReJITCompilationStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ReJITCompilationStarted(functionId, rejitId, fIsSafeToBlock);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ReJITCompilationStarted: [Custom] Error in ReJITCompilationStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ReJITCompilationStarted(functionId, rejitId, fIsSafeToBlock));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::GetReJITParameters(ModuleID moduleId, mdMethodDef methodId,
                                                               ICorProfilerFunctionControl* pFunctionControl)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->GetReJITParameters(moduleId, methodId, pFunctionControl);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::GetReJITParameters: [Continuous Profiler] Error in GetReJITParameters() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->GetReJITParameters(moduleId, methodId, pFunctionControl);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::GetReJITParameters: [Tracer] Error in GetReJITParameters() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->GetReJITParameters(moduleId, methodId, pFunctionControl);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::GetReJITParameters: [Custom] Error in GetReJITParameters() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(GetReJITParameters(moduleId, methodId, pFunctionControl));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ReJITCompilationFinished(FunctionID functionId, ReJITID rejitId,
                                                                     HRESULT hrStatus, BOOL fIsSafeToBlock)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ReJITCompilationFinished(functionId, rejitId, hrStatus, fIsSafeToBlock);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ReJITCompilationFinished: [Continuous Profiler] Error in ReJITCompilationFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ReJITCompilationFinished(functionId, rejitId, hrStatus, fIsSafeToBlock);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ReJITCompilationFinished: [Tracer] Error in ReJITCompilationFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ReJITCompilationFinished(functionId, rejitId, hrStatus, fIsSafeToBlock);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ReJITCompilationFinished: [Custom] Error in ReJITCompilationFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ReJITCompilationFinished(functionId, rejitId, hrStatus, fIsSafeToBlock));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ReJITError(ModuleID moduleId, mdMethodDef methodId, FunctionID functionId,
                                                       HRESULT hrStatus)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ReJITError(moduleId, methodId, functionId, hrStatus);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ReJITError: [Continuous Profiler] Error in ReJITError() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ReJITError(moduleId, methodId, functionId, hrStatus);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ReJITError: [Tracer] Error in ReJITError() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ReJITError(moduleId, methodId, functionId, hrStatus);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ReJITError: [Custom] Error in ReJITError() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ReJITError(moduleId, methodId, functionId, hrStatus));
     }
 
 
@@ -4101,245 +727,33 @@ namespace datadog::shared::nativeloader
                                                             ObjectID newObjectIDRangeStart[],
                                                             SIZE_T cObjectIDRangeLength[])
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->MovedReferences2(cMovedObjectIDRanges, oldObjectIDRangeStart,
-                                                        newObjectIDRangeStart, cObjectIDRangeLength);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::MovedReferences2: [Continuous Profiler] Error in MovedReferences2() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->MovedReferences2(cMovedObjectIDRanges, oldObjectIDRangeStart,
-                                                            newObjectIDRangeStart, cObjectIDRangeLength);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::MovedReferences2: [Tracer] Error in MovedReferences2() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->MovedReferences2(cMovedObjectIDRanges, oldObjectIDRangeStart,
-                                                            newObjectIDRangeStart, cObjectIDRangeLength);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::MovedReferences2: [Custom] Error in MovedReferences2() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(
+            MovedReferences2(cMovedObjectIDRanges, oldObjectIDRangeStart, newObjectIDRangeStart, cObjectIDRangeLength));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::SurvivingReferences2(ULONG cSurvivingObjectIDRanges,
                                                                 ObjectID objectIDRangeStart[],
                                                                 SIZE_T cObjectIDRangeLength[])
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->SurvivingReferences2(cSurvivingObjectIDRanges, objectIDRangeStart,
-                                                            cObjectIDRangeLength);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::SurvivingReferences2: [Continuous Profiler] Error in SurvivingReferences2() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->SurvivingReferences2(cSurvivingObjectIDRanges, objectIDRangeStart,
-                                                                cObjectIDRangeLength);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::SurvivingReferences2: [Tracer] Error in SurvivingReferences2() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->SurvivingReferences2(cSurvivingObjectIDRanges, objectIDRangeStart,
-                                                                cObjectIDRangeLength);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::SurvivingReferences2: [Custom] Error in SurvivingReferences2() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(SurvivingReferences2(cSurvivingObjectIDRanges, objectIDRangeStart, cObjectIDRangeLength));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ConditionalWeakTableElementReferences(ULONG cRootRefs, ObjectID keyRefIds[],
                                                                                  ObjectID valueRefIds[],
                                                                                  GCHandleID rootIds[])
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ConditionalWeakTableElementReferences(cRootRefs, keyRefIds, valueRefIds, rootIds);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ConditionalWeakTableElementReferences: [Continuous Profiler] Error in ConditionalWeakTableElementReferences() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr =
-                m_tracerProfiler->ConditionalWeakTableElementReferences(cRootRefs, keyRefIds, valueRefIds, rootIds);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ConditionalWeakTableElementReferences: [Tracer] Error in ConditionalWeakTableElementReferences() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr =
-                m_customProfiler->ConditionalWeakTableElementReferences(cRootRefs, keyRefIds, valueRefIds, rootIds);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ConditionalWeakTableElementReferences: [Custom] Error in ConditionalWeakTableElementReferences() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ConditionalWeakTableElementReferences(cRootRefs, keyRefIds, valueRefIds, rootIds));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(const WCHAR* wszAssemblyPath,
                                                                  ICorProfilerAssemblyReferenceProvider* pAsmRefProvider)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->GetAssemblyReferences(wszAssemblyPath, pAsmRefProvider);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::GetAssemblyReferences: [Continuous Profiler] Error in GetAssemblyReferences() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->GetAssemblyReferences(wszAssemblyPath, pAsmRefProvider);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::GetAssemblyReferences: [Tracer] Error in GetAssemblyReferences() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->GetAssemblyReferences(wszAssemblyPath, pAsmRefProvider);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::GetAssemblyReferences: [Custom] Error in GetAssemblyReferences() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(GetAssemblyReferences(wszAssemblyPath, pAsmRefProvider));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::ModuleInMemorySymbolsUpdated(ModuleID moduleId)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->ModuleInMemorySymbolsUpdated(moduleId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ModuleInMemorySymbolsUpdated: [Continuous Profiler] Error in ModuleInMemorySymbolsUpdated() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->ModuleInMemorySymbolsUpdated(moduleId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ModuleInMemorySymbolsUpdated: [Tracer] Error in ModuleInMemorySymbolsUpdated() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->ModuleInMemorySymbolsUpdated(moduleId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::ModuleInMemorySymbolsUpdated: [Custom] Error in ModuleInMemorySymbolsUpdated() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(ModuleInMemorySymbolsUpdated(moduleId));
     }
 
 
@@ -4347,144 +761,18 @@ namespace datadog::shared::nativeloader
                                                                               BOOL fIsSafeToBlock, LPCBYTE ilHeader,
                                                                               ULONG cbILHeader)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr =
-                m_cpProfiler->DynamicMethodJITCompilationStarted(functionId, fIsSafeToBlock, ilHeader, cbILHeader);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::DynamicMethodJITCompilationStarted: [Continuous Profiler] Error in DynamicMethodJITCompilationStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr =
-                m_tracerProfiler->DynamicMethodJITCompilationStarted(functionId, fIsSafeToBlock, ilHeader, cbILHeader);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::DynamicMethodJITCompilationStarted: [Tracer] Error in DynamicMethodJITCompilationStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr =
-                m_customProfiler->DynamicMethodJITCompilationStarted(functionId, fIsSafeToBlock, ilHeader, cbILHeader);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::DynamicMethodJITCompilationStarted: [Custom] Error in DynamicMethodJITCompilationStarted() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(DynamicMethodJITCompilationStarted(functionId, fIsSafeToBlock, ilHeader, cbILHeader));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::DynamicMethodJITCompilationFinished(FunctionID functionId, HRESULT hrStatus,
                                                                                BOOL fIsSafeToBlock)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->DynamicMethodJITCompilationFinished(functionId, hrStatus, fIsSafeToBlock);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::DynamicMethodJITCompilationFinished: [Continuous Profiler] Error in DynamicMethodJITCompilationFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->DynamicMethodJITCompilationFinished(functionId, hrStatus, fIsSafeToBlock);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::DynamicMethodJITCompilationFinished: [Tracer] Error in DynamicMethodJITCompilationFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->DynamicMethodJITCompilationFinished(functionId, hrStatus, fIsSafeToBlock);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::DynamicMethodJITCompilationFinished: [Custom] Error in DynamicMethodJITCompilationFinished() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(DynamicMethodJITCompilationFinished(functionId, hrStatus, fIsSafeToBlock));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::DynamicMethodUnloaded(FunctionID functionId)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->DynamicMethodUnloaded(functionId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::DynamicMethodUnloaded: [Continuous Profiler] Error in DynamicMethodUnloaded() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->DynamicMethodUnloaded(functionId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::DynamicMethodUnloaded: [Tracer] Error in DynamicMethodUnloaded() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->DynamicMethodUnloaded(functionId);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::DynamicMethodUnloaded: [Custom] Error in DynamicMethodUnloaded() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(DynamicMethodUnloaded(functionId));
     }
 
 
@@ -4495,100 +783,14 @@ namespace datadog::shared::nativeloader
                                                                    LPCGUID pRelatedActivityId, ThreadID eventThread,
                                                                    ULONG numStackFrames, UINT_PTR stackFrames[])
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->EventPipeEventDelivered(
-                provider, eventId, eventVersion, cbMetadataBlob, metadataBlob, cbEventData, eventData, pActivityId,
-                pRelatedActivityId, eventThread, numStackFrames, stackFrames);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::EventPipeEventDelivered: [Continuous Profiler] Error in EventPipeEventDelivered() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->EventPipeEventDelivered(
-                provider, eventId, eventVersion, cbMetadataBlob, metadataBlob, cbEventData, eventData, pActivityId,
-                pRelatedActivityId, eventThread, numStackFrames, stackFrames);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::EventPipeEventDelivered: [Tracer] Error in EventPipeEventDelivered() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->EventPipeEventDelivered(
-                provider, eventId, eventVersion, cbMetadataBlob, metadataBlob, cbEventData, eventData, pActivityId,
-                pRelatedActivityId, eventThread, numStackFrames, stackFrames);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::EventPipeEventDelivered: [Custom] Error in EventPipeEventDelivered() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(EventPipeEventDelivered(provider, eventId, eventVersion, cbMetadataBlob, metadataBlob,
+                                                  cbEventData, eventData, pActivityId, pRelatedActivityId, eventThread,
+                                                  numStackFrames, stackFrames));
     }
 
     HRESULT STDMETHODCALLTYPE CorProfiler::EventPipeProviderCreated(EVENTPIPE_PROVIDER provider)
     {
-        HRESULT gHR = S_OK;
-
-        //
-        // Continuous Profiler
-        //
-        if (m_cpProfiler != nullptr)
-        {
-            HRESULT hr = m_cpProfiler->EventPipeProviderCreated(provider);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::EventPipeProviderCreated: [Continuous Profiler] Error in EventPipeProviderCreated() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Tracer
-        //
-        if (m_tracerProfiler != nullptr)
-        {
-            HRESULT hr = m_tracerProfiler->EventPipeProviderCreated(provider);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::EventPipeProviderCreated: [Tracer] Error in EventPipeProviderCreated() call.");
-                gHR = hr;
-            }
-        }
-
-        //
-        // Custom
-        //
-        if (m_customProfiler != nullptr)
-        {
-            HRESULT hr = m_customProfiler->EventPipeProviderCreated(provider);
-            if (FAILED(hr))
-            {
-                Warn("CorProfiler::EventPipeProviderCreated: [Custom] Error in EventPipeProviderCreated() call.");
-                gHR = hr;
-            }
-        }
-
-        return gHR;
+        RunInAllProfilers(EventPipeProviderCreated(provider));
     }
 
     void CorProfiler::InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk)
