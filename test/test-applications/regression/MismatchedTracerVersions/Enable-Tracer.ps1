@@ -50,6 +50,8 @@ function Set-EnvironmentVariable {
 
 if ($IsWindows) {
     Set-EnvironmentVariable 'DD_PROFILER_EXCLUDE_PROCESSES' 'dotnet.exe;devenv.exe;Microsoft.ServiceHub.Controller.exe;ServiceHub.Host.CLR.exe;ServiceHub.TestWindowStoreHost.exe;ServiceHub.DataWarehouseHost.exe;sqlservr.exe;VBCSCompiler.exe;iisexpresstray.exe;msvsmon.exe;PerfWatson2.exe;ServiceHub.IdentityHost.exe;ServiceHub.VSDetouredHost.exe;ServiceHub.SettingsHost.exe;ServiceHub.Host.CLR.x86.exe;vstest.console.exe;ServiceHub.RoslynCodeAnalysisService32.exe;testhost.x86.exe;MSBuild.exe;ServiceHub.ThreadedWaitDialog.exe;OmniSharp.exe;CodeHelper.exe;pwsh.exe'
+} else {
+    Set-EnvironmentVariable 'DD_PROFILER_EXCLUDE_PROCESSES' 'dotnet'
 }
 
 Set-EnvironmentVariable 'DD_DOTNET_TRACER_HOME' $TracerHome
