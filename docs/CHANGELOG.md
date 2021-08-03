@@ -4,31 +4,27 @@
 
 ## Changes
 * Add additional logs injection fallback for NLog 1.x (#1614)
-* CIApp - Removes version from the test.framework tag (#1622)
+* Remove version from the `test.framework` tag in CIApp (#1622)
 * Fix ReJIT and Shutdown log levels (#1624)
 * Logger API refactoring (#1625)
-* Enable experimental NGEN support (#1628)
+* Add experimental NGEN support (#1628)
 * Clear metadata when an appdomain unloads (#1630)
-* Ignore empty values when parsing headers (#1639)
-* Don't add the sampling priority header if empty (#1644)
-* Revert "Ignore empty values when parsing headers" (#1645)
-* Don't add the sampling priority header if empty (other overload) (#1649)
+* Don't add the sampling priority header if empty (#1644, #1649)
 
 ## Fixes
-* Update package versions + fix MSTest (#1604)
+* Fix CIApp in latest version of MSTest (#1604)
 * Add fallback for logs injection for NLog versions < 4.1.0 (#1607)
 * Fix PInvokes to the native lib on non windows os. (#1612)
 * Add fix for log injection with log4net.Ext.Json versions < 2.0.9.1 (#1615)
 * Fix CIApp Feature Tracking (#1616)
 * Fix crank project reference (#1617)
-* don't include code analyzer when publishing projects (#1619)
 * Fixes the dd-trace exit code always returning 0 (#1621)
 * Preserve the task cancelled state when using calltarget instrumentation (#1634)
-* Fixes the native logger path issue (#1635)
+* Fix the native logger path issue (#1635)
 * Add better error handling for the Header Tags feature accessing System.Web.HttpResponse.Headers (#1641)
 
 ## Build / Test
-* Add analyzer project + ThreadAbortAnlayzer to detect inifinte loops on ThreadAbortException (#1325)
+* Add analyzer project + ThreadAbortAnlayzer to detect inifinte loops on ThreadAbortException (#1325, #1619)
 * Add ASP.NET Core on IIS Express tests (#1582)
 * Split Windows regression tests and integration tests to save drive space (#1586)
 * CIApp - Add support to add custom env-vars from dd-trace wrapper (#1594)
