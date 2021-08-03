@@ -387,7 +387,7 @@ stages:
         targetPath: 'build_data/results/'
       continueOnError: true
 
-    - publish: $(ProgramData)\Datadog .NET Tracer\logs
+    - publish: build_data\logs\
       displayName: Uploading integration_tests_windows tracer logs
       artifact: integration_tests_windows_tracer_logs_$(platform)_$(target)
       condition: succeededOrFailed()
@@ -463,7 +463,7 @@ stages:
         dockerComposeCommand: down
       condition: succeededOrFailed()
 
-    - publish: $(ProgramData)\Datadog .NET Tracer\logs
+    - publish: build_data\logs\
       displayName: Uploading integration_tests_windows_iis tracer logs
       artifact: integration_tests_windows_iis_tracer_logs_$(platform)
       condition: succeededOrFailed()
