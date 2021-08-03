@@ -51,10 +51,10 @@ rm calltarget_linux.json
 
 
 
-crank --config Samples.AspNetCoreSimpleController.yml --scenario baseline --profile linux_arm64 --output baseline_linux_arm64.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=baseline --property profile=linux_arm64 --property arch=arm64
+crank --config Samples.AspNetCoreSimpleController.yml --scenario baseline --profile linux_arm64 --output baseline_linux_arm64.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=baseline --property profile=linux_arm64 --property arch=arm64 --variable commit_hash=$commit_sha
 dd-trace --crank-import="baseline_linux_arm64.json"
 rm baseline_linux_arm64.json
 
-crank --config Samples.AspNetCoreSimpleController.yml --scenario calltarget --profile linux_arm64 --output calltarget_linux_arm64.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=calltarget --property profile=linux_arm64 --property arch=arm64
+crank --config Samples.AspNetCoreSimpleController.yml --scenario calltarget --profile linux_arm64 --output calltarget_linux_arm64.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=calltarget --property profile=linux_arm64 --property arch=arm64 --variable commit_hash=$commit_sha
 dd-trace --crank-import="calltarget_linux_arm64.json"
 rm calltarget_linux_arm64.json
