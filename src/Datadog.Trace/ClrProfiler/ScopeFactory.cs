@@ -87,6 +87,20 @@ namespace Datadog.Trace.ClrProfiler
         /// <param name="spanId">The span ID</param>
         /// <returns>A new pre-populated scope.</returns>
         public static Scope CreateOutboundHttpScope(Tracer tracer, string httpMethod, Uri requestUri, IntegrationInfo integrationId, out HttpTags tags, ulong? spanId = null)
+            => CreateOutboundHttpScope(tracer, httpMethod, requestUri, integrationId, out tags, spanId, startTime: null);
+
+        /// <summary>
+        /// Creates a scope for outbound http requests and populates some common details.
+        /// </summary>
+        /// <param name="tracer">The tracer instance to use to create the new scope.</param>
+        /// <param name="httpMethod">The HTTP method used by the request.</param>
+        /// <param name="requestUri">The URI requested by the request.</param>
+        /// <param name="integrationId">The id of the integration creating this scope.</param>
+        /// <param name="tags">The tags associated to the scope</param>
+        /// <param name="spanId">The span ID</param>
+        /// <param name="startTime">The start time that should be applied to the span</param>
+        /// <returns>A new pre-populated scope.</returns>
+        internal static Scope CreateOutboundHttpScope(Tracer tracer, string httpMethod, Uri requestUri, IntegrationInfo integrationId, out HttpTags tags, ulong? spanId, DateTimeOffset? startTime)
         {
             tags = null;
 
@@ -114,7 +128,7 @@ namespace Datadog.Trace.ClrProfiler
                 tags = new HttpTags();
 
                 string serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
-                scope = tracer.StartActiveWithTags(OperationName, tags: tags, serviceName: serviceName, spanId: spanId);
+                scope = tracer.StartActiveWithTags(OperationName, tags: tags, serviceName: serviceName, spanId: spanId, startTime: startTime);
 
                 var span = scope.Span;
 
