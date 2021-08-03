@@ -2,6 +2,9 @@ imports:
   - https://raw.githubusercontent.com/dotnet/crank/main/src/Microsoft.Crank.Jobs.Bombardier/bombardier.yml
   - /var/opt/crank/variables.yml
 
+variables:
+  commit_hash: 0
+
 jobs:
   server:
     source:
@@ -73,20 +76,20 @@ profiles:
           - "{{ windowsEndpoint }}"
         environmentVariables:
           COR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
-          COR_PROFILER_PATH: "{{ windowsProfilerPath }}\\Datadog.Trace.ClrProfiler.Native.dll"
+          COR_PROFILER_PATH: "{{ windowsProfilerPath }}\\{{ commit_hash }}\\Datadog.Trace.ClrProfiler.Native.dll"
           CORECLR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
-          CORECLR_PROFILER_PATH: "{{ windowsProfilerPath }}\\Datadog.Trace.ClrProfiler.Native.dll"
-          DD_DOTNET_TRACER_HOME: "{{ windowsProfilerPath }}"
-          DD_INTEGRATIONS: "{{ windowsProfilerPath }}\\integrations.json"
+          CORECLR_PROFILER_PATH: "{{ windowsProfilerPath }}\\{{ commit_hash }}\\Datadog.Trace.ClrProfiler.Native.dll"
+          DD_DOTNET_TRACER_HOME: "{{ windowsProfilerPath }}\\{{ commit_hash }}"
+          DD_INTEGRATIONS: "{{ windowsProfilerPath }}\\{{ commit_hash }}\\integrations.json"
           DD_AGENT_HOST: "{{ controllerIp }}"
           DD_TRACE_DEBUG: 0
         options:
           requiredOperatingSystem: windows
           requiredArchitecture: x64
           buildFiles:
-          - "../../integrations.json;{{ windowsProfilerPath }}"
-          - "../../Datadog.Trace.ClrProfiler.Native.dll;{{ windowsProfilerPath }}"
-          - "../../Datadog.Trace.ClrProfiler.Native.pdb;{{ windowsProfilerPath }}"
+          - "../../integrations.json;{{ windowsProfilerPath }}\\{{ commit_hash }}"
+          - "../../Datadog.Trace.ClrProfiler.Native.dll;{{ windowsProfilerPath }}\\{{ commit_hash }}"
+          - "../../Datadog.Trace.ClrProfiler.Native.pdb;{{ windowsProfilerPath }}\\{{ commit_hash }}"
       load:
         endpoints:
           - http://localhost:5010
