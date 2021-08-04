@@ -37,6 +37,7 @@ jobs:
         run: .\build.ps1 UpdateIntegrationsJson UpdateVersion UpdateMsiContents
 
       - name: "Output version"
+        id: versions
         run: .\build.ps1 OutputCurrentVersionToGitHub
 
       - name: "Rename vNext milestone"
