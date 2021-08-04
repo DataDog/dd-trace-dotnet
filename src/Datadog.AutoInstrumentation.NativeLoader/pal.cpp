@@ -96,6 +96,13 @@ namespace datadog::shared::nativeloader
     {
         Debug("GetEnvironmentValue: ", name);
 
+        /*
+        Environment variables set with SetEnvironmentVariable() are not seen by
+        getenv() (although GetEnvironmentVariable() sees changes done by
+        putenv()), and since SetEnvironmentVariable() is preferable to putenv()
+        because the former is thread-safe we use different apis for Windows implementation.
+        */
+
 #ifdef _WIN32
         const size_t max_buf_size = 4096;
         WSTRING buf(max_buf_size, 0);
@@ -116,6 +123,13 @@ namespace datadog::shared::nativeloader
     bool SetEnvironmentValue(const WSTRING& name, const WSTRING& value)
     {
         Debug("SetEnvironmentValue: ", name, "=", value);
+
+        /*
+        Environment variables set with SetEnvironmentVariable() are not seen by
+        getenv() (although GetEnvironmentVariable() sees changes done by
+        putenv()), and since SetEnvironmentVariable() is preferable to putenv()
+        because the former is thread-safe we use different apis for Windows implementation.
+        */
 
 #ifdef _WIN32
         return SetEnvironmentVariable(Trim(name).c_str(), value.c_str());
