@@ -1,3 +1,4 @@
+# Workaround from https://github.com/docker/for-win/issues/1976#issuecomment-585423014
 $hostsFile = "C:\Windows\System32\drivers\etc\hosts"
 
 try {

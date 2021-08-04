@@ -1,5 +1,5 @@
 #See https://aka.ms/containerfastmode to understand how Visual Studio uses this Dockerfile to build your images for faster debugging.
-
+# Use Windows Server Core as Nano Server does not run x86 applications. See https://github.com/dotnet/dotnet-docker/issues/2210#issuecomment-689746778
 FROM mcr.microsoft.com/dotnet/runtime:5.0-windowsservercore-ltsc2019 AS base
 WORKDIR /app
 
