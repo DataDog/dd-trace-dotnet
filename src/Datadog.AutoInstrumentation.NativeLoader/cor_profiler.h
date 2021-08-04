@@ -6,13 +6,13 @@
 namespace datadog::shared::nativeloader
 {
 
-    class DynamicDispatcher;
+    class IDynamicDispatcher;
 
     class CorProfiler : public ICorProfilerCallback10
     {
     private:
         std::atomic<int> m_refCount;
-        DynamicDispatcher* m_dispatcher;
+        IDynamicDispatcher* m_dispatcher;
         ICorProfilerCallback10* m_cpProfiler;
         ICorProfilerCallback10* m_tracerProfiler;
         ICorProfilerCallback10* m_customProfiler;
@@ -21,7 +21,7 @@ namespace datadog::shared::nativeloader
         void InspectRuntimeVersion(ICorProfilerInfo4* pCorProfilerInfo);
 
     public:
-        CorProfiler(DynamicDispatcher* dispatcher);
+        CorProfiler(IDynamicDispatcher* dispatcher);
         ~CorProfiler();
 
         HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override;

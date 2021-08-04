@@ -14,9 +14,9 @@ namespace datadog::shared::nativeloader
     typedef HRESULT(STDMETHODCALLTYPE* dllCanUnloadNow)();
 
     //
-    // DynamicInstance base class
+    // IDynamicInstance interface
     //
-    class DynamicInstance
+    class IDynamicInstance
     {
     public:
         virtual HRESULT LoadClassFactory(REFIID riid) = 0;
@@ -28,9 +28,9 @@ namespace datadog::shared::nativeloader
     };
 
     //
-    // Default implementation of the DynamicInstance
+    // Default implementation of the IDynamicInstance
     //
-    class DynamicInstanceImpl : public DynamicInstance
+    class DynamicInstanceImpl : public IDynamicInstance
     {
     protected:
         std::string m_filepath;

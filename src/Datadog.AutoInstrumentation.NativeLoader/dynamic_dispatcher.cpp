@@ -314,17 +314,17 @@ namespace datadog::shared::nativeloader
         return result;
     }
 
-    DynamicInstance* DynamicDispatcherImpl::GetContinuousProfilerInstance()
+    IDynamicInstance* DynamicDispatcherImpl::GetContinuousProfilerInstance()
     {
         return m_continuousProfilerInstance.get();
     }
 
-    DynamicInstance* DynamicDispatcherImpl::GetTracerInstance()
+    IDynamicInstance* DynamicDispatcherImpl::GetTracerInstance()
     {
         return m_tracerInstance.get();
     }
 
-    DynamicInstance* DynamicDispatcherImpl::GetCustomInstance()
+    IDynamicInstance* DynamicDispatcherImpl::GetCustomInstance()
     {
         return m_customInstance.get();
     }

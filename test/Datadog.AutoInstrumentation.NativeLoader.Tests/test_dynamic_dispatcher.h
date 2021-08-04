@@ -11,17 +11,17 @@ public:
         // empty
     }
 
-    void SetContinuousProfilerInstance(std::unique_ptr<DynamicInstance> dynInstance)
+    void SetContinuousProfilerInstance(std::unique_ptr<IDynamicInstance> dynInstance)
     {
         m_continuousProfilerInstance = std::move(dynInstance);
     }
 
-    void SetTracerInstance(std::unique_ptr<DynamicInstance> dynInstance)
+    void SetTracerInstance(std::unique_ptr<IDynamicInstance> dynInstance)
     {
         m_tracerInstance = std::move(dynInstance);
     }
 
-    void SetCustomInstance(std::unique_ptr<DynamicInstance> dynInstance)
+    void SetCustomInstance(std::unique_ptr<IDynamicInstance> dynInstance)
     {
         m_customInstance = std::move(dynInstance);
     }

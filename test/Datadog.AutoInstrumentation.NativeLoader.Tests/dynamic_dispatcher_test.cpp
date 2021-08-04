@@ -5,9 +5,9 @@
 TEST(dynamic_dispatcher, CreateInstance)
 {
     TestDynamicDispatcherImpl* test_dispatcher = new TestDynamicDispatcherImpl();
-    test_dispatcher->SetTracerInstance(std::unique_ptr<DynamicInstance>(CreateTestDynamicInstance(true)));
+    test_dispatcher->SetTracerInstance(std::unique_ptr<IDynamicInstance>(CreateTestDynamicInstance(true)));
 
-    DynamicDispatcher* dispatcher = test_dispatcher;
+    IDynamicDispatcher* dispatcher = test_dispatcher;
 
     HRESULT result = dispatcher->LoadClassFactory(datadog::shared::nativeloader::IID_IUnknown);
     EXPECT_HRESULT_SUCCEEDED(result);
@@ -16,7 +16,7 @@ TEST(dynamic_dispatcher, CreateInstance)
     EXPECT_HRESULT_SUCCEEDED(result);
 
 #if _WINDOWS
-    DynamicInstance* instance = dispatcher->GetTracerInstance();
+    IDynamicInstance* instance = dispatcher->GetTracerInstance();
     ICorProfilerCallback10* profiler = instance->GetProfilerCallback();
     EXPECT_NE(nullptr, profiler);
 #else

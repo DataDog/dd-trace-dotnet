@@ -8,17 +8,17 @@
 
 namespace datadog::shared::nativeloader
 {
-class DynamicDispatcher;
+class IDynamicDispatcher;
 } // namespace datadog::shared::nativeloader
 
 class CorProfilerClassFactory : public IClassFactory
 {
 private:
     std::atomic<int> m_refCount;
-    datadog::shared::nativeloader::DynamicDispatcher* m_dispatcher;
+    datadog::shared::nativeloader::IDynamicDispatcher* m_dispatcher;
 
 public:
-    CorProfilerClassFactory(datadog::shared::nativeloader::DynamicDispatcher* dispatcher);
+    CorProfilerClassFactory(datadog::shared::nativeloader::IDynamicDispatcher* dispatcher);
     virtual ~CorProfilerClassFactory();
     HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override;
     ULONG STDMETHODCALLTYPE AddRef(void) override;

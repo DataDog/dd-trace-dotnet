@@ -10,29 +10,29 @@
 namespace datadog::shared::nativeloader
 {
     //
-    // DynamicDispatcher base class
+    // IDynamicDispatcher interface
     //
-    class DynamicDispatcher
+    class IDynamicDispatcher
     {
     public:
         virtual void LoadConfiguration(std::string configFilePath) = 0;
         virtual HRESULT LoadClassFactory(REFIID riid) = 0;
         virtual HRESULT LoadInstance(IUnknown* pUnkOuter, REFIID riid) = 0;
         virtual HRESULT STDMETHODCALLTYPE DllCanUnloadNow() = 0;
-        virtual DynamicInstance* GetContinuousProfilerInstance() = 0;
-        virtual DynamicInstance* GetTracerInstance() = 0;
-        virtual DynamicInstance* GetCustomInstance() = 0;
+        virtual IDynamicInstance* GetContinuousProfilerInstance() = 0;
+        virtual IDynamicInstance* GetTracerInstance() = 0;
+        virtual IDynamicInstance* GetCustomInstance() = 0;
     };
 
     //
-    // Default implementation of the DynamicDispatcher
+    // Default implementation of the IDynamicDispatcher
     //
-    class DynamicDispatcherImpl : public DynamicDispatcher
+    class DynamicDispatcherImpl : public IDynamicDispatcher
     {
     protected:
-        std::unique_ptr<DynamicInstance> m_continuousProfilerInstance;
-        std::unique_ptr<DynamicInstance> m_tracerInstance;
-        std::unique_ptr<DynamicInstance> m_customInstance;
+        std::unique_ptr<IDynamicInstance> m_continuousProfilerInstance;
+        std::unique_ptr<IDynamicInstance> m_tracerInstance;
+        std::unique_ptr<IDynamicInstance> m_customInstance;
 
     public:
         DynamicDispatcherImpl();
@@ -40,9 +40,9 @@ namespace datadog::shared::nativeloader
         virtual HRESULT LoadClassFactory(REFIID riid) override;
         virtual HRESULT LoadInstance(IUnknown* pUnkOuter, REFIID riid) override;
         virtual HRESULT STDMETHODCALLTYPE DllCanUnloadNow() override;
-        virtual DynamicInstance* GetContinuousProfilerInstance() override;
-        virtual DynamicInstance* GetTracerInstance() override;
-        virtual DynamicInstance* GetCustomInstance() override;
+        virtual IDynamicInstance* GetContinuousProfilerInstance() override;
+        virtual IDynamicInstance* GetTracerInstance() override;
+        virtual IDynamicInstance* GetCustomInstance() override;
     };
 
 } // namespace datadog::shared::nativeloader

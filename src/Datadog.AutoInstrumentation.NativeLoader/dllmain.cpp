@@ -7,7 +7,7 @@
 
 using namespace datadog::shared::nativeloader;
 
-DynamicDispatcher* dispatcher;
+IDynamicDispatcher* dispatcher;
 
 extern "C"
 {

@@ -44,7 +44,7 @@ namespace datadog::shared::nativeloader
     }                                                                                                                  \
     return gHR;
 
-    CorProfiler::CorProfiler(DynamicDispatcher* dispatcher) :
+    CorProfiler::CorProfiler(IDynamicDispatcher* dispatcher) :
         m_refCount(0), m_dispatcher(dispatcher), m_cpProfiler(nullptr), m_tracerProfiler(nullptr), m_customProfiler(nullptr)
     {
         Debug("CorProfiler::.ctor");
@@ -110,17 +110,17 @@ namespace datadog::shared::nativeloader
         {
             return E_FAIL;
         }
-        DynamicInstance* cpInstance = m_dispatcher->GetContinuousProfilerInstance();
+        IDynamicInstance* cpInstance = m_dispatcher->GetContinuousProfilerInstance();
         if (cpInstance != nullptr)
         {
             m_cpProfiler = cpInstance->GetProfilerCallback();
         }
-        DynamicInstance* tracerInstance = m_dispatcher->GetTracerInstance();
+        IDynamicInstance* tracerInstance = m_dispatcher->GetTracerInstance();
         if (tracerInstance != nullptr)
         {
             m_tracerProfiler = tracerInstance->GetProfilerCallback();
         }
-        DynamicInstance* customInstance = m_dispatcher->GetCustomInstance();
+        IDynamicInstance* customInstance = m_dispatcher->GetCustomInstance();
         if (customInstance != nullptr)
         {
             m_customProfiler = customInstance->GetProfilerCallback();
