@@ -2,21 +2,21 @@
 
 From this directory, here are the steps to building and running the sample applications. By default, the containers are sending traces to `host.docker.internal`. If the agent is elsewhere (e.g. a Datadog Agent container), set the environment variable `DD_AGENT_HOST` in the docker run command.
 
+## Alpine Linux example
+```
+docker build -t netcoreapp -f Dockerfile.alpine .
+docker run -it --rm --name myapp netcoreapp
+```
+
 ## Linux example
 ```
-docker build -t netcoreapp -f Dockerfile .
+docker build -t netcoreapp -f Dockerfile.linux .
 docker run -it --rm --name myapp netcoreapp
 ```
 
 ## Linux ARM64 example
 ```
-docker build -t netcoreapp -f Dockerfile.linuxarm64 .
-docker run -it --rm --name myapp netcoreapp
-```
-
-## Alpine Linux example
-```
-docker build -t netcoreapp -f Dockerfile.alpine .
+docker build -t netcoreapp -f Dockerfile.linux-arm64 .
 docker run -it --rm --name myapp netcoreapp
 ```
 
@@ -24,7 +24,7 @@ docker run -it --rm --name myapp netcoreapp
 Note: This requires running on Windows and switching Docker Desktop to Windows containers
 
 ```
-docker build -t netcoreapp -f Dockerfile.windows-netcore64bit .
+docker build -t netcoreapp -f Dockerfile.windows-netcore-x64 .
 docker run -it --rm --name myapp netcoreapp
 ```
 
@@ -32,7 +32,7 @@ docker run -it --rm --name myapp netcoreapp
 Note: This requires running on Windows and switching Docker Desktop to Windows containers
 
 ```
-docker build -t netcoreapp -f Dockerfile.windows-netcore32bit .
+docker build -t netcoreapp -f Dockerfile.windows-netcore-x86 .
 docker run -it --rm --name myapp netcoreapp
 ```
 
@@ -40,7 +40,7 @@ docker run -it --rm --name myapp netcoreapp
 Note: This requires running on Windows and switching Docker Desktop to Windows containers
 
 ```
-docker build -t netframeworkapp -f Dockerfile.netframework64bit .
+docker build -t netframeworkapp -f Dockerfile.netframework-x64 .
 docker run -it --rm --name myapp netframeworkapp
 ```
 
@@ -48,7 +48,7 @@ docker run -it --rm --name myapp netframeworkapp
 Note: This requires running on Windows and switching Docker Desktop to Windows containers
 
 ```
-docker build -t netframeworkapp -f Dockerfile.netframework32bit .
+docker build -t netframeworkapp -f Dockerfile.netframework-x86 .
 docker run -it --rm --name myapp netframeworkapp
 ```
 
