@@ -33,16 +33,16 @@ namespace datadog::shared::nativeloader
         }
 
         // Check if the function pointer needs to be loaded
-        if (m_getClassObjectPtr == nullptr)
+        if (m_dllGetClassObject == nullptr)
         {
-            m_getClassObjectPtr =
-                static_cast<dllGetClassObjectPtr>(GetExternalFunction(m_instance, "DllGetClassObject"));
+            m_dllGetClassObject =
+                static_cast<DllGetClassObjectDelegate_t>(GetExternalFunction(m_instance, "DllGetClassObject"));
         }
 
         // If we have the function pointer we call the function
-        if (m_getClassObjectPtr != nullptr)
+        if (m_dllGetClassObject != nullptr)
         {
-            return m_getClassObjectPtr(m_clsid, riid, ppv);
+            return m_dllGetClassObject(m_clsid, riid, ppv);
         }
 
         // The function cannot be loaded.
@@ -60,8 +60,8 @@ namespace datadog::shared::nativeloader
         m_clsid = guid_parse::make_guid(clsid);
         m_loaded = false;
         m_instance = nullptr;
-        m_getClassObjectPtr = nullptr;
-        m_canUnloadNow = nullptr;
+        m_dllGetClassObject = nullptr;
+        m_dllCanUnloadNow = nullptr;
         m_classFactory = nullptr;
         m_corProfilerCallback = nullptr;
     }
@@ -70,8 +70,8 @@ namespace datadog::shared::nativeloader
     {
         m_corProfilerCallback = nullptr;
         m_classFactory = nullptr;
-        m_canUnloadNow = nullptr;
-        m_getClassObjectPtr = nullptr;
+        m_dllCanUnloadNow = nullptr;
+        m_dllGetClassObject = nullptr;
         m_loaded = false;
 
         if (m_instance != nullptr)
@@ -134,15 +134,16 @@ namespace datadog::shared::nativeloader
         }
 
         // Check if the function pointer needs to be loaded
-        if (m_canUnloadNow == nullptr)
+        if (m_dllCanUnloadNow == nullptr)
         {
-            m_canUnloadNow = static_cast<dllCanUnloadNow>(GetExternalFunction(m_instance, "DllCanUnloadNow"));
+            m_dllCanUnloadNow =
+                static_cast<DllCanUnloadNowDelegate_t>(GetExternalFunction(m_instance, "DllCanUnloadNow"));
         }
 
         // If we have the function pointer we call the function
-        if (m_canUnloadNow != nullptr)
+        if (m_dllCanUnloadNow != nullptr)
         {
-            return m_canUnloadNow();
+            return m_dllCanUnloadNow();
         }
 
         // The function cannot be loaded.

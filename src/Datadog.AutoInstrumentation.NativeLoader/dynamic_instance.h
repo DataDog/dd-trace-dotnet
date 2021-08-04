@@ -10,8 +10,8 @@ namespace datadog::shared::nativeloader
 {
     const IID IID_IUnknown = {0x00000000, 0x0000, 0x0000, {0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}};
 
-    typedef HRESULT(STDMETHODCALLTYPE* dllGetClassObjectPtr)(REFCLSID, REFIID, LPVOID*);
-    typedef HRESULT(STDMETHODCALLTYPE* dllCanUnloadNow)();
+    typedef HRESULT(STDMETHODCALLTYPE* DllGetClassObjectDelegate_t)(REFCLSID, REFIID, LPVOID*);
+    typedef HRESULT(STDMETHODCALLTYPE* DllCanUnloadNowDelegate_t)();
 
     //
     // IDynamicInstance interface
@@ -38,8 +38,8 @@ namespace datadog::shared::nativeloader
         IID m_clsid = IID_IUnknown;
         bool m_loaded;
         void* m_instance;
-        dllGetClassObjectPtr m_getClassObjectPtr;
-        dllCanUnloadNow m_canUnloadNow;
+        DllGetClassObjectDelegate_t m_dllGetClassObject;
+        DllCanUnloadNowDelegate_t m_dllCanUnloadNow;
         IClassFactory* m_classFactory;
         ICorProfilerCallback10* m_corProfilerCallback;
 
