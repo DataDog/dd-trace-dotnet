@@ -7,7 +7,7 @@
 using namespace datadog::shared::nativeloader;
 
 const std::string conf_filename = "loader.conf";
-const WSTRING cfg_filepath_env = WStr("DD_PROXY_CONFIGFILE");
+const WSTRING cfg_filepath_env = WStr("DD_NATIVELOADER_CONFIGFILE");
 
 // Gets the profiler path
 static WSTRING GetProfilerPath()
