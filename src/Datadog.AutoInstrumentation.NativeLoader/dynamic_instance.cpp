@@ -56,7 +56,6 @@ namespace datadog::shared::nativeloader
     DynamicInstanceImpl::DynamicInstanceImpl(std::string filePath, std::string clsid)
     {
         m_filepath = filePath;
-        m_clsid_string = clsid;
         m_clsid = guid_parse::make_guid(clsid);
         m_loaded = false;
         m_instance = nullptr;
@@ -166,11 +165,6 @@ namespace datadog::shared::nativeloader
     std::string DynamicInstanceImpl::GetFilePath()
     {
         return m_filepath;
-    }
-
-    std::string DynamicInstanceImpl::GetClsId()
-    {
-        return m_clsid_string;
     }
 
 } // namespace datadog::shared::nativeloader

@@ -24,7 +24,6 @@ namespace datadog::shared::nativeloader
         virtual HRESULT STDMETHODCALLTYPE DllCanUnloadNow() = 0;
         virtual ICorProfilerCallback10* GetProfilerCallback() = 0;
         virtual std::string GetFilePath() = 0;
-        virtual std::string GetClsId() = 0;
     };
 
     //
@@ -34,7 +33,6 @@ namespace datadog::shared::nativeloader
     {
     protected:
         std::string m_filepath;
-        std::string m_clsid_string;
         IID m_clsid = IID_IUnknown;
         bool m_loaded;
         void* m_instance;
@@ -54,7 +52,6 @@ namespace datadog::shared::nativeloader
         virtual HRESULT STDMETHODCALLTYPE DllCanUnloadNow() override;
         virtual ICorProfilerCallback10* GetProfilerCallback() override;
         virtual std::string GetFilePath() override;
-        virtual std::string GetClsId() override;
     };
 
 } // namespace datadog::shared::nativeloader

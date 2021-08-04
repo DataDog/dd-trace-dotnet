@@ -6,7 +6,6 @@ TEST(dynamic_instance, CreateInstance)
     IDynamicInstance* instance = CreateTestDynamicInstance(true);
 
     EXPECT_EQ(TestDynamicInstanceFilePath, instance->GetFilePath());
-    EXPECT_EQ(TestDynamicInstanceIid, instance->GetClsId());
 
     HRESULT result = instance->LoadClassFactory(datadog::shared::nativeloader::IID_IUnknown);
     EXPECT_HRESULT_SUCCEEDED(result);
