@@ -1,4 +1,6 @@
 #!/bin/bash
+set -eo pipefail
+
 sha="$(git rev-parse HEAD)"
 echo "sha=$sha"
 echo "SYSTEM_PULLREQUEST_SOURCECOMMITID=$SYSTEM_PULLREQUEST_SOURCECOMMITID"
