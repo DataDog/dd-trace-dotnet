@@ -140,23 +140,27 @@ namespace datadog::shared::nativeloader
                         {
                             Debug("[", type, "] Creating a new DynamicInstance object");
 
+                            WSTRING env_key;
+
                             if (type == "TRACER")
                             {
                                 this->m_tracerInstance =
                                     std::make_unique<DynamicInstanceImpl>(absoluteFilepathValue, idValue);
+                                env_key = WStr("DD_TRACER_PROFILER_PATH");
                             }
                             else if (type == "PROFILER")
                             {
                                 this->m_continuousProfilerInstance =
                                     std::make_unique<DynamicInstanceImpl>(absoluteFilepathValue, idValue);
+                                env_key = WStr("DD_CONTINUOUSPROFILER_PROFILER_PATH");
                             }
                             else if (type == "CUSTOM")
                             {
                                 this->m_customInstance =
                                     std::make_unique<DynamicInstanceImpl>(absoluteFilepathValue, idValue);
+                                env_key = WStr("DD_CUSTOM_PROFILER_PATH");
                             }
 
-                            WSTRING env_key = WStr("PROFID_") + ToWSTRING(idValue);
                             WSTRING env_value = ToWSTRING(absoluteFilepathValue);
                             Debug("DynamicDispatcherImpl::LoadConfiguration: [", type, "] Setting environment variable: ", env_key, "=", env_value);
                             bool envVal = SetEnvironmentValue(env_key, env_value);

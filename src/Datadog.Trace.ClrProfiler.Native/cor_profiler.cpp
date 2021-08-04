@@ -2240,9 +2240,8 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
 #ifdef _WIN32
     WSTRING native_profiler_file = WStr("DATADOG.TRACE.CLRPROFILER.NATIVE.DLL");
 #else // _WIN32
-    WSTRING native_profiler_file = GetEnvironmentValue(WStr("PROFID_{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"));
-    Logger::Debug("GenerateVoidILStartupMethod: PROFID_{846F5F1C-F9AE-4B07-969E-05C26BC060D8} defined as: ", 
-                  native_profiler_file);
+    WSTRING native_profiler_file = GetEnvironmentValue(WStr("DD_TRACER_PROFILER_PATH"));
+    Logger::Debug("GenerateVoidILStartupMethod: DD_TRACER_PROFILER_PATH defined as: ", native_profiler_file);
 
     if (native_profiler_file == WStr(""))
     {
