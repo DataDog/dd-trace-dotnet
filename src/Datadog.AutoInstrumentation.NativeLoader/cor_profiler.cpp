@@ -170,6 +170,7 @@ namespace datadog::shared::nativeloader
 
                     Debug("CorProfiler::Initialize: *LocalMaskLow: ", local_mask_low);
                     Debug("CorProfiler::Initialize: *LocalMaskHi : ", local_mask_hi);
+                    Info("CorProfiler::Initialize: Continuous Profiler initialized successfully.");
                 }
                 else
                 {
@@ -203,6 +204,7 @@ namespace datadog::shared::nativeloader
 
                     Debug("CorProfiler::Initialize: *LocalMaskLow: ", local_mask_low);
                     Debug("CorProfiler::Initialize: *LocalMaskHi : ", local_mask_hi);
+                    Info("CorProfiler::Initialize: Tracer Profiler initialized successfully.");
                 }
                 else
                 {
@@ -236,6 +238,7 @@ namespace datadog::shared::nativeloader
 
                     Debug("CorProfiler::Initialize: *LocalMaskLow: ", local_mask_low);
                     Debug("CorProfiler::Initialize: *LocalMaskHi : ", local_mask_hi);
+                    Info("CorProfiler::Initialize: Custom Profiler initialized successfully.");
                 }
                 else
                 {
