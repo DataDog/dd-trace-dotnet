@@ -40,7 +40,7 @@ docker run -it --rm --name myapp netcoreapp
 Note: This requires running on Windows and switching Docker Desktop to Windows containers
 
 ```
-docker build -t netframeworkapp -f Dockerfile.netframework-x64 .
+docker build -t netframeworkapp -f Dockerfile.windows-netframework-x64 .
 docker run -it --rm --name myapp netframeworkapp
 ```
 
@@ -48,7 +48,7 @@ docker run -it --rm --name myapp netframeworkapp
 Note: This requires running on Windows and switching Docker Desktop to Windows containers
 
 ```
-docker build -t netframeworkapp -f Dockerfile.netframework-x86 .
+docker build -t netframeworkapp -f Dockerfile.windows-netframework-x86 .
 docker run -it --rm --name myapp netframeworkapp
 ```
 
