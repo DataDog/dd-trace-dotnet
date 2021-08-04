@@ -191,6 +191,8 @@ namespace datadog::shared::nativeloader
 
     HRESULT DynamicDispatcherImpl::LoadClassFactory(REFIID riid)
     {
+        HRESULT GHR = S_OK;
+
         if (m_continuousProfilerInstance != nullptr)
         {
             HRESULT result = m_continuousProfilerInstance->LoadClassFactory(riid);
@@ -198,7 +200,10 @@ namespace datadog::shared::nativeloader
             {
                 Warn("DynamicDispatcherImpl::LoadClassFactory: Error trying to load continuous profiler class factory in: ",
                      m_continuousProfilerInstance->GetFilePath());
-                return result;
+
+                // If we cannot load the class factory we release the instance.
+                m_continuousProfilerInstance.release();
+                GHR = result;
             }
         }
 
@@ -208,7 +213,10 @@ namespace datadog::shared::nativeloader
             if (FAILED(result))
             {
                 Warn("DynamicDispatcherImpl::LoadClassFactory: Error trying to load tracer class factory in: ", m_tracerInstance->GetFilePath());
-                return result;
+
+                // If we cannot load the class factory we release the instance.
+                m_tracerInstance.release();
+                GHR = result;
             }
         }
 
@@ -218,15 +226,20 @@ namespace datadog::shared::nativeloader
             if (FAILED(result))
             {
                 Warn("DynamicDispatcherImpl::LoadClassFactory: Error trying to load custom class factory in: ", m_customInstance->GetFilePath());
-                return result;
+
+                // If we cannot load the class factory we release the instance.
+                m_customInstance.release();
+                GHR = result;
             }
         }
 
-        return S_OK;
+        return GHR;
     }
 
     HRESULT DynamicDispatcherImpl::LoadInstance(IUnknown* pUnkOuter, REFIID riid)
     {
+        HRESULT GHR = S_OK;
+
         if (m_continuousProfilerInstance != nullptr)
         {
             HRESULT result = m_continuousProfilerInstance->LoadInstance(pUnkOuter, riid);
@@ -234,7 +247,10 @@ namespace datadog::shared::nativeloader
             {
                 Warn("DynamicDispatcherImpl::LoadInstance: Error trying to load the continuous profiler instance in: ",
                      m_continuousProfilerInstance->GetFilePath());
-                return result;
+
+                // If we cannot load the class factory we release the instance.
+                m_continuousProfilerInstance.release();
+                GHR = result;
             }
         }
 
@@ -244,7 +260,10 @@ namespace datadog::shared::nativeloader
             if (FAILED(result))
             {
                 Warn("DynamicDispatcherImpl::LoadInstance: Error trying to load the tracer instance in: ", m_tracerInstance->GetFilePath());
-                return result;
+
+                // If we cannot load the class factory we release the instance.
+                m_tracerInstance.release();
+                GHR = result;
             }
         }
 
@@ -254,11 +273,14 @@ namespace datadog::shared::nativeloader
             if (FAILED(result))
             {
                 Warn("DynamicDispatcherImpl::LoadInstance: Error trying to load the custom instance in: ", m_customInstance->GetFilePath());
-                return result;
+
+                // If we cannot load the class factory we release the instance.
+                m_customInstance.release();
+                GHR = result;
             }
         }
 
-        return S_OK;
+        return GHR;
     }
 
     HRESULT STDMETHODCALLTYPE DynamicDispatcherImpl::DllCanUnloadNow()

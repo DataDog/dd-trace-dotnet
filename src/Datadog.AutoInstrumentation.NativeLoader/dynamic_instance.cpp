@@ -68,8 +68,16 @@ namespace datadog::shared::nativeloader
 
     DynamicInstanceImpl::~DynamicInstanceImpl()
     {
-        m_corProfilerCallback = nullptr;
-        m_classFactory = nullptr;
+        if (m_corProfilerCallback != nullptr)
+        {
+            delete m_corProfilerCallback;
+            m_corProfilerCallback = nullptr;
+        }
+        if (m_classFactory != nullptr)
+        {
+            delete m_classFactory;
+            m_classFactory = nullptr;
+        }
         m_dllCanUnloadNow = nullptr;
         m_dllGetClassObject = nullptr;
         m_loaded = false;

@@ -23,12 +23,16 @@ CorProfilerClassFactory::~CorProfilerClassFactory()
 HRESULT STDMETHODCALLTYPE CorProfilerClassFactory::QueryInterface(REFIID riid, void** ppvObject)
 {
     Debug("CorProfilerClassFactory::QueryInterface");
-    HRESULT res = m_dispatcher->LoadClassFactory(riid);
-
-    if ((riid == IID_IUnknown || riid == IID_IClassFactory) && SUCCEEDED(res))
+    if (riid == IID_IUnknown || riid == IID_IClassFactory)
     {
         *ppvObject = this;
         this->AddRef();
+
+        // We try to load the class factory of all target cor profilers.
+        if (FAILED(m_dispatcher->LoadClassFactory(riid)))
+        {
+            Warn("Error loading all cor profiler class factories.");
+        }
 
         return S_OK;
     }
