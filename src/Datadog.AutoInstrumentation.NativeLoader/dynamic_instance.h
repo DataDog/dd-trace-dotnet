@@ -1,4 +1,5 @@
 #pragma once
+#include <atomic>
 #include <corhlpr.h>
 #include <corprof.h>
 #include <functional>
@@ -36,8 +37,8 @@ namespace datadog::shared::nativeloader
         IID m_clsid = IID_IUnknown;
         bool m_loaded;
         void* m_instance;
-        DllGetClassObjectDelegate_t m_dllGetClassObject;
-        DllCanUnloadNowDelegate_t m_dllCanUnloadNow;
+        std::atomic<DllGetClassObjectDelegate_t> m_dllGetClassObject = {nullptr};
+        std::atomic<DllCanUnloadNowDelegate_t> m_dllCanUnloadNow = {nullptr};
         IClassFactory* m_classFactory;
         ICorProfilerCallback10* m_corProfilerCallback;
 

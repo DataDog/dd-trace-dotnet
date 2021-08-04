@@ -42,7 +42,7 @@ namespace datadog::shared::nativeloader
         // If we have the function pointer we call the function
         if (m_dllGetClassObject != nullptr)
         {
-            return m_dllGetClassObject(m_clsid, riid, ppv);
+            return m_dllGetClassObject.load()(m_clsid, riid, ppv);
         }
 
         // The function cannot be loaded.
@@ -143,14 +143,13 @@ namespace datadog::shared::nativeloader
         // Check if the function pointer needs to be loaded
         if (m_dllCanUnloadNow == nullptr)
         {
-            m_dllCanUnloadNow =
-                static_cast<DllCanUnloadNowDelegate_t>(GetExternalFunction(m_instance, "DllCanUnloadNow"));
+            m_dllCanUnloadNow = static_cast<DllCanUnloadNowDelegate_t>(GetExternalFunction(m_instance, "DllCanUnloadNow"));
         }
 
         // If we have the function pointer we call the function
         if (m_dllCanUnloadNow != nullptr)
         {
-            return m_dllCanUnloadNow();
+            return m_dllCanUnloadNow.load()();
         }
 
         // The function cannot be loaded.
