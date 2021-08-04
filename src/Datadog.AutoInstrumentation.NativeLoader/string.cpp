@@ -95,15 +95,17 @@ WSTRING Trim(const WSTRING& str)
         return WStr("");
     }
 
+    const WSTRING WhiteSpaceChars = WStr(" \f\n\r\t\v");
+
     WSTRING trimmed = str;
 
-    auto lpos = trimmed.find_first_not_of(WStr(" \t"));
+    auto lpos = trimmed.find_first_not_of(WhiteSpaceChars);
     if (lpos != WSTRING::npos && lpos > 0)
     {
         trimmed = trimmed.substr(lpos);
     }
 
-    auto rpos = trimmed.find_last_not_of(WStr(" \t"));
+    auto rpos = trimmed.find_last_not_of(WhiteSpaceChars);
     if (rpos != WSTRING::npos)
     {
         trimmed = trimmed.substr(0, rpos + 1);
@@ -119,15 +121,17 @@ std::string Trim(const std::string& str)
         return "";
     }
 
+    const char* WhiteSpaceChars = " \f\n\r\t\v";
+
     std::string trimmed = str;
 
-    auto lpos = trimmed.find_first_not_of(" \t");
+    auto lpos = trimmed.find_first_not_of(WhiteSpaceChars);
     if (lpos != std::string::npos && lpos > 0)
     {
         trimmed = trimmed.substr(lpos);
     }
 
-    auto rpos = trimmed.find_last_not_of(" \t");
+    auto rpos = trimmed.find_last_not_of(WhiteSpaceChars);
     if (rpos != std::string::npos)
     {
         trimmed = trimmed.substr(0, rpos + 1);
