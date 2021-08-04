@@ -600,7 +600,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         if (foundType)
         {
             // Define the actual profiler file path as a ModuleRef
-            WSTRING native_profiler_file = GetCoreCLRProfilerPath();
+            WSTRING native_profiler_file = GetEnvironmentValue(environment::tracer_profiler_path);
+            if (native_profiler_file.empty())
+            {
+                native_profiler_file = GetCoreCLRProfilerPath();
+            }
             mdModuleRef profiler_ref;
             hr = metadata_emit->DefineModuleRef(native_profiler_file.c_str(), &profiler_ref);
             if (SUCCEEDED(hr))
