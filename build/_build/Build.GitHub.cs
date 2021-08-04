@@ -441,7 +441,6 @@ partial class Build
 
             // buildHttpClient.GetArtifactContentZipAsync doesn't seem to work
             var temporary = new HttpClient();
-            var viewResourceUrl = artifact.Resource.Url;
             var resourceDownloadUrl = artifact.Resource.DownloadUrl;
             var response = await temporary.GetAsync(resourceDownloadUrl);
 
@@ -460,7 +459,7 @@ partial class Build
             UncompressZip(zipPath, OutputDirectory);
 
             Console.WriteLine($"Artifact download complete");
-            Console.WriteLine("::set-output name=artifacts_link::" + viewResourceUrl);
+            Console.WriteLine("::set-output name=artifacts_link::" + resourceDownloadUrl);
             Console.WriteLine("::set-output name=artifacts_path::" + OutputDirectory / artifactName);
         });
 
