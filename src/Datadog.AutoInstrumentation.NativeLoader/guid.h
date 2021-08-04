@@ -3,6 +3,7 @@
 // Written by Alexander Bessonov
 //
 // Licensed under the MIT license.
+// https://gist.github.com/AlexBAV/b58e92d7632bae5d6f5947be455f796f
 //-------------------------------------------------------------------------------------------------------
 
 #pragma once
