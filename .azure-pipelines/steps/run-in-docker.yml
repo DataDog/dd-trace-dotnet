@@ -30,6 +30,7 @@ steps:
         --env NugetPackageDirectory=/project/$(relativeNugetPackageDirectory) \
         --env tracerHome=/project/$(relativeTracerHome) \
         --env artifacts=/project/$(relativeArtifacts) \
+        --env DD_CLR_ENABLE_NGEN=$(DD_CLR_ENABLE_NGEN) \
         dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }} \
         dotnet /build/bin/Debug/_build.dll ${{ parameters.command }}
   displayName: Run '${{ parameters.command }}' in Docker
