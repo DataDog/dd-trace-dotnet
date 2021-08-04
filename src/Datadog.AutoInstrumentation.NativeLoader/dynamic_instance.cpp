@@ -10,7 +10,7 @@ namespace datadog::shared::nativeloader
     // ************************************************************************
 
     //
-    // private
+    // protected
     //
 
     HRESULT DynamicInstanceImpl::EnsureDynamicLibraryIsLoaded()
