@@ -8,17 +8,11 @@ rem Set default values
 set profiler_platform=x64
 set profiler_configuration=Debug
 set start_visual_studio=true
-
-:next_argument
-set arg1=%1
-set devenv_arg1=
+set start_rider=false
 set vs_sln_name=Datadog.Trace.sln
 
-if "%arg1:~-3%" == "sln" (
-    set vs_sln_name=%1
-) else (
-    set devenv_arg1=%1
-)
+:next_argument
+set devenv_arg1=%1
 
 if not "%devenv_arg1%" == "" (
     if /i "%devenv_arg1%" == "Debug" (
@@ -33,6 +27,11 @@ if not "%devenv_arg1%" == "" (
         set start_visual_studio=true
     ) else if /i "%devenv_arg1%" == "vs-" (
         set start_visual_studio=false
+    ) else if /i "%devenv_arg1%" == "rider" (
+        set start_visual_studio=false
+        set start_rider=true
+    )    else if /i "%devenv_arg1:~-3%" == "sln" (
+        set vs_sln_name=%devenv_arg1%
     ) else (
         echo Invalid option: "%devenv_arg1%".
         goto show_usage
@@ -57,7 +56,7 @@ set DD_TRACE_CALLTARGET_ENABLED=0
 set DD_APPSEC_ENABLED=false
 
 rem Don't attach the profiler to these processes
-SET DD_PROFILER_EXCLUDE_PROCESSES=devenv.exe;Microsoft.ServiceHub.Controller.exe;ServiceHub.Host.CLR.exe;ServiceHub.TestWindowStoreHost.exe;ServiceHub.DataWarehouseHost.exe;sqlservr.exe;VBCSCompiler.exe;iisexpresstray.exe;msvsmon.exe;PerfWatson2.exe;ServiceHub.IdentityHost.exe;ServiceHub.VSDetouredHost.exe;ServiceHub.SettingsHost.exe;ServiceHub.Host.CLR.x86.exe;vstest.console.exe;ServiceHub.RoslynCodeAnalysisService32.exe;testhost.x86.exe;MSBuild.exe;ServiceHub.ThreadedWaitDialog.exe
+SET DD_PROFILER_EXCLUDE_PROCESSES=devenv.exe;JetBrains.DPA.Runner.exe;JetBrains.Debugger.Worker.exe;Microsoft.ServiceHub.Controller.exe;ServiceHub.Host.CLR.exe;ServiceHub.TestWindowStoreHost.exe;ServiceHub.DataWarehouseHost.exe;sqlservr.exe;VBCSCompiler.exe;iisexpresstray.exe;msvsmon.exe;PerfWatson2.exe;ServiceHub.IdentityHost.exe;ServiceHub.VSDetouredHost.exe;ServiceHub.SettingsHost.exe;ServiceHub.Host.CLR.x86.exe;vstest.console.exe;ServiceHub.RoslynCodeAnalysisService32.exe;testhost.x86.exe;MSBuild.exe;ServiceHub.ThreadedWaitDialog.exe
 
 rem Set dotnet tracer home path
 SET DD_DOTNET_TRACER_HOME=%~dp0
@@ -77,6 +76,11 @@ if "%start_visual_studio%" == "true" (
     ) ELSE (
         START "Visual Studio" "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\IDE\devenv.exe" "%~dp0\%vs_sln_name%"
     )
+) else if "%start_rider%" == "true" (
+    echo %~dp0%
+    SETLOCAL EnableDelayedExpansion
+    echo !vs_sln_name!
+        START "Rider" "%ProgramFiles%\JetBrains\JetBrains Rider 2021.2\bin\rider.bat" %~dp0\%vs_sln_name%
 )
 goto end
 
@@ -86,7 +90,8 @@ echo   All arguments are optional and can be provided in any order.
 echo   If an argument is provided multiple times, the last value wins.
 echo   The default configuration is "Release".
 echo   The default platform is "x64".
-echo   Visual Studio is started unless "vs-" is specified.
+echo   Visual Studio is started unless "vs-" or "rider" is specified.
+echo   Rider is started with argument "rider"
 echo   The default solution is "Datadog.Trace.sln"
 
 :end
