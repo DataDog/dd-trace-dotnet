@@ -36,6 +36,8 @@ TEST(string, Trim)
     EXPECT_TRUE(WStr("Wide String") == Trim(WStr("Wide String               ")));
     EXPECT_TRUE(WStr("Wide String") == Trim(WStr("               Wide String               ")));
 
+    EXPECT_TRUE(WStr ("Wide String") == Trim(WStr(" Wide String \n ")));
+
     //
 
     EXPECT_TRUE("NormalString" == Trim("               NormalString"));
@@ -45,6 +47,8 @@ TEST(string, Trim)
     EXPECT_TRUE("Normal String" == Trim("               Normal String"));
     EXPECT_TRUE("Normal String" == Trim("Normal String               "));
     EXPECT_TRUE("Normal String" == Trim("               Normal String               "));
+
+    EXPECT_TRUE("Normal String" == Trim(" Normal String \n "));
 }
 
 TEST(string, Split)
