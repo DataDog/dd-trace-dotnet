@@ -6,7 +6,7 @@ namespace datadog::shared::nativeloader
 
     void* LoadDynamicLibrary(std::string filePath);
 
-    void* GetExternalFunction(void* instance, std::string funcName);
+    void* GetExternalFunction(void* instance, const char* funcName);
 
     bool FreeDynamicLibrary(void* handle);
 

@@ -43,12 +43,12 @@ namespace datadog::shared::nativeloader
 #endif
     }
 
-    void* GetExternalFunction(void* instance, std::string funcName)
+    void* GetExternalFunction(void* instance, const char* funcName)
     {
         Debug("GetExternalFunction: ", funcName);
 
 #if _WIN32
-        FARPROC dynFunc = GetProcAddress((HMODULE) instance, funcName.c_str());
+        FARPROC dynFunc = GetProcAddress((HMODULE) instance, funcName);
         if (dynFunc == NULL || dynFunc == nullptr)
         {
             LPVOID msgBuffer;
