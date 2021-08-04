@@ -24,7 +24,7 @@ docker run -it --rm --name myapp netcoreapp
 Note: This requires running on Windows and switching Docker Desktop to Windows containers
 
 ```
-docker build -t netcoreapp -f Dockerfile .
+docker build -t netcoreapp -f Dockerfile.windows-netcore64bit .
 docker run -it --rm --name myapp netcoreapp
 ```
 
@@ -32,7 +32,7 @@ docker run -it --rm --name myapp netcoreapp
 Note: This requires running on Windows and switching Docker Desktop to Windows containers
 
 ```
-docker build -t netcoreapp -f Dockerfile.netcore32bit .
+docker build -t netcoreapp -f Dockerfile.windows-netcore32bit .
 docker run -it --rm --name myapp netcoreapp
 ```
 
