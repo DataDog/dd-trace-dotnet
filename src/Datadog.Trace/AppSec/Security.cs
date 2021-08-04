@@ -32,7 +32,7 @@ namespace Datadog.Trace.AppSec
         private readonly IPowerWaf _powerWaf;
         private readonly IAgentWriter _agentWriter;
         private readonly InstrumentationGateway _instrumentationGateway;
-        private readonly ConcurrentDictionary<Guid, Action> toExecute = new ConcurrentDictionary<Guid, Action>();
+        private readonly ConcurrentDictionary<Guid, Action> toExecute = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Security"/> class with default settings.
@@ -56,12 +56,18 @@ namespace Datadog.Trace.AppSec
 
                 _instrumentationGateway = instrumentationGateway ?? new InstrumentationGateway();
 
-                _powerWaf = powerWaf ?? (Enabled ? new PowerWaf() : new NullPowerWaf());
-                _agentWriter = agentWriter ?? new AgentWriter();
-
                 if (Enabled)
                 {
-                    _instrumentationGateway.InstrumentationGetwayEvent += InstrumentationGateway_InstrumentationGetwayEvent;
+                    _powerWaf = powerWaf ?? PowerWaf.Initialize();
+                    if (_powerWaf != null)
+                    {
+                        _agentWriter = agentWriter ?? new AgentWriter();
+                        _instrumentationGateway.InstrumentationGatewayEvent += InstrumentationGatewayInstrumentationGatewayEvent;
+                    }
+                    else
+                    {
+                        Enabled = false;
+                    }
                 }
             }
             catch (Exception ex)
@@ -138,7 +144,7 @@ namespace Datadog.Trace.AppSec
             using var wafResult = additiveContext.Run(args);
             if (wafResult.ReturnCode == ReturnCode.Monitor || wafResult.ReturnCode == ReturnCode.Block)
             {
-                Log.Warning($"Attack detected! Action: {wafResult.ReturnCode} " + string.Join(", ", args.Select(x => $"{x.Key}: {x.Value}")));
+                Log.Warning($"AppSec: Attack detected! Action: {wafResult.ReturnCode} " + string.Join(", ", args.Select(x => $"{x.Key}: {x.Value}. Blocking enabled : {BlockingEnabled}")));
                 var managedWafResult = Waf.ReturnTypes.Managed.Return.From(wafResult);
                 if (BlockingEnabled && wafResult.ReturnCode == ReturnCode.Block)
                 {
@@ -158,7 +164,7 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        private void InstrumentationGateway_InstrumentationGetwayEvent(object sender, InstrumentationGatewayEventArgs e)
+        private void InstrumentationGatewayInstrumentationGatewayEvent(object sender, InstrumentationGatewayEventArgs e)
         {
             try
             {
