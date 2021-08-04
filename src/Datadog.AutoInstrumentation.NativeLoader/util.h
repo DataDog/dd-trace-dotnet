@@ -14,6 +14,15 @@ static WSTRING GetProfilerPath()
 {
     WSTRING profiler_path;
 
+    //
+    // There's no particular reason for the order of the environment variables.
+    // The only requirement was in the architecture, from the specific bitness
+    // to the generic one.
+    //
+    // For the other cases we follow the convention from the latest key format (CORECLR)
+    // to the oldest one (COR).
+    //
+
 #if BIT64
     profiler_path = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_64"));
     if (profiler_path.length() > 0)
