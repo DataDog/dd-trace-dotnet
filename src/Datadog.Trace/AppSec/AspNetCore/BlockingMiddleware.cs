@@ -18,7 +18,7 @@ namespace Datadog.Trace.AppSec.AspNetCore
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(BlockingMiddleware));
 
-        public static void ModifyASpplicationBuilder(object applicationBuilderInstance)
+        public static void ModifyApplicationBuilder(object applicationBuilderInstance)
         {
             if (applicationBuilderInstance.TryDuckCast<ApplicationBuilderDuck>(out var applicationBuilder))
             {
@@ -58,7 +58,7 @@ namespace Datadog.Trace.AppSec.AspNetCore
             if (components.Count > 2)
             {
                 // insert 2nd to last, making a guess that the last one will be the user action
-                components.Insert(components.Count - 2, MiddlewareWrapper);
+                components.Insert(components.Count - 1, MiddlewareWrapper);
             }
         }
 
