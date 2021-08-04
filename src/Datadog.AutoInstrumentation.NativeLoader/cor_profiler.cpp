@@ -181,7 +181,6 @@ namespace datadog::shared::nativeloader
             {
                 Warn("CorProfiler::Initialize: Error Initializing the Continuous Profiler, unloading the dynamic library.");
                 m_cpProfiler = nullptr;
-                delete cpInstance;
             }
         }
 
@@ -215,7 +214,6 @@ namespace datadog::shared::nativeloader
             {
                 Warn("CorProfiler::Initialize: Error Initializing the Tracer Profiler, unloading the dynamic library.");
                 m_tracerProfiler = nullptr;
-                delete tracerInstance;
             }
         }
 
@@ -249,7 +247,6 @@ namespace datadog::shared::nativeloader
             {
                 Warn("CorProfiler::Initialize: Error Initializing the Custom Profiler, unloading the dynamic library.");
                 m_customProfiler = nullptr;
-                delete customInstance;
             }
         }
 

@@ -71,7 +71,7 @@ namespace datadog::shared::nativeloader
         }
         return dynFunc;
 #else
-        void* dynFunc = dlsym(instance, funcName.c_str());
+        void* dynFunc = dlsym(instance, funcName);
         if (dynFunc == nullptr)
         {
             char* errorMessage = dlerror();

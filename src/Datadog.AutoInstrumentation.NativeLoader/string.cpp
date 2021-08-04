@@ -44,7 +44,7 @@ std::string ToString(const LPTSTR& tstr)
 #if defined(_UNICODE)
     return ToString(WSTRING(tstr));
 #else
-    return std::string(tstr);
+    return std::string((char*)tstr);
 #endif
 }
 

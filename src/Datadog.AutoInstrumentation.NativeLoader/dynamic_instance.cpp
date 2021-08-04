@@ -35,8 +35,7 @@ namespace datadog::shared::nativeloader
         // Check if the function pointer needs to be loaded
         if (m_dllGetClassObject == nullptr)
         {
-            m_dllGetClassObject =
-                static_cast<DllGetClassObjectDelegate_t>(GetExternalFunction(m_instance, "DllGetClassObject"));
+            m_dllGetClassObject = (DllGetClassObjectDelegate_t) GetExternalFunction(m_instance, "DllGetClassObject");
         }
 
         // If we have the function pointer we call the function
@@ -67,16 +66,8 @@ namespace datadog::shared::nativeloader
 
     DynamicInstanceImpl::~DynamicInstanceImpl()
     {
-        if (m_corProfilerCallback != nullptr)
-        {
-            delete m_corProfilerCallback;
-            m_corProfilerCallback = nullptr;
-        }
-        if (m_classFactory != nullptr)
-        {
-            delete m_classFactory;
-            m_classFactory = nullptr;
-        }
+        m_corProfilerCallback = nullptr;
+        m_classFactory = nullptr;
         m_dllCanUnloadNow = nullptr;
         m_dllGetClassObject = nullptr;
         m_loaded = false;
@@ -143,7 +134,7 @@ namespace datadog::shared::nativeloader
         // Check if the function pointer needs to be loaded
         if (m_dllCanUnloadNow == nullptr)
         {
-            m_dllCanUnloadNow = static_cast<DllCanUnloadNowDelegate_t>(GetExternalFunction(m_instance, "DllCanUnloadNow"));
+            m_dllCanUnloadNow = (DllCanUnloadNowDelegate_t) GetExternalFunction(m_instance, "DllCanUnloadNow");
         }
 
         // If we have the function pointer we call the function
