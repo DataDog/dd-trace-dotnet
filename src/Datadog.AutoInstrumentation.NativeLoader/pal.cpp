@@ -47,6 +47,12 @@ namespace datadog::shared::nativeloader
     {
         Debug("GetExternalFunction: ", funcName);
 
+        if (instance == nullptr)
+        {
+            Warn("GetExternalFunction: The module instance is null.");
+            return nullptr;
+        }
+
 #if _WIN32
         FARPROC dynFunc = GetProcAddress((HMODULE) instance, funcName);
         if (dynFunc == NULL || dynFunc == nullptr)
