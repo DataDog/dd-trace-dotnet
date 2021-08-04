@@ -42,12 +42,12 @@ namespace Datadog.Trace.AppSec
         {
         }
 
-        internal Security(InstrumentationGateway instrumentationGateway = null, IPowerWaf powerWaf = null, IAgentWriter agentWriter = null)
+        private Security(InstrumentationGateway instrumentationGateway = null, IPowerWaf powerWaf = null, IAgentWriter agentWriter = null)
         {
             try
             {
                 var enabled = Environment.GetEnvironmentVariable(ConfigurationKeys.AppSecEnabled)?.ToBoolean();
-                Enabled = enabled == true;
+                Enabled = enabled.GetValueOrDefault() && AreArchitectureAndOsSupported();
 
                 var blockingEnabled = Environment.GetEnvironmentVariable(ConfigurationKeys.AppSecBlockingEnabled)?.ToBoolean();
                 BlockingEnabled = blockingEnabled == true;
@@ -168,6 +168,34 @@ namespace Datadog.Trace.AppSec
             {
                 Log.Error(ex, "Call into the security module failed");
             }
+        }
+
+        private bool AreArchitectureAndOsSupported()
+        {
+            var frameworkDescription = FrameworkDescription.Instance;
+            var osSupported = false;
+            var supportedOs = new[] { OSPlatforms.Linux, OSPlatforms.MacOS, OSPlatforms.Windows };
+            if (supportedOs.Contains(frameworkDescription.OSPlatform))
+            {
+                osSupported = true;
+            }
+            else
+            {
+                Log.Warning("AppSec could not start because of unsupported operating system platform {OS}", FrameworkDescription.Instance.OSPlatform);
+            }
+
+            var archSupported = false;
+            var supportedArchs = new[] { ProcessArchitecture.Arm, ProcessArchitecture.X64, ProcessArchitecture.X86 };
+            if (supportedArchs.Contains(frameworkDescription.ProcessArchitecture))
+            {
+                archSupported = true;
+            }
+            else
+            {
+                Log.Warning("AppSec could not start because of unsupported process architecture {ProcessArchitecture}", frameworkDescription.ProcessArchitecture);
+            }
+
+            return osSupported && archSupported;
         }
     }
 }
