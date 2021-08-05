@@ -145,7 +145,7 @@ namespace Datadog.Trace.RuntimeMetrics
 #if NETCOREAPP
             return new RuntimeEventListener(statsd, delay);
 #elif NETFRAMEWORK
-            return AzureAppServices.Metadata.IsRelevant ? new AzurePerformanceCountersListener(statsd) : new PerformanceCountersListener(statsd);
+            return AzureAppServices.Metadata.IsRelevant ? new AzureAppServicePerformanceCounters(statsd) : new PerformanceCountersListener(statsd);
 #else
             return null;
 #endif
