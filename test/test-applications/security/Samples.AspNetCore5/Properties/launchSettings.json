@@ -31,7 +31,7 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "DD_APPSEC_ENABLED": "true",
-        "DD_APPSEC_BLOCKING_ENABLED": "false",
+        "DD_APPSEC_BLOCKING_ENABLED": "true",
         "DD_DOTNET_TRACER_HOME": "$(ProjectDir)$(OutputPath)profiler-lib",
         "CORECLR_ENABLE_PROFILING": "1",
         "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",

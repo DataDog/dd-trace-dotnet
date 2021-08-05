@@ -11,11 +11,11 @@ namespace Datadog.Trace.AppSec
 {
     internal class InstrumentationGateway
     {
-        public event EventHandler<InstrumentationGatewayEventArgs> InstrumentationGetwayEvent;
+        public event EventHandler<InstrumentationGatewayEventArgs> InstrumentationGatewayEvent;
 
         public void RaiseEvent(IDictionary<string, object> eventData, ITransport transport, Span relatedSpan)
         {
-            InstrumentationGetwayEvent?.Invoke(this, new InstrumentationGatewayEventArgs(eventData, transport, relatedSpan));
+            InstrumentationGatewayEvent?.Invoke(this, new InstrumentationGatewayEventArgs(eventData, transport, relatedSpan));
         }
     }
 }

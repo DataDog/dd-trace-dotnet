@@ -4,11 +4,7 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
 
@@ -21,9 +17,9 @@ namespace Datadog.Trace.AppSec.Waf
         private readonly Rule rule;
         private bool disposed = false;
 
-        public PowerWaf()
+        private PowerWaf(Rule rule)
         {
-            rule = NewRule();
+            this.rule = rule;
         }
 
         ~PowerWaf()
@@ -40,13 +36,14 @@ namespace Datadog.Trace.AppSec.Waf
             }
         }
 
+        public static PowerWaf Initialize()
+        {
+            var rule = NewRule();
+            return rule == null ? null : new PowerWaf(rule);
+        }
+
         public IAdditiveContext CreateAdditiveContext()
         {
-            if (rule == null)
-            {
-                return new NullAdditiveContext();
-            }
-
             var handle = Native.pw_initAdditiveH(rule.Handle);
             return new AdditiveContext(handle);
         }
@@ -69,16 +66,16 @@ namespace Datadog.Trace.AppSec.Waf
             rule?.Dispose();
         }
 
-        private Rule NewRule()
+        private static Rule NewRule()
         {
             try
             {
                 string message = null;
                 PWConfig args = default;
 
-                var assembly = GetType().Assembly;
+                var assembly = typeof(PowerWaf).Assembly;
                 var resource = assembly.GetManifestResourceStream("Datadog.Trace.AppSec.Waf.rule-set.json");
-                var reader = new StreamReader(resource);
+                using var reader = new StreamReader(resource);
                 var rules = reader.ReadToEnd();
 
                 Log.Debug($"NewRule: got {rules.Length} bytes");
