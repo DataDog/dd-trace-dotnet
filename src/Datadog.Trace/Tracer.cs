@@ -594,6 +594,9 @@ namespace Datadog.Trace
                     writer.WritePropertyName("appsec_enabled");
                     writer.WriteValue(Security.Instance.Settings.Enabled);
 
+                    writer.WritePropertyName("appsec_blocking_enabled");
+                    writer.WriteValue(Security.Instance.Settings.BlockingEnabled);
+
                     writer.WriteEndObject();
                 }
 
