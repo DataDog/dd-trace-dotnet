@@ -302,7 +302,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var settings = tracer.Settings;
 
-            if (!settings.HeaderTags.IsEmpty())
+            if (!settings.HeaderTags.IsNullOrEmpty())
             {
                 try
                 {

@@ -1,5 +1,44 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
+## [Release 1.28.2](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.28.2)
+
+## Changes
+* Add additional logs injection fallback for NLog 1.x (#1614)
+* Remove version from the `test.framework` tag in CIApp (#1622)
+* Fix ReJIT and Shutdown log levels (#1624)
+* Logger API refactoring (#1625)
+* Add experimental NGEN support (#1628)
+* Clear metadata when an appdomain unloads (#1630)
+* Don't add the sampling priority header if empty (#1644, #1649)
+
+## Fixes
+* Fix CIApp in latest version of MSTest (#1604)
+* Add fallback for logs injection for NLog versions < 4.1.0 (#1607)
+* Fix PInvokes to the native lib on non windows os. (#1612)
+* Add fix for log injection with log4net.Ext.Json versions < 2.0.9.1 (#1615)
+* Fix CIApp Feature Tracking (#1616)
+* Fix crank project reference (#1617)
+* Fixes the dd-trace exit code always returning 0 (#1621)
+* Preserve the task cancelled state when using calltarget instrumentation (#1634)
+* Fix the native logger path issue (#1635)
+* Add better error handling for the Header Tags feature accessing System.Web.HttpResponse.Headers (#1641)
+
+## Build / Test
+* Add analyzer project + ThreadAbortAnlayzer to detect inifinte loops on ThreadAbortException (#1325, #1619)
+* Add ASP.NET Core on IIS Express tests (#1582)
+* Split Windows regression tests and integration tests to save drive space (#1586)
+* CIApp - Add support to add custom env-vars from dd-trace wrapper (#1594)
+* Merge tools into Nuke (#1605)
+* Make the benchmark step optional (#1608)
+* Add GitHub workflows for automating Release creation (#1611)
+* Fix throughtput/crank pipeline. (#1618)
+* Fix ARM64 Integration tests (#1629)
+* Exclude more vendored files from code coverage (#1632)
+* Add additional scrubbing for stacktraces in snapshots (#1633)
+* Fix throughput tests (#1650)
+
+[Changes since 1.28.0](https://github.com/DataDog/dd-trace-dotnet/compare/v1.28.0...v1.28.2)
+
 ## [Release 1.28.1-prerelease](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.28.1-prerelease)
 
 ## Changes

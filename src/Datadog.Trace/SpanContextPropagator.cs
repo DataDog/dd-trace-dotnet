@@ -69,9 +69,12 @@ namespace Datadog.Trace
 
             var samplingPriority = (int?)(context.TraceContext?.SamplingPriority ?? context.SamplingPriority);
 
-            headers.Set(
-                HttpHeaderNames.SamplingPriority,
-                samplingPriority?.ToString(InvariantCulture));
+            if (samplingPriority != null)
+            {
+                headers.Set(
+                    HttpHeaderNames.SamplingPriority,
+                    samplingPriority.Value.ToString(InvariantCulture));
+            }
         }
 
         /// <summary>
@@ -104,7 +107,10 @@ namespace Datadog.Trace
 
             var samplingPriority = (int?)(context.TraceContext?.SamplingPriority ?? context.SamplingPriority);
 
-            setter(carrier, HttpHeaderNames.SamplingPriority, samplingPriority?.ToString(InvariantCulture));
+            if (samplingPriority != null)
+            {
+                setter(carrier, HttpHeaderNames.SamplingPriority, samplingPriority?.ToString(InvariantCulture));
+            }
         }
 
         /// <summary>

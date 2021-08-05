@@ -113,6 +113,9 @@ namespace environment
     // Custom tracer profiler path
     const WSTRING tracer_profiler_path = WStr("DD_TRACER_PROFILER_PATH");
 
+    // Sets whether to enable NGEN images.
+    const WSTRING clr_enable_ngen = WStr("DD_CLR_ENABLE_NGEN");
+
 } // namespace environment
 } // namespace trace
 

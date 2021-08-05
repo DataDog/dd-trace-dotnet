@@ -698,7 +698,8 @@ partial class Build
                 {
                     _ when exclude.Contains(projectPath) => false,
                     _ when projectPath.ToString().Contains("Samples.OracleMDA") => false,
-                    _ => true,
+                    _ when !string.IsNullOrWhiteSpace(SampleName) => projectPath.ToString().Contains(SampleName),
+                     _ => true,
                 }
             );
 
@@ -927,6 +928,7 @@ partial class Build
                         "Samples.AspNetCoreMvc31" => Framework == TargetFramework.NETCOREAPP3_1,
                         var name when projectsToSkip.Contains(name) => false,
                         var name when multiApiProjects.Contains(name) => false,
+                        _ when !string.IsNullOrWhiteSpace(SampleName) => project?.Name?.Contains(SampleName) ?? false,
                         _ => true,
                     };
                 });

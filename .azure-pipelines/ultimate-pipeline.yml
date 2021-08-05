@@ -629,6 +629,7 @@ stages:
           condition: succeededOrFailed()
 
 - stage: benchmarks
+  condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
   dependsOn: build_windows  
   jobs:
 
@@ -658,7 +659,7 @@ stages:
         script: 'Start-Sleep -s 120'
 
 - stage: dotnet_tool
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
   dependsOn: [build_windows, build_linux, build_arm64, build_macos]
   jobs:
   - job: build_runner_tool_and_standalone
@@ -767,7 +768,7 @@ stages:
       displayName: Add $(dotnetToolTag) build tag
 
 - stage: upload_to_s3
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
   dependsOn: [package_windows, build_linux, build_arm64]
   jobs:
   - job: s3_upload
@@ -926,6 +927,7 @@ stages:
         # We don't include the MSI artifacts as they're not signed
 
 - stage: throughput
+  condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
   dependsOn: [build_linux, build_arm64, build_windows]
   jobs:
 
@@ -957,14 +959,21 @@ stages:
         path: $(System.DefaultWorkingDirectory)/arm64
 
     - script: |
+        mv win-x64/*.dll ./
+        rmdir win-x64
+        test ! -s "integrations.json" && echo "integrations.json does not exist" && exit 1
+        test ! -s "Datadog.Trace.ClrProfiler.Native.dll" && echo "Datadog.Trace.ClrProfiler.Native.dll does not exist" && exit 1
+        test ! -s "Datadog.Trace.ClrProfiler.Native.so" && echo "Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
+        test ! -s "arm64/Datadog.Trace.ClrProfiler.Native.so" && echo "arm64/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
         cd $(System.DefaultWorkingDirectory)/build/crank
         chmod +x ./run.sh
         ./run.sh
       displayName: Crank
       env:
         DD_SERVICE: dd-trace-dotnet
+
 - stage: coverage
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
   dependsOn: [integration_tests_windows, integration_tests_windows_iis, integration_tests_linux, unit_tests_linux, unit_tests_macos, unit_tests_windows]
   jobs:
     - job: Windows

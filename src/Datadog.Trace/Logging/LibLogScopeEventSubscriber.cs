@@ -264,26 +264,32 @@ namespace Datadog.Trace.Logging
             //  - NLog
             //  - Log4net
 
-            // Register the custom log4net provider
-            LogProvider.LogProviderResolvers.Insert(
-                0,
-                Tuple.Create<LogProvider.IsLoggerAvailable, LogProvider.CreateLogProvider>(
-                    CustomLog4NetLogProvider.IsLoggerAvailable,
-                    () => new CustomLog4NetLogProvider()));
-
-            // Register the custom NLog provider
-            LogProvider.LogProviderResolvers.Insert(
-                0,
-                Tuple.Create<LogProvider.IsLoggerAvailable, LogProvider.CreateLogProvider>(
-                    CustomNLogLogProvider.IsLoggerAvailable,
-                    () => new CustomNLogLogProvider()));
-
             // Register the custom Serilog provider
             LogProvider.LogProviderResolvers.Insert(
                 0,
                 Tuple.Create<LogProvider.IsLoggerAvailable, LogProvider.CreateLogProvider>(
                     CustomSerilogLogProvider.IsLoggerAvailable,
                     () => new CustomSerilogLogProvider()));
+
+            // Register the custom NLog providers
+            LogProvider.LogProviderResolvers.Insert(
+                1,
+                Tuple.Create<LogProvider.IsLoggerAvailable, LogProvider.CreateLogProvider>(
+                    CustomNLogLogProvider.IsLoggerAvailable,
+                    () => new CustomNLogLogProvider()));
+
+            LogProvider.LogProviderResolvers.Insert(
+                2,
+                Tuple.Create<LogProvider.IsLoggerAvailable, LogProvider.CreateLogProvider>(
+                    FallbackNLogLogProvider.IsLoggerAvailable,
+                    () => new FallbackNLogLogProvider()));
+
+            // Register the custom log4net provider
+            LogProvider.LogProviderResolvers.Insert(
+                3,
+                Tuple.Create<LogProvider.IsLoggerAvailable, LogProvider.CreateLogProvider>(
+                    CustomLog4NetLogProvider.IsLoggerAvailable,
+                    () => new CustomLog4NetLogProvider()));
         }
 
         private void SetDefaultValues()

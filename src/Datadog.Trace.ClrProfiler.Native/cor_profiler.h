@@ -133,6 +133,8 @@ public:
     HRESULT STDMETHODCALLTYPE ReJITError(ModuleID moduleId, mdMethodDef methodId, FunctionID functionId,
                                          HRESULT hrStatus) override;
 
+    HRESULT STDMETHODCALLTYPE JITCachedFunctionSearchStarted(FunctionID functionId, BOOL* pbUseCachedFunction) override;
+
     //
     // ICorProfilerCallback6 methods
     //
