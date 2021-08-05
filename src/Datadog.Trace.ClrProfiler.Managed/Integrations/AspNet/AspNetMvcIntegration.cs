@@ -62,8 +62,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 }
 
                 Span span = null;
-                var security = Security.Instance;
-                // integration disabled, don't create a scope, skip this trace
+                // integration enabled, go create a scope!
                 if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
                 {
                     var newResourceNamesEnabled = Tracer.Instance.Settings.RouteTemplateResourceNamesEnabled;
@@ -193,6 +192,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     }
                 }
 
+                var security = Security.Instance;
                 if (security.Settings.Enabled)
                 {
                     RaiseIntrumentationEvent(security, HttpContext.Current, span, controllerContext.RouteData);
