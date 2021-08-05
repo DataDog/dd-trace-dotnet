@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Xunit;
@@ -165,27 +166,28 @@ namespace Datadog.Trace.Tests.Configuration
         {
             // save original value so we can restore later
             var originalValue = Environment.GetEnvironmentVariable(key);
+            // some keys are dependent on others. If these keys are set (e.g when using dd-trace)
+            // then the test will fail, so remember and restore them
+            var dependentKeyMapping = new Dictionary<string, string[]>
+            {
+                { "DD_SERVICE_NAME", new[] { ConfigurationKeys.ServiceName } },
+                { ConfigurationKeys.AgentPort, new[] { ConfigurationKeys.AgentUri } },
+                { ConfigurationKeys.AgentHost, new[] { ConfigurationKeys.AgentUri } },
+                { ConfigurationKeys.AgentUri, new[] { ConfigurationKeys.AgentPort, ConfigurationKeys.AgentHost } },
+            };
 
             TracerSettings settings;
 
-            if (key == "DD_SERVICE_NAME")
+            var savedEnvironmentVariablesValues = SaveValues(key, dependentKeyMapping);
+            try
             {
-                // We need to ensure DD_SERVICE is empty.
-                string originalServiceName = Environment.GetEnvironmentVariable(ConfigurationKeys.ServiceName);
-                Environment.SetEnvironmentVariable(ConfigurationKeys.ServiceName, null, EnvironmentVariableTarget.Process);
-
                 Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
                 IConfigurationSource source = new EnvironmentConfigurationSource();
                 settings = new TracerSettings(source);
-
-                // after load settings we can restore the original DD_SERVICE
-                Environment.SetEnvironmentVariable(ConfigurationKeys.ServiceName, originalServiceName, EnvironmentVariableTarget.Process);
             }
-            else
+            finally
             {
-                Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
-                IConfigurationSource source = new EnvironmentConfigurationSource();
-                settings = new TracerSettings(source);
+                RestoreValues(savedEnvironmentVariablesValues);
             }
 
             object actualValue = settingGetter(settings);
@@ -193,6 +195,30 @@ namespace Datadog.Trace.Tests.Configuration
 
             // restore original value
             Environment.SetEnvironmentVariable(key, originalValue, EnvironmentVariableTarget.Process);
+
+            static Dictionary<string, string> SaveValues(string key, Dictionary<string, string[]> dependentKeyMapping)
+            {
+                var mappedValues = new Dictionary<string, string>();
+                if (dependentKeyMapping.TryGetValue(key, out var envVars))
+                {
+                    foreach (var envVar in envVars)
+                    {
+                        string originalValue = Environment.GetEnvironmentVariable(envVar);
+                        mappedValues.Add(envVar, originalValue);
+                        Environment.SetEnvironmentVariable(envVar, null, EnvironmentVariableTarget.Process);
+                    }
+                }
+
+                return mappedValues;
+            }
+
+            void RestoreValues(Dictionary<string, string> values)
+            {
+                foreach (var kvp in values)
+                {
+                    Environment.SetEnvironmentVariable(kvp.Key, kvp.Value, EnvironmentVariableTarget.Process);
+                }
+            }
         }
 
         [Theory]
