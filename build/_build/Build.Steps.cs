@@ -624,6 +624,7 @@ partial class Build
                 .Where(x => !x.Contains("EntityFramework6x.MdTokenLookupFailure")
                             && !x.Contains("ExpenseItDemo")
                             && !x.Contains("StackExchange.Redis.AssemblyConflict.LegacyProject")
+                            && !x.Contains("MismatchedTracerVersions")
                             && !x.Contains("dependency-libs"));
 
             // Allow restore here, otherwise things go wonky with runtime identifiers
@@ -889,6 +890,7 @@ partial class Build
                 "NLog10LogsInjection.NullReferenceException",
                 "Sandbox.ManualTracing",
                 "StackExchange.Redis.AssemblyConflict.LegacyProject",
+                "MismatchedTracerVersions"
             };
 
             // These sample projects are built using RestoreAndBuildSamplesForPackageVersions
