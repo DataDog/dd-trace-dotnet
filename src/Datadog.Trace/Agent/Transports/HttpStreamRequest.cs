@@ -40,14 +40,16 @@ namespace Datadog.Trace.Agent.Transports
             _headers.Add(name, value);
         }
 
-        public async Task<IApiResponse> PostAsJsonAsync(IEvent events)
+        public async Task<IApiResponse> PostAsJsonAsync(IEvent events, JsonSerializer serializer)
         {
-            using var memoryStream = new MemoryStream();
-            using var streamWriter = new StreamWriter(memoryStream);
-            var json = JsonConvert.SerializeObject(events);
-            streamWriter.Write(json);
-            var buffer = memoryStream.GetBuffer();
-            return await PostSegmentAsync(new ArraySegment<byte>(buffer, 0, (int)memoryStream.Length)).ConfigureAwait(false);
+            var memoryStream = new MemoryStream();
+            var sw = new StreamWriter(memoryStream);
+            using (JsonWriter writer = new JsonTextWriter(sw))
+            {
+                serializer.Serialize(writer, events);
+                var buffer = memoryStream.GetBuffer();
+                return await PostSegmentAsync(new ArraySegment<byte>(buffer, 0, (int)memoryStream.Length)).ConfigureAwait(false);
+            }
         }
 
         public async Task<IApiResponse> PostAsync(ArraySegment<byte> traces)

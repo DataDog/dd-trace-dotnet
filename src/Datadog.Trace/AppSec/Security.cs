@@ -8,6 +8,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Datadog.Trace.Agent;
 using Datadog.Trace.AppSec.Agent;
 using Datadog.Trace.AppSec.EventModel;
 using Datadog.Trace.AppSec.Transport;
@@ -30,7 +31,7 @@ namespace Datadog.Trace.AppSec
         private static object _globalInstanceLock = new();
 
         private readonly IPowerWaf _powerWaf;
-        private readonly IAgentWriter _agentWriter;
+        private readonly Datadog.Trace.AppSec.Agent.IAgentWriter _agentWriter;
         private readonly InstrumentationGateway _instrumentationGateway;
         private readonly ConcurrentDictionary<Guid, Action> toExecute = new();
 
@@ -42,7 +43,7 @@ namespace Datadog.Trace.AppSec
         {
         }
 
-        private Security(InstrumentationGateway instrumentationGateway = null, IPowerWaf powerWaf = null, IAgentWriter agentWriter = null)
+        private Security(InstrumentationGateway instrumentationGateway = null, IPowerWaf powerWaf = null, Datadog.Trace.AppSec.Agent.IAgentWriter agentWriter = null)
         {
             try
             {
@@ -61,7 +62,7 @@ namespace Datadog.Trace.AppSec
                     _powerWaf = powerWaf ?? PowerWaf.Initialize();
                     if (_powerWaf != null)
                     {
-                        _agentWriter = agentWriter ?? new AgentWriter();
+                        _agentWriter = agentWriter ?? new Datadog.Trace.AppSec.Agent.AgentWriter();
                         _instrumentationGateway.InstrumentationGatewayEvent += InstrumentationGatewayInstrumentationGatewayEvent;
                     }
                     else
