@@ -193,7 +193,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     }
                 }
 
-                if (security.Enabled)
+                if (security.Settings.Enabled)
                 {
                     RaiseIntrumentationEvent(security, HttpContext.Current, span, controllerContext.RouteData);
                 }

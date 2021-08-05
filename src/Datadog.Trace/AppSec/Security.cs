@@ -33,6 +33,7 @@ namespace Datadog.Trace.AppSec
         private readonly IPowerWaf _powerWaf;
         private readonly Datadog.Trace.AppSec.Agent.IAgentWriter _agentWriter;
         private readonly InstrumentationGateway _instrumentationGateway;
+        private readonly SecuritySettings _settings;
         private readonly ConcurrentDictionary<Guid, Action> toExecute = new();
 
         /// <summary>
@@ -43,21 +44,15 @@ namespace Datadog.Trace.AppSec
         {
         }
 
-        private Security(InstrumentationGateway instrumentationGateway = null, IPowerWaf powerWaf = null, Datadog.Trace.AppSec.Agent.IAgentWriter agentWriter = null)
+        private Security(SecuritySettings settings = null, InstrumentationGateway instrumentationGateway = null, IPowerWaf powerWaf = null, IAgentWriter agentWriter = null)
         {
             try
             {
-                var enabled = Environment.GetEnvironmentVariable(ConfigurationKeys.AppSecEnabled)?.ToBoolean();
-                Enabled = enabled.GetValueOrDefault() && AreArchitectureAndOsSupported();
-
-                var blockingEnabled = Environment.GetEnvironmentVariable(ConfigurationKeys.AppSecBlockingEnabled)?.ToBoolean();
-                BlockingEnabled = blockingEnabled == true;
-
-                Log.Information($"Security.Enabled: {Enabled}, Security.BlockingEnabled {BlockingEnabled}");
+                _settings = settings ?? SecuritySettings.FromDefaultSources();
 
                 _instrumentationGateway = instrumentationGateway ?? new InstrumentationGateway();
 
-                if (Enabled)
+                if (_settings.Enabled)
                 {
                     _powerWaf = powerWaf ?? PowerWaf.Initialize();
                     if (_powerWaf != null)
@@ -67,13 +62,13 @@ namespace Datadog.Trace.AppSec
                     }
                     else
                     {
-                        Enabled = false;
+                        _settings.Enabled = false;
                     }
                 }
             }
             catch (Exception ex)
             {
-                Enabled = false;
+                _settings.Enabled = false;
                 Log.Error(ex, "Datadog AppSec failed to initialize, your application is NOT protected");
             }
         }
@@ -99,19 +94,16 @@ namespace Datadog.Trace.AppSec
         }
 
         /// <summary>
-        /// Gets a value indicating whether security is enabled
-        /// </summary>
-        public bool Enabled { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether blocking is enabled
-        /// </summary>
-        public bool BlockingEnabled { get; }
-
-        /// <summary>
         /// Gets <see cref="InstrumentationGateway"/> instance
         /// </summary>
         InstrumentationGateway IDatadogSecurity.InstrumentationGateway => _instrumentationGateway;
+
+        /// <summary>
+        /// Gets <see cref="SecuritySettings"/> instance
+        /// </summary>
+        SecuritySettings IDatadogSecurity.Settings => _settings;
+
+        internal SecuritySettings Settings => _settings;
 
         /// <summary>
         /// Frees resouces
@@ -146,9 +138,9 @@ namespace Datadog.Trace.AppSec
             using var wafResult = additiveContext.Run(args);
             if (wafResult.ReturnCode == ReturnCode.Monitor || wafResult.ReturnCode == ReturnCode.Block)
             {
-                Log.Warning($"AppSec: Attack detected! Action: {wafResult.ReturnCode} " + string.Join(", ", args.Select(x => $"{x.Key}: {x.Value}. Blocking enabled : {BlockingEnabled}")));
+                Log.Warning($"AppSec: Attack detected! Action: {wafResult.ReturnCode} " + string.Join(", ", args.Select(x => $"{x.Key}: {x.Value}. Blocking enabled : {_settings.BlockingEnabled}")));
                 var managedWafResult = Waf.ReturnTypes.Managed.Return.From(wafResult);
-                if (BlockingEnabled && wafResult.ReturnCode == ReturnCode.Block)
+                if (_settings.BlockingEnabled && wafResult.ReturnCode == ReturnCode.Block)
                 {
                     transport.Block();
 #if !NETFRAMEWORK
