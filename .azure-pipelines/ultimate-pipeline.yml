@@ -564,6 +564,7 @@ stages:
         TestAllPackageVersions: true
         publishTargetFramework: net5.0
         baseImage: debian
+        COMPOSE_PROJECT_NAME: ddtrace_$(Build.BuildNumber)
 
       pool:
         name: Arm64
