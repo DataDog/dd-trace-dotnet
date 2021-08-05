@@ -7,7 +7,7 @@ on:
       - '**'
 
 jobs:
-  add_to_milestone:
+  tag_version_bump_commit:
     if: startsWith(github.event.head_commit.message, '[Version Bump]')
     runs-on: ubuntu-latest
     steps:
