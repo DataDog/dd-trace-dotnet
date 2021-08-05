@@ -13,7 +13,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <None Include="Datadog.Trace.Tools.Runner.proj" />
+      <None Include="Datadog.Trace.AutoInstrumentation.proj" />
     </ItemGroup>
   
     <ItemGroup>
