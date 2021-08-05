@@ -105,7 +105,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var logs = GetLogFileContents(logFilePath);
                 logs.Should().NotBeNullOrEmpty();
 
-                // using var s = new AssertionScope(test.FileName);
+                using var s = new AssertionScope(test.FileName);
 
                 // Assumes we _only_ have logs for logs within traces + our startup log
                 additionalInjectedLogFilter ??= (_) => true;
