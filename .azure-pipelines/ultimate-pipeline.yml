@@ -956,25 +956,21 @@ stages:
         path: $(System.DefaultWorkingDirectory)/tracer-home-linux-arm64
 
     - script: |
-        echo "Root folder"
-        ls
-        echo "Windows Tracer Home"
+        echo "***Windows Tracer Home"
         ls tracer-home-win/
-        echo "Linux Tracer Home"
+        echo "***Linux Tracer Home"
         ls tracer-home-linux/
-        echo "Linux ARM64 Tracer Home"
+        echo "***Linux ARM64 Tracer Home"
         ls tracer-home-linux-arm64/
-
-        #mv win-x64/*.dll ./
-        #rmdir win-x64
-        #ls
-        #test ! -s "integrations.json" && echo "integrations.json does not exist" && exit 1
-        #test ! -s "Datadog.Trace.ClrProfiler.Native.dll" && echo "Datadog.Trace.ClrProfiler.Native.dll does not exist" && exit 1
-        #test ! -s "Datadog.Trace.ClrProfiler.Native.so" && echo "Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
-        #test ! -s "arm64/Datadog.Trace.ClrProfiler.Native.so" && echo "arm64/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
-        #cd $(System.DefaultWorkingDirectory)/build/crank
-        #chmod +x ./run.sh
-        #./run.sh
+        test ! -s "tracer-home-win/integrations.json" && echo "tracer-home-win/integrations.json does not exist" && exit 1
+        test ! -s "tracer-home-win/Datadog.Trace.ClrProfiler.Native.dll" && echo "tracer-home-win/Datadog.Trace.ClrProfiler.Native.dll does not exist" && exit 1
+        test ! -s "tracer-home-linux/integrations.json" && echo "tracer-home-linux/integrations.json does not exist" && exit 1
+        test ! -s "tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
+        test ! -s "tracer-home-linux-arm64/integrations.json" && echo "tracer-home-linux-arm64/integrations.json does not exist" && exit 1
+        test ! -s "tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
+        cd $(System.DefaultWorkingDirectory)/build/crank
+        chmod +x ./run.sh
+        ./run.sh
       displayName: Crank
       env:
         DD_SERVICE: dd-trace-dotnet

@@ -40,7 +40,7 @@ namespace Samples.AspNetCoreSimpleController
 
         private static bool IsProfilerAttached()
         {
-            Assembly managedAssembly = typeof(Datadog.Trace.ClrProfiler.Instrumentation).Assembly;
+            Assembly managedAssembly = Type.GetType("Datadog.Trace.ClrProfiler.Instrumentation").Assembly;
             Type nativeMethodsType = managedAssembly.GetType("Datadog.Trace.ClrProfiler.NativeMethods");
             MethodInfo profilerAttachedMethodInfo = nativeMethodsType.GetMethod("IsProfilerAttached");
             try
