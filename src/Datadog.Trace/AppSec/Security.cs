@@ -72,6 +72,7 @@ namespace Datadog.Trace.AppSec
             }
             catch (Exception ex)
             {
+                Enabled = false;
                 Log.Error(ex, "Datadog AppSec failed to initialize, your application is NOT protected");
             }
         }
