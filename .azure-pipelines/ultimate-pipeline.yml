@@ -630,7 +630,7 @@ stages:
 
 - stage: benchmarks
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
-  dependsOn: build_windows  
+  dependsOn: build_windows
   jobs:
 
   #### Windows
@@ -959,8 +959,10 @@ stages:
         path: $(System.DefaultWorkingDirectory)/arm64
 
     - script: |
+        ls
         mv win-x64/*.dll ./
         rmdir win-x64
+        ls
         test ! -s "integrations.json" && echo "integrations.json does not exist" && exit 1
         test ! -s "Datadog.Trace.ClrProfiler.Native.dll" && echo "Datadog.Trace.ClrProfiler.Native.dll does not exist" && exit 1
         test ! -s "Datadog.Trace.ClrProfiler.Native.so" && echo "Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
