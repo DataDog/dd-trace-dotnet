@@ -31,7 +31,7 @@ namespace Datadog.Trace.AppSec
         private static object _globalInstanceLock = new();
 
         private readonly IPowerWaf _powerWaf;
-        private readonly Datadog.Trace.AppSec.Agent.IAgentWriter _agentWriter;
+        private readonly IAppSecAgentWriter _agentWriter;
         private readonly InstrumentationGateway _instrumentationGateway;
         private readonly SecuritySettings _settings;
         private readonly ConcurrentDictionary<Guid, Action> toExecute = new();
@@ -44,7 +44,7 @@ namespace Datadog.Trace.AppSec
         {
         }
 
-        private Security(SecuritySettings settings = null, InstrumentationGateway instrumentationGateway = null, IPowerWaf powerWaf = null, IAgentWriter agentWriter = null)
+        private Security(SecuritySettings settings = null, InstrumentationGateway instrumentationGateway = null, IPowerWaf powerWaf = null, IAppSecAgentWriter agentWriter = null)
         {
             try
             {

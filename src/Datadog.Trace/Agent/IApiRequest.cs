@@ -5,8 +5,12 @@
 
 using System;
 using System.Threading.Tasks;
+<<<<<<< HEAD
 using Datadog.Trace.Abstractions;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+=======
+using Datadog.Trace.AppSec;
+>>>>>>> 6cd73399 (Move IEvent, rename AgentWriter)
 
 namespace Datadog.Trace.Agent
 {
