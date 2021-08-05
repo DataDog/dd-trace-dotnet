@@ -961,6 +961,10 @@ stages:
     - script: |
         mv win-x64/*.dll ./
         rmdir win-x64
+        test ! -s "integrations.json" && echo "integrations.json does not exist" && exit 1
+        test ! -s "Datadog.Trace.ClrProfiler.Native.dll" && echo "Datadog.Trace.ClrProfiler.Native.dll does not exist" && exit 1
+        test ! -s "Datadog.Trace.ClrProfiler.Native.so" && echo "Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
+        test ! -s "arm64/Datadog.Trace.ClrProfiler.Native.so" && echo "arm64/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
         cd $(System.DefaultWorkingDirectory)/build/crank
         chmod +x ./run.sh
         ./run.sh

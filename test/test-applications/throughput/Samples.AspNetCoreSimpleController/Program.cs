@@ -17,7 +17,7 @@ namespace Samples.AspNetCoreSimpleController
                 if (!isAttached)
                 {
                     Console.WriteLine("Error: Profiler is required and is not loaded.");
-                    Environment.Exit(-1);
+                    Environment.Exit(1);
                     return;
                 }
             }
