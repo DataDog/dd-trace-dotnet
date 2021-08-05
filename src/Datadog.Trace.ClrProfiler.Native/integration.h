@@ -145,6 +145,8 @@ struct AssemblyReference
                         WStr(", PublicKeyToken=") + public_key.str();
         return ss;
     }
+
+    static AssemblyReference* GetFromCache(const WSTRING& str);
 };
 
 // A MethodSignature is a byte array. The format is:
@@ -256,7 +258,7 @@ struct MethodReference
     MethodReference(const WSTRING& assembly_name, WSTRING type_name, WSTRING method_name, WSTRING action,
                     Version min_version, Version max_version, const std::vector<BYTE>& method_signature,
                     const std::vector<WSTRING>& signature_types) :
-        assembly(assembly_name),
+        assembly(*AssemblyReference::GetFromCache(assembly_name)),
         type_name(type_name),
         method_name(method_name),
         action(action),

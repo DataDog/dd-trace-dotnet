@@ -8,10 +8,15 @@
 #endif
 #include <sstream>
 
+#include <unordered_map>
+
 #include "util.h"
+#include "logger.h"
 
 namespace trace
 {
+
+    std::unordered_map<WSTRING, std::unique_ptr<AssemblyReference>> m_assemblyReferenceCache;
 
 AssemblyReference::AssemblyReference(const WSTRING& str) :
     name(GetNameFromAssemblyReferenceString(str)),
@@ -19,6 +24,18 @@ AssemblyReference::AssemblyReference(const WSTRING& str) :
     locale(GetLocaleFromAssemblyReferenceString(str)),
     public_key(GetPublicKeyFromAssemblyReferenceString(str))
 {
+}
+
+AssemblyReference* AssemblyReference::GetFromCache(const WSTRING& str)
+{
+    auto findRes = m_assemblyReferenceCache.find(str);
+    if (findRes != m_assemblyReferenceCache.end())
+    {
+        return findRes->second.get();
+    }
+    AssemblyReference* aref = new AssemblyReference(str);
+    m_assemblyReferenceCache[str] = std::unique_ptr<AssemblyReference>(aref);
+    return aref;
 }
 
 namespace
