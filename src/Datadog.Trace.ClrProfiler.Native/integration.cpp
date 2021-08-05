@@ -16,7 +16,9 @@
 namespace trace
 {
 
-    std::unordered_map<WSTRING, std::unique_ptr<AssemblyReference>> m_assemblyReferenceCache;
+std::mutex m_assemblyReferenceCacheMutex;
+std::unordered_map<WSTRING, std::unique_ptr<AssemblyReference>> m_assemblyReferenceCache;
+
 
 AssemblyReference::AssemblyReference(const WSTRING& str) :
     name(GetNameFromAssemblyReferenceString(str)),
@@ -28,6 +30,7 @@ AssemblyReference::AssemblyReference(const WSTRING& str) :
 
 AssemblyReference* AssemblyReference::GetFromCache(const WSTRING& str)
 {
+    std::lock_guard<std::mutex> guard(m_assemblyReferenceCacheMutex);
     auto findRes = m_assemblyReferenceCache.find(str);
     if (findRes != m_assemblyReferenceCache.end())
     {
