@@ -36,7 +36,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         IntegrationName = nameof(IntegrationIds.AspNetCore))]
     public static class AspNetCoreMiddlewareIntegration
     {
-        private const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetCoreMiddlewareIntegration";
         private const string MinimumVersion = "2";
         private const string MaximumVersion = "6";
         private const string AssemblyName = "Microsoft.AspNetCore.Http";
