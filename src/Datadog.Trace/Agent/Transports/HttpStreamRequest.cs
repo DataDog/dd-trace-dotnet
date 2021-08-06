@@ -47,6 +47,7 @@ namespace Datadog.Trace.Agent.Transports
             using (JsonWriter writer = new JsonTextWriter(sw))
             {
                 serializer.Serialize(writer, events);
+                await writer.FlushAsync();
                 var buffer = memoryStream.GetBuffer();
                 return await PostSegmentAsync(new ArraySegment<byte>(buffer, 0, (int)memoryStream.Length)).ConfigureAwait(false);
             }
