@@ -61,7 +61,6 @@ steps:
           --env SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI \
           --env SYSTEM_PULLREQUEST_SOURCEBRANCH \
           --env SYSTEM_PULLREQUEST_SOURCECOMMITID \
-          --env SYSTEM_PULLREQUEST_SOURCECOMMITID \
           dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }} \
           dd-trace --agent-url ${{ parameters.ddTraceAgentUrl }}  -- dotnet /build/bin/Debug/_build.dll info ${{ parameters.command }}
     displayName: Run dd-trace '${{ parameters.command }}' in Docker
