@@ -423,20 +423,9 @@ namespace Samples.WebRequest
                     }
 
                     await Task.Factory.FromAsync(
-                        beginMethod: (callback, state) => request.BeginGetResponse(callback, state),
-                        endMethod: iar =>
-                        {
-                            var req = (HttpWebRequest)iar.AsyncState;
-                            var response = req.EndGetResponse(iar);
-
-                            response.Close();
-
-                            Console.WriteLine("Received response for request.Begin/EndGetResponse()");
-                            _allDone.Set();
-                        },
+                        beginMethod: request.BeginGetResponse,
+                        endMethod: request.EndGetResponse,
                         state: request);
-
-                    _allDone.WaitOne();
                 }
             }
         }
