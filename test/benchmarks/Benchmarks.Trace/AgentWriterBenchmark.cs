@@ -92,17 +92,6 @@ namespace Benchmarks.Trace
                 _realRequest.AddHeader(name, value);
             }
 
-            public Task<IApiResponse> PostAsJsonAsync(IEvent events)
-            {
-                using (var requestStream = Stream.Null)
-                {
-                    using var streamWriter = new StreamWriter(requestStream);
-                    var json = JsonConvert.SerializeObject(events);
-                    streamWriter.Write(json);
-                }
-                return Task.FromResult<IApiResponse>(new FakeApiResponse());
-            }
-
             public async Task<IApiResponse> PostAsync(ArraySegment<byte> traces)
             {
                 using (var requestStream = Stream.Null)
@@ -111,6 +100,16 @@ namespace Benchmarks.Trace
                 }
 
                 return new FakeApiResponse();
+            }
+            public  Task<IApiResponse> PostAsJsonAsync(IEvent events, JsonSerializer serializer)
+            {
+                using (var requestStream = Stream.Null)
+                {
+                    using var streamWriter = new StreamWriter(requestStream);
+                    var json = JsonConvert.SerializeObject(events);
+                    streamWriter.Write(json);
+                }
+                return Task.FromResult<IApiResponse>(new FakeApiResponse());
             }
         }
 
