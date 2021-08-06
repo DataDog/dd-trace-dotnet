@@ -126,6 +126,24 @@ namespace datadog::shared::nativeloader
             m_customProfiler = customInstance->GetProfilerCallback();
         }
 
+        // ********************************************************************************************
+        // We get the ICorProfilerInfo5 interface from the pICorProfilerInfoUnk given by the runtime.
+        // Note: pICorProfilerInfoUnk is shared with CP and Tracer profilers, so their ICorProfilerInfoX
+        // will be extracted the same way we do here. And in fact, the mask is global and shared with
+        // all profilers.
+        //
+        // So for event masks we do the following:
+        //
+        // 1. Read the Profiler mask using the ICorProfilerInfo5 instance.
+        // 2. Call the `Initialize` function from the ContinousProfiler with the same pICorProfilerInfoUnk
+        // instance. In this step the Continous Profiler will set the required event mask to work.
+        // 3. Read again the event mask from the ICorProfilerInfo5 instance, and because it's using the
+        // same pICorProfilerInfoUnk we will see here the event masks that the continuous profiler set.
+        // 4. We do the bitwise OR operation with the global `mask_low` and `mask_hi`.
+        // 5. Repeat the steps 2,3,4 for other target profilers.
+        // 6. Use the ICorProfilerInfo5 instance to set the final `mask_low` and `mask_hi`.
+        // ********************************************************************************************
+
         //
         // Get Profiler interface ICorProfilerInfo5 for net46+
         //
