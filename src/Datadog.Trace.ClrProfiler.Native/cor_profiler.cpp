@@ -314,6 +314,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     opcodes_names.push_back("(count)"); // CEE_COUNT
     opcodes_names.push_back("->");      // CEE_SWITCH_ARG
 
+    //
+    managed_profiler_assembly_reference = AssemblyReference::GetFromCache(managed_profiler_full_assembly_version);
+
     // we're in!
     Logger::Info("Profiler attached.");
     this->info_->AddRef();
@@ -1092,34 +1095,33 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(const WCHAR* wszAss
 
     // Construct an ASSEMBLYMETADATA structure for the managed profiler that can
     // be consumed by the runtime
-    const AssemblyReference assemblyReference = trace::AssemblyReference(managed_profiler_full_assembly_version);
     ASSEMBLYMETADATA assembly_metadata{};
 
-    assembly_metadata.usMajorVersion = assemblyReference.version.major;
-    assembly_metadata.usMinorVersion = assemblyReference.version.minor;
-    assembly_metadata.usBuildNumber = assemblyReference.version.build;
-    assembly_metadata.usRevisionNumber = assemblyReference.version.revision;
-    if (assemblyReference.locale == WStr("neutral"))
+    assembly_metadata.usMajorVersion = managed_profiler_assembly_reference->version.major;
+    assembly_metadata.usMinorVersion = managed_profiler_assembly_reference->version.minor;
+    assembly_metadata.usBuildNumber = managed_profiler_assembly_reference->version.build;
+    assembly_metadata.usRevisionNumber = managed_profiler_assembly_reference->version.revision;
+    if (managed_profiler_assembly_reference->locale == WStr("neutral"))
     {
         assembly_metadata.szLocale = const_cast<WCHAR*>(WStr("\0"));
         assembly_metadata.cbLocale = 0;
     }
     else
     {
-        assembly_metadata.szLocale = const_cast<WCHAR*>(assemblyReference.locale.c_str());
-        assembly_metadata.cbLocale = (DWORD)(assemblyReference.locale.size());
+        assembly_metadata.szLocale = const_cast<WCHAR*>(managed_profiler_assembly_reference->locale.c_str());
+        assembly_metadata.cbLocale = (DWORD)(managed_profiler_assembly_reference->locale.size());
     }
 
     DWORD public_key_size = 8;
-    if (assemblyReference.public_key == trace::PublicKey())
+    if (managed_profiler_assembly_reference->public_key == trace::PublicKey())
     {
         public_key_size = 0;
     }
 
     COR_PRF_ASSEMBLY_REFERENCE_INFO asmRefInfo;
-    asmRefInfo.pbPublicKeyOrToken = (void*) &assemblyReference.public_key.data[0];
+    asmRefInfo.pbPublicKeyOrToken = (void*) &managed_profiler_assembly_reference->public_key.data[0];
     asmRefInfo.cbPublicKeyOrToken = public_key_size;
-    asmRefInfo.szName = assemblyReference.name.c_str();
+    asmRefInfo.szName = managed_profiler_assembly_reference->name.c_str();
     asmRefInfo.pMetaData = &assembly_metadata;
     asmRefInfo.pbHashValue = nullptr;
     asmRefInfo.cbHashValue = 0;
