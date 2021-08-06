@@ -54,8 +54,6 @@ steps:
           --env BUILD_REPOSITORY_URI \
           --env BUILD_SOURCEBRANCH \
           --env BUILD_SOURCEVERSION \
-          --env BUILD_SOURCEBRANCH \
-          --env BUILD_SOURCEVERSION \
           --env SYSTEM_TEAMFOUNDATIONSERVERURI \
           --env SYSTEM_TEAMPROJECT \
           --env SYSTEM_JOBID \
