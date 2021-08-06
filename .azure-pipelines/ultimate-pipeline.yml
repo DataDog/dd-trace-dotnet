@@ -221,9 +221,12 @@ stages:
         condition: succeededOrFailed()
 
     - job: native
+      services:
+        dd_agent: dd_agent
       steps:
       - template: steps/install-dotnet.yml
       - template: steps/restore-working-directory.yml
+      - template: steps/enable-ciapp.yml
 
       - script: build.cmd BuildAndRunNativeUnitTests
         displayName: Build and Test
