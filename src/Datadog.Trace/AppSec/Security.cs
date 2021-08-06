@@ -200,7 +200,7 @@ namespace Datadog.Trace.AppSec
             }
             else
             {
-                Log.Warning("AppSec could not start because of unsupported process architecture {ProcessArchitecture}", frameworkDescription.ProcessArchitecture);
+                Log.Warning($"AppSec could not start because the current environment is not supported. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help. Host information: {{ operating_system:{frameworkDescription.OSPlatform} }}, arch:{{ {frameworkDescription.ProcessArchitecture} }}, runtime_infos: {{ {frameworkDescription.ProductVersion} }}");
             }
 
             return osSupported && archSupported;
