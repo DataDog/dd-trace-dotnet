@@ -82,6 +82,24 @@ namespace datadog::shared::nativeloader
         }
     }
 
+    /*
+     * DllGetClassObject Is called to get the proxy profiler class factory.
+     * So in our proxy class factory we redirect the call to the target profilers
+     * DllGetClassObject exported function, so we get the class factories from the
+     * target profilers as well.
+     *
+     * Then the CreateInstance method from the proxy profiler class factory gets called.
+     * In this case we create our proxy profiler callbacks instance and also redirect
+     * the same call to the CreateInstance method on each target profilers class factories,
+     * so in this steps we get also the CorProfilerCallback instances from the target
+     * profilers as well.
+     *
+     * Then the CorProfilerCallback::Initialize method gets called, here we do the same
+     * a previous steps, calls the same method in each target profiler and set the global
+     * event mask.
+     *
+     */
+
     HRESULT DynamicInstanceImpl::LoadClassFactory(REFIID riid)
     {
         LPVOID ppv;
