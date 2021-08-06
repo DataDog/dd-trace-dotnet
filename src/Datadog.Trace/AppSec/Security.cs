@@ -57,7 +57,7 @@ namespace Datadog.Trace.AppSec
                     _powerWaf = powerWaf ?? PowerWaf.Initialize();
                     if (_powerWaf != null)
                     {
-                        _agentWriter = agentWriter ?? new Datadog.Trace.AppSec.Agent.AgentWriter();
+                        _agentWriter = agentWriter ?? new AppSecAgentWriter();
                         _instrumentationGateway.InstrumentationGatewayEvent += InstrumentationGatewayInstrumentationGatewayEvent;
                     }
                     else
