@@ -542,7 +542,7 @@ stages:
       displayName: docker-compose start datadog agent
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: run -e "DD_API_KEY=$(ddApiKey)" --rm datadog-agent
+        dockerComposeCommand: run -d -e "DD_API_KEY=$(ddApiKey)" --rm datadog-agent
 
     # Doing a clean of obj files _before_ restore to remove build output from previous runs
     # Can't do a full clean, as otherwise restore-working-directory fails
