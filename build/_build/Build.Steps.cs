@@ -450,7 +450,6 @@ partial class Build
         .After(BuildTracerHome)
         .Executes(() =>
         {
-
             // Copy existing files from tracer home to the AutoInstrumentation location
             CopyDirectoryRecursively(TracerHomeDirectory, AutoInstrumentationHomeDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
 
