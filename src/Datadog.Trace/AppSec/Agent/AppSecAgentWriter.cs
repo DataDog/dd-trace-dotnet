@@ -20,9 +20,11 @@ namespace Datadog.Trace.AppSec.Agent
         private const int BatchInterval = 1000;
         private const int MaxItemsPerBatch = 1000;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AppSecAgentWriter>();
-        private readonly ManualResetEventSlim _senderMutex = new ManualResetEventSlim(initialState: false, spinCount: 0);
         private readonly ConcurrentQueue<IEvent> _events;
+        private readonly ManualResetEventSlim _senderMutex = new(initialState: false, spinCount: 0);
+        private readonly TaskCompletionSource<bool> _processExit = new();
         private readonly Sender _sender;
+        private readonly CancellationTokenSource _batchCancelationSource = new();
 
         internal AppSecAgentWriter()
         {
@@ -41,10 +43,29 @@ namespace Datadog.Trace.AppSec.Agent
             }
         }
 
+        public void Shutdown()
+        {
+            if (!_processExit.TrySetResult(true))
+            {
+                return;
+            }
+
+            _batchCancelationSource.Cancel();
+            if (!_senderMutex.IsSet)
+            {
+                _senderMutex.Set();
+            }
+        }
+
         private async Task FlushTracesAsync()
         {
             while (true)
             {
+                if (_processExit.Task.IsCompleted)
+                {
+                    return;
+                }
+
                 if (_events.Count == 0)
                 {
                     _senderMutex.Wait();
@@ -74,7 +95,7 @@ namespace Datadog.Trace.AppSec.Agent
                 }
                 finally
                 {
-                    await Task.Delay(BatchInterval);
+                    await Task.Delay(BatchInterval, _batchCancelationSource.Token);
                 }
             }
         }
