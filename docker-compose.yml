@@ -219,7 +219,7 @@ services:
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdk5Version:-5.0.103}
     image: dd-trace-dotnet/${baseImage:-debian}-tester
-    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1} --code-coverage
+    command: dd-trace --agent-url http://dd_agent:8126 -- dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1} --code-coverage
     volumes:
       - ./:/project
     environment:
@@ -243,6 +243,23 @@ services:
       - RABBITMQ_HOST=rabbitmq
       - KAFKA_BROKER_HOST=kafka-broker:29092
       - AWS_SQS_HOST=aws_sqs:9324
+      - DD_SERVICE=${DD_SERVICE:-}
+      - DD_ENV=${DD_ENV:-}
+      - TF_BUILD=${TF_BUILD:-}
+      - BUILD_DEFINITIONNAME=${BUILD_DEFINITIONNAME:-}
+      - BUILD_BUILDID=${BUILD_BUILDID:-}
+      - BUILD_SOURCESDIRECTORY=${BUILD_SOURCESDIRECTORY:-}
+      - BUILD_REPOSITORY_URI=${BUILD_REPOSITORY_URI:-}
+      - BUILD_SOURCEBRANCH=${BUILD_SOURCEBRANCH:-}
+      - BUILD_SOURCEVERSION=${BUILD_SOURCEVERSION:-}
+      - SYSTEM_TEAMFOUNDATIONSERVERURI=${SYSTEM_TEAMFOUNDATIONSERVERURI:-}
+      - SYSTEM_TEAMPROJECT=${SYSTEM_TEAMPROJECT:-}
+      - SYSTEM_JOBID=${SYSTEM_JOBID:-}
+      - SYSTEM_TASKINSTANCEID=${SYSTEM_TASKINSTANCEID:-}
+      - SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI=${SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI:-}
+      - SYSTEM_PULLREQUEST_SOURCEBRANCH=${SYSTEM_PULLREQUEST_SOURCEBRANCH:-}
+      - SYSTEM_PULLREQUEST_SOURCECOMMITID=${SYSTEM_PULLREQUEST_SOURCECOMMITID:-}
+      - SYSTEM_PULLREQUEST_SOURCECOMMITID=${SYSTEM_PULLREQUEST_SOURCECOMMITID:-}
     depends_on:
       - servicestackredis
       - stackexchangeredis
@@ -257,6 +274,7 @@ services:
       - kafka-broker
       - kafka-zookeeper
       - aws_sqs
+      - datadog-agent
 
   StartDependencies:
     image: andrewlock/wait-for-dependencies
@@ -332,3 +350,13 @@ services:
     environment:
       - TIMEOUT_LENGTH=120
     command: servicestackredis:6379 stackexchangeredis:6379 elasticsearch7_arm64:9200 sqledge:1433 mongo:27017 postgres:5432 mysql:3306 rabbitmq:5672 aws_sqs:9324
+
+  datadog-agent:
+    image: "gcr.io/datadoghq/agent:7"
+    ports:
+      - "8126:8126"
+    environment:
+      DD_API_KEY: ${DD_API_KEY:-}
+      DD_INSIDE_CI: ${DD_INSIDE_CI:-true}
+      DD_APM_ENABLED: "true"
+      DD_APM_NON_LOCAL_TRAFFIC: "true"

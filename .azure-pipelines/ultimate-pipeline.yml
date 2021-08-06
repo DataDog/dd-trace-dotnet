@@ -538,10 +538,11 @@ stages:
       vmImage: ubuntu-18.04
 
     steps:
-    - script: |
-        docker network create $(dockerNetwork)
-        docker run --rm -d --network $(dockerNetwork) --name dd_agent -p 8126:8126 -e "DD_API_KEY=$(ddApiKey)" -e "DD_INSIDE_CI=true" datadog/agent
-      displayName: Start dd_agent in Docker
+    - task: DockerCompose@0
+      displayName: docker-compose start datadog agent
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: run -e "DD_API_KEY=$(ddApiKey)" --rm datadog-agent
 
     # Doing a clean of obj files _before_ restore to remove build output from previous runs
     # Can't do a full clean, as otherwise restore-working-directory fails
@@ -593,12 +594,6 @@ stages:
 
     - publish: build_data
       artifact: profiler-logs_integration_tests_linux_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
-      condition: succeededOrFailed()
-
-    - script: |
-        docker stop dd_agent
-        docker network rm $(dockerNetwork)
-      displayName: Stop dd_agent
       condition: succeededOrFailed()
 
     - task: PublishTestResults@2
