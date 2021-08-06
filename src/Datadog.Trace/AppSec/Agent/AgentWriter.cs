@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Abstractions;
 using Datadog.Trace.AppSec.Transports;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.AppSec.Agent
