@@ -373,6 +373,8 @@ stages:
   jobs:
 
   - job: Windows
+    services:
+      dd_agent: dd_agent
     timeoutInMinutes: 100
     strategy:
       matrix:
@@ -398,6 +400,7 @@ stages:
       parameters:
         includeX86: true
     - template: steps/restore-working-directory.yml
+    - template: steps/enable-ciapp.yml
 
     - powershell: |
         Write-Host "Starting CosmosDB Emulator"
@@ -427,6 +430,8 @@ stages:
   dependsOn: [build_windows, package_windows]
   jobs:
   - job: Windows_IIS
+    services:
+      dd_agent: dd_agent
     timeoutInMinutes: 100
     strategy:
       matrix:
@@ -447,6 +452,7 @@ stages:
       parameters:
         includeX86: true
     - template: steps/restore-working-directory.yml
+    - template: steps/enable-ciapp.yml
 
     - task: DownloadPipelineArtifact@2
       displayName: Download MSI
