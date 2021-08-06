@@ -412,6 +412,32 @@ namespace Samples.WebRequest
 
                     _allDone.WaitOne();
                 }
+
+                using (Tracer.Instance.StartActive("BeginGetResponse TaskFactoryFromAsync"))
+                {
+                    // Create separate request objects since .NET Core asserts only one response per request
+                    HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest("TaskFactoryFromAsync", url));
+                    if (tracingDisabled)
+                    {
+                        request.Headers.Add(HttpHeaderNames.TracingEnabled, "false");
+                    }
+
+                    await Task.Factory.FromAsync(
+                        beginMethod: (callback, state) => request.BeginGetResponse(callback, state),
+                        endMethod: iar =>
+                        {
+                            var req = (HttpWebRequest)iar.AsyncState;
+                            var response = req.EndGetResponse(iar);
+
+                            response.Close();
+
+                            Console.WriteLine("Received response for request.Begin/EndGetResponse()");
+                            _allDone.Set();
+                        },
+                        state: request);
+
+                    _allDone.WaitOne();
+                }
             }
         }
 
