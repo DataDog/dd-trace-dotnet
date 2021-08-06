@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -44,6 +45,7 @@ partial class Build
 
     AbsolutePath SourceDirectory => RootDirectory / "src";
     AbsolutePath TestsDirectory => RootDirectory / "test";
+    AbsolutePath AutoInstrumentationHomeDirectory => SourceDirectory / "Datadog.Trace.AutoInstrumentation" / "home";
 
     AbsolutePath TempDirectory => (AbsolutePath)(IsWin ? Path.GetTempPath() : "/tmp/");
     string TracerLogDirectory => IsWin
@@ -443,6 +445,24 @@ partial class Build
                 degreeOfParallelism: 2);
         });
 
+    Target CreateAutoInstrumentationHome => _ => _
+        .Unlisted()
+        .After(BuildTracerHome)
+        .Executes(() =>
+        {
+
+            // Copy existing files from tracer home to the AutoInstrumentation location
+            CopyDirectoryRecursively(TracerHomeDirectory, AutoInstrumentationHomeDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+
+            // Ensure createLogPath.sh is copied to the directory
+            CopyFileToDirectory(
+                RootDirectory / "build" / "artifacts" / "createLogPath.sh",
+                AutoInstrumentationHomeDirectory,
+                FileExistsPolicy.Overwrite);
+
+            // Delete integrations.json (if it exists) because will be consumed from the root directory
+            File.Delete(AutoInstrumentationHomeDirectory / "integrations.json");
+        });
 
     /// <summary>
     /// This target is a bit of a hack, but means that we actually use the All CPU builds in intgration tests etc

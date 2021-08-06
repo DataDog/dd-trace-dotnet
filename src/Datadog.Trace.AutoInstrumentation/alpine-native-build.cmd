@@ -20,7 +20,7 @@ docker run --rm ^
     --env tracerHome=/project/src/bin/linux-tracer-home-alpine ^
     --env artifacts=/project/src/bin/artifacts ^
     dd-trace-dotnet/alpine-builder ^
-    dotnet /build/bin/Debug/_build.dll Clean BuildTracerHome ZipTracerHome
+    dotnet /build/bin/Debug/_build.dll BuildTracerHome ZipTracerHome
 
 copy %RootDir%\src\bin\linux-tracer-home-alpine\Datadog.Trace.ClrProfiler.Native.so %RootDir%\src\Datadog.Trace.AutoInstrumentation\home\linux-musl-x64\Datadog.Trace.ClrProfiler.Native.so
 ENDLOCAL

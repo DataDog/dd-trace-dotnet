@@ -10,6 +10,7 @@ using Nuke.Common.Utilities.Collections;
 using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
+using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
 
 // #pragma warning disable SA1306
 // #pragma warning disable SA1134
@@ -233,6 +234,7 @@ partial class Build : NukeBuild
     Target BuildAutoInstrumentation => _ => _
         // Currently requires manual copying of files into expected locations
         .Unlisted()
+        .After(CreateAutoInstrumentationHome)
         .Executes(() =>
         {
             DotNetBuild(x => x
@@ -247,6 +249,7 @@ partial class Build : NukeBuild
     Target BuildRunnerTool => _ => _
         // Currently requires manual copying of files into expected locations
         .Unlisted()
+        .After(CreateAutoInstrumentationHome)
         .Executes(() =>
         {
             DotNetBuild(x => x
@@ -261,6 +264,7 @@ partial class Build : NukeBuild
     Target BuildStandaloneTool => _ => _
         // Currently requires manual copying of files into expected locations
         .Unlisted()
+        .After(CreateAutoInstrumentationHome)
         .Executes(() =>
         {
             var runtimes = new[] {"win-x86", "win-x64", "linux-x64", "linux-musl-x64", "osx-x64", "linux-arm64"};
