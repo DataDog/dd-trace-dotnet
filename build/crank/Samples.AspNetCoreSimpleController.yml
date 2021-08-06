@@ -82,7 +82,7 @@ profiles:
           DD_DOTNET_TRACER_HOME: "{{ windowsProfilerPath }}\\{{ commit_hash }}\\tracer-home-win"
           DD_INTEGRATIONS: "{{ windowsProfilerPath }}\\{{ commit_hash }}\\tracer-home-win\\integrations.json"
           DD_AGENT_HOST: "{{ controllerIp }}"
-          DD_TRACE_DEBUG: 0
+          DD_TRACE_DEBUG: 1
         options:
           requiredOperatingSystem: windows
           requiredArchitecture: x64
@@ -107,7 +107,7 @@ profiles:
           DD_DOTNET_TRACER_HOME: "{{ linuxProfilerPath }}/{{ commit_hash }}/tracer-home-linux"
           DD_INTEGRATIONS: "{{ linuxProfilerPath }}/{{ commit_hash }}/tracer-home-linux/integrations.json"
           DD_AGENT_HOST: "{{ controllerIp }}"
-          DD_TRACE_DEBUG: 0
+          DD_TRACE_DEBUG: 1
         options:
           requiredOperatingSystem: linux
           requiredArchitecture: x64
@@ -132,7 +132,7 @@ profiles:
           DD_DOTNET_TRACER_HOME: "{{ linuxArm64ProfilerPath }}/{{ commit_hash }}/tracer-home-linux-arm64"
           DD_INTEGRATIONS: "{{ linuxArm64ProfilerPath }}/{{ commit_hash }}/tracer-home-linux-arm64/integrations.json"
           DD_AGENT_HOST: "{{ controllerIp }}"
-          DD_TRACE_DEBUG: 0
+          DD_TRACE_DEBUG: 1
         options:
           requiredOperatingSystem: linux
           requiredArchitecture: arm64
