@@ -136,7 +136,7 @@ HRESULT CallTargetTokens::EnsureBaseCalltargetTokens()
     // *** Ensure profiler assembly ref
     if (profilerAssemblyRef == mdAssemblyRefNil)
     {
-        const AssemblyReference assemblyReference = managed_profiler_full_assembly_version;
+        const AssemblyReference assemblyReference = *trace::AssemblyReference::GetFromCache(managed_profiler_full_assembly_version);
         ASSEMBLYMETADATA assembly_metadata{};
 
         assembly_metadata.usMajorVersion = assemblyReference.version.major;
