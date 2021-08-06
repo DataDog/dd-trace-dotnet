@@ -634,7 +634,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         if (foundType)
         {
             // Define the actual profiler file path as a ModuleRef
-            WSTRING native_profiler_file = GetEnvironmentValue(environment::tracer_profiler_path);
+            WSTRING native_profiler_file = GetEnvironmentValue(environment::internal_trace_profiler_path);
             if (native_profiler_file.empty())
             {
                 native_profiler_file = GetCoreCLRProfilerPath();
@@ -2277,9 +2277,9 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
 #ifdef _WIN32
     WSTRING native_profiler_file = WStr("DATADOG.TRACE.CLRPROFILER.NATIVE.DLL");
 #else // _WIN32
-    WSTRING native_profiler_file = GetEnvironmentValue(environment::tracer_profiler_path);
-    Logger::Debug(
-        "GenerateVoidILStartupMethod: ", environment::tracer_profiler_path, " defined as: ", native_profiler_file);
+    WSTRING native_profiler_file = GetEnvironmentValue(environment::internal_trace_profiler_path);
+    Logger::Debug("GenerateVoidILStartupMethod: ", environment::internal_trace_profiler_path,
+                  " defined as: ", native_profiler_file);
 
     if (native_profiler_file == WStr(""))
     {

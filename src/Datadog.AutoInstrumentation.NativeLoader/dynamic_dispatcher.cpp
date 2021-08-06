@@ -146,19 +146,19 @@ namespace datadog::shared::nativeloader
                             {
                                 this->m_tracerInstance =
                                     std::make_unique<DynamicInstanceImpl>(absoluteFilepathValue, idValue);
-                                env_key = WStr("DD_TRACER_PROFILER_PATH");
+                                env_key = WStr("DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH");
                             }
                             else if (type == "PROFILER")
                             {
                                 this->m_continuousProfilerInstance =
                                     std::make_unique<DynamicInstanceImpl>(absoluteFilepathValue, idValue);
-                                env_key = WStr("DD_CONTINUOUSPROFILER_PROFILER_PATH");
+                                env_key = WStr("DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH");
                             }
                             else if (type == "CUSTOM")
                             {
                                 this->m_customInstance =
                                     std::make_unique<DynamicInstanceImpl>(absoluteFilepathValue, idValue);
-                                env_key = WStr("DD_CUSTOM_PROFILER_PATH");
+                                env_key = WStr("DD_INTERNAL_CUSTOM_CLR_PROFILER_PATH");
                             }
 
                             WSTRING env_value = ToWSTRING(absoluteFilepathValue);

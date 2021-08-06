@@ -110,8 +110,8 @@ namespace environment
     // Sets whether to enable the CallTarget instrumentation mode
     const WSTRING calltarget_enabled = WStr("DD_TRACE_CALLTARGET_ENABLED");
 
-    // Custom tracer profiler path
-    const WSTRING tracer_profiler_path = WStr("DD_TRACER_PROFILER_PATH");
+    // Custom internal tracer profiler path
+    const WSTRING internal_trace_profiler_path = WStr("DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH");
 
     // Sets whether to enable NGEN images.
     const WSTRING clr_enable_ngen = WStr("DD_CLR_ENABLE_NGEN");

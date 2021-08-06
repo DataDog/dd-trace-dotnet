@@ -33,7 +33,7 @@ const WSTRING env_vars_to_display[]{environment::tracing_enabled,
                                     environment::azure_app_services,
                                     environment::azure_app_services_app_pool_id,
                                     environment::azure_app_services_cli_telemetry_profile_value,
-                                    environment::tracer_profiler_path};
+                                    environment::internal_trace_profiler_path};
 
 const WSTRING skip_assembly_prefixes[]{
     WStr("Microsoft.AI"),

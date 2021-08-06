@@ -381,7 +381,7 @@ void RejitHandler::EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::ve
     std::copy(modulesMethodDef.begin(), modulesMethodDef.end(), mDefs);
 
     // Create module and methods metadata.
-    for (int i = 0; i < length; i++)
+    for (size_t i = 0; i < length; i++)
     {
         GetOrAddModule(moduleIds[i])->GetOrAddMethod(mDefs[i]);
     }
