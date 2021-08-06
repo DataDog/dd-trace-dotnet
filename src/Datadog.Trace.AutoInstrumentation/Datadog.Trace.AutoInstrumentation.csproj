@@ -11,10 +11,6 @@
       <NoWarn>NU5100;NU5128</NoWarn>
       <PackageOutputPath>bin\$(Configuration)\packages</PackageOutputPath>
     </PropertyGroup>
-
-    <ItemGroup>
-      <None Include="Datadog.Trace.AutoInstrumentation.proj" />
-    </ItemGroup>
   
     <ItemGroup>
       <Content Include="..\..\integrations.json" Link="datadog\integrations.json" Pack="true" PackagePath="content\datadog;contentFiles\any\any\datadog">
