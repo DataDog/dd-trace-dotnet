@@ -61,7 +61,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             var appSecUrl = ctx.Value.Request.Url.AbsoluteUri.Contains("appsec");
             if (appSecUrl)
             {
-                var sr = new StreamReader(ctx.Value.Request.InputStream);
+                using var sr = new StreamReader(ctx.Value.Request.InputStream);
                 string content = sr.ReadToEnd();
                 var intake = JsonConvert.DeserializeObject<Intake>(content, new IntakeConverter());
                 events.AddRange(intake.Events);

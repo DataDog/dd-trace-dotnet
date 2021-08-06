@@ -6,6 +6,7 @@
 using System;
 using System.Threading.Tasks;
 using Datadog.Trace.Abstractions;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Agent
 {
@@ -15,6 +16,6 @@ namespace Datadog.Trace.Agent
 
         Task<IApiResponse> PostAsync(ArraySegment<byte> traces);
 
-        Task<IApiResponse> PostAsJsonAsync(IEvent events);
+        Task<IApiResponse> PostAsJsonAsync(IEvent events, JsonSerializer serializer);
     }
 }

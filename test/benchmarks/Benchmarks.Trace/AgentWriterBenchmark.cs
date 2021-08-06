@@ -92,7 +92,7 @@ namespace Benchmarks.Trace
                 _realRequest.AddHeader(name, value);
             }
 
-            public Task<IApiResponse> PostAsJsonAsync(IEvent events)
+            public Task<IApiResponse> PostAsJsonAsync(IEvent events, JsonSerializer serializer)
             {
                 using (var requestStream = Stream.Null)
                 {

@@ -5,10 +5,14 @@
 
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.Abstractions;
 using Datadog.Trace.Agent;
 using Datadog.Trace.AppSec.EventModel.Batch;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec.Transports
 {
@@ -16,18 +20,21 @@ namespace Datadog.Trace.AppSec.Transports
     {
         internal const string AppSecHeaderValue = "v0.1.0";
         internal const string AppSecHeaderKey = "X-Api-Version";
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Sender>();
         private readonly IApiRequestFactory _apiRequestFactory;
         private readonly Uri _uri;
+        private readonly JsonSerializer _serializer;
 
         internal Sender()
         {
-            _apiRequestFactory = Api.CreateRequestFactory();
+            _apiRequestFactory = TransportStrategy.Get(TracerSettings.FromDefaultSources()) ?? Api.CreateRequestFactory();
             var settings = Tracer.Instance.Settings;
             // todo: read from configuration key?
             _uri = new Uri(settings.AgentUri, "appsec/proxy/api/v2/appsecevts");
+            _serializer = JsonSerializer.CreateDefault();
         }
 
-        internal Task Send(IEnumerable<IEvent> events)
+        internal async Task Send(IEnumerable<IEvent> events)
         {
             var batch = new Intake()
             {
@@ -36,7 +43,12 @@ namespace Datadog.Trace.AppSec.Transports
             };
             var request = _apiRequestFactory.Create(_uri);
             request.AddHeader(AppSecHeaderKey, AppSecHeaderValue);
-            return request.PostAsJsonAsync(batch);
+            var response = await request.PostAsJsonAsync(batch, _serializer);
+            if (response.StatusCode != 200 && response.StatusCode != 202)
+            {
+                var responseText = await response.ReadAsStringAsync();
+                Log.Warning($"AppSec event not correctly sent to backend {response.StatusCode} with response {responseText}");
+            }
         }
     }
 }

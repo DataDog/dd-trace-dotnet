@@ -55,28 +55,29 @@ namespace Datadog.Trace.Agent.Transports
             }
         }
 
-        public async Task<IApiResponse> PostAsJsonAsync(IEvent events)
+        public async Task<IApiResponse> PostAsJsonAsync(IEvent events, JsonSerializer serializer)
         {
             _request.Method = "POST";
             _request.ContentType = "application/json";
 
             using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
             {
-                using var streamWriter = new StreamWriter(requestStream);
-                var json = JsonConvert.SerializeObject(events);
-                streamWriter.Write(json);
-            }
-
-            try
-            {
-                var httpWebResponse = (HttpWebResponse)await _request.GetResponseAsync().ConfigureAwait(false);
-                return new ApiWebResponse(httpWebResponse);
-            }
-            catch (WebException exception)
-                when (exception.Status == WebExceptionStatus.ProtocolError && exception.Response != null)
-            {
-                // If the exception is caused by an error status code, ignore it and let the caller handle the result
-                return new ApiWebResponse((HttpWebResponse)exception.Response);
+                using (var writer = new JsonTextWriter(new StreamWriter(requestStream)))
+                {
+                    serializer.Serialize(writer, events);
+                    await writer.FlushAsync();
+                    try
+                    {
+                        var httpWebResponse = (HttpWebResponse)await _request.GetResponseAsync().ConfigureAwait(false);
+                        return new ApiWebResponse(httpWebResponse);
+                    }
+                    catch (WebException exception)
+                        when (exception.Status == WebExceptionStatus.ProtocolError && exception.Response != null)
+                    {
+                        // If the exception is caused by an error status code, ignore it and let the caller handle the result
+                        return new ApiWebResponse((HttpWebResponse)exception.Response);
+                    }
+                }
             }
         }
     }
