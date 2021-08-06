@@ -60,32 +60,27 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ILogger
         public override string ToString()
         {
             var span = _tracer.ActiveScope?.Span;
-            if (span is null)
-            {
-                return string.Empty;
-            }
 
             return string.Format(
                 CultureInfo.InvariantCulture,
                 "dd_service:{0}, dd_env:{1}, dd_version:{2}, dd_trace_id:{3}",
-                span.ServiceName,
+                span?.ServiceName ?? _service,
                 _env,
                 _version,
-                span.TraceId);
+                _tracer.ActiveScope?.Span.TraceId);
         }
 
         public IEnumerator<KeyValuePair<string, object>> GetEnumerator()
         {
             var span = _tracer.ActiveScope?.Span;
-            if (span is null)
-            {
-                yield break;
-            }
-
-            yield return new KeyValuePair<string, object>("dd_service", span.ServiceName);
+            yield return new KeyValuePair<string, object>("dd_service", span?.ServiceName ?? _service);
             yield return new KeyValuePair<string, object>("dd_env", _env);
             yield return new KeyValuePair<string, object>("dd_version", _version);
-            yield return new KeyValuePair<string, object>("dd_trace_id", span.TraceId);
+
+            if (span is not null)
+            {
+                yield return new KeyValuePair<string, object>("dd_trace_id", span.TraceId);
+            }
         }
 
         IEnumerator IEnumerable.GetEnumerator()
