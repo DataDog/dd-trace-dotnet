@@ -11,11 +11,11 @@ namespace Datadog.Trace.AppSec.EventModel
 {
     internal class AppSecEvent : IEvent
     {
+        [JsonProperty("event_version")]
+        public string EventVersion => "0.1.0";
+
         [JsonProperty("event_id")]
         public string EventId { get; set; }
-
-        [JsonProperty("event_version")]
-        public string EventVersion { get; set; }
 
         [JsonProperty("detected_at")]
         public DateTime DetectedAt { get; set; }
