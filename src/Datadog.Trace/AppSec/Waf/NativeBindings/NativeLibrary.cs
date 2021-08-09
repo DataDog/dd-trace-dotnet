@@ -70,13 +70,13 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
 #pragma warning disable SA1300 // Element should begin with upper-case letter
 
-        [DllImport("libdl")]
+        [DllImport("dl")]
         private static extern IntPtr dlopen(string fileName, int flags);
 
-        [DllImport("libdl")]
+        [DllImport("dl")]
         private static extern IntPtr dlerror();
 
-        [DllImport("libdl")]
+        [DllImport("dl")]
         private static extern IntPtr dlsym(IntPtr hModule, string lpProcName);
 
         [DllImport("kernel32.dll")]
