@@ -19,26 +19,26 @@ using json = nlohmann::json;
 // in the DD_INTEGRATIONS environment variable
 void LoadIntegrationsFromEnvironment(std::vector<IntegrationMethod>& integrationMethods, const bool isCallTargetEnabled,
                                      const bool isNetstandardEnabled,
-                                     const std::vector<WSTRING> disabledIntegrationNames);
+                                     const std::vector<WSTRING>& disabledIntegrationNames);
 
 // LoadIntegrationsFromFile loads the integrations from a file
 void LoadIntegrationsFromFile(const WSTRING& file_path, std::vector<IntegrationMethod>& integrationMethods,
                               const bool isCallTargetEnabled, const bool isNetstandardEnabled,
-                              const std::vector<WSTRING> disabledIntegrationNames);
+                              const std::vector<WSTRING>& disabledIntegrationNames);
 
 // LoadIntegrationsFromFile loads the integrations from a stream
 void LoadIntegrationsFromStream(std::istream& stream, std::vector<IntegrationMethod>& integrationMethods,
                                 const bool isCallTargetEnabled, const bool isNetstandardEnabled,
-                                const std::vector<WSTRING> disabledIntegrationNames);
+                                const std::vector<WSTRING>& disabledIntegrationNames);
 
 namespace
 {
 
     void IntegrationFromJson(const json::value_type& src, std::vector<IntegrationMethod>& integrationMethods,
                              const bool isCallTargetEnabled, const bool isNetstandardEnabled,
-                             const std::vector<WSTRING> disabledIntegrationNames);
+                             const std::vector<WSTRING>& disabledIntegrationNames);
 
-    void MethodReplacementFromJson(const json::value_type& src, const WSTRING integrationName,
+    void MethodReplacementFromJson(const json::value_type& src, const WSTRING& integrationName,
                                    std::vector<IntegrationMethod>& integrationMethods,
                                    const bool isCallTargetEnabled, const bool isNetstandardEnabled);
 

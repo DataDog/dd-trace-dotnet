@@ -14,9 +14,9 @@ using json = nlohmann::json;
 
 void LoadIntegrationsFromEnvironment(std::vector<IntegrationMethod>& integrationMethods, const bool isCallTargetEnabled,
                                      const bool isNetstandardEnabled,
-                                     const std::vector<WSTRING> disabledIntegrationNames)
+                                     const std::vector<WSTRING>& disabledIntegrationNames)
 {
-    for (const WSTRING filePath : GetEnvironmentValues(environment::integrations_path))
+    for (const WSTRING& filePath : GetEnvironmentValues(environment::integrations_path))
     {
         Logger::Debug("Loading integrations from file: ", filePath);
         LoadIntegrationsFromFile(filePath, integrationMethods, isCallTargetEnabled, isNetstandardEnabled,
@@ -26,7 +26,7 @@ void LoadIntegrationsFromEnvironment(std::vector<IntegrationMethod>& integration
 
 void LoadIntegrationsFromFile(const WSTRING& file_path, std::vector<IntegrationMethod>& integrationMethods,
                               const bool isCallTargetEnabled, const bool isNetstandardEnabled,
-                              const std::vector<WSTRING> disabledIntegrationNames)
+                              const std::vector<WSTRING>& disabledIntegrationNames)
 {
     try
     {
@@ -63,7 +63,7 @@ void LoadIntegrationsFromFile(const WSTRING& file_path, std::vector<IntegrationM
 
 void LoadIntegrationsFromStream(std::istream& stream, std::vector<IntegrationMethod>& integrationMethods,
                                 const bool isCallTargetEnabled, const bool isNetstandardEnabled,
-                                const std::vector<WSTRING> disabledIntegrationNames)
+                                const std::vector<WSTRING>& disabledIntegrationNames)
 {
     try
     {
@@ -73,7 +73,7 @@ void LoadIntegrationsFromStream(std::istream& stream, std::vector<IntegrationMet
 
         integrationMethods.reserve(j.size());
 
-        for (auto& el : j)
+        for (const auto& el : j)
         {
             IntegrationFromJson(el, integrationMethods, isCallTargetEnabled, isNetstandardEnabled,
                                 disabledIntegrationNames);
@@ -110,7 +110,7 @@ namespace
 
     void IntegrationFromJson(const json::value_type& src, std::vector<IntegrationMethod>& integrationMethods,
                              const bool isCallTargetEnabled, const bool isNetstandardEnabled,
-                             const std::vector<WSTRING> disabledIntegrationNames)
+                             const std::vector<WSTRING>& disabledIntegrationNames)
     {
         if (!src.is_object())
         {
@@ -126,7 +126,7 @@ namespace
         }
 
         // check if the integration is disabled
-        for (const WSTRING disabledName : disabledIntegrationNames)
+        for (const WSTRING& disabledName : disabledIntegrationNames)
         {
             if (name == disabledName)
             {
@@ -137,14 +137,14 @@ namespace
         auto arr = src.value("method_replacements", json::array());
         if (arr.is_array())
         {
-            for (auto& el : arr)
+            for (const auto& el : arr)
             {
                 MethodReplacementFromJson(el, name, integrationMethods, isCallTargetEnabled, isNetstandardEnabled);
             }
         }
     }
 
-    void MethodReplacementFromJson(const json::value_type& src, const WSTRING integrationName,
+    void MethodReplacementFromJson(const json::value_type& src, const WSTRING& integrationName,
                                    std::vector<IntegrationMethod>& integrationMethods,
                                    const bool isCallTargetEnabled, const bool isNetstandardEnabled)
     {
