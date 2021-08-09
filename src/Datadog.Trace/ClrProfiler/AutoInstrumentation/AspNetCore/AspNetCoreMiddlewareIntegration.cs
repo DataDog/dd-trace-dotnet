@@ -50,7 +50,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         /// <returns>Calltarget state value</returns>
         public static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         {
-            BlockingMiddleware.ModifyASpplicationBuilder(instance);
+            if (Security.Instance.Enabled)
+            {
+                BlockingMiddleware.ModifyApplicationBuilder(instance);
+            }
 
             return default;
         }
