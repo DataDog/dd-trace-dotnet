@@ -593,6 +593,7 @@ partial class Build
                     .SetTargetPlatformAnyCPU()
                     .SetDDEnvironmentVariables("dd-tracer-dotnet")
                     .EnableMemoryDumps()
+                    .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .UseBlame()
                     .CombineWith(testProjects, (x, project) => x
