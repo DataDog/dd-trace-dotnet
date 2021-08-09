@@ -117,33 +117,58 @@ public:
     }
     std::string ToString()
     {
+        const auto ns_initialize = initialize.load();
+        const auto ns_moduleLoadFinished = moduleLoadFinished.load();
+        const auto ns_callTargetRequestRejit = callTargetRequestRejit.load();
+        const auto ns_callTargetRewriter = callTargetRewriter.load();
+        const auto ns_assemblyLoadFinished = assemblyLoadFinished.load();
+        const auto ns_moduleUnloadStarted = moduleUnloadStarted.load();
+        const auto ns_jitCompilationStarted = jitCompilationStarted.load();
+        const auto ns_jitInlining = jitInlining.load();
+        const auto ns_jitCachedFunctionSearchStarted = jitCachedFunctionSearchStarted.load();
+
+        const auto count_moduleLoadFinishedCount = moduleLoadFinishedCount.load();
+        const auto count_callTargetRequestRejitCount = callTargetRequestRejitCount.load();
+        const auto count_callTargetRewriterCount = callTargetRewriterCount.load();
+        const auto count_assemblyLoadFinishedCount = assemblyLoadFinishedCount.load();
+        const auto count_moduleUnloadStartedCount = moduleUnloadStartedCount.load();
+        const auto count_jitCompilationStartedCount = jitCompilationStartedCount.load();
+        const auto count_jitInliningCount = jitInliningCount.load();
+        const auto count_jitCachedFunctionSearchStartedCount = jitCachedFunctionSearchStartedCount.load();
+
+        const auto ns_total = ns_initialize + ns_moduleLoadFinished + ns_callTargetRequestRejit +
+                              ns_callTargetRewriter + ns_assemblyLoadFinished + ns_moduleUnloadStarted +
+                              ns_jitCompilationStarted + ns_jitInlining + ns_jitCachedFunctionSearchStarted;
+
         std::stringstream ss;
+        ss << "Total ";
+        ss << ns_total / 1000000 << "ms ";
         ss << "[Initialize=";
-        ss << initialize.load() / 1000000 << "ms";
+        ss << ns_initialize / 1000000 << "ms";
         ss << ", ModuleLoadFinished=";
-        ss << moduleLoadFinished.load() / 1000000 << "ms"
-           << "/" << moduleLoadFinishedCount.load();
+        ss << ns_moduleLoadFinished / 1000000 << "ms"
+           << "/" << count_moduleLoadFinishedCount;
         ss << ", CallTargetRequestRejit=";
-        ss << callTargetRequestRejit.load() / 1000000 << "ms"
-           << "/" << callTargetRequestRejitCount.load();
+        ss << ns_callTargetRequestRejit / 1000000 << "ms"
+           << "/" << count_callTargetRequestRejitCount;
         ss << ", CallTargetRewriter=";
-        ss << callTargetRewriter.load() / 1000000 << "ms"
-           << "/" << callTargetRewriterCount.load();
+        ss << ns_callTargetRewriter / 1000000 << "ms"
+           << "/" << count_callTargetRewriterCount;
         ss << ", AssemblyLoadFinished=";
-        ss << assemblyLoadFinished.load() / 1000000 << "ms"
-           << "/" << assemblyLoadFinishedCount.load();
+        ss << ns_assemblyLoadFinished / 1000000 << "ms"
+           << "/" << count_assemblyLoadFinishedCount;
         ss << ", ModuleUnloadStarted=";
-        ss << moduleUnloadStarted.load() / 1000000 << "ms"
-           << "/" << moduleUnloadStartedCount.load();
+        ss << ns_moduleUnloadStarted / 1000000 << "ms"
+           << "/" << count_moduleUnloadStartedCount;
         ss << ", JitCompilationStarted=";
-        ss << jitCompilationStarted.load() / 1000000 << "ms"
-           << "/" << jitCompilationStartedCount.load();
+        ss << ns_jitCompilationStarted / 1000000 << "ms"
+           << "/" << count_jitCompilationStartedCount;
         ss << ", JitInlining=";
-        ss << jitInlining.load() / 1000000 << "ms"
-           << "/" << jitInliningCount.load();
+        ss << ns_jitInlining / 1000000 << "ms"
+           << "/" << count_jitInliningCount;
         ss << ", JitCacheFunctionSearchStarted=";
-        ss << jitCachedFunctionSearchStarted.load() / 1000000 << "ms"
-           << "/" << jitCachedFunctionSearchStartedCount.load();
+        ss << ns_jitCachedFunctionSearchStarted / 1000000 << "ms"
+           << "/" << count_jitCachedFunctionSearchStartedCount;
         ss << "]";
         return ss.str();
     }

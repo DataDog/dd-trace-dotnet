@@ -101,19 +101,17 @@ struct Version
 
     inline bool operator>(const Version& other) const
     {
-        if (major > other.major)
-        {
-            return true;
-        }
-        if (major == other.major && minor > other.minor)
-        {
-            return true;
-        }
-        if (major == other.major && minor == other.minor && build > other.build)
-        {
-            return true;
-        }
-        return false;
+        return other < *this;
+    }
+
+    inline bool operator<=(const Version& other) const
+    {
+        return !(*this > other);
+    }
+
+    inline bool operator>=(const Version& other) const
+    {
+        return !(*this < other);
     }
 };
 
@@ -308,26 +306,6 @@ struct MethodReplacement
     {
         return caller_method == other.caller_method && target_method == other.target_method &&
                wrapper_method == other.wrapper_method;
-    }
-};
-
-struct Integration
-{
-    const WSTRING integration_name;
-    std::vector<MethodReplacement> method_replacements;
-
-    Integration() : integration_name(WStr("")), method_replacements({})
-    {
-    }
-
-    Integration(WSTRING integration_name, std::vector<MethodReplacement> method_replacements) :
-        integration_name(integration_name), method_replacements(method_replacements)
-    {
-    }
-
-    inline bool operator==(const Integration& other) const
-    {
-        return integration_name == other.integration_name && method_replacements == other.method_replacements;
     }
 };
 

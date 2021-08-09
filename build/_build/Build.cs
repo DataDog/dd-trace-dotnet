@@ -11,11 +11,11 @@ using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
-// #pragma warning disable SA1306  
-// #pragma warning disable SA1134  
-// #pragma warning disable SA1111  
-// #pragma warning disable SA1400  
-// #pragma warning disable SA1401  
+// #pragma warning disable SA1306
+// #pragma warning disable SA1134
+// #pragma warning disable SA1111
+// #pragma warning disable SA1400
+// #pragma warning disable SA1401
 
 partial class Build : NukeBuild
 {
@@ -30,8 +30,8 @@ partial class Build : NukeBuild
 
     [Parameter("Platform to build - x86 or x64. Default is x64")]
     readonly MSBuildTargetPlatform Platform = MSBuildTargetPlatform.x64;
-    
-    [Parameter("The TargetFramework to execute when running or building a sample app, or linux integration tests")] 
+
+    [Parameter("The TargetFramework to execute when running or building a sample app, or linux integration tests")]
     readonly TargetFramework Framework;
 
     [Parameter("Should all versions of integration NuGet packages be tested, or just the defaults")]
@@ -43,7 +43,7 @@ partial class Build : NukeBuild
     readonly AbsolutePath DDTracerHome;
     [Parameter("The location to place NuGet packages and other packages. Default is ./bin/artifacts ")]
     readonly AbsolutePath Artifacts;
-    
+
     [Parameter("The location to restore Nuget packages (optional) ")]
     readonly AbsolutePath NugetPackageDirectory;
 
@@ -259,7 +259,7 @@ partial class Build : NukeBuild
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
                 .CombineWith(runtimes, (c, runtime) => c
                     .SetRuntime(runtime)));
-                
+
         });
 
     Target RunBenchmarks => _ => _

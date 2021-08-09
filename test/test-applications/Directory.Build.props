@@ -15,7 +15,7 @@
     <IsPackable>false</IsPackable>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <ProfilerOutputDirectory>$(MSBuildThisFileDirectory)\..\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$(Platform)</ProfilerOutputDirectory>
-    <ManagedProfilerOutputDirectory Condition="'$(ManagedProfilerOutputDirectory)' == ''">$(MSBuildThisFileDirectory)\..\..\src\Datadog.Trace.ClrProfiler.Managed\bin\$(Configuration)</ManagedProfilerOutputDirectory>
+    <ManagedProfilerOutputDirectory Condition="'$(ManagedProfilerOutputDirectory)' == ''">$(MSBuildThisFileDirectory)\..\..\src\Datadog.Trace\bin\$(Configuration)</ManagedProfilerOutputDirectory>
 
     <!--These should be consolidated in a file that can be shared for the tests and samples directories -->
     <DefineConstants Condition="'$(BuildingInsideVisualStudio)'=='true' or '$(TestAllPackageVersions)'!='true'">$(DefineConstants);DEFAULT_SAMPLES</DefineConstants>
@@ -27,7 +27,7 @@
 
   <ItemGroup Condition="'$(ExcludeManagedProfiler)' != 'true' and
                         '$(LoadManagedProfilerFromProfilerDirectory)' != 'true' ">
-    <ProjectReference Include="$(MSBuildThisFileDirectory)\..\..\src\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(ExcludeNativeProfiler)' != 'true'">

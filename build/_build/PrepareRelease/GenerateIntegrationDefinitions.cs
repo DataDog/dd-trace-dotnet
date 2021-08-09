@@ -74,12 +74,12 @@ namespace PrepareRelease
                                    });
 
             var json = JsonConvert.SerializeObject(callTargetIntegrations.Concat(callSiteIntegrations), serializerSettings);
-            Console.WriteLine($"Writing integration.json...");
 
             foreach (var outputDirectory in outputDirectories)
             {
                 var filename = Path.Combine(outputDirectory, "integrations.json");
                 var utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+                Console.WriteLine($"Writing {filename}...");
                 File.WriteAllText(filename, json, utf8NoBom);
             }
         }
@@ -97,7 +97,7 @@ namespace PrepareRelease
 
             // Extract all InstrumentMethodAttribute from the classes
             var classesInstrumentMethodAttributes = from assembly in assemblies
-                                                    from wrapperType in assembly.GetTypes()
+                                                    from wrapperType in GetLoadableTypes(assembly)
                                                     let attributes = wrapperType.GetCustomAttributes(inherit: false)
                                                                                 .Where(a => InheritsFrom(a.GetType(), InstrumentMethodAttributeName))
                                                                                 .Select(a => (wrapperType, a))
@@ -160,10 +160,10 @@ namespace PrepareRelease
 
         static IEnumerable<Integration> GetCallSiteIntegrations(ICollection<Assembly> assemblies)
         {
-            // find all methods in Datadog.Trace.ClrProfiler.Managed.dll with [InterceptMethod]
+            // find all methods in Datadog.Trace.dll with [InterceptMethod]
             // and create objects that will generate correct JSON schema
             var integrations = from assembly in assemblies
-                               from wrapperType in assembly.GetTypes()
+                               from wrapperType in GetLoadableTypes(assembly)
                                from wrapperMethod in wrapperType.GetRuntimeMethods()
                                let attributes = wrapperMethod.GetCustomAttributes(inherit: false)
                                                              .Where(a => InheritsFrom(a.GetType(), InterceptMethodAttributeName))
@@ -324,6 +324,20 @@ namespace PrepareRelease
             }
 
             return string.Join(" ", signatureBytes.Select(b => b.ToString("X2")));
+        }
+
+        public static IEnumerable<Type> GetLoadableTypes(this Assembly assembly)
+        {
+            try
+            {
+                return assembly.GetTypes();
+            }
+            catch (ReflectionTypeLoadException e)
+            {
+                // Ignore types that cannot be loaded. In particular, TracingHttpModule inherits from
+                // IHttpModule, which is not available to the nuke builds because they run on net5.0.
+                return e.Types.Where(t => t != null);
+            }
         }
 
         private class Integration
