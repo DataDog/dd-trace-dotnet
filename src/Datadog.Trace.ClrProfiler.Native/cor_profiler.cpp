@@ -172,7 +172,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         return E_FAIL;
     }
 
-    const auto is_calltarget_enabled = IsCallTargetEnabled(is_net46_or_greater);
+    const bool is_calltarget_enabled = IsCallTargetEnabled(is_net46_or_greater);
 
     // Initialize ReJIT handler and define the Rewriter Callback
     if (is_calltarget_enabled)
@@ -190,17 +190,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         rejit_handler = nullptr;
     }
 
-    // load all available integrations from JSON files
-    const std::vector<Integration> all_integrations = LoadIntegrationsFromEnvironment();
-
-    // get list of disabled integration names
-    const std::vector<WSTRING> disabled_integration_names = GetEnvironmentValues(environment::disabled_integrations);
-
-    // remove disabled integrations
-    const std::vector<Integration> integrations =
-        FilterIntegrationsByName(all_integrations, disabled_integration_names);
-
-    integration_methods_ = FlattenIntegrations(integrations, is_calltarget_enabled);
+    // load all integrations from JSON files
+    LoadIntegrationsFromEnvironment(integration_methods_, is_calltarget_enabled, IsNetstandardEnabled(),
+                                    GetEnvironmentValues(environment::disabled_integrations));
 
     // check if there are any enabled integrations left
     if (integration_methods_.empty())
@@ -211,15 +203,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     else
     {
         Logger::Debug("Number of Integrations loaded: ", integration_methods_.size());
-    }
-
-    // temporarily skip the calls into netstandard.dll that were added in
-    // https://github.com/DataDog/dd-trace-dotnet/pull/753.
-    // users can opt-in to the additional instrumentation by setting environment
-    // variable DD_TRACE_NETSTANDARD_ENABLED
-    if (!IsNetstandardEnabled())
-    {
-        integration_methods_ = FilterIntegrationsByTargetAssemblyName(integration_methods_, {WStr("netstandard")});
     }
 
     DWORD event_mask = COR_PRF_MONITOR_JIT_COMPILATION | COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
