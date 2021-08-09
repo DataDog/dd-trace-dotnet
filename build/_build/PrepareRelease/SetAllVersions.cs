@@ -95,16 +95,8 @@ namespace PrepareRelease
                 NugetVersionReplace);
 
             SynchronizeVersion(
-                "src/Datadog.Trace.AspNet/Datadog.Trace.AspNet.csproj",
-                NugetVersionReplace);
-
-            SynchronizeVersion(
-                "src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj",
-                NugetVersionReplace);
-
-            SynchronizeVersion(
-                "src/Datadog.Trace.ClrProfiler.Managed.Core/Datadog.Trace.ClrProfiler.Managed.Core.csproj",
-                NugetVersionReplace);
+                  "src/Datadog.Trace.AspNet/Datadog.Trace.AspNet.csproj",
+                  NugetVersionReplace);
 
             SynchronizeVersion(
                 "src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj",
@@ -139,15 +131,6 @@ namespace PrepareRelease
             SynchronizeVersion(
                 "src/Datadog.Trace/TracerConstants.cs",
                 FourPartVersionReplace);
-
-            // Locked AssemblyVersion #.0.0.0 updates
-            SynchronizeVersion(
-                "src/Datadog.Trace.AspNet/AssemblyInfo.cs",
-                text => MajorAssemblyVersionReplace(text, "."));
-
-            SynchronizeVersion(
-                "src/Datadog.Trace.ClrProfiler.Managed.Core/AssemblyInfo.cs",
-                text => MajorAssemblyVersionReplace(text, "."));
 
             // Native profiler updates
             SynchronizeVersion(
@@ -298,7 +281,7 @@ namespace PrepareRelease
 
         private string AssemblyString(string versionText)
         {
-            return $"Datadog.Trace.ClrProfiler.Managed, Version={versionText}.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
+            return $"Datadog.Trace, Version={versionText}.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
         }
     }
 }

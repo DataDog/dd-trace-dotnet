@@ -337,7 +337,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
         return S_OK;
     }
 
-    const auto is_instrumentation_assembly = assembly_info.name == WStr("Datadog.Trace.ClrProfiler.Managed");
+    const auto is_instrumentation_assembly = assembly_info.name == WStr("Datadog.Trace");
 
     if (is_instrumentation_assembly || Logger::IsDebugEnabled())
     {
@@ -361,26 +361,39 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
         const auto assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
         const auto assembly_metadata = GetAssemblyImportMetadata(assembly_import);
 
+        // used multiple times for logging
+        const auto assembly_version = assembly_metadata.version.str();
+
         if (Logger::IsDebugEnabled())
         {
             Logger::Debug("AssemblyLoadFinished: AssemblyName=", assembly_info.name,
-                          " AssemblyVersion=", assembly_metadata.version.str());
+                          " AssemblyVersion=", assembly_version);
         }
 
         if (is_instrumentation_assembly)
         {
-            // Configure a version string to compare with the profiler version
-            std::stringstream ss;
-            ss << assembly_metadata.version.major << '.' << assembly_metadata.version.minor << '.'
-               << assembly_metadata.version.build;
+            const auto expected_assembly_reference = trace::AssemblyReference(managed_profiler_full_assembly_version);
 
-            auto assembly_version = ToWSTRING(ss.str());
+            // used multiple times for logging
+            const auto expected_version = expected_assembly_reference.version.str();
 
-            // Check that Major.Minor.Build match the profiler version
-            if (assembly_version == ToWSTRING(PROFILER_VERSION))
+            bool is_viable_version;
+
+            if (runtime_information_.is_core())
             {
-                Logger::Info("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed v", assembly_version,
-                             " matched profiler version v", PROFILER_VERSION);
+                is_viable_version = (assembly_metadata.version >= expected_assembly_reference.version);
+            }
+            else
+            {
+                is_viable_version = (assembly_metadata.version == expected_assembly_reference.version);
+            }
+
+            // Check that Major.Minor.Build matches the profiler version.
+            // On .NET Core, allow managed library to be a higher version than the native library.
+            if (is_viable_version)
+            {
+                Logger::Info("AssemblyLoadFinished: Datadog.Trace.dll v", assembly_version,
+                             " matched profiler version v", expected_version);
                 managed_profiler_loaded_app_domains.insert(assembly_info.app_domain_id);
 
                 if (runtime_information_.is_desktop() && corlib_module_loaded)
@@ -389,19 +402,19 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
                     // managed profiler is loaded shared
                     if (assembly_info.app_domain_id == corlib_app_domain_id)
                     {
-                        Logger::Info("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed was loaded domain-neutral");
+                        Logger::Info("AssemblyLoadFinished: Datadog.Trace.dll was loaded domain-neutral");
                         managed_profiler_loaded_domain_neutral = true;
                     }
                     else
                     {
-                        Logger::Info("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed was not loaded domain-neutral");
+                        Logger::Info("AssemblyLoadFinished: Datadog.Trace.dll was not loaded domain-neutral");
                     }
                 }
             }
             else
             {
-                Logger::Warn("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed v", assembly_version,
-                             " did not match profiler version v", PROFILER_VERSION);
+                Logger::Warn("AssemblyLoadFinished: Datadog.Trace.dll v", assembly_version,
+                             " did not match profiler version v", expected_version);
             }
         }
     }
@@ -884,9 +897,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     }
 
     // The first time a method is JIT compiled in an AppDomain, insert our startup
-    // hook which, at a minimum, must add an AssemblyResolve event so we can find
-    // Datadog.Trace.ClrProfiler.Managed.dll and its dependencies on-disk since it
-    // is no longer provided in a NuGet package
+    // hook, which, at a minimum, must add an AssemblyResolve event so we can find
+    // Datadog.Trace.dll and its dependencies on disk.
     if (valid_startup_hook_callsite && !has_loader_injected_in_appdomain)
     {
         bool domain_neutral_assembly = runtime_information_.is_desktop() && corlib_module_loaded &&

@@ -9,13 +9,13 @@ using System.Reflection;
 namespace Datadog.Trace.ClrProfiler.Managed.Loader
 {
     /// <summary>
-    /// A class that attempts to load the Datadog.Trace.ClrProfiler.Managed .NET assembly.
+    /// A class that attempts to load the Datadog.Trace .NET assembly.
     /// </summary>
     public partial class Startup
     {
         /// <summary>
         /// Initializes static members of the <see cref="Startup"/> class.
-        /// This method also attempts to load the Datadog.Trace.ClrProfiler.Managed .NET assembly.
+        /// This method also attempts to load the Datadog.Trace .NET assembly.
         /// </summary>
         static Startup()
         {
@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         {
             try
             {
-                var assembly = Assembly.Load("Datadog.Trace.ClrProfiler.Managed, Version=1.28.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
+                var assembly = Assembly.Load("Datadog.Trace, Version=1.28.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
 
                 if (assembly != null)
                 {
