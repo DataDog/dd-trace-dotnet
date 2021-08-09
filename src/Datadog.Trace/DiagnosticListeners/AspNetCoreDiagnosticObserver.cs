@@ -620,7 +620,7 @@ namespace Datadog.Trace.DiagnosticListeners
             scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, tags, tagsFromHeaders);
 
             tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
-            Log.Warning($"Created span {scope.Span.SpanId} with {resourceName}, {scope.Span.ResourceName}");
+
             return scope.Span;
         }
 
