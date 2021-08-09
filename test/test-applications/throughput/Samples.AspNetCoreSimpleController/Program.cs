@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using System;
+using System.Net.Http;
 using System.Reflection;
 
 namespace Samples.AspNetCoreSimpleController
@@ -43,8 +44,17 @@ namespace Samples.AspNetCoreSimpleController
 
         public static bool IsProfilerAttached()
         {
-            Assembly managedAssembly = typeof(Datadog.Trace.ClrProfiler.Instrumentation).Assembly;
-            Type nativeMethodsType = managedAssembly.GetType("Datadog.Trace.ClrProfiler.NativeMethods");
+            try
+            {
+                // Forces loader injection on CallSite scenarios (not required in CallTarget).
+                new HttpClient().GetAsync("http://localhost/bad-url").GetAwaiter().GetResult();
+            }
+            catch
+            {
+                //
+            }
+
+            Type nativeMethodsType = Type.GetType("Datadog.Trace.ClrProfiler.NativeMethods, Datadog.Trace");
             MethodInfo profilerAttachedMethodInfo = nativeMethodsType.GetMethod("IsProfilerAttached");
             try
             {
