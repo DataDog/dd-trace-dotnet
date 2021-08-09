@@ -204,10 +204,6 @@ namespace Datadog.Trace.AppSec
             {
                 osSupported = true;
             }
-            else
-            {
-                Log.Warning("AppSec could not start because of unsupported operating system platform {OS}", FrameworkDescription.Instance.OSPlatform);
-            }
 
             var archSupported = false;
             var supportedArchs = new[] { ProcessArchitecture.Arm, ProcessArchitecture.X64, ProcessArchitecture.X86 };
@@ -215,7 +211,8 @@ namespace Datadog.Trace.AppSec
             {
                 archSupported = true;
             }
-            else
+
+            if (!osSupported || !archSupported)
             {
                 Log.Warning($"AppSec could not start because the current environment is not supported. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help. Host information: {{ operating_system:{frameworkDescription.OSPlatform} }}, arch:{{ {frameworkDescription.ProcessArchitecture} }}, runtime_infos: {{ {frameworkDescription.ProductVersion} }}");
             }
