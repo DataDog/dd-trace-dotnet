@@ -3,6 +3,8 @@
 #include "../../src/Datadog.Trace.ClrProfiler.Native/clr_helpers.h"
 #include "test_helpers.h"
 
+#include <vector>
+
 using namespace trace;
 
 class CLRHelperTest : public ::CLRHelperTestBase {};
@@ -62,47 +64,37 @@ TEST_F(CLRHelperTest, EnumeratesAssemblyRefs) {
   EXPECT_EQ(expected_assemblies, actual_assemblies);
 }
 
-TEST_F(CLRHelperTest, FiltersEnabledIntegrations) {
-  Integration i1 = {L"integration-1",
-                    {{{},
-                      {L"Samples.ExampleLibrary",
-                       L"SomeType",
-                       L"SomeMethod",
-                       L"ReplaceTargetMethod",
-                       min_ver_,
-                       max_ver_,
-                       {},
-                       empty_sig_type_},
-                      {}}}};
-  Integration i2 = {
-      L"integration-2",
-      {{{},
-        {L"Assembly.Two", L"SomeType", L"SomeMethod", L"ReplaceTargetMethod", min_ver_, max_ver_, {}, empty_sig_type_},
-        {}}}};
-  Integration i3 = {
-      L"integration-3",
-      {{{}, {L"System.Runtime", L"", L"", L"ReplaceTargetMethod", min_ver_, max_ver_, {}, empty_sig_type_}, {}}}};
-  std::vector<Integration> all = {i1, i2, i3};
-  std::vector<Integration> expected = {i1, i3};
-  std::vector<WSTRING> disabled_integrations = {WStr("integration-2")};
-  auto actual = FilterIntegrationsByName(all, disabled_integrations);
-  EXPECT_EQ(actual, expected);
-}
-
 TEST_F(CLRHelperTest, FiltersIntegrationsByCaller) {
-  Integration i1 = {
+  IntegrationMethod i1 =
+  {
       L"integration-1",
-      {{{L"Assembly.One", L"SomeType", L"SomeMethod", L"ReplaceTargetMethod", min_ver_, max_ver_, {}, empty_sig_type_},
-        {},
-        {}}}};
-  Integration i2 = {
+      {
+          {L"Assembly.One", L"SomeType", L"SomeMethod", L"ReplaceTargetMethod", min_ver_, max_ver_, {}, empty_sig_type_},
+          {},
+          {}
+      }
+  };
+
+  IntegrationMethod i2 =
+  {
       L"integration-2",
-      {{{L"Assembly.Two", L"SomeType", L"SomeMethod", L"ReplaceTargetMethod", min_ver_, max_ver_, {}, empty_sig_type_},
-        {},
-        {}}}};
-  Integration i3 = {L"integration-3", {{{}, {}, {}}}};
-  auto all = FlattenIntegrations({i1, i2, i3}, false);
-  auto expected = FlattenIntegrations({i1, i3}, false);
+      {
+          {L"Assembly.Two", L"SomeType", L"SomeMethod", L"ReplaceTargetMethod", min_ver_, max_ver_, {}, empty_sig_type_},
+          {},
+          {}
+      }
+  };
+
+  IntegrationMethod i3 =
+  {
+      L"integration-3",
+      {
+          {}, {}, {}
+      }
+  };
+
+  std::vector<IntegrationMethod> all = {i1, i2, i3};
+  std::vector<IntegrationMethod> expected = {i1, i3};
   ModuleID manifest_module_id{};
   AppDomainID app_domain_id{};
   trace::AssemblyInfo assembly_info = { 1, L"Assembly.One", manifest_module_id,  app_domain_id, L"AppDomain1"};
@@ -111,8 +103,10 @@ TEST_F(CLRHelperTest, FiltersIntegrationsByCaller) {
 }
 
 TEST_F(CLRHelperTest, FiltersIntegrationsByTarget) {
-  Integration i1 = {L"integration-1",
-                    {{{},
+  IntegrationMethod i1 =
+  {
+      L"integration-1",
+                    {{},
                       {L"Samples.ExampleLibrary",
                        L"SomeType",
                        L"SomeMethod",
@@ -121,17 +115,21 @@ TEST_F(CLRHelperTest, FiltersIntegrationsByTarget) {
                        max_ver_,
                        {},
                        empty_sig_type_},
-                      {}}}};
-  Integration i2 = {
+                      {}}
+  };
+
+  IntegrationMethod i2 = {
       L"integration-2",
-      {{{},
+      {{},
         {L"Assembly.Two", L"SomeType", L"SomeMethod", L"ReplaceTargetMethod", min_ver_, max_ver_, {}, empty_sig_type_},
-        {}}}};
-  Integration i3 = {
+        {}}};
+
+  IntegrationMethod i3 = {
       L"integration-3",
-      {{{}, {L"System.Runtime", L"", L"", L"ReplaceTargetMethod", min_ver_, max_ver_, {}, empty_sig_type_}, {}}}};
-  auto all = FlattenIntegrations({i1, i2, i3}, false);
-  auto expected = FlattenIntegrations({i1, i3}, false);
+      {{}, {L"System.Runtime", L"", L"", L"ReplaceTargetMethod", min_ver_, max_ver_, {}, empty_sig_type_}, {}}};
+
+  std::vector<IntegrationMethod> all = {i1, i2, i3};
+  std::vector<IntegrationMethod> expected = {i1, i3};
   auto actual = FilterIntegrationsByTarget(all, assembly_import_);
   EXPECT_EQ(actual, expected);
 }
@@ -159,12 +157,22 @@ TEST_F(CLRHelperTest, FiltersFlattenedIntegrationMethodsByTargetAssembly) {
                        empty_sig_type_},
                       {}};
 
-  Integration mixed_integration = {L"integration-1", {included_method, excluded_method}};
-  Integration included_integration = {L"integration-2", {included_method}};
-  Integration excluded_integration = {L"integration-3", {excluded_method}};
-  auto all = FlattenIntegrations({mixed_integration, included_integration, excluded_integration}, false);
-  auto expected = FlattenIntegrations({{L"integration-1", {included_method}}, included_integration}, false);
-  auto actual = FilterIntegrationsByTargetAssemblyName(all, {L"Samples.Excluded"});
+  IntegrationMethod included_integration = {L"integration-2", included_method};
+  IntegrationMethod excluded_integration = {L"integration-3", excluded_method};
+
+  std::vector<IntegrationMethod> all =
+  {
+      {L"integration-1", included_method}, {L"integration-1", excluded_method},
+      included_integration,
+      excluded_integration
+  };
+
+  std::vector<IntegrationMethod> expected =
+  {
+      {L"integration-1", included_method}, included_integration
+  };
+
+  std::vector<IntegrationMethod> actual = FilterIntegrationsByTargetAssemblyName(all, {L"Samples.Excluded"});
   EXPECT_EQ(actual, expected);
 }
 
@@ -187,8 +195,12 @@ TEST_F(CLRHelperTest, FiltersFlattenedIntegrationMethodsByTarget) {
                               {},
                               empty_sig_type_};
 
-  Integration i1 = {L"integration-1", {{{}, included, {}}, {{}, excluded, {}}}};
-  auto all = FlattenIntegrations({i1}, false);
+  std::vector<IntegrationMethod> all =
+  {
+      {L"integration-1", {{}, included, {}}},
+      {L"integration-1", {{}, excluded, {}}}
+  };
+
   auto filtered = FilterIntegrationsByTarget(all, assembly_import_);
   bool foundExclusion = false;
   for (auto& item : filtered) {

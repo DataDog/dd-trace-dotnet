@@ -311,26 +311,6 @@ struct MethodReplacement
     }
 };
 
-struct Integration
-{
-    const WSTRING integration_name;
-    std::vector<MethodReplacement> method_replacements;
-
-    Integration() : integration_name(WStr("")), method_replacements({})
-    {
-    }
-
-    Integration(WSTRING integration_name, std::vector<MethodReplacement> method_replacements) :
-        integration_name(integration_name), method_replacements(method_replacements)
-    {
-    }
-
-    inline bool operator==(const Integration& other) const
-    {
-        return integration_name == other.integration_name && method_replacements == other.method_replacements;
-    }
-};
-
 struct IntegrationMethod
 {
     const WSTRING integration_name;
