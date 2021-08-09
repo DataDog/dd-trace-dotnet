@@ -218,7 +218,10 @@ namespace Datadog.Trace.TestHelpers
             if (enableSecurity)
             {
                 environmentVariables[ConfigurationKeys.AppSecEnabled] = enableSecurity.ToString();
-                // our tests require blocking to be activated to work, might add more fine grained control later
+            }
+
+            if (enableBlocking)
+            {
                 environmentVariables[ConfigurationKeys.AppSecBlockingEnabled] = enableBlocking.ToString();
             }
 

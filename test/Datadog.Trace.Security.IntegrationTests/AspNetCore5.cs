@@ -23,6 +23,8 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         [Theory]
         [InlineData(true, true, HttpStatusCode.Forbidden)]
+        [InlineData(true, false, HttpStatusCode.OK)]
+        [InlineData(false, true, HttpStatusCode.OK)]
         [InlineData(false, false, HttpStatusCode.OK)]
         [Trait("RunOnWindows", "True")]
         [Trait("Category", "ArmUnsupported")]
