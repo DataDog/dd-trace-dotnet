@@ -848,6 +848,7 @@ stages:
 
 - stage: benchmarks
   dependsOn: build
+  condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
   jobs:
 
   #### Windows
@@ -1148,16 +1149,14 @@ stages:
         )
 
 - stage: throughput
-  dependsOn: build
+  dependsOn: [build]
   jobs:
 
   #### Linux
 
   - job: Linux
+    condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
     pool: Throughput
-
-    workspace:
-      clean: all
 
     steps:
 
@@ -1168,33 +1167,31 @@ stages:
         artifact: build-managed
         path: $(System.DefaultWorkingDirectory)
 
-    - download: current
-      artifact: build-windows-tracer-home
-      patterns: '**/win-x64/*.dll'
-
-    - task: CopyFiles@2
-      displayName: Copying windows native bindary from previous job
+    - task: DownloadPipelineArtifact@2
+      displayName: Download windows native binary
       inputs:
-        sourceFolder: $(Pipeline.Workspace)/build-windows-tracer-home
-        targetFolder: $(System.DefaultWorkingDirectory)/
+        artifact: build-windows-tracer-home
+        path: $(System.DefaultWorkingDirectory)/tracer-home-win
 
-    - download: current
-      artifact: build-linux-tracer-home
-      patterns: '**/*.so'
-
-    - task: CopyFiles@2
-      displayName: Copying native linux binary from previous job
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux native binary
       inputs:
-        sourceFolder: $(Pipeline.Workspace)/build-linux-tracer-home
-        targetFolder: $(System.DefaultWorkingDirectory)/
+        artifact: build-linux-tracer-home
+        path: $(System.DefaultWorkingDirectory)/tracer-home-linux
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download arm64 native binary
+      inputs:
+        artifact: build-linux-tracer-home-arm64
+        path: $(System.DefaultWorkingDirectory)/tracer-home-linux-arm64
 
     - script: |
-        mv win-x64/*.dll ./
-        rmdir win-x64
-        test ! -s "integrations.json" && echo "integrations.json does not exist" && exit 1
-        test ! -s "Datadog.Trace.ClrProfiler.Native.dll" && echo "Datadog.Trace.ClrProfiler.Native.dll does not exist" && exit 1
-        test ! -s "Datadog.Trace.ClrProfiler.Native.so" && echo "Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
-        test ! -s "arm64/Datadog.Trace.ClrProfiler.Native.so" && echo "arm64/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
+        test ! -s "tracer-home-win/integrations.json" && echo "tracer-home-win/integrations.json does not exist" && exit 1
+        test ! -s "tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll" && echo "tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll does not exist" && exit 1
+        test ! -s "tracer-home-linux/integrations.json" && echo "tracer-home-linux/integrations.json does not exist" && exit 1
+        test ! -s "tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
+        test ! -s "tracer-home-linux-arm64/integrations.json" && echo "tracer-home-linux-arm64/integrations.json does not exist" && exit 1
+        test ! -s "tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
         cd $(System.DefaultWorkingDirectory)/build/crank
         chmod +x ./run.sh
         ./run.sh

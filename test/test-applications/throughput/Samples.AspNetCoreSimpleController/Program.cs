@@ -7,6 +7,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Net.Http;
+using System.Reflection;
 
 namespace Samples.AspNetCoreSimpleController
 {
@@ -45,5 +47,31 @@ namespace Samples.AspNetCoreSimpleController
                 {
                     webBuilder.UseStartup<Startup>();
                 });
+
+        public static bool IsProfilerAttached()
+        {
+            try
+            {
+                // Forces loader injection on CallSite scenarios (not required in CallTarget).
+                new HttpClient().GetAsync("http://localhost/bad-url").GetAwaiter().GetResult();
+            }
+            catch
+            {
+                //
+            }
+
+            Type nativeMethodsType = Type.GetType("Datadog.Trace.ClrProfiler.NativeMethods, Datadog.Trace");
+            MethodInfo profilerAttachedMethodInfo = nativeMethodsType.GetMethod("IsProfilerAttached");
+            try
+            {
+                return (bool)profilerAttachedMethodInfo.Invoke(null, null);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+
+            return false;
+        }
     }
 }
