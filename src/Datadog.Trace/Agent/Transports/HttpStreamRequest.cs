@@ -54,9 +54,9 @@ namespace Datadog.Trace.Agent.Transports
             }
         }
 
-        public async Task<IApiResponse> PostAsync(ArraySegment<byte> traces)
+        public Task<IApiResponse> PostAsync(ArraySegment<byte> traces)
         {
-            return await PostSegmentAsync(traces).ConfigureAwait(false);
+            return PostSegmentAsync(traces);
         }
 
         private async Task<IApiResponse> PostSegmentAsync(ArraySegment<byte> segment)
