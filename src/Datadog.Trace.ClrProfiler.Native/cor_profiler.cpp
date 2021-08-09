@@ -2281,7 +2281,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     Logger::Debug("GenerateVoidILStartupMethod: ", environment::internal_trace_profiler_path,
                   " defined as: ", native_profiler_file);
 
-    if (native_profiler_file == WStr(""))
+    if (native_profiler_file.empty())
     {
         native_profiler_file = GetCoreCLRProfilerPath();
     }
