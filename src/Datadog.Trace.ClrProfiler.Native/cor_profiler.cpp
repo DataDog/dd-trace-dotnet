@@ -172,7 +172,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         return E_FAIL;
     }
 
-    const auto is_calltarget_enabled = IsCallTargetEnabled(is_net46_or_greater);
+    const bool is_calltarget_enabled = IsCallTargetEnabled(is_net46_or_greater);
 
     // Initialize ReJIT handler and define the Rewriter Callback
     if (is_calltarget_enabled)
@@ -190,17 +190,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         rejit_handler = nullptr;
     }
 
-    // load all available integrations from JSON files
-    const std::vector<Integration> all_integrations = LoadIntegrationsFromEnvironment();
-
-    // get list of disabled integration names
-    const std::vector<WSTRING> disabled_integration_names = GetEnvironmentValues(environment::disabled_integrations);
-
-    // remove disabled integrations
-    const std::vector<Integration> integrations =
-        FilterIntegrationsByName(all_integrations, disabled_integration_names);
-
-    integration_methods_ = FlattenIntegrations(integrations, is_calltarget_enabled);
+    // load all integrations from JSON files
+    LoadIntegrationsFromEnvironment(integration_methods_, is_calltarget_enabled, IsNetstandardEnabled(),
+                                    GetEnvironmentValues(environment::disabled_integrations));
 
     // check if there are any enabled integrations left
     if (integration_methods_.empty())
@@ -211,15 +203,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     else
     {
         Logger::Debug("Number of Integrations loaded: ", integration_methods_.size());
-    }
-
-    // temporarily skip the calls into netstandard.dll that were added in
-    // https://github.com/DataDog/dd-trace-dotnet/pull/753.
-    // users can opt-in to the additional instrumentation by setting environment
-    // variable DD_TRACE_NETSTANDARD_ENABLED
-    if (!IsNetstandardEnabled())
-    {
-        integration_methods_ = FilterIntegrationsByTargetAssemblyName(integration_methods_, {WStr("netstandard")});
     }
 
     DWORD event_mask = COR_PRF_MONITOR_JIT_COMPILATION | COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
@@ -314,6 +297,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     opcodes_names.push_back("(count)"); // CEE_COUNT
     opcodes_names.push_back("->");      // CEE_SWITCH_ARG
 
+    //
+    managed_profiler_assembly_reference = AssemblyReference::GetFromCache(managed_profiler_full_assembly_version);
+
     // we're in!
     Logger::Info("Profiler attached.");
     this->info_->AddRef();
@@ -351,7 +337,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
         return S_OK;
     }
 
-    const auto is_instrumentation_assembly = assembly_info.name == WStr("Datadog.Trace.ClrProfiler.Managed");
+    const auto is_instrumentation_assembly = assembly_info.name == WStr("Datadog.Trace");
 
     if (is_instrumentation_assembly || Logger::IsDebugEnabled())
     {
@@ -375,26 +361,39 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
         const auto assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
         const auto assembly_metadata = GetAssemblyImportMetadata(assembly_import);
 
+        // used multiple times for logging
+        const auto assembly_version = assembly_metadata.version.str();
+
         if (Logger::IsDebugEnabled())
         {
             Logger::Debug("AssemblyLoadFinished: AssemblyName=", assembly_info.name,
-                          " AssemblyVersion=", assembly_metadata.version.str());
+                          " AssemblyVersion=", assembly_version);
         }
 
         if (is_instrumentation_assembly)
         {
-            // Configure a version string to compare with the profiler version
-            std::stringstream ss;
-            ss << assembly_metadata.version.major << '.' << assembly_metadata.version.minor << '.'
-               << assembly_metadata.version.build;
+            const auto expected_assembly_reference = trace::AssemblyReference(managed_profiler_full_assembly_version);
 
-            auto assembly_version = ToWSTRING(ss.str());
+            // used multiple times for logging
+            const auto expected_version = expected_assembly_reference.version.str();
 
-            // Check that Major.Minor.Build match the profiler version
-            if (assembly_version == ToWSTRING(PROFILER_VERSION))
+            bool is_viable_version;
+
+            if (runtime_information_.is_core())
             {
-                Logger::Info("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed v", assembly_version,
-                             " matched profiler version v", PROFILER_VERSION);
+                is_viable_version = (assembly_metadata.version >= expected_assembly_reference.version);
+            }
+            else
+            {
+                is_viable_version = (assembly_metadata.version == expected_assembly_reference.version);
+            }
+
+            // Check that Major.Minor.Build matches the profiler version.
+            // On .NET Core, allow managed library to be a higher version than the native library.
+            if (is_viable_version)
+            {
+                Logger::Info("AssemblyLoadFinished: Datadog.Trace.dll v", assembly_version,
+                             " matched profiler version v", expected_version);
                 managed_profiler_loaded_app_domains.insert(assembly_info.app_domain_id);
 
                 if (runtime_information_.is_desktop() && corlib_module_loaded)
@@ -403,19 +402,19 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
                     // managed profiler is loaded shared
                     if (assembly_info.app_domain_id == corlib_app_domain_id)
                     {
-                        Logger::Info("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed was loaded domain-neutral");
+                        Logger::Info("AssemblyLoadFinished: Datadog.Trace.dll was loaded domain-neutral");
                         managed_profiler_loaded_domain_neutral = true;
                     }
                     else
                     {
-                        Logger::Info("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed was not loaded domain-neutral");
+                        Logger::Info("AssemblyLoadFinished: Datadog.Trace.dll was not loaded domain-neutral");
                     }
                 }
             }
             else
             {
-                Logger::Warn("AssemblyLoadFinished: Datadog.Trace.ClrProfiler.Managed v", assembly_version,
-                             " did not match profiler version v", PROFILER_VERSION);
+                Logger::Warn("AssemblyLoadFinished: Datadog.Trace.dll v", assembly_version,
+                             " did not match profiler version v", expected_version);
             }
         }
     }
@@ -898,9 +897,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     }
 
     // The first time a method is JIT compiled in an AppDomain, insert our startup
-    // hook which, at a minimum, must add an AssemblyResolve event so we can find
-    // Datadog.Trace.ClrProfiler.Managed.dll and its dependencies on-disk since it
-    // is no longer provided in a NuGet package
+    // hook, which, at a minimum, must add an AssemblyResolve event so we can find
+    // Datadog.Trace.dll and its dependencies on disk.
     if (valid_startup_hook_callsite && !has_loader_injected_in_appdomain)
     {
         bool domain_neutral_assembly = runtime_information_.is_desktop() && corlib_module_loaded &&
@@ -1092,34 +1090,33 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(const WCHAR* wszAss
 
     // Construct an ASSEMBLYMETADATA structure for the managed profiler that can
     // be consumed by the runtime
-    const AssemblyReference assemblyReference = trace::AssemblyReference(managed_profiler_full_assembly_version);
     ASSEMBLYMETADATA assembly_metadata{};
 
-    assembly_metadata.usMajorVersion = assemblyReference.version.major;
-    assembly_metadata.usMinorVersion = assemblyReference.version.minor;
-    assembly_metadata.usBuildNumber = assemblyReference.version.build;
-    assembly_metadata.usRevisionNumber = assemblyReference.version.revision;
-    if (assemblyReference.locale == WStr("neutral"))
+    assembly_metadata.usMajorVersion = managed_profiler_assembly_reference->version.major;
+    assembly_metadata.usMinorVersion = managed_profiler_assembly_reference->version.minor;
+    assembly_metadata.usBuildNumber = managed_profiler_assembly_reference->version.build;
+    assembly_metadata.usRevisionNumber = managed_profiler_assembly_reference->version.revision;
+    if (managed_profiler_assembly_reference->locale == WStr("neutral"))
     {
         assembly_metadata.szLocale = const_cast<WCHAR*>(WStr("\0"));
         assembly_metadata.cbLocale = 0;
     }
     else
     {
-        assembly_metadata.szLocale = const_cast<WCHAR*>(assemblyReference.locale.c_str());
-        assembly_metadata.cbLocale = (DWORD)(assemblyReference.locale.size());
+        assembly_metadata.szLocale = const_cast<WCHAR*>(managed_profiler_assembly_reference->locale.c_str());
+        assembly_metadata.cbLocale = (DWORD)(managed_profiler_assembly_reference->locale.size());
     }
 
     DWORD public_key_size = 8;
-    if (assemblyReference.public_key == trace::PublicKey())
+    if (managed_profiler_assembly_reference->public_key == trace::PublicKey())
     {
         public_key_size = 0;
     }
 
     COR_PRF_ASSEMBLY_REFERENCE_INFO asmRefInfo;
-    asmRefInfo.pbPublicKeyOrToken = (void*) &assemblyReference.public_key.data[0];
+    asmRefInfo.pbPublicKeyOrToken = (void*) &managed_profiler_assembly_reference->public_key.data[0];
     asmRefInfo.cbPublicKeyOrToken = public_key_size;
-    asmRefInfo.szName = assemblyReference.name.c_str();
+    asmRefInfo.szName = managed_profiler_assembly_reference->name.c_str();
     asmRefInfo.pMetaData = &assembly_metadata;
     asmRefInfo.pbHashValue = nullptr;
     asmRefInfo.cbHashValue = 0;

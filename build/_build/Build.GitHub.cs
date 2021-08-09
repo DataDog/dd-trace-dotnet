@@ -8,6 +8,8 @@ using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
 using Nuke.Common;
+using Nuke.Common.Tooling;
+using Nuke.Common.Tools.Git;
 using Octokit;
 using static Nuke.Common.IO.CompressionTasks;
 using Issue = Octokit.Issue;
@@ -85,6 +87,105 @@ partial class Build
             Console.WriteLine("::set-output name=version::" + Version);
             Console.WriteLine("::set-output name=full_version::" + FullVersion);
             Console.WriteLine("::set-output name=isprerelease::" + (IsPrerelease ? "true" : "false"));
+        });
+
+
+    Target VerifyChangedFilesFromVersionBump => _ => _
+       .Unlisted()
+       .Description("Verifies that the expected files were changed")
+       .After(UpdateVersion, UpdateMsiContents, UpdateIntegrationsJson, UpdateChangeLog)
+       .Executes(() =>
+        {
+            var expectedFileChanges = new []
+            {
+                "docs/CHANGELOG.md",
+                "build/_build/Build.cs",
+                "integrations.json",
+                "samples/AutomaticTraceIdInjection/Log4NetExample/Log4NetExample.csproj",
+                "samples/AutomaticTraceIdInjection/NLog40Example/NLog40Example.csproj",
+                "samples/AutomaticTraceIdInjection/NLog45Example/NLog45Example.csproj",
+                "samples/AutomaticTraceIdInjection/NLog46Example/NLog46Example.csproj",
+                "samples/AutomaticTraceIdInjection/SerilogExample/SerilogExample.csproj",
+                "samples/ConsoleApp/Alpine3.10.dockerfile",
+                "samples/ConsoleApp/Alpine3.9.dockerfile",
+                "samples/ConsoleApp/Debian.dockerfile",
+                "samples/WindowsContainer/Dockerfile",
+                "src/Datadog.Trace.AspNet/Datadog.Trace.AspNet.csproj",
+                "src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj",
+                "src/Datadog.Trace.ClrProfiler.Managed.Loader/Startup.cs",
+                "src/Datadog.Trace.ClrProfiler.Native/CMakeLists.txt",
+                "src/Datadog.Trace.ClrProfiler.Native/dd_profiler_constants.h",
+                "src/Datadog.Trace.ClrProfiler.Native/Resource.rc",
+                "src/Datadog.Trace.ClrProfiler.Native/version.h",
+                "src/Datadog.Trace.MSBuild/Datadog.Trace.MSBuild.csproj",
+                "src/Datadog.Trace.OpenTracing/Datadog.Trace.OpenTracing.csproj",
+                "src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.Standalone.csproj",
+                "src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.Tool.csproj",
+                "src/Datadog.Trace/Datadog.Trace.csproj",
+                "src/Datadog.Trace/TracerConstants.cs",
+                "src/WindowsInstaller/WindowsInstaller.wixproj",
+                "test/test-applications/regression/AutomapperTest/Dockerfile",
+            };
+
+            Logger.Info("Verifying that all expected files changed...");
+            var changes = GitTasks.Git("diff --name-only");
+            var stagedChanges = GitTasks.Git("diff --name-only --staged");
+
+            var allChanges = changes
+                            .Concat(stagedChanges)
+                            .Where(x => x.Type == OutputType.Std)
+                            .Select(x => x.Text)
+                            .ToHashSet();
+
+            var missingChanges = expectedFileChanges
+                                .Where(x => !allChanges.Contains(x))
+                                .ToList();
+
+            if (missingChanges.Any())
+            {
+                foreach (var missingChange in missingChanges)
+                {
+                    Logger.Error($"::error::Expected change not found in file '{missingChange}'");
+                }
+
+                throw new Exception("Some of the expected files were not modified by the version bump");
+            }
+
+            // Check if we have _extra_ changes. These might be ok, but we should verify
+            var extraChanges = allChanges.Where(x => !expectedFileChanges.Contains(x)).ToList();
+
+            var sb = new StringBuilder();
+            if (extraChanges.Any())
+            {
+                sb.AppendLine("The following files were found to be modified. Confirm that these changes were expected " +
+                              "(for example, changes to files in the MSI project are expected if our dependencies have changed).");
+                sb.AppendLine();
+                foreach (var extraChange in extraChanges)
+                {
+                    sb.Append("- [ ] ").AppendLine(extraChange);
+                }
+
+                sb.AppendLine();
+                sb.AppendLine();
+            }
+
+            sb.AppendLine("The following files were found to be modified (as expected)");
+            sb.AppendLine();
+            foreach (var expectedFileChange in expectedFileChanges)
+            {
+                sb.Append("- [x] ").AppendLine(expectedFileChange);
+            }
+
+            sb.AppendLine();
+            sb.AppendLine("@DataDog/apm-dotnet");
+
+            // need to encode the notes for use by github actions
+            // see https://trstringer.com/github-actions-multiline-strings/
+            sb.Replace("%","%25");
+            sb.Replace("\n","%0A");
+            sb.Replace("\r","%0D");
+
+            Console.WriteLine("::set-output name=release_notes::" + sb.ToString());
         });
 
     Target UpdateChangeLog => _ => _
@@ -338,7 +439,6 @@ partial class Build
 
             // buildHttpClient.GetArtifactContentZipAsync doesn't seem to work
             var temporary = new HttpClient();
-            var viewResourceUrl = artifact.Resource.Url;
             var resourceDownloadUrl = artifact.Resource.DownloadUrl;
             var response = await temporary.GetAsync(resourceDownloadUrl);
 
@@ -357,7 +457,7 @@ partial class Build
             UncompressZip(zipPath, OutputDirectory);
 
             Console.WriteLine($"Artifact download complete");
-            Console.WriteLine("::set-output name=artifacts_link::" + viewResourceUrl);
+            Console.WriteLine("::set-output name=artifacts_link::" + resourceDownloadUrl);
             Console.WriteLine("::set-output name=artifacts_path::" + OutputDirectory / artifactName);
         });
 

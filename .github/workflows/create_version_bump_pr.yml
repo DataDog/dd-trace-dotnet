@@ -36,7 +36,12 @@ jobs:
       - name: "Bump Version"
         run: .\build.ps1 UpdateIntegrationsJson UpdateVersion UpdateMsiContents
 
+      - name: "Verify Changes"
+        id: changes
+        run: .\build.ps1 VerifyChangedFilesFromVersionBump
+
       - name: "Output version"
+        id: versions
         run: .\build.ps1 OutputCurrentVersionToGitHub
 
       - name: "Rename vNext milestone"
@@ -52,41 +57,9 @@ jobs:
           commit-message: "[Version Bump] ${{steps.versions.outputs.full_version}}"
           delete-branch: true
           title: "[Version Bump] ${{steps.versions.outputs.full_version}}"
-          milestone: ${{steps.rename.outputs.milestone}}"
+          milestone: "${{steps.rename.outputs.milestone}}"
           reviewers: "DataDog/apm-dotnet"
-          body: |
-            The following files should have been modified. Confirm that each file was updated correctly.
-            You may also see changes to files in the MSI project if our dependencies have changed.
-            - [ ] docs/CHANGELOG.md
-            - [ ] build/_build/Build.cs
-            - [ ] integrations.json
-            - [ ] samples/AutomaticTraceIdInjection/Log4NetExample/Log4NetExample.csproj
-            - [ ] samples/AutomaticTraceIdInjection/NLog40Example/NLog40Example.csproj
-            - [ ] samples/AutomaticTraceIdInjection/NLog45Example/NLog45Example.csproj
-            - [ ] samples/AutomaticTraceIdInjection/NLog46Example/NLog46Example.csproj
-            - [ ] samples/AutomaticTraceIdInjection/SerilogExample/SerilogExample.csproj
-            - [ ] samples/ConsoleApp/Alpine3.10.dockerfile
-            - [ ] samples/ConsoleApp/Alpine3.9.dockerfile
-            - [ ] samples/ConsoleApp/Debian.dockerfile
-            - [ ] samples/WindowsContainer/Dockerfile
-            - [ ] src/Datadog.Trace.AspNet/Datadog.Trace.AspNet.csproj
-            - [ ] src/Datadog.Trace.ClrProfiler.Managed.Core/Datadog.Trace.ClrProfiler.Managed.Core.csproj
-            - [ ] src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
-            - [ ] src/Datadog.Trace.ClrProfiler.Managed.Loader/Startup.cs
-            - [ ] src/Datadog.Trace.ClrProfiler.Managed/Datadog.Trace.ClrProfiler.Managed.csproj
-            - [ ] src/Datadog.Trace.ClrProfiler.Native/CMakeLists.txt
-            - [ ] src/Datadog.Trace.ClrProfiler.Native/dd_profiler_constants.h
-            - [ ] src/Datadog.Trace.ClrProfiler.Native/Resource.rc
-            - [ ] src/Datadog.Trace.ClrProfiler.Native/version.h
-            - [ ] src/Datadog.Trace.MSBuild/Datadog.Trace.MSBuild.csproj
-            - [ ] src/Datadog.Trace.OpenTracing/Datadog.Trace.OpenTracing.csproj
-            - [ ] src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.Standalone.csproj
-            - [ ] src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.Tool.csproj
-            - [ ] src/Datadog.Trace/Datadog.Trace.csproj
-            - [ ] src/Datadog.Trace/TracerConstants.cs
-            - [ ] src/WindowsInstaller/WindowsInstaller.wixproj
-            - [ ] test/test-applications/regression/AutomapperTest/Dockerfile
-            @DataDog/apm-dotnet
+          body: "${{steps.changes.outputs.release_notes}}"
 
       - name: Display output
         run: |

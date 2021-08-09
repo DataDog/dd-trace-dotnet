@@ -306,58 +306,6 @@ mdAssemblyRef FindAssemblyRef(const ComPtr<IMetaDataAssemblyImport>& assembly_im
     return mdAssemblyRefNil;
 }
 
-std::vector<Integration> FilterIntegrationsByName(const std::vector<Integration>& integrations,
-                                                  const std::vector<WSTRING>& disabled_integration_names)
-{
-    std::vector<Integration> enabled;
-
-    for (auto& i : integrations)
-    {
-        bool disabled = false;
-        for (auto& disabled_integration : disabled_integration_names)
-        {
-            if (i.integration_name == disabled_integration)
-            {
-                // this integration is disabled, skip it
-                disabled = true;
-                break;
-            }
-        }
-
-        if (!disabled)
-        {
-            enabled.push_back(i);
-        }
-    }
-
-    return enabled;
-}
-
-std::vector<IntegrationMethod> FlattenIntegrations(const std::vector<Integration>& integrations,
-                                                   bool is_calltarget_enabled)
-{
-    std::vector<IntegrationMethod> flattened;
-
-    for (auto& i : integrations)
-    {
-        for (auto& mr : i.method_replacements)
-        {
-            const auto isCallTargetIntegration = mr.wrapper_method.action == calltarget_modification_action;
-
-            if (is_calltarget_enabled && isCallTargetIntegration)
-            {
-                flattened.emplace_back(i.integration_name, mr);
-            }
-            else if (!is_calltarget_enabled && !isCallTargetIntegration)
-            {
-                flattened.emplace_back(i.integration_name, mr);
-            }
-        }
-    }
-
-    return flattened;
-}
-
 std::vector<IntegrationMethod> FilterIntegrationsByCaller(const std::vector<IntegrationMethod>& integration_methods,
                                                           const AssemblyInfo assembly)
 {
