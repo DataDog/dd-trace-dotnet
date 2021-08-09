@@ -630,7 +630,7 @@ namespace Datadog.Trace.DiagnosticListeners
             var security = CurrentSecurity;
 
             var shouldTrace = tracer.Settings.IsIntegrationEnabled(IntegrationId);
-            var shouldSecure = security.Enabled;
+            var shouldSecure = security.Settings.Enabled;
 
             if (!shouldTrace && !shouldSecure)
             {
@@ -793,7 +793,7 @@ namespace Datadog.Trace.DiagnosticListeners
             var security = CurrentSecurity;
 
             var shouldTrace = tracer.Settings.IsIntegrationEnabled(IntegrationId);
-            var shouldSecure = security.Enabled;
+            var shouldSecure = security.Settings.Enabled;
 
             if (!shouldTrace && !shouldSecure)
             {

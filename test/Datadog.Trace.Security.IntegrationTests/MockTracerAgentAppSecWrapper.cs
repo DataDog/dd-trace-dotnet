@@ -9,6 +9,7 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Threading;
 using Datadog.Trace.Abstractions;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.EventModel.Batch;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;

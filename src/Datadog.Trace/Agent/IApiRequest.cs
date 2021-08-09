@@ -5,7 +5,7 @@
 
 using System;
 using System.Threading.Tasks;
-using Datadog.Trace.Abstractions;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Agent

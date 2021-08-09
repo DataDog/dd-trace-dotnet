@@ -63,7 +63,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     HttpContext.Current.Items[AspNetMvcIntegration.HttpContextKey] = scope;
 
                     var security = Security.Instance;
-                    if (security.Enabled)
+                    if (security.Settings.Enabled)
                     {
                         AspNetMvcIntegration.RaiseIntrumentationEvent(security, HttpContext.Current, scope.Span, duckedControllerContext.RouteData);
                     }

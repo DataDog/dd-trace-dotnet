@@ -136,7 +136,7 @@ namespace Datadog.Trace.AspNet
                 httpContext.Items[_httpContextScopeKey] = scope;
 
                 var security = Security.Instance;
-                if (security.Enabled)
+                if (security.Settings.Enabled)
                 {
                     RaiseInstrumentationEvent(security, httpContext, httpRequest, scope.Span);
                 }

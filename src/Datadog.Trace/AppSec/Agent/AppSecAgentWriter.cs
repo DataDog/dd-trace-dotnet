@@ -1,4 +1,4 @@
-// <copyright file="AgentWriter.cs" company="Datadog">
+// <copyright file="AppSecAgentWriter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -15,18 +15,18 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.AppSec.Agent
 {
-    internal class AgentWriter : IAgentWriter
+    internal class AppSecAgentWriter : IAppSecAgentWriter
     {
         private const int BatchInterval = 1000;
         private const int MaxItemsPerBatch = 1000;
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AgentWriter>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AppSecAgentWriter>();
         private readonly ManualResetEventSlim _senderMutex = new ManualResetEventSlim(initialState: false, spinCount: 0);
-        private readonly ConcurrentQueue<IEvent> events;
+        private readonly ConcurrentQueue<IEvent> _events;
         private readonly Sender _sender;
 
-        internal AgentWriter()
+        internal AppSecAgentWriter()
         {
-            events = new ConcurrentQueue<IEvent>();
+            _events = new ConcurrentQueue<IEvent>();
             Task periodicFlush = Task.Factory.StartNew(FlushTracesAsync, TaskCreationOptions.LongRunning);
             periodicFlush.ContinueWith(t => Log.Error(t.Exception, "Error in sending appsec events"), TaskContinuationOptions.OnlyOnFaulted);
             _sender = new Sender();
@@ -34,7 +34,7 @@ namespace Datadog.Trace.AppSec.Agent
 
         public void AddEvent(IEvent @event)
         {
-            events.Enqueue(@event);
+            _events.Enqueue(@event);
             if (!_senderMutex.IsSet)
             {
                 _senderMutex.Set();
@@ -45,7 +45,7 @@ namespace Datadog.Trace.AppSec.Agent
         {
             while (true)
             {
-                if (events.Count == 0)
+                if (_events.Count == 0)
                 {
                     _senderMutex.Wait();
                     _senderMutex.Reset();
@@ -54,7 +54,7 @@ namespace Datadog.Trace.AppSec.Agent
                 try
                 {
                     var appsecEvents = new List<IEvent>();
-                    while (events.TryDequeue(out var result) && appsecEvents.Count <= MaxItemsPerBatch)
+                    while (_events.TryDequeue(out var result) && appsecEvents.Count <= MaxItemsPerBatch)
                     {
                         appsecEvents.Add(result);
                     }

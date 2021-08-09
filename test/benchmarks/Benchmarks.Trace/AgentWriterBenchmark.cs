@@ -6,6 +6,7 @@ using Datadog.Trace;
 using Datadog.Trace.Abstractions;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.BenchmarkDotNet;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
