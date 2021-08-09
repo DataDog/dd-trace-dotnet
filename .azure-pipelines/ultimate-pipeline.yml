@@ -630,7 +630,7 @@ stages:
 
 - stage: benchmarks
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
-  dependsOn: build_windows  
+  dependsOn: build_windows
   jobs:
 
   #### Windows
@@ -941,30 +941,27 @@ stages:
       displayName: Download windows native binary
       inputs:
         artifact: windows-tracer-home
-        patterns: '**/win-x64/*.dll'
-        path: $(System.DefaultWorkingDirectory)
+        path: $(System.DefaultWorkingDirectory)/tracer-home-win
 
     - task: DownloadPipelineArtifact@2
       displayName: Download linux native binary
       inputs:
         artifact: linux-tracer-home-debian
-        patterns: '**/*.so'
-        path: $(System.DefaultWorkingDirectory)
+        path: $(System.DefaultWorkingDirectory)/tracer-home-linux
 
     - task: DownloadPipelineArtifact@2
       displayName: Download arm64 native binary
       inputs:
         artifact: linux-tracer-home-arm64
-        patterns: '**/*.so'
-        path: $(System.DefaultWorkingDirectory)/arm64
+        path: $(System.DefaultWorkingDirectory)/tracer-home-linux-arm64
 
     - script: |
-        mv win-x64/*.dll ./
-        rmdir win-x64
-        test ! -s "integrations.json" && echo "integrations.json does not exist" && exit 1
-        test ! -s "Datadog.Trace.ClrProfiler.Native.dll" && echo "Datadog.Trace.ClrProfiler.Native.dll does not exist" && exit 1
-        test ! -s "Datadog.Trace.ClrProfiler.Native.so" && echo "Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
-        test ! -s "arm64/Datadog.Trace.ClrProfiler.Native.so" && echo "arm64/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
+        test ! -s "tracer-home-win/integrations.json" && echo "tracer-home-win/integrations.json does not exist" && exit 1
+        test ! -s "tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll" && echo "tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll does not exist" && exit 1
+        test ! -s "tracer-home-linux/integrations.json" && echo "tracer-home-linux/integrations.json does not exist" && exit 1
+        test ! -s "tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
+        test ! -s "tracer-home-linux-arm64/integrations.json" && echo "tracer-home-linux-arm64/integrations.json does not exist" && exit 1
+        test ! -s "tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
         cd $(System.DefaultWorkingDirectory)/build/crank
         chmod +x ./run.sh
         ./run.sh
