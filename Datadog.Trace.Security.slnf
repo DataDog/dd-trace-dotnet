@@ -12,6 +12,8 @@
       "src\\Datadog.Trace\\Datadog.Trace.csproj",
       "test\\Datadog.Trace.ClrProfiler.IntegrationTests\\Datadog.Trace.ClrProfiler.IntegrationTests.csproj",
       "test\\Datadog.Trace.Security.IntegrationTests\\Datadog.Trace.Security.IntegrationTests.csproj",
+      "test\\Datadog.Trace.TestHelpers\\Datadog.Trace.TestHelpers.csproj",
+      "test\\test-applications\\security\\Samples.AspNetCore2\\Samples.AspNetCore2.csproj",
       "test\\test-applications\\security\\Samples.AspNetCore5\\Samples.AspNetCore5.csproj",
       "test\\test-applications\\security\\aspnet\\Samples.AspNetMvc5\\Samples.AspNetMvc5.csproj"
     ]

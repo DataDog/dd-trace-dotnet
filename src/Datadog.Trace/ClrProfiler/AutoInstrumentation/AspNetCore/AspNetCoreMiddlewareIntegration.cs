@@ -31,16 +31,28 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         TypeName = ApplicationBuilder,
         MethodName = "Build",
         ReturnTypeName = ClrNames.Void,
-        MinimumVersion = MinimumVersion,
-        MaximumVersion = MaximumVersion,
+        MinimumVersion = Major3,
+        MaximumVersion = Major6,
+        IntegrationName = nameof(IntegrationIds.AspNetCore))]
+    [InstrumentMethod(
+        AssemblyName = AssemblyName,
+        TypeName = InternalApplicationBuilder,
+        MethodName = "Build",
+        ReturnTypeName = "Microsoft.AspNetCore.Http.RequestDelegate",
+        MinimumVersion = Major2,
+        MaximumVersion = Major2,
         IntegrationName = nameof(IntegrationIds.AspNetCore))]
     public static class AspNetCoreMiddlewareIntegration
     {
-        private const string MinimumVersion = "2";
-        private const string MaximumVersion = "6";
+        private const string Major2 = "2";
+        private const string Major3 = "3";
+        private const string Major6 = "6";
         private const string AssemblyName = "Microsoft.AspNetCore.Http";
 
         private const string ApplicationBuilder = "Microsoft.AspNetCore.Builder.ApplicationBuilder";
+        private const string InternalApplicationBuilder = "Microsoft.AspNetCore.Builder.Internal.ApplicationBuilder";
+
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AspNetCoreMiddlewareIntegration));
 
         /// <summary>
         /// OnMethodBegin callback
@@ -52,6 +64,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         {
             if (Security.Instance.Settings.Enabled)
             {
+                Log.Information("Inserting Middleware");
                 BlockingMiddleware.ModifyApplicationBuilder(instance);
             }
 
