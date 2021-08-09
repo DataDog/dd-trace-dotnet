@@ -1,0 +1,5 @@
+LIBRARY "Datadog.AutoInstrumentation.NativeLoader.dll"
+
+EXPORTS
+    DllCanUnloadNow PRIVATE
+    DllGetClassObject PRIVATE
