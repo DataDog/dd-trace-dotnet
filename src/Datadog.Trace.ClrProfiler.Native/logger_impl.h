@@ -135,7 +135,10 @@ LoggerImpl<TLoggerPolicy>::LoggerImpl()
     }
     catch (...)
     {
-        std::cerr << "LoggerImpl Handler: Error creating native log file." << std::endl;
+        // By writing into the stderr was changing the behavior in a CI scenario.
+        // There's not a good way to report errors when trying to create the log file.
+        // But we never should be changing the normal behavior of an app.
+        // std::cerr << "LoggerImpl Handler: Error creating native log file." << std::endl;
         m_fileout = spdlog::null_logger_mt("LoggerImpl");
     }
 
