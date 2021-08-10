@@ -30,5 +30,4 @@ RUN dotnet publish "HttpListenerExample.csproj" -c Release -o /app/publish -r wi
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-COPY ["*.ps1", "./"]
-ENTRYPOINT ["powershell", "./windowsservercore-docker-entrypoint.ps1"]
+ENTRYPOINT ["HttpListenerExample.exe"]
