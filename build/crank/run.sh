@@ -33,6 +33,11 @@ crank --config Samples.AspNetCoreSimpleController.yml --scenario calltarget --pr
 dd-trace --crank-import="calltarget_windows.json"
 rm calltarget_windows.json
 
+crank --config Samples.AspNetCoreSimpleController.yml --scenario calltarget_ngen --profile windows --output calltarget_ngen_windows.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=calltarget_ngen --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha
+dd-trace --crank-import="calltarget_ngen_windows.json"
+rm calltarget_ngen_windows.json
+
+
 
 
 crank --config Samples.AspNetCoreSimpleController.yml --scenario baseline --profile linux --output baseline_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=baseline --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
@@ -42,6 +47,11 @@ rm baseline_linux.json
 crank --config Samples.AspNetCoreSimpleController.yml --scenario calltarget --profile linux --output calltarget_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=calltarget --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
 dd-trace --crank-import="calltarget_linux.json"
 rm calltarget_linux.json
+
+crank --config Samples.AspNetCoreSimpleController.yml --scenario calltarget_ngen --profile linux --output calltarget_ngen_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=calltarget_ngen --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
+dd-trace --crank-import="calltarget_ngen_linux.json"
+rm calltarget_ngen_linux.json
+
 
 
 
