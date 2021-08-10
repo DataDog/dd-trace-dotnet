@@ -31,6 +31,7 @@ variables:
   tracerHome: $(System.DefaultWorkingDirectory)/src/bin/windows-tracer-home
   ddApiKey: $(DD_API_KEY)
   isMainBranch: $[eq(variables['Build.SourceBranch'], 'refs/heads/master')]
+  isScheduledBuild: ${{ eq(variables['Build.Reason'], 'Schedule') }} # only works if you have a main branch
   DD_DOTNET_TRACER_MSBUILD:
 
 # Declare the datadog agent as a resource to be used as a pipeline service
@@ -309,6 +310,7 @@ stages:
 
 - stage: unit_tests
   dependsOn: build
+  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   jobs:
   - job: unit_tests_managed
     strategy:
@@ -447,6 +449,7 @@ stages:
 
 - stage: integration_tests
   dependsOn: build
+  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   jobs:
 
   - job: Windows
@@ -900,6 +903,7 @@ stages:
         script: 'Start-Sleep -s 120'
 
 - stage: dotnet_tool
+  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: build
   jobs:
   - job: build_runner_tool_and_standalone
@@ -1060,6 +1064,7 @@ stages:
       artifact: runner-dotnet-tool
 
 - stage: upload
+  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: build
   jobs:
   - job: s3_upload
