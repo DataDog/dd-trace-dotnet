@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ILogger
             _version = tracer.Settings.ServiceVersion ?? string.Empty;
         }
 
-        public int Count => 4;
+        public int Count => 5;
 
         public KeyValuePair<string, object> this[int index]
         {
@@ -52,6 +52,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ILogger
                 {
                     return new KeyValuePair<string, object>("dd_trace_id", _tracer.ActiveScope?.Span.TraceId);
                 }
+                else if (index == 4)
+                {
+                    return new KeyValuePair<string, object>("dd_span_id", _tracer.ActiveScope?.Span.SpanId);
+                }
 
                 throw new ArgumentOutOfRangeException(nameof(index));
             }
@@ -63,11 +67,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ILogger
 
             return string.Format(
                 CultureInfo.InvariantCulture,
-                "dd_service:{0}, dd_env:{1}, dd_version:{2}, dd_trace_id:{3}",
+                "dd_service:{0}, dd_env:{1}, dd_version:{2}, dd_trace_id:{3}, dd_span_id:{4}",
                 span?.ServiceName ?? _service,
                 _env,
                 _version,
-                _tracer.ActiveScope?.Span.TraceId);
+                _tracer.ActiveScope?.Span.TraceId,
+                _tracer.ActiveScope?.Span.SpanId);
         }
 
         public IEnumerator<KeyValuePair<string, object>> GetEnumerator()
@@ -80,6 +85,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ILogger
             if (span is not null)
             {
                 yield return new KeyValuePair<string, object>("dd_trace_id", span.TraceId);
+                yield return new KeyValuePair<string, object>("dd_span_id", span.SpanId);
             }
         }
 
