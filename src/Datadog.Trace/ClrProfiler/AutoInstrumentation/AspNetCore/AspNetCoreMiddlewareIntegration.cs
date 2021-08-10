@@ -4,22 +4,12 @@
 // </copyright>
 
 #if !NETFRAMEWORK
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Web;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.AspNetCore;
+#endif
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Tagging;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 {
@@ -62,14 +52,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         /// <returns>Calltarget state value</returns>
         public static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         {
+// AppSec doesn't support Asp.Net Core on .NET Framework
+// but this class is needed as it could be called by a
+// .NET Framewok app and should be an no-op in this case
+#if !NETFRAMEWORK
             if (Security.Instance.Settings.Enabled)
             {
                 Log.Information("Inserting Middleware");
                 BlockingMiddleware.ModifyApplicationBuilder(instance);
             }
+#endif
 
             return default;
         }
     }
 }
-#endif

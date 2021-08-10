@@ -9,7 +9,7 @@ using System.Runtime.Serialization;
 namespace Datadog.Trace.AppSec
 {
     /// <summary>
-    /// This exception should only be used to singal to the end user that
+    /// This exception should only be used to signal to the end user that
     /// there page has been blocked
     /// </summary>
     internal class PageBlockedByAppSecException : Exception
