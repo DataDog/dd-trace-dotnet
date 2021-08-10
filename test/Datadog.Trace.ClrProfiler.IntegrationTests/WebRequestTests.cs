@@ -7,6 +7,7 @@ using System.Globalization;
 using System.Linq;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -31,26 +32,29 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetCallTargetSettings(enableCallTarget);
 
-            int expectedSpanCount = EnvironmentHelper.IsCoreClr() ? 71 : 27; // .NET Framework automatic instrumentation doesn't cover Async / TaskAsync operations
-
-            var ignoreAsync = EnvironmentHelper.IsCoreClr() ? string.Empty : "IgnoreAsync ";
+            var (ignoreAsync, expectedSpanCount) = (EnvironmentHelper.IsCoreClr(), enableCallTarget) switch
+            {
+                (false, false) => (true, 28), // .NET Framework CallSite instrumentation doesn't cover Async / TaskAsync operations
+                _ => (false, 74)
+            };
 
             const string expectedOperationName = "http.request";
             const string expectedServiceName = "Samples.WebRequest-http-client";
 
             int agentPort = TcpPortProvider.GetOpenPort();
             int httpPort = TcpPortProvider.GetOpenPort();
+            var extraArgs = ignoreAsync ? "IgnoreAsync " : string.Empty;
 
             Output.WriteLine($"Assigning port {agentPort} for the agentPort.");
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
 
             using (var agent = new MockTracerAgent(agentPort))
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"{ignoreAsync}Port={httpPort}"))
+            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"{extraArgs}Port={httpPort}"))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
-                Assert.Equal(expectedSpanCount, spans.Count);
+                spans.Should().HaveCount(expectedSpanCount);
 
                 foreach (var span in spans)
                 {

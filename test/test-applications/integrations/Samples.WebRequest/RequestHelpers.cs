@@ -3,6 +3,7 @@ using System.Collections.Specialized;
 using System.IO;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace;
 
@@ -11,6 +12,7 @@ namespace Samples.WebRequest
     public static class RequestHelpers
     {
         private static readonly Encoding Utf8 = Encoding.UTF8;
+        private static readonly AutoResetEvent _allDone = new(false);
 
         public static async Task SendWebClientRequests(bool tracingDisabled, string url, string requestContent)
         {
@@ -357,6 +359,73 @@ namespace Samples.WebRequest
 
                     request.GetResponse().Close();
                     Console.WriteLine("Received response for request.GetRequestStream()/GetResponse()");
+                }
+
+                using (Tracer.Instance.StartActive("BeginGetRequestStream"))
+                {
+                    // Create separate request objects since .NET Core asserts only one response per request
+                    HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest("BeginGetRequestStream", url));
+                    request.Method = "POST";
+
+                    if (tracingDisabled)
+                    {
+                        request.Headers.Add(HttpHeaderNames.TracingEnabled, "false");
+                    }
+
+                    request.BeginGetRequestStream(
+                        iar =>
+                        {
+                            var req = (HttpWebRequest)iar.AsyncState;
+                            var stream = req.EndGetRequestStream(iar);
+                            stream.Write(new byte[1], 0, 1);
+
+                            request.GetResponse()
+                                   .Close();
+
+                            Console.WriteLine("Received response for request.Begin/EndGetRequestStream()/GetResponse()");
+                            _allDone.Set();
+                        }, request);
+
+                    _allDone.WaitOne();
+                }
+
+                using (Tracer.Instance.StartActive("BeginGetResponse"))
+                {
+                    // Create separate request objects since .NET Core asserts only one response per request
+                    HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest("BeginGetResponseAsync", url));
+                    if (tracingDisabled)
+                    {
+                        request.Headers.Add(HttpHeaderNames.TracingEnabled, "false");
+                    }
+
+                    request.BeginGetResponse(
+                        iar =>
+                        {
+                            var req = (HttpWebRequest)iar.AsyncState;
+                            var response = req.EndGetResponse(iar);
+
+                            response.Close();
+
+                            Console.WriteLine("Received response for request.Begin/EndGetResponse()");
+                            _allDone.Set();
+                        }, request);
+
+                    _allDone.WaitOne();
+                }
+
+                using (Tracer.Instance.StartActive("BeginGetResponse TaskFactoryFromAsync"))
+                {
+                    // Create separate request objects since .NET Core asserts only one response per request
+                    HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest("TaskFactoryFromAsync", url));
+                    if (tracingDisabled)
+                    {
+                        request.Headers.Add(HttpHeaderNames.TracingEnabled, "false");
+                    }
+
+                    await Task.Factory.FromAsync(
+                        beginMethod: request.BeginGetResponse,
+                        endMethod: request.EndGetResponse,
+                        state: request);
                 }
             }
         }

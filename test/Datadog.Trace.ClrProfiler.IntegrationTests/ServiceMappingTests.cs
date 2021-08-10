@@ -19,26 +19,33 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        [Fact]
+        [Theory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void RenamesService()
+        [InlineData(false)]
+        [InlineData(true)]
+        public void RenamesService(bool enableCallTarget)
         {
-            int expectedSpanCount = EnvironmentHelper.IsCoreClr() ? 71 : 27; // .NET Framework automatic instrumentation doesn't cover Async / TaskAsync operations
+            SetCallTargetSettings(enableCallTarget);
 
-            var ignoreAsync = EnvironmentHelper.IsCoreClr() ? string.Empty : "IgnoreAsync ";
+            var (ignoreAsync, expectedSpanCount) = (EnvironmentHelper.IsCoreClr(), enableCallTarget) switch
+            {
+                (false, false) => (true, 28), // .NET Framework CallSite instrumentation doesn't cover Async / TaskAsync operations
+                _ => (false, 74)
+            };
 
             const string expectedOperationName = "http.request";
             const string expectedServiceName = "my-custom-client";
 
             int agentPort = TcpPortProvider.GetOpenPort();
             int httpPort = TcpPortProvider.GetOpenPort();
+            var extraArgs = ignoreAsync ? "IgnoreAsync " : string.Empty;
 
             Output.WriteLine($"Assigning port {agentPort} for the agentPort.");
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
 
             using (var agent = new MockTracerAgent(agentPort))
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"{ignoreAsync}Port={httpPort}"))
+            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"{extraArgs}Port={httpPort}"))
             {
                 Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
 

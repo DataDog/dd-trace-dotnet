@@ -45,6 +45,8 @@ namespace Samples.WebRequest
                 Console.WriteLine("Stopping HTTP listener.");
                 listener.Stop();
             }
+
+            await Tracer.Instance.ForceFlushAsync();
         }
 
         public static HttpListener StartHttpListenerWithPortResilience(string port, int retries = 5)

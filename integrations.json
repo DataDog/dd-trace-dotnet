@@ -4705,6 +4705,101 @@
         "target": {
           "assembly": "System",
           "type": "System.Net.HttpWebRequest",
+          "method": "BeginGetRequestStream",
+          "signature_types": [
+            "System.IAsyncResult",
+            "System.AsyncCallback",
+            "System.Object"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace, Version=1.28.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest.HttpWebRequest_BeginGetRequestStream_Integration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Net.Requests",
+          "type": "System.Net.HttpWebRequest",
+          "method": "BeginGetRequestStream",
+          "signature_types": [
+            "System.IAsyncResult",
+            "System.AsyncCallback",
+            "System.Object"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 5,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace, Version=1.28.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest.HttpWebRequest_BeginGetRequestStream_Integration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System",
+          "type": "System.Net.HttpWebRequest",
+          "method": "BeginGetResponse",
+          "signature_types": [
+            "System.IAsyncResult",
+            "System.AsyncCallback",
+            "System.Object"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace, Version=1.28.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest.HttpWebRequest_BeginGetResponse_Integration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System",
+          "type": "System.Net.HttpWebRequest",
+          "method": "EndGetResponse",
+          "signature_types": [
+            "System.Net.WebResponse",
+            "System.IAsyncResult"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace, Version=1.28.2.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest.HttpWebRequest_EndGetResponse_Integration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System",
+          "type": "System.Net.HttpWebRequest",
           "method": "GetRequestStream",
           "signature_types": [
             "System.IO.Stream"
