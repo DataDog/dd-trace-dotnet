@@ -890,9 +890,9 @@ partial class Build
                 "NLog10LogsInjection.NullReferenceException",
                 "Sandbox.ManualTracing",
                 "StackExchange.Redis.AssemblyConflict.LegacyProject",
-                "MismatchedTracerVersions"
                 "Samples.OracleMDA", // We don't test these yet
-                "Samples.OracleMDA.Core" // We don't test these yet
+                "Samples.OracleMDA.Core", // We don't test these yet
+                "MismatchedTracerVersions",
             };
 
             // These sample projects are built using RestoreAndBuildSamplesForPackageVersions
