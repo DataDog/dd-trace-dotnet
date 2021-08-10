@@ -51,7 +51,7 @@ namespace Samples.AspNetCoreSimpleController
                 //
             }
 
-            Type nativeMethodsType = Type.GetType("Datadog.Trace.ClrProfiler.NativeMethods, Datadog.Trace");
+            Type nativeMethodsType = Type.GetType("Datadog.Trace.ClrProfiler.NativeMethods, Datadog.Trace.ClrProfiler.Managed");
             MethodInfo profilerAttachedMethodInfo = nativeMethodsType.GetMethod("IsProfilerAttached");
             try
             {
