@@ -9,12 +9,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
+using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Transport.Http;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Http;
 
 namespace Datadog.Trace.AspNet
 {
@@ -131,6 +134,12 @@ namespace Datadog.Trace.AspNet
                 }
 
                 httpContext.Items[_httpContextScopeKey] = scope;
+
+                var security = Security.Instance;
+                if (security.Settings.Enabled)
+                {
+                    RaiseInstrumentationEvent(security, httpContext, httpRequest, scope.Span);
+                }
             }
             catch (Exception ex)
             {
@@ -242,6 +251,19 @@ namespace Datadog.Trace.AspNet
                 {
                     Log.Error(ex, "Error extracting HTTP headers to create header tags.");
                 }
+            }
+        }
+
+        private void RaiseInstrumentationEvent(IDatadogSecurity security, HttpContext context, HttpRequest request, Span relatedSpan)
+        {
+            try
+            {
+                var dict = request.PrepareArgsForWaf();
+                security.InstrumentationGateway.RaiseEvent(dict, new HttpTransport(context), relatedSpan);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error occurred raising instrumentation event");
             }
         }
     }

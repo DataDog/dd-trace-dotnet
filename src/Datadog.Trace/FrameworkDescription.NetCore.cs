@@ -45,15 +45,15 @@ namespace Datadog.Trace
 
                 if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
                 {
-                    osPlatform = "Windows";
+                    osPlatform = Trace.OSPlatform.Windows;
                 }
                 else if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
                 {
-                    osPlatform = "Linux";
+                    osPlatform = Trace.OSPlatform.Linux;
                 }
                 else if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX))
                 {
-                    osPlatform = "MacOS";
+                    osPlatform = Trace.OSPlatform.MacOS;
                 }
 
                 osArchitecture = RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant();
@@ -71,6 +71,11 @@ namespace Datadog.Trace
                 osPlatform: osPlatform,
                 osArchitecture: osArchitecture,
                 processArchitecture: processArchitecture);
+        }
+
+        public bool IsCoreClr()
+        {
+            return Name.ToLowerInvariant().Contains("core") || IsNet5();
         }
 
         private static string GetNetCoreOrNetFrameworkVersion()

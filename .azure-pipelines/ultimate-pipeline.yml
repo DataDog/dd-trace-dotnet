@@ -387,6 +387,12 @@ stages:
         targetPath: 'build_data/results/'
       continueOnError: true
 
+    - publish: build_data\logs\
+      displayName: Uploading integration_tests_windows tracer logs
+      artifact: integration_tests_windows_tracer_logs_$(platform)_$(target)
+      condition: succeededOrFailed()
+      continueOnError: true
+
 - stage: integration_tests_windows_iis
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: [build_windows, package_windows]
@@ -456,6 +462,12 @@ stages:
         containerregistrytype: Container Registry
         dockerComposeCommand: down
       condition: succeededOrFailed()
+
+    - publish: build_data\logs\
+      displayName: Uploading integration_tests_windows_iis tracer logs
+      artifact: integration_tests_windows_iis_tracer_logs_$(platform)
+      condition: succeededOrFailed()
+      continueOnError: true
 
 - stage: integration_tests_linux
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))

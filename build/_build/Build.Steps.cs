@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Nuke.Common;
@@ -38,10 +39,13 @@ partial class Build
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath BuildDataDirectory => RootDirectory / "build_data";
 
+    const string LibSqreenVersion = "1.1.2.3";
+    AbsolutePath LibSqreenDirectory => (NugetPackageDirectory ?? (RootDirectory / "packages")) / $"libsqreen.{LibSqreenVersion}";
+
     AbsolutePath SourceDirectory => RootDirectory / "src";
     AbsolutePath TestsDirectory => RootDirectory / "test";
 
-    string TempDirectory => IsWin ? Path.GetTempPath() : "/tmp/";
+    AbsolutePath TempDirectory => (AbsolutePath)(IsWin ? Path.GetTempPath() : "/tmp/");
     string TracerLogDirectory => IsWin
         ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
             "Datadog .NET Tracer", "logs")
@@ -79,7 +83,8 @@ partial class Build
 
     Project[] ClrProfilerIntegrationTests => new[]
     {
-        Solution.GetProject(Projects.ClrProfilerIntegrationTests)
+        Solution.GetProject(Projects.ClrProfilerIntegrationTests),
+        Solution.GetProject(Projects.AppSecIntegrationTests),
     };
 
     readonly IEnumerable<TargetFramework> TargetFrameworks = new[]
@@ -253,6 +258,52 @@ partial class Build
             CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
         });
 
+    Target DownloadLibSqreen => _ => _
+        .Unlisted()
+        .After(CreateRequiredDirectories)
+        .Executes(() =>
+        {
+            var wc = new WebClient();
+            var libSqreenUri = new Uri($"https://www.nuget.org/api/v2/package/libsqreen/{LibSqreenVersion}");
+            var libSqreenZip = TempDirectory / "libsqreen.zip";
+
+            wc.DownloadFile(libSqreenUri, libSqreenZip);
+
+            Console.WriteLine($"{libSqreenZip} downloaded. Extracting to {LibSqreenDirectory}...");
+
+            UncompressZip(libSqreenZip, LibSqreenDirectory);
+        });
+
+    Target CopyLibSqreen => _ => _
+        .Unlisted()
+        .After(Clean)
+        .After(DownloadLibSqreen)
+        .OnlyWhenStatic(() => !IsArm64) // not supported yet
+        .Executes(() =>
+        {
+            if (IsWin)
+            {
+                foreach (var architecture in new[] {"win-x86", "win-x64"})
+                {
+                    var source = LibSqreenDirectory / "runtimes" / architecture / "native" / "Sqreen.dll";
+                    var dest = TracerHomeDirectory / architecture;
+                    Logger.Info($"Copying '{source}' to '{dest}'");
+                    CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+                }
+            }
+            else
+            {
+                var (architecture, ext) = GetUnixArchitectureAndExtention();
+                var sqreenFileName = $"libSqreen.{ext}";
+
+                var source = LibSqreenDirectory / "runtimes" / architecture / "native" / sqreenFileName;
+                var dest = TracerHomeDirectory;
+                Logger.Info($"Copying '{source}' to '{dest}'");
+                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+
+            }
+        });
+
     Target PublishManagedProfiler => _ => _
         .Unlisted()
         .After(CompileManagedSrc)
@@ -336,7 +387,7 @@ partial class Build
 
     Target CreateDdTracerHome => _ => _
        .Unlisted()
-       .After(PublishNativeProfiler, CopyIntegrationsJson, PublishManagedProfiler)
+       .After(PublishNativeProfiler, CopyIntegrationsJson, PublishManagedProfiler, DownloadLibSqreen, CopyLibSqreen)
        .Executes(() =>
        {
            // start by copying everything from the tracer home dir
@@ -349,15 +400,26 @@ partial class Build
            }
 
            // Move the native file to the architecture-specific folder
-           var (architecture, fileName) = IsOsx
-               ? ("osx-x64", $"{NativeProfilerProject.Name}.dylib")
-               : ($"linux-{LinuxArchitectureIdentifier}", $"{NativeProfilerProject.Name}.so");
+           var (architecture, ext) = GetUnixArchitectureAndExtention();
+
+           var profilerFileName = $"{NativeProfilerProject.Name}.{ext}";
+           var sqreenFileName = $"libSqreen.{ext}";
 
            var outputDir = DDTracerHomeDirectory / architecture;
+
            EnsureCleanDirectory(outputDir);
            MoveFile(
-               DDTracerHomeDirectory / fileName,
-               outputDir / fileName);
+               DDTracerHomeDirectory / profilerFileName,
+               outputDir / profilerFileName);
+
+           // won't exist yet for arm64 builds
+           var srcSqreenFile = DDTracerHomeDirectory / sqreenFileName;
+           if (File.Exists(srcSqreenFile))
+           {
+               MoveFile(
+                   srcSqreenFile,
+                   DDTracerHomeDirectory / architecture / sqreenFileName);
+           }
        });
 
     Target BuildMsi => _ => _
@@ -373,6 +435,7 @@ partial class Build
                     .SetMSBuildPath()
                     .AddProperty("RunWixToolsOutOfProc", true)
                     .SetProperty("TracerHomeDirectory", TracerHomeDirectory)
+                    .SetProperty("LibSqreenDirectory", LibSqreenDirectory)
                     .SetMaxCpuCount(null)
                     .CombineWith(ArchitecturesForPlatform, (o, arch) => o
                         .SetProperty("MsiOutputPath", ArtifactsDirectory / arch.ToString())
@@ -436,7 +499,7 @@ partial class Build
 
                 foreach (var packageType in LinuxPackageTypes)
                 {
-                    var args = new[]
+                    var args = new List<string>()
                     {
                         "-f",
                         "-s dir",
@@ -451,6 +514,12 @@ partial class Build
                         "integrations.json",
                         "createLogPath.sh",
                     };
+
+                    if (!IsArm64)
+                    {
+                        args.Add("libSqreen.so");
+                    }
+
                     var arguments = string.Join(" ", args);
                     fpm(arguments, workingDirectory: workingDirectory);
                 }
@@ -692,10 +761,15 @@ partial class Build
         .Executes(() =>
         {
             // This does some "unnecessary" rebuilding and restoring
-            var include = RootDirectory.GlobFiles("test/test-applications/integrations/**/*.csproj");
+            var includeIntegration = RootDirectory.GlobFiles("test/test-applications/integrations/**/*.csproj");
+            // Don't build aspnet full framework sample in this step
+            var includeSecurity = RootDirectory.GlobFiles("test/test-applications/security/*/*.csproj");
+
             var exclude = RootDirectory.GlobFiles("test/test-applications/integrations/dependency-libs/**/*.csproj");
 
-            var projects = include.Where(projectPath =>
+            var projects =  includeIntegration
+                .Concat(includeSecurity)
+                .Where(projectPath =>
                 projectPath switch
                 {
                     _ when exclude.Contains(projectPath) => false,
@@ -726,7 +800,10 @@ partial class Build
         .Executes(() =>
         {
             var aspnetFolder = TestsDirectory / "test-applications" / "aspnet";
+            var securityAspnetFolder = TestsDirectory / "test-applications" / "security" / "aspnet";
+
             var aspnetProjects = aspnetFolder.GlobFiles("**/*.csproj");
+            var securityAspnetProjects = securityAspnetFolder.GlobFiles("**/*.csproj");
 
             var publishProfile = aspnetFolder / "PublishProfiles" / "FolderProfile.pubxml";
 
@@ -739,7 +816,7 @@ partial class Build
                 .SetProperty("DeployOnBuild", true)
                 .SetProperty("PublishProfile", publishProfile)
                 .SetMaxCpuCount(null)
-                .CombineWith(aspnetProjects, (c, project) => c
+                .CombineWith(aspnetProjects.Concat(securityAspnetProjects), (c, project) => c
                     .SetTargetPath(project))
             );
         });
@@ -868,6 +945,7 @@ partial class Build
             // There's nothing specifically linux-y here, it's just that we only build a subset of projects
             // for testing on linux.
             var sampleProjects = RootDirectory.GlobFiles("test/test-applications/integrations/*/*.csproj");
+            var securitySampleProjects = RootDirectory.GlobFiles("test/test-applications/security/*/*.csproj");
             var regressionProjects = RootDirectory.GlobFiles("test/test-applications/regression/*/*.csproj");
             var instrumentationProjects = RootDirectory.GlobFiles("test/test-applications/instrumentation/*/*.csproj");
 
@@ -919,6 +997,7 @@ partial class Build
             };
 
             var projectsToBuild = sampleProjects
+                .Concat(securitySampleProjects)
                 .Concat(regressionProjects)
                 .Concat(instrumentationProjects)
                 .Where(path =>
@@ -929,6 +1008,8 @@ partial class Build
                         "Samples.AspNetCoreMvc21" => Framework == TargetFramework.NETCOREAPP2_1,
                         "Samples.AspNetCoreMvc30" => Framework == TargetFramework.NETCOREAPP3_0,
                         "Samples.AspNetCoreMvc31" => Framework == TargetFramework.NETCOREAPP3_1,
+                        "Samples.AspNetCore2" => Framework == TargetFramework.NETCOREAPP2_1,
+                        "Samples.AspNetCore5" => Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NETCOREAPP3_0,
                         var name when projectsToSkip.Contains(name) => false,
                         var name when multiApiProjects.Contains(name) => false,
                         _ when !string.IsNullOrWhiteSpace(SampleName) => project?.Name?.Contains(SampleName) ?? false,
@@ -1033,17 +1114,8 @@ partial class Build
                     .CombineWith(integrationTestProjects, (c, project) => c
                         .SetProjectFile(project)));
 
-            // Not sure if/why this is necessary, and we can't just point to the correct output location
-            var src = TracerHomeDirectory;
-            var testProject = Solution.GetProject(Projects.ClrProfilerIntegrationTests).Directory;
-            var dest = testProject / "bin" / BuildConfiguration / Framework / "profiler-lib";
-            CopyDirectoryRecursively(src, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
-
-            // not sure exactly where this is supposed to go, may need to change the original build
-            foreach (var linuxDir in TracerHomeDirectory.GlobDirectories("linux-*"))
-            {
-                CopyDirectoryRecursively(linuxDir, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
-            }
+            IntegrationTestLinuxProfilerDirFudge(Projects.ClrProfilerIntegrationTests);
+            IntegrationTestLinuxProfilerDirFudge(Projects.AppSecIntegrationTests);
         });
 
     Target RunLinuxIntegrationTests => _ => _
@@ -1110,6 +1182,31 @@ partial class Build
     private AbsolutePath GetResultsDirectory(Project proj) => BuildDataDirectory / "results" / proj.Name;
 
     private void EnsureResultsDirectory(Project proj) => EnsureCleanDirectory(GetResultsDirectory(proj));
+
+    private (string, string) GetUnixArchitectureAndExtention()
+    {
+        var archExt = IsOsx
+            ? ("osx-x64", "dylib")
+            : ($"linux-{LinuxArchitectureIdentifier}", "so");
+
+        return archExt;
+    }
+
+    // the integration tests need their own copy of the profiler, this achived through build.props on Windows, but doesn't seem to work under Linux 
+    private void IntegrationTestLinuxProfilerDirFudge(string project)
+    {
+            // Not sure if/why this is necessary, and we can't just point to the correct output location
+            var src = TracerHomeDirectory;
+            var testProject = Solution.GetProject(project).Directory;
+            var dest = testProject / "bin" / BuildConfiguration / Framework / "profiler-lib";
+            CopyDirectoryRecursively(src, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+
+            // not sure exactly where this is supposed to go, may need to change the original build
+            foreach (var linuxDir in TracerHomeDirectory.GlobDirectories("linux-*"))
+            {
+                CopyDirectoryRecursively(linuxDir, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+            }
+    }
 
     private void MoveLogsToBuildData()
     {
