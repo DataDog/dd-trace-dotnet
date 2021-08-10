@@ -75,7 +75,7 @@ namespace Datadog.Trace.AppSec.Agent
                 try
                 {
                     var appsecEvents = new List<IEvent>();
-                    while (_events.TryDequeue(out var result) && appsecEvents.Count <= MaxItemsPerBatch)
+                    while (appsecEvents.Count <= MaxItemsPerBatch && _events.TryDequeue(out var result))
                     {
                         appsecEvents.Add(result);
                     }

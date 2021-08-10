@@ -19,7 +19,7 @@ namespace Datadog.Trace.AppSec
     /// <summary>
     /// The Secure is responsible cooridating app sec
     /// </summary>
-    public class Security : IDatadogSecurity
+    public class Security : IDatadogSecurity, IDisposable
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Security>();
 
@@ -173,7 +173,7 @@ namespace Datadog.Trace.AppSec
         {
             var frameworkDescription = FrameworkDescription.Instance;
             var osSupported = false;
-            var supportedOs = new[] { OSPlatforms.Linux, OSPlatforms.MacOS, OSPlatforms.Windows };
+            var supportedOs = new[] { OSPlatform.Linux, OSPlatform.MacOS, OSPlatform.Windows };
             if (supportedOs.Contains(frameworkDescription.OSPlatform))
             {
                 osSupported = true;
