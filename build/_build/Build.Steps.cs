@@ -762,7 +762,8 @@ partial class Build
         {
             // This does some "unnecessary" rebuilding and restoring
             var includeIntegration = RootDirectory.GlobFiles("test/test-applications/integrations/**/*.csproj");
-            var includeSecurity = RootDirectory.GlobFiles("test/test-applications/security/**/*.csproj");
+            // Don't build aspnet full framework sample in this step
+            var includeSecurity = RootDirectory.GlobFiles("test/test-applications/security/*/*.csproj");
 
             var exclude = RootDirectory.GlobFiles("test/test-applications/integrations/dependency-libs/**/*.csproj");
 
