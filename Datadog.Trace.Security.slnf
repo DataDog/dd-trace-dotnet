@@ -4,9 +4,7 @@
     "projects": [
       "src\\Datadog.Trace.AspNet\\Datadog.Trace.AspNet.csproj",
       "src\\Datadog.Trace.Ci.Shared\\Datadog.Trace.Ci.Shared.shproj",
-      "src\\Datadog.Trace.ClrProfiler.Managed.Core\\Datadog.Trace.ClrProfiler.Managed.Core.csproj",
       "src\\Datadog.Trace.ClrProfiler.Managed.Loader\\Datadog.Trace.ClrProfiler.Managed.Loader.csproj",
-      "src\\Datadog.Trace.ClrProfiler.Managed\\Datadog.Trace.ClrProfiler.Managed.csproj",
       "src\\Datadog.Trace.ClrProfiler.Native\\Datadog.Trace.ClrProfiler.Native.DLL.vcxproj",
       "src\\Datadog.Trace.ClrProfiler.Native\\Datadog.Trace.ClrProfiler.Native.vcxproj",
       "src\\Datadog.Trace.MSBuild\\Datadog.Trace.MSBuild.csproj",
