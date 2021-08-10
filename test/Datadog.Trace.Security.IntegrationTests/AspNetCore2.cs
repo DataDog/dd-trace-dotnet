@@ -1,9 +1,9 @@
-// <copyright file="AspNetCore5.cs" company="Datadog">
+// <copyright file="AspNetCore2.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NETCOREAPP3_0_OR_GREATER
+#if NETCOREAPP2_1
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,10 +14,10 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
-    public class AspNetCore5 : AspNetBase, IDisposable
+    public class AspNetCore2 : AspNetBase, IDisposable
     {
-        public AspNetCore5(ITestOutputHelper outputHelper)
-            : base("AspNetCore5", outputHelper)
+        public AspNetCore2(ITestOutputHelper outputHelper)
+            : base("AspNetCore2", outputHelper)
         {
         }
 
@@ -34,7 +34,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             await TestBlockedRequestAsync(agent, enableSecurity, expectedStatusCode, 5, new Action<TestHelpers.MockTracerAgent.Span>[]
             {
              s => Assert.Equal("aspnet_core.request", s.Name),
-             s  => Assert.Equal("Samples.AspNetCore5", s.Service),
+             s  => Assert.Equal("Samples.AspNetCore2", s.Service),
              s  =>  Assert.Equal("web", s.Type)
             });
         }

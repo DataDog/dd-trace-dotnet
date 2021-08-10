@@ -72,9 +72,14 @@ namespace Datadog.Trace.Security.IntegrationTests
             }
 
             var expectedAppSecEvents = enableSecurity ? 5 : 0;
-            var appSecEvents = mockTracerAgentAppSecWrapper.WaitForAppSecEvents(expectedAppSecEvents);
-            Assert.Equal(expectedAppSecEvents, appSecEvents.Count);
+
+            // asserts on request status code
             Assert.All(resultRequests, r => Assert.Equal(r.StatusCode, expectedStatusCode));
+
+            var appSecEvents = mockTracerAgentAppSecWrapper.WaitForAppSecEvents(expectedAppSecEvents);
+
+            // asserts on the security events
+            Assert.Equal(expectedAppSecEvents, appSecEvents.Count);
             var spanIds = spans.Select(s => s.SpanId);
             var usedIds = new List<ulong>();
             foreach (var item in appSecEvents)

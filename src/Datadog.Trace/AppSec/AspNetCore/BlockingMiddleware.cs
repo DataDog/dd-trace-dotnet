@@ -64,13 +64,24 @@ namespace Datadog.Trace.AppSec.AspNetCore
 
         private static async Task BlockRequest(HttpContext context)
         {
-            context.Response.StatusCode = 403;
-            context.Response.ContentType = "text/html";
-            await context.Response.WriteAsync(SecurityConstants.AttackBlockedHtml);
+            bool blockByThrow = true;
+            if (!context.Response.HasStarted)
+            {
+                blockByThrow = false;
+                context.Response.StatusCode = 403;
+                context.Response.ContentType = "text/html";
+                await context.Response.WriteAsync(SecurityConstants.AttackBlockedHtml);
+            }
+
             var callbackExists = context.Items.TryGetValue("Security", out var result);
             if (callbackExists && result is Guid callbackId)
             {
                 Security.Instance.Execute(callbackId);
+            }
+
+            if (blockByThrow)
+            {
+                throw new PageBlockedByAppSecException();
             }
         }
 
