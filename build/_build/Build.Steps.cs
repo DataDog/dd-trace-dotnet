@@ -45,7 +45,7 @@ partial class Build
 
     AbsolutePath SourceDirectory => RootDirectory / "src";
     AbsolutePath TestsDirectory => RootDirectory / "test";
-    AbsolutePath AutoInstrumentationHomeDirectory => SourceDirectory / "Datadog.Trace.AutoInstrumentation" / "home";
+    AbsolutePath AutoInstrumentationHomeDirectory => Solution.GetProject(Projects.DatadogTraceAutoInstrumentation).Directory / "home";
 
     AbsolutePath TempDirectory => (AbsolutePath)(IsWin ? Path.GetTempPath() : "/tmp/");
     string TracerLogDirectory => IsWin
