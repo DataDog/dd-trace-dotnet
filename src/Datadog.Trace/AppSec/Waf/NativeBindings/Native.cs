@@ -287,7 +287,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                     AppDomain.CurrentDomain.BaseDirectory : AppDomain.CurrentDomain.RelativeSearchPath;
             integrationsPaths.Add(currentDir);
 
-            Log.Warning($"current dir is {currentDir}'");
+            Log.Debug($"current dir is {currentDir}'");
 
             // the home folder could contain the native dll directly, but it could also
             // be under a runtime specific folder
@@ -361,12 +361,12 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
             switch (frameworkDescription.OSPlatform)
             {
-                case OSPlatforms.MacOS:
+                case OSPlatform.MacOS:
                     runtimeIdPart1 = "osx";
                     libPrefix = "lib";
                     libExt = "dylib";
                     break;
-                case OSPlatforms.Linux:
+                case OSPlatform.Linux:
                     runtimeIdPart1 =
                         IsMuslBasedLinux() ?
                             "linux-musl" :
@@ -374,7 +374,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                     libPrefix = "lib";
                     libExt = "so";
                     break;
-                case OSPlatforms.Windows:
+                case OSPlatform.Windows:
                     runtimeIdPart1 = "win";
                     libPrefix = string.Empty;
                     libExt = "dll";

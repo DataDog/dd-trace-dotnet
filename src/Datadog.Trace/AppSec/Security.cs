@@ -8,13 +8,10 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using Datadog.Trace.Agent;
 using Datadog.Trace.AppSec.Agent;
 using Datadog.Trace.AppSec.EventModel;
 using Datadog.Trace.AppSec.Transport;
 using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.AppSec
@@ -22,7 +19,7 @@ namespace Datadog.Trace.AppSec
     /// <summary>
     /// The Secure is responsible cooridating app sec
     /// </summary>
-    public class Security : IDatadogSecurity
+    public class Security : IDatadogSecurity, IDisposable
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Security>();
 
@@ -65,30 +62,7 @@ namespace Datadog.Trace.AppSec
                         _settings.Enabled = false;
                     }
 
-                    // Register callbacks to make sure we flush the traces before exiting
-                    AppDomain.CurrentDomain.ProcessExit += ProcessExit;
-                    AppDomain.CurrentDomain.DomainUnload += DomainUnload;
-
-                    try
-                    {
-                        // Registering for the AppDomain.UnhandledException event cannot be called by a security transparent method
-                        // This will only happen if the Tracer is not run full-trust
-                        AppDomain.CurrentDomain.UnhandledException += UnhandledException;
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Warning(ex, "Unable to register a callback to the AppDomain.UnhandledException event.");
-                    }
-
-                    try
-                    {
-                        // Registering for the cancel key press event requires the System.Security.Permissions.UIPermission
-                        Console.CancelKeyPress += CancelKeyPress;
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Warning(ex, "Unable to register a callback to the Console.CancelKeyPress event.");
-                    }
+                    RegisterShutdownTasks();
                 }
             }
             catch (Exception ex)
@@ -199,7 +173,7 @@ namespace Datadog.Trace.AppSec
         {
             var frameworkDescription = FrameworkDescription.Instance;
             var osSupported = false;
-            var supportedOs = new[] { OSPlatforms.Linux, OSPlatforms.MacOS, OSPlatforms.Windows };
+            var supportedOs = new[] { OSPlatform.Linux, OSPlatform.MacOS, OSPlatform.Windows };
             if (supportedOs.Contains(frameworkDescription.OSPlatform))
             {
                 osSupported = true;
@@ -224,6 +198,35 @@ namespace Datadog.Trace.AppSec
         {
             _agentWriter.Shutdown();
             _instrumentationGateway.InstrumentationGatewayEvent -= InstrumentationGatewayInstrumentationGatewayEvent;
+            Dispose();
+        }
+
+        private void RegisterShutdownTasks()
+        {
+            // Register callbacks to make sure we flush the traces before exiting
+            AppDomain.CurrentDomain.ProcessExit += ProcessExit;
+            AppDomain.CurrentDomain.DomainUnload += DomainUnload;
+
+            try
+            {
+                // Registering for the AppDomain.UnhandledException event cannot be called by a security transparent method
+                // This will only happen if the Tracer is not run full-trust
+                AppDomain.CurrentDomain.UnhandledException += UnhandledException;
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Unable to register a callback to the AppDomain.UnhandledException event.");
+            }
+
+            try
+            {
+                // Registering for the cancel key press event requires the System.Security.Permissions.UIPermission
+                Console.CancelKeyPress += CancelKeyPress;
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Unable to register a callback to the Console.CancelKeyPress event.");
+            }
         }
 
         private void ProcessExit(object sender, EventArgs e)

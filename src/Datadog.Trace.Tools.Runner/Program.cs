@@ -36,15 +36,15 @@ namespace Datadog.Trace.Tools.Runner
 
             RunnerFolder = Path.GetDirectoryName(location);
 
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
             {
                 Platform = Platform.Windows;
             }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            else if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
             {
                 Platform = Platform.Linux;
             }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            else if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX))
             {
                 Platform = Platform.MacOS;
             }

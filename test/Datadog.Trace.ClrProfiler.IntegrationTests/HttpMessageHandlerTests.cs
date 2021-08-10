@@ -126,7 +126,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private static int CalculateExpectedAsyncSpans(InstrumentationOptions instrumentation, bool enableCallTarget)
         {
-            var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+            var isWindows = RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
 
             // net4x doesn't have patch
             var spansPerHttpClient = EnvironmentHelper.IsCoreClr() ? 35 : 31;

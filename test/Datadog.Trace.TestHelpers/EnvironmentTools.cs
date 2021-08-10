@@ -59,14 +59,14 @@ namespace Datadog.Trace.TestHelpers
         public static string GetOS()
         {
             return IsWindows()                                       ? "win" :
-                   RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "linux" :
-                   RuntimeInformation.IsOSPlatform(OSPlatform.OSX)   ? "osx" :
+                   RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux) ? "linux" :
+                   RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX)   ? "osx" :
                                                                        string.Empty;
         }
 
         public static bool IsWindows()
         {
-            return RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+            return RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
         }
 
         public static string GetPlatform()

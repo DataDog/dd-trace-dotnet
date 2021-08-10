@@ -20,7 +20,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 #if NETFRAMEWORK
             false;
 #else
-            !RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+            !RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
 #endif
 
         internal static bool TryLoad(string libraryPath, out IntPtr handle)
