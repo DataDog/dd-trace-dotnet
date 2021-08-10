@@ -458,9 +458,6 @@ partial class Build
                 RootDirectory / "build" / "artifacts" / "createLogPath.sh",
                 AutoInstrumentationHomeDirectory,
                 FileExistsPolicy.Overwrite);
-
-            // Delete integrations.json (if it exists) because will be consumed from the root directory
-            File.Delete(AutoInstrumentationHomeDirectory / "integrations.json");
         });
 
     /// <summary>

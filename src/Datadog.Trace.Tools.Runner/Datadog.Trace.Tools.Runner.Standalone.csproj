@@ -25,10 +25,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\..\integrations.json" Link="home\integrations.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
-    </Content>
     <Content Include="..\Datadog.Trace.AutoInstrumentation\home\**\*.*" LinkBase="home">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <CopyToPublishDirectory>Always</CopyToPublishDirectory>

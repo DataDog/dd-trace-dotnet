@@ -691,7 +691,6 @@ stages:
       displayName: Download windows tracer home
       inputs:
         artifact: windows-tracer-home
-        patterns: "!integrations.json"
         path: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.AutoInstrumentation/home
 
     - task: DownloadPipelineArtifact@2

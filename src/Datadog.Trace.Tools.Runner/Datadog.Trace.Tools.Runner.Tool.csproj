@@ -23,12 +23,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="..\..\integrations.json" Link="home\integrations.json" Pack="true" PackagePath="\home">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.8.0" />
   </ItemGroup>
 
