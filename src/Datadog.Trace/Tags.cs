@@ -364,6 +364,26 @@ namespace Datadog.Trace
         public const string AzureAppServicesSubscriptionId = "aas.subscription.id";
 
         /// <summary>
+        /// The type of trigger for an azure function
+        /// </summary>
+        internal const string AzureFunctionTriggerType = "aas.function.trigger";
+
+        /// <summary>
+        /// The UI name of the azure function
+        /// </summary>
+        internal const string AzureFunctionName = "aas.function.name";
+
+        /// <summary>
+        /// The UI name of the azure function
+        /// </summary>
+        internal const string AzureFunctionMethod = "aas.function.method";
+
+        /// <summary>
+        /// The literal type of the binding for the azure function trigger
+        /// </summary>
+        internal const string AzureFunctionBindingSource = "aas.function.binding";
+
+        /// <summary>
         /// Configures the origin of the trace
         /// </summary>
         public const string Origin = "_dd.origin";
