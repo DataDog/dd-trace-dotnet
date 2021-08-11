@@ -440,7 +440,8 @@ namespace Datadog.Trace.Ci
             AuthorName = authorArray[0].Trim();
             AuthorEmail = authorArray[1].Trim();
 
-            if (DateTimeOffset.TryParseExact(EnvironmentHelpers.GetEnvironmentVariable("CI_COMMIT_TIMESTAMP"), "yyyy-MM-ddTHH:mm:sszzz", CultureInfo.InvariantCulture, DateTimeStyles.None, out var authorDate))
+            var authorDate = GetDateTimeOffsetEnvironmentVariableIfIsNotEmpty("CI_COMMIT_TIMESTAMP", null);
+            if (authorDate is not null)
             {
                 AuthorDate = authorDate;
             }
