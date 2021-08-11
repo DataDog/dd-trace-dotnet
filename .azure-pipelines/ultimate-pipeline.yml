@@ -697,7 +697,9 @@ stages:
       displayName: Download linux tracer home
       inputs:
         artifact: linux-tracer-home-debian
-        patterns: "**/*.so"
+        patterns: |
+          **/*.so
+          **/*.sh
         path: $(System.DefaultWorkingDirectory)/src/Datadog.Instrumentation/home/linux-x64
 
     - task: DownloadPipelineArtifact@2
