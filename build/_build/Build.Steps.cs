@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
-using System.Text.RegularExpressions;
+using System.Text.Json;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
@@ -968,33 +968,29 @@ partial class Build
                 "NLog10LogsInjection.NullReferenceException",
                 "Sandbox.ManualTracing",
                 "StackExchange.Redis.AssemblyConflict.LegacyProject",
-                "MismatchedTracerVersions"
+                "Samples.OracleMDA", // We don't test these yet
+                "Samples.OracleMDA.Core", // We don't test these yet
+                "MismatchedTracerVersions",
             };
 
             // These sample projects are built using RestoreAndBuildSamplesForPackageVersions
             // so no point building them now
-            // TODO: Load this list dynamically
-            var multiApiProjects = new[]
+            List<string> multiPackageProjects;
+            var samplesFile = RootDirectory / "build" / "PackageVersionsGeneratorDefinitions.json";
+            using (var fs = File.OpenRead(samplesFile))
             {
-                "Samples.CosmosDb",
-                "Samples.MongoDB",
-                "Samples.Elasticsearch",
-                "Samples.Elasticsearch.V5",
-                "Samples.Kafka",
-                "Samples.Npgsql",
-                "Samples.RabbitMQ",
-                "Samples.SqlServer",
-                "Samples.Microsoft.Data.SqlClient",
-                "Samples.StackExchange.Redis",
-                "Samples.ServiceStack.Redis",
-                // "Samples.MySql", - the "non package version" is _ALSO_ tested separately
-                "Samples.Microsoft.Data.Sqlite",
-                "Samples.OracleMDA",
-                "Samples.OracleMDA.Core",
-                "Samples.XUnitTests",
-                "Samples.NUnitTests",
-                "Samples.MSTestTests",
-            };
+                var json = JsonDocument.Parse(fs);
+                multiPackageProjects = json.RootElement
+                                       .EnumerateArray()
+                                       .Select(e => e.GetProperty("SampleProjectName").GetString())
+                                       .Distinct()
+                                       .Where(name => name switch
+                                        {
+                                            "Samples.MySql" => false, // the "non package version" is _ALSO_ tested separately
+                                            _ => true
+                                        })
+                                       .ToList();
+            }
 
             var projectsToBuild = sampleProjects
                 .Concat(securitySampleProjects)
@@ -1011,7 +1007,7 @@ partial class Build
                         "Samples.AspNetCore2" => Framework == TargetFramework.NETCOREAPP2_1,
                         "Samples.AspNetCore5" => Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NETCOREAPP3_0,
                         var name when projectsToSkip.Contains(name) => false,
-                        var name when multiApiProjects.Contains(name) => false,
+                        var name when multiPackageProjects.Contains(name) => false,
                         _ when !string.IsNullOrWhiteSpace(SampleName) => project?.Name?.Contains(SampleName) ?? false,
                         _ => true,
                     };

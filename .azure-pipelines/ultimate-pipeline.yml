@@ -576,6 +576,7 @@ stages:
         TestAllPackageVersions: true
         publishTargetFramework: net5.0
         baseImage: debian
+        COMPOSE_PROJECT_NAME: ddtrace_$(Build.BuildNumber)
 
       pool:
         name: Arm64
@@ -873,18 +874,13 @@ stages:
           )
         )
 
-
-
-
-- stage: upload_to_feed
+- stage: upload_to_azure
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: [package_windows, build_linux, build_arm64, dotnet_tool]
   jobs:
     - job: upload
-
       pool:
         vmImage: ubuntu-18.04
-
       steps:
 
         - task: DownloadPipelineArtifact@2
@@ -936,7 +932,47 @@ stages:
           displayName: Publish release artifacts
           artifact: $(tracer_version)-release-artifacts
 
-        # We don't include the MSI artifacts as they're not signed
+        # We don't include the MSIs in the artifact upload as they're
+        # not signed, but we do include them in the push to Azure
+        - task: DownloadPipelineArtifact@2
+          displayName: Download x64 MSI
+          inputs:
+            artifact: windows-msi-x64
+            path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download x86 MSI
+          inputs:
+            artifact: windows-msi-x86
+            path: $(Build.ArtifactStagingDirectory)
+
+        - bash: |
+            az storage blob upload-batch \
+              --destination "$(AZURE_STORAGE_CONTAINER_NAME)" \
+              --destination-path "$(Build.SourceVersion)" \
+              --source "$(Build.ArtifactStagingDirectory)"
+          displayName: Upload blobs to Azure
+          condition: and(succeeded(), eq(variables.isMainBranch, true), ne(variables['isNgenTestBuild'], 'True'))
+          env:
+            AZURE_STORAGE_ACCOUNT: $(AZURE_STORAGE_ACCOUNT_NAME)
+            AZURE_STORAGE_SAS_TOKEN: $(AZURE_STORAGE_SHARED_ACCESS_TOKEN)
+
+        - bash: ls "$(Build.ArtifactStagingDirectory)" > index.txt
+          displayName: Write file list to index.txt
+
+        - bash: echo "$(Build.SourceVersion)" > sha.txt
+          displayName: Write commit hash to sha.txt
+
+        - bash: |
+            az storage blob upload --container-name "$(AZURE_STORAGE_CONTAINER_NAME)" --file "index.txt" --name "index.txt"
+            az storage blob upload --container-name "$(AZURE_STORAGE_CONTAINER_NAME)" --file "sha.txt" --name "sha.txt"
+          displayName: Upload indexes to Azure
+          condition: and(succeeded(), eq(variables.isMainBranch, true), ne(variables['isNgenTestBuild'], 'True'))
+          env:
+            AZURE_STORAGE_ACCOUNT: $(AZURE_STORAGE_ACCOUNT_NAME)
+            AZURE_STORAGE_SAS_TOKEN: $(AZURE_STORAGE_SHARED_ACCESS_TOKEN)
+
+
 
 - stage: throughput
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
