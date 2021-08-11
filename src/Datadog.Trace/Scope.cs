@@ -39,6 +39,8 @@ namespace Datadog.Trace
 
         internal Scope Parent { get; }
 
+        internal Scope Root => Parent?.Root ?? this;
+
         /// <summary>
         /// Closes the current scope and makes its parent scope active
         /// </summary>

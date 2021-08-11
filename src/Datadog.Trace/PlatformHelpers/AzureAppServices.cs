@@ -77,6 +77,11 @@ namespace Datadog.Trace.PlatformHelpers
         /// </summary>
         internal const string OperatingSystemKey = "WEBSITE_OS";
 
+        /// <summary>
+        /// The unique name of the web site.
+        /// </summary>
+        internal const string WebsiteSiteNameKey = "WEBSITE_SITE_NAME";
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AzureAppServices));
 
         static AzureAppServices()
@@ -116,16 +121,16 @@ namespace Datadog.Trace.PlatformHelpers
                         GetVariableIfExists(
                             FunctionsWorkerRuntimeKey,
                             environmentVariables,
-                            i => AzureContext = AzureContext.AzureFunction);
+                            i => AzureContext = AzureContext.AzureFunctions);
                     FunctionsExtensionVersion =
                         GetVariableIfExists(
                             FunctionsExtensionVersionKey,
                             environmentVariables,
-                            i => AzureContext = AzureContext.AzureFunction);
+                            i => AzureContext = AzureContext.AzureFunctions);
 
                     switch (AzureContext)
                     {
-                        case AzureContext.AzureFunction:
+                        case AzureContext.AzureFunctions:
                             SiteKind = "functionapp";
                             SiteType = "function";
                             break;
@@ -183,7 +188,7 @@ namespace Datadog.Trace.PlatformHelpers
 
         public string Runtime { get; }
 
-        public string DefaultHttpClientExclusions { get; } = "logs.datadoghq, services.visualstudio, applicationinsights.azure, blob.core.windows.net/azure-webjobs, azurewebsites.net/admin".ToUpperInvariant();
+        public string DefaultHttpClientExclusions { get; } = "logs.datadoghq, services.visualstudio, applicationinsights.azure, blob.core.windows.net/azure-webjobs, azurewebsites.net/admin, /azure-webjobs-hosts/".ToUpperInvariant();
 
         private string CompileResourceId()
         {

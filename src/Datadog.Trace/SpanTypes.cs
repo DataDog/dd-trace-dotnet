@@ -66,5 +66,10 @@ namespace Datadog.Trace
         /// The span type for msbuild integration.
         /// </summary>
         public const string Build = "build";
+
+        /// <summary>
+        /// The span type for serverless integrations.
+        /// </summary>
+        public const string Serverless = "serverless";
     }
 }

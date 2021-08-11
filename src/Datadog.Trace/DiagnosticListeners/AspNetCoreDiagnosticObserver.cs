@@ -54,6 +54,9 @@ namespace Datadog.Trace.DiagnosticListeners
         private readonly Tracer _tracer;
         private readonly Security _security;
 
+        private readonly IntegrationInfo _integrationId = IntegrationId;
+        private readonly string _requestInOperationName = HttpRequestInOperationName;
+
         private string _hostingHttpRequestInStartEventKey;
         private string _mvcBeforeActionEventKey;
         private string _mvcAfterActionEventKey;
@@ -63,7 +66,7 @@ namespace Datadog.Trace.DiagnosticListeners
         private string _routingEndpointMatchedKey;
 
         public AspNetCoreDiagnosticObserver()
-            : this(null, null)
+            : this(tracer: null, security: null)
         {
         }
 
@@ -71,6 +74,13 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             _tracer = tracer;
             _security = security;
+        }
+
+        public AspNetCoreDiagnosticObserver(string httpOperationName, IntegrationInfo integrationInfo)
+            : this()
+        {
+            _requestInOperationName = httpOperationName;
+            _integrationId = integrationInfo;
         }
 
         protected override string ListenerName => DiagnosticListenerName;
@@ -615,11 +625,11 @@ namespace Datadog.Trace.DiagnosticListeners
             var tagsFromHeaders = ExtractHeaderTags(request, tracer);
 
             var tags = tracer.Settings.RouteTemplateResourceNamesEnabled ? new AspNetCoreEndpointTags() : new AspNetCoreTags();
-            var scope = tracer.StartActiveWithTags(HttpRequestInOperationName, propagatedContext, tags: tags);
+            var scope = tracer.StartActiveWithTags(_requestInOperationName, propagatedContext, tags: tags);
 
             scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, tags, tagsFromHeaders);
 
-            tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
+            tags.SetAnalyticsSampleRate(_integrationId, tracer.Settings, enabledWithGlobalSetting: true);
 
             return scope.Span;
         }
@@ -629,7 +639,7 @@ namespace Datadog.Trace.DiagnosticListeners
             var tracer = CurrentTracer;
             var security = CurrentSecurity;
 
-            var shouldTrace = tracer.Settings.IsIntegrationEnabled(IntegrationId);
+            var shouldTrace = tracer.Settings.IsIntegrationEnabled(_integrationId);
             var shouldSecure = security.Settings.Enabled;
 
             if (!shouldTrace && !shouldSecure)
@@ -671,7 +681,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var tracer = CurrentTracer;
 
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) ||
+            if (!tracer.Settings.IsIntegrationEnabled(_integrationId) ||
                 !tracer.Settings.RouteTemplateResourceNamesEnabled)
             {
                 return;
@@ -792,7 +802,7 @@ namespace Datadog.Trace.DiagnosticListeners
             var tracer = CurrentTracer;
             var security = CurrentSecurity;
 
-            var shouldTrace = tracer.Settings.IsIntegrationEnabled(IntegrationId);
+            var shouldTrace = tracer.Settings.IsIntegrationEnabled(_integrationId);
             var shouldSecure = security.Settings.Enabled;
 
             if (!shouldTrace && !shouldSecure)
@@ -833,7 +843,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var tracer = CurrentTracer;
 
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) ||
+            if (!tracer.Settings.IsIntegrationEnabled(_integrationId) ||
                 !tracer.Settings.RouteTemplateResourceNamesEnabled)
             {
                 return;
@@ -851,7 +861,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var tracer = CurrentTracer;
 
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!tracer.Settings.IsIntegrationEnabled(_integrationId))
             {
                 return;
             }
@@ -876,7 +886,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var tracer = CurrentTracer;
 
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!tracer.Settings.IsIntegrationEnabled(_integrationId))
             {
                 return;
             }
