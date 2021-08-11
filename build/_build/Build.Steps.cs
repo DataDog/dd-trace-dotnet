@@ -45,7 +45,7 @@ partial class Build
 
     AbsolutePath SourceDirectory => RootDirectory / "src";
     AbsolutePath TestsDirectory => RootDirectory / "test";
-    AbsolutePath AutoInstrumentationHomeDirectory => Solution.GetProject(Projects.DatadogTraceAutoInstrumentation).Directory / "home";
+    AbsolutePath InstrumentationHomeDirectory => Solution.GetProject(Projects.DatadogInstrumentation).Directory / "home";
 
     AbsolutePath TempDirectory => (AbsolutePath)(IsWin ? Path.GetTempPath() : "/tmp/");
     string TracerLogDirectory => IsWin
@@ -445,18 +445,18 @@ partial class Build
                 degreeOfParallelism: 2);
         });
 
-    Target CreateAutoInstrumentationHome => _ => _
+    Target CreateInstrumentationHome => _ => _
         .Unlisted()
         .After(BuildTracerHome)
         .Executes(() =>
         {
-            // Copy existing files from tracer home to the AutoInstrumentation location
-            CopyDirectoryRecursively(TracerHomeDirectory, AutoInstrumentationHomeDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+            // Copy existing files from tracer home to the Instrumentation location
+            CopyDirectoryRecursively(TracerHomeDirectory, InstrumentationHomeDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
 
             // Ensure createLogPath.sh is copied to the directory
             CopyFileToDirectory(
                 RootDirectory / "build" / "artifacts" / "createLogPath.sh",
-                AutoInstrumentationHomeDirectory,
+                InstrumentationHomeDirectory,
                 FileExistsPolicy.Overwrite);
         });
 

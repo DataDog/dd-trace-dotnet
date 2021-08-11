@@ -94,7 +94,7 @@ partial class Build : NukeBuild
             }
             SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => DeleteDirectory(x));
             TestsDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => DeleteDirectory(x));
-            AutoInstrumentationHomeDirectory.GlobFiles("**").Where(x => !x.ToString().Contains("readme.txt")).ForEach(x => DeleteFile(x));
+            InstrumentationHomeDirectory.GlobFiles("**").Where(x => !x.ToString().Contains("readme.txt")).ForEach(x => DeleteFile(x));
             EnsureCleanDirectory(OutputDirectory);
             EnsureCleanDirectory(TracerHomeDirectory);
             EnsureCleanDirectory(DDTracerHomeDirectory);
@@ -231,14 +231,14 @@ partial class Build : NukeBuild
                 degreeOfParallelism: 2);
         });
 
-    Target BuildAutoInstrumentation => _ => _
+    Target BuildInstrumentationNuget => _ => _
         // Currently requires manual copying of files into expected locations
         .Unlisted()
-        .After(CreateAutoInstrumentationHome)
+        .After(CreateInstrumentationHome)
         .Executes(() =>
         {
             DotNetBuild(x => x
-                .SetProjectFile(Solution.GetProject(Projects.DatadogTraceAutoInstrumentation))
+                .SetProjectFile(Solution.GetProject(Projects.DatadogInstrumentation))
                 .EnableNoRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
@@ -249,7 +249,7 @@ partial class Build : NukeBuild
     Target BuildRunnerTool => _ => _
         // Currently requires manual copying of files into expected locations
         .Unlisted()
-        .After(CreateAutoInstrumentationHome)
+        .After(CreateInstrumentationHome)
         .Executes(() =>
         {
             DotNetBuild(x => x
@@ -264,7 +264,7 @@ partial class Build : NukeBuild
     Target BuildStandaloneTool => _ => _
         // Currently requires manual copying of files into expected locations
         .Unlisted()
-        .After(CreateAutoInstrumentationHome)
+        .After(CreateInstrumentationHome)
         .Executes(() =>
         {
             var runtimes = new[] {"win-x86", "win-x64", "linux-x64", "linux-musl-x64", "osx-x64", "linux-arm64"};

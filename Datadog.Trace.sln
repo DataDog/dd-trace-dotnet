@@ -395,7 +395,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Security.Inte
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCore2", "test\test-applications\security\Samples.AspNetCore2\Samples.AspNetCore2.csproj", "{8A73100E-F2C3-44D3-A5B8-49B5BFDF1B52}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.AutoInstrumentation", "src\Datadog.Trace.AutoInstrumentation\Datadog.Trace.AutoInstrumentation.csproj", "{CF364E70-F5B5-4D44-B29E-2165525D3A69}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Instrumentation", "src\Datadog.Instrumentation\Datadog.Instrumentation.csproj", "{CF364E70-F5B5-4D44-B29E-2165525D3A69}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
