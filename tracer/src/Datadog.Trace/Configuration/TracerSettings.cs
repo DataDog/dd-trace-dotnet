@@ -103,7 +103,7 @@ namespace Datadog.Trace.Configuration
 #if DEBUG
             ?? 20_000;
 #else
-            ?? 100;
+            ?? 500;
 #endif
 
             TracesTransport = source?.GetString(ConfigurationKeys.TracesTransport);

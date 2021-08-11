@@ -253,6 +253,7 @@ namespace Datadog.Trace
         public const string MongoDb = "mongodb";
         public const string Queue = "queue";
         public const string Redis = "redis";
+        public const string Serverless = "serverless";
         public const string Sql = "sql";
         public const string Test = "test";
         public const string Web = "web";

@@ -116,16 +116,16 @@ namespace Datadog.Trace.PlatformHelpers
                         GetVariableIfExists(
                             FunctionsWorkerRuntimeKey,
                             environmentVariables,
-                            i => AzureContext = AzureContext.AzureFunction);
+                            i => AzureContext = AzureContext.AzureFunctions);
                     FunctionsExtensionVersion =
                         GetVariableIfExists(
                             FunctionsExtensionVersionKey,
                             environmentVariables,
-                            i => AzureContext = AzureContext.AzureFunction);
+                            i => AzureContext = AzureContext.AzureFunctions);
 
                     switch (AzureContext)
                     {
-                        case AzureContext.AzureFunction:
+                        case AzureContext.AzureFunctions:
                             SiteKind = "functionapp";
                             SiteType = "function";
                             break;
@@ -183,7 +183,7 @@ namespace Datadog.Trace.PlatformHelpers
 
         public string Runtime { get; }
 
-        public string DefaultHttpClientExclusions { get; } = "logs.datadoghq, services.visualstudio, applicationinsights.azure, blob.core.windows.net/azure-webjobs, azurewebsites.net/admin".ToUpperInvariant();
+        public string DefaultHttpClientExclusions { get; } = "logs.datadoghq, services.visualstudio, applicationinsights.azure, blob.core.windows.net/azure-webjobs, azurewebsites.net/admin, /azure-webjobs-hosts/".ToUpperInvariant();
 
         private string CompileResourceId()
         {

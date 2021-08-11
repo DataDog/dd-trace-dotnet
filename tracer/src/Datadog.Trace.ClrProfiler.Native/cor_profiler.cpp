@@ -160,6 +160,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
                          " is recognized as Kudu, an Azure App Services reserved process.");
             return E_FAIL;
         }
+
+        const auto functions_worker_runtime_value =
+            GetEnvironmentValue(environment::azure_app_services_functions_worker_runtime);
+
+        if (!functions_worker_runtime_value.empty() && !IsAzureFunctionsEnabled())
+        {
+            Logger::Info("DATADOG TRACER DIAGNOSTICS - Profiler disabled: Azure Functions are not officially supported. Enable instrumentation with DD_TRACE_AZURE_FUNCTIONS_ENABLED.");
+            return E_FAIL;
+        }
     }
 
     const bool is_calltarget_enabled = IsCallTargetEnabled(is_net46_or_greater);
