@@ -33,22 +33,6 @@ scenarios:
         serverPort: 5000
         path: /hello
 
-  callsite:
-    application:
-      job: server
-      environmentVariables:
-        COR_ENABLE_PROFILING: 1
-        CORECLR_ENABLE_PROFILING: 1
-        DD_TRACE_CALLTARGET_ENABLED: 0
-        DD_CLR_ENABLE_INLINING: 0
-    load:
-      job: bombardier
-      variables:
-        warmup: 30
-        duration: 240
-        serverPort: 5000
-        path: /hello
-
   calltarget:
     application:
       job: server
