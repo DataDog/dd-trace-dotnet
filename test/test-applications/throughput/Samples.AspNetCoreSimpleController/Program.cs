@@ -41,16 +41,6 @@ namespace Samples.AspNetCoreSimpleController
 
         private static bool IsProfilerAttached()
         {
-            try
-            {
-                // Forces loader injection on CallSite scenarios (not required in CallTarget).
-                new HttpClient().GetAsync("http://localhost/bad-url").GetAwaiter().GetResult();
-            }
-            catch
-            {
-                //
-            }
-
             Type nativeMethodsType = Type.GetType("Datadog.Trace.ClrProfiler.NativeMethods, Datadog.Trace");
             MethodInfo profilerAttachedMethodInfo = nativeMethodsType.GetMethod("IsProfilerAttached");
             try
