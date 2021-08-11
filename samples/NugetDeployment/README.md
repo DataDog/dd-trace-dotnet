@@ -1,99 +1,57 @@
-# Running samples
+# Agent configuration
+The `docker-compose.yml` file automatically starts the Datadog agent container image when running the applications.
+- `DD_API_KEY` (required)
+- `DD_ENV` (optional)
 
-From this directory, here are the steps to building and running the sample applications. By default, the containers are sending traces to `host.docker.internal`. If the agent is elsewhere (e.g. a Datadog Agent container), set the environment variable `DD_AGENT_HOST` in the docker run command.
+# Running samples
+From this directory, run the docker-compose service for the corresponding container you want to test.
 
 ## Alpine Linux example
 ```
-docker build -t netcoreapp -f Dockerfile.alpine .
-docker run -it --rm --name myapp netcoreapp
+docker-compose build alpine
+docker-compose run alpine
 ```
 
 ## Linux example
 ```
-docker build -t netcoreapp -f Dockerfile.linux .
-docker run -it --rm --name myapp netcoreapp
+docker-compose build linux
+docker-compose run linux
 ```
 
 ## Linux ARM64 example
 ```
-docker build -t netcoreapp -f Dockerfile.linux-arm64 .
-docker run -it --rm --name myapp netcoreapp
+docker-compose build linux-arm64
+docker-compose run linux-arm64
 ```
 
 ## Windows .NET Core (x64) example
 Note: This requires running on Windows and switching Docker Desktop to Windows containers
 
 ```
-docker build -t netcoreapp -f Dockerfile.windows-netcore-x64 .
-docker run -it --rm --name myapp netcoreapp
+docker-compose build windows-netcore-x64
+docker-compose run windows-netcore-x64
 ```
 
 ## Windows .NET Core (x86) example
 Note: This requires running on Windows and switching Docker Desktop to Windows containers
 
 ```
-docker build -t netcoreapp -f Dockerfile.windows-netcore-x86 .
-docker run -it --rm --name myapp netcoreapp
+docker-compose build windows-netcore-x86
+docker-compose run windows-netcore-x86
 ```
 
 ## .NET Framework (x64) example
 Note: This requires running on Windows and switching Docker Desktop to Windows containers
 
 ```
-docker build -t netframeworkapp -f Dockerfile.windows-netframework-x64 .
-docker run -it --rm --name myapp netframeworkapp
+docker-compose build windows-netframework-x64
+docker-compose run windows-netframework-x64
 ```
 
 ## .NET Framework (x86) example
 Note: This requires running on Windows and switching Docker Desktop to Windows containers
 
 ```
-docker build -t netframeworkapp -f Dockerfile.windows-netframework-x86 .
-docker run -it --rm --name myapp netframeworkapp
+docker-compose build windows-netframework-x86
+docker-compose run windows-netframework-x86
 ```
-
-# Sending APM traffic from app container to Datadog Agent container
-For more the latest docs, see https://docs.datadoghq.com/agent/docker/apm/?tab=standard#docker-network
-
-## Linux
-```
-docker network create <NETWORK_NAME>
-
-docker run -d --name datadog-agent
-              --network <NETWORK_NAME> \
-              -v /var/run/docker.sock:/var/run/docker.sock:ro \
-              -v /proc/:/host/proc/:ro \
-              -v /sys/fs/cgroup/:/host/sys/fs/cgroup:ro \
-              -e DD_API_KEY=<DATADOG_API_KEY> \
-              -e DD_APM_ENABLED=true \
-              -e DD_APM_NON_LOCAL_TRAFFIC=true \
-              gcr.io/datadoghq/agent:7
-
-docker run -it --rm \
-               --name myapp \
-               --network <NETWORK_NAME> \
-               -e DD_AGENT_HOST=datadog-agent \
-               <APP_CONTAINER>
-```
-
-## Windows (using Powershell)
-```
-docker network create --driver nat <NETWORK_NAME>
-
-docker run -d --name datadog-agent `
-              --network <NETWORK_NAME> `
-              -e DD_API_KEY=<DATADOG_API_KEY> `
-              -e DD_APM_ENABLED=true `
-              -e DD_APM_NON_LOCAL_TRAFFIC=true `
-              gcr.io/datadoghq/agent:7
-
-docker run -it --rm `
-               --name myapp `
-               --network <NETWORK_NAME> `
-               -e DD_AGENT_HOST=datadog-agent `
-               <APP_CONTAINER>
-```
-
-## Additional environment variables
-- `DD_ENV`
-- `DD_HOSTNAME`
