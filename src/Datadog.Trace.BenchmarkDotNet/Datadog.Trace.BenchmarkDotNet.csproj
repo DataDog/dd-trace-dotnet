@@ -14,7 +14,7 @@
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="BenchmarkDotNet" Version="0.12.1" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.13.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
