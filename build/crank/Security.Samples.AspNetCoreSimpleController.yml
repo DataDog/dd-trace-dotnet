@@ -1,0 +1,123 @@
+﻿imports:
+  - https://raw.githubusercontent.com/dotnet/crank/main/src/Microsoft.Crank.Jobs.Bombardier/bombardier.yml
+  - /var/opt/crank/variables.yml
+
+variables:
+  commit_hash: 0
+
+jobs:
+  server:
+    source:
+      project: test/test-applications/throughput/Samples.AspNetCoreSimpleController/Samples.AspNetCoreSimpleController.csproj
+    readyStateText: Application started.
+    options:
+      displayOutput: true
+      displayBuild: true
+      counterProviders:
+      - System.Runtime
+      - Microsoft.AspNetCore.Hosting
+      - Microsoft.AspNetCore.Http.Connections
+
+scenarios:
+  appsec_baseline:
+    application:
+      job: server
+      environmentVariables:
+        COR_ENABLE_PROFILING: 1
+        CORECLR_ENABLE_PROFILING: 1
+        DD_TRACE_CALLTARGET_ENABLED: 1
+        DD_APPSEC_ENABLED: false
+        DD_APPSEC_BLOCKING_ENABLED: false
+    load:
+      job: bombardier
+      variables:
+        warmup: 30
+        duration: 240
+        serverPort: 5000
+        path: /hello?arg=[$slice]
+
+  appsec_noblocking:
+    application:
+      job: server
+      environmentVariables:
+        COR_ENABLE_PROFILING: 1
+        CORECLR_ENABLE_PROFILING: 1
+        DD_TRACE_CALLTARGET_ENABLED: 1
+        DD_APPSEC_ENABLED: true
+        DD_APPSEC_BLOCKING_ENABLED: false
+    load:
+      job: bombardier
+      variables:
+        warmup: 30
+        duration: 240
+        serverPort: 5000
+        path: /hello?arg=[$slice]
+
+  appsec_withblocking:
+    application:
+      job: server
+      environmentVariables:
+        COR_ENABLE_PROFILING: 1
+        CORECLR_ENABLE_PROFILING: 1
+        DD_TRACE_CALLTARGET_ENABLED: 1
+        DD_APPSEC_ENABLED: true
+        DD_APPSEC_BLOCKING_ENABLED: true
+    load:
+      job: bombardier
+      variables:
+        warmup: 30
+        duration: 240
+        serverPort: 5000
+        path: /hello?arg=[$slice]
+
+profiles:
+
+  windows:
+    variables:
+      serverAddress: "{{ windowsIp }}"
+    jobs:
+      application:
+        endpoints:
+          - "{{ windowsEndpoint }}"
+        environmentVariables:
+          COR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
+          COR_PROFILER_PATH: "{{ windowsProfilerPath }}\\{{ commit_hash }}\\tracer-home-win\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll"
+          CORECLR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
+          CORECLR_PROFILER_PATH: "{{ windowsProfilerPath }}\\{{ commit_hash }}\\tracer-home-win\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll"
+          DD_DOTNET_TRACER_HOME: "{{ windowsProfilerPath }}\\{{ commit_hash }}\\tracer-home-win"
+          DD_INTEGRATIONS: "{{ windowsProfilerPath }}\\{{ commit_hash }}\\tracer-home-win\\integrations.json"
+          DD_AGENT_HOST: "{{ controllerIp }}"
+          DD_TRACE_DEBUG: 0
+        options:
+          requiredOperatingSystem: windows
+          requiredArchitecture: x64
+          buildFiles:
+          - "../../tracer-home-win/**;{{ windowsProfilerPath }}\\{{ commit_hash }}\\tracer-home-win"
+      load:
+        endpoints:
+          - http://localhost:5010
+
+  linux:
+    variables:
+      serverAddress: "{{ linuxIp }}"
+    jobs:
+      application:
+        endpoints:
+          - "{{ linuxEndpoint }}"
+        environmentVariables:
+          COR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
+          COR_PROFILER_PATH: "{{ linuxProfilerPath }}/{{ commit_hash }}/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so"
+          CORECLR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
+          CORECLR_PROFILER_PATH: "{{ linuxProfilerPath }}/{{ commit_hash }}/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so"
+          DD_DOTNET_TRACER_HOME: "{{ linuxProfilerPath }}/{{ commit_hash }}/tracer-home-linux"
+          DD_INTEGRATIONS: "{{ linuxProfilerPath }}/{{ commit_hash }}/tracer-home-linux/integrations.json"
+          DD_AGENT_HOST: "{{ controllerIp }}"
+          DD_TRACE_DEBUG: 0
+        options:
+          requiredOperatingSystem: linux
+          requiredArchitecture: x64
+          buildFiles:
+          - "../../tracer-home-linux/**;{{ linuxProfilerPath }}/{{ commit_hash }}/tracer-home-linux"
+      load:
+        endpoints:
+          - http://localhost:5010

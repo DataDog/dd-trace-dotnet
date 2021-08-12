@@ -62,3 +62,35 @@ rm baseline_linux_arm64.json
 crank --config Samples.AspNetCoreSimpleController.yml --scenario calltarget --profile linux_arm64 --output calltarget_linux_arm64.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=calltarget --property profile=linux_arm64 --property arch=arm64 --variable commit_hash=$commit_sha
 dd-trace --crank-import="calltarget_linux_arm64.json"
 rm calltarget_linux_arm64.json
+
+
+#appsec
+
+
+crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_baseline --profile windows --json appsec_baseline_windows.json $repository $commit --property name=AspNetCoreSimpleController --property scenario=appsec_baseline --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha
+dd-trace --crank-import="appsec_baseline_windows.json"
+rm appsec_baseline_windows.json
+
+crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_noblocking --profile windows --json appsec_baseline_windows.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_noblocking --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha
+dd-trace --crank-import="appsec_noblocking_windows.json"
+rm appsec_noblocking_windows.json
+
+crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_withblocking --profile windows --json appsec_withblocking_windows.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_withblocking --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha
+dd-trace --crank-import="appsec_withblocking_windows.json"
+rm appsec_withblocking_windows.json
+
+
+
+
+crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_baseline --profile linux --json appsec_baseline_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_baseline --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
+dd-trace --crank-import="appsec_baseline_linux.json"
+rm appsec_baseline_linux.json
+
+crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_noblocking --profile linux --json appsec_baseline_windows.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_noblocking --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
+dd-trace --crank-import="appsec_noblocking_linux.json"
+rm appsec_noblocking_linux.json
+
+crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_withblocking --profile linux --json appsec_withblocking_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_withblocking --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
+dd-trace --crank-import="appsec_withblocking_linux.json"
+rm appsec_withblocking_linux.json
+
