@@ -17,9 +17,9 @@ using Datadog.Trace.Logging;
 namespace Datadog.Trace.AppSec
 {
     /// <summary>
-    /// The Secure is responsible cooridating app sec
+    /// The Secure is responsible coordinating app sec
     /// </summary>
-    public class Security : IDatadogSecurity, IDisposable
+    internal class Security : IDatadogSecurity, IDisposable
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Security>();
 
