@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.ClrProfiler.CallTarget.Handlers;
@@ -14,6 +15,8 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
     /// <summary>
     /// CallTarget Invoker
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public static class CallTargetInvoker
     {
         /// <summary>

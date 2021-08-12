@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.ClrProfiler.Integrations;
 using Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis;
@@ -17,6 +18,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
     [RedisExecuteAsyncInstrumentMethod(TypeName = "StackExchange.Redis.RedisBase")]
     [RedisExecuteAsyncInstrumentMethod(TypeName = "StackExchange.Redis.RedisBatch")]
     [RedisExecuteAsyncInstrumentMethod(TypeName = "StackExchange.Redis.RedisTransaction")]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class RedisExecuteAsyncIntegration
     {
         private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.StackExchangeRedis));

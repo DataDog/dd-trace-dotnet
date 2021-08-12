@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
@@ -10,6 +11,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
     /// <summary>
     /// CreateQueueResponse interface for ducktyping
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public interface ICreateQueueResponse : IAmazonWebServiceResponse
     {
         /// <summary>

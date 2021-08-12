@@ -4,12 +4,15 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 
 namespace Datadog.Trace.ClrProfiler
 {
     /// <summary>
     /// Holds names obtained through the metadata interface.
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class MetadataNames
     {
         /// <summary>

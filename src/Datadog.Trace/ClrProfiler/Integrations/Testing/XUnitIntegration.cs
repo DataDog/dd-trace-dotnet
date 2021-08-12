@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Reflection;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.Emit;
@@ -17,6 +18,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
     /// <summary>
     /// Tracing integration for XUnit testing framework
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public static class XUnitIntegration
     {
         private const string Major2 = "2";

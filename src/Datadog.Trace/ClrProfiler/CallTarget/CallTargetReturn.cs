@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget
@@ -11,6 +12,8 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
     /// Call target return value
     /// </summary>
     /// <typeparam name="T">Type of the return value</typeparam>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public readonly struct CallTargetReturn<T>
     {
         private readonly T _returnValue;
@@ -54,6 +57,8 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
     /// <summary>
     /// Call target return value
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public readonly struct CallTargetReturn
     {
         /// <summary>

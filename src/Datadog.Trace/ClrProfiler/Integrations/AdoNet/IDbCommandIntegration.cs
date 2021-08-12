@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using System.Data;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.Logging;
@@ -14,6 +15,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
     /// Instrumentation wrappers for <see cref="IDbCommand"/>.
     /// </summary>
     // ReSharper disable once InconsistentNaming
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public static class IDbCommandIntegration
     {
         private const string Major2 = "2";

@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using System.Data;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
@@ -13,6 +14,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
     /// CallTarget instrumentation for:
     /// object [Command].ExecuteScalar(CommandBehavior)
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class CommandExecuteScalarWithBehaviorIntegration
     {
         /// <summary>

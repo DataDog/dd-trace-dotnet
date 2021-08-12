@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 
 namespace Datadog.Trace.ClrProfiler
 {
@@ -11,6 +12,8 @@ namespace Datadog.Trace.ClrProfiler
     /// Provides helper methods to access object members by emitting IL dynamically.
     /// </summary>
     [Obsolete("This type will be removed in a future version of this library.")]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public static class MemberAccessor
     {
         /// <summary>

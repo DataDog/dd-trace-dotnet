@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.Configuration;
@@ -15,6 +16,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
     /// <summary>
     /// Wraps calls to the StackExchange redis library.
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public static class ConnectionMultiplexer
     {
         private const string IntegrationName = RedisBatch.IntegrationName;

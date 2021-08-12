@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.ComponentModel;
 using System.Reflection;
 using Datadog.Trace.DuckTyping;
 
@@ -12,6 +13,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
     /// Microsoft.Azure.Cosmos.CosmosClientContext for duck typing
     /// </summary>
     [DuckCopy]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public struct CosmosContextClientStruct
     {
         /// <summary>

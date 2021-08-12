@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
@@ -22,6 +23,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         MinimumVersion = "1.4.0",
         MaximumVersion = "1.*.*",
         IntegrationName = KafkaConstants.IntegrationName)]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class KafkaConsumerConsumeIntegration
     {
         /// <summary>

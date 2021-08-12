@@ -5,12 +5,15 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 {
     /// <summary>
     /// DuckTyping interface for NUnit.Framework.Interfaces.IPropertyBag
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public interface IPropertyBag
     {
         /// <summary>

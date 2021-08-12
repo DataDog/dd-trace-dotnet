@@ -4,12 +4,15 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
 {
     /// <summary>
     /// message queue proxy
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public interface IMessageQueue
     {
         /// <summary>

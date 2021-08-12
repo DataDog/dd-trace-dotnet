@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
@@ -23,6 +24,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
         MinimumVersion = "3.0.0",
         MaximumVersion = "3.*.*",
         IntegrationName = AwsConstants.IntegrationName)]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class RuntimePipelineInvokeSyncIntegration
     {
         /// <summary>

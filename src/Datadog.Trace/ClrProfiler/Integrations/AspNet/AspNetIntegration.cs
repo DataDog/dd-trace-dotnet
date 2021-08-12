@@ -4,6 +4,7 @@
 // </copyright>
 
 #if NETFRAMEWORK
+using System.ComponentModel;
 using System.Reflection;
 using System.Threading;
 using System.Web;
@@ -14,6 +15,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AspNet
     /// <summary>
     /// The ASP.NET integration.
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public static class AspNetIntegration
     {
         /// <summary>

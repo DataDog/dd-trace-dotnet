@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.ClrProfiler.Integrations;
@@ -24,6 +25,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V6
         MaximumVersion = ElasticsearchV6Constants.Version6,
         IntegrationName = ElasticsearchV6Constants.IntegrationName)]
     // ReSharper disable once InconsistentNaming
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class RequestPipeline_CallElasticsearchAsync_Integration
     {
         /// <summary>

@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
@@ -17,6 +18,8 @@ namespace Datadog.Trace.ClrProfiler
     /// <summary>
     /// Provides access to the profiler CLSID and whether it is attached to the process.
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public static class Instrumentation
     {
         /// <summary>

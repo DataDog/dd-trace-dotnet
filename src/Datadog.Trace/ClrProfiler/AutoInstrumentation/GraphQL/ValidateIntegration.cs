@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 
@@ -21,6 +22,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
         MinimumVersion = GraphQLCommon.Major2Minor3,
         MaximumVersion = GraphQLCommon.Major2,
         IntegrationName = GraphQLCommon.IntegrationName)]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class ValidateIntegration
     {
         private const string ErrorType = "GraphQL.Validation.ValidationError";

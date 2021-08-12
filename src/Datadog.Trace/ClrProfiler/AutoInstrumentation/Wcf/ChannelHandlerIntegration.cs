@@ -5,6 +5,7 @@
 
 #if NETFRAMEWORK
 using System;
+using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.ClrProfiler.Integrations;
 using Datadog.Trace.Configuration;
@@ -23,6 +24,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         MinimumVersion = "4.0.0",
         MaximumVersion = "4.*.*",
         IntegrationName = IntegrationName)]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class ChannelHandlerIntegration
     {
         private const string IntegrationName = nameof(IntegrationIds.Wcf);

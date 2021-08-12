@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 
@@ -19,6 +20,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
         MinimumVersion = "2.2.0",
         MaximumVersion = "2.*.*",
         IntegrationName = XUnitIntegration.IntegrationName)]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public static class XUnitTestRunnerRunAsyncIntegration
     {
         /// <summary>

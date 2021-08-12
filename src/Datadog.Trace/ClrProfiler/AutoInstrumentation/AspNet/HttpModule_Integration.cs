@@ -4,6 +4,7 @@
 // </copyright>
 
 #if NETFRAMEWORK
+using System.ComponentModel;
 using System.Threading;
 using System.Web;
 using Datadog.Trace.AspNet;
@@ -24,6 +25,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         MinimumVersion = "4.0.0",
         MaximumVersion = "4.*.*",
         IntegrationName = IntegrationName)]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class HttpModule_Integration
     {
         private const string IntegrationName = nameof(IntegrationIds.AspNet);

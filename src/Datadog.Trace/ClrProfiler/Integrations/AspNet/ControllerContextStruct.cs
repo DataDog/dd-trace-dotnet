@@ -4,6 +4,7 @@
 // </copyright>
 
 #if NETFRAMEWORK
+using System.ComponentModel;
 using System.Web;
 using System.Web.Routing;
 using Datadog.Trace.DuckTyping;
@@ -14,6 +15,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AspNet
     /// ControllerContext struct copy target for ducktyping
     /// </summary>
     [DuckCopy]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public struct ControllerContextStruct
     {
         /// <summary>

@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
@@ -22,6 +23,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
         MinimumVersion = "14.0.0",
         MaximumVersion = "14.*.*",
         IntegrationName = MsTestIntegration.IntegrationName)]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class TestMethodRunnerExecuteIntegration
     {
         /// <summary>

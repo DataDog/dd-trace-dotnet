@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.ComponentModel;
 using System.Net;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.ExtensionMethods;
@@ -28,6 +29,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
         MinimumVersion = WebRequestCommon.Major4,
         MaximumVersion = WebRequestCommon.Major5,
         IntegrationName = WebRequestCommon.IntegrationName)]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class HttpWebRequest_GetRequestStream_Integration
     {
         private const string MethodName = "GetRequestStream";

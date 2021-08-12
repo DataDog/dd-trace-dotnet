@@ -3,12 +3,16 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.ComponentModel;
+
 namespace Datadog.Trace.ClrProfiler
 {
     /// <summary>
     /// Enum that instructs the CLR profiler, during JIT compilation of a method,
     /// where to insert a method call to the intercept method.
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public enum MethodReplacementActionType
     {
         /// <summary>

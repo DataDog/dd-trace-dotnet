@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -22,6 +23,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
         MinimumVersion = "2.2.0",
         MaximumVersion = "2.*.*",
         IntegrationName = IntegrationName)]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public static class XUnitTestInvokerRunAsyncIntegration
     {
         private const string IntegrationName = nameof(IntegrationIds.XUnit);

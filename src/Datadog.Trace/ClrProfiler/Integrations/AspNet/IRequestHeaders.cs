@@ -5,12 +5,15 @@
 
 #if NETFRAMEWORK
 using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace Datadog.Trace.ClrProfiler.Integrations.AspNet
 {
     /// <summary>
     /// RequestHeaders interface for ducktyping
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public interface IRequestHeaders
     {
         /// <summary>

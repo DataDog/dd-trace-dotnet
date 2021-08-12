@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.ClrProfiler.Integrations;
 
@@ -22,6 +23,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         MinimumVersion = "3.6.9",
         MaximumVersion = "6.*.*",
         IntegrationName = RabbitMQConstants.IntegrationName)]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class QueueDeclareIntegration
     {
         private const string Command = "queue.declare";

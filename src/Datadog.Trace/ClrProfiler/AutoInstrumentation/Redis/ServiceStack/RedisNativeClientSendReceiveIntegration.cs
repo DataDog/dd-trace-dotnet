@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -25,6 +26,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack
         MinimumVersion = "4.0.0",
         MaximumVersion = "5.*.*",
         IntegrationName = IntegrationName)]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class RedisNativeClientSendReceiveIntegration
     {
         private const string IntegrationName = nameof(IntegrationIds.ServiceStackRedis);

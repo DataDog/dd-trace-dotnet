@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
@@ -22,6 +23,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.CurlHand
         MinimumVersion = "4.0.0",
         MaximumVersion = "4.*.*",
         IntegrationName = IntegrationName)]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class CurlHandlerIntegration
     {
         private const string IntegrationName = nameof(IntegrationIds.HttpMessageHandler);

@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.ClrProfiler.Integrations;
 using Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis;
@@ -32,6 +33,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
         MinimumVersion = "1.0.0",
         MaximumVersion = "2.*.*",
         IntegrationName = IntegrationName)]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class ConnectionMultiplexerExecuteAsyncImplIntegration
     {
         private const string IntegrationName = nameof(IntegrationIds.StackExchangeRedis);

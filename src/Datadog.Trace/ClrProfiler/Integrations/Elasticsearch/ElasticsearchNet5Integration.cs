@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch;
@@ -19,6 +20,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// <summary>
     /// Traces an Elasticsearch pipeline
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public static class ElasticsearchNet5Integration
     {
         private const string Version5 = "5";

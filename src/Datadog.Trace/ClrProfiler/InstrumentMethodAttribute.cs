@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 
 namespace Datadog.Trace.ClrProfiler
 {
@@ -12,6 +13,8 @@ namespace Datadog.Trace.ClrProfiler
     /// by modifying the method body with callbacks. Used to generate the integration definitions file.
     /// </summary>
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Assembly, AllowMultiple = true, Inherited = false)]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class InstrumentMethodAttribute : Attribute
     {
         /// <summary>

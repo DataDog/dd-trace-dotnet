@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using System.Reflection;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
@@ -24,6 +25,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         MinimumVersion = "1.4.0",
         MaximumVersion = "1.*.*",
         IntegrationName = KafkaConstants.IntegrationName)]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class KafkaProduceSyncDeliveryHandlerIntegration
     {
         private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<KafkaProduceSyncDeliveryHandlerIntegration>();

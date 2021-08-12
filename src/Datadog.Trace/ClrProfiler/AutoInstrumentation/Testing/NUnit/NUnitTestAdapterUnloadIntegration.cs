@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
@@ -19,6 +20,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         MinimumVersion = "3.0.0",
         MaximumVersion = "3.*.*",
         IntegrationName = NUnitIntegration.IntegrationName)]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class NUnitTestAdapterUnloadIntegration
     {
         /// <summary>

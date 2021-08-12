@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
@@ -21,6 +22,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
         TypeName = "GraphQL.Execution.SubscriptionExecutionStrategy",
         MinimumVersion = GraphQLCommon.Major2Minor3,
         MaximumVersion = GraphQLCommon.Major2)]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class ExecuteAsyncIntegration
     {
         private const string ErrorType = "GraphQL.ExecutionError";

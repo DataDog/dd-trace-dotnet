@@ -4,12 +4,15 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
 {
     /// <summary>
     /// Version-agnostic interface for Elasticsearch RequestData
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public interface IRequestData
     {
         /// <summary>

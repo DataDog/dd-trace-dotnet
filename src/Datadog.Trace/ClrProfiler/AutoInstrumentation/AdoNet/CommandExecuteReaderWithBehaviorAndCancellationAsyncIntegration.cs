@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using System.Data;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -15,6 +16,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
     /// Task[*DataReader] [Command].ExecuteReaderAsync(CommandBehavior, CancellationToken)
     /// Task[DbDataReader] [Command].ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class CommandExecuteReaderWithBehaviorAndCancellationAsyncIntegration
     {
         /// <summary>

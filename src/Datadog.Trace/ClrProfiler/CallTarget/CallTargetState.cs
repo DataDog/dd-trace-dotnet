@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget
@@ -11,6 +12,8 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
     /// <summary>
     /// Call target execution state
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public readonly struct CallTargetState
     {
         private readonly Scope _previousScope;

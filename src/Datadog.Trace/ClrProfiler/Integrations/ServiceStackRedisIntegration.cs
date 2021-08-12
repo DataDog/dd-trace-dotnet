@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -17,6 +18,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// <summary>
     /// Wraps a RedisNativeClient.
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public static class ServiceStackRedisIntegration
     {
         private const string Major4 = "4";

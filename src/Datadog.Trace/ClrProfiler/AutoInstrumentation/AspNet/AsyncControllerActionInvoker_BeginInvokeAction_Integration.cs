@@ -5,6 +5,7 @@
 
 #if NETFRAMEWORK
 using System;
+using System.ComponentModel;
 using System.Web;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -30,6 +31,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         MaximumVersion = MaximumVersion,
         IntegrationName = IntegrationName)]
     // ReSharper disable once InconsistentNaming
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class AsyncControllerActionInvoker_BeginInvokeAction_Integration
     {
         private const string AssemblyName = "System.Web.Mvc";

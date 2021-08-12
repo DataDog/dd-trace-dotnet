@@ -4,12 +4,15 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
 {
     /// <summary>
     /// ResponseMetadata interface for ducktyping
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public interface IResponseMetadata
     {
         /// <summary>

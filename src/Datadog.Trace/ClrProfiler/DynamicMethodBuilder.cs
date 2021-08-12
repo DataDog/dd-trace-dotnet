@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using System.Reflection.Emit;
 using Datadog.Trace.ClrProfiler.Emit;
 
@@ -14,6 +15,8 @@ namespace Datadog.Trace.ClrProfiler
     /// </summary>
     /// <typeparam name="TDelegate">The type of delegate</typeparam>
     [Obsolete("This type will be removed in a future version of this library.")]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public static class DynamicMethodBuilder<TDelegate>
         where TDelegate : Delegate
     {
