@@ -10,7 +10,8 @@
       "TRAVIS_BUILD_WEB_URL": "travis-pipeline-url",
       "TRAVIS_JOB_WEB_URL": "travis-job-url",
       "TRAVIS_COMMIT": "travis-git-commit",
-      "TRAVIS_REPO_SLUG": "user/repo"
+      "TRAVIS_REPO_SLUG": "user/repo",
+      "TRAVIS_COMMIT_MESSAGE": "travis-commit-message"
     },
     {
       "git.repository_url": "https://github.com/user/repo.git",
@@ -22,7 +23,8 @@
       "ci.pipeline.number": "travis-pipeline-number",
       "ci.pipeline.url": "travis-pipeline-url",
       "ci.provider.name": "travisci",
-      "git.commit.sha": "travis-git-commit"
+      "git.commit.sha": "travis-git-commit",
+      "git.commit.message": "travis-commit-message"
     }
   ],
   [
@@ -36,7 +38,8 @@
       "TRAVIS_BUILD_WEB_URL": "travis-pipeline-url",
       "TRAVIS_JOB_WEB_URL": "travis-job-url",
       "TRAVIS_COMMIT": "travis-git-commit",
-      "TRAVIS_REPO_SLUG": "user/repo"
+      "TRAVIS_REPO_SLUG": "user/repo",
+      "TRAVIS_COMMIT_MESSAGE": "travis-commit-message"
     },
     {
       "git.repository_url": "https://github.com/user/repo.git",
@@ -48,7 +51,8 @@
       "ci.pipeline.number": "travis-pipeline-number",
       "ci.pipeline.url": "travis-pipeline-url",
       "ci.provider.name": "travisci",
-      "git.commit.sha": "travis-git-commit"
+      "git.commit.sha": "travis-git-commit",
+      "git.commit.message": "travis-commit-message"
     }
   ],
   [
@@ -60,7 +64,8 @@
       "TRAVIS_BUILD_WEB_URL": "travis-pipeline-url",
       "TRAVIS_JOB_WEB_URL": "travis-job-url",
       "TRAVIS_COMMIT": "travis-git-commit",
-      "TRAVIS_REPO_SLUG": "user/repo"
+      "TRAVIS_REPO_SLUG": "user/repo",
+      "TRAVIS_COMMIT_MESSAGE": "travis-commit-message"
     },
     {
       "git.repository_url": "https://github.com/user/repo.git",
@@ -71,30 +76,8 @@
       "ci.pipeline.number": "travis-pipeline-number",
       "ci.pipeline.url": "travis-pipeline-url",
       "ci.provider.name": "travisci",
-      "git.commit.sha": "travis-git-commit"
-    }
-  ],
-  [
-    {
-      "TRAVIS_BRANCH": "origin/master",
-      "TRAVIS": "travisCI",
-      "TRAVIS_BUILD_ID": "travis-pipeline-id",
-      "TRAVIS_BUILD_NUMBER": "travis-pipeline-number",
-      "TRAVIS_BUILD_WEB_URL": "travis-pipeline-url",
-      "TRAVIS_JOB_WEB_URL": "travis-job-url",
-      "TRAVIS_COMMIT": "travis-git-commit",
-      "TRAVIS_REPO_SLUG": "user/repo"
-    },
-    {
-      "git.repository_url": "https://github.com/user/repo.git",
-      "git.branch": "master",
-      "ci.job.url": "travis-job-url",
-      "ci.pipeline.id": "travis-pipeline-id",
-      "ci.pipeline.name": "user/repo",
-      "ci.pipeline.number": "travis-pipeline-number",
-      "ci.pipeline.url": "travis-pipeline-url",
-      "ci.provider.name": "travisci",
-      "git.commit.sha": "travis-git-commit"
+      "git.commit.sha": "travis-git-commit",
+      "git.commit.message": "travis-commit-message"
     }
   ],
   [
@@ -107,7 +90,8 @@
       "TRAVIS_BUILD_WEB_URL": "travis-pipeline-url",
       "TRAVIS_JOB_WEB_URL": "travis-job-url",
       "TRAVIS_COMMIT": "travis-git-commit",
-      "TRAVIS_REPO_SLUG": "user/repo"
+      "TRAVIS_REPO_SLUG": "user/repo",
+      "TRAVIS_COMMIT_MESSAGE": "travis-commit-message"
     },
     {
       "git.repository_url": "https://github.com/user/repo.git",
@@ -119,57 +103,8 @@
       "ci.pipeline.number": "travis-pipeline-number",
       "ci.pipeline.url": "travis-pipeline-url",
       "ci.provider.name": "travisci",
-      "git.commit.sha": "travis-git-commit"
-    }
-  ],
-  [
-    {
-      "TRAVIS_BUILD_DIR": "foo/bar",
-      "TRAVIS_BRANCH": "origin/master",
-      "TRAVIS": "travisCI",
-      "TRAVIS_BUILD_ID": "travis-pipeline-id",
-      "TRAVIS_BUILD_NUMBER": "travis-pipeline-number",
-      "TRAVIS_BUILD_WEB_URL": "travis-pipeline-url",
-      "TRAVIS_JOB_WEB_URL": "travis-job-url",
-      "TRAVIS_COMMIT": "travis-git-commit",
-      "TRAVIS_REPO_SLUG": "user/repo"
-    },
-    {
-      "git.repository_url": "https://github.com/user/repo.git",
-      "ci.workspace_path": "foo/bar",
-      "git.branch": "master",
-      "ci.job.url": "travis-job-url",
-      "ci.pipeline.id": "travis-pipeline-id",
-      "ci.pipeline.name": "user/repo",
-      "ci.pipeline.number": "travis-pipeline-number",
-      "ci.pipeline.url": "travis-pipeline-url",
-      "ci.provider.name": "travisci",
-      "git.commit.sha": "travis-git-commit"
-    }
-  ],
-  [
-    {
-      "TRAVIS_BUILD_DIR": "foo/bar",
-      "TRAVIS_BRANCH": "origin/master",
-      "TRAVIS": "travisCI",
-      "TRAVIS_BUILD_ID": "travis-pipeline-id",
-      "TRAVIS_BUILD_NUMBER": "travis-pipeline-number",
-      "TRAVIS_BUILD_WEB_URL": "travis-pipeline-url",
-      "TRAVIS_JOB_WEB_URL": "travis-job-url",
-      "TRAVIS_COMMIT": "travis-git-commit",
-      "TRAVIS_REPO_SLUG": "user/repo"
-    },
-    {
-      "git.repository_url": "https://github.com/user/repo.git",
-      "ci.workspace_path": "foo/bar",
-      "git.branch": "master",
-      "ci.job.url": "travis-job-url",
-      "ci.pipeline.id": "travis-pipeline-id",
-      "ci.pipeline.name": "user/repo",
-      "ci.pipeline.number": "travis-pipeline-number",
-      "ci.pipeline.url": "travis-pipeline-url",
-      "ci.provider.name": "travisci",
-      "git.commit.sha": "travis-git-commit"
+      "git.commit.sha": "travis-git-commit",
+      "git.commit.message": "travis-commit-message"
     }
   ],
   [
@@ -182,7 +117,8 @@
       "TRAVIS_BUILD_WEB_URL": "travis-pipeline-url",
       "TRAVIS_JOB_WEB_URL": "travis-job-url",
       "TRAVIS_COMMIT": "travis-git-commit",
-      "TRAVIS_REPO_SLUG": "user/repo"
+      "TRAVIS_REPO_SLUG": "user/repo",
+      "TRAVIS_COMMIT_MESSAGE": "travis-commit-message"
     },
     {
       "git.repository_url": "https://github.com/user/repo.git",
@@ -194,7 +130,8 @@
       "ci.pipeline.number": "travis-pipeline-number",
       "ci.pipeline.url": "travis-pipeline-url",
       "ci.provider.name": "travisci",
-      "git.commit.sha": "travis-git-commit"
+      "git.commit.sha": "travis-git-commit",
+      "git.commit.message": "travis-commit-message"
     }
   ],
   [
@@ -207,7 +144,8 @@
       "TRAVIS_BUILD_WEB_URL": "travis-pipeline-url",
       "TRAVIS_JOB_WEB_URL": "travis-job-url",
       "TRAVIS_COMMIT": "travis-git-commit",
-      "TRAVIS_REPO_SLUG": "user/repo"
+      "TRAVIS_REPO_SLUG": "user/repo",
+      "TRAVIS_COMMIT_MESSAGE": "travis-commit-message"
     },
     {
       "git.repository_url": "https://github.com/user/repo.git",
@@ -219,7 +157,8 @@
       "ci.pipeline.number": "travis-pipeline-number",
       "ci.pipeline.url": "travis-pipeline-url",
       "ci.provider.name": "travisci",
-      "git.commit.sha": "travis-git-commit"
+      "git.commit.sha": "travis-git-commit",
+      "git.commit.message": "travis-commit-message"
     }
   ],
   [
@@ -234,7 +173,8 @@
       "TRAVIS_BUILD_WEB_URL": "travis-pipeline-url",
       "TRAVIS_JOB_WEB_URL": "travis-job-url",
       "TRAVIS_COMMIT": "travis-git-commit",
-      "TRAVIS_REPO_SLUG": "user/repo"
+      "TRAVIS_REPO_SLUG": "user/repo",
+      "TRAVIS_COMMIT_MESSAGE": "travis-commit-message"
     },
     {
       "git.repository_url": "https://github.com/user/repo.git",
@@ -246,7 +186,8 @@
       "ci.pipeline.number": "travis-pipeline-number",
       "ci.pipeline.url": "travis-pipeline-url",
       "ci.provider.name": "travisci",
-      "git.commit.sha": "travis-git-commit"
+      "git.commit.sha": "travis-git-commit",
+      "git.commit.message": "travis-commit-message"
     }
   ],
   [
@@ -259,7 +200,8 @@
       "TRAVIS_BUILD_WEB_URL": "travis-pipeline-url",
       "TRAVIS_JOB_WEB_URL": "travis-job-url",
       "TRAVIS_COMMIT": "travis-git-commit",
-      "TRAVIS_REPO_SLUG": "user/repo"
+      "TRAVIS_REPO_SLUG": "user/repo",
+      "TRAVIS_COMMIT_MESSAGE": "travis-commit-message"
     },
     {
       "git.repository_url": "https://github.com/user/repo.git",
@@ -271,7 +213,8 @@
       "ci.pipeline.number": "travis-pipeline-number",
       "ci.pipeline.url": "travis-pipeline-url",
       "ci.provider.name": "travisci",
-      "git.commit.sha": "travis-git-commit"
+      "git.commit.sha": "travis-git-commit",
+      "git.commit.message": "travis-commit-message"
     }
   ],
   [
@@ -286,7 +229,8 @@
       "TRAVIS_BUILD_WEB_URL": "travis-pipeline-url",
       "TRAVIS_JOB_WEB_URL": "travis-job-url",
       "TRAVIS_COMMIT": "travis-git-commit",
-      "TRAVIS_REPO_SLUG": "user/repo"
+      "TRAVIS_REPO_SLUG": "user/repo",
+      "TRAVIS_COMMIT_MESSAGE": "travis-commit-message"
     },
     {
       "git.repository_url": "https://github.com/user/repo.git",
@@ -298,7 +242,8 @@
       "ci.pipeline.number": "travis-pipeline-number",
       "ci.pipeline.url": "travis-pipeline-url",
       "ci.provider.name": "travisci",
-      "git.commit.sha": "travis-git-commit"
+      "git.commit.sha": "travis-git-commit",
+      "git.commit.message": "travis-commit-message"
     }
   ],
   [
@@ -311,7 +256,8 @@
       "TRAVIS_BUILD_WEB_URL": "travis-pipeline-url",
       "TRAVIS_JOB_WEB_URL": "travis-job-url",
       "TRAVIS_COMMIT": "travis-git-commit",
-      "TRAVIS_REPO_SLUG": "user/repo"
+      "TRAVIS_REPO_SLUG": "user/repo",
+      "TRAVIS_COMMIT_MESSAGE": "travis-commit-message"
     },
     {
       "git.repository_url": "https://github.com/user/repo.git",
@@ -323,7 +269,8 @@
       "ci.pipeline.number": "travis-pipeline-number",
       "ci.pipeline.url": "travis-pipeline-url",
       "ci.provider.name": "travisci",
-      "git.commit.sha": "travis-git-commit"
+      "git.commit.sha": "travis-git-commit",
+      "git.commit.message": "travis-commit-message"
     }
   ],
   [
@@ -336,7 +283,8 @@
       "TRAVIS_BUILD_WEB_URL": "travis-pipeline-url",
       "TRAVIS_JOB_WEB_URL": "travis-job-url",
       "TRAVIS_COMMIT": "travis-git-commit",
-      "TRAVIS_REPO_SLUG": "user/repo"
+      "TRAVIS_REPO_SLUG": "user/repo",
+      "TRAVIS_COMMIT_MESSAGE": "travis-commit-message"
     },
     {
       "git.repository_url": "https://github.com/user/repo.git",
@@ -348,7 +296,8 @@
       "ci.pipeline.number": "travis-pipeline-number",
       "ci.pipeline.url": "travis-pipeline-url",
       "ci.provider.name": "travisci",
-      "git.commit.sha": "travis-git-commit"
+      "git.commit.sha": "travis-git-commit",
+      "git.commit.message": "travis-commit-message"
     }
   ],
   [
@@ -361,7 +310,8 @@
       "TRAVIS_BUILD_WEB_URL": "travis-pipeline-url",
       "TRAVIS_JOB_WEB_URL": "travis-job-url",
       "TRAVIS_COMMIT": "travis-git-commit",
-      "TRAVIS_REPO_SLUG": "user/repo"
+      "TRAVIS_REPO_SLUG": "user/repo",
+      "TRAVIS_COMMIT_MESSAGE": "travis-commit-message"
     },
     {
       "git.repository_url": "https://github.com/user/repo.git",
@@ -373,7 +323,8 @@
       "ci.pipeline.number": "travis-pipeline-number",
       "ci.pipeline.url": "travis-pipeline-url",
       "ci.provider.name": "travisci",
-      "git.commit.sha": "travis-git-commit"
+      "git.commit.sha": "travis-git-commit",
+      "git.commit.message": "travis-commit-message"
     }
   ],
   [
@@ -388,7 +339,8 @@
       "TRAVIS_BUILD_WEB_URL": "travis-pipeline-url",
       "TRAVIS_JOB_WEB_URL": "travis-job-url",
       "TRAVIS_COMMIT": "travis-git-commit",
-      "TRAVIS_REPO_SLUG": "user/repo"
+      "TRAVIS_REPO_SLUG": "user/repo",
+      "TRAVIS_COMMIT_MESSAGE": "travis-commit-message"
     },
     {
       "git.repository_url": "https://github.com/user/repo.git",
@@ -400,7 +352,8 @@
       "ci.pipeline.number": "travis-pipeline-number",
       "ci.pipeline.url": "travis-pipeline-url",
       "ci.provider.name": "travisci",
-      "git.commit.sha": "travis-git-commit"
+      "git.commit.sha": "travis-git-commit",
+      "git.commit.message": "travis-commit-message"
     }
   ],
   [
@@ -415,7 +368,8 @@
       "TRAVIS_BUILD_WEB_URL": "travis-pipeline-url",
       "TRAVIS_JOB_WEB_URL": "travis-job-url",
       "TRAVIS_COMMIT": "travis-git-commit",
-      "TRAVIS_REPO_SLUG": "user/repo"
+      "TRAVIS_REPO_SLUG": "user/repo",
+      "TRAVIS_COMMIT_MESSAGE": "travis-commit-message"
     },
     {
       "git.repository_url": "https://github.com/user/repo.git",
@@ -427,7 +381,8 @@
       "ci.pipeline.number": "travis-pipeline-number",
       "ci.pipeline.url": "travis-pipeline-url",
       "ci.provider.name": "travisci",
-      "git.commit.sha": "travis-git-commit"
+      "git.commit.sha": "travis-git-commit",
+      "git.commit.message": "travis-commit-message"
     }
   ],
   [
@@ -442,7 +397,8 @@
       "TRAVIS_BUILD_WEB_URL": "travis-pipeline-url",
       "TRAVIS_JOB_WEB_URL": "travis-job-url",
       "TRAVIS_COMMIT": "travis-git-commit",
-      "TRAVIS_REPO_SLUG": "user/repo"
+      "TRAVIS_REPO_SLUG": "user/repo",
+      "TRAVIS_COMMIT_MESSAGE": "travis-commit-message"
     },
     {
       "git.repository_url": "https://github.com/user/repo.git",
@@ -454,7 +410,8 @@
       "ci.pipeline.number": "travis-pipeline-number",
       "ci.pipeline.url": "travis-pipeline-url",
       "ci.provider.name": "travisci",
-      "git.commit.sha": "travis-git-commit"
+      "git.commit.sha": "travis-git-commit",
+      "git.commit.message": "travis-commit-message"
     }
   ]
 ]

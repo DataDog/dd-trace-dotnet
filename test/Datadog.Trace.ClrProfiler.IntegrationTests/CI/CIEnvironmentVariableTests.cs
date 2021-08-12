@@ -62,11 +62,31 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 foreach (KeyValuePair<string, string> spanDataItem in spanData)
                 {
                     string value = span.Tags.GetTag(spanDataItem.Key);
+
+                    /* Due date parsing and DateTimeOffset.ToString() we need to remove
+                     * The fraction of a second part from the actual value.
+                     *     Expected: 2021-07-21T11:43:07-04:00
+                     *     Actual:   2021-07-21T11:43:07.000-04:00
+                     */
+                    if (spanDataItem.Key.Contains(".date"))
+                    {
+                        if (jsonData.Name == "usersupplied")
+                        {
+                            // We cannot compare dates on the usersupplied json file.
+                            continue;
+                        }
+
+                        value = value.Replace(".000", string.Empty);
+                    }
+
                     Assert.Equal(spanDataItem.Value, value);
                 }
 
-                string providerName = span.Tags.GetTag(CommonTags.CIProvider);
-                Assert.Equal(jsonData.Name, providerName);
+                if (jsonData.Name != "usersupplied")
+                {
+                    string providerName = span.Tags.GetTag(CommonTags.CIProvider);
+                    Assert.Equal(jsonData.Name, providerName);
+                }
             }
         }
 

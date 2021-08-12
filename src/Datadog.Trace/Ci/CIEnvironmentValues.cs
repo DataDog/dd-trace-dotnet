@@ -244,6 +244,48 @@ namespace Datadog.Trace.Ci
             // **********
 
             CleanBranchAndTag();
+
+            // **********
+            // Custom environment variables.
+            // **********
+            Branch = GetEnvironmentVariableIfIsNotEmpty("DD_GIT_BRANCH", Branch);
+            Tag = GetEnvironmentVariableIfIsNotEmpty("DD_GIT_TAG", Tag);
+            Repository = GetEnvironmentVariableIfIsNotEmpty("DD_GIT_REPOSITORY_URL", Repository);
+            Commit = GetEnvironmentVariableIfIsNotEmpty("DD_GIT_COMMIT_SHA", Commit);
+            Message = GetEnvironmentVariableIfIsNotEmpty("DD_GIT_COMMIT_MESSAGE", Message);
+            AuthorName = GetEnvironmentVariableIfIsNotEmpty("DD_GIT_COMMIT_AUTHOR_NAME", AuthorName);
+            AuthorEmail = GetEnvironmentVariableIfIsNotEmpty("DD_GIT_COMMIT_AUTHOR_EMAIL", AuthorEmail);
+            AuthorDate = GetDateTimeOffsetEnvironmentVariableIfIsNotEmpty("DD_GIT_COMMIT_AUTHOR_DATE", AuthorDate);
+            CommitterName = GetEnvironmentVariableIfIsNotEmpty("DD_GIT_COMMIT_COMMITTER_NAME", CommitterName);
+            CommitterEmail = GetEnvironmentVariableIfIsNotEmpty("DD_GIT_COMMIT_COMMITTER_EMAIL", CommitterEmail);
+            CommitterDate = GetDateTimeOffsetEnvironmentVariableIfIsNotEmpty("DD_GIT_COMMIT_COMMITTER_DATE", CommitterDate);
+        }
+
+        private static string GetEnvironmentVariableIfIsNotEmpty(string key, string defaultValue)
+        {
+            string value = EnvironmentHelpers.GetEnvironmentVariable(key, defaultValue);
+            if (string.IsNullOrEmpty(value))
+            {
+                return defaultValue;
+            }
+
+            return value;
+        }
+
+        private static DateTimeOffset? GetDateTimeOffsetEnvironmentVariableIfIsNotEmpty(string key, DateTimeOffset? defaultValue)
+        {
+            string value = EnvironmentHelpers.GetEnvironmentVariable(key);
+            if (string.IsNullOrEmpty(value))
+            {
+                return defaultValue;
+            }
+
+            if (DateTimeOffset.TryParseExact(value, "yyyy-MM-ddTHH:mm:sszzz", CultureInfo.InvariantCulture, DateTimeStyles.None, out var valueDateTimeOffset))
+            {
+                return valueDateTimeOffset;
+            }
+
+            return defaultValue;
         }
 
         private static void SetupTravisEnvironment()
@@ -303,6 +345,11 @@ namespace Datadog.Trace.Ci
             IsCI = true;
             Provider = "jenkins";
             Repository = EnvironmentHelpers.GetEnvironmentVariable("GIT_URL");
+            if (string.IsNullOrEmpty(Repository))
+            {
+                Repository = EnvironmentHelpers.GetEnvironmentVariable("GIT_URL_1");
+            }
+
             Commit = EnvironmentHelpers.GetEnvironmentVariable("GIT_COMMIT");
 
             string gitBranch = EnvironmentHelpers.GetEnvironmentVariable("GIT_BRANCH");
@@ -388,6 +435,17 @@ namespace Datadog.Trace.Ci
 
             Message = EnvironmentHelpers.GetEnvironmentVariable("CI_COMMIT_MESSAGE");
 
+            string author = EnvironmentHelpers.GetEnvironmentVariable("CI_COMMIT_AUTHOR");
+            string[] authorArray = author.Split('<', '>');
+            AuthorName = authorArray[0].Trim();
+            AuthorEmail = authorArray[1].Trim();
+
+            var authorDate = GetDateTimeOffsetEnvironmentVariableIfIsNotEmpty("CI_COMMIT_TIMESTAMP", null);
+            if (authorDate is not null)
+            {
+                AuthorDate = authorDate;
+            }
+
             // Clean pipeline url
             PipelineUrl = PipelineUrl?.Replace("/-/pipelines/", "/pipelines/");
         }
@@ -440,6 +498,10 @@ namespace Datadog.Trace.Ci
                 EnvironmentHelpers.GetEnvironmentVariable("SYSTEM_TEAMFOUNDATIONSERVERURI"),
                 EnvironmentHelpers.GetEnvironmentVariable("SYSTEM_TEAMPROJECTID"),
                 EnvironmentHelpers.GetEnvironmentVariable("BUILD_BUILDID"));
+
+            StageName = EnvironmentHelpers.GetEnvironmentVariable("SYSTEM_STAGEDISPLAYNAME");
+
+            JobName = EnvironmentHelpers.GetEnvironmentVariable("SYSTEM_JOBDISPLAYNAME");
             JobUrl = string.Format(
                 "{0}{1}/_build/results?buildId={2}&view=logs&j={3}&t={4}",
                 EnvironmentHelpers.GetEnvironmentVariable("SYSTEM_TEAMFOUNDATIONSERVERURI"),
@@ -496,7 +558,7 @@ namespace Datadog.Trace.Ci
 
             string headRef = EnvironmentHelpers.GetEnvironmentVariable("GITHUB_HEAD_REF");
             string ghRef = !string.IsNullOrEmpty(headRef) ? headRef : EnvironmentHelpers.GetEnvironmentVariable("GITHUB_REF");
-            if (ghRef.Contains("tags"))
+            if (ghRef?.Contains("tags") == true)
             {
                 Tag = ghRef;
             }
