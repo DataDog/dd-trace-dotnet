@@ -694,12 +694,17 @@ stages:
         path: $(System.DefaultWorkingDirectory)/src/Datadog.Instrumentation/home
 
     - task: DownloadPipelineArtifact@2
+      displayName: Download linux shell scripts
+      inputs:
+        artifact: linux-tracer-home-debian
+        patterns: "*.sh"
+        path: $(System.DefaultWorkingDirectory)/src/Datadog.Instrumentation/home
+
+    - task: DownloadPipelineArtifact@2
       displayName: Download linux tracer home
       inputs:
         artifact: linux-tracer-home-debian
-        patterns: |
-          **/*.so
-          **/*.sh
+        patterns: "**/*.so"
         path: $(System.DefaultWorkingDirectory)/src/Datadog.Instrumentation/home/linux-x64
 
     - task: DownloadPipelineArtifact@2
