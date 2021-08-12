@@ -30,4 +30,7 @@ ENV CORECLR_PROFILER_PATH=/app/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.
 ENV DD_INTEGRATIONS=/app/datadog/integrations.json
 ENV DD_DOTNET_TRACER_HOME=/app/datadog
 
+# Run the createLogPath script on Linux to ensure the automatic instrumentation logs are genereated without permission isues
+RUN sh /app/datadog/createLogPath.sh
+
 ENTRYPOINT ["dotnet", "HttpListenerExample.dll"]
