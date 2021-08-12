@@ -46,7 +46,9 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         {
             if (isPosixLike)
             {
-                return dlsym(handle, name);
+                var exportPtr = dlsym(handle, name);
+                ReadDlerror("dlsym");
+                return exportPtr;
             }
             else
             {
@@ -58,25 +60,30 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         {
             const int RTLD_NOW = 2;
             var addr = dlopen(path, RTLD_NOW);
-            if (addr == IntPtr.Zero)
-            {
-                // Not using NanosmgException because it depends on nn_errno.
-                var error = Marshal.PtrToStringAnsi(dlerror());
-                Log.Error("Error loading library: " + error);
-            }
+            ReadDlerror("dlopen");
 
             return addr;
         }
 
+        private static void ReadDlerror(string op)
+        {
+            var errorPtr = dlerror();
+            if (errorPtr != IntPtr.Zero)
+            {
+                var error = Marshal.PtrToStringAnsi(errorPtr);
+                Log.Error($"Error during '{op}': {error}");
+            }
+        }
+
 #pragma warning disable SA1300 // Element should begin with upper-case letter
 
-        [DllImport("dl")]
+        [DllImport("Datadog.Trace.ClrProfiler.Native")]
         private static extern IntPtr dlopen(string fileName, int flags);
 
-        [DllImport("dl")]
+        [DllImport("Datadog.Trace.ClrProfiler.Native")]
         private static extern IntPtr dlerror();
 
-        [DllImport("dl")]
+        [DllImport("Datadog.Trace.ClrProfiler.Native")]
         private static extern IntPtr dlsym(IntPtr hModule, string lpProcName);
 
         [DllImport("kernel32.dll")]
