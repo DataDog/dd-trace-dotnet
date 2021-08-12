@@ -1,5 +1,14 @@
 [assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/DataDog/dd-trace-dotnet.git")]
 
+namespace Datadog.Trace.AppSec
+{
+    public class Security : System.IDisposable
+    {
+        public Security() { }
+        public static Datadog.Trace.AppSec.Security Instance { get; set; }
+        public void Dispose() { }
+    }
+}
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
 {
     public interface IAmazonWebServiceResponse
@@ -289,6 +298,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         public CommandExecuteScalarWithBehaviorIntegration() { }
         public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TBehavior>(TTarget instance, TBehavior commandBehavior) { }
         public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+}
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
+{
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="Microsoft.AspNetCore.Http", IntegrationName="AspNetCore", MaximumVersion="2", MethodName="Build", MinimumVersion="2", ReturnTypeName="Microsoft.AspNetCore.Http.RequestDelegate", TypeName="Microsoft.AspNetCore.Builder.Internal.ApplicationBuilder")]
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="Microsoft.AspNetCore.Http", IntegrationName="AspNetCore", MaximumVersion="6", MethodName="Build", MinimumVersion="3", ReturnTypeName="System.Void", TypeName="Microsoft.AspNetCore.Builder.ApplicationBuilder")]
+    public static class AspNetCoreMiddlewareIntegration
+    {
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget>(TTarget instance) { }
     }
 }
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
@@ -682,6 +700,33 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.WinHttpH
 }
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
 {
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="System", IntegrationName="WebRequest", MaximumVersion="4", MethodName="BeginGetRequestStream", MinimumVersion="4", ParameterTypeNames=new string[] {
+            "System.AsyncCallback",
+            "System.Object"}, ReturnTypeName="System.IAsyncResult", TypeName="System.Net.HttpWebRequest")]
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="System.Net.Requests", IntegrationName="WebRequest", MaximumVersion="5", MethodName="BeginGetRequestStream", MinimumVersion="4", ParameterTypeNames=new string[] {
+            "System.AsyncCallback",
+            "System.Object"}, ReturnTypeName="System.IAsyncResult", TypeName="System.Net.HttpWebRequest")]
+    public class HttpWebRequest_BeginGetRequestStream_Integration
+    {
+        public HttpWebRequest_BeginGetRequestStream_Integration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget>(TTarget instance, System.AsyncCallback callback, object state) { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="System", IntegrationName="WebRequest", MaximumVersion="4", MethodName="BeginGetResponse", MinimumVersion="4", ParameterTypeNames=new string[] {
+            "System.AsyncCallback",
+            "System.Object"}, ReturnTypeName="System.IAsyncResult", TypeName="System.Net.HttpWebRequest")]
+    public class HttpWebRequest_BeginGetResponse_Integration
+    {
+        public HttpWebRequest_BeginGetResponse_Integration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget>(TTarget instance, System.AsyncCallback callback, object state) { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="System", IntegrationName="WebRequest", MaximumVersion="4", MethodName="EndGetResponse", MinimumVersion="4", ParameterTypeNames=new string[] {
+            "System.IAsyncResult"}, ReturnTypeName="System.Net.WebResponse", TypeName="System.Net.HttpWebRequest")]
+    public class HttpWebRequest_EndGetResponse_Integration
+    {
+        public HttpWebRequest_EndGetResponse_Integration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state)
+            where TTarget : Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest.IHttpWebRequest, Datadog.Trace.DuckTyping.IDuckType { }
+    }
     [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="System", IntegrationName="WebRequest", MaximumVersion="4", MethodName="GetRequestStream", MinimumVersion="4", ReturnTypeName="System.IO.Stream", TypeName="System.Net.HttpWebRequest")]
     [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="System.Net.Requests", IntegrationName="WebRequest", MaximumVersion="5", MethodName="GetRequestStream", MinimumVersion="4", ReturnTypeName="System.IO.Stream", TypeName="System.Net.HttpWebRequest")]
     public class HttpWebRequest_GetRequestStream_Integration
@@ -696,6 +741,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
         public HttpWebRequest_GetResponse_Integration() { }
         public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget>(TTarget instance) { }
         public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+    public interface IHttpWebRequest
+    {
+        [Datadog.Trace.DuckTyping.Duck(Kind=Datadog.Trace.DuckTyping.DuckKind.Field, Name="m_StartTimestamp")]
+        long RequestStartTicks { get; }
     }
     [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="System", IntegrationName="WebRequest", MaximumVersion="4", MethodName="GetResponseAsync", MinimumVersion="4", ReturnTypeName="System.Threading.Tasks.Task`1<System.Net.WebResponse>", TypeName="System.Net.WebRequest")]
     [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="System.Net.Requests", IntegrationName="WebRequest", MaximumVersion="5", MethodName="GetResponseAsync", MinimumVersion="4", ReturnTypeName="System.Threading.Tasks.Task`1<System.Net.WebResponse>", TypeName="System.Net.WebRequest")]
@@ -2129,6 +2179,8 @@ namespace Datadog.Trace.Configuration
         public const string AgentPort = "DD_TRACE_AGENT_PORT";
         public const string AgentUri = "DD_TRACE_AGENT_URL";
         public const string ApiKey = "DD_API_KEY";
+        public const string AppSecBlockingEnabled = "DD_APPSEC_BLOCKING_ENABLED";
+        public const string AppSecEnabled = "DD_APPSEC_ENABLED";
         public const string BufferSize = "DD_TRACE_BUFFER_SIZE";
         public const string ConfigurationFileName = "DD_TRACE_CONFIG_FILE";
         public const string CustomSamplingRules = "DD_TRACE_SAMPLING_RULES";
