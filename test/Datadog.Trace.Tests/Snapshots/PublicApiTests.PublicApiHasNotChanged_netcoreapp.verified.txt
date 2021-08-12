@@ -1,5 +1,2113 @@
 [assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/DataDog/dd-trace-dotnet.git")]
 
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
+{
+    public interface IAmazonWebServiceResponse
+    {
+        long ContentLength { get; }
+        System.Net.HttpStatusCode HttpStatusCode { get; }
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IResponseMetadata ResponseMetadata { get; }
+    }
+    public interface IClientConfig
+    {
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IRegionEndpoint RegionEndpoint { get; }
+    }
+    public interface IExecutionContext
+    {
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IRequestContext RequestContext { get; }
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IResponseContext ResponseContext { get; }
+    }
+    public interface IRegionEndpoint
+    {
+        string SystemName { get; }
+    }
+    public interface IRequest
+    {
+        string HttpMethod { get; }
+    }
+    public interface IRequestContext
+    {
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IClientConfig ClientConfig { get; }
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IRequest Request { get; }
+    }
+    public interface IResponseContext
+    {
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse Response { get; }
+    }
+    public interface IResponseMetadata
+    {
+        System.Collections.Generic.IDictionary<string, string> Metadata { get; }
+        string RequestId { get; }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="AWSSDK.Core", IntegrationName="AwsSdk", MaximumVersion="3.*.*", MethodName="InvokeAsync", MinimumVersion="3.0.0", ParameterTypeNames=new string[] {
+            "Amazon.Runtime.IExecutionContext"}, ReturnTypeName="System.Threading.Tasks.Task`1<T>", TypeName="Amazon.Runtime.Internal.RuntimePipeline")]
+    public class RuntimePipelineInvokeAsyncIntegration
+    {
+        public RuntimePipelineInvokeAsyncIntegration() { }
+        public static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state)
+            where TResponse : Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TExecutionContext>(TTarget instance, TExecutionContext executionContext)
+            where TExecutionContext : Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IExecutionContext, Datadog.Trace.DuckTyping.IDuckType { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="AWSSDK.Core", IntegrationName="AwsSdk", MaximumVersion="3.*.*", MethodName="InvokeSync", MinimumVersion="3.0.0", ParameterTypeNames=new string[] {
+            "Amazon.Runtime.IExecutionContext"}, ReturnTypeName="Amazon.Runtime.IResponseContext", TypeName="Amazon.Runtime.Internal.RuntimePipeline")]
+    public class RuntimePipelineInvokeSyncIntegration
+    {
+        public RuntimePipelineInvokeSyncIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TExecutionContext>(TTarget instance, TExecutionContext executionContext)
+            where TExecutionContext : Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IExecutionContext, Datadog.Trace.DuckTyping.IDuckType { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TResponseContext> OnMethodEnd<TTarget, TResponseContext>(TTarget instance, TResponseContext responseContext, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state)
+            where TResponseContext : Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IResponseContext { }
+    }
+}
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
+{
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="AWSSDK.SQS", IntegrationName="AwsSqs", MaximumVersion="3.*.*", MethodName="CreateQueueAsync", MinimumVersion="3.0.0", ParameterTypeNames=new string[] {
+            "Amazon.SQS.Model.CreateQueueRequest",
+            "System.Threading.CancellationToken"}, ReturnTypeName="System.Threading.Tasks.Task`1<Amazon.SQS.Model.CreateQueueResponse>", TypeName="Amazon.SQS.AmazonSQSClient")]
+    public class CreateQueueAsyncIntegration
+    {
+        public CreateQueueAsyncIntegration() { }
+        public static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state)
+            where TResponse : Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.ICreateQueueResponse { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TCreateQueueRequest>(TTarget instance, TCreateQueueRequest request, System.Threading.CancellationToken cancellationToken)
+            where TCreateQueueRequest : Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.ICreateQueueRequest, Datadog.Trace.DuckTyping.IDuckType { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="AWSSDK.SQS", IntegrationName="AwsSqs", MaximumVersion="3.*.*", MethodName="CreateQueue", MinimumVersion="3.0.0", ParameterTypeNames=new string[] {
+            "Amazon.SQS.Model.CreateQueueRequest"}, ReturnTypeName="Amazon.SQS.Model.CreateQueueResponse", TypeName="Amazon.SQS.AmazonSQSClient")]
+    public class CreateQueueIntegration
+    {
+        public CreateQueueIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TCreateQueueRequest>(TTarget instance, TCreateQueueRequest request)
+            where TCreateQueueRequest : Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.ICreateQueueRequest, Datadog.Trace.DuckTyping.IDuckType { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state)
+            where TResponse : Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.ICreateQueueResponse { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="AWSSDK.SQS", IntegrationName="AwsSqs", MaximumVersion="3.*.*", MethodName="DeleteMessageAsync", MinimumVersion="3.0.0", ParameterTypeNames=new string[] {
+            "Amazon.SQS.Model.DeleteMessageRequest",
+            "System.Threading.CancellationToken"}, ReturnTypeName="System.Threading.Tasks.Task`1<Amazon.SQS.Model.DeleteMessageResponse>", TypeName="Amazon.SQS.AmazonSQSClient")]
+    public class DeleteMessageAsyncIntegration
+    {
+        public DeleteMessageAsyncIntegration() { }
+        public static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TDeleteMessageRequest>(TTarget instance, TDeleteMessageRequest request, System.Threading.CancellationToken cancellationToken)
+            where TDeleteMessageRequest : Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.IAmazonSQSRequestWithQueueUrl, Datadog.Trace.DuckTyping.IDuckType { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="AWSSDK.SQS", IntegrationName="AwsSqs", MaximumVersion="3.*.*", MethodName="DeleteMessageBatchAsync", MinimumVersion="3.0.0", ParameterTypeNames=new string[] {
+            "Amazon.SQS.Model.DeleteMessageBatchRequest",
+            "System.Threading.CancellationToken"}, ReturnTypeName="System.Threading.Tasks.Task`1<Amazon.SQS.Model.DeleteMessageBatchResponse>", TypeName="Amazon.SQS.AmazonSQSClient")]
+    public class DeleteMessageBatchAsyncIntegration
+    {
+        public DeleteMessageBatchAsyncIntegration() { }
+        public static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TDeleteMessageBatchRequest>(TTarget instance, TDeleteMessageBatchRequest request, System.Threading.CancellationToken cancellationToken)
+            where TDeleteMessageBatchRequest : Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.IAmazonSQSRequestWithQueueUrl, Datadog.Trace.DuckTyping.IDuckType { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="AWSSDK.SQS", IntegrationName="AwsSqs", MaximumVersion="3.*.*", MethodName="DeleteMessageBatch", MinimumVersion="3.0.0", ParameterTypeNames=new string[] {
+            "Amazon.SQS.Model.DeleteMessageBatchRequest"}, ReturnTypeName="Amazon.SQS.Model.DeleteMessageBatchResponse", TypeName="Amazon.SQS.AmazonSQSClient")]
+    public class DeleteMessageBatchIntegration
+    {
+        public DeleteMessageBatchIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TDeleteMessageBatchRequest>(TTarget instance, TDeleteMessageBatchRequest request)
+            where TDeleteMessageBatchRequest : Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.IAmazonSQSRequestWithQueueUrl, Datadog.Trace.DuckTyping.IDuckType { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="AWSSDK.SQS", IntegrationName="AwsSqs", MaximumVersion="3.*.*", MethodName="DeleteMessage", MinimumVersion="3.0.0", ParameterTypeNames=new string[] {
+            "Amazon.SQS.Model.DeleteMessageRequest"}, ReturnTypeName="Amazon.SQS.Model.DeleteMessageResponse", TypeName="Amazon.SQS.AmazonSQSClient")]
+    public class DeleteMessageIntegration
+    {
+        public DeleteMessageIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TDeleteMessageRequest>(TTarget instance, TDeleteMessageRequest request)
+            where TDeleteMessageRequest : Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.IAmazonSQSRequestWithQueueUrl, Datadog.Trace.DuckTyping.IDuckType { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="AWSSDK.SQS", IntegrationName="AwsSqs", MaximumVersion="3.*.*", MethodName="DeleteQueueAsync", MinimumVersion="3.0.0", ParameterTypeNames=new string[] {
+            "Amazon.SQS.Model.DeleteQueueRequest",
+            "System.Threading.CancellationToken"}, ReturnTypeName="System.Threading.Tasks.Task`1<Amazon.SQS.Model.DeleteQueueResponse>", TypeName="Amazon.SQS.AmazonSQSClient")]
+    public class DeleteQueueAsyncIntegration
+    {
+        public DeleteQueueAsyncIntegration() { }
+        public static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TDeleteQueueRequest>(TTarget instance, TDeleteQueueRequest request, System.Threading.CancellationToken cancellationToken)
+            where TDeleteQueueRequest : Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.IAmazonSQSRequestWithQueueUrl, Datadog.Trace.DuckTyping.IDuckType { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="AWSSDK.SQS", IntegrationName="AwsSqs", MaximumVersion="3.*.*", MethodName="DeleteQueue", MinimumVersion="3.0.0", ParameterTypeNames=new string[] {
+            "Amazon.SQS.Model.DeleteQueueRequest"}, ReturnTypeName="Amazon.SQS.Model.DeleteQueueResponse", TypeName="Amazon.SQS.AmazonSQSClient")]
+    public class DeleteQueueIntegration
+    {
+        public DeleteQueueIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TDeleteQueueRequest>(TTarget instance, TDeleteQueueRequest request)
+            where TDeleteQueueRequest : Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.IAmazonSQSRequestWithQueueUrl, Datadog.Trace.DuckTyping.IDuckType { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+    public interface IAmazonSQSRequestWithQueueUrl
+    {
+        string QueueUrl { get; }
+    }
+    public interface IContainsMessageAttributes
+    {
+        System.Collections.IDictionary MessageAttributes { get; set; }
+    }
+    public interface ICreateQueueRequest
+    {
+        System.Collections.Generic.Dictionary<string, string> Attributes { get; }
+        string QueueName { get; }
+    }
+    public interface ICreateQueueResponse : Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.IAmazonWebServiceResponse
+    {
+        string QueueUrl { get; }
+    }
+    public interface ISendMessageBatchRequest : Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.IAmazonSQSRequestWithQueueUrl
+    {
+        System.Collections.IList Entries { get; }
+    }
+    public interface ISendMessageRequest : Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.IAmazonSQSRequestWithQueueUrl, Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.IContainsMessageAttributes { }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="AWSSDK.SQS", IntegrationName="AwsSqs", MaximumVersion="3.*.*", MethodName="ReceiveMessageAsync", MinimumVersion="3.0.0", ParameterTypeNames=new string[] {
+            "Amazon.SQS.Model.ReceiveMessageRequest",
+            "System.Threading.CancellationToken"}, ReturnTypeName="System.Threading.Tasks.Task`1<Amazon.SQS.Model.ReceiveMessageResponse>", TypeName="Amazon.SQS.AmazonSQSClient")]
+    public class ReceiveMessageAsyncIntegration
+    {
+        public ReceiveMessageAsyncIntegration() { }
+        public static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TReceiveMessageRequest>(TTarget instance, TReceiveMessageRequest request, System.Threading.CancellationToken cancellationToken)
+            where TReceiveMessageRequest : Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.IAmazonSQSRequestWithQueueUrl, Datadog.Trace.DuckTyping.IDuckType { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="AWSSDK.SQS", IntegrationName="AwsSqs", MaximumVersion="3.*.*", MethodName="ReceiveMessage", MinimumVersion="3.0.0", ParameterTypeNames=new string[] {
+            "Amazon.SQS.Model.ReceiveMessageRequest"}, ReturnTypeName="Amazon.SQS.Model.ReceiveMessageResponse", TypeName="Amazon.SQS.AmazonSQSClient")]
+    public class ReceiveMessageIntegration
+    {
+        public ReceiveMessageIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TReceiveMessageRequest>(TTarget instance, TReceiveMessageRequest request)
+            where TReceiveMessageRequest : Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.IAmazonSQSRequestWithQueueUrl, Datadog.Trace.DuckTyping.IDuckType { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="AWSSDK.SQS", IntegrationName="AwsSqs", MaximumVersion="3.*.*", MethodName="SendMessageAsync", MinimumVersion="3.0.0", ParameterTypeNames=new string[] {
+            "Amazon.SQS.Model.SendMessageRequest",
+            "System.Threading.CancellationToken"}, ReturnTypeName="System.Threading.Tasks.Task`1<Amazon.SQS.Model.SendMessageResponse>", TypeName="Amazon.SQS.AmazonSQSClient")]
+    public class SendMessageAsyncIntegration
+    {
+        public SendMessageAsyncIntegration() { }
+        public static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TSendMessageRequest>(TTarget instance, TSendMessageRequest request, System.Threading.CancellationToken cancellationToken) { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="AWSSDK.SQS", IntegrationName="AwsSqs", MaximumVersion="3.*.*", MethodName="SendMessageBatchAsync", MinimumVersion="3.0.0", ParameterTypeNames=new string[] {
+            "Amazon.SQS.Model.SendMessageBatchRequest",
+            "System.Threading.CancellationToken"}, ReturnTypeName="System.Threading.Tasks.Task`1<Amazon.SQS.Model.SendMessageBatchResponse>", TypeName="Amazon.SQS.AmazonSQSClient")]
+    public class SendMessageBatchAsyncIntegration
+    {
+        public SendMessageBatchAsyncIntegration() { }
+        public static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TSendMessageBatchRequest>(TTarget instance, TSendMessageBatchRequest request, System.Threading.CancellationToken cancellationToken) { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="AWSSDK.SQS", IntegrationName="AwsSqs", MaximumVersion="3.*.*", MethodName="SendMessageBatch", MinimumVersion="3.0.0", ParameterTypeNames=new string[] {
+            "Amazon.SQS.Model.SendMessageBatchRequest"}, ReturnTypeName="Amazon.SQS.Model.SendMessageBatchResponse", TypeName="Amazon.SQS.AmazonSQSClient")]
+    public class SendMessageBatchIntegration
+    {
+        public SendMessageBatchIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TSendMessageBatchRequest>(TTarget instance, TSendMessageBatchRequest request) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="AWSSDK.SQS", IntegrationName="AwsSqs", MaximumVersion="3.*.*", MethodName="SendMessage", MinimumVersion="3.0.0", ParameterTypeNames=new string[] {
+            "Amazon.SQS.Model.SendMessageRequest"}, ReturnTypeName="Amazon.SQS.Model.SendMessageResponse", TypeName="Amazon.SQS.AmazonSQSClient")]
+    public class SendMessageIntegration
+    {
+        public SendMessageIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TSendMessageRequest>(TTarget instance, TSendMessageRequest request) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+}
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
+{
+    public class CommandExecuteNonQueryAsyncIntegration
+    {
+        public CommandExecuteNonQueryAsyncIntegration() { }
+        public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget>(TTarget instance, System.Threading.CancellationToken cancellationToken) { }
+    }
+    public class CommandExecuteNonQueryIntegration
+    {
+        public CommandExecuteNonQueryIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget>(TTarget instance) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+    public class CommandExecuteNonQueryWithBehaviorIntegration
+    {
+        public CommandExecuteNonQueryWithBehaviorIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TBehavior>(TTarget instance, TBehavior commandBehavior) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+    public class CommandExecuteReaderAsyncIntegration
+    {
+        public CommandExecuteReaderAsyncIntegration() { }
+        public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget>(TTarget instance) { }
+    }
+    public class CommandExecuteReaderIntegration
+    {
+        public CommandExecuteReaderIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget>(TTarget instance) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+    public class CommandExecuteReaderWithBehaviorAndCancellationAsyncIntegration
+    {
+        public CommandExecuteReaderWithBehaviorAndCancellationAsyncIntegration() { }
+        public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TBehavior>(TTarget instance, TBehavior commandBehavior, System.Threading.CancellationToken cancellationToken) { }
+    }
+    public class CommandExecuteReaderWithBehaviorAsyncIntegration
+    {
+        public CommandExecuteReaderWithBehaviorAsyncIntegration() { }
+        public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TBehavior>(TTarget instance, TBehavior commandBehavior) { }
+    }
+    public class CommandExecuteReaderWithBehaviorIntegration
+    {
+        public CommandExecuteReaderWithBehaviorIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TBehavior>(TTarget instance, TBehavior commandBehavior) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+    public class CommandExecuteReaderWithCancellationAsyncIntegration
+    {
+        public CommandExecuteReaderWithCancellationAsyncIntegration() { }
+        public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget>(TTarget instance, System.Threading.CancellationToken cancellationToken) { }
+    }
+    public class CommandExecuteScalarAsyncIntegration
+    {
+        public CommandExecuteScalarAsyncIntegration() { }
+        public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget>(TTarget instance, System.Threading.CancellationToken cancellationToken) { }
+    }
+    public class CommandExecuteScalarIntegration
+    {
+        public CommandExecuteScalarIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget>(TTarget instance) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+    public class CommandExecuteScalarWithBehaviorIntegration
+    {
+        public CommandExecuteScalarWithBehaviorIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TBehavior>(TTarget instance, TBehavior commandBehavior) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+}
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
+{
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="Microsoft.Azure.Cosmos.Client", IntegrationName="CosmosDb", MaximumVersion="3", MethodName="GetDatabaseQueryIterator", MinimumVersion="3.6.0", ParameterTypeNames=new string[] {
+            "Microsoft.Azure.Cosmos.QueryDefinition",
+            "System.String",
+            "Microsoft.Azure.Cosmos.QueryRequestOptions"}, ReturnTypeName="Microsoft.Azure.Cosmos.FeedIterator`1<T>", TypeName="Microsoft.Azure.Cosmos.CosmosClient")]
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="Microsoft.Azure.Cosmos.Client", IntegrationName="CosmosDb", MaximumVersion="3", MethodName="GetDatabaseQueryIterator", MinimumVersion="3.6.0", ParameterTypeNames=new string[] {
+            "System.String",
+            "System.String",
+            "Microsoft.Azure.Cosmos.QueryRequestOptions"}, ReturnTypeName="Microsoft.Azure.Cosmos.FeedIterator`1<T>", TypeName="Microsoft.Azure.Cosmos.CosmosClient")]
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="Microsoft.Azure.Cosmos.Client", IntegrationName="CosmosDb", MaximumVersion="3", MethodName="GetDatabaseQueryStreamIterator", MinimumVersion="3.6.0", ParameterTypeNames=new string[] {
+            "Microsoft.Azure.Cosmos.QueryDefinition",
+            "System.String",
+            "Microsoft.Azure.Cosmos.QueryRequestOptions"}, ReturnTypeName="Microsoft.Azure.Cosmos.FeedIterator`1<T>", TypeName="Microsoft.Azure.Cosmos.CosmosClient")]
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="Microsoft.Azure.Cosmos.Client", IntegrationName="CosmosDb", MaximumVersion="3", MethodName="GetDatabaseQueryStreamIterator", MinimumVersion="3.6.0", ParameterTypeNames=new string[] {
+            "System.String",
+            "System.String",
+            "Microsoft.Azure.Cosmos.QueryRequestOptions"}, ReturnTypeName="Microsoft.Azure.Cosmos.FeedIterator`1<T>", TypeName="Microsoft.Azure.Cosmos.CosmosClient")]
+    public class ClientQueryIteratorsIntegrations
+    {
+        public ClientQueryIteratorsIntegrations() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TQueryDefinition, TQueryRequestOptions>(TTarget instance, TQueryDefinition queryDefinition, string cancellationToken, TQueryRequestOptions queryRequestOptions) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+    [Datadog.Trace.DuckTyping.DuckCopy]
+    public struct ContainerNewStruct
+    {
+        [Datadog.Trace.DuckTyping.Duck(BindingFlags=System.Reflection.BindingFlags.Default | System.Reflection.BindingFlags.IgnoreCase | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.FlattenHierarchy)]
+        public Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.DatabaseNewStruct Database;
+        [Datadog.Trace.DuckTyping.Duck(BindingFlags=System.Reflection.BindingFlags.Default | System.Reflection.BindingFlags.IgnoreCase | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.FlattenHierarchy)]
+        public string Id;
+    }
+    [Datadog.Trace.DuckTyping.DuckCopy]
+    public struct ContainerOldStruct
+    {
+        [Datadog.Trace.DuckTyping.Duck(BindingFlags=System.Reflection.BindingFlags.Default | System.Reflection.BindingFlags.IgnoreCase | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.FlattenHierarchy)]
+        public Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.DatabaseOldStruct Database;
+        [Datadog.Trace.DuckTyping.Duck(BindingFlags=System.Reflection.BindingFlags.Default | System.Reflection.BindingFlags.IgnoreCase | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.FlattenHierarchy)]
+        public string Id;
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="Microsoft.Azure.Cosmos.Client", IntegrationName="CosmosDb", MaximumVersion="3", MethodName="GetItemQueryIterator", MinimumVersion="3.6.0", ParameterTypeNames=new string[] {
+            "Microsoft.Azure.Cosmos.QueryDefinition",
+            "System.String",
+            "Microsoft.Azure.Cosmos.QueryRequestOptions"}, ReturnTypeName="Microsoft.Azure.Cosmos.FeedIterator`1<T>", TypeName="Microsoft.Azure.Cosmos.ContainerCore")]
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="Microsoft.Azure.Cosmos.Client", IntegrationName="CosmosDb", MaximumVersion="3", MethodName="GetItemQueryIterator", MinimumVersion="3.6.0", ParameterTypeNames=new string[] {
+            "System.String",
+            "System.String",
+            "Microsoft.Azure.Cosmos.QueryRequestOptions"}, ReturnTypeName="Microsoft.Azure.Cosmos.FeedIterator`1<T>", TypeName="Microsoft.Azure.Cosmos.ContainerCore")]
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="Microsoft.Azure.Cosmos.Client", IntegrationName="CosmosDb", MaximumVersion="3", MethodName="GetItemQueryStreamIterator", MinimumVersion="3.6.0", ParameterTypeNames=new string[] {
+            "Microsoft.Azure.Cosmos.QueryDefinition",
+            "System.String",
+            "Microsoft.Azure.Cosmos.QueryRequestOptions"}, ReturnTypeName="Microsoft.Azure.Cosmos.FeedIterator`1<T>", TypeName="Microsoft.Azure.Cosmos.ContainerCore")]
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="Microsoft.Azure.Cosmos.Client", IntegrationName="CosmosDb", MaximumVersion="3", MethodName="GetItemQueryStreamIterator", MinimumVersion="3.6.0", ParameterTypeNames=new string[] {
+            "System.String",
+            "System.String",
+            "Microsoft.Azure.Cosmos.QueryRequestOptions"}, ReturnTypeName="Microsoft.Azure.Cosmos.FeedIterator`1<T>", TypeName="Microsoft.Azure.Cosmos.ContainerCore")]
+    public class ContainerQueryIteratorsIntegrations
+    {
+        public ContainerQueryIteratorsIntegrations() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TQueryDefinition, TQueryRequestOptions>(TTarget instance, TQueryDefinition queryDefinition, string cancellationToken, TQueryRequestOptions queryRequestOptions) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+    [Datadog.Trace.DuckTyping.DuckCopy]
+    public struct CosmosClientStruct
+    {
+        [Datadog.Trace.DuckTyping.Duck(BindingFlags=System.Reflection.BindingFlags.Default | System.Reflection.BindingFlags.IgnoreCase | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.FlattenHierarchy)]
+        public System.Uri Endpoint;
+    }
+    [Datadog.Trace.DuckTyping.DuckCopy]
+    public struct CosmosContextClientStruct
+    {
+        [Datadog.Trace.DuckTyping.Duck(BindingFlags=System.Reflection.BindingFlags.Default | System.Reflection.BindingFlags.IgnoreCase | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.FlattenHierarchy)]
+        public Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.CosmosClientStruct Client;
+    }
+    [Datadog.Trace.DuckTyping.DuckCopy]
+    public struct DatabaseNewStruct
+    {
+        [Datadog.Trace.DuckTyping.Duck(BindingFlags=System.Reflection.BindingFlags.Default | System.Reflection.BindingFlags.IgnoreCase | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.FlattenHierarchy)]
+        public Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.CosmosClientStruct Client;
+        [Datadog.Trace.DuckTyping.Duck(BindingFlags=System.Reflection.BindingFlags.Default | System.Reflection.BindingFlags.IgnoreCase | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.FlattenHierarchy)]
+        public string Id;
+    }
+    [Datadog.Trace.DuckTyping.DuckCopy]
+    public struct DatabaseOldStruct
+    {
+        [Datadog.Trace.DuckTyping.Duck(BindingFlags=System.Reflection.BindingFlags.Default | System.Reflection.BindingFlags.IgnoreCase | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.FlattenHierarchy)]
+        public Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.CosmosContextClientStruct ClientContext;
+        [Datadog.Trace.DuckTyping.Duck(BindingFlags=System.Reflection.BindingFlags.Default | System.Reflection.BindingFlags.IgnoreCase | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.FlattenHierarchy)]
+        public string Id;
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="Microsoft.Azure.Cosmos.Client", IntegrationName="CosmosDb", MaximumVersion="3", MethodName="GetContainerQueryIterator", MinimumVersion="3.6.0", ParameterTypeNames=new string[] {
+            "Microsoft.Azure.Cosmos.QueryDefinition",
+            "System.String",
+            "Microsoft.Azure.Cosmos.QueryRequestOptions"}, ReturnTypeName="Microsoft.Azure.Cosmos.FeedIterator`1<T>", TypeName="Microsoft.Azure.Cosmos.DatabaseCore")]
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="Microsoft.Azure.Cosmos.Client", IntegrationName="CosmosDb", MaximumVersion="3", MethodName="GetContainerQueryIterator", MinimumVersion="3.6.0", ParameterTypeNames=new string[] {
+            "System.String",
+            "System.String",
+            "Microsoft.Azure.Cosmos.QueryRequestOptions"}, ReturnTypeName="Microsoft.Azure.Cosmos.FeedIterator`1<T>", TypeName="Microsoft.Azure.Cosmos.DatabaseCore")]
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="Microsoft.Azure.Cosmos.Client", IntegrationName="CosmosDb", MaximumVersion="3", MethodName="GetContainerQueryStreamIterator", MinimumVersion="3.6.0", ParameterTypeNames=new string[] {
+            "Microsoft.Azure.Cosmos.QueryDefinition",
+            "System.String",
+            "Microsoft.Azure.Cosmos.QueryRequestOptions"}, ReturnTypeName="Microsoft.Azure.Cosmos.FeedIterator`1<T>", TypeName="Microsoft.Azure.Cosmos.DatabaseCore")]
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="Microsoft.Azure.Cosmos.Client", IntegrationName="CosmosDb", MaximumVersion="3", MethodName="GetContainerQueryStreamIterator", MinimumVersion="3.6.0", ParameterTypeNames=new string[] {
+            "System.String",
+            "System.String",
+            "Microsoft.Azure.Cosmos.QueryRequestOptions"}, ReturnTypeName="Microsoft.Azure.Cosmos.FeedIterator`1<T>", TypeName="Microsoft.Azure.Cosmos.DatabaseCore")]
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="Microsoft.Azure.Cosmos.Client", IntegrationName="CosmosDb", MaximumVersion="3", MethodName="GetUserQueryIterator", MinimumVersion="3.6.0", ParameterTypeNames=new string[] {
+            "Microsoft.Azure.Cosmos.QueryDefinition",
+            "System.String",
+            "Microsoft.Azure.Cosmos.QueryRequestOptions"}, ReturnTypeName="Microsoft.Azure.Cosmos.FeedIterator`1<T>", TypeName="Microsoft.Azure.Cosmos.DatabaseCore")]
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="Microsoft.Azure.Cosmos.Client", IntegrationName="CosmosDb", MaximumVersion="3", MethodName="GetUserQueryIterator", MinimumVersion="3.6.0", ParameterTypeNames=new string[] {
+            "System.String",
+            "System.String",
+            "Microsoft.Azure.Cosmos.QueryRequestOptions"}, ReturnTypeName="Microsoft.Azure.Cosmos.FeedIterator`1<T>", TypeName="Microsoft.Azure.Cosmos.DatabaseCore")]
+    public class DatabaseQueryIteratorsIntegrations
+    {
+        public DatabaseQueryIteratorsIntegrations() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TQueryDefinition, TQueryRequestOptions>(TTarget instance, TQueryDefinition queryDefinition, string cancellationToken, TQueryRequestOptions queryRequestOptions) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+    [Datadog.Trace.DuckTyping.DuckCopy]
+    public struct QueryDefinitionStruct
+    {
+        [Datadog.Trace.DuckTyping.Duck(BindingFlags=System.Reflection.BindingFlags.Default | System.Reflection.BindingFlags.IgnoreCase | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.FlattenHierarchy)]
+        public string QueryText;
+    }
+}
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
+{
+    public enum HttpMethod
+    {
+        GET = 0,
+        POST = 1,
+        PUT = 2,
+        DELETE = 3,
+        HEAD = 4,
+    }
+    public interface IRequestData
+    {
+        string Method { get; }
+        string Path { get; }
+        System.Uri Uri { get; }
+    }
+    [Datadog.Trace.DuckTyping.DuckCopy]
+    public struct RequestPipelineStruct
+    {
+        public object RequestParameters;
+    }
+}
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V5
+{
+    public struct RequestDataV5 : Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.IRequestData
+    {
+        public RequestDataV5(object source) { }
+        public string Method { get; }
+        public string Path { get; }
+        public System.Uri Uri { get; }
+        [Datadog.Trace.DuckTyping.DuckCopy]
+        public struct Proxy
+        {
+            public Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.HttpMethod Method;
+            public string Path;
+            public System.Uri Uri;
+        }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="Elasticsearch.Net", IntegrationName="ElasticsearchNet5", MaximumVersion="5", MethodName="CallElasticsearchAsync", MinimumVersion="5", ParameterTypeNames=new string[] {
+            "Elasticsearch.Net.RequestData",
+            "System.Threading.CancellationToken"}, ReturnTypeName="System.Threading.Tasks.Task`1<Elasticsearch.Net.ElasticsearchResponse`1<T>>", TypeName="Elasticsearch.Net.RequestPipeline")]
+    public class RequestPipeline_CallElasticsearchAsync_Integration
+    {
+        public RequestPipeline_CallElasticsearchAsync_Integration() { }
+        public static TExecutionResult OnAsyncMethodEnd<TTarget, TExecutionResult>(TTarget instance, TExecutionResult executionResult, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TRequestData>(TTarget instance, TRequestData requestData, System.Threading.CancellationToken cancellationToken) { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="Elasticsearch.Net", IntegrationName="ElasticsearchNet5", MaximumVersion="5", MethodName="CallElasticsearch", MinimumVersion="5", ParameterTypeNames=new string[] {
+            "Elasticsearch.Net.RequestData"}, ReturnTypeName="Elasticsearch.Net.ElasticsearchResponse`1<T>", TypeName="Elasticsearch.Net.RequestPipeline")]
+    public class RequestPipeline_CallElasticsearch_Integration
+    {
+        public RequestPipeline_CallElasticsearch_Integration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TRequestData>(TTarget instance, TRequestData requestData) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+}
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V6
+{
+    public struct RequestDataV6 : Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.IRequestData
+    {
+        public RequestDataV6(object source) { }
+        public string Method { get; }
+        public string Path { get; }
+        public System.Uri Uri { get; }
+        [Datadog.Trace.DuckTyping.DuckCopy]
+        public struct Proxy
+        {
+            public Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.HttpMethod Method;
+            public string PathAndQuery;
+            public System.Uri Uri;
+        }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="Elasticsearch.Net", IntegrationName="ElasticsearchNet", MaximumVersion="6", MethodName="CallElasticsearchAsync", MinimumVersion="6", ParameterTypeNames=new string[] {
+            "Elasticsearch.Net.RequestData",
+            "System.Threading.CancellationToken"}, ReturnTypeName="System.Threading.Tasks.Task`1<T>", TypeName="Elasticsearch.Net.RequestPipeline")]
+    public class RequestPipeline_CallElasticsearchAsync_Integration
+    {
+        public RequestPipeline_CallElasticsearchAsync_Integration() { }
+        public static TExecutionResult OnAsyncMethodEnd<TTarget, TExecutionResult>(TTarget instance, TExecutionResult executionResult, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TRequestData>(TTarget instance, TRequestData requestData, System.Threading.CancellationToken cancellationToken) { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="Elasticsearch.Net", IntegrationName="ElasticsearchNet", MaximumVersion="6", MethodName="CallElasticsearch", MinimumVersion="6", ParameterTypeNames=new string[] {
+            "Elasticsearch.Net.RequestData"}, ReturnTypeName="T", TypeName="Elasticsearch.Net.RequestPipeline")]
+    public class RequestPipeline_CallElasticsearch_Integration
+    {
+        public RequestPipeline_CallElasticsearch_Integration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TRequestData>(TTarget instance, TRequestData requestData) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+}
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
+{
+    [Datadog.Trace.DuckTyping.DuckCopy]
+    public struct ErrorLocationStruct
+    {
+        public int Column;
+        public int Line;
+    }
+    public class ExecuteAsyncIntegration
+    {
+        public ExecuteAsyncIntegration() { }
+        public static TExecutionResult OnAsyncMethodEnd<TTarget, TExecutionResult>(TTarget instance, TExecutionResult executionResult, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext context)
+            where TContext : Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.IExecutionContext { }
+    }
+    public interface IDocument
+    {
+        string OriginalQuery { get; }
+    }
+    public interface IExecutionContext
+    {
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.IDocument Document { get; }
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.IExecutionErrors Errors { get; }
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.IOperation Operation { get; }
+    }
+    public interface IExecutionError
+    {
+        string Code { get; }
+        System.Collections.Generic.IEnumerable<object> Locations { get; }
+        string Message { get; }
+        System.Collections.Generic.IEnumerable<string> Path { get; }
+    }
+    public interface IExecutionErrors
+    {
+        int Count { get; }
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.IExecutionError this[int index] { get; }
+    }
+    public interface IOperation
+    {
+        string Name { get; }
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.OperationTypeProxy OperationType { get; }
+    }
+    public interface IValidationResult
+    {
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.IExecutionErrors Errors { get; }
+    }
+    public enum OperationTypeProxy
+    {
+        Query = 0,
+        Mutation = 1,
+        Subscription = 2,
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="GraphQL", IntegrationName="GraphQL", MaximumVersion="2", MethodName="Validate", MinimumVersion="2.3", ParameterTypeNames=new string[] {
+            "System.String",
+            "GraphQL.Types.ISchema",
+            "GraphQL.Language.AST.Document",
+            "System.Collections.Generic.IEnumerable`1[GraphQL.Validation.IValidationRule]",
+            "_",
+            "GraphQL.Inputs"}, ReturnTypeName="GraphQL.Validation.IValidationResult", TypeName="GraphQL.Validation.DocumentValidator")]
+    public class ValidateIntegration
+    {
+        public ValidateIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TSchema, TDocument, TRules, TUserContext, TInputs>(TTarget instance, string originalQuery, TSchema schema, TDocument document, TRules rules, TUserContext userContext, TInputs inputs)
+            where TDocument : Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.IDocument { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TValidationResult> OnMethodEnd<TTarget, TValidationResult>(TTarget instance, TValidationResult validationResult, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state)
+            where TValidationResult : Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.IValidationResult { }
+    }
+}
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.CurlHandler
+{
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="System.Net.Http", IntegrationName="HttpMessageHandler", MaximumVersion="4.*.*", MethodName="SendAsync", MinimumVersion="4.0.0", ParameterTypeNames=new string[] {
+            "System.Net.Http.HttpRequestMessage",
+            "System.Threading.CancellationToken"}, ReturnTypeName="System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>", TypeName="System.Net.Http.CurlHandler")]
+    public class CurlHandlerIntegration
+    {
+        public CurlHandlerIntegration() { }
+        public static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse responseMessage, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state)
+            where TResponse : Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.IHttpResponseMessage { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest requestMessage, System.Threading.CancellationToken cancellationToken)
+            where TRequest : Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.IHttpRequestMessage { }
+    }
+}
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.HttpClientHandler
+{
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="System.Net.Http", IntegrationName="HttpMessageHandler", MaximumVersion="5.*.*", MethodName="SendAsync", MinimumVersion="4.0.0", ParameterTypeNames=new string[] {
+            "System.Net.Http.HttpRequestMessage",
+            "System.Threading.CancellationToken"}, ReturnTypeName="System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>", TypeName="System.Net.Http.HttpClientHandler")]
+    public class HttpClientHandlerIntegration
+    {
+        public HttpClientHandlerIntegration() { }
+        public static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse responseMessage, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state)
+            where TResponse : Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.IHttpResponseMessage { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest requestMessage, System.Threading.CancellationToken cancellationToken)
+            where TRequest : Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.IHttpRequestMessage { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="System.Net.Http", IntegrationName="HttpMessageHandler", MaximumVersion="5.*.*", MethodName="Send", MinimumVersion="5.0.0", ParameterTypeNames=new string[] {
+            "System.Net.Http.HttpRequestMessage",
+            "System.Threading.CancellationToken"}, ReturnTypeName="System.Net.Http.HttpResponseMessage", TypeName="System.Net.Http.HttpClientHandler")]
+    public class HttpClientHandlerSyncIntegration
+    {
+        public HttpClientHandlerSyncIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest requestMessage, System.Threading.CancellationToken cancellationToken)
+            where TRequest : Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.IHttpRequestMessage { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse responseMessage, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state)
+            where TResponse : Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.IHttpResponseMessage { }
+    }
+}
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
+{
+    [Datadog.Trace.DuckTyping.DuckCopy]
+    public struct HttpMethodStruct
+    {
+        public string Method;
+    }
+    public interface IHttpRequestMessage : Datadog.Trace.DuckTyping.IDuckType
+    {
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.IRequestHeaders Headers { get; }
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.HttpMethodStruct Method { get; }
+        System.Uri RequestUri { get; }
+    }
+    public interface IHttpResponseMessage : Datadog.Trace.DuckTyping.IDuckType
+    {
+        int StatusCode { get; }
+    }
+    public interface IRequestHeaders
+    {
+        void Add(string name, string value);
+        bool Remove(string name);
+        bool TryGetValues(string name, out System.Collections.Generic.IEnumerable<string> values);
+    }
+}
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.SocketsHttpHandler
+{
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="System.Net.Http", IntegrationName="HttpMessageHandler", MaximumVersion="5.*.*", MethodName="SendAsync", MinimumVersion="4.0.0", ParameterTypeNames=new string[] {
+            "System.Net.Http.HttpRequestMessage",
+            "System.Threading.CancellationToken"}, ReturnTypeName="System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>", TypeName="System.Net.Http.SocketsHttpHandler")]
+    public class SocketsHttpHandlerIntegration
+    {
+        public SocketsHttpHandlerIntegration() { }
+        public static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse responseMessage, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state)
+            where TResponse : Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.IHttpResponseMessage { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest requestMessage, System.Threading.CancellationToken cancellationToken)
+            where TRequest : Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.IHttpRequestMessage { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="System.Net.Http", IntegrationName="HttpMessageHandler", MaximumVersion="5.*.*", MethodName="Send", MinimumVersion="5.0.0", ParameterTypeNames=new string[] {
+            "System.Net.Http.HttpRequestMessage",
+            "System.Threading.CancellationToken"}, ReturnTypeName="System.Net.Http.HttpResponseMessage", TypeName="System.Net.Http.SocketsHttpHandler")]
+    public class SocketsHttpHandlerSyncIntegration
+    {
+        public SocketsHttpHandlerSyncIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest requestMessage, System.Threading.CancellationToken cancellationToken)
+            where TRequest : Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.IHttpRequestMessage { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse responseMessage, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state)
+            where TResponse : Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.IHttpResponseMessage { }
+    }
+}
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.WinHttpHandler
+{
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyNames=new string[] {
+            "System.Net.Http",
+            "System.Net.Http.WinHttpHandler"}, IntegrationName="HttpMessageHandler", MaximumVersion="5.*.*", MethodName="SendAsync", MinimumVersion="4.0.0", ParameterTypeNames=new string[] {
+            "System.Net.Http.HttpRequestMessage",
+            "System.Threading.CancellationToken"}, ReturnTypeName="System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>", TypeName="System.Net.Http.WinHttpHandler")]
+    public class WinHttpHandlerIntegration
+    {
+        public WinHttpHandlerIntegration() { }
+        public static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse responseMessage, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state)
+            where TResponse : Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.IHttpResponseMessage { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TRequest>(TTarget instance, TRequest requestMessage, System.Threading.CancellationToken cancellationToken)
+            where TRequest : Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.IHttpRequestMessage { }
+    }
+}
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
+{
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="System", IntegrationName="WebRequest", MaximumVersion="4", MethodName="GetRequestStream", MinimumVersion="4", ReturnTypeName="System.IO.Stream", TypeName="System.Net.HttpWebRequest")]
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="System.Net.Requests", IntegrationName="WebRequest", MaximumVersion="5", MethodName="GetRequestStream", MinimumVersion="4", ReturnTypeName="System.IO.Stream", TypeName="System.Net.HttpWebRequest")]
+    public class HttpWebRequest_GetRequestStream_Integration
+    {
+        public HttpWebRequest_GetRequestStream_Integration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget>(TTarget instance) { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="System", IntegrationName="WebRequest", MaximumVersion="4", MethodName="GetResponse", MinimumVersion="4", ReturnTypeName="System.Net.WebResponse", TypeName="System.Net.HttpWebRequest")]
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="System.Net.Requests", IntegrationName="WebRequest", MaximumVersion="5", MethodName="GetResponse", MinimumVersion="4", ReturnTypeName="System.Net.WebResponse", TypeName="System.Net.HttpWebRequest")]
+    public class HttpWebRequest_GetResponse_Integration
+    {
+        public HttpWebRequest_GetResponse_Integration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget>(TTarget instance) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="System", IntegrationName="WebRequest", MaximumVersion="4", MethodName="GetResponseAsync", MinimumVersion="4", ReturnTypeName="System.Threading.Tasks.Task`1<System.Net.WebResponse>", TypeName="System.Net.WebRequest")]
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="System.Net.Requests", IntegrationName="WebRequest", MaximumVersion="5", MethodName="GetResponseAsync", MinimumVersion="4", ReturnTypeName="System.Threading.Tasks.Task`1<System.Net.WebResponse>", TypeName="System.Net.WebRequest")]
+    public class WebRequest_GetResponseAsync_Integration
+    {
+        public WebRequest_GetResponseAsync_Integration() { }
+        public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget>(TTarget instance) { }
+    }
+}
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
+{
+    public interface IConsumeException
+    {
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.IConsumeResult ConsumerRecord { get; }
+    }
+    public interface IConsumeResult
+    {
+        bool IsPartitionEOF { get; }
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.IMessage Message { get; }
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.Offset Offset { get; }
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.Partition Partition { get; }
+        string Topic { get; }
+    }
+    public interface IDeliveryReport : Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.IDeliveryResult
+    {
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.IError Error { get; }
+    }
+    public interface IDeliveryResult
+    {
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.Offset Offset { get; }
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.Partition Partition { get; }
+    }
+    public interface IError
+    {
+        bool IsError { get; }
+        string ToString();
+    }
+    public interface IHeaders
+    {
+        void Add(string key, byte[] val);
+        void Remove(string key);
+        bool TryGetLastBytes(string key, out byte[] lastHeader);
+    }
+    public interface IMessage
+    {
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.IHeaders Headers { get; set; }
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.ITimestamp Timestamp { get; }
+        object Value { get; }
+    }
+    public interface IProduceException
+    {
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.IDeliveryResult DeliveryResult { get; }
+    }
+    public interface ITimestamp
+    {
+        int Type { get; }
+        System.DateTime UtcDateTime { get; }
+    }
+    public interface ITopicPartition
+    {
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.Partition Partition { get; }
+        string Topic { get; }
+    }
+    public interface ITypedDeliveryHandlerShimAction
+    {
+        [Datadog.Trace.DuckTyping.Duck(Kind=Datadog.Trace.DuckTyping.DuckKind.Field)]
+        object Handler { set; }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="Confluent.Kafka", IntegrationName="Kafka", MaximumVersion="1.*.*", MethodName="Close", MinimumVersion="1.4.0", ParameterTypeNames=new string[0], ReturnTypeName="System.Void", TypeName="Confluent.Kafka.Consumer`2")]
+    public class KafkaConsumerCloseIntegration
+    {
+        public KafkaConsumerCloseIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget>(TTarget instance) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="Confluent.Kafka", IntegrationName="Kafka", MaximumVersion="1.*.*", MethodName="Consume", MinimumVersion="1.4.0", ParameterTypeNames=new string[] {
+            "System.Int32"}, ReturnTypeName="Confluent.Kafka.ConsumeResult`2[!0,!1]", TypeName="Confluent.Kafka.Consumer`2")]
+    public class KafkaConsumerConsumeIntegration
+    {
+        public KafkaConsumerConsumeIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget>(TTarget instance, int millisecondsTimeout) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state)
+            where TResponse : Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.IConsumeResult, Datadog.Trace.DuckTyping.IDuckType { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="Confluent.Kafka", IntegrationName="Kafka", MaximumVersion="1.*.*", MethodName="Dispose", MinimumVersion="1.4.0", ParameterTypeNames=new string[0], ReturnTypeName="System.Void", TypeName="Confluent.Kafka.Consumer`2")]
+    public class KafkaConsumerDisposeIntegration
+    {
+        public KafkaConsumerDisposeIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget>(TTarget instance) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="Confluent.Kafka", IntegrationName="Kafka", MaximumVersion="1.*.*", MethodName="Unsubscribe", MinimumVersion="1.4.0", ParameterTypeNames=new string[0], ReturnTypeName="System.Void", TypeName="Confluent.Kafka.Consumer`2")]
+    public class KafkaConsumerUnsubscribeIntegration
+    {
+        public KafkaConsumerUnsubscribeIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget>(TTarget instance) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="Confluent.Kafka", IntegrationName="Kafka", MaximumVersion="1.*.*", MethodName="ProduceAsync", MinimumVersion="1.4.0", ParameterTypeNames=new string[] {
+            "Confluent.Kafka.TopicPartition",
+            "Confluent.Kafka.Message`2[!0,!1]",
+            "System.Threading.CancellationToken"}, ReturnTypeName="System.Threading.Tasks.Task`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]", TypeName="Confluent.Kafka.Producer`2")]
+    public class KafkaProduceAsyncIntegration
+    {
+        public KafkaProduceAsyncIntegration() { }
+        public static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state)
+            where TResponse : Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.IDeliveryResult { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TTopicPartition, TMessage>(TTarget instance, TTopicPartition topicPartition, TMessage message, System.Threading.CancellationToken cancellationToken)
+            where TMessage : Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.IMessage { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="Confluent.Kafka", IntegrationName="Kafka", MaximumVersion="1.*.*", MethodName=".ctor", MinimumVersion="1.4.0", ParameterTypeNames=new string[] {
+            "System.String",
+            "!0",
+            "!1",
+            "System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"}, ReturnTypeName="System.Void", TypeName="Confluent.Kafka.Producer`2+TypedDeliveryHandlerShim_Action")]
+    public class KafkaProduceSyncDeliveryHandlerIntegration
+    {
+        public KafkaProduceSyncDeliveryHandlerIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TKey, TValue, TActionOfDeliveryReport>(TTarget instance, string topic, TKey key, TValue value, TActionOfDeliveryReport handler) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+        public static System.Action<TDeliveryReport> WrapAction<TDeliveryReport>(System.Action<TDeliveryReport> originalHandler, Datadog.Trace.Span span) { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="Confluent.Kafka", IntegrationName="Kafka", MaximumVersion="1.*.*", MethodName="Produce", MinimumVersion="1.4.0", ParameterTypeNames=new string[] {
+            "Confluent.Kafka.TopicPartition",
+            "Confluent.Kafka.Message`2[!0,!1]",
+            "System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]"}, ReturnTypeName="System.Void", TypeName="Confluent.Kafka.Producer`2")]
+    public class KafkaProduceSyncIntegration
+    {
+        public KafkaProduceSyncIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TTopicPartition, TMessage, TDeliveryHandler>(TTarget instance, TTopicPartition topicPartition, TMessage message, TDeliveryHandler deliveryHandler)
+            where TMessage : Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.IMessage { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+    [Datadog.Trace.DuckTyping.DuckCopy]
+    public struct Offset
+    {
+        public long Value;
+        public override string ToString() { }
+    }
+    [Datadog.Trace.DuckTyping.DuckCopy]
+    public struct Partition
+    {
+        public bool IsSpecial;
+        public int Value;
+        public override string ToString() { }
+    }
+}
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
+{
+    public class IWireProtocol_ExecuteAsync_Integration
+    {
+        public IWireProtocol_ExecuteAsync_Integration() { }
+        public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget>(TTarget instance, object connection, System.Threading.CancellationToken cancellationToken) { }
+    }
+    public class IWireProtocol_Execute_Integration
+    {
+        public IWireProtocol_Execute_Integration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget>(TTarget instance, object connection, System.Threading.CancellationToken cancellationToken) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+    public class IWireProtocol_Generic_Execute_Integration
+    {
+        public IWireProtocol_Generic_Execute_Integration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget>(TTarget instance, object connection, System.Threading.CancellationToken cancellationToken) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+}
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
+{
+    public interface IMessageQueue
+    {
+        string Path { get; }
+        bool Transactional { get; }
+    }
+    public enum MessageQueueTransactionType
+    {
+        None = 0,
+        Automatic = 1,
+        Single = 3,
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="System.Messaging", IntegrationName="Msmq", MaximumVersion="4.*.*", MethodName="Purge", MinimumVersion="4.0.0", ReturnTypeName="System.Void", TypeName="System.Messaging.MessageQueue")]
+    public class MessageQueue_Purge_Integration
+    {
+        public MessageQueue_Purge_Integration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TMessageQueue>(TMessageQueue instance)
+            where TMessageQueue : Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq.IMessageQueue { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="System.Messaging", IntegrationName="Msmq", MaximumVersion="4.*.*", MethodName="ReceiveCurrent", MinimumVersion="4.0.0", ParameterTypeNames=new string[] {
+            "System.TimeSpan",
+            "System.Int32",
+            "System.Messaging.Interop.CursorHandle",
+            "System.Messaging.MessagePropertyFilter",
+            "System.Messaging.MessageQueueTransaction",
+            "System.Messaging.MessageQueueTransactionType"}, ReturnTypeName="System.Messaging.Message", TypeName="System.Messaging.MessageQueue")]
+    public class MessageQueue_ReceiveCurrent_Integration
+    {
+        public MessageQueue_ReceiveCurrent_Integration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TMessageQueue>(TMessageQueue instance, System.TimeSpan timeout, int action, object cursorHandle, object messagePropertyFilter, object messageQueueTransaction, Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq.MessageQueueTransactionType messageQueueTransactionType)
+            where TMessageQueue : Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq.IMessageQueue { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult messageResult, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="System.Messaging", IntegrationName="Msmq", MaximumVersion="4.*.*", MethodName="SendInternal", MinimumVersion="4.0.0", ParameterTypeNames=new string[] {
+            "System.Object",
+            "System.Messaging.MessageQueueTransaction",
+            "System.Messaging.MessageQueueTransactionType"}, ReturnTypeName="System.Void", TypeName="System.Messaging.MessageQueue")]
+    public class MessageQueue_SendInternal_Integration
+    {
+        public MessageQueue_SendInternal_Integration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TMessageQueue>(TMessageQueue instance, object message, object messageQueueTransaction, Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq.MessageQueueTransactionType messageQueueTransactionType)
+            where TMessageQueue : Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq.IMessageQueue { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+}
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
+{
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="RabbitMQ.Client", IntegrationName="RabbitMQ", MaximumVersion="6.*.*", MethodName="HandleBasicDeliver", MinimumVersion="3.6.9", ParameterTypeNames=new string[] {
+            "System.String",
+            "System.UInt64",
+            "System.Boolean",
+            "System.String",
+            "System.String",
+            "RabbitMQ.Client.IBasicProperties",
+            "_"}, ReturnTypeName="System.Void", TypeName="RabbitMQ.Client.Events.EventingBasicConsumer")]
+    public class BasicDeliverIntegration
+    {
+        public BasicDeliverIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TBasicProperties, TBody>(TTarget instance, string consumerTag, ulong deliveryTag, bool redelivered, string exchange, string routingKey, TBasicProperties basicProperties, TBody body)
+            where TBasicProperties : Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.IBasicProperties
+            where TBody : Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.IBody { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="RabbitMQ.Client", IntegrationName="RabbitMQ", MaximumVersion="6.*.*", MethodName="BasicGet", MinimumVersion="3.6.9", ParameterTypeNames=new string[] {
+            "System.String",
+            "System.Boolean"}, ReturnTypeName="RabbitMQ.Client.BasicGetResult", TypeName="RabbitMQ.Client.Impl.ModelBase")]
+    public class BasicGetIntegration
+    {
+        public BasicGetIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget>(TTarget instance, string queue, bool autoAck) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult basicGetResult, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state)
+            where TResult : Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.IBasicGetResult, Datadog.Trace.DuckTyping.IDuckType { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="RabbitMQ.Client", IntegrationName="RabbitMQ", MaximumVersion="6.*.*", MethodName="_Private_BasicPublish", MinimumVersion="3.6.9", ParameterTypeNames=new string[] {
+            "System.String",
+            "System.String",
+            "System.Boolean",
+            "RabbitMQ.Client.IBasicProperties",
+            "_"}, ReturnTypeName="System.Void", TypeName="RabbitMQ.Client.Framing.Impl.Model")]
+    public class BasicPublishIntegration
+    {
+        public BasicPublishIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TBasicProperties, TBody>(TTarget instance, string exchange, string routingKey, bool mandatory, TBasicProperties basicProperties, TBody body)
+            where TBasicProperties : Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.IBasicProperties, Datadog.Trace.DuckTyping.IDuckType
+            where TBody : Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.IBody, Datadog.Trace.DuckTyping.IDuckType { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="RabbitMQ.Client", IntegrationName="RabbitMQ", MaximumVersion="6.*.*", MethodName="_Private_ExchangeDeclare", MinimumVersion="3.6.9", ParameterTypeNames=new string[] {
+            "System.String",
+            "System.String",
+            "System.Boolean",
+            "System.Boolean",
+            "System.Boolean",
+            "System.Boolean",
+            "System.Boolean",
+            "System.Collections.Generic.IDictionary`2[System.String,System.Object]"}, ReturnTypeName="System.Void", TypeName="RabbitMQ.Client.Framing.Impl.Model")]
+    public class ExchangeDeclareIntegration
+    {
+        public ExchangeDeclareIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget>(TTarget instance, string exchange, string type, bool passive, bool durable, bool autoDelete, bool @internal, bool nowait, System.Collections.Generic.IDictionary<string, object> arguments) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+    public interface IBasicGetResult
+    {
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.IBasicProperties BasicProperties { get; }
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.IBody Body { get; }
+    }
+    public interface IBasicProperties
+    {
+        byte DeliveryMode { get; }
+        System.Collections.Generic.IDictionary<string, object> Headers { get; set; }
+        bool IsDeliveryModePresent();
+    }
+    public interface IBody
+    {
+        int Length { get; }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="RabbitMQ.Client", IntegrationName="RabbitMQ", MaximumVersion="6.*.*", MethodName="QueueBind", MinimumVersion="3.6.9", ParameterTypeNames=new string[] {
+            "System.String",
+            "System.String",
+            "System.String",
+            "System.Collections.Generic.IDictionary`2[System.String,System.Object]"}, ReturnTypeName="System.Void", TypeName="RabbitMQ.Client.Impl.ModelBase")]
+    public class QueueBindIntegration
+    {
+        public QueueBindIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget>(TTarget instance, string queue, string exchange, string routingKey, System.Collections.Generic.IDictionary<string, object> arguments) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="RabbitMQ.Client", IntegrationName="RabbitMQ", MaximumVersion="6.*.*", MethodName="_Private_QueueDeclare", MinimumVersion="3.6.9", ParameterTypeNames=new string[] {
+            "System.String",
+            "System.Boolean",
+            "System.Boolean",
+            "System.Boolean",
+            "System.Boolean",
+            "System.Boolean",
+            "System.Collections.Generic.IDictionary`2[System.String,System.Object]"}, ReturnTypeName="System.Void", TypeName="RabbitMQ.Client.Framing.Impl.Model")]
+    public class QueueDeclareIntegration
+    {
+        public QueueDeclareIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget>(TTarget instance, string queue, bool passive, bool durable, bool exclusive, bool autoDelete, bool nowait, System.Collections.Generic.IDictionary<string, object> arguments) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+}
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack
+{
+    public interface IRedisNativeClient
+    {
+        string Host { get; }
+        int Port { get; }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="ServiceStack.Redis", IntegrationName="ServiceStackRedis", MaximumVersion="5.*.*", MethodName="SendReceive", MinimumVersion="4.0.0", ParameterTypeNames=new string[] {
+            "System.Byte[][]",
+            "System.Func`1[!!0]",
+            "System.Action`1[System.Func`1[!!0]]",
+            "System.Boolean"}, ReturnTypeName="T", TypeName="ServiceStack.Redis.RedisNativeClient")]
+    public class RedisNativeClientSendReceiveIntegration
+    {
+        public RedisNativeClientSendReceiveIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TFunc, TAction>(TTarget instance, byte[][] cmdWithBinaryArgs, TFunc fn, TAction completePipelineFn, bool sendWithoutRead)
+            where TTarget : Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack.IRedisNativeClient { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+}
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
+{
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="StackExchange.Redis", IntegrationName="StackExchangeRedis", MaximumVersion="2.*.*", MethodName="ExecuteAsyncImpl", MinimumVersion="1.0.0", ParameterTypeNames=new string[] {
+            "StackExchange.Redis.Message",
+            "StackExchange.Redis.ResultProcessor`1[!!0]",
+            "System.Object",
+            "StackExchange.Redis.ServerEndPoint"}, ReturnTypeName="System.Threading.Tasks.Task`1<T>", TypeName="StackExchange.Redis.ConnectionMultiplexer")]
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="StackExchange.Redis.StrongName", IntegrationName="StackExchangeRedis", MaximumVersion="2.*.*", MethodName="ExecuteAsyncImpl", MinimumVersion="1.0.0", ParameterTypeNames=new string[] {
+            "StackExchange.Redis.Message",
+            "StackExchange.Redis.ResultProcessor`1[!!0]",
+            "System.Object",
+            "StackExchange.Redis.ServerEndPoint"}, ReturnTypeName="System.Threading.Tasks.Task`1<T>", TypeName="StackExchange.Redis.ConnectionMultiplexer")]
+    public class ConnectionMultiplexerExecuteAsyncImplIntegration
+    {
+        public ConnectionMultiplexerExecuteAsyncImplIntegration() { }
+        public static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TMessage, TProcessor, TServerEndPoint>(TTarget instance, TMessage message, TProcessor resultProcessor, object state, TServerEndPoint serverEndPoint)
+            where TTarget : Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.IConnectionMultiplexer
+            where TMessage : Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.IMessageData { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="StackExchange.Redis", IntegrationName="StackExchangeRedis", MaximumVersion="2.*.*", MethodName="ExecuteSyncImpl", MinimumVersion="1.0.0", ParameterTypeNames=new string[] {
+            "StackExchange.Redis.Message",
+            "StackExchange.Redis.ResultProcessor`1[!!0]",
+            "StackExchange.Redis.ServerEndPoint"}, ReturnTypeName="T", TypeName="StackExchange.Redis.ConnectionMultiplexer")]
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="StackExchange.Redis.StrongName", IntegrationName="StackExchangeRedis", MaximumVersion="2.*.*", MethodName="ExecuteSyncImpl", MinimumVersion="1.0.0", ParameterTypeNames=new string[] {
+            "StackExchange.Redis.Message",
+            "StackExchange.Redis.ResultProcessor`1[!!0]",
+            "StackExchange.Redis.ServerEndPoint"}, ReturnTypeName="T", TypeName="StackExchange.Redis.ConnectionMultiplexer")]
+    public class ConnectionMultiplexerExecuteSyncImplIntegration
+    {
+        public ConnectionMultiplexerExecuteSyncImplIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TMessage, TProcessor, TServerEndPoint>(TTarget instance, TMessage message, TProcessor resultProcessor, TServerEndPoint serverEndPoint)
+            where TTarget : Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.IConnectionMultiplexer
+            where TMessage : Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.IMessageData { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+    public interface IConnectionMultiplexer
+    {
+        string Configuration { get; }
+    }
+    public interface IMessageData
+    {
+        string CommandAndKey { get; }
+    }
+    public interface IRedisBase
+    {
+        [Datadog.Trace.DuckTyping.Duck(Kind=Datadog.Trace.DuckTyping.DuckKind.Field, Name="multiplexer")]
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.MultiplexerData Multiplexer { get; }
+    }
+    [Datadog.Trace.DuckTyping.DuckCopy]
+    public struct MultiplexerData
+    {
+        public string Configuration;
+    }
+    public class RedisExecuteAsyncIntegration
+    {
+        public RedisExecuteAsyncIntegration() { }
+        public static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TMessage, TProcessor, TServerEndPoint>(TTarget instance, TMessage message, TProcessor resultProcessor, TServerEndPoint serverEndPoint)
+            where TTarget : Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.IRedisBase
+            where TMessage : Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.IMessageData { }
+    }
+    public class RedisExecuteSyncIntegration
+    {
+        public RedisExecuteSyncIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TMessage, TProcessor, TServerEndPoint>(TTarget instance, TMessage message, TProcessor resultProcessor, TServerEndPoint serverEndPoint)
+            where TTarget : Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.IRedisBase
+            where TMessage : Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.IMessageData { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+}
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
+{
+    public interface ITestMethod
+    {
+        object[] Arguments { get; }
+        System.Reflection.MethodInfo MethodInfo { get; }
+        string TestClassName { get; }
+        string TestMethodName { get; }
+        System.Attribute[] GetAllAttributes(bool inherit);
+    }
+    public interface ITestMethodRunner
+    {
+        [Datadog.Trace.DuckTyping.Duck(Kind=Datadog.Trace.DuckTyping.DuckKind.Field, Name="testMethodInfo")]
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.ITestMethod TestMethodInfo { get; }
+    }
+    [Datadog.Trace.DuckTyping.DuckCopy]
+    public struct TestCategoryAttributeStruct
+    {
+        public System.Collections.Generic.IList<string> TestCategories;
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="Microsoft.VisualStudio.TestPlatform.TestFramework", IntegrationName="MsTestV2", MaximumVersion="14.*.*", MethodName="Execute", MinimumVersion="14.0.0", ParameterTypeNames=new string[] {
+            "Microsoft.VisualStudio.TestTools.UnitTesting.ITestMethod"}, ReturnTypeName="Microsoft.VisualStudio.TestTools.UnitTesting.TestResult", TypeName="Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute")]
+    public class TestMethodAttributeExecuteIntegration
+    {
+        public TestMethodAttributeExecuteIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TTestMethod>(TTarget instance, TTestMethod testMethod)
+            where TTestMethod : Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.ITestMethod, Datadog.Trace.DuckTyping.IDuckType { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter", IntegrationName="MsTestV2", MaximumVersion="14.*.*", MethodName="Execute", MinimumVersion="14.0.0", ParameterTypeNames=new string[0], ReturnTypeName="Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.UnitTestResult" +
+        "", TypeName="Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodRunner" +
+        "")]
+    public class TestMethodRunnerExecuteIntegration
+    {
+        public TestMethodRunnerExecuteIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget>(TTarget instance) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state)
+            where TTarget : Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.ITestMethodRunner { }
+    }
+    [Datadog.Trace.DuckTyping.DuckCopy]
+    public struct TestPropertyAttributeStruct
+    {
+        public string Name;
+        public string Value;
+    }
+    [Datadog.Trace.DuckTyping.DuckCopy]
+    public struct TestResultStruct
+    {
+        public Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestOutcome Outcome;
+        public System.Exception TestFailureException;
+    }
+    public enum UnitTestOutcome
+    {
+        Failed = 0,
+        Inconclusive = 1,
+        Passed = 2,
+        InProgress = 3,
+        Error = 4,
+        Timeout = 5,
+        Aborted = 6,
+        Unknown = 7,
+        NotRunnable = 8,
+    }
+    public enum UnitTestResultOutcome
+    {
+        Error = 0,
+        Failed = 1,
+        Timeout = 2,
+        Inconclusive = 3,
+        Ignored = 4,
+        NotRunnable = 5,
+        Passed = 6,
+        NotFound = 7,
+        InProgress = 8,
+    }
+    [Datadog.Trace.DuckTyping.DuckCopy]
+    public struct UnitTestResultStruct
+    {
+        public string ErrorMessage;
+        public string ErrorStackTrace;
+        public Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestResultOutcome Outcome;
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter", IntegrationName="MsTestV2", MaximumVersion="14.*.*", MethodName="RunCleanup", MinimumVersion="14.0.0", ParameterTypeNames=new string[0], ReturnTypeName="Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.RunCleanupResult" +
+        "", TypeName="Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.UnitTestRunner")]
+    public class UnitTestRunnerRunCleanupIntegration
+    {
+        public UnitTestRunnerRunCleanupIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+}
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
+{
+    public enum FailureSite
+    {
+        Test = 0,
+        SetUp = 1,
+        TearDown = 2,
+        Parent = 3,
+        Child = 4,
+    }
+    public interface ICompositeWorkItem : Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.IWorkItem
+    {
+        System.Collections.IEnumerable Children { get; }
+    }
+    public interface IMethodInfo
+    {
+        System.Reflection.MethodInfo MethodInfo { get; }
+    }
+    public interface IPropertyBag
+    {
+        System.Collections.IList this[string key] { get; }
+        System.Collections.Generic.ICollection<string> Keys { get; }
+        object Get(string key);
+    }
+    public interface IResultState
+    {
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.FailureSite Site { get; }
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.TestStatus Status { get; }
+    }
+    public interface ITest
+    {
+        object[] Arguments { get; }
+        string FullName { get; }
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.IMethodInfo Method { get; }
+        string Name { get; }
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.IPropertyBag Properties { get; }
+    }
+    public interface ITestExecutionContext
+    {
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.ITest CurrentTest { get; }
+    }
+    public interface ITestResult
+    {
+        string Message { get; }
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.IResultState ResultState { get; }
+        string StackTrace { get; }
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.ITest Test { get; }
+    }
+    public interface ITestSuite : Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.ITest
+    {
+        System.Collections.IEnumerable Tests { get; }
+    }
+    public interface IWorkItem
+    {
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.ITestResult Result { get; }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="nunit.framework", IntegrationName="NUnit", MaximumVersion="3.*.*", MethodName="SkipChildren", MinimumVersion="3.0.0", ParameterTypeNames=new string[] {
+            "_",
+            "NUnit.Framework.Interfaces.ResultState",
+            "System.String"}, ReturnTypeName="System.Void", TypeName="NUnit.Framework.Internal.Execution.CompositeWorkItem")]
+    public class NUnitCompositeWorkItemSkipChildrenIntegration
+    {
+        public NUnitCompositeWorkItemSkipChildrenIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TSuite, TResultState>(TTarget instance, TSuite testSuite, TResultState resultState, string message) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="nunit.framework", IntegrationName="NUnit", MaximumVersion="3.*.*", MethodName="Execute", MinimumVersion="3.0.0", ParameterTypeNames=new string[] {
+            "NUnit.Framework.Internal.TestExecutionContext"}, ReturnTypeName="NUnit.Framework.Internal.TestResult", TypeName="NUnit.Framework.Internal.Commands.SkipCommand")]
+    public class NUnitSkipCommandExecuteIntegration
+    {
+        public NUnitSkipCommandExecuteIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext executionContext)
+            where TContext : Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.ITestExecutionContext { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult returnValue, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="NUnit3.TestAdapter", IntegrationName="NUnit", MaximumVersion="3.*.*", MethodName="Unload", MinimumVersion="3.0.0", ReturnTypeName="System.Void", TypeName="NUnit.VisualStudio.TestAdapter.NUnitTestAdapter")]
+    public class NUnitTestAdapterUnloadIntegration
+    {
+        public NUnitTestAdapterUnloadIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="nunit.framework", IntegrationName="NUnit", MaximumVersion="3.*.*", MethodName="WaitForCompletion", MinimumVersion="3.0.0", ParameterTypeNames=new string[] {
+            "System.Int32"}, ReturnTypeName="System.Boolean", TypeName="NUnit.Framework.Api.NUnitTestAssemblyRunner")]
+    public class NUnitTestAssemblyRunnerWaitForCompletionIntegration
+    {
+        public NUnitTestAssemblyRunnerWaitForCompletionIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult returnValue, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyName="nunit.framework", IntegrationName="NUnit", MaximumVersion="3.*.*", MethodName="Execute", MinimumVersion="3.0.0", ParameterTypeNames=new string[] {
+            "NUnit.Framework.Internal.TestExecutionContext"}, ReturnTypeName="NUnit.Framework.Internal.TestResult", TypeName="NUnit.Framework.Internal.Commands.TestMethodCommand")]
+    public class NUnitTestMethodCommandExecuteIntegration
+    {
+        public NUnitTestMethodCommandExecuteIntegration() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext executionContext)
+            where TContext : Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.ITestExecutionContext { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult returnValue, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+    public enum TestStatus
+    {
+        Inconclusive = 0,
+        Skipped = 1,
+        Passed = 2,
+        Warning = 3,
+        Failed = 4,
+    }
+}
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
+{
+    public interface IExceptionAggregator
+    {
+        System.Exception ToException();
+    }
+    [Datadog.Trace.DuckTyping.DuckCopy]
+    public struct TestCaseStruct
+    {
+        public string DisplayName;
+        public System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<string>> Traits;
+    }
+    [Datadog.Trace.DuckTyping.DuckCopy]
+    public struct TestInvokerStruct
+    {
+        public Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.IExceptionAggregator Aggregator;
+        public Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.TestCaseStruct TestCase;
+        public System.Type TestClass;
+        public System.Reflection.MethodInfo TestMethod;
+        public object[] TestMethodArguments;
+    }
+    [Datadog.Trace.DuckTyping.DuckCopy]
+    public struct TestRunnerStruct
+    {
+        public Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.IExceptionAggregator Aggregator;
+        public string SkipReason;
+        public Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.TestCaseStruct TestCase;
+        public System.Type TestClass;
+        public System.Reflection.MethodInfo TestMethod;
+        public object[] TestMethodArguments;
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyNames=new string[] {
+            "xunit.execution.dotnet",
+            "xunit.execution.desktop"}, IntegrationName="XUnit", MaximumVersion="2.*.*", MethodName=".ctor", MinimumVersion="2.2.0", ParameterTypeNames=new string[] {
+            "_",
+            "_",
+            "_",
+            "_",
+            "_",
+            "_"}, ReturnTypeName="System.Void", TypeName="Xunit.Sdk.TestAssemblyFinished")]
+    public static class XUnitTestAssemblyFinishedCtorIntegration
+    {
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>(TTarget instance, TArg1 testCases, TArg2 testAssembly, TArg3 executionTime, TArg4 testsRun, TArg5 testsFailed, TArg6 testsSkipped) { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyNames=new string[] {
+            "xunit.execution.dotnet",
+            "xunit.execution.desktop"}, IntegrationName="XUnit", MaximumVersion="2.*.*", MethodName="RunTestCollectionAsync", MinimumVersion="2.2.0", ParameterTypeNames=new string[] {
+            "Xunit.Sdk.IMessageBus",
+            "_",
+            "_",
+            "_"}, ReturnTypeName="System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>", TypeName="Xunit.Sdk.TestAssemblyRunner`1")]
+    public static class XUnitTestAssemblyRunnerRunTestCollectionAsyncIntegration
+    {
+        public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyNames=new string[] {
+            "xunit.execution.dotnet",
+            "xunit.execution.desktop"}, IntegrationName="XUnit", MaximumVersion="2.*.*", MethodName="RunAsync", MinimumVersion="2.2.0", ParameterTypeNames=new string[0], ReturnTypeName="System.Threading.Tasks.Task`1<System.Decimal>", TypeName="Xunit.Sdk.TestInvoker`1")]
+    public static class XUnitTestInvokerRunAsyncIntegration
+    {
+        public static decimal OnAsyncMethodEnd<TTarget>(TTarget instance, decimal returnValue, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget>(TTarget instance) { }
+    }
+    [Datadog.Trace.ClrProfiler.InstrumentMethod(AssemblyNames=new string[] {
+            "xunit.execution.dotnet",
+            "xunit.execution.desktop"}, IntegrationName="XUnit", MaximumVersion="2.*.*", MethodName="RunAsync", MinimumVersion="2.2.0", ReturnTypeName="System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>", TypeName="Xunit.Sdk.TestRunner`1")]
+    public static class XUnitTestRunnerRunAsyncIntegration
+    {
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget>(TTarget instance) { }
+    }
+}
+namespace Datadog.Trace.ClrProfiler.CallTarget
+{
+    public static class CallTargetInvoker
+    {
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState BeginMethod<TIntegration, TTarget>(TTarget instance) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState BeginMethod<TIntegration, TTarget>(TTarget instance, object[] arguments) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState BeginMethod<TIntegration, TTarget, TArg1>(TTarget instance, TArg1 arg1) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2>(TTarget instance, TArg1 arg1, TArg2 arg2) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3>(TTarget instance, TArg1 arg1, TArg2 arg2, TArg3 arg3) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4>(TTarget instance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5>(TTarget instance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4, TArg5 arg5) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>(TTarget instance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4, TArg5 arg5, TArg6 arg6) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7>(TTarget instance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4, TArg5 arg5, TArg6 arg6, TArg7 arg7) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>(TTarget instance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4, TArg5 arg5, TArg6 arg6, TArg7 arg7, TArg8 arg8) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn EndMethod<TIntegration, TTarget>(TTarget instance, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<TReturn> EndMethod<TIntegration, TTarget, TReturn>(TTarget instance, TReturn returnValue, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+        public static T GetDefaultValue<T>() { }
+        public static void LogException<TIntegration, TTarget>(System.Exception exception) { }
+    }
+    public readonly struct CallTargetReturn
+    {
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn GetDefault() { }
+    }
+    public readonly struct CallTargetReturn<T>
+    {
+        public CallTargetReturn(T returnValue) { }
+        public T GetReturnValue() { }
+        public override string ToString() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn<T> GetDefault() { }
+    }
+    public readonly struct CallTargetState
+    {
+        public CallTargetState(Datadog.Trace.Scope scope) { }
+        public CallTargetState(Datadog.Trace.Scope scope, object state) { }
+        public CallTargetState(Datadog.Trace.Scope scope, object state, System.DateTimeOffset? startTime) { }
+        public Datadog.Trace.Scope Scope { get; }
+        public System.DateTimeOffset? StartTime { get; }
+        public object State { get; }
+        public override string ToString() { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState GetDefault() { }
+    }
+}
+namespace Datadog.Trace.ClrProfiler
+{
+    [System.Obsolete("This type will be removed in a future version of this library.")]
+    public static class DynamicMethodBuilder<TDelegate>
+        where TDelegate : System.Delegate
+    {
+        public static TDelegate CreateMethodCallDelegate(System.Type type, string methodName, System.Type[] methodParameterTypes = null, System.Type[] methodGenericArguments = null) { }
+        public static TDelegate GetOrCreateMethodCallDelegate(System.Type type, string methodName, System.Type returnType = null, System.Type[] methodParameterTypes = null, System.Type[] methodGenericArguments = null) { }
+    }
+    [System.AttributeUsage(System.AttributeTargets.Assembly | System.AttributeTargets.Class | System.AttributeTargets.All, AllowMultiple=true, Inherited=false)]
+    public class InstrumentMethodAttribute : System.Attribute
+    {
+        public InstrumentMethodAttribute() { }
+        public string AssemblyName { get; set; }
+        public string[] AssemblyNames { get; set; }
+        public System.Type CallTargetType { get; set; }
+        public string IntegrationName { get; set; }
+        public string MaximumVersion { get; set; }
+        public string MethodName { get; set; }
+        public string MinimumVersion { get; set; }
+        public string[] ParameterTypeNames { get; set; }
+        public string ReturnTypeName { get; set; }
+        public string TypeName { get; set; }
+        public Datadog.Trace.ClrProfiler.IntegrationVersionRange VersionRange { get; }
+    }
+    public static class Instrumentation
+    {
+        public static readonly string ProfilerClsid;
+        public static bool ProfilerAttached { get; }
+        public static void Initialize() { }
+    }
+    public class IntegrationVersionRange
+    {
+        public IntegrationVersionRange() { }
+        public ushort MaximumMajor { get; }
+        public ushort MaximumMinor { get; }
+        public ushort MaximumPatch { get; }
+        public string MaximumVersion { get; }
+        public ushort MinimumMajor { get; }
+        public ushort MinimumMinor { get; }
+        public ushort MinimumPatch { get; }
+        public string MinimumVersion { get; }
+    }
+    [System.AttributeUsage(System.AttributeTargets.Method | System.AttributeTargets.All, AllowMultiple=true, Inherited=false)]
+    public class InterceptMethodAttribute : System.Attribute
+    {
+        public InterceptMethodAttribute() { }
+        public string CallerAssembly { get; set; }
+        public string CallerMethod { get; set; }
+        public string CallerType { get; set; }
+        public string Integration { get; set; }
+        public Datadog.Trace.ClrProfiler.MethodReplacementActionType MethodReplacementAction { get; set; }
+        public string[] TargetAssemblies { get; set; }
+        public string TargetAssembly { get; set; }
+        public string TargetMaximumVersion { get; set; }
+        public string TargetMethod { get; set; }
+        public string TargetMinimumVersion { get; set; }
+        public string TargetSignature { get; set; }
+        public string[] TargetSignatureTypes { get; set; }
+        public string TargetType { get; set; }
+        public Datadog.Trace.ClrProfiler.IntegrationVersionRange TargetVersionRange { get; }
+    }
+    [System.Obsolete("This type will be removed in a future version of this library.")]
+    public static class MemberAccessor
+    {
+        public static bool TryCallMethod<TArg1, TResult>(this object source, string methodName, TArg1 arg1, out TResult value) { }
+        public static bool TryGetFieldValue<TResult>(this object source, string fieldName, out TResult value) { }
+        public static bool TryGetPropertyValue<TResult>(this object source, string propertyName, out TResult value) { }
+    }
+    public class MetadataNames
+    {
+        public MetadataNames(string moduleName, string typeName, string methodName) { }
+        public string MethodName { get; }
+        public string ModuleName { get; }
+        public string TypeName { get; }
+    }
+    public enum MethodReplacementActionType
+    {
+        ReplaceTargetMethod = 0,
+        InsertFirst = 1,
+        CallTargetModification = 2,
+    }
+}
+namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
+{
+    public static class DbCommandIntegration
+    {
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "System.Data"}, TargetMaximumVersion="4", TargetMethod="ExecuteNonQuery", TargetMinimumVersion="2", TargetSignatureTypes=new string[] {
+                "System.Int32"}, TargetType="System.Data.Common.DbCommand")]
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "System.Data.Common"}, TargetMaximumVersion="5", TargetMethod="ExecuteNonQuery", TargetMinimumVersion="4", TargetSignatureTypes=new string[] {
+                "System.Int32"}, TargetType="System.Data.Common.DbCommand")]
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "netstandard"}, TargetMaximumVersion="2", TargetMethod="ExecuteNonQuery", TargetMinimumVersion="2", TargetSignatureTypes=new string[] {
+                "System.Int32"}, TargetType="System.Data.Common.DbCommand")]
+        public static int ExecuteNonQuery(object command, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "System.Data",
+                "System.Data.Common"}, TargetMaximumVersion="5", TargetMinimumVersion="4", TargetSignatureTypes=new string[] {
+                "System.Threading.Tasks.Task`1<System.Int32>",
+                "System.Threading.CancellationToken"}, TargetType="System.Data.Common.DbCommand")]
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "netstandard"}, TargetMaximumVersion="2", TargetMinimumVersion="2", TargetSignatureTypes=new string[] {
+                "System.Threading.Tasks.Task`1<System.Int32>",
+                "System.Threading.CancellationToken"}, TargetType="System.Data.Common.DbCommand")]
+        public static object ExecuteNonQueryAsync(object command, object boxedCancellationToken, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "System.Data"}, TargetMaximumVersion="4", TargetMethod="ExecuteReader", TargetMinimumVersion="2", TargetSignatureTypes=new string[] {
+                "System.Data.Common.DbDataReader"}, TargetType="System.Data.Common.DbCommand")]
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "System.Data.Common"}, TargetMaximumVersion="5", TargetMethod="ExecuteReader", TargetMinimumVersion="4", TargetSignatureTypes=new string[] {
+                "System.Data.Common.DbDataReader"}, TargetType="System.Data.Common.DbCommand")]
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "netstandard"}, TargetMaximumVersion="2", TargetMethod="ExecuteReader", TargetMinimumVersion="2", TargetSignatureTypes=new string[] {
+                "System.Data.Common.DbDataReader"}, TargetType="System.Data.Common.DbCommand")]
+        public static object ExecuteReader(object command, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "System.Data",
+                "System.Data.Common"}, TargetMaximumVersion="5", TargetMinimumVersion="4", TargetSignatureTypes=new string[] {
+                "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>",
+                "System.Data.CommandBehavior",
+                "System.Threading.CancellationToken"}, TargetType="System.Data.Common.DbCommand")]
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "netstandard"}, TargetMaximumVersion="2", TargetMinimumVersion="2", TargetSignatureTypes=new string[] {
+                "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>",
+                "System.Data.CommandBehavior",
+                "System.Threading.CancellationToken"}, TargetType="System.Data.Common.DbCommand")]
+        public static object ExecuteReaderAsync(object command, int behavior, object boxedCancellationToken, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "System.Data"}, TargetMaximumVersion="4", TargetMethod="ExecuteReader", TargetMinimumVersion="2", TargetSignatureTypes=new string[] {
+                "System.Data.Common.DbDataReader",
+                "System.Data.CommandBehavior"}, TargetType="System.Data.Common.DbCommand")]
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "System.Data.Common"}, TargetMaximumVersion="5", TargetMethod="ExecuteReader", TargetMinimumVersion="4", TargetSignatureTypes=new string[] {
+                "System.Data.Common.DbDataReader",
+                "System.Data.CommandBehavior"}, TargetType="System.Data.Common.DbCommand")]
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "netstandard"}, TargetMaximumVersion="2", TargetMethod="ExecuteReader", TargetMinimumVersion="2", TargetSignatureTypes=new string[] {
+                "System.Data.Common.DbDataReader",
+                "System.Data.CommandBehavior"}, TargetType="System.Data.Common.DbCommand")]
+        public static object ExecuteReaderWithBehavior(object command, int behavior, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "System.Data"}, TargetMaximumVersion="4", TargetMethod="ExecuteScalar", TargetMinimumVersion="2", TargetSignatureTypes=new string[] {
+                "System.Object"}, TargetType="System.Data.Common.DbCommand")]
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "System.Data.Common"}, TargetMaximumVersion="5", TargetMethod="ExecuteScalar", TargetMinimumVersion="4", TargetSignatureTypes=new string[] {
+                "System.Object"}, TargetType="System.Data.Common.DbCommand")]
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "netstandard"}, TargetMaximumVersion="2", TargetMethod="ExecuteScalar", TargetMinimumVersion="2", TargetSignatureTypes=new string[] {
+                "System.Object"}, TargetType="System.Data.Common.DbCommand")]
+        public static object ExecuteScalar(object command, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "System.Data",
+                "System.Data.Common"}, TargetMaximumVersion="5", TargetMinimumVersion="4", TargetSignatureTypes=new string[] {
+                "System.Threading.Tasks.Task`1<System.Object>",
+                "System.Threading.CancellationToken"}, TargetType="System.Data.Common.DbCommand")]
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "netstandard"}, TargetMaximumVersion="2", TargetMinimumVersion="2", TargetSignatureTypes=new string[] {
+                "System.Threading.Tasks.Task`1<System.Object>",
+                "System.Threading.CancellationToken"}, TargetType="System.Data.Common.DbCommand")]
+        public static object ExecuteScalarAsync(object command, object boxedCancellationToken, int opCode, int mdToken, long moduleVersionPtr) { }
+    }
+    public static class IDbCommandIntegration
+    {
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "System.Data"}, TargetMaximumVersion="4", TargetMinimumVersion="2", TargetSignatureTypes=new string[] {
+                "System.Int32"}, TargetType="System.Data.IDbCommand")]
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "System.Data.Common"}, TargetMaximumVersion="5", TargetMinimumVersion="4", TargetSignatureTypes=new string[] {
+                "System.Int32"}, TargetType="System.Data.IDbCommand")]
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "netstandard"}, TargetMaximumVersion="2", TargetMinimumVersion="2", TargetSignatureTypes=new string[] {
+                "System.Int32"}, TargetType="System.Data.IDbCommand")]
+        public static int ExecuteNonQuery(object command, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "System.Data"}, TargetMaximumVersion="4", TargetMinimumVersion="2", TargetSignatureTypes=new string[] {
+                "System.Data.IDataReader"}, TargetType="System.Data.IDbCommand")]
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "System.Data.Common"}, TargetMaximumVersion="5", TargetMinimumVersion="4", TargetSignatureTypes=new string[] {
+                "System.Data.IDataReader"}, TargetType="System.Data.IDbCommand")]
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "netstandard"}, TargetMaximumVersion="2", TargetMinimumVersion="2", TargetSignatureTypes=new string[] {
+                "System.Data.IDataReader"}, TargetType="System.Data.IDbCommand")]
+        public static object ExecuteReader(object command, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "System.Data"}, TargetMaximumVersion="4", TargetMethod="ExecuteReader", TargetMinimumVersion="2", TargetSignatureTypes=new string[] {
+                "System.Data.IDataReader",
+                "System.Data.CommandBehavior"}, TargetType="System.Data.IDbCommand")]
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "System.Data.Common"}, TargetMaximumVersion="5", TargetMethod="ExecuteReader", TargetMinimumVersion="4", TargetSignatureTypes=new string[] {
+                "System.Data.IDataReader",
+                "System.Data.CommandBehavior"}, TargetType="System.Data.IDbCommand")]
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "netstandard"}, TargetMaximumVersion="2", TargetMethod="ExecuteReader", TargetMinimumVersion="2", TargetSignatureTypes=new string[] {
+                "System.Data.IDataReader",
+                "System.Data.CommandBehavior"}, TargetType="System.Data.IDbCommand")]
+        public static object ExecuteReaderWithBehavior(object command, int behavior, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "System.Data"}, TargetMaximumVersion="4", TargetMinimumVersion="2", TargetSignatureTypes=new string[] {
+                "System.Object"}, TargetType="System.Data.IDbCommand")]
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "System.Data.Common"}, TargetMaximumVersion="5", TargetMinimumVersion="4", TargetSignatureTypes=new string[] {
+                "System.Object"}, TargetType="System.Data.IDbCommand")]
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "netstandard"}, TargetMaximumVersion="2", TargetMinimumVersion="2", TargetSignatureTypes=new string[] {
+                "System.Object"}, TargetType="System.Data.IDbCommand")]
+        public static object ExecuteScalar(object command, int opCode, int mdToken, long moduleVersionPtr) { }
+    }
+    public static class NpgsqlCommandIntegration
+    {
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "Npgsql"}, TargetMaximumVersion="4", TargetMinimumVersion="4", TargetSignatureTypes=new string[] {
+                "System.Int32"}, TargetType="Npgsql.NpgsqlCommand")]
+        public static int ExecuteNonQuery(object command, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "Npgsql"}, TargetMaximumVersion="4", TargetMinimumVersion="4", TargetSignatureTypes=new string[] {
+                "System.Threading.Tasks.Task`1<System.Int32>",
+                "System.Threading.CancellationToken"}, TargetType="Npgsql.NpgsqlCommand")]
+        public static object ExecuteNonQueryAsync(object command, object boxedCancellationToken, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "Npgsql"}, TargetMaximumVersion="4", TargetMethod="ExecuteReader", TargetMinimumVersion="4", TargetSignatureTypes=new string[] {
+                "Npgsql.NpgsqlDataReader"}, TargetType="Npgsql.NpgsqlCommand")]
+        public static object ExecuteReader(object command, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "Npgsql"}, TargetMaximumVersion="4", TargetMinimumVersion="4", TargetSignatureTypes=new string[] {
+                "System.Threading.Tasks.Task`1<Npgsql.NpgsqlDataReader>",
+                "System.Threading.CancellationToken"}, TargetType="Npgsql.NpgsqlCommand")]
+        public static object ExecuteReaderAsync(object command, object boxedCancellationToken, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "Npgsql"}, TargetMaximumVersion="4", TargetMethod="ExecuteReaderAsync", TargetMinimumVersion="4", TargetSignatureTypes=new string[] {
+                "System.Threading.Tasks.Task`1<Npgsql.NpgsqlDataReader>",
+                "System.Data.CommandBehavior",
+                "System.Threading.CancellationToken"}, TargetType="Npgsql.NpgsqlCommand")]
+        public static object ExecuteReaderAsyncWithBehaviorAndCancellation(object command, int behavior, object boxedCancellationToken, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "Npgsql"}, TargetMaximumVersion="4", TargetMethod="ExecuteReader", TargetMinimumVersion="4", TargetSignatureTypes=new string[] {
+                "Npgsql.NpgsqlDataReader",
+                "System.Data.CommandBehavior"}, TargetType="Npgsql.NpgsqlCommand")]
+        public static object ExecuteReaderWithBehavior(object command, int behavior, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "Npgsql"}, TargetMaximumVersion="4", TargetMinimumVersion="4", TargetSignatureTypes=new string[] {
+                "System.Object"}, TargetType="Npgsql.NpgsqlCommand")]
+        public static object ExecuteScalar(object command, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "Npgsql"}, TargetMaximumVersion="4", TargetMinimumVersion="4", TargetSignatureTypes=new string[] {
+                "System.Threading.Tasks.Task`1<System.Object>",
+                "System.Threading.CancellationToken"}, TargetType="Npgsql.NpgsqlCommand")]
+        public static object ExecuteScalarAsync(object command, object boxedCancellationToken, int opCode, int mdToken, long moduleVersionPtr) { }
+    }
+    public static class SqlCommandIntegration
+    {
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "Microsoft.Data.SqlClient"}, TargetMaximumVersion="2", TargetMethod="ExecuteNonQuery", TargetMinimumVersion="1", TargetSignatureTypes=new string[] {
+                "System.Int32"}, TargetType="Microsoft.Data.SqlClient.SqlCommand")]
+        public static int MicrosoftSqlClientExecuteNonQuery(object command, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "Microsoft.Data.SqlClient"}, TargetMaximumVersion="2", TargetMethod="ExecuteNonQueryAsync", TargetMinimumVersion="1", TargetSignatureTypes=new string[] {
+                "System.Threading.Tasks.Task`1<System.Int32>",
+                "System.Threading.CancellationToken"}, TargetType="Microsoft.Data.SqlClient.SqlCommand")]
+        public static object MicrosoftSqlClientExecuteNonQueryAsync(object command, object boxedCancellationToken, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "Microsoft.Data.SqlClient"}, TargetMaximumVersion="2", TargetMethod="ExecuteReader", TargetMinimumVersion="1", TargetSignatureTypes=new string[] {
+                "Microsoft.Data.SqlClient.SqlDataReader"}, TargetType="Microsoft.Data.SqlClient.SqlCommand")]
+        public static object MicrosoftSqlClientExecuteReader(object command, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "Microsoft.Data.SqlClient"}, TargetMaximumVersion="2", TargetMethod="ExecuteReaderAsync", TargetMinimumVersion="1", TargetSignatureTypes=new string[] {
+                "System.Threading.Tasks.Task`1<Microsoft.Data.SqlClient.SqlDataReader>",
+                "System.Data.CommandBehavior",
+                "System.Threading.CancellationToken"}, TargetType="Microsoft.Data.SqlClient.SqlCommand")]
+        public static object MicrosoftSqlClientExecuteReaderAsync(object command, int behavior, object boxedCancellationToken, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "Microsoft.Data.SqlClient"}, TargetMaximumVersion="2", TargetMethod="ExecuteReader", TargetMinimumVersion="1", TargetSignatureTypes=new string[] {
+                "Microsoft.Data.SqlClient.SqlDataReader",
+                "System.Data.CommandBehavior"}, TargetType="Microsoft.Data.SqlClient.SqlCommand")]
+        public static object MicrosoftSqlClientExecuteReaderWithBehavior(object command, int behavior, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "Microsoft.Data.SqlClient"}, TargetMaximumVersion="2", TargetMethod="ExecuteScalar", TargetMinimumVersion="1", TargetSignatureTypes=new string[] {
+                "System.Object"}, TargetType="Microsoft.Data.SqlClient.SqlCommand")]
+        public static object MicrosoftSqlClientExecuteScalar(object command, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "Microsoft.Data.SqlClient"}, TargetMaximumVersion="2", TargetMethod="ExecuteScalarAsync", TargetMinimumVersion="1", TargetSignatureTypes=new string[] {
+                "System.Threading.Tasks.Task`1<System.Object>",
+                "System.Threading.CancellationToken"}, TargetType="Microsoft.Data.SqlClient.SqlCommand")]
+        public static object MicrosoftSqlClientExecuteScalarAsync(object command, object boxedCancellationToken, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "System.Data"}, TargetMaximumVersion="4", TargetMethod="ExecuteNonQuery", TargetMinimumVersion="2", TargetSignatureTypes=new string[] {
+                "System.Int32"}, TargetType="System.Data.SqlClient.SqlCommand")]
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "System.Data.SqlClient"}, TargetMaximumVersion="4", TargetMethod="ExecuteNonQuery", TargetMinimumVersion="4", TargetSignatureTypes=new string[] {
+                "System.Int32"}, TargetType="System.Data.SqlClient.SqlCommand")]
+        public static int SystemSqlClientExecuteNonQuery(object command, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "System.Data",
+                "System.Data.SqlClient"}, TargetMaximumVersion="4", TargetMethod="ExecuteNonQueryAsync", TargetMinimumVersion="4", TargetSignatureTypes=new string[] {
+                "System.Threading.Tasks.Task`1<System.Int32>",
+                "System.Threading.CancellationToken"}, TargetType="System.Data.SqlClient.SqlCommand")]
+        public static object SystemSqlClientExecuteNonQueryAsync(object command, object boxedCancellationToken, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "System.Data"}, TargetMaximumVersion="4", TargetMethod="ExecuteReader", TargetMinimumVersion="2", TargetSignatureTypes=new string[] {
+                "System.Data.SqlClient.SqlDataReader"}, TargetType="System.Data.SqlClient.SqlCommand")]
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "System.Data.SqlClient"}, TargetMaximumVersion="4", TargetMethod="ExecuteReader", TargetMinimumVersion="4", TargetSignatureTypes=new string[] {
+                "System.Data.SqlClient.SqlDataReader"}, TargetType="System.Data.SqlClient.SqlCommand")]
+        public static object SystemSqlClientExecuteReader(object command, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "System.Data",
+                "System.Data.SqlClient"}, TargetMaximumVersion="4", TargetMethod="ExecuteReaderAsync", TargetMinimumVersion="4", TargetSignatureTypes=new string[] {
+                "System.Threading.Tasks.Task`1<System.Data.SqlClient.SqlDataReader>",
+                "System.Data.CommandBehavior",
+                "System.Threading.CancellationToken"}, TargetType="System.Data.SqlClient.SqlCommand")]
+        public static object SystemSqlClientExecuteReaderAsync(object command, int behavior, object boxedCancellationToken, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "System.Data"}, TargetMaximumVersion="4", TargetMethod="ExecuteReader", TargetMinimumVersion="2", TargetSignatureTypes=new string[] {
+                "System.Data.SqlClient.SqlDataReader",
+                "System.Data.CommandBehavior"}, TargetType="System.Data.SqlClient.SqlCommand")]
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "System.Data.SqlClient"}, TargetMaximumVersion="4", TargetMethod="ExecuteReader", TargetMinimumVersion="4", TargetSignatureTypes=new string[] {
+                "System.Data.SqlClient.SqlDataReader",
+                "System.Data.CommandBehavior"}, TargetType="System.Data.SqlClient.SqlCommand")]
+        public static object SystemSqlClientExecuteReaderWithBehavior(object command, int behavior, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "System.Data"}, TargetMaximumVersion="4", TargetMethod="ExecuteScalar", TargetMinimumVersion="2", TargetSignatureTypes=new string[] {
+                "System.Object"}, TargetType="System.Data.SqlClient.SqlCommand")]
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "System.Data.SqlClient"}, TargetMaximumVersion="4", TargetMethod="ExecuteScalar", TargetMinimumVersion="4", TargetSignatureTypes=new string[] {
+                "System.Object"}, TargetType="System.Data.SqlClient.SqlCommand")]
+        public static object SystemSqlClientExecuteScalar(object command, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "System.Data",
+                "System.Data.SqlClient"}, TargetMaximumVersion="4", TargetMethod="ExecuteScalarAsync", TargetMinimumVersion="4", TargetSignatureTypes=new string[] {
+                "System.Threading.Tasks.Task`1<System.Object>",
+                "System.Threading.CancellationToken"}, TargetType="System.Data.SqlClient.SqlCommand")]
+        public static object SystemSqlClientExecuteScalarAsync(object command, object boxedCancellationToken, int opCode, int mdToken, long moduleVersionPtr) { }
+    }
+}
+namespace Datadog.Trace.ClrProfiler.Integrations
+{
+    public static class ElasticsearchNet5Integration
+    {
+        [Datadog.Trace.ClrProfiler.InterceptMethod(CallerAssembly="Elasticsearch.Net", TargetAssembly="Elasticsearch.Net", TargetMaximumVersion="5", TargetMinimumVersion="5", TargetSignatureTypes=new string[] {
+                "Elasticsearch.Net.ElasticsearchResponse`1<T>",
+                "Elasticsearch.Net.RequestData"}, TargetType="Elasticsearch.Net.IRequestPipeline")]
+        public static object CallElasticsearch<TResponse>(object pipeline, object requestData, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(CallerAssembly="Elasticsearch.Net", TargetAssembly="Elasticsearch.Net", TargetMaximumVersion="5", TargetMinimumVersion="5", TargetSignatureTypes=new string[] {
+                "System.Threading.Tasks.Task`1<Elasticsearch.Net.ElasticsearchResponse`1<T>>",
+                "Elasticsearch.Net.RequestData",
+                "System.Threading.CancellationToken"}, TargetType="Elasticsearch.Net.IRequestPipeline")]
+        public static object CallElasticsearchAsync<TResponse>(object pipeline, object requestData, object boxedCancellationToken, int opCode, int mdToken, long moduleVersionPtr) { }
+    }
+    public static class ElasticsearchNet6Integration
+    {
+        [Datadog.Trace.ClrProfiler.InterceptMethod(CallerAssembly="Elasticsearch.Net", TargetAssembly="Elasticsearch.Net", TargetMaximumVersion="6", TargetMinimumVersion="6", TargetSignatureTypes=new string[] {
+                "T",
+                "Elasticsearch.Net.RequestData"}, TargetType="Elasticsearch.Net.IRequestPipeline")]
+        public static object CallElasticsearch<TResponse>(object pipeline, object requestData, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(CallerAssembly="Elasticsearch.Net", TargetAssembly="Elasticsearch.Net", TargetMaximumVersion="6", TargetMinimumVersion="6", TargetSignatureTypes=new string[] {
+                "System.Threading.Tasks.Task`1<T>",
+                "Elasticsearch.Net.RequestData",
+                "System.Threading.CancellationToken"}, TargetType="Elasticsearch.Net.IRequestPipeline")]
+        public static object CallElasticsearchAsync<TResponse>(object pipeline, object requestData, object boxedCancellationToken, int opCode, int mdToken, long moduleVersionPtr) { }
+    }
+    public static class GraphQLIntegration
+    {
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssembly="GraphQL", TargetMaximumVersion="2", TargetMinimumVersion="2.3", TargetSignatureTypes=new string[] {
+                "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>",
+                "GraphQL.Execution.ExecutionContext"}, TargetType="GraphQL.Execution.IExecutionStrategy")]
+        public static object ExecuteAsync(object executionStrategy, object context, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssembly="GraphQL", TargetMaximumVersion="2", TargetMinimumVersion="2.3", TargetSignatureTypes=new string[] {
+                "GraphQL.Validation.IValidationResult",
+                "System.String",
+                "GraphQL.Types.ISchema",
+                "GraphQL.Language.AST.Document",
+                "System.Collections.Generic.IEnumerable`1<GraphQL.Validation.IValidationRule>",
+                "_",
+                "GraphQL.Inputs"}, TargetType="GraphQL.Validation.IDocumentValidator")]
+        public static object Validate(object documentValidator, object originalQuery, object schema, object document, object rules, object userContext, object inputs, int opCode, int mdToken, long moduleVersionPtr) { }
+    }
+    public static class HttpMessageHandlerIntegration
+    {
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssembly="System.Net.Http", TargetMaximumVersion="5", TargetMethod="Send", TargetMinimumVersion="5", TargetSignatureTypes=new string[] {
+                "System.Net.Http.HttpResponseMessage",
+                "System.Net.Http.HttpRequestMessage",
+                "System.Threading.CancellationToken"}, TargetType="System.Net.Http.HttpClientHandler")]
+        public static object HttpClientHandler_Send(object handler, object request, object boxedCancellationToken, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssembly="System.Net.Http", TargetMaximumVersion="5", TargetMethod="SendAsync", TargetMinimumVersion="4", TargetSignatureTypes=new string[] {
+                "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>",
+                "System.Net.Http.HttpRequestMessage",
+                "System.Threading.CancellationToken"}, TargetType="System.Net.Http.HttpClientHandler")]
+        public static object HttpClientHandler_SendAsync(object handler, object request, object boxedCancellationToken, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssembly="System.Net.Http", TargetMaximumVersion="5", TargetMethod="Send", TargetMinimumVersion="5", TargetSignatureTypes=new string[] {
+                "System.Net.Http.HttpResponseMessage",
+                "System.Net.Http.HttpRequestMessage",
+                "System.Threading.CancellationToken"}, TargetType="System.Net.Http.HttpMessageHandler")]
+        public static object HttpMessageHandler_Send(object handler, object request, object boxedCancellationToken, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssembly="System.Net.Http", TargetMaximumVersion="5", TargetMethod="SendAsync", TargetMinimumVersion="4", TargetSignatureTypes=new string[] {
+                "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>",
+                "System.Net.Http.HttpRequestMessage",
+                "System.Threading.CancellationToken"}, TargetType="System.Net.Http.HttpMessageHandler")]
+        public static object HttpMessageHandler_SendAsync(object handler, object request, object boxedCancellationToken, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.DuckTyping.DuckCopy]
+        public struct HttpMethodStruct
+        {
+            public string Method;
+        }
+        [Datadog.Trace.DuckTyping.DuckCopy]
+        public struct HttpRequestMessageStruct
+        {
+            public Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration.IRequestHeaders Headers;
+            public Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration.HttpMethodStruct Method;
+            public System.Uri RequestUri;
+        }
+        [Datadog.Trace.DuckTyping.DuckCopy]
+        public struct HttpResponseMessageStruct
+        {
+            public int StatusCode;
+        }
+        public interface IRequestHeaders
+        {
+            void Add(string name, string value);
+            bool Remove(string name);
+            bool TryGetValues(string name, out System.Collections.Generic.IEnumerable<string> values);
+        }
+        [Datadog.Trace.DuckTyping.DuckCopy]
+        public struct TaskObjectStruct
+        {
+            public object Result;
+        }
+    }
+    public static class MongoDbIntegration
+    {
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssembly="MongoDB.Driver.Core", TargetMaximumVersion="2", TargetMinimumVersion="2.2", TargetSignatureTypes=new string[] {
+                "System.Void",
+                "MongoDB.Driver.Core.Connections.IConnection",
+                "System.Threading.CancellationToken"}, TargetType="MongoDB.Driver.Core.WireProtocol.IWireProtocol")]
+        public static void Execute(object wireProtocol, object connection, object boxedCancellationToken, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssembly="MongoDB.Driver.Core", TargetMaximumVersion="2", TargetMethod="ExecuteAsync", TargetMinimumVersion="2.1", TargetSignatureTypes=new string[] {
+                "System.Threading.Tasks.Task",
+                "MongoDB.Driver.Core.Connections.IConnection",
+                "System.Threading.CancellationToken"}, TargetType="MongoDB.Driver.Core.WireProtocol.IWireProtocol")]
+        public static object ExecuteAsync(object wireProtocol, object connection, object boxedCancellationToken, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssembly="MongoDB.Driver.Core", TargetMaximumVersion="2", TargetMethod="ExecuteAsync", TargetMinimumVersion="2.1", TargetSignatureTypes=new string[] {
+                "System.Threading.Tasks.Task`1<T>",
+                "MongoDB.Driver.Core.Connections.IConnection",
+                "System.Threading.CancellationToken"}, TargetType="MongoDB.Driver.Core.WireProtocol.IWireProtocol`1")]
+        public static object ExecuteAsyncGeneric(object wireProtocol, object connection, object boxedCancellationToken, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssembly="MongoDB.Driver.Core", TargetMaximumVersion="2", TargetMethod="Execute", TargetMinimumVersion="2.2", TargetSignatureTypes=new string[] {
+                "T",
+                "MongoDB.Driver.Core.Connections.IConnection",
+                "System.Threading.CancellationToken"}, TargetType="MongoDB.Driver.Core.WireProtocol.IWireProtocol`1")]
+        public static object ExecuteGeneric(object wireProtocol, object connection, object boxedCancellationToken, int opCode, int mdToken, long moduleVersionPtr) { }
+    }
+    public static class RabbitMQIntegration
+    {
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssembly="RabbitMQ.Client", TargetMaximumVersion="5", TargetMethod="HandleBasicDeliver", TargetMinimumVersion="3.6.9", TargetSignatureTypes=new string[] {
+                "System.Void",
+                "System.String",
+                "System.UInt64",
+                "System.Boolean",
+                "System.String",
+                "System.String",
+                "_",
+                "_"}, TargetType="RabbitMQ.Client.DefaultBasicConsumer")]
+        public static void BasicDeliver(object model, string consumerTag, ulong deliveryTag, bool redelivered, string exchange, string routingKey, object basicProperties, byte[] body, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssembly="RabbitMQ.Client", TargetMaximumVersion="6", TargetMethod="HandleBasicDeliver", TargetMinimumVersion="6", TargetSignatureTypes=new string[] {
+                "System.Void",
+                "System.String",
+                "System.UInt64",
+                "System.Boolean",
+                "System.String",
+                "System.String",
+                "_",
+                "_"}, TargetType="RabbitMQ.Client.DefaultBasicConsumer")]
+        public static void BasicDeliverV6(object model, string consumerTag, ulong deliveryTag, bool redelivered, string exchange, string routingKey, object basicProperties, object body, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssembly="RabbitMQ.Client", TargetMaximumVersion="6", TargetMethod="BasicGet", TargetMinimumVersion="3.6.9", TargetSignatureTypes=new string[] {
+                "_",
+                "System.String",
+                "System.Boolean"}, TargetType="RabbitMQ.Client.IModel")]
+        public static object BasicGet(object model, string queue, bool autoAck, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssembly="RabbitMQ.Client", TargetMaximumVersion="5", TargetMethod="_Private_BasicPublish", TargetMinimumVersion="3.6.9", TargetSignatureTypes=new string[] {
+                "System.Void",
+                "System.String",
+                "System.String",
+                "System.Boolean",
+                "_",
+                "_"}, TargetType="RabbitMQ.Client.Impl.ModelBase")]
+        public static void BasicPublish(object model, string exchange, string routingKey, bool mandatory, object basicProperties, byte[] body, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssembly="RabbitMQ.Client", TargetMaximumVersion="6", TargetMethod="_Private_BasicPublish", TargetMinimumVersion="6", TargetSignatureTypes=new string[] {
+                "System.Void",
+                "System.String",
+                "System.String",
+                "System.Boolean",
+                "_",
+                "_"}, TargetType="RabbitMQ.Client.Impl.ModelBase")]
+        public static void BasicPublishV6(object model, string exchange, string routingKey, bool mandatory, object basicProperties, object body, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssembly="RabbitMQ.Client", TargetMaximumVersion="6", TargetMethod="_Private_ExchangeDeclare", TargetMinimumVersion="3.6.9", TargetSignatureTypes=new string[] {
+                "System.Void",
+                "System.String",
+                "System.String",
+                "System.Boolean",
+                "System.Boolean",
+                "System.Boolean",
+                "System.Boolean",
+                "System.Boolean",
+                "_"}, TargetType="RabbitMQ.Client.Impl.ModelBase")]
+        public static void ExchangeDeclare(object model, string exchange, string type, bool passive, bool durable, bool autoDelete, bool @internal, bool nowait, object arguments, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssembly="RabbitMQ.Client", TargetMaximumVersion="6", TargetMethod="_Private_QueueBind", TargetMinimumVersion="3.6.9", TargetSignatureTypes=new string[] {
+                "System.Void",
+                "System.String",
+                "System.String",
+                "System.String",
+                "System.Boolean",
+                "_"}, TargetType="RabbitMQ.Client.Impl.ModelBase")]
+        public static void QueueBind(object model, string queue, string exchange, string routingKey, bool nowait, object arguments, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssembly="RabbitMQ.Client", TargetMaximumVersion="6", TargetMethod="_Private_QueueDeclare", TargetMinimumVersion="3.6.9", TargetSignatureTypes=new string[] {
+                "System.Void",
+                "System.String",
+                "System.Boolean",
+                "System.Boolean",
+                "System.Boolean",
+                "System.Boolean",
+                "System.Boolean",
+                "_"}, TargetType="RabbitMQ.Client.Impl.ModelBase")]
+        public static void QueueDeclare(object model, string queue, bool passive, bool durable, bool exclusive, bool autoDelete, bool nowait, object arguments, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.DuckTyping.DuckCopy]
+        public struct BasicGetResultStruct
+        {
+            public Datadog.Trace.ClrProfiler.Integrations.RabbitMQIntegration.IBasicProperties BasicProperties;
+            public Datadog.Trace.ClrProfiler.Integrations.RabbitMQIntegration.BodyStruct Body;
+        }
+        [Datadog.Trace.DuckTyping.DuckCopy]
+        public struct BodyStruct
+        {
+            public int Length;
+        }
+        public interface IBasicProperties
+        {
+            byte DeliveryMode { get; }
+            System.Collections.Generic.IDictionary<string, object> Headers { get; set; }
+            bool IsDeliveryModePresent();
+        }
+    }
+    public static class ServiceStackRedisIntegration
+    {
+        [Datadog.Trace.ClrProfiler.InterceptMethod(CallerAssembly="ServiceStack.Redis", TargetAssembly="ServiceStack.Redis", TargetMaximumVersion="5", TargetMinimumVersion="4", TargetSignatureTypes=new string[] {
+                "T",
+                "System.Byte[][]",
+                "System.Func`1<T>",
+                "System.Action`1<System.Func`1<T>>",
+                "System.Boolean"}, TargetType="ServiceStack.Redis.RedisNativeClient")]
+        public static T SendReceive<T>(object redisNativeClient, byte[][] cmdWithBinaryArgs, object fn, object completePipelineFn, bool sendWithoutRead, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.DuckTyping.DuckCopy]
+        public struct RedisNativeClientData
+        {
+            public string Host;
+            public int Port;
+        }
+    }
+    public static class WebRequestIntegration
+    {
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssembly="System", TargetMaximumVersion="4", TargetMinimumVersion="2", TargetSignatureTypes=new string[] {
+                "System.IO.Stream"}, TargetType="System.Net.WebRequest")]
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssembly="System.Net.Requests", TargetMaximumVersion="5", TargetMinimumVersion="4", TargetSignatureTypes=new string[] {
+                "System.IO.Stream"}, TargetType="System.Net.WebRequest")]
+        public static object GetRequestStream(object webRequest, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssembly="System", TargetMaximumVersion="4", TargetMinimumVersion="2", TargetSignatureTypes=new string[] {
+                "System.Net.WebResponse"}, TargetType="System.Net.WebRequest")]
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssembly="System.Net.Requests", TargetMaximumVersion="5", TargetMinimumVersion="4", TargetSignatureTypes=new string[] {
+                "System.Net.WebResponse"}, TargetType="System.Net.WebRequest")]
+        public static object GetResponse(object webRequest, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssembly="System", TargetMaximumVersion="4", TargetMinimumVersion="4", TargetSignatureTypes=new string[] {
+                "System.Threading.Tasks.Task`1<System.Net.WebResponse>"}, TargetType="System.Net.WebRequest")]
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssembly="System.Net.Requests", TargetMaximumVersion="5", TargetMinimumVersion="4", TargetSignatureTypes=new string[] {
+                "System.Threading.Tasks.Task`1<System.Net.WebResponse>"}, TargetType="System.Net.WebRequest")]
+        public static object GetResponseAsync(object webRequest, int opCode, int mdToken, long moduleVersionPtr) { }
+    }
+}
+namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
+{
+    public static class ConnectionMultiplexer
+    {
+        [Datadog.Trace.ClrProfiler.InterceptMethod(CallerAssembly="StackExchange.Redis", Integration="StackExchangeRedis", TargetAssembly="StackExchange.Redis", TargetMaximumVersion="2", TargetMinimumVersion="1", TargetSignatureTypes=new string[] {
+                "System.Threading.Tasks.Task`1<T>",
+                "StackExchange.Redis.Message",
+                "StackExchange.Redis.ResultProcessor`1<T>",
+                "System.Object",
+                "StackExchange.Redis.ServerEndPoint"}, TargetType="StackExchange.Redis.ConnectionMultiplexer")]
+        [Datadog.Trace.ClrProfiler.InterceptMethod(CallerAssembly="StackExchange.Redis.StrongName", Integration="StackExchangeRedis", TargetAssembly="StackExchange.Redis.StrongName", TargetMaximumVersion="2", TargetMinimumVersion="1", TargetSignatureTypes=new string[] {
+                "System.Threading.Tasks.Task`1<T>",
+                "StackExchange.Redis.Message",
+                "StackExchange.Redis.ResultProcessor`1<T>",
+                "System.Object",
+                "StackExchange.Redis.ServerEndPoint"}, TargetType="StackExchange.Redis.ConnectionMultiplexer")]
+        public static object ExecuteAsyncImpl<T>(object multiplexer, object message, object processor, object state, object server, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(CallerAssembly="StackExchange.Redis", Integration="StackExchangeRedis", TargetAssembly="StackExchange.Redis", TargetMaximumVersion="2", TargetMinimumVersion="1", TargetSignatureTypes=new string[] {
+                "T",
+                "StackExchange.Redis.Message",
+                "StackExchange.Redis.ResultProcessor`1<T>",
+                "StackExchange.Redis.ServerEndPoint"}, TargetType="StackExchange.Redis.ConnectionMultiplexer")]
+        [Datadog.Trace.ClrProfiler.InterceptMethod(CallerAssembly="StackExchange.Redis.StrongName", Integration="StackExchangeRedis", TargetAssembly="StackExchange.Redis.StrongName", TargetMaximumVersion="2", TargetMinimumVersion="1", TargetSignatureTypes=new string[] {
+                "T",
+                "StackExchange.Redis.Message",
+                "StackExchange.Redis.ResultProcessor`1<T>",
+                "StackExchange.Redis.ServerEndPoint"}, TargetType="StackExchange.Redis.ConnectionMultiplexer")]
+        public static T ExecuteSyncImpl<T>(object multiplexer, object message, object processor, object server, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.DuckTyping.DuckCopy]
+        public struct MessageData
+        {
+            public string CommandAndKey;
+        }
+        [Datadog.Trace.DuckTyping.DuckCopy]
+        public struct MultiplexerData
+        {
+            public string Configuration;
+        }
+    }
+    public static class RedisBatch
+    {
+        [Datadog.Trace.ClrProfiler.InterceptMethod(CallerAssembly="StackExchange.Redis", Integration="StackExchangeRedis", TargetAssembly="StackExchange.Redis", TargetMaximumVersion="2", TargetMinimumVersion="1", TargetSignatureTypes=new string[] {
+                "System.Threading.Tasks.Task`1<T>",
+                "StackExchange.Redis.Message",
+                "StackExchange.Redis.ResultProcessor`1<T>",
+                "StackExchange.Redis.ServerEndPoint"}, TargetType="StackExchange.Redis.RedisBase")]
+        [Datadog.Trace.ClrProfiler.InterceptMethod(CallerAssembly="StackExchange.Redis.StrongName", Integration="StackExchangeRedis", TargetAssembly="StackExchange.Redis.StrongName", TargetMaximumVersion="2", TargetMinimumVersion="1", TargetSignatureTypes=new string[] {
+                "System.Threading.Tasks.Task`1<T>",
+                "StackExchange.Redis.Message",
+                "StackExchange.Redis.ResultProcessor`1<T>",
+                "StackExchange.Redis.ServerEndPoint"}, TargetType="StackExchange.Redis.RedisBase")]
+        public static object ExecuteAsync<T>(object redisBase, object message, object processor, object server, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.DuckTyping.DuckCopy]
+        public struct BatchData
+        {
+            [Datadog.Trace.DuckTyping.Duck(Kind=Datadog.Trace.DuckTyping.DuckKind.Field, Name="multiplexer")]
+            public Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis.RedisBatch.MultiplexerData Multiplexer;
+        }
+        [Datadog.Trace.DuckTyping.DuckCopy]
+        public struct MessageData
+        {
+            public string CommandAndKey;
+        }
+        [Datadog.Trace.DuckTyping.DuckCopy]
+        public struct MultiplexerData
+        {
+            public string Configuration;
+        }
+    }
+}
+namespace Datadog.Trace.ClrProfiler.Integrations.Testing
+{
+    public static class NUnitIntegration
+    {
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssembly="nunit.framework", TargetMaximumVersion="3", TargetMethod="SkipChildren", TargetMinimumVersion="3.0", TargetSignatureTypes=new string[] {
+                "System.Void",
+                "_",
+                "NUnit.Framework.Interfaces.ResultState",
+                "System.String"}, TargetType="NUnit.Framework.Internal.Execution.CompositeWorkItem")]
+        public static void CompositeWorkItem_SkipChildren(object compositeWorkItem, object testSuiteOrCompositeWorkItem, object resultState, object message, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssembly="nunit.framework", TargetMaximumVersion="3", TargetMethod="WaitForCompletion", TargetMinimumVersion="3.0", TargetSignatureTypes=new string[] {
+                "System.Boolean",
+                "System.Int32"}, TargetType="NUnit.Framework.Api.NUnitTestAssemblyRunner")]
+        public static object NUnitTestAssemblyRunner_WaitForCompletion(object testAssemblyRunner, int timeout, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssembly="nunit.framework", TargetMaximumVersion="3", TargetMethod="Execute", TargetMinimumVersion="3.0", TargetSignatureTypes=new string[] {
+                "NUnit.Framework.Internal.TestResult",
+                "NUnit.Framework.Internal.TestExecutionContext"}, TargetType="NUnit.Framework.Internal.Commands.TestCommand")]
+        public static object TestCommand_Execute(object testMethodCommand, object testExecutionContext, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssembly="nunit.framework", TargetMaximumVersion="3", TargetMethod="ShutDown", TargetMinimumVersion="3.0", TargetSignatureTypes=new string[] {
+                "System.Void"}, TargetType="NUnit.Framework.Internal.Execution.WorkShift")]
+        public static void WorkShift_ShutDown(object workShift, int opCode, int mdToken, long moduleVersionPtr) { }
+    }
+    public static class XUnitIntegration
+    {
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "xunit.execution.dotnet",
+                "xunit.execution.desktop"}, TargetMaximumVersion="2", TargetMethod="RunTestCollectionAsync", TargetMinimumVersion="2.2", TargetSignatureTypes=new string[] {
+                "System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>",
+                "Xunit.Sdk.IMessageBus",
+                "Xunit.Abstractions.ITestCollection",
+                "System.Collections.Generic.IEnumerable`1<T>",
+                "System.Threading.CancellationTokenSource"}, TargetType="Xunit.Sdk.TestAssemblyRunner`1")]
+        public static object AssemblyRunner_RunAsync(object xunitTestAssemblyRunner, object messageBus, object testCollection, object testCases, object cancellationTokenSource, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "xunit.execution.dotnet",
+                "xunit.execution.desktop"}, TargetMaximumVersion="2", TargetMethod="RunAsync", TargetMinimumVersion="2.2", TargetSignatureTypes=new string[] {
+                "System.Threading.Tasks.Task`1<System.Decimal>"}, TargetType="Xunit.Sdk.TestInvoker`1")]
+        public static object TestInvoker_RunAsync(object testInvoker, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "xunit.execution.dotnet",
+                "xunit.execution.desktop"}, TargetMaximumVersion="2", TargetMethod="QueueTestOutput", TargetMinimumVersion="2.2", TargetSignatureTypes=new string[] {
+                "System.Void",
+                "System.String"}, TargetType="Xunit.Sdk.TestOutputHelper")]
+        public static void TestOutputHelper_QueueTestOutput(object testOutputHelper, object output, int opCode, int mdToken, long moduleVersionPtr) { }
+        [Datadog.Trace.ClrProfiler.InterceptMethod(TargetAssemblies=new string[] {
+                "xunit.execution.dotnet",
+                "xunit.execution.desktop"}, TargetMaximumVersion="2", TargetMethod="RunAsync", TargetMinimumVersion="2.2", TargetSignatureTypes=new string[] {
+                "System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>"}, TargetType="Xunit.Sdk.TestRunner`1")]
+        public static object TestRunner_RunAsync(object testRunner, int opCode, int mdToken, long moduleVersionPtr) { }
+    }
+}
 namespace Datadog.Trace.Configuration
 {
     public class CompositeConfigurationSource : Datadog.Trace.Configuration.IConfigurationSource, System.Collections.Generic.IEnumerable<Datadog.Trace.Configuration.IConfigurationSource>, System.Collections.IEnumerable
