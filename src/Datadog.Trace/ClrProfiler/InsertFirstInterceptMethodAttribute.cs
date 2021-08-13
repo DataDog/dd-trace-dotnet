@@ -12,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler
     /// Attribute that indicates that the decorated method is meant to intercept calls
     /// to another method. Used to generate the integration definitions file.
     /// </summary>
-    public class InsertFirstInterceptMethodAttribute : InterceptMethodAttribute
+    internal class InsertFirstInterceptMethodAttribute : InterceptMethodAttribute
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="InsertFirstInterceptMethodAttribute"/> class.
