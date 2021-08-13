@@ -200,6 +200,7 @@ stages:
     - job: managed
       steps:
       - template: steps/install-dotnet.yml
+      - template: steps/install_procdump.yml
       - template: steps/restore-working-directory.yml
 
       - script: build.cmd BuildAndRunManagedUnitTests --code-coverage
@@ -359,6 +360,7 @@ stages:
           requiresCosmos: false
 
     steps:
+    - template: steps/install_procdump.yml
     - template: steps/install-dotnet-sdks.yml
       parameters:
         includeX86: true
@@ -408,7 +410,7 @@ stages:
       relativeMsiOutputDirectory: $(relativeArtifacts)/$(platform)/en-us
 
     steps:
-
+    - template: steps/install_procdump.yml
     - template: steps/install-dotnet-sdks.yml
       parameters:
         includeX86: true

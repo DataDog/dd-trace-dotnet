@@ -1,0 +1,16 @@
+﻿steps:
+  - powershell: |
+      $tempDir = "$(System.DefaultWorkingDirectory)\.tmp\temp\"
+      $installDir = "$(System.DefaultWorkingDirectory)\.tmp\ProcDump\"
+      mkdir $tempDir -ea Ignore | out-null
+      mkdir $installDir -ea Ignore | out-null
+      Write-Host "Starting ProcDump download"
+      Invoke-WebRequest -UseBasicParsing -Uri "https://download.sysinternals.com/files/Procdump.zip" -Out "$tempDir/ProcDump.zip"
+      Write-Host "Done downloading ProcDump"
+      Expand-Archive "$tempDir/ProcDump.zip" -d "$tempDir/ProcDump/"
+      Write-Host "Installing ProcDump to $installDir"
+      Move-Item "$tempDir/ProcDump/*" $installDir
+      Remove-Item -Force -Recurse $tempDir
+      Write-Host "Done installing ProcDump to $installDir"
+      Write-Host "##vso[task.setvariable variable=PROCDUMP_PATH]$installDir"
+    displayName: Install procdump
