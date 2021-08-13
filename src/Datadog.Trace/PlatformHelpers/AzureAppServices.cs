@@ -77,11 +77,6 @@ namespace Datadog.Trace.PlatformHelpers
         /// </summary>
         internal const string OperatingSystemKey = "WEBSITE_OS";
 
-        /// <summary>
-        /// The unique name of the web site.
-        /// </summary>
-        internal const string WebsiteSiteNameKey = "WEBSITE_SITE_NAME";
-
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AzureAppServices));
 
         static AzureAppServices()

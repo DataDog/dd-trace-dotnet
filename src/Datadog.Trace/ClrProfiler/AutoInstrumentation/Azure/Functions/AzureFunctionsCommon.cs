@@ -31,13 +31,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             return CallTargetState.GetDefault();
         }
 
-        public static TResult OnMethodEnd<TTarget, TResult>(TTarget instance, TResult result, Exception exception, CallTargetState state)
-        {
-            var scope = state.Scope;
-            scope?.DisposeWithException(exception);
-            return result;
-        }
-
         internal static Scope CreateScope(Tracer tracer, IFunctionInstance instanceParam)
         {
             Scope scope = null;
