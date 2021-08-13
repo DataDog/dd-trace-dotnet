@@ -1,6 +1,8 @@
 @echo off
 set
 
+dir ..\\..\\..\\bin
+
 echo %GOPATH%
 
 echo *********************

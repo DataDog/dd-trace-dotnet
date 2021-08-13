@@ -1083,6 +1083,7 @@ stages:
     - task: GoTool@0
       inputs:
         version: '1.16'
+        goPath: '$(System.DefaultWorkingDirectory)'
         workingDirectory: $(System.DefaultWorkingDirectory)
 
     - task: Go@0
