@@ -1061,7 +1061,8 @@ stages:
     services:
       dd_agent: dd_agent
     steps:
-    - template: steps/install-dotnet-5-sdk.yml
+    - template: steps/install-dotnet.yml
+    - template: steps/restore-working-directory.yml
 
     - task: DownloadPipelineArtifact@2
       displayName: Download windows native binary
