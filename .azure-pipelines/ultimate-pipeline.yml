@@ -1094,8 +1094,7 @@ stages:
 
     - task: Go@0
       inputs:
-        command: 'command'
-        customCommand: 'env'
+        command: 'env'
         workingDirectory: $(System.DefaultWorkingDirectory)
 
     - script: run.cmd
