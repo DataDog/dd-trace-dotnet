@@ -1,4 +1,5 @@
 @echo off
+echo %GOPATH%
 
 echo *********************
 echo .NET Framework 4.6.1
