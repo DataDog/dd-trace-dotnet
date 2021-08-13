@@ -1052,7 +1052,7 @@ stages:
 
 - stage: execution_benchmarks
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
-  # dependsOn: [build_windows]
+  dependsOn: [build_windows]
   jobs:
   - job: windows
     pool:
@@ -1060,25 +1060,25 @@ stages:
     steps:
     - template: steps/install-dotnet-5-sdk.yml
 
-    #- task: DownloadPipelineArtifact@2
-    #  displayName: Download windows native binary
-    #  inputs:
-    #    artifact: windows-tracer-home
-    #    path: $(System.DefaultWorkingDirectory)/bin/tracer-home
+    - task: DownloadPipelineArtifact@2
+      displayName: Download windows native binary
+      inputs:
+        artifact: windows-tracer-home
+        path: $(System.DefaultWorkingDirectory)/bin/tracer-home
 
-    #- task: DotNetCoreCLI@2
-    #  inputs:
-    #    command: 'build'
-    #    arguments: '--configuration Release'
-    #    workingDirectory: $(System.DefaultWorkingDirectory)/test/test-applications/integrations/Samples.HttpMessageHandler
-    #  displayName: 'dotnet build $(buildConfiguration)'
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: 'build'
+        arguments: '--configuration Release'
+        workingDirectory: $(System.DefaultWorkingDirectory)/test/test-applications/integrations/Samples.HttpMessageHandler
+      displayName: 'dotnet build $(buildConfiguration)'
 
-    #- task: DotNetCoreCLI@2
-    #  inputs:
-    #    command: 'build'
-    #    arguments: '--configuration Release'
-    #    workingDirectory: $(System.DefaultWorkingDirectory)/test/test-applications/integrations/Samples.FakeDbCommand
-    #  displayName: 'dotnet build $(buildConfiguration)'
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: 'build'
+        arguments: '--configuration Release'
+        workingDirectory: $(System.DefaultWorkingDirectory)/test/test-applications/integrations/Samples.FakeDbCommand
+      displayName: 'dotnet build $(buildConfiguration)'
 
     - task: GoTool@0
       displayName: 'Install Go 1.16'
