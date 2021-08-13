@@ -1,4 +1,6 @@
 @echo off
+set
+
 echo %GOPATH%
 
 echo *********************
