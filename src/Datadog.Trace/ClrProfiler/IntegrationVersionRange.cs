@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler
         public ushort MaximumPatch { get; private set; } = ushort.MaxValue;
 
         /// <summary>
-        /// Gets the MinimumMajor, MinimumMinor, and MinimumPatch properties.
+        /// Gets or sets the MinimumMajor, MinimumMinor, and MinimumPatch properties.
         /// Convenience property for setting target minimum version.
         /// </summary>
         public string MinimumVersion
@@ -73,7 +73,7 @@ namespace Datadog.Trace.ClrProfiler
         }
 
         /// <summary>
-        /// Gets the MaximumMajor, MaximumMinor, and MaximumPatch properties.
+        /// Gets or sets the MaximumMajor, MaximumMinor, and MaximumPatch properties.
         /// Convenience property for setting target maximum version.
         /// </summary>
         public string MaximumVersion
