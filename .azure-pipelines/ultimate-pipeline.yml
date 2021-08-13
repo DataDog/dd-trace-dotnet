@@ -382,14 +382,9 @@ stages:
         testResultsFiles: build_data/results/**/*.trx
       condition: succeededOrFailed()
 
-    - task: PublishPipelineArtifact@1
-      inputs:
-        targetPath: 'build_data/results/'
-      continueOnError: true
-
-    - publish: build_data\logs\
+    - publish: build_data
       displayName: Uploading integration_tests_windows tracer logs
-      artifact: integration_tests_windows_tracer_logs_$(platform)_$(target)
+      artifact: integration_tests_windows_tracer_logs_$(platform)_$(target)_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -451,11 +446,6 @@ stages:
         testResultsFiles: build_data/results/**/*.trx
       condition: succeededOrFailed()
 
-    - task: PublishPipelineArtifact@1
-      inputs:
-        targetPath: 'build_data/results/'
-      continueOnError: true
-
     - task: DockerCompose@0
       displayName: docker-compose stop services
       inputs:
@@ -463,9 +453,9 @@ stages:
         dockerComposeCommand: down
       condition: succeededOrFailed()
 
-    - publish: build_data\logs\
+    - publish: build_data
       displayName: Uploading integration_tests_windows_iis tracer logs
-      artifact: integration_tests_windows_iis_tracer_logs_$(platform)
+      artifact: integration_tests_windows_iis_tracer_logs_$(platform)_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
