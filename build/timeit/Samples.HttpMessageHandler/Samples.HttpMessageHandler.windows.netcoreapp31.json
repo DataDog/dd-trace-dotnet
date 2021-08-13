@@ -1,7 +1,7 @@
 {
   "enableDatadog": true,
-  "warmUpCount": 10,
-  "count": 50,
+  "warmUpCount": 5,
+  "count": 25,
   "scenarios": [
     {
       "name": "Baseline",

@@ -1057,6 +1057,9 @@ stages:
   - job: windows
     pool:
       vmImage: windows-2019
+    # Enable the Datadog Agent service for this job
+    services:
+      dd_agent: dd_agent
     steps:
     - template: steps/install-dotnet-5-sdk.yml
 
@@ -1069,16 +1072,16 @@ stages:
     - task: DotNetCoreCLI@2
       inputs:
         command: 'build'
-        arguments: '--configuration Release'
+        arguments: '-c Release'
         workingDirectory: $(System.DefaultWorkingDirectory)/test/test-applications/integrations/Samples.HttpMessageHandler
-      displayName: 'dotnet build $(buildConfiguration)'
+      displayName: 'dotnet build Release'
 
     - task: DotNetCoreCLI@2
       inputs:
         command: 'build'
-        arguments: '--configuration Release'
+        arguments: '-c Release'
         workingDirectory: $(System.DefaultWorkingDirectory)/test/test-applications/integrations/Samples.FakeDbCommand
-      displayName: 'dotnet build $(buildConfiguration)'
+      displayName: 'dotnet build Release'
 
     - task: GoTool@0
       displayName: 'Install Go 1.16'
