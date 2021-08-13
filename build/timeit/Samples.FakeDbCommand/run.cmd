@@ -1,10 +1,4 @@
 @echo off
-set
-
-dir ..\\..\\..\\bin
-
-echo %GOPATH%
-
 echo *********************
 echo .NET Framework 4.6.1
 echo *********************

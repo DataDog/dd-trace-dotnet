@@ -1081,6 +1081,7 @@ stages:
     #  displayName: 'dotnet build $(buildConfiguration)'
 
     - task: GoTool@0
+      displayName: 'Install Go 1.16'
       inputs:
         version: '1.16'
         goPath: '$(System.DefaultWorkingDirectory)'
@@ -1091,11 +1092,6 @@ stages:
       inputs:
         command: 'install'
         arguments: 'github.com/tonyredondo/timeit@latest'
-        workingDirectory: $(System.DefaultWorkingDirectory)
-
-    - task: Go@0
-      inputs:
-        command: 'env'
         workingDirectory: $(System.DefaultWorkingDirectory)
 
     - script: run.cmd
