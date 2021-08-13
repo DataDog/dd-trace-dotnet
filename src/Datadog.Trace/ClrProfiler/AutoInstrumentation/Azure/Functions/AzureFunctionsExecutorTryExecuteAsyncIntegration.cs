@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         TypeName = "Microsoft.Azure.WebJobs.Host.Executors.FunctionExecutor",
         MethodName = "TryExecuteAsync",
         ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.Azure.WebJobs.Host.Executors.IDelayedException]",
-        ParameterTypeNames = new[] { "Microsoft.Azure.WebJobs.Host.Executors.IFunctionInstance", "System.Threading.CancellationToken" },
+        ParameterTypeNames = new[] { "Microsoft.Azure.WebJobs.Host.Executors.IFunctionInstance", ClrNames.CancellationToken },
         MinimumVersion = "3.0.0",
         MaximumVersion = "3.*.*",
         IntegrationName = IntegrationName)]
