@@ -12,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class IntegrationVersionRange
+    internal class IntegrationVersionRange
     {
         /// <summary>
         /// Gets the minimum major version.

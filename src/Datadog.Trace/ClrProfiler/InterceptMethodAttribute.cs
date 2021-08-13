@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = true, Inherited = false)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class InterceptMethodAttribute : Attribute
+    internal class InterceptMethodAttribute : Attribute
     {
         /// <summary>
         /// Gets or sets the name of the integration.

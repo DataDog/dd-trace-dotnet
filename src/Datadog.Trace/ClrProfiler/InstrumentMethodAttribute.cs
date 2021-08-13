@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Assembly, AllowMultiple = true, Inherited = false)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class InstrumentMethodAttribute : Attribute
+    internal class InstrumentMethodAttribute : Attribute
     {
         /// <summary>
         /// Gets or sets the name of the assembly that contains the target method to be intercepted.

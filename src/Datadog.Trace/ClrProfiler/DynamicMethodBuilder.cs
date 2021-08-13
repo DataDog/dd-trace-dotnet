@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler
     [Obsolete("This type will be removed in a future version of this library.")]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static class DynamicMethodBuilder<TDelegate>
+    internal static class DynamicMethodBuilder<TDelegate>
         where TDelegate : Delegate
     {
         /// <summary>

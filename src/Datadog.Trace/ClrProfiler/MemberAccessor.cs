@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler
     [Obsolete("This type will be removed in a future version of this library.")]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static class MemberAccessor
+    internal static class MemberAccessor
     {
         /// <summary>
         /// Tries to call an instance method with the specified name, a single parameter, and a return value.
