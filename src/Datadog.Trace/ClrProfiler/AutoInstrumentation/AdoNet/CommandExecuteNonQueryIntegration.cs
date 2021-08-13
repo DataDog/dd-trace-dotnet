@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using System.Data;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
@@ -13,6 +14,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
     /// CallTarget instrumentation for:
     /// int [Command].ExecuteNonQuery()
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class CommandExecuteNonQueryIntegration
     {
         /// <summary>

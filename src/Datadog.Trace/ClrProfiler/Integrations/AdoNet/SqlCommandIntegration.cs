@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using System.Data;
 using System.Data.Common;
 using System.Threading;
@@ -18,6 +19,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
     /// Instrumentation wrappers for <c>System.Data.SqlClient.SqlCommand</c>
     /// and <c>Microsoft.Data.SqlClient.SqlCommand</c>.
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public static class SqlCommandIntegration
     {
         private const string Major1 = "1";

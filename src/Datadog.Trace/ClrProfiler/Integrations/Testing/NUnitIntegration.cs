@@ -6,6 +6,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -22,6 +23,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
     /// <summary>
     /// Tracing integration for NUnit teting framework
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public static class NUnitIntegration
     {
         private const string IntegrationName = nameof(IntegrationIds.NUnit);

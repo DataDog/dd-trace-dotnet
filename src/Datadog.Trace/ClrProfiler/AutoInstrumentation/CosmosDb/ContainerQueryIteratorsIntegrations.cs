@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
@@ -49,6 +50,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
         MaximumVersion = CosmosCommon.Major3MinorX,
         IntegrationName = CosmosCommon.IntegrationName)]
 
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     // ReSharper disable once InconsistentNaming
     public class ContainerQueryIteratorsIntegrations
     {

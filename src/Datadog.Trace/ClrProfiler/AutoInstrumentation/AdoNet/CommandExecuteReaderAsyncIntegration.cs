@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using System.Data;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -14,6 +15,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
     /// CallTarget instrumentation for:
     /// Task[*DataReader] [Command].ExecuteReaderAsync()
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class CommandExecuteReaderAsyncIntegration
     {
         /// <summary>

@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 {
@@ -11,6 +12,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
     /// Timestamp struct for duck-typing
     /// Requires boxing, but necessary as we need to duck-type <see cref="Type"/> too
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public interface ITimestamp
     {
         /// <summary>

@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using System.Data;
 using System.Data.Common;
 using System.Threading;
@@ -17,6 +18,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
     /// <summary>
     /// Instrumentation wrappers for <see cref="NpgsqlCommandIntegration"/>.
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public static class NpgsqlCommandIntegration
     {
         private const string Major4 = "4";

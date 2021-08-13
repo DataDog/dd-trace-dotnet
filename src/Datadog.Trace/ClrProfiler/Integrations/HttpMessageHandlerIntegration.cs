@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,6 +22,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// <summary>
     /// Tracer integration for HttpClientHandler.
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public static class HttpMessageHandlerIntegration
     {
         private const string SystemNetHttp = "System.Net.Http";
@@ -538,6 +541,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 #pragma warning disable SA1600 // Elements must be documented
 
         [DuckCopy]
+        [Browsable(false)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public struct HttpRequestMessageStruct
         {
             public HttpMethodStruct Method;
@@ -548,11 +553,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         }
 
         [DuckCopy]
+        [Browsable(false)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public struct HttpMethodStruct
         {
             public string Method;
         }
 
+        [Browsable(false)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
         public interface IRequestHeaders
         {
             bool TryGetValues(string name, out IEnumerable<string> values);

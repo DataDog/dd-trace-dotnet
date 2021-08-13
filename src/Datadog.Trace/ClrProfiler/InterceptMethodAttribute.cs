@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using System.Linq;
 
 namespace Datadog.Trace.ClrProfiler
@@ -13,7 +14,9 @@ namespace Datadog.Trace.ClrProfiler
     /// to another method. Used to generate the integration definitions file.
     /// </summary>
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = true, Inherited = false)]
-    public class InterceptMethodAttribute : Attribute
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    internal class InterceptMethodAttribute : Attribute
     {
         /// <summary>
         /// Gets or sets the name of the integration.

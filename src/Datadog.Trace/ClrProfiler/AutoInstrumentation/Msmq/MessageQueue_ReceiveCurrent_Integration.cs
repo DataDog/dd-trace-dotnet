@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -28,6 +29,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
     MinimumVersion = "4.0.0",
     MaximumVersion = "4.*.*",
     IntegrationName = MsmqConstants.IntegrationName)]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class MessageQueue_ReceiveCurrent_Integration
     {
         private const string CommandPeek = MsmqConstants.MsmqPeekCommand;

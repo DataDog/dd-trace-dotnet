@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 
 namespace Datadog.Trace.ClrProfiler
 {
@@ -12,7 +13,9 @@ namespace Datadog.Trace.ClrProfiler
     /// by modifying the method body with callbacks. Used to generate the integration definitions file.
     /// </summary>
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Assembly, AllowMultiple = true, Inherited = false)]
-    public class InstrumentMethodAttribute : Attribute
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    internal class InstrumentMethodAttribute : Attribute
     {
         /// <summary>
         /// Gets or sets the name of the assembly that contains the target method to be intercepted.

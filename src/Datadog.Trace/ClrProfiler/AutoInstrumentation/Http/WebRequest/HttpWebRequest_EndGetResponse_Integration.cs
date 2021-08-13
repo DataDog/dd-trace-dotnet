@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Net;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -26,6 +27,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
         MinimumVersion = WebRequestCommon.Major4,
         MaximumVersion = WebRequestCommon.Major4,
         IntegrationName = WebRequestCommon.IntegrationName)]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class HttpWebRequest_EndGetResponse_Integration
     {
         private const string MethodName = "EndGetResponse";

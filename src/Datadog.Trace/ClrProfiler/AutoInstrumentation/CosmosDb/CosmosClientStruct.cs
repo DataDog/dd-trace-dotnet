@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -17,6 +18,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
     /// Microsoft.Azure.Cosmos.CosmosClient
     /// </summary>
     [DuckCopy]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public struct CosmosClientStruct
     {
         /// <summary>

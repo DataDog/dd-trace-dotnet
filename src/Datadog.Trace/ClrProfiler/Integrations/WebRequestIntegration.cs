@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
@@ -17,6 +18,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// <summary>
     /// Tracer integration for WebRequest.
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public static class WebRequestIntegration
     {
         private const string WebRequestTypeName = "System.Net.WebRequest";

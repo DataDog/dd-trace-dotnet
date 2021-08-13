@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 
@@ -21,6 +22,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
     MinimumVersion = "4.0.0",
     MaximumVersion = "4.*.*",
     IntegrationName = MsmqConstants.IntegrationName)]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class MessageQueue_SendInternal_Integration
     {
         private const string Command = MsmqConstants.MsmqSendCommand;

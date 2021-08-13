@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using System.Data;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
@@ -14,6 +15,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
     /// [*]DataReader [Command].ExecuteReader(CommandBehavior)
     /// [*]DataReader [Command].ExecuteDbDataReader(CommandBehavior)
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class CommandExecuteReaderWithBehaviorIntegration
     {
         /// <summary>

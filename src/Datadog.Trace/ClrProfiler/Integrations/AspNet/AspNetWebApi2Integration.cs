@@ -6,6 +6,7 @@
 #if NETFRAMEWORK
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -28,6 +29,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// <summary>
     /// Contains instrumentation wrappers for ASP.NET Web API 5.
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public static class AspNetWebApi2Integration
     {
         private const string OperationName = "aspnet-webapi.request";

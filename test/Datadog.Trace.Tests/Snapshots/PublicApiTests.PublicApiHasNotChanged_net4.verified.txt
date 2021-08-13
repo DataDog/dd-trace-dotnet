@@ -1,0 +1,555 @@
+[assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/DataDog/dd-trace-dotnet.git")]
+
+namespace Datadog.Trace.Configuration
+{
+    public class CompositeConfigurationSource : Datadog.Trace.Configuration.IConfigurationSource, System.Collections.Generic.IEnumerable<Datadog.Trace.Configuration.IConfigurationSource>, System.Collections.IEnumerable
+    {
+        public CompositeConfigurationSource() { }
+        public void Add(Datadog.Trace.Configuration.IConfigurationSource source) { }
+        public bool? GetBool(string key) { }
+        public System.Collections.Generic.IDictionary<string, string> GetDictionary(string key) { }
+        public System.Collections.Generic.IDictionary<string, string> GetDictionary(string key, bool allowOptionalMappings) { }
+        public double? GetDouble(string key) { }
+        public int? GetInt32(string key) { }
+        public string GetString(string key) { }
+        public void Insert(int index, Datadog.Trace.Configuration.IConfigurationSource item) { }
+    }
+    public static class ConfigurationKeys
+    {
+        public const string AdoNetExcludedTypes = "DD_TRACE_ADONET_EXCLUDED_TYPES";
+        public const string AgentHost = "DD_AGENT_HOST";
+        public const string AgentPort = "DD_TRACE_AGENT_PORT";
+        public const string AgentUri = "DD_TRACE_AGENT_URL";
+        public const string ApiKey = "DD_API_KEY";
+        public const string AppSecBlockingEnabled = "DD_APPSEC_BLOCKING_ENABLED";
+        public const string AppSecEnabled = "DD_APPSEC_ENABLED";
+        public const string BufferSize = "DD_TRACE_BUFFER_SIZE";
+        public const string ConfigurationFileName = "DD_TRACE_CONFIG_FILE";
+        public const string CustomSamplingRules = "DD_TRACE_SAMPLING_RULES";
+        public const string DebugEnabled = "DD_TRACE_DEBUG";
+        public const string DiagnosticSourceEnabled = "DD_DIAGNOSTIC_SOURCE_ENABLED";
+        public const string DisabledIntegrations = "DD_DISABLED_INTEGRATIONS";
+        public const string DogStatsDArgs = "DD_DOGSTATSD_ARGS";
+        public const string DogStatsDPath = "DD_DOGSTATSD_PATH";
+        public const string DogStatsdPort = "DD_DOGSTATSD_PORT";
+        public const string Environment = "DD_ENV";
+        public const string GlobalAnalyticsEnabled = "DD_TRACE_ANALYTICS_ENABLED";
+        public const string GlobalSamplingRate = "DD_TRACE_SAMPLE_RATE";
+        public const string GlobalTags = "DD_TAGS";
+        public const string HeaderTags = "DD_TRACE_HEADER_TAGS";
+        public const string HttpClientErrorStatusCodes = "DD_HTTP_CLIENT_ERROR_STATUSES";
+        public const string HttpClientExcludedUrlSubstrings = "DD_TRACE_HTTP_CLIENT_EXCLUDED_URL_SUBSTRINGS";
+        public const string HttpServerErrorStatusCodes = "DD_HTTP_SERVER_ERROR_STATUSES";
+        public const string KafkaCreateConsumerScopeEnabled = "DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED";
+        public const string LogDirectory = "DD_TRACE_LOG_DIRECTORY";
+        public const string LogRateLimit = "DD_TRACE_LOGGING_RATE";
+        public const string LogsInjectionEnabled = "DD_LOGS_INJECTION";
+        public const string MaxLogFileSize = "DD_MAX_LOGFILE_SIZE";
+        public const string MaxTracesSubmittedPerSecond = "DD_MAX_TRACES_PER_SECOND";
+        public const string MetricsPipeName = "DD_DOGSTATSD_PIPE_NAME";
+        public const string PartialFlushEnabled = "DD_TRACE_PARTIAL_FLUSH_ENABLED";
+        public const string PartialFlushMinSpans = "DD_TRACE_PARTIAL_FLUSH_MIN_SPANS";
+        public const string ProfilerLogPath = "DD_TRACE_LOG_PATH";
+        public const string RuntimeMetricsEnabled = "DD_RUNTIME_METRICS_ENABLED";
+        public const string SerializationBatchInterval = "DD_TRACE_BATCH_INTERVAL";
+        public const string ServiceName = "DD_SERVICE";
+        public const string ServiceNameMappings = "DD_TRACE_SERVICE_MAPPING";
+        public const string ServiceVersion = "DD_VERSION";
+        public const string StartupDiagnosticLogEnabled = "DD_TRACE_STARTUP_LOGS";
+        public const string TraceAgentArgs = "DD_TRACE_AGENT_ARGS";
+        public const string TraceAgentPath = "DD_TRACE_AGENT_PATH";
+        public const string TraceAgentPortKey = "DD_APM_RECEIVER_PORT";
+        public const string TraceEnabled = "DD_TRACE_ENABLED";
+        public const string TracerMetricsEnabled = "DD_TRACE_METRICS_ENABLED";
+        public const string TracesPipeName = "DD_TRACE_PIPE_NAME";
+        public const string TracesPipeTimeoutMs = "DD_TRACE_PIPE_TIMEOUT_MS";
+        public const string TracesTransport = "DD_TRACE_TRANSPORT";
+        public static class Integrations
+        {
+            public const string AnalyticsEnabled = "DD_TRACE_{0}_ANALYTICS_ENABLED";
+            public const string AnalyticsSampleRate = "DD_TRACE_{0}_ANALYTICS_SAMPLE_RATE";
+            public const string Enabled = "DD_TRACE_{0}_ENABLED";
+        }
+    }
+    public class EnvironmentConfigurationSource : Datadog.Trace.Configuration.StringConfigurationSource
+    {
+        public EnvironmentConfigurationSource() { }
+        public override string GetString(string key) { }
+    }
+    public class GlobalSettings
+    {
+        public bool DebugEnabled { get; }
+        public static Datadog.Trace.Configuration.GlobalSettings FromDefaultSources() { }
+        public static void Reload() { }
+        public static void SetDebugEnabled(bool enabled) { }
+    }
+    public interface IConfigurationSource
+    {
+        bool? GetBool(string key);
+        System.Collections.Generic.IDictionary<string, string> GetDictionary(string key);
+        System.Collections.Generic.IDictionary<string, string> GetDictionary(string key, bool allowOptionalMappings);
+        double? GetDouble(string key);
+        int? GetInt32(string key);
+        string GetString(string key);
+    }
+    public class IntegrationSettings
+    {
+        public IntegrationSettings(string integrationName, Datadog.Trace.Configuration.IConfigurationSource source) { }
+        public bool? AnalyticsEnabled { get; set; }
+        public double AnalyticsSampleRate { get; set; }
+        public bool? Enabled { get; set; }
+        public string IntegrationName { get; }
+    }
+    public class IntegrationSettingsCollection
+    {
+        public IntegrationSettingsCollection(Datadog.Trace.Configuration.IConfigurationSource source) { }
+        public Datadog.Trace.Configuration.IntegrationSettings this[string integrationName] { get; }
+    }
+    public class JsonConfigurationSource : Datadog.Trace.Configuration.IConfigurationSource
+    {
+        public JsonConfigurationSource(string json) { }
+        public System.Collections.Generic.IDictionary<string, string> GetDictionary(string key) { }
+        public System.Collections.Generic.IDictionary<string, string> GetDictionary(string key, bool allowOptionalMappings) { }
+        public T GetValue<T>(string key) { }
+        public static Datadog.Trace.Configuration.JsonConfigurationSource FromFile(string filename) { }
+    }
+    public class NameValueConfigurationSource : Datadog.Trace.Configuration.StringConfigurationSource
+    {
+        public NameValueConfigurationSource(System.Collections.Specialized.NameValueCollection nameValueCollection) { }
+        public override string GetString(string key) { }
+    }
+    public abstract class StringConfigurationSource : Datadog.Trace.Configuration.IConfigurationSource
+    {
+        protected StringConfigurationSource() { }
+        public virtual bool? GetBool(string key) { }
+        public System.Collections.Generic.IDictionary<string, string> GetDictionary(string key) { }
+        public System.Collections.Generic.IDictionary<string, string> GetDictionary(string key, bool allowOptionalMappings) { }
+        public double? GetDouble(string key) { }
+        public virtual int? GetInt32(string key) { }
+        public abstract string GetString(string key);
+        public static System.Collections.Generic.IDictionary<string, string> ParseCustomKeyValues(string data) { }
+        public static System.Collections.Generic.IDictionary<string, string> ParseCustomKeyValues(string data, bool allowOptionalMappings) { }
+    }
+    public class TracerSettings
+    {
+        public const string DefaultAgentHost = "localhost";
+        public const int DefaultAgentPort = 8126;
+        public TracerSettings() { }
+        public TracerSettings(Datadog.Trace.Configuration.IConfigurationSource source) { }
+        public System.Collections.Generic.HashSet<string> AdoNetExcludedTypes { get; set; }
+        public System.Uri AgentUri { get; set; }
+        public bool AnalyticsEnabled { get; set; }
+        public string CustomSamplingRules { get; set; }
+        [System.Obsolete]
+        public bool DebugEnabled { get; set; }
+        public bool DiagnosticSourceEnabled { get; set; }
+        public System.Collections.Generic.HashSet<string> DisabledIntegrationNames { get; set; }
+        public int DogStatsdPort { get; set; }
+        public string Environment { get; set; }
+        public double? GlobalSamplingRate { get; set; }
+        public System.Collections.Generic.IDictionary<string, string> GlobalTags { get; set; }
+        public System.Collections.Generic.IDictionary<string, string> HeaderTags { get; set; }
+        public Datadog.Trace.Configuration.IntegrationSettingsCollection Integrations { get; }
+        public bool KafkaCreateConsumerScopeEnabled { get; set; }
+        public bool LogsInjectionEnabled { get; set; }
+        public int MaxTracesSubmittedPerSecond { get; set; }
+        public string MetricsPipeName { get; set; }
+        public bool PartialFlushEnabled { get; set; }
+        public int PartialFlushMinSpans { get; set; }
+        public bool RuntimeMetricsEnabled { get; set; }
+        public string ServiceName { get; set; }
+        public string ServiceVersion { get; set; }
+        public bool StartupDiagnosticLogEnabled { get; set; }
+        public bool TraceEnabled { get; set; }
+        public bool TracerMetricsEnabled { get; set; }
+        public string TracesPipeName { get; set; }
+        public int TracesPipeTimeoutMs { get; set; }
+        public string TracesTransport { get; set; }
+        public void SetHttpClientErrorStatusCodes(System.Collections.Generic.IEnumerable<int> statusCodes) { }
+        public void SetHttpServerErrorStatusCodes(System.Collections.Generic.IEnumerable<int> statusCodes) { }
+        public void SetServiceNameMappings(System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>> mappings) { }
+        public static Datadog.Trace.Configuration.CompositeConfigurationSource CreateDefaultConfigurationSource() { }
+        public static Datadog.Trace.Configuration.TracerSettings FromDefaultSources() { }
+    }
+}
+namespace Datadog.Trace
+{
+    public static class CorrelationIdentifier
+    {
+        public static string Env { get; }
+        public static string Service { get; }
+        public static ulong SpanId { get; }
+        public static ulong TraceId { get; }
+        public static string Version { get; }
+    }
+    public static class HttpHeaderNames
+    {
+        public const string Origin = "x-datadog-origin";
+        public const string ParentId = "x-datadog-parent-id";
+        public const string SamplingPriority = "x-datadog-sampling-priority";
+        public const string TraceId = "x-datadog-trace-id";
+        public const string TracingEnabled = "x-datadog-tracing-enabled";
+    }
+    public interface ISpanContext
+    {
+        string ServiceName { get; }
+        ulong SpanId { get; }
+        ulong TraceId { get; }
+    }
+    public enum SamplingPriority
+    {
+        UserReject = -1,
+        AutoReject = 0,
+        AutoKeep = 1,
+        UserKeep = 2,
+    }
+    public class Scope : System.IDisposable
+    {
+        public Datadog.Trace.Span Span { get; }
+        public void Close() { }
+        public void Dispose() { }
+    }
+    public class Span : System.IDisposable
+    {
+        public bool Error { get; set; }
+        public string OperationName { get; set; }
+        public string ResourceName { get; set; }
+        public string ServiceName { get; set; }
+        public ulong SpanId { get; }
+        public ulong TraceId { get; }
+        public string Type { get; set; }
+        public void Dispose() { }
+        public void Finish() { }
+        public void Finish(System.DateTimeOffset finishTimestamp) { }
+        public string GetTag(string key) { }
+        public void SetException(System.Exception exception) { }
+        public Datadog.Trace.Span SetTag(string key, string value) { }
+        public override string ToString() { }
+    }
+    public class SpanContext : Datadog.Trace.ISpanContext
+    {
+        public SpanContext(ulong? traceId, ulong spanId, Datadog.Trace.SamplingPriority? samplingPriority = default, string serviceName = null) { }
+        public Datadog.Trace.ISpanContext Parent { get; }
+        public ulong? ParentId { get; }
+        public string ServiceName { get; set; }
+        public ulong SpanId { get; }
+        public ulong TraceId { get; }
+    }
+    public static class SpanKinds
+    {
+        public const string Client = "client";
+        public const string Consumer = "consumer";
+        public const string Producer = "producer";
+        public const string Server = "server";
+    }
+    public static class SpanTypes
+    {
+        public const string Benchmark = "benchmark";
+        public const string Build = "build";
+        public const string Custom = "custom";
+        public const string GraphQL = "graphql";
+        public const string Http = "http";
+        public const string MongoDb = "mongodb";
+        public const string Queue = "queue";
+        public const string Redis = "redis";
+        public const string Sql = "sql";
+        public const string Test = "test";
+        public const string Web = "web";
+    }
+    public static class Tags
+    {
+        public const string AmqpCommand = "amqp.command";
+        public const string AmqpDeliveryMode = "amqp.delivery_mode";
+        public const string AmqpExchange = "amqp.exchange";
+        public const string AmqpQueue = "amqp.queue";
+        public const string AmqpRoutingKey = "amqp.routing_key";
+        public const string Analytics = "_dd1.sr.eausr";
+        public const string AspNetAction = "aspnet.action";
+        public const string AspNetArea = "aspnet.area";
+        public const string AspNetController = "aspnet.controller";
+        public const string AspNetCoreAction = "aspnet_core.action";
+        public const string AspNetCoreArea = "aspnet_core.area";
+        public const string AspNetCoreController = "aspnet_core.controller";
+        public const string AspNetCoreEndpoint = "aspnet_core.endpoint";
+        public const string AspNetCorePage = "aspnet_core.page";
+        public const string AspNetCoreRoute = "aspnet_core.route";
+        public const string AspNetRoute = "aspnet.route";
+        public const string AwsAgentName = "aws.agent";
+        public const string AwsOperationName = "aws.operation";
+        public const string AwsQueueName = "aws.queue.name";
+        public const string AwsQueueUrl = "aws.queue.url";
+        public const string AwsRegion = "aws.region";
+        public const string AwsRequestId = "aws.requestId";
+        public const string AwsServiceName = "aws.service";
+        public const string AzureAppServicesExtensionVersion = "aas.environment.extension_version";
+        public const string AzureAppServicesInstanceId = "aas.environment.instance_id";
+        public const string AzureAppServicesInstanceName = "aas.environment.instance_name";
+        public const string AzureAppServicesOperatingSystem = "aas.environment.os";
+        public const string AzureAppServicesResourceGroup = "aas.resource.group";
+        public const string AzureAppServicesResourceId = "aas.resource.id";
+        public const string AzureAppServicesRuntime = "aas.environment.runtime";
+        public const string AzureAppServicesSiteKind = "aas.site.kind";
+        public const string AzureAppServicesSiteName = "aas.site.name";
+        public const string AzureAppServicesSiteType = "aas.site.type";
+        public const string AzureAppServicesSubscriptionId = "aas.subscription.id";
+        public const string CosmosDbContainer = "cosmosdb.container";
+        public const string DbName = "db.name";
+        public const string DbType = "db.type";
+        public const string DbUser = "db.user";
+        public const string Env = "env";
+        public const string ErrorMsg = "error.msg";
+        public const string ErrorStack = "error.stack";
+        public const string ErrorType = "error.type";
+        [System.Obsolete("This field will be removed in futures versions of this library. Use ManualDrop in" +
+            "stead.")]
+        public const string ForceDrop = "force.drop";
+        [System.Obsolete("This field will be removed in futures versions of this library. Use ManualKeep in" +
+            "stead.")]
+        public const string ForceKeep = "force.keep";
+        public const string GraphQLOperationName = "graphql.operation.name";
+        public const string GraphQLOperationType = "graphql.operation.type";
+        public const string GraphQLSource = "graphql.source";
+        public const string HttpMethod = "http.method";
+        public const string HttpRequestHeadersHost = "http.request.headers.host";
+        public const string HttpStatusCode = "http.status_code";
+        public const string HttpUrl = "http.url";
+        public const string InstrumentationName = "component";
+        public const string InstrumentedMethod = "instrumented.method";
+        public const string KafkaOffset = "kafka.offset";
+        public const string KafkaPartition = "kafka.partition";
+        public const string KafkaTombstone = "kafka.tombstone";
+        public const string Language = "language";
+        public const string ManualDrop = "manual.drop";
+        public const string ManualKeep = "manual.keep";
+        public const string Measured = "_dd.measured";
+        public const string MessageSize = "message.size";
+        public const string MongoDbCollection = "mongodb.collection";
+        public const string MongoDbQuery = "mongodb.query";
+        public const string MsmqCommand = "msmq.command";
+        public const string MsmqIsTransactionalQueue = "msmq.queue.transactional";
+        public const string MsmqMessageWithTransaction = "msmq.message.transactional";
+        public const string MsmqQueuePath = "msmq.queue.path";
+        public const string Origin = "_dd.origin";
+        public const string OutHost = "out.host";
+        public const string OutPort = "out.port";
+        public const string RedisRawCommand = "redis.raw_command";
+        public const string SamplingPriority = "sampling.priority";
+        public const string SpanKind = "span.kind";
+        public const string SqlQuery = "sql.query";
+        public const string SqlRows = "sql.rows";
+        public const string Version = "version";
+    }
+    public class Tracer
+    {
+        public Tracer() { }
+        public Tracer(Datadog.Trace.Configuration.TracerSettings settings) { }
+        public Datadog.Trace.Scope ActiveScope { get; }
+        public string DefaultServiceName { get; }
+        public Datadog.Trace.Configuration.TracerSettings Settings { get; }
+        public static Datadog.Trace.Tracer Instance { get; set; }
+        public Datadog.Trace.Scope ActivateSpan(Datadog.Trace.Span span, bool finishOnClose = true) { }
+        protected override void Finalize() { }
+        public System.Threading.Tasks.Task ForceFlushAsync() { }
+        public Datadog.Trace.Scope StartActive(string operationName, Datadog.Trace.ISpanContext parent = null, string serviceName = null, System.DateTimeOffset? startTime = default, bool ignoreActiveScope = false, bool finishOnClose = true) { }
+        public Datadog.Trace.Span StartSpan(string operationName, Datadog.Trace.ISpanContext parent = null, string serviceName = null, System.DateTimeOffset? startTime = default, bool ignoreActiveScope = false) { }
+        public static Datadog.Trace.Tracer Create(System.Uri agentEndpoint = null, string defaultServiceName = null, bool isDebugEnabled = false) { }
+    }
+}
+namespace Datadog.Trace.DiagnosticListeners
+{
+    public interface IEndpointFeature
+    {
+        [Datadog.Trace.DuckTyping.Duck(Name="Microsoft.AspNetCore.Http.Features.IEndpointFeature.get_Endpoint")]
+        Datadog.Trace.DiagnosticListeners.RouteEndpoint GetEndpoint();
+    }
+    [Datadog.Trace.DuckTyping.DuckCopy]
+    public struct RouteEndpoint
+    {
+        public string DisplayName;
+        public Datadog.Trace.DiagnosticListeners.RoutePattern RoutePattern;
+    }
+    [Datadog.Trace.DuckTyping.DuckCopy]
+    public struct RoutePattern
+    {
+        public System.Collections.IEnumerable PathSegments;
+        public string RawText;
+    }
+}
+namespace Datadog.Trace.DuckTyping
+{
+    public delegate T CreateProxyInstance<T>(object instance);
+    [System.AttributeUsage(System.AttributeTargets.Method | System.AttributeTargets.Property | System.AttributeTargets.Field | System.AttributeTargets.All, AllowMultiple=false)]
+    public class DuckAttribute : System.Attribute
+    {
+        public const System.Reflection.BindingFlags DefaultFlags = 124;
+        public DuckAttribute() { }
+        public System.Reflection.BindingFlags BindingFlags { get; set; }
+        public string ExplicitInterfaceTypeName { get; set; }
+        public string[] GenericParameterTypeNames { get; set; }
+        public Datadog.Trace.DuckTyping.DuckKind Kind { get; set; }
+        public string Name { get; set; }
+        public string[] ParameterTypeNames { get; set; }
+    }
+    [System.AttributeUsage(System.AttributeTargets.Struct | System.AttributeTargets.All, AllowMultiple=false)]
+    public class DuckCopyAttribute : System.Attribute
+    {
+        public DuckCopyAttribute() { }
+    }
+    [System.AttributeUsage(System.AttributeTargets.Method | System.AttributeTargets.Property | System.AttributeTargets.Field | System.AttributeTargets.All, AllowMultiple=false)]
+    public class DuckIgnoreAttribute : System.Attribute
+    {
+        public DuckIgnoreAttribute() { }
+    }
+    [System.AttributeUsage(System.AttributeTargets.Method | System.AttributeTargets.All, AllowMultiple=false)]
+    public class DuckIncludeAttribute : System.Attribute
+    {
+        public DuckIncludeAttribute() { }
+    }
+    public enum DuckKind
+    {
+        Property = 0,
+        Field = 1,
+    }
+    [System.AttributeUsage(System.AttributeTargets.Method | System.AttributeTargets.All)]
+    public class DuckReverseMethodAttribute : System.Attribute
+    {
+        public DuckReverseMethodAttribute() { }
+        public DuckReverseMethodAttribute(params string[] arguments) { }
+        public string[] Arguments { get; }
+    }
+    public static class DuckType
+    {
+        public static readonly System.Reflection.MethodInfo EnumToObjectMethodInfo;
+        public static readonly System.Reflection.MethodInfo GetTypeFromHandleMethodInfo;
+        public static bool CanCreate(System.Type proxyType, object instance) { }
+        public static bool CanCreate<T>(object instance) { }
+        public static Datadog.Trace.DuckTyping.IDuckType Create(System.Type proxyType, object instance) { }
+        public static T Create<T>(object instance) { }
+        public static Datadog.Trace.DuckTyping.DuckType.CreateTypeResult GetOrCreateProxyType(System.Type proxyType, System.Type targetType) { }
+        public readonly struct CreateTypeResult
+        {
+            public readonly bool Success;
+            public readonly System.Type TargetType;
+            public System.Type ProxyType { get; }
+            public bool CanCreate() { }
+            public T CreateInstance<T>(object instance) { }
+        }
+        public static class CreateCache<T>
+        {
+            public static readonly bool IsVisible;
+            public static readonly System.Type Type;
+            public static bool CanCreate(object instance) { }
+            public static T Create(object instance) { }
+            public static Datadog.Trace.DuckTyping.DuckType.CreateTypeResult GetProxy(System.Type targetType) { }
+        }
+        public static class DelegateCache<TProxyDelegate>
+            where TProxyDelegate : System.Delegate
+        {
+            public static TProxyDelegate GetDelegate() { }
+        }
+    }
+    public class DuckTypeException : System.Exception { }
+    public static class DuckTypeExtensions
+    {
+        public static object DuckAs(this object instance, System.Type targetType) { }
+        public static T DuckAs<T>(this object instance)
+            where T :  class { }
+        public static object DuckCast(this object instance, System.Type targetType) { }
+        public static T DuckCast<T>(this object instance) { }
+        public static bool DuckIs(this object instance, System.Type targetType) { }
+        public static bool DuckIs<T>(this object instance) { }
+        public static bool TryDuckCast(this object instance, System.Type targetType, out object value) { }
+        public static bool TryDuckCast<T>(this object instance, out T value) { }
+    }
+    public class DuckTypeFieldIsReadonlyException : Datadog.Trace.DuckTyping.DuckTypeException { }
+    public class DuckTypeInvalidTypeConversionException : Datadog.Trace.DuckTyping.DuckTypeException { }
+    public class DuckTypePropertyArgumentsLengthException : Datadog.Trace.DuckTyping.DuckTypeException { }
+    public class DuckTypePropertyCantBeReadException : Datadog.Trace.DuckTyping.DuckTypeException { }
+    public class DuckTypePropertyCantBeWrittenException : Datadog.Trace.DuckTyping.DuckTypeException { }
+    public class DuckTypePropertyOrFieldNotFoundException : Datadog.Trace.DuckTyping.DuckTypeException { }
+    public class DuckTypeProxyAndTargetMethodParameterSignatureMismatchException : Datadog.Trace.DuckTyping.DuckTypeException { }
+    public class DuckTypeProxyMethodParameterIsMissingException : Datadog.Trace.DuckTyping.DuckTypeException { }
+    public class DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException : Datadog.Trace.DuckTyping.DuckTypeException { }
+    public class DuckTypeProxyTypeDefinitionIsNull : Datadog.Trace.DuckTyping.DuckTypeException { }
+    public class DuckTypeStructMembersCannotBeChangedException : Datadog.Trace.DuckTyping.DuckTypeException { }
+    public class DuckTypeTargetMethodAmbiguousMatchException : Datadog.Trace.DuckTyping.DuckTypeException { }
+    public class DuckTypeTargetMethodNotFoundException : Datadog.Trace.DuckTyping.DuckTypeException { }
+    public class DuckTypeTargetObjectInstanceIsNull : Datadog.Trace.DuckTyping.DuckTypeException { }
+    public class DuckTypeTypeIsNotPublicException : Datadog.Trace.DuckTyping.DuckTypeException { }
+    public interface IDuckType
+    {
+        object Instance { get; }
+        System.Type Type { get; }
+    }
+}
+namespace Datadog.Trace.ExtensionMethods
+{
+    public static class SpanExtensions
+    {
+        public static void AddTagsFromDbCommand(this Datadog.Trace.Span span, System.Data.IDbCommand command) { }
+        public static void SetTraceSamplingPriority(this Datadog.Trace.Span span, Datadog.Trace.SamplingPriority samplingPriority) { }
+    }
+}
+namespace Datadog.Trace.Logging
+{
+    public interface ILogProvider
+    {
+        Datadog.Trace.Logging.Logger GetLogger(string name);
+        System.IDisposable OpenMappedContext(string key, object value, bool destructure = false);
+        System.IDisposable OpenNestedContext(string message);
+    }
+    public enum LogLevel
+    {
+        Trace = 0,
+        Debug = 1,
+        Info = 2,
+        Warn = 3,
+        Error = 4,
+        Fatal = 5,
+    }
+    public static class LogProvider
+    {
+        public static bool IsDisabled { get; set; }
+        public static void SetCurrentLogProvider(Datadog.Trace.Logging.ILogProvider logProvider) { }
+    }
+    public delegate bool Logger(Datadog.Trace.Logging.LogLevel logLevel, System.Func<string> messageFunc, System.Exception exception = null, params object[] formatParameters);
+}
+namespace Datadog.Trace.Logging.LogProviders
+{
+    public class LibLogException : System.Exception
+    {
+        public LibLogException(string message) { }
+        public LibLogException(string message, System.Exception inner) { }
+    }
+}
+namespace Datadog.Trace.ServiceFabric
+{
+    public interface IServiceRemotingFailedResponseEventArgs
+    {
+        System.Exception? Error { get; }
+    }
+    public interface IServiceRemotingRequestEventArgs
+    {
+        string? MethodName { get; }
+        Datadog.Trace.ServiceFabric.IServiceRemotingRequestMessage? Request { get; }
+        System.Uri? ServiceUri { get; }
+    }
+    public interface IServiceRemotingRequestMessage
+    {
+        Datadog.Trace.ServiceFabric.IServiceRemotingRequestMessageHeader GetHeader();
+    }
+    public interface IServiceRemotingRequestMessageHeader
+    {
+        int InterfaceId { get; }
+        string? InvocationId { get; }
+        int MethodId { get; }
+        string? MethodName { get; }
+        void AddHeader(string headerName, byte[] headerValue);
+        bool TryGetHeaderValue(string headerName, out byte[]? headerValue);
+    }
+}
+namespace System.Runtime.CompilerServices
+{
+    [System.AttributeUsage(System.AttributeTargets.Assembly | System.AttributeTargets.All, AllowMultiple=true)]
+    public class IgnoresAccessChecksToAttribute : System.Attribute { }
+}

@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,6 +18,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
     /// to be decorated with the correct operation. Since the original type is public,
     /// we not expect changes between minor versions of the GraphQL library.
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public enum OperationTypeProxy
     {
         /// <summary>

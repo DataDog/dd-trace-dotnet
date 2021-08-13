@@ -3,12 +3,16 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.ComponentModel;
+
 namespace Datadog.Trace.ClrProfiler
 {
     /// <summary>
     /// Specifies a safe version range for an integration.
     /// </summary>
-    public class IntegrationVersionRange
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    internal class IntegrationVersionRange
     {
         /// <summary>
         /// Gets the minimum major version.
@@ -41,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler
         public ushort MaximumPatch { get; private set; } = ushort.MaxValue;
 
         /// <summary>
-        /// Gets the MinimumMajor, MinimumMinor, and MinimumPatch properties.
+        /// Gets or sets the MinimumMajor, MinimumMinor, and MinimumPatch properties.
         /// Convenience property for setting target minimum version.
         /// </summary>
         public string MinimumVersion
@@ -69,7 +73,7 @@ namespace Datadog.Trace.ClrProfiler
         }
 
         /// <summary>
-        /// Gets the MaximumMajor, MaximumMinor, and MaximumPatch properties.
+        /// Gets or sets the MaximumMajor, MaximumMinor, and MaximumPatch properties.
         /// Convenience property for setting target maximum version.
         /// </summary>
         public string MaximumVersion

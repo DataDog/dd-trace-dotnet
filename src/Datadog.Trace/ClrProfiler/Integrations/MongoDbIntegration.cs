@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,6 +18,8 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     /// <summary>
     /// Tracing integration for MongoDB.Driver.Core.
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public static class MongoDbIntegration
     {
         internal const string IntegrationName = nameof(IntegrationIds.MongoDb);

@@ -6,6 +6,7 @@
 #if NETFRAMEWORK
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Web;
@@ -34,6 +35,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         MaximumVersion = Major5MinorX,
         IntegrationName = IntegrationName)]
     // ReSharper disable once InconsistentNaming
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class ApiController_ExecuteAsync_Integration
     {
         private const string SystemWebHttpAssemblyName = "System.Web.Http";

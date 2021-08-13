@@ -7,6 +7,7 @@
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.AspNetCore;
 #endif
+using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -32,6 +33,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         MinimumVersion = Major2,
         MaximumVersion = Major2,
         IntegrationName = nameof(IntegrationIds.AspNetCore))]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public static class AspNetCoreMiddlewareIntegration
     {
         private const string Major2 = "2";

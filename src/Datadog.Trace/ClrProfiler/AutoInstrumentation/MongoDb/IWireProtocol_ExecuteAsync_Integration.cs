@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.ClrProfiler.Integrations;
@@ -35,6 +36,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
         typeName: "MongoDB.Driver.Core.WireProtocol.KillCursorsWireProtocol",
         isGeneric: false)]
     // ReSharper disable once InconsistentNaming
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class IWireProtocol_ExecuteAsync_Integration
     {
         /// <summary>
