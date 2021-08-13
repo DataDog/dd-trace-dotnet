@@ -134,4 +134,13 @@ internal static partial class DotNetSettingsExtensions
 
         return settings.SetProcessToolPath(dotnetPath);
     }
+
+    public static DotNetTestSettings UseBlame(this DotNetTestSettings settings)
+    {
+        return settings.SetProcessArgumentConfigurator(
+            arg => arg
+                  .Add("--blame")
+                  .Add("--blame-crash")
+                  .Add("--blame-hang-timeout 15m"));
+    }
 }
