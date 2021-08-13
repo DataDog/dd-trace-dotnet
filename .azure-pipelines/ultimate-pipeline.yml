@@ -1070,26 +1070,26 @@ stages:
       inputs:
         command: 'build'
         arguments: '--configuration Release'
+        workingDirectory: $(System.DefaultWorkingDirectory)/test/test-applications/integrations/Samples.HttpMessageHandler
       displayName: 'dotnet build $(buildConfiguration)'
-      workingDirectory: $(System.DefaultWorkingDirectory)/test/test-applications/integrations/Samples.HttpMessageHandler
 
     - task: DotNetCoreCLI@2
       inputs:
         command: 'build'
         arguments: '--configuration Release'
+        workingDirectory: $(System.DefaultWorkingDirectory)/test/test-applications/integrations/Samples.FakeDbCommand
       displayName: 'dotnet build $(buildConfiguration)'
-      workingDirectory: $(System.DefaultWorkingDirectory)/test/test-applications/integrations/Samples.FakeDbCommand
 
     - task: GoTool@0
       inputs:
         version: '1.16'
-      workingDirectory: $(System.DefaultWorkingDirectory)
+        workingDirectory: $(System.DefaultWorkingDirectory)
 
     - task: Go@0
       inputs:
         command: 'install'
         arguments: 'github.com/tonyredondo/timeit@latest'
-      workingDirectory: $(System.DefaultWorkingDirectory)
+        workingDirectory: $(System.DefaultWorkingDirectory)
 
     - script: run.cmd
       workingDirectory: $(System.DefaultWorkingDirectory)/build/timeit/Samples.HttpMessageHandler
