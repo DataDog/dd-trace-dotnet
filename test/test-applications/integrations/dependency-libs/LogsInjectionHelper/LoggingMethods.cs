@@ -38,8 +38,8 @@ namespace PluginApplication
             // Set up Tracer and start a trace
             var settings = TracerSettings.FromDefaultSources();
             settings.LogsInjectionEnabled = true;
-            settings.Environment ??= "dev"; // Later we can test when Environment=null / dd.env=null
-            settings.ServiceVersion ??= "1.0.0"; // Later we can test when ServiceVersion=null / dd.service=null
+            settings.Environment ??= "dev"; // Ensure that we have an env value. In CI, this will automatically be assigned. Later we can test that everything is fine when Environment=null
+            settings.ServiceVersion ??= "1.0.0"; // Ensure that we have an env value. In CI, this will automatically be assigned. Later we can test that everything is fine when when ServiceVersion=null
             Tracer.Instance = new Tracer(settings);
 
             try
