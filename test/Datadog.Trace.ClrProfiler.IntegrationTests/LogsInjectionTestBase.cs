@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
@@ -30,6 +31,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     prependSamplesToAppName: false),
                 output)
         {
+        }
+
+        public enum UnTracedLogTypes
+        {
+            /// <summary>
+            /// UnTraced logs do not include any dd_ properties
+            /// </summary>
+            None,
+
+            /// <summary>
+            /// UnTraced logs include the dd_ properties, but without any values
+            /// </summary>
+            EmptyProperties,
+
+            /// <summary>
+            /// UnTraced logs include dd_service, dd_env, and dd_version with their correct values
+            /// but no dd_trace_id
+            /// </summary>
+            EnvServiceTracingPropertiesOnly,
         }
 
         public string[] GetLogFileContents(string logFile)
@@ -58,7 +78,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             throw new Exception("Unable to Fetch Log File Contents", ex);
         }
 
-        public void ValidateLogCorrelation(IEnumerable<MockTracerAgent.Span> spans, IEnumerable<LogFileTest> logFileTestCases, Func<string, bool> additionalInjectedLogFilter = null)
+        public void ValidateLogCorrelation(IReadOnlyCollection<MockTracerAgent.Span> spans, IEnumerable<LogFileTest> logFileTestCases, Func<string, bool> additionalInjectedLogFilter = null)
         {
             foreach (var test in logFileTestCases)
             {
@@ -82,46 +102,67 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     }
                 }
 
+                var versionProperty = test.PropertiesUseSerilogNaming ? "dd_version" : @"dd\.version";
+                var envProperty = test.PropertiesUseSerilogNaming ? "dd_env" : @"dd\.env";
+                var serviceProperty = test.PropertiesUseSerilogNaming ? "dd_service" : @"dd\.service";
+                var traceIdProperty = test.PropertiesUseSerilogNaming ? "dd_trace_id" : @"dd\.trace_id";
+                var spanIdProperty = test.PropertiesUseSerilogNaming ? "dd_span_id" : @"dd\.span_id";
+
+                var versionRegex = string.Format(test.RegexFormat, versionProperty, @"""1.0.0""");
+                var envRegex = string.Format(test.RegexFormat, envProperty, @"""integration_tests""");
+                var serviceRegex = string.Format(test.RegexFormat, serviceProperty, @$"""{EnvironmentHelper.FullSampleName}""");
+                var traceIdRegex = string.Format(test.RegexFormat, traceIdProperty, @"("")?(\d\d+)(?(1)\1|)"); // Match a string of digits or string of digits surrounded by double quotes. See https://stackoverflow.com/a/3569031
+                var spanIdRegex = string.Format(test.RegexFormat, spanIdProperty, @"("")?(\d\d+)(?(1)\1|)"); // Match a string of digits or string of digits surrounded by double quotes. See https://stackoverflow.com/a/3569031
+
                 foreach (var log in tracedLogs)
                 {
-                    if (test.PropertiesUseSerilogNaming)
-                    {
-                        log.Should().MatchRegex(string.Format(test.RegexFormat, "dd_version", "1.0.0"));
-                        log.Should().MatchRegex(string.Format(test.RegexFormat, "dd_env", "integration_tests"));
-                        log.Should().MatchRegex(string.Format(test.RegexFormat, "dd_service", EnvironmentHelper.FullSampleName));
-                        log.Should().NotMatchRegex(string.Format(test.RegexFormat, "dd_trace_id", "0"));
-                    }
-                    else
-                    {
-                        log.Should().MatchRegex(string.Format(test.RegexFormat, @"dd\.version", "1.0.0"));
-                        log.Should().MatchRegex(string.Format(test.RegexFormat, @"dd\.env", "integration_tests"));
-                        log.Should().MatchRegex(string.Format(test.RegexFormat, @"dd\.service", EnvironmentHelper.FullSampleName));
-                        log.Should().NotMatchRegex(string.Format(test.RegexFormat, @"dd\.trace_id", "0"));
-                    }
+                    log.Should()
+                       .MatchRegex(versionRegex)
+                       .And.MatchRegex(envRegex)
+                       .And.MatchRegex(serviceRegex)
+                       .And.MatchRegex(traceIdRegex)
+                       .And.MatchRegex(spanIdRegex);
                 }
 
-                if (!test.PropertiesAreAlwaysPresent)
+                // expect all SpanIDs in the traced logs to be represented in span list
+                var spanIdsInLogs = tracedLogs.Select(log => Regex.Match(log, spanIdRegex).Groups[2].Value);
+                var spanIds = spans.Select(x => x.SpanId.ToString()).Distinct().ToList();
+                if (spanIdsInLogs.Any())
                 {
-                    var unTracedLogs = logs.Where(log => log.Contains(_excludeMessagePrefix)).ToList();
+                    spanIds.Should().Contain(spanIdsInLogs);
+                }
 
-                    foreach (var log in unTracedLogs)
+                var unTracedLogs = logs.Where(log => log.Contains(_excludeMessagePrefix)).ToList();
+
+                foreach (var log in unTracedLogs)
+                {
+                    switch (test.UnTracedLogTypes)
                     {
-                        if (test.PropertiesUseSerilogNaming)
-                        {
+                        case UnTracedLogTypes.None:
                             log.Should()
-                               .NotMatchRegex("dd_version")
-                               .And.NotMatchRegex("dd_env")
-                               .And.NotMatchRegex("dd_service")
-                               .And.NotMatchRegex("dd_trace_id");
-                        }
-                        else
-                        {
+                               .NotMatchRegex(versionProperty)
+                               .And.NotMatchRegex(envProperty)
+                               .And.NotMatchRegex(serviceProperty)
+                               .And.NotMatchRegex(traceIdProperty)
+                               .And.NotMatchRegex(spanIdProperty);
+                            break;
+                        case UnTracedLogTypes.EmptyProperties:
                             log.Should()
-                               .NotMatchRegex(@"dd\.version")
-                               .And.NotMatchRegex(@"dd\.env")
-                               .And.NotMatchRegex(@"dd\.service")
-                               .And.NotMatchRegex(@"dd\.trace_id");
-                        }
+                               .MatchRegex(versionProperty)
+                               .And.MatchRegex(envProperty)
+                               .And.MatchRegex(serviceProperty)
+                               .And.MatchRegex(traceIdProperty)
+                               .And.MatchRegex(spanIdProperty);
+                            break;
+                        case UnTracedLogTypes.EnvServiceTracingPropertiesOnly:
+                            log.Should().MatchRegex(versionRegex);
+                            log.Should().MatchRegex(envRegex);
+                            log.Should().MatchRegex(serviceRegex);
+                            log.Should().NotMatchRegex(traceIdProperty);
+                            log.Should().NotMatchRegex(spanIdProperty);
+                            break;
+                        default:
+                            throw new InvalidOperationException("Unknown UnTracedLogType: " + test.UnTracedLogTypes);
                     }
                 }
             }
@@ -133,7 +174,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             public string RegexFormat { get; set; }
 
-            public bool PropertiesAreAlwaysPresent { get; set; }
+            public UnTracedLogTypes UnTracedLogTypes { get; set; }
 
             public bool PropertiesUseSerilogNaming { get; set; }
         }

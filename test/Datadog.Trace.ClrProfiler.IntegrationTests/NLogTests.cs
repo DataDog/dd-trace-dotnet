@@ -17,8 +17,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new LogFileTest()
                 {
                     FileName = "log-textFile.log",
-                    RegexFormat = @"{0}: ""{1}""",
-                    PropertiesAreAlwaysPresent = true,
+                    RegexFormat = @"{0}: {1}",
+                    UnTracedLogTypes = UnTracedLogTypes.EmptyProperties,
                     PropertiesUseSerilogNaming = false
                 }
             };
@@ -28,15 +28,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new LogFileTest()
                 {
                     FileName = "log-textFile.log",
-                    RegexFormat = @"{0}: ""{1}""",
-                    PropertiesAreAlwaysPresent = true,
+                    RegexFormat = @"{0}: {1}",
+                    UnTracedLogTypes = UnTracedLogTypes.EmptyProperties,
                     PropertiesUseSerilogNaming = false
                 },
                 new LogFileTest()
                 {
                     FileName = "log-jsonFile.log",
-                    RegexFormat = @"""{0}"": ""{1}""",
-                    PropertiesAreAlwaysPresent = true,
+                    RegexFormat = @"""{0}"": {1}",
+                    UnTracedLogTypes = UnTracedLogTypes.None,
                     PropertiesUseSerilogNaming = false
                 }
             };
