@@ -31,10 +31,4 @@
   <ItemGroup Condition="'$(TargetFramework)' != 'net452'">
     <PackageReference Include="Microsoft.Data.SqlClient" Version="2.0.1" />
   </ItemGroup>
-
-  <ItemGroup Condition=" !$(TargetFramework.StartsWith('net4')) ">
-    <PackageReference Include="Microsoft.AspNetCore" Version="2.2.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
-    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="2.2.0" />
-  </ItemGroup>
 </Project>
