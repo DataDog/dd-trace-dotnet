@@ -36,8 +36,8 @@ namespace PluginApplication
 #endif
 
             // Set up Tracer and start a trace
+            // Do not explicitly set LogsInjectionEnabled = true, use DD_LOGS_INJECTION environment variable to enable
             var settings = TracerSettings.FromDefaultSources();
-            settings.LogsInjectionEnabled = true;
             settings.Environment ??= "dev"; // Ensure that we have an env value. In CI, this will automatically be assigned. Later we can test that everything is fine when Environment=null
             settings.ServiceVersion ??= "1.0.0"; // Ensure that we have an env value. In CI, this will automatically be assigned. Later we can test that everything is fine when when ServiceVersion=null
             Tracer.Instance = new Tracer(settings);

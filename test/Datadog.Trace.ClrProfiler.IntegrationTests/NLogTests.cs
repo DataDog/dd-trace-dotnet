@@ -52,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("Category", "LinuxUnsupported")]
-        public void InjectsLogs(string packageVersion)
+        public void InjectsLogsWhenEnabled(string packageVersion)
         {
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
 
@@ -72,6 +72,35 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 else
                 {
                     ValidateLogCorrelation(spans, _nlogPre40LogFileTests);
+                }
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(PackageVersions.NLog), MemberType = typeof(PackageVersions))]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("Category", "LinuxUnsupported")]
+        public void DoesNotInjectLogsWhenDisabled(string packageVersion)
+        {
+            SetEnvironmentVariable("DD_LOGS_INJECTION", "false");
+
+            int agentPort = TcpPortProvider.GetOpenPort();
+            using (var agent = new MockTracerAgent(agentPort))
+            using (var processResult = RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
+            {
+                Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode} and exception: {processResult.StandardError}");
+
+                var spans = agent.WaitForSpans(1, 2500);
+                Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
+
+                if (string.IsNullOrWhiteSpace(packageVersion) || new Version(packageVersion) >= new Version("4.0.0"))
+                {
+                    ValidateLogCorrelation(spans, _nlog40LogFileTests, disableLogCorrelation: true);
+                }
+                else
+                {
+                    ValidateLogCorrelation(spans, _nlogPre40LogFileTests, disableLogCorrelation: true);
                 }
             }
         }

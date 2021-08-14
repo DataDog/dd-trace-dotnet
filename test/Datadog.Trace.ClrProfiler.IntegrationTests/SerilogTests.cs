@@ -4,6 +4,8 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -36,6 +38,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     FileName = "log-textFile.log",
                     RegexFormat = @"{0}: {1}",
+                    TracedLogTypes = TracedLogTypes.NotCorrelated,
                     UnTracedLogTypes = UnTracedLogTypes.EmptyProperties,
                     PropertiesUseSerilogNaming = true
                 }
@@ -52,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("Category", "LinuxUnsupported")]
-        public void InjectsLogs(string packageVersion)
+        public void InjectsLogsWhenEnabled(string packageVersion)
         {
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
 
@@ -72,7 +75,37 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 else
                 {
                     // We do not expect logs injection for Serilog versions < 2.0.0 so filter out all logs
-                    ValidateLogCorrelation(spans, _logPre200FileTests, additionalInjectedLogFilter: (_) => false);
+                    ValidateLogCorrelation(spans, _logPre200FileTests);
+                }
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(PackageVersions.Serilog), MemberType = typeof(PackageVersions))]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("Category", "LinuxUnsupported")]
+        public void DoesNotInjectLogsWhenDisabled(string packageVersion)
+        {
+            SetEnvironmentVariable("DD_LOGS_INJECTION", "false");
+
+            int agentPort = TcpPortProvider.GetOpenPort();
+            using (var agent = new MockTracerAgent(agentPort))
+            using (var processResult = RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
+            {
+                Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode} and exception: {processResult.StandardError}");
+
+                var spans = agent.WaitForSpans(1, 2500);
+                Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
+
+                if (string.IsNullOrWhiteSpace(packageVersion) || new Version(packageVersion) >= new Version("2.0.0"))
+                {
+                    ValidateLogCorrelation(spans, _log200FileTests, disableLogCorrelation: true);
+                }
+                else
+                {
+                    // We do not expect logs injection for Serilog versions < 2.0.0 so filter out all logs
+                    ValidateLogCorrelation(spans, _logPre200FileTests, disableLogCorrelation: true);
                 }
             }
         }

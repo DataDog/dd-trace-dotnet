@@ -33,6 +33,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
         }
 
+        public enum TracedLogTypes
+        {
+            /// <summary>
+            /// Traced logs that include all dd_ properties
+            /// </summary>
+            Correlated,
+
+            /// <summary>
+            /// Traced logs that do not include any dd_ properties
+            /// </summary>
+            NotCorrelated
+        }
+
         public enum UnTracedLogTypes
         {
             /// <summary>
@@ -78,27 +91,43 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             throw new Exception("Unable to Fetch Log File Contents", ex);
         }
 
-        public void ValidateLogCorrelation(IReadOnlyCollection<MockTracerAgent.Span> spans, IEnumerable<LogFileTest> logFileTestCases, Func<string, bool> additionalInjectedLogFilter = null)
+        public void ValidateLogCorrelation(IReadOnlyCollection<MockTracerAgent.Span> spans, IEnumerable<LogFileTest> logFileTestCases, bool disableLogCorrelation = false, Func<string, bool> additionalInjectedLogFilter = null)
         {
             foreach (var test in logFileTestCases)
             {
+                // If we're testing a scenario without log correlation, disable the test case expectation of traced logs
+                if (disableLogCorrelation)
+                {
+                    test.TracedLogTypes = TracedLogTypes.NotCorrelated;
+                }
+
                 var logFilePath = Path.Combine(EnvironmentHelper.GetSampleApplicationOutputDirectory(), test.FileName);
                 var logs = GetLogFileContents(logFilePath);
                 logs.Should().NotBeNullOrEmpty();
 
-                using var s = new AssertionScope(test.FileName);
+                // using var s = new AssertionScope(test.FileName);
 
                 // Assumes we _only_ have logs for logs within traces + our startup log
                 additionalInjectedLogFilter ??= (_) => true;
                 var tracedLogs = logs.Where(log => !log.Contains(_excludeMessagePrefix)).Where(additionalInjectedLogFilter).ToList();
 
-                // all spans should be represented in the traced logs
+                // Ensure that all spans are represented (when correlated) or no spans are represented (when not correlated) in the traced logs
                 if (tracedLogs.Any())
                 {
                     var traceIds = spans.Select(x => x.TraceId.ToString()).Distinct().ToList();
                     if (traceIds.Any())
                     {
-                        string.Join(",", tracedLogs).Should().ContainAll(traceIds);
+                        switch (test.TracedLogTypes)
+                        {
+                            case TracedLogTypes.Correlated:
+                                string.Join(",", tracedLogs).Should().ContainAll(traceIds);
+                                break;
+                            case TracedLogTypes.NotCorrelated:
+                                string.Join(",", tracedLogs).Should().NotContainAny(traceIds);
+                                break;
+                            default:
+                                throw new InvalidOperationException("Unknown TracedLogType: " + test.TracedLogTypes);
+                        }
                     }
                 }
 
@@ -116,20 +145,38 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var log in tracedLogs)
                 {
-                    log.Should()
-                       .MatchRegex(versionRegex)
-                       .And.MatchRegex(envRegex)
-                       .And.MatchRegex(serviceRegex)
-                       .And.MatchRegex(traceIdRegex)
-                       .And.MatchRegex(spanIdRegex);
+                    switch (test.TracedLogTypes)
+                    {
+                        case TracedLogTypes.Correlated:
+                            log.Should()
+                               .MatchRegex(versionRegex)
+                               .And.MatchRegex(envRegex)
+                               .And.MatchRegex(serviceRegex)
+                               .And.MatchRegex(traceIdRegex)
+                               .And.MatchRegex(spanIdRegex);
+                            break;
+                        case TracedLogTypes.NotCorrelated:
+                            log.Should()
+                               .NotMatchRegex(versionRegex)
+                               .And.NotMatchRegex(envRegex)
+                               .And.NotMatchRegex(serviceRegex)
+                               .And.NotMatchRegex(traceIdRegex)
+                               .And.NotMatchRegex(spanIdRegex);
+                            break;
+                        default:
+                            throw new InvalidOperationException("Unknown TracedLogType: " + test.TracedLogTypes);
+                    }
                 }
 
-                // expect all SpanIDs in the traced logs to be represented in span list
-                var spanIdsInLogs = tracedLogs.Select(log => Regex.Match(log, spanIdRegex).Groups[2].Value);
-                var spanIds = spans.Select(x => x.SpanId.ToString()).Distinct().ToList();
-                if (spanIdsInLogs.Any())
+                // If logs are correlated, expect all SpanIDs in the traced logs to be represented in span list
+                if (test.TracedLogTypes == TracedLogTypes.Correlated)
                 {
-                    spanIds.Should().Contain(spanIdsInLogs);
+                    var spanIdsInLogs = tracedLogs.Select(log => Regex.Match(log, spanIdRegex).Groups[2].Value);
+                    var spanIds = spans.Select(x => x.SpanId.ToString()).Distinct().ToList();
+                    if (spanIdsInLogs.Any())
+                    {
+                        spanIds.Should().Contain(spanIdsInLogs);
+                    }
                 }
 
                 var unTracedLogs = logs.Where(log => log.Contains(_excludeMessagePrefix)).ToList();
@@ -173,6 +220,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             public string FileName { get; set; }
 
             public string RegexFormat { get; set; }
+
+            public TracedLogTypes TracedLogTypes { get; set; }
 
             public UnTracedLogTypes UnTracedLogTypes { get; set; }
 
