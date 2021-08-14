@@ -24,7 +24,6 @@
   <ItemGroup>
     <ProjectReference Include="..\dependency-libs\LogsInjectionHelper\LogsInjectionHelper.csproj" />
     <ProjectReference Include="..\dependency-libs\PluginApplication\PluginApplication.csproj" />
-    <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
 
   <ItemGroup>
