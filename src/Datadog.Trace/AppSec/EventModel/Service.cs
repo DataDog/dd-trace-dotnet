@@ -22,7 +22,7 @@ namespace Datadog.Trace.AppSec.EventModel
         [JsonProperty("version")]
         public string Version { get; set; }
 
-        [JsonProperty("when", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonPropertyIgnoreNullValue("when")]
         public DateTimeOffset? When { get; set; }
     }
 }
