@@ -1,0 +1,11 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <LoadManagedProfilerFromProfilerDirectory>true</LoadManagedProfilerFromProfilerDirectory>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MongoDB.Driver" Version="2.13.1" />
+    <PackageReference Include="NServiceBus" Version="7.5.0" />
+    <PackageReference Include="NServiceBus.Storage.MongoDB" Version="2.2.0" />
+  </ItemGroup>
+</Project>
