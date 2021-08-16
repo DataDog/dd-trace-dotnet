@@ -1,0 +1,113 @@
+﻿@model List<KeyValuePair<string, string>>
+@using System.Linq
+
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<script>
+    window.post = function (url, data) {
+        let fullUrl = window.location + url;
+        console.log(fullUrl);
+        return fetch(url, { method: "POST", headers: { 'Content-Type': 'application/json' }, body: data });
+    }
+
+    window.postData = function () {
+        post("/data", "{\"field\": \"1.0\"}");
+    }
+</script>
+
+<div class="container">
+    <h1>Welcome to .Net Weblog</h1>
+
+    <div>
+        @Html.ActionLink("Health", "Index", "Health")
+    </div>
+
+    <div>
+        @Html.ActionLink("GET /?q=&lt;script&gt;alert(10)&lt;%2Fscript&gt;", "Index", new { q = new HtmlString("<script>alert(10)</script>") })
+    </div>
+
+    <div>
+        @Html.ActionLink("GET /render/{str}", "Index", "Render", new { str = "test!" }, null)
+    </div>
+
+    <div>
+        <p>
+            @Html.ActionLink("GET /posts/{id}", "Index", "Posts", new { id = "1" }, null)
+
+        </p>
+        <ul>
+            <li>
+                @Html.ActionLink("GET /posts/{id}", "Index", "Posts", new { id = "1 OR 1=1" }, null)
+            </li>
+            <li><a href="/posts/1 UNION SELECT 1, [UserName], [PasswordHash] FROM [AspNetUsers]">GET /posts/1 UNION SELECT 1, [UserName], [PasswordHash] FROM [AspNetUsers]</a></li>
+            <li><a href="/posts/1?xss_message=%22value%22">GET /posts/1?xss_message="value"</a></li>
+        </ul>
+    </div>
+
+    <div><a href="javascript:postData()">POST /data</a></div>
+
+    <div>@Html.ActionLink("GET /?arg=database()", "Index", new { arg = "database()" });</div>
+    <a href="@(Url.Action("Index", "Home"))?arg=[$slice]">GET /?arg=[$slice]</a>
+
+    <div>
+        @Html.Raw(Context.Request["q"])
+    </div>
+
+    <div>&nbsp;</div>
+
+</div>
+
+<div class="container">
+    <table class="table table-striped table-hover">
+        <tbody>
+            <tr>
+                <th scope="row">Application bitness</th>
+                <td>@(Environment.Is64BitProcess ? "64-bit" : "32-bit")</td>
+            </tr>
+            <tr>
+                <th scope="row">Profiler attached</th>
+                <td>@Datadog.Trace.ClrProfiler.Instrumentation.ProfilerAttached</td>
+            </tr>
+            <tr>
+                <th scope="row">Datadog.Trace.dll path</th>
+                <td>@typeof(Datadog.Trace.Tracer).Assembly.Location</td>
+            </tr>
+            <tr>
+                <th scope="row">Datadog.Trace.ClrProfiler.Managed.dll</th>
+                <td>@typeof(Datadog.Trace.ClrProfiler.Instrumentation).Assembly.Location</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="container">
+    <div>Environment Variables:</div>
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Any())
+            {
+                foreach (var envVar in Model)
+                {
+                    <tr>
+                        <th scope="row">@envVar.Key</th>
+                        <td>@envVar.Value</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="2">(empty)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

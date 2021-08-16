@@ -4,8 +4,12 @@
 // </copyright>
 
 using System;
+using System.IO;
 using System.Net;
 using System.Threading.Tasks;
+using Datadog.Trace.Abstractions;
+using Datadog.Trace.AppSec;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Agent.Transports
 {
@@ -49,6 +53,32 @@ namespace Datadog.Trace.Agent.Transports
             {
                 // If the exception is caused by an error status code, ignore it and let the caller handle the result
                 return new ApiWebResponse((HttpWebResponse)exception.Response);
+            }
+        }
+
+        public async Task<IApiResponse> PostAsJsonAsync(IEvent events, JsonSerializer serializer)
+        {
+            _request.Method = "POST";
+            _request.ContentType = "application/json";
+
+            using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
+            {
+                using (var writer = new JsonTextWriter(new StreamWriter(requestStream)))
+                {
+                    serializer.Serialize(writer, events);
+                    await writer.FlushAsync();
+                    try
+                    {
+                        var httpWebResponse = (HttpWebResponse)await _request.GetResponseAsync().ConfigureAwait(false);
+                        return new ApiWebResponse(httpWebResponse);
+                    }
+                    catch (WebException exception)
+                        when (exception.Status == WebExceptionStatus.ProtocolError && exception.Response != null)
+                    {
+                        // If the exception is caused by an error status code, ignore it and let the caller handle the result
+                        return new ApiWebResponse((HttpWebResponse)exception.Response);
+                    }
+                }
             }
         }
     }

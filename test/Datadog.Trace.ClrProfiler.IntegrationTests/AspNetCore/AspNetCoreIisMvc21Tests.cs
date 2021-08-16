@@ -8,6 +8,7 @@
 #pragma warning disable SA1649 // File name must match first type name
 using System.Net;
 using System.Threading.Tasks;
+using Datadog.Trace.TestHelpers;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -59,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
 
-            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, statusCode);
+            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, (int)statusCode);
 
             // Overriding the type name here as we have multiple test classes in the file
             // Ensures that we get nice file nesting in Solution Explorer

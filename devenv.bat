@@ -8,6 +8,7 @@ rem Set default values
 set profiler_platform=x64
 set profiler_configuration=Debug
 set start_visual_studio=true
+set start_rider=false
 set vs_sln_name=Datadog.Trace.sln
 
 :next_argument
@@ -26,6 +27,11 @@ if not "%devenv_arg1%" == "" (
         set start_visual_studio=true
     ) else if /i "%devenv_arg1%" == "vs-" (
         set start_visual_studio=false
+    ) else if /i "%devenv_arg1%" == "rider" (
+        set start_visual_studio=false
+        set start_rider=true
+    )    else if /i "%devenv_arg1:~-3%" == "sln" (
+        set vs_sln_name=%devenv_arg1%
     ) else (
         echo Invalid option: "%devenv_arg1%".
         goto show_usage
@@ -46,9 +52,10 @@ rem Enable .NET Core Profiling API
 SET CORECLR_ENABLE_PROFILING=1
 SET CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}
 SET CORECLR_PROFILER_PATH=%~dp0\src\Datadog.Trace.ClrProfiler.Native\bin\%profiler_configuration%\%profiler_platform%\Datadog.Trace.ClrProfiler.Native.dll
+SET DD_APPSEC_ENABLED=false
 
 rem Don't attach the profiler to these processes
-SET DD_PROFILER_EXCLUDE_PROCESSES=devenv.exe;Microsoft.ServiceHub.Controller.exe;ServiceHub.Host.CLR.exe;ServiceHub.TestWindowStoreHost.exe;ServiceHub.DataWarehouseHost.exe;sqlservr.exe;VBCSCompiler.exe;iisexpresstray.exe;msvsmon.exe;PerfWatson2.exe;ServiceHub.IdentityHost.exe;ServiceHub.VSDetouredHost.exe;ServiceHub.SettingsHost.exe;ServiceHub.Host.CLR.x86.exe;vstest.console.exe;ServiceHub.RoslynCodeAnalysisService32.exe;testhost.x86.exe;MSBuild.exe;ServiceHub.ThreadedWaitDialog.exe
+SET DD_PROFILER_EXCLUDE_PROCESSES=devenv.exe;JetBrains.DPA.Runner.exe;JetBrains.Debugger.Worker.exe;Rider.Backend64.exe;Microsoft.ServiceHub.Controller.exe;ServiceHub.Host.CLR.exe;ServiceHub.TestWindowStoreHost.exe;ServiceHub.DataWarehouseHost.exe;sqlservr.exe;VBCSCompiler.exe;iisexpresstray.exe;msvsmon.exe;PerfWatson2.exe;ServiceHub.IdentityHost.exe;ServiceHub.VSDetouredHost.exe;ServiceHub.SettingsHost.exe;ServiceHub.Host.CLR.x86.exe;vstest.console.exe;ServiceHub.RoslynCodeAnalysisService32.exe;testhost.x86.exe;MSBuild.exe;ServiceHub.ThreadedWaitDialog.exe
 
 rem Set dotnet tracer home path
 SET DD_DOTNET_TRACER_HOME=%~dp0
@@ -61,21 +68,30 @@ if "%start_visual_studio%" == "true" (
         START "Visual Studio" "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Professional\Common7\IDE\devenv.exe" "%~dp0\%vs_sln_name%"
     ) ELSE IF EXIST "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Community\Common7\IDE\devenv.exe" (
         START "Visual Studio" "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Community\Common7\IDE\devenv.exe" "%~dp0\%vs_sln_name%"
+    ) ELSE IF EXIST "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\devenv.exe" (
+        START "Visual Studio" "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\devenv.exe" "%~dp0\%vs_sln_name%"
     ) ELSE IF EXIST "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Professional\Common7\IDE\devenv.exe" (
         START "Visual Studio" "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Professional\Common7\IDE\devenv.exe" "%~dp0\%vs_sln_name%"
     ) ELSE (
         START "Visual Studio" "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\IDE\devenv.exe" "%~dp0\%vs_sln_name%"
     )
+) else if "%start_rider%" == "true" (
+    echo %~dp0%
+    SETLOCAL EnableDelayedExpansion
+    echo !vs_sln_name!
+        START "Rider" "%ProgramFiles%\JetBrains\JetBrains Rider 2021.2\bin\rider.bat" %~dp0\%vs_sln_name%
 )
 goto end
 
 :show_usage
-echo Usage: %0 [Release^|Debug] [x64^|x86] [vs+^|vs-]
+echo Usage: %0 [Release^|Debug] [x64^|x86] [vs+^|vs-] [sln name with sln extension]
 echo   All arguments are optional and can be provided in any order.
 echo   If an argument is provided multiple times, the last value wins.
 echo   The default configuration is "Release".
 echo   The default platform is "x64".
-echo   Visual Studio is started unless "vs-" is specified.
+echo   Visual Studio is started unless "vs-" or "rider" is specified.
+echo   Rider is started with argument "rider"
+echo   The default solution is "Datadog.Trace.sln"
 
 :end
 rem Clear temporary values
@@ -84,4 +100,3 @@ set profiler_configuration=
 set start_visual_studio=
 set vs_sln_name=
 set devenv_arg1=
-set devenv_arg1_sub7=

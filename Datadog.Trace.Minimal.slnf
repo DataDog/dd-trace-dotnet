@@ -1,0 +1,13 @@
+{
+  "solution": {
+    "path": "Datadog.Trace.sln",
+    "projects": [
+      "src\\Datadog.Trace.ClrProfiler.Managed.Loader\\Datadog.Trace.ClrProfiler.Managed.Loader.csproj",
+      "src\\Datadog.Trace.ClrProfiler.Native\\Datadog.Trace.ClrProfiler.Native.DLL.vcxproj",
+      "src\\Datadog.Trace.ClrProfiler.Native\\Datadog.Trace.ClrProfiler.Native.vcxproj",
+      "src\\Datadog.Trace.MSBuild\\Datadog.Trace.MSBuild.csproj",
+      "src\\Datadog.Trace.Tools.Analyzers\\Datadog.Trace.Tools.Analyzers.csproj",
+      "src\\Datadog.Trace\\Datadog.Trace.csproj"
+    ]
+  }
+}

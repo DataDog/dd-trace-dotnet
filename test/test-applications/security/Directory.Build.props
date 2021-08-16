@@ -1,0 +1,23 @@
+<Project>
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="$(SecurityLibraryDirectory)\*.dll;$(SecurityLibraryDirectory)\*.pdb"
+          CopyToOutputDirectory="Always"
+          CopyToPublishDirectory="Always"
+          Link="profiler-lib\%(RecursiveDir)\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="libsqreen" Version="1.1.2.3" GeneratePathProperty="true" />
+    <SecurityLibraryFiles Include="$(Pkglibsqreen)\runtimes\**\*.*" />
+  </ItemGroup>
+
+  <Target Name="AfterBuildCopyManagedProfiler" AfterTargets="AfterBuild">
+    <Copy SourceFiles="@(ManagedProfilerFiles)" DestinationFolder="$(OutputPath)profiler-lib\%(RecursiveDir)" />
+    <Copy SourceFiles="@(SecurityLibraryFiles)" DestinationFolder="$(OutputPath)profiler-lib\%(RecursiveDir)" />
+  </Target>
+</Project>

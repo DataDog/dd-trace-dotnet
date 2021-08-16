@@ -139,7 +139,7 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        private static IApiRequestFactory CreateRequestFactory()
+        internal static IApiRequestFactory CreateRequestFactory()
         {
 #if NETCOREAPP
             Log.Information("Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));

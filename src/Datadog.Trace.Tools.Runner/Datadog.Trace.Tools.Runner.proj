@@ -34,7 +34,7 @@
 
   <Target Name="BuildCSharpProjects">
     <ItemGroup>
-      <ManagedProject Include="..\Datadog.Trace.ClrProfiler.Managed\Datadog.Trace.ClrProfiler.Managed.csproj" />
+      <ManagedProject Include="..\Datadog.Trace\Datadog.Trace.csproj" />
 
       <ManagedProfilerPublishProject Include="@(ManagedProject)">
         <Properties>TargetFramework=net45;PublishDir=@(TracerHomeDirectory)\net45</Properties>

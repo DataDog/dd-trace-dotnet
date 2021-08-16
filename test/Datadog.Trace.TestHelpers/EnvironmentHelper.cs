@@ -11,6 +11,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
+using Datadog.Trace.Configuration;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers
@@ -143,7 +144,9 @@ namespace Datadog.Trace.TestHelpers
                 "DD_DISABLED_INTEGRATIONS",
                 "DD_SERVICE",
                 "DD_VERSION",
-                "DD_TAGS"
+                "DD_TAGS",
+                "DD_APPSEC_ENABLED",
+                "DD_TRACE_CALLTARGET_ENABLED"
             };
 
             foreach (string variable in environmentVariables)
@@ -157,7 +160,10 @@ namespace Datadog.Trace.TestHelpers
             int aspNetCorePort,
             int? statsdPort,
             StringDictionary environmentVariables,
-            string processToProfile = null)
+            string processToProfile = null,
+            bool enableSecurity = false,
+            bool enableBlocking = false,
+            bool callTargetEnabled = false)
         {
             string profilerEnabled = _requiresProfiling ? "1" : "0";
             string profilerPath;
@@ -186,6 +192,11 @@ namespace Datadog.Trace.TestHelpers
                 environmentVariables["DD_TRACE_DEBUG"] = "1";
             }
 
+            if (callTargetEnabled)
+            {
+                environmentVariables["DD_TRACE_CALLTARGET_ENABLED"] = "1";
+            }
+
             if (!string.IsNullOrEmpty(processToProfile))
             {
                 environmentVariables["DD_PROFILER_PROCESSES"] = Path.GetFileName(processToProfile);
@@ -204,6 +215,16 @@ namespace Datadog.Trace.TestHelpers
                 environmentVariables["DD_DOGSTATSD_PORT"] = statsdPort.Value.ToString();
             }
 
+            if (enableSecurity)
+            {
+                environmentVariables[ConfigurationKeys.AppSecEnabled] = enableSecurity.ToString();
+            }
+
+            if (enableBlocking)
+            {
+                environmentVariables[ConfigurationKeys.AppSecBlockingEnabled] = enableBlocking.ToString();
+            }
+
             foreach (var name in new[] { "SERVICESTACK_REDIS_HOST", "STACKEXCHANGE_REDIS_HOST" })
             {
                 var value = Environment.GetEnvironmentVariable(name);
@@ -215,6 +236,13 @@ namespace Datadog.Trace.TestHelpers
 
             // set consistent env name (can be overwritten by custom environment variable)
             environmentVariables["DD_ENV"] = "integration_tests";
+
+            // Don't attach the profiler to these processes
+            environmentVariables["DD_PROFILER_EXCLUDE_PROCESSES"] =
+                "devenv.exe;Microsoft.ServiceHub.Controller.exe;ServiceHub.Host.CLR.exe;ServiceHub.TestWindowStoreHost.exe;" +
+                "ServiceHub.DataWarehouseHost.exe;sqlservr.exe;VBCSCompiler.exe;iisexpresstray.exe;msvsmon.exe;PerfWatson2.exe;" +
+                "ServiceHub.IdentityHost.exe;ServiceHub.VSDetouredHost.exe;ServiceHub.SettingsHost.exe;ServiceHub.Host.CLR.x86.exe;" +
+                "ServiceHub.RoslynCodeAnalysisService32.exe;MSBuild.exe;ServiceHub.ThreadedWaitDialog.exe";
 
             foreach (var key in CustomEnvironmentVariables.Keys)
             {

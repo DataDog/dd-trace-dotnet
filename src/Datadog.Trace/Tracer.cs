@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DogStatsd;
@@ -589,6 +590,12 @@ namespace Datadog.Trace
 
                     writer.WritePropertyName("agent_error");
                     writer.WriteValue(agentError ?? string.Empty);
+
+                    writer.WritePropertyName("appsec_enabled");
+                    writer.WriteValue(Security.Instance.Settings.Enabled);
+
+                    writer.WritePropertyName("appsec_blocking_enabled");
+                    writer.WriteValue(Security.Instance.Settings.BlockingEnabled);
 
                     writer.WriteEndObject();
                 }

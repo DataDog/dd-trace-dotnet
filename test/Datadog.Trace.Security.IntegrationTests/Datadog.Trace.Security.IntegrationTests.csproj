@@ -1,0 +1,62 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Platforms>x64;x86</Platforms>
+
+    <!--These should be consolidated in a file that can be shared for the tests and samples directories -->
+    <DefineConstants Condition="'$(BuildingInsideVisualStudio)'=='true' or '$(TestAllPackageVersions)'!='true'">$(DefineConstants);DEFAULT_SAMPLES</DefineConstants>
+    <DefineConstants Condition="'$(PerformComprehensiveTesting)'=='true'">$(DefineConstants);COMPREHENSIVE_TESTS</DefineConstants>
+
+    <ManagedProfilerOutputDirectory Condition="'$(ManagedProfilerOutputDirectory)' == ''">$(MSBuildThisFileDirectory)\..\src\Datadog.Trace.ClrProfiler.Managed\bin\$(Configuration)</ManagedProfilerOutputDirectory>
+    <NativeProfilerOutputDirectory Condition="'$(NativeProfilerOutputDirectory)' == ''">$(MSBuildThisFileDirectory)\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$()</NativeProfilerOutputDirectory>
+
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$(Platform)\**" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" Link="profiler-lib\%(RecursiveDir)\%(Filename)%(Extension)" />
+    <None Remove="applicationHost.config" />
+    <None Remove="xunit.runner.json" />
+    <Content Include="..\..\integrations.json" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" Link="profiler-lib\integrations.json" />
+    <Content Include="applicationHost.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="xunit.runner.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
+    <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
+    <PackageReference Include="libsqreen" Version="1.1.2.3" GeneratePathProperty="true" />
+
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
+    <Reference Include="System.EnterpriseServices" />
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" $(TargetFramework.StartsWith('netcoreapp')) ">
+    <PackageReference Include="System.Net.Http" Version="4.3.4" />
+  </ItemGroup>
+  
+  <Target Name="AfterBuildCopyManagedProfiler" AfterTargets="AfterBuild">
+    <ItemGroup>
+      <!-- Subfolders of the output directory should each be a target framework -->
+      <ManagedProfilerFiles Include="$(ManagedProfilerOutputDirectory)\**\*.dll" Exclude="$(ManagedProfilerOutputDirectory)\*\runtimes\**\*.dll" />
+      <ManagedProfilerFiles Include="$(ManagedProfilerOutputDirectory)\**\*.pdb" Exclude="$(ManagedProfilerOutputDirectory)\*\runtimes\**\*.pdb" />
+      <SecurityLibraryFiles Include="$(Pkglibsqreen)\runtimes\**\*.*" />
+    </ItemGroup>
+
+    <Copy SourceFiles="@(ManagedProfilerFiles)" DestinationFolder="$(OutputPath)profiler-lib\%(RecursiveDir)" />
+    <Copy SourceFiles="@(SecurityLibraryFiles)" DestinationFolder="$(OutputPath)profiler-lib\%(RecursiveDir)" />
+  </Target>
+  
+  <ItemGroup>
+    <None Update="CI\Data\*.*">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CI\Data\**\*.*">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+</Project>

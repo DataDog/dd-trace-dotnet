@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using System;
+using System.Net.Http;
 using System.Reflection;
 
 namespace Samples.AspNetCoreSimpleController
@@ -17,7 +18,7 @@ namespace Samples.AspNetCoreSimpleController
                 if (!isAttached)
                 {
                     Console.WriteLine("Error: Profiler is required and is not loaded.");
-                    Environment.Exit(-1);
+                    Environment.Exit(1);
                     return;
                 }
             }
@@ -40,8 +41,7 @@ namespace Samples.AspNetCoreSimpleController
 
         private static bool IsProfilerAttached()
         {
-            Assembly managedAssembly = typeof(Datadog.Trace.ClrProfiler.Instrumentation).Assembly;
-            Type nativeMethodsType = managedAssembly.GetType("Datadog.Trace.ClrProfiler.NativeMethods");
+            Type nativeMethodsType = Type.GetType("Datadog.Trace.ClrProfiler.NativeMethods, Datadog.Trace");
             MethodInfo profilerAttachedMethodInfo = nativeMethodsType.GetMethod("IsProfilerAttached");
             try
             {

@@ -387,6 +387,12 @@ stages:
         targetPath: 'build_data/results/'
       continueOnError: true
 
+    - publish: build_data\logs\
+      displayName: Uploading integration_tests_windows tracer logs
+      artifact: integration_tests_windows_tracer_logs_$(platform)_$(target)
+      condition: succeededOrFailed()
+      continueOnError: true
+
 - stage: integration_tests_windows_iis
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: [build_windows, package_windows]
@@ -456,6 +462,12 @@ stages:
         containerregistrytype: Container Registry
         dockerComposeCommand: down
       condition: succeededOrFailed()
+
+    - publish: build_data\logs\
+      displayName: Uploading integration_tests_windows_iis tracer logs
+      artifact: integration_tests_windows_iis_tracer_logs_$(platform)
+      condition: succeededOrFailed()
+      continueOnError: true
 
 - stage: integration_tests_linux
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
@@ -564,6 +576,7 @@ stages:
         TestAllPackageVersions: true
         publishTargetFramework: net5.0
         baseImage: debian
+        COMPOSE_PROJECT_NAME: ddtrace_$(Build.BuildNumber)
 
       pool:
         name: Arm64
@@ -629,7 +642,8 @@ stages:
           condition: succeededOrFailed()
 
 - stage: benchmarks
-  dependsOn: build_windows  
+  condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
+  dependsOn: build_windows
   jobs:
 
   #### Windows
@@ -658,7 +672,7 @@ stages:
         script: 'Start-Sleep -s 120'
 
 - stage: dotnet_tool
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
   dependsOn: [build_windows, build_linux, build_arm64, build_macos]
   jobs:
   - job: build_runner_tool_and_standalone
@@ -767,7 +781,7 @@ stages:
       displayName: Add $(dotnetToolTag) build tag
 
 - stage: upload_to_s3
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
   dependsOn: [package_windows, build_linux, build_arm64]
   jobs:
   - job: s3_upload
@@ -860,18 +874,13 @@ stages:
           )
         )
 
-
-
-
-- stage: upload_to_feed
+- stage: upload_to_azure
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: [package_windows, build_linux, build_arm64, dotnet_tool]
   jobs:
     - job: upload
-
       pool:
         vmImage: ubuntu-18.04
-
       steps:
 
         - task: DownloadPipelineArtifact@2
@@ -923,9 +932,50 @@ stages:
           displayName: Publish release artifacts
           artifact: $(tracer_version)-release-artifacts
 
-        # We don't include the MSI artifacts as they're not signed
+        # We don't include the MSIs in the artifact upload as they're
+        # not signed, but we do include them in the push to Azure
+        - task: DownloadPipelineArtifact@2
+          displayName: Download x64 MSI
+          inputs:
+            artifact: windows-msi-x64
+            path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download x86 MSI
+          inputs:
+            artifact: windows-msi-x86
+            path: $(Build.ArtifactStagingDirectory)
+
+        - bash: |
+            az storage blob upload-batch \
+              --destination "$(AZURE_STORAGE_CONTAINER_NAME)" \
+              --destination-path "$(Build.SourceVersion)" \
+              --source "$(Build.ArtifactStagingDirectory)"
+          displayName: Upload blobs to Azure
+          condition: and(succeeded(), eq(variables.isMainBranch, true), ne(variables['isNgenTestBuild'], 'True'))
+          env:
+            AZURE_STORAGE_ACCOUNT: $(AZURE_STORAGE_ACCOUNT_NAME)
+            AZURE_STORAGE_SAS_TOKEN: $(AZURE_STORAGE_SHARED_ACCESS_TOKEN)
+
+        - bash: ls "$(Build.ArtifactStagingDirectory)" > index.txt
+          displayName: Write file list to index.txt
+
+        - bash: echo "$(Build.SourceVersion)" > sha.txt
+          displayName: Write commit hash to sha.txt
+
+        - bash: |
+            az storage blob upload --container-name "$(AZURE_STORAGE_CONTAINER_NAME)" --file "index.txt" --name "index.txt"
+            az storage blob upload --container-name "$(AZURE_STORAGE_CONTAINER_NAME)" --file "sha.txt" --name "sha.txt"
+          displayName: Upload indexes to Azure
+          condition: and(succeeded(), eq(variables.isMainBranch, true), ne(variables['isNgenTestBuild'], 'True'))
+          env:
+            AZURE_STORAGE_ACCOUNT: $(AZURE_STORAGE_ACCOUNT_NAME)
+            AZURE_STORAGE_SAS_TOKEN: $(AZURE_STORAGE_SHARED_ACCESS_TOKEN)
+
+
 
 - stage: throughput
+  condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
   dependsOn: [build_linux, build_arm64, build_windows]
   jobs:
 
@@ -939,32 +989,36 @@ stages:
       displayName: Download windows native binary
       inputs:
         artifact: windows-tracer-home
-        patterns: '**/win-x64/*.dll'
-        path: $(System.DefaultWorkingDirectory)
+        path: $(System.DefaultWorkingDirectory)/tracer-home-win
 
     - task: DownloadPipelineArtifact@2
       displayName: Download linux native binary
       inputs:
         artifact: linux-tracer-home-debian
-        patterns: '**/*.so'
-        path: $(System.DefaultWorkingDirectory)
+        path: $(System.DefaultWorkingDirectory)/tracer-home-linux
 
     - task: DownloadPipelineArtifact@2
       displayName: Download arm64 native binary
       inputs:
         artifact: linux-tracer-home-arm64
-        patterns: '**/*.so'
-        path: $(System.DefaultWorkingDirectory)/arm64
+        path: $(System.DefaultWorkingDirectory)/tracer-home-linux-arm64
 
     - script: |
+        test ! -s "tracer-home-win/integrations.json" && echo "tracer-home-win/integrations.json does not exist" && exit 1
+        test ! -s "tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll" && echo "tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll does not exist" && exit 1
+        test ! -s "tracer-home-linux/integrations.json" && echo "tracer-home-linux/integrations.json does not exist" && exit 1
+        test ! -s "tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
+        test ! -s "tracer-home-linux-arm64/integrations.json" && echo "tracer-home-linux-arm64/integrations.json does not exist" && exit 1
+        test ! -s "tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
         cd $(System.DefaultWorkingDirectory)/build/crank
         chmod +x ./run.sh
         ./run.sh
       displayName: Crank
       env:
         DD_SERVICE: dd-trace-dotnet
+
 - stage: coverage
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
   dependsOn: [integration_tests_windows, integration_tests_windows_iis, integration_tests_linux, unit_tests_linux, unit_tests_macos, unit_tests_windows]
   jobs:
     - job: Windows

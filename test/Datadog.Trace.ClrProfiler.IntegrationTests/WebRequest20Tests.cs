@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetCallTargetSettings(enableCallTarget);
 
-            int expectedSpanCount = 25;
+            int expectedSpanCount = enableCallTarget ? 45 : 25; // CallSite insturmentation doesn't instrument async requests
             const string expectedOperationName = "http.request";
             const string expectedServiceName = "Samples.WebRequest.NetFramework20-http-client";
 

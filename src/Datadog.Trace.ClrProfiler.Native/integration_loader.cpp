@@ -12,33 +12,30 @@ namespace trace
 
 using json = nlohmann::json;
 
-std::vector<Integration> LoadIntegrationsFromEnvironment()
+void LoadIntegrationsFromEnvironment(std::vector<IntegrationMethod>& integrationMethods, const bool isCallTargetEnabled,
+                                     const bool isNetstandardEnabled,
+                                     const std::vector<WSTRING>& disabledIntegrationNames)
 {
-    std::vector<Integration> integrations;
-    for (const auto f : GetEnvironmentValues(environment::integrations_path))
+    for (const WSTRING& filePath : GetEnvironmentValues(environment::integrations_path))
     {
-        Logger::Debug("Loading integrations from file: ", f);
-        auto is = LoadIntegrationsFromFile(f);
-        for (auto& i : is)
-        {
-            integrations.push_back(i);
-        }
+        Logger::Debug("Loading integrations from file: ", filePath);
+        LoadIntegrationsFromFile(filePath, integrationMethods, isCallTargetEnabled, isNetstandardEnabled,
+                                 disabledIntegrationNames);
     }
-    return integrations;
 }
 
-std::vector<Integration> LoadIntegrationsFromFile(const WSTRING& file_path)
+void LoadIntegrationsFromFile(const WSTRING& file_path, std::vector<IntegrationMethod>& integrationMethods,
+                              const bool isCallTargetEnabled, const bool isNetstandardEnabled,
+                              const std::vector<WSTRING>& disabledIntegrationNames)
 {
-    std::vector<Integration> integrations;
-
     try
     {
-        std::ifstream stream;
-        stream.open(ToString(file_path));
+        std::ifstream stream(ToString(file_path));
 
         if (static_cast<bool>(stream))
         {
-            integrations = LoadIntegrationsFromStream(stream);
+            LoadIntegrationsFromStream(stream, integrationMethods, isCallTargetEnabled, isNetstandardEnabled,
+                                       disabledIntegrationNames);
         }
         else
         {
@@ -62,30 +59,26 @@ std::vector<Integration> LoadIntegrationsFromFile(const WSTRING& file_path)
             Logger::Warn("Failed to load integrations: ", ex.what());
         }
     }
-
-    return integrations;
 }
 
-std::vector<Integration> LoadIntegrationsFromStream(std::istream& stream)
+void LoadIntegrationsFromStream(std::istream& stream, std::vector<IntegrationMethod>& integrationMethods,
+                                const bool isCallTargetEnabled, const bool isNetstandardEnabled,
+                                const std::vector<WSTRING>& disabledIntegrationNames)
 {
-    std::vector<Integration> integrations;
-
     try
     {
         json j;
         // parse the stream
         stream >> j;
 
-        for (auto& el : j)
+        integrationMethods.reserve(j.size());
+
+        for (const auto& el : j)
         {
-            auto i = IntegrationFromJson(el);
-            if (std::get<1>(i))
-            {
-                integrations.push_back(std::get<0>(i));
-            }
+            IntegrationFromJson(el, integrationMethods, isCallTargetEnabled, isNetstandardEnabled,
+                                disabledIntegrationNames);
         }
 
-        // Logger::Debug("Loaded integrations: ", j.dump());
     }
     catch (const json::parse_error& e)
     {
@@ -110,55 +103,90 @@ std::vector<Integration> LoadIntegrationsFromStream(std::istream& stream)
             Logger::Warn("Failed to load integrations: ", ex.what());
         }
     }
-
-    return integrations;
 }
 
 namespace
 {
 
-    std::pair<Integration, bool> IntegrationFromJson(const json::value_type& src)
+    void IntegrationFromJson(const json::value_type& src, std::vector<IntegrationMethod>& integrationMethods,
+                             const bool isCallTargetEnabled, const bool isNetstandardEnabled,
+                             const std::vector<WSTRING>& disabledIntegrationNames)
     {
         if (!src.is_object())
         {
-            return std::make_pair<Integration, bool>({}, false);
+            return;
         }
 
         // first get the name, which is required
-        const auto name = ToWSTRING(src.value("name", ""));
+        const WSTRING name = ToWSTRING(src.value("name", ""));
         if (name.empty())
         {
             Logger::Warn("Integration name is missing for integration: ", src.dump());
-            return std::make_pair<Integration, bool>({}, false);
+            return;
         }
 
-        std::vector<MethodReplacement> replacements;
+        // check if the integration is disabled
+        for (const WSTRING& disabledName : disabledIntegrationNames)
+        {
+            if (name == disabledName)
+            {
+                return;
+            }
+        }
+
         auto arr = src.value("method_replacements", json::array());
         if (arr.is_array())
         {
-            for (auto& el : arr)
+            for (const auto& el : arr)
             {
-                auto mr = MethodReplacementFromJson(el);
-                if (std::get<1>(mr))
-                {
-                    replacements.push_back(std::get<0>(mr));
-                }
+                MethodReplacementFromJson(el, name, integrationMethods, isCallTargetEnabled, isNetstandardEnabled);
             }
         }
-        return std::make_pair<Integration, bool>({name, replacements}, true);
     }
 
-    std::pair<MethodReplacement, bool> MethodReplacementFromJson(const json::value_type& src)
+    void MethodReplacementFromJson(const json::value_type& src, const WSTRING& integrationName,
+                                   std::vector<IntegrationMethod>& integrationMethods,
+                                   const bool isCallTargetEnabled, const bool isNetstandardEnabled)
     {
-        if (!src.is_object())
+        if (src.is_object())
         {
-            return std::make_pair<MethodReplacement, bool>({}, false);
-        }
+            const MethodReference wrapper = MethodReferenceFromJson(src.value("wrapper", json::object()), false, true);
 
-        const auto caller = MethodReferenceFromJson(src.value("caller", json::object()), false, false);
-        const auto target = MethodReferenceFromJson(src.value("target", json::object()), true, false);
-        const auto wrapper = MethodReferenceFromJson(src.value("wrapper", json::object()), false, true);
-        return std::make_pair<MethodReplacement, bool>({caller, target, wrapper}, true);
+            if (isCallTargetEnabled)
+            {
+                // Check if is a calltarget integration
+
+                if (wrapper.action != WStr("CallTargetModification"))
+                {
+                    return;
+                }
+
+                const MethodReference target =
+                    MethodReferenceFromJson(src.value("target", json::object()), true, false);
+
+                integrationMethods.push_back({integrationName, {{}, target, wrapper}});
+
+            }
+            else
+            {
+                const MethodReference target =
+                    MethodReferenceFromJson(src.value("target", json::object()), true, false);
+
+                // temporarily skip the calls into netstandard.dll that were added in
+                // https://github.com/DataDog/dd-trace-dotnet/pull/753.
+                // users can opt-in to the additional instrumentation by setting environment
+                // variable DD_TRACE_NETSTANDARD_ENABLED
+                if (!isNetstandardEnabled && target.assembly.name == WStr("netstandard"))
+                {
+                    return;
+                }
+
+                const MethodReference caller =
+                    MethodReferenceFromJson(src.value("caller", json::object()), false, false);
+
+                integrationMethods.push_back({integrationName, {caller, target, wrapper}});
+            }
+        }
     }
 
     MethodReference MethodReferenceFromJson(const json::value_type& src, const bool is_target_method,

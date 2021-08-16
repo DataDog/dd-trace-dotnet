@@ -516,15 +516,6 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdTo
 
 mdAssemblyRef FindAssemblyRef(const ComPtr<IMetaDataAssemblyImport>& assembly_import, const WSTRING& assembly_name);
 
-// FilterIntegrationsByName removes integrations whose names are specified in
-// disabled_integration_names
-std::vector<Integration> FilterIntegrationsByName(const std::vector<Integration>& integrations,
-                                                  const std::vector<WSTRING>& disabled_integration_names);
-
-// FlattenIntegrations flattens integrations to per method structures
-std::vector<IntegrationMethod> FlattenIntegrations(const std::vector<Integration>& integrations,
-                                                   bool is_calltarget_enabled);
-
 // FilterIntegrationsByCaller removes any integrations which have a caller and
 // its not set to the module
 std::vector<IntegrationMethod> FilterIntegrationsByCaller(const std::vector<IntegrationMethod>& integration_methods,

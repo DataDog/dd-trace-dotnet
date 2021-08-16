@@ -1,0 +1,92 @@
+﻿[
+  [
+    {
+      "DD_GIT_BRANCH": "feature",
+      "DD_GIT_REPOSITORY_URL": "usersupplied-repo",
+      "DD_GIT_COMMIT_SHA": "usersupplied-commit",
+      "DD_GIT_COMMIT_MESSAGE": "usersupplied-message",
+      "DD_GIT_COMMIT_AUTHOR_NAME": "usersupplied-authorname",
+      "DD_GIT_COMMIT_AUTHOR_EMAIL": "usersupplied-authoremail",
+      "DD_GIT_COMMIT_AUTHOR_DATE": "usersupplied-authordate",
+      "DD_GIT_COMMIT_COMMITTER_NAME": "usersupplied-comittername",
+      "DD_GIT_COMMIT_COMMITTER_EMAIL": "usersupplied-comitteremail",
+      "DD_GIT_COMMIT_COMMITTER_DATE": "usersupplied-comitterdate"
+    },
+    {
+      "git.branch": "feature",
+      "git.repository_url": "usersupplied-repo",
+      "git.commit.sha": "usersupplied-commit",
+      "git.commit.message": "usersupplied-message",
+      "git.commit.author.name": "usersupplied-authorname",
+      "git.commit.author.email": "usersupplied-authoremail",
+      "git.commit.author.date": "usersupplied-authordate",
+      "git.commit.committer.name": "usersupplied-comittername",
+      "git.commit.committer.email": "usersupplied-comitteremail",
+      "git.commit.committer.date": "usersupplied-comitterdate"
+    }
+  ],
+  [
+    {
+      "DD_GIT_TAG": "0.1.0",
+      "DD_GIT_REPOSITORY_URL": "usersupplied-repo",
+      "DD_GIT_COMMIT_SHA": "usersupplied-commit",
+      "DD_GIT_COMMIT_MESSAGE": "usersupplied-message",
+      "DD_GIT_COMMIT_AUTHOR_NAME": "usersupplied-authorname",
+      "DD_GIT_COMMIT_AUTHOR_EMAIL": "usersupplied-authoremail",
+      "DD_GIT_COMMIT_AUTHOR_DATE": "usersupplied-authordate",
+      "DD_GIT_COMMIT_COMMITTER_NAME": "usersupplied-comittername",
+      "DD_GIT_COMMIT_COMMITTER_EMAIL": "usersupplied-comitteremail",
+      "DD_GIT_COMMIT_COMMITTER_DATE": "usersupplied-comitterdate"
+    },
+    {
+      "git.tag": "0.1.0",
+      "git.repository_url": "usersupplied-repo",
+      "git.commit.sha": "usersupplied-commit",
+      "git.commit.message": "usersupplied-message",
+      "git.commit.author.name": "usersupplied-authorname",
+      "git.commit.author.email": "usersupplied-authoremail",
+      "git.commit.author.date": "usersupplied-authordate",
+      "git.commit.committer.name": "usersupplied-comittername",
+      "git.commit.committer.email": "usersupplied-comitteremail",
+      "git.commit.committer.date": "usersupplied-comitterdate"
+    }
+  ],
+  [
+    {
+      "GITHUB_WORKSPACE": "/foo/bar",
+      "GITHUB_ACTION": "run",
+      "GITHUB_RUN_ID": "ghactions-pipeline-id",
+      "GITHUB_WORKFLOW": "ghactions-pipeline-name",
+      "GITHUB_RUN_NUMBER": "ghactions-pipeline-number",
+      "GITHUB_REPOSITORY": "ghactions-repo",
+      "GITHUB_SHA": "ghactions-commit",
+      "DD_GIT_REPOSITORY_URL": "usersupplied-repo",
+      "DD_GIT_COMMIT_SHA": "usersupplied-commit",
+      "DD_GIT_COMMIT_MESSAGE": "usersupplied-message",
+      "DD_GIT_COMMIT_AUTHOR_NAME": "usersupplied-authorname",
+      "DD_GIT_COMMIT_AUTHOR_EMAIL": "usersupplied-authoremail",
+      "DD_GIT_COMMIT_AUTHOR_DATE": "usersupplied-authordate",
+      "DD_GIT_COMMIT_COMMITTER_NAME": "usersupplied-comittername",
+      "DD_GIT_COMMIT_COMMITTER_EMAIL": "usersupplied-comitteremail",
+      "DD_GIT_COMMIT_COMMITTER_DATE": "usersupplied-comitterdate"
+    },
+    {
+      "ci.workspace_path": "/foo/bar",
+      "ci.provider.name": "github",
+      "ci.pipeline.id": "ghactions-pipeline-id",
+      "ci.pipeline.name": "ghactions-pipeline-name",
+      "ci.pipeline.number": "ghactions-pipeline-number",
+      "ci.pipeline.url": "https://github.com/ghactions-repo/commit/ghactions-commit/checks",
+      "ci.job.url": "https://github.com/ghactions-repo/commit/ghactions-commit/checks",
+      "git.repository_url": "usersupplied-repo",
+      "git.commit.sha": "usersupplied-commit",
+      "git.commit.message": "usersupplied-message",
+      "git.commit.author.name": "usersupplied-authorname",
+      "git.commit.author.email": "usersupplied-authoremail",
+      "git.commit.author.date": "usersupplied-authordate",
+      "git.commit.committer.name": "usersupplied-comittername",
+      "git.commit.committer.email": "usersupplied-comitteremail",
+      "git.commit.committer.date": "usersupplied-comitterdate"
+    }
+  ]
+]

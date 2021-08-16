@@ -78,7 +78,7 @@ namespace environment
 
     // Sets whether to intercept method calls when the caller method is inside a
     // domain-neutral assembly. This is dangerous because the integration assembly
-    // Datadog.Trace.ClrProfiler.Managed.dll must also be loaded domain-neutral,
+    // Datadog.Trace.dll must also be loaded domain-neutral,
     // otherwise a sharing violation (HRESULT 0x80131401) may occur. This setting should only be
     // enabled when there is only one AppDomain or, when hosting applications in IIS,
     // the user can guarantee that all Application Pools on the system have at most
@@ -109,6 +109,9 @@ namespace environment
 
     // Sets whether to enable the CallTarget instrumentation mode
     const WSTRING calltarget_enabled = WStr("DD_TRACE_CALLTARGET_ENABLED");
+
+    // Custom internal tracer profiler path
+    const WSTRING internal_trace_profiler_path = WStr("DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH");
 
     // Sets whether to enable NGEN images.
     const WSTRING clr_enable_ngen = WStr("DD_CLR_ENABLE_NGEN");

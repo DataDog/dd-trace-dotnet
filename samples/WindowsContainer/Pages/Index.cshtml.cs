@@ -15,14 +15,12 @@ namespace Dotnet.WindowsContainer.Example.Pages
         public IEnumerable<KeyValuePair<string, string>> EnvVars { get; set; }
         public bool IsProfilerAttached { get; set; }
         public string TracerAssemblyLocation { get; set; }
-        public string ClrProfilerAssemblyLocation { get; set; }
 
         public void OnGet()
         {
-            var instrumentationType = Type.GetType("Datadog.Trace.ClrProfiler.Instrumentation, Datadog.Trace.ClrProfiler.Managed");
+            var instrumentationType = Type.GetType("Datadog.Trace.ClrProfiler.Instrumentation, Datadog.Trace");
             IsProfilerAttached = (bool?)instrumentationType?.GetProperty("ProfilerAttached", BindingFlags.Public | BindingFlags.Static)?.GetValue(null) ?? false;
-            TracerAssemblyLocation = Type.GetType("Datadog.Trace.Tracer, Datadog.Trace")?.Assembly.Location;
-            ClrProfilerAssemblyLocation = instrumentationType?.Assembly.Location;
+            TracerAssemblyLocation = instrumentationType?.Assembly.Location;
 
             var prefixes = new[] { "COR_", "CORECLR_", "DD_", "DATADOG_" };
 

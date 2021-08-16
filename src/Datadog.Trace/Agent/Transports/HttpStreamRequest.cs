@@ -6,8 +6,11 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using Datadog.Trace.Abstractions;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.HttpOverStreams.HttpContent;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Agent.Transports
 {
@@ -38,11 +41,29 @@ namespace Datadog.Trace.Agent.Transports
             _headers.Add(name, value);
         }
 
-        public async Task<IApiResponse> PostAsync(ArraySegment<byte> traces)
+        public async Task<IApiResponse> PostAsJsonAsync(IEvent events, JsonSerializer serializer)
+        {
+            var memoryStream = new MemoryStream();
+            var sw = new StreamWriter(memoryStream);
+            using (JsonWriter writer = new JsonTextWriter(sw))
+            {
+                serializer.Serialize(writer, events);
+                await writer.FlushAsync();
+                var buffer = memoryStream.GetBuffer();
+                return await PostSegmentAsync(new ArraySegment<byte>(buffer, 0, (int)memoryStream.Length)).ConfigureAwait(false);
+            }
+        }
+
+        public Task<IApiResponse> PostAsync(ArraySegment<byte> traces)
+        {
+            return PostSegmentAsync(traces);
+        }
+
+        private async Task<IApiResponse> PostSegmentAsync(ArraySegment<byte> segment)
         {
             using (var bidirectionalStream = _streamFactory.GetBidirectionalStream())
             {
-                var content = new BufferContent(traces);
+                var content = new BufferContent(segment);
                 var request = new HttpRequest("POST", _uri.Host, _uri.PathAndQuery, _headers, content);
 
                 // send request, get response

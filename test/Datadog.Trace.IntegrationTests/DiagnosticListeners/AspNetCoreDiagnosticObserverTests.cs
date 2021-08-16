@@ -159,7 +159,8 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
             var testServer = new TestServer(builder);
             var client = testServer.CreateClient();
-            var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver(tracer) };
+            var security = new AppSec.Security();
+            var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver(tracer, security) };
 
             using (var diagnosticManager = new DiagnosticManager(observers))
             {

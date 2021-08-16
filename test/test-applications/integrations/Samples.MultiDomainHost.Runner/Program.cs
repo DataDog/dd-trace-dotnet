@@ -22,7 +22,7 @@ namespace Samples.MultiDomainHost.Runner
             {
                 // First load the application that does not have bindingRedirect policies
                 // This will instrument at least one domain-neutral assembly with a
-                // domain-neutral version of Datadog.Trace.ClrProfiler.Managed.dll
+                // domain-neutral version of Datadog.Trace.dll
                 CreateAndRunAppDomain("Samples.MultiDomainHost.App.FrameworkHttpNoRedirects");
 
                 // Next load an application that does the same thing, still does not have
@@ -32,7 +32,7 @@ namespace Samples.MultiDomainHost.Runner
 
                 // Next load the application that has a bindingRedirect policy on Newtonsoft.Json.
                 // This will cause a sharing violation when the domain-neutral assembly attempts
-                // to call into Datadog.Trace.ClrProfiler.Managed.dll because Datadog.Trace.ClrProfiler.Managed.dll
+                // to call into Datadog.Trace.dll because Datadog.Trace.dll
                 // can no longer be loaded shared with the bindingRedirect policy in place. This breaks
                 // the consistency check of all domain-neutral assemblies only depending on other
                 // domain-neutral assemblies
@@ -40,7 +40,7 @@ namespace Samples.MultiDomainHost.Runner
 
                 // Next load the application that has a bindingRedirect policy on System.Net.Http.
                 // This will cause a sharing violation when the domain-neutral assembly attempts
-                // to call into Datadog.Trace.ClrProfiler.Managed.dll because Datadog.Trace.ClrProfiler.Managed.dll
+                // to call into Datadog.Trace.dll because Datadog.Trace.dll
                 // can no longer be loaded shared with the bindingRedirect policy in place. This breaks
                 // the consistency check of all domain-neutral assemblies only depending on other
                 // domain-neutral assemblies
