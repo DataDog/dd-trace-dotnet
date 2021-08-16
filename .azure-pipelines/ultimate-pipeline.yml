@@ -1110,3 +1110,5 @@ stages:
       env:
         DD_SERVICE: dd-trace-dotnet
 
+    - script: timeout /t 15 /nobreak >nul
+      displayName: Wait 15 seconds to agent flush before finishing pipeline
