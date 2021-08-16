@@ -1110,5 +1110,8 @@ stages:
       env:
         DD_SERVICE: dd-trace-dotnet
 
-    - script: timeout /t 15 /nobreak >nul
-      displayName: Wait 15 seconds to agent flush before finishing pipeline
+    - task: PowerShell@2
+      displayName: Wait 20 seconds to agent flush before finishing pipeline
+      inputs:
+        targetType: 'inline'
+        script: 'Start-Sleep -s 20'
