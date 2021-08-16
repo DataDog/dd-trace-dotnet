@@ -691,6 +691,7 @@ partial class Build
                 }
             );
 
+            // /nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
             DotNetBuild(config => config
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatform(Platform)
@@ -700,6 +701,7 @@ partial class Build
                 .SetProperty("ExcludeNativeProfiler", true)
                 .SetProperty("ManagedProfilerOutputDirectory", TracerHomeDirectory)
                 .SetProperty("LoadManagedProfilerFromProfilerDirectory", false)
+                .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
                 .CombineWith(projects, (s, project) => s
                     .SetProjectFile(project)));
         });
