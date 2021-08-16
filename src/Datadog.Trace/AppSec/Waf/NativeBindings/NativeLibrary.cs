@@ -46,8 +46,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         {
             if (isPosixLike)
             {
-                var exportPtr = dlsym(handle, name);
-                ReadDlerror("dlsym");
+                var exportPtr = dddlsym(handle, name);
+                ReadDlerror("dddlsym");
                 return exportPtr;
             }
             else
@@ -59,15 +59,15 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private static IntPtr LoadPosixLibrary(string path)
         {
             const int RTLD_NOW = 2;
-            var addr = dlopen(path, RTLD_NOW);
-            ReadDlerror("dlopen");
+            var addr = dddlopen(path, RTLD_NOW);
+            ReadDlerror("dddlopen");
 
             return addr;
         }
 
         private static void ReadDlerror(string op)
         {
-            var errorPtr = dlerror();
+            var errorPtr = dddlerror();
             if (errorPtr != IntPtr.Zero)
             {
                 var error = Marshal.PtrToStringAnsi(errorPtr);
@@ -78,13 +78,13 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 #pragma warning disable SA1300 // Element should begin with upper-case letter
 
         [DllImport("Datadog.Trace.ClrProfiler.Native")]
-        private static extern IntPtr dlopen(string fileName, int flags);
+        private static extern IntPtr dddlopen(string fileName, int flags);
 
         [DllImport("Datadog.Trace.ClrProfiler.Native")]
-        private static extern IntPtr dlerror();
+        private static extern IntPtr dddlerror();
 
         [DllImport("Datadog.Trace.ClrProfiler.Native")]
-        private static extern IntPtr dlsym(IntPtr hModule, string lpProcName);
+        private static extern IntPtr dddlsym(IntPtr hModule, string lpProcName);
 
         [DllImport("kernel32.dll")]
         private static extern IntPtr LoadLibrary(string dllToLoad);

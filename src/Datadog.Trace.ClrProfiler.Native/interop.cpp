@@ -25,14 +25,12 @@ EXTERN_C VOID STDAPICALLTYPE GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, i
 }
 
 #ifndef _WIN32
-EXTERN_C void *dlopen (const char *__file, int __mode)
+EXTERN_C void *dddlopen (const char *__file, int __mode)
 {
-    trace::Logger::Debug("dlopen: __file: ", __file, " __mode:", __mode);
-
     return dlopen(__file, __mode);
 }
 
-EXTERN_C char *dlerror (void)
+EXTERN_C char *dddlerror (void)
 {
     auto errorPtr = dlerror();
 
@@ -44,10 +42,8 @@ EXTERN_C char *dlerror (void)
     return errorPtr;
 }
 
-EXTERN_C void *dlsym (void *__restrict __handle, const char *__restrict __name)
+EXTERN_C void *dddlsym (void *__restrict __handle, const char *__restrict __name)
 {
-    trace::Logger::Debug("dlsym: __handle: ", __handle, " __name: ", __name);
-
     return dlsym(__handle, __name);
 }
 #endif
