@@ -1,5 +1,38 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
+## [Release 1.28.3-prerelease](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.28.3-prerelease)
+
+## Changes
+* Adds Datadog.AutoInstrumentation.NativeLoader (#1577)
+* The v0 version of App Sec (#1647)
+* Read performance counter values from environment variables in AAS (#1651)
+* Improve error handling for performance counters (#1652)
+* Add instrumentation for Begin/EndGetResponse to WebRequest (#1658)
+* Cache native AssemblyReference instances (#1665)
+* Use link shortener for IIS permissions (#1666)
+* Native profiler Initialize callback optimization (#1672)
+* Update CI Visibility specification (#1682)
+
+## Fixes
+* Fixes native regex usage on non windows platforms. (#1662)
+
+## Build / Test
+* Merge auto-instrumentation code into Datadog.Trace.dll (#1443)
+* replace "minimal" solution with a solution filter (#1631)
+* Add support for a temporary NGEN pipeline (#1642)
+* Small build improvements (#1646)
+* Filter now applied to the samples when compiling (#1653)
+* Crank native profiler fix (#1655)
+* Reduce length of snapshot paths (#1657)
+* Update GitHub action release workflows (#1659)
+* Fixes crank pipeline on PR merge commits. (#1669)
+* Disable CallSite scenario from Throughput tests. (#1674)
+* Removes code for Callsite scenario from the throughput tests (#1679)
+* Add a custom test framework to monitor execution of unit tests in ducktyping library (#1680)
+* Add tests for changes to Datadog.Trace's Public API (#1681)
+
+[Changes since 1.28.2](https://github.com/DataDog/dd-trace-dotnet/compare/v1.28.2...v1.28.3-prerelease)
+
 ## [Release 1.28.2](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.28.2)
 
 ## Changes
