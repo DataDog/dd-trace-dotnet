@@ -422,7 +422,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
     return S_OK;
 }
 
-void STDMETHODCALLTYPE CorProfiler::RewritingPInvokeMaps(ComPtr<IUnknown> metadata_interfaces, ModuleMetadata* module_metadata, WSTRING nativemethods_type_name)
+void CorProfiler::RewritingPInvokeMaps(ComPtr<IUnknown> metadata_interfaces, ModuleMetadata* module_metadata, WSTRING nativemethods_type_name)
 {
     HRESULT hr;
     const auto metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
