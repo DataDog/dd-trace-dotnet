@@ -422,6 +422,93 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
     return S_OK;
 }
 
+void STDMETHODCALLTYPE CorProfiler::RewritingPInvokeMaps(ComPtr<IUnknown> metadata_interfaces, ModuleMetadata* module_metadata, WSTRING nativemethods_type_name)
+{
+    HRESULT hr;
+    const auto metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+    const auto metadata_emit = metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
+    
+    // We are in the right module, so we try to load the mdTypeDef from the target type name.
+    mdTypeDef nativeMethodsTypeDef = mdTypeDefNil;
+    auto foundType = FindTypeDefByName(nativemethods_type_name,
+                                        module_metadata->assemblyName, metadata_import, nativeMethodsTypeDef);
+    if (foundType)
+    {
+        // Define the actual profiler file path as a ModuleRef
+        WSTRING native_profiler_file = GetEnvironmentValue(environment::internal_trace_profiler_path);
+        if (native_profiler_file.empty())
+        {
+            native_profiler_file = GetCoreCLRProfilerPath();
+        }
+        mdModuleRef profiler_ref;
+        hr = metadata_emit->DefineModuleRef(native_profiler_file.c_str(), &profiler_ref);
+        if (SUCCEEDED(hr))
+        {
+            // Enumerate all methods inside the native methods type with the PInvokes
+            Enumerator<mdMethodDef> enumMethods = Enumerator<mdMethodDef>(
+                [metadata_import, nativeMethodsTypeDef](HCORENUM* ptr, mdMethodDef arr[], ULONG max, ULONG* cnt) -> HRESULT
+                {
+                    return metadata_import->EnumMethods(ptr, nativeMethodsTypeDef, arr, max, cnt);
+                }, [metadata_import](HCORENUM ptr) -> void { metadata_import->CloseEnum(ptr); });
+
+            EnumeratorIterator<mdMethodDef> enumIterator = enumMethods.begin();
+            while (enumIterator != enumMethods.end())
+            {
+                auto methodDef = *enumIterator;
+
+                const auto caller = GetFunctionInfo(module_metadata->metadata_import, methodDef);
+                Logger::Info("Rewriting pinvoke for: ", caller.name);
+
+                // Get the current PInvoke map to extract the flags and the entrypoint name
+                DWORD pdwMappingFlags;
+                WCHAR importName[kNameMaxSize]{};
+                DWORD importNameLength = 0;
+                mdModuleRef importModule;
+                hr = metadata_import->GetPinvokeMap(methodDef, &pdwMappingFlags, importName, kNameMaxSize,
+                                                    &importNameLength, &importModule);
+                if (SUCCEEDED(hr))
+                {
+                    // Delete the current PInvoke map
+                    hr = metadata_emit->DeletePinvokeMap(methodDef);
+                    if (SUCCEEDED(hr))
+                    {
+                        // Define a new PInvoke map with the new ModuleRef of the actual profiler file path
+                        hr = metadata_emit->DefinePinvokeMap(methodDef, pdwMappingFlags,
+                                                                WSTRING(importName).c_str(), profiler_ref);
+                        if (FAILED(hr))
+                        {
+                            Logger::Warn("ModuleLoadFinished: DefinePinvokeMap to the actual profiler file path "
+                                            "failed, trying to restore the previous one.");
+                            hr = metadata_emit->DefinePinvokeMap(methodDef, pdwMappingFlags,
+                                                                    WSTRING(importName).c_str(), importModule);
+                            if (FAILED(hr))
+                            {
+                                // We only warn that we cannot rewrite the PInvokeMap but we still continue the module load.
+                                // These errors must be handled on the caller with a try/catch.
+                                Logger::Warn("ModuleLoadFinished: Error trying to restore the previous PInvokeMap.");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // We only warn that we cannot rewrite the PInvokeMap but we still continue the module load.
+                        // These errors must be handled on the caller with a try/catch.
+                        Logger::Warn("ModuleLoadFinished: DeletePinvokeMap failed");
+                    }
+                }
+
+                enumIterator = ++enumIterator;
+            }
+        }
+        else
+        {
+            // We only warn that we cannot rewrite the PInvokeMap but we still continue the module load.
+            // These errors must be handled on the caller with a try/catch.
+            Logger::Warn("ModuleLoadFinished: Native Profiler DefineModuleRef failed");
+        }
+    }
+}
+
 HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HRESULT hr_status)
 {
     auto _ = trace::Stats::Instance()->ModuleLoadFinishedMeasure();
@@ -622,88 +709,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
     if (module_info.assembly.name == managed_profiler_name)
     {
         Logger::Info("ModuleLoadFinished: ", managed_profiler_name, " - Fix PInvoke maps");
-
-        // We are in the right module, so we try to load the mdTypeDef from the target type name.
-        mdTypeDef nativeMethodsTypeDef = mdTypeDefNil;
-        auto foundType = FindTypeDefByName(nonwindows_nativemethods_type,
-                                           module_metadata->assemblyName, metadata_import, nativeMethodsTypeDef);
-        if (foundType)
-        {
-            // Define the actual profiler file path as a ModuleRef
-            WSTRING native_profiler_file = GetEnvironmentValue(environment::internal_trace_profiler_path);
-            if (native_profiler_file.empty())
-            {
-                native_profiler_file = GetCoreCLRProfilerPath();
-            }
-            mdModuleRef profiler_ref;
-            hr = metadata_emit->DefineModuleRef(native_profiler_file.c_str(), &profiler_ref);
-            if (SUCCEEDED(hr))
-            {
-                // Enumerate all methods inside the native methods type with the PInvokes
-                Enumerator<mdMethodDef> enumMethods = Enumerator<mdMethodDef>(
-                    [metadata_import, nativeMethodsTypeDef](HCORENUM* ptr, mdMethodDef arr[], ULONG max, ULONG* cnt) -> HRESULT
-                    {
-                        return metadata_import->EnumMethods(ptr, nativeMethodsTypeDef, arr, max, cnt);
-                    }, [metadata_import](HCORENUM ptr) -> void { metadata_import->CloseEnum(ptr); });
-
-                EnumeratorIterator<mdMethodDef> enumIterator = enumMethods.begin();
-                while (enumIterator != enumMethods.end())
-                {
-                    auto methodDef = *enumIterator;
-
-                    // Get the current PInvoke map to extract the flags and the entrypoint name
-                    DWORD pdwMappingFlags;
-                    WCHAR importName[kNameMaxSize]{};
-                    DWORD importNameLength = 0;
-                    mdModuleRef importModule;
-                    hr = metadata_import->GetPinvokeMap(methodDef, &pdwMappingFlags, importName, kNameMaxSize,
-                                                        &importNameLength, &importModule);
-                    if (SUCCEEDED(hr))
-                    {
-                        // Delete the current PInvoke map
-                        hr = metadata_emit->DeletePinvokeMap(methodDef);
-                        if (SUCCEEDED(hr))
-                        {
-                            // Define a new PInvoke map with the new ModuleRef of the actual profiler file path
-                            hr = metadata_emit->DefinePinvokeMap(methodDef, pdwMappingFlags,
-                                                                 WSTRING(importName).c_str(), profiler_ref);
-                            if (FAILED(hr))
-                            {
-                                Logger::Warn("ModuleLoadFinished: DefinePinvokeMap to the actual profiler file path "
-                                             "failed, trying to restore the previous one.");
-                                hr = metadata_emit->DefinePinvokeMap(methodDef, pdwMappingFlags,
-                                                                     WSTRING(importName).c_str(), importModule);
-                                if (FAILED(hr))
-                                {
-                                    // We only warn that we cannot rewrite the PInvokeMap but we still continue the module load.
-                                    // These errors must be handled on the caller with a try/catch.
-                                    Logger::Warn("ModuleLoadFinished: Error trying to restore the previous PInvokeMap.");
-                                }
-                            }
-                        }
-                        else
-                        {
-                            // We only warn that we cannot rewrite the PInvokeMap but we still continue the module load.
-                            // These errors must be handled on the caller with a try/catch.
-                            Logger::Warn("ModuleLoadFinished: DeletePinvokeMap failed");
-                        }
-                    }
-
-                    enumIterator = ++enumIterator;
-                }
-            }
-            else
-            {
-                // We only warn that we cannot rewrite the PInvokeMap but we still continue the module load.
-                // These errors must be handled on the caller with a try/catch.
-                Logger::Warn("ModuleLoadFinished: Native Profiler DefineModuleRef failed");
-            }
-        }
+        RewritingPInvokeMaps(metadata_interfaces, module_metadata, nonwindows_nativemethods_type);
+        RewritingPInvokeMaps(metadata_interfaces, module_metadata, appsec_nonwindows_nativemethods_type);
     }
 #endif
 
     return S_OK;
 }
+
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
 {
