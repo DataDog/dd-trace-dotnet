@@ -14,12 +14,12 @@ namespace NServiceBus.SqlServer.Saga
         internal static readonly int MessageSendDelayMs = 500;
         internal static readonly int MessageCompletionDurationMs = 1000;
         internal static readonly CountdownEvent Countdown = new CountdownEvent(NumMessagesToSend);
-
-        private static readonly string ConnectionString = @"Server=(localdb)\MSSQLLocalDB;Initial Catalog=NsbSamplesSqlPersistence;Integrated Security=true;Connection Timeout=60";
         private static readonly string EndpointName = "NServiceBus.SqlServer.Saga";
 
         static async Task Main()
         {
+            var connectionString = SqlHelper.GetSqlServerConnectionString("NsbSamplesSqlPersistence");
+
             #region sqlServerConfig
 
             var endpointConfiguration = new EndpointConfiguration(EndpointName);
@@ -29,12 +29,12 @@ namespace NServiceBus.SqlServer.Saga
             persistence.ConnectionBuilder(
                 connectionBuilder: () =>
                 {
-                    return new SqlConnection(ConnectionString);
+                    return new SqlConnection(connectionString);
                 });
 
             #endregion
 
-            SqlHelper.EnsureDatabaseExists(ConnectionString);
+            SqlHelper.EnsureDatabaseExists(connectionString);
 
             endpointConfiguration.UseTransport<LearningTransport>();
             endpointConfiguration.EnableInstallers();

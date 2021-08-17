@@ -1,12 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 using System.Data.SqlClient;
-using System.Text;
 
 namespace Rebus.SqlServer.RequestReply.Server
 {
     public static class SqlHelper
     {
+        public static string GetSqlServerConnectionString(string overrideInitialCatalog = null)
+        {
+            var connectionString = Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING") ??
+@"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=60";
+
+            var builder = new SqlConnectionStringBuilder(connectionString);
+            if (!string.IsNullOrWhiteSpace(overrideInitialCatalog))
+            {
+                builder.InitialCatalog = overrideInitialCatalog;
+            }
+
+            return builder.ConnectionString;
+        }
+
         public static void EnsureDatabaseExists(string connectionString)
         {
             var builder = new SqlConnectionStringBuilder(connectionString);

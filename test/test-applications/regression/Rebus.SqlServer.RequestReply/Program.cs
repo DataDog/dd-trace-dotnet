@@ -12,13 +12,13 @@ namespace Rebus.SqlServer.RequestReply
 {
     class Program
     {
-        const string ConnectionString = @"Server=(localdb)\MSSQLLocalDB;Initial Catalog=RebusSamples;Integrated Security=true;Connection Timeout=60";
         internal static readonly int NumMessagesToSend = 5;
         internal static readonly int MessageSendDelayMs = 500;
 
         static void Main()
         {
-            SqlHelper.EnsureDatabaseExists(ConnectionString);
+            var connectionString = SqlHelper.GetSqlServerConnectionString("RebusSamples");
+            SqlHelper.EnsureDatabaseExists(connectionString);
             using var adapter = new BuiltinHandlerActivator();
             
             adapter.Handle<Job>(async (bus, job) =>
@@ -32,13 +32,13 @@ namespace Rebus.SqlServer.RequestReply
 
             Configure.With(adapter)
                 .Logging(l => l.ColoredConsole(minLevel: LogLevel.Warn))
-                .Transport(t => t.UseSqlServer(new SqlServerTransportOptions(ConnectionString), "consumer.input"))
+                .Transport(t => t.UseSqlServer(new SqlServerTransportOptions(connectionString), "consumer.input"))
                 .Start();
 
-            SendMessages();
+            SendMessages(connectionString);
         }
 
-        static void SendMessages()
+        static void SendMessages(string connectionString)
         {
             using var adapter = new BuiltinHandlerActivator();
 
@@ -49,7 +49,7 @@ namespace Rebus.SqlServer.RequestReply
 
             Configure.With(adapter)
                 .Logging(l => l.ColoredConsole(minLevel: LogLevel.Warn))
-                .Transport(t => t.UseSqlServer(new SqlServerTransportOptions(ConnectionString), "producer.input"))
+                .Transport(t => t.UseSqlServer(new SqlServerTransportOptions(connectionString), "producer.input"))
                 .Routing(r => r.TypeBased().MapAssemblyOf<Job>("consumer.input"))
                 .Start();
 
