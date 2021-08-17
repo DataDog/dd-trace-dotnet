@@ -1,5 +1,6 @@
 ﻿public static class Projects
 {
+    public const string DatadogInstrumentation = "Datadog.Instrumentation";
     public const string DatadogTrace = "Datadog.Trace";
     public const string DatadogTraceAspNet = "Datadog.Trace.AspNet";
     public const string DatadogTraceOpenTracing = "Datadog.Trace.OpenTracing";

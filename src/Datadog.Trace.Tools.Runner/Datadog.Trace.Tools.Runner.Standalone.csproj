@@ -6,7 +6,7 @@
     <Copyright>Copyright 2020 Datadog, Inc.</Copyright>
     <OutputType>Exe</OutputType>
     <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
-    <RuntimeIdentifiers>win-x64;win-x86;linux-x64;osx-x64;linux-arm64</RuntimeIdentifiers>
+    <RuntimeIdentifiers>win-x64;win-x86;linux-x64;linux-musl-x64;osx-x64;linux-arm64</RuntimeIdentifiers>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <NoWarn>NU5100</NoWarn>
     <RootNamespace>Datadog.Trace.Tools.Runner</RootNamespace>
@@ -21,20 +21,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\..\build\docker\linux-build.dockerfile" Link="linux-build.dockerfile" />
-    <None Include="Datadog.Trace.Tools.Runner.proj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.8.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\..\integrations.json" Link="home\integrations.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
-    </Content>
-    <Content Include="home\**\*.*">
+    <Content Include="..\Datadog.Instrumentation\home\**\*.*" LinkBase="home">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <CopyToPublishDirectory>Always</CopyToPublishDirectory>
     </Content>

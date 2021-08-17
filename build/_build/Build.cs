@@ -94,6 +94,7 @@ partial class Build : NukeBuild
             }
             SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => DeleteDirectory(x));
             TestsDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => DeleteDirectory(x));
+            InstrumentationHomeDirectory.GlobFiles("**").Where(x => !x.ToString().Contains("readme.txt")).ForEach(x => DeleteFile(x));
             EnsureCleanDirectory(OutputDirectory);
             EnsureCleanDirectory(TracerHomeDirectory);
             EnsureCleanDirectory(DDTracerHomeDirectory);
@@ -230,9 +231,25 @@ partial class Build : NukeBuild
                 degreeOfParallelism: 2);
         });
 
+    Target BuildInstrumentationNuget => _ => _
+        // Currently requires manual copying of files into expected locations
+        .Unlisted()
+        .After(CreateInstrumentationHome)
+        .Executes(() =>
+        {
+            DotNetBuild(x => x
+                .SetProjectFile(Solution.GetProject(Projects.DatadogInstrumentation))
+                .EnableNoRestore()
+                .EnableNoDependencies()
+                .SetConfiguration(BuildConfiguration)
+                .SetNoWarnDotNetCore3()
+                .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool"));
+        });
+
     Target BuildRunnerTool => _ => _
         // Currently requires manual copying of files into expected locations
         .Unlisted()
+        .After(CreateInstrumentationHome)
         .Executes(() =>
         {
             DotNetBuild(x => x
@@ -247,6 +264,7 @@ partial class Build : NukeBuild
     Target BuildStandaloneTool => _ => _
         // Currently requires manual copying of files into expected locations
         .Unlisted()
+        .After(CreateInstrumentationHome)
         .Executes(() =>
         {
             var runtimes = new[] {"win-x86", "win-x64", "linux-x64", "linux-musl-x64", "osx-x64", "linux-arm64"};
