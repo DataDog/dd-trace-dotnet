@@ -395,6 +395,10 @@ namespace Datadog.Trace.DuckTyping
     {
         public DuckCopyAttribute() { }
     }
+    public class DuckFieldAttribute : Datadog.Trace.DuckTyping.DuckAttribute
+    {
+        public DuckFieldAttribute() { }
+    }
     [System.AttributeUsage(System.AttributeTargets.Method | System.AttributeTargets.Property | System.AttributeTargets.Field | System.AttributeTargets.All, AllowMultiple=false)]
     public class DuckIgnoreAttribute : System.Attribute
     {
