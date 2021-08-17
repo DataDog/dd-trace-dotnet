@@ -409,6 +409,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.MongoDB.Saga", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.SqlServer.Saga", "test\test-applications\regression\NServiceBus.SqlServer.Saga\NServiceBus.SqlServer.Saga.csproj", "{9D5935CB-2DF2-46CB-A5E1-98BE134CAFCC}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rebus.SqlServer.RequestReply", "test\test-applications\regression\Rebus.SqlServer.RequestReply\Rebus.SqlServer.RequestReply.csproj", "{6C599D79-87D0-476B-9CBA-F731E5627622}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1708,6 +1710,16 @@ Global
 		{9D5935CB-2DF2-46CB-A5E1-98BE134CAFCC}.Release|x64.Build.0 = Release|x64
 		{9D5935CB-2DF2-46CB-A5E1-98BE134CAFCC}.Release|x86.ActiveCfg = Release|x86
 		{9D5935CB-2DF2-46CB-A5E1-98BE134CAFCC}.Release|x86.Build.0 = Release|x86
+		{6C599D79-87D0-476B-9CBA-F731E5627622}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{6C599D79-87D0-476B-9CBA-F731E5627622}.Debug|x64.ActiveCfg = Debug|x64
+		{6C599D79-87D0-476B-9CBA-F731E5627622}.Debug|x64.Build.0 = Debug|x64
+		{6C599D79-87D0-476B-9CBA-F731E5627622}.Debug|x86.ActiveCfg = Debug|x86
+		{6C599D79-87D0-476B-9CBA-F731E5627622}.Debug|x86.Build.0 = Debug|x86
+		{6C599D79-87D0-476B-9CBA-F731E5627622}.Release|Any CPU.ActiveCfg = Release|x86
+		{6C599D79-87D0-476B-9CBA-F731E5627622}.Release|x64.ActiveCfg = Release|x64
+		{6C599D79-87D0-476B-9CBA-F731E5627622}.Release|x64.Build.0 = Release|x64
+		{6C599D79-87D0-476B-9CBA-F731E5627622}.Release|x86.ActiveCfg = Release|x86
+		{6C599D79-87D0-476B-9CBA-F731E5627622}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1846,6 +1858,7 @@ Global
 		{463A6FB2-1ABE-4B92-A470-97134D0BBC7E} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{7471A7A8-B89C-4C94-8EB1-24180E71CA1F} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{9D5935CB-2DF2-46CB-A5E1-98BE134CAFCC} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
+		{6C599D79-87D0-476B-9CBA-F731E5627622} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
