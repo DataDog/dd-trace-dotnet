@@ -1,9 +1,12 @@
 using System;
+using System.Data.SqlClient;
 using System.Threading;
 using System.Threading.Tasks;
-using NServiceBus.MongoDB.Saga.Shared;
+using NServiceBus.SqlServer.Saga.Shared;
+using NServiceBus.Persistence.Sql;
+using NServiceBus.SqlServer.Saga.Server;
 
-namespace NServiceBus.MongoDB.Saga
+namespace NServiceBus.SqlServer.Saga
 {
     class Program
     {
@@ -12,18 +15,29 @@ namespace NServiceBus.MongoDB.Saga
         internal static readonly int MessageCompletionDurationMs = 1000;
         internal static readonly CountdownEvent Countdown = new CountdownEvent(NumMessagesToSend);
 
+        private static readonly string ConnectionString = @"Server=(localdb)\MSSQLLocalDB;Initial Catalog=NsbSamplesSqlPersistence;Integrated Security=true;Connection Timeout=60";
+        private static readonly string EndpointName = "NServiceBus.SqlServer.Saga";
+
         static async Task Main()
         {
-            #region mongoDbConfig
+            #region sqlServerConfig
 
-            var endpointConfiguration = new EndpointConfiguration("Samples.MongoDB.Server");
-            var persistence = endpointConfiguration.UsePersistence<MongoPersistence>().UseTransactions(false);
-            persistence.DatabaseName("Samples_MongoDB_Server");
+            var endpointConfiguration = new EndpointConfiguration(EndpointName);
+
+            var persistence = endpointConfiguration.UsePersistence<SqlPersistence>();
+            persistence.SqlDialect<SqlDialect.MsSqlServer>();
+            persistence.ConnectionBuilder(
+                connectionBuilder: () =>
+                {
+                    return new SqlConnection(ConnectionString);
+                });
 
             #endregion
 
-            endpointConfiguration.EnableInstallers();
+            SqlHelper.EnsureDatabaseExists(ConnectionString);
+
             endpointConfiguration.UseTransport<LearningTransport>();
+            endpointConfiguration.EnableInstallers();
 
             var endpointInstance = await Endpoint.Start(endpointConfiguration)
                 .ConfigureAwait(false);
@@ -36,7 +50,7 @@ namespace NServiceBus.MongoDB.Saga
 
         static async Task SendMessagesAsync()
         {
-            var endpointConfiguration = new EndpointConfiguration("Samples.MongoDB.Client");
+            var endpointConfiguration = new EndpointConfiguration(EndpointName);
             endpointConfiguration.UsePersistence<LearningPersistence>();
             endpointConfiguration.UseTransport<LearningTransport>();
 
@@ -53,7 +67,7 @@ namespace NServiceBus.MongoDB.Saga
                     OrderId = orderId
                 };
 
-                await endpointInstance.Send("Samples.MongoDB.Server", startOrder)
+                await endpointInstance.Send(EndpointName, startOrder)
                     .ConfigureAwait(false);
 
                 Console.WriteLine($"Message #{i}: StartOrder Message sent with OrderId {orderId}");

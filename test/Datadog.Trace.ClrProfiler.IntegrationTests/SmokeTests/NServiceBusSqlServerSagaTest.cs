@@ -1,4 +1,4 @@
-// <copyright file="NServiceBusMongoDBSagaTest.cs" company="Datadog">
+// <copyright file="NServiceBusSqlServerSagaTest.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,10 +13,10 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 {
-    public class NServiceBusMongoDBSagaTest : SmokeTestBase
+    public class NServiceBusSqlServerSagaTest : SmokeTestBase
     {
-        public NServiceBusMongoDBSagaTest(ITestOutputHelper output)
-            : base(output, "NServiceBus.MongoDB.Saga", maxTestRunSeconds: 90)
+        public NServiceBusSqlServerSagaTest(ITestOutputHelper output)
+            : base(output, "NServiceBus.SqlServer.Saga", maxTestRunSeconds: 90)
         {
         }
 

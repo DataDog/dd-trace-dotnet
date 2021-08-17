@@ -2,9 +2,9 @@ using System;
 using System.Threading.Tasks;
 using NServiceBus;
 using NServiceBus.Logging;
-using NServiceBus.MongoDB.Saga.Shared;
+using NServiceBus.SqlServer.Saga.Shared;
 
-namespace NServiceBus.MongoDB.Saga.Server
+namespace NServiceBus.SqlServer.Saga.Server
 {
     #region thesaga
 

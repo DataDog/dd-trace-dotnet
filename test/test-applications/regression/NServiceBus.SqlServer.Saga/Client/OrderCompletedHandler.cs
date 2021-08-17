@@ -1,9 +1,9 @@
 using System.Threading.Tasks;
 using NServiceBus;
 using NServiceBus.Logging;
-using NServiceBus.MongoDB.Saga.Shared;
+using NServiceBus.SqlServer.Saga.Shared;
 
-namespace NServiceBus.MongoDB.Saga.Client
+namespace NServiceBus.SqlServer.Saga.Client
 {
     public class OrderCompletedHandler : IHandleMessages<OrderCompleted>
     {

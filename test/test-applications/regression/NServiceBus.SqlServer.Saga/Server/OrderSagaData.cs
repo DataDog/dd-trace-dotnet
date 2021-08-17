@@ -1,7 +1,7 @@
 using System;
 using NServiceBus;
 
-namespace NServiceBus.MongoDB.Saga.Server
+namespace NServiceBus.SqlServer.Saga.Server
 {
     #region sagadata
 

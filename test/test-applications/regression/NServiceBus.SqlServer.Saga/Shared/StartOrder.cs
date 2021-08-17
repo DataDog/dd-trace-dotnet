@@ -1,7 +1,7 @@
 using System;
 using NServiceBus;
 
-namespace NServiceBus.MongoDB.Saga.Shared
+namespace NServiceBus.SqlServer.Saga.Shared
 {
     public class StartOrder : IMessage
     {
