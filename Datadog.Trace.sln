@@ -341,8 +341,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCoreSimpleCon
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "crank", "crank", "{E3FB283A-B766-4887-95E1-329667671921}"
 	ProjectSection(SolutionItems) = preProject
+		build\crank\os.profiles.yml = build\crank\os.profiles.yml
 		build\crank\run.sh = build\crank\run.sh
 		build\crank\Samples.AspNetCoreSimpleController.yml = build\crank\Samples.AspNetCoreSimpleController.yml
+		build\crank\Security.Samples.AspNetCoreSimpleController.yml = build\crank\Security.Samples.AspNetCoreSimpleController.yml
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DuplicateTypeProxy", "test\test-applications\regression\DuplicateTypeProxy\DuplicateTypeProxy.csproj", "{34B67004-7249-4EF1-8E12-6E6DA37EA6BE}"
@@ -1584,17 +1586,6 @@ Global
 		{04B3C44A-D21B-40A8-A167-CB6C035D613B}.Release|x64.Build.0 = Release|Any CPU
 		{04B3C44A-D21B-40A8-A167-CB6C035D613B}.Release|x86.ActiveCfg = Release|Any CPU
 		{04B3C44A-D21B-40A8-A167-CB6C035D613B}.Release|x86.Build.0 = Release|Any CPU
-		{3F146731-A66B-464F-9257-98A828883FC5}.Debug|Any CPU.ActiveCfg = Debug|x64
-		{3F146731-A66B-464F-9257-98A828883FC5}.Debug|Any CPU.Build.0 = Debug|x64
-		{3F146731-A66B-464F-9257-98A828883FC5}.Debug|x64.ActiveCfg = Debug|x64
-		{3F146731-A66B-464F-9257-98A828883FC5}.Debug|x64.Build.0 = Debug|x64
-		{3F146731-A66B-464F-9257-98A828883FC5}.Debug|x86.ActiveCfg = Debug|x86
-		{3F146731-A66B-464F-9257-98A828883FC5}.Debug|x86.Build.0 = Debug|x86
-		{3F146731-A66B-464F-9257-98A828883FC5}.Release|Any CPU.ActiveCfg = Release|x86
-		{3F146731-A66B-464F-9257-98A828883FC5}.Release|x64.ActiveCfg = Release|x64
-		{3F146731-A66B-464F-9257-98A828883FC5}.Release|x64.Build.0 = Release|x64
-		{3F146731-A66B-464F-9257-98A828883FC5}.Release|x86.ActiveCfg = Release|x86
-		{3F146731-A66B-464F-9257-98A828883FC5}.Release|x86.Build.0 = Release|x86
 		{AF000E79-8F94-4F52-A7EE-52781C958DCB}.Debug|Any CPU.ActiveCfg = Debug|x64
 		{AF000E79-8F94-4F52-A7EE-52781C958DCB}.Debug|Any CPU.Build.0 = Debug|x64
 		{AF000E79-8F94-4F52-A7EE-52781C958DCB}.Debug|x64.ActiveCfg = Debug|x64

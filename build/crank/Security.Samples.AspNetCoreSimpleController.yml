@@ -1,4 +1,4 @@
-imports:
+﻿imports:
   - https://raw.githubusercontent.com/dotnet/crank/main/src/Microsoft.Crank.Jobs.Bombardier/bombardier.yml
   - ./os.profiles.yml
 
@@ -19,12 +19,15 @@ jobs:
       - Microsoft.AspNetCore.Http.Connections
 
 scenarios:
-  baseline:
+  appsec_noattack:
     application:
       job: server
       environmentVariables:
-        COR_ENABLE_PROFILING: 0
-        CORECLR_ENABLE_PROFILING: 0
+        COR_ENABLE_PROFILING: 1
+        CORECLR_ENABLE_PROFILING: 1
+        DD_TRACE_CALLTARGET_ENABLED: 1
+        DD_APPSEC_ENABLED: true
+        DD_APPSEC_BLOCKING_ENABLED: true
     load:
       job: bombardier
       variables:
@@ -33,35 +36,37 @@ scenarios:
         serverPort: 5000
         path: /hello
 
-  calltarget:
+  appsec_attack_noblocking:
     application:
       job: server
       environmentVariables:
         COR_ENABLE_PROFILING: 1
         CORECLR_ENABLE_PROFILING: 1
         DD_TRACE_CALLTARGET_ENABLED: 1
-        DD_CLR_ENABLE_INLINING: 1
+        DD_APPSEC_ENABLED: true
+        DD_APPSEC_BLOCKING_ENABLED: false
     load:
       job: bombardier
       variables:
         warmup: 30
         duration: 240
         serverPort: 5000
-        path: /hello
+        path: /hello?arg=[$slice]
 
-  calltarget_ngen:
+  appsec_attack_blocking:
     application:
       job: server
       environmentVariables:
         COR_ENABLE_PROFILING: 1
         CORECLR_ENABLE_PROFILING: 1
+        DD_APPSEC_ENABLED: true
         DD_TRACE_CALLTARGET_ENABLED: 1
-        DD_CLR_ENABLE_INLINING: 1
-        DD_CLR_ENABLE_NGEN: 1
+        DD_APPSEC_BLOCKING_ENABLED: true
     load:
       job: bombardier
       variables:
         warmup: 30
         duration: 240
         serverPort: 5000
-        path: /hello
+        path: /hello?arg=[$slice]
+
