@@ -405,13 +405,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LogsInjection.ILogger", "te
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Aerospike", "test\test-applications\integrations\Samples.Aerospike\Samples.Aerospike.csproj", "{7471A7A8-B89C-4C94-8EB1-24180E71CA1F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.MongoDB.Saga", "test\test-applications\regression\NServiceBus.MongoDB.Saga\NServiceBus.MongoDB.Saga.csproj", "{9D5935CB-2DF2-46CB-A5E1-98BE134CAFCC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServiceBus.Minimal.NServiceBus", "test\test-applications\regression\ServiceBus.Minimal.NServiceBus\ServiceBus.Minimal.NServiceBus.csproj", "{9D5935CB-2DF2-46CB-A5E1-98BE134CAFCC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.SqlServer.Saga", "test\test-applications\regression\NServiceBus.SqlServer.Saga\NServiceBus.SqlServer.Saga.csproj", "{9D5935CB-2DF2-46CB-A5E1-98BE134CAFCC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServiceBus.Minimal.Rebus", "test\test-applications\regression\ServiceBus.Minimal.Rebus\ServiceBus.Minimal.Rebus.csproj", "{6C599D79-87D0-476B-9CBA-F731E5627622}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rebus.SqlServer.RequestReply", "test\test-applications\regression\Rebus.SqlServer.RequestReply\Rebus.SqlServer.RequestReply.csproj", "{6C599D79-87D0-476B-9CBA-F731E5627622}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MassTransit.Autofac.Saga", "test\test-applications\regression\MassTransit.Autofac.Saga\MassTransit.Autofac.Saga.csproj", "{B0E671B9-78DE-410F-A0AA-612FF1F900F2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServiceBus.Minimal.MassTransit", "test\test-applications\regression\ServiceBus.Minimal.MassTransit\ServiceBus.Minimal.MassTransit.csproj", "{B0E671B9-78DE-410F-A0AA-612FF1F900F2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
