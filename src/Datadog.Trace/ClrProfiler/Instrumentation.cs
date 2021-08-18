@@ -68,21 +68,22 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
+                NativeMethods.InitializeProfiler(NativeCallTargetDefinition.GetAllDefinitions());
+                Log.Information($"IsProfilerAttached: true");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, ex.Message);
+            }
+
+            try
+            {
                 // ensure global instance is created if it's not already
                 _ = Tracer.Instance;
             }
             catch
             {
                 // ignore
-            }
-
-            try
-            {
-                Log.Information($"IsProfilerAttached: {NativeMethods.IsProfilerAttached()}");
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, ex.Message);
             }
 
             try

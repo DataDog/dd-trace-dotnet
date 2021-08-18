@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NETFRAMEWORK
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -11,13 +10,13 @@ using System.Linq;
 using System.Threading;
 using System.Web;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.ClrProfiler.Integrations;
+#if NETFRAMEWORK
 using Datadog.Trace.ClrProfiler.Integrations.AspNet;
+#endif
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Headers;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
@@ -45,6 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         private const string Major5MinorX = "5";
 
         private const string IntegrationName = nameof(IntegrationIds.AspNetWebApi2);
+#if NETFRAMEWORK
 
         /// <summary>
         /// OnMethodBegin callback
@@ -133,6 +133,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             scope.Span.Finish(finishTime);
             scope.Dispose();
         }
+#endif
     }
 }
-#endif

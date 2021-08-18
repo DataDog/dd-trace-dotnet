@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NETFRAMEWORK
 using System.ComponentModel;
 using System.Threading;
 using System.Web;
@@ -30,6 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
     public class HttpModule_Integration
     {
         private const string IntegrationName = nameof(IntegrationIds.AspNet);
+#if NETFRAMEWORK
 
         /// <summary>
         /// Indicates whether we're initializing the HttpModule for the first time
@@ -66,6 +66,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
             return CallTargetState.GetDefault();
         }
+#endif
     }
 }
-#endif

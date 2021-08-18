@@ -25,7 +25,6 @@ namespace PrepareRelease
         {
             Console.WriteLine("Updating the integrations definitions");
 
-            var callTargetIntegrations = Enumerable.Empty<Integration>();
             var callSiteIntegrations = Enumerable.Empty<Integration>();
 
             foreach (var path in assemblyPaths)
@@ -34,7 +33,6 @@ namespace PrepareRelease
                 var assemblyLoadContext = new CustomAssemblyLoadContext(Path.GetDirectoryName(path));
                 var assembly = assemblyLoadContext.LoadFromAssemblyPath(path);
 
-                callTargetIntegrations = callTargetIntegrations.Concat(GetCallTargetIntegrations(new[] { assembly }));
                 callSiteIntegrations = callSiteIntegrations.Concat(GetCallSiteIntegrations(new[] { assembly }));
 
                 assemblyLoadContext.Unload();
@@ -51,17 +49,6 @@ namespace PrepareRelease
             };
 
             // remove duplicates
-            callTargetIntegrations = callTargetIntegrations
-                                    .GroupBy(x => x.Name)
-                                    .Select(x => new Integration()
-                                     {
-                                         Name = x.Key,
-                                         MethodReplacements = x
-                                                             .SelectMany(y => y.MethodReplacements)
-                                                             .Distinct()
-                                                             .ToArray(),
-                                     });
-
             callSiteIntegrations = callSiteIntegrations
                                   .GroupBy(x => x.Name)
                                   .Select(x => new Integration()
@@ -73,7 +60,7 @@ namespace PrepareRelease
                                                            .ToArray(),
                                    });
 
-            var json = JsonConvert.SerializeObject(callTargetIntegrations.Concat(callSiteIntegrations), serializerSettings);
+            var json = JsonConvert.SerializeObject(callSiteIntegrations, serializerSettings);
 
             foreach (var outputDirectory in outputDirectories)
             {
@@ -83,80 +70,6 @@ namespace PrepareRelease
                 File.WriteAllText(filename, json, utf8NoBom);
             }
         }
-
-        static IEnumerable<Integration> GetCallTargetIntegrations(ICollection<Assembly> assemblies)
-        {
-            var assemblyInstrumentMethodAttributes = from assembly in assemblies
-                                                     let attributes = assembly.GetCustomAttributes(inherit: false)
-                                                                              .Where(a => InheritsFrom(a.GetType(), InstrumentMethodAttributeName))
-                                                                              .ToList()
-                                                     from attribute in attributes
-                                                     let callTargetType = GetPropertyValue<Type>(attribute, "CallTargetType")
-                                                                       ?? throw new NullReferenceException($"The usage of InstrumentMethodAttribute[Type={GetPropertyValue<string>(attribute, "TypeName")}, Method={GetPropertyValue<Type>(attribute, "MethodName")}] in assembly scope must define the CallTargetType property.")
-                                                     select (callTargetType, attribute);
-
-            // Extract all InstrumentMethodAttribute from the classes
-            var classesInstrumentMethodAttributes = from assembly in assemblies
-                                                    from wrapperType in GetLoadableTypes(assembly)
-                                                    let attributes = wrapperType.GetCustomAttributes(inherit: false)
-                                                                                .Where(a => InheritsFrom(a.GetType(), InstrumentMethodAttributeName))
-                                                                                .Select(a => (wrapperType, a))
-                                                                                .ToList()
-                                                    from attribute in attributes
-                                                    select attribute;
-
-            // combine all InstrumentMethodAttributes
-            // and create objects that will generate correct JSON schema
-            var callTargetIntegrations = from attributePair in assemblyInstrumentMethodAttributes.Concat(classesInstrumentMethodAttributes)
-                                         let callTargetType = attributePair.Item1
-                                         let attribute = attributePair.Item2
-                                         let integrationName = GetPropertyValue<string>(attribute, "IntegrationName")
-                                         let assembly = callTargetType.Assembly
-                                         let wrapperType = callTargetType
-                                         orderby integrationName
-                                         group new
-                                             {
-                                                 assembly,
-                                                 wrapperType,
-                                                 attribute
-                                             }
-                                             by integrationName into g
-                                         select new Integration
-                                         {
-                                             Name = g.Key,
-                                             MethodReplacements = (from item in g
-                                                                 from assembly in GetPropertyValue<string[]>(item.attribute, "AssemblyNames")
-                                                                 let version = GetPropertyValue<object>(item.attribute, "VersionRange")
-                                                                 select new Integration.MethodReplacement
-                                                                 {
-                                                                     Caller = new Integration.CallerDetail(),
-                                                                     Target = new Integration.TargetDetail
-                                                                     {
-                                                                         Assembly = assembly,
-                                                                         Type = GetPropertyValue<string>(item.attribute, "TypeName"),
-                                                                         Method = GetPropertyValue<string>(item.attribute, "MethodName"),
-                                                                         SignatureTypes = new string[] { GetPropertyValue<string>(item.attribute, "ReturnTypeName") }
-                                                                                          .Concat(GetPropertyValue<string[]>(item.attribute, "ParameterTypeNames") ?? Enumerable.Empty<string>())
-                                                                                          .ToArray(),
-                                                                         MinimumMajor = GetPropertyValue<ushort>(version, "MinimumMajor"),
-                                                                         MinimumMinor = GetPropertyValue<ushort>(version, "MinimumMinor"),
-                                                                         MinimumPatch = GetPropertyValue<ushort>(version, "MinimumPatch"),
-                                                                         MaximumMajor = GetPropertyValue<ushort>(version, "MaximumMajor"),
-                                                                         MaximumMinor = GetPropertyValue<ushort>(version, "MaximumMinor"),
-                                                                         MaximumPatch = GetPropertyValue<ushort>(version, "MaximumPatch"),
-                                                                     },
-                                                                     Wrapper = new Integration.WrapperDetail()
-                                                                     {
-                                                                         Assembly = item.assembly.FullName,
-                                                                         Type = item.wrapperType.FullName,
-                                                                         Action = "CallTargetModification"
-                                                                     }
-                                                                 }).ToArray()
-                                         };
-            return callTargetIntegrations.ToList();
-        }
-
-
 
         static IEnumerable<Integration> GetCallSiteIntegrations(ICollection<Assembly> assemblies)
         {

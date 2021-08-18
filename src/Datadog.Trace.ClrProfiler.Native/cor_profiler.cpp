@@ -162,16 +162,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         }
     }
 
-    // get path to integration definition JSON files
-    const WSTRING integrations_paths = GetEnvironmentValue(environment::integrations_path);
-
-    if (integrations_paths.empty())
-    {
-        Logger::Warn("DATADOG TRACER DIAGNOSTICS - Profiler disabled: ", environment::integrations_path,
-                     " environment variable not set.");
-        return E_FAIL;
-    }
-
     const bool is_calltarget_enabled = IsCallTargetEnabled(is_net46_or_greater);
 
     // Initialize ReJIT handler and define the Rewriter Callback
@@ -190,19 +180,16 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         rejit_handler = nullptr;
     }
 
-    // load all integrations from JSON files
-    LoadIntegrationsFromEnvironment(integration_methods_, is_calltarget_enabled, IsNetstandardEnabled(),
-                                    GetEnvironmentValues(environment::disabled_integrations));
+    // get path to integration definition JSON files
+    const WSTRING integrations_paths = GetEnvironmentValue(environment::integrations_path);
 
-    // check if there are any enabled integrations left
-    if (integration_methods_.empty())
+    if (!integrations_paths.empty())
     {
-        Logger::Warn("DATADOG TRACER DIAGNOSTICS - Profiler disabled: no enabled integrations found.");
-        return E_FAIL;
-    }
-    else
-    {
-        Logger::Debug("Number of Integrations loaded: ", integration_methods_.size());
+        // load all integrations from JSON files
+        LoadIntegrationsFromEnvironment(integration_methods_, is_calltarget_enabled, IsNetstandardEnabled(),
+                                        GetEnvironmentValues(environment::disabled_integrations));
+
+        Logger::Info("Number of Integrations loaded from file: ", integration_methods_.size());
     }
 
     DWORD event_mask = COR_PRF_MONITOR_JIT_COMPILATION | COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
@@ -524,15 +511,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         return S_OK;
     }
 
-    for (auto&& skip_assembly_pattern : skip_assembly_prefixes)
-    {
-        if (module_info.assembly.name.rfind(skip_assembly_pattern, 0) == 0)
-        {
-            Logger::Debug("ModuleLoadFinished skipping module by pattern: ", module_id, " ", module_info.assembly.name);
-            return S_OK;
-        }
-    }
-
     for (auto&& skip_assembly : skip_assemblies)
     {
         if (module_info.assembly.name == skip_assembly)
@@ -542,10 +520,19 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         }
     }
 
+    for (auto&& skip_assembly_pattern : skip_assembly_prefixes)
+    {
+        if (module_info.assembly.name.rfind(skip_assembly_pattern, 0) == 0)
+        {
+            Logger::Debug("ModuleLoadFinished skipping module by pattern: ", module_id, " ", module_info.assembly.name);
+            return S_OK;
+        }
+    }
+
     std::vector<IntegrationMethod> filtered_integrations = IsCallTargetEnabled(is_net46_or_greater) ?
       integration_methods_ : FilterIntegrationsByCaller(integration_methods_, module_info.assembly);
 
-    if (filtered_integrations.empty())
+    if (!IsCallTargetEnabled(is_net46_or_greater) && filtered_integrations.empty())
     {
         // we don't need to instrument anything in this module, skip it
         Logger::Debug("ModuleLoadFinished skipping module (filtered by caller): ", module_id, " ", module_info.assembly.name);
@@ -1038,6 +1025,94 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId, Function
     }
 
     return S_OK;
+}
+
+
+//
+// InitializeProfiler method
+//
+void CorProfiler::InitializeProfiler(CallTargetDefinition* items, int size)
+{
+    auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
+
+    Logger::Info("InitializeProfiler:: received from managed side: ", size, " integrations.");
+    if (items != nullptr && rejit_handler != nullptr)
+    {
+        std::vector<IntegrationMethod> integrationMethods;
+
+        for (int i = 0; i < size; i++)
+        {
+            const CallTargetDefinition& current = items[i];
+
+            WSTRING targetAssembly;
+            WSTRING targetType;
+            WSTRING targetMethod;
+
+            if (current.targetAssembly != nullptr)
+            {
+                targetAssembly = WSTRING(current.targetAssembly);
+            }
+            if (current.targetType != nullptr)
+            {
+                targetType = WSTRING(current.targetType);
+            }
+            if (current.targetMethod != nullptr)
+            {
+                targetMethod = WSTRING(current.targetMethod);
+            }
+
+            WSTRING wrapperAssembly;
+            WSTRING wrapperType;
+
+            if (current.wrapperAssembly != nullptr)
+            {
+                wrapperAssembly = WSTRING(current.wrapperAssembly);
+            }
+            if (current.wrapperType != nullptr)
+            {
+                wrapperType = WSTRING(current.wrapperType);
+            }
+
+            std::vector<WSTRING> signatureTypes;
+            for (int sIdx = 0; sIdx < current.signatureTypesLength; sIdx++)
+            {
+                const auto currentSignature = current.signatureTypes[sIdx];
+                if (currentSignature != nullptr)
+                {
+                    signatureTypes.push_back(WSTRING(currentSignature));
+                }
+            }
+
+            const auto integration = IntegrationMethod(
+                WStr(""),
+                MethodReplacement(
+                    {},
+                    MethodReference(
+                        targetAssembly, targetType, targetMethod, WStr(""),
+                        Version(current.targetMinimumMajor, current.targetMinimumMinor, current.targetMinimumPatch, 0),
+                        Version(current.targetMaximumMajor, current.targetMaximumMinor, current.targetMaximumPatch, 0),
+                        {}, signatureTypes),
+                    MethodReference(targetAssembly, targetType, WStr(""), calltarget_modification_action, {}, {}, {},
+                                    {})));
+
+            integrationMethods.push_back(integration);
+        }
+
+        std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
+
+        for (const auto& moduleItem : module_id_to_info_map_)
+        {
+            CallTarget_RequestRejitForModule(moduleItem.first, moduleItem.second, integrationMethods);
+        }
+
+        integration_methods_.reserve(integration_methods_.size() + integrationMethods.size());
+        for (const auto& integration : integrationMethods)
+        {
+            integration_methods_.push_back(integration);
+        }
+
+        Logger::Info("InitializeProfiler:: Total integrations in profiler: ", integration_methods_.size());
+    }
 }
 
 //
@@ -3199,7 +3274,6 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
     if (!vtMethodDefs.empty())
     {
         this->rejit_handler->EnqueueForRejit(vtModules, vtMethodDefs);
-        this->rejit_handler->RequestRejitForNGenInliners();
     }
 
     // We return the number of ReJIT requests
