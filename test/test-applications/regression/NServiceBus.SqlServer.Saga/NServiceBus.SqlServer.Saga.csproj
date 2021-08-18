@@ -5,6 +5,5 @@
 
   <ItemGroup>
     <PackageReference Include="NServiceBus" Version="7.5.0" />
-    <PackageReference Include="NServiceBus.Persistence.Sql" Version="4.6.2" />
   </ItemGroup>
 </Project>

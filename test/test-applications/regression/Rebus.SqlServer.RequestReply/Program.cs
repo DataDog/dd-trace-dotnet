@@ -5,8 +5,8 @@ using Rebus.Activation;
 using Rebus.Config;
 using Rebus.Logging;
 using Rebus.Routing.TypeBased;
-using Rebus.SqlServer.RequestReply.Server;
 using Rebus.SqlServer.RequestReply.Shared;
+using Rebus.Transport.InMem;
 
 namespace Rebus.SqlServer.RequestReply
 {
@@ -17,8 +17,7 @@ namespace Rebus.SqlServer.RequestReply
 
         static void Main()
         {
-            var connectionString = SqlHelper.GetSqlServerConnectionString("RebusSamples");
-            SqlHelper.EnsureDatabaseExists(connectionString);
+            var network = new InMemNetwork();
             using var adapter = new BuiltinHandlerActivator();
             
             adapter.Handle<Job>(async (bus, job) =>
@@ -32,13 +31,13 @@ namespace Rebus.SqlServer.RequestReply
 
             Configure.With(adapter)
                 .Logging(l => l.ColoredConsole(minLevel: LogLevel.Warn))
-                .Transport(t => t.UseSqlServer(new SqlServerTransportOptions(connectionString), "consumer.input"))
+                .Transport(t => t.UseInMemoryTransport(network, "consumer.input"))
                 .Start();
 
-            SendMessages(connectionString);
+            SendMessages(network);
         }
 
-        static void SendMessages(string connectionString)
+        static void SendMessages(InMemNetwork network)
         {
             using var adapter = new BuiltinHandlerActivator();
 
@@ -49,7 +48,7 @@ namespace Rebus.SqlServer.RequestReply
 
             Configure.With(adapter)
                 .Logging(l => l.ColoredConsole(minLevel: LogLevel.Warn))
-                .Transport(t => t.UseSqlServer(new SqlServerTransportOptions(connectionString), "producer.input"))
+                .Transport(t => t.UseInMemoryTransport(network, "producer.input"))
                 .Routing(r => r.TypeBased().MapAssemblyOf<Job>("consumer.input"))
                 .Start();
 

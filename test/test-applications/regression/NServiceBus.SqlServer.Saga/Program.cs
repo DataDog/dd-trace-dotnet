@@ -1,10 +1,7 @@
 using System;
-using System.Data.SqlClient;
 using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus.SqlServer.Saga.Shared;
-using NServiceBus.Persistence.Sql;
-using NServiceBus.SqlServer.Saga.Server;
 
 namespace NServiceBus.SqlServer.Saga
 {
@@ -18,24 +15,8 @@ namespace NServiceBus.SqlServer.Saga
 
         static async Task Main()
         {
-            var connectionString = SqlHelper.GetSqlServerConnectionString("NsbSamplesSqlPersistence");
-
-            #region sqlServerConfig
-
             var endpointConfiguration = new EndpointConfiguration(EndpointName);
-
-            var persistence = endpointConfiguration.UsePersistence<SqlPersistence>();
-            persistence.SqlDialect<SqlDialect.MsSqlServer>();
-            persistence.ConnectionBuilder(
-                connectionBuilder: () =>
-                {
-                    return new SqlConnection(connectionString);
-                });
-
-            #endregion
-
-            SqlHelper.EnsureDatabaseExists(connectionString);
-
+            endpointConfiguration.UsePersistence<LearningPersistence>();
             endpointConfiguration.UseTransport<LearningTransport>();
             endpointConfiguration.EnableInstallers();
 

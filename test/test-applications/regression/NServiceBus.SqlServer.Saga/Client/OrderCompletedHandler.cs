@@ -9,19 +9,11 @@ namespace NServiceBus.SqlServer.Saga.Client
     {
         static readonly ILog log = LogManager.GetLogger<OrderCompletedHandler>();
         static Task CompletedTask = Task.FromResult(0);
-        static bool ContinueSignal = true;
 
         public Task Handle(OrderCompleted message, IMessageHandlerContext context)
         {
             log.Info($"Received OrderCompleted for OrderId {message.OrderId}");
-            if (ContinueSignal)
-            {
-                // Stop signaling after we've reached zero
-                // We may continue to receive events if subsequent program executions
-                // left messages in MongoDB
-                ContinueSignal = !Program.Countdown.Signal();
-            }
-
+            Program.Countdown.Signal(); // Send CountdownEvent signal so the program knows when to exit
             return CompletedTask;
         }
     }

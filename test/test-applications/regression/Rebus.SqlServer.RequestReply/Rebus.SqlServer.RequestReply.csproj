@@ -7,7 +7,5 @@
 
   <ItemGroup>
     <PackageReference Include="Rebus" Version="6.4.1" />
-    <PackageReference Include="Rebus.SqlServer" Version="7.1.7" />
-    <PackageReference Include="System.Data.SqlClient" Version="4.4.3" />
   </ItemGroup>
 </Project>
