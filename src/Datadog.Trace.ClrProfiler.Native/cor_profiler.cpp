@@ -1092,7 +1092,7 @@ void CorProfiler::InitializeProfiler(CallTargetDefinition* items, int size)
                         Version(current.targetMinimumMajor, current.targetMinimumMinor, current.targetMinimumPatch, 0),
                         Version(current.targetMaximumMajor, current.targetMaximumMinor, current.targetMaximumPatch, 0),
                         {}, signatureTypes),
-                    MethodReference(targetAssembly, targetType, WStr(""), calltarget_modification_action, {}, {}, {},
+                    MethodReference(wrapperAssembly, wrapperType, WStr(""), calltarget_modification_action, {}, {}, {},
                                     {})));
 
             integrationMethods.push_back(integration);
