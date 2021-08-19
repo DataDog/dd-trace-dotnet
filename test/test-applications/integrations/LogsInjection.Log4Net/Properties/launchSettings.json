@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "LogsInjection.Log4Net": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DD_LOGS_INJECTION": "true"
+      }
+    }
+  }
+}

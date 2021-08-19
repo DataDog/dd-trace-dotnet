@@ -692,17 +692,6 @@ partial class Build
         .After(CompileRegressionDependencyLibs)
         .Executes(() =>
         {
-            // explicitly build the other dependency (with restore to avoid runtime identifier dependency issues)
-            DotNetBuild(x => x
-                .SetProjectFile(Solution.GetProject(Projects.ApplicationWithLog4Net))
-                // .EnableNoRestore()
-                .EnableNoDependencies()
-                .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatform(Platform)
-                .SetNoWarnDotNetCore3()
-                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
-                    o.SetPackageDirectory(NugetPackageDirectory)));
-
             var regressionsDirectory = Solution.GetProject(Projects.EntityFramework6xMdTokenLookupFailure)
                 .Directory.Parent;
             var regressionLibs = GlobFiles(regressionsDirectory / "**" / "*.csproj")
@@ -795,15 +784,17 @@ partial class Build
                 }
             );
 
+            // /nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
             DotNetBuild(config => config
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatform(Platform)
                 .EnableNoDependencies()
                 .SetProperty("BuildInParallel", "false")
-                .SetProperty("ManagedProfilerOutputDirectory", TracerHomeDirectory)
                 .SetProperty("ExcludeManagedProfiler", true)
                 .SetProperty("ExcludeNativeProfiler", true)
+                .SetProperty("ManagedProfilerOutputDirectory", TracerHomeDirectory)
                 .SetProperty("LoadManagedProfilerFromProfilerDirectory", false)
+                .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
                 .CombineWith(projects, (s, project) => s
                     .SetProjectFile(project)));
         });
@@ -980,8 +971,6 @@ partial class Build
                 "DogStatsD.RaceCondition",
                 "EntityFramework6x.MdTokenLookupFailure",
                 "LargePayload", // I think we _should_ run this one (assuming it has tests)
-                "Log4Net.SerializationException",
-                "NLog10LogsInjection.NullReferenceException",
                 "Sandbox.ManualTracing",
                 "StackExchange.Redis.AssemblyConflict.LegacyProject",
                 "Samples.OracleMDA", // We don't test these yet

@@ -13,6 +13,8 @@ namespace Datadog.Trace.Logging
 {
     internal class CustomSerilogLogProvider : SerilogLogProvider, ILogProviderWithEnricher
     {
+        private static readonly IDisposable NoopDisposableInstance = new DisposableAction();
+        private static readonly Version SupportedSerilogAssemblyVersion = new Version("2.0.0.0");
         private static Func<object, IDisposable> _pushMethod;
         private readonly bool _wrapEnricher;
 
@@ -32,8 +34,7 @@ namespace Datadog.Trace.Logging
             else
             {
                 _wrapEnricher = false;
-                IDisposable cachedDisposable = new NoOpDisposable();
-                _pushMethod = (enricher) => { return cachedDisposable; };
+                _pushMethod = (enricher) => NoopDisposableInstance;
             }
         }
 
@@ -47,7 +48,7 @@ namespace Datadog.Trace.Logging
         internal static Type GetLogEnricherType() => Type.GetType("Serilog.Core.ILogEventEnricher, Serilog");
 
         internal static new bool IsLoggerAvailable() =>
-            SerilogLogProvider.IsLoggerAvailable() && (GetPushMethodInfo() != null || GetPushPropertiesMethodInfo() != null);
+            SerilogLogProvider.IsLoggerAvailable() && SerilogAssemblySupported() && (GetPushMethodInfo() != null || GetPushPropertiesMethodInfo() != null);
 
         private static MethodInfo GetPushMethodInfo()
         {
@@ -73,6 +74,13 @@ namespace Datadog.Trace.Logging
                 .Compile();
 
             return push;
+        }
+
+        private static bool SerilogAssemblySupported()
+        {
+            var ndcContextType = FindType("Serilog.Context.LogContext", new[] { "Serilog", "Serilog.FullNetFx" });
+            var serilogVersion = ndcContextType.Assembly.GetName().Version;
+            return serilogVersion >= SupportedSerilogAssemblyVersion;
         }
 
         internal class NoOpDisposable : IDisposable

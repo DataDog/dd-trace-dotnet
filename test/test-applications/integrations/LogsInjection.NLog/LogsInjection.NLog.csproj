@@ -1,0 +1,44 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">4.5.0</ApiVersion>
+    <DefineConstants Condition="'$(ApiVersion)'&gt;='4.0.0'">$(DefineConstants);NLOG_4_0</DefineConstants>
+
+    <!-- Required to build multiple projects with the same Configuration|Platform -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+
+    <ExcludeManagedProfiler>true</ExcludeManagedProfiler>
+    <ExcludeNativeProfiler>true</ExcludeNativeProfiler>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NLog" Version="$(ApiVersion)" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\dependency-libs\LogsInjectionHelper\LogsInjectionHelper.csproj" />
+    <ProjectReference Include="..\dependency-libs\PluginApplication\PluginApplication.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="NLog.40.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="NLog.Pre40.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <Target Name="AfterBuildMovePluginApplication" AfterTargets="AfterBuild">
+    <ItemGroup>
+      <!-- Subfolders of the output directory should each be a target framework -->
+      <OtherApplicationFiles Include="$(OutputPath)PluginApplication.dll" />
+      <OtherApplicationFiles Include="$(OutputPath)PluginApplication.pdb" />
+    </ItemGroup>
+
+    <Copy SourceFiles="@(OtherApplicationFiles)" DestinationFolder="$(OutputPath)ApplicationFiles" />
+  </Target>
+
+</Project>

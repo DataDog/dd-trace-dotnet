@@ -336,5 +336,74 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
+        public static IEnumerable<object[]> Serilog =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETFRAMEWORK
+                new object[] { "1.0.3" },
+                new object[] { "1.1.2" },
+                new object[] { "1.2.53" },
+                new object[] { "1.3.43" },
+                new object[] { "1.4.214" },
+                new object[] { "1.5.14" },
+#endif
+                new object[] { "2.0.0" },
+                new object[] { "2.1.0" },
+                new object[] { "2.2.1" },
+                new object[] { "2.3.0" },
+                new object[] { "2.4.0" },
+                new object[] { "2.5.0" },
+                new object[] { "2.6.0" },
+                new object[] { "2.7.1" },
+                new object[] { "2.8.0" },
+                new object[] { "2.9.0" },
+                new object[] { "2.10.0" },
+#endif
+            };
+
+        public static IEnumerable<object[]> NLog =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETFRAMEWORK
+                new object[] { "1.0.0.505" },
+                new object[] { "2.0.1.2" },
+                new object[] { "2.1.0" },
+                new object[] { "3.0.0" },
+                new object[] { "3.1.0" },
+                new object[] { "3.2.1" },
+                new object[] { "4.0.1" },
+                new object[] { "4.1.2" },
+                new object[] { "4.2.3" },
+                new object[] { "4.3.11" },
+                new object[] { "4.4.13" },
+#endif
+                new object[] { "4.5.11" },
+                new object[] { "4.6.8" },
+                new object[] { "4.7.10" },
+#endif
+            };
+
+        public static IEnumerable<object[]> log4net =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETFRAMEWORK
+                new object[] { "1.2.11" },
+#endif
+                new object[] { "2.0.12" },
+#endif
+            };
+
     }
 }

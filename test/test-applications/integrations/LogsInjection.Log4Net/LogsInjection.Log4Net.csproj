@@ -1,0 +1,48 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">2.0.12</ApiVersion>
+    <DefineConstants Condition="'$(ApiVersion)'&gt;='2.0.5'">$(DefineConstants);LOG4NET_2_0_5</DefineConstants>
+
+    <!-- Required to build multiple projects with the same Configuration|Platform -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+
+    <ExcludeManagedProfiler>true</ExcludeManagedProfiler>
+    <ExcludeNativeProfiler>true</ExcludeNativeProfiler>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="log4net" Version="$(ApiVersion)" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(ApiVersion)' &gt;= '2.0.5'">
+    <PackageReference Include="log4net.Ext.Json" Version="1.2.15.14586" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\dependency-libs\LogsInjectionHelper\LogsInjectionHelper.csproj" />
+    <ProjectReference Include="..\dependency-libs\PluginApplication\PluginApplication.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="log4net.205.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="log4net.Pre205.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <Target Name="AfterBuildMovePluginApplication" AfterTargets="AfterBuild">
+    <ItemGroup>
+      <!-- Subfolders of the output directory should each be a target framework -->
+      <OtherApplicationFiles Include="$(OutputPath)PluginApplication.dll" />
+      <OtherApplicationFiles Include="$(OutputPath)PluginApplication.pdb" />
+    </ItemGroup>
+
+    <Copy SourceFiles="@(OtherApplicationFiles)" DestinationFolder="$(OutputPath)ApplicationFiles" />
+  </Target>
+
+</Project>
