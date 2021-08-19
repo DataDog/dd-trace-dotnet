@@ -196,8 +196,12 @@ namespace Datadog.Trace.AppSec
 
         private void RunShutdown()
         {
-            _agentWriter.Shutdown();
-            _instrumentationGateway.InstrumentationGatewayEvent -= InstrumentationGatewayInstrumentationGatewayEvent;
+            _agentWriter?.Shutdown();
+            if (_instrumentationGateway != null)
+            {
+                _instrumentationGateway.InstrumentationGatewayEvent -= InstrumentationGatewayInstrumentationGatewayEvent;
+            }
+
             Dispose();
         }
 

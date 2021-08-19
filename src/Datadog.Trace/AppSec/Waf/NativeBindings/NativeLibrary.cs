@@ -46,7 +46,9 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         {
             if (isPosixLike)
             {
-                return dlsym(handle, name);
+                var exportPtr = NonWindows.dddlsym(handle, name);
+                ReadDlerror("dddlsym");
+                return exportPtr;
             }
             else
             {
@@ -57,32 +59,39 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private static IntPtr LoadPosixLibrary(string path)
         {
             const int RTLD_NOW = 2;
-            var addr = dlopen(path, RTLD_NOW);
-            if (addr == IntPtr.Zero)
-            {
-                // Not using NanosmgException because it depends on nn_errno.
-                var error = Marshal.PtrToStringAnsi(dlerror());
-                Log.Error("Error loading library: " + error);
-            }
+            var addr = NonWindows.dddlopen(path, RTLD_NOW);
+            ReadDlerror("dddlopen");
 
             return addr;
         }
 
+        private static void ReadDlerror(string op)
+        {
+            var errorPtr = NonWindows.dddlerror();
+            if (errorPtr != IntPtr.Zero)
+            {
+                var error = Marshal.PtrToStringAnsi(errorPtr);
+                Log.Error($"Error during '{op}': {error}");
+            }
+        }
+
 #pragma warning disable SA1300 // Element should begin with upper-case letter
-
-        [DllImport("dl")]
-        private static extern IntPtr dlopen(string fileName, int flags);
-
-        [DllImport("dl")]
-        private static extern IntPtr dlerror();
-
-        [DllImport("dl")]
-        private static extern IntPtr dlsym(IntPtr hModule, string lpProcName);
-
         [DllImport("kernel32.dll")]
         private static extern IntPtr LoadLibrary(string dllToLoad);
 
         [DllImport("Kernel32.dll")]
         private static extern IntPtr GetProcAddress(IntPtr hModule, string lpProcName);
+
+        private static class NonWindows
+        {
+            [DllImport("Datadog.Trace.ClrProfiler.Native")]
+            internal static extern IntPtr dddlopen(string fileName, int flags);
+
+            [DllImport("Datadog.Trace.ClrProfiler.Native")]
+            internal static extern IntPtr dddlerror();
+
+            [DllImport("Datadog.Trace.ClrProfiler.Native")]
+            internal static extern IntPtr dddlsym(IntPtr hModule, string lpProcName);
+        }
     }
 }

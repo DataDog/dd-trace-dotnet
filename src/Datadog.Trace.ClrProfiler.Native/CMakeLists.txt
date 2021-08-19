@@ -253,11 +253,13 @@ if (ISMACOS)
     target_link_libraries("Datadog.Trace.ClrProfiler.Native.static"
         ${OUTPUT_DEPS_DIR}/re2/obj/libre2.a
         ${OUTPUT_DEPS_DIR}/fmt/libfmt.a
+        ${CMAKE_DL_LIBS}
     )
 elseif(ISLINUX)
     target_link_libraries("Datadog.Trace.ClrProfiler.Native.static"
         ${OUTPUT_DEPS_DIR}/re2/obj/libre2.a
         ${OUTPUT_DEPS_DIR}/fmt/libfmt.a
+        ${CMAKE_DL_LIBS}
         -static-libgcc
         -static-libstdc++
     )

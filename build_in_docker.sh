@@ -19,5 +19,7 @@ docker run -it --rm \
     --env NugetPackageDirectory=/project/packages \
     --env tracerHome=/project/bin/tracer-home \
     --env artifacts=/project/bin/artifacts \
+    -p 5003:5003 \
+    -v /ddlogs:/var/log/datadog/dotnet \
     $IMAGE_NAME \
     dotnet /build/bin/Debug/_build.dll "$@"
