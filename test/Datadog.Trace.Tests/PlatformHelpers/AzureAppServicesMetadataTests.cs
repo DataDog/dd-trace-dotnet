@@ -63,7 +63,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
                 functionsRuntime: FunctionsRuntime);
 
             var metadata = new AzureAppServices(vars);
-            Assert.Equal(expected: AzureContext.AzureFunction, actual: metadata.AzureContext);
+            Assert.Equal(expected: AzureContext.AzureFunctions, actual: metadata.AzureContext);
             Assert.Equal(expected: FunctionKind, actual: metadata.SiteKind);
             Assert.Equal(expected: FunctionType, actual: metadata.SiteType);
         }

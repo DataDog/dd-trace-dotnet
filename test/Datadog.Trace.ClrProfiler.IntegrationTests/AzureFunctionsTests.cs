@@ -34,10 +34,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var agentPort = TcpPortProvider.GetOpenPort();
             using var agent = new MockTracerAgent(agentPort);
-            using var processResult = RunSampleAndWaitForExit(agent.Port); // , arguments: $"5 5");
-            Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode} and exception: {processResult.StandardError}");
+
+            var functionsPort = TcpPortProvider.GetOpenPort();
+            using var process = RunFunctionsHost(functionsPort, agent.Port);
 
             var spans = agent.WaitForSpans(expectedMinimumSpanCount);
+
+            process.CloseMainWindow();
+            process.Close();
+            CloseOutProcess(process);
+
             // var functionsSpans = spans.Where(span => string.Equals(span.Service, ExpectedServiceName, StringComparison.OrdinalIgnoreCase));
             foreach (var span in spans)
             {

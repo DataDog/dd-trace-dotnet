@@ -43,5 +43,38 @@ namespace Datadog.Trace.TestHelpers
 
             return Process.Start(startInfo);
         }
+
+        public static Process StartFunctionsHostWithProfiler(
+            string projectDirectory,
+            EnvironmentHelper environmentHelper,
+            string arguments = null,
+            bool redirectStandardInput = false,
+            int traceAgentPort = 9696,
+            int functionsHostPort = 5000,
+            int? statsdPort = null,
+            string processToProfile = null)
+        {
+            if (environmentHelper == null)
+            {
+                throw new ArgumentNullException(nameof(environmentHelper));
+            }
+
+            // clear all relevant environment variables to start with a clean slate
+            EnvironmentHelper.ClearProfilerEnvironmentVariables();
+
+            var funcStartCmd = $"func start --script-root {projectDirectory} --port {functionsHostPort}";
+
+            var startInfo = new ProcessStartInfo(fileName: "cmd.exe", arguments: funcStartCmd);
+            environmentHelper.CustomEnvironmentVariables.Add("DD_FUNCTION_HOST_BASE", $"http://localhost:{functionsHostPort}");
+            environmentHelper.SetEnvironmentVariables(traceAgentPort, functionsHostPort, statsdPort, startInfo.EnvironmentVariables, processToProfile);
+
+            startInfo.UseShellExecute = false;
+            startInfo.CreateNoWindow = true;
+            startInfo.RedirectStandardOutput = true;
+            startInfo.RedirectStandardError = true;
+            startInfo.RedirectStandardInput = redirectStandardInput;
+
+            return Process.Start(startInfo);
+        }
     }
 }

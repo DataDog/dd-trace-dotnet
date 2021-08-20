@@ -54,26 +54,26 @@ namespace Samples.AzureFunctions.AllTriggers
 			return new OkObjectResult(responseMessage);
 		}
 
-		[FunctionName("CosmosTrigger")]
-		public static void Run([CosmosDBTrigger(
-									databaseName: Config.CosmosDatabase,
-									collectionName: Config.CosmosCollection,
-									ConnectionStringSetting = Config.CosmosConnectionStringName,
-									CreateLeaseCollectionIfNotExists = true)]IReadOnlyList<Document> documents,
-							   ILogger log)
-		{
-			if (documents != null && documents.Count > 0)
-			{
-				log.LogInformation($"Documents modified: {documents.Count}");
-				log.LogInformation($"First document Id: {documents[0].Id}");
-			}
-		}
+		// [FunctionName("CosmosTrigger")]
+		// public static void Run([CosmosDBTrigger(
+		// 							databaseName: Config.CosmosDatabase,
+		// 							collectionName: Config.CosmosCollection,
+		// 							ConnectionStringSetting = Config.CosmosConnectionStringName,
+		// 							CreateLeaseCollectionIfNotExists = true)]IReadOnlyList<Document> documents,
+		// 					   ILogger log)
+		// {
+		// 	if (documents != null && documents.Count > 0)
+		// 	{
+		// 		log.LogInformation($"Documents modified: {documents.Count}");
+		// 		log.LogInformation($"First document Id: {documents[0].Id}");
+		// 	}
+		// }
 
-		[FunctionName("BlobWatcherFunction")]
-		public static void BlobTrigger([BlobTrigger("blob-function-sample/{name}", Connection = "StorageConnectionString")] Stream myBlob, string name, ILogger log)
-		{
-			log.LogInformation($"C# Blob trigger function Processed blob\n Name:{name} \n Size: {myBlob.Length} Bytes");
-		}
+		// [FunctionName("BlobWatcherFunction")]
+		// public static void BlobTrigger([BlobTrigger("blob-function-sample/{name}", Connection = "StorageConnectionString")] Stream myBlob, string name, ILogger log)
+		// {
+		// 	log.LogInformation($"C# Blob trigger function Processed blob\n Name:{name} \n Size: {myBlob.Length} Bytes");
+		// }
 
 		[FunctionName("TriggerCaller")]
 		public static async Task<IActionResult> Trigger(
@@ -86,18 +86,18 @@ namespace Samples.AzureFunctions.AllTriggers
 
 			if (doAll || triggers.Contains("blob"))
 			{
-				await Attempt(AddBlobForTrigger, log);
+				await Attempt("blob", AddBlobForTrigger, log);
 			}
 
 			if (doAll || triggers.Contains("http"))
 			{
-				await Attempt(() => CallFunctionHttp("simple"), log);
+				await Attempt("simple-http", () => CallFunctionHttp("simple"), log);
 			}
 
-			if (doAll || triggers.Contains("cosmos"))
-			{
-				await Attempt(InsertIntoCosmos, log);
-			}
+			// if (doAll || triggers.Contains("cosmos"))
+			// {
+			// 	await Attempt("cosmos", InsertIntoCosmos, log);
+			// }
 
 			return new OkObjectResult("Attempting triggers.");
 		}
@@ -146,7 +146,7 @@ namespace Samples.AzureFunctions.AllTriggers
 			await container.CreateItemAsync<FakeEvent>(new FakeEvent() { id = Guid.NewGuid().ToString(), message = "See you on the other side." });
 		}
 
-		private static async Task Attempt(Func<Task> action, ILogger log)
+		private static async Task Attempt(string name, Func<Task> action, ILogger log)
 		{
 			try
 			{
@@ -154,7 +154,7 @@ namespace Samples.AzureFunctions.AllTriggers
 			}
 			catch (Exception ex)
 			{
-				log.LogError(ex, "Trigger attempt failure");
+				log.LogError(ex, $"Trigger attempt failure: {name}");
 			}
 		}
 	}

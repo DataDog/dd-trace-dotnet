@@ -137,34 +137,23 @@ namespace Datadog.Trace.TestHelpers
                 processToProfile: executable);
         }
 
+        public Process RunFunctionsHost(int functionsPort, int traceAgentPort, int? statsdPort = null)
+        {
+            var process = ProfilerHelper.StartFunctionsHostWithProfiler(
+                EnvironmentHelper.GetSampleProjectDirectory(),
+                EnvironmentHelper,
+                traceAgentPort: traceAgentPort,
+                statsdPort: statsdPort,
+                functionsHostPort: functionsPort);
+
+            return process;
+        }
+
         public ProcessResult RunSampleAndWaitForExit(int traceAgentPort, int? statsdPort = null, string arguments = null, string packageVersion = "", string framework = "")
         {
             var process = StartSample(traceAgentPort, arguments, packageVersion, aspNetCorePort: 5000, statsdPort: statsdPort, framework: framework);
 
-            using var helper = new ProcessHelper(process);
-
-            process.WaitForExit();
-            helper.Drain();
-            var exitCode = process.ExitCode;
-
-            Output.WriteLine($"ProcessId: " + process.Id);
-            Output.WriteLine($"Exit Code: " + exitCode);
-
-            var standardOutput = helper.StandardOutput;
-
-            if (!string.IsNullOrWhiteSpace(standardOutput))
-            {
-                Output.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
-            }
-
-            var standardError = helper.ErrorOutput;
-
-            if (!string.IsNullOrWhiteSpace(standardError))
-            {
-                Output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
-            }
-
-            return new ProcessResult(process, standardOutput, standardError, exitCode);
+            return CloseOutProcess(process);
         }
 
         public (Process Process, string ConfigFile) StartIISExpress(int traceAgentPort, int iisPort, IisAppType appType)
@@ -282,6 +271,33 @@ namespace Datadog.Trace.TestHelpers
             }
 
             return (process, newConfig);
+        }
+
+        protected ProcessResult CloseOutProcess(Process process)
+        {
+            using var helper = new ProcessHelper(process);
+            process.WaitForExit();
+            helper.Drain();
+            var exitCode = process.ExitCode;
+
+            Output.WriteLine($"ProcessId: " + process.Id);
+            Output.WriteLine($"Exit Code: " + exitCode);
+
+            var standardOutput = helper.StandardOutput;
+
+            if (!string.IsNullOrWhiteSpace(standardOutput))
+            {
+                Output.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
+            }
+
+            var standardError = helper.ErrorOutput;
+
+            if (!string.IsNullOrWhiteSpace(standardError))
+            {
+                Output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
+            }
+
+            return new ProcessResult(process, standardOutput, standardError, exitCode);
         }
 
         protected void ValidateSpans<T>(IEnumerable<MockTracerAgent.Span> spans, Func<MockTracerAgent.Span, T> mapper, IEnumerable<T> expected)
