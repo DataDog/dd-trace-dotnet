@@ -110,6 +110,7 @@ partial class Build
                 "samples/ConsoleApp/Alpine3.9.dockerfile",
                 "samples/ConsoleApp/Debian.dockerfile",
                 "samples/WindowsContainer/Dockerfile",
+                "src/Datadog.Instrumentation/Datadog.Instrumentation.csproj",
                 "src/Datadog.Trace.AspNet/Datadog.Trace.AspNet.csproj",
                 "src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj",
                 "src/Datadog.Trace.ClrProfiler.Managed.Loader/Startup.cs",

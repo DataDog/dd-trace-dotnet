@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -44,6 +45,7 @@ partial class Build
 
     AbsolutePath SourceDirectory => RootDirectory / "src";
     AbsolutePath TestsDirectory => RootDirectory / "test";
+    AbsolutePath InstrumentationHomeDirectory => Solution.GetProject(Projects.DatadogInstrumentation).Directory / "home";
 
     AbsolutePath TempDirectory => (AbsolutePath)(IsWin ? Path.GetTempPath() : "/tmp/");
     string TracerLogDirectory => IsWin
@@ -443,6 +445,20 @@ partial class Build
                 degreeOfParallelism: 2);
         });
 
+    Target CreateInstrumentationHome => _ => _
+        .Unlisted()
+        .After(BuildTracerHome)
+        .Executes(() =>
+        {
+            // Copy existing files from tracer home to the Instrumentation location
+            CopyDirectoryRecursively(TracerHomeDirectory, InstrumentationHomeDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+
+            // Ensure createLogPath.sh is copied to the directory
+            CopyFileToDirectory(
+                RootDirectory / "build" / "artifacts" / "createLogPath.sh",
+                InstrumentationHomeDirectory,
+                FileExistsPolicy.Overwrite);
+        });
 
     /// <summary>
     /// This target is a bit of a hack, but means that we actually use the All CPU builds in intgration tests etc
@@ -676,17 +692,6 @@ partial class Build
         .After(CompileRegressionDependencyLibs)
         .Executes(() =>
         {
-            // explicitly build the other dependency (with restore to avoid runtime identifier dependency issues)
-            DotNetBuild(x => x
-                .SetProjectFile(Solution.GetProject(Projects.ApplicationWithLog4Net))
-                // .EnableNoRestore()
-                .EnableNoDependencies()
-                .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatform(Platform)
-                .SetNoWarnDotNetCore3()
-                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
-                    o.SetPackageDirectory(NugetPackageDirectory)));
-
             var regressionsDirectory = Solution.GetProject(Projects.EntityFramework6xMdTokenLookupFailure)
                 .Directory.Parent;
             var regressionLibs = GlobFiles(regressionsDirectory / "**" / "*.csproj")
@@ -779,15 +784,17 @@ partial class Build
                 }
             );
 
+            // /nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
             DotNetBuild(config => config
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatform(Platform)
                 .EnableNoDependencies()
                 .SetProperty("BuildInParallel", "false")
-                .SetProperty("ManagedProfilerOutputDirectory", TracerHomeDirectory)
                 .SetProperty("ExcludeManagedProfiler", true)
                 .SetProperty("ExcludeNativeProfiler", true)
+                .SetProperty("ManagedProfilerOutputDirectory", TracerHomeDirectory)
                 .SetProperty("LoadManagedProfilerFromProfilerDirectory", false)
+                .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
                 .CombineWith(projects, (s, project) => s
                     .SetProjectFile(project)));
         });
@@ -964,8 +971,6 @@ partial class Build
                 "DogStatsD.RaceCondition",
                 "EntityFramework6x.MdTokenLookupFailure",
                 "LargePayload", // I think we _should_ run this one (assuming it has tests)
-                "Log4Net.SerializationException",
-                "NLog10LogsInjection.NullReferenceException",
                 "Sandbox.ManualTracing",
                 "StackExchange.Redis.AssemblyConflict.LegacyProject",
                 "Samples.OracleMDA", // We don't test these yet

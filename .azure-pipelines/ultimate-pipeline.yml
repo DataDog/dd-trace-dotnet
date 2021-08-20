@@ -692,36 +692,42 @@ stages:
       displayName: Download windows tracer home
       inputs:
         artifact: windows-tracer-home
-        patterns: "!integrations.json"
-        path: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home
+        path: $(System.DefaultWorkingDirectory)/src/Datadog.Instrumentation/home
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux shell scripts
+      inputs:
+        artifact: linux-tracer-home-debian
+        patterns: "*.sh"
+        path: $(System.DefaultWorkingDirectory)/src/Datadog.Instrumentation/home
 
     - task: DownloadPipelineArtifact@2
       displayName: Download linux tracer home
       inputs:
         artifact: linux-tracer-home-debian
         patterns: "**/*.so"
-        path: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home/linux-x64
+        path: $(System.DefaultWorkingDirectory)/src/Datadog.Instrumentation/home/linux-x64
 
     - task: DownloadPipelineArtifact@2
       displayName: Download alpine tracer home
       inputs:
         artifact: linux-tracer-home-alpine
         patterns: "**/*.so"
-        path: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home/linux-musl-x64
+        path: $(System.DefaultWorkingDirectory)/src/Datadog.Instrumentation/home/linux-musl-x64
 
     - task: DownloadPipelineArtifact@2
       displayName: Download arm64 tracer home
       inputs:
         artifact: linux-tracer-home-arm64
         patterns: "**/*.so"
-        path: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home/linux-arm64
+        path: $(System.DefaultWorkingDirectory)/src/Datadog.Instrumentation/home/linux-arm64
 
     - task: DownloadPipelineArtifact@2
       displayName: Download osx tracer home
       inputs:
         artifact: macos-tracer-home
         patterns: "**/*.dylib"
-        path: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/home/osx-x64
+        path: $(System.DefaultWorkingDirectory)/src/Datadog.Instrumentation/home/osx-x64
 
     # Install the tracer latest stable release to attach the profiler to the build and test steps.
     # The script exposes the required environment variables to the following steps
@@ -729,6 +735,9 @@ stages:
       displayName: Install profiler latest release
       inputs:
         filePath: ./.azure-pipelines/setup_tracer.ps1
+
+    - script: build.cmd BuildInstrumentationNuget --skip
+      displayName: Build BuildInstrumentationNuget package
 
     - script: build.cmd BuildRunnerTool --skip
       displayName: Build Runner tool
@@ -747,6 +756,10 @@ stages:
           $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-musl-x64/home*
           $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-arm64/home*
           $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/osx-x64/home*
+
+    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Instrumentation/bin/$(buildConfiguration)/packages
+      displayName: Publish Instrumentation package
+      artifact: instrumentation-nuget-package
 
     - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Tool
       displayName: Uploading runner dotnet tool artifact
@@ -922,6 +935,12 @@ stages:
             path: $(Build.ArtifactStagingDirectory)
 
         - task: DownloadPipelineArtifact@2
+          displayName: Download instrumentation nuget package
+          inputs:
+            artifact: instrumentation-nuget-package
+            path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
           displayName: Download runner dotnet tool
           inputs:
             artifact: runner-dotnet-tool
@@ -979,10 +998,11 @@ stages:
   dependsOn: [build_linux, build_arm64, build_windows]
   jobs:
 
-  #### Linux
+  #### Throughput Linux 64, windows 64, linux arm 64 
 
-  - job: Linux
+  - job: Throughput
     pool: Throughput
+    timeoutInMinutes: 190
 
     steps:
     - task: DownloadPipelineArtifact@2
@@ -1006,8 +1026,10 @@ stages:
     - script: |
         test ! -s "tracer-home-win/integrations.json" && echo "tracer-home-win/integrations.json does not exist" && exit 1
         test ! -s "tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll" && echo "tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll does not exist" && exit 1
+        test ! -s "tracer-home-win/win-x64/Sqreen.dll" && echo "tracer-home-win/win-x64/Sqreen.dll does not exist" && exit 1
         test ! -s "tracer-home-linux/integrations.json" && echo "tracer-home-linux/integrations.json does not exist" && exit 1
         test ! -s "tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
+         test ! -s "tracer-home-linux/libSqreen.so" && echo "tracer-home-linux/libSqreen.so does not exist" && exit 1
         test ! -s "tracer-home-linux-arm64/integrations.json" && echo "tracer-home-linux-arm64/integrations.json does not exist" && exit 1
         test ! -s "tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
         cd $(System.DefaultWorkingDirectory)/build/crank

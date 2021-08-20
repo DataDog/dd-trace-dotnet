@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "LogsInjection.NLog": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DD_LOGS_INJECTION": "true"
+      }
+    }
+  }
+}

@@ -213,8 +213,9 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private static T GetDelegateForNativeFunction<T>(IntPtr handle, string functionName)
             where T : Delegate
         {
-            var initHPtr = NativeLibrary.GetExport(handle, functionName);
-            return (T)Marshal.GetDelegateForFunctionPointer(initHPtr, typeof(T));
+            var funcPtr = NativeLibrary.GetExport(handle, functionName);
+            Log.Debug("GetDelegateForNativeFunction -  funcPtr: " + funcPtr);
+            return (T)Marshal.GetDelegateForFunctionPointer(funcPtr, typeof(T));
         }
 
         private static List<string> GetDatadogNativeFolders(FrameworkDescription frameworkDescription, string runtimeId)
@@ -319,7 +320,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                 if (loaded)
                 {
                     success = true;
-                    Log.Information($"Loaded library '{libName}' from '{path}'");
+                    Log.Information($"Loaded library '{libName}' from '{path}' with handle '{handle}'");
                     break;
                 }
                 else

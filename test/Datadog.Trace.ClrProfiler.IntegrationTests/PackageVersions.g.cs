@@ -58,5 +58,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static IEnumerable<object[]> Kafka => IsComprehensive ? PackageVersionsComprehensive.Kafka : PackageVersionsLatestMinors.Kafka;
 
         public static IEnumerable<object[]> CosmosDb => IsComprehensive ? PackageVersionsComprehensive.CosmosDb : PackageVersionsLatestMinors.CosmosDb;
+
+        public static IEnumerable<object[]> Serilog => IsComprehensive ? PackageVersionsComprehensive.Serilog : PackageVersionsLatestMinors.Serilog;
+
+        public static IEnumerable<object[]> NLog => IsComprehensive ? PackageVersionsComprehensive.NLog : PackageVersionsLatestMinors.NLog;
+
+        public static IEnumerable<object[]> log4net => IsComprehensive ? PackageVersionsComprehensive.log4net : PackageVersionsLatestMinors.log4net;
     }
 }

@@ -13,6 +13,7 @@ namespace Datadog.Trace.Logging
     internal class CustomLog4NetLogProvider : Log4NetLogProvider, ILogProviderWithEnricher
     {
         private static readonly Version SupportedExtJsonAssemblyVersion = new Version("2.0.9.1");
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CustomLog4NetLogProvider));
 
         public ILogEnricher CreateEnricher() => new Log4NetEnricher(this);
 
@@ -82,10 +83,19 @@ namespace Datadog.Trace.Logging
         /// <returns>true if the log4net.Ext.Json assembly is not found or if it is found and the version is &gt;= 2.0.9.1. Otherwise, false.</returns>
         private static bool ExtJsonAssemblySupported()
         {
-            Assembly extJsonAssembly = Assembly.Load("log4net.Ext.Json");
-            if (extJsonAssembly is not null)
+            try
             {
-                return extJsonAssembly.GetName().Version >= SupportedExtJsonAssemblyVersion;
+                Assembly extJsonAssembly = Assembly.Load("log4net.Ext.Json");
+                if (extJsonAssembly is not null)
+                {
+                    return extJsonAssembly.GetName().Version >= SupportedExtJsonAssemblyVersion;
+                }
+            }
+            catch (Exception ex)
+            {
+                // The Assembly load should only fail when the assembly cannot be found
+                // Fallback to default case
+                Log.Debug(ex, "Failed to load log4net.Ext.Json, so there are no expected compatibility issues.");
             }
 
             // log4net.Ext.Json not found, so there will be no compatibility issues
