@@ -17,10 +17,13 @@ namespace Datadog.Trace.Util.Http
         internal static Dictionary<string, object> PrepareArgsForWaf(this HttpRequest request, RouteData routeDatas = null)
         {
             var headersDic = new Dictionary<string, string>();
-            var headerKeys = request.Headers.Keys.Where(k => k != "Cookie");
-            foreach (var k in headerKeys)
+            var headerKeys = request.Headers.Keys;
+            foreach (string k in headerKeys)
             {
-                headersDic.Add(k, request.Headers[k]);
+                if (k != "Cookie")
+                {
+                    headersDic.Add(k, request.Headers[k]);
+                }
             }
 
             var cookiesDic = new Dictionary<string, string>();
