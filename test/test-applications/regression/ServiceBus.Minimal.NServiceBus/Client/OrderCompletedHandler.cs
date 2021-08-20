@@ -9,11 +9,19 @@ namespace ServiceBus.Minimal.NServiceBus.Client
     {
         static readonly ILog log = LogManager.GetLogger<OrderCompletedHandler>();
         static Task CompletedTask = Task.FromResult(0);
+        static bool ContinueSignal = true;
 
         public Task Handle(OrderCompleted message, IMessageHandlerContext context)
         {
             log.Info($"Received OrderCompleted for OrderId {message.OrderId}");
-            Program.Countdown.Signal(); // Send CountdownEvent signal so the program knows when to exit
+            if (ContinueSignal)
+            {
+                // Send CountdownEvent signal so the program knows when to exit
+                // Stop signaling after we've reached zero to avoid issues
+                // if previous program executions left messages in persistence
+                ContinueSignal = !Program.Countdown.Signal();
+            }
+
             return CompletedTask;
         }
     }

@@ -6,7 +6,7 @@ using Rebus.Config;
 using Rebus.Logging;
 using Rebus.Routing.TypeBased;
 using ServiceBus.Minimal.Rebus.Shared;
-using Rebus.Transport.InMem;
+using System.Data.SqlClient;
 
 namespace ServiceBus.Minimal.Rebus
 {
@@ -17,7 +17,9 @@ namespace ServiceBus.Minimal.Rebus
 
         static void Main()
         {
-            var network = new InMemNetwork();
+            var connectionString = GetSqlServerConnectionString("RebusSamples");
+            EnsureDatabaseExists(connectionString);
+
             using var adapter = new BuiltinHandlerActivator();
             
             adapter.Handle<Job>(async (bus, job) =>
@@ -31,13 +33,13 @@ namespace ServiceBus.Minimal.Rebus
 
             Configure.With(adapter)
                 .Logging(l => l.ColoredConsole(minLevel: LogLevel.Warn))
-                .Transport(t => t.UseInMemoryTransport(network, "consumer.input"))
+                .Transport(t => t.UseSqlServer(new SqlServerTransportOptions(connectionString), "consumer.input"))
                 .Start();
 
-            SendMessages(network);
+            SendMessages(connectionString);
         }
 
-        static void SendMessages(InMemNetwork network)
+        static void SendMessages(string connectionString)
         {
             using var adapter = new BuiltinHandlerActivator();
 
@@ -48,7 +50,7 @@ namespace ServiceBus.Minimal.Rebus
 
             Configure.With(adapter)
                 .Logging(l => l.ColoredConsole(minLevel: LogLevel.Warn))
-                .Transport(t => t.UseInMemoryTransport(network, "producer.input"))
+                .Transport(t => t.UseSqlServer(new SqlServerTransportOptions(connectionString), "producer.input"))
                 .Routing(r => r.TypeBased().MapAssemblyOf<Job>("consumer.input"))
                 .Start();
 
@@ -56,6 +58,42 @@ namespace ServiceBus.Minimal.Rebus
             {
                 adapter.Bus.Send(new Job(i)).Wait();
                 Thread.Sleep(MessageSendDelayMs);
+            }
+        }
+
+        static string GetSqlServerConnectionString(string overrideInitialCatalog = null)
+        {
+            var connectionString = Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING") ??
+@"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=60";
+
+            var builder = new SqlConnectionStringBuilder(connectionString);
+            if (!string.IsNullOrWhiteSpace(overrideInitialCatalog))
+            {
+                builder.InitialCatalog = overrideInitialCatalog;
+            }
+
+            return builder.ConnectionString;
+        }
+
+        static void EnsureDatabaseExists(string connectionString)
+        {
+            var builder = new SqlConnectionStringBuilder(connectionString);
+            var database = builder.InitialCatalog;
+
+            var masterConnection = connectionString.Replace(builder.InitialCatalog, "master");
+
+            using (var connection = new SqlConnection(masterConnection))
+            {
+                connection.Open();
+
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = $@"
+    if(db_id('{database}') is null)
+        create database [{database}]
+    ";
+                    command.ExecuteNonQuery();
+                }
             }
         }
     }

@@ -1,7 +1,9 @@
 using System;
+using System.Data.SqlClient;
 using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus;
+using NServiceBus.Persistence.Sql;
 using ServiceBus.Minimal.NServiceBus.Shared;
 
 namespace ServiceBus.Minimal.NServiceBus
@@ -16,8 +18,19 @@ namespace ServiceBus.Minimal.NServiceBus
 
         static async Task Main()
         {
+            var connectionString = GetSqlServerConnectionString("NsbSamplesSqlPersistence");
             var endpointConfiguration = new EndpointConfiguration(EndpointName);
-            endpointConfiguration.UsePersistence<LearningPersistence>();
+
+            var persistence = endpointConfiguration.UsePersistence<SqlPersistence>();
+            persistence.SqlDialect<SqlDialect.MsSqlServer>();
+            persistence.ConnectionBuilder(
+                connectionBuilder: () =>
+                {
+                    return new SqlConnection(connectionString);
+                });
+
+            EnsureDatabaseExists(connectionString);
+
             endpointConfiguration.UseTransport<LearningTransport>();
             endpointConfiguration.EnableInstallers();
 
@@ -64,6 +77,42 @@ namespace ServiceBus.Minimal.NServiceBus
 
             // Wait one more second to ensure the state is flushed between consecutive local runs
             await Task.Delay(1000);
+        }
+
+        static string GetSqlServerConnectionString(string overrideInitialCatalog = null)
+        {
+            var connectionString = Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING") ??
+@"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=60";
+
+            var builder = new SqlConnectionStringBuilder(connectionString);
+            if (!string.IsNullOrWhiteSpace(overrideInitialCatalog))
+            {
+                builder.InitialCatalog = overrideInitialCatalog;
+            }
+
+            return builder.ConnectionString;
+        }
+
+        static void EnsureDatabaseExists(string connectionString)
+        {
+            var builder = new SqlConnectionStringBuilder(connectionString);
+            var database = builder.InitialCatalog;
+
+            var masterConnection = connectionString.Replace(builder.InitialCatalog, "master");
+
+            using (var connection = new SqlConnection(masterConnection))
+            {
+                connection.Open();
+
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = $@"
+    if(db_id('{database}') is null)
+        create database [{database}]
+    ";
+                    command.ExecuteNonQuery();
+                }
+            }
         }
     }
 }
