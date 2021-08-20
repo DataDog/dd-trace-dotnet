@@ -15,10 +15,13 @@ namespace Datadog.Trace.ClrProfiler
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     internal struct NativeCallTargetDefinition
     {
+        [MarshalAs(UnmanagedType.LPWStr)]
         public string TargetAssembly;
 
+        [MarshalAs(UnmanagedType.LPWStr)]
         public string TargetType;
 
+        [MarshalAs(UnmanagedType.LPWStr)]
         public string TargetMethod;
 
         public IntPtr TargetSignatureTypes;
@@ -37,8 +40,10 @@ namespace Datadog.Trace.ClrProfiler
 
         public ushort TargetMaximumPatch;
 
+        [MarshalAs(UnmanagedType.LPWStr)]
         public string WrapperAssembly;
 
+        [MarshalAs(UnmanagedType.LPWStr)]
         public string WrapperType;
 
         public NativeCallTargetDefinition(
@@ -160,11 +165,6 @@ namespace Datadog.Trace.ClrProfiler
 
                 return retSignature;
             }
-        }
-
-        public void Dispose()
-        {
-            Marshal.FreeHGlobal(TargetSignatureTypes);
         }
     }
 }

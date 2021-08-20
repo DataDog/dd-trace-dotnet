@@ -66,10 +66,14 @@ namespace Datadog.Trace.ClrProfiler
                 return;
             }
 
+            Log.Debug("Initialization started.");
+
             try
             {
+                Log.Debug("Sending CallTarget integrations definitions to native profiler.");
                 NativeMethods.InitializeProfiler(NativeCallTargetDefinition.GetAllDefinitions());
-                Log.Information($"IsProfilerAttached: true");
+                Log.Debug("CallTarget integrations definitions sent.");
+                Log.Information("IsProfilerAttached: true");
             }
             catch (Exception ex)
             {
@@ -79,20 +83,22 @@ namespace Datadog.Trace.ClrProfiler
             try
             {
                 // ensure global instance is created if it's not already
+                Log.Debug("Initializing tracer singleton instance.");
                 _ = Tracer.Instance;
             }
-            catch
+            catch (Exception ex)
             {
-                // ignore
+                Log.Error(ex, ex.Message);
             }
 
             try
             {
+                Log.Debug("Initializing security singleton instance.");
                 _ = Security.Instance;
             }
-            catch
+            catch (Exception ex)
             {
-                // ignore
+                Log.Error(ex, ex.Message);
             }
 
 #if !NETFRAMEWORK
@@ -142,6 +148,8 @@ namespace Datadog.Trace.ClrProfiler
                 }
             }
 #endif
+
+            Log.Debug("Initialization finished.");
         }
 
 #if !NETFRAMEWORK
