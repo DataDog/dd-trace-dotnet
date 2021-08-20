@@ -43,6 +43,10 @@
 *.user
 *.userosscache
 *.sln.docstates
+*.playlist
+
+# https://github.com/VerifyTests/Verify
+*.received.*
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
@@ -61,8 +65,8 @@ bld/
 
 # Visual Studio 2015 cache/options directory
 .vs/
-# Project's static files in wwwroot
-wwwroot/
+# Uncomment if you have tasks that create the project's static files in wwwroot
+#wwwroot/
 
 # MSTest test Results
 [Tt]est[Rr]esult*/
@@ -180,7 +184,7 @@ publish/
 *.azurePubxml
 # TODO: Comment the next line if you want to checkin your web deploy settings
 # but database connection strings (with potential passwords) will be unencrypted
-*.pubxml
+#*.pubxml
 *.publishproj
 
 # Microsoft Azure Web App publish settings. Comment the next line if you want to
@@ -231,6 +235,10 @@ ClientBin/
 *.publishsettings
 node_modules/
 orleans.codegen.cs
+
+# Since there are multiple workflows, uncomment next line to ignore bower_components
+# (https://github.com/github/gitignore/pull/1529#issuecomment-104372622)
+#bower_components/
 
 # RIA/Silverlight projects
 Generated_Code/
@@ -299,3 +307,21 @@ BenchmarkDotNet.Artifacts/
 
 # VSTest results
 *.trx
+
+deploy/linux/
+deploy/AzureAppServices/
+!build/artifacts
+
+# macOS temporal files
+*..DS_Store
+.DS_Store/*
+.DS_Store
+
+# profiler build files
+src/Datadog.Trace.ClrProfiler.Native/build/
+src/Datadog.Trace.ClrProfiler.Native/deps/
+src/Datadog.Trace.ClrProfiler.Native/CMakeFiles/
+src/Datadog.Trace.ClrProfiler.Native/tmp.*
+src/Datadog.Trace.ClrProfiler.Native/Makefile
+src/Datadog.Trace.ClrProfiler.Native/CMakeCache.txt
+src/Datadog.Trace.ClrProfiler.Native/cmake_install.cmake
