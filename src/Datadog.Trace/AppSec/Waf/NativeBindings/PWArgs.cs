@@ -19,7 +19,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         [FieldOffset(8)]
         public ulong ParameterNameLength;
 
-        // The equivalent union in LibSqreen contains more cases, but they don't
+        // The equivalent union in LibDdwaf contains more cases, but they don't
         // all map well to .NET types. It shouldn't be necessary to manipulate them
         // they're just provided for debugging.
         // union

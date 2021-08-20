@@ -25,7 +25,7 @@
     </Content>
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
     <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
-    <PackageReference Include="libsqreen" Version="1.1.2.3" GeneratePathProperty="true" />
+    <PackageReference Include="libddwaf" Version="1.0.6" GeneratePathProperty="true" />
 
     <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
   </ItemGroup>
@@ -44,7 +44,7 @@
       <!-- Subfolders of the output directory should each be a target framework -->
       <ManagedProfilerFiles Include="$(ManagedProfilerOutputDirectory)\**\*.dll" Exclude="$(ManagedProfilerOutputDirectory)\*\runtimes\**\*.dll" />
       <ManagedProfilerFiles Include="$(ManagedProfilerOutputDirectory)\**\*.pdb" Exclude="$(ManagedProfilerOutputDirectory)\*\runtimes\**\*.pdb" />
-      <SecurityLibraryFiles Include="$(Pkglibsqreen)\runtimes\**\*.*" />
+      <SecurityLibraryFiles Include="$(Pkglibddwaf)\runtimes\**\*.*" />
     </ItemGroup>
 
     <Copy SourceFiles="@(ManagedProfilerFiles)" DestinationFolder="$(OutputPath)profiler-lib\%(RecursiveDir)" />

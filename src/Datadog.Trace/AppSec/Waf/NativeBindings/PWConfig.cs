@@ -14,5 +14,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         public ulong MaxArrayLength;
 
         public ulong MaxMapDepth;
+
+        public int MaxTimeStore;
     }
 }
