@@ -1,0 +1,70 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>netcoreapp3.1;netcoreapp2.0;</TargetFrameworks>
+	  
+	<!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp2.0) -->
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup>
+	<SharedSrcBaseDir>$(MSBuildThisFileDirectory)..\..\..\src</SharedSrcBaseDir>
+  </PropertyGroup>
+	
+   <!-- Datadog.Logging.Emission.props is required for emitting logs: -->
+  <Import Project="$(SharedSrcBaseDir)\Shared-Src\Datadog.Logging\Datadog.Logging.Emission.props" Condition="$(LogEmissionPropsIncluded) == ''" />
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Shared-Libs\DynamicDiagnosticSourceBindings\Datadog.DynamicDiagnosticSourceBindings.csproj" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Compile Include="..\Shared-Demo-Src\DynamicDiagnosticSourceBindings.Demo\internal\ConsoleWrite.cs" />
+  </ItemGroup>
+	
+  <ItemGroup>
+    <!-- The two following items trick the Solution Explorer in VS to display a folder  -->
+    <!-- structure like 'Datadog.Util/internal'                                         -->
+    <None Include="$(SharedSrcBaseDir)\Shared-Src\Datadog.Util\_Datadog.Util_.files">
+      <CustomToolNamespace>Virtual Folder</CustomToolNamespace>
+    </None>
+    <None Include="$(SharedSrcBaseDir)\Shared-Src\Datadog.Util\internal\_internal_.files">
+      <CustomToolNamespace>Virtual Folder</CustomToolNamespace>
+      <DependentUpon>_Datadog.Util_.files</DependentUpon>
+    </None>
+    <!-- The actual CS files to include for compilation.                                -->
+    <!-- VS will show them in the above virtual folders.                                -->
+    <Compile Include="$(SharedSrcBaseDir)\Shared-Src\Datadog.Util\internal\ObserverAdapter.cs">
+      <DependentUpon>_internal_.files</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="$(SharedSrcBaseDir)\Shared-Src\Datadog.Util\internal\Validate.cs">
+      <DependentUpon>_internal_.files</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+	
+  <ItemGroup>
+	<!-- This "service" is required for T4-templating.                                                                                   -->
+	<Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  
+  	<!-- Make sure the value of SharedSrcBaseDir is available in the T4 template: -->
+    <T4ParameterValues Include="SharedSrcBaseDir">
+      <Value>$(SharedSrcBaseDir)</Value>
+    </T4ParameterValues>
+    
+    <!-- Log.tt is a T4 template that refers to the Log.tt.cs templete referenced in Datadog.Logging.Emission.props.                     -->
+    <!-- It ensures that the Log Emission API is correctly generated.                                                                    -->
+    <None Update="Demo.Slimple.NetCore31\public\Log.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>Log.cs</LastGenOutput>
+    </None>
+    <Compile Update="Demo.Slimple.NetCore31\public\Log.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Log.tt</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+</Project>
