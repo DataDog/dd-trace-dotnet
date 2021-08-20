@@ -33,6 +33,7 @@ namespace ServiceBus.Minimal.NServiceBus
 
             endpointConfiguration.UseTransport<LearningTransport>();
             endpointConfiguration.EnableInstallers();
+            endpointConfiguration.EnableOutbox();
 
             var endpointInstance = await Endpoint.Start(endpointConfiguration)
                 .ConfigureAwait(false);
