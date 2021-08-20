@@ -28,9 +28,6 @@ partial class Build
     [Parameter("The sample name to execute when running or building sample apps")]
     readonly string SampleName;
 
-    [Parameter("The launch profile name when running the dotnet core sample")]
-    readonly string LaunchProfile;
-
     [Parameter("Additional environment variables, in the format KEY1=Value1 Key2=Value2 to use when running the IIS Sample")]
     readonly string[] ExtraEnvVars;
 
@@ -42,7 +39,7 @@ partial class Build
     AbsolutePath IisExpressApplicationConfig =>
         RootDirectory / ".vs" / Solution.Name / "config" / "applicationhost.config";
 
-    readonly IEnumerable<string> GacProjects = new[]
+    readonly IEnumerable<string> GacProjects = new []
     {
         Projects.DatadogTrace,
         Projects.DatadogTraceAspNet
@@ -92,7 +89,7 @@ partial class Build
         .Requires(() => IsWin)
         .Executes(() =>
         {
-            var envVars = new Dictionary<string, string>(new ProcessStartInfo().Environment);
+            var envVars = new Dictionary<string,string>(new ProcessStartInfo().Environment);
 
             // Override environment variables
             envVars["COR_ENABLE_PROFILING"] = "1";
@@ -123,7 +120,7 @@ partial class Build
         .Requires(() => Framework)
         .Executes(() =>
         {
-            var envVars = new Dictionary<string, string>()
+            var envVars = new Dictionary<string,string>()
             {
                 {"COR_ENABLE_PROFILING", "1"},
                 {"COR_PROFILER", "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"},
@@ -160,7 +157,7 @@ partial class Build
             {
                 Logger.Info($"Running sample '{SampleName}'");
             }
-            else if (System.IO.File.Exists(SampleName))
+            else if(System.IO.File.Exists(SampleName))
             {
                 project = SampleName;
                 Logger.Info($"Running project '{SampleName}'");
@@ -178,22 +175,16 @@ partial class Build
                 .SetNoWarnDotNetCore3()
                 .SetProperty("platform", Platform));
 
-            var dotNetRunSettings = new DotNetRunSettings().SetDotnetPath(Platform)
+            DotNetRun(s => s
+                .SetDotnetPath(Platform)
                 .SetFramework(Framework)
+                .EnableNoLaunchProfile()
                 .SetProjectFile(project)
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
                 .SetProperty("platform", Platform)
-                .SetProcessEnvironmentVariables(envVars);
-            if (!string.IsNullOrEmpty(LaunchProfile))
-            {
-                dotNetRunSettings.SetLaunchProfile(LaunchProfile);
-            }
-            else
-            {
-                dotNetRunSettings.EnableNoLaunchProfile();
-            }
-            DotNetRun(dotNetRunSettings);
+                .SetProcessEnvironmentVariables(envVars));
+
         });
 
     Target GeneratePackageVersions => _ => _
@@ -210,13 +201,13 @@ partial class Build
        .Description("Updates the vendored dependency code and dependabot template")
        .Executes(() =>
        {
-           var honeypotProject = RootDirectory / "honeypot" / "Datadog.Dependabot.Honeypot.csproj";
-           UpdateVendorsTool.UpdateHoneypotProject(honeypotProject);
+            var honeypotProject = RootDirectory / "honeypot"  /  "Datadog.Dependabot.Honeypot.csproj";
+            UpdateVendorsTool.UpdateHoneypotProject(honeypotProject);
 
-           var vendorDirectory = Solution.GetProject(Projects.DatadogTrace).Directory / "Vendors";
-           var downloadDirectory = TemporaryDirectory / "Downloads";
-           EnsureCleanDirectory(downloadDirectory);
-           UpdateVendorsTool.UpdateVendors(downloadDirectory, vendorDirectory);
+            var vendorDirectory = Solution.GetProject(Projects.DatadogTrace).Directory / "Vendors";
+            var downloadDirectory = TemporaryDirectory / "Downloads";
+            EnsureCleanDirectory(downloadDirectory);
+            UpdateVendorsTool.UpdateVendors(downloadDirectory, vendorDirectory);
        });
 
     Target UpdateIntegrationsJson => _ => _
