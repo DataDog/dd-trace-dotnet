@@ -9,7 +9,7 @@ namespace Demo.Slimple.NetCore31
         // The corresponding Net Fx demo shows how to use the APIs directly.
         // Other demos show other approaches for dealing with these exceptions.
 
-        static void Main(string[] args)
+        public static void Main(string[] _)
         {
             ConsoleWrite.Line(typeof(Program).FullName);
 

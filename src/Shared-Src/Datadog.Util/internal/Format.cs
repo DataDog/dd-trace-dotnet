@@ -10,8 +10,8 @@ namespace Datadog.Util
         private const string NullWord = "null";
 
         private const string HundredSpaces = "                                                                                                    ";
-        private const string TenSpaces =     "          ";
-        private const string OneSpace =      " ";
+        private const string TenSpaces = "          ";
+        private const char OneSpace = ' ';
 
         /// <summary>
         /// Returns either the specified <c>str</c> instrance, or the string <c>"null"</c> if <c>str</c> was <c>null</c>.

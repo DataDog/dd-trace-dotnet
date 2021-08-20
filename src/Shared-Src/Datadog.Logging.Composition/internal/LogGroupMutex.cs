@@ -30,7 +30,7 @@ namespace Datadog.Logging.Composition
         private string _mutexName;
         private Mutex _mutex;
 
-#region struct LogGroupMutex.Handle
+        #region struct LogGroupMutex.Handle
         public struct Handle : IDisposable
         {
             internal static readonly Handle InvalidInstance = new Handle(null, null);
@@ -92,7 +92,7 @@ namespace Datadog.Logging.Composition
                 }
             }
         }
-#endregion struct LogGroupMutex.Handle
+        #endregion struct LogGroupMutex.Handle
 
         public LogGroupMutex(Guid logGroupId)
         {
@@ -165,7 +165,7 @@ namespace Datadog.Logging.Composition
                     }
 
                     SafeDisposeAndSetToNull(ref _mutex);
-                    _mutexName = string.Empty;
+                    _mutexName = String.Empty;
                     Interlocked.Exchange(ref _iteration, -1);
                 }
                 finally
@@ -181,7 +181,8 @@ namespace Datadog.Logging.Composition
 
         private static string ConstructMutextName(Guid groupId, int iteration)
         {
-            return $"Global\\Datadog-FileLigSink-{groupId.ToString("D")}-{iteration}";
+            string groupIdString = groupId.ToString("D");
+            return $"Global\\Datadog-FileLigSink-{groupIdString}-{iteration}";
         }
 
         private static bool TryAcquireCore(Mutex mutex, SemaphoreSlim mutexProtector, ref LogGroupMutex.Handle handle)
@@ -229,7 +230,11 @@ namespace Datadog.Logging.Composition
                             return true;
                         }
 
-                        rnd = rnd ?? new Random();
+                        if (rnd == null)
+                        {
+                            rnd = new Random();
+                        }
+
                         Thread.Sleep(rnd.Next(MaxPauseBetweenWaitsMillis));
 
                         int now = Environment.TickCount & Int32.MaxValue;

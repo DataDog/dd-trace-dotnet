@@ -110,7 +110,7 @@ namespace DynamicDiagnosticSourceBindings.Demo
                 DiagnosticSourceStub newDiagSrc = DiagnosticListening.CreateNewSource(DiagnosticEventsSpecification.StubbedSourceName);
                 diagnosticSource = newDiagSrc;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 diagnosticSource = DiagnosticSourceStub.NoOpStub;
 

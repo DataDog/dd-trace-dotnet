@@ -27,7 +27,7 @@ namespace Datadog.Logging.Composition
             {
                 return false;
             }
-            
+
         }
 
         public bool TryLogInfo(LogSourceInfo logSourceInfo, string message, IEnumerable<object> dataNamesAndValues)

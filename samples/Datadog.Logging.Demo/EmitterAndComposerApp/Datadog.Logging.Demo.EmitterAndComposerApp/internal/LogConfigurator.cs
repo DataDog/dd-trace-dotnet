@@ -15,8 +15,10 @@ namespace Datadog.Logging.Demo.EmitterAndComposerApp
         private const string Product = "DemosAndTests";
         private const string ComponentGroup = "Logging-Demo";
 
+#pragma warning disable IDE1006  // Runtime-initialized Constants {
         // If you copy this text, remember to re-generate a unique ID.
         private static readonly Guid LoggingDemoLogGroupId = Guid.Parse("8A335CC9-AAA7-435E-8794-87F9338ABFA2");
+#pragma warning restore IDE1006  // } Runtime-initialized Constants
 
         private static IReadOnlyDictionary<Type, LogSourceNameCompositionLogSink> s_logRedirections = null;
 
@@ -64,7 +66,7 @@ namespace Datadog.Logging.Demo.EmitterAndComposerApp
                         {
                             redirection.Value.Dispose();
                         }
-                        catch(Exception ex)
+                        catch (Exception ex)
                         {
                             ConsoleWriteLine();
                             ConsoleWriteLine($"Error disposing a {nameof(LogSourceNameCompositionLogSink)}"
@@ -93,7 +95,7 @@ namespace Datadog.Logging.Demo.EmitterAndComposerApp
                     return true;
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 ConsoleWriteLine();
                 ConsoleWriteLine($"Error setting up a file logger.");
@@ -119,7 +121,7 @@ namespace Datadog.Logging.Demo.EmitterAndComposerApp
 
             foreach (KeyValuePair<Type, LogSourceNameCompositionLogSink> redirection in redirections)
             {
-                ConsoleWriteLine( "{");
+                ConsoleWriteLine("{");
                 ConsoleWriteLine($"    Logger Type:         \"{redirection.Key.FullName}\"");
                 if (redirection.Value == null)
                 {
@@ -130,8 +132,8 @@ namespace Datadog.Logging.Demo.EmitterAndComposerApp
                     ConsoleWriteLine($"    Destination:         Log Sink Type:       \"{redirection.Value.DownstreamLogSink.GetType().Name}\"");
                     ConsoleWriteLine($"                         Log Component Group: \"{redirection.Value.LogSourcesGroupMoniker}\"");
                 }
-                
-                ConsoleWriteLine( "}");
+
+                ConsoleWriteLine("}");
             }
         }
 

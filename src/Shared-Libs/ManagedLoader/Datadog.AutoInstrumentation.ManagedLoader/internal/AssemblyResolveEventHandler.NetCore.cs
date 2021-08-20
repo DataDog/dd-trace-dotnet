@@ -33,17 +33,17 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             {
                 try
                 {
-                    Log.Debug(LoggingComponentMoniker, $"Assembly listed for SxS loading", "assemblyName", assemblyName.FullName, "assemblyPath", assemblyPath);
+                    Log.Debug(Constants.LoggingComponentMoniker, $"Assembly listed for SxS loading", "assemblyName", assemblyName.FullName, "assemblyPath", assemblyPath);
                     loadedAssembly = SxSAssemblyLoadContext.SingeltonInstance.LoadFromAssemblyPath(assemblyPath);
 
                     if (loadedAssembly == null)
                     {
-                        Log.Debug(LoggingComponentMoniker, $"Not able to load assembly into SxS loading context", "assemblyName", assemblyName.FullName, "assemblyPath", assemblyPath);
+                        Log.Debug(Constants.LoggingComponentMoniker, $"Not able to load assembly into SxS loading context", "assemblyName", assemblyName.FullName, "assemblyPath", assemblyPath);
                     }
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(LoggingComponentMoniker, $"Error loading assembly into SxS loading context", ex, "assemblyName", assemblyName.FullName, "assemblyPath", assemblyPath);
+                    Log.Error(Constants.LoggingComponentMoniker, $"Error loading assembly into SxS loading context", ex, "assemblyName", assemblyName.FullName, "assemblyPath", assemblyPath);
                     loadedAssembly = null;
                 }
             }
@@ -61,11 +61,11 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
 
             // Look for the specified assembly in AssembliesToLoadSxS:
             // (Because AssembliesToLoadSxS is very short, it is an array/list. If it ever gets largem we need to use a look-up instead.)
-            for (int i = 0; i < AssembliesToLoadSxS.Length; i++)
+            for (int i = 0; i < Constants.AssembliesToLoadSxS.Length; i++)
             {
                 // Did we list the specified assembly for SxS loading?
 
-                if (assemblyName.Name.Equals(AssembliesToLoadSxS[i], StringComparison.OrdinalIgnoreCase))
+                if (assemblyName.Name.Equals(Constants.AssembliesToLoadSxS[i], StringComparison.OrdinalIgnoreCase))
                 {
                     lock (_assembliesAttemptedToLoadSxS)
                     {

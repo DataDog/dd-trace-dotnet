@@ -60,7 +60,7 @@ namespace Demo.LoadUnloadPlugin.NetCore31
                     diagnosticSource1.Write("EventXyzName", new EventXyzNamePayload(null, null, i));
                 }
 
-                diagnosticSource2.Write("EventAbcName", new { Value="Something", IterationNr = i });
+                diagnosticSource2.Write("EventAbcName", new { Value = "Something", IterationNr = i });
 
                 ConsoleWrite.LineLine($"-----------{i}-----------");
             }

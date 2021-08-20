@@ -71,12 +71,12 @@ namespace Datadog.Logging.Emission
             {
                 return WithLogSourcesName(null, superGroupName);
             }
-            
+
             if (LogSourceNamePart1 == null && LogSourceNamePart2 != null)
             {
                 return WithLogSourcesName(superGroupName, LogSourceNamePart2);
             }
-            
+
             if (LogSourceNamePart1 != null && LogSourceNamePart2 == null)
             {
                 return WithLogSourcesName(superGroupName, LogSourceNamePart1);

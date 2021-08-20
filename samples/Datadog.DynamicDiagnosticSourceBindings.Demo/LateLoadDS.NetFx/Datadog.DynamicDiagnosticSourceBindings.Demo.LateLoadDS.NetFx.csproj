@@ -87,6 +87,7 @@
       <DependentUpon>_internal_.files</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <None Include="Directory.Build.props" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

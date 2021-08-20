@@ -5,11 +5,11 @@ using System.Text;
 
 namespace Datadog.Logging.Emission
 {
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1308:Variable names must not be prefixed", Justification = "Should not apply to statics")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1311:Static readonly fields must begin with upper-case letter", Justification = "Should only apply to vars that are logically const.")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1116:Split parameters must start on line after declaration", Justification = "Bad rule")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1310:Field names must not contain underscore", Justification = "Underscore aid visibility in long names")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0007:Use implicit type", Justification = "Worst piece of advise Style tools ever gave.")]
+    //[System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1308:Variable names must not be prefixed", Justification = "Should not apply to statics")]
+    //[System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1311:Static readonly fields must begin with upper-case letter", Justification = "Should only apply to vars that are logically const.")]
+    //[System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1116:Split parameters must start on line after declaration", Justification = "Bad rule")]
+    //[System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.NamingRules", "SA1310:Field names must not contain underscore", Justification = "Underscore aid visibility in long names")]
+    //[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0007:Use implicit type", Justification = "Worst piece of advise Style tools ever gave.")]
     internal static class DefaultFormat
     {
         public class Options
@@ -124,7 +124,7 @@ namespace Datadog.Logging.Emission
             {
                 hasEncounteredNewLines = false;
                 int p = 0;
-                while(p < srcText.Length)
+                while (p < srcText.Length)
                 {
                     char c = srcText[p];
                     if (c == '\n' || c == '\r')
@@ -230,7 +230,7 @@ namespace Datadog.Logging.Emission
                     return;
                 }
 
-                targetBuffer.Append("[");
+                targetBuffer.Append('[');
                 AppendPrefixCore(targetBuffer, logLevelMoniker, useUtcTimestamp);
                 targetBuffer.Append("] ");
             }
@@ -264,6 +264,7 @@ namespace Datadog.Logging.Emission
                 }
             }
 
+            [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0060:Remove unused parameter", Justification = "@ToDo review")]
             public static void AppendEventInfo(StringBuilder targetBuffer,
                                                string logSourceNamePart1,
                                                string logSourceNamePart2,
@@ -275,8 +276,8 @@ namespace Datadog.Logging.Emission
                                                IEnumerable<object> dataNamesAndValues,
                                                bool useNewLines)
             {
-                bool hasLogSourceNamePart1 = !string.IsNullOrWhiteSpace(logSourceNamePart1);
-                bool hasLogSourceNamePart2 = !string.IsNullOrWhiteSpace(logSourceNamePart2);
+                bool hasLogSourceNamePart1 = !String.IsNullOrWhiteSpace(logSourceNamePart1);
+                bool hasLogSourceNamePart2 = !String.IsNullOrWhiteSpace(logSourceNamePart2);
 
                 if (hasLogSourceNamePart1)
                 {
@@ -298,7 +299,7 @@ namespace Datadog.Logging.Emission
                     targetBuffer.Append(": ");
                 }
 
-                if (!string.IsNullOrWhiteSpace(message))
+                if (!String.IsNullOrWhiteSpace(message))
                 {
                     targetBuffer.Append(message);
 

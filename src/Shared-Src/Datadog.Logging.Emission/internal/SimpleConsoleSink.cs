@@ -3,11 +3,13 @@ using System.Collections.Generic;
 
 namespace Datadog.Logging.Emission
 {
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0007:Use implicit type", Justification = "Worst piece of advise Style tools ever gave.")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1116:Split parameters must start on line after declaration", Justification = "Bad rule")]
+    //[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0007:Use implicit type", Justification = "Worst piece of advise Style tools ever gave.")]
+    //[System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1116:Split parameters must start on line after declaration", Justification = "Bad rule")]
     internal static class SimpleConsoleSink
     {
+#pragma warning disable IDE1006  // Runtime-initialized Constants {
         private static readonly DefaultFormat.Options FormatOptions = DefaultFormat.Options.StructuredMultilines;
+#pragma warning restore IDE1006  // } Runtime-initialized Constants
 
         public static void Error(string logSourceNamePart1,
                                  string logSourceNamePart2,

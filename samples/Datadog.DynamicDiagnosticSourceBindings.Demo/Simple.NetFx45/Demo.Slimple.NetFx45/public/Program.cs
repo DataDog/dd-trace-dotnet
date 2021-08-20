@@ -9,7 +9,7 @@ namespace Demo.Slimple.NetFx45
         // The corresponding Net Core demo shows one of several possible ways for dealing with such exceptions.
         // Other demos show other approaches for dealing with these exceptions.
 
-        static void Main(string[] args)
+        public static void Main(string[] _)
         {
             ConsoleWrite.Line(typeof(Program).FullName);
 

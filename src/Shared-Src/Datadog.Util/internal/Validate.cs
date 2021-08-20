@@ -58,7 +58,7 @@ namespace Datadog.Util
         {
             NotNullOrEmpty(value, name);
 
-            if (string.IsNullOrWhiteSpace(value))
+            if (String.IsNullOrWhiteSpace(value))
             {
                 throw new ArgumentException((name ?? Validate.FallbackParameterName) + " may not be whitespace only.");
             }

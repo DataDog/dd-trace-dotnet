@@ -11,7 +11,7 @@ namespace Demo.LoadUnloadPlugin.NetCore31
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static void Main(string[] _)
         {
             (new Program()).Run();
         }
@@ -86,6 +86,7 @@ namespace Demo.LoadUnloadPlugin.NetCore31
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0059:Unnecessary assignment of a value", Justification = "Need null assignments to work with weak refs.")]
         private async Task Plugin()
         {
             //const string DSAssemblyNameForPlugin = "System.Diagnostics.DiagnosticSource, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51";
@@ -114,7 +115,7 @@ namespace Demo.LoadUnloadPlugin.NetCore31
             asmLoadCtx = null;
 
             int unloadWaitIterations = 0;
-            while(asmLoadCtxWeakRef.IsAlive)
+            while (asmLoadCtxWeakRef.IsAlive)
             {
                 GC.Collect();
                 GC.WaitForPendingFinalizers();

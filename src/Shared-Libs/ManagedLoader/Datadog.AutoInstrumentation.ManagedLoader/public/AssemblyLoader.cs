@@ -51,7 +51,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
 
         internal const bool UseConsoleLoggingInsteadOfFile = false;             // Should be False in production.
         internal const bool UseConsoleLogInAdditionToFileLog = false;           // Should be False in production?
-        internal const bool UseConsoleLoggingIfFileLoggingFails = true;         // May be True n production. Can that affect customer app behaviour?
+        internal const bool UseConsoleLoggingIfFileLoggingFails = true;         // May be True in production. Can that affect customer app behaviour?
         private const string LoggingComponentMoniker = nameof(AssemblyLoader);  // The prefix to this is specified in LogComposer.tt
 
         private bool _isDefaultAppDomain;
@@ -108,13 +108,16 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                 {
                     // We still have an exception, despite the above catch-all. Likely the exception came out of the logger.
                     // We can log it to console it as a backup (if enabled).
-#pragma warning disable CS0162 // Unreachable code detected (deliberately using const bool for compile settings)
+#pragma warning disable IDE0079  // Remove unnecessary suppression: Supresion is necessary for some, but not all compile time settings
+#pragma warning disable CS0162  // Unreachable code detected (deliberately using const bool for compile settings)
                     if (UseConsoleLoggingIfFileLoggingFails)
+
                     {
                         Console.WriteLine($"{Environment.NewLine}{LoggingComponentMoniker}: An exception occurred. Assemblies may not be loaded or started."
                                         + $"{Environment.NewLine}{ex}");
                     }
-#pragma warning restore CS0162 // Unreachable code detected
+#pragma warning restore CS0162  // Unreachable code detected
+#pragma warning restore IDE0079  // Remove unnecessary suppression
                 }
             }
             catch
@@ -326,7 +329,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                 return assemblyNamesToLoad;
             }
 
-            var validAssemblyNamesToLoad = new string[validAssemblyNamesCount];
+            string[] validAssemblyNamesToLoad = new string[validAssemblyNamesCount];
             for (int pAsmNames = 0, pValidAsmNames = 0; pAsmNames < assemblyNamesToLoad.Length; pAsmNames++)
             {
                 if (CleanAssemblyNameToLoad(assemblyNamesToLoad[pAsmNames], out string cleanAssemblyNameToLoad, out _))
@@ -340,7 +343,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
 
         private static bool CleanAssemblyNameToLoad(string rawAssemblyName, out string cleanAssemblyName, out bool asmNameNeedsCleaning)
         {
-            if (string.IsNullOrWhiteSpace(rawAssemblyName))
+            if (String.IsNullOrWhiteSpace(rawAssemblyName))
             {
                 cleanAssemblyName = null;
                 asmNameNeedsCleaning = true;
@@ -363,7 +366,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                 }
             }
 
-            if (string.IsNullOrWhiteSpace(cleanAssemblyName))
+            if (String.IsNullOrWhiteSpace(cleanAssemblyName))
             {
                 cleanAssemblyName = null;
                 asmNameNeedsCleaning = true;
@@ -497,7 +500,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                 {
                     managedBinariesRootFull = managedBinariesRoot;
                 }
-                
+
                 string managedBinariesDirectory = Path.Combine(managedBinariesRootFull, managedBinariesSubdir);
 
                 if (binaryDirs != null && !String.IsNullOrWhiteSpace(managedBinariesDirectory))
@@ -547,7 +550,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
 
                 try
                 {
-                    string objectAssemblyFileVersionString = ((AssemblyFileVersionAttribute)objectAssembly.GetCustomAttribute(typeof(AssemblyFileVersionAttribute))).Version;
+                    string objectAssemblyFileVersionString = ((AssemblyFileVersionAttribute) objectAssembly.GetCustomAttribute(typeof(AssemblyFileVersionAttribute))).Version;
                     var objectAssemblyVersion = new Version(objectAssemblyFileVersionString);
 
                     var mscorlib461Version = new Version("4.6.1055.0");
@@ -693,10 +696,12 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             }
             else if (UseConsoleLoggingIfFileLoggingFails)
             {
-#pragma warning disable CS0162 // Unreachable code detected (deliberately using const bool for compile settings)
+#pragma warning disable IDE0079  // Remove unnecessary suppression: Supresion is necessary for some, but not all compile time settings
+#pragma warning disable CS0162  // Unreachable code detected (deliberately using const bool for compile settings)
                 Console.WriteLine($"{Environment.NewLine}{LoggingComponentMoniker}: {message}"
                                 + (ex == null ? "" : $"{Environment.NewLine}{ex}"));
-#pragma warning restore CS0162 // Unreachable code detected
+#pragma warning restore CS0162  // Unreachable code detected
+#pragma warning restore IDE0079  // Remove unnecessary suppression
             }
         }
 
@@ -708,9 +713,11 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             }
             else if (UseConsoleLoggingIfFileLoggingFails)
             {
-#pragma warning disable CS0162 // Unreachable code detected (deliberately using const bool for compile settings)
+#pragma warning disable IDE0079  // Remove unnecessary suppression: Supresion is necessary for some, but not all compile time settings
+#pragma warning disable CS0162  // Unreachable code detected (deliberately using const bool for compile settings)
                 Console.WriteLine($"{Environment.NewLine}{LoggingComponentMoniker}: {message}");
-#pragma warning restore CS0162 // Unreachable code detected
+#pragma warning restore CS0162  // Unreachable code detected
+#pragma warning restore IDE0079  // Remove unnecessary suppression
             }
         }
 

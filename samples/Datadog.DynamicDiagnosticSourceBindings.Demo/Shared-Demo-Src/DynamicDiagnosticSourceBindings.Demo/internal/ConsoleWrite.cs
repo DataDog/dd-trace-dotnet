@@ -39,7 +39,7 @@ namespace DynamicDiagnosticSourceBindings.Demo
             {
                 const string TimestampPattern = @"HH\:mm\:ss\.ffff";
 
-                Console.WriteLine(prefix + " ### Demo says (@" + DateTimeOffset.Now.ToString(TimestampPattern) + "): " + line); ;
+                Console.WriteLine(prefix + " ### Demo says (@" + DateTimeOffset.Now.ToString(TimestampPattern) + "): " + line);
             }
         }
 

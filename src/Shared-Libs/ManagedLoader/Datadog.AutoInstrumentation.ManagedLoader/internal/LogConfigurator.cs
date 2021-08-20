@@ -16,12 +16,15 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
         private const string Product = "Common";
         private const string ComponentGroup = "ManagedLoader";
 
+#pragma warning disable IDE1006  // Runtime-initialized Constants {
+
         /// <summary>A universe-wide, randomly generated unique ID for managed loader logs.</summary>
         private static readonly Guid ManagedLoaderLogGroupId = Guid.Parse("27B50088-5AFB-44AC-9F24-8A5BD5D1DCF6");
 
         private static readonly DefaultFormat.Options FileFormatOptions = new DefaultFormat.Options(useUtcTimestamps: false,
                                                                                                     useNewLinesInErrorMessages: true,
                                                                                                     useNewLinesInDataNamesAndValues: true);
+#pragma warning restore IDE1006  // } Runtime-initialized Constants
 
         private static IReadOnlyDictionary<Type, LogSourceNameCompositionLogSink> s_logRedirections = null;
 

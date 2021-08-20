@@ -53,7 +53,7 @@ namespace Datadog.Util
     ///     }
     /// </code>
     /// </summary>
-    /// <remarks>This type is a <c>ref struct</c> rather than a simple <c>struct</c> because it is a non-imutable value type.
+    /// <remarks>This type is a <c>ref struct</c> rather than a simple <c>struct</c> because it is a non-immutable value type.
     /// Being a <c>ref struct</c> prevents it from being unintentionally boxed (such a boxed copy may be torn-modified).</remarks>
     internal ref struct ExceptionAggregator
     {

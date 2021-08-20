@@ -6,7 +6,9 @@ namespace Datadog.Logging.Demo.EmitterAndComposerApp
 {
     public class Program
     {
+#pragma warning disable IDE1006  // Runtime-initialized Constants {
         private static readonly LogSourceInfo LogSourceInfo = new LogSourceInfo("Demo.EmitterAndComposerApp");
+#pragma warning restore IDE1006  // } Runtime-initialized Constants
 
         private const int RuntimeSecs = 20;
 
@@ -21,7 +23,7 @@ namespace Datadog.Logging.Demo.EmitterAndComposerApp
 
         private static readonly Random s_rnd = new Random();
 
-        public static void Main(string[] args)
+        public static void Main(string[] _)
         {
             (new Datadog.Logging.Demo.EmitterAndComposerApp.Program()).Run();
         }
@@ -86,7 +88,7 @@ namespace Datadog.Logging.Demo.EmitterAndComposerApp
                         ThrowException();
                         demoLogAction = (DemoLogAction) 0;  // Line never reached
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         error = ex;
                         if ((iteration / 10) % 3 == 1)
@@ -112,7 +114,7 @@ namespace Datadog.Logging.Demo.EmitterAndComposerApp
                     demoLogAction = DemoLogAction.Info;
                 }
 
-                switch(demoLogAction)
+                switch (demoLogAction)
                 {
                     case DemoLogAction.ErrorWithMessage:
                         Log.Error(LogSourceInfo.WithCallInfo().WithinLogSourcesGroup("Some Large Component"),
@@ -152,6 +154,7 @@ namespace Datadog.Logging.Demo.EmitterAndComposerApp
                                   "<UnpairedTag />");
                         break;
 
+                    case DemoLogAction.Info:
                     default:
                         Log.Info(LogSourceInfo,
                                  "A log-worthy event occurred",
@@ -161,7 +164,7 @@ namespace Datadog.Logging.Demo.EmitterAndComposerApp
                                  "demoLogAction", demoLogAction);
                         break;
                 }
-                
+
 
                 if (iteration % 500 == 0)
                 {

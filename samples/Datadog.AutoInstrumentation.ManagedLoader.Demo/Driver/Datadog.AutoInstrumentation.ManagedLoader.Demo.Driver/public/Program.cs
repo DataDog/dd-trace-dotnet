@@ -3,16 +3,15 @@ using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
-using System.Security.Principal;
 
 namespace Datadog.AutoInstrumentation.ManagedLoader.Demo.Driver
 {
     public class Program
     {
         // If FALSE, must place them there manually!
-        private const bool PlaceTargetAssembliesToAppDirs = false;
+        internal static readonly bool PlaceTargetAssembliesToAppDirs = false;  // static readonly rather than const to avoid unreachable code warings
 
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
             (new Program()).Run(args);
         }
@@ -37,7 +36,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader.Demo.Driver
                     {
                         ConsoleWrite.LineLine($"Command line parameter {nameof(PlaceTargetAssembliesToAppDirs)} was specified.");
 
-                        if (args.Length > 1 && args[1] != null && bool.TryParse(args[1], out bool parsedParam))
+                        if (args.Length > 1 && args[1] != null && Boolean.TryParse(args[1], out bool parsedParam))
                         {
                             ConsoleWrite.Line($"    Command line parameter {nameof(PlaceTargetAssembliesToAppDirs)} parsed to be \"{parsedParam}\". Will use that value.");
                             placeTargetAssembliesToAppDirs = parsedParam;
@@ -50,7 +49,6 @@ namespace Datadog.AutoInstrumentation.ManagedLoader.Demo.Driver
                     }
                 }
 
-#pragma warning disable CS0162 // Unreachable code detected (const bool config)
                 ConsoleWrite.LineLine($"placeTargetAssembliesToAppDirs = {placeTargetAssembliesToAppDirs}");
                 if (placeTargetAssembliesToAppDirs)
                 {
@@ -62,7 +60,6 @@ namespace Datadog.AutoInstrumentation.ManagedLoader.Demo.Driver
                         return;
                     }
                 }
-#pragma warning restore CS0162 // Unreachable code detected
 
                 validationSuccess = validationSuccess && LoadTestTargetsInCurrentAppDomain();
 
@@ -98,7 +95,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader.Demo.Driver
                     }
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 ConsoleWrite.Exception(ex);
                 validationSuccess = false;
@@ -133,12 +130,12 @@ namespace Datadog.AutoInstrumentation.ManagedLoader.Demo.Driver
                 ConsoleWrite.LineLine("Invoking AssemblyLoader.Run(..)");
                 ConsoleWrite.Line($"    Current AD: Id={AppDomain.CurrentDomain.Id}, IsDefaultAppDomain={AppDomain.CurrentDomain.IsDefaultAppDomain()}.");
 
-                var assemblyNamesToLoadIntoDefaultAppDomain = new string[] { "Datadog.AutoInstrumentation.ManagedLoader.Demo.Driver.DefAd.Asm1.dll" };
-                var assemblyNamesToLoadIntoNonDefaultAppDomains = new string[] { "Datadog.AutoInstrumentation.ManagedLoader.Demo.Driver.DefAd.Asm1.dll" };
+                string[] assemblyNamesToLoadIntoDefaultAppDomain = new string[] { "Datadog.AutoInstrumentation.ManagedLoader.Demo.Driver.DefAd.Asm1.dll" };
+                string[] assemblyNamesToLoadIntoNonDefaultAppDomains = new string[] { "Datadog.AutoInstrumentation.ManagedLoader.Demo.Driver.DefAd.Asm1.dll" };
                 AssemblyLoader.Run(assemblyNamesToLoadIntoDefaultAppDomain, assemblyNamesToLoadIntoNonDefaultAppDomains);
 
                 ConsoleWrite.Line("AssemblyLoader.Run(..) invoked. Validating that target assemblies have been executed.");
-                
+
                 if (IsDummyWorkPerformed(AppDomain.CurrentDomain, out string details))
                 {
                     ConsoleWrite.LineLine($"AppDomain \"{AppDomain.CurrentDomain.FriendlyName}\" vaidated. Details: {details}.");
@@ -150,7 +147,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader.Demo.Driver
                     return false;
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 ConsoleWrite.Exception(ex);
 
@@ -176,7 +173,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader.Demo.Driver
                 return false;
             }
 
-            if (! (adData is string adDataString))
+            if (!(adData is string adDataString))
             {
                 details = $"Target AppDomain has Data under the expected key, however the type is {adData.GetType().FullName} whereas {typeof(string).FullName} was expected.";
                 return false;
@@ -197,8 +194,6 @@ namespace Datadog.AutoInstrumentation.ManagedLoader.Demo.Driver
             MoveTestTargetAssemlyToAppDir(@"Datadog.AutoInstrumentation.ManagedLoader.Demo.Driver.DefAd.Asm1.dll",
                                           @"c:\Program Files\Datadog\.NET Tracer\net461\",
                                           out mustRelaunchAsAdmin);
-
-            if (mustRelaunchAsAdmin) { return; }
         }
 
         private void MoveTestTargetAssemlyToAppDir(string assemblyFileName, string appDir, out bool mustRelaunchAsAdmin)

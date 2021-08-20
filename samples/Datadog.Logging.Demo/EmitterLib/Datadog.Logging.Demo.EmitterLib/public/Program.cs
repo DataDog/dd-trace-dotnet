@@ -20,7 +20,7 @@ namespace Datadog.Logging.Demo.EmitterLib
 
         private static readonly Random s_rnd = new Random();
 
-        public static void Main(string[] args)
+        public static void Main(string[] _)
         {
             (new Program()).Run();
         }
@@ -71,7 +71,7 @@ namespace Datadog.Logging.Demo.EmitterLib
                         ThrowException();
                         demoLogAction = (DemoLogAction) 0;  // Line never reached
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         error = ex;
                         if ((iteration / 10) % 3 == 1)
@@ -97,7 +97,7 @@ namespace Datadog.Logging.Demo.EmitterLib
                     demoLogAction = DemoLogAction.Info;
                 }
 
-                switch(demoLogAction)
+                switch (demoLogAction)
                 {
                     case DemoLogAction.ErrorWithMessage:
                         Log.Error(Log.WithCallInfo(LogSourceMoniker),
@@ -137,6 +137,7 @@ namespace Datadog.Logging.Demo.EmitterLib
                                   "<UnpairedTag />");
                         break;
 
+                    case DemoLogAction.Info:
                     default:
                         Log.Info(LogSourceMoniker,
                                  "A log-worthy foo-bar event occurred",
@@ -146,7 +147,7 @@ namespace Datadog.Logging.Demo.EmitterLib
                                  "demoLogAction", demoLogAction);
                         break;
                 }
-                
+
 
                 if (iteration % 500 == 0)
                 {

@@ -28,7 +28,7 @@ namespace Demo.LateLoadDS.NetFx
 
         private int _isPhaseOneCompleted = 0;
 
-        public static void Main(string[] args)
+        public static void Main(string[] _)
         {
             (new Program()).Run();
         }
@@ -86,7 +86,7 @@ namespace Demo.LateLoadDS.NetFx
             SetPhaseOneCompleted(false);
 
             ConsoleWrite.LineLine($"Starting {nameof(StubbedDiagnosticEventsGenerator)}.");
-            
+
             var stubbedGenerator = new StubbedDiagnosticEventsGenerator(MaxIterations, PhaseOneIterations);
             Task stubbedGeneratorTask = Task.Run(stubbedGenerator.Run);
 
@@ -202,7 +202,7 @@ namespace Demo.LateLoadDS.NetFx
             {
                 return AssemblyName.GetAssemblyName(path);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 ConsoleWrite.Exception(ex);
                 return null;

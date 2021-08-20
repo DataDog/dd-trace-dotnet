@@ -10,36 +10,39 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
     /// </summary>
     internal partial class AssemblyResolveEventHandler
     {
-        // The prefix to this is specified in LogComposer.tt
-        private const string LoggingComponentMoniker = nameof(AssemblyResolveEventHandler);
-
-        // This handler will try to load assemblies from the folders specified in <c>ManagedProductBinariesDirectories</c>.
-        // It will handle all assemblies with names that start with the prefixes below (<see cref="LoadAssemblyFromProductDirectoryPrefixes" />).
-        // In addition, it will handle all assemblies with names specified in <c>AssemblyNamesToLoad</c>.
-        private static readonly string[] LoadAssemblyFromProductDirectoryPrefixes = new string[]
+        private static class Constants
         {
-                        "Datadog.Trace",
-                        "Datadog.AutoInstrumentation"
-        };
+            // The prefix to this is specified in LogComposer.tt
+            public const string LoggingComponentMoniker = nameof(AssemblyResolveEventHandler);
 
-        // The <c>AssembliesToLoadSxS</c> setting is only used in NetCore.
-        // For some assemblies, if that assembly is referenced by the application, we still want to load a version from the product
-        // directory in addition to (NOT instead of) the version loaded with the application. Such assemblies must be carefully
-        // verified for their ability to run side-by-side in this manner. Only after such validation can they be white-listed here.
-        // Note: If this list grows large, we should replace the list with a look-up set.
-        private static readonly string[] AssembliesToLoadSxS = new string[]
-        {
-                        "Datadog.Trace",
-                        // "Add.Your.Assembly.Here"
-        };
+            // This handler will try to load assemblies from the folders specified in <c>ManagedProductBinariesDirectories</c>.
+            // It will handle all assemblies with names that start with the prefixes below (<see cref="LoadAssemblyFromProductDirectoryPrefixes" />).
+            // In addition, it will handle all assemblies with names specified in <c>AssemblyNamesToLoad</c>.
+            public static readonly string[] LoadAssemblyFromProductDirectoryPrefixes = new string[]
+            {
+                            "Datadog.Trace",
+                            "Datadog.AutoInstrumentation"
+            };
+
+            // The <c>AssembliesToLoadSxS</c> setting is only used in NetCore.
+            // For some assemblies, if that assembly is referenced by the application, we still want to load a version from the product
+            // directory in addition to (NOT instead of) the version loaded with the application. Such assemblies must be carefully
+            // verified for their ability to run side-by-side in this manner. Only after such validation can they be white-listed here.
+            // Note: If this list grows large, we should replace the list with a look-up set.
+            public static readonly string[] AssembliesToLoadSxS = new string[]
+            {
+                            "Datadog.Trace",
+                            // "Add.Your.Assembly.Here"
+            };
+        }
 
         private readonly IReadOnlyList<string> _assemblyNamesToLoad;
         private readonly IReadOnlyList<string> _managedProductBinariesDirectories;
 
         public AssemblyResolveEventHandler(IReadOnlyList<string> assemblyNamesToLoad, IReadOnlyList<string> managedProductBinariesDirectories)
         {
-            _assemblyNamesToLoad = (assemblyNamesToLoad) == null ? new string[0] : assemblyNamesToLoad;
-            _managedProductBinariesDirectories = (managedProductBinariesDirectories) == null ? new string[0] : managedProductBinariesDirectories;
+            _assemblyNamesToLoad = assemblyNamesToLoad ?? new string[0];
+            _managedProductBinariesDirectories = managedProductBinariesDirectories ?? new string[0];
         }
 
         internal IReadOnlyList<string> AssemblyNamesToLoad
@@ -54,7 +57,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
 
         private static AssemblyName ParseAssemblyName(string fullAssemblyName)
         {
-            if (string.IsNullOrEmpty(fullAssemblyName))
+            if (String.IsNullOrEmpty(fullAssemblyName))
             {
                 return null;
             }
@@ -86,12 +89,12 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             }
 
             // Is this an assembly which should be loaded from the product directory?
-            if (! MustLoadAssemblyFromProductDirectory(assemblyName))
+            if (!MustLoadAssemblyFromProductDirectory(assemblyName))
             {
                 // No. Log and bail out.
                 if (Log.IsDebugLoggingEnabled)
                 {
-                    Log.Debug(LoggingComponentMoniker,
+                    Log.Debug(Constants.LoggingComponentMoniker,
                               "The runtime requested a hint while resolving an assembly;"
                             + " this handler will NOT participate in the resolution: the assembly is not relevant.",
                               "assemblyName", assemblyName?.FullName,
@@ -106,7 +109,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
 
             if (Log.IsDebugLoggingEnabled)
             {
-                Log.Debug(LoggingComponentMoniker,
+                Log.Debug(Constants.LoggingComponentMoniker,
                           "The runtime requested a hint while resolving an assembly;"
                         + " this handler WILL participate in the resolution: the assembly is relevant.",
                           "assemblyName", assemblyName?.FullName,
@@ -120,7 +123,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                 // Assembly was not found.
                 if (Log.IsDebugLoggingEnabled)
                 {
-                    Log.Debug(LoggingComponentMoniker,
+                    Log.Debug(Constants.LoggingComponentMoniker,
                               "The requested assembly was NOT located in any of the known product binaries directories. No resolution hint will be provided.",
                               "assemblyName", assemblyName.FullName,
                              $"{nameof(currendAppDomain)}.{nameof(AppDomain.Id)}", currendAppDomain?.Id,
@@ -135,7 +138,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                 // Assembly was found. Load it:
                 if (Log.IsDebugLoggingEnabled)
                 {
-                    Log.Debug(LoggingComponentMoniker,
+                    Log.Debug(Constants.LoggingComponentMoniker,
                               "Loading assembly from product directory.",
                               "assemblyName", assemblyName.FullName,
                               "assemblyPath", assemblyPath,
@@ -149,7 +152,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                 {
                     if (Log.IsDebugLoggingEnabled)
                     {
-                        Log.Debug(LoggingComponentMoniker,
+                        Log.Debug(Constants.LoggingComponentMoniker,
                                   "Not able to load assembly from product directory.",
                                   "assemblyName", assemblyName.FullName,
                                   "assemblyPath", assemblyPath,
@@ -162,7 +165,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             }
             catch (Exception ex)
             {
-                Log.Error(LoggingComponentMoniker,
+                Log.Error(Constants.LoggingComponentMoniker,
                           "Error loading assembly from product directory",
                           ex,
                           "assemblyName", assemblyName.FullName,
@@ -176,16 +179,16 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
 
         private bool MustLoadAssemblyFromProductDirectory(AssemblyName assemblyName)
         {
-            if (string.IsNullOrWhiteSpace(assemblyName?.Name) || string.IsNullOrWhiteSpace(assemblyName?.FullName))
+            if (String.IsNullOrWhiteSpace(assemblyName?.Name) || String.IsNullOrWhiteSpace(assemblyName?.FullName))
             {
                 return false;
             }
 
             // The AssemblyResolveEventHandler will handle all assemblies that have specific prefixes:
 
-            for (int i = 0; i < LoadAssemblyFromProductDirectoryPrefixes.Length; i++)
+            for (int i = 0; i < Constants.LoadAssemblyFromProductDirectoryPrefixes.Length; i++)
             {
-                string prefix = LoadAssemblyFromProductDirectoryPrefixes[i];
+                string prefix = Constants.LoadAssemblyFromProductDirectoryPrefixes[i];
                 if (assemblyName.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
                 {
                     return true;

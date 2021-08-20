@@ -38,7 +38,7 @@ namespace Datadog.Logging.Composition
                                                          logSourceCallLineNumber,
                                                          logSourceCallMemberName,
                                                          logSourceCallFileName,
-                                                         logSourceAssemblyName), 
+                                                         logSourceAssemblyName),
                                        message,
                                        exception,
                                        dataNamesAndValues);

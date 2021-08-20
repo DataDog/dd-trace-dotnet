@@ -3,7 +3,7 @@ using System.Text;
 
 namespace DynamicDiagnosticSourceBindings.Demo
 {
-    internal  class ReceivedEventsAccumulator
+    internal class ReceivedEventsAccumulator
     {
         private readonly int _expectedMaxIteration;
         private readonly bool[] _receivedEvents;
@@ -15,7 +15,7 @@ namespace DynamicDiagnosticSourceBindings.Demo
             _receivedCount = 0;
 
             _receivedEvents = new bool[_expectedMaxIteration];
-            for(int i = 0; i < _expectedMaxIteration; i++)
+            for (int i = 0; i < _expectedMaxIteration; i++)
             {
                 _receivedEvents[i] = false;
             }

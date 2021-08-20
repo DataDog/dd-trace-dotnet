@@ -24,7 +24,7 @@ namespace Datadog.Util
         /// 'missing initialization' and similar.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Exception Rethrow(this Exception exception) 
+        public static Exception Rethrow(this Exception exception)
         {
             if (exception == null)
             {

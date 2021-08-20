@@ -3,8 +3,10 @@ using System.Text;
 
 namespace Datadog.Util
 {
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0049:Simplify Names", Justification = "Uses Framework type names for correspondance with native types.")]
     public static class HResult
     {
+#pragma warning disable IDE1006  // Non-CodeStyle-conform names required here {
         public const UInt32 S_OK = 0x00000000;
         public const UInt32 E_ABORT = 0x80004004;               // Operation aborted
         public const UInt32 E_FAIL = 0x80004005;                // Unspecified failure
@@ -19,6 +21,7 @@ namespace Datadog.Util
         public const UInt32 E_CHANGED_STATE = 0x8000000C;       // A concurrent operation changed the state of the object, invalidating this operation.
         public const UInt32 E_ILLEGAL_STATE_CHANGE = 0x8000000D;// An illegal state change was requested.
         public const UInt32 E_ILLEGAL_METHOD_CALL = 0x8000000E; // A method was called at an unexpected time.
+#pragma warning restore IDE1006  // } Non-CodeStyle-conform names required here
 
         private const UInt32 SeverityBitMask = 0x80000000;
 
@@ -50,23 +53,56 @@ namespace Datadog.Util
         {
             switch (hr)
             {
-                case S_OK:                      return "S_OK";
-                case E_ABORT:                   return "E_ABORT";
-                case E_FAIL:                    return "E_FAIL";
-                case E_NOTIMPL:                 return "E_NOTIMPL";
-                case E_POINTER:                 return "E_POINTER";
-                case E_UNEXPECTED:              return "E_UNEXPECTED";
-                case E_OUTOFMEMORY:             return "E_OUTOFMEMORY";
-                case E_INVALIDARG:              return "E_INVALIDARG";
-                case E_ACCESSDENIED:            return "E_ACCESSDENIED";
-                case E_PENDING:                 return "E_PENDING";
-                case E_BOUNDS:                  return "E_BOUNDS";
-                case E_CHANGED_STATE:           return "E_CHANGED_STATE";
-                case E_ILLEGAL_STATE_CHANGE:    return "E_ILLEGAL_STATE_CHANGE";
-                case E_ILLEGAL_METHOD_CALL:     return "E_ILLEGAL_METHOD_CALL";
+                case S_OK:
+                    return "S_OK";
+
+                case E_ABORT:
+                    return "E_ABORT";
+                case E_FAIL:
+                    return "E_FAIL";
+
+                case E_NOTIMPL:
+                    return "E_NOTIMPL";
+
+                case E_POINTER:
+                    return "E_POINTER";
+
+                case E_UNEXPECTED:
+                    return "E_UNEXPECTED";
+
+                case E_OUTOFMEMORY:
+                    return "E_OUTOFMEMORY";
+
+                case E_INVALIDARG:
+                    return "E_INVALIDARG";
+
+                case E_ACCESSDENIED:
+                    return "E_ACCESSDENIED";
+
+                case E_PENDING:
+                    return "E_PENDING";
+
+                case E_BOUNDS:
+                    return "E_BOUNDS";
+
+                case E_CHANGED_STATE:
+                    return "E_CHANGED_STATE";
+
+                case E_ILLEGAL_STATE_CHANGE:
+                    return "E_ILLEGAL_STATE_CHANGE";
+
+                case E_ILLEGAL_METHOD_CALL:
+                    return "E_ILLEGAL_METHOD_CALL";
+
                 default:
-                    if (IsSuccess(hr))          return "UnknownCode_Success";
-                    else                        return "UnknownCode_Failure";
+                    if (IsSuccess(hr))
+                    {
+                        return "UnknownCode_Success";
+                    }
+                    else
+                    {
+                        return "UnknownCode_Failure";
+                    }
             }
         }
 
@@ -80,12 +116,12 @@ namespace Datadog.Util
             var s = new StringBuilder(ToString(hr));
             s.Append(" (0x");
             s.Append(hr.ToString("X8"));
-            s.Append(")");
+            s.Append(')');
             return s.ToString();
         }
 
         public static UInt32 GetFailureCode(Exception ex)
-        { 
+        {
             if (ex == null)
             {
                 return HResult.E_FAIL;

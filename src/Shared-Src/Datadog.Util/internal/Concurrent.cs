@@ -66,7 +66,7 @@ namespace Datadog.Util
         /// <param name="comparand"></param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static T CompareExchangeResult<T>(ref T storageLocation, T value,T comparand) where T : class
+        public static T CompareExchangeResult<T>(ref T storageLocation, T value, T comparand) where T : class
         {
             T prevValue = Interlocked.CompareExchange(ref storageLocation, value, comparand);
             return Object.ReferenceEquals(prevValue, comparand) ? value : prevValue;
