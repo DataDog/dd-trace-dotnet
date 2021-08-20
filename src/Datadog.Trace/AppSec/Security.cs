@@ -49,6 +49,7 @@ namespace Datadog.Trace.AppSec
 
                 _instrumentationGateway = instrumentationGateway ?? new InstrumentationGateway();
 
+                _settings.Enabled = _settings.Enabled && AreArchitectureAndOsSupported();
                 if (_settings.Enabled)
                 {
                     _powerWaf = powerWaf ?? PowerWaf.Initialize();

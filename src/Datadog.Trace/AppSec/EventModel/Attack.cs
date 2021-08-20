@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Net;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec.EventModel
@@ -26,18 +27,28 @@ namespace Datadog.Trace.AppSec.EventModel
         {
             var ruleMatch = result.ResultData.Filter[0];
             var request = transport.Request();
-
+            var frameworkDescription = FrameworkDescription.Instance;
             var attack = new Attack
             {
                 EventId = Guid.NewGuid().ToString(),
                 Context = new Context()
                 {
+                    Host = new Host
+                    {
+                        OsType = frameworkDescription.OSPlatform,
+                        Hostname = Dns.GetHostName()
+                    },
                     Http = new Http
                     {
                         Request = request,
                         Response = transport.Response(result.Blocked)
                     },
-                    Actor = new Actor { Ip = new Ip { Address = request.RemoteIp } }
+                    Actor = new Actor { Ip = new Ip { Address = request.RemoteIp } },
+                    Tracer = new Tracer
+                    {
+                        RuntimeType = frameworkDescription.Name,
+                        RuntimeVersion = frameworkDescription.ProductVersion,
+                    }
                 },
                 Blocked = result.Blocked,
                 Rule = new Rule { Name = result.ResultData.Flow, Id = result.ResultData.Rule },
