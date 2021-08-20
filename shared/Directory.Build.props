@@ -12,7 +12,7 @@
     <!-- We keep them separate / independent / encapsulated as much as possible and reference all of them from here.                                    -->
     <!-- It is crucial that most of them are included from within the repo root and apply to the entire repo.                                           -->
     
-    <Import Project="RepoAndBuild-DirectoryStructure.props" />
-    <Import Project="CodeAnalysis.props" Condition=" '$(SkipCodeAnalysis)' != 'True' " />
+    <Import Project="$(MSBuildThisFileDirectory)\RepoAndBuild-DirectoryStructure.props" />
+    <Import Project="$(MSBuildThisFileDirectory)\CodeAnalysis.props" Condition=" '$(SkipCodeAnalysis)' != 'True' " />
     
 </Project>
