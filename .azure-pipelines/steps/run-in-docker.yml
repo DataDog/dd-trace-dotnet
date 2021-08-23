@@ -10,7 +10,19 @@ parameters:
   - name: build
     type: boolean
     default: false
-    
+
+  - name: ddTraceEnabled
+    type: boolean
+    default: false
+
+  - name: ddTraceNetwork
+    type: string
+    default: $(dockerNetwork)
+
+  - name: ddTraceAgentUrl
+    type: string
+    default: http://dd_agent:8126
+
   - name: command
     type: string
 
@@ -24,13 +36,42 @@ steps:
         --file "$(System.DefaultWorkingDirectory)/build/_build/docker/${{ parameters.baseImage }}.dockerfile" \
         "$(System.DefaultWorkingDirectory)/build/_build"
     displayName: Build ${{ parameters.baseImage }} Docker image
-- script: |
-    docker run --rm \
-        --mount type=bind,source="$(System.DefaultWorkingDirectory)",target=/project \
-        --env NugetPackageDirectory=/project/$(relativeNugetPackageDirectory) \
-        --env tracerHome=/project/$(relativeTracerHome) \
-        --env artifacts=/project/$(relativeArtifacts) \
-        --env DD_CLR_ENABLE_NGEN=$(DD_CLR_ENABLE_NGEN) \
-        dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }} \
-        dotnet /build/bin/Debug/_build.dll ${{ parameters.command }}
-  displayName: Run '${{ parameters.command }}' in Docker
+- ${{ if eq(parameters.ddTraceEnabled, 'true') }}:
+  - script: |
+      docker run --rm \
+          --mount type=bind,source="$(System.DefaultWorkingDirectory)",target=/project \
+          --network ${{ parameters.ddTraceNetwork }} \
+          --env NugetPackageDirectory=/project/$(relativeNugetPackageDirectory) \
+          --env tracerHome=/project/$(relativeTracerHome) \
+          --env artifacts=/project/$(relativeArtifacts) \
+          --env DD_CLR_ENABLE_NGEN=$(DD_CLR_ENABLE_NGEN) \
+          --env DD_SERVICE \
+          --env DD_ENV \
+          --env TF_BUILD \
+          --env BUILD_DEFINITIONNAME \
+          --env BUILD_BUILDID \
+          --env BUILD_SOURCESDIRECTORY \
+          --env BUILD_REPOSITORY_URI \
+          --env BUILD_SOURCEBRANCH \
+          --env BUILD_SOURCEVERSION \
+          --env SYSTEM_TEAMFOUNDATIONSERVERURI \
+          --env SYSTEM_TEAMPROJECT \
+          --env SYSTEM_JOBID \
+          --env SYSTEM_TASKINSTANCEID \
+          --env SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI \
+          --env SYSTEM_PULLREQUEST_SOURCEBRANCH \
+          --env SYSTEM_PULLREQUEST_SOURCECOMMITID \
+          dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }} \
+          dd-trace --agent-url ${{ parameters.ddTraceAgentUrl }}  -- dotnet /build/bin/Debug/_build.dll info ${{ parameters.command }}
+    displayName: Run dd-trace '${{ parameters.command }}' in Docker
+- ${{ if ne(parameters.ddTraceEnabled, 'true') }}:
+    - script: |
+        docker run --rm \
+            --mount type=bind,source="$(System.DefaultWorkingDirectory)",target=/project \
+            --env NugetPackageDirectory=/project/$(relativeNugetPackageDirectory) \
+            --env tracerHome=/project/$(relativeTracerHome) \
+            --env artifacts=/project/$(relativeArtifacts) \
+            --env DD_CLR_ENABLE_NGEN=$(DD_CLR_ENABLE_NGEN) \
+            dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }} \
+            dotnet /build/bin/Debug/_build.dll ${{ parameters.command }}
+      displayName: Run '${{ parameters.command }}' in Docker

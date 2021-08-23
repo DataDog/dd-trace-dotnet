@@ -42,6 +42,7 @@ variables:
   isScheduledBuild: ${{ eq(variables['Build.Reason'], 'Schedule') }} # only works if you have a main branch
   # Allow forcing a benchmark/throughput run using run_benchmarks_only=true
   dotnetToolTag: build-dotnet-tool
+  DD_ENV: ci
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
@@ -198,9 +199,12 @@ stages:
     vmImage: windows-2019
   jobs:
     - job: managed
+      services:
+        dd_agent: dd_agent
       steps:
       - template: steps/install-dotnet.yml
       - template: steps/restore-working-directory.yml
+      - template: steps/enable-ciapp.yml
 
       - script: build.cmd BuildAndRunManagedUnitTests --code-coverage
         displayName: Build and Test
@@ -217,9 +221,12 @@ stages:
         condition: succeededOrFailed()
 
     - job: native
+      services:
+        dd_agent: dd_agent
       steps:
       - template: steps/install-dotnet.yml
       - template: steps/restore-working-directory.yml
+      - template: steps/enable-ciapp.yml
 
       - script: build.cmd BuildAndRunNativeUnitTests
         displayName: Build and Test
@@ -272,8 +279,15 @@ stages:
           baseImage: alpine
     pool:
       vmImage: ubuntu-18.04
+    variables:
+      dockerNetwork: dd_agent_$(baseImage)_unit_tests
 
     steps:
+    - script: |
+        docker network create $(dockerNetwork)
+        docker run --rm -d --network $(dockerNetwork) --name dd_agent -p 8126:8126 -e "DD_API_KEY=$(ddApiKey)" -e "DD_INSIDE_CI=true" datadog/agent
+      displayName: Start dd_agent in Docker
+
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-linux-$(baseImage)-working-directory
@@ -281,11 +295,18 @@ stages:
     - template: steps/run-in-docker.yml
       parameters:
         build: true
+        ddTraceEnabled: true
         baseImage: $(baseImage)
         command: "BuildAndRunManagedUnitTests --code-coverage"
 
     - publish: build_data
       artifact: profiler-logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+
+    - script: |
+        docker stop dd_agent
+        docker network rm $(dockerNetwork)
+      displayName: Stop dd_agent
       condition: succeededOrFailed()
 
     - task: PublishTestResults@2
@@ -308,7 +329,14 @@ stages:
       pool:
         name: Arm64
 
+      variables:
+        dockerNetwork: dd_agent_arm64_unit_tests
       steps:
+        - script: |
+            docker network create $(dockerNetwork)
+            docker run --rm -d --network $(dockerNetwork) --name dd_agent -p 8126:8126 -e "DD_API_KEY=$(ddApiKey)" -e "DD_INSIDE_CI=true" datadog/agent
+          displayName: Start dd_agent in Docker
+
         - template: steps/restore-working-directory.yml
           parameters:
             artifact: build-linux-arm64-working-directory
@@ -321,6 +349,12 @@ stages:
 
         - publish: build_data
           artifact: profiler-logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt)
+          condition: succeededOrFailed()
+
+        - script: |
+            docker stop dd_agent
+            docker network rm $(dockerNetwork)
+          displayName: Stop dd_agent
           condition: succeededOrFailed()
 
         - task: PublishTestResults@2
