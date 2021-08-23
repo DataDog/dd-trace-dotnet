@@ -86,7 +86,8 @@ namespace Datadog.Trace.Security.IntegrationTests
             {
                 Assert.IsType<AppSec.EventModel.Attack>(item);
                 var attackEvent = (AppSec.EventModel.Attack)item;
-                Assert.True(attackEvent.Blocked);
+                var shouldBlock = expectedStatusCode == HttpStatusCode.Forbidden;
+                Assert.Equal(shouldBlock, attackEvent.Blocked);
                 var spanId = spanIds.FirstOrDefault(s => s == attackEvent.Context.Span.Id);
                 Assert.NotEqual(0m, spanId);
                 Assert.DoesNotContain(spanId, usedIds);
