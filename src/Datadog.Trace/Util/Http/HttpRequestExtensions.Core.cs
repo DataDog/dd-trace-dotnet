@@ -20,10 +20,12 @@ namespace Datadog.Trace.Util.Http
         {
             var url = GetUrl(request);
             var headersDic = new Dictionary<string, string>();
-            var headerKeys = request.Headers.Keys.Where(k => k != "Cookie");
-            foreach (var k in headerKeys)
+            foreach (var k in request.Headers.Keys)
             {
-                headersDic.Add(k, request.Headers[k]);
+                if (!k.Equals("cookie", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    headersDic.Add(k, request.Headers[k]);
+                }
             }
 
             var cookiesDic = new Dictionary<string, string>();

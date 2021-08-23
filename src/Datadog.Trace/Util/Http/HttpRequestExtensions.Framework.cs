@@ -20,7 +20,7 @@ namespace Datadog.Trace.Util.Http
             var headerKeys = request.Headers.Keys;
             foreach (string k in headerKeys)
             {
-                if (k != "Cookie")
+                if (!k.Equals("cookie", System.StringComparison.OrdinalIgnoreCase))
                 {
                     headersDic.Add(k, request.Headers[k]);
                 }
