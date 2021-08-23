@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ILogger
@@ -20,6 +21,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ILogger
         MinimumVersion = "2.0.0",
         MaximumVersion = "5.*.*",
         IntegrationName = LoggerIntegrationCommon.IntegrationName)]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class LoggerFactoryScopeProviderForEachScopeIntegration
     {
         /// <summary>
