@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<!-- This Directory.Build.props file needs to apply to all projects and solutions in this repository. It is placed near the top of the repo accordingly.    -->
+<!-- If you use more specific Directory.Build.props files, you need to reference this file from there. You can do it with a statement such as this:         -->
+<!--     <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />                                   -->
+<!-- For details see: https://docs.microsoft.com/en-us/visualstudio/msbuild/customize-your-build?view=vs-2019#use-case-multi-level-merging                  -->
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+                       
+    <!-- There are several PROPS files that must apply to the entire repo.                                                                              -->
+    <!-- This includes global coding style settings, global build configuration, global folder structure and so on...                                   -->
+    <!-- We keep them separate / independent / encapsulated as much as possible and reference all of them from here.                                    -->
+    <!-- It is crucial that most of them are included from within the repo root and apply to the entire repo.                                           -->
+    
+    <Import Project="$(MSBuildThisFileDirectory)\RepoAndBuild-DirectoryStructure.props" />
+    <Import Project="$(MSBuildThisFileDirectory)\CodeAnalysis.props" Condition=" '$(SkipCodeAnalysis)' != 'True' " />
+    
+</Project>
