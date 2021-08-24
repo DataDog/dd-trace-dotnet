@@ -91,7 +91,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 var spanId = spanIds.FirstOrDefault(s => s == attackEvent.Context.Span.Id);
                 Assert.NotEqual(0m, spanId);
                 Assert.DoesNotContain(spanId, usedIds);
-                Assert.Equal("nosql_injection-blocking", attackEvent.Rule.Name);
+                Assert.Equal("nosqli", attackEvent.Rule.Name);
                 usedIds.Add(spanId);
             }
 
