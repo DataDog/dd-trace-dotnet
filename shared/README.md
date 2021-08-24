@@ -11,4 +11,4 @@ Copyright (c) 2017-2021 Datadog
 
 ### License
 
-See [license information](./LICENSE).
+See [license information](../LICENSE).
