@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AspNet
         /// <summary>
         /// Injects a call to HttpApplication to register the HttpModule
         /// </summary>
-        [InterceptMethod(
+        [InsertFirstInterceptMethod(
             Integration = "AspNet",
             CallerAssembly = "System.Web",
             CallerType = "System.Web.Compilation.BuildManager",
@@ -36,8 +36,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AspNet
             TargetType = "System.Web.Compilation.BuildManager",
             TargetMethod = "InvokePreStartInitMethodsCore",
             TargetMinimumVersion = "4",
-            TargetMaximumVersion = "4",
-            MethodReplacementAction = MethodReplacementActionType.InsertFirst)]
+            TargetMaximumVersion = "4")]
         public static void TryLoadHttpModule()
         {
             if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)

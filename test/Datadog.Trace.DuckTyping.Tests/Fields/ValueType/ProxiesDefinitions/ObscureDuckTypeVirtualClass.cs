@@ -7,72 +7,72 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ValueType.ProxiesDefinitions
 {
     public class ObscureDuckTypeVirtualClass
     {
-        [Duck(Name = "_publicStaticReadonlyValueTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_publicStaticReadonlyValueTypeField")]
         public virtual int PublicStaticReadonlyValueTypeField { get; }
 
-        [Duck(Name = "_internalStaticReadonlyValueTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_internalStaticReadonlyValueTypeField")]
         public virtual int InternalStaticReadonlyValueTypeField { get; }
 
-        [Duck(Name = "_protectedStaticReadonlyValueTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_protectedStaticReadonlyValueTypeField")]
         public virtual int ProtectedStaticReadonlyValueTypeField { get; }
 
-        [Duck(Name = "_privateStaticReadonlyValueTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_privateStaticReadonlyValueTypeField")]
         public virtual int PrivateStaticReadonlyValueTypeField { get; }
 
         // *
 
-        [Duck(Name = "_publicStaticValueTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_publicStaticValueTypeField")]
         public virtual int PublicStaticValueTypeField { get; set; }
 
-        [Duck(Name = "_internalStaticValueTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_internalStaticValueTypeField")]
         public virtual int InternalStaticValueTypeField { get; set; }
 
-        [Duck(Name = "_protectedStaticValueTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_protectedStaticValueTypeField")]
         public virtual int ProtectedStaticValueTypeField { get; set; }
 
-        [Duck(Name = "_privateStaticValueTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_privateStaticValueTypeField")]
         public virtual int PrivateStaticValueTypeField { get; set; }
 
         // *
 
-        [Duck(Name = "_publicReadonlyValueTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_publicReadonlyValueTypeField")]
         public virtual int PublicReadonlyValueTypeField { get; }
 
-        [Duck(Name = "_internalReadonlyValueTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_internalReadonlyValueTypeField")]
         public virtual int InternalReadonlyValueTypeField { get; }
 
-        [Duck(Name = "_protectedReadonlyValueTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_protectedReadonlyValueTypeField")]
         public virtual int ProtectedReadonlyValueTypeField { get; }
 
-        [Duck(Name = "_privateReadonlyValueTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_privateReadonlyValueTypeField")]
         public virtual int PrivateReadonlyValueTypeField { get; }
 
         // *
 
-        [Duck(Name = "_publicValueTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_publicValueTypeField")]
         public virtual int PublicValueTypeField { get; set; }
 
-        [Duck(Name = "_internalValueTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_internalValueTypeField")]
         public virtual int InternalValueTypeField { get; set; }
 
-        [Duck(Name = "_protectedValueTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_protectedValueTypeField")]
         public virtual int ProtectedValueTypeField { get; set; }
 
-        [Duck(Name = "_privateValueTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_privateValueTypeField")]
         public virtual int PrivateValueTypeField { get; set; }
 
         // *
 
-        [Duck(Name = "_publicStaticNullableIntField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_publicStaticNullableIntField")]
         public virtual int? PublicStaticNullableIntField { get; set; }
 
-        [Duck(Name = "_privateStaticNullableIntField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_privateStaticNullableIntField")]
         public virtual int? PrivateStaticNullableIntField { get; set; }
 
-        [Duck(Name = "_publicNullableIntField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_publicNullableIntField")]
         public virtual int? PublicNullableIntField { get; set; }
 
-        [Duck(Name = "_privateNullableIntField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_privateNullableIntField")]
         public virtual int? PrivateNullableIntField { get; set; }
     }
 }
