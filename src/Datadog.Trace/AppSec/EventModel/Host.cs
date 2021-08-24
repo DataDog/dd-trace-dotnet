@@ -10,7 +10,7 @@ namespace Datadog.Trace.AppSec.EventModel
     internal class Host
     {
         [JsonProperty("context_version")]
-        public string ContextVersion { get; set; }
+        public string ContextVersion => "0.1.0";
 
         [JsonProperty("os_type")]
         public string OsType { get; set; }
