@@ -192,7 +192,7 @@ namespace Datadog.Trace.TestHelpers
 
         public void Dispose()
         {
-            _listener?.Stop();
+            _listener?.Abort();
             _cancellationTokenSource.Cancel();
             _udpClient?.Close();
         }
