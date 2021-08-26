@@ -385,6 +385,67 @@ partial class Build
             Console.WriteLine("::set-output name=artifacts_path::" + OutputDirectory / artifact.Name);
         });
 
+    Target CompareCodeCoverageReports => _ => _
+         .Unlisted()
+         .DependsOn(CreateRequiredDirectories)
+         .Requires(() => AzureDevopsToken)
+         .Executes(async () =>
+          {
+              var newReportdir = OutputDirectory / "CodeCoverage" / "New";
+              var oldReportdir = OutputDirectory / "CodeCoverage" / "Old";
+
+              FileSystemTasks.EnsureCleanDirectory(newReportdir);
+              FileSystemTasks.EnsureCleanDirectory(oldReportdir);
+
+              // Connect to Azure DevOps Services
+              var connection = new VssConnection(
+                  new Uri(AzureDevopsOrganisation),
+                  new VssBasicCredential(string.Empty, AzureDevopsToken));
+
+              // Get a GitHttpClient to talk to the Git endpoints
+              using var buildHttpClient = connection.GetClient<BuildHttpClient>();
+
+              var prNumber = int.Parse(Environment.GetEnvironmentVariable("PR_NUMBER"));
+              var branch = $"refs/pull/{prNumber}/merge";
+              var fixedPrefix = "Code Coverage Report_";
+
+              var newArtifact = await DownloadAzureArtifact(buildHttpClient, branch, build => $"{fixedPrefix}{build.Id}", newReportdir, buildReason: null);
+              var oldArtifact = await DownloadAzureArtifact(buildHttpClient, "refs/head/master", build => $"{fixedPrefix}{build.Id}", oldReportdir, buildReason: null);
+
+              // // Download original report
+              // // Download new report
+              // var newReportPath = RootDirectory / "Cobertura.xml";
+              // var oldReportPath = RootDirectory / "Cobertura.oldxml";
+              var oldBuildId = oldArtifact.Name.Substring(fixedPrefix.Length);
+              var newBuildId = newArtifact.Name.Substring(fixedPrefix.Length);
+
+              var oldReportPath = oldReportdir / oldArtifact.Name / $"summary{oldBuildId}" / "Cobertura.xml";
+              var newReportPath = newReportdir / newArtifact.Name / $"summary{newBuildId}" / "Cobertura.xml";
+
+              var downloadOldLink = oldArtifact.Resource.DownloadUrl;
+              var downloadNewLink = newArtifact.Resource.DownloadUrl;
+
+              // var oldReportPath = RootDirectory / "Cobertura.old.xml";
+              // var newReportPath = RootDirectory / "Cobertura.new.xml";
+              // var prNumber = 17;
+              // var downloadOldLink = "https://old";
+              // var downloadNewLink = "https://new";
+
+              var oldReport = Covertura.CodeCoverage.ReadReport(oldReportPath);
+              var newReport = Covertura.CodeCoverage.ReadReport(newReportPath);
+
+              var comparison = Covertura.CodeCoverage.Compare(oldReport, newReport);
+              var markdown = Covertura.CodeCoverage.RenderAsMarkdown(comparison, prNumber, downloadOldLink, downloadNewLink);
+
+              // need to encode the release for use by github actions
+              // see https://trstringer.com/github-actions-multiline-strings/
+              markdown.Replace("%","%25");
+              markdown.Replace("\n","%0A");
+              markdown.Replace("\r","%0D");
+
+              Console.WriteLine("::set-output name=report_markdown::" + markdown);
+          });
+
     async Task<BuildArtifact> DownloadAzureArtifact(
         BuildHttpClient buildHttpClient,
         string branch,
