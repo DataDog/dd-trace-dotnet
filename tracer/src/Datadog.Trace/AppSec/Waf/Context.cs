@@ -5,9 +5,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec.Waf
 {
@@ -30,7 +31,11 @@ namespace Datadog.Trace.AppSec.Waf
 
         public IResult Run(IDictionary<string, object> args)
         {
+            LogParametersIfDebugEnabled(args);
+
             var pwArgs = Encoder.Encode(args, argCache);
+
+            Log.Debug("Executing AppSec In-App WAF");
 
             var rawAgs = pwArgs.RawPtr;
             DdwafResultStruct retNative = default;
@@ -39,7 +44,34 @@ namespace Datadog.Trace.AppSec.Waf
 
             var ret = new Result(retNative, code);
 
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug<ReturnCode, string>(
+                    @"AppSec In-App WAF returned: {ReturnCode} {Data}
+Took {PerfTotalRuntime} ms",
+                    ret.ReturnCode,
+                    ret.Data,
+                    retNative.PerfTotalRuntime);
+            }
+
             return ret;
+        }
+
+        private static void LogParametersIfDebugEnabled(IDictionary<string, object> args)
+        {
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+
+                foreach (var kvp in args)
+                {
+                    sb.Append(kvp.Key);
+                    sb.Append(": ");
+                    sb.AppendLine(kvp.Value.ToString());
+                }
+
+                Log.Debug("Executing AppSec In-App WAF with parameters: {Parameters}", sb.ToString());
+            }
         }
 
         public void Dispose(bool disposing)

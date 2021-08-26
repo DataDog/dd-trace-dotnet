@@ -4,9 +4,7 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace Datadog.Trace.AppSec.Waf.NativeBindings
 {
@@ -21,7 +19,5 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         public IntPtr PerfData;
 
         public int PerfTotalRuntime;
-
-        public int PerfCacheHitRate;
     }
 }

@@ -29,7 +29,7 @@ namespace Datadog.Trace.AppSec
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
 
-        private readonly IWaf _powerWaf;
+        private readonly IWaf _waf;
         private readonly IAppSecAgentWriter _agentWriter;
         private readonly InstrumentationGateway _instrumentationGateway;
         private readonly SecuritySettings _settings;
@@ -43,7 +43,7 @@ namespace Datadog.Trace.AppSec
         {
         }
 
-        private Security(SecuritySettings settings = null, InstrumentationGateway instrumentationGateway = null, IWaf powerWaf = null, IAppSecAgentWriter agentWriter = null)
+        private Security(SecuritySettings settings = null, InstrumentationGateway instrumentationGateway = null, IWaf waf = null, IAppSecAgentWriter agentWriter = null)
         {
             try
             {
@@ -54,8 +54,8 @@ namespace Datadog.Trace.AppSec
                 _settings.Enabled = _settings.Enabled && AreArchitectureAndOsSupported();
                 if (_settings.Enabled)
                 {
-                    _powerWaf = powerWaf ?? Waf.Waf.Initialize(_settings.Rules);
-                    if (_powerWaf != null)
+                    _waf = waf ?? Waf.Waf.Initialize(_settings.Rules);
+                    if (_waf != null)
                     {
                         _agentWriter = agentWriter ?? new AppSecAgentWriter();
                         _instrumentationGateway.InstrumentationGatewayEvent += InstrumentationGatewayInstrumentationGatewayEvent;
@@ -71,7 +71,7 @@ namespace Datadog.Trace.AppSec
             catch (Exception ex)
             {
                 _settings.Enabled = false;
-                Log.Error(ex, "Datadog AppSec failed to initialize, your application is NOT protected");
+                Log.Error(ex, "AppSec could not start because of an unexpected error. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help.");
             }
         }
 
@@ -109,6 +109,8 @@ namespace Datadog.Trace.AppSec
 
         internal SecuritySettings Settings => _settings;
 
+        internal Version DdlibWafVersion => _waf?.Version;
+
         private static void AnnotateSpan(Span span)
         {
             // we should only tag service entry span, the first span opened for a
@@ -124,7 +126,7 @@ namespace Datadog.Trace.AppSec
         /// <summary>
         /// Frees resouces
         /// </summary>
-        public void Dispose() => _powerWaf?.Dispose();
+        public void Dispose() => _waf?.Dispose();
 
         internal void Execute(Guid guid)
         {
@@ -157,7 +159,7 @@ namespace Datadog.Trace.AppSec
 
             if (additiveContext == null)
             {
-                additiveContext = _powerWaf.CreateContext();
+                additiveContext = _waf.CreateContext();
                 transport.SetAdditiveContext(additiveContext);
             }
 
@@ -168,7 +170,7 @@ namespace Datadog.Trace.AppSec
                 Log.Information("AppSec: Attack detected! Action: {ReturnCode}, Blocking enabled : {BlockingEnabled}", wafResult.ReturnCode, _settings.BlockingEnabled);
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
-                    Log.Information("AppSec: Attack arguments {Args}", Encoder.FormatArgs(args));
+                    Log.Debug("AppSec: Attack arguments {Args}", Encoder.FormatArgs(args));
                 }
 
                 var managedWafResult = Waf.ReturnTypes.Managed.Return.From(wafResult);
@@ -221,8 +223,8 @@ namespace Datadog.Trace.AppSec
 
             if (!osSupported || !archSupported)
             {
-                Log.Warning(
-                    "AppSec could not start because the current environment is not supported. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help. Host information: {{ operating_system:{frameworkDescription.OSPlatform} }}, arch:{{ {frameworkDescription.ProcessArchitecture} }}, runtime_infos: {{ {frameworkDescription.ProductVersion} }}",
+                Log.Error(
+                    "AppSec could not start because the current environment is not supported. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help. Host information: {{ operating_system:{OSPlatform} }}, arch:{{ {ProcessArchitecture} }}, runtime_infos: {{ {ProductVersion} }}",
                     frameworkDescription.OSPlatform,
                     frameworkDescription.ProcessArchitecture,
                     frameworkDescription.ProductVersion);

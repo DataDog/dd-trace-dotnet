@@ -12,6 +12,7 @@ using System.Web.Routing;
 using Datadog.Trace.AppSec.Transport.Http;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util.Http;
+using Datadog.Trace.Vendors.Serilog.Events;
 #if !NETFRAMEWORK
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -21,7 +22,7 @@ namespace Datadog.Trace.AppSec
 {
     internal class InstrumentationGateway
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(InstrumentationGateway));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<InstrumentationGateway>();
 
         public event EventHandler<InstrumentationGatewayEventArgs> InstrumentationGatewayEvent;
 
@@ -44,12 +45,25 @@ namespace Datadog.Trace.AppSec
                 {
                     var transport = new HttpTransport(context);
 
+                    LogAddressIfDebugEnabled(eventData);
+
                     InstrumentationGatewayEvent?.Invoke(this, new InstrumentationGatewayEventArgs(eventData, transport, relatedSpan));
                 }
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "AppSec Error.");
+            }
+        }
+
+        private static void LogAddressIfDebugEnabled(IDictionary<string, object> args)
+        {
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                foreach (var key in args.Keys)
+                {
+                    Log.Debug("Pushing address {Key} to the Instrumentation Gateway.", key);
+                }
             }
         }
     }

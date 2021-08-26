@@ -90,6 +90,13 @@ namespace Datadog.Trace.AppSec.Waf
         public IContext CreateContext()
         {
             var handle = WafNative.InitContext(wafHandle.Handle, WafNative.ObjectFreeFuncPtr);
+
+            if (handle == IntPtr.Zero)
+            {
+                Log.Error("WAF initialization failed.");
+                throw new Exception("WAF initialization failed.");
+            }
+
             return new Context(handle);
         }
 
