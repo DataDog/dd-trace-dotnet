@@ -20,7 +20,9 @@ namespace Samples.HttpMessageHandler
 
         private static string Url;
 
+#pragma warning disable 1998
         public static async Task Main(string[] args)
+#pragma warning restore 1998
         {
             bool tracingDisabled = args.Any(arg => arg.Equals("TracingDisabled", StringComparison.OrdinalIgnoreCase));
             Console.WriteLine($"TracingDisabled {tracingDisabled}");
@@ -179,6 +181,8 @@ namespace Samples.HttpMessageHandler
                 try
                 {
                     var context = listener.GetContext();
+
+                    Thread.Sleep(100);
 
                     Console.WriteLine("[HttpListener] received request");
 
