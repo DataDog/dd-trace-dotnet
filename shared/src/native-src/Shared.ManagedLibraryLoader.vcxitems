@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <ItemsProjectGuid>{d6380925-f0a0-4da2-b6ab-9ffab35cd088}</ItemsProjectGuid>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectCapability Include="SourceItemsFromImports" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)il_rewriter.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)il_rewriter_wrapper.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)loader.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)miniutf.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)string.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)util.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)com_ptr.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)environment_variables.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)il_rewriter.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)il_rewriter_wrapper.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)loader.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)logging.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)miniutf.hpp" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)miniutfdata.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)pal.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)string.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)util.h" />
+  </ItemGroup>
+</Project>
