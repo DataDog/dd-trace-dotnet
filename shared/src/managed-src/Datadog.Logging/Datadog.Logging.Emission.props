@@ -3,38 +3,46 @@
   <PropertyGroup>
     <LogEmissionPropsIncluded>true</LogEmissionPropsIncluded>
   </PropertyGroup>
+  
+  <PropertyGroup>
+    <SharedSrcBaseDir>$(MSBuildThisFileDirectory)..</SharedSrcBaseDir>
+    <SharedSrcBaseLabel>Shared-Src</SharedSrcBaseLabel>
+  </PropertyGroup>
 
   <ItemGroup Condition="@(IncludedSharedLogEmissionCompileItem->Count()) == 0">
-    <!-- Play a trick with the VS Solution Explorer:                                                                               -->
-    <!-- We want all these files to be grouped under a key that is:                                                                -->
-    <!-- the name of the immediate subfolder within the "Shared-Src" sources folder.                                               -->
-    <!-- For that, we need to create an item group rooted in "Shared-Src" and then exclude all except these files.                 -->
+    <!-- *** Cross-project-shared files needed by all projects that use Log.tt.cs: ***                                              -->
+    
+    <!-- The files in this section are shared across projects and are located outside the root folder of this project.              -->
+    <!-- To ensure that this is clearly visible to the user, we group these files in a virtual folder named 'Shared-Src'.           -->
+    <!-- See the $(SharedSrcBaseLabel) definition. We use the 'Link' property to place them into that folder.                       -->
+    <!-- (We do not use 'LinkBase' because we use the same approach in classic project files and they do not support 'LinkBase'.)   -->
+    <!-- The virtual subfolder is calculated using their relative file location within $(SharedSrcBaseDir).                         -->
+    <!-- Note that we could also use a direct approach and avoid the doubly-negated item lists. E.g.:                               -->
+    <!--     <Compile Link="$(SharedSrcBaseLabel)\Datadog.Package.Name\internal\%(Filename)%(Extension)"                            -->
+    <!--              Include="$(SharedSrcBaseDir)\Datadog.Package.Name\internal\SourceFileName.cs" />                              -->
+    <!-- The current approach is used to avoid redundantly specifying the relative path.                                            -->
 
-    <!-- *** Cross-project-shared files needed by all projects that use Log.tt.cs: ***                                             -->
-
+    <IncludedSharedLogEmissionCompileItem Include="$(SharedSrcBaseDir)\Datadog.Logging.Emission\internal\DefaultFormat.cs" />
+    <IncludedSharedLogEmissionCompileItem Include="$(SharedSrcBaseDir)\Datadog.Logging.Emission\internal\SimpleConsoleSink.cs" />
+    <IncludedSharedLogEmissionCompileItem Include="$(SharedSrcBaseDir)\Datadog.Logging.Emission\internal\LogSourceInfo.cs" />
     
-    <IncludedSharedLogEmissionCompileItem Include="$(MSBuildThisFileDirectory)" />
+    <ExcludedSharedCompileItems Link="ExcludedSharedCompileItems\%(RecursiveDir)\%(Filename)%(Extension)" Include="$(SharedSrcBaseDir)\**\*.cs" Exclude="@(IncludedSharedLogEmissionCompileItem)" />
+    <Compile Link="$(SharedSrcBaseLabel)\%(RecursiveDir)\%(Filename)%(Extension)" Include="$(SharedSrcBaseDir)\**\*.cs" Exclude="@(ExcludedSharedCompileItems)" />
     
-    <IncludedSharedLogEmissionCompileItem Include="$(MSBuildThisFileDirectory)..\..\Shared-Src\Datadog.Logging.Emission\internal\DefaultFormat.cs" />
-    <IncludedSharedLogEmissionCompileItem Include="$(MSBuildThisFileDirectory)..\..\Shared-Src\Datadog.Logging.Emission\internal\SimpleConsoleSink.cs" />
-    <IncludedSharedLogEmissionCompileItem Include="$(MSBuildThisFileDirectory)..\..\Shared-Src\Datadog.Logging.Emission\internal\LogSourceInfo.cs" />
-    
-    <ExcludedSharedLogEmissionCompileItems Include="$(MSBuildThisFileDirectory)..\..\**\*.cs" Exclude="@(IncludedSharedLogEmissionCompileItem)" />
-    <Compile Include="$(MSBuildThisFileDirectory)..\..\**\*.cs" Exclude="@(ExcludedSharedLogEmissionCompileItems)" />
+    <!-- This ensures that ExcludedSharedCompileItems is not rendered in the Solution Explorer for Classic Projects:                -->
+    <ExcludedSharedCompileItems Remove="$(SharedSrcBaseDir)\**\*" />  
   </ItemGroup>
 
-  <ItemGroup Condition="@(IncludedSharedLogEmissionNoActionItem->Count()) == 0">
-    <!-- Same trick as for Shared Compile Items (see above), but for no-build-action inclusions.                                   -->
-
-    <!-- *** Cross-project-shared files needed by all projects that use Log.tt.cs: ***                                             -->
-    <IncludedSharedLogEmissionNoActionItem Include="$(MSBuildThisFileDirectory)..\..\Shared-Src\Datadog.Logging\public\Log.tt.cs" />
-
-    <ExcludedSharedLogEmissionNoActionItems Include="$(MSBuildThisFileDirectory)..\..\**\*.tt.cs" Exclude="@(IncludedSharedLogEmissionNoActionItem)" />
-    <None Include="$(MSBuildThisFileDirectory)..\..\**\*.tt.cs" Exclude="@(ExcludedSharedLogEmissionNoActionItems)" />
+  <ItemGroup>
+    <!-- *** Cross-project-shared files needed by all projects that use Log.tt.cs: ***                                              -->
+    
+    <!-- The shared no-build-action items are not as many, including setting the 'Link' for each explicitly.                        -->
+    <Compile Link="$(SharedSrcBaseLabel)\Datadog.Logging\public\%(Filename)%(Extension)"
+             Include="$(SharedSrcBaseDir)\Datadog.Logging\public\Log.tt.cs" />    
   </ItemGroup>
 
   <ItemGroup Condition="@(T4ServiceGuidIncluded->Count()) == 0">
-    <!-- This "service" is required for T4-templating.                                                                             -->
+    <!-- This "service" is required for T4-templating.                                                                              -->
     <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
     <T4ServiceGuidIncluded Include="true" />
   </ItemGroup>
