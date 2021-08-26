@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
+using YamlDotNet.Deserializer.Serialization;
+using YamlDotNet.Deserializer.Serialization.NamingConventions;
 
 namespace Datadog.Trace.AppSec.Waf
 {
@@ -65,6 +67,17 @@ namespace Datadog.Trace.AppSec.Waf
             disposed = true;
 
             rule?.Dispose();
+        }
+
+        private static Args DynamicRuleSet()
+        {
+            var sr = typeof(PowerWaf).Assembly.GetManifestResourceStream("Datadog.Trace.AppSec.Waf.rules.yml");
+            using (var reader = new StreamReader(sr))
+            {
+                var deserializer = new DeserializerBuilder().WithNamingConvention(CamelCaseNamingConvention.Instance).Build();
+                var res = deserializer.Deserialize(reader);
+                return Encoder.Encode(res);
+            }
         }
 
         private static Args StaticRuleSet()
@@ -164,7 +177,7 @@ namespace Datadog.Trace.AppSec.Waf
                 string message = null;
                 PWConfig args = default;
 
-                var rules = StaticRuleSet();
+                var rules = DynamicRuleSet();
 
                 var ruleHandle = Native.pw_initH(rules.RawArgs, ref args);
 
