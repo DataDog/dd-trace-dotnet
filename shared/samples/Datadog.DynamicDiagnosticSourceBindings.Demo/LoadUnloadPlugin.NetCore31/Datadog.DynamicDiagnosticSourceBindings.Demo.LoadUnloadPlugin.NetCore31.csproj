@@ -6,21 +6,28 @@
   </PropertyGroup>
 
   <PropertyGroup>
-	  <SharedSrcBaseDir>$(MSBuildThisFileDirectory)..\..\..\src\Shared-Src\</SharedSrcBaseDir>
-	  <SharedDemoSrcBaseDir>$(MSBuildThisFileDirectory)..\Shared-Demo-Src</SharedDemoSrcBaseDir>
+    <SharedSrcBaseDir>$(MSBuildThisFileDirectory)..\..\..\src\managed-src</SharedSrcBaseDir>
+    <SharedSrcBaseLabel>Shared-Src</SharedSrcBaseLabel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SharedDemoSrcBaseDir>$(MSBuildThisFileDirectory)..\Shared-Demo-Src</SharedDemoSrcBaseDir>
+    <SharedDemoSrcBaseLabel>Shared-Demo-Src</SharedDemoSrcBaseLabel>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Shared-Libs\DynamicDiagnosticSourceBindings\Datadog.DynamicDiagnosticSourceBindings.csproj" />
+    <ProjectReference Include="..\..\..\src\managed-lib\DynamicDiagnosticSourceBindings\Datadog.DynamicDiagnosticSourceBindings.csproj" />
   </ItemGroup>
   
-  <ItemGroup>
+  <ItemGroup>    
     <Compile Include="$(SharedDemoSrcBaseDir)\DynamicDiagnosticSourceBindings.Demo\internal\DiagnosticEventsSpecification.cs" />
     <Compile Include="$(SharedDemoSrcBaseDir)\DynamicDiagnosticSourceBindings.Demo\internal\DirectDiagnosticEventsGenerator.cs" />
     <Compile Include="$(SharedDemoSrcBaseDir)\DynamicDiagnosticSourceBindings.Demo\internal\StubbedDiagnosticEventsGenerator.cs" />
     <Compile Include="$(SharedDemoSrcBaseDir)\DynamicDiagnosticSourceBindings.Demo\internal\ReceivedEventsAccumulator.cs" />
     <Compile Include="$(SharedDemoSrcBaseDir)\DynamicDiagnosticSourceBindings.Demo\internal\StubbedDiagnosticEventsCollector.cs" />
     <Compile Include="$(SharedDemoSrcBaseDir)\DynamicDiagnosticSourceBindings.Demo\internal\ConsoleWrite.cs" />
+    
+    <Compile Update="$(SharedDemoSrcBaseDir)\DynamicDiagnosticSourceBindings.Demo\internal\*"
+             Link="$(SharedDemoSrcBaseLabel)\DynamicDiagnosticSourceBindings.Demo\internal\%(Filename)%(Extension)" />  
   </ItemGroup>
 	
   <ItemGroup>
@@ -30,24 +37,22 @@
   </ItemGroup>
 	
   <ItemGroup>
-    <!-- The two following items trick the Solution Explorer in VS to display a folder  -->
-    <!-- structure like 'Datadog.Util/internal'                                         -->
-    <None Include="$(SharedSrcBaseDir)Datadog.Util\_Datadog.Util_.files">
-      <CustomToolNamespace>Virtual Folder</CustomToolNamespace>
-    </None>
-    <None Include="$(SharedSrcBaseDir)Datadog.Util\internal\_internal_.files">
-      <CustomToolNamespace>Virtual Folder</CustomToolNamespace>
-      <DependentUpon>_Datadog.Util_.files</DependentUpon>
-    </None>
-    <!-- The actual CS files to include for compilation.                                -->
-    <!-- VS will show them in the above virtual folders.                                -->
-    <Compile Include="$(SharedSrcBaseDir)Datadog.Util\internal\ObserverAdapter.cs">
-      <DependentUpon>_internal_.files</DependentUpon>
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="$(SharedSrcBaseDir)Datadog.Util\internal\Validate.cs">
-      <DependentUpon>_internal_.files</DependentUpon>
-      <SubType>Code</SubType>
-    </Compile>
+    <!-- The files in this section are shared across projects and are located outside the root folder of this project.              -->
+    <!-- To ensure that this is clearly visible to the user, we group these files in a virtual folder named 'Shared-Src'.           -->
+    <!-- See the $(SharedSrcBaseLabel) definition. We use the 'Link' property to place them into that folder.                       -->
+    <!-- (We do not use 'LinkBase' because we use the same approach in classic project files and they do not support 'LinkBase'.)   -->
+    <!-- The virtual subfolder is calculated using their relative file location within $(SharedSrcBaseDir).                         -->
+    <!-- Note that we could also use a direct approach and avoid the doubly-negated item lists. E.g.:                               -->
+    <!--     <Compile Link="$(SharedSrcBaseLabel)\Datadog.Package.Name\internal\%(Filename)%(Extension)"                            -->
+    <!--              Include="$(SharedSrcBaseDir)\Datadog.Package.Name\internal\SourceFileName.cs" />                              -->
+    <!-- The current approach is used to avoid redundantly specifying the relative path.                                            -->
+    <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Datadog.Util\internal\ObserverAdapter.cs" />
+    <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Datadog.Util\internal\Validate.cs" />
+    
+    <ExcludedSharedCompileItems Link="ExcludedSharedCompileItems\%(RecursiveDir)\%(Filename)%(Extension)" Include="$(SharedSrcBaseDir)\**\*.cs" Exclude="@(IncludedSharedCompileItem)" />
+    <Compile Link="$(SharedSrcBaseLabel)\%(RecursiveDir)\%(Filename)%(Extension)" Include="$(SharedSrcBaseDir)\**\*.cs" Exclude="@(ExcludedSharedCompileItems)" />
+    
+    <!-- This ensures that ExcludedSharedCompileItems is not rendered in the Solution Explorer for Classic Projects:                -->
+    <ExcludedSharedCompileItems Remove="$(SharedSrcBaseDir)\**\*" />
   </ItemGroup>
 </Project>

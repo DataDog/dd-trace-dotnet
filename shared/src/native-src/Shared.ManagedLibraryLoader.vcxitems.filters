@@ -1,0 +1,69 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="ManagedLibraryLoader">
+      <UniqueIdentifier>{e9efd5f3-9977-4910-b084-9675ebef5d26}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ManagedLibraryLoader-Dependencies">
+      <UniqueIdentifier>{8d6c6869-9b31-498a-9a19-6dbf1dbe9cd2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Logging">
+      <UniqueIdentifier>{741260da-064c-43db-a792-b8c851743d81}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)loader.cpp">
+      <Filter>ManagedLibraryLoader</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)string.cpp">
+      <Filter>ManagedLibraryLoader-Dependencies</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)util.cpp">
+      <Filter>ManagedLibraryLoader-Dependencies</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)il_rewriter.cpp">
+      <Filter>ManagedLibraryLoader-Dependencies</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)il_rewriter_wrapper.cpp">
+      <Filter>ManagedLibraryLoader-Dependencies</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)miniutf.cpp">
+      <Filter>ManagedLibraryLoader-Dependencies</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)loader.h">
+      <Filter>ManagedLibraryLoader</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)com_ptr.h">
+      <Filter>ManagedLibraryLoader-Dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)string.h">
+      <Filter>ManagedLibraryLoader-Dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)util.h">
+      <Filter>ManagedLibraryLoader-Dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)il_rewriter.h">
+      <Filter>ManagedLibraryLoader-Dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)il_rewriter_wrapper.h">
+      <Filter>ManagedLibraryLoader-Dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)miniutf.hpp">
+      <Filter>ManagedLibraryLoader-Dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)miniutfdata.h">
+      <Filter>ManagedLibraryLoader-Dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)pal.h">
+      <Filter>ManagedLibraryLoader-Dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)environment_variables.h">
+      <Filter>ManagedLibraryLoader-Dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)logging.h">
+      <Filter>Logging</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

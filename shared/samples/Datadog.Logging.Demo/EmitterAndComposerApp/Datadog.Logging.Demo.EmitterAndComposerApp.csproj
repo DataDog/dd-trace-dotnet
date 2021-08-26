@@ -6,7 +6,8 @@
   </PropertyGroup>
   
   <PropertyGroup>
-    <SharedSrcBaseDir>$(MSBuildThisFileDirectory)..\..\..\src\Shared-Src</SharedSrcBaseDir>
+    <SharedSrcBaseDir>$(MSBuildThisFileDirectory)..\..\..\src\managed-src</SharedSrcBaseDir>
+    <SharedSrcBaseLabel>Shared-Src</SharedSrcBaseLabel>
   </PropertyGroup>
 
   <!-- Datadog.Logging.Emission.props is required for emitting logs: -->
@@ -14,6 +15,7 @@
 
   <!-- Datadog.Logging.Composition.props is required for composing logs and chosing a log sink: -->
   <Import Project="$(SharedSrcBaseDir)\Datadog.Logging\Datadog.Logging.Composition.props" Condition="$(LogCompositionPropsIncluded) == ''" />
+  
   <ItemGroup>
     <ProjectReference Include="..\EmitterLib\Datadog.Logging.Demo.EmitterLib.csproj" />
   </ItemGroup>

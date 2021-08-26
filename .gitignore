@@ -1,37 +1,38 @@
 
-# # C++ specific ignores:
-
-# Prerequisites
-*.d
-
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-
-# Executables
-*.exe
-*.out
-*.app
+## # C++ specific ignores:
+# Uncomment as required, but be careful, as some binaries may be part of the repo on purpose.
+#
+## Prerequisites
+#*.d
+#
+## Compiled Object files
+#*.slo
+#*.lo
+#*.o
+#*.obj
+#
+## Precompiled Headers
+#*.gch
+#*.pch
+#
+## Compiled Dynamic libraries
+#*.so
+#*.dylib
+#*.dll
+#
+## Fortran module files
+#*.mod
+#*.smod
+#
+## Compiled Static libraries
+#*.lai
+#*.la
+#*.a
+#
+## Executables
+#*.exe
+#*.out
+#*.app
 
 # # .NET specific ignores:
 

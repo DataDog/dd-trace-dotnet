@@ -5,4 +5,4 @@
 // Modify the respective T4 templates if changes are required.
 
 <# string LogNamespaceName = "Demo.Slimple.NetCore31"; #>
-<#@ include file="$(SharedSrcBaseDir)\Shared-Src\Datadog.Logging\public\Log.tt.cs" #>
+<#@ include file="$(SharedSrcBaseDir)\Datadog.Logging\public\Log.tt.cs" #>
