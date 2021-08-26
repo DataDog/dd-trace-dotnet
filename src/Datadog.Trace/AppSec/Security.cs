@@ -13,6 +13,7 @@ using Datadog.Trace.AppSec.EventModel;
 using Datadog.Trace.AppSec.Transport;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.AppSec
 {
@@ -118,14 +119,17 @@ namespace Datadog.Trace.AppSec
             }
         }
 
+        private void Report(ITransport transport, Span span, Waf.ReturnTypes.Managed.Return result)
+        {
+            span.Tags.SetTag(Tags.ManualKeep, bool.TrueString);
+            span.Tags.SetTag(Tags.AppSecEvent, bool.TrueString);
+
+            var attack = Attack.From(result, span, transport);
+            _agentWriter.AddEvent(attack);
+        }
+
         private void RunWafAndReact(IDictionary<string, object> args, ITransport transport, Span span)
         {
-            void Report(ITransport transport, Span span, Waf.ReturnTypes.Managed.Return result)
-            {
-                var attack = Attack.From(result, span, transport);
-                _agentWriter.AddEvent(attack);
-            }
-
             var additiveContext = transport.GetAdditiveContext();
 
             if (additiveContext == null)
@@ -158,10 +162,25 @@ namespace Datadog.Trace.AppSec
             }
         }
 
+        private void TagWithTelemetry(Span span)
+        {
+            // NOTE: these tags are a temporary measure and should be removed when telemetry is available.
+            // AppSecLanguage has the same value as Language, but a different tag name. Language has a different implementation
+            // across different tracers.
+
+            // Web tags is the heuristic that the tracers uses for "service entry span"
+            if (span.Tags is WebTags)
+            {
+                span.Tags.SetTag(Tags.AppSecEnabled, bool.TrueString);
+                span.Tags.SetTag(Tags.AppSecLanguage, TracerConstants.Language);
+            }
+        }
+
         private void InstrumentationGatewayInstrumentationGatewayEvent(object sender, InstrumentationGatewayEventArgs e)
         {
             try
             {
+                TagWithTelemetry(e.RelatedSpan);
                 RunWafAndReact(e.EventData, e.Transport, e.RelatedSpan);
             }
             catch (Exception ex)

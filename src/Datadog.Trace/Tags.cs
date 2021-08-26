@@ -405,5 +405,11 @@ namespace Datadog.Trace
         internal const string ElasticsearchUrl = "elasticsearch.url";
 
         internal const string RuntimeId = "runtime-id";
+
+        internal const string AppSecEvent = "appsec.event";
+
+        internal const string AppSecEnabled = "_dd.appsec.enabled";
+
+        internal const string AppSecLanguage = "_dd.appsec.language";
     }
 }
