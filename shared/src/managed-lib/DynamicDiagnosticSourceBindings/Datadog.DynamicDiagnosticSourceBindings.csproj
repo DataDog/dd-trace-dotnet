@@ -1,0 +1,91 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net45;net461;netstandard2.0;netcoreapp3.1</TargetFrameworks>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	  
+	<!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp2.0) -->
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\..\Shared-Resources\Datadog.Trace.snk</AssemblyOriginatorKeyFile>
+    <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
+    <DelaySign>false</DelaySign>
+  </PropertyGroup>
+	
+  <PropertyGroup>
+    <NoWarn>1591</NoWarn>
+    <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
+  </PropertyGroup>
+	
+  <PropertyGroup>
+    <SharedSrcBaseDir>$(MSBuildThisFileDirectory)..\..</SharedSrcBaseDir>
+  </PropertyGroup>
+	
+  <!-- Datadog.Logging.Emission.props is required for emitting logs: -->
+  <Import Project="$(SharedSrcBaseDir)\Shared-Src\Datadog.Logging\Datadog.Logging.Emission.props" Condition="$(LogEmissionPropsIncluded) == ''" />
+
+  <ItemGroup>
+    <!-- Play a trick with the VS Solution Explorer:                                                               -->
+    <!-- We want all these files to be grouped under a key that is:                                                -->
+    <!-- the name of the immediate subfolder within the "Shared-Src" sources folder.                               -->
+    <!-- For that, we need to create an item group rooted in "Shared-Src" and then exclude all except these files. -->
+    <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Shared-Src\Datadog.Util\internal\ArrayExtensions.cs" />
+    <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Shared-Src\Datadog.Util\internal\Concurrent.cs" />
+    <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Shared-Src\Datadog.Util\internal\Format.cs" />
+    <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Shared-Src\Datadog.Util\internal\Validate.cs" />
+
+    <ExcludedSharedCompileItems Include="$(SharedSrcBaseDir)\**\*.cs" Exclude="@(IncludedSharedCompileItem)" />
+    <Compile Include="$(SharedSrcBaseDir)\**\*.cs" Exclude="@(ExcludedSharedCompileItems)" />
+  </ItemGroup>
+	
+  <ItemGroup>
+	<!-- This "service" is required for T4-templating.                                                                                   -->
+	<Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  
+  	<!-- Make sure the value of SharedSrcBaseDir is available in the T4 template: -->
+    <T4ParameterValues Include="SharedSrcBaseDir">
+      <Value>$(SharedSrcBaseDir)</Value>
+    </T4ParameterValues>
+    
+    <!-- Log.tt is a T4 template that refers to the Log.tt.cs templete referenced in Datadog.Logging.Emission.props.                     -->
+    <!-- It ensures that the Log Emission API is correctly generated.                                                                    -->
+    <None Update="Datadog.DynamicDiagnosticSourceBindings\public\Log.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>Log.cs</LastGenOutput>
+    </None>
+    <Compile Update="Datadog.DynamicDiagnosticSourceBindings\public\Log.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Log.tt</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Compile Remove="UnusedSrc\**\*.cs" />
+    <None Include="UnusedSrc\**\*.cs" />
+  </ItemGroup>
+ 
+  <PropertyGroup>
+    <VendoredPath Condition="$(VendoredPath) == ''">VendoredLibs/</VendoredPath>
+  </PropertyGroup>
+   
+  <ItemGroup>
+      <Compile Remove="$(VendoredPath)**/*" />
+      <None Remove="$(VendoredPath)**/*" />
+      <EmbeddedResource Remove="$(VendoredPath)**/*.resx" />
+  </ItemGroup>
+   
+  <ItemGroup>
+    <ExcludedSharedLogEmissionCompileItems Remove="Datadog.DynamicDiagnosticSourceBindings\internal\AssemblyLoadContextUnloadingEvent.cs" />
+    <ExcludedSharedLogEmissionCompileItems Remove="Datadog.DynamicDiagnosticSourceBindings\internal\DiagnosticListenerToStubObserverAdapter.cs" />
+    <ExcludedSharedLogEmissionCompileItems Remove="Datadog.DynamicDiagnosticSourceBindings\internal\DynamicInvokerInvalidationListenersCollection.cs" />
+    <ExcludedSharedLogEmissionCompileItems Remove="Datadog.DynamicDiagnosticSourceBindings\internal\ListenerActionsCollection.cs" />
+    <ExcludedSharedLogEmissionCompileItems Remove="Datadog.DynamicDiagnosticSourceBindings\public\DiagnosticSourceAssembly.cs" />
+  </ItemGroup>
+
+  <Import Project="VendoredLibs.DiagnosticSource.props" />
+
+</Project> 
