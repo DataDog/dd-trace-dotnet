@@ -41,7 +41,7 @@ namespace Demo.Slimple.NetCore31
     /// Library "Datadog.AutoInstrumentation.Profiler.Managed.dll" gets a copy of this file with the adjusted namespace:
     /// 
     /// <code>
-    ///   namespace Datadog.AutoInstrumentation.Profiler.Managed
+    ///   namespace Datadog.AutoInstrumentation.Profiler
     ///   {
     ///       public static class Log
     ///       {
@@ -86,7 +86,7 @@ namespace Demo.Slimple.NetCore31
     ///   namespace Datadog.AutoInstrumentation.TracerAndProfilerLoader
     ///   {
     ///       using ComposerLogAdapter = Datadog.AutoInstrumentation.ProductComposer.LogAdapter;
-    ///       using ProfilerLog = Datadog.AutoInstrumentation.Profiler.Managed.Log;
+    ///       using ProfilerLog = Datadog.AutoInstrumentation.Profiler.Log;
     ///       using TracerLog = Datadog.AutoInstrumentation.Tracer.Managed.Log;
     ///       
     ///       internal static class LogComposer
@@ -375,7 +375,7 @@ namespace Demo.Slimple.NetCore31
                 if (s_config_AutomaticAssemblyName_ForError_Include && logSourceInfo.AssemblyName == null)
                 {
                     // If AutomaticAssemblyName inclusion period has passed, add the assembly name (xxx_PeriodMillisecs < 1 indicates "always include").
-                    // There is a benign race on R/W of xxx_LastTimestamp: We may log all the assembly name a few extra times or get the period off by a few millisecs.
+                    // There is a benign race on R/W of xxx_LastTimestamp: We may log all the assembly names a few extra times or get the period off by a few millisecs.
                     if (s_config_AutomaticAssemblyName_ForError_PeriodMillisecs <= 0
                             || GetEnvironmentTicksSince(s_AutomaticAssemblyName_ForError_LastTimestamp, out s_AutomaticAssemblyName_ForError_LastTimestamp)
                                     >= s_config_AutomaticAssemblyName_ForError_PeriodMillisecs)
@@ -392,11 +392,11 @@ namespace Demo.Slimple.NetCore31
                                 logSourceInfo.AssemblyName,
                                 message,
                                 exception,
-                                dataNamesAndValues);
+                                GetDataNamesAndValuesEnum(dataNamesAndValues));
             }
         }
 
-/// <summary>
+        /// <summary>
         /// This method logs and rethrows the exception. It is typed to return the exception, to enable writing concise code like:
         /// <code>
         ///   try
@@ -513,7 +513,7 @@ namespace Demo.Slimple.NetCore31
                 if (s_config_AutomaticAssemblyName_ForInfo_Include && logSourceInfo.AssemblyName == null)
                 {
                     // If AutomaticAssemblyName inclusion period has passed, add the assembly name (xxx_PeriodMillisecs < 1 indicates "always include").
-                    // There is a benign race on R/W of xxx_LastTimestamp: We may log all the assembly name a few extra times or get the period off by a few millisecs.
+                    // There is a benign race on R/W of xxx_LastTimestamp: We may log all the assembly names a few extra times or get the period off by a few millisecs.
                     if (s_config_AutomaticAssemblyName_ForInfo_PeriodMillisecs <= 0
                             || GetEnvironmentTicksSince(s_AutomaticAssemblyName_ForInfo_LastTimestamp, out s_AutomaticAssemblyName_ForInfo_LastTimestamp)
                                     >= s_config_AutomaticAssemblyName_ForInfo_PeriodMillisecs)
@@ -529,7 +529,7 @@ namespace Demo.Slimple.NetCore31
                                 logSourceInfo.CallFileName,
                                 logSourceInfo.AssemblyName,
                                 message,
-                                dataNamesAndValues);
+                                GetDataNamesAndValuesEnum(dataNamesAndValues));
             }
         }
 
@@ -561,11 +561,11 @@ namespace Demo.Slimple.NetCore31
                     // If AutomaticAssemblyName is enabled AND AssemblyName is not already specified, look into including the assembly name now.
                     if (s_config_AutomaticAssemblyName_ForDebug_Include && logSourceInfo.AssemblyName == null)
                     {
-                // If AutomaticAssemblyName inclusion period has passed, add the assembly name (xxx_PeriodMillisecs < 1 indicates "always include").
-                // There is a benign race on R/W of xxx_LastTimestamp: We may log all the assembly name a few extra times or get the period off by a few millisecs.
-                if (s_config_AutomaticAssemblyName_ForDebug_PeriodMillisecs <= 0
-                            || GetEnvironmentTicksSince(s_AutomaticAssemblyName_ForDebug_LastTimestamp, out s_AutomaticAssemblyName_ForDebug_LastTimestamp)
-                                    >= s_config_AutomaticAssemblyName_ForDebug_PeriodMillisecs)
+                        // If AutomaticAssemblyName inclusion period has passed, add the assembly name (xxx_PeriodMillisecs < 1 indicates "always include").
+                        // There is a benign race on R/W of xxx_LastTimestamp: We may log all the assembly names a few extra times or get the period off by a few millisecs.
+                        if (s_config_AutomaticAssemblyName_ForDebug_PeriodMillisecs <= 0
+                                    || GetEnvironmentTicksSince(s_AutomaticAssemblyName_ForDebug_LastTimestamp, out s_AutomaticAssemblyName_ForDebug_LastTimestamp)
+                                            >= s_config_AutomaticAssemblyName_ForDebug_PeriodMillisecs)
                         {
                             logSourceInfo = logSourceInfo.WithAssemblyName();
                         }
@@ -578,8 +578,24 @@ namespace Demo.Slimple.NetCore31
                                     logSourceInfo.CallFileName,
                                     logSourceInfo.AssemblyName,
                                     message,
-                                    dataNamesAndValues);
+                                    GetDataNamesAndValuesEnum(dataNamesAndValues));
                 }
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static IEnumerable<object> GetDataNamesAndValuesEnum(object[] dataNamesAndValues)
+        {
+            if (dataNamesAndValues != null
+                    && dataNamesAndValues.Length == 1
+                    && dataNamesAndValues[0] != null
+                    && dataNamesAndValues[0] is IEnumerable<object> enumVal )
+            {
+                return enumVal;
+            }
+            else
+            {
+                return dataNamesAndValues;
             }
         }
 

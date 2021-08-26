@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Shared-Libs\ManagedLoader\Datadog.AutoInstrumentation.ManagedLoader.csproj" />
+    <ProjectReference Include="..\..\..\src\managed-lib\ManagedLoader\Datadog.AutoInstrumentation.ManagedLoader.csproj" />
     <ProjectReference Include="..\DefAD.Asm1\Datadog.AutoInstrumentation.ManagedLoader.Demo.Driver.DefAD.Asm1.csproj" />
   </ItemGroup>
 
