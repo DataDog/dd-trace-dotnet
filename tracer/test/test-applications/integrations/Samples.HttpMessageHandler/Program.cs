@@ -182,8 +182,6 @@ namespace Samples.HttpMessageHandler
                 {
                     var context = listener.GetContext();
 
-                    Thread.Sleep(100);
-
                     Console.WriteLine("[HttpListener] received request");
 
                     // read request content and headers

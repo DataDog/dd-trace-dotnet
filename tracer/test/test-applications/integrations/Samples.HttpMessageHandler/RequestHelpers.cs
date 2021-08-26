@@ -288,38 +288,28 @@ namespace Samples.HttpMessageHandler
 
         private class SingleThreadedSynchronizationContext : SynchronizationContext
         {
-            private readonly BlockingCollection<Action> _callbacks;
-
-            public SingleThreadedSynchronizationContext()
-            {
-                _callbacks = new BlockingCollection<Action>();
-
-                Task.Run(
-                    () =>
-                    {
-                        foreach (var item in _callbacks.GetConsumingEnumerable())
-                        {
-                            item();
-                        }
-                    });
-            }
+            private int _queuedOperations;
 
             public override void Post(SendOrPostCallback d, object state)
             {
-                _callbacks.Add(() => d(state));
+                Send(d, state);
             }
 
             public override void Send(SendOrPostCallback d, object state)
             {
-                using var mutex = new ManualResetEventSlim();
+                if (Interlocked.Increment(ref _queuedOperations) > 1)
+                {
+                    throw new InvalidOperationException("Deadlock condition detected");
+                }
 
-                _callbacks.Add(() =>
+                try
                 {
                     d(state);
-                    mutex.Set();
-                });
-
-                mutex.Wait();
+                }
+                finally
+                {
+                    Interlocked.Decrement(ref _queuedOperations);
+                }
             }
         }
     }
