@@ -77,6 +77,7 @@
 		
 		<!-- This ensures that ExcludedSharedCompileItems is not rendered in the Solution Explorer for Classic Projects:                -->
 		<ExcludedSharedCompileItems Remove="$(SharedSrcBaseDir)\**\*" />
+		<IncludedSharedCompileItem Remove="$(SharedSrcBaseDir)\**\*" />
 	</ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

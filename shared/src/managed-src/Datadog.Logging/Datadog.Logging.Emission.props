@@ -37,8 +37,8 @@
     <!-- *** Cross-project-shared files needed by all projects that use Log.tt.cs: ***                                              -->
     
     <!-- The shared no-build-action items are not as many, including setting the 'Link' for each explicitly.                        -->
-    <Compile Link="$(SharedSrcBaseLabel)\Datadog.Logging\public\%(Filename)%(Extension)"
-             Include="$(SharedSrcBaseDir)\Datadog.Logging\public\Log.tt.cs" />    
+    <None Link="$(SharedSrcBaseLabel)\Datadog.Logging\public\%(Filename)%(Extension)"
+          Include="$(SharedSrcBaseDir)\Datadog.Logging\public\Log.tt.cs" />    
   </ItemGroup>
 
   <ItemGroup Condition="@(T4ServiceGuidIncluded->Count()) == 0">

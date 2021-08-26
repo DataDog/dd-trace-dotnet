@@ -93,6 +93,7 @@
     <Compile Link="$(SharedSrcBaseLabel)\%(RecursiveDir)\%(Filename)%(Extension)" Include="$(SharedSrcBaseDir)\**\*.cs" Exclude="@(ExcludedSharedCompileItems)" />
     <!-- This ensures that ExcludedSharedCompileItems is not rendered in the Solution Explorer for Classic Projects:                -->
     <ExcludedSharedCompileItems Remove="$(SharedSrcBaseDir)\**\*" />
+    <IncludedSharedCompileItem Remove="$(SharedSrcBaseDir)\**\*" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Directory.Build.props" />

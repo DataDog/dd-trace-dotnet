@@ -44,8 +44,8 @@
     <!-- *** Cross-project-shared files needed by projects that want to do Log composition/redirection: ***                         -->
     
     <!-- The shared no-build-action items are not as many, including setting the 'Link' for each explicitly.                        -->
-    <Compile Link="$(SharedSrcBaseLabel)\Datadog.Logging.Composition\internal\%(Filename)%(Extension)"
-             Include="$(SharedSrcBaseDir)\Datadog.Logging.Composition\internal\LogComposer.tt.cs" />    
+    <None Link="$(SharedSrcBaseLabel)\Datadog.Logging.Composition\internal\%(Filename)%(Extension)"
+          Include="$(SharedSrcBaseDir)\Datadog.Logging.Composition\internal\LogComposer.tt.cs" />    
   </ItemGroup>
 
   <ItemGroup Condition="@(T4ServiceGuidIncluded->Count()) == 0">
