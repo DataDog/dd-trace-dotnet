@@ -16,10 +16,10 @@ placed in a subdirectory with the same name.
 
 ### Copyright
 
-Copyright (c) 2020-2021 Datadog
+Copyright (c) 2020 Datadog
 
 [https://www.datadoghq.com](https://www.datadoghq.com/)
 
 ### License
 
-See [license information](../LICENSE).
+See [license information](../../../LICENSE).
