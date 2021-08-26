@@ -11,7 +11,7 @@ trigger:
     exclude:
       - docs/*
       - .github/*
-# The followong is a list of shared assets locations.
+# The following is a list of shared asset locations.
 # This is the config for the Tracer CI pipeline,
 # so we are excluding shared assets that are not currently used by the Tracer.
 # We make this list granular, rather than catch-all, on purpose.
