@@ -38,7 +38,7 @@ namespace Samples.HttpMessageHandler
                 Console.WriteLine("Sending async request with default HttpClient.");
                 using (var client = new HttpClient())
                 {
-                    await RequestHelpers.SendHttpClientRequestsAsync(client, tracingDisabled, Url, RequestContent);
+                    RequestHelpers.SendHttpClientRequestsAsync(client, tracingDisabled, Url, RequestContent);
                 }
 
                 // send async http requests using HttpClient with CustomHandler
@@ -46,7 +46,7 @@ namespace Samples.HttpMessageHandler
                 Console.WriteLine("Sending async request with HttpClient(CustomHandler).");
                 using (var client = new HttpClient(new CustomHandler()))
                 {
-                    await RequestHelpers.SendHttpClientRequestsAsync(client, tracingDisabled, Url, RequestContent);
+                    RequestHelpers.SendHttpClientRequestsAsync(client, tracingDisabled, Url, RequestContent);
                 }
 
 #if !NET452
@@ -57,7 +57,7 @@ namespace Samples.HttpMessageHandler
                     Console.WriteLine("Sending async request with HttpClient(WinHttpHandler).");
                     using (var client = new HttpClient(new WinHttpHandler()))
                     {
-                        await RequestHelpers.SendHttpClientRequestsAsync(client, tracingDisabled, Url, RequestContent);
+                        RequestHelpers.SendHttpClientRequestsAsync(client, tracingDisabled, Url, RequestContent);
                     }
                 }
 #endif
@@ -68,7 +68,7 @@ namespace Samples.HttpMessageHandler
                 Console.WriteLine("Sending async request with HttpClient(SocketsHttpHandler).");
                 using (var client = new HttpClient(new SocketsHttpHandler()))
                 {
-                    await RequestHelpers.SendHttpClientRequestsAsync(client, tracingDisabled, Url, RequestContent);
+                    RequestHelpers.SendHttpClientRequestsAsync(client, tracingDisabled, Url, RequestContent);
                 }
 #endif
 
