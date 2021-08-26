@@ -22,4 +22,4 @@ Copyright (c) 2020 Datadog
 
 ### License
 
-See [license information](../LICENSE).
+See [license information](../../../LICENSE).
