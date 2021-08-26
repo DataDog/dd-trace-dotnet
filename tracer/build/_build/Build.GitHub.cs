@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.TeamFoundation.Build.WebApi;
@@ -14,6 +15,7 @@ using Nuke.Common.Tools.Git;
 using Octokit;
 using static Nuke.Common.IO.CompressionTasks;
 using Issue = Octokit.Issue;
+using ProductHeaderValue = Octokit.ProductHeaderValue;
 using Target = Nuke.Common.Target;
 
 partial class Build
@@ -389,6 +391,7 @@ partial class Build
          .Unlisted()
          .DependsOn(CreateRequiredDirectories)
          .Requires(() => AzureDevopsToken)
+         .Requires(() => GitHubToken)
          .Executes(async () =>
           {
               var newReportdir = OutputDirectory / "CodeCoverage" / "New";
@@ -410,12 +413,8 @@ partial class Build
               var fixedPrefix = "Code Coverage Report_";
 
               var newArtifact = await DownloadAzureArtifact(buildHttpClient, branch, build => $"{fixedPrefix}{build.Id}", newReportdir, buildReason: null);
-              var oldArtifact = await DownloadAzureArtifact(buildHttpClient, "refs/head/master", build => $"{fixedPrefix}{build.Id}", oldReportdir, buildReason: null);
+              var oldArtifact = await DownloadAzureArtifact(buildHttpClient, "refs/heads/master", build => $"{fixedPrefix}{build.Id}", oldReportdir, buildReason: null);
 
-              // // Download original report
-              // // Download new report
-              // var newReportPath = RootDirectory / "Cobertura.xml";
-              // var oldReportPath = RootDirectory / "Cobertura.oldxml";
               var oldBuildId = oldArtifact.Name.Substring(fixedPrefix.Length);
               var newBuildId = newArtifact.Name.Substring(fixedPrefix.Length);
 
@@ -427,7 +426,7 @@ partial class Build
 
               // var oldReportPath = RootDirectory / "Cobertura.old.xml";
               // var newReportPath = RootDirectory / "Cobertura.new.xml";
-              // var prNumber = 17;
+              // var prNumber = 1700;
               // var downloadOldLink = "https://old";
               // var downloadNewLink = "https://new";
 
@@ -437,13 +436,29 @@ partial class Build
               var comparison = Covertura.CodeCoverage.Compare(oldReport, newReport);
               var markdown = Covertura.CodeCoverage.RenderAsMarkdown(comparison, prNumber, downloadOldLink, downloadNewLink);
 
-              // need to encode the release for use by github actions
-              // see https://trstringer.com/github-actions-multiline-strings/
-              markdown.Replace("%","%25");
-              markdown.Replace("\n","%0A");
-              markdown.Replace("\r","%0D");
+              Console.WriteLine("Posting comment to GitHub");
 
-              Console.WriteLine("::set-output name=report_markdown::" + markdown);
+              // post directly to GitHub as
+              var httpClient = new HttpClient();
+              httpClient.DefaultRequestHeaders.Add("Accept", "application/vnd.github.v3+json");
+              httpClient.DefaultRequestHeaders.Add("Authorization", $"token {GitHubToken}");
+              httpClient.DefaultRequestHeaders.UserAgent.Add(new(new System.Net.Http.Headers.ProductHeaderValue("nuke-ci-client")));
+
+              var url = $"https://api.github.com/repos/{GitHubRepositoryOwner}/{GitHubRepositoryName}/issues/{prNumber}/comments";
+              Console.WriteLine($"Sending request to '{url}'");
+
+              var result = await httpClient.PostAsJsonAsync(url, new { body = markdown });
+
+              if (result.IsSuccessStatusCode)
+              {
+                  Console.WriteLine("Comment posted successfully");
+              }
+              else
+              {
+                  var response = await result.Content.ReadAsStringAsync();
+                  Console.WriteLine("Error: " + response);
+                  result.EnsureSuccessStatusCode();
+              }
           });
 
     async Task<BuildArtifact> DownloadAzureArtifact(
