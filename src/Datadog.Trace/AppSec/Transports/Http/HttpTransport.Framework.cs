@@ -43,14 +43,14 @@ namespace Datadog.Trace.AppSec.Transport.Http
             return context.Items[WafKey] as IAdditiveContext;
         }
 
-        public Request Request()
+        public Request Request() => new()
         {
-            return new Request
-            {
-                Url = context.Request.Url,
-                Method = context.Request.HttpMethod,
-            };
-        }
+            Url = context.Request.Url,
+            Method = context.Request.HttpMethod,
+            Scheme = context.Request.Url.Scheme,
+            RemoteIp = context.Request.ServerVariables["HTTP_X_FORWARDED_FOR"] ?? context.Request.ServerVariables["REMOTE_ADDR"],
+            Host = context.Request.UserHostAddress,
+        };
 
         public Response Response(bool blocked) => new()
         {

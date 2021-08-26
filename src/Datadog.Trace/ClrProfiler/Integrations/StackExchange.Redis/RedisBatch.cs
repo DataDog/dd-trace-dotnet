@@ -188,7 +188,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
             /// <summary>
             /// Multiplexer data structure
             /// </summary>
-            [Duck(Name = "multiplexer", Kind = DuckKind.Field)]
+            [DuckField(Name = "multiplexer")]
             public MultiplexerData Multiplexer;
         }
 

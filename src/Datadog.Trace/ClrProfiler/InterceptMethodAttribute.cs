@@ -115,6 +115,6 @@ namespace Datadog.Trace.ClrProfiler
         /// <summary>
         /// Gets or sets the <see cref="MethodReplacementActionType">MethodReplacementActionType</see> for this method.
         /// </summary>
-        public MethodReplacementActionType MethodReplacementAction { get; set; } = MethodReplacementActionType.ReplaceTargetMethod;
+        public MethodReplacementActionType MethodReplacementAction { get; protected set; } = MethodReplacementActionType.ReplaceTargetMethod;
     }
 }

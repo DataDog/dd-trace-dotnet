@@ -59,10 +59,10 @@ In contrast to parts of libraries that may also be included as sources (e.g. lib
 
 ### Copyright
 
-Copyright (c) 2020-2021 Datadog
+Copyright (c) 2020 Datadog
 
 [https://www.datadoghq.com](https://www.datadoghq.com/)
 
 ### License
 
-See [license information](../LICENSE).
+See [license information](../../LICENSE).

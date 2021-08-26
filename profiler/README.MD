@@ -6,7 +6,7 @@ This directory (`/profiler`) contains the source for the __Continuous Profiler f
 
 ### Copyright
 
-Copyright (c) 2017-2021 Datadog
+Copyright (c) 2020 Datadog
 [https://www.datadoghq.com](https://www.datadoghq.com/)
 
 ### License

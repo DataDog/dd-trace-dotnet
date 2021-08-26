@@ -155,39 +155,7 @@ namespace Datadog.Trace.Configuration
 
         private static string GetCurrentDirectory()
         {
-            try
-            {
-                // Entering TryLoadHostingEnvironmentPath and accessing System.Web.dll
-                // will immediately throw an exception in partial trust scenarios,
-                // so surround this call by a try/catch block
-                if (TryLoadHostingEnvironmentPath(out var hostingPath))
-                {
-                    return hostingPath;
-                }
-            }
-            catch (Exception)
-            {
-                // The configuration manager should not depend on a logger being bootstrapped yet
-                // so do not do anything
-            }
-
-            return System.Environment.CurrentDirectory;
-        }
-
-        private static bool TryLoadHostingEnvironmentPath(out string hostingPath)
-        {
-#if NETFRAMEWORK
-            // on .NET Framework only, use application's root folder
-            // as default path when looking for datadog.json
-            if (System.Web.Hosting.HostingEnvironment.IsHosted)
-            {
-                hostingPath = System.Web.Hosting.HostingEnvironment.MapPath("~");
-                return true;
-            }
-
-#endif
-            hostingPath = default;
-            return false;
+            return System.AppDomain.CurrentDomain.BaseDirectory;
         }
     }
 }

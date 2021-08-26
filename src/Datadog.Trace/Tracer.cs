@@ -534,6 +534,9 @@ namespace Datadog.Trace
                     writer.WritePropertyName("debug");
                     writer.WriteValue(GlobalSettings.Source.DebugEnabled);
 
+                    writer.WritePropertyName("health_checks_enabled");
+                    writer.WriteValue(Settings.TracerMetricsEnabled);
+
                     writer.WritePropertyName("analytics_enabled");
                     writer.WriteValue(Settings.AnalyticsEnabled);
 

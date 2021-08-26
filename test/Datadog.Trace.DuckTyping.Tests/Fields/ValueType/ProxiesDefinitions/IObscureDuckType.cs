@@ -7,72 +7,72 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ValueType.ProxiesDefinitions
 {
     public interface IObscureDuckType
     {
-        [Duck(Name = "_publicStaticReadonlyValueTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_publicStaticReadonlyValueTypeField")]
         int PublicStaticReadonlyValueTypeField { get; }
 
-        [Duck(Name = "_internalStaticReadonlyValueTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_internalStaticReadonlyValueTypeField")]
         int InternalStaticReadonlyValueTypeField { get; }
 
-        [Duck(Name = "_protectedStaticReadonlyValueTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_protectedStaticReadonlyValueTypeField")]
         int ProtectedStaticReadonlyValueTypeField { get; }
 
-        [Duck(Name = "_privateStaticReadonlyValueTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_privateStaticReadonlyValueTypeField")]
         int PrivateStaticReadonlyValueTypeField { get; }
 
         // *
 
-        [Duck(Name = "_publicStaticValueTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_publicStaticValueTypeField")]
         int PublicStaticValueTypeField { get; set; }
 
-        [Duck(Name = "_internalStaticValueTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_internalStaticValueTypeField")]
         int InternalStaticValueTypeField { get; set; }
 
-        [Duck(Name = "_protectedStaticValueTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_protectedStaticValueTypeField")]
         int ProtectedStaticValueTypeField { get; set; }
 
-        [Duck(Name = "_privateStaticValueTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_privateStaticValueTypeField")]
         int PrivateStaticValueTypeField { get; set; }
 
         // *
 
-        [Duck(Name = "_publicReadonlyValueTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_publicReadonlyValueTypeField")]
         int PublicReadonlyValueTypeField { get; }
 
-        [Duck(Name = "_internalReadonlyValueTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_internalReadonlyValueTypeField")]
         int InternalReadonlyValueTypeField { get; }
 
-        [Duck(Name = "_protectedReadonlyValueTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_protectedReadonlyValueTypeField")]
         int ProtectedReadonlyValueTypeField { get; }
 
-        [Duck(Name = "_privateReadonlyValueTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_privateReadonlyValueTypeField")]
         int PrivateReadonlyValueTypeField { get; }
 
         // *
 
-        [Duck(Name = "_publicValueTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_publicValueTypeField")]
         int PublicValueTypeField { get; set; }
 
-        [Duck(Name = "_internalValueTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_internalValueTypeField")]
         int InternalValueTypeField { get; set; }
 
-        [Duck(Name = "_protectedValueTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_protectedValueTypeField")]
         int ProtectedValueTypeField { get; set; }
 
-        [Duck(Name = "_privateValueTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_privateValueTypeField")]
         int PrivateValueTypeField { get; set; }
 
         // *
 
-        [Duck(Name = "_publicStaticNullableIntField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_publicStaticNullableIntField")]
         int? PublicStaticNullableIntField { get; set; }
 
-        [Duck(Name = "_privateStaticNullableIntField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_privateStaticNullableIntField")]
         int? PrivateStaticNullableIntField { get; set; }
 
-        [Duck(Name = "_publicNullableIntField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_publicNullableIntField")]
         int? PublicNullableIntField { get; set; }
 
-        [Duck(Name = "_privateNullableIntField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_privateNullableIntField")]
         int? PrivateNullableIntField { get; set; }
     }
 }
