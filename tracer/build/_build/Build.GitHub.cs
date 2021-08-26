@@ -8,6 +8,7 @@ using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
 using Nuke.Common;
+using Nuke.Common.IO;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.Git;
 using Octokit;
@@ -377,90 +378,102 @@ partial class Build
 
             var branch = $"refs/tags/v{FullVersion}";
 
-            var builds = await buildHttpClient.GetBuildsAsync(
-                              project: AzureDevopsProjectId,
-                              definitions: new[] { AzureDevopsConsolidatePipelineId },
-                              reasonFilter: BuildReason.IndividualCI,
-                              branchName: branch);
+            var artifact = await DownloadAzureArtifact(buildHttpClient, branch, _ => $"{FullVersion}-release-artifacts", OutputDirectory, BuildReason.IndividualCI);
 
-            if (builds?.Count == 0)
-            {
-                throw new Exception($"Error: could not find any builds for {branch}. " +
-                                    $"Are you sure you've merged the version bump PR?");
-            }
-
-            var completedBuilds = builds
-                                 .Where(x => x.Status == BuildStatus.Completed)
-                                 .ToList();
-            if (!completedBuilds.Any())
-            {
-                throw new Exception($"Error: no completed builds for {branch} were found. " +
-                                    $"Please wait for completion before running this workflow.");
-            }
-
-            var successfulBuilds = completedBuilds
-                                  .Where(x => x.Result == BuildResult.Succeeded || x.Result == BuildResult.PartiallySucceeded)
-                                  .ToList();
-
-            if (!successfulBuilds.Any())
-            {
-                // likely not critical, probably a flaky test, so just warn (and push to github actions explicitly)
-                Console.WriteLine($"::warning::There were no successful builds for {branch}. Attempting to find artifacts");
-            }
-
-            Console.WriteLine($"Found {completedBuilds.Count} completed builds for {branch}. Looking for artifacts...");
-
-            var artifactName = $"{FullVersion}-release-artifacts";
-
-            BuildArtifact artifact = null;
-            foreach (var build in completedBuilds.OrderByDescending(x => x.FinishTime)) // Successful builds
-            {
-                try
-                {
-                     artifact = await buildHttpClient.GetArtifactAsync(
-                                    project: AzureDevopsProjectId,
-                                    buildId: build.Id,
-                                    artifactName: artifactName);
-                     break;
-                }
-                catch (ArtifactNotFoundException)
-                {
-                    Console.WriteLine($"Could not find {artifactName} artifact for build {build.Id}. Skipping");
-                }
-            }
-
-            if (artifact is null)
-            {
-                throw new Exception($"Error: no artifacts available for {branch}");
-            }
-
-            var zipPath = OutputDirectory / $"{artifactName}.zip";
-
-            Console.WriteLine($"Found artifacts. Downloading to {zipPath}...");
-
-            // buildHttpClient.GetArtifactContentZipAsync doesn't seem to work
-            var temporary = new HttpClient();
             var resourceDownloadUrl = artifact.Resource.DownloadUrl;
-            var response = await temporary.GetAsync(resourceDownloadUrl);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new Exception($"Error downloading artifact: {response.StatusCode}:{response.ReasonPhrase}");
-            }
-
-            await using (Stream file = File.Create(zipPath))
-            {
-                await response.Content.CopyToAsync(file);
-            }
-
-            Console.WriteLine($"{artifactName} downloaded. Extracting to {OutputDirectory}...");
-
-            UncompressZip(zipPath, OutputDirectory);
-
-            Console.WriteLine($"Artifact download complete");
             Console.WriteLine("::set-output name=artifacts_link::" + resourceDownloadUrl);
-            Console.WriteLine("::set-output name=artifacts_path::" + OutputDirectory / artifactName);
+            Console.WriteLine("::set-output name=artifacts_path::" + OutputDirectory / artifact.Name);
         });
+
+    async Task<BuildArtifact> DownloadAzureArtifact(
+        BuildHttpClient buildHttpClient,
+        string branch,
+        Func<Microsoft.TeamFoundation.Build.WebApi.Build, string> getArtifactName,
+        AbsolutePath outputDirectory,
+        BuildReason? buildReason = BuildReason.IndividualCI)
+    {
+        var builds = await buildHttpClient.GetBuildsAsync(
+                         project: AzureDevopsProjectId,
+                         definitions: new[] { AzureDevopsConsolidatePipelineId },
+                         reasonFilter: buildReason,
+                         branchName: branch);
+
+        if (builds?.Count == 0)
+        {
+            throw new Exception($"Error: could not find any builds for {branch}.");
+        }
+
+        var completedBuilds = builds
+                             .Where(x => x.Status == BuildStatus.Completed)
+                             .ToList();
+        if (!completedBuilds.Any())
+        {
+            throw new Exception(
+                $"Error: no completed builds for {branch} were found. " +
+                $"Please wait for completion before running this workflow.");
+        }
+
+        var successfulBuilds = completedBuilds
+                              .Where(x => x.Result == BuildResult.Succeeded || x.Result == BuildResult.PartiallySucceeded)
+                              .ToList();
+
+        if (!successfulBuilds.Any())
+        {
+            // likely not critical, probably a flaky test, so just warn (and push to github actions explicitly)
+            Console.WriteLine($"::warning::There were no successful builds for {branch}. Attempting to find artifacts");
+        }
+
+        Console.WriteLine($"Found {completedBuilds.Count} completed builds for {branch}. Looking for artifacts...");
+
+        BuildArtifact artifact = null;
+        foreach (var build in completedBuilds.OrderByDescending(x => x.FinishTime)) // Successful builds
+        {
+            var artifactName = getArtifactName(build);
+            try
+            {
+                artifact = await buildHttpClient.GetArtifactAsync(
+                               project: AzureDevopsProjectId,
+                               buildId: build.Id,
+                               artifactName: artifactName);
+                break;
+            }
+            catch (ArtifactNotFoundException)
+            {
+                Console.WriteLine($"Could not find {artifactName} artifact for build {build.Id}. Skipping");
+            }
+        }
+
+        if (artifact is null)
+        {
+            throw new Exception($"Error: no artifacts available for {branch}");
+        }
+
+        var zipPath = outputDirectory / $"{artifact.Name}.zip";
+
+        Console.WriteLine($"Found artifacts. Downloading to {zipPath}...");
+
+        // buildHttpClient.GetArtifactContentZipAsync doesn't seem to work
+        var temporary = new HttpClient();
+        var resourceDownloadUrl = artifact.Resource.DownloadUrl;
+        var response = await temporary.GetAsync(resourceDownloadUrl);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new Exception($"Error downloading artifact: {response.StatusCode}:{response.ReasonPhrase}");
+        }
+
+        await using (Stream file = File.Create(zipPath))
+        {
+            await response.Content.CopyToAsync(file);
+        }
+
+        Console.WriteLine($"{artifact.Name} downloaded. Extracting to {outputDirectory}...");
+
+        UncompressZip(zipPath, outputDirectory);
+
+        Console.WriteLine($"Artifact download complete");
+        return artifact;
+    }
 
     GitHubClient GetGitHubClient() =>
         new(new ProductHeaderValue("nuke-ci-client"))
