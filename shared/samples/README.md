@@ -10,7 +10,7 @@ Some the the demos may be applications that act as end-to-end or integration tes
 
 ### Copyright
 
-Copyright (c) 2020-2021 Datadog
+Copyright (c) 2020 Datadog
 
 [https://www.datadoghq.com](https://www.datadoghq.com/)
 
