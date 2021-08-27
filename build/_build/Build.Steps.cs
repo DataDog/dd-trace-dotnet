@@ -40,8 +40,8 @@ partial class Build
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath BuildDataDirectory => RootDirectory / "build_data";
 
-    const string LibSqreenVersion = "1.1.2.3";
-    AbsolutePath LibSqreenDirectory => (NugetPackageDirectory ?? (RootDirectory / "packages")) / $"libsqreen.{LibSqreenVersion}";
+    const string LibDdwafVersion = "1.0.6";
+    AbsolutePath LibDdwafDirectory => (NugetPackageDirectory ?? (RootDirectory / "packages")) / $"libddwaf.{LibDdwafVersion}";
 
     AbsolutePath SourceDirectory => RootDirectory / "src";
     AbsolutePath TestsDirectory => RootDirectory / "test";
@@ -260,26 +260,26 @@ partial class Build
             CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
         });
 
-    Target DownloadLibSqreen => _ => _
+    Target DownloadLibDdwaf => _ => _
         .Unlisted()
         .After(CreateRequiredDirectories)
         .Executes(() =>
         {
             var wc = new WebClient();
-            var libSqreenUri = new Uri($"https://www.nuget.org/api/v2/package/libsqreen/{LibSqreenVersion}");
-            var libSqreenZip = TempDirectory / "libsqreen.zip";
+            var libDdwafUri = new Uri($"https://www.nuget.org/api/v2/package/libddwaf/{LibDdwafVersion}");
+            var libDdwafZip = TempDirectory / "libddwaf.zip";
 
-            wc.DownloadFile(libSqreenUri, libSqreenZip);
+            wc.DownloadFile(libDdwafUri, libDdwafZip);
 
-            Console.WriteLine($"{libSqreenZip} downloaded. Extracting to {LibSqreenDirectory}...");
+            Console.WriteLine($"{libDdwafZip} downloaded. Extracting to {LibDdwafDirectory}...");
 
-            UncompressZip(libSqreenZip, LibSqreenDirectory);
+            UncompressZip(libDdwafZip, LibDdwafDirectory);
         });
 
-    Target CopyLibSqreen => _ => _
+    Target CopyLibDdwaf => _ => _
         .Unlisted()
         .After(Clean)
-        .After(DownloadLibSqreen)
+        .After(DownloadLibDdwaf)
         .OnlyWhenStatic(() => !IsArm64) // not supported yet
         .Executes(() =>
         {
@@ -287,7 +287,7 @@ partial class Build
             {
                 foreach (var architecture in new[] {"win-x86", "win-x64"})
                 {
-                    var source = LibSqreenDirectory / "runtimes" / architecture / "native" / "Sqreen.dll";
+                    var source = LibDdwafDirectory / "runtimes" / architecture / "native" / "ddwaf.dll";
                     var dest = TracerHomeDirectory / architecture;
                     Logger.Info($"Copying '{source}' to '{dest}'");
                     CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
@@ -296,9 +296,9 @@ partial class Build
             else
             {
                 var (architecture, ext) = GetUnixArchitectureAndExtention();
-                var sqreenFileName = $"libSqreen.{ext}";
+                var ddwafFileName = $"libddwaf.{ext}";
 
-                var source = LibSqreenDirectory / "runtimes" / architecture / "native" / sqreenFileName;
+                var source = LibDdwafDirectory / "runtimes" / architecture / "native" / ddwafFileName;
                 var dest = TracerHomeDirectory;
                 Logger.Info($"Copying '{source}' to '{dest}'");
                 CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
@@ -389,7 +389,7 @@ partial class Build
 
     Target CreateDdTracerHome => _ => _
        .Unlisted()
-       .After(PublishNativeProfiler, CopyIntegrationsJson, PublishManagedProfiler, DownloadLibSqreen, CopyLibSqreen)
+       .After(PublishNativeProfiler, CopyIntegrationsJson, PublishManagedProfiler, DownloadLibDdwaf, CopyLibDdwaf)
        .Executes(() =>
        {
            // start by copying everything from the tracer home dir
@@ -405,7 +405,7 @@ partial class Build
            var (architecture, ext) = GetUnixArchitectureAndExtention();
 
            var profilerFileName = $"{NativeProfilerProject.Name}.{ext}";
-           var sqreenFileName = $"libSqreen.{ext}";
+           var ddwafFileName = $"libddwaf.{ext}";
 
            var outputDir = DDTracerHomeDirectory / architecture;
 
@@ -415,12 +415,12 @@ partial class Build
                outputDir / profilerFileName);
 
            // won't exist yet for arm64 builds
-           var srcSqreenFile = DDTracerHomeDirectory / sqreenFileName;
-           if (File.Exists(srcSqreenFile))
+           var srcDdwafFile = DDTracerHomeDirectory / ddwafFileName;
+           if (File.Exists(srcDdwafFile))
            {
                MoveFile(
-                   srcSqreenFile,
-                   DDTracerHomeDirectory / architecture / sqreenFileName);
+                   srcDdwafFile,
+                   DDTracerHomeDirectory / architecture / ddwafFileName);
            }
        });
 
@@ -437,7 +437,7 @@ partial class Build
                     .SetMSBuildPath()
                     .AddProperty("RunWixToolsOutOfProc", true)
                     .SetProperty("TracerHomeDirectory", TracerHomeDirectory)
-                    .SetProperty("LibSqreenDirectory", LibSqreenDirectory)
+                    .SetProperty("LibDdwafDirectory", LibDdwafDirectory)
                     .SetMaxCpuCount(null)
                     .CombineWith(ArchitecturesForPlatform, (o, arch) => o
                         .SetProperty("MsiOutputPath", ArtifactsDirectory / arch.ToString())
@@ -533,7 +533,7 @@ partial class Build
 
                     if (!IsArm64)
                     {
-                        args.Add("libSqreen.so");
+                        args.Add("libddwaf.so");
                     }
 
                     var arguments = string.Join(" ", args);

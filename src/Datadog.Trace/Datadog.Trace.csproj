@@ -26,14 +26,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="AppSec\Waf\rule-set.json" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="AppSec\Waf\rule-set.json" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="LibLog" Version="5.0.8" PrivateAssets="All" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
   </ItemGroup>

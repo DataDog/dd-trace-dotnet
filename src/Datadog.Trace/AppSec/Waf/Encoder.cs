@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.AppSec.Waf
 {
@@ -166,6 +167,90 @@ namespace Datadog.Trace.AppSec.Waf
         {
             s = TrunacteLongString(s);
             return new Args(Native.pw_createStringWithLength(s, Convert.ToUInt64(s.Length)));
+        }
+
+        public static string FormatArgs(object o)
+        {
+            // zero capcity because we don't know the size in advance
+            var sb = StringBuilderCache.Acquire(0);
+            FormatArgsInternal(o, sb);
+            return StringBuilderCache.GetStringAndRelease(sb);
+        }
+
+        private static void FormatArgsInternal(object o, StringBuilder sb)
+        {
+            _ =
+                o switch
+                {
+                    string s => sb.Append(s),
+                    int i => sb.Append(i),
+                    long i => sb.Append(i),
+                    uint i => sb.Append(i),
+                    ulong i => sb.Append(i),
+                    IList<object> objs => FormatList(objs, sb),
+                    IEnumerable<KeyValuePair<string, object>> objDict => FormatDictionary(objDict, sb),
+                    IEnumerable<KeyValuePair<string, string>> objDict => FormatDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), sb),
+                    _ => throw new Exception($"Couldn't encode: {o}, type: {o.GetType()}")
+                };
+        }
+
+        private static StringBuilder FormatDictionary(IEnumerable<KeyValuePair<string, object>> objDict, StringBuilder sb)
+        {
+            sb.Append("{ ");
+            using var enumerator = objDict.GetEnumerator();
+            if (!enumerator.MoveNext())
+            {
+                sb.Append(" }");
+                return sb;
+            }
+
+            sb.Append(enumerator.Current.Key);
+            sb.Append(": ");
+            if (enumerator.Current.Value != null)
+            {
+                FormatArgsInternal(enumerator.Current.Value, sb);
+            }
+
+            while (enumerator.MoveNext())
+            {
+                sb.Append(", ");
+                sb.Append(enumerator.Current.Key);
+                sb.Append(": ");
+                if (enumerator.Current.Value != null)
+                {
+                    FormatArgsInternal(enumerator.Current.Value, sb);
+                }
+            }
+
+            sb.Append(" }");
+            return sb;
+        }
+
+        private static StringBuilder FormatList(IList<object> objs, StringBuilder sb)
+        {
+            sb.Append("[ ");
+            using var enumerator = objs.GetEnumerator();
+            if (!enumerator.MoveNext())
+            {
+                sb.Append(" ]");
+                return sb;
+            }
+
+            if (enumerator.Current != null)
+            {
+                FormatArgsInternal(enumerator.Current, sb);
+            }
+
+            while (enumerator.MoveNext())
+            {
+                if (enumerator.Current != null)
+                {
+                    FormatArgsInternal(enumerator.Current, sb);
+                }
+            }
+
+            sb.Append(" ]");
+            return sb;
         }
     }
 }

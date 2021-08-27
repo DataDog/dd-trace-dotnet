@@ -21,8 +21,9 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
         }
 
+        // NOTE: by integrating the latest version of the WAF, blocking was disabled, as it does not support blocking yet
         [Theory]
-        [InlineData(true, true, HttpStatusCode.Forbidden)]
+        [InlineData(true, true, HttpStatusCode.OK)]
         [InlineData(true, false, HttpStatusCode.OK)]
         [InlineData(false, true, HttpStatusCode.OK)]
         [InlineData(false, false, HttpStatusCode.OK)]

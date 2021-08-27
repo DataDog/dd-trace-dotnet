@@ -1026,10 +1026,10 @@ stages:
     - script: |
         test ! -s "tracer-home-win/integrations.json" && echo "tracer-home-win/integrations.json does not exist" && exit 1
         test ! -s "tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll" && echo "tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll does not exist" && exit 1
-        test ! -s "tracer-home-win/win-x64/Sqreen.dll" && echo "tracer-home-win/win-x64/Sqreen.dll does not exist" && exit 1
+        test ! -s "tracer-home-win/win-x64/ddwaf.dll" && echo "tracer-home-win/win-x64/ddwaf.dll does not exist" && exit 1
         test ! -s "tracer-home-linux/integrations.json" && echo "tracer-home-linux/integrations.json does not exist" && exit 1
         test ! -s "tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
-         test ! -s "tracer-home-linux/libSqreen.so" && echo "tracer-home-linux/libSqreen.so does not exist" && exit 1
+        test ! -s "tracer-home-linux/libddwaf.so" && echo "tracer-home-linux/libddwaf.so does not exist" && exit 1
         test ! -s "tracer-home-linux-arm64/integrations.json" && echo "tracer-home-linux-arm64/integrations.json does not exist" && exit 1
         test ! -s "tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
         cd $(System.DefaultWorkingDirectory)/build/crank
