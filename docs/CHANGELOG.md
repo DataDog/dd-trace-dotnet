@@ -1,5 +1,33 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
+## [Release 1.28.5-prerelease](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.28.5-prerelease)
+
+## Changes
+* Remove usage of non-builtin types in Attribute named arguments (#1601)
+* Add Microsoft.Extensions.Logging.ILogger instrumentation (#1663)
+* Adding appsec crank scenarios (#1684)
+* Proxy calls to dl (#1686)
+* Add tracer metrics to startup logs (#1689)
+* New version of the WAF (#1692)
+* Merging repos: 'dd-shared-components-dotnet' into 'dd-trace-dotnet'. (#1694)
+* Sending more relevant data to backend (#1695)
+* Prepare the `/shared` folder for consumption by the Profiler. (#1697)
+* Don't cache the process instance for runtime metrics (#1698)
+* Use AppDomain.CurrentDomain.BaseDirectory to get current directory for configuration (#1700)
+* Don't trigger Tracer-specific CI for changes to shared assets not used by the Tracer (#1701)
+
+## Fixes
+* Add PreserveContext attribute for async integrations (#1702)
+
+## Build / Test
+* Add end-to-end integration tests for logs injection (#1637)
+* Produce NuGet package to deploy automatic instrumentation (#1661)
+* Adds Execution time benchmarks (#1687)
+* Add fix for Samples.MultiDomainHost.App.NuGetHttpWithRedirects test application (#1691)
+* Reduce snapshot file path length (#1696)
+
+[Changes since 1.28.2](https://github.com/DataDog/dd-trace-dotnet/compare/v1.28.2...v1.28.5-prerelease)
+
 ## [Release 1.28.3-prerelease](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.28.3-prerelease)
 
 ## Changes

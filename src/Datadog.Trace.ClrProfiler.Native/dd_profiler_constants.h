@@ -80,7 +80,7 @@ const WSTRING skip_assemblies[]{WStr("mscorlib"),
                                 WStr("ISymWrapper")};
 
 const WSTRING managed_profiler_full_assembly_version =
-    WStr("Datadog.Trace, Version=1.28.3.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
+    WStr("Datadog.Trace, Version=1.28.5.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
 
 const WSTRING managed_profiler_name = WStr("Datadog.Trace");
 
