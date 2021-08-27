@@ -411,7 +411,7 @@ stages:
 
     - publish: tracer/build_data
       displayName: Uploading integration_tests_windows tracer logs
-      artifact: integration_tests_windows_tracer_logs_$(platform)_$(target)
+      artifact: integration_tests_windows_tracer_logs_$(platform)_$(target)_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
