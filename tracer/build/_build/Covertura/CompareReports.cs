@@ -190,27 +190,26 @@ View the full report for further details:
                   if (package.ClassChanges.Any())
                   {
                       sb.Append($@"
-The following classes have coverage changes.
+The following classes have significant coverage changes.
 
 | File    | Line coverage change | Branch coverage change | Complexity change |
 |:--------|:--------------------:|:----------:|:--------:|");
 
                       var maxFileDisplay = 10;
-                      var changesToDisplay = package.ClassChanges
+                      var significantChanges = package.ClassChanges
                                                 .Where(x => x.Value.IsSignificantChange)
                                                 .OrderBy(x => x.Value.LineCoverageChange)
                                                 .ThenBy(x => x.Value.BranchCoverageChange)
                                                 .ThenBy(x => x.Value.Name)
-                                                .Take(maxFileDisplay)
                                                 .ToList();
-                      foreach (var classChange in changesToDisplay)
+                      foreach (var classChange in significantChanges.Take(maxFileDisplay))
                       {
                           var change = classChange.Value;
                           sb.Append($@"
 | [{change.Name}]({FixFilename(change.Filename)}) | `{change.LineCoverageChange:F2}%` {GetIcon(change.LineCoverageChange)} | `{change.BranchCoverageChange:F2}%` {GetIcon(change.BranchCoverageChange)}   | `{change.ComplexityChange}` {GetIcon(-change.ComplexityChange)} |");
                       }
 
-                      var extras = package.ClassChanges.Count - changesToDisplay.Count;
+                      var extras = significantChanges.Count - maxFileDisplay;
                       if (extras > 0)
                       {
                           sb.Append($@"
@@ -283,8 +282,24 @@ The following classes were added in {newBranchMarkdown}:
                   sb.AppendLine($@"### Deleted projects
 
 
-{comparison.RemovedPackages.Count} projects were removed in {newBranchMarkdown}")
-                    .AppendLine();
+{comparison.RemovedPackages.Count} projects were removed in {newBranchMarkdown}
+
+| Project    | Line coverage | Branch coverage | Complexity |
+|:--------|:--------------------:|:----------:|:--------:|");
+
+                  var maxDisplay = 5;
+                  foreach (var oldProject in comparison.RemovedPackages.Take(maxDisplay))
+                  {
+                      sb.Append($@"
+| [{oldProject.Name}]({prFiles}) | `{oldProject.LineRate:F2}%` | `{oldProject.BranchRate:F2}%` | `{oldProject.Complexity}` |");
+                  }
+
+                  var extras = comparison.RemovedPackages.Count - maxDisplay;
+                  if (extras > 0)
+                  {
+                      sb.Append($@"
+| ...And {extras} more  | | | |");
+                  }
               }
 
               sb.AppendLine($@"
