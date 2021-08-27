@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -10,16 +9,14 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Azure.Documents;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 namespace Samples.AzureFunctions.AllTriggers
 {
 	public static class AllTriggers
 	{
 		private static readonly HttpClient FunctionHttpClient = new HttpClient();
-		private const string EveryTenSeconds = "*/10 * * * * *";
+		private const string EveryTenSeconds = "*/1 * * * * *";
 
 		[FunctionName("TriggerAllTimer")]
 		public static async Task TriggerAllTimer([TimerTrigger(EveryTenSeconds)] TimerInfo myTimer, ILogger log)
@@ -40,18 +37,7 @@ namespace Samples.AzureFunctions.AllTriggers
 			ILogger log)
 		{
 			log.LogInformation("C# HTTP trigger function processed a request.");
-
-			string name = req.Query["name"];
-
-			string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-			dynamic data = JsonConvert.DeserializeObject(requestBody);
-			name = name ?? data?.name;
-
-			string responseMessage = string.IsNullOrEmpty(name)
-				? "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response."
-				: $"Hello, {name}. This HTTP triggered function executed successfully.";
-
-			return new OkObjectResult(responseMessage);
+			return new OkObjectResult("This HTTP triggered function executed successfully. ");
 		}
 
 		// [FunctionName("CosmosTrigger")]
@@ -104,8 +90,8 @@ namespace Samples.AzureFunctions.AllTriggers
 
 		private static async Task<string> CallFunctionHttp(string path)
 		{
-			var httpFunctionUrl = Environment.GetEnvironmentVariable("DD_FUNCTION_HOST_BASE") ?? "http://localhost:7071";
-			var url = $"{httpFunctionUrl}";
+			var httpFunctionUrl = Environment.GetEnvironmentVariable("WEBSITE_HOSTNAME") ?? "localhost:7071";
+			var url = $"http://{httpFunctionUrl}";
 			var simpleResponse = await FunctionHttpClient.GetStringAsync($"{url}/api/{path}");
 			return simpleResponse;
 		}
