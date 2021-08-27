@@ -412,7 +412,7 @@ partial class Build
               var branch = $"refs/pull/{prNumber}/merge";
               var fixedPrefix = "Code Coverage Report_";
 
-              var newArtifact = await DownloadAzureArtifact(buildHttpClient, branch, build => $"{fixedPrefix}{build.Id}", newReportdir, buildReason: null);
+              var newArtifact = await DownloadAzureArtifact(buildHttpClient, branch, build => $"{fixedPrefix}{build.Id}", newReportdir, buildReason: null, completedBuildsOnly: false);
               var oldArtifact = await DownloadAzureArtifact(buildHttpClient, "refs/heads/master", build => $"{fixedPrefix}{build.Id}", oldReportdir, buildReason: null);
 
               var oldBuildId = oldArtifact.Name.Substring(fixedPrefix.Length);
@@ -466,7 +466,8 @@ partial class Build
         string branch,
         Func<Microsoft.TeamFoundation.Build.WebApi.Build, string> getArtifactName,
         AbsolutePath outputDirectory,
-        BuildReason? buildReason = BuildReason.IndividualCI)
+        BuildReason? buildReason = BuildReason.IndividualCI,
+        bool completedBuildsOnly = true)
     {
         var builds = await buildHttpClient.GetBuildsAsync(
                          project: AzureDevopsProjectId,
@@ -479,9 +480,9 @@ partial class Build
             throw new Exception($"Error: could not find any builds for {branch}.");
         }
 
-        var completedBuilds = builds
-                             .Where(x => x.Status == BuildStatus.Completed)
-                             .ToList();
+        var completedBuilds = completedBuildsOnly
+                                  ? builds.Where(x => x.Status == BuildStatus.Completed).ToList()
+                                  : builds;
         if (!completedBuilds.Any())
         {
             throw new Exception(
@@ -502,7 +503,7 @@ partial class Build
         Console.WriteLine($"Found {completedBuilds.Count} completed builds for {branch}. Looking for artifacts...");
 
         BuildArtifact artifact = null;
-        foreach (var build in completedBuilds.OrderByDescending(x => x.FinishTime)) // Successful builds
+        foreach (var build in completedBuilds.OrderByDescending(x => x.FinishTime).ThenByDescending(x=>x.StartTime))
         {
             var artifactName = getArtifactName(build);
             try
