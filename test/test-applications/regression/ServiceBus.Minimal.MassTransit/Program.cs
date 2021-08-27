@@ -183,7 +183,7 @@
         static string GetSqlServerConnectionString(string overrideInitialCatalog = null)
         {
             var connectionString = Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING") ??
-@"Server=(localdb)\MSSQLLocalDB;Connection Timeout=60";
+                @"Server=(localdb)\MSSQLLocalDB;Connection Timeout=60";
 
             var builder = new SqlConnectionStringBuilder(connectionString);
             if (!string.IsNullOrWhiteSpace(overrideInitialCatalog))

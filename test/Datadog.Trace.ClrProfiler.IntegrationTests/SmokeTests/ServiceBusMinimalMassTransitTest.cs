@@ -12,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
     public class ServiceBusMinimalMassTransitTest : SmokeTestBase
     {
         public ServiceBusMinimalMassTransitTest(ITestOutputHelper output)
-        : base(output, "ServiceBus.Minimal.MassTransit", maxTestRunSeconds: 90)
+            : base(output, "ServiceBus.Minimal.MassTransit", maxTestRunSeconds: 90)
         {
         }
 
