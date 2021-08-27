@@ -10,9 +10,13 @@ namespace Datadog.Trace.Tagging
 {
     internal class AzureFunctionsTags : InstrumentationTags
     {
+        public const string InstrumentationName = nameof(Datadog.Trace.Configuration.IntegrationIds.AzureFunctions);
+        public const string Language = TracerConstants.Language;
+
         public static readonly IEnumerable<Property<AzureFunctionsTags, string>> AzureFunctionsExtraTags = new List<Property<AzureFunctionsTags, string>>()
         {
-            new ReadOnlyProperty<AzureFunctionsTags, string>(Trace.Tags.InstrumentationName, t => t.InstrumentationName),
+            new ReadOnlyProperty<AzureFunctionsTags, string>(Trace.Tags.InstrumentationName, t => InstrumentationName),
+            new ReadOnlyProperty<AzureFunctionsTags, string>(Trace.Tags.Language, t => TracerConstants.Language),
             new Property<AzureFunctionsTags, string>(Trace.Tags.AzureFunctionTriggerType, t => t.TriggerType, (t, v) => t.TriggerType = v),
             new Property<AzureFunctionsTags, string>(Trace.Tags.AzureFunctionName, t => t.ShortName, (t, v) => t.ShortName = v),
             new Property<AzureFunctionsTags, string>(Trace.Tags.AzureFunctionMethod, t => t.FullName, (t, v) => t.FullName = v),
@@ -21,21 +25,14 @@ namespace Datadog.Trace.Tagging
 
         public static readonly IProperty<string>[] AzureFunctionRootTagsProperties =
             InstrumentationTagsProperties.Concat(
-                new ReadOnlyProperty<AzureFunctionsTags, string>(Trace.Tags.InstrumentationName, t => t.InstrumentationName),
+                new ReadOnlyProperty<AzureFunctionsTags, string>(Trace.Tags.InstrumentationName, t => InstrumentationName),
+                new ReadOnlyProperty<AzureFunctionsTags, string>(Trace.Tags.Language, t => TracerConstants.Language),
                 new Property<AzureFunctionsTags, string>(Trace.Tags.AzureFunctionTriggerType, t => t.TriggerType, (t, v) => t.TriggerType = v),
                 new Property<AzureFunctionsTags, string>(Trace.Tags.AzureFunctionName, t => t.ShortName, (t, v) => t.ShortName = v),
                 new Property<AzureFunctionsTags, string>(Trace.Tags.AzureFunctionMethod, t => t.FullName, (t, v) => t.FullName = v),
                 new Property<AzureFunctionsTags, string>(Trace.Tags.AzureFunctionBindingSource, t => t.BindingSource, (t, v) => t.BindingSource = v));
 
-        public AzureFunctionsTags()
-        {
-            SpanKind = SpanKinds.Server;
-            TriggerType = "Unknown";
-        }
-
-        public string InstrumentationName => nameof(Datadog.Trace.Configuration.IntegrationIds.AzureFunctions);
-
-        public override string SpanKind { get; }
+        public override string SpanKind => SpanKinds.Server;
 
         public string ShortName { get; set; }
 
@@ -43,7 +40,7 @@ namespace Datadog.Trace.Tagging
 
         public string BindingSource { get; set; }
 
-        public string TriggerType { get; set; }
+        public string TriggerType { get; set; } = "Unknown";
 
         protected override IProperty<string>[] GetAdditionalTags() => AzureFunctionRootTagsProperties;
     }
