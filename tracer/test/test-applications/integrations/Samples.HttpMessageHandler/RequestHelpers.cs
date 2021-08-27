@@ -13,7 +13,7 @@ namespace Samples.HttpMessageHandler
     {
         private static readonly Encoding Utf8 = Encoding.UTF8;
 
-        public static void SendHttpClientRequestsAsync(HttpClient client, bool tracingDisabled, string url, string requestContent)
+        public static void SendAsyncHttpClientRequests(HttpClient client, bool tracingDisabled, string url, string requestContent)
         {
             void Invoke()
             {
@@ -168,7 +168,9 @@ namespace Samples.HttpMessageHandler
 
             // Wait for the tasks in a single threaded synchronization context, to detect potential deadlocks
             var synchronizationContext = new SingleThreadedSynchronizationContext();
+            SynchronizationContext.SetSynchronizationContext(synchronizationContext);
             synchronizationContext.Send(_ => Invoke(), null);
+            SynchronizationContext.SetSynchronizationContext(null);
         }
 
 #if NET5_0

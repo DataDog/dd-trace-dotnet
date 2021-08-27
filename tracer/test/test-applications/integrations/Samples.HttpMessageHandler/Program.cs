@@ -40,7 +40,7 @@ namespace Samples.HttpMessageHandler
                 Console.WriteLine("Sending async request with default HttpClient.");
                 using (var client = new HttpClient())
                 {
-                    RequestHelpers.SendHttpClientRequestsAsync(client, tracingDisabled, Url, RequestContent);
+                    RequestHelpers.SendAsyncHttpClientRequests(client, tracingDisabled, Url, RequestContent);
                 }
 
                 // send async http requests using HttpClient with CustomHandler
@@ -48,7 +48,7 @@ namespace Samples.HttpMessageHandler
                 Console.WriteLine("Sending async request with HttpClient(CustomHandler).");
                 using (var client = new HttpClient(new CustomHandler()))
                 {
-                    RequestHelpers.SendHttpClientRequestsAsync(client, tracingDisabled, Url, RequestContent);
+                    RequestHelpers.SendAsyncHttpClientRequests(client, tracingDisabled, Url, RequestContent);
                 }
 
 #if !NET452
@@ -59,7 +59,7 @@ namespace Samples.HttpMessageHandler
                     Console.WriteLine("Sending async request with HttpClient(WinHttpHandler).");
                     using (var client = new HttpClient(new WinHttpHandler()))
                     {
-                        RequestHelpers.SendHttpClientRequestsAsync(client, tracingDisabled, Url, RequestContent);
+                        RequestHelpers.SendAsyncHttpClientRequests(client, tracingDisabled, Url, RequestContent);
                     }
                 }
 #endif
@@ -70,7 +70,7 @@ namespace Samples.HttpMessageHandler
                 Console.WriteLine("Sending async request with HttpClient(SocketsHttpHandler).");
                 using (var client = new HttpClient(new SocketsHttpHandler()))
                 {
-                    RequestHelpers.SendHttpClientRequestsAsync(client, tracingDisabled, Url, RequestContent);
+                    RequestHelpers.SendAsyncHttpClientRequests(client, tracingDisabled, Url, RequestContent);
                 }
 #endif
 
