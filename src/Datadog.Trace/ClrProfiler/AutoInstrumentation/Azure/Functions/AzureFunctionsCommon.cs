@@ -115,6 +115,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     }
                 }
 
+                scope.Root.Span.Type = SpanTypes.Serverless;
                 scope.Span.ResourceName = $"{triggerType} {functionName}";
                 scope.Span.Type = SpanTypes.Serverless;
             }
