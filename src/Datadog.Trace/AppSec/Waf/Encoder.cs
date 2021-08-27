@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.AppSec.Waf
 {
@@ -170,9 +171,10 @@ namespace Datadog.Trace.AppSec.Waf
 
         public static string FormatArgs(object o)
         {
-            var sb = new StringBuilder();
+            // zero capcity because we don't know the size in advance
+            var sb = StringBuilderCache.Acquire(0);
             FormatArgsInternal(o, sb);
-            return sb.ToString();
+            return StringBuilderCache.GetStringAndRelease(sb);
         }
 
         private static void FormatArgsInternal(object o, StringBuilder sb)
