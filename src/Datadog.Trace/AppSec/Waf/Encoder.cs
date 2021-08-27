@@ -85,8 +85,9 @@ namespace Datadog.Trace.AppSec.Waf
                     uint i => new Args(Native.pw_createUint(i)),
                     ulong i => new Args(Native.pw_createUint(i)),
                     IList<object> objs => EncodeList(objs, remainingDepth),
-                    IEnumerable<KeyValuePair<string, object>> objDict => EncodeDictionary(objDict, remainingDepth),
-                    IEnumerable<KeyValuePair<string, string>> objDict => EncodeDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), remainingDepth),
+                    IEnumerable<KeyValuePair<object, object>> objDict => EncodeDictionary(objDict, remainingDepth),
+                    IEnumerable<KeyValuePair<string, string>> objDict => EncodeDictionary(objDict.Select(x => new KeyValuePair<object, object>(x.Key, x.Value)), remainingDepth),
+                    IEnumerable<KeyValuePair<string, object>> objDict => EncodeDictionary(objDict.Select(x => new KeyValuePair<object, object>(x.Key, x.Value)), remainingDepth),
                     _ => throw new Exception($"Couldn't encode: {o}, type: {o.GetType()}")
                 };
             return value;
@@ -118,7 +119,7 @@ namespace Datadog.Trace.AppSec.Waf
             return new Args(arrNat);
         }
 
-        private static Args EncodeDictionary(IEnumerable<KeyValuePair<string, object>> objDictEnumerator, int remainingDepth)
+        private static Args EncodeDictionary(IEnumerable<KeyValuePair<object, object>> objDictEnumerator, int remainingDepth)
         {
             var mapNat = Native.pw_createMap();
 
@@ -128,7 +129,7 @@ namespace Datadog.Trace.AppSec.Waf
                 return new Args(mapNat);
             }
 
-            var count = objDictEnumerator is IDictionary<string, object> objDict ? objDict.Count : objDictEnumerator.Count();
+            var count = objDictEnumerator is IDictionary<object, object> objDict ? objDict.Count : objDictEnumerator.Count();
 
             if (count > MaxMapOrArrayLength)
             {
@@ -138,7 +139,7 @@ namespace Datadog.Trace.AppSec.Waf
 
             foreach (var o in objDictEnumerator)
             {
-                var name = o.Key;
+                var name = (string)o.Key;
                 if (name != null)
                 {
                     var value = EncodeInternal(o.Value, remainingDepth);

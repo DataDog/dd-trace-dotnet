@@ -76,7 +76,9 @@ namespace Datadog.Trace.AppSec.Waf
             {
                 var deserializer = new DeserializerBuilder().WithNamingConvention(CamelCaseNamingConvention.Instance).Build();
                 var res = deserializer.Deserialize(reader);
-                return Encoder.Encode(res);
+                var encoded = Encoder.Encode(res);
+                Log.Warning($"deserialized res {res}");
+                return encoded;
             }
         }
 
@@ -190,6 +192,8 @@ namespace Datadog.Trace.AppSec.Waf
                 {
                     Log.Information("Rules successfully created: {Message}", message);
                 }
+
+                Log.Information("Successfully create rules {ruleHandle}", ruleHandle);
 
                 return new Rule(ruleHandle);
             }
