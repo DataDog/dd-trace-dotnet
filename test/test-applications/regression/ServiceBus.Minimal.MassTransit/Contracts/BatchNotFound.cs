@@ -1,10 +1,12 @@
-using System;
-
 namespace ServiceBus.Minimal.MassTransit.Contracts
 {
-    public interface OrderStateCreated
+    using System;
+
+
+    public interface BatchNotFound
     {
-        Guid OrderId { get; }
+        Guid BatchId { get; }
+
         DateTime Timestamp { get; }
     }
 }
