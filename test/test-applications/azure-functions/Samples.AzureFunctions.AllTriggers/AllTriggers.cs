@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -19,7 +20,7 @@ namespace Samples.AzureFunctions.AllTriggers
 	public static class AllTriggers
 	{
 		private static readonly HttpClient FunctionHttpClient = new HttpClient();
-		private const string EveryTenSeconds = "*/10 * * * * *";
+		private const string EveryTenSeconds = "*/1 * * * * *";
 
 		[FunctionName("TriggerAllTimer")]
 		public static async Task TriggerAllTimer([TimerTrigger(EveryTenSeconds)] TimerInfo myTimer, ILogger log)
@@ -104,8 +105,8 @@ namespace Samples.AzureFunctions.AllTriggers
 
 		private static async Task<string> CallFunctionHttp(string path)
 		{
-			var httpFunctionUrl = Environment.GetEnvironmentVariable("DD_FUNCTION_HOST_BASE") ?? "http://localhost:7071";
-			var url = $"{httpFunctionUrl}";
+			var httpFunctionUrl = Environment.GetEnvironmentVariable("WEBSITE_HOSTNAME") ?? "localhost:7071";
+			var url = $"http://{httpFunctionUrl}";
 			var simpleResponse = await FunctionHttpClient.GetStringAsync($"{url}/api/{path}");
 			return simpleResponse;
 		}
