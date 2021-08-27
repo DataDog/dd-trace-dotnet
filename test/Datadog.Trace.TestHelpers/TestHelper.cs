@@ -142,6 +142,7 @@ namespace Datadog.Trace.TestHelpers
             var process = ProfilerHelper.StartFunctionsHostWithProfiler(
                 EnvironmentHelper.GetSampleProjectDirectory(),
                 EnvironmentHelper,
+                output: Output,
                 traceAgentPort: traceAgentPort,
                 statsdPort: statsdPort,
                 functionsHostPort: functionsPort);

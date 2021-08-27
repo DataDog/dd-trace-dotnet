@@ -5,6 +5,10 @@
 
 using System;
 using System.Diagnostics;
+using System.Net;
+using System.Net.NetworkInformation;
+using System.Threading;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers
 {
@@ -47,6 +51,7 @@ namespace Datadog.Trace.TestHelpers
         public static Process StartFunctionsHostWithProfiler(
             string projectDirectory,
             EnvironmentHelper environmentHelper,
+            ITestOutputHelper output,
             string arguments = null,
             bool redirectStandardInput = false,
             int traceAgentPort = 9696,
@@ -62,10 +67,10 @@ namespace Datadog.Trace.TestHelpers
             // clear all relevant environment variables to start with a clean slate
             EnvironmentHelper.ClearProfilerEnvironmentVariables();
 
-            var funcStartCmd = $"func start --script-root {projectDirectory} --port {functionsHostPort}";
+            var funcStartCmd = $"/C func start --script-root {projectDirectory} --port {functionsHostPort}";
+            Console.WriteLine(funcStartCmd);
 
             var startInfo = new ProcessStartInfo(fileName: "cmd.exe", arguments: funcStartCmd);
-            environmentHelper.CustomEnvironmentVariables.Add("DD_FUNCTION_HOST_BASE", $"http://localhost:{functionsHostPort}");
             environmentHelper.SetEnvironmentVariables(traceAgentPort, functionsHostPort, statsdPort, startInfo.EnvironmentVariables, processToProfile);
 
             startInfo.UseShellExecute = false;
@@ -74,7 +79,58 @@ namespace Datadog.Trace.TestHelpers
             startInfo.RedirectStandardError = true;
             startInfo.RedirectStandardInput = redirectStandardInput;
 
-            return Process.Start(startInfo);
+            var process = Process.Start(startInfo);
+
+            if (process != null)
+            {
+                process.OutputDataReceived += (sender, args) => output.WriteLine(args.Data);
+                process.ErrorDataReceived += (sender, args) => output.WriteLine(args.Data);
+            }
+
+            var maxWait = 25_000;
+            while (!PortInUse(functionsHostPort))
+            {
+                Thread.Sleep(50);
+
+                if (process == null)
+                {
+                    throw new Exception("Functions host process instance is null");
+                }
+
+                if (process.HasExited)
+                {
+                    throw new Exception("Functions host process has already exited");
+                }
+
+                maxWait -= 50;
+                if (maxWait <= 0)
+                {
+                    throw new Exception("Unable to verify functions host start");
+                }
+            }
+
+            output.WriteLine($"Verified that a process has bound to port: {functionsHostPort}");
+
+            return process;
+        }
+
+        public static bool PortInUse(int port)
+        {
+            var inUse = false;
+
+            IPGlobalProperties ipProperties = IPGlobalProperties.GetIPGlobalProperties();
+            IPEndPoint[] ipEndPoints = ipProperties.GetActiveTcpListeners();
+
+            foreach (IPEndPoint endPoint in ipEndPoints)
+            {
+                if (endPoint.Port == port)
+                {
+                    inUse = true;
+                    break;
+                }
+            }
+
+            return inUse;
         }
     }
 }

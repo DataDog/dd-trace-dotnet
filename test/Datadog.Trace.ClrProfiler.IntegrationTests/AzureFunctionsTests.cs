@@ -3,9 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NETCOREAPP3_1
 using System;
-using System.Linq;
+#if NETCOREAPP3_1
+using System.Diagnostics;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -34,30 +34,47 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var agentPort = TcpPortProvider.GetOpenPort();
             using var agent = new MockTracerAgent(agentPort);
+            Process process = null;
 
-            var functionsPort = TcpPortProvider.GetOpenPort();
-            using var process = RunFunctionsHost(functionsPort, agent.Port);
-
-            var spans = agent.WaitForSpans(expectedMinimumSpanCount);
-
-            process.CloseMainWindow();
-            process.Close();
-            CloseOutProcess(process);
-
-            // var functionsSpans = spans.Where(span => string.Equals(span.Service, ExpectedServiceName, StringComparison.OrdinalIgnoreCase));
-            foreach (var span in spans)
+            try
             {
-                span.Type.Should().Be(SpanTypes.Serverless);
-                span.Service.Should().Be(ExpectedServiceName);
-                span.Tags.Should().Contain(new System.Collections.Generic.KeyValuePair<string, string>(Tags.InstrumentationName, "AzureFunctions"));
-                span.Name.Should().Be("azure.function");
-                // span.Tags?.ContainsKey(Tags.Version).Should().BeFalse("External service span should not have service version tag.");
-                // span.Tags[Tags.SpanKind].Should().Be(SpanKinds.Client);
-                // span.Resource.Should().Be($"msmq.purge {span.Tags[Tags.MsmqQueuePath]}");
-                // purgeCount++;
-            }
+                var functionsPort = TcpPortProvider.GetOpenPort();
+                process = RunFunctionsHost(functionsPort, agent.Port);
 
-            // spanCount.Should().Be(expectedSpanCount);
+                var spans = agent.WaitForSpans(expectedMinimumSpanCount);
+
+                Output.WriteLine($"Span count: {spans.Count}");
+
+                // var functionsSpans = spans.Where(span => string.Equals(span.Service, ExpectedServiceName, StringComparison.OrdinalIgnoreCase));
+                foreach (var span in spans)
+                {
+                    Output.WriteLine(span.ToString());
+                    span.Type.Should().Be(SpanTypes.Serverless);
+                    span.Service.Should().Be(ExpectedServiceName);
+                    span.Tags.Should().Contain(new System.Collections.Generic.KeyValuePair<string, string>(Tags.InstrumentationName, "AzureFunctions"));
+                    span.Name.Should().Be("azure.function");
+                    // span.Tags?.ContainsKey(Tags.Version).Should().BeFalse("External service span should not have service version tag.");
+                    // span.Tags[Tags.SpanKind].Should().Be(SpanKinds.Client);
+                    // span.Resource.Should().Be($"msmq.purge {span.Tags[Tags.MsmqQueuePath]}");
+                    // purgeCount++;
+                }
+
+                // spanCount.Should().Be(expectedSpanCount);
+            }
+            finally
+            {
+                try
+                {
+                    process?.CloseMainWindow();
+                    process?.Close();
+                    process?.Dispose();
+                    // CloseOutProcess(process);
+                }
+                catch (Exception ex)
+                {
+                    Output.WriteLine(ex.ToString());
+                }
+            }
         }
     }
 }
