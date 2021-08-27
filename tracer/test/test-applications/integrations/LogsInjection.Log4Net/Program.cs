@@ -24,7 +24,7 @@ namespace LogsInjection.Log4Net
             XmlConfigurator.Configure(logRepository, new FileInfo(Path.Combine(appDirectory, "log4net.Pre205.config")));
 #endif
 
-            return LoggingMethods.RunLoggingProcedure(log.Info, makeCrossAppDomainCall: false);
+            return LoggingMethods.RunLoggingProcedure(log.Info);
         }
     }
 }
