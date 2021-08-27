@@ -202,6 +202,9 @@ namespace Datadog.Trace.TestHelpers
                 environmentVariables["DD_PROFILER_PROCESSES"] = Path.GetFileName(processToProfile);
             }
 
+            // Enable logging for coverlet
+            environmentVariables["COVERLET_ENABLETRACKERLOG"] = "1";
+
             string integrations = string.Join(";", GetIntegrationsFilePaths());
             environmentVariables["DD_INTEGRATIONS"] = integrations;
             environmentVariables["DD_TRACE_AGENT_HOSTNAME"] = "127.0.0.1";
