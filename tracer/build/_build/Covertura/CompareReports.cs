@@ -147,12 +147,12 @@ namespace Covertura
             return comparison;
         }
 
-        public static string RenderAsMarkdown(CoverturaReportComparison comparison, int prNumber, string oldReportLink, string newReportlink)
+        public static string RenderAsMarkdown(CoverturaReportComparison comparison, int prNumber, string oldReportLink, string newReportlink, string oldCommit, string newCommit)
         {
-            var oldBranchMarkdown = "[master](https://github.com/DataDog/dd-trace-dotnet/tree/master)";
+            var oldBranchMarkdown = $"[master](https://github.com/DataDog/dd-trace-dotnet/tree/master/{oldCommit})";
             var newBranchMarkdown = $"#{prNumber}";
             var prFiles = $"https://github.com/DataDog/dd-trace-dotnet/pull/{prNumber}/files";
-            var tree = "https://github.com/DataDog/dd-trace-dotnet/tree/master";
+            var tree = $"https://github.com/DataDog/dd-trace-dotnet/tree/{newCommit}";
             var oldReport = comparison.Old;
             var newReport = comparison.New;
 

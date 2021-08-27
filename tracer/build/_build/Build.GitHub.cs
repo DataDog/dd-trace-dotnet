@@ -380,7 +380,7 @@ partial class Build
 
             var branch = $"refs/tags/v{FullVersion}";
 
-            var artifact = await DownloadAzureArtifact(buildHttpClient, branch, _ => $"{FullVersion}-release-artifacts", OutputDirectory, BuildReason.IndividualCI);
+            var (build, artifact) = await DownloadAzureArtifact(buildHttpClient, branch, _ => $"{FullVersion}-release-artifacts", OutputDirectory, BuildReason.IndividualCI);
 
             var resourceDownloadUrl = artifact.Resource.DownloadUrl;
             Console.WriteLine("::set-output name=artifacts_link::" + resourceDownloadUrl);
@@ -412,8 +412,8 @@ partial class Build
               var branch = $"refs/pull/{prNumber}/merge";
               var fixedPrefix = "Code Coverage Report_";
 
-              var newArtifact = await DownloadAzureArtifact(buildHttpClient, branch, build => $"{fixedPrefix}{build.Id}", newReportdir, buildReason: null, completedBuildsOnly: false);
-              var oldArtifact = await DownloadAzureArtifact(buildHttpClient, "refs/heads/master", build => $"{fixedPrefix}{build.Id}", oldReportdir, buildReason: null);
+              var (newBuild, newArtifact) = await DownloadAzureArtifact(buildHttpClient, branch, build => $"{fixedPrefix}{build.Id}", newReportdir, buildReason: null, completedBuildsOnly: false);
+              var (oldBuild, oldArtifact) = await DownloadAzureArtifact(buildHttpClient, "refs/heads/master", build => $"{fixedPrefix}{build.Id}", oldReportdir, buildReason: null);
 
               var oldBuildId = oldArtifact.Name.Substring(fixedPrefix.Length);
               var newBuildId = newArtifact.Name.Substring(fixedPrefix.Length);
@@ -434,7 +434,7 @@ partial class Build
               var newReport = Covertura.CodeCoverage.ReadReport(newReportPath);
 
               var comparison = Covertura.CodeCoverage.Compare(oldReport, newReport);
-              var markdown = Covertura.CodeCoverage.RenderAsMarkdown(comparison, prNumber, downloadOldLink, downloadNewLink);
+              var markdown = Covertura.CodeCoverage.RenderAsMarkdown(comparison, prNumber, downloadOldLink, downloadNewLink, oldBuild.SourceVersion, newBuild.SourceVersion);
 
               Console.WriteLine("Posting comment to GitHub");
 
@@ -461,7 +461,7 @@ partial class Build
               }
           });
 
-    async Task<BuildArtifact> DownloadAzureArtifact(
+    async Task<(Microsoft.TeamFoundation.Build.WebApi.Build, BuildArtifact)> DownloadAzureArtifact(
         BuildHttpClient buildHttpClient,
         string branch,
         Func<Microsoft.TeamFoundation.Build.WebApi.Build, string> getArtifactName,
@@ -503,6 +503,7 @@ partial class Build
         Console.WriteLine($"Found {completedBuilds.Count} completed builds for {branch}. Looking for artifacts...");
 
         BuildArtifact artifact = null;
+        Microsoft.TeamFoundation.Build.WebApi.Build artifactBuild = null;
         foreach (var build in completedBuilds.OrderByDescending(x => x.FinishTime).ThenByDescending(x=>x.StartTime))
         {
             var artifactName = getArtifactName(build);
@@ -512,6 +513,7 @@ partial class Build
                                project: AzureDevopsProjectId,
                                buildId: build.Id,
                                artifactName: artifactName);
+                artifactBuild = build;
                 break;
             }
             catch (ArtifactNotFoundException)
@@ -549,7 +551,7 @@ partial class Build
         UncompressZip(zipPath, outputDirectory);
 
         Console.WriteLine($"Artifact download complete");
-        return artifact;
+        return (artifactBuild, artifact);
     }
 
     GitHubClient GetGitHubClient() =>
