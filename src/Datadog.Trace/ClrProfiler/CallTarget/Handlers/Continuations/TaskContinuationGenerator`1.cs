@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Reflection.Emit;
 using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 #pragma warning disable SA1649 // File name must match first type name
@@ -14,13 +13,15 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
     internal class TaskContinuationGenerator<TIntegration, TTarget, TReturn, TResult> : ContinuationGenerator<TTarget, TReturn>
     {
         private static readonly Func<TTarget, TResult, Exception, CallTargetState, TResult> _continuation;
+        private static readonly bool _preserveContext;
 
         static TaskContinuationGenerator()
         {
-            DynamicMethod continuationMethod = IntegrationMapper.CreateAsyncEndMethodDelegate(typeof(TIntegration), typeof(TTarget), typeof(TResult));
-            if (continuationMethod != null)
+            var result = IntegrationMapper.CreateAsyncEndMethodDelegate(typeof(TIntegration), typeof(TTarget), typeof(TResult));
+            if (result.Method != null)
             {
-                _continuation = (Func<TTarget, TResult, Exception, CallTargetState, TResult>)continuationMethod.CreateDelegate(typeof(Func<TTarget, TResult, Exception, CallTargetState, TResult>));
+                _continuation = (Func<TTarget, TResult, Exception, CallTargetState, TResult>)result.Method.CreateDelegate(typeof(Func<TTarget, TResult, Exception, CallTargetState, TResult>));
+                _preserveContext = result.PreserveContext;
             }
         }
 
@@ -51,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
         {
             if (!previousTask.IsCompleted)
             {
-                await new NoThrowAwaiter(previousTask);
+                await new NoThrowAwaiter(previousTask, _preserveContext);
             }
 
             TResult taskResult = default;

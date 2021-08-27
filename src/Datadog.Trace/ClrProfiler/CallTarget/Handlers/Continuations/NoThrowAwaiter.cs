@@ -13,10 +13,12 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
     internal struct NoThrowAwaiter : ICriticalNotifyCompletion
     {
         private readonly Task _task;
+        private readonly bool _preserveContext;
 
-        public NoThrowAwaiter(Task task)
+        public NoThrowAwaiter(Task task, bool preserveContext)
         {
             _task = task;
+            _preserveContext = preserveContext;
         }
 
         public bool IsCompleted => _task.IsCompleted;
@@ -27,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
         {
         }
 
-        public void OnCompleted(Action continuation) => _task.GetAwaiter().OnCompleted(continuation);
+        public void OnCompleted(Action continuation) => _task.ConfigureAwait(_preserveContext).GetAwaiter().OnCompleted(continuation);
 
         public void UnsafeOnCompleted(Action continuation) => OnCompleted(continuation);
     }
