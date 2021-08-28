@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Reflection.Emit;
 using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 
@@ -13,13 +12,15 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
     internal class TaskContinuationGenerator<TIntegration, TTarget, TReturn> : ContinuationGenerator<TTarget, TReturn>
     {
         private static readonly Func<TTarget, object, Exception, CallTargetState, object> _continuation;
+        private static readonly bool _preserveContext;
 
         static TaskContinuationGenerator()
         {
-            DynamicMethod continuationMethod = IntegrationMapper.CreateAsyncEndMethodDelegate(typeof(TIntegration), typeof(TTarget), typeof(object));
-            if (continuationMethod != null)
+            var result = IntegrationMapper.CreateAsyncEndMethodDelegate(typeof(TIntegration), typeof(TTarget), typeof(object));
+            if (result.Method != null)
             {
-                _continuation = (Func<TTarget, object, Exception, CallTargetState, object>)continuationMethod.CreateDelegate(typeof(Func<TTarget, object, Exception, CallTargetState, object>));
+                _continuation = (Func<TTarget, object, Exception, CallTargetState, object>)result.Method.CreateDelegate(typeof(Func<TTarget, object, Exception, CallTargetState, object>));
+                _preserveContext = result.PreserveContext;
             }
         }
 
@@ -50,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
         {
             if (!previousTask.IsCompleted)
             {
-                await new NoThrowAwaiter(previousTask);
+                await new NoThrowAwaiter(previousTask, _preserveContext);
             }
 
             Exception exception = null;
