@@ -1,5 +1,21 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
+## [Release 1.28.4](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.28.4)
+
+## Changes
+* Read performance counter values from environment variables in AAS (#1651)
+* Improve error handling for performance counters (#1652)
+* Use link shortener for IIS permissions (#1666)
+* Don't cache the process instance for runtime metrics (#1698)
+* Use AppDomain.CurrentDomain.BaseDirectory to get current directory for configuration (#1700)
+
+## Fixes
+* Fixes native regex usage on non windows platforms. (#1662)
+* Native logger error fix (#1677)
+* Add PreserveContext attribute for async integrations (#1702)
+
+[Changes since 1.28.2](https://github.com/DataDog/dd-trace-dotnet/compare/v1.28.2...v1.28.4)
+
 ## [Release 1.28.2](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.28.2)
 
 ## Changes
