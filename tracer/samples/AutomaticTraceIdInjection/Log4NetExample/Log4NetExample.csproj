@@ -6,14 +6,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- <PackageReference Include="Datadog.Trace" Version="1.28.3-prerelease" /> -->
-    <!-- <PackageReference Include="log4net" Version="2.0.12" /> -->
+    <PackageReference Include="Datadog.Trace" Version="1.28.3-prerelease" />
+    <PackageReference Include="log4net" Version="2.0.12" />
     <PackageReference Include="log4net.Ext.Json" Version="2.0.8.3" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\..\..\apache\logging-log4net\src\log4net\log4net.csproj" />
-    <ProjectReference Include="..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
 
   <ItemGroup>
