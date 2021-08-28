@@ -10,17 +10,14 @@ using Datadog.Trace.Logging.LogProviders;
 
 namespace Datadog.Trace.Logging
 {
-    internal class CustomLog4NetLogProvider : Log4NetLogProvider, ILogProviderWithEnricher
+    internal class CustomLog4NetLogProvider : Log4NetLogProvider
     {
         private static readonly IDisposable NoopDisposableInstance = new DisposableAction();
-
-        public ILogEnricher CreateEnricher() => new Log4NetEnricher(this);
 
 #pragma warning disable SA1313 // Parameter names should begin with lower-case letter
         protected override OpenMdc GetOpenMdcMethod()
         {
-            // Make this a no-op
-            // This is a copy/paste of the base GetOpenMdcMethod, but calling Set(string, object) instead of Set(string, string)
+            // Make this log provider a no-op so the automatic instrumentation does all the work
             return (_, __, ___) => NoopDisposableInstance;
         }
 #pragma warning restore SA1313 // Parameter names should begin with lower-case letter
