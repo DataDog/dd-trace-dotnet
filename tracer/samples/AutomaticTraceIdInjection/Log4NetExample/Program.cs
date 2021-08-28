@@ -21,11 +21,6 @@ namespace Log4NetExample
                 using (var scope = Tracer.Instance.StartActive("Log4NetExample - Main()"))
                 {
                     log.Info("Message during a trace.");
-
-                    for (int i = 0; i < 1024; i++)
-                    {
-                        log.Info($"Message #{i}/1024 in the batch.");
-                    }
                 }
             }
             finally
@@ -34,7 +29,6 @@ namespace Log4NetExample
             }
 
             log.Info("Message after a trace.");
-            LogManager.Flush(3000);
         }
     }
 }
