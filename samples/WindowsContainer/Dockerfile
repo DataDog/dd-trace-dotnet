@@ -6,7 +6,7 @@
 FROM mcr.microsoft.com/dotnet/aspnet:5.0-windowsservercore-ltsc2019 AS base
 WORKDIR /app
 
-ARG TRACER_VERSION=1.28.3
+ARG TRACER_VERSION=1.28.5
 ENV DD_TRACER_VERSION=$TRACER_VERSION
 ENV ASPNETCORE_URLS=http://*.80
 
