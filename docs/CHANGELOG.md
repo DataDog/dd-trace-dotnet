@@ -14,6 +14,9 @@
 * Native logger error fix (#1677)
 * Add PreserveContext attribute for async integrations (#1702)
 
+## Build / Test
+* Reduce length of snapshot paths (#1657)
+
 [Changes since 1.28.2](https://github.com/DataDog/dd-trace-dotnet/compare/v1.28.2...v1.28.4)
 
 ## [Release 1.28.2](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.28.2)
