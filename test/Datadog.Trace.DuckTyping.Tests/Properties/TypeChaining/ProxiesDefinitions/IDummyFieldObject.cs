@@ -7,7 +7,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.TypeChaining.ProxiesDefiniti
 {
     public interface IDummyFieldObject
     {
-        [Duck(Kind = DuckKind.Field)]
+        [DuckField]
         int MagicNumber { get; set; }
 
         ITypesTuple this[ITypesTuple index] { get; set; }

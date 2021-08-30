@@ -19,8 +19,8 @@
     <DefineSolutionProperties>false</DefineSolutionProperties>
     <OutputName>datadog-dotnet-apm-1.28.3-prerelease-$(Platform)</OutputName>
     <TracerHomeDirectory Condition="'$(TracerHomeDirectory)' == ''">$(MSBuildThisFileDirectory)..\bin\windows-tracer-home</TracerHomeDirectory>
-    <DefineConstants>InstallerVersion=1.28.3;TracerHomeDirectory=$(TracerHomeDirectory);LibSqreenDirectory=$(LibSqreenDirectory)</DefineConstants>
-    <LibSqreenDirectory Condition="'$(LibSqreenDirectory)' == ''">$(LibSqreenDirectory)..\..\packages\libsqreen.1.1.2.3</LibSqreenDirectory>
+    <DefineConstants>InstallerVersion=1.28.3;TracerHomeDirectory=$(TracerHomeDirectory);LibDdwafDirectory=$(LibDdwafDirectory)</DefineConstants>
+    <LibDdwafDirectory Condition="'$(LibDdwafDirectory)' == ''">$(LibDdwafDirectory)..\..\packages\libddwaf.1.0.6</LibDdwafDirectory>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <DefineConstants>$(DefineConstants);Debug</DefineConstants>

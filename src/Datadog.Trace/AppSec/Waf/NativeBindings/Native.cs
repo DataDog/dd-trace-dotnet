@@ -10,6 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.AppSec.Waf.NativeBindings
@@ -17,9 +18,9 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
     internal class Native
     {
 #if NETFRAMEWORK
-        private const string DllName = "Sqreen.dll";
+        private const string DllName = "ddwaf.dll";
 #else
-        private const string DllName = "Sqreen";
+        private const string DllName = "ddwaf";
 #endif
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Native));
@@ -42,6 +43,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private static AddArrayDelegate addArray;
         private static AddMapDelegate addMap;
         private static FreeArgDelegate freeArg;
+        private static LoggingCallbackDelegate loggingCallback;
 
         static Native()
         {
@@ -75,13 +77,21 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                     addArray = GetDelegateForNativeFunction<AddArrayDelegate>(handle, "pw_addArray");
                     addMap = GetDelegateForNativeFunction<AddMapDelegate>(handle, "pw_addMap");
                     freeArg = GetDelegateForNativeFunction<FreeArgDelegate>(handle, "pw_freeArg");
+
+                    // setup logging
+                    var setupLogging = GetDelegateForNativeFunction<SetupLoggingDelegate>(handle, "pw_setupLogging");
+                    // convert to a delegate and attempt to pin it by assigning it to static field
+                    loggingCallback = LoggingCallback;
+                    // set the log level and setup the loger
+                    var level = GlobalSettings.Source.DebugEnabled ? PW_LOG_LEVEL.PWL_DEBUG : PW_LOG_LEVEL.PWL_INFO;
+                    setupLogging(Marshal.GetFunctionPointerForDelegate(loggingCallback), PW_LOG_LEVEL.PWL_DEBUG);
                 }
             }
         }
 
         private delegate PWVersion GetVersionDelegate();
 
-        private delegate IntPtr InitHDelegate(string wafRule, ref PWConfig config, ref string errors);
+        private delegate IntPtr InitHDelegate(PWArgs wafRule, ref PWConfig config);
 
         private delegate void ClearRuleHDelegate(IntPtr wafHandle);
 
@@ -115,6 +125,27 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         private delegate void FreeArgDelegate(ref PWArgs input);
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate void LoggingCallbackDelegate(
+            PW_LOG_LEVEL level,
+            string function,
+            string file,
+            int line,
+            string message,
+            ulong message_len);
+
+        private delegate bool SetupLoggingDelegate(IntPtr cb, PW_LOG_LEVEL min_level);
+
+        private enum PW_LOG_LEVEL
+        {
+            PWL_TRACE,
+            PWL_DEBUG,
+            PWL_INFO,
+            PWL_WARN,
+            PWL_ERROR,
+            PWL_AFTER_LAST,
+        }
+
 #pragma warning disable SA1300 // Element should begin with upper-case letter
 
         internal static PWVersion pw_getVersion()
@@ -122,9 +153,9 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             return getVersion();
         }
 
-        internal static IntPtr pw_initH(string wafRule, ref PWConfig config, ref string errors)
+        internal static IntPtr pw_initH(PWArgs wafRule, ref PWConfig config)
         {
-            return initH(wafRule, ref config, ref errors);
+            return initH(wafRule, ref config);
         }
 
         internal static void pw_clearRuleH(IntPtr wafHandle)
@@ -206,6 +237,37 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         internal static void pw_freeArg(ref PWArgs input)
         {
             freeArg(ref input);
+        }
+
+        private static void LoggingCallback(
+            PW_LOG_LEVEL level,
+            string function,
+            string file,
+            int line,
+            string message,
+            ulong message_len)
+        {
+            var formattedMessage = $"{level}: [{function}]{file}({line}): {message}";
+            switch (level)
+            {
+                case PW_LOG_LEVEL.PWL_TRACE:
+                case PW_LOG_LEVEL.PWL_DEBUG:
+                    Log.Debug(formattedMessage);
+                    break;
+                case PW_LOG_LEVEL.PWL_INFO:
+                    Log.Information(formattedMessage);
+                    break;
+                case PW_LOG_LEVEL.PWL_WARN:
+                    Log.Warning(formattedMessage);
+                    break;
+                case PW_LOG_LEVEL.PWL_ERROR:
+                case PW_LOG_LEVEL.PWL_AFTER_LAST:
+                    Log.Error(formattedMessage);
+                    break;
+                default:
+                    Log.Error("[Unknown level] " + formattedMessage);
+                    break;
+            }
         }
 
 #pragma warning restore SA1300 // Element should begin with upper-case letter
@@ -390,7 +452,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
             if (runtimeIdPart1 != null && libPrefix != null && libExt != null)
             {
-                libName = libPrefix + "Sqreen." + libExt;
+                libName = libPrefix + "ddwaf." + libExt;
                 runtimeId = Environment.Is64BitProcess ? runtimeIdPart1 + "-x64" : runtimeIdPart1 + "-x86";
             }
             else

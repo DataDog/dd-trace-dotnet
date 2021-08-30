@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30717.126
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Logging.Demo.EmitterAndComposerApp", "EmitterAndComposerApp\Datadog.Logging.Demo.EmitterAndComposerApp.csproj", "{7D15858F-8A16-449A-A0F8-7E2B6831E1CF}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Logging.Demo.EmitterLib", "EmitterLib\Datadog.Logging.Demo.EmitterLib.csproj", "{040EC021-39E7-4616-94BF-C24CA53A820B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7D15858F-8A16-449A-A0F8-7E2B6831E1CF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7D15858F-8A16-449A-A0F8-7E2B6831E1CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7D15858F-8A16-449A-A0F8-7E2B6831E1CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7D15858F-8A16-449A-A0F8-7E2B6831E1CF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{040EC021-39E7-4616-94BF-C24CA53A820B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{040EC021-39E7-4616-94BF-C24CA53A820B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{040EC021-39E7-4616-94BF-C24CA53A820B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{040EC021-39E7-4616-94BF-C24CA53A820B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4F5697A2-8927-468B-8259-057E0ED873BF}
+	EndGlobalSection
+EndGlobal

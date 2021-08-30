@@ -125,8 +125,8 @@
               Checksum="yes">
           <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
         </File>
-        <File Id="LibSqreen"
-              Source="$(var.LibSqreenDirectory)\runtimes\win-x64\native\Sqreen.dll"
+        <File Id="LibDdwaf"
+              Source="$(var.LibDdwafDirectory)\runtimes\win-x64\native\ddwaf.dll"
               Checksum="yes">
         </File>
       </Component>
@@ -140,8 +140,8 @@
               Checksum="yes">
           <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
         </File>
-        <File Id="LibSqreen.32"
-              Source="$(var.LibSqreenDirectory)\runtimes\win-x86\native\Sqreen.dll"
+        <File Id="LibDdwaf.32"
+              Source="$(var.LibDdwafDirectory)\runtimes\win-x86\native\ddwaf.dll"
               Checksum="yes">
         </File>
       </Component>
@@ -157,8 +157,8 @@
               Checksum="yes">
           <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
         </File>
-        <File Id="LibSqreen.32"
-              Source="$(var.LibSqreenDirectory)\runtimes\win-x86\native\Sqreen.dll"
+        <File Id="LibDdwaf.32"
+              Source="$(var.LibDdwafDirectory)\runtimes\win-x86\native\ddwaf.dll"
               Checksum="yes">
         </File>
       </Component>

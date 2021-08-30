@@ -94,13 +94,13 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         public interface P_IHostingApplication
         {
-            [Duck(Name = "_diagnostics", Kind = DuckKind.Field)]
+            [DuckField(Name = "_diagnostics")]
             P_IHostingApplicationDiagnostics Diagnostics { get; }
         }
 
         public interface P_IHostingApplicationDiagnostics
         {
-            [Duck(Name = "_logger", Kind = DuckKind.Field)]
+            [DuckField(Name = "_logger")]
             P_ILogger Logger { get; }
         }
 

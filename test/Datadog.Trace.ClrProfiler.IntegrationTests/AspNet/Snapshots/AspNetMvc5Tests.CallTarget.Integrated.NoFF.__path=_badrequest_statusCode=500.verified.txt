@@ -1,0 +1,60 @@
+[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: aspnet.request,
+    Resource: GET /badrequest,
+    Service: sample,
+    Type: web,
+    Error: 1,
+    Tags: {
+      env: integration_tests,
+      error.msg: Oops, it broke.,
+      error.stack: 
+System.Exception: Oops, it broke.
+at Samples.AspNetMvc5.Controllers.HomeController.BadRequest(),
+      error.type: System.Exception,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.status_code: 500,
+      http.url: /badrequest,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      _sampling_priority_v1: 1.0,
+      _dd.tracer_kr: 1.0,
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: aspnet-mvc.request,
+    Resource: GET /badrequest,
+    Service: sample,
+    Type: web,
+    ParentId: Id_2,
+    Error: 1,
+    Tags: {
+      aspnet.action: badrequest,
+      aspnet.controller: home,
+      aspnet.route: badrequest,
+      env: integration_tests,
+      error.msg: Oops, it broke.,
+      error.stack: 
+System.Exception: Oops, it broke.
+at Samples.AspNetMvc5.Controllers.HomeController.BadRequest(),
+      error.type: System.Exception,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.status_code: 500,
+      http.url: /badrequest,
+      language: dotnet,
+      span.kind: server,
+      version: 1.0.0
+    }
+  }
+]

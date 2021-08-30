@@ -1,0 +1,65 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Datadog.AutoInstrumentation.ManagedLoader</RootNamespace>
+    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net45;netcoreapp2.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netcoreapp2.0</TargetFrameworks>
+
+	<!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp2.0) -->
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+  </PropertyGroup>
+	
+  <PropertyGroup>
+    <SharedSrcBaseDir>$(MSBuildThisFileDirectory)..\..\..\src\managed-src</SharedSrcBaseDir>
+    <SharedSrcBaseLabel>Shared-Src</SharedSrcBaseLabel>
+  </PropertyGroup>
+
+  <!-- Datadog.Logging.Emission.props is required for emitting logs: -->
+  <Import Project="$(SharedSrcBaseDir)\Datadog.Logging\Datadog.Logging.Emission.props" Condition="$(LogEmissionPropsIncluded) == ''" />
+
+  <!-- Datadog.Logging.Composition.props is required for composing logs and chosing a log sink: -->
+  <Import Project="$(SharedSrcBaseDir)\Datadog.Logging\Datadog.Logging.Composition.props" Condition="$(LogCompositionPropsIncluded) == ''" />
+
+  <ItemGroup>
+	<!-- This "service" is required for T4-templating.                                                                                   -->
+	<Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+	<T4ServiceGuidIncluded Include="true" />
+  </ItemGroup>
+
+	<ItemGroup>
+    <!-- Log.tt is a T4 template that refers to the Log.tt.cs templete referenced in Datadog.Logging.Emission.props.                     -->
+    <!-- It ensures that the Log Emission API is correctly generated.                                                                    -->
+    <None Update="Datadog.AutoInstrumentation.ManagedLoader\internal\Log.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>Log.cs</LastGenOutput>
+    </None>
+    <Compile Update="Datadog.AutoInstrumentation.ManagedLoader\internal\Log.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Log.tt</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  
+  <ItemGroup>
+	<!-- This "service" is required for T4-templating.                                                                                   -->
+	<Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  
+  	<!-- Make sure the value of SharedSrcBaseDir is available in the T4 template: -->
+    <T4ParameterValues Include="SharedSrcBaseDir">
+      <Value>$(SharedSrcBaseDir)</Value>
+    </T4ParameterValues>
+	  
+    <!-- LogComposer.tt is a T4 template that refers to the LogComposer.tt.cs templete referenced in Datadog.Logging.Composition.props.  -->
+    <!-- It ensures that the Log Composition API is correctly generated.                                                                 -->
+    <None Update="Datadog.AutoInstrumentation.ManagedLoader\internal\LogComposer.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>LogComposer.cs</LastGenOutput>
+    </None>
+    <Compile Update="Datadog.AutoInstrumentation.ManagedLoader\internal\LogComposer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>LogComposer.tt</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  
+</Project>

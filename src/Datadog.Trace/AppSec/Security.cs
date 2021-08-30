@@ -13,6 +13,7 @@ using Datadog.Trace.AppSec.EventModel;
 using Datadog.Trace.AppSec.Transport;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec
 {
@@ -49,6 +50,7 @@ namespace Datadog.Trace.AppSec
 
                 _instrumentationGateway = instrumentationGateway ?? new InstrumentationGateway();
 
+                _settings.Enabled = _settings.Enabled && AreArchitectureAndOsSupported();
                 if (_settings.Enabled)
                 {
                     _powerWaf = powerWaf ?? PowerWaf.Initialize();
@@ -137,7 +139,12 @@ namespace Datadog.Trace.AppSec
             using var wafResult = additiveContext.Run(args);
             if (wafResult.ReturnCode == ReturnCode.Monitor || wafResult.ReturnCode == ReturnCode.Block)
             {
-                Log.Warning($"AppSec: Attack detected! Action: {wafResult.ReturnCode} " + string.Join(", ", args.Select(x => $"{x.Key}: {x.Value}. Blocking enabled : {_settings.BlockingEnabled}")));
+                Log.Information($"AppSec: Attack detected! Action: {wafResult.ReturnCode}, Blocking enabled : {_settings.BlockingEnabled}");
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Information($"AppSec: Attack arguments " + Encoder.FormatArgs(args));
+                }
+
                 var managedWafResult = Waf.ReturnTypes.Managed.Return.From(wafResult);
                 if (_settings.BlockingEnabled && wafResult.ReturnCode == ReturnCode.Block)
                 {

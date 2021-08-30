@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Reflection.Emit;
 using System.Threading.Tasks;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
@@ -13,13 +12,15 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
     internal class ValueTaskContinuationGenerator<TIntegration, TTarget, TReturn> : ContinuationGenerator<TTarget, TReturn>
     {
         private static readonly Func<TTarget, object, Exception, CallTargetState, object> _continuation;
+        private static readonly bool _preserveContext;
 
         static ValueTaskContinuationGenerator()
         {
-            DynamicMethod continuationMethod = IntegrationMapper.CreateAsyncEndMethodDelegate(typeof(TIntegration), typeof(TTarget), typeof(object));
-            if (continuationMethod != null)
+            var result = IntegrationMapper.CreateAsyncEndMethodDelegate(typeof(TIntegration), typeof(TTarget), typeof(object));
+            if (result.Method != null)
             {
-                _continuation = (Func<TTarget, object, Exception, CallTargetState, object>)continuationMethod.CreateDelegate(typeof(Func<TTarget, object, Exception, CallTargetState, object>));
+                _continuation = (Func<TTarget, object, Exception, CallTargetState, object>)result.Method.CreateDelegate(typeof(Func<TTarget, object, Exception, CallTargetState, object>));
+                _preserveContext = result.PreserveContext;
             }
         }
 
@@ -44,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
             {
                 try
                 {
-                    await previousValueTask;
+                    await previousValueTask.ConfigureAwait(_preserveContext);
                 }
                 catch (Exception ex)
                 {

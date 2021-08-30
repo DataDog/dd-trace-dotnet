@@ -94,7 +94,7 @@ namespace Datadog.Trace.AppSec.AspNetCore
             /// <summary>
             /// The components that will make up the application http pipe
             /// </summary>
-            [Duck(Name = "_components", Kind = DuckKind.Field)]
+            [DuckField(Name = "_components")]
             public List<Func<RequestDelegate, RequestDelegate>> Components;
         }
     }

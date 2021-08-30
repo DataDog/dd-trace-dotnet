@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NETCOREAPP3_1_OR_GREATER
+#if NETCOREAPP3_1 || NET5_0 || NETCOREAPP3_1_OR_GREATER
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -85,6 +85,41 @@ namespace Datadog.Trace.Tests.CallTarget
             }
         }
 
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void SynchronizationContextTest(bool preserveContext)
+        {
+            ContinuationGenerator<ValueTaskContinuationGeneratorTests, ValueTask> tcg;
+
+            if (preserveContext)
+            {
+                tcg = new ValueTaskContinuationGenerator<PreserveContextTests, ValueTaskContinuationGeneratorTests, ValueTask>();
+            }
+            else
+            {
+                tcg = new ValueTaskContinuationGenerator<ValueTaskContinuationGeneratorTests, ValueTaskContinuationGeneratorTests, ValueTask>();
+            }
+
+            var synchronizationContext = new CustomSynchronizationContext();
+            SynchronizationContext.SetSynchronizationContext(synchronizationContext);
+
+            var cTask = tcg.SetContinuation(this, GetPreviousTask(), null, CallTargetState.GetDefault()).AsTask();
+
+            Task.WaitAny(cTask, synchronizationContext.Task);
+
+            // If preserving context, the continuation should be posted to the synchronization context and cTask should never complete
+            // If not, the cTask should complete without using the synchronization context
+            var notCompletedTask = preserveContext ? cTask : synchronizationContext.Task;
+
+            Assert.False(notCompletedTask.IsCompleted);
+
+            async ValueTask GetPreviousTask()
+            {
+                await Task.Delay(1000).ConfigureAwait(false);
+            }
+        }
+
         [Fact]
         public async Task SuccessGenericTest()
         {
@@ -151,6 +186,42 @@ namespace Datadog.Trace.Tests.CallTarget
             }
         }
 
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void SynchronizationContextGenericTest(bool preserveContext)
+        {
+            ContinuationGenerator<ValueTaskContinuationGeneratorTests, ValueTask<bool>> tcg;
+
+            if (preserveContext)
+            {
+                tcg = new ValueTaskContinuationGenerator<PreserveContextTests, ValueTaskContinuationGeneratorTests, ValueTask<bool>, bool>();
+            }
+            else
+            {
+                tcg = new ValueTaskContinuationGenerator<ValueTaskContinuationGeneratorTests, ValueTaskContinuationGeneratorTests, ValueTask<bool>, bool>();
+            }
+
+            var synchronizationContext = new CustomSynchronizationContext();
+            SynchronizationContext.SetSynchronizationContext(synchronizationContext);
+
+            var cTask = tcg.SetContinuation(this, GetPreviousTask(), null, CallTargetState.GetDefault()).AsTask();
+
+            Task.WaitAny(cTask, synchronizationContext.Task);
+
+            // If preserving context, the continuation should be posted to the synchronization context and cTask should never complete
+            // If not, the cTask should complete without using the synchronization context
+            var notCompletedTask = preserveContext ? cTask : synchronizationContext.Task;
+
+            Assert.False(notCompletedTask.IsCompleted);
+
+            async ValueTask<bool> GetPreviousTask()
+            {
+                await Task.Delay(1000).ConfigureAwait(false);
+                return true;
+            }
+        }
+
         internal class CustomException : Exception
         {
             public CustomException(string message)
@@ -164,6 +235,32 @@ namespace Datadog.Trace.Tests.CallTarget
             public CustomCancellationException(CancellationToken token)
                 : base(token)
             {
+            }
+        }
+
+        internal class CustomSynchronizationContext : SynchronizationContext
+        {
+            private readonly TaskCompletionSource<bool> _tcs = new();
+
+            public Task Task => _tcs.Task;
+
+            public override void Post(SendOrPostCallback d, object state)
+            {
+                _tcs.TrySetResult(true);
+            }
+
+            public override void Send(SendOrPostCallback d, object state)
+            {
+                _tcs.TrySetResult(true);
+            }
+        }
+
+        internal class PreserveContextTests
+        {
+            [PreserveContext]
+            public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
+            {
+                return returnValue;
             }
         }
     }

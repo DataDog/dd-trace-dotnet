@@ -10,7 +10,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.TypeChaining.ProxiesDefiniti
     [DuckCopy]
     public struct DummyFieldStruct
     {
-        [Duck(Kind = DuckKind.Field)]
+        [DuckField]
         public int MagicNumber;
     }
 }

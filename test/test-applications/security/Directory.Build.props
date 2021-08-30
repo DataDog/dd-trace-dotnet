@@ -12,8 +12,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="libsqreen" Version="1.1.2.3" GeneratePathProperty="true" />
-    <SecurityLibraryFiles Include="$(Pkglibsqreen)\runtimes\**\*.*" />
+    <PackageReference Include="libddwaf" Version="1.0.6" GeneratePathProperty="true" />
+    <SecurityLibraryFiles Include="$(Pkglibddwaf)\runtimes\**\*.*" />
   </ItemGroup>
 
   <Target Name="AfterBuildCopyManagedProfiler" AfterTargets="AfterBuild">

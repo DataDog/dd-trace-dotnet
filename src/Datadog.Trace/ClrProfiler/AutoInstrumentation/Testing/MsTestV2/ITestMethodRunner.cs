@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
         /// <summary>
         /// Gets the TestMethodInfo instance
         /// </summary>
-        [Duck(Name = "testMethodInfo", Kind = DuckKind.Field)]
+        [DuckField(Name = "testMethodInfo")]
         ITestMethod TestMethodInfo { get; }
     }
 }

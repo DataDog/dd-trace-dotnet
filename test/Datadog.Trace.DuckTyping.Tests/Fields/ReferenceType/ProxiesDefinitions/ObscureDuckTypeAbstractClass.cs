@@ -7,58 +7,58 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ReferenceType.ProxiesDefinitions
 {
     public abstract class ObscureDuckTypeAbstractClass
     {
-        [Duck(Name = "_publicStaticReadonlyReferenceTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_publicStaticReadonlyReferenceTypeField")]
         public abstract string PublicStaticReadonlyReferenceTypeField { get; }
 
-        [Duck(Name = "_internalStaticReadonlyReferenceTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_internalStaticReadonlyReferenceTypeField")]
         public abstract string InternalStaticReadonlyReferenceTypeField { get; }
 
-        [Duck(Name = "_protectedStaticReadonlyReferenceTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_protectedStaticReadonlyReferenceTypeField")]
         public abstract string ProtectedStaticReadonlyReferenceTypeField { get; }
 
-        [Duck(Name = "_privateStaticReadonlyReferenceTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_privateStaticReadonlyReferenceTypeField")]
         public abstract string PrivateStaticReadonlyReferenceTypeField { get; }
 
         // *
 
-        [Duck(Name = "_publicStaticReferenceTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_publicStaticReferenceTypeField")]
         public abstract string PublicStaticReferenceTypeField { get; set; }
 
-        [Duck(Name = "_internalStaticReferenceTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_internalStaticReferenceTypeField")]
         public abstract string InternalStaticReferenceTypeField { get; set; }
 
-        [Duck(Name = "_protectedStaticReferenceTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_protectedStaticReferenceTypeField")]
         public abstract string ProtectedStaticReferenceTypeField { get; set; }
 
-        [Duck(Name = "_privateStaticReferenceTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_privateStaticReferenceTypeField")]
         public abstract string PrivateStaticReferenceTypeField { get; set; }
 
         // *
 
-        [Duck(Name = "_publicReadonlyReferenceTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_publicReadonlyReferenceTypeField")]
         public abstract string PublicReadonlyReferenceTypeField { get; }
 
-        [Duck(Name = "_internalReadonlyReferenceTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_internalReadonlyReferenceTypeField")]
         public abstract string InternalReadonlyReferenceTypeField { get; }
 
-        [Duck(Name = "_protectedReadonlyReferenceTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_protectedReadonlyReferenceTypeField")]
         public abstract string ProtectedReadonlyReferenceTypeField { get; }
 
-        [Duck(Name = "_privateReadonlyReferenceTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_privateReadonlyReferenceTypeField")]
         public abstract string PrivateReadonlyReferenceTypeField { get; }
 
         // *
 
-        [Duck(Name = "_publicReferenceTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_publicReferenceTypeField")]
         public abstract string PublicReferenceTypeField { get; set; }
 
-        [Duck(Name = "_internalReferenceTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_internalReferenceTypeField")]
         public abstract string InternalReferenceTypeField { get; set; }
 
-        [Duck(Name = "_protectedReferenceTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_protectedReferenceTypeField")]
         public abstract string ProtectedReferenceTypeField { get; set; }
 
-        [Duck(Name = "_privateReferenceTypeField", Kind = DuckKind.Field)]
+        [DuckField(Name = "_privateReferenceTypeField")]
         public abstract string PrivateReferenceTypeField { get; set; }
     }
 }

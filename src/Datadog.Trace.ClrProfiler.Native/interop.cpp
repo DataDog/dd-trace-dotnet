@@ -15,7 +15,7 @@
 
 EXTERN_C BOOL STDAPICALLTYPE IsProfilerAttached()
 {
-    return trace::profiler->IsAttached();
+    return trace::profiler != nullptr && trace::profiler->IsAttached();
 }
 
 EXTERN_C VOID STDAPICALLTYPE GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assemblySize, BYTE** pSymbolsArray,
