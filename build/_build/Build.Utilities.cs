@@ -36,6 +36,9 @@ partial class Build
     [LazyLocalExecutable(@"C:\Program Files\IIS Express\iisexpress.exe")]
     readonly Lazy<Tool> IisExpress;
 
+    [Parameter("Whether the examples should use https or http")]
+    readonly bool UseHttps = true;
+
     AbsolutePath IisExpressApplicationConfig =>
         RootDirectory / ".vs" / Solution.Name / "config" / "applicationhost.config";
 
@@ -130,7 +133,7 @@ partial class Build
                 {"CORECLR_PROFILER", "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"},
                 {"DD_INTEGRATIONS", TracerHomeDirectory / "integrations.json" },
                 {"DD_DOTNET_TRACER_HOME", TracerHomeDirectory },
-                {"ASPNETCORE_URLS", "https://*:5003" },
+                {"ASPNETCORE_URLS", UseHttps ? "https://*:5003" : "http://*:5003" },
             };
 
             if (IsWin)

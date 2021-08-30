@@ -583,6 +583,7 @@ partial class Build
             DotNetMSBuild(x => x
                 .SetTargetPath(MsBuildProject)
                 .SetConfiguration(BuildConfiguration)
+                .When(Framework != null, o => o.SetProperty("TargetFramework", Framework.ToString()))
                 .SetTargetPlatformAnyCPU()
                 .DisableRestore()
                 .SetProperty("BuildProjectReferences", false)
@@ -610,6 +611,8 @@ partial class Build
                     .SetDDEnvironmentVariables("dd-tracer-dotnet")
                     .EnableMemoryDumps()
                     .When(CodeCoverage, ConfigureCodeCoverage)
+                    .When(Framework != null, o => o.SetFramework(Framework))
+                    .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
                     .CombineWith(testProjects, (x, project) => x
                         .EnableTrxLogOutput(GetResultsDirectory(project))
                         .SetProjectFile(project)));
@@ -1193,7 +1196,7 @@ partial class Build
         return archExt;
     }
 
-    // the integration tests need their own copy of the profiler, this achived through build.props on Windows, but doesn't seem to work under Linux 
+    // the integration tests need their own copy of the profiler, this achived through build.props on Windows, but doesn't seem to work under Linux
     private void IntegrationTestLinuxProfilerDirFudge(string project)
     {
             // Not sure if/why this is necessary, and we can't just point to the correct output location
