@@ -36,7 +36,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         /// <param name="cancellationToken">Second argument</param>
         /// <returns>Calltarget state value</returns>
         public static CallTargetState OnMethodBegin<TTarget, TFunction>(TTarget instance, TFunction functionInstance, CancellationToken cancellationToken)
-            where TTarget : IFunctionInvoker
             where TFunction : IFunctionInstance
         {
             return AzureFunctionsCommon.OnMethodBegin(instance, functionInstance);
