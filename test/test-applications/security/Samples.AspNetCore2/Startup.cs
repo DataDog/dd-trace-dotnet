@@ -43,6 +43,15 @@ namespace Samples.AspNetCore2
                 app.UseDeveloperExceptionPage();
             }
 
+            app.Map("/shutdown", builder =>
+            {
+                builder.Run(async context =>
+                {
+                    await context.Response.WriteAsync("Shutting down");
+                    _ = Task.Run(() => builder.ApplicationServices.GetService<IApplicationLifetime>().StopApplication());
+                });
+            });
+
             app.UseMvc(routes =>
             {
                 routes.MapRoute(
