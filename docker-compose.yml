@@ -314,7 +314,6 @@ services:
       - RABBITMQ_HOST=rabbitmq
       - AWS_SQS_HOST=aws_sqs:9324
     depends_on:
-      - aerospike
       - servicestackredis
       - stackexchangeredis
       - elasticsearch7_arm64
@@ -328,7 +327,6 @@ services:
   StartDependencies.ARM64:
     image: andrewlock/wait-for-dependencies
     depends_on:
-      - aerospike
       - servicestackredis
       - stackexchangeredis
       - elasticsearch7_arm64
@@ -340,4 +338,4 @@ services:
       - aws_sqs
     environment:
       - TIMEOUT_LENGTH=120
-    command: aerospike:3000 servicestackredis:6379 stackexchangeredis:6379 elasticsearch7_arm64:9200 sqledge:1433 mongo:27017 postgres:5432 mysql:3306 rabbitmq:5672 aws_sqs:9324
+    command: servicestackredis:6379 stackexchangeredis:6379 elasticsearch7_arm64:9200 sqledge:1433 mongo:27017 postgres:5432 mysql:3306 rabbitmq:5672 aws_sqs:9324

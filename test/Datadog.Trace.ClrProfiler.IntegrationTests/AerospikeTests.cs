@@ -23,6 +23,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Theory]
         [MemberData(nameof(PackageVersions.Aerospike), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
+        [Trait("Category", "ArmUnsupported")]
         public void SubmitTraces(string packageVersion)
         {
             int agentPort = TcpPortProvider.GetOpenPort();
