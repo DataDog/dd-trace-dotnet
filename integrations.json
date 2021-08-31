@@ -145,6 +145,55 @@
     ]
   },
   {
+    "name": "Aerospike",
+    "method_replacements": [
+      {
+        "caller": {},
+        "target": {
+          "assembly": "AerospikeClient",
+          "type": "Aerospike.Client.AsyncCommand",
+          "method": "ExecuteCommand",
+          "signature_types": [
+            "System.Void"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace, Version=1.28.5.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.AsyncCommandIntegration",
+          "action": "CallTargetModification"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "AerospikeClient",
+          "type": "Aerospike.Client.SyncCommand",
+          "method": "ExecuteCommand",
+          "signature_types": [
+            "System.Void"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace, Version=1.28.5.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.SyncCommandIntegration",
+          "action": "CallTargetModification"
+        }
+      }
+    ]
+  },
+  {
     "name": "AspNet",
     "method_replacements": [
       {

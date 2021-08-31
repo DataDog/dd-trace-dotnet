@@ -66,5 +66,10 @@ namespace Datadog.Trace
         /// The span type for msbuild integration.
         /// </summary>
         public const string Build = "build";
+
+        /// <summary>
+        /// The span type for an Aerospike integration.
+        /// </summary>
+        public const string Aerospike = "aerospike";
     }
 }

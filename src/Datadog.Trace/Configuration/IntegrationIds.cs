@@ -35,5 +35,6 @@ namespace Datadog.Trace.Configuration
         AwsSdk,
         AwsSqs,
         ILogger,
+        Aerospike,
     }
 }
