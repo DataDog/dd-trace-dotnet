@@ -5,6 +5,7 @@
 
 using System;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Vendors.Serilog;
 
@@ -36,9 +37,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
                 scope = tracer.StartActiveWithTags(OperationName, tags: tags, serviceName: serviceName);
                 var span = scope.Span;
 
-                if (target.TryGetFieldValue<object>("key", out var key) && key != null)
+                if (target.TryDuckCast<HasKey>(out var key) && key.Key != null)
                 {
-                    tags.Key = key.ToString();
+                    tags.Key = key.Key.ToString();
                 }
 
                 span.Type = SpanTypes.Aerospike;
