@@ -1,5 +1,72 @@
 version: '3'
 services:
+  # ARM64 dependencies
+  aws_sqs_arm64:
+    image: softwaremill/elasticmq
+    ports:
+    - "9324"
+
+  elasticsearch7_arm64:
+    image: elasticsearch:7.10.1
+    ports:
+    - "9200"
+    - "9300"
+    environment:
+    - discovery.type=single-node
+
+  mongo_arm64:
+    image: mongo:4.0.9
+    ports:
+      - "27017"
+    command: mongod
+
+  mysql_arm64:
+    image: mysql/mysql-server:8.0
+    environment:
+    - MYSQL_DATABASE=world
+    - MYSQL_ROOT_PASSWORD=mysqldb
+    - MYSQL_USER=mysqldb
+    - MYSQL_PASSWORD=mysqldb
+    ports:
+    - "3306"
+
+  postgres_arm64:
+    image: postgres:10.5-alpine
+    environment:
+    - POSTGRES_PASSWORD=postgres
+    - POSTGRES_USER=postgres
+    - POSTGRES_DB=postgres
+    ports:
+    - "5432"
+
+  rabbitmq_arm64:
+    image: rabbitmq:3-management
+    command: rabbitmq-server
+    ports:
+      - "5672"
+      - "15672"
+
+  servicestackredis_arm64:
+    image: redis:4-alpine
+    command: redis-server --bind 0.0.0.0
+    ports:
+    - "6379"
+
+  sqledge_arm64:
+    image: mcr.microsoft.com/azure-sql-edge:latest
+    ports:
+    - "1433"
+    environment:
+    - ACCEPT_EULA=Y
+    - SA_PASSWORD=Strong!Passw0rd
+
+  stackexchangeredis_arm64:
+    image: redis:4-alpine
+    command: redis-server --bind 0.0.0.0
+    ports:
+    - "6379"
+
+# Dependencies
   aws_sqs:
     image: softwaremill/elasticmq
     ports:
@@ -46,14 +113,6 @@ services:
     environment:
     - discovery.type=single-node
 
-  elasticsearch7_arm64:
-    image: elasticsearch:7.10.1
-    ports:
-    - "127.0.0.1:9200:9200"
-    - "127.0.0.1:9300:9300"
-    environment:
-    - discovery.type=single-node
-
   postgres:
     image: postgres:10.5-alpine
     environment:
@@ -85,14 +144,6 @@ services:
 
   sqlserver:
     image: mcr.microsoft.com/mssql/server:latest
-    ports:
-    - "127.0.0.1:1433:1433"
-    environment:
-    - ACCEPT_EULA=Y
-    - SA_PASSWORD=Strong!Passw0rd
-
-  sqledge:
-    image: mcr.microsoft.com/azure-sql-edge:latest
     ports:
     - "127.0.0.1:1433:1433"
     environment:
@@ -295,40 +346,40 @@ services:
       - framework=${framework:-netcoreapp3.1}
       - baseImage=${baseImage:-debian}
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-0}
-      - MONGO_HOST=mongo
-      - SERVICESTACK_REDIS_HOST=servicestackredis:6379
-      - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
+      - MONGO_HOST=mongo_arm64
+      - SERVICESTACK_REDIS_HOST=servicestackredis_arm64:6379
+      - STACKEXCHANGE_REDIS_HOST=stackexchangeredis_arm64:6379
       - ELASTICSEARCH6_HOST=elasticsearch7_arm64:9200
       - ELASTICSEARCH5_HOST=elasticsearch7_arm64:9200
-      - SQLSERVER_CONNECTION_STRING=Server=sqledge;User=sa;Password=Strong!Passw0rd
-      - POSTGRES_HOST=postgres
-      - MYSQL_HOST=mysql
+      - SQLSERVER_CONNECTION_STRING=Server=sqledge_arm64;User=sa;Password=Strong!Passw0rd
+      - POSTGRES_HOST=postgres_arm64
+      - MYSQL_HOST=mysql_arm64
       - MYSQL_PORT=3306
-      - RABBITMQ_HOST=rabbitmq
-      - AWS_SQS_HOST=aws_sqs:9324
+      - RABBITMQ_HOST=rabbitmq_arm64
+      - AWS_SQS_HOST=aws_sqs_arm64:9324
     depends_on:
-      - servicestackredis
-      - stackexchangeredis
+      - servicestackredis_arm64
+      - stackexchangeredis_arm64
       - elasticsearch7_arm64
-      - sqledge
-      - mongo
-      - postgres
-      - mysql
-      - rabbitmq
-      - aws_sqs
+      - sqledge_arm64
+      - mongo_arm64
+      - postgres_arm64
+      - mysql_arm64
+      - rabbitmq_arm64
+      - aws_sqs_arm64
 
   StartDependencies.ARM64:
     image: andrewlock/wait-for-dependencies
     depends_on:
-      - servicestackredis
-      - stackexchangeredis
+      - servicestackredis_arm64
+      - stackexchangeredis_arm64
       - elasticsearch7_arm64
-      - sqledge
-      - mongo
-      - postgres
-      - mysql
-      - rabbitmq
-      - aws_sqs
+      - sqledge_arm64
+      - mongo_arm64
+      - postgres_arm64
+      - mysql_arm64
+      - rabbitmq_arm64
+      - aws_sqs_arm64
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis:6379 stackexchangeredis:6379 elasticsearch7_arm64:9200 sqledge:1433 mongo:27017 postgres:5432 mysql:3306 rabbitmq:5672 aws_sqs:9324
+    command: servicestackredis_arm64:6379 stackexchangeredis_arm64:6379 elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 aws_sqs_arm64:9324
