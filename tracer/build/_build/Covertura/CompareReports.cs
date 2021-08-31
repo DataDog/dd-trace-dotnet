@@ -149,7 +149,7 @@ namespace Covertura
 
         public static string RenderAsMarkdown(CoverturaReportComparison comparison, int prNumber, string oldReportLink, string newReportlink, string oldCommit, string newCommit)
         {
-            var oldBranchMarkdown = $"[master](https://github.com/DataDog/dd-trace-dotnet/tree/master/{oldCommit})";
+            var oldBranchMarkdown = $"[master](https://github.com/DataDog/dd-trace-dotnet/tree/{oldCommit})";
             var newBranchMarkdown = $"#{prNumber}";
             var prFiles = $"https://github.com/DataDog/dd-trace-dotnet/pull/{prNumber}/files";
             var tree = $"https://github.com/DataDog/dd-trace-dotnet/tree/{newCommit}";
@@ -231,7 +231,7 @@ The following classes were added in {newBranchMarkdown}:
                       foreach (var newClass in package.NewClasses.Take(maxFileDisplay))
                       {
                           sb.Append($@"
-| [{newClass.Name}]({prFiles}) | `{newClass.LineRate:F2}%` | `{newClass.BranchRate:F2}%` | `{newClass.Complexity}` |");
+| [{FixClassName(newClass.Name)}]({prFiles}) | `{newClass.LineRate:F2}%` | `{newClass.BranchRate:F2}%` | `{newClass.Complexity}` |");
                       }
 
                       var extras = package.NewClasses.Count - maxFileDisplay;
@@ -328,6 +328,8 @@ View the full reports for further details:
                   > 0 => $"will **increase** complexity by `{value}`",
                   _ => $"**not change** complexity",
               };
+
+              static string FixClassName(string className) => className.Replace("`", "\\`");
 
               string FixFilename(string filename)
               {

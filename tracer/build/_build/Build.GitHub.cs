@@ -504,7 +504,7 @@ partial class Build
 
         BuildArtifact artifact = null;
         Microsoft.TeamFoundation.Build.WebApi.Build artifactBuild = null;
-        foreach (var build in completedBuilds.OrderByDescending(x => x.FinishTime).ThenByDescending(x=>x.StartTime))
+        foreach (var build in completedBuilds.OrderByDescending(x => x.Id).ThenByDescending(x=>x.FinishTime))
         {
             var artifactName = getArtifactName(build);
             try
