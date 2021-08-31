@@ -210,7 +210,7 @@ namespace
         USHORT max_minor = USHRT_MAX;
         USHORT max_patch = USHRT_MAX;
         std::vector<WSTRING> signature_type_array;
-        WSTRING action = WStr("");
+        WSTRING action = EmptyWStr;
 
         if (is_target_method)
         {

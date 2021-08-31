@@ -246,7 +246,7 @@ struct AssemblyInfo
     const AppDomainID app_domain_id;
     const WSTRING app_domain_name;
 
-    AssemblyInfo() : id(0), name(WStr("")), manifest_module_id(0), app_domain_id(0), app_domain_name(WStr(""))
+    AssemblyInfo() : id(0), name(EmptyWStr), manifest_module_id(0), app_domain_id(0), app_domain_name(EmptyWStr)
     {
     }
 
@@ -273,7 +273,7 @@ struct AssemblyMetadata
     const mdAssembly assembly_token;
     const Version version;
 
-    AssemblyMetadata() : module_id(0), name(WStr("")), assembly_token(mdTokenNil)
+    AssemblyMetadata() : module_id(0), name(EmptyWStr), assembly_token(mdTokenNil)
     {
     }
 
@@ -301,7 +301,7 @@ struct AssemblyProperty
     WSTRING szName;
     DWORD assemblyFlags = 0;
 
-    AssemblyProperty() : ppbPublicKey(nullptr), pcbPublicKey(0), pulHashAlgId(0), szName(WStr(""))
+    AssemblyProperty() : ppbPublicKey(nullptr), pcbPublicKey(0), pulHashAlgId(0), szName(EmptyWStr)
     {
     }
 };
@@ -313,7 +313,7 @@ struct ModuleInfo
     const AssemblyInfo assembly;
     const DWORD flags;
 
-    ModuleInfo() : id(0), path(WStr("")), assembly({}), flags(0)
+    ModuleInfo() : id(0), path(EmptyWStr), assembly({}), flags(0)
     {
     }
     ModuleInfo(ModuleID id, WSTRING path, AssemblyInfo assembly, DWORD flags) :
@@ -350,7 +350,7 @@ struct TypeInfo
 
     TypeInfo() :
         id(0),
-        name(WStr("")),
+        name(EmptyWStr),
         type_spec(0),
         token_type(0),
         extend_from(nullptr),
@@ -461,7 +461,7 @@ struct FunctionInfo
     const mdToken method_def_id;
     FunctionMethodSignature method_signature;
 
-    FunctionInfo() : id(0), name(WStr("")), type({}), is_generic(false), method_def_id(0), method_signature({})
+    FunctionInfo() : id(0), name(EmptyWStr), type({}), is_generic(false), method_def_id(0), method_signature({})
     {
     }
 

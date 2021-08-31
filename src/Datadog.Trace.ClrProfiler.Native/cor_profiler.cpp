@@ -427,7 +427,7 @@ void CorProfiler::RewritingPInvokeMaps(ComPtr<IUnknown> metadata_interfaces, Mod
     HRESULT hr;
     const auto metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
     const auto metadata_emit = metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
-    
+
     // We are in the right module, so we try to load the mdTypeDef from the target type name.
     mdTypeDef nativeMethodsTypeDef = mdTypeDefNil;
     auto foundType = FindTypeDefByName(nativemethods_type_name,
@@ -1169,7 +1169,7 @@ WSTRING CorProfiler::GetCoreCLRProfilerPath()
 #ifdef BIT64
     native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_64"));
     Logger::Debug("GetProfilerFilePath: CORECLR_PROFILER_PATH_64 defined as: ", native_profiler_file);
-    if (native_profiler_file == WStr(""))
+    if (native_profiler_file == EmptyWStr)
     {
         native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH"));
         Logger::Debug("GetProfilerFilePath: CORECLR_PROFILER_PATH defined as: ", native_profiler_file);
@@ -1177,7 +1177,7 @@ WSTRING CorProfiler::GetCoreCLRProfilerPath()
 #else // BIT64
     native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_32"));
     Logger::Debug("GetProfilerFilePath: CORECLR_PROFILER_PATH_32 defined as: ", native_profiler_file);
-    if (native_profiler_file == WStr(""))
+    if (native_profiler_file == EmptyWStr)
     {
         native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH"));
         Logger::Debug("GetProfilerFilePath: CORECLR_PROFILER_PATH defined as: ", native_profiler_file);

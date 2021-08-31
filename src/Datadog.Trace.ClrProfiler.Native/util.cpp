@@ -39,7 +39,7 @@ WSTRING Trim(const WSTRING& str)
 {
     if (str.length() == 0)
     {
-        return WStr("");
+        return EmptyWStr;
     }
 
     WSTRING trimmed = str;
@@ -70,7 +70,7 @@ WSTRING GetEnvironmentValue(const WSTRING& name)
     auto cstr = std::getenv(ToString(name).c_str());
     if (cstr == nullptr)
     {
-        return WStr("");
+        return EmptyWStr;
     }
     std::string str(cstr);
     auto wstr = ToWSTRING(str);

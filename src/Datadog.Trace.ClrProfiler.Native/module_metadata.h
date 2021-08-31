@@ -27,16 +27,16 @@ public:
     const ComPtr<IMetaDataEmit2> metadata_emit{};
     const ComPtr<IMetaDataAssemblyImport> assembly_import{};
     const ComPtr<IMetaDataAssemblyEmit> assembly_emit{};
-    WSTRING assemblyName = WStr("");
-    AppDomainID app_domain_id;
-    GUID module_version_id;
-    std::vector<IntegrationMethod> integrations = {};
-    AssemblyProperty* corAssemblyProperty{};
+    const WSTRING assemblyName = EmptyWStr;
+    const AppDomainID app_domain_id;
+    const GUID module_version_id;
+    const std::vector<IntegrationMethod> integrations = {};
+    const AssemblyProperty* corAssemblyProperty = nullptr;
 
     ModuleMetadata(ComPtr<IMetaDataImport2> metadata_import, ComPtr<IMetaDataEmit2> metadata_emit,
                    ComPtr<IMetaDataAssemblyImport> assembly_import, ComPtr<IMetaDataAssemblyEmit> assembly_emit,
-                   WSTRING assembly_name, AppDomainID app_domain_id, GUID module_version_id,
-                   std::vector<IntegrationMethod> integrations, AssemblyProperty* corAssemblyProperty) :
+                   const WSTRING& assembly_name, const AppDomainID app_domain_id, const GUID module_version_id,
+                   const std::vector<IntegrationMethod>& integrations, AssemblyProperty* corAssemblyProperty) :
         metadata_import(metadata_import),
         metadata_emit(metadata_emit),
         assembly_import(assembly_import),
