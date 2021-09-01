@@ -97,6 +97,14 @@ namespace environment
     // The DOTNET_CLI_TELEMETRY_PROFILE in the context of azure app services
     const WSTRING azure_app_services_cli_telemetry_profile_value = WStr("DOTNET_CLI_TELEMETRY_PROFILE");
 
+    // The FUNCTIONS_WORKER_RUNTIME in the context of azure app services
+    // Used as a flag to determine that we are running within a functions app.
+    const WSTRING azure_app_services_functions_worker_runtime = WStr("FUNCTIONS_WORKER_RUNTIME");
+
+    // Determine whether to instrument within azure functions.
+    // Default is false until official support is announced.
+    const WSTRING azure_functions_enabled = WStr("DD_AZURE_FUNCTIONS_ENABLED");
+
     // Determine whether to instrument calls into netstandard.dll.
     // Default to false for now to avoid the unexpected overhead of additional spans.
     const WSTRING netstandard_enabled = WStr("DD_TRACE_NETSTANDARD_ENABLED");

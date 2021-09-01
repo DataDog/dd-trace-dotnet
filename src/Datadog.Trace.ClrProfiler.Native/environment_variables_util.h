@@ -92,6 +92,11 @@ bool IsAzureAppServices()
     CheckIfTrue(GetEnvironmentValue(environment::azure_app_services));
 }
 
+bool IsAzureFunctionsEnabled()
+{
+    CheckIfTrue(GetEnvironmentValue(environment::azure_functions_enabled));
+}
+
 bool IsNetstandardEnabled()
 {
     CheckIfTrue(GetEnvironmentValue(environment::netstandard_enabled));
