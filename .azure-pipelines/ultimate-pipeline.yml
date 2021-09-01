@@ -583,6 +583,16 @@ stages:
         dockerComposeCommand: down
       condition: succeededOrFailed()
 
+    - script: |
+        if [ -d "build_data/dumps" ]
+        then
+          ls -l build_data/dumps
+          find build_data/dumps -type f -exec chmod 644 {} \;
+        fi
+      continueOnError: true
+      condition: succeededOrFailed()
+      displayName: Fix dump permissions
+
     - publish: build_data
       artifact: profiler-logs_integration_tests_linux_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
       condition: succeededOrFailed()
@@ -659,6 +669,16 @@ stages:
             dockerComposeCommand: down
             projectName: ddtrace_$(Build.BuildNumber)
           condition: succeededOrFailed()
+
+        - script: |
+            if [ -d "build_data/dumps" ]
+            then
+              ls -l build_data/dumps
+              find build_data/dumps -type f -exec chmod 644 {} \;
+            fi
+          continueOnError: true
+          condition: succeededOrFailed()
+          displayName: Fix dump permissions
 
         - publish: build_data
           artifact: profiler-logs_integration_tests_linux_arm64_$(publishTargetFramework)_$(System.JobAttempt)
