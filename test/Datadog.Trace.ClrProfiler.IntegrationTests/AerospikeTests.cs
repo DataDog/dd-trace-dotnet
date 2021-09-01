@@ -6,6 +6,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -59,18 +60,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                  .OrderBy(s => s.Start)
                                  .ToList();
 
-                foreach (var span in spans)
-                {
-                    Assert.Equal("aerospike.command", span.Name);
-                    Assert.Equal("Samples.Aerospike-aerospike", span.Service);
-                    Assert.Equal("aerospike", span.Type);
-                    Assert.Equal(SpanKinds.Client, span.Tags[Tags.SpanKind]);
-                    Assert.Equal("test:myset:mykey:56cfdb28a0a21ba119f76e0ea4e528a1f406dd94", span.Tags[Tags.AerospikeKey]);
+                spans.Should()
+                     .OnlyContain(span => span.Name == "aerospike.command")
+                     .And.OnlyContain(span => span.Service == "Samples.Aerospike-aerospike")
+                     .And.OnlyContain(span => span.Tags[Tags.SpanKind] == SpanKinds.Client)
+                     .And.OnlyContain(span => span.Tags[Tags.AerospikeKey] == "test:myset:mykey:56cfdb28a0a21ba119f76e0ea4e528a1f406dd94");
 
-                    Assert.True(expectedSpans.Remove(span.Resource), $"Unexpected span resource: {span.Resource}");
-                }
-
-                Assert.Empty(expectedSpans);
+                spans.Select(span => span.Resource).Should().ContainInOrder(expectedSpans);
             }
         }
     }

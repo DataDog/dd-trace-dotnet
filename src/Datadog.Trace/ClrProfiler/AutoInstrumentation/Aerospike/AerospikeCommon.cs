@@ -20,10 +20,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AerospikeCommon));
 
-        public static Scope CreateScope<TTarget>(Tracer tracer, out AerospikeTags tags, TTarget target)
+        public static Scope CreateScope<TTarget>(Tracer tracer, TTarget target)
         {
-            tags = null;
-
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
@@ -34,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
 
             try
             {
-                tags = new AerospikeTags();
+                var tags = new AerospikeTags();
                 var serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
                 scope = tracer.StartActiveWithTags(OperationName, tags: tags, serviceName: serviceName);
                 var span = scope.Span;
