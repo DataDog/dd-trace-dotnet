@@ -39,8 +39,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             try
             {
                 var functionsPort = TcpPortProvider.GetOpenPort();
+                Output.WriteLine($"[{DateTime.UtcNow:HH:mm:ss.FFF}] Functions port selected: {functionsPort}");
                 process = RunFunctionsHost(functionsPort, agent.Port);
 
+                Output.WriteLine($"Functions port selected: {functionsPort}");
                 var spans = agent.WaitForSpans(expectedMinimumSpanCount);
 
                 Output.WriteLine($"Span count: {spans.Count}");
