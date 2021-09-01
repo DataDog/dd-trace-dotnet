@@ -88,7 +88,7 @@ private:
     // CallTarget Methods
     //
     size_t CallTarget_RequestRejitForModule(ModuleID module_id, ModuleMetadata* module_metadata,
-                                            const std::vector<IntegrationMethod>& filtered_integrations);
+                                            const std::vector<IntegrationMethod>& integrations);
     HRESULT CallTarget_RewriterCallback(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler);
 
 public:

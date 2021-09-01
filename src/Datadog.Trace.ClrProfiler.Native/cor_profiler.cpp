@@ -541,6 +541,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
     {
         return S_OK;
     }
+
     if (module_info.IsNGEN() && rejit_handler != nullptr)
     {
         // We check if the Module contains NGEN images and added to the
@@ -551,7 +552,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
     if (Logger::IsDebugEnabled())
     {
         Logger::Debug("ModuleLoadFinished: ", module_id, " ", module_info.assembly.name, " AppDomain ",
-                      module_info.assembly.app_domain_id, " ", module_info.assembly.app_domain_name, " | IsNGEN = ", (module_info.IsNGEN() ? "true" : "false"));
+                      module_info.assembly.app_domain_id, " ", module_info.assembly.app_domain_name,
+                      " | IsNGEN = ", (module_info.IsNGEN() ? "true" : "false"),
+                      " | IsDynamic = ", (module_info.IsDynamic() ? "true" : "false"),
+                      " | IsResource = ", (module_info.IsResource() ? "true" : "false"));
     }
 
     AppDomainID app_domain_id = module_info.assembly.app_domain_id;
@@ -611,13 +615,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         return S_OK;
     }
 
-    for (auto&& skip_assembly_pattern : skip_assembly_prefixes)
+    if (module_info.IsResource())
     {
-        if (module_info.assembly.name.rfind(skip_assembly_pattern, 0) == 0)
-        {
-            Logger::Debug("ModuleLoadFinished skipping module by pattern: ", module_id, " ", module_info.assembly.name);
-            return S_OK;
-        }
+        // We don't need to load metadata on resources modules.
+        Logger::Debug("ModuleLoadFinished skipping Resources module: ", module_id, " ", module_info.assembly.name);
+        return S_OK;
     }
 
     for (auto&& skip_assembly : skip_assemblies)
@@ -629,80 +631,139 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         }
     }
 
-    std::vector<IntegrationMethod> filtered_integrations = IsCallTargetEnabled(is_net46_or_greater) ?
-      integration_methods_ : FilterIntegrationsByCaller(integration_methods_, module_info.assembly);
-
-    if (filtered_integrations.empty())
+    for (auto&& skip_assembly_pattern : skip_assembly_prefixes)
     {
-        // we don't need to instrument anything in this module, skip it
-        Logger::Debug("ModuleLoadFinished skipping module (filtered by caller): ", module_id, " ", module_info.assembly.name);
-        return S_OK;
-    }
-
-    ComPtr<IUnknown> metadata_interfaces;
-    auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2,
-                                             metadata_interfaces.GetAddressOf());
-
-    if (FAILED(hr))
-    {
-        Logger::Warn("ModuleLoadFinished failed to get metadata interface for ", module_id, " ", module_info.assembly.name);
-        return S_OK;
-    }
-
-    const auto metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
-    const auto metadata_emit = metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
-    const auto assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
-    const auto assembly_emit = metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
-
-    // don't skip Microsoft.AspNetCore.Hosting so we can run the startup hook and
-    // subscribe to DiagnosticSource events.
-    // don't skip Dapper: it makes ADO.NET calls even though it doesn't reference
-    // System.Data or System.Data.Common
-    if (module_info.assembly.name != WStr("Microsoft.AspNetCore.Hosting") &&
-        module_info.assembly.name != WStr("Dapper") && !IsCallTargetEnabled(is_net46_or_greater))
-    {
-        filtered_integrations = FilterIntegrationsByTarget(filtered_integrations, assembly_import);
-
-        if (filtered_integrations.empty())
+        if (module_info.assembly.name.rfind(skip_assembly_pattern, 0) == 0)
         {
-            // we don't need to instrument anything in this module, skip it
-            Logger::Debug("ModuleLoadFinished skipping module (filtered by target): ", module_id, " ",
-                          module_info.assembly.name);
+            Logger::Debug("ModuleLoadFinished skipping module by pattern: ", module_id, " ", module_info.assembly.name);
             return S_OK;
         }
     }
 
-    mdModule module;
-    hr = metadata_import->GetModuleFromScope(&module);
-    if (FAILED(hr))
+
+    if (IsCallTargetEnabled(is_net46_or_greater))
     {
-        Logger::Warn("ModuleLoadFinished failed to get module metadata token for ", module_id, " ", module_info.assembly.name);
-        return S_OK;
-    }
+        if (module_info.IsDynamic())
+        {
+            // For CallTarget we don't need to load metadata on dynamic modules.
+            Logger::Debug("ModuleLoadFinished skipping Dynamic module: ", module_id, " ", module_info.assembly.name);
+            return S_OK;
+        }
 
-    GUID module_version_id;
-    hr = metadata_import->GetScopeProps(nullptr, 0, nullptr, &module_version_id);
-    if (FAILED(hr))
+        if (integration_methods_.empty())
+        {
+            Logger::Debug("ModuleLoadFinished skipping module (no integrations): ", module_id, " ", module_info.assembly.name);
+            return S_OK;
+        }
+
+        ComPtr<IUnknown> metadata_interfaces;
+        auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2, metadata_interfaces.GetAddressOf());
+
+        if (FAILED(hr))
+        {
+            Logger::Warn("ModuleLoadFinished failed to get metadata interface for ", module_id, " ", module_info.assembly.name);
+            return S_OK;
+        }
+
+        const auto metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+        const auto metadata_emit = metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
+        const auto assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
+        const auto assembly_emit = metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
+
+        mdModule module;
+        hr = metadata_import->GetModuleFromScope(&module);
+        if (FAILED(hr))
+        {
+            Logger::Warn("ModuleLoadFinished failed to get module metadata token for ", module_id, " ", module_info.assembly.name);
+            return S_OK;
+        }
+
+        GUID module_version_id;
+        hr = metadata_import->GetScopeProps(nullptr, 0, nullptr, &module_version_id);
+        if (FAILED(hr))
+        {
+            Logger::Warn("ModuleLoadFinished failed to get module_version_id for ", module_id, " ", module_info.assembly.name);
+            return S_OK;
+        }
+
+        auto module_metadata = new ModuleMetadata(metadata_import, metadata_emit, assembly_import, assembly_emit,
+                                                  module_info.assembly.name, app_domain_id, module_version_id,
+                                                  &integration_methods_, &corAssemblyProperty);
+
+        // store module info for later lookup
+        module_id_to_info_map_[module_id] = module_metadata;
+
+        // We call the function to analyze the module and request the ReJIT of integrations defined in this module.
+        CallTarget_RequestRejitForModule(module_id, module_metadata, integration_methods_);
+    }
+    else
     {
-        Logger::Warn("ModuleLoadFinished failed to get module_version_id for ", module_id, " ", module_info.assembly.name);
-        return S_OK;
+        std::vector<IntegrationMethod> filtered_integrations =
+            FilterIntegrationsByCaller(integration_methods_, module_info.assembly);
+
+        if (filtered_integrations.empty())
+        {
+            // we don't need to instrument anything in this module, skip it
+            Logger::Debug("ModuleLoadFinished skipping module (filtered by caller): ", module_id, " ", module_info.assembly.name);
+            return S_OK;
+        }
+
+        ComPtr<IUnknown> metadata_interfaces;
+        auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2, metadata_interfaces.GetAddressOf());
+
+        if (FAILED(hr))
+        {
+            Logger::Warn("ModuleLoadFinished failed to get metadata interface for ", module_id, " ", module_info.assembly.name);
+            return S_OK;
+        }
+
+        const auto metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+        const auto metadata_emit = metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
+        const auto assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
+        const auto assembly_emit = metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
+
+        // don't skip Microsoft.AspNetCore.Hosting so we can run the startup hook and
+        // subscribe to DiagnosticSource events.
+        // don't skip Dapper: it makes ADO.NET calls even though it doesn't reference
+        // System.Data or System.Data.Common
+        if (module_info.assembly.name != WStr("Microsoft.AspNetCore.Hosting") && module_info.assembly.name != WStr("Dapper"))
+        {
+            filtered_integrations = FilterIntegrationsByTarget(filtered_integrations, assembly_import);
+
+            if (filtered_integrations.empty())
+            {
+                // we don't need to instrument anything in this module, skip it
+                Logger::Debug("ModuleLoadFinished skipping module (filtered by target): ", module_id, " ", module_info.assembly.name);
+                return S_OK;
+            }
+        }
+
+        mdModule module;
+        hr = metadata_import->GetModuleFromScope(&module);
+        if (FAILED(hr))
+        {
+            Logger::Warn("ModuleLoadFinished failed to get module metadata token for ", module_id, " ", module_info.assembly.name);
+            return S_OK;
+        }
+
+        GUID module_version_id;
+        hr = metadata_import->GetScopeProps(nullptr, 0, nullptr, &module_version_id);
+        if (FAILED(hr))
+        {
+            Logger::Warn("ModuleLoadFinished failed to get module_version_id for ", module_id, " ", module_info.assembly.name);
+            return S_OK;
+        }
+
+        auto module_metadata = new ModuleMetadata(metadata_import, metadata_emit, assembly_import, assembly_emit,
+                                                  module_info.assembly.name, app_domain_id, module_version_id,
+                                                  filtered_integrations, &corAssemblyProperty);
+
+        // store module info for later lookup
+        module_id_to_info_map_[module_id] = module_metadata;
     }
-
-    ModuleMetadata* module_metadata =
-        new ModuleMetadata(metadata_import, metadata_emit, assembly_import, assembly_emit, module_info.assembly.name,
-                           app_domain_id, module_version_id, filtered_integrations, &corAssemblyProperty);
-
-    // store module info for later lookup
-    module_id_to_info_map_[module_id] = module_metadata;
 
     Logger::Debug("ModuleLoadFinished stored metadata for ", module_id, " ", module_info.assembly.name, " AppDomain ",
                   module_info.assembly.app_domain_id, " ", module_info.assembly.app_domain_name);
-
-    // We call the function to analyze the module and request the ReJIT of integrations defined in this module.
-    if (IsCallTargetEnabled(is_net46_or_greater))
-    {
-        CallTarget_RequestRejitForModule(module_id, module_metadata, filtered_integrations);
-    }
 
 #ifndef _WIN32
     // Fix PInvokeMap (Non windows only)
@@ -3071,7 +3132,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
 /// <param name="filtered_integrations">Filtered vector of integrations to be applied</param>
 /// <returns>Number of ReJIT requests made</returns>
 size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleMetadata* module_metadata,
-                                                     const std::vector<IntegrationMethod>& filtered_integrations)
+                                                     const std::vector<IntegrationMethod>& integrations)
 {
     auto _ = trace::Stats::Instance()->CallTargetRequestRejitMeasure();
 
@@ -3081,7 +3142,7 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
     std::vector<ModuleID> vtModules;
     std::vector<mdMethodDef> vtMethodDefs;
 
-    for (const IntegrationMethod& integration : filtered_integrations)
+    for (const IntegrationMethod& integration : integrations)
     {
 
         // If the integration is not for the current assembly we skip.
@@ -3212,7 +3273,6 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
     if (!vtMethodDefs.empty())
     {
         this->rejit_handler->EnqueueForRejit(vtModules, vtMethodDefs);
-        this->rejit_handler->RequestRejitForNGenInliners();
     }
 
     // We return the number of ReJIT requests

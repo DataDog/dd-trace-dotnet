@@ -335,6 +335,16 @@ struct ModuleInfo
     {
         return ((flags & COR_PRF_MODULE_NGEN) != 0);
     }
+
+    bool IsDynamic() const
+    {
+        return ((flags & COR_PRF_MODULE_DYNAMIC) != 0);
+    }
+
+    bool IsResource() const
+    {
+        return ((flags & COR_PRF_MODULE_RESOURCE) != 0);
+    }
 };
 
 struct TypeInfo
