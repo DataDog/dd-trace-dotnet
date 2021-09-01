@@ -6,8 +6,8 @@
 using System;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
-using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
 {
@@ -17,6 +17,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
         private const string OperationName = "aerospike.command";
         public const string IntegrationName = nameof(IntegrationIds.Aerospike);
         internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
+
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AerospikeCommon));
 
         public static Scope CreateScope<TTarget>(Tracer tracer, out AerospikeTags tags, TTarget target)
         {
@@ -37,9 +39,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
                 scope = tracer.StartActiveWithTags(OperationName, tags: tags, serviceName: serviceName);
                 var span = scope.Span;
 
-                if (target.TryDuckCast<HasKey>(out var key) && key.Key != null)
+                if (target.TryDuckCast<HasKey>(out var hasKey))
                 {
-                    tags.Key = key.Key.ToString();
+                    tags.Key = hasKey.Key?.ToString();
+                }
+
+                if (target.TryDuckCast<HasStatement>(out var hasStatement))
+                {
+                    tags.Namespace = hasStatement.Statement.Ns;
+                    tags.SetName = hasStatement.Statement.SetName;
                 }
 
                 span.Type = SpanTypes.Aerospike;

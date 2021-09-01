@@ -12,13 +12,19 @@ namespace Datadog.Trace.Tagging
         protected static readonly IProperty<string>[] AerospikeTagsProperties =
             InstrumentationTagsProperties.Concat(
                 new ReadOnlyProperty<AerospikeTags, string>(Trace.Tags.InstrumentationName, t => t.InstrumentationName),
-                new Property<AerospikeTags, string>(Trace.Tags.AerospikeKey, t => t.Key, (t, v) => t.Key = v));
+                new Property<AerospikeTags, string>(Trace.Tags.AerospikeKey, t => t.Key, (t, v) => t.Key = v),
+                new Property<AerospikeTags, string>(Trace.Tags.AerospikeNamespace, t => t.Namespace, (t, v) => t.Namespace = v),
+                new Property<AerospikeTags, string>(Trace.Tags.AerospikeSetName, t => t.SetName, (t, v) => t.SetName = v));
 
         public override string SpanKind => SpanKinds.Client;
 
         public string InstrumentationName => "aerospike";
 
         public string Key { get; set; }
+
+        public string Namespace { get; set; }
+
+        public string SetName { get; set; }
 
         protected override IProperty<string>[] GetAdditionalTags() => AerospikeTagsProperties;
     }
