@@ -640,6 +640,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         }
     }
 
+    ComPtr<IUnknown> metadata_interfaces;
+    ModuleMetadata* module_metadata = nullptr;
 
     if (IsCallTargetEnabled(is_net46_or_greater))
     {
@@ -656,7 +658,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
             return S_OK;
         }
 
-        ComPtr<IUnknown> metadata_interfaces;
         auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2, metadata_interfaces.GetAddressOf());
 
         if (FAILED(hr))
@@ -686,9 +687,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
             return S_OK;
         }
 
-        auto module_metadata = new ModuleMetadata(metadata_import, metadata_emit, assembly_import, assembly_emit,
-                                                  module_info.assembly.name, app_domain_id, module_version_id,
-                                                  &integration_methods_, &corAssemblyProperty);
+        module_metadata = new ModuleMetadata(metadata_import, metadata_emit, assembly_import, assembly_emit,
+                                             module_info.assembly.name, app_domain_id, module_version_id,
+                                             &integration_methods_, &corAssemblyProperty);
 
         // store module info for later lookup
         module_id_to_info_map_[module_id] = module_metadata;
@@ -708,7 +709,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
             return S_OK;
         }
 
-        ComPtr<IUnknown> metadata_interfaces;
         auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2, metadata_interfaces.GetAddressOf());
 
         if (FAILED(hr))
@@ -754,9 +754,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
             return S_OK;
         }
 
-        auto module_metadata = new ModuleMetadata(metadata_import, metadata_emit, assembly_import, assembly_emit,
-                                                  module_info.assembly.name, app_domain_id, module_version_id,
-                                                  filtered_integrations, &corAssemblyProperty);
+        module_metadata = new ModuleMetadata(metadata_import, metadata_emit, assembly_import, assembly_emit,
+                                             module_info.assembly.name, app_domain_id, module_version_id,
+                                             filtered_integrations, &corAssemblyProperty);
 
         // store module info for later lookup
         module_id_to_info_map_[module_id] = module_metadata;
