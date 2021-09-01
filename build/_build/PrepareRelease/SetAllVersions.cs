@@ -91,7 +91,7 @@ namespace PrepareRelease
 
             // Managed project / NuGet package updates
             SynchronizeVersion(
-                "src/Datadog.Instrumentation/Datadog.Instrumentation.csproj",
+                "src/Datadog.Monitoring.Distribution/Datadog.Monitoring.Distribution.csproj",
                 NugetVersionReplace);
 
             SynchronizeVersion(

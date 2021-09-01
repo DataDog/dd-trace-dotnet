@@ -27,13 +27,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\Datadog.Instrumentation\home\**\*.*" Pack="true" PackagePath="\home" LinkBase="home">
+    <Content Include="..\Datadog.Monitoring.Distribution\home\**\*.*" Pack="true" PackagePath="\home" LinkBase="home">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
 
   <ItemGroup>
-    <Content Update="..\Datadog.Instrumentation\home\**\readme.txt" Pack="false">
+    <Content Update="..\Datadog.Monitoring.Distribution\home\**\readme.txt" Pack="false">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
