@@ -1,4 +1,4 @@
-// <copyright file="Native.cs" company="Datadog">
+// <copyright file="WafNative.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -15,7 +15,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.AppSec.Waf.NativeBindings
 {
-    internal class Native
+    internal class WafNative
     {
 #if NETFRAMEWORK
         private const string DllName = "ddwaf.dll";
@@ -23,29 +23,28 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private const string DllName = "ddwaf";
 #endif
 
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Native));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(WafNative));
 
-        private static GetVersionDelegate getVersion;
-        private static InitHDelegate initH;
-        private static ClearRuleHDelegate clearRuleH;
-        private static RunHDelegate runH;
-        private static FreeReturnDelegate freeReturn;
-        private static InitAdditiveHDelegate initAdditiveH;
-        private static RunAdditiveDelegate runAdditive;
-        private static ClearAdditiveDelegate clearAdditive;
-        private static GetInvalidDelegate getInvalid;
-        private static CreateStringWithLengthDelegate createStringWithLength;
-        private static CreateStringDelegate createString;
-        private static CreateIntDelegate createInt;
-        private static CreateUintDelegate createUint;
-        private static CreateArrayDelegate createArray;
-        private static CreateMapDelegate createMap;
-        private static AddArrayDelegate addArray;
-        private static AddMapDelegate addMap;
-        private static FreeArgDelegate freeArg;
-        private static LoggingCallbackDelegate loggingCallback;
+        private static readonly GetVersionDelegate GetVersionField;
+        private static readonly InitDelegate InitField;
+        private static readonly ResultFreeDelegate ResultFreeField;
+        private static readonly InitContextDelegate InitContextField;
+        private static readonly RunDelegate RunField;
+        private static readonly DestroyDelegate DestroyField;
+        private static readonly ContextDestroyDelegate ContextDestroyField;
+        private static readonly ObjectInvalidDelegate ObjectInvalidField;
+        private static readonly ObjectStringLengthDelegate ObjectStringLengthField;
+        private static readonly ObjectSignedDelegate ObjectSignedField;
+        private static readonly ObjectUnsignedDelegate ObjectUnsignField;
+        private static readonly ObjectArrayDelegate ObjectArrayField;
+        private static readonly ObjectMapDelegate ObjectMapField;
+        private static readonly ObjectArrayAddDelegate ObjectArrayAddField;
+        private static readonly ObjectMapAddDelegate ObjectMapAddField;
+        private static readonly ObjectFreeDelegate ObjectFreeField;
+        private static readonly SetupLogCallbackDelegate SetupLogCallbackField;
+        private static readonly IntPtr ObjectFreeFuncPtrField;
 
-        static Native()
+        static WafNative()
         {
             var fd = FrameworkDescription.Create();
 
@@ -59,188 +58,189 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                 var paths = GetDatadogNativeFolders(fd, runtimeId);
                 if (TryLoadLibraryFromPaths(libName, paths, out IntPtr handle))
                 {
-                    getVersion = GetDelegateForNativeFunction<GetVersionDelegate>(handle, "pw_getVersion");
-                    initH = GetDelegateForNativeFunction<InitHDelegate>(handle, "pw_initH");
-                    clearRuleH = GetDelegateForNativeFunction<ClearRuleHDelegate>(handle, "pw_clearRuleH");
-                    runH = GetDelegateForNativeFunction<RunHDelegate>(handle, "pw_runH");
-                    freeReturn = GetDelegateForNativeFunction<FreeReturnDelegate>(handle, "pw_freeReturn");
-                    initAdditiveH = GetDelegateForNativeFunction<InitAdditiveHDelegate>(handle, "pw_initAdditiveH");
-                    runAdditive = GetDelegateForNativeFunction<RunAdditiveDelegate>(handle, "pw_runAdditive");
-                    clearAdditive = GetDelegateForNativeFunction<ClearAdditiveDelegate>(handle, "pw_clearAdditive");
-                    getInvalid = GetDelegateForNativeFunction<GetInvalidDelegate>(handle, "pw_getInvalid");
-                    createStringWithLength = GetDelegateForNativeFunction<CreateStringWithLengthDelegate>(handle, "pw_createStringWithLength");
-                    createString = GetDelegateForNativeFunction<CreateStringDelegate>(handle, "pw_createString");
-                    createInt = GetDelegateForNativeFunction<CreateIntDelegate>(handle, "pw_createInt");
-                    createUint = GetDelegateForNativeFunction<CreateUintDelegate>(handle, "pw_createUint");
-                    createArray = GetDelegateForNativeFunction<CreateArrayDelegate>(handle, "pw_createArray");
-                    createMap = GetDelegateForNativeFunction<CreateMapDelegate>(handle, "pw_createMap");
-                    addArray = GetDelegateForNativeFunction<AddArrayDelegate>(handle, "pw_addArray");
-                    addMap = GetDelegateForNativeFunction<AddMapDelegate>(handle, "pw_addMap");
-                    freeArg = GetDelegateForNativeFunction<FreeArgDelegate>(handle, "pw_freeArg");
+                    InitField = GetDelegateForNativeFunction<InitDelegate>(handle, "ddwaf_init");
+                    DestroyField = GetDelegateForNativeFunction<DestroyDelegate>(handle, "ddwaf_destroy");
+                    InitContextField = GetDelegateForNativeFunction<InitContextDelegate>(handle, "ddwaf_context_init");
+                    RunField = GetDelegateForNativeFunction<RunDelegate>(handle, "ddwaf_run");
+                    ContextDestroyField = GetDelegateForNativeFunction<ContextDestroyDelegate>(handle, "ddwaf_context_destroy");
+                    ResultFreeField = GetDelegateForNativeFunction<ResultFreeDelegate>(handle, "ddwaf_result_free");
+                    ObjectInvalidField = GetDelegateForNativeFunction<ObjectInvalidDelegate>(handle, "ddwaf_object_invalid");
+                    ObjectStringLengthField = GetDelegateForNativeFunction<ObjectStringLengthDelegate>(handle, "ddwaf_object_stringl");
+                    ObjectSignedField = GetDelegateForNativeFunction<ObjectSignedDelegate>(handle, "ddwaf_object_signed");
+                    ObjectUnsignField = GetDelegateForNativeFunction<ObjectUnsignedDelegate>(handle, "ddwaf_object_unsigned");
+                    ObjectArrayField = GetDelegateForNativeFunction<ObjectArrayDelegate>(handle, "ddwaf_object_array");
+                    ObjectMapField = GetDelegateForNativeFunction<ObjectMapDelegate>(handle, "ddwaf_object_map");
+                    ObjectArrayAddField = GetDelegateForNativeFunction<ObjectArrayAddDelegate>(handle, "ddwaf_object_array_add");
+                    ObjectMapAddField = GetDelegateForNativeFunction<ObjectMapAddDelegate>(handle, "ddwaf_object_map_addl");
+                    ObjectFreeField = GetDelegateForNativeFunction<ObjectFreeDelegate>(handle, "ddwaf_object_free", out ObjectFreeFuncPtrField);
+                    GetVersionField = GetDelegateForNativeFunction<GetVersionDelegate>(handle, "ddwaf_get_version");
 
                     // setup logging
-                    var setupLogging = GetDelegateForNativeFunction<SetupLoggingDelegate>(handle, "pw_setupLogging");
+                    var setupLogging = GetDelegateForNativeFunction<SetupLoggingDelegate>(handle, "ddwaf_set_log_cb");
                     // convert to a delegate and attempt to pin it by assigning it to static field
-                    loggingCallback = LoggingCallback;
+                    SetupLogCallbackField = LoggingCallback;
                     // set the log level and setup the loger
-                    var level = GlobalSettings.Source.DebugEnabled ? PW_LOG_LEVEL.PWL_DEBUG : PW_LOG_LEVEL.PWL_INFO;
-                    setupLogging(Marshal.GetFunctionPointerForDelegate(loggingCallback), PW_LOG_LEVEL.PWL_DEBUG);
+                    var level = GlobalSettings.Source.DebugEnabled ? DDWAF_LOG_LEVEL.DDWAF_DEBUG : DDWAF_LOG_LEVEL.DDWAF_INFO;
+                    setupLogging(Marshal.GetFunctionPointerForDelegate(SetupLogCallbackField), level);
                 }
             }
         }
 
-        private delegate PWVersion GetVersionDelegate();
+        private delegate DdwafVersionStruct GetVersionDelegate();
 
-        private delegate IntPtr InitHDelegate(PWArgs wafRule, ref PWConfig config);
+        private delegate IntPtr InitDelegate(IntPtr wafRule, ref DdwafConfigStruct config);
 
-        private delegate void ClearRuleHDelegate(IntPtr wafHandle);
+        private delegate void ResultFreeDelegate(ref DdwafResultStruct output);
 
-        private delegate PWRet RunHDelegate(IntPtr wafHandle, PWArgs parameters, ulong timeLeftInUs);
+        private delegate IntPtr InitContextDelegate(IntPtr powerwafHandle, IntPtr objFree);
 
-        private delegate void FreeReturnDelegate(PWRet output);
+        private delegate DDWAF_RET_CODE RunDelegate(IntPtr context, IntPtr newArgs, ref DdwafResultStruct result, ulong timeLeftInUs);
 
-        private delegate IntPtr InitAdditiveHDelegate(IntPtr powerwafHandle);
+        private delegate void DestroyDelegate(IntPtr handle);
 
-        private delegate PWRet RunAdditiveDelegate(IntPtr context, PWArgs newArgs, ulong timeLeftInUs);
+        private delegate void ContextDestroyDelegate(IntPtr context);
 
-        private delegate void ClearAdditiveDelegate(IntPtr context);
+        private delegate IntPtr ObjectInvalidDelegate(IntPtr emptyObjPtr);
 
-        private delegate PWArgs GetInvalidDelegate();
+        private delegate IntPtr ObjectStringLengthDelegate(IntPtr emptyObjPtr, string s, ulong length);
 
-        private delegate PWArgs CreateStringWithLengthDelegate(string s, ulong length);
+        private delegate IntPtr ObjectSignedDelegate(IntPtr emptyObjPtr, long value);
 
-        private delegate PWArgs CreateStringDelegate(string s);
+        private delegate IntPtr ObjectUnsignedDelegate(IntPtr emptyObjPtr, ulong value);
 
-        private delegate PWArgs CreateIntDelegate(long value);
+        private delegate IntPtr ObjectArrayDelegate(IntPtr emptyObjPtr);
 
-        private delegate PWArgs CreateUintDelegate(ulong value);
+        private delegate IntPtr ObjectMapDelegate(IntPtr emptyObjPtr);
 
-        private delegate PWArgs CreateArrayDelegate();
+        private delegate bool ObjectArrayAddDelegate(IntPtr array, IntPtr entry);
 
-        private delegate PWArgs CreateMapDelegate();
+        private delegate bool ObjectMapAddDelegate(IntPtr map, string entryName, ulong entryNameLength, IntPtr entry);
 
-        private delegate bool AddArrayDelegate(ref PWArgs array, PWArgs entry);
-
-        private delegate bool AddMapDelegate(ref PWArgs map, string entryName, ulong entryNameLength, PWArgs entry);
-
-        private delegate void FreeArgDelegate(ref PWArgs input);
+        private delegate void ObjectFreeDelegate(IntPtr input);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate void LoggingCallbackDelegate(
-            PW_LOG_LEVEL level,
+        private delegate void SetupLogCallbackDelegate(
+            DDWAF_LOG_LEVEL level,
             string function,
             string file,
             int line,
             string message,
             ulong message_len);
 
-        private delegate bool SetupLoggingDelegate(IntPtr cb, PW_LOG_LEVEL min_level);
+        private delegate bool SetupLoggingDelegate(IntPtr cb, DDWAF_LOG_LEVEL min_level);
 
-        private enum PW_LOG_LEVEL
+        private enum DDWAF_LOG_LEVEL
         {
-            PWL_TRACE,
-            PWL_DEBUG,
-            PWL_INFO,
-            PWL_WARN,
-            PWL_ERROR,
-            PWL_AFTER_LAST,
+            DDWAF_TRACE,
+            DDWAF_DEBUG,
+            DDWAF_INFO,
+            DDWAF_WARN,
+            DDWAF_ERROR,
+            DDWAF_AFTER_LAST,
         }
 
 #pragma warning disable SA1300 // Element should begin with upper-case letter
 
-        internal static PWVersion pw_getVersion()
+        internal static IntPtr ObjectFreeFuncPtr
         {
-            return getVersion();
+            get { return ObjectFreeFuncPtrField; }
         }
 
-        internal static IntPtr pw_initH(PWArgs wafRule, ref PWConfig config)
+        internal static DdwafVersionStruct GetVersion()
         {
-            return initH(wafRule, ref config);
+            return GetVersionField();
         }
 
-        internal static void pw_clearRuleH(IntPtr wafHandle)
+        internal static IntPtr Init(IntPtr wafRule, ref DdwafConfigStruct config)
         {
-            clearRuleH(wafHandle);
+            return InitField(wafRule, ref config);
         }
 
-        internal static PWRet pw_runH(IntPtr wafHandle, PWArgs parameters, ulong timeLeftInUs)
+        internal static void ResultFree(ref DdwafResultStruct output)
         {
-            return runH(wafHandle, parameters, timeLeftInUs);
+            ResultFreeField(ref output);
         }
 
-        internal static void pw_freeReturn(PWRet output)
+        internal static IntPtr InitContext(IntPtr powerwafHandle, IntPtr objFree)
         {
-            freeReturn(output);
+            return InitContextField(powerwafHandle, objFree);
         }
 
-        internal static IntPtr pw_initAdditiveH(IntPtr powerwafHandle)
+        internal static DDWAF_RET_CODE Run(IntPtr context, IntPtr newArgs, ref DdwafResultStruct result, ulong timeLeftInUs)
         {
-            return initAdditiveH(powerwafHandle);
+            return RunField(context, newArgs, ref result, timeLeftInUs);
         }
 
-        internal static PWRet pw_runAdditive(IntPtr context, PWArgs newArgs, ulong timeLeftInUs)
+        internal static void Destroy(IntPtr handle)
         {
-            return runAdditive(context, newArgs, timeLeftInUs);
+            DestroyField(handle);
         }
 
-        internal static void pw_clearAdditive(IntPtr context)
+        internal static void ContextDistroy(IntPtr handle)
         {
-            clearAdditive(context);
+            ContextDestroyField(handle);
         }
 
-        internal static PWArgs pw_getInvalid()
+        internal static IntPtr ObjectInvalid()
         {
-            return getInvalid();
+            var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(DdwafObjectStruct)));
+            ObjectInvalidField(ptr);
+            return ptr;
         }
 
-        internal static PWArgs pw_createStringWithLength(string s, ulong length)
+        internal static IntPtr ObjectStringLength(string s, ulong length)
         {
-            return createStringWithLength(s, length);
+            var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(DdwafObjectStruct)));
+            ObjectStringLengthField(ptr, s, length);
+            return ptr;
         }
 
-        internal static PWArgs pw_createString(string s)
+        internal static IntPtr ObjectSigned(long value)
         {
-            return createString(s);
+            var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(DdwafObjectStruct)));
+            ObjectSignedField(ptr, value);
+            return ptr;
         }
 
-        internal static PWArgs pw_createInt(long value)
+        internal static IntPtr ObjectUnsigned(ulong value)
         {
-            return createInt(value);
+            var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(DdwafObjectStruct)));
+            ObjectUnsignField(ptr, value);
+            return ptr;
         }
 
-        internal static PWArgs pw_createUint(ulong value)
+        internal static IntPtr ObjectArray()
         {
-            return createUint(value);
+            var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(DdwafObjectStruct)));
+            ObjectArrayField(ptr);
+            return ptr;
         }
 
-        internal static PWArgs pw_createArray()
+        internal static IntPtr ObjectMap()
         {
-            return createArray();
+            var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(DdwafObjectStruct)));
+            ObjectMapField(ptr);
+            return ptr;
         }
 
-        internal static PWArgs pw_createMap()
+        internal static bool ObjectArrayAdd(IntPtr array, IntPtr entry)
         {
-            return createMap();
-        }
-
-        internal static bool pw_addArray(ref PWArgs array, PWArgs entry)
-        {
-            return addArray(ref array, entry);
+            return ObjectArrayAddField(array, entry);
         }
 
         // Setting entryNameLength to 0 will result in the entryName length being re-computed with strlen
-        internal static bool pw_addMap(ref PWArgs map, string entryName, ulong entryNameLength, PWArgs entry)
+        internal static bool ObjectMapAdd(IntPtr map, string entryName, ulong entryNameLength, IntPtr entry)
         {
-            return addMap(ref map, entryName, entryNameLength, entry);
+            return ObjectMapAddField(map, entryName, entryNameLength, entry);
         }
 
-        internal static void pw_freeArg(ref PWArgs input)
+        internal static void ObjectFree(IntPtr input)
         {
-            freeArg(ref input);
+            ObjectFreeField(input);
         }
 
         private static void LoggingCallback(
-            PW_LOG_LEVEL level,
+            DDWAF_LOG_LEVEL level,
             string function,
             string file,
             int line,
@@ -250,18 +250,18 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             var formattedMessage = $"{level}: [{function}]{file}({line}): {message}";
             switch (level)
             {
-                case PW_LOG_LEVEL.PWL_TRACE:
-                case PW_LOG_LEVEL.PWL_DEBUG:
+                case DDWAF_LOG_LEVEL.DDWAF_TRACE:
+                case DDWAF_LOG_LEVEL.DDWAF_DEBUG:
                     Log.Debug(formattedMessage);
                     break;
-                case PW_LOG_LEVEL.PWL_INFO:
+                case DDWAF_LOG_LEVEL.DDWAF_INFO:
                     Log.Information(formattedMessage);
                     break;
-                case PW_LOG_LEVEL.PWL_WARN:
+                case DDWAF_LOG_LEVEL.DDWAF_WARN:
                     Log.Warning(formattedMessage);
                     break;
-                case PW_LOG_LEVEL.PWL_ERROR:
-                case PW_LOG_LEVEL.PWL_AFTER_LAST:
+                case DDWAF_LOG_LEVEL.DDWAF_ERROR:
+                case DDWAF_LOG_LEVEL.DDWAF_AFTER_LAST:
                     Log.Error(formattedMessage);
                     break;
                 default:
@@ -272,12 +272,18 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
 #pragma warning restore SA1300 // Element should begin with upper-case letter
 
+        private static T GetDelegateForNativeFunction<T>(IntPtr handle, string functionName, out IntPtr funcPtr)
+            where T : Delegate
+        {
+            funcPtr = NativeLibrary.GetExport(handle, functionName);
+            Log.Debug("GetDelegateForNativeFunction -  funcPtr: " + funcPtr);
+            return (T)Marshal.GetDelegateForFunctionPointer(funcPtr, typeof(T));
+        }
+
         private static T GetDelegateForNativeFunction<T>(IntPtr handle, string functionName)
             where T : Delegate
         {
-            var funcPtr = NativeLibrary.GetExport(handle, functionName);
-            Log.Debug("GetDelegateForNativeFunction -  funcPtr: " + funcPtr);
-            return (T)Marshal.GetDelegateForFunctionPointer(funcPtr, typeof(T));
+            return GetDelegateForNativeFunction<T>(handle, functionName, out var _);
         }
 
         private static List<string> GetDatadogNativeFolders(FrameworkDescription frameworkDescription, string runtimeId)

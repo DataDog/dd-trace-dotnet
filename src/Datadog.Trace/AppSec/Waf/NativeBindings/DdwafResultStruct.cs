@@ -1,4 +1,4 @@
-// <copyright file="PWVersion.cs" company="Datadog">
+// <copyright file="DdwafResultStruct.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,17 +11,17 @@ using System.Text;
 namespace Datadog.Trace.AppSec.Waf.NativeBindings
 {
     [StructLayout(LayoutKind.Sequential)]
-    internal struct PWVersion
+    internal struct DdwafResultStruct
     {
-        public ushort Major;
+        [Obsolete("This member will be removed from then ddwaf library vby a future PR")]
+        public DDWAF_RET_CODE Action;
 
-        public ushort Minor;
+        public IntPtr Data;
 
-        public ushort Patch;
+        public IntPtr PerfData;
 
-        public override string ToString()
-        {
-            return $"{Major}.{Minor}.{Patch}";
-        }
+        public int PerfTotalRuntime;
+
+        public int PerfCacheHitRate;
     }
 }

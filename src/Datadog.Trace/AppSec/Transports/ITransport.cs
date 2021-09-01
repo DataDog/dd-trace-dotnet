@@ -18,9 +18,9 @@ namespace Datadog.Trace.AppSec.Transport
 
         void Block();
 
-        IAdditiveContext GetAdditiveContext();
+        IContext GetAdditiveContext();
 
-        void SetAdditiveContext(IAdditiveContext additiveContext);
+        void SetAdditiveContext(IContext additiveContext);
 
         void AddRequestScope(Guid guid);
     }

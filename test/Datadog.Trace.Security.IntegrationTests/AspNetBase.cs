@@ -66,7 +66,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             Func<Task<(HttpStatusCode StatusCode, string ResponseText)>> attack = () => SubmitRequest("/Health/?arg=[$slice]");
             var resultRequests = await Task.WhenAll(attack(), attack(), attack(), attack(), attack());
             agent.SpanFilters.Add(s => s.Tags["http.url"].IndexOf("Health", StringComparison.InvariantCultureIgnoreCase) > 0);
-            var spans = agent.WaitForSpans(5);
+            var spans = agent.WaitForSpans(expectedSpans);
             Assert.Equal(expectedSpans, spans.Count());
             foreach (var span in spans)
             {

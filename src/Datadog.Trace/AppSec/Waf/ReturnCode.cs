@@ -11,12 +11,10 @@ namespace Datadog.Trace.AppSec.Waf
 {
     internal enum ReturnCode
     {
-        ErrorInternal = -6,
-        ErrorTimeout = -5,
-        ErrorInvalidCall = -4,
-        ErrorInvalidRule = -3,
-        ErrorInvalidFlow = -2,
-        ErrorNorule = -1,
+        ErrorInternal = -4,
+        ErrorInvalidObject = -3,
+        ErrorInvalidArgument = -2,
+        ErrorTimeout = -1,
         Good = 0,
         Monitor = 1,
         Block = 2

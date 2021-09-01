@@ -1,39 +1,32 @@
-// <copyright file="Return.cs" company="Datadog">
+// <copyright file="WafHandle.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using System.Text;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.AppSec.Waf
 {
-    internal class Return : IReturn
+    internal class WafHandle : IDisposable
     {
-        private PWRet returnHandle;
+        private IntPtr ruleHandle;
         private bool disposed;
 
-        public Return(PWRet returnHandle)
+        public WafHandle(IntPtr ruleHandle)
         {
-            this.returnHandle = returnHandle;
+            this.ruleHandle = ruleHandle;
         }
 
-        ~Return()
+        ~WafHandle()
         {
             Dispose(false);
         }
 
-        public ReturnCode ReturnCode
+        public IntPtr Handle
         {
-            get { return Encoder.DecodeReturnCode(returnHandle.Action); }
-        }
-
-        public string Data
-        {
-            get { return Marshal.PtrToStringAnsi(returnHandle.Data); }
+            get { return ruleHandle; }
         }
 
         public void Dispose(bool disposing)
@@ -44,8 +37,7 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             disposed = true;
-
-            Native.pw_freeReturn(returnHandle);
+            WafNative.Destroy(ruleHandle);
         }
 
         public void Dispose()
