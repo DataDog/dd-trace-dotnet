@@ -603,7 +603,6 @@ stages:
         TestAllPackageVersions: true
         publishTargetFramework: net5.0
         baseImage: debian
-        COMPOSE_PROJECT_NAME: ddtrace_$(Build.BuildNumber)
 
       pool:
         name: Arm64
@@ -634,12 +633,14 @@ stages:
           inputs:
             containerregistrytype: Container Registry
             dockerComposeCommand: build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests.ARM64
+            projectName: ddtrace_$(Build.BuildNumber)
 
         - task: DockerCompose@0
           displayName: docker-compose start dependencies
           inputs:
             containerregistrytype: Container Registry
             dockerComposeCommand: run --rm StartDependencies.ARM64
+            projectName: ddtrace_$(Build.BuildNumber)
 
         - task: DockerCompose@0
           displayName: docker-compose run IntegrationTests
@@ -649,12 +650,14 @@ stages:
               baseImage=$(baseImage)
               framework=$(publishTargetFramework)
             dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) IntegrationTests.ARM64
+            projectName: ddtrace_$(Build.BuildNumber)
 
         - task: DockerCompose@0
           displayName: docker-compose stop services
           inputs:
             containerregistrytype: Container Registry
             dockerComposeCommand: down
+            projectName: ddtrace_$(Build.BuildNumber)
           condition: succeededOrFailed()
 
         - publish: build_data
