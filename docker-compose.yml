@@ -248,6 +248,7 @@ services:
       - RABBITMQ_HOST=rabbitmq
       - KAFKA_BROKER_HOST=kafka-broker:29092
       - AWS_SQS_HOST=aws_sqs:9324
+      - AEROSPIKE_HOST=aerospike:3000
     depends_on:
       - aerospike
       - servicestackredis

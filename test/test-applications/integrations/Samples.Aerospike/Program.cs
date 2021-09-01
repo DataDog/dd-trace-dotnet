@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Aerospike.Client;
@@ -8,7 +9,9 @@ namespace Samples.Aerospike
     {
         static async Task Main(string[] args)
         {
-            var client = new AsyncClient("localhost", 3000);
+            var host = Host();
+
+            var client = new AsyncClient(host.Item1, host.Item2);
 
             var key = new Key("test", "myset", "mykey");
 
@@ -41,6 +44,20 @@ namespace Samples.Aerospike
             await client.Delete(null, CancellationToken.None, key);
 
             client.Close();
+        }
+
+        private static Tuple<string, int> Host()
+        {
+            var host = Environment.GetEnvironmentVariable("AEROSPIKE_HOST");
+
+            if (host == null)
+            {
+                return Tuple.Create("localhost", 3000);
+            }
+
+            var values = host.Split(':');
+
+            return Tuple.Create(values[0], int.Parse(values[1]));
         }
     }
 }
