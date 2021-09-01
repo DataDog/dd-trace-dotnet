@@ -13,9 +13,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj">
-      <CopyLocal>False</CopyLocal>
-    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" Private="false" />
   </ItemGroup>
 
   <ItemGroup>
