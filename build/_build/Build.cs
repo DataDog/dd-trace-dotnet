@@ -141,6 +141,7 @@ partial class Build : NukeBuild
         .After(Clean, BuildTracerHome)
         .DependsOn(CreateRequiredDirectories)
         .DependsOn(ZipTracerHome)
+        .DependsOn(ZipSymbols)
         .DependsOn(BuildMsi)
         .DependsOn(PackNuGet);
 
