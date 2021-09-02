@@ -54,15 +54,14 @@ public:
 
     ModuleMetadata(ComPtr<IMetaDataImport2> metadata_import, ComPtr<IMetaDataEmit2> metadata_emit,
                    ComPtr<IMetaDataAssemblyImport> assembly_import, ComPtr<IMetaDataAssemblyEmit> assembly_emit,
-                   const WSTRING& assembly_name, const AppDomainID app_domain_id, const GUID module_version_id,
-                   const AssemblyProperty* corAssemblyProperty) :
+                   const WSTRING& assembly_name, const AppDomainID app_domain_id, const AssemblyProperty* corAssemblyProperty) :
         metadata_import(metadata_import),
         metadata_emit(metadata_emit),
         assembly_import(assembly_import),
         assembly_emit(assembly_emit),
         assemblyName(assembly_name),
         app_domain_id(app_domain_id),
-        module_version_id(module_version_id),
+        module_version_id(),
         corAssemblyProperty(corAssemblyProperty)
     {
     }

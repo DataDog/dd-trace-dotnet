@@ -526,6 +526,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         return S_OK;
     }
 
+    if (integration_methods_.empty())
+    {
+        Logger::Debug("ModuleLoadFinished skipping module (no integrations): ", module_id);
+        return S_OK;
+    }
+
     // keep this lock until we are done using the module,
     // to prevent it from unloading while in use
     std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
@@ -562,8 +568,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
 
     // Identify the AppDomain ID of mscorlib which will be the Shared Domain
     // because mscorlib is always a domain-neutral assembly
-    if (!corlib_module_loaded &&
-        (module_info.assembly.name == WStr("mscorlib") || module_info.assembly.name == WStr("System.Private.CoreLib")))
+    if (!corlib_module_loaded && (module_info.assembly.name == mscorlib_assemblyName ||
+                                  module_info.assembly.name == system_private_corelib_assemblyName))
     {
         corlib_module_loaded = true;
         corlib_app_domain_id = app_domain_id;
@@ -599,7 +605,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
     // but the Datadog.Trace.ClrProfiler.Managed.Loader assembly that the startup hook loads from a
     // byte array will be loaded into a non-shared AppDomain.
     // In this case, do not insert another startup hook into that non-shared AppDomain
-    if (module_info.assembly.name == WStr("Datadog.Trace.ClrProfiler.Managed.Loader"))
+    if (module_info.assembly.name == datadog_trace_clrprofiler_managed_loader_assemblyName)
     {
         Logger::Info("ModuleLoadFinished: Datadog.Trace.ClrProfiler.Managed.Loader loaded into AppDomain ", app_domain_id, " ",
                      module_info.assembly.app_domain_name);
@@ -652,12 +658,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
             return S_OK;
         }
 
-        if (integration_methods_.empty())
-        {
-            Logger::Debug("ModuleLoadFinished skipping module (no integrations): ", module_id, " ", module_info.assembly.name);
-            return S_OK;
-        }
-
         auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2, metadata_interfaces.GetAddressOf());
 
         if (FAILED(hr))
@@ -671,25 +671,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         const auto assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
         const auto assembly_emit = metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
-        mdModule module;
-        hr = metadata_import->GetModuleFromScope(&module);
-        if (FAILED(hr))
-        {
-            Logger::Warn("ModuleLoadFinished failed to get module metadata token for ", module_id, " ", module_info.assembly.name);
-            return S_OK;
-        }
-
-        GUID module_version_id;
-        hr = metadata_import->GetScopeProps(nullptr, 0, nullptr, &module_version_id);
-        if (FAILED(hr))
-        {
-            Logger::Warn("ModuleLoadFinished failed to get module_version_id for ", module_id, " ", module_info.assembly.name);
-            return S_OK;
-        }
-
         module_metadata = new ModuleMetadata(metadata_import, metadata_emit, assembly_import, assembly_emit,
-                                             module_info.assembly.name, app_domain_id, module_version_id,
-                                             &corAssemblyProperty);
+                                             module_info.assembly.name, app_domain_id, &corAssemblyProperty);
 
         // store module info for later lookup
         module_id_to_info_map_[module_id] = module_metadata;
