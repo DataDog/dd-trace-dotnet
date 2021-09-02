@@ -25,7 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\Datadog.Instrumentation\home\**\*.*" LinkBase="home">
+    <Content Include="..\Datadog.Monitoring.Distribution\home\**\*.*" LinkBase="home">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <CopyToPublishDirectory>Always</CopyToPublishDirectory>
     </Content>
