@@ -108,7 +108,7 @@
 
             List<Task> batchCompletedTasks = new();
 
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < 1; i++)
             {
                 var id = NewId.NextGuid();
                 var orderIds = new List<Guid>();
