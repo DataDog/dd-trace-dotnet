@@ -3273,6 +3273,7 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
     if (!vtMethodDefs.empty())
     {
         this->rejit_handler->EnqueueForRejit(vtModules, vtMethodDefs);
+        this->rejit_handler->RequestRejitForNGenInliners();
     }
 
     // We return the number of ReJIT requests

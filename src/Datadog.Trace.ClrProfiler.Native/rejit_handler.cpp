@@ -279,9 +279,6 @@ void RejitHandler::EnqueueThreadLoop(RejitHandler* handler)
         {
             Logger::Warn("Error requesting ReJIT for ", item->m_length, " methods");
         }
-
-        // Request for NGen Inliners
-        handler->RequestRejitForNGenInliners();
     }
     Logger::Info("Exiting ReJIT request thread.");
 }
