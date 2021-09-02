@@ -5,7 +5,7 @@
   </PropertyGroup>
   
   <PropertyGroup>
-    <SharedSrcBaseDir>$(MSBuildThisFileDirectory)..</SharedSrcBaseDir>
+    <SharedSrcBaseDir>$(EnlistmentRoot)\shared\src\managed-src</SharedSrcBaseDir>
     <SharedSrcBaseLabel>Shared-Src</SharedSrcBaseLabel>
   </PropertyGroup>
   

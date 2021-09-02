@@ -21,8 +21,8 @@
   </PropertyGroup>
 	
   <PropertyGroup>
-    <SharedSrcBaseDir>$(MSBuildThisFileDirectory)..\..\managed-src</SharedSrcBaseDir>
-	  <SharedSrcBaseLabel>Shared-Src</SharedSrcBaseLabel>
+    <SharedSrcBaseDir>$(EnlistmentRoot)\shared\src\managed-src</SharedSrcBaseDir>
+    <SharedSrcBaseLabel>Shared-Src</SharedSrcBaseLabel>
   </PropertyGroup>
 	
   <!-- Datadog.Logging.Emission.props is required for emitting logs: -->
