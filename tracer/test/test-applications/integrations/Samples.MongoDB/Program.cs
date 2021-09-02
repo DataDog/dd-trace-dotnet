@@ -18,7 +18,7 @@ namespace Samples.MongoDB
             return Environment.GetEnvironmentVariable("MONGO_HOST") ?? "localhost";
         }
 
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             bool IsProfilerAttached()
             {
