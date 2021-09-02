@@ -998,7 +998,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
         // we don't actually need to instrument anything in
         // Microsoft.AspNetCore.Hosting, it was included only to ensure the startup
         // hook is called for AspNetCore applications
-        if (module_metadata->assemblyName == WStr("Microsoft.AspNetCore.Hosting"))
+        if (module_metadata->assemblyName == microsoft_aspnetcore_hosting_assemblyName)
         {
             return S_OK;
         }
