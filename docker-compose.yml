@@ -72,6 +72,11 @@ services:
     ports:
     - "127.0.0.1:9324:9324"
 
+  aerospike:
+    image: aerospike/aerospike-server
+    ports:
+    - "127.0.0.1:3000:3000"
+
   rabbitmq:
     image: rabbitmq:3-management
     command: rabbitmq-server
@@ -294,7 +299,9 @@ services:
       - RABBITMQ_HOST=rabbitmq
       - KAFKA_BROKER_HOST=kafka-broker:29092
       - AWS_SQS_HOST=aws_sqs:9324
+      - AEROSPIKE_HOST=aerospike:3000
     depends_on:
+      - aerospike
       - servicestackredis
       - stackexchangeredis
       - elasticsearch6
@@ -312,6 +319,7 @@ services:
   StartDependencies:
     image: andrewlock/wait-for-dependencies
     depends_on:
+      - aerospike
       - servicestackredis
       - stackexchangeredis
       - elasticsearch6
@@ -327,7 +335,7 @@ services:
       - aws_sqs
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis:6379 stackexchangeredis:6379 elasticsearch5:9200 elasticsearch6:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 aws_sqs:9324
+    command: aerospike:3000 servicestackredis:6379 stackexchangeredis:6379 elasticsearch5:9200 elasticsearch6:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 aws_sqs:9324
 
   IntegrationTests.ARM64:
     build:

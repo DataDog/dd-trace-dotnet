@@ -145,5 +145,12 @@
     "MinVersion": "1.0.0",
     "MinVersionNetCore": "2.0.6",
     "MaxVersionExclusive": "3.0.0"
+  },
+  {
+    "IntegrationName": "Aerospike",
+    "SampleProjectName": "Samples.Aerospike",
+    "NugetPackageSearchName": "Aerospike.Client",
+    "MinVersion": "4.0.0",
+    "MaxVersionExclusive": "5.0.0"
   }
 ]
