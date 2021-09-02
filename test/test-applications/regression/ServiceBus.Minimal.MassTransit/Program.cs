@@ -191,7 +191,6 @@
                 builder.InitialCatalog = overrideInitialCatalog;
             }
 
-            builder.Add("Trusted_Connection", "True");
             builder.Add("MultipleActiveResultSets", "True");
 
             return builder.ConnectionString;
