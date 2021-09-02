@@ -193,7 +193,7 @@ partial class Build
        {
            var testDir = Solution.GetProject(Projects.ClrProfilerIntegrationTests).Directory;
 
-           var versionGenerator = new PackageVersionGenerator(RootDirectory, testDir);
+           var versionGenerator = new PackageVersionGenerator(TracerDirectory, testDir);
            await versionGenerator.GenerateVersions();
        });
 
@@ -221,7 +221,7 @@ partial class Build
                             .Select(x => x.ToString())
                             .ToList();
 
-            GenerateIntegrationDefinitions.Run(assemblies, RootDirectory);
+            GenerateIntegrationDefinitions.Run(assemblies, TracerDirectory);
         });
 
     Target UpdateVersion => _ => _
@@ -230,7 +230,7 @@ partial class Build
        .Requires(() => Version)
        .Executes(() =>
         {
-            new SetAllVersions(RootDirectory, Version, IsPrerelease).Run();
+            new SetAllVersions(TracerDirectory, Version, IsPrerelease).Run();
         });
 
     Target UpdateMsiContents => _ => _
@@ -238,7 +238,7 @@ partial class Build
        .DependsOn(Clean, BuildTracerHome)
        .Executes(() =>
         {
-            SyncMsiContent.Run(RootDirectory, TracerHomeDirectory);
+            SyncMsiContent.Run(TracerDirectory, TracerHomeDirectory);
         });
 
     Target CiAppFeatureTracking => _ => _

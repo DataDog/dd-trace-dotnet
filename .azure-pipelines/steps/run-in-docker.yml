@@ -21,8 +21,8 @@ steps:
         --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdk5Version) \
         --tag dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }} \
         --target ${{ parameters.target }} \
-        --file "$(System.DefaultWorkingDirectory)/build/_build/docker/${{ parameters.baseImage }}.dockerfile" \
-        "$(System.DefaultWorkingDirectory)/build/_build"
+        --file "$(System.DefaultWorkingDirectory)/tracer/build/_build/docker/${{ parameters.baseImage }}.dockerfile" \
+        "$(System.DefaultWorkingDirectory)/tracer/build/_build"
     displayName: Build ${{ parameters.baseImage }} Docker image
 - script: |
     docker run --rm \

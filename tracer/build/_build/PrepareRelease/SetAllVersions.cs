@@ -13,17 +13,17 @@ namespace PrepareRelease
 {
     public class SetAllVersions
     {
-        public SetAllVersions(string solutionDirectory, string tracerVersion, bool isPrerelease)
+        public SetAllVersions(string tracerDirectory, string tracerVersion, bool isPrerelease)
         {
-            SolutionDirectory = solutionDirectory;
+            TracerDirectory = tracerDirectory;
             TracerVersion = new Version(tracerVersion);
             IsPrerelease = isPrerelease;
         }
 
         /// <summary>
-        /// Gets the root solution directory, where "Datadog.Trace.sln" can be found.
+        /// Gets the tracer directory, where src/build/samples/test subdirectories can be found.
         /// </summary>
-        public string SolutionDirectory { get; }
+        public string TracerDirectory { get; }
 
         /// <summary>
         /// Gets the current tracer version.
@@ -99,8 +99,8 @@ namespace PrepareRelease
                 NugetVersionReplace);
 
             SynchronizeVersion(
-                  "src/Datadog.Trace.AspNet/Datadog.Trace.AspNet.csproj",
-                  NugetVersionReplace);
+                "src/Datadog.Trace.AspNet/Datadog.Trace.AspNet.csproj",
+                NugetVersionReplace);
 
             SynchronizeVersion(
                 "src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj",
@@ -220,7 +220,7 @@ namespace PrepareRelease
 
         private void SynchronizeVersion(string path, Func<string, string> transform)
         {
-            var fullPath = Path.Combine(SolutionDirectory, path);
+            var fullPath = Path.Combine(TracerDirectory, path);
 
             Console.WriteLine($"Updating version instances for {path}");
 

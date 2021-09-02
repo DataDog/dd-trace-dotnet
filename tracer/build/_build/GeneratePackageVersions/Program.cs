@@ -21,11 +21,11 @@ namespace GeneratePackageVersions
         private readonly XunitStrategyFileGenerator _strategyGenerator;
 
         public PackageVersionGenerator(
-            AbsolutePath solutionDirectory,
+            AbsolutePath tracerDirectory,
             AbsolutePath testProjectDirectory)
         {
-            var propsDirectory = solutionDirectory / "build";
-            _definitionsFilePath = solutionDirectory / "build" / "PackageVersionsGeneratorDefinitions.json";
+            var propsDirectory = tracerDirectory / "build";
+            _definitionsFilePath = tracerDirectory / "build" / "PackageVersionsGeneratorDefinitions.json";
             _latestMinors = new PackageGroup(propsDirectory, testProjectDirectory, "LatestMinors");
             _comprehensive = new PackageGroup(propsDirectory, testProjectDirectory, "Comprehensive");
             _strategyGenerator = new XunitStrategyFileGenerator(testProjectDirectory / "PackageVersions.g.cs");

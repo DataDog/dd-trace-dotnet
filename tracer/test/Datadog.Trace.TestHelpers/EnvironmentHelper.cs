@@ -283,6 +283,7 @@ namespace Datadog.Trace.TestHelpers
                     // One last attempt at the solution root
                     _integrationsFileLocation = Path.Combine(
                         EnvironmentTools.GetSolutionDirectory(),
+                        "tracer",
                         fileName);
                 }
 
@@ -422,6 +423,7 @@ namespace Datadog.Trace.TestHelpers
             var solutionDirectory = EnvironmentTools.GetSolutionDirectory();
             var projectDir = Path.Combine(
                 solutionDirectory,
+                "tracer",
                 _samplesDirectory,
                 $"{FullSampleName}");
             return projectDir;

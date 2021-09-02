@@ -31,22 +31,24 @@ using static CustomDotNetTasks;
 partial class Build
 {
     [Solution("Datadog.Trace.sln")] readonly Solution Solution;
-    AbsolutePath MsBuildProject => RootDirectory / "Datadog.Trace.proj";
+    AbsolutePath TracerDirectory => RootDirectory / "tracer";
+    AbsolutePath MsBuildProject => TracerDirectory / "Datadog.Trace.proj";
 
-    AbsolutePath OutputDirectory => RootDirectory / "bin";
+    AbsolutePath OutputDirectory => TracerDirectory / "bin";
     AbsolutePath TracerHomeDirectory => TracerHome ?? (OutputDirectory / "tracer-home");
     AbsolutePath SymbolsDirectory => TracerHome ?? (OutputDirectory / "symbols");
     AbsolutePath DDTracerHomeDirectory => DDTracerHome ?? (OutputDirectory / "dd-tracer-home");
     AbsolutePath ArtifactsDirectory => Artifacts ?? (OutputDirectory / "artifacts");
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath WindowsSymbolsZip => ArtifactsDirectory / "windows-native-symbols.zip";
-    AbsolutePath BuildDataDirectory => RootDirectory / "build_data";
+    AbsolutePath BuildDataDirectory => TracerDirectory / "build_data";
 
     const string LibDdwafVersion = "1.0.7";
     AbsolutePath LibDdwafDirectory => (NugetPackageDirectory ?? (RootDirectory / "packages")) / $"libddwaf.{LibDdwafVersion}";
 
-    AbsolutePath SourceDirectory => RootDirectory / "src";
-    AbsolutePath TestsDirectory => RootDirectory / "test";
+    AbsolutePath SourceDirectory => TracerDirectory / "src";
+    AbsolutePath BuildDirectory => TracerDirectory / "build";
+    AbsolutePath TestsDirectory => TracerDirectory / "test";
     AbsolutePath DistributionHomeDirectory => Solution.GetProject(Projects.DatadogMonitoringDistribution).Directory / "home";
 
     AbsolutePath TempDirectory => (AbsolutePath)(IsWin ? Path.GetTempPath() : "/tmp/");
@@ -255,7 +257,7 @@ partial class Build
         .After(CreateRequiredDirectories)
         .Executes(() =>
         {
-            var source = RootDirectory / "integrations.json";
+            var source = TracerDirectory / "integrations.json";
             var dest = TracerHomeDirectory;
 
             Logger.Info($"Copying '{source}' to '{dest}'");
@@ -369,7 +371,7 @@ partial class Build
         {
             // copy createLogPath.sh
             CopyFileToDirectory(
-                RootDirectory / "build" / "artifacts" / "createLogPath.sh",
+                BuildDirectory / "artifacts" / "createLogPath.sh",
                 TracerHomeDirectory,
                 FileExistsPolicy.Overwrite);
 
@@ -388,7 +390,7 @@ partial class Build
         {
             // copy createLogPath.sh
             CopyFileToDirectory(
-                RootDirectory / "build" / "artifacts" / "createLogPath.sh",
+                BuildDirectory / "artifacts" / "createLogPath.sh",
                 TracerHomeDirectory,
                 FileExistsPolicy.Overwrite);
 
@@ -473,7 +475,7 @@ partial class Build
 
             // Ensure createLogPath.sh is copied to the directory
             CopyFileToDirectory(
-                RootDirectory / "build" / "artifacts" / "createLogPath.sh",
+                BuildDirectory / "artifacts" / "createLogPath.sh",
                 DistributionHomeDirectory,
                 FileExistsPolicy.Overwrite);
         });
@@ -490,7 +492,7 @@ partial class Build
         .Executes(() =>
         {
             // create junction for each directory
-            var directories = RootDirectory.GlobDirectories(
+            var directories = TracerDirectory.GlobDirectories(
                 $"src/**/bin/{BuildConfiguration}",
                 $"tools/**/bin/{BuildConfiguration}",
                 $"test/Datadog.Trace.TestHelpers/**/bin/{BuildConfiguration}",
@@ -622,7 +624,7 @@ partial class Build
         .After(CompileManagedUnitTests)
         .Executes(() =>
         {
-            var testProjects = RootDirectory.GlobFiles("test/**/*.Tests.csproj")
+            var testProjects = TracerDirectory.GlobFiles("test/**/*.Tests.csproj")
                 .Select(x => Solution.GetProject(x))
                 .ToList();
 
@@ -794,11 +796,11 @@ partial class Build
         .Executes(() =>
         {
             // This does some "unnecessary" rebuilding and restoring
-            var includeIntegration = RootDirectory.GlobFiles("test/test-applications/integrations/**/*.csproj");
+            var includeIntegration = TracerDirectory.GlobFiles("test/test-applications/integrations/**/*.csproj");
             // Don't build aspnet full framework sample in this step
-            var includeSecurity = RootDirectory.GlobFiles("test/test-applications/security/*/*.csproj");
+            var includeSecurity = TracerDirectory.GlobFiles("test/test-applications/security/*/*.csproj");
 
-            var exclude = RootDirectory.GlobFiles("test/test-applications/integrations/dependency-libs/**/*.csproj");
+            var exclude = TracerDirectory.GlobFiles("test/test-applications/integrations/dependency-libs/**/*.csproj");
 
             var projects =  includeIntegration
                 .Concat(includeSecurity)
@@ -979,10 +981,10 @@ partial class Build
         {
             // There's nothing specifically linux-y here, it's just that we only build a subset of projects
             // for testing on linux.
-            var sampleProjects = RootDirectory.GlobFiles("test/test-applications/integrations/*/*.csproj");
-            var securitySampleProjects = RootDirectory.GlobFiles("test/test-applications/security/*/*.csproj");
-            var regressionProjects = RootDirectory.GlobFiles("test/test-applications/regression/*/*.csproj");
-            var instrumentationProjects = RootDirectory.GlobFiles("test/test-applications/instrumentation/*/*.csproj");
+            var sampleProjects = TracerDirectory.GlobFiles("test/test-applications/integrations/*/*.csproj");
+            var securitySampleProjects = TracerDirectory.GlobFiles("test/test-applications/security/*/*.csproj");
+            var regressionProjects = TracerDirectory.GlobFiles("test/test-applications/regression/*/*.csproj");
+            var instrumentationProjects = TracerDirectory.GlobFiles("test/test-applications/instrumentation/*/*.csproj");
 
             // These samples are currently skipped.
             var projectsToSkip = new[]
@@ -1009,7 +1011,7 @@ partial class Build
             // These sample projects are built using RestoreAndBuildSamplesForPackageVersions
             // so no point building them now
             List<string> multiPackageProjects;
-            var samplesFile = RootDirectory / "build" / "PackageVersionsGeneratorDefinitions.json";
+            var samplesFile = BuildDirectory / "PackageVersionsGeneratorDefinitions.json";
             using (var fs = File.OpenRead(samplesFile))
             {
                 var json = JsonDocument.Parse(fs);
@@ -1126,7 +1128,7 @@ partial class Build
         .Executes(() =>
         {
             // Build the actual integration test projects for Any CPU
-            var integrationTestProjects = RootDirectory.GlobFiles("test/*.IntegrationTests/*.csproj");
+            var integrationTestProjects = TracerDirectory.GlobFiles("test/*.IntegrationTests/*.csproj");
             DotNetBuild(x => x
                     // .EnableNoRestore()
                     .EnableNoDependencies()

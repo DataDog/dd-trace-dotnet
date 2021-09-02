@@ -48,10 +48,10 @@ namespace PrepareRelease
             Net461 = 2
         }
 
-        public static void Run(string solutionDirectory, string outputDirectory)
+        public static void Run(string tracerDirectory, string outputDirectory)
         {
             CreateWixFile(
-                solutionDirectory,
+                tracerDirectory,
                 outputDirectory,
                 groupId: "Files.Managed.Net45.GAC",
                 frameworkMoniker: "net45",
@@ -59,7 +59,7 @@ namespace PrepareRelease
                 filePrefix: "net45_GAC_",
                 GacStatus.Net45);
             CreateWixFile(
-                solutionDirectory,
+                tracerDirectory,
                 outputDirectory,
                 groupId: "Files.Managed.Net461.GAC",
                 frameworkMoniker: "net461",
@@ -67,29 +67,29 @@ namespace PrepareRelease
                 filePrefix: "net461_GAC_",
                 GacStatus.Net461);
             CreateWixFile(
-                solutionDirectory,
+                tracerDirectory,
                 outputDirectory,
                 groupId: "Files.Managed.Net45",
                 frameworkMoniker: "net45");
             CreateWixFile(
-                solutionDirectory,
+                tracerDirectory,
                 outputDirectory,
                 groupId: "Files.Managed.Net461",
                 frameworkMoniker: "net461");
             CreateWixFile(
-                solutionDirectory,
+                tracerDirectory,
                 outputDirectory,
                 groupId: "Files.Managed.NetStandard20",
                 frameworkMoniker: "netstandard2.0");
             CreateWixFile(
-                solutionDirectory,
+                tracerDirectory,
                 outputDirectory,
                 groupId: "Files.Managed.Netcoreapp31",
                 frameworkMoniker: "netcoreapp3.1");
         }
 
         private static void CreateWixFile(
-            string solutionDirectory,
+            string tracerDirectory,
             string outputDirectory,
             string groupId,
             string frameworkMoniker,
@@ -104,7 +104,7 @@ namespace PrepareRelease
 
             var wixProjectRoot =
                 Path.Combine(
-                    solutionDirectory,
+                    tracerDirectory,
                     "src",
                     "WindowsInstaller");
 

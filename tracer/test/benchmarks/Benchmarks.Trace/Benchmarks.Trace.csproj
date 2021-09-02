@@ -11,7 +11,7 @@
 
     <!-- Strong name signature -->
     <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>..\..\..\Datadog.Trace.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>..\..\..\..\Datadog.Trace.snk</AssemblyOriginatorKeyFile>
     <DelaySign>false</DelaySign>
     <NoWarn>1591</NoWarn>
 

@@ -2,7 +2,7 @@ FROM mcr.microsoft.com/dotnet/framework/aspnet:4.8-windowsservercore-ltsc2019
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 
 # Copy IIS websites
-ADD test/test-applications/aspnet/Samples.AspNet472.LoaderOptimizationRegKey/bin/Release/publish LoaderOptimizationRegKey
+ADD tracer/test/test-applications/aspnet/Samples.AspNet472.LoaderOptimizationRegKey/bin/Release/publish LoaderOptimizationRegKey
 
 # Set up IIS websites
 ARG ENABLE_32_BIT

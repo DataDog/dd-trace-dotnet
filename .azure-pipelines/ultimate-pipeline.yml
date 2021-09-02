@@ -55,11 +55,11 @@ schedules:
 variables:
   buildConfiguration: Release
   dotnetCoreSdk5Version: 5.0.103
-  relativeTracerHome: /src/bin/windows-tracer-home
-  relativeArtifacts: /src/bin/artifacts
-  ddTracerHome: $(System.DefaultWorkingDirectory)/src/bin/dd-tracer-home
-  tracerHome: $(System.DefaultWorkingDirectory)/src/bin/windows-tracer-home
-  artifacts: $(System.DefaultWorkingDirectory)/src/bin/artifacts
+  relativeTracerHome: /tracer/src/bin/windows-tracer-home
+  relativeArtifacts: /tracer/src/bin/artifacts
+  ddTracerHome: $(System.DefaultWorkingDirectory)/tracer/src/bin/dd-tracer-home
+  tracerHome: $(System.DefaultWorkingDirectory)/tracer/src/bin/windows-tracer-home
+  artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
   ddApiKey: $(DD_API_KEY)
   isMainBranch: $[eq(variables['Build.SourceBranch'], 'refs/heads/master')]
   DD_DOTNET_TRACER_MSBUILD:
@@ -92,7 +92,7 @@ stages:
     steps:
     - template: steps/install-dotnet-5-sdk.yml
 
-    - script: build.cmd BuildTracerHome
+    - script: tracer\build.cmd BuildTracerHome
       displayName: Build tracer home
 
     - publish: $(tracerHome)
@@ -177,7 +177,7 @@ stages:
     - template: steps/install-dotnet-5-sdk.yml
     - template: steps/downgrade-macos-cmake.yml
 
-    - script: ./build.sh BuildTracerHome
+    - script: ./tracer/build.sh BuildTracerHome
       displayName: Build tracer home
 
     - publish: $(tracerHome)
@@ -199,7 +199,7 @@ stages:
       - template: steps/install-dotnet-5-sdk.yml
       - template: steps/restore-working-directory.yml
 
-      - script: build.cmd PackageTracerHome
+      - script: tracer\build.cmd PackageTracerHome
         displayName: Build MSI and Tracer home
 
       - publish: $(artifacts)/windows-tracer-home.zip
@@ -229,10 +229,10 @@ stages:
       - template: steps/install-dotnet.yml
       - template: steps/restore-working-directory.yml
 
-      - script: build.cmd BuildAndRunManagedUnitTests --code-coverage
+      - script: tracer\build.cmd BuildAndRunManagedUnitTests --code-coverage
         displayName: Build and Test
 
-      - publish: build_data
+      - publish: tracer/build_data
         artifact: profiler-logs_unit_tests_windows_$(System.JobAttempt)
         condition: succeededOrFailed()
         continueOnError: true
@@ -241,7 +241,7 @@ stages:
         displayName: publish test results
         inputs:
           testResultsFormat: VSTest
-          testResultsFiles: build_data/results/**/*.trx
+          testResultsFiles: tracer/build_data/results/**/*.trx
         condition: succeededOrFailed()
 
     - job: native
@@ -249,13 +249,13 @@ stages:
       - template: steps/install-dotnet.yml
       - template: steps/restore-working-directory.yml
 
-      - script: build.cmd BuildAndRunNativeUnitTests
+      - script: tracer\build.cmd BuildAndRunNativeUnitTests
         displayName: Build and Test
 
       - task: PublishTestResults@2
         displayName: publish test results
         inputs:
-          testResultsFiles: test/**/test*.xml
+          testResultsFiles: tracer/test/**/test*.xml
         condition: succeededOrFailed()
 
 - stage: unit_tests_macos
@@ -271,10 +271,10 @@ stages:
         parameters:
           artifact: build-macos-working-directory
 
-      - script: ./build.sh BuildAndRunManagedUnitTests --code-coverage
+      - script: ./tracer/build.sh BuildAndRunManagedUnitTests --code-coverage
         displayName: Build and Test
 
-      - publish: build_data
+      - publish: tracer/build_data
         artifact: profiler-logs_unit_tests_macos_$(System.JobAttempt)
         condition: succeededOrFailed()
         continueOnError: true
@@ -283,7 +283,7 @@ stages:
         displayName: publish test results
         inputs:
           testResultsFormat: VSTest
-          testResultsFiles: build_data/results/**/*.trx
+          testResultsFiles: tracer/build_data/results/**/*.trx
         condition: succeededOrFailed()
 
 
@@ -313,7 +313,7 @@ stages:
         baseImage: $(baseImage)
         command: "BuildAndRunManagedUnitTests --code-coverage"
 
-    - publish: build_data
+    - publish: tracer/build_data
       artifact: profiler-logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
@@ -322,7 +322,7 @@ stages:
       displayName: publish test results
       inputs:
         testResultsFormat: VSTest
-        testResultsFiles: build_data/results/**/*.trx
+        testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
 - stage: unit_tests_arm64
@@ -344,7 +344,7 @@ stages:
             baseImage: debian
             command: "BuildAndRunManagedUnitTests"
 
-        - publish: build_data
+        - publish: tracer/build_data
           artifact: profiler-logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt)
           condition: succeededOrFailed()
           continueOnError: true
@@ -353,7 +353,7 @@ stages:
           displayName: publish test results
           inputs:
             testResultsFormat: VSTest
-            testResultsFiles: build_data/results/**/*.trx
+            testResultsFiles: tracer/build_data/results/**/*.trx
           condition: succeededOrFailed()
 
 - stage: integration_tests_windows
@@ -398,17 +398,17 @@ stages:
       condition: eq(variables.requiresCosmos, true)
       workingDirectory: $(Pipeline.Workspace)
 
-    - script: build.cmd $(target) --PrintDriveSpace --code-coverage
+    - script: tracer\build.cmd $(target) --PrintDriveSpace --code-coverage
       displayName: Run integration tests
 
     - task: PublishTestResults@2
       displayName: publish test results
       inputs:
         testResultsFormat: VSTest
-        testResultsFiles: build_data/results/**/*.trx
+        testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
-    - publish: build_data
+    - publish: tracer/build_data
       displayName: Uploading integration_tests_windows tracer logs
       artifact: integration_tests_windows_tracer_logs_$(platform)_$(target)
       condition: succeededOrFailed()
@@ -447,7 +447,7 @@ stages:
         patterns: '**/*.msi'
         path: $(System.DefaultWorkingDirectory)/$(relativeMsiOutputDirectory)
 
-    - script: build.cmd BuildWindowsIntegrationTests
+    - script: tracer\build.cmd BuildWindowsIntegrationTests
       displayName: BuildWindowsIntegrationTests
 
     - task: DockerCompose@0
@@ -462,14 +462,14 @@ stages:
         containerregistrytype: Container Registry
         dockerComposeCommand: up -d IntegrationTests.IIS
 
-    - script: build.cmd RunWindowsIisIntegrationTests --code-coverage
+    - script: tracer\build.cmd RunWindowsIisIntegrationTests --code-coverage
       displayName: RunWindowsIisIntegrationTests
 
     - task: PublishTestResults@2
       displayName: publish test results
       inputs:
         testResultsFormat: VSTest
-        testResultsFiles: build_data/results/**/*.trx
+        testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
     - task: DockerCompose@0
@@ -479,7 +479,7 @@ stages:
         dockerComposeCommand: down
       condition: succeededOrFailed()
 
-    - publish: build_data
+    - publish: tracer/build_data
       displayName: Uploading integration_tests_windows_iis tracer logs
       artifact: integration_tests_windows_iis_tracer_logs_$(platform)
       condition: succeededOrFailed()
@@ -572,7 +572,7 @@ stages:
         dockerComposeCommand: down
       condition: succeededOrFailed()
 
-    - publish: build_data
+    - publish: tracer/build_data
       artifact: profiler-logs_integration_tests_linux_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
@@ -581,7 +581,7 @@ stages:
       displayName: publish test results
       inputs:
         testResultsFormat: VSTest
-        testResultsFiles: build_data/results/**/*.trx
+        testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
 - stage: integration_tests_arm64
@@ -650,7 +650,7 @@ stages:
             projectName: ddtrace_$(Build.BuildNumber)
           condition: succeededOrFailed()
 
-        - publish: build_data
+        - publish: tracer/build_data
           artifact: profiler-logs_integration_tests_linux_arm64_$(publishTargetFramework)_$(System.JobAttempt)
           condition: succeededOrFailed()
           continueOnError: true
@@ -659,7 +659,7 @@ stages:
           displayName: publish test results
           inputs:
             testResultsFormat: VSTest
-            testResultsFiles: build_data/results/**/*.trx
+            testResultsFiles: tracer/build_data/results/**/*.trx
           condition: succeededOrFailed()
 
 - stage: benchmarks
@@ -682,7 +682,7 @@ stages:
     - template: steps/install-dotnet-5-sdk.yml
     - template: steps/restore-working-directory.yml
 
-    - script: build.cmd RunBenchmarks
+    - script: tracer\build.cmd RunBenchmarks
       continueOnError: true
       displayName: RunBenchmarks
 
@@ -713,42 +713,42 @@ stages:
       displayName: Download windows tracer home
       inputs:
         artifact: windows-tracer-home
-        path: $(System.DefaultWorkingDirectory)/src/Datadog.Monitoring.Distribution/home
+        path: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/home
 
     - task: DownloadPipelineArtifact@2
       displayName: Download linux shell scripts
       inputs:
         artifact: linux-tracer-home-debian
         patterns: "*.sh"
-        path: $(System.DefaultWorkingDirectory)/src/Datadog.Monitoring.Distribution/home
+        path: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/home
 
     - task: DownloadPipelineArtifact@2
       displayName: Download linux tracer home
       inputs:
         artifact: linux-tracer-home-debian
         patterns: "**/*.so"
-        path: $(System.DefaultWorkingDirectory)/src/Datadog.Monitoring.Distribution/home/linux-x64
+        path: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/home/linux-x64
 
     - task: DownloadPipelineArtifact@2
       displayName: Download alpine tracer home
       inputs:
         artifact: linux-tracer-home-alpine
         patterns: "**/*.so"
-        path: $(System.DefaultWorkingDirectory)/src/Datadog.Monitoring.Distribution/home/linux-musl-x64
+        path: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/home/linux-musl-x64
 
     - task: DownloadPipelineArtifact@2
       displayName: Download arm64 tracer home
       inputs:
         artifact: linux-tracer-home-arm64
         patterns: "**/*.so"
-        path: $(System.DefaultWorkingDirectory)/src/Datadog.Monitoring.Distribution/home/linux-arm64
+        path: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/home/linux-arm64
 
     - task: DownloadPipelineArtifact@2
       displayName: Download osx tracer home
       inputs:
         artifact: macos-tracer-home
         patterns: "**/*.dylib"
-        path: $(System.DefaultWorkingDirectory)/src/Datadog.Monitoring.Distribution/home/osx-x64
+        path: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/home/osx-x64
 
     # Install the tracer latest stable release to attach the profiler to the build and test steps.
     # The script exposes the required environment variables to the following steps
@@ -757,56 +757,56 @@ stages:
       inputs:
         filePath: ./.azure-pipelines/setup_tracer.ps1
 
-    - script: build.cmd BuildDistributionNuget --skip
+    - script: tracer\build.cmd BuildDistributionNuget --skip
       displayName: Build BuildDistributionNuget package
 
-    - script: build.cmd BuildRunnerTool --skip
+    - script: tracer\build.cmd BuildRunnerTool --skip
       displayName: Build Runner tool
 
-    - script: build.cmd BuildStandaloneTool --skip
+    - script: tracer\build.cmd BuildStandaloneTool --skip
       displayName: Build Standalone tool
 
     - task: DeleteFiles@1
       displayName: 'Remove unneeded files'
       inputs:
         Contents: |
-          $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Tool/!(*.nupkg)
-          $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/win-x64/home*
-          $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/win-x86/home*
-          $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-x64/home*
-          $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-musl-x64/home*
-          $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-arm64/home*
-          $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/osx-x64/home*
+          $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Tool/!(*.nupkg)
+          $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/win-x64/home*
+          $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/win-x86/home*
+          $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-x64/home*
+          $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-musl-x64/home*
+          $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-arm64/home*
+          $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/osx-x64/home*
 
-    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Monitoring.Distribution/bin/$(buildConfiguration)/packages
+    - publish: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/bin/$(buildConfiguration)/packages
       displayName: Publish Distribution package
       artifact: distribution-nuget-package
 
-    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Tool
+    - publish: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Tool
       displayName: Uploading runner dotnet tool artifact
       artifact: runner-dotnet-tool
 
-    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/win-x64
+    - publish: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/win-x64
       displayName: Uploading runner standalone win-x64 artifact
       artifact: runner-standalone-win-x64
 
-    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/win-x86
+    - publish: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/win-x86
       displayName: Uploading runner standalone win-x86 artifact
       artifact: runner-standalone-win-x86
 
-    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-x64
+    - publish: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-x64
       displayName: Uploading runner standalone linux-x64 artifact
       artifact: runner-standalone-linux-x64
 
-    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-musl-x64
+    - publish: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-musl-x64
       displayName: Uploading runner standalone linux-musl-x64 artifact
       artifact: runner-standalone-linux-musl-x64
 
-    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-arm64
+    - publish: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-arm64
       displayName: Uploading runner standalone linux-arm64 artifact
       artifact: runner-standalone-linux-arm64
 
-    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/osx-x64
+    - publish: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/osx-x64
       displayName: Uploading runner standalone osx-x64 artifact
       artifact: runner-standalone-osx-x64
 
@@ -1030,30 +1030,30 @@ stages:
       displayName: Download windows native binary
       inputs:
         artifact: windows-tracer-home
-        path: $(System.DefaultWorkingDirectory)/tracer-home-win
+        path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-win
 
     - task: DownloadPipelineArtifact@2
       displayName: Download linux native binary
       inputs:
         artifact: linux-tracer-home-debian
-        path: $(System.DefaultWorkingDirectory)/tracer-home-linux
+        path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux
 
     - task: DownloadPipelineArtifact@2
       displayName: Download arm64 native binary
       inputs:
         artifact: linux-tracer-home-arm64
-        path: $(System.DefaultWorkingDirectory)/tracer-home-linux-arm64
+        path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux-arm64
 
     - script: |
-        test ! -s "tracer-home-win/integrations.json" && echo "tracer-home-win/integrations.json does not exist" && exit 1
-        test ! -s "tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll" && echo "tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll does not exist" && exit 1
-        test ! -s "tracer-home-win/win-x64/ddwaf.dll" && echo "tracer-home-win/win-x64/ddwaf.dll does not exist" && exit 1
-        test ! -s "tracer-home-linux/integrations.json" && echo "tracer-home-linux/integrations.json does not exist" && exit 1
-        test ! -s "tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
-        test ! -s "tracer-home-linux/libddwaf.so" && echo "tracer-home-linux/libddwaf.so does not exist" && exit 1
-        test ! -s "tracer-home-linux-arm64/integrations.json" && echo "tracer-home-linux-arm64/integrations.json does not exist" && exit 1
-        test ! -s "tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
-        cd $(System.DefaultWorkingDirectory)/build/crank
+        test ! -s "tracer/tracer-home-win/integrations.json" && echo "tracer/tracer-home-win/integrations.json does not exist" && exit 1
+        test ! -s "tracer/tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll" && echo "tracer/tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll does not exist" && exit 1
+        test ! -s "tracer/tracer-home-win/win-x64/ddwaf.dll" && echo "tracer/tracer-home-win/win-x64/ddwaf.dll does not exist" && exit 1
+        test ! -s "tracer/tracer-home-linux/integrations.json" && echo "tracer/tracer-home-linux/integrations.json does not exist" && exit 1
+        test ! -s "tracer/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
+        test ! -s "tracer/tracer-home-linux/libddwaf.so" && echo "tracer/tracer-home-linux/libddwaf.so does not exist" && exit 1
+        test ! -s "tracer/tracer-home-linux-arm64/integrations.json" && echo "tracer/tracer-home-linux-arm64/integrations.json does not exist" && exit 1
+        test ! -s "tracer/tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
+        cd $(System.DefaultWorkingDirectory)/tracer/build/crank
         chmod +x ./run.sh
         ./run.sh
       displayName: Crank
@@ -1117,14 +1117,14 @@ stages:
       inputs:
         command: 'build'
         arguments: '-c Release'
-        workingDirectory: $(System.DefaultWorkingDirectory)/test/test-applications/integrations/Samples.HttpMessageHandler
+        workingDirectory: $(System.DefaultWorkingDirectory)/tracer/test/test-applications/integrations/Samples.HttpMessageHandler
       displayName: 'dotnet build Release'
 
     - task: DotNetCoreCLI@2
       inputs:
         command: 'build'
         arguments: '-c Release'
-        workingDirectory: $(System.DefaultWorkingDirectory)/test/test-applications/integrations/Samples.FakeDbCommand
+        workingDirectory: $(System.DefaultWorkingDirectory)/tracer/test/test-applications/integrations/Samples.FakeDbCommand
       displayName: 'dotnet build Release'
 
     - task: GoTool@0
@@ -1142,13 +1142,13 @@ stages:
         workingDirectory: $(System.DefaultWorkingDirectory)
 
     - script: run.cmd
-      workingDirectory: $(System.DefaultWorkingDirectory)/build/timeit/Samples.HttpMessageHandler
+      workingDirectory: $(System.DefaultWorkingDirectory)/tracer/build/timeit/Samples.HttpMessageHandler
       displayName: Execute Samples.HttpMessageHandler benchmark
       env:
         DD_SERVICE: dd-trace-dotnet
 
     - script: run.cmd
-      workingDirectory: $(System.DefaultWorkingDirectory)/build/timeit/Samples.FakeDbCommand
+      workingDirectory: $(System.DefaultWorkingDirectory)/tracer/build/timeit/Samples.FakeDbCommand
       displayName: Execute Samples.FakeDbCommand benchmark
       env:
         DD_SERVICE: dd-trace-dotnet
