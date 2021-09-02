@@ -18,9 +18,7 @@ namespace Samples.MongoDB
             return Environment.GetEnvironmentVariable("MONGO_HOST") ?? "localhost";
         }
 
-#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
         public static async Task Main(string[] args)
-#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             bool IsProfilerAttached()
             {
@@ -65,7 +63,7 @@ namespace Samples.MongoDB
                 var collection = database.GetCollection<BsonDocument>("employees");
 
                 Run(collection, newDocument);
-                RunAsync(collection, newDocument).Wait();
+                await RunAsync(collection, newDocument);
 
 #if MONGODB_2_2
                 WireProtocolExecuteIntegrationTest(client);

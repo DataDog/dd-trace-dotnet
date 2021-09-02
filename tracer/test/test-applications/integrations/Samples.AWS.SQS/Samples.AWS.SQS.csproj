@@ -4,12 +4,13 @@
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+    <LoadManagedProfilerFromProfilerDirectory>true</LoadManagedProfilerFromProfilerDirectory>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" Private="false" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <PackageReference Include="AWSSDK.SQS" Version="$(ApiVersion)" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
