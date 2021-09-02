@@ -726,7 +726,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         // subscribe to DiagnosticSource events.
         // don't skip Dapper: it makes ADO.NET calls even though it doesn't reference
         // System.Data or System.Data.Common
-        if (module_info.assembly.name != WStr("Microsoft.AspNetCore.Hosting") && module_info.assembly.name != WStr("Dapper"))
+        if (module_info.assembly.name != microsoft_aspnetcore_hosting_assemblyName &&
+            module_info.assembly.name != dapper_assemblyName)
         {
             filtered_integrations = FilterIntegrationsByTarget(filtered_integrations, assembly_import);
 
