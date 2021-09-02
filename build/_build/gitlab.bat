@@ -5,7 +5,7 @@ call "%VSTUDIO_ROOT%\vc\auxiliary\build\vcvars64.bat"
 SET VSToolsPath=%VSTUDIO_ROOT%\MSBuild\Microsoft\Visual Studio\v16.0
 
 cd c:\mnt\
-dotnet run --project build/_build/_build.csproj -- Info Clean BuildTracerHome PackageTracerHome SignDlls SignMsiAndNupkg --Artifacts "build-out\%CI_JOB_ID%"
+dotnet run --project build/_build/_build.csproj -- Info Clean BuildTracerHome PackageTracerHome ZipSymbols SignDlls SignMsiAndNupkg --Artifacts "build-out\%CI_JOB_ID%"
 goto :EOF
 
 :nomntdir

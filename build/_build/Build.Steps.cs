@@ -402,7 +402,6 @@ partial class Build
     Target PublishNativeProfiler => _ => _
         .Unlisted()
         .DependsOn(PublishNativeProfilerWindows)
-        .DependsOn(PublishNativeSymbolsWindows)                                
         .DependsOn(PublishNativeProfilerLinux)
         .DependsOn(PublishNativeProfilerMacOs);
 
@@ -516,6 +515,7 @@ partial class Build
     Target ZipSymbols => _ => _
         .Unlisted()
         .After(BuildTracerHome)
+        .DependsOn(PublishNativeSymbolsWindows)
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
