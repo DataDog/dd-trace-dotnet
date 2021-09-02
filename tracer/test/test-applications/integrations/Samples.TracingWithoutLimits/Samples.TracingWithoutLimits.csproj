@@ -3,6 +3,6 @@
     <LoadManagedProfilerFromProfilerDirectory>true</LoadManagedProfilerFromProfilerDirectory>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" Private="false" />
   </ItemGroup>
 </Project>
