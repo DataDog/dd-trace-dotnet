@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace;
 using Datadog.Trace.TestHelpers;
 
@@ -18,7 +19,9 @@ namespace Samples.WebRequest.NetFramework20
 
         private static string Url;
 
-        public static void Main(string[] args)
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
+        public static async Task Main(string[] args)
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             bool tracingDisabled = args.Any(arg => arg.Equals("TracingDisabled", StringComparison.OrdinalIgnoreCase));
             Console.WriteLine($"TracingDisabled {tracingDisabled}");
