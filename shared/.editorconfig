@@ -121,7 +121,7 @@ dotnet_diagnostic.IDE0008.severity = error  # Use explicit type instead of 'var'
 
 # Expression-bodied members
 csharp_style_expression_bodied_accessors = false:suggestion
-dotnet_diagnostic.IDE0027.severity = suggestion
+dotnet_diagnostic.IDE0027.severity = suggestion  # Use expression body for accessors
 
 csharp_style_expression_bodied_constructors = false:error
 dotnet_diagnostic.IDE0021.severity = error  # Use expression body for constructors
