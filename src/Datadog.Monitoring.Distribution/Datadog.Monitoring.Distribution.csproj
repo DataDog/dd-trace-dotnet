@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <Version>1.28.5-prerelease</Version>
+    <Version>$(Version)-beta01</Version> <!-- Unconditionally add a beta suffix to the package, but keep the rest of the name so we can associate it with the rest of the release -->
     <Title>Datadog APM Auto-instrumentation Assets</Title>
     <Description>Auto-instrumentation assets for Datadog APM</Description>
     <IncludeBuildOutput>false</IncludeBuildOutput>
