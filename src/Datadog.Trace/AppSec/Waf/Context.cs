@@ -50,7 +50,7 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             disposed = true;
-            WafNative.ContextDistroy(contextHandle);
+            WafNative.ContextDestroy(contextHandle);
         }
 
         public void Dispose()

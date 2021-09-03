@@ -139,8 +139,6 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             DDWAF_AFTER_LAST,
         }
 
-#pragma warning disable SA1300 // Element should begin with upper-case letter
-
         internal static IntPtr ObjectFreeFuncPtr
         {
             get { return ObjectFreeFuncPtrField; }
@@ -176,7 +174,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             DestroyField(handle);
         }
 
-        internal static void ContextDistroy(IntPtr handle)
+        internal static void ContextDestroy(IntPtr handle)
         {
             ContextDestroyField(handle);
         }
@@ -269,8 +267,6 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                     break;
             }
         }
-
-#pragma warning restore SA1300 // Element should begin with upper-case letter
 
         private static T GetDelegateForNativeFunction<T>(IntPtr handle, string functionName, out IntPtr funcPtr)
             where T : Delegate

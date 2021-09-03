@@ -16,7 +16,7 @@ namespace Datadog.Trace.AppSec.Waf
     {
         private readonly IntPtr ptr;
         private DdwafObjectStruct innerObj;
-        private bool innerObjInitalized = false;
+        private bool innerObjInitialized = false;
         private bool disposed = false;
 
         public Obj(IntPtr ptr)
@@ -59,11 +59,12 @@ namespace Datadog.Trace.AppSec.Waf
 
         private void Initailize()
         {
-            if (innerObjInitalized)
+            if (innerObjInitialized)
             {
                 return;
             }
 
+            innerObjInitialized = true;
             innerObj = (DdwafObjectStruct)Marshal.PtrToStructure(ptr, typeof(DdwafObjectStruct));
         }
     }
