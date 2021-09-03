@@ -342,26 +342,40 @@ namespace Datadog.Trace.DuckTyping.Tests.Methods
             Assert.Null(wrapper3.Item1);
             Assert.Equal("World", wrapper3.Item2);
 
-            duckInterface.ForEachScope<int>(
-                (obj, x) =>
-                {
-                    Assert.Equal(42, x);
-                },
-                42);
+            // Generic methods with generic types in parameters
+            RunForEachScopeTest(42);
+            RunForEachScopeTest(new object());
+            RunForEachScopeTest("Hello World");
+            RunForEachScopeTest(new { AnonymousType = true });
 
-            duckAbstract.ForEachScope<int>(
-                (obj, x) =>
-                {
-                    Assert.Equal(42, x);
-                },
-                42);
+            void RunForEachScopeTest<T>(T value)
+            {
+                // Generic methods with generic types in parameters
 
-            duckVirtual.ForEachScope<int>(
+                duckInterface.ForEachScope<T>(
                 (obj, x) =>
                 {
-                    Assert.Equal(42, x);
+                    Assert.Same(obscureObject, obj);
+                    Assert.Equal(value, x);
                 },
-                42);
+                value);
+
+                duckAbstract.ForEachScope<T>(
+                    (obj, x) =>
+                    {
+                        Assert.Same(obscureObject, obj);
+                        Assert.Equal(value, x);
+                    },
+                    value);
+
+                duckVirtual.ForEachScope<T>(
+                    (obj, x) =>
+                    {
+                        Assert.Same(obscureObject, obj);
+                        Assert.Equal(value, x);
+                    },
+                    value);
+            }
         }
 
         [Theory]
