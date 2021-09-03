@@ -341,6 +341,27 @@ namespace Datadog.Trace.DuckTyping.Tests.Methods
             Tuple<object, string> wrapper3 = duckAbstract.Wrap<object, string>(null, "World");
             Assert.Null(wrapper3.Item1);
             Assert.Equal("World", wrapper3.Item2);
+
+            duckInterface.ForEachScope<int>(
+                (obj, x) =>
+                {
+                    Assert.Equal(42, x);
+                },
+                42);
+
+            duckAbstract.ForEachScope<int>(
+                (obj, x) =>
+                {
+                    Assert.Equal(42, x);
+                },
+                42);
+
+            duckVirtual.ForEachScope<int>(
+                (obj, x) =>
+                {
+                    Assert.Equal(42, x);
+                },
+                42);
         }
 
         [Theory]
