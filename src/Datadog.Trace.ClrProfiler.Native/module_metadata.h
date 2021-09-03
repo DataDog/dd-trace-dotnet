@@ -121,7 +121,7 @@ public:
 
     void SetWrapperMemberRef(const WSTRING& keyIn, const mdMemberRef valueIn)
     {
-        std::lock_guard<std::mutex> guard(wrapper_mutex);
+        std::scoped_lock<std::mutex> lock(wrapper_mutex);
         if (wrapper_refs == nullptr)
         {
             wrapper_refs = std::make_unique<std::unordered_map<WSTRING, mdMemberRef>>();
@@ -132,7 +132,7 @@ public:
 
     void SetWrapperParentTypeRef(const WSTRING& keyIn, const mdTypeRef valueIn)
     {
-        std::lock_guard<std::mutex> guard(wrapper_mutex);
+        std::scoped_lock<std::mutex> lock(wrapper_mutex);
         if (wrapper_parent_type == nullptr)
         {
             wrapper_parent_type = std::make_unique<std::unordered_map<WSTRING, mdTypeRef>>();
@@ -143,7 +143,7 @@ public:
 
     void SetFailedWrapperMemberKey(const WSTRING& key)
     {
-        std::lock_guard<std::mutex> guard(wrapper_mutex);
+        std::scoped_lock<std::mutex> lock(wrapper_mutex);
         if (failed_wrapper_keys == nullptr)
         {
             failed_wrapper_keys = std::make_unique<std::unordered_set<WSTRING>>();

@@ -559,9 +559,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
     {
         Logger::Debug("ModuleLoadFinished: ", module_id, " ", module_info.assembly.name, " AppDomain ",
                       module_info.assembly.app_domain_id, " ", module_info.assembly.app_domain_name,
-                      " | IsNGEN = ", (module_info.IsNGEN() ? "true" : "false"),
-                      " | IsDynamic = ", (module_info.IsDynamic() ? "true" : "false"),
-                      " | IsResource = ", (module_info.IsResource() ? "true" : "false"));
+                      std::boolalpha,
+                      " | IsNGEN = ", module_info.IsNGEN(),
+                      " | IsDynamic = ", module_info.IsDynamic(),
+                      " | IsResource = ", module_info.IsResource(),
+                      std::noboolalpha);
     }
 
     AppDomainID app_domain_id = module_info.assembly.app_domain_id;
