@@ -667,7 +667,7 @@ namespace Datadog.Trace.DuckTyping
                         if (!candidateParamType.IsAssignableFrom(proxyParamType))
                         {
                             // Check if the parameter type contains generic types before skipping
-                            if (!candidateParamType.IsGenericType || candidateParamType.IsGenericType != proxyParamType.IsGenericType)
+                            if (!candidateParamType.IsGenericType || !proxyParamType.IsGenericType)
                             {
                                 skip = true;
                                 break;
