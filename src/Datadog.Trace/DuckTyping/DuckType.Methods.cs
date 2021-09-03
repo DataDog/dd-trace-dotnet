@@ -706,7 +706,7 @@ namespace Datadog.Trace.DuckTyping
                                     }
 
                                     // If the proxy parameter type is a value type (no ducktyping neither a base class) both types must match
-                                    if (!proxyParamTypeGenericType.IsEnum && proxyParamTypeGenericType != candidateParamTypeGenericType)
+                                    if (proxyParamTypeGenericType.IsValueType && !proxyParamTypeGenericType.IsEnum && proxyParamTypeGenericType != candidateParamTypeGenericType)
                                     {
                                         skip = true;
                                         break;
