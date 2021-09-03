@@ -25,24 +25,7 @@ namespace trace
 class CallTargetTokens
 {
 private:
-    void* module_metadata_ptr = nullptr;
-
-    // CallTarget constants
-    WSTRING managed_profiler_calltarget_type = WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker");
-    WSTRING managed_profiler_calltarget_beginmethod_name = WStr("BeginMethod");
-    WSTRING managed_profiler_calltarget_endmethod_name = WStr("EndMethod");
-    WSTRING managed_profiler_calltarget_logexception_name = WStr("LogException");
-    WSTRING managed_profiler_calltarget_getdefaultvalue_name = WStr("GetDefaultValue");
-
-    WSTRING managed_profiler_calltarget_statetype = WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetState");
-    WSTRING managed_profiler_calltarget_statetype_getdefault_name = WStr("GetDefault");
-
-    WSTRING managed_profiler_calltarget_returntype = WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn");
-    WSTRING managed_profiler_calltarget_returntype_getdefault_name = WStr("GetDefault");
-
-    WSTRING managed_profiler_calltarget_returntype_generics =
-        WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn`1");
-    WSTRING managed_profiler_calltarget_returntype_getreturnvalue_name = WStr("GetReturnValue");
+    ModuleMetadata* module_metadata_ptr = nullptr;
 
     // CorLib tokens
     mdAssemblyRef corLibAssemblyRef = mdAssemblyRefNil;
@@ -70,10 +53,7 @@ private:
     mdMemberRef callTargetReturnVoidTypeGetDefault = mdMemberRefNil;
     mdMemberRef getDefaultMemberRef = mdMemberRefNil;
 
-    inline ModuleMetadata* GetMetadata()
-    {
-        return (ModuleMetadata*) module_metadata_ptr;
-    }
+    ModuleMetadata* GetMetadata();
     HRESULT EnsureCorLibTokens();
     HRESULT EnsureBaseCalltargetTokens();
     mdTypeRef GetTargetStateTypeRef();
@@ -93,14 +73,8 @@ private:
                                                const TypeInfo* currentType, ILInstr** instruction);
 
 public:
-    CallTargetTokens(void* module_metadata_ptr)
-    {
-        this->module_metadata_ptr = module_metadata_ptr;
-        for (int i = 0; i < FASTPATH_COUNT; i++)
-        {
-            beginMethodFastPathRefs[i] = mdMemberRefNil;
-        }
-    }
+    CallTargetTokens(ModuleMetadata* module_metadata_ptr);
+
     mdTypeRef GetObjectTypeRef();
     mdTypeRef GetExceptionTypeRef();
     mdAssemblyRef GetCorLibAssemblyRef();

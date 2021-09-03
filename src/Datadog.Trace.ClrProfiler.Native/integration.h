@@ -314,7 +314,7 @@ struct IntegrationMethod
     const WSTRING integration_name;
     MethodReplacement replacement;
 
-    IntegrationMethod() : integration_name(WStr("")), replacement({})
+    IntegrationMethod() : integration_name(EmptyWStr), replacement({})
     {
     }
 

@@ -79,6 +79,13 @@ const WSTRING skip_assemblies[]{WStr("mscorlib"),
                                 WStr("Anonymously Hosted DynamicMethods Assembly"),
                                 WStr("ISymWrapper")};
 
+const WSTRING mscorlib_assemblyName = WStr("mscorlib");
+const WSTRING system_private_corelib_assemblyName = WStr("System.Private.CoreLib");
+const WSTRING datadog_trace_clrprofiler_managed_loader_assemblyName = WStr("Datadog.Trace.ClrProfiler.Managed.Loader");
+
+const WSTRING microsoft_aspnetcore_hosting_assemblyName = WStr("Microsoft.AspNetCore.Hosting");
+const WSTRING dapper_assemblyName = WStr("Dapper");
+
 const WSTRING managed_profiler_full_assembly_version =
     WStr("Datadog.Trace, Version=1.28.5.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
 
