@@ -20,7 +20,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetCore5 : AspNetBase, IDisposable
     {
         public AspNetCore5(ITestOutputHelper outputHelper)
-            : base("AspNetCore5", outputHelper)
+            : base("AspNetCore5", outputHelper, "/shutdown")
         {
         }
 
