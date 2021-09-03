@@ -11,8 +11,35 @@ namespace trace
 const int signatureBufferSize = 500;
 
 /**
+ * CALLTARGET CONSTANTS
+ **/
+
+static const WSTRING managed_profiler_calltarget_type = WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker");
+static const WSTRING managed_profiler_calltarget_beginmethod_name = WStr("BeginMethod");
+static const WSTRING managed_profiler_calltarget_endmethod_name = WStr("EndMethod");
+static const WSTRING managed_profiler_calltarget_logexception_name = WStr("LogException");
+static const WSTRING managed_profiler_calltarget_getdefaultvalue_name = WStr("GetDefaultValue");
+
+static const WSTRING managed_profiler_calltarget_statetype =
+    WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetState");
+static const WSTRING managed_profiler_calltarget_statetype_getdefault_name = WStr("GetDefault");
+
+static const WSTRING managed_profiler_calltarget_returntype =
+    WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn");
+static const WSTRING managed_profiler_calltarget_returntype_getdefault_name = WStr("GetDefault");
+
+static const WSTRING managed_profiler_calltarget_returntype_generics =
+    WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetReturn`1");
+static const WSTRING managed_profiler_calltarget_returntype_getreturnvalue_name = WStr("GetReturnValue");
+
+/**
  * PRIVATE
  **/
+
+ModuleMetadata* CallTargetTokens::GetMetadata()
+{
+    return module_metadata_ptr;
+}
 
 HRESULT CallTargetTokens::EnsureCorLibTokens()
 {
@@ -776,6 +803,15 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArgumentsArray(void* rewriterWrapp
 /**
  * PUBLIC
  **/
+
+CallTargetTokens::CallTargetTokens(ModuleMetadata* module_metadata_ptr)
+{
+    this->module_metadata_ptr = module_metadata_ptr;
+    for (int i = 0; i < FASTPATH_COUNT; i++)
+    {
+        beginMethodFastPathRefs[i] = mdMemberRefNil;
+    }
+}
 
 mdTypeRef CallTargetTokens::GetObjectTypeRef()
 {

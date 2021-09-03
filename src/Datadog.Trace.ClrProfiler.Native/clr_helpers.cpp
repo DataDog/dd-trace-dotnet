@@ -452,8 +452,8 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import, con
         std::vector<WSTRING> type_names(expected_number_of_types);
 
         std::stack<int> generic_arg_stack;
-        WSTRING append_to_type = WStr("");
-        WSTRING current_type_name = WStr("");
+        WSTRING append_to_type = EmptyWStr;
+        WSTRING current_type_name = EmptyWStr;
 
         for (; current_index < signature_size; current_index++)
         {
@@ -680,7 +680,7 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import, con
             if (!append_to_type.empty())
             {
                 current_type_name.append(append_to_type);
-                append_to_type = WStr("");
+                append_to_type = EmptyWStr;
             }
 
             if (!generic_arg_stack.empty())
@@ -720,7 +720,7 @@ bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import, con
             }
 
             type_names[current_type_index] = current_type_name;
-            current_type_name = WStr("");
+            current_type_name = EmptyWStr;
             current_type_index++;
         }
 
@@ -767,7 +767,7 @@ bool ReturnTypeTokenforValueTypeElementType(PCCOR_SIGNATURE p_sig, const ComPtr<
                                             AssemblyProperty& corAssemblyProperty, mdToken* ret_type_token)
 {
     const auto cor_element_type = CorElementType(*p_sig);
-    WSTRING managed_type_name = WStr("");
+    WSTRING managed_type_name = EmptyWStr;
 
     switch (cor_element_type)
     {
@@ -850,7 +850,7 @@ bool ReturnTypeTokenforValueTypeElementType(PCCOR_SIGNATURE p_sig, const ComPtr<
     }
 
     // Create/Get TypeRef to the listed type
-    if (managed_type_name == WStr(""))
+    if (managed_type_name == EmptyWStr)
     {
         Logger::Warn("[trace::ReturnTypeTokenforElementType] no managed type name given");
         return false;
@@ -1217,7 +1217,7 @@ mdToken FunctionMethodArgument::GetTypeTok(ComPtr<IMetaDataEmit2>& pEmit, mdAsse
 
 WSTRING GetSigTypeTokName(PCCOR_SIGNATURE& pbCur, const ComPtr<IMetaDataImport2>& pImport)
 {
-    WSTRING tokenName = WStr("");
+    WSTRING tokenName = EmptyWStr;
     bool ref_flag = false;
     if (*pbCur == ELEMENT_TYPE_BYREF)
     {
