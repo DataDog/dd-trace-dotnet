@@ -88,4 +88,10 @@
     <DefineConstants>$(DefineConstants);NAMED_PIPE_AVAILABLE</DefineConstants>
   </PropertyGroup>
 
+  <!-- Liblog -->
+  <!-- Exclude liblog from code coverage -->
+  <PropertyGroup>
+    <DefineConstants>$(DefineConstants);LIBLOG_EXCLUDE_CODE_COVERAGE</DefineConstants>
+  </PropertyGroup>
+
 </Project>
