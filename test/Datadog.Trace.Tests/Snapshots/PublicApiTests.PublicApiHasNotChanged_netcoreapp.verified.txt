@@ -244,6 +244,7 @@ namespace Datadog.Trace
     }
     public static class SpanTypes
     {
+        public const string Aerospike = "aerospike";
         public const string Benchmark = "benchmark";
         public const string Build = "build";
         public const string Custom = "custom";

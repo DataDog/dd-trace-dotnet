@@ -6,7 +6,7 @@ services:
   datadog-agent:
     image: "gcr.io/datadoghq/agent:7"
     ports:
-      - "8126:8126"
+      - "8126"
     environment:
       DD_API_KEY: "${DD_API_KEY:?Set DD_API_KEY in your shell to send traces to Datadog}"
       DD_APM_ENABLED: "true"

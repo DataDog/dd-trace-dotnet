@@ -405,5 +405,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
+        public static IEnumerable<object[]> Aerospike =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETFRAMEWORK
+#endif
+                new object[] { "4.0.3" },
+                new object[] { "4.1.6" },
+                new object[] { "4.2.2" },
+#endif
+            };
+
     }
 }

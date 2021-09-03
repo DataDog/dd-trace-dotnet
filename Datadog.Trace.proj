@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <CsharpProject Include="src\**\*.csproj" Exclude="src/Datadog.Instrumentation/Datadog.Instrumentation.csproj;src/Datadog.Trace.Tools.Runner/*.csproj" />
+    <CsharpProject Include="src\**\*.csproj" Exclude="src/Datadog.Monitoring.Distribution/Datadog.Monitoring.Distribution.csproj;src/Datadog.Trace.Tools.Runner/*.csproj" />
     <CsharpUnitTestProject Include="test\**\*.Tests.csproj"/>
     <CsharpIntegrationTestProject Include="test\*.IntegrationTests\*.IntegrationTests.csproj"/>
     <CsharpIntegrationTestRegressionProject Include="test\tests-applications\regression\*.IntegrationTests.csproj" />

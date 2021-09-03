@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Datadog.Instrumentation" Version="1.28.2" />
+    <PackageReference Include="Datadog.Monitoring.Distribution" Version="1.28.2" />
   </ItemGroup>
 
   <ItemGroup Condition=" !$(TargetFramework.StartsWith('net45')) ">
