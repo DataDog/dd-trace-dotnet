@@ -35,9 +35,11 @@ partial class Build
 
     AbsolutePath OutputDirectory => RootDirectory / "bin";
     AbsolutePath TracerHomeDirectory => TracerHome ?? (OutputDirectory / "tracer-home");
+    AbsolutePath SymbolsDirectory => TracerHome ?? (OutputDirectory / "symbols");
     AbsolutePath DDTracerHomeDirectory => DDTracerHome ?? (OutputDirectory / "dd-tracer-home");
     AbsolutePath ArtifactsDirectory => Artifacts ?? (OutputDirectory / "artifacts");
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
+    AbsolutePath WindowsSymbolsZip => ArtifactsDirectory / "windows-native-symbols.zip";
     AbsolutePath BuildDataDirectory => RootDirectory / "build_data";
 
     const string LibDdwafVersion = "1.0.6";
@@ -327,6 +329,22 @@ partial class Build
                     .SetOutput(TracerHomeDirectory / framework)));
         });
 
+    Target PublishNativeSymbolsWindows => _ => _
+      .Unlisted()
+      .OnlyWhenStatic(() => IsWin)
+      .After(CompileNativeSrc, PublishManagedProfiler)
+      .Executes(() =>
+       {
+           foreach (var architecture in ArchitecturesForPlatform)
+           {
+               var source = NativeProfilerProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
+                            $"{NativeProfilerProject.Name}.pdb";
+               var dest = SymbolsDirectory / $"win-{architecture}";
+               Logger.Info($"Copying '{source}' to '{dest}'");
+               CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+           }
+       });
+
     Target PublishNativeProfilerWindows => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsWin)
@@ -492,6 +510,16 @@ partial class Build
                     Cmd.Value(arguments: $"cmd /c mklink /J \"{newDir}\" \"{existingDir}\"");
                 }
             });
+        });
+
+    Target ZipSymbols => _ => _
+        .Unlisted()
+        .After(BuildTracerHome)
+        .DependsOn(PublishNativeSymbolsWindows)
+        .OnlyWhenStatic(() => IsWin)
+        .Executes(() =>
+        {
+            CompressZip(SymbolsDirectory, WindowsSymbolsZip, fileMode: FileMode.Create);
         });
 
     Target ZipTracerHome => _ => _
