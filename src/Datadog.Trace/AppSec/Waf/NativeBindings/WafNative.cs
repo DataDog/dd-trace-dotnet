@@ -33,13 +33,15 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private static readonly DestroyDelegate DestroyField;
         private static readonly ContextDestroyDelegate ContextDestroyField;
         private static readonly ObjectInvalidDelegate ObjectInvalidField;
-        private static readonly ObjectStringLengthDelegate ObjectStringLengthField;
+        private static readonly ObjectStringLengthDelegateX64 ObjectStringLengthFieldX64;
+        private static readonly ObjectStringLengthDelegateX86 ObjectStringLengthFieldX86;
         private static readonly ObjectSignedDelegate ObjectSignedField;
         private static readonly ObjectUnsignedDelegate ObjectUnsignField;
         private static readonly ObjectArrayDelegate ObjectArrayField;
         private static readonly ObjectMapDelegate ObjectMapField;
         private static readonly ObjectArrayAddDelegate ObjectArrayAddField;
-        private static readonly ObjectMapAddDelegate ObjectMapAddField;
+        private static readonly ObjectMapAddDelegateX64 ObjectMapAddFieldX64;
+        private static readonly ObjectMapAddDelegateX86 ObjectMapAddFieldX86;
         private static readonly ObjectFreeDelegate ObjectFreeField;
         private static readonly SetupLogCallbackDelegate SetupLogCallbackField;
         private static readonly IntPtr ObjectFreeFuncPtrField;
@@ -65,13 +67,27 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                     ContextDestroyField = GetDelegateForNativeFunction<ContextDestroyDelegate>(handle, "ddwaf_context_destroy");
                     ResultFreeField = GetDelegateForNativeFunction<ResultFreeDelegate>(handle, "ddwaf_result_free");
                     ObjectInvalidField = GetDelegateForNativeFunction<ObjectInvalidDelegate>(handle, "ddwaf_object_invalid");
-                    ObjectStringLengthField = GetDelegateForNativeFunction<ObjectStringLengthDelegate>(handle, "ddwaf_object_stringl");
+                    ObjectStringLengthFieldX64 =
+                        Environment.Is64BitProcess ?
+                            GetDelegateForNativeFunction<ObjectStringLengthDelegateX64>(handle, "ddwaf_object_stringl") :
+                            null;
+                    ObjectStringLengthFieldX86 =
+                        Environment.Is64BitProcess ?
+                            null :
+                            GetDelegateForNativeFunction<ObjectStringLengthDelegateX86>(handle, "ddwaf_object_stringl");
                     ObjectSignedField = GetDelegateForNativeFunction<ObjectSignedDelegate>(handle, "ddwaf_object_signed");
                     ObjectUnsignField = GetDelegateForNativeFunction<ObjectUnsignedDelegate>(handle, "ddwaf_object_unsigned");
                     ObjectArrayField = GetDelegateForNativeFunction<ObjectArrayDelegate>(handle, "ddwaf_object_array");
                     ObjectMapField = GetDelegateForNativeFunction<ObjectMapDelegate>(handle, "ddwaf_object_map");
                     ObjectArrayAddField = GetDelegateForNativeFunction<ObjectArrayAddDelegate>(handle, "ddwaf_object_array_add");
-                    ObjectMapAddField = GetDelegateForNativeFunction<ObjectMapAddDelegate>(handle, "ddwaf_object_map_addl");
+                    ObjectMapAddFieldX64 =
+                        Environment.Is64BitProcess ?
+                            GetDelegateForNativeFunction<ObjectMapAddDelegateX64>(handle, "ddwaf_object_map_addl") :
+                            null;
+                    ObjectMapAddFieldX86 =
+                        Environment.Is64BitProcess ?
+                            null :
+                            GetDelegateForNativeFunction<ObjectMapAddDelegateX86>(handle, "ddwaf_object_map_addl");
                     ObjectFreeField = GetDelegateForNativeFunction<ObjectFreeDelegate>(handle, "ddwaf_object_free", out ObjectFreeFuncPtrField);
                     GetVersionField = GetDelegateForNativeFunction<GetVersionDelegate>(handle, "ddwaf_get_version");
 
@@ -102,7 +118,9 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         private delegate IntPtr ObjectInvalidDelegate(IntPtr emptyObjPtr);
 
-        private delegate IntPtr ObjectStringLengthDelegate(IntPtr emptyObjPtr, string s, ulong length);
+        private delegate IntPtr ObjectStringLengthDelegateX64(IntPtr emptyObjPtr, string s, ulong length);
+
+        private delegate IntPtr ObjectStringLengthDelegateX86(IntPtr emptyObjPtr, string s, uint length);
 
         private delegate IntPtr ObjectSignedDelegate(IntPtr emptyObjPtr, long value);
 
@@ -114,7 +132,9 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         private delegate bool ObjectArrayAddDelegate(IntPtr array, IntPtr entry);
 
-        private delegate bool ObjectMapAddDelegate(IntPtr map, string entryName, ulong entryNameLength, IntPtr entry);
+        private delegate bool ObjectMapAddDelegateX64(IntPtr map, string entryName, ulong entryNameLength, IntPtr entry);
+
+        private delegate bool ObjectMapAddDelegateX86(IntPtr map, string entryName, uint entryNameLength, IntPtr entry);
 
         private delegate void ObjectFreeDelegate(IntPtr input);
 
@@ -189,7 +209,15 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         internal static IntPtr ObjectStringLength(string s, ulong length)
         {
             var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(DdwafObjectStruct)));
-            ObjectStringLengthField(ptr, s, length);
+            if (Environment.Is64BitProcess)
+            {
+                ObjectStringLengthFieldX64(ptr, s, length);
+            }
+            else
+            {
+                ObjectStringLengthFieldX86(ptr, s, (uint)length);
+            }
+
             return ptr;
         }
 
@@ -229,7 +257,10 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         // Setting entryNameLength to 0 will result in the entryName length being re-computed with strlen
         internal static bool ObjectMapAdd(IntPtr map, string entryName, ulong entryNameLength, IntPtr entry)
         {
-            return ObjectMapAddField(map, entryName, entryNameLength, entry);
+            return
+                Environment.Is64BitProcess ?
+                    ObjectMapAddFieldX64(map, entryName, entryNameLength, entry) :
+                    ObjectMapAddFieldX86(map, entryName, (uint)entryNameLength, entry);
         }
 
         internal static void ObjectFree(IntPtr input)
