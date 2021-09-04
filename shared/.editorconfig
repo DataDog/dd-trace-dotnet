@@ -281,7 +281,7 @@ dotnet_diagnostic.IDE0077.severity = error       # Avoid legacy format target in
 dotnet_diagnostic.IDE0001.severity = silent      # Simplify name 
 dotnet_diagnostic.IDE0002.severity = silent      # Simplify member access  
 dotnet_diagnostic.IDE0004.severity = silent      # Remove unnecessary cast
-dotnet_diagnostic.IDE0005.severity = warning     # Remove unnecessary import
+dotnet_diagnostic.IDE0005.severity = suggestion  # Remove unnecessary import
 dotnet_diagnostic.IDE0035.severity = suggestion  # Remove unreachable code
 dotnet_diagnostic.IDE0051.severity = warning     # Remove unused private member  
 dotnet_diagnostic.IDE0052.severity = warning     # Remove unread private member 
@@ -292,8 +292,8 @@ dotnet_diagnostic.IDE0070.severity = warning     # Use 'System.HashCode.Combine'
 
 #### Rules that have dotnet_style_blah or csharp_style_blah specification, but are not in the VS UI: ####
 
-csharp_style_implicit_object_creation_when_type_is_apparent = true:suggestion
-dotnet_diagnostic.IDE0090.severity = suggestion  # Simplify new expression
+csharp_style_implicit_object_creation_when_type_is_apparent = true:silent
+dotnet_diagnostic.IDE0090.severity = silent  # Simplify new expression
 
 #### Naming styles ####
 
