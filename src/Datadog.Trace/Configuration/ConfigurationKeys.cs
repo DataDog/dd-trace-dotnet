@@ -396,6 +396,11 @@ namespace Datadog.Trace.Configuration
             /// Feature Flag: enables instrumenting calls to netstandard.dll (only applies to CallSite instrumentation)
             /// </summary>
             public const string NetStandardEnabled = "DD_TRACE_NETSTANDARD_ENABLED";
+
+            /// <summary>
+            /// Feature Flag: enables the ILogger logs injection integration. Defaults to false.
+            /// </summary>
+            public const string ILoggerIntegrationEnabled = "DD_TRACE_ILOGGER_LOGS_INJECTION_ENABLED";
         }
     }
 }
