@@ -8,7 +8,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ILogger
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
 {
     internal class DatadogLoggingScope : IReadOnlyList<KeyValuePair<string, object>>
     {
