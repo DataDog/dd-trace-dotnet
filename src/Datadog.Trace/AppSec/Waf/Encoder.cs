@@ -10,122 +10,128 @@ using System.Text;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.AppSec.Waf
 {
     internal class Encoder
     {
         internal const int MaxStringLength = 4096;
-        internal const int MaxObjectDepth = 10;
-        internal const int MaxMapOrArrayLength = 150;
+        internal const int MaxObjectDepth = 15;
+        internal const int MaxMapOrArrayLength = 1500;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Encoder));
 
-        public static Args Encode(object o)
+        public static Obj Encode(object o)
         {
             return EncodeInternal(o, MaxObjectDepth);
         }
 
-        public static ArgsType DecodeArgsType(PW_INPUT_TYPE t)
+        public static ObjType DecodeArgsType(DDWAF_OBJ_TYPE t)
         {
             switch (t)
             {
-                case PW_INPUT_TYPE.PWI_INVALID:
-                    return ArgsType.Invalid;
-                case PW_INPUT_TYPE.PWI_SIGNED_NUMBER:
-                    return ArgsType.SignedNumber;
-                case PW_INPUT_TYPE.PWI_UNSIGNED_NUMBER:
-                    return ArgsType.UnsignedNumber;
-                case PW_INPUT_TYPE.PWI_STRING:
-                    return ArgsType.String;
-                case PW_INPUT_TYPE.PWI_ARRAY:
-                    return ArgsType.Array;
-                case PW_INPUT_TYPE.PWI_MAP:
-                    return ArgsType.Map;
+                case DDWAF_OBJ_TYPE.DDWAF_OBJ_INVALID:
+                    return ObjType.Invalid;
+                case DDWAF_OBJ_TYPE.DDWAF_OBJ_SIGNED:
+                    return ObjType.SignedNumber;
+                case DDWAF_OBJ_TYPE.DDWAF_OBJ_UNSIGNED:
+                    return ObjType.UnsignedNumber;
+                case DDWAF_OBJ_TYPE.DDWAF_OBJ_STRING:
+                    return ObjType.String;
+                case DDWAF_OBJ_TYPE.DDWAF_OBJ_ARRAY:
+                    return ObjType.Array;
+                case DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP:
+                    return ObjType.Map;
                 default:
-                    throw new Exception($"Invalid PW_INPUT_TYPE {t}");
+                    throw new Exception($"Invalid DDWAF_INPUT_TYPE {t}");
             }
         }
 
-        public static ReturnCode DecodeReturnCode(PW_RET_CODE rc)
+        public static ReturnCode DecodeReturnCode(DDWAF_RET_CODE rc)
         {
             switch (rc)
             {
-                case PW_RET_CODE.PW_ERR_INTERNAL:
+                case DDWAF_RET_CODE.DDWAF_ERR_INTERNAL:
                     return ReturnCode.ErrorInternal;
-                case PW_RET_CODE.PW_ERR_TIMEOUT:
+                case DDWAF_RET_CODE.DDWAF_ERR_TIMEOUT:
                     return ReturnCode.ErrorTimeout;
-                case PW_RET_CODE.PW_ERR_INVALID_CALL:
-                    return ReturnCode.ErrorInvalidCall;
-                case PW_RET_CODE.PW_ERR_INVALID_RULE:
-                    return ReturnCode.ErrorInvalidRule;
-                case PW_RET_CODE.PW_ERR_INVALID_FLOW:
-                    return ReturnCode.ErrorInvalidFlow;
-                case PW_RET_CODE.PW_ERR_NORULE:
-                    return ReturnCode.ErrorNorule;
-                case PW_RET_CODE.PW_GOOD:
+                case DDWAF_RET_CODE.DDWAF_ERR_INVALID_ARGUMENT:
+                    return ReturnCode.ErrorInvalidArgument;
+                case DDWAF_RET_CODE.DDWAF_ERR_INVALID_OBJECT:
+                    return ReturnCode.ErrorInvalidObject;
+                case DDWAF_RET_CODE.DDWAF_GOOD:
                     return ReturnCode.Good;
-                case PW_RET_CODE.PW_MONITOR:
+                case DDWAF_RET_CODE.DDWAF_MONITOR:
                     return ReturnCode.Monitor;
-                case PW_RET_CODE.PW_BLOCK:
+                case DDWAF_RET_CODE.DDWAF_BLOCK:
                     return ReturnCode.Block;
                 default:
                     throw new Exception($"Unknown return code: {rc}");
             }
         }
 
-        private static Args EncodeInternal(object o, int remainingDepth)
+        private static Obj EncodeInternal(object o, int remainingDepth)
         {
+            Log.Debug($"Encoding: {o?.GetType()}");
+
             var value =
                 o switch
                 {
                     string s => CreateNativeString(s),
-                    int i => new Args(Native.pw_createInt(i)),
-                    long i => new Args(Native.pw_createInt(i)),
-                    uint i => new Args(Native.pw_createUint(i)),
-                    ulong i => new Args(Native.pw_createUint(i)),
-                    IList<object> objs => EncodeList(objs, remainingDepth),
-                    IEnumerable<KeyValuePair<string, object>> objDict => EncodeDictionary(objDict, remainingDepth),
+                    JValue jv => CreateNativeString(jv.Value.ToString()),
+                    int i => new Obj(WafNative.ObjectSigned(i)),
+                    long i => new Obj(WafNative.ObjectSigned(i)),
+                    uint i => new Obj(WafNative.ObjectUnsigned(i)),
+                    ulong i => new Obj(WafNative.ObjectUnsigned(i)),
+                    IEnumerable<KeyValuePair<string, JToken>> objDict => EncodeDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), remainingDepth),
                     IEnumerable<KeyValuePair<string, string>> objDict => EncodeDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), remainingDepth),
+                    IEnumerable<KeyValuePair<string, object>> objDict => EncodeDictionary(objDict, remainingDepth),
+                    IList<JToken> objs => EncodeList(objs.Select(x => (object)x), remainingDepth),
+                    IList<object> objs => EncodeList(objs, remainingDepth),
                     _ => throw new Exception($"Couldn't encode: {o}, type: {o.GetType()}")
                 };
             return value;
         }
 
-        private static Args EncodeList(IList<object> objs, int remainingDepth)
+        private static Obj EncodeList(IEnumerable<object> objEnumerator, int remainingDepth)
         {
-            var arrNat = Native.pw_createArray();
+            Log.Debug($"Encoding list: {objEnumerator?.GetType()}");
+
+            var arrNat = WafNative.ObjectArray();
 
             if (remainingDepth-- <= 0)
             {
-                Log.Warning($"EncodeList: object graph too deep, truncating nesting");
-                return new Args(arrNat);
+                Log.Warning($"EncodeList: object graph too deep, truncating nesting " + string.Join(", ", objEnumerator));
+                return new Obj(arrNat);
             }
 
-            IEnumerable<object> objEnumerator = objs;
-            if (objs.Count > MaxMapOrArrayLength)
+            var count = objEnumerator is IList<object> objs ? objs.Count : objEnumerator.Count();
+            if (count > MaxMapOrArrayLength)
             {
-                Log.Warning($"EncodeList: list too long, it will be truncated, objs.Count: {objs.Count}, MaxMapOrArrayLength {MaxMapOrArrayLength}");
-                objEnumerator = objs.Take(MaxMapOrArrayLength);
+                Log.Warning($"EncodeList: list too long, it will be truncated, count: {count}, MaxMapOrArrayLength {MaxMapOrArrayLength}");
+                objEnumerator = objEnumerator.Take(MaxMapOrArrayLength);
             }
 
             foreach (var o in objEnumerator)
             {
                 var value = EncodeInternal(o, remainingDepth);
-                Native.pw_addArray(ref arrNat, value.RawArgs);
+                WafNative.ObjectArrayAdd(arrNat, value.RawPtr);
             }
 
-            return new Args(arrNat);
+            return new Obj(arrNat);
         }
 
-        private static Args EncodeDictionary(IEnumerable<KeyValuePair<string, object>> objDictEnumerator, int remainingDepth)
+        private static Obj EncodeDictionary(IEnumerable<KeyValuePair<string, object>> objDictEnumerator, int remainingDepth)
         {
-            var mapNat = Native.pw_createMap();
+            Log.Debug($"Encoding dictionary: {objDictEnumerator?.GetType()}");
+
+            var mapNat = WafNative.ObjectMap();
 
             if (remainingDepth-- <= 0)
             {
-                Log.Warning($"EncodeDictionary: object graph too deep, truncating nesting");
-                return new Args(mapNat);
+                Log.Warning($"EncodeDictionary: object graph too deep, truncating nesting " + string.Join(", ", objDictEnumerator.Select(x => $"{x.Key}, {x.Value}")));
+                return new Obj(mapNat);
             }
 
             var count = objDictEnumerator is IDictionary<string, object> objDict ? objDict.Count : objDictEnumerator.Count();
@@ -142,7 +148,7 @@ namespace Datadog.Trace.AppSec.Waf
                 if (name != null)
                 {
                     var value = EncodeInternal(o.Value, remainingDepth);
-                    Native.pw_addMap(ref mapNat, name, Convert.ToUInt64(name.Length), value.RawArgs);
+                    WafNative.ObjectMapAdd(mapNat, name, Convert.ToUInt64(name.Length), value.RawPtr);
                 }
                 else
                 {
@@ -150,7 +156,7 @@ namespace Datadog.Trace.AppSec.Waf
                 }
             }
 
-            return new Args(mapNat);
+            return new Obj(mapNat);
         }
 
         private static string TrunacteLongString(string s)
@@ -163,10 +169,10 @@ namespace Datadog.Trace.AppSec.Waf
             return s;
         }
 
-        private static Args CreateNativeString(string s)
+        private static Obj CreateNativeString(string s)
         {
             s = TrunacteLongString(s);
-            return new Args(Native.pw_createStringWithLength(s, Convert.ToUInt64(s.Length)));
+            return new Obj(WafNative.ObjectStringLength(s, Convert.ToUInt64(s.Length)));
         }
 
         public static string FormatArgs(object o)

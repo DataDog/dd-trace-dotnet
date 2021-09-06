@@ -14,7 +14,7 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 
         internal ResultData ResultData { get; set; }
 
-        internal static Return From(IReturn wafReturn)
+        internal static Return From(IResult wafReturn)
         {
             return new Return
             {

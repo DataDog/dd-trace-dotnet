@@ -1,4 +1,4 @@
-// <copyright file="IAdditiveContext.cs" company="Datadog">
+// <copyright file="DdwafConfigStruct.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,10 +7,14 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Datadog.Trace.AppSec.Waf
+namespace Datadog.Trace.AppSec.Waf.NativeBindings
 {
-    internal interface IAdditiveContext : IDisposable
+    internal struct DdwafConfigStruct
     {
-        IReturn Run(IDictionary<string, object> args);
+        public ulong MaxArrayLength;
+
+        public ulong MaxMapDepth;
+
+        public int MaxTimeStore;
     }
 }

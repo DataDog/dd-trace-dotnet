@@ -68,7 +68,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     var security = Security.Instance;
                     if (security.Settings.Enabled)
                     {
-                        AspNetMvcIntegration.RaiseIntrumentationEvent(security, HttpContext.Current, scope.Span, duckedControllerContext.RouteData);
+                        AspNetMvcIntegration.RaiseInstrumentationEvent(security, HttpContext.Current, scope.Span, duckedControllerContext.RouteData);
                     }
                 }
             }

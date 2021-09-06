@@ -25,7 +25,7 @@
     </Content>
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
     <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
-    <PackageReference Include="libddwaf" Version="1.0.6" GeneratePathProperty="true" />
+    <PackageReference Include="libddwaf" Version="1.0.7" GeneratePathProperty="true" />
 
     <PackageReference Include="coverlet.collector" Version="3.0.4-preview.32">
       <PrivateAssets>all</PrivateAssets>
@@ -43,7 +43,7 @@
   <ItemGroup Condition=" $(TargetFramework.StartsWith('netcoreapp')) ">
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
   </ItemGroup>
-  
+
   <Target Name="AfterBuildCopyManagedProfiler" AfterTargets="AfterBuild">
     <ItemGroup>
       <!-- Subfolders of the output directory should each be a target framework -->
@@ -55,7 +55,7 @@
     <Copy SourceFiles="@(ManagedProfilerFiles)" DestinationFolder="$(OutputPath)profiler-lib\%(RecursiveDir)" />
     <Copy SourceFiles="@(SecurityLibraryFiles)" DestinationFolder="$(OutputPath)profiler-lib\%(RecursiveDir)" />
   </Target>
-  
+
   <ItemGroup>
     <None Update="CI\Data\*.*">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

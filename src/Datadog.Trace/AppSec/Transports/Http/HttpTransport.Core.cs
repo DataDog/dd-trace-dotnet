@@ -55,12 +55,12 @@ namespace Datadog.Trace.AppSec.Transport.Http
             }
         }
 
-        public IAdditiveContext GetAdditiveContext()
+        public IContext GetAdditiveContext()
         {
-            return context.Features.Get<IAdditiveContext>();
+            return context.Features.Get<IContext>();
         }
 
-        public void SetAdditiveContext(IAdditiveContext additiveContext)
+        public void SetAdditiveContext(IContext additiveContext)
         {
             context.Features.Set(additiveContext);
             context.Response.RegisterForDispose(additiveContext);

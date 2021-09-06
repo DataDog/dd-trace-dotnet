@@ -198,7 +198,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 var security = Security.Instance;
                 if (security.Settings.Enabled)
                 {
-                    RaiseIntrumentationEvent(security, HttpContext.Current, span, controllerContext.RouteData);
+                    RaiseInstrumentationEvent(security, HttpContext.Current, span, controllerContext.RouteData);
                 }
             }
             catch (Exception ex)
@@ -216,7 +216,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <param name="context">context</param>
         /// <param name="relatedSpan">related span</param>
         /// <param name="routeDatas">routeDatas</param>
-        internal static void RaiseIntrumentationEvent(IDatadogSecurity security, HttpContext context, Span relatedSpan, RouteData routeDatas)
+        internal static void RaiseInstrumentationEvent(IDatadogSecurity security, HttpContext context, Span relatedSpan, RouteData routeDatas)
         {
             try
             {

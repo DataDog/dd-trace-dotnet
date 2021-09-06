@@ -1,4 +1,4 @@
-// <copyright file="AdditiveContext.cs" company="Datadog">
+// <copyright file="Context.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,36 +10,34 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.AppSec.Waf
 {
-    internal class AdditiveContext : IAdditiveContext
+    internal class Context : IContext
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AdditiveContext>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Context>();
         private readonly IntPtr contextHandle;
         private bool disposed = false;
 
-        public AdditiveContext(IntPtr contextHandle)
+        public Context(IntPtr contextHandle)
         {
             this.contextHandle = contextHandle;
         }
 
-        ~AdditiveContext()
+        ~Context()
         {
             Dispose(false);
         }
 
-        public IReturn Run(IDictionary<string, object> args)
+        public IResult Run(IDictionary<string, object> args)
         {
             // do not add a using or call dispose in some other way here
-            // when passing args to pw_runAdditive it will take ownership and free them
+            // when passing args to Native.Run it will take ownership and free them
             var pwArgs = Encoder.Encode(args);
 
-            var retNative = Native.pw_runAdditive(contextHandle, pwArgs.RawArgs, 1000000);
-            var ret = new Return(retNative);
+            var rawAgs = pwArgs.RawPtr;
+            DdwafResultStruct retNative = default;
 
-            // in these two specific case we need to explicitly free the pwArgs
-            if (ret.ReturnCode == ReturnCode.ErrorTimeout || ret.ReturnCode == ReturnCode.ErrorInvalidCall)
-            {
-                pwArgs.Dispose();
-            }
+            var code = WafNative.Run(contextHandle, rawAgs, ref retNative, 1000000);
+
+            var ret = new Result(retNative, code);
 
             return ret;
         }
@@ -52,7 +50,7 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             disposed = true;
-            Native.pw_clearAdditive(contextHandle);
+            WafNative.ContextDestroy(contextHandle);
         }
 
         public void Dispose()

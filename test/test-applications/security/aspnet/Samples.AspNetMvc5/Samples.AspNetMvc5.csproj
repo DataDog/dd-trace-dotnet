@@ -202,7 +202,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <SecurityLibraryFiles Include="..\..\..\..\..\packages\libddwaf.1.0.6\runtimes\**\*.*" />
+    <SecurityLibraryFiles Include="..\..\..\..\..\packages\libddwaf.1.0.7\runtimes\**\*.*" />
   </ItemGroup>
   <Target Name="CopyFiles" AfterTargets="Build">
     <Copy SourceFiles="@(SecurityLibraryFiles)" DestinationFolder="$(TargetDir)\%(RecursiveDir)" SkipUnchangedFiles="true" />

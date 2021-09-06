@@ -42,7 +42,7 @@ partial class Build
     AbsolutePath WindowsSymbolsZip => ArtifactsDirectory / "windows-native-symbols.zip";
     AbsolutePath BuildDataDirectory => RootDirectory / "build_data";
 
-    const string LibDdwafVersion = "1.0.6";
+    const string LibDdwafVersion = "1.0.7";
     AbsolutePath LibDdwafDirectory => (NugetPackageDirectory ?? (RootDirectory / "packages")) / $"libddwaf.{LibDdwafVersion}";
 
     AbsolutePath SourceDirectory => RootDirectory / "src";
@@ -1221,7 +1221,7 @@ partial class Build
         return archExt;
     }
 
-    // the integration tests need their own copy of the profiler, this achived through build.props on Windows, but doesn't seem to work under Linux 
+    // the integration tests need their own copy of the profiler, this achived through build.props on Windows, but doesn't seem to work under Linux
     private void IntegrationTestLinuxProfilerDirFudge(string project)
     {
             // Not sure if/why this is necessary, and we can't just point to the correct output location
