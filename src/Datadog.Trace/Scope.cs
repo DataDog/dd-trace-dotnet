@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.Abstractions;
+using System;
 
 namespace Datadog.Trace
 {
@@ -13,7 +13,7 @@ namespace Datadog.Trace
     /// all newly created spans that are not created with the ignoreActiveSpan
     /// parameter will be automatically children of the active span.
     /// </summary>
-    public class Scope : IScope
+    public class Scope : IDisposable
     {
         private readonly IScopeManager _scopeManager;
         private readonly bool _finishOnClose;
@@ -30,12 +30,6 @@ namespace Datadog.Trace
         /// Gets the active span wrapped in this scope
         /// </summary>
         public Span Span { get; }
-
-        /// <summary>
-        /// Gets the active span wrapped in this scope
-        /// Proxy to Span without concrete return value
-        /// </summary>
-        ISpan IScope.Span => Span;
 
         internal Scope Parent { get; }
 

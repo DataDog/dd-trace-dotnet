@@ -4,7 +4,6 @@
 // </copyright>
 
 using System.Collections.Generic;
-using Datadog.Trace.Abstractions;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec.EventModel.Batch

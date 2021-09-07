@@ -6,7 +6,6 @@
 using System;
 using System.Globalization;
 using System.Text;
-using Datadog.Trace.Abstractions;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
@@ -20,7 +19,7 @@ namespace Datadog.Trace
     /// tracks the duration of an operation as well as associated metadata in
     /// the form of a resource name, a service name, and user defined tags.
     /// </summary>
-    public class Span : IDisposable, ISpan
+    public class Span : IDisposable
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Span>();
         private static readonly bool IsLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
@@ -244,15 +243,6 @@ namespace Datadog.Trace
 
             return this;
         }
-
-        /// <summary>
-        /// Add a the specified tag to this span.
-        /// </summary>
-        /// <param name="key">The tag's key.</param>
-        /// <param name="value">The tag's value.</param>
-        /// <returns>This span to allow method chaining.</returns>
-        ISpan ISpan.SetTag(string key, string value)
-            => SetTag(key, value);
 
         /// <summary>
         /// Record the end time of the span and flushes it to the backend.

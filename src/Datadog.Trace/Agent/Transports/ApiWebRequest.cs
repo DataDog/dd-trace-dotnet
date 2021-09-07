@@ -7,7 +7,6 @@ using System;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
-using Datadog.Trace.Abstractions;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
