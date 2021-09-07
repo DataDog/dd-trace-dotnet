@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
 
@@ -14,6 +15,7 @@ namespace Datadog.Trace.AppSec.Waf
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Context>();
         private readonly IntPtr contextHandle;
+        private readonly List<Obj> argCache = new List<Obj>();
         private bool disposed = false;
 
         public Context(IntPtr contextHandle)
@@ -28,9 +30,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         public IResult Run(IDictionary<string, object> args)
         {
-            // do not add a using or call dispose in some other way here
-            // when passing args to Native.Run it will take ownership and free them
-            var pwArgs = Encoder.Encode(args);
+            var pwArgs = Encoder.Encode(args, argCache);
 
             var rawAgs = pwArgs.RawPtr;
             DdwafResultStruct retNative = default;
@@ -50,6 +50,12 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             disposed = true;
+
+            foreach (var arg in argCache)
+            {
+                arg.Dispose();
+            }
+
             WafNative.ContextDestroy(contextHandle);
         }
 
