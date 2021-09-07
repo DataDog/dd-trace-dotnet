@@ -201,11 +201,6 @@ namespace Datadog.Trace.Configuration
             RouteTemplateResourceNamesEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled)
                                                    ?? false;
 
-            if (!(source?.GetBool(ConfigurationKeys.FeatureFlags.ILoggerIntegrationEnabled) ?? false))
-            {
-                DisabledIntegrationNames.Add(nameof(IntegrationIds.ILogger));
-            }
-
             PartialFlushEnabled = source?.GetBool(ConfigurationKeys.PartialFlushEnabled)
                 // default value
                 ?? false;
