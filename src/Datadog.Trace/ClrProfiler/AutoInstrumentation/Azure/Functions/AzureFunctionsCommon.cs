@@ -13,7 +13,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 {
     internal static class AzureFunctionsCommon
     {
-        public const string OperationName = "azure.function";
+        public const string OperationName = "azure-functions.invoke";
+        public const string SpanType = SpanTypes.Serverless;
         public static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.AzureFunctions));
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AzureFunctionsCommon));
@@ -115,9 +116,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     }
                 }
 
-                scope.Root.Span.Type = SpanTypes.Serverless;
+                scope.Root.Span.Type = SpanType;
                 scope.Span.ResourceName = $"{triggerType} {functionName}";
-                scope.Span.Type = SpanTypes.Serverless;
+                scope.Span.Type = SpanType;
             }
             catch (Exception ex)
             {
