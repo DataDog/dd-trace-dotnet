@@ -1,5 +1,25 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
+## [Release 1.28.6](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.28.6)
+
+## Changes
+* Add support for Aerospike (#1717)
+* Reduce native memory consumption (#1723)
+* Implement 1.0.7 of libddwaf library for AppSec (#1732, #1742)
+* Finalise naming of Datadog.Monitoring.Distribution NuGet package (#1720, #1728)
+
+## Fixes
+* AppSec Header keys should be lower case (#1743)
+
+## Build / Test
+* Updates to code coverage (#1699)
+* Fixes for various flaky tests (#1713, #1715, #1718, #1719, #1722
+* Package windows native symbols in a separate archive (#1727)
+* Disable AppSec crank till a new runner machine can be created (#1739)
+* Updates to shared loader build (#1724, #1725, #1735, #1736)
+
+[Changes since 1.28.4](https://github.com/DataDog/dd-trace-dotnet/compare/v1.28.4...v1.28.6)
+
 ## [Release 1.28.5-prerelease](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.28.5-prerelease)
 
 ## Changes
