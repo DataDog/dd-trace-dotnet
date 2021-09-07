@@ -5,6 +5,7 @@
 #if NETFRAMEWORK
 
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Web;
 using System.Web.Routing;
@@ -22,7 +23,7 @@ namespace Datadog.Trace.Util.Http
             {
                 if (!k.Equals("cookie", System.StringComparison.OrdinalIgnoreCase))
                 {
-                    headersDic.Add(k, request.Headers[k]);
+                    headersDic.Add(k.ToLowerInvariant(), request.Headers[k]);
                 }
             }
 
