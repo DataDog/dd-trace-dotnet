@@ -5,7 +5,11 @@
   </PropertyGroup>
   
   <PropertyGroup>
-    <SharedSrcBaseDir>$(EnlistmentRoot)\shared\src\managed-src</SharedSrcBaseDir>
+    <!-- In .csproj files we define 'SharedSrcBaseDir' similar to this:                                 -->
+    <!--   <SharedSrcBaseDir>$(EnlistmentRoot)\shared\src\managed-src</SharedSrcBaseDir>                -->
+    <!-- However, in this .props file we need to use a relative path, becasue it may be pulled into a   -->
+    <!-- project located in a different repo which has a different value for 'EnlistmentRoot'.          -->
+    <SharedSrcBaseDir>$([System.IO.Path]::GetFullPath( $(MSBuildThisFileDirectory)\..\ ))</SharedSrcBaseDir>  
     <SharedSrcBaseLabel>Shared-Src</SharedSrcBaseLabel>
   </PropertyGroup>
 
