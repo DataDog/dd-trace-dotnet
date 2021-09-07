@@ -103,7 +103,7 @@ namespace environment
 
     // Determine whether to instrument within azure functions.
     // Default is false until official support is announced.
-    const WSTRING azure_functions_enabled = WStr("DD_AZURE_FUNCTIONS_ENABLED");
+    const WSTRING azure_functions_enabled = WStr("DD_TRACE_AZURE_FUNCTIONS_ENABLED");
 
     // Determine whether to instrument calls into netstandard.dll.
     // Default to false for now to avoid the unexpected overhead of additional spans.

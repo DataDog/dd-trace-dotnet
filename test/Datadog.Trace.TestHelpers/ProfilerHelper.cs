@@ -5,10 +5,6 @@
 
 using System;
 using System.Diagnostics;
-using System.Net;
-using System.Net.NetworkInformation;
-using System.Threading;
-using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers
 {
@@ -46,25 +42,6 @@ namespace Datadog.Trace.TestHelpers
             startInfo.RedirectStandardInput = redirectStandardInput;
 
             return Process.Start(startInfo);
-        }
-
-        public static bool PortInUse(int port)
-        {
-            var inUse = false;
-
-            IPGlobalProperties ipProperties = IPGlobalProperties.GetIPGlobalProperties();
-            IPEndPoint[] ipEndPoints = ipProperties.GetActiveTcpListeners();
-
-            foreach (IPEndPoint endPoint in ipEndPoints)
-            {
-                if (endPoint.Port == port)
-                {
-                    inUse = true;
-                    break;
-                }
-            }
-
-            return inUse;
         }
     }
 }
