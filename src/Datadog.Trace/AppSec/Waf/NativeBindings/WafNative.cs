@@ -448,7 +448,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
             return files
                 .Select(File.ReadAllText)
-                .Any(fileContents => muslDistros.Any(distroId => fileContents.ToLower(CultureInfo.InvariantCulture).Contains(distroId)));
+                .Any(fileContents => muslDistros.Any(distroId => fileContents.ToLowerInvariant().Contains(distroId)));
         }
 
         private static void GetLibNameAndRuntimeId(FrameworkDescription frameworkDescription, out string libName, out string runtimeId)

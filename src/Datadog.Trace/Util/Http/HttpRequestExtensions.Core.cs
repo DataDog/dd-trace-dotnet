@@ -25,7 +25,7 @@ namespace Datadog.Trace.Util.Http
             {
                 if (!k.Equals("cookie", System.StringComparison.OrdinalIgnoreCase))
                 {
-                    headersDic.Add(k.ToLower(CultureInfo.InvariantCulture), request.Headers[k]);
+                    headersDic.Add(k.ToLowerInvariant(), request.Headers[k]);
                 }
             }
 
