@@ -534,6 +534,14 @@ namespace Datadog.Trace.DuckTyping.Tests
             {
                 return obj;
             }
+
+            private void ForEachScope<TState>(Action<object, TState> callback, TState state)
+            {
+                for (var i = 0; i < 50; i++)
+                {
+                    callback(this, state);
+                }
+            }
         }
 
         internal class PropertyInternalObject
@@ -769,6 +777,14 @@ namespace Datadog.Trace.DuckTyping.Tests
             {
                 return obj;
             }
+
+            private void ForEachScope<TState>(Action<object, TState> callback, TState state)
+            {
+                for (var i = 0; i < 50; i++)
+                {
+                    callback(this, state);
+                }
+            }
         }
 
         private class PropertyPrivateObject
@@ -1002,6 +1018,14 @@ namespace Datadog.Trace.DuckTyping.Tests
             private DummyFieldObject Bypass(DummyFieldObject obj)
             {
                 return obj;
+            }
+
+            private void ForEachScope<TState>(Action<object, TState> callback, TState state)
+            {
+                for (var i = 0; i < 50; i++)
+                {
+                    callback(this, state);
+                }
             }
         }
 
