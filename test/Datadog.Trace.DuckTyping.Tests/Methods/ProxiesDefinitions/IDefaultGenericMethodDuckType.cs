@@ -12,5 +12,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Methods.ProxiesDefinitions
         T GetDefault<T>();
 
         Tuple<T1, T2> Wrap<T1, T2>(T1 a, T2 b);
+
+        void ForEachScope<TState2>(Action<object, TState2> callback, TState2 state);
     }
 }
