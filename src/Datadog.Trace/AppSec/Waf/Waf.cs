@@ -69,14 +69,14 @@ namespace Datadog.Trace.AppSec.Waf
             rule?.Dispose();
         }
 
-        private static Obj RuleSetFromManifest()
+        private static Obj RuleSetFromManifest(List<Obj> argCache)
         {
             var assembly = typeof(Waf).Assembly;
             var resource = assembly.GetManifestResourceStream("Datadog.Trace.AppSec.Waf.rule-set.json");
             using var reader = new JsonTextReader(new StreamReader(resource));
             var root = JToken.ReadFrom(reader);
 
-            return Encoder.Encode(root);
+            return Encoder.Encode(root, argCache);
         }
 
         private static WafHandle NewRule()
@@ -85,9 +85,16 @@ namespace Datadog.Trace.AppSec.Waf
             {
                 DdwafConfigStruct args = default;
 
-                var rules = RuleSetFromManifest();
+                var argCache = new List<Obj>();
+                var rules = RuleSetFromManifest(argCache);
 
                 var ruleHandle = WafNative.Init(rules.RawPtr, ref args);
+
+                rules.Dispose();
+                foreach (var arg in argCache)
+                {
+                    arg.Dispose();
+                }
 
                 if (ruleHandle == IntPtr.Zero)
                 {

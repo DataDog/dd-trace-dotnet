@@ -22,9 +22,9 @@ namespace Datadog.Trace.AppSec.Waf
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Encoder));
 
-        public static Obj Encode(object o)
+        public static Obj Encode(object o, List<Obj> argCache)
         {
-            return EncodeInternal(o, MaxObjectDepth);
+            return EncodeInternal(o, argCache, MaxObjectDepth);
         }
 
         public static ObjType DecodeArgsType(DDWAF_OBJ_TYPE t)
@@ -71,7 +71,7 @@ namespace Datadog.Trace.AppSec.Waf
             }
         }
 
-        private static Obj EncodeInternal(object o, int remainingDepth)
+        private static Obj EncodeInternal(object o, List<Obj> argCache, int remainingDepth)
         {
             Log.Debug($"Encoding: {o?.GetType()}");
 
@@ -84,17 +84,20 @@ namespace Datadog.Trace.AppSec.Waf
                     long i => new Obj(WafNative.ObjectSigned(i)),
                     uint i => new Obj(WafNative.ObjectUnsigned(i)),
                     ulong i => new Obj(WafNative.ObjectUnsigned(i)),
-                    IEnumerable<KeyValuePair<string, JToken>> objDict => EncodeDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), remainingDepth),
-                    IEnumerable<KeyValuePair<string, string>> objDict => EncodeDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), remainingDepth),
-                    IEnumerable<KeyValuePair<string, object>> objDict => EncodeDictionary(objDict, remainingDepth),
-                    IList<JToken> objs => EncodeList(objs.Select(x => (object)x), remainingDepth),
-                    IList<object> objs => EncodeList(objs, remainingDepth),
+                    IEnumerable<KeyValuePair<string, JToken>> objDict => EncodeDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), argCache, remainingDepth),
+                    IEnumerable<KeyValuePair<string, string>> objDict => EncodeDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), argCache, remainingDepth),
+                    IEnumerable<KeyValuePair<string, object>> objDict => EncodeDictionary(objDict, argCache, remainingDepth),
+                    IList<JToken> objs => EncodeList(objs.Select(x => (object)x), argCache, remainingDepth),
+                    IList<object> objs => EncodeList(objs, argCache, remainingDepth),
                     _ => throw new Exception($"Couldn't encode: {o}, type: {o.GetType()}")
                 };
+
+            argCache.Add(value);
+
             return value;
         }
 
-        private static Obj EncodeList(IEnumerable<object> objEnumerator, int remainingDepth)
+        private static Obj EncodeList(IEnumerable<object> objEnumerator, List<Obj> argCache, int remainingDepth)
         {
             Log.Debug($"Encoding list: {objEnumerator?.GetType()}");
 
@@ -115,14 +118,14 @@ namespace Datadog.Trace.AppSec.Waf
 
             foreach (var o in objEnumerator)
             {
-                var value = EncodeInternal(o, remainingDepth);
+                var value = EncodeInternal(o, argCache, remainingDepth);
                 WafNative.ObjectArrayAdd(arrNat, value.RawPtr);
             }
 
             return new Obj(arrNat);
         }
 
-        private static Obj EncodeDictionary(IEnumerable<KeyValuePair<string, object>> objDictEnumerator, int remainingDepth)
+        private static Obj EncodeDictionary(IEnumerable<KeyValuePair<string, object>> objDictEnumerator, List<Obj> argCache, int remainingDepth)
         {
             Log.Debug($"Encoding dictionary: {objDictEnumerator?.GetType()}");
 
@@ -147,7 +150,7 @@ namespace Datadog.Trace.AppSec.Waf
                 var name = o.Key;
                 if (name != null)
                 {
-                    var value = EncodeInternal(o.Value, remainingDepth);
+                    var value = EncodeInternal(o.Value, argCache, remainingDepth);
                     WafNative.ObjectMapAdd(mapNat, name, Convert.ToUInt64(name.Length), value.RawPtr);
                 }
                 else

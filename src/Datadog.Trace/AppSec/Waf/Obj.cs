@@ -24,7 +24,10 @@ namespace Datadog.Trace.AppSec.Waf
             this.ptr = ptr;
         }
 
-        // NOTE: do not add a finalizer here. Mostly DdwafObject will be owned and freed by the native code
+        ~Obj()
+        {
+            Dispose(false);
+        }
 
         public ObjType ArgsType
         {
@@ -43,6 +46,7 @@ namespace Datadog.Trace.AppSec.Waf
         public void Dispose()
         {
             Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         public void Dispose(bool disposing)
@@ -54,7 +58,7 @@ namespace Datadog.Trace.AppSec.Waf
 
             disposed = true;
 
-            WafNative.ObjectFree(ptr);
+            Marshal.FreeHGlobal(ptr);
         }
 
         private void Initailize()
