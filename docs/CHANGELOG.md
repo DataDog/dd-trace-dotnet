@@ -3,31 +3,20 @@
 ## [Release 1.28.6](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.28.6)
 
 ## Changes
-* Implement shutdown to help fix app sec test flakiness (#1713)
 * Add support for Aerospike (#1717)
-* Native memory improvements (#1723)
-* Implement 1.0.7 of libddwaf (#1732)
-* Disable ILogger integration by default (#1738)
-* Header keys should be lower case (#1743)
-* Revert "Disable ILogger integration by default (#1738)" (#1744)
+* Reduce native memory consumption (#1723)
+* Implement 1.0.7 of libddwaf library for AppSec (#1732, #1742)
+* Finalise naming of Datadog.Monitoring.Distribution NuGet package (#1720, #1728)
 
 ## Fixes
-* Correct memory management for interactions with libddwaf (#1742)
+* AppSec Header keys should be lower case (#1743)
 
 ## Build / Test
-* Enable code coverage for security tests (#1699)
-* Fix docker-compose command line for arm64 integration tests (#1715)
-* Fix flakiness in Datadog.Trace.ClrProfiler.IntegrationTests.WebRequestTests.SubmitsTraces (#1718)
-* Additional fix for ARM64 docker-compose services in CI (#1719)
-* Update name of NuGet package carrying automatic instrumentation assets (#1720)
-* Don't fail the build if uploading core dumps fails (#1722)
-* Define 'SharedSrcBaseDir' consistently across projects. (#1724)
-* Add FmtLib debug files that were previously forgotten during import of shared files (#1725)
+* Updates to code coverage (#1699)
+* Fixes for various flaky tests (#1713, #1715, #1718, #1719, #1722
 * Package windows native symbols in a separate archive (#1727)
-* Add a beta suffix to the Datadog.Monitoring.Distribution NuGet package (#1728)
-* Add a previously forgotten comment to a shared editorconfig file. (#1735)
-* Downgrade severity of a shared editorconfig rule to match ongoing Profiler work. (#1736)
 * Disable AppSec crank till a new runner machine can be created (#1739)
+* Updates to shared loader build (#1724, #1725, #1735, #1736)
 
 [Changes since 1.28.4](https://github.com/DataDog/dd-trace-dotnet/compare/v1.28.4...v1.28.6)
 
