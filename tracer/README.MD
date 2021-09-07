@@ -6,7 +6,7 @@ This directory (`/tracer`) contains the source for the __Tracer for .NET__ produ
 
 ### Copyright
 
-Copyright (c) 2017-2021 Datadog
+Copyright (c) 2017 Datadog
 [https://www.datadoghq.com](https://www.datadoghq.com/)
 
 ### License
@@ -18,4 +18,3 @@ See [license information](../LICENSE).
 Currently, this directory is empty.
 It is a placeholder for the Tracer sources, which will be available here in the future.
 In the meantime, the Tracer is available directly in the root of this repo.
- 
