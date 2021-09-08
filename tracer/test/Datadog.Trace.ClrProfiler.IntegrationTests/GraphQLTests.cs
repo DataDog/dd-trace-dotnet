@@ -21,6 +21,16 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+#if NETCOREAPP3_1 || NET5_0
+    public class GraphQL4Tests : GraphQLTests
+    {
+        public GraphQL4Tests(ITestOutputHelper output)
+            : base("GraphQL4", output, disableCallsite: true)
+        {
+        }
+    }
+#endif
+
     public class GraphQL3Tests : GraphQLTests
     {
         public GraphQL3Tests(ITestOutputHelper output)

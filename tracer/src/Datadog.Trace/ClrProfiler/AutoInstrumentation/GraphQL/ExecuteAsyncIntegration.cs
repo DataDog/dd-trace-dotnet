@@ -21,6 +21,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
         AssemblyName = GraphQLCommon.GraphQLAssembly,
         TypeName = "GraphQL.Execution.SubscriptionExecutionStrategy",
         MinimumVersion = GraphQLCommon.Major2Minor3,
+        MaximumVersion = GraphQLCommon.Major3)]
+    [GraphQLExecuteAsync(
+        AssemblyName = GraphQLCommon.GraphQLReactiveAssembly,
+        TypeName = "GraphQL.Execution.SubscriptionExecutionStrategy",
+        MinimumVersion = GraphQLCommon.Major4,
         MaximumVersion = GraphQLCommon.Major4)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
