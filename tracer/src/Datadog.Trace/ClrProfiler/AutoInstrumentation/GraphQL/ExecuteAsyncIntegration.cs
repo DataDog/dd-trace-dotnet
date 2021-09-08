@@ -16,12 +16,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
         AssemblyName = GraphQLCommon.GraphQLAssembly,
         TypeName = "GraphQL.Execution.ExecutionStrategy",
         MinimumVersion = GraphQLCommon.Major2Minor3,
-        MaximumVersion = GraphQLCommon.Major2)]
+        MaximumVersion = GraphQLCommon.Major4)]
     [GraphQLExecuteAsync(
         AssemblyName = GraphQLCommon.GraphQLAssembly,
         TypeName = "GraphQL.Execution.SubscriptionExecutionStrategy",
         MinimumVersion = GraphQLCommon.Major2Minor3,
-        MaximumVersion = GraphQLCommon.Major2)]
+        MaximumVersion = GraphQLCommon.Major4)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class ExecuteAsyncIntegration
