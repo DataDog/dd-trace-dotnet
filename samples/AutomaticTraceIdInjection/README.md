@@ -19,3 +19,9 @@ Layouts configured in the sample:
 - JSON format: `JsonFormatter`
 - JSON format: `CompactJsonFormatter` (from the `Serilog.Formatting.Compact` NuGet package)
 - Raw format: output template (requires a custom Datadog Log Pipeline for processing)
+
+### Microsoft.Extensions.Logging
+Log injection for Microsoft.Extensions.Logging uses auto-instrumentation to inject logs. In this sample the [Datadog.Monitoring.Distribution](https://www.nuget.org/packages/Datadog.Monitoring.Distribution/) NuGet package is used to enable automatic instrumentation, but you can use any of the installation methods described in [the documentation](https://docs.datadoghq.com/tracing/setup_overview/setup/dotnet-core/).  
+
+Layouts configured in the sample:
+- JSON format (from the `NetEscapades.Extensions.Logging.RollingFile` NuGet package)
