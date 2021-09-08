@@ -16,6 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
         private readonly string _env;
         private readonly string _version;
         private readonly Tracer _tracer;
+        private readonly string _cachedFormat;
 
         public DatadogLoggingScope()
             : this(Tracer.Instance)
@@ -28,6 +29,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
             _service = tracer.DefaultServiceName ?? string.Empty;
             _env = tracer.Settings.Environment ?? string.Empty;
             _version = tracer.Settings.ServiceVersion ?? string.Empty;
+            _cachedFormat = string.Format(
+                CultureInfo.InvariantCulture,
+                "{{\"dd_service\":\"{0}\", \"dd_env\":\"{1}\", \"dd_version\":\"{2}\"}}",
+                _service,
+                _env,
+                _version);
         }
 
         public int Count => 5;
@@ -51,15 +58,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
         public override string ToString()
         {
             var span = _tracer.ActiveScope?.Span;
+            if (span is null)
+            {
+                return _cachedFormat;
+            }
 
             return string.Format(
                 CultureInfo.InvariantCulture,
-                "dd_service:{0}, dd_env:{1}, dd_version:{2}, dd_trace_id:{3}, dd_span_id:{4}",
+                "{{\"dd_service\":\"{0}\", \"dd_env\":\"{1}\", \"dd_version\":\"{2}\", \"dd_trace_id\":\"{3}\", \"dd_span_id\":\"{4}\"}}",
                 span?.ServiceName ?? _service,
                 _env,
                 _version,
-                _tracer.ActiveScope?.Span.TraceId ?? 0,
-                _tracer.ActiveScope?.Span.SpanId ?? 0);
+                _tracer.ActiveScope?.Span.TraceId,
+                _tracer.ActiveScope?.Span.SpanId);
         }
 
         public IEnumerator<KeyValuePair<string, object>> GetEnumerator()
