@@ -653,7 +653,7 @@ namespace shared
         std::string moduleIdHex = "0x" + HexStr(moduleId);
 
         //
-        // rewrite method IsCompatibilitySwitchSet to call the startup loader.
+        // rewrite method to call the startup loader.
         //
         ILRewriter rewriter(this->_pCorProfilerInfo, nullptr, moduleId, methodDef);
         hr = rewriter.Import();
@@ -1540,6 +1540,9 @@ namespace shared
                 const auto pSection = pHeaders + FIELD_OFFSET(IMAGE_NT_HEADERS, OptionalHeader) +
                                       VAL16(ntHeaders->FileHeader.SizeOfOptionalHeader);
 
+                Debug("Loader::GetModuleEntryPointToken: Number of sections: " +
+                      ToString(VAL16(ntHeaders->FileHeader.NumberOfSections)));
+
                 // We need to iterate and find the right section
                 auto section = (IMAGE_SECTION_HEADER*) pSection;
                 for (auto i = 0; i < VAL16(ntHeaders->FileHeader.NumberOfSections); i++)
@@ -1560,10 +1563,12 @@ namespace shared
                     {
                         if (clrDataVirtualAddress < sectionVirtualAddress)
                         {
+                            Debug("Loader::GetModuleEntryPointToken: " + ToString(i) + ". sectionRet = nullptr");
                             sectionRet = nullptr;
                         }
                         else
                         {
+                            Debug("Loader::GetModuleEntryPointToken: " + ToString(i) + ". sectionRet = (found)");
                             sectionRet = section;
                         }
                     }
@@ -1574,10 +1579,12 @@ namespace shared
 
                 if (sectionRet == nullptr)
                 {
+                    Debug("Loader::GetModuleEntryPointToken: Simple pCorHeader");
                     pCorHeader = moduleBaseLoadAddress + clrDataVirtualAddress;
                 }
                 else
                 {
+                    Debug("Loader::GetModuleEntryPointToken: Complex pCorHeader");
                     pCorHeader = moduleBaseLoadAddress + clrDataVirtualAddress - VAL32(sectionRet->VirtualAddress) +
                                  VAL32(sectionRet->PointerToRawData);
                 }
