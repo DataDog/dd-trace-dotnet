@@ -534,6 +534,8 @@ namespace shared
 
             return S_OK;
         }
+
+        return S_OK;
     }
 
     HRESULT Loader::HandleJitCachedFunctionSearchStarted(FunctionID functionId, BOOL* pbUseCachedFunction)
@@ -1604,6 +1606,8 @@ namespace shared
                 Error("Failed getting module entrypoint: " + ToString(ex.what()));
             }
         }
+
+        return mdTokenNil;
     }
 
     //
@@ -1707,7 +1711,7 @@ namespace shared
         *pSymbolsSize = pdb_end - pdb_start;
         *ppSymbolsArray = (void*)pdb_start;
 
-        if (_logDebugIsEnabled)
+        if (_loaderOptions.LogDebugIsEnabled)
         {
             Debug("Loader::GetAssemblyAndSymbolsBytes: Loaded resouces for " + trait + " (platform=LINUX)."
                   " *assemblySize=" + ToString(*pAssemblySize) + ", "
@@ -1741,7 +1745,7 @@ namespace shared
             }
         }
 
-        if (_logDebugIsEnabled)
+        if (_loaderOptions.LogDebugIsEnabled)
         {
             Debug("Loader::GetAssemblyAndSymbolsBytes: Loaded resouces for " + trait + " (platform=MACOS)."
                 " *assemblySize=" + ToString(*pAssemblySize) + ", "
