@@ -57,6 +57,12 @@ namespace Datadog.Trace.Configuration
         public const string AppSecBlockingEnabled = "DD_APPSEC_BLOCKING_ENABLED";
 
         /// <summary>
+        /// Configuration key for enabling or disabling blocking in AppSec.
+        /// Default is value is false (disabled).
+        /// </summary>
+        public const string AppSecRules = "DD_APPSEC_RULES";
+
+        /// <summary>
         /// Configuration key for enabling or disabling the Tracer's debug mode.
         /// Default is value is false (disabled).
         /// </summary>
