@@ -513,12 +513,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         return S_OK;
     }
 
-    if (integration_methods_.empty())
-    {
-        Logger::Debug("ModuleLoadFinished skipping module (no integrations): ", module_id);
-        return S_OK;
-    }
-
     // keep this lock until we are done using the module,
     // to prevent it from unloading while in use
     std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
