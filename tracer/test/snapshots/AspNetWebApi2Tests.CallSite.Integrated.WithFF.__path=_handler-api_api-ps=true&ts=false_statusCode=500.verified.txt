@@ -1,0 +1,32 @@
+[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: aspnet.request,
+    Resource: GET /handler-api/api,
+    Service: sample,
+    Type: web,
+    Error: 1,
+    Tags: {
+      env: integration_tests,
+      error.msg: Source: TerminatingQuerySuccessMessageHandler. Error: Query param ts was set to a non-true value,
+      error.stack: 
+System.ArgumentException: Source: TerminatingQuerySuccessMessageHandler. Error: Query param ts was set to a non-true value
+at Samples.AspNetMvc5.Handlers.TerminatingQuerySuccessMessageHandler.SendAsync(HttpRequestMessage request, CancellationToken cancellationToken),
+      error.type: System.ArgumentException,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.status_code: 500,
+      http.url: /handler-api/api?ps=true&ts=false,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      _sampling_priority_v1: 1.0,
+      _dd.tracer_kr: 1.0,
+      _dd.top_level: 1.0
+    }
+  }
+]

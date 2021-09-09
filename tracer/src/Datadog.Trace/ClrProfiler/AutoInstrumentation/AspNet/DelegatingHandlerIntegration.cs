@@ -1,4 +1,4 @@
-// <copyright file="HttpRoutingDispatcherIntegration.cs" company="Datadog">
+// <copyright file="DelegatingHandlerIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,11 +12,11 @@ using Datadog.Trace.Configuration;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 {
     /// <summary>
-    /// System.Web.Http.Dispatcher.HttpRoutingDispatcher calltarget instrumentation
+    /// System.Net.Http.DelegatingHandler calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
-        AssemblyName = "System.Web.Http",
-        TypeName = "System.Web.Http.Dispatcher.HttpRoutingDispatcher",
+        AssemblyName = "System.Net.Http",
+        TypeName = "System.Net.Http.DelegatingHandler",
         MethodName = "SendAsync",
         ReturnTypeName = ClrNames.HttpResponseMessageTask,
         ParameterTypeNames = new[] { ClrNames.HttpRequestMessage, ClrNames.CancellationToken },
@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         IntegrationName = IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class HttpRoutingDispatcherIntegration
+    public class DelegatingHandlerIntegration
     {
         private const string IntegrationName = nameof(IntegrationIds.AspNet);
         private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
