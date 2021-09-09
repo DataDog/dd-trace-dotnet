@@ -40,9 +40,6 @@ namespace PrepareRelease
                 assemblyLoadContext.Unload();
             }
 
-            // Create CallTarget definitions file content
-            string callTargetFileContent = CreateCallTargetDefinitionFileContent(callTargetIntegrations);
-
             // Create json serializer
             var serializerSettings = new JsonSerializerSettings
             {
@@ -78,62 +75,62 @@ namespace PrepareRelease
                 // CallTarget
                 var calltargetPath = Path.Combine(outputDirectory, "src", "Datadog.Trace", "ClrProfiler", "InstrumentationDefinitions.cs");
                 Console.WriteLine($"Writing {calltargetPath}...");
-                File.WriteAllText(calltargetPath, callTargetFileContent, utf8NoBom);
+                using var fs = new FileStream(calltargetPath, FileMode.Create, FileAccess.Write, FileShare.None);
+                using var sw = new StreamWriter(fs, utf8NoBom);
+                WriteCallTargetDefinitionFile(sw, callTargetIntegrations);
             }
         }
 
-        static string CreateCallTargetDefinitionFileContent(IEnumerable<CallTargetDefinitionSource> callTargetIntegrations)
+        static void WriteCallTargetDefinitionFile(StreamWriter swriter, IEnumerable<CallTargetDefinitionSource> callTargetIntegrations)
         {
-            var cTargetIntegrations = callTargetIntegrations.Distinct().ToList();
-            var sBuilder = new StringBuilder();
-            sBuilder.AppendLine("// <copyright file=\"InstrumentationDefinitions.cs\" company=\"Datadog\">");
-            sBuilder.AppendLine("// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.");
-            sBuilder.AppendLine("// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.");
-            sBuilder.AppendLine("// </copyright>\n");
-            sBuilder.AppendLine("namespace Datadog.Trace.ClrProfiler");
-            sBuilder.AppendLine("{");
-            sBuilder.AppendLine("\tinternal static class InstrumentationDefinitions");
-            sBuilder.AppendLine("\t{");
-            sBuilder.AppendLine("\t\tinternal static NativeCallTargetDefinition[] GetAllDefinitions()");
-            sBuilder.AppendLine("\t\t{");
-            sBuilder.AppendLine($"\t\t\tvar defsArray = new NativeCallTargetDefinition[{cTargetIntegrations.Count}];");
-            for (var i = 0; i < cTargetIntegrations.Count; i++)
+            swriter.WriteLine("// <copyright file=\"InstrumentationDefinitions.cs\" company=\"Datadog\">");
+            swriter.WriteLine("// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.");
+            swriter.WriteLine("// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.");
+            swriter.WriteLine("// </copyright>\n");
+            swriter.WriteLine("namespace Datadog.Trace.ClrProfiler");
+            swriter.WriteLine("{");
+            swriter.WriteLine("    internal static class InstrumentationDefinitions");
+            swriter.WriteLine("    {");
+            swriter.WriteLine("        internal static NativeCallTargetDefinition[] GetAllDefinitions()");
+            swriter.WriteLine("        {");
+            swriter.WriteLine("            return new NativeCallTargetDefinition[]");
+            swriter.WriteLine("            {");
+            foreach (var integration in callTargetIntegrations.Distinct())
             {
-                sBuilder.Append($"\t\t\tdefsArray[{i}] = new NativeCallTargetDefinition(");
-                sBuilder.Append($"\"{cTargetIntegrations[i].TargetAssembly}\", ");
-                sBuilder.Append($"\"{cTargetIntegrations[i].TargetType}\", ");
-                sBuilder.Append($"\"{cTargetIntegrations[i].TargetMethod}\", ");
+                swriter.Write($"                new(");
+                swriter.Write($"\"{integration.TargetAssembly}\", ");
+                swriter.Write($"\"{integration.TargetType}\", ");
+                swriter.Write($"\"{integration.TargetMethod}\", ");
 
-                sBuilder.Append($" new string[] {{ ");
-                for (var s = 0; s < cTargetIntegrations[i].TargetSignatureTypes.Length; s++)
+                swriter.Write($" new[] {{ ");
+                for (var s = 0; s < integration.TargetSignatureTypes.Length; s++)
                 {
-                    if (s == cTargetIntegrations[i].TargetSignatureTypes.Length - 1)
+                    if (s == integration.TargetSignatureTypes.Length - 1)
                     {
-                        sBuilder.Append($"\"{cTargetIntegrations[i].TargetSignatureTypes[s]}\"");
+                        swriter.Write($"\"{integration.TargetSignatureTypes[s]}\"");
                     }
                     else
                     {
-                        sBuilder.Append($"\"{cTargetIntegrations[i].TargetSignatureTypes[s]}\", ");
+                        swriter.Write($"\"{integration.TargetSignatureTypes[s]}\", ");
                     }
                 }
 
-                sBuilder.Append($" }}, ");
+                swriter.Write(" }, ");
 
-                sBuilder.Append($"{cTargetIntegrations[i].TargetMinimumMajor}, ");
-                sBuilder.Append($"{cTargetIntegrations[i].TargetMinimumMinor}, ");
-                sBuilder.Append($"{cTargetIntegrations[i].TargetMinimumPatch}, ");
-                sBuilder.Append($"{cTargetIntegrations[i].TargetMaximumMajor}, ");
-                sBuilder.Append($"{cTargetIntegrations[i].TargetMaximumMinor}, ");
-                sBuilder.Append($"{cTargetIntegrations[i].TargetMaximumPatch}, ");
-                sBuilder.Append($"\"{cTargetIntegrations[i].WrapperAssembly}\", ");
-                sBuilder.Append($"\"{cTargetIntegrations[i].WrapperType}\"");
-                sBuilder.AppendLine($");");
+                swriter.Write($"{integration.TargetMinimumMajor}, ");
+                swriter.Write($"{integration.TargetMinimumMinor}, ");
+                swriter.Write($"{integration.TargetMinimumPatch}, ");
+                swriter.Write($"{integration.TargetMaximumMajor}, ");
+                swriter.Write($"{integration.TargetMaximumMinor}, ");
+                swriter.Write($"{integration.TargetMaximumPatch}, ");
+                swriter.Write($"\"{integration.WrapperAssembly}\", ");
+                swriter.Write($"\"{integration.WrapperType}\"");
+                swriter.WriteLine($"),");
             }
-            sBuilder.AppendLine("\t\t\treturn defsArray;");
-            sBuilder.AppendLine("\t\t}");
-            sBuilder.AppendLine("\t}");
-            sBuilder.AppendLine("}");
-            return sBuilder.Replace("\t", "    ").ToString();
+            swriter.WriteLine("            };");
+            swriter.WriteLine("        }");
+            swriter.WriteLine("    }");
+            swriter.WriteLine("}");
         }
 
         static IEnumerable<CallTargetDefinitionSource> GetCallTargetIntegrations(ICollection<Assembly> assemblies)

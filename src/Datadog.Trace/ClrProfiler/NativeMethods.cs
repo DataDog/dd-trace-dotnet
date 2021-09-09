@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler
             public static extern bool IsProfilerAttached();
 
             [DllImport("Datadog.Trace.ClrProfiler.Native.dll")]
-            public static extern void InitializeProfiler([In, Out] NativeCallTargetDefinition[] methodArrays, int size);
+            public static extern void InitializeProfiler([In] NativeCallTargetDefinition[] methodArrays, int size);
         }
 
         // assume .NET Core if not running on Windows
@@ -53,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler
             public static extern bool IsProfilerAttached();
 
             [DllImport("Datadog.Trace.ClrProfiler.Native")]
-            public static extern void InitializeProfiler([In, Out] NativeCallTargetDefinition[] methodArrays, int size);
+            public static extern void InitializeProfiler([In] NativeCallTargetDefinition[] methodArrays, int size);
         }
     }
 }

@@ -70,9 +70,9 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
-                Log.Debug("Sending CallTarget integrations definitions to native profiler.");
+                Log.Debug("Sending CallTarget integration definitions to native library.");
                 NativeMethods.InitializeProfiler(InstrumentationDefinitions.GetAllDefinitions());
-                Log.Debug("CallTarget integrations definitions sent.");
+                Log.Debug("CallTarget integration definitions sent.");
                 Log.Information("IsProfilerAttached: true");
             }
             catch (Exception ex)
