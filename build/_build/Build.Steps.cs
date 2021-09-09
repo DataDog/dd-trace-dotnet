@@ -35,17 +35,19 @@ partial class Build
 
     AbsolutePath OutputDirectory => RootDirectory / "bin";
     AbsolutePath TracerHomeDirectory => TracerHome ?? (OutputDirectory / "tracer-home");
+    AbsolutePath SymbolsDirectory => TracerHome ?? (OutputDirectory / "symbols");
     AbsolutePath DDTracerHomeDirectory => DDTracerHome ?? (OutputDirectory / "dd-tracer-home");
     AbsolutePath ArtifactsDirectory => Artifacts ?? (OutputDirectory / "artifacts");
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
+    AbsolutePath WindowsSymbolsZip => ArtifactsDirectory / "windows-native-symbols.zip";
     AbsolutePath BuildDataDirectory => RootDirectory / "build_data";
 
-    const string LibDdwafVersion = "1.0.6";
+    const string LibDdwafVersion = "1.0.7";
     AbsolutePath LibDdwafDirectory => (NugetPackageDirectory ?? (RootDirectory / "packages")) / $"libddwaf.{LibDdwafVersion}";
 
     AbsolutePath SourceDirectory => RootDirectory / "src";
     AbsolutePath TestsDirectory => RootDirectory / "test";
-    AbsolutePath InstrumentationHomeDirectory => Solution.GetProject(Projects.DatadogInstrumentation).Directory / "home";
+    AbsolutePath DistributionHomeDirectory => Solution.GetProject(Projects.DatadogMonitoringDistribution).Directory / "home";
 
     AbsolutePath TempDirectory => (AbsolutePath)(IsWin ? Path.GetTempPath() : "/tmp/");
     string TracerLogDirectory => IsWin
@@ -327,6 +329,22 @@ partial class Build
                     .SetOutput(TracerHomeDirectory / framework)));
         });
 
+    Target PublishNativeSymbolsWindows => _ => _
+      .Unlisted()
+      .OnlyWhenStatic(() => IsWin)
+      .After(CompileNativeSrc, PublishManagedProfiler)
+      .Executes(() =>
+       {
+           foreach (var architecture in ArchitecturesForPlatform)
+           {
+               var source = NativeProfilerProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
+                            $"{NativeProfilerProject.Name}.pdb";
+               var dest = SymbolsDirectory / $"win-{architecture}";
+               Logger.Info($"Copying '{source}' to '{dest}'");
+               CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+           }
+       });
+
     Target PublishNativeProfilerWindows => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsWin)
@@ -445,18 +463,18 @@ partial class Build
                 degreeOfParallelism: 2);
         });
 
-    Target CreateInstrumentationHome => _ => _
+    Target CreateDistributionHome => _ => _
         .Unlisted()
         .After(BuildTracerHome)
         .Executes(() =>
         {
-            // Copy existing files from tracer home to the Instrumentation location
-            CopyDirectoryRecursively(TracerHomeDirectory, InstrumentationHomeDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+            // Copy existing files from tracer home to the Distribution location
+            CopyDirectoryRecursively(TracerHomeDirectory, DistributionHomeDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
 
             // Ensure createLogPath.sh is copied to the directory
             CopyFileToDirectory(
                 RootDirectory / "build" / "artifacts" / "createLogPath.sh",
-                InstrumentationHomeDirectory,
+                DistributionHomeDirectory,
                 FileExistsPolicy.Overwrite);
         });
 
@@ -492,6 +510,16 @@ partial class Build
                     Cmd.Value(arguments: $"cmd /c mklink /J \"{newDir}\" \"{existingDir}\"");
                 }
             });
+        });
+
+    Target ZipSymbols => _ => _
+        .Unlisted()
+        .After(BuildTracerHome)
+        .DependsOn(PublishNativeSymbolsWindows)
+        .OnlyWhenStatic(() => IsWin)
+        .Executes(() =>
+        {
+            CompressZip(SymbolsDirectory, WindowsSymbolsZip, fileMode: FileMode.Create);
         });
 
     Target ZipTracerHome => _ => _
@@ -1193,7 +1221,7 @@ partial class Build
         return archExt;
     }
 
-    // the integration tests need their own copy of the profiler, this achived through build.props on Windows, but doesn't seem to work under Linux 
+    // the integration tests need their own copy of the profiler, this achived through build.props on Windows, but doesn't seem to work under Linux
     private void IntegrationTestLinuxProfilerDirFudge(string project)
     {
             // Not sure if/why this is necessary, and we can't just point to the correct output location

@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Version>1.28.6</Version>
+    <Version>$(Version)-beta01</Version> <!-- Unconditionally add a beta suffix to the package, but keep the rest of the name so we can associate it with the rest of the release -->
+    <Title>Datadog APM Auto-instrumentation Assets</Title>
+    <Description>Auto-instrumentation assets for Datadog APM</Description>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <NoWarn>NU5100;NU5128</NoWarn>
+    <PackageOutputPath>bin\$(Configuration)\packages</PackageOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="home\**\*.*" Pack="true" PackagePath="content\datadog;contentFiles\any\any\datadog">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="home\**\readme.txt" Pack="false">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
+  </ItemGroup>
+
+</Project>

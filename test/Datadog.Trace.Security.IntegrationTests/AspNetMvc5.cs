@@ -81,7 +81,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         private readonly string _testName;
 
         public AspNetMvc5(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity, bool blockingEnabled)
-            : base(nameof(AspNetMvc5), output, @"test\test-applications\security\aspnet")
+            : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
         {
             SetCallTargetSettings(true);
             SetSecurity(enableSecurity);

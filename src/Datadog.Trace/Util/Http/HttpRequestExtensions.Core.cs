@@ -5,6 +5,7 @@
 
 #if !NETFRAMEWORK
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Datadog.Trace.AppSec;
 using Microsoft.AspNetCore.Http;
@@ -24,7 +25,7 @@ namespace Datadog.Trace.Util.Http
             {
                 if (!k.Equals("cookie", System.StringComparison.OrdinalIgnoreCase))
                 {
-                    headersDic.Add(k, request.Headers[k]);
+                    headersDic.Add(k.ToLowerInvariant(), request.Headers[k]);
                 }
             }
 

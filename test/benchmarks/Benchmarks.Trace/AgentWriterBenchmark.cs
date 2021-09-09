@@ -3,7 +3,6 @@ using System.IO;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
-using Datadog.Trace.Abstractions;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.AppSec;

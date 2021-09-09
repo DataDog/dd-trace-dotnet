@@ -38,9 +38,9 @@ namespace Datadog.Trace.AppSec.Transport.Http
             context.ApplicationInstance.CompleteRequest();
         }
 
-        public IAdditiveContext GetAdditiveContext()
+        public IContext GetAdditiveContext()
         {
-            return context.Items[WafKey] as IAdditiveContext;
+            return context.Items[WafKey] as IContext;
         }
 
         public Request Request() => new()
@@ -58,7 +58,7 @@ namespace Datadog.Trace.AppSec.Transport.Http
             Blocked = blocked
         };
 
-        public void SetAdditiveContext(IAdditiveContext additiveContext)
+        public void SetAdditiveContext(IContext additiveContext)
         {
             context.DisposeOnPipelineCompleted(additiveContext);
             context.Items[WafKey] = additiveContext;

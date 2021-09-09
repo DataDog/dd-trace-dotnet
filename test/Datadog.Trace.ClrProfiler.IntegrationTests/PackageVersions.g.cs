@@ -64,5 +64,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static IEnumerable<object[]> NLog => IsComprehensive ? PackageVersionsComprehensive.NLog : PackageVersionsLatestMinors.NLog;
 
         public static IEnumerable<object[]> log4net => IsComprehensive ? PackageVersionsComprehensive.log4net : PackageVersionsLatestMinors.log4net;
+
+        public static IEnumerable<object[]> Aerospike => IsComprehensive ? PackageVersionsComprehensive.Aerospike : PackageVersionsLatestMinors.Aerospike;
     }
 }

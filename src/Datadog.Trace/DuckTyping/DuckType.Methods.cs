@@ -666,8 +666,68 @@ namespace Datadog.Trace.DuckTyping
                     {
                         if (!candidateParamType.IsAssignableFrom(proxyParamType))
                         {
-                            skip = true;
-                            break;
+                            // Check if the parameter type contains generic types before skipping
+                            if (!candidateParamType.IsGenericType || !proxyParamType.IsGenericType)
+                            {
+                                skip = true;
+                                break;
+                            }
+
+                            // if the string representation of the generic parameter types is not the same we need to analyze the
+                            // GenericTypeArguments array before skipping it
+                            if (candidateParamType.ToString() != proxyParamType.ToString())
+                            {
+                                if (candidateParamType.GenericTypeArguments.Length != proxyParamType.GenericTypeArguments.Length)
+                                {
+                                    skip = true;
+                                    break;
+                                }
+
+                                for (int paramIndex = 0; paramIndex < candidateParamType.GenericTypeArguments.Length; paramIndex++)
+                                {
+                                    Type candidateParamTypeGenericType = candidateParamType.GenericTypeArguments[paramIndex];
+                                    Type proxyParamTypeGenericType = proxyParamType.GenericTypeArguments[paramIndex];
+
+                                    // Both need to have the same element type or byref type signature.
+                                    if (proxyParamTypeGenericType.IsByRef != candidateParamTypeGenericType.IsByRef)
+                                    {
+                                        skip = true;
+                                        break;
+                                    }
+
+                                    // If the parameters are by ref we unwrap them to have the actual type
+                                    proxyParamTypeGenericType = proxyParamTypeGenericType.IsByRef ? proxyParamTypeGenericType.GetElementType() : proxyParamTypeGenericType;
+                                    candidateParamTypeGenericType = candidateParamTypeGenericType.IsByRef ? candidateParamTypeGenericType.GetElementType() : candidateParamTypeGenericType;
+
+                                    // We can't compare generic parameters
+                                    if (candidateParamTypeGenericType.IsGenericParameter)
+                                    {
+                                        continue;
+                                    }
+
+                                    // If the proxy parameter type is a value type (no ducktyping neither a base class) both types must match
+                                    if (proxyParamTypeGenericType.IsValueType && !proxyParamTypeGenericType.IsEnum && proxyParamTypeGenericType != candidateParamTypeGenericType)
+                                    {
+                                        skip = true;
+                                        break;
+                                    }
+
+                                    // If the proxy parameter is a class and not is an abstract class (only interface and abstract class can be used as ducktype base type)
+                                    if (proxyParamTypeGenericType.IsClass && !proxyParamTypeGenericType.IsAbstract && proxyParamTypeGenericType != typeof(object))
+                                    {
+                                        if (!candidateParamTypeGenericType.IsAssignableFrom(proxyParamTypeGenericType))
+                                        {
+                                            skip = true;
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                if (skip)
+                                {
+                                    break;
+                                }
+                            }
                         }
                     }
                 }

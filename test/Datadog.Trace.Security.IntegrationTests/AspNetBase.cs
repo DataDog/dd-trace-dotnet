@@ -21,13 +21,15 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetBase : TestHelper
     {
         private readonly HttpClient httpClient;
+        private readonly string shutdownPath;
         private int httpPort;
         private Process process;
 
-        public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string samplesDir = null)
+        public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath, string samplesDir = null)
             : base(sampleName, samplesDir ?? "test/test-applications/security", outputHelper)
         {
             httpClient = new HttpClient();
+            this.shutdownPath = shutdownPath;
         }
 
         public async Task<MockTracerAgent> RunOnSelfHosted(bool enableSecurity, bool enableBlocking)
@@ -42,6 +44,9 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         public void Dispose()
         {
+            var request = WebRequest.CreateHttp($"http://localhost:{httpPort}{shutdownPath}");
+            request.GetResponse().Close();
+
             if (process != null && !process.HasExited)
             {
                 process.Kill();
@@ -61,7 +66,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             Func<Task<(HttpStatusCode StatusCode, string ResponseText)>> attack = () => SubmitRequest("/Health/?arg=[$slice]");
             var resultRequests = await Task.WhenAll(attack(), attack(), attack(), attack(), attack());
             agent.SpanFilters.Add(s => s.Tags["http.url"].IndexOf("Health", StringComparison.InvariantCultureIgnoreCase) > 0);
-            var spans = agent.WaitForSpans(5);
+            var spans = agent.WaitForSpans(expectedSpans);
             Assert.Equal(expectedSpans, spans.Count());
             foreach (var span in spans)
             {

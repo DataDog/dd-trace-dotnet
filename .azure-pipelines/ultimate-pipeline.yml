@@ -235,6 +235,7 @@ stages:
       - publish: build_data
         artifact: profiler-logs_unit_tests_windows_$(System.JobAttempt)
         condition: succeededOrFailed()
+        continueOnError: true
 
       - task: PublishTestResults@2
         displayName: publish test results
@@ -276,6 +277,7 @@ stages:
       - publish: build_data
         artifact: profiler-logs_unit_tests_macos_$(System.JobAttempt)
         condition: succeededOrFailed()
+        continueOnError: true
 
       - task: PublishTestResults@2
         displayName: publish test results
@@ -314,6 +316,7 @@ stages:
     - publish: build_data
       artifact: profiler-logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt)
       condition: succeededOrFailed()
+      continueOnError: true
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -321,11 +324,6 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: build_data/results/**/*.trx
       condition: succeededOrFailed()
-
-    - task: PublishPipelineArtifact@1
-      inputs:
-        targetPath: 'build_data/results/'
-      continueOnError: true
 
 - stage: unit_tests_arm64
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
@@ -349,6 +347,7 @@ stages:
         - publish: build_data
           artifact: profiler-logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt)
           condition: succeededOrFailed()
+          continueOnError: true
 
         - task: PublishTestResults@2
           displayName: publish test results
@@ -409,12 +408,7 @@ stages:
         testResultsFiles: build_data/results/**/*.trx
       condition: succeededOrFailed()
 
-    - task: PublishPipelineArtifact@1
-      inputs:
-        targetPath: 'build_data/results/'
-      continueOnError: true
-
-    - publish: build_data\logs\
+    - publish: build_data
       displayName: Uploading integration_tests_windows tracer logs
       artifact: integration_tests_windows_tracer_logs_$(platform)_$(target)
       condition: succeededOrFailed()
@@ -478,11 +472,6 @@ stages:
         testResultsFiles: build_data/results/**/*.trx
       condition: succeededOrFailed()
 
-    - task: PublishPipelineArtifact@1
-      inputs:
-        targetPath: 'build_data/results/'
-      continueOnError: true
-
     - task: DockerCompose@0
       displayName: docker-compose stop services
       inputs:
@@ -490,7 +479,7 @@ stages:
         dockerComposeCommand: down
       condition: succeededOrFailed()
 
-    - publish: build_data\logs\
+    - publish: build_data
       displayName: Uploading integration_tests_windows_iis tracer logs
       artifact: integration_tests_windows_iis_tracer_logs_$(platform)
       condition: succeededOrFailed()
@@ -586,6 +575,7 @@ stages:
     - publish: build_data
       artifact: profiler-logs_integration_tests_linux_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
       condition: succeededOrFailed()
+      continueOnError: true
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -603,7 +593,6 @@ stages:
         TestAllPackageVersions: true
         publishTargetFramework: net5.0
         baseImage: debian
-        COMPOSE_PROJECT_NAME: ddtrace_$(Build.BuildNumber)
 
       pool:
         name: Arm64
@@ -634,12 +623,14 @@ stages:
           inputs:
             containerregistrytype: Container Registry
             dockerComposeCommand: build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests.ARM64
+            projectName: ddtrace_$(Build.BuildNumber)
 
         - task: DockerCompose@0
           displayName: docker-compose start dependencies
           inputs:
             containerregistrytype: Container Registry
             dockerComposeCommand: run --rm StartDependencies.ARM64
+            projectName: ddtrace_$(Build.BuildNumber)
 
         - task: DockerCompose@0
           displayName: docker-compose run IntegrationTests
@@ -649,17 +640,20 @@ stages:
               baseImage=$(baseImage)
               framework=$(publishTargetFramework)
             dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) IntegrationTests.ARM64
+            projectName: ddtrace_$(Build.BuildNumber)
 
         - task: DockerCompose@0
           displayName: docker-compose stop services
           inputs:
             containerregistrytype: Container Registry
             dockerComposeCommand: down
+            projectName: ddtrace_$(Build.BuildNumber)
           condition: succeededOrFailed()
 
         - publish: build_data
           artifact: profiler-logs_integration_tests_linux_arm64_$(publishTargetFramework)_$(System.JobAttempt)
           condition: succeededOrFailed()
+          continueOnError: true
 
         - task: PublishTestResults@2
           displayName: publish test results
@@ -719,42 +713,42 @@ stages:
       displayName: Download windows tracer home
       inputs:
         artifact: windows-tracer-home
-        path: $(System.DefaultWorkingDirectory)/src/Datadog.Instrumentation/home
+        path: $(System.DefaultWorkingDirectory)/src/Datadog.Monitoring.Distribution/home
 
     - task: DownloadPipelineArtifact@2
       displayName: Download linux shell scripts
       inputs:
         artifact: linux-tracer-home-debian
         patterns: "*.sh"
-        path: $(System.DefaultWorkingDirectory)/src/Datadog.Instrumentation/home
+        path: $(System.DefaultWorkingDirectory)/src/Datadog.Monitoring.Distribution/home
 
     - task: DownloadPipelineArtifact@2
       displayName: Download linux tracer home
       inputs:
         artifact: linux-tracer-home-debian
         patterns: "**/*.so"
-        path: $(System.DefaultWorkingDirectory)/src/Datadog.Instrumentation/home/linux-x64
+        path: $(System.DefaultWorkingDirectory)/src/Datadog.Monitoring.Distribution/home/linux-x64
 
     - task: DownloadPipelineArtifact@2
       displayName: Download alpine tracer home
       inputs:
         artifact: linux-tracer-home-alpine
         patterns: "**/*.so"
-        path: $(System.DefaultWorkingDirectory)/src/Datadog.Instrumentation/home/linux-musl-x64
+        path: $(System.DefaultWorkingDirectory)/src/Datadog.Monitoring.Distribution/home/linux-musl-x64
 
     - task: DownloadPipelineArtifact@2
       displayName: Download arm64 tracer home
       inputs:
         artifact: linux-tracer-home-arm64
         patterns: "**/*.so"
-        path: $(System.DefaultWorkingDirectory)/src/Datadog.Instrumentation/home/linux-arm64
+        path: $(System.DefaultWorkingDirectory)/src/Datadog.Monitoring.Distribution/home/linux-arm64
 
     - task: DownloadPipelineArtifact@2
       displayName: Download osx tracer home
       inputs:
         artifact: macos-tracer-home
         patterns: "**/*.dylib"
-        path: $(System.DefaultWorkingDirectory)/src/Datadog.Instrumentation/home/osx-x64
+        path: $(System.DefaultWorkingDirectory)/src/Datadog.Monitoring.Distribution/home/osx-x64
 
     # Install the tracer latest stable release to attach the profiler to the build and test steps.
     # The script exposes the required environment variables to the following steps
@@ -763,8 +757,8 @@ stages:
       inputs:
         filePath: ./.azure-pipelines/setup_tracer.ps1
 
-    - script: build.cmd BuildInstrumentationNuget --skip
-      displayName: Build BuildInstrumentationNuget package
+    - script: build.cmd BuildDistributionNuget --skip
+      displayName: Build BuildDistributionNuget package
 
     - script: build.cmd BuildRunnerTool --skip
       displayName: Build Runner tool
@@ -784,9 +778,9 @@ stages:
           $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-arm64/home*
           $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/osx-x64/home*
 
-    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Instrumentation/bin/$(buildConfiguration)/packages
-      displayName: Publish Instrumentation package
-      artifact: instrumentation-nuget-package
+    - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Monitoring.Distribution/bin/$(buildConfiguration)/packages
+      displayName: Publish Distribution package
+      artifact: distribution-nuget-package
 
     - publish: $(System.DefaultWorkingDirectory)/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Tool
       displayName: Uploading runner dotnet tool artifact
@@ -962,9 +956,9 @@ stages:
             path: $(Build.ArtifactStagingDirectory)
 
         - task: DownloadPipelineArtifact@2
-          displayName: Download instrumentation nuget package
+          displayName: Download distribution nuget package
           inputs:
-            artifact: instrumentation-nuget-package
+            artifact: distribution-nuget-package
             path: $(Build.ArtifactStagingDirectory)
 
         - task: DownloadPipelineArtifact@2

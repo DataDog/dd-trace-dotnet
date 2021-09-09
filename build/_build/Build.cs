@@ -51,10 +51,10 @@ partial class Build : NukeBuild
     readonly bool IsAlpine = false;
 
     [Parameter("The build version. Default is latest")]
-    readonly string Version = "1.28.3";
+    readonly string Version = "1.28.6";
 
     [Parameter("Whether the build version is a prerelease(for packaging purposes). Default is latest")]
-    readonly bool IsPrerelease = true;
+    readonly bool IsPrerelease = false;
 
     [Parameter("Prints the available drive space before executing each target. Defaults to false")]
     readonly bool PrintDriveSpace = false;
@@ -94,7 +94,7 @@ partial class Build : NukeBuild
             }
             SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => DeleteDirectory(x));
             TestsDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => DeleteDirectory(x));
-            InstrumentationHomeDirectory.GlobFiles("**").Where(x => !x.ToString().Contains("readme.txt")).ForEach(x => DeleteFile(x));
+            DistributionHomeDirectory.GlobFiles("**").Where(x => !x.ToString().Contains("readme.txt")).ForEach(x => DeleteFile(x));
             EnsureCleanDirectory(OutputDirectory);
             EnsureCleanDirectory(TracerHomeDirectory);
             EnsureCleanDirectory(DDTracerHomeDirectory);
@@ -231,14 +231,14 @@ partial class Build : NukeBuild
                 degreeOfParallelism: 2);
         });
 
-    Target BuildInstrumentationNuget => _ => _
+    Target BuildDistributionNuget => _ => _
         // Currently requires manual copying of files into expected locations
         .Unlisted()
-        .After(CreateInstrumentationHome)
+        .After(CreateDistributionHome)
         .Executes(() =>
         {
             DotNetBuild(x => x
-                .SetProjectFile(Solution.GetProject(Projects.DatadogInstrumentation))
+                .SetProjectFile(Solution.GetProject(Projects.DatadogMonitoringDistribution))
                 .EnableNoRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
@@ -249,7 +249,7 @@ partial class Build : NukeBuild
     Target BuildRunnerTool => _ => _
         // Currently requires manual copying of files into expected locations
         .Unlisted()
-        .After(CreateInstrumentationHome)
+        .After(CreateDistributionHome)
         .Executes(() =>
         {
             DotNetBuild(x => x
@@ -264,7 +264,7 @@ partial class Build : NukeBuild
     Target BuildStandaloneTool => _ => _
         // Currently requires manual copying of files into expected locations
         .Unlisted()
-        .After(CreateInstrumentationHome)
+        .After(CreateDistributionHome)
         .Executes(() =>
         {
             var runtimes = new[] {"win-x86", "win-x64", "linux-x64", "linux-musl-x64", "osx-x64", "linux-arm64"};

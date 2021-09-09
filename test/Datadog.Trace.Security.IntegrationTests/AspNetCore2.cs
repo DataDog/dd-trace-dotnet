@@ -17,7 +17,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetCore2 : AspNetBase, IDisposable
     {
         public AspNetCore2(ITestOutputHelper outputHelper)
-            : base("AspNetCore2", outputHelper)
+            : base("AspNetCore2", outputHelper, "/shutdown")
         {
         }
 

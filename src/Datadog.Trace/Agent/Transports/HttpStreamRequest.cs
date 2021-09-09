@@ -6,7 +6,6 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using Datadog.Trace.Abstractions;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.HttpOverStreams.HttpContent;

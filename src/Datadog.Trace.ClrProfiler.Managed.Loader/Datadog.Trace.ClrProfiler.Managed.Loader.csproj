@@ -6,7 +6,7 @@
     <OutputPath>..\bin\ProfilerResources\</OutputPath>
 
     <!-- NuGet -->
-    <Version>1.28.3-prerelease</Version>
+    <Version>1.28.6</Version>
 
     <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp2.0) -->
     <CheckEolTargetFramework>false</CheckEolTargetFramework>

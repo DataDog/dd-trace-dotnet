@@ -24,7 +24,7 @@ echo "Using repo=$repo commit=$commit_sha"
 repository="--application.source.repository $repo"
 commit="--application.source.branchOrCommit #$commit_sha"
 
-#windows 
+#windows
 
 crank --config Samples.AspNetCoreSimpleController.yml --scenario baseline --profile windows --json baseline_windows.json $repository $commit --property name=AspNetCoreSimpleController --property scenario=baseline --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha
 dd-trace --crank-import="baseline_windows.json"
@@ -38,20 +38,7 @@ crank --config Samples.AspNetCoreSimpleController.yml --scenario calltarget_ngen
 dd-trace --crank-import="calltarget_ngen_windows.json"
 rm calltarget_ngen_windows.json
 
-
-crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_noattack --profile windows --json appsec_noattack_windows.json $repository $commit --property name=AspNetCoreSimpleController --property scenario=appsec_noattack --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha
-dd-trace --crank-import="appsec_noattack_windows.json"
-rm appsec_noattack_windows.json
-
-crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_attack_noblocking --profile windows --json appsec_attack_noblocking_windows.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_attack_noblocking --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha
-dd-trace --crank-import="appsec_attack_noblocking_windows.json"
-rm appsec_attack_noblocking_windows.json
-
-crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_attack_blocking --profile windows --json appsec_attack_blocking_windows.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_attack_blocking --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha
-dd-trace --crank-import="appsec_attack_blocking_windows.json"
-rm appsec_attack_blocking_windows.json
-
-#linux 
+#linux
 
 crank --config Samples.AspNetCoreSimpleController.yml --scenario baseline --profile linux --json baseline_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=baseline --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
 dd-trace --crank-import="baseline_linux.json"
@@ -64,19 +51,6 @@ rm calltarget_linux.json
 crank --config Samples.AspNetCoreSimpleController.yml --scenario calltarget_ngen --profile linux --json calltarget_ngen_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=calltarget_ngen --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
 dd-trace --crank-import="calltarget_ngen_linux.json"
 rm calltarget_ngen_linux.json
-
-
-crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_noattack --profile linux --json appsec_noattack_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_noattack --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
-dd-trace --crank-import="appsec_noattack_linux.json"
-rm appsec_noattack_linux.json
-
-crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_attack_noblocking --profile linux --json appsec_attack_noblocking_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_attack_noblocking --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
-dd-trace --crank-import="appsec_attack_noblocking_linux.json"
-rm appsec_attack_noblocking_linux.json
-
-crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_attack_blocking --profile linux --json appsec_attack_blocking_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_attack_blocking --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
-dd-trace --crank-import="appsec_attack_blocking_linux.json"
-rm appsec_attack_blocking_linux.json
 
 #linux arm64
 

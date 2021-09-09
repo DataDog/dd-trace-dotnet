@@ -28,7 +28,7 @@ namespace Datadog.Trace.AppSec
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
 
-        private readonly IPowerWaf _powerWaf;
+        private readonly IWaf _powerWaf;
         private readonly IAppSecAgentWriter _agentWriter;
         private readonly InstrumentationGateway _instrumentationGateway;
         private readonly SecuritySettings _settings;
@@ -42,7 +42,7 @@ namespace Datadog.Trace.AppSec
         {
         }
 
-        private Security(SecuritySettings settings = null, InstrumentationGateway instrumentationGateway = null, IPowerWaf powerWaf = null, IAppSecAgentWriter agentWriter = null)
+        private Security(SecuritySettings settings = null, InstrumentationGateway instrumentationGateway = null, IWaf powerWaf = null, IAppSecAgentWriter agentWriter = null)
         {
             try
             {
@@ -53,7 +53,7 @@ namespace Datadog.Trace.AppSec
                 _settings.Enabled = _settings.Enabled && AreArchitectureAndOsSupported();
                 if (_settings.Enabled)
                 {
-                    _powerWaf = powerWaf ?? PowerWaf.Initialize();
+                    _powerWaf = powerWaf ?? Waf.Waf.Initialize();
                     if (_powerWaf != null)
                     {
                         _agentWriter = agentWriter ?? new AppSecAgentWriter();
@@ -131,7 +131,7 @@ namespace Datadog.Trace.AppSec
 
             if (additiveContext == null)
             {
-                additiveContext = _powerWaf.CreateAdditiveContext();
+                additiveContext = _powerWaf.CreateContext();
                 transport.SetAdditiveContext(additiveContext);
             }
 

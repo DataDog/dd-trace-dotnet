@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- Override TargetFrameworks to remove net452 -->
+    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net461;netcoreapp2.1;netcoreapp3.0;netcoreapp3.1;net5.0</TargetFrameworks>
+    <LoadManagedProfilerFromProfilerDirectory>true</LoadManagedProfilerFromProfilerDirectory>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Rebus" Version="6.4.1" />
+    <PackageReference Include="Rebus.SqlServer" Version="7.1.7" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.4.3" />
+  </ItemGroup>
+</Project>

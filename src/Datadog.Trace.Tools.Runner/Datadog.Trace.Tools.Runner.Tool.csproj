@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Version>1.28.3-prerelease</Version>
+    <Version>1.28.6</Version>
     <Title>Datadog APM Auto-instrumentation Runner</Title>
     <Copyright>Copyright 2020 Datadog, Inc.</Copyright>
     <Description>Auto-instrumentation dotnet global tool for Datadog APM</Description>
@@ -27,13 +27,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\Datadog.Instrumentation\home\**\*.*" Pack="true" PackagePath="\home" LinkBase="home">
+    <Content Include="..\Datadog.Monitoring.Distribution\home\**\*.*" Pack="true" PackagePath="\home" LinkBase="home">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
 
   <ItemGroup>
-    <Content Update="..\Datadog.Instrumentation\home\**\readme.txt" Pack="false">
+    <Content Update="..\Datadog.Monitoring.Distribution\home\**\readme.txt" Pack="false">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

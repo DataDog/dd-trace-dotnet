@@ -7,7 +7,7 @@
 //     with the correct arguments outside of Visual Studio.
 
 //     Changes to this file may cause incorrect behavior and will be lost if
-//     the code is regenerated. 
+//     the code is regenerated.
 // </auto-generated>
 //------------------------------------------------------------------------------
 
@@ -1318,6 +1318,32 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.0.10" },
                 new object[] { "2.0.11" },
                 new object[] { "2.0.12" },
+#endif
+            };
+
+        public static IEnumerable<object[]> Aerospike =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETFRAMEWORK
+#endif
+                new object[] { "4.0.0" },
+                new object[] { "4.0.1" },
+                new object[] { "4.0.2" },
+                new object[] { "4.0.3" },
+                new object[] { "4.1.0" },
+                new object[] { "4.1.1" },
+                new object[] { "4.1.2" },
+                new object[] { "4.1.3" },
+                new object[] { "4.1.4" },
+                new object[] { "4.1.5" },
+                new object[] { "4.1.6" },
+                new object[] { "4.2.0" },
+                new object[] { "4.2.1" },
+                new object[] { "4.2.2" },
 #endif
             };
 

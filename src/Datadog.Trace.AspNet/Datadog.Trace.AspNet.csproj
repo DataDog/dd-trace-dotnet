@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>net45</TargetFrameworks>
-    <Version>1.28.3-prerelease</Version>
+    <Version>1.28.6</Version>
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
   </PropertyGroup>
 
