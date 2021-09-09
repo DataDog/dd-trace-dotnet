@@ -71,7 +71,7 @@ namespace PrepareRelease
                 var utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
                 Console.WriteLine($"Writing {filename}...");
                 File.WriteAllText(filename, json, utf8NoBom);
-                
+
                 // CallTarget
                 var calltargetPath = Path.Combine(outputDirectory, "src", "Datadog.Trace", "ClrProfiler", "InstrumentationDefinitions.cs");
                 Console.WriteLine($"Writing {calltargetPath}...");
@@ -164,7 +164,7 @@ namespace PrepareRelease
                                          let wrapperType = callTargetType
                                          from assemblyNames in GetPropertyValue<string[]>(attribute, "AssemblyNames")
                                          let versionRange = GetPropertyValue<object>(attribute, "VersionRange")
-                                         orderby assemblyNames, GetPropertyValue<string>(attribute, "TypeName"), GetPropertyValue<string>(attribute, "MethodName") 
+                                         orderby assemblyNames, GetPropertyValue<string>(attribute, "TypeName"), GetPropertyValue<string>(attribute, "MethodName")
                                          select new CallTargetDefinitionSource
                                          {
                                              TargetAssembly = assemblyNames,
@@ -185,7 +185,7 @@ namespace PrepareRelease
             var cTargetInt = callTargetIntegrations.ToList();
             return callTargetIntegrations.ToList();
         }
-        
+
         static IEnumerable<Integration> GetCallSiteIntegrations(ICollection<Assembly> assemblies)
         {
             // find all methods in Datadog.Trace.dll with [InterceptMethod]
@@ -537,27 +537,27 @@ namespace PrepareRelease
         public class CallTargetDefinitionSource
         {
             public string TargetAssembly { get; init; }
-            
+
             public string TargetType { get; init; }
-            
+
             public string TargetMethod { get; init; }
-            
+
             public string[] TargetSignatureTypes { get; init; }
-            
+
             public ushort TargetMinimumMajor { get; init; }
-            
+
             public ushort TargetMinimumMinor { get; init; }
-            
+
             public ushort TargetMinimumPatch { get; init; }
-            
+
             public ushort TargetMaximumMajor { get; init; }
-            
+
             public ushort TargetMaximumMinor { get; init; }
-            
+
             public ushort TargetMaximumPatch { get; init; }
-            
+
             public string WrapperAssembly { get; init; }
-            
+
             public string WrapperType { get; init; }
 
             protected bool Equals(CallTargetDefinitionSource other) =>
@@ -573,7 +573,7 @@ namespace PrepareRelease
                 TargetMaximumPatch == other.TargetMaximumPatch &&
                 WrapperAssembly == other.WrapperAssembly &&
                 WrapperType == other.WrapperType &&
-                string.Join(',', TargetSignatureTypes ?? Array.Empty<string>()) == string.Join(',', other.TargetSignatureTypes ?? Array.Empty<string>()); 
+                string.Join(',', TargetSignatureTypes ?? Array.Empty<string>()) == string.Join(',', other.TargetSignatureTypes ?? Array.Empty<string>());
 
             public override bool Equals(object obj)
             {
@@ -595,8 +595,8 @@ namespace PrepareRelease
                 return Equals((CallTargetDefinitionSource)obj);
             }
 
-            public override int GetHashCode() => HashCode.Combine(TargetAssembly, TargetType, TargetMethod) + HashCode.Combine(TargetMinimumMajor, TargetMinimumMinor, TargetMinimumPatch, 
-                                                                                                                               TargetMaximumMajor, TargetMaximumMinor, TargetMaximumPatch, 
+            public override int GetHashCode() => HashCode.Combine(TargetAssembly, TargetType, TargetMethod) + HashCode.Combine(TargetMinimumMajor, TargetMinimumMinor, TargetMinimumPatch,
+                                                                                                                               TargetMaximumMajor, TargetMaximumMinor, TargetMaximumPatch,
                                                                                                                                WrapperAssembly, WrapperType);
         }
     }

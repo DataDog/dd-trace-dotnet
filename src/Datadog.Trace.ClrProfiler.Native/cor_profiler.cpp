@@ -278,11 +278,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     }
 
     // writing opcodes vector for the IL dumper
+    if (dump_il_rewrite_enabled)
+    {
 #define OPDEF(c, s, pop, push, args, type, l, s1, s2, flow) opcodes_names.push_back(s);
 #include "opcode.def"
 #undef OPDEF
-    opcodes_names.push_back("(count)"); // CEE_COUNT
-    opcodes_names.push_back("->");      // CEE_SWITCH_ARG
+        opcodes_names.push_back("(count)"); // CEE_COUNT
+        opcodes_names.push_back("->");      // CEE_SWITCH_ARG
+    }
 
     //
     managed_profiler_assembly_reference = AssemblyReference::GetFromCache(managed_profiler_full_assembly_version);
