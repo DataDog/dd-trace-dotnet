@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class GraphQL4Tests : GraphQLTests
     {
         public GraphQL4Tests(ITestOutputHelper output)
-            : base("GraphQL4", output, disableCallsite: true)
+            : base("GraphQL4", output, callTargetOnly : true)
         {
         }
     }
@@ -34,35 +34,38 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class GraphQL3Tests : GraphQLTests
     {
         public GraphQL3Tests(ITestOutputHelper output)
-            : base("GraphQL3", output, disableCallsite: true)
+            : base("GraphQL3", output, callTargetOnly: true)
         {
         }
     }
 
-    public class GraphQLTests : TestHelper
+    public class GraphQL2Tests : GraphQLTests
+    {
+        public GraphQL3Tests(ITestOutputHelper output)
+            : base("GraphQL", output, callTargetOnly: false)
+        {
+        }
+    }
+
+    public abstract class GraphQLTests : TestHelper
     {
         private const string ServiceVersion = "1.0.0";
 
         private static readonly string _graphQLValidateOperationName = "graphql.validate";
         private static readonly string _graphQLExecuteOperationName = "graphql.execute";
 
-        private readonly bool _disableCallsite;
+        private readonly bool _callTargetOnly;
 
         private List<RequestInfo> _requests;
         private List<WebServerSpanExpectation> _expectations;
         private int _expectedGraphQLValidateSpanCount;
         private int _expectedGraphQLExecuteSpanCount;
 
-        public GraphQLTests(ITestOutputHelper output)
-            : this("GraphQL", output)
-        {
-        }
-
-        protected GraphQLTests(string sampleAppName, ITestOutputHelper output, bool disableCallsite = false)
+        protected GraphQLTests(string sampleAppName, ITestOutputHelper output, bool callTargetOnly = false)
             : base(sampleAppName, output)
         {
             InitializeExpectations(sampleAppName);
-            _disableCallsite = disableCallsite;
+            __callTargetOnly = _callTargetOnly;
             SetServiceVersion(ServiceVersion);
         }
 
@@ -73,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [InlineData(true)]
         public void SubmitsTraces(bool enableCallTarget)
         {
-            if (!enableCallTarget && _disableCallsite)
+            if (_callTargetOnly && !enableCallTarget)
             {
                 return;
             }
