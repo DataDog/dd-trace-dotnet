@@ -1473,7 +1473,7 @@
         },
         "wrapper": {
           "assembly": "Datadog.Trace, Version=1.28.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ILogger.LoggerExternalScopeProviderForEachScopeIntegration",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.LoggerExternalScopeProviderForEachScopeIntegration",
           "action": "CallTargetModification"
         }
       },
@@ -1497,7 +1497,7 @@
         },
         "wrapper": {
           "assembly": "Datadog.Trace, Version=1.28.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ILogger.LoggerFactoryScopeProviderForEachScopeIntegration",
+          "type": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.LoggerFactoryScopeProviderForEachScopeIntegration",
           "action": "CallTargetModification"
         }
       }

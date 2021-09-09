@@ -8,7 +8,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ILogger
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
 {
     internal class DatadogLoggingScope : IReadOnlyList<KeyValuePair<string, object>>
     {
@@ -16,6 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ILogger
         private readonly string _env;
         private readonly string _version;
         private readonly Tracer _tracer;
+        private readonly string _cachedFormat;
 
         public DatadogLoggingScope()
             : this(Tracer.Instance)
@@ -28,6 +29,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ILogger
             _service = tracer.DefaultServiceName ?? string.Empty;
             _env = tracer.Settings.Environment ?? string.Empty;
             _version = tracer.Settings.ServiceVersion ?? string.Empty;
+            _cachedFormat = string.Format(
+                CultureInfo.InvariantCulture,
+                "dd_service:\"{0}\", dd_env:\"{1}\", dd_version:\"{2}\"",
+                _service,
+                _env,
+                _version);
         }
 
         public int Count => 5;
@@ -41,8 +48,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ILogger
                     0 => new KeyValuePair<string, object>("dd_service", _tracer.ActiveScope?.Span.ServiceName ?? _service),
                     1 => new KeyValuePair<string, object>("dd_env", _env),
                     2 => new KeyValuePair<string, object>("dd_version", _version),
-                    3 => new KeyValuePair<string, object>("dd_trace_id", _tracer.ActiveScope?.Span.TraceId),
-                    4 => new KeyValuePair<string, object>("dd_span_id", _tracer.ActiveScope?.Span.SpanId),
+                    3 => new KeyValuePair<string, object>("dd_trace_id", (_tracer.ActiveScope?.Span.TraceId ?? 0).ToString()),
+                    4 => new KeyValuePair<string, object>("dd_span_id", (_tracer.ActiveScope?.Span.SpanId ?? 0).ToString()),
                     _ => throw new ArgumentOutOfRangeException(nameof(index))
                 };
             }
@@ -51,10 +58,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ILogger
         public override string ToString()
         {
             var span = _tracer.ActiveScope?.Span;
+            if (span is null)
+            {
+                return _cachedFormat;
+            }
 
             return string.Format(
                 CultureInfo.InvariantCulture,
-                "dd_service:{0}, dd_env:{1}, dd_version:{2}, dd_trace_id:{3}, dd_span_id:{4}",
+                "dd_service:\"{0}\", dd_env:\"{1}\", dd_version:\"{2}\", dd_trace_id:\"{3}\", dd_span_id:\"{4}\"",
                 span?.ServiceName ?? _service,
                 _env,
                 _version,
@@ -71,8 +82,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ILogger
 
             if (span is not null)
             {
-                yield return new KeyValuePair<string, object>("dd_trace_id", span.TraceId);
-                yield return new KeyValuePair<string, object>("dd_span_id", span.SpanId);
+                yield return new KeyValuePair<string, object>("dd_trace_id", span.TraceId.ToString());
+                yield return new KeyValuePair<string, object>("dd_span_id", span.SpanId.ToString());
             }
         }
 
