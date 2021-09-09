@@ -5,7 +5,7 @@
 
 // The conditions looks weird, but it seems like _OR_GREATER is not supported yet in all environments
 // We can trim all the additional conditions when this is fixed
-#if NETCOREAPP3_0_OR_GREATER || NETCOREAPP3_0 || NETCOREAPP3_1 || NET50
+#if NETCOREAPP3_0 || NETCOREAPP3_1 || NET5_0
 
 using System;
 using System.Collections.Generic;

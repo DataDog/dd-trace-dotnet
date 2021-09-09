@@ -7,7 +7,7 @@ using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ILogger
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
 {
     /// <summary>
     /// LoggerExternalScopeProvider.ForEach&lt;TState&gt; calltarget instrumentation
