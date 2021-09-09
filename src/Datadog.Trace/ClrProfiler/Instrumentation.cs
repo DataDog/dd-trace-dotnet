@@ -71,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler
             try
             {
                 Log.Debug("Sending CallTarget integrations definitions to native profiler.");
-                NativeMethods.InitializeProfiler(NativeCallTargetDefinition.GetAllDefinitions());
+                NativeMethods.InitializeProfiler(InstrumentationDefinitions.GetAllDefinitions());
                 Log.Debug("CallTarget integrations definitions sent.");
                 Log.Information("IsProfilerAttached: true");
             }
