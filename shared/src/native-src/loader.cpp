@@ -397,8 +397,39 @@ namespace shared
             const mdToken moduleEntryPoint = GetModuleEntryPointToken(moduleBaseLoadAddress, moduleFlags);
             if (moduleEntryPoint != NULL && moduleEntryPoint != mdTokenNil && _corlibMetadata.Token != mdAssemblyNil)
             {
-                std::string moduleEntryPointHex = HexStr(moduleEntryPoint);
-                Debug("Loader::InjectLoaderToModuleInitializer: Module entrypoint found at: " + moduleEntryPointHex);
+                constexpr DWORD NameBuffSize = 1024;
+
+                mdToken moduleEntryPointParent;
+                WCHAR moduleEntryPointName[NameBuffSize]{};
+                DWORD moduleEntryPointNameLength = 0;
+                hr = metadataImport->GetMemberProps(moduleEntryPoint, &moduleEntryPointParent, moduleEntryPointName,
+                                                    NameBuffSize, &moduleEntryPointNameLength, nullptr, nullptr,
+                                                    nullptr, nullptr, nullptr,
+                                                    nullptr, nullptr, nullptr);
+                if (FAILED(hr))
+                {
+                    Error("Loader::InjectLoaderToModuleInitializer: Call to GetMemberProps(..) returned a FAILED "
+                          "HResult: " + ToString(hr) + ".");
+                    return S_FALSE;
+                }
+
+                WCHAR typeName[NameBuffSize]{};
+                DWORD typeNameLength = 0;
+                DWORD typeFlags;
+                hr = metadataImport->GetTypeDefProps(moduleEntryPointParent, typeName, NameBuffSize, &typeNameLength,
+                                                     &typeFlags, NULL);
+                if (FAILED(hr))
+                {
+                    Error("Loader::InjectLoaderToModuleInitializer: Call to GetTypeDefProps(..) returned a FAILED "
+                          "HResult: " + ToString(hr) + ".");
+                    return S_FALSE;
+                }
+
+                const std::string moduleEntryPointHex = HexStr(moduleEntryPoint);
+                const std::string moduleEntryPointFullName = ToString(typeName) + "." + ToString(moduleEntryPointName);
+
+                Debug("Loader::InjectLoaderToModuleInitializer: Module entrypoint found at: " + moduleEntryPointHex +
+                      " (" + moduleEntryPointFullName + ").");
 
                 mdAssemblyRef corlibAssemblyRef = mdAssemblyRefNil;
                 hr = assmeblyEmit->DefineAssemblyRef(_corlibMetadata.pPublicKey,
@@ -462,7 +493,8 @@ namespace shared
                 hr = EmitLoaderCallInMethod(moduleId, moduleEntryPoint, loaderMethodDef);
                 if (SUCCEEDED(hr))
                 {
-                    Info("Loader::InjectLoaderToModuleInitializer: Loader injected successfully in module entrypoint. "
+                    Info("Loader::InjectLoaderToModuleInitializer: Loader injected successfully in module entrypoint " +
+                         moduleEntryPointFullName +
                          " [ModuleID=" +
                          moduleIdHex + ", AssemblyID=" + assemblyIdHex +
                          ", AssemblyName=" + ToString(assemblyNameString) + ", AppDomainID=" + appDomainIdHex +
@@ -582,9 +614,15 @@ namespace shared
             {
                 if (entrypoint.ModuleId == moduleId && entrypoint.Token == functionToken)
                 {
-                    Debug("Loader::HandleJitCachedFunctionSearchStarted:"
-                      " (functionId=" + ToString(functionId) + ")"
-                      " Disabled module entrypoint NGEN image.");
+                    if (_loaderOptions.LogDebugIsEnabled)
+                    {
+                        const std::string moduleIdHex = "0x" + HexStr(moduleId);
+                        const std::string moduleEntryPointHex = HexStr(functionToken);
+
+                        Debug("Loader::HandleJitCachedFunctionSearchStarted: Disabled module entrypoint NGEN image. "
+                              "[FunctionId=" + ToString(functionId) + ", ModuleId=" + moduleIdHex +
+                              ", MethodDef=" + moduleEntryPointHex + "]");
+                    }
                     *pbUseCachedFunction = false;
                     return S_OK;
                 }
@@ -615,7 +653,6 @@ namespace shared
             return S_FALSE;
         }
 
-        mdToken typeParentToken = mdTokenNil;
         WCHAR typeName[NameBuffSize]{};
         DWORD typeNameLength = 0;
         DWORD typeFlags;
@@ -1580,12 +1617,10 @@ namespace shared
 
                 if (sectionRet == nullptr)
                 {
-                    Debug("Loader::GetModuleEntryPointToken: Simple pCorHeader");
                     pCorHeader = moduleBaseLoadAddress + clrDataVirtualAddress;
                 }
                 else
                 {
-                    Debug("Loader::GetModuleEntryPointToken: Complex pCorHeader");
                     pCorHeader = moduleBaseLoadAddress + clrDataVirtualAddress - VAL32(sectionRet->VirtualAddress) +
                                  VAL32(sectionRet->PointerToRawData);
                 }
