@@ -1570,6 +1570,7 @@ namespace shared
                         {
                             Debug("Loader::GetModuleEntryPointToken: " + ToString(i) + ". sectionRet = (found)");
                             sectionRet = section;
+                            break;
                         }
                     }
 
