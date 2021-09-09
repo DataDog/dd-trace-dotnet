@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#if !NETFRAMEWORK
 using System;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
@@ -131,3 +132,4 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         }
     }
 }
+#endif

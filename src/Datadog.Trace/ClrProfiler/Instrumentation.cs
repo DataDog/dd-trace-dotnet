@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Logging;
@@ -152,7 +151,7 @@ namespace Datadog.Trace.ClrProfiler
 
             if (AzureAppServices.Metadata.IsRelevant && AzureAppServices.Metadata.AzureContext == AzureContext.AzureFunctions)
             {
-                observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver(AzureFunctionsCommon.OperationName, AzureFunctionsCommon.IntegrationId) };
+                observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver(AutoInstrumentation.Azure.Functions.AzureFunctionsCommon.OperationName, AutoInstrumentation.Azure.Functions.AzureFunctionsCommon.IntegrationId) };
             }
             else
             {
