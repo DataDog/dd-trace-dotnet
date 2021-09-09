@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
             _version = tracer.Settings.ServiceVersion ?? string.Empty;
             _cachedFormat = string.Format(
                 CultureInfo.InvariantCulture,
-                "{{\"dd_service\":\"{0}\", \"dd_env\":\"{1}\", \"dd_version\":\"{2}\"}}",
+                "dd_service:\"{0}\", dd_env:\"{1}\", dd_version:\"{2}\"",
                 _service,
                 _env,
                 _version);
@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
 
             return string.Format(
                 CultureInfo.InvariantCulture,
-                "{{\"dd_service\":\"{0}\", \"dd_env\":\"{1}\", \"dd_version\":\"{2}\", \"dd_trace_id\":\"{3}\", \"dd_span_id\":\"{4}\"}}",
+                "dd_service:\"{0}\", dd_env:\"{1}\", dd_version:\"{2}\", dd_trace_id:\"{3}\", dd_span_id:\"{4}\"",
                 span?.ServiceName ?? _service,
                 _env,
                 _version,
