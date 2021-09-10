@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
@@ -214,6 +215,28 @@ namespace Datadog.Trace.Configuration
 
             KafkaCreateConsumerScopeEnabled = source?.GetBool(ConfigurationKeys.KafkaCreateConsumerScopeEnabled)
                                            ?? true; // default
+
+            DirectLogSubmissionHostname = source?.GetString(ConfigurationKeys.DirectLogSubmission.Hostname);
+            DirectLogSubmissionSource = source?.GetString(ConfigurationKeys.DirectLogSubmission.Source)
+                                     ?? "csharp"; // default
+            DirectLogSubmissionTransport = source?.GetString(ConfigurationKeys.DirectLogSubmission.Transport)
+                                        ?? "HTTP"; // default
+            DirectLogSubmissionUrl = source?.GetString(ConfigurationKeys.DirectLogSubmission.Url)
+                                        ?? "https://http-intake.logs.datadoghq.com:443"; // default
+
+            DirectLogSubmissionMinimumLevel = DirectSubmissionLogLevelExtensions.Parse(
+                source?.GetString(ConfigurationKeys.DirectLogSubmission.MinimumLevel),
+                DirectSubmissionLogLevel.Information); // default
+
+            DirectLogSubmissionGlobalTags = source?.GetDictionary(ConfigurationKeys.DirectLogSubmission.GlobalTags)
+                                                   ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
+                                                   .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim())
+                                         ?? new Dictionary<string, string>();
+
+            var logSubmissionIntegrations = source?.GetString(ConfigurationKeys.DirectLogSubmission.EnabledIntegrations)
+                                                  ?.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries) ??
+                                            Enumerable.Empty<string>();
+            DirectLogSubmissionEnabledIntegrations = new HashSet<string>(logSubmissionIntegrations, StringComparer.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -440,6 +463,48 @@ namespace Datadog.Trace.Configuration
         /// Gets configuration values for changing service names based on configuration
         /// </summary>
         internal ServiceNames ServiceNameMappings { get; }
+
+        /// <summary>
+        /// Gets or Sets the integrations enabled for direct log submission
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.DirectLogSubmission.EnabledIntegrations" />
+        internal HashSet<string> DirectLogSubmissionEnabledIntegrations { get; set; }
+
+        /// <summary>
+        /// Gets or Sets the originating host name for direct logs submission
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.DirectLogSubmission.Hostname" />
+        internal string DirectLogSubmissionHostname { get; set; }
+
+        /// <summary>
+        /// Gets or Sets the originating source for direct logs submission
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.DirectLogSubmission.Source" />
+        internal string DirectLogSubmissionSource { get; set; }
+
+        /// <summary>
+        /// Gets or sets the global tags, which are applied to all directly submitted logs
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.DirectLogSubmission.GlobalTags" />
+        internal IDictionary<string, string> DirectLogSubmissionGlobalTags { get; set; }
+
+        /// <summary>
+        /// Gets or sets the transport to use for communicating with the trace agent.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.DirectLogSubmission.Transport" />
+        internal string DirectLogSubmissionTransport { get; set; }
+
+        /// <summary>
+        /// Gets or sets the url to send logs to
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.DirectLogSubmission.Url" />
+        internal string DirectLogSubmissionUrl { get; set; }
+
+        /// <summary>
+        /// Gets or sets the minimum level logs should have to be sent to the intake.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.DirectLogSubmission.Url" />
+        internal DirectSubmissionLogLevel DirectLogSubmissionMinimumLevel { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating the size in bytes of the trace buffer
