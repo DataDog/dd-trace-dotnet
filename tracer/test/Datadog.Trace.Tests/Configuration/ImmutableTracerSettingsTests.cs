@@ -21,6 +21,13 @@ namespace Datadog.Trace.Tests.Configuration
         {
             nameof(TracerSettings.DisabledIntegrationNames),
             nameof(TracerSettings.DiagnosticSourceEnabled),
+            nameof(TracerSettings.DirectLogSubmissionEnabledIntegrations),
+            nameof(TracerSettings.DirectLogSubmissionHost),
+            nameof(TracerSettings.DirectLogSubmissionSource),
+            nameof(TracerSettings.DirectLogSubmissionGlobalTags),
+            nameof(TracerSettings.DirectLogSubmissionTransport),
+            nameof(TracerSettings.DirectLogSubmissionUrl),
+            nameof(TracerSettings.DirectLogSubmissionMinimumLevel),
         };
 
         [Fact]

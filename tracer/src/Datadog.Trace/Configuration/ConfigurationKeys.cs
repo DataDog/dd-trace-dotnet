@@ -350,5 +350,61 @@ namespace Datadog.Trace.Configuration
             /// <seealso cref="TracerSettings.DelayWcfInstrumentationEnabled"/>
             public const string DelayWcfInstrumentationEnabled = "DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED";
         }
+
+        internal static class DirectLogSubmission
+        {
+            /// <summary>
+            /// Configuration key for a list of direct log submission integrations to enable.
+            /// Only selected integrations are enabled for direct log submission
+            /// Default is empty (direct log submission disabled).
+            /// Supports multiple values separated with semi-colons.
+            /// </summary>
+            /// <seealso cref="TracerSettings.DirectLogSubmissionEnabledIntegrations"/>
+            public const string EnabledIntegrations = "DD_LOGS_DIRECT_SUBMISSION_INTEGRATIONS";
+
+            /// <summary>
+            /// Set the name of the originating host for direct logs submission.
+            /// Required for direct logs submission (default is machine name).
+            /// </summary>
+            /// <seealso cref="TracerSettings.DirectLogSubmissionHost"/>
+            public const string Host = "DD_LOGS_DIRECT_SUBMISSION_HOST";
+
+            /// <summary>
+            /// Set the originating source for direct logs submission.
+            /// Default is 'csharp'
+            /// </summary>
+            /// <seealso cref="TracerSettings.DirectLogSubmissionSource"/>
+            public const string Source = "DD_LOGS_DIRECT_SUBMISSION_SOURCE";
+
+            /// <summary>
+            /// Configuration key for a list of tags to be applied globally to all logs directly submitted.
+            /// </summary>
+            /// <seealso cref="TracerSettings.DirectLogSubmissionGlobalTags"/>
+            public const string GlobalTags = "DD_LOGS_DIRECT_SUBMISSION_TAGS";
+
+            /// <summary>
+            /// Configuration key for the transport to use for communicating with the trace agent.
+            /// Default value is <c>HTTP</c>.
+            /// Options available: <c>HTTP</c>,<c>TCP</c>
+            /// </summary>
+            /// <seealso cref="TracerSettings.DirectLogSubmissionTransport"/>
+            public const string Transport = "DD_LOGS_DIRECT_SUBMISSION_TRANSPORT";
+
+            /// <summary>
+            /// Configuration key for the url to send logs to.
+            /// Default value is <c>https://http-intake.logs.datadoghq.eu:443</c>.
+            /// If using <c>TCP</c> <see cref="Transport"/>, the scheme will be ignored
+            /// </summary>
+            /// <seealso cref="TracerSettings.DirectLogSubmissionUrl"/>
+            public const string Url = "DD_LOGS_DIRECT_SUBMISSION_URL";
+
+            /// <summary>
+            /// Configuration key for the minimum level logs should have to be sent to the intake.
+            /// Default value is <c>Information</c>.
+            /// Should be one of <c>Verbose</c>,<c>Debug</c>,<c>Information</c>,<c>Warning</c>,<c>Error</c>,<c>Fatal</c>
+            /// </summary>
+            /// <seealso cref="TracerSettings.DirectLogSubmissionMinimumLevel"/>
+            public const string MinimumLevel = "DD_LOGS_DIRECT_SUBMISSION_MINIMUM_LEVEL";
+        }
     }
 }
