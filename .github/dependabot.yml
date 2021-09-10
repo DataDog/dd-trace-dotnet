@@ -12,7 +12,7 @@ updates:
       - dependency-name: "MessagePack" # Locked at a version that supports our net452 build target
   # Src libraries
   - package-ecosystem: "nuget"
-    directory: "/src/Datadog.Trace"
+    directory: "/tracer/src/Datadog.Trace"
     schedule:
       interval: "daily"
     labels:
@@ -37,7 +37,7 @@ updates:
       - dependency-name: "Microsoft.Build.Framework"
 
   - package-ecosystem: "nuget"
-    directory: "/src/Datadog.Trace.OpenTracing"
+    directory: "/tracer/src/Datadog.Trace.OpenTracing"
     schedule:
       interval: "daily"
     labels:
@@ -58,7 +58,7 @@ updates:
       - dependency-name: "System.Reflection.Emit.Lightweight"
       ### End Datadog.Trace.csproj ignored dependencies
   - package-ecosystem: "nuget"
-    directory: "/src/Datadog.Trace.BenchmarkDotNet"
+    directory: "/tracer/src/Datadog.Trace.BenchmarkDotNet"
     schedule:
       interval: "daily"
     labels:
