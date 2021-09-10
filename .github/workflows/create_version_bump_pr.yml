@@ -31,22 +31,22 @@ jobs:
           dotnet-version: '5.0.x'
 
       - name: "Update Changelog"
-        run: .\build.ps1 UpdateChangeLog
+        run: .\tracer\build.ps1 UpdateChangeLog
 
       - name: "Bump Version"
-        run: .\build.ps1 UpdateIntegrationsJson UpdateVersion UpdateMsiContents
+        run: .\tracer\build.ps1 UpdateIntegrationsJson UpdateVersion UpdateMsiContents
 
       - name: "Verify Changes"
         id: changes
-        run: .\build.ps1 VerifyChangedFilesFromVersionBump
+        run: .\tracer\build.ps1 VerifyChangedFilesFromVersionBump
 
       - name: "Output version"
         id: versions
-        run: .\build.ps1 OutputCurrentVersionToGitHub
+        run: .\tracer\build.ps1 OutputCurrentVersionToGitHub
 
       - name: "Rename vNext milestone"
         id: rename
-        run: .\build.ps1 RenameVNextMilestone
+        run: .\tracer\build.ps1 RenameVNextMilestone
 
       - name: Create Pull Request
         id: pr

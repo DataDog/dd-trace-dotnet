@@ -20,7 +20,7 @@ jobs:
           dotnet-version: '5.0.x'
 
       - name: "Assign to vNext Milestone"
-        run: ./build.sh AssignPullRequestToMilestone
+        run: ./tracer/build.sh AssignPullRequestToMilestone
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           PullRequestNumber: "${{ github.event.pull_request.number }}"

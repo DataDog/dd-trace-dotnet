@@ -20,7 +20,7 @@ jobs:
 
       - name: "Output current version"
         id: versions
-        run: ./build.sh OutputCurrentVersionToGitHub
+        run: ./tracer/build.sh OutputCurrentVersionToGitHub
 
       - name: "Configure Git Credentials"
         run: |
