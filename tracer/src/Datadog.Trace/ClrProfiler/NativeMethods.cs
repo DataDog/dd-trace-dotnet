@@ -23,12 +23,27 @@ namespace Datadog.Trace.ClrProfiler
             return NonWindows.IsProfilerAttached();
         }
 
+        public static void InitializeProfiler(NativeCallTargetDefinition[] methodArrays)
+        {
+            if (IsWindows)
+            {
+                Windows.InitializeProfiler(methodArrays, methodArrays.Length);
+            }
+            else
+            {
+                NonWindows.InitializeProfiler(methodArrays, methodArrays.Length);
+            }
+        }
+
         // the "dll" extension is required on .NET Framework
         // and optional on .NET Core
         private static class Windows
         {
             [DllImport("Datadog.Trace.ClrProfiler.Native.dll")]
             public static extern bool IsProfilerAttached();
+
+            [DllImport("Datadog.Trace.ClrProfiler.Native.dll")]
+            public static extern void InitializeProfiler([In] NativeCallTargetDefinition[] methodArrays, int size);
         }
 
         // assume .NET Core if not running on Windows
@@ -36,6 +51,9 @@ namespace Datadog.Trace.ClrProfiler
         {
             [DllImport("Datadog.Trace.ClrProfiler.Native")]
             public static extern bool IsProfilerAttached();
+
+            [DllImport("Datadog.Trace.ClrProfiler.Native")]
+            public static extern void InitializeProfiler([In] NativeCallTargetDefinition[] methodArrays, int size);
         }
     }
 }

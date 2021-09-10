@@ -329,6 +329,23 @@ struct IntegrationMethod
     }
 };
 
+typedef struct _CallTargetDefinition
+{
+    WCHAR* targetAssembly;
+    WCHAR* targetType;
+    WCHAR* targetMethod;
+    WCHAR** signatureTypes;
+    USHORT signatureTypesLength;
+    USHORT targetMinimumMajor;
+    USHORT targetMinimumMinor;
+    USHORT targetMinimumPatch;
+    USHORT targetMaximumMajor;
+    USHORT targetMaximumMinor;
+    USHORT targetMaximumPatch;
+    WCHAR* wrapperAssembly;
+    WCHAR* wrapperType;
+} CallTargetDefinition;
+
 namespace
 {
 

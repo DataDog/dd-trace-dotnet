@@ -24,6 +24,11 @@ EXTERN_C VOID STDAPICALLTYPE GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, i
     return trace::profiler->GetAssemblyAndSymbolsBytes(pAssemblyArray, assemblySize, pSymbolsArray, symbolsSize);
 }
 
+EXTERN_C VOID STDAPICALLTYPE InitializeProfiler(trace::CallTargetDefinition* items, int size)
+{
+    return trace::profiler->InitializeProfiler(items, size);
+}
+
 #ifndef _WIN32
 EXTERN_C void *dddlopen (const char *__file, int __mode)
 {
