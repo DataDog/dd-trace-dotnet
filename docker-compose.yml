@@ -102,6 +102,14 @@ services:
       - "127.0.0.1:27017:27017"
     command: mongod
 
+  elasticsearch7:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.14.1
+    ports:
+    - "127.0.0.1:9200:9200"
+    - "127.0.0.1:9300:9300"
+    environment:
+    - discovery.type=single-node
+
   elasticsearch6:
     image: docker.elastic.co/elasticsearch/elasticsearch:6.4.2
     ports:
@@ -288,6 +296,7 @@ services:
       - MONGO_HOST=mongo
       - SERVICESTACK_REDIS_HOST=servicestackredis:6379
       - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
+      - ELASTICSEARCH7_HOST=elasticsearch7:9200
       - ELASTICSEARCH6_HOST=elasticsearch6:9200
       - ELASTICSEARCH5_HOST=elasticsearch5:9200
       - SQLSERVER_CONNECTION_STRING=Server=sqlserver;User=sa;Password=Strong!Passw0rd
@@ -304,6 +313,7 @@ services:
       - aerospike
       - servicestackredis
       - stackexchangeredis
+      - elasticsearch7
       - elasticsearch6
       - elasticsearch5
       - sqlserver
@@ -322,6 +332,7 @@ services:
       - aerospike
       - servicestackredis
       - stackexchangeredis
+      - elasticsearch7
       - elasticsearch6
       - elasticsearch5
       - sqlserver
@@ -335,7 +346,7 @@ services:
       - aws_sqs
     environment:
       - TIMEOUT_LENGTH=120
-    command: aerospike:3000 servicestackredis:6379 stackexchangeredis:6379 elasticsearch5:9200 elasticsearch6:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 aws_sqs:9324
+    command: aerospike:3000 servicestackredis:6379 stackexchangeredis:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 aws_sqs:9324
 
   IntegrationTests.ARM64:
     build:
@@ -357,6 +368,7 @@ services:
       - MONGO_HOST=mongo_arm64
       - SERVICESTACK_REDIS_HOST=servicestackredis_arm64:6379
       - STACKEXCHANGE_REDIS_HOST=stackexchangeredis_arm64:6379
+      - ELASTICSEARCH7_HOST=elasticsearch7_arm64:9200
       - ELASTICSEARCH6_HOST=elasticsearch7_arm64:9200
       - ELASTICSEARCH5_HOST=elasticsearch7_arm64:9200
       - SQLSERVER_CONNECTION_STRING=Server=sqledge_arm64;User=sa;Password=Strong!Passw0rd
