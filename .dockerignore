@@ -1,5 +1,5 @@
-test/
-deploy/
+tracer/test/
+tracer/deploy/
 
 .circleci/
 .git/
@@ -10,5 +10,5 @@ packages/
 **/bin/
 **/obj/
 
-!test/test-applications/aspnet/Samples.AspNet472.LoaderOptimizationRegKey/bin/
-!src/WindowsInstaller/bin/
+!tracer/test/test-applications/aspnet/Samples.AspNet472.LoaderOptimizationRegKey/bin/
+!tracer/src/WindowsInstaller/bin/

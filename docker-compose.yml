@@ -261,7 +261,7 @@ services:
       args:
         - ENABLE_32_BIT
         - DOTNET_TRACER_MSI
-      dockerfile: ./build/_build/docker/iis.dockerfile
+      dockerfile: ./tracer/build/_build/docker/iis.dockerfile
     image: datadog-iis-loaderoptimizationregkey
     ports:
     - "8080:80"
@@ -270,7 +270,7 @@ services:
 
   IntegrationTests:
     build:
-      context: ./build/_build/
+      context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdk5Version:-5.0.103}
@@ -339,7 +339,7 @@ services:
 
   IntegrationTests.ARM64:
     build:
-      context: ./build/_build/
+      context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdk5Version:-5.0.103}

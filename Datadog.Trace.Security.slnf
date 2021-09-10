@@ -2,20 +2,20 @@
   "solution": {
     "path": "Datadog.Trace.sln",
     "projects": [
-      "src\\Datadog.Trace.AspNet\\Datadog.Trace.AspNet.csproj",
-      "src\\Datadog.Trace.Ci.Shared\\Datadog.Trace.Ci.Shared.shproj",
-      "src\\Datadog.Trace.ClrProfiler.Managed.Loader\\Datadog.Trace.ClrProfiler.Managed.Loader.csproj",
-      "src\\Datadog.Trace.ClrProfiler.Native\\Datadog.Trace.ClrProfiler.Native.DLL.vcxproj",
-      "src\\Datadog.Trace.ClrProfiler.Native\\Datadog.Trace.ClrProfiler.Native.vcxproj",
-      "src\\Datadog.Trace.MSBuild\\Datadog.Trace.MSBuild.csproj",
-      "src\\Datadog.Trace.Tools.Analyzers\\Datadog.Trace.Tools.Analyzers.csproj",
-      "src\\Datadog.Trace\\Datadog.Trace.csproj",
-      "test\\Datadog.Trace.ClrProfiler.IntegrationTests\\Datadog.Trace.ClrProfiler.IntegrationTests.csproj",
-      "test\\Datadog.Trace.Security.IntegrationTests\\Datadog.Trace.Security.IntegrationTests.csproj",
-      "test\\Datadog.Trace.TestHelpers\\Datadog.Trace.TestHelpers.csproj",
-      "test\\test-applications\\security\\Samples.AspNetCore2\\Samples.AspNetCore2.csproj",
-      "test\\test-applications\\security\\Samples.AspNetCore5\\Samples.AspNetCore5.csproj",
-      "test\\test-applications\\security\\aspnet\\Samples.AspNetMvc5\\Samples.AspNetMvc5.csproj"
+      "tracer\\src\\Datadog.Trace.AspNet\\Datadog.Trace.AspNet.csproj",
+      "tracer\\src\\Datadog.Trace.Ci.Shared\\Datadog.Trace.Ci.Shared.shproj",
+      "tracer\\src\\Datadog.Trace.ClrProfiler.Managed.Loader\\Datadog.Trace.ClrProfiler.Managed.Loader.csproj",
+      "tracer\\src\\Datadog.Trace.ClrProfiler.Native\\Datadog.Trace.ClrProfiler.Native.DLL.vcxproj",
+      "tracer\\src\\Datadog.Trace.ClrProfiler.Native\\Datadog.Trace.ClrProfiler.Native.vcxproj",
+      "tracer\\src\\Datadog.Trace.MSBuild\\Datadog.Trace.MSBuild.csproj",
+      "tracer\\src\\Datadog.Trace.Tools.Analyzers\\Datadog.Trace.Tools.Analyzers.csproj",
+      "tracer\\src\\Datadog.Trace\\Datadog.Trace.csproj",
+      "tracer\\test\\Datadog.Trace.ClrProfiler.IntegrationTests\\Datadog.Trace.ClrProfiler.IntegrationTests.csproj",
+      "tracer\\test\\Datadog.Trace.Security.IntegrationTests\\Datadog.Trace.Security.IntegrationTests.csproj",
+      "tracer\\test\\Datadog.Trace.TestHelpers\\Datadog.Trace.TestHelpers.csproj",
+      "tracer\\test\\test-applications\\security\\Samples.AspNetCore2\\Samples.AspNetCore2.csproj",
+      "tracer\\test\\test-applications\\security\\Samples.AspNetCore5\\Samples.AspNetCore5.csproj",
+      "tracer\\test\\test-applications\\security\\aspnet\\Samples.AspNetMvc5\\Samples.AspNetMvc5.csproj"
     ]
   }
 }
