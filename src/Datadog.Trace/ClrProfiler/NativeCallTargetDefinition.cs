@@ -85,5 +85,10 @@ namespace Datadog.Trace.ClrProfiler
             WrapperAssembly = wrapperAssembly;
             WrapperType = wrapperType;
         }
+
+        public void Dispose()
+        {
+            Marshal.FreeHGlobal(TargetSignatureTypes);
+        }
     }
 }
