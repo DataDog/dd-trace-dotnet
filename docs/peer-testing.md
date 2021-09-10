@@ -1,6 +1,6 @@
 # [Datadog .NET AppSec] Peer-testing
 
-This document describes how to test the installation of the .NET App Sec Library
+Peer-testing is a test script that allows engineers outside of the .NET group to test the installation and basic functionality of the app sec components.
 
 ## Testing Locally
 
