@@ -5,9 +5,12 @@
 
 #if NETFRAMEWORK
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
 using Datadog.Trace.AppSec.EventModel;
+using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
 
@@ -38,19 +41,22 @@ namespace Datadog.Trace.AppSec.Transport.Http
             context.ApplicationInstance.CompleteRequest();
         }
 
-        public IContext GetAdditiveContext()
-        {
-            return context.Items[WafKey] as IContext;
-        }
+        public IContext GetAdditiveContext() => context.Items[WafKey] as IContext;
 
-        public Request Request() => new()
+        public Request Request()
         {
-            Url = context.Request.Url,
-            Method = context.Request.HttpMethod,
-            Scheme = context.Request.Url.Scheme,
-            RemoteIp = context.Request.ServerVariables["HTTP_X_FORWARDED_FOR"] ?? context.Request.ServerVariables["REMOTE_ADDR"],
-            Host = context.Request.UserHostAddress,
-        };
+            var headersDic = RequestHeadersHelper.Get(key => context.Request.Headers[key]);
+
+            return new()
+            {
+                Url = context.Request.Url,
+                Method = context.Request.HttpMethod,
+                Scheme = context.Request.Url.Scheme,
+                RemoteIp = context.Request.ServerVariables["HTTP_X_FORWARDED_FOR"] ?? context.Request.ServerVariables["REMOTE_ADDR"],
+                Host = context.Request.UserHostAddress,
+                Headers = headersDic
+            };
+        }
 
         public Response Response(bool blocked) => new()
         {

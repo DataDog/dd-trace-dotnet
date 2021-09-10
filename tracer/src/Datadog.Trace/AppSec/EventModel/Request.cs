@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec.EventModel
@@ -36,5 +37,8 @@ namespace Datadog.Trace.AppSec.EventModel
 
         [JsonProperty("remote_port")]
         public long RemotePort { get; set; }
+
+        [JsonProperty("headers")]
+        public IDictionary<string, string> Headers { get; set; }
     }
 }

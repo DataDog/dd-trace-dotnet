@@ -5,8 +5,11 @@
 
 #if !NETFRAMEWORK
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.EventModel;
+using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.AppSec.Waf;
 using Microsoft.AspNetCore.Http;
 
@@ -20,12 +23,15 @@ namespace Datadog.Trace.AppSec.Transport.Http
 
         public Request Request()
         {
+            var headersDic = RequestHeadersHelper.Get(key => context.Request.Headers[key]);
+
             var request = new Request
             {
                 Method = context.Request.Method,
                 Path = context.Request.Path,
                 Scheme = context.Request.Scheme,
-                RemoteIp = context.Connection.RemoteIpAddress.ToString()
+                RemoteIp = context.Connection.RemoteIpAddress.ToString(),
+                Headers = headersDic
             };
 
             if (context.Request.Host.HasValue)
