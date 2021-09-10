@@ -14,6 +14,9 @@ namespace Covertura
 {
     public static class CodeCoverage
     {
+        // somewhat arbitrary, but used to exclude noise
+        const decimal SignificantChangeThreshold = 0.05m;
+
         public static CoverturaReport ReadReport(AbsolutePath path)
         {
             var doc = XDocument.Load(path);
@@ -119,9 +122,9 @@ namespace Covertura
                         BranchCoverageChange = decimal.Round(newClass.BranchRate - oldClass.BranchRate, decimals: 2),
                         ComplexityChange = newClass.Complexity - oldClass.Complexity,
                     };
-                    // somewhat arbitrary
-                    changeSummary.IsSignificantChange = Math.Abs(changeSummary.LineCoverageChange) > 0.05m
-                                                     || Math.Abs(changeSummary.BranchCoverageChange) > 0.05m;
+
+                    changeSummary.IsSignificantChange = Math.Abs(changeSummary.LineCoverageChange) > SignificantChangeThreshold
+                                                     || Math.Abs(changeSummary.BranchCoverageChange) > SignificantChangeThreshold;
 
                     changes.ClassChanges[classKvp.Key] = changeSummary;
 
@@ -129,7 +132,7 @@ namespace Covertura
 
                 changes.NewClasses =
                     newPackage.Classes
-                             .Where(kvp => !newPackage.Classes.ContainsKey(kvp.Key))
+                             .Where(kvp => !oldPackage.Classes.ContainsKey(kvp.Key))
                              .Select(kvp => kvp.Value)
                              .ToList();
 
@@ -310,7 +313,7 @@ View the full reports for further details:
 
               static string GetIcon(decimal value) => value switch
               {
-                  <= -0.05m => ":no_entry:",
+                  <= -SignificantChangeThreshold => ":no_entry:",
                   >= 0 => ":heavy_check_mark:",
                   _ => ":warning:",
               };

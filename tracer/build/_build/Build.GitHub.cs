@@ -424,12 +424,6 @@ partial class Build
               var downloadOldLink = oldArtifact.Resource.DownloadUrl;
               var downloadNewLink = newArtifact.Resource.DownloadUrl;
 
-              // var oldReportPath = RootDirectory / "Cobertura.old.xml";
-              // var newReportPath = RootDirectory / "Cobertura.new.xml";
-              // var prNumber = 1700;
-              // var downloadOldLink = "https://old";
-              // var downloadNewLink = "https://new";
-
               var oldReport = Covertura.CodeCoverage.ReadReport(oldReportPath);
               var newReport = Covertura.CodeCoverage.ReadReport(newReportPath);
 
