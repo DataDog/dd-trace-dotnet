@@ -57,8 +57,8 @@ namespace Datadog.Trace.Configuration
         public const string AppSecBlockingEnabled = "DD_APPSEC_BLOCKING_ENABLED";
 
         /// <summary>
-        /// Configuration key for enabling or disabling blocking in AppSec.
-        /// Default is value is false (disabled).
+        /// Override the default rule file provide. Must be a path to a valid JSON rule file.
+        /// Default is value is null (no not override).
         /// </summary>
         public const string AppSecRules = "DD_APPSEC_RULES";
 

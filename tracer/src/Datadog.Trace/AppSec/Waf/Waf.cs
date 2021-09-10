@@ -83,15 +83,11 @@ namespace Datadog.Trace.AppSec.Waf
 
         private static Obj CreatObjFromRulesStream(List<Obj> argCache, Stream stream)
         {
-            var root = GetJsonReaderFromStream(stream);
+            using var reader = new StreamReader(stream);
+            using var jsonReader = new JsonTextReader(reader);
+            var root = JToken.ReadFrom(jsonReader);
 
             return Encoder.Encode(root, argCache);
-        }
-
-        private static JToken GetJsonReaderFromStream(Stream stream)
-        {
-            var reader = new JsonTextReader(new StreamReader(stream));
-            return JToken.ReadFrom(reader);
         }
 
         private static Stream GetRulesManifestStream()
@@ -111,13 +107,14 @@ namespace Datadog.Trace.AppSec.Waf
             return File.OpenRead(rulesFile);
         }
 
+        // null rulesFile means use rules embedded in the manifest
         private static WafHandle CreateWafHandle(string rulesFile)
         {
             var argCache = new List<Obj>();
             Obj configObj;
             try
             {
-                var stream = GetRulesStream(rulesFile);
+                using var stream = GetRulesStream(rulesFile);
 
                 if (stream == null)
                 {
@@ -133,7 +130,12 @@ namespace Datadog.Trace.AppSec.Waf
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"AppSec could not read the rule file \"{rulesFile}\" as it was invalid. AppSec will not run any protections in this application.");
+                var message =
+                    rulesFile != null ?
+                    $"AppSec could not read the rule file \"{rulesFile}\" as it was invalid. AppSec will not run any protections in this application." :
+                    "AppSec could not read the rule file emmbeded in the manifest as it was invalid. AppSec will not run any protections in this application.";
+                Log.Error(ex, message);
+
                 return null;
             }
 
@@ -160,8 +162,10 @@ namespace Datadog.Trace.AppSec.Waf
                 // because of the generic way rules are encoded for the WAF there's no good
                 // way to log them without double parsing, but as this only happens at debug
                 // log level, I think this is okay
-                var stream = GetRulesStream(rulesFile);
-                var root = GetJsonReaderFromStream(stream);
+                using var stream = GetRulesStream(rulesFile);
+                using var reader = new StreamReader(stream);
+                using var jsonReader = new JsonTextReader(reader);
+                var root = JToken.ReadFrom(jsonReader);
 
                 var eventsProp = root.Value<JArray>("events");
                 foreach (var ev in eventsProp)
