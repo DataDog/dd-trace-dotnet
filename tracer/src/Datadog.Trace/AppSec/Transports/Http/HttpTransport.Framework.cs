@@ -52,8 +52,8 @@ namespace Datadog.Trace.AppSec.Transport.Http
                 Url = context.Request.Url,
                 Method = context.Request.HttpMethod,
                 Scheme = context.Request.Url.Scheme,
-                RemoteIp = context.Request.ServerVariables["HTTP_X_FORWARDED_FOR"] ?? context.Request.ServerVariables["REMOTE_ADDR"],
-                Host = context.Request.UserHostAddress,
+                RemoteIp = context.Request.UserHostAddress,
+                Host = context.Request.UserHostName,
                 Headers = headersDic
             };
         }
