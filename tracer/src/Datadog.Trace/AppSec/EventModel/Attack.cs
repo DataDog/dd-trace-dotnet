@@ -33,6 +33,7 @@ namespace Datadog.Trace.AppSec.EventModel
                 EventId = Guid.NewGuid().ToString(),
                 Context = new Context()
                 {
+                    Actor = new Actor { Ip = new Ip { Address = request.RemoteIp } },
                     Host = new Host
                     {
                         OsType = frameworkDescription.OSPlatform,
@@ -43,7 +44,7 @@ namespace Datadog.Trace.AppSec.EventModel
                         Request = request,
                         Response = transport.Response(result.Blocked)
                     },
-                    Actor = new Actor { Ip = new Ip { Address = request.RemoteIp } },
+                    Service = new Service { Environment = CorrelationIdentifier.Env },
                     Tracer = new Tracer
                     {
                         RuntimeType = frameworkDescription.Name,
@@ -66,7 +67,7 @@ namespace Datadog.Trace.AppSec.EventModel
             {
                 attack.Context.Span = new Span { Id = span.SpanId };
                 attack.Context.Trace = new Span { Id = span.TraceId };
-                attack.Context.Service = new Service { Name = span.ServiceName };
+                attack.Context.Service.Name = span.ServiceName;
             }
 
             return attack;
