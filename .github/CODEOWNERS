@@ -2,6 +2,6 @@
 
 *                          @DataDog/apm-dotnet
 /tracer                    @DataDog/apm-dotnet
-/src/Datadog.Trace/Ci      @DataDog/apm-dotnet @DataDog/ci-app-tracers
-/src/Datadog.Trace/AppSec  @DataDog/apm-dotnet @DataDog/appsec-dotnet
+/tracer/src/Datadog.Trace/Ci      @DataDog/apm-dotnet @DataDog/ci-app-tracers
+/tracer/src/Datadog.Trace/AppSec  @DataDog/apm-dotnet @DataDog/appsec-dotnet
 /profiler                  @DataDog/profiling-dotnet
