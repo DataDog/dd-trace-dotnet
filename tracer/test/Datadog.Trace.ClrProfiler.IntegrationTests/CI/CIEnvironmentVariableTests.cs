@@ -76,6 +76,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             continue;
                         }
 
+                        if (spanDataItem.Value.Contains("usersupplied"))
+                        {
+                            // We cannot parse non datetime data.
+                            continue;
+                        }
+
                         value = value.Replace(".000", string.Empty);
                     }
 
