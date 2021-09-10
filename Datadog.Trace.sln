@@ -403,13 +403,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Monitoring.Distribu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LogsInjection.ILogger", "tracer\test\test-applications\integrations\LogsInjection.ILogger\LogsInjection.ILogger.csproj", "{463A6FB2-1ABE-4B92-A470-97134D0BBC7E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Aerospike", "test\test-applications\integrations\Samples.Aerospike\Samples.Aerospike.csproj", "{7471A7A8-B89C-4C94-8EB1-24180E71CA1F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Aerospike", "tracer\test\test-applications\integrations\Samples.Aerospike\Samples.Aerospike.csproj", "{7471A7A8-B89C-4C94-8EB1-24180E71CA1F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServiceBus.Minimal.NServiceBus", "test\test-applications\regression\ServiceBus.Minimal.NServiceBus\ServiceBus.Minimal.NServiceBus.csproj", "{9D5935CB-2DF2-46CB-A5E1-98BE134CAFCC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServiceBus.Minimal.NServiceBus", "tracer\test\test-applications\regression\ServiceBus.Minimal.NServiceBus\ServiceBus.Minimal.NServiceBus.csproj", "{9D5935CB-2DF2-46CB-A5E1-98BE134CAFCC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServiceBus.Minimal.Rebus", "test\test-applications\regression\ServiceBus.Minimal.Rebus\ServiceBus.Minimal.Rebus.csproj", "{6C599D79-87D0-476B-9CBA-F731E5627622}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServiceBus.Minimal.Rebus", "tracer\test\test-applications\regression\ServiceBus.Minimal.Rebus\ServiceBus.Minimal.Rebus.csproj", "{6C599D79-87D0-476B-9CBA-F731E5627622}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServiceBus.Minimal.MassTransit", "test\test-applications\regression\ServiceBus.Minimal.MassTransit\ServiceBus.Minimal.MassTransit.csproj", "{B0E671B9-78DE-410F-A0AA-612FF1F900F2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServiceBus.Minimal.MassTransit", "tracer\test\test-applications\regression\ServiceBus.Minimal.MassTransit\ServiceBus.Minimal.MassTransit.csproj", "{B0E671B9-78DE-410F-A0AA-612FF1F900F2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
