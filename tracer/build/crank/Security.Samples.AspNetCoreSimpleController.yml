@@ -1,0 +1,72 @@
+﻿imports:
+  - https://raw.githubusercontent.com/dotnet/crank/main/src/Microsoft.Crank.Jobs.Bombardier/bombardier.yml
+  - ./os.profiles.yml
+
+variables:
+  commit_hash: 0
+
+jobs:
+  server:
+    source:
+      project: tracer/test/test-applications/throughput/Samples.AspNetCoreSimpleController/Samples.AspNetCoreSimpleController.csproj
+    readyStateText: Application started.
+    options:
+      displayOutput: true
+      displayBuild: true
+      counterProviders:
+      - System.Runtime
+      - Microsoft.AspNetCore.Hosting
+      - Microsoft.AspNetCore.Http.Connections
+
+scenarios:
+  appsec_noattack:
+    application:
+      job: server
+      environmentVariables:
+        COR_ENABLE_PROFILING: 1
+        CORECLR_ENABLE_PROFILING: 1
+        DD_TRACE_CALLTARGET_ENABLED: 1
+        DD_APPSEC_ENABLED: true
+        DD_APPSEC_BLOCKING_ENABLED: true
+    load:
+      job: bombardier
+      variables:
+        warmup: 30
+        duration: 240
+        serverPort: 5000
+        path: /hello
+
+  appsec_attack_noblocking:
+    application:
+      job: server
+      environmentVariables:
+        COR_ENABLE_PROFILING: 1
+        CORECLR_ENABLE_PROFILING: 1
+        DD_TRACE_CALLTARGET_ENABLED: 1
+        DD_APPSEC_ENABLED: true
+        DD_APPSEC_BLOCKING_ENABLED: false
+    load:
+      job: bombardier
+      variables:
+        warmup: 30
+        duration: 240
+        serverPort: 5000
+        path: /hello?arg=[$slice]
+
+  appsec_attack_blocking:
+    application:
+      job: server
+      environmentVariables:
+        COR_ENABLE_PROFILING: 1
+        CORECLR_ENABLE_PROFILING: 1
+        DD_APPSEC_ENABLED: true
+        DD_TRACE_CALLTARGET_ENABLED: 1
+        DD_APPSEC_BLOCKING_ENABLED: true
+    load:
+      job: bombardier
+      variables:
+        warmup: 30
+        duration: 240
+        serverPort: 5000
+        path: /hello?arg=[$slice]
+
