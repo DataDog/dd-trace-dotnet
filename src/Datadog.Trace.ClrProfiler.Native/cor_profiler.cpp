@@ -1147,13 +1147,12 @@ void CorProfiler::InitializeProfiler(CallTargetDefinition* items, int size)
                 Version(current.targetMaximumMajor, current.targetMaximumMinor, current.targetMaximumPatch, 0);
 
             const auto integration = IntegrationMethod(
-                WStr(""),
+                EmptyWStr,
                 MethodReplacement(
                     {},
-                    MethodReference(
-                        targetAssembly, targetType, targetMethod, WStr(""), minVersion, maxVersion,
+                    MethodReference(targetAssembly, targetType, targetMethod, EmptyWStr, minVersion, maxVersion,
                         {}, signatureTypes),
-                    MethodReference(wrapperAssembly, wrapperType, WStr(""), calltarget_modification_action, {}, {}, {},
+                    MethodReference(wrapperAssembly, wrapperType, EmptyWStr, calltarget_modification_action, {}, {}, {},
                                     {})));
 
             if (Logger::IsDebugEnabled())
