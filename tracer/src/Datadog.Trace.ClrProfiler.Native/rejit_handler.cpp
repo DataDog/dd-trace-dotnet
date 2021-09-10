@@ -100,6 +100,8 @@ void RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
 
         HRESULT hr = pInfo->EnumNgenModuleMethodsInliningThisMethod(moduleId, currentModuleId, currentMethodDef,
                                                                     &incompleteData, &methodEnum);
+        std::ostringstream hexValue;
+        hexValue << std::hex << hr;
         if (SUCCEEDED(hr))
         {
             COR_PRF_METHOD method;
@@ -135,15 +137,22 @@ void RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
         else if (hr == E_INVALIDARG)
         {
             Logger::Info("NGEN:: Error Invalid arguments in [ModuleId=", currentModuleId,
-                         ",MethodDef=", currentMethodDef, ", HR=", hr, "]");
+                         ",MethodDef=", currentMethodDef, ", HR=", hexValue.str(), "]");
         }
         else if (hr == CORPROF_E_DATAINCOMPLETE)
         {
-            Logger::Info("NGEN:: Error Incomplete data in [ModuleId=", currentModuleId, ",MethodDef=", currentMethodDef, ", HR=", hr, "]");
+            Logger::Info("NGEN:: Error Incomplete data in [ModuleId=", currentModuleId, ",MethodDef=", currentMethodDef,
+                         ", HR=", hexValue.str(), "]");
+        }
+        else if (hr == CORPROF_E_UNSUPPORTED_CALL_SEQUENCE)
+        {
+            Logger::Info("NGEN:: Unsupported call sequence error in [ModuleId=", currentModuleId, ",MethodDef=", currentMethodDef,
+                         ", HR=", hexValue.str(), "]");
         }
         else
         {
-            Logger::Info("NGEN:: Error in [ModuleId=", currentModuleId, ",MethodDef=", currentMethodDef, ", HR=", hr, "]");
+            Logger::Info("NGEN:: Error in [ModuleId=", currentModuleId, ",MethodDef=", currentMethodDef,
+                         ", HR=", hexValue.str(), "]");
         }
     }
 }
@@ -279,6 +288,9 @@ void RejitHandler::EnqueueThreadLoop(RejitHandler* handler)
         {
             Logger::Warn("Error requesting ReJIT for ", item->m_length, " methods");
         }
+
+        // Request for NGen Inliners
+        handler->RequestRejitForNGenInliners();
     }
     Logger::Info("Exiting ReJIT request thread.");
 }

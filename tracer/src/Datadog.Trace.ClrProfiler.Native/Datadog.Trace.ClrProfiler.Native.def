@@ -5,3 +5,4 @@ EXPORTS
     DllGetClassObject PRIVATE
     IsProfilerAttached
     GetAssemblyAndSymbolsBytes
+    InitializeProfiler

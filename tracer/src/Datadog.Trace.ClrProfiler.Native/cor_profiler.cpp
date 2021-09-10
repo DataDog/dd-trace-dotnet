@@ -162,16 +162,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         }
     }
 
-    // get path to integration definition JSON files
-    const WSTRING integrations_paths = GetEnvironmentValue(environment::integrations_path);
-
-    if (integrations_paths.empty())
-    {
-        Logger::Warn("DATADOG TRACER DIAGNOSTICS - Profiler disabled: ", environment::integrations_path,
-                     " environment variable not set.");
-        return E_FAIL;
-    }
-
     const bool is_calltarget_enabled = IsCallTargetEnabled(is_net46_or_greater);
 
     // Initialize ReJIT handler and define the Rewriter Callback
@@ -190,19 +180,16 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         rejit_handler = nullptr;
     }
 
-    // load all integrations from JSON files
-    LoadIntegrationsFromEnvironment(integration_methods_, is_calltarget_enabled, IsNetstandardEnabled(),
-                                    GetEnvironmentValues(environment::disabled_integrations));
+    // get path to integration definition JSON files
+    const WSTRING integrations_paths = GetEnvironmentValue(environment::integrations_path);
 
-    // check if there are any enabled integrations left
-    if (integration_methods_.empty())
+    if (!integrations_paths.empty())
     {
-        Logger::Warn("DATADOG TRACER DIAGNOSTICS - Profiler disabled: no enabled integrations found.");
-        return E_FAIL;
-    }
-    else
-    {
-        Logger::Debug("Number of Integrations loaded: ", integration_methods_.size());
+        // load all integrations from JSON files
+        LoadIntegrationsFromEnvironment(integration_methods_, is_calltarget_enabled, IsNetstandardEnabled(),
+                                        GetEnvironmentValues(environment::disabled_integrations));
+
+        Logger::Info("Number of Integrations loaded from file: ", integration_methods_.size());
     }
 
     DWORD event_mask = COR_PRF_MONITOR_JIT_COMPILATION | COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
@@ -291,11 +278,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     }
 
     // writing opcodes vector for the IL dumper
+    if (dump_il_rewrite_enabled)
+    {
 #define OPDEF(c, s, pop, push, args, type, l, s1, s2, flow) opcodes_names.push_back(s);
 #include "opcode.def"
 #undef OPDEF
-    opcodes_names.push_back("(count)"); // CEE_COUNT
-    opcodes_names.push_back("->");      // CEE_SWITCH_ARG
+        opcodes_names.push_back("(count)"); // CEE_COUNT
+        opcodes_names.push_back("->");      // CEE_SWITCH_ARG
+    }
 
     //
     managed_profiler_assembly_reference = AssemblyReference::GetFromCache(managed_profiler_full_assembly_version);
@@ -523,12 +513,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
 
     if (!is_attached_)
     {
-        return S_OK;
-    }
-
-    if (integration_methods_.empty())
-    {
-        Logger::Debug("ModuleLoadFinished skipping module (no integrations): ", module_id);
         return S_OK;
     }
 
@@ -1099,6 +1083,103 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId, Function
     }
 
     return S_OK;
+}
+
+
+//
+// InitializeProfiler method
+//
+void CorProfiler::InitializeProfiler(CallTargetDefinition* items, int size)
+{
+    auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
+
+    Logger::Info("InitializeProfiler:: received from managed side: ", size, " integrations.");
+    if (items != nullptr && rejit_handler != nullptr)
+    {
+        std::vector<IntegrationMethod> integrationMethods;
+
+        for (int i = 0; i < size; i++)
+        {
+            const CallTargetDefinition& current = items[i];
+
+            WSTRING targetAssembly;
+            WSTRING targetType;
+            WSTRING targetMethod;
+
+            if (current.targetAssembly != nullptr)
+            {
+                targetAssembly = WSTRING(current.targetAssembly);
+            }
+            if (current.targetType != nullptr)
+            {
+                targetType = WSTRING(current.targetType);
+            }
+            if (current.targetMethod != nullptr)
+            {
+                targetMethod = WSTRING(current.targetMethod);
+            }
+
+            WSTRING wrapperAssembly;
+            WSTRING wrapperType;
+
+            if (current.wrapperAssembly != nullptr)
+            {
+                wrapperAssembly = WSTRING(current.wrapperAssembly);
+            }
+            if (current.wrapperType != nullptr)
+            {
+                wrapperType = WSTRING(current.wrapperType);
+            }
+
+            std::vector<WSTRING> signatureTypes;
+            for (int sIdx = 0; sIdx < current.signatureTypesLength; sIdx++)
+            {
+                const auto currentSignature = current.signatureTypes[sIdx];
+                if (currentSignature != nullptr)
+                {
+                    signatureTypes.push_back(WSTRING(currentSignature));
+                }
+            }
+
+            const Version minVersion =
+                Version(current.targetMinimumMajor, current.targetMinimumMinor, current.targetMinimumPatch, 0);
+            const Version maxVersion =
+                Version(current.targetMaximumMajor, current.targetMaximumMinor, current.targetMaximumPatch, 0);
+
+            const auto integration = IntegrationMethod(
+                EmptyWStr,
+                MethodReplacement(
+                    {},
+                    MethodReference(targetAssembly, targetType, targetMethod, EmptyWStr, minVersion, maxVersion,
+                        {}, signatureTypes),
+                    MethodReference(wrapperAssembly, wrapperType, EmptyWStr, calltarget_modification_action, {}, {}, {},
+                                    {})));
+
+            if (Logger::IsDebugEnabled())
+            {
+                Logger::Debug("  * Target: ", targetAssembly, " | ", targetType, ".", targetMethod, "(", signatureTypes.size(), ") { ",
+                              minVersion.str(), " - ", maxVersion.str(), " } [", wrapperAssembly,
+                              " | ", wrapperType, "]");
+            }
+
+            integrationMethods.push_back(integration);
+        }
+
+        std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
+
+        for (const auto& moduleItem : module_id_to_info_map_)
+        {
+            CallTarget_RequestRejitForModule(moduleItem.first, moduleItem.second, integrationMethods);
+        }
+
+        integration_methods_.reserve(integration_methods_.size() + integrationMethods.size());
+        for (const auto& integration : integrationMethods)
+        {
+            integration_methods_.push_back(integration);
+        }
+
+        Logger::Info("InitializeProfiler:: Total integrations in profiler: ", integration_methods_.size());
+    }
 }
 
 //
@@ -3122,6 +3203,7 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
                                                      const std::vector<IntegrationMethod>& integrations)
 {
     auto _ = trace::Stats::Instance()->CallTargetRequestRejitMeasure();
+    Logger::Debug("Requesting Rejit for Module: ", module_metadata->assemblyName);
 
     auto metadata_import = module_metadata->metadata_import;
     const auto assembly_metadata = GetAssemblyImportMetadata(module_metadata->assembly_import);
@@ -3166,6 +3248,10 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
             continue;
         }
 
+        Logger::Debug("  Looking for '", integration.replacement.target_method.type_name, ".",
+                      integration.replacement.target_method.method_name, "(",
+                      (integration.replacement.target_method.signature_types.size() - 1), " params)' method.");
+
         // Now we enumerate all methods with the same target method name. (All overloads of the method)
         auto enumMethods = Enumerator<mdMethodDef>(
             [metadata_import, integration, typeDef](HCORENUM* ptr, mdMethodDef arr[], ULONG max,
@@ -3184,7 +3270,7 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
             const auto caller = GetFunctionInfo(module_metadata->metadata_import, methodDef);
             if (!caller.IsValid())
             {
-                Logger::Warn("The caller for the methoddef: ", TokenStr(&methodDef), " is not valid!");
+                Logger::Warn("    * The caller for the methoddef: ", TokenStr(&methodDef), " is not valid!");
                 enumIterator = ++enumIterator;
                 continue;
             }
@@ -3195,7 +3281,7 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
             auto hr = functionInfo.method_signature.TryParse();
             if (FAILED(hr))
             {
-                Logger::Warn("The method signature: ", functionInfo.method_signature.str(), " cannot be parsed.");
+                Logger::Warn("    * The method signature: ", functionInfo.method_signature.str(), " cannot be parsed.");
                 enumIterator = ++enumIterator;
                 continue;
             }
@@ -3204,8 +3290,8 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
             const auto numOfArgs = functionInfo.method_signature.NumberOfArguments();
             if (numOfArgs != integration.replacement.target_method.signature_types.size() - 1)
             {
-                Logger::Debug("The caller for the methoddef: ", integration.replacement.target_method.method_name,
-                              " doesn't have the right number of arguments.");
+                Logger::Debug("    * The caller for the methoddef: ", integration.replacement.target_method.method_name,
+                              " doesn't have the right number of arguments (", numOfArgs, " arguments).");
                 enumIterator = ++enumIterator;
                 continue;
             }
@@ -3213,13 +3299,13 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
             // Compare each mdMethodDef argument type to the instrumentation target
             bool argumentsMismatch = false;
             const auto methodArguments = functionInfo.method_signature.GetMethodArguments();
-            Logger::Debug("Comparing signature for method: ", integration.replacement.target_method.type_name, ".",
+            Logger::Debug("    * Comparing signature for method: ", integration.replacement.target_method.type_name, ".",
                           integration.replacement.target_method.method_name);
             for (unsigned int i = 0; i < numOfArgs; i++)
             {
                 const auto argumentTypeName = methodArguments[i].GetTypeTokName(metadata_import);
                 const auto integrationArgumentTypeName = integration.replacement.target_method.signature_types[i + 1];
-                Logger::Debug("  -> ", argumentTypeName, " = ", integrationArgumentTypeName);
+                Logger::Debug("        -> ", argumentTypeName, " = ", integrationArgumentTypeName);
                 if (argumentTypeName != integrationArgumentTypeName && integrationArgumentTypeName != WStr("_"))
                 {
                     argumentsMismatch = true;
@@ -3228,7 +3314,7 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
             }
             if (argumentsMismatch)
             {
-                Logger::Debug("The caller for the methoddef: ", integration.replacement.target_method.method_name,
+                Logger::Debug("    * The caller for the methoddef: ", integration.replacement.target_method.method_name,
                               " doesn't have the right type of arguments.");
                 enumIterator = ++enumIterator;
                 continue;
@@ -3248,10 +3334,10 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
             bool caller_assembly_is_domain_neutral = runtime_information_.is_desktop() && corlib_module_loaded &&
                                                      module_metadata->app_domain_id == corlib_app_domain_id;
 
-            Logger::Debug("Enqueue for ReJIT [ModuleId=", module_id, ", MethodDef=", TokenStr(&methodDef),
+            Logger::Debug("    * Enqueue for ReJIT [ModuleId=", module_id, ", MethodDef=", TokenStr(&methodDef),
                           ", AppDomainId=", module_metadata->app_domain_id,
-                          ", IsDomainNeutral=", caller_assembly_is_domain_neutral, ", Assembly=", module_metadata->assemblyName,
-                          ", Type=", caller.type.name, ", Method=", caller.name, ", Signature=", caller.signature.str(), "]");
+                          ", IsDomainNeutral=", caller_assembly_is_domain_neutral, ", Assembly=", module_metadata->assemblyName, ", Type=", caller.type.name,
+                          ", Method=", caller.name, "(", numOfArgs , " params), Signature=", caller.signature.str(), "]");
             enumIterator = ++enumIterator;
         }
     }
@@ -3260,7 +3346,6 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
     if (!vtMethodDefs.empty())
     {
         this->rejit_handler->EnqueueForRejit(vtModules, vtMethodDefs);
-        this->rejit_handler->RequestRejitForNGenInliners();
     }
 
     // We return the number of ReJIT requests

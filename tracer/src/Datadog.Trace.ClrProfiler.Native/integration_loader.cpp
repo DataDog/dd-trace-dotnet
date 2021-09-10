@@ -150,22 +150,21 @@ namespace
     {
         if (src.is_object())
         {
-            const MethodReference wrapper = MethodReferenceFromJson(src.value("wrapper", json::object()), false, true);
+            const auto wrapperAction = ToWSTRING(src.value("wrapper", json::object()).value("action", ""));
+            if (isCallTargetEnabled && wrapperAction != WStr("CallTargetModification"))
+            {
+                return;
+            }
 
             if (isCallTargetEnabled)
             {
-                // Check if is a calltarget integration
-
-                if (wrapper.action != WStr("CallTargetModification"))
-                {
-                    return;
-                }
+                const MethodReference wrapper =
+                    MethodReferenceFromJson(src.value("wrapper", json::object()), false, true);
 
                 const MethodReference target =
                     MethodReferenceFromJson(src.value("target", json::object()), true, false);
 
                 integrationMethods.push_back({integrationName, {{}, target, wrapper}});
-
             }
             else
             {
@@ -180,6 +179,9 @@ namespace
                 {
                     return;
                 }
+
+                const MethodReference wrapper =
+                    MethodReferenceFromJson(src.value("wrapper", json::object()), false, true);
 
                 const MethodReference caller =
                     MethodReferenceFromJson(src.value("caller", json::object()), false, false);

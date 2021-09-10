@@ -25,7 +25,7 @@ namespace PrepareRelease
         {
             Console.WriteLine("Updating the integrations definitions");
 
-            var callTargetIntegrations = Enumerable.Empty<Integration>();
+            var callTargetIntegrations = Enumerable.Empty<CallTargetDefinitionSource>();
             var callSiteIntegrations = Enumerable.Empty<Integration>();
 
             foreach (var path in assemblyPaths)
@@ -40,6 +40,7 @@ namespace PrepareRelease
                 assemblyLoadContext.Unload();
             }
 
+            // Create json serializer
             var serializerSettings = new JsonSerializerSettings
             {
                 NullValueHandling = NullValueHandling.Ignore,
@@ -51,17 +52,6 @@ namespace PrepareRelease
             };
 
             // remove duplicates
-            callTargetIntegrations = callTargetIntegrations
-                                    .GroupBy(x => x.Name)
-                                    .Select(x => new Integration()
-                                     {
-                                         Name = x.Key,
-                                         MethodReplacements = x
-                                                             .SelectMany(y => y.MethodReplacements)
-                                                             .Distinct()
-                                                             .ToArray(),
-                                     });
-
             callSiteIntegrations = callSiteIntegrations
                                   .GroupBy(x => x.Name)
                                   .Select(x => new Integration()
@@ -73,7 +63,7 @@ namespace PrepareRelease
                                                            .ToArray(),
                                    });
 
-            var json = JsonConvert.SerializeObject(callTargetIntegrations.Concat(callSiteIntegrations), serializerSettings);
+            var json = JsonConvert.SerializeObject(callSiteIntegrations, serializerSettings);
 
             foreach (var outputDirectory in outputDirectories)
             {
@@ -81,10 +71,69 @@ namespace PrepareRelease
                 var utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
                 Console.WriteLine($"Writing {filename}...");
                 File.WriteAllText(filename, json, utf8NoBom);
+
+                // CallTarget
+                var calltargetPath = Path.Combine(outputDirectory, "src", "Datadog.Trace", "ClrProfiler", "InstrumentationDefinitions.cs");
+                Console.WriteLine($"Writing {calltargetPath}...");
+                using var fs = new FileStream(calltargetPath, FileMode.Create, FileAccess.Write, FileShare.None);
+                using var sw = new StreamWriter(fs, utf8NoBom);
+                WriteCallTargetDefinitionFile(sw, callTargetIntegrations);
             }
         }
 
-        static IEnumerable<Integration> GetCallTargetIntegrations(ICollection<Assembly> assemblies)
+        static void WriteCallTargetDefinitionFile(StreamWriter swriter, IEnumerable<CallTargetDefinitionSource> callTargetIntegrations)
+        {
+            swriter.WriteLine("// <copyright file=\"InstrumentationDefinitions.cs\" company=\"Datadog\">");
+            swriter.WriteLine("// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.");
+            swriter.WriteLine("// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.");
+            swriter.WriteLine("// </copyright>\n");
+            swriter.WriteLine("namespace Datadog.Trace.ClrProfiler");
+            swriter.WriteLine("{");
+            swriter.WriteLine("    internal static class InstrumentationDefinitions");
+            swriter.WriteLine("    {");
+            swriter.WriteLine("        internal static NativeCallTargetDefinition[] GetAllDefinitions()");
+            swriter.WriteLine("        {");
+            swriter.WriteLine("            return new NativeCallTargetDefinition[]");
+            swriter.WriteLine("            {");
+            foreach (var integration in callTargetIntegrations.Distinct())
+            {
+                swriter.Write($"                new(");
+                swriter.Write($"\"{integration.TargetAssembly}\", ");
+                swriter.Write($"\"{integration.TargetType}\", ");
+                swriter.Write($"\"{integration.TargetMethod}\", ");
+
+                swriter.Write($" new[] {{ ");
+                for (var s = 0; s < integration.TargetSignatureTypes.Length; s++)
+                {
+                    if (s == integration.TargetSignatureTypes.Length - 1)
+                    {
+                        swriter.Write($"\"{integration.TargetSignatureTypes[s]}\"");
+                    }
+                    else
+                    {
+                        swriter.Write($"\"{integration.TargetSignatureTypes[s]}\", ");
+                    }
+                }
+
+                swriter.Write(" }, ");
+
+                swriter.Write($"{integration.TargetMinimumMajor}, ");
+                swriter.Write($"{integration.TargetMinimumMinor}, ");
+                swriter.Write($"{integration.TargetMinimumPatch}, ");
+                swriter.Write($"{integration.TargetMaximumMajor}, ");
+                swriter.Write($"{integration.TargetMaximumMinor}, ");
+                swriter.Write($"{integration.TargetMaximumPatch}, ");
+                swriter.Write($"\"{integration.WrapperAssembly}\", ");
+                swriter.Write($"\"{integration.WrapperType}\"");
+                swriter.WriteLine($"),");
+            }
+            swriter.WriteLine("            };");
+            swriter.WriteLine("        }");
+            swriter.WriteLine("    }");
+            swriter.WriteLine("}");
+        }
+
+        static IEnumerable<CallTargetDefinitionSource> GetCallTargetIntegrations(ICollection<Assembly> assemblies)
         {
             var assemblyInstrumentMethodAttributes = from assembly in assemblies
                                                      let attributes = assembly.GetCustomAttributes(inherit: false)
@@ -113,50 +162,29 @@ namespace PrepareRelease
                                          let integrationName = GetPropertyValue<string>(attribute, "IntegrationName")
                                          let assembly = callTargetType.Assembly
                                          let wrapperType = callTargetType
-                                         orderby integrationName
-                                         group new
-                                             {
-                                                 assembly,
-                                                 wrapperType,
-                                                 attribute
-                                             }
-                                             by integrationName into g
-                                         select new Integration
+                                         from assemblyNames in GetPropertyValue<string[]>(attribute, "AssemblyNames")
+                                         let versionRange = GetPropertyValue<object>(attribute, "VersionRange")
+                                         orderby assemblyNames, GetPropertyValue<string>(attribute, "TypeName"), GetPropertyValue<string>(attribute, "MethodName")
+                                         select new CallTargetDefinitionSource
                                          {
-                                             Name = g.Key,
-                                             MethodReplacements = (from item in g
-                                                                 from assembly in GetPropertyValue<string[]>(item.attribute, "AssemblyNames")
-                                                                 let version = GetPropertyValue<object>(item.attribute, "VersionRange")
-                                                                 select new Integration.MethodReplacement
-                                                                 {
-                                                                     Caller = new Integration.CallerDetail(),
-                                                                     Target = new Integration.TargetDetail
-                                                                     {
-                                                                         Assembly = assembly,
-                                                                         Type = GetPropertyValue<string>(item.attribute, "TypeName"),
-                                                                         Method = GetPropertyValue<string>(item.attribute, "MethodName"),
-                                                                         SignatureTypes = new string[] { GetPropertyValue<string>(item.attribute, "ReturnTypeName") }
-                                                                                          .Concat(GetPropertyValue<string[]>(item.attribute, "ParameterTypeNames") ?? Enumerable.Empty<string>())
-                                                                                          .ToArray(),
-                                                                         MinimumMajor = GetPropertyValue<ushort>(version, "MinimumMajor"),
-                                                                         MinimumMinor = GetPropertyValue<ushort>(version, "MinimumMinor"),
-                                                                         MinimumPatch = GetPropertyValue<ushort>(version, "MinimumPatch"),
-                                                                         MaximumMajor = GetPropertyValue<ushort>(version, "MaximumMajor"),
-                                                                         MaximumMinor = GetPropertyValue<ushort>(version, "MaximumMinor"),
-                                                                         MaximumPatch = GetPropertyValue<ushort>(version, "MaximumPatch"),
-                                                                     },
-                                                                     Wrapper = new Integration.WrapperDetail()
-                                                                     {
-                                                                         Assembly = item.assembly.FullName,
-                                                                         Type = item.wrapperType.FullName,
-                                                                         Action = "CallTargetModification"
-                                                                     }
-                                                                 }).ToArray()
+                                             TargetAssembly = assemblyNames,
+                                             TargetType = GetPropertyValue<string>(attribute, "TypeName"),
+                                             TargetMethod = GetPropertyValue<string>(attribute, "MethodName"),
+                                             TargetSignatureTypes = new string[] { GetPropertyValue<string>(attribute, "ReturnTypeName") }
+                                                                   .Concat(GetPropertyValue<string[]>(attribute, "ParameterTypeNames") ?? Enumerable.Empty<string>())
+                                                                   .ToArray(),
+                                             TargetMinimumMajor = GetPropertyValue<ushort>(versionRange, "MinimumMajor"),
+                                             TargetMinimumMinor = GetPropertyValue<ushort>(versionRange, "MinimumMinor"),
+                                             TargetMinimumPatch = GetPropertyValue<ushort>(versionRange, "MinimumPatch"),
+                                             TargetMaximumMajor = GetPropertyValue<ushort>(versionRange, "MaximumMajor"),
+                                             TargetMaximumMinor = GetPropertyValue<ushort>(versionRange, "MaximumMinor"),
+                                             TargetMaximumPatch = GetPropertyValue<ushort>(versionRange, "MaximumPatch"),
+                                             WrapperAssembly = assembly.FullName,
+                                             WrapperType = wrapperType.FullName
                                          };
+            var cTargetInt = callTargetIntegrations.ToList();
             return callTargetIntegrations.ToList();
         }
-
-
 
         static IEnumerable<Integration> GetCallSiteIntegrations(ICollection<Assembly> assemblies)
         {
@@ -504,6 +532,72 @@ namespace PrepareRelease
                 return null;
             }
 
+        }
+
+        public class CallTargetDefinitionSource
+        {
+            public string TargetAssembly { get; init; }
+
+            public string TargetType { get; init; }
+
+            public string TargetMethod { get; init; }
+
+            public string[] TargetSignatureTypes { get; init; }
+
+            public ushort TargetMinimumMajor { get; init; }
+
+            public ushort TargetMinimumMinor { get; init; }
+
+            public ushort TargetMinimumPatch { get; init; }
+
+            public ushort TargetMaximumMajor { get; init; }
+
+            public ushort TargetMaximumMinor { get; init; }
+
+            public ushort TargetMaximumPatch { get; init; }
+
+            public string WrapperAssembly { get; init; }
+
+            public string WrapperType { get; init; }
+
+            protected bool Equals(CallTargetDefinitionSource other) =>
+                TargetAssembly == other.TargetAssembly &&
+                TargetType == other.TargetType &&
+                TargetMethod == other.TargetMethod &&
+                TargetSignatureTypes?.Length == other.TargetSignatureTypes?.Length &&
+                TargetMinimumMajor == other.TargetMinimumMajor &&
+                TargetMinimumMinor == other.TargetMinimumMinor &&
+                TargetMinimumPatch == other.TargetMinimumPatch &&
+                TargetMaximumMajor == other.TargetMaximumMajor &&
+                TargetMaximumMinor == other.TargetMaximumMinor &&
+                TargetMaximumPatch == other.TargetMaximumPatch &&
+                WrapperAssembly == other.WrapperAssembly &&
+                WrapperType == other.WrapperType &&
+                string.Join(',', TargetSignatureTypes ?? Array.Empty<string>()) == string.Join(',', other.TargetSignatureTypes ?? Array.Empty<string>());
+
+            public override bool Equals(object obj)
+            {
+                if (ReferenceEquals(null, obj))
+                {
+                    return false;
+                }
+
+                if (ReferenceEquals(this, obj))
+                {
+                    return true;
+                }
+
+                if (obj.GetType() != this.GetType())
+                {
+                    return false;
+                }
+
+                return Equals((CallTargetDefinitionSource)obj);
+            }
+
+            public override int GetHashCode() => HashCode.Combine(TargetAssembly, TargetType, TargetMethod) + HashCode.Combine(TargetMinimumMajor, TargetMinimumMinor, TargetMinimumPatch,
+                                                                                                                               TargetMaximumMajor, TargetMaximumMinor, TargetMaximumPatch,
+                                                                                                                               WrapperAssembly, WrapperType);
         }
     }
 }

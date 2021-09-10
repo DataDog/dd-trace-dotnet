@@ -142,6 +142,11 @@ public:
     //
     HRESULT STDMETHODCALLTYPE GetAssemblyReferences(const WCHAR* wszAssemblyPath,
                                                     ICorProfilerAssemblyReferenceProvider* pAsmRefProvider) override;
+
+    //
+    // Add Integrations methods
+    //
+    void InitializeProfiler(CallTargetDefinition* items, int size);
 };
 
 // Note: Generally you should not have a single, global callback implementation,
