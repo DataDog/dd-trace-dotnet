@@ -178,7 +178,7 @@ namespace Datadog.Trace.AppSec.Waf
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error occured logging rules");
+                Log.Error(ex, "Error occured logging the ddwaf rules");
             }
         }
 
