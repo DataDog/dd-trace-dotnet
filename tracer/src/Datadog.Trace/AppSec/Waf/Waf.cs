@@ -87,6 +87,11 @@ namespace Datadog.Trace.AppSec.Waf
             using var jsonReader = new JsonTextReader(reader);
             var root = JToken.ReadFrom(jsonReader);
 
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                LogRuleDetails(root);
+            }
+
             return Encoder.Encode(root, argCache);
         }
 
@@ -121,11 +126,6 @@ namespace Datadog.Trace.AppSec.Waf
                     return null;
                 }
 
-                if (Log.IsEnabled(LogEventLevel.Debug))
-                {
-                    LogRuleDetails(rulesFile);
-                }
-
                 configObj = CreatObjFromRulesStream(argCache, stream);
             }
             catch (Exception ex)
@@ -155,18 +155,10 @@ namespace Datadog.Trace.AppSec.Waf
             }
         }
 
-        private static void LogRuleDetails(string rulesFile)
+        private static void LogRuleDetails(JToken root)
         {
             try
             {
-                // because of the generic way rules are encoded for the WAF there's no good
-                // way to log them without double parsing, but as this only happens at debug
-                // log level, I think this is okay
-                using var stream = GetRulesStream(rulesFile);
-                using var reader = new StreamReader(stream);
-                using var jsonReader = new JsonTextReader(reader);
-                var root = JToken.ReadFrom(jsonReader);
-
                 var eventsProp = root.Value<JArray>("events");
                 foreach (var ev in eventsProp)
                 {
