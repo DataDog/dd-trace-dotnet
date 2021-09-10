@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#if NETFRAMEWORK
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -28,7 +29,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
     public class ChannelHandlerIntegration
     {
         private const string IntegrationName = nameof(IntegrationIds.Wcf);
-#if NETFRAMEWORK
 
         /// <summary>
         /// OnMethodBegin callback
@@ -60,6 +60,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
             state.Scope.DisposeWithException(exception);
             return new CallTargetReturn<TReturn>(returnValue);
         }
-#endif
     }
 }
+#endif
