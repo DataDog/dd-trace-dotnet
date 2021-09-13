@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class GraphQL4Tests : GraphQLTests
     {
         public GraphQL4Tests(ITestOutputHelper output)
-            : base("GraphQL4", output, callTargetOnly : true)
+            : base("GraphQL4", output, callTargetOnly: true)
         {
         }
     }
@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base(sampleAppName, output)
         {
             InitializeExpectations(sampleAppName);
-            __callTargetOnly = _callTargetOnly;
+            _callTargetOnly = callTargetOnly;
             SetServiceVersion(ServiceVersion);
         }
 
