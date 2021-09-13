@@ -105,8 +105,8 @@ services:
   elasticsearch7:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.14.1
     ports:
-    - "127.0.0.1:9200:9200"
-    - "127.0.0.1:9300:9300"
+    - "127.0.0.1:9210:9200"
+    - "127.0.0.1:9310:9300"
     environment:
     - discovery.type=single-node
 
