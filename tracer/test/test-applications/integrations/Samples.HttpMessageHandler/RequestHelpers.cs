@@ -1,5 +1,5 @@
 using System;
-using System.Diagnostics;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Net.Http;
 using System.Text;
@@ -13,155 +13,164 @@ namespace Samples.HttpMessageHandler
     {
         private static readonly Encoding Utf8 = Encoding.UTF8;
 
-        public static async Task SendHttpClientRequestsAsync(HttpClient client, bool tracingDisabled, string url, string requestContent)
+        public static void SendAsyncHttpClientRequests(HttpClient client, bool tracingDisabled, string url, string requestContent)
         {
-            // Insert a call to the Tracer.Instance to include an AssemblyRef to Datadog.Trace assembly in the final executable
-            Console.WriteLine($"[HttpClient] sending requests to {url}");
-
-            if (tracingDisabled)
+            void Invoke()
             {
-                client.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
-            }
+                // Insert a call to the Tracer.Instance to include an AssemblyRef to Datadog.Trace assembly in the final executable
+                Console.WriteLine($"[HttpClient] sending requests to {url}");
 
-            using (Tracer.Instance.StartActive("HttpClientRequestAsync"))
-            {
-                using (Tracer.Instance.StartActive("DeleteAsync"))
+                if (tracingDisabled)
                 {
-                    await client.DeleteAsync(url);
-                    Console.WriteLine("Received response for client.DeleteAsync(String)");
-
-                    await client.DeleteAsync(new Uri(url));
-                    Console.WriteLine("Received response for client.DeleteAsync(Uri)");
-
-                    await client.DeleteAsync(url, CancellationToken.None);
-                    Console.WriteLine("Received response for client.DeleteAsync(String, CancellationToken)");
-
-                    await client.DeleteAsync(new Uri(url), CancellationToken.None);
-                    Console.WriteLine("Received response for client.DeleteAsync(Uri, CancellationToken)");
+                    client.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
                 }
 
-                using (Tracer.Instance.StartActive("GetAsync"))
+                using (Tracer.Instance.StartActive("HttpClientRequestAsync"))
                 {
-                    await client.GetAsync(url);
-                    Console.WriteLine("Received response for client.GetAsync(String)");
+                    using (Tracer.Instance.StartActive("DeleteAsync"))
+                    {
+                        client.DeleteAsync(url).Wait();
+                        Console.WriteLine("Received response for client.DeleteAsync(String)");
 
-                    await client.GetAsync(new Uri(url));
-                    Console.WriteLine("Received response for client.GetAsync(Uri)");
+                        client.DeleteAsync(new Uri(url)).Wait();
+                        Console.WriteLine("Received response for client.DeleteAsync(Uri)");
 
-                    await client.GetAsync(url, CancellationToken.None);
-                    Console.WriteLine("Received response for client.GetAsync(String, CancellationToken)");
+                        client.DeleteAsync(url, CancellationToken.None).Wait();
+                        Console.WriteLine("Received response for client.DeleteAsync(String, CancellationToken)");
 
-                    await client.GetAsync(new Uri(url), CancellationToken.None);
-                    Console.WriteLine("Received response for client.GetAsync(Uri, CancellationToken)");
+                        client.DeleteAsync(new Uri(url), CancellationToken.None).Wait();
+                        Console.WriteLine("Received response for client.DeleteAsync(Uri, CancellationToken)");
+                    }
 
-                    await client.GetAsync(url, HttpCompletionOption.ResponseContentRead);
-                    Console.WriteLine("Received response for client.GetAsync(String, HttpCompletionOption)");
+                    using (Tracer.Instance.StartActive("GetAsync"))
+                    {
+                        client.GetAsync(url).Wait();
+                        Console.WriteLine("Received response for client.GetAsync(String)");
 
-                    await client.GetAsync(new Uri(url), HttpCompletionOption.ResponseContentRead);
-                    Console.WriteLine("Received response for client.GetAsync(Uri, HttpCompletionOption)");
+                        client.GetAsync(new Uri(url)).Wait();
+                        Console.WriteLine("Received response for client.GetAsync(Uri)");
 
-                    await client.GetAsync(url, HttpCompletionOption.ResponseContentRead, CancellationToken.None);
-                    Console.WriteLine("Received response for client.GetAsync(String, HttpCompletionOption, CancellationToken)");
+                        client.GetAsync(url, CancellationToken.None).Wait();
+                        Console.WriteLine("Received response for client.GetAsync(String, CancellationToken)");
 
-                    await client.GetAsync(new Uri(url), HttpCompletionOption.ResponseContentRead, CancellationToken.None);
-                    Console.WriteLine("Received response for client.GetAsync(Uri, HttpCompletionOption, CancellationToken)");
-                }
+                        client.GetAsync(new Uri(url), CancellationToken.None).Wait();
+                        Console.WriteLine("Received response for client.GetAsync(Uri, CancellationToken)");
 
-                using (Tracer.Instance.StartActive("GetByteArrayAsync"))
-                {
-                    await client.GetByteArrayAsync(url);
-                    Console.WriteLine("Received response for client.GetByteArrayAsync(String)");
+                        client.GetAsync(url, HttpCompletionOption.ResponseContentRead).Wait();
+                        Console.WriteLine("Received response for client.GetAsync(String, HttpCompletionOption)");
 
-                    await client.GetByteArrayAsync(new Uri(url));
-                    Console.WriteLine("Received response for client.GetByteArrayAsync(Uri)");
-                }
+                        client.GetAsync(new Uri(url), HttpCompletionOption.ResponseContentRead).Wait();
+                        Console.WriteLine("Received response for client.GetAsync(Uri, HttpCompletionOption)");
 
-                using (Tracer.Instance.StartActive("GetStreamAsync"))
-                {
-                    using Stream stream1 = await client.GetStreamAsync(url);
-                    Console.WriteLine("Received response for client.GetStreamAsync(String)");
+                        client.GetAsync(url, HttpCompletionOption.ResponseContentRead, CancellationToken.None).Wait();
+                        Console.WriteLine("Received response for client.GetAsync(String, HttpCompletionOption, CancellationToken)");
 
-                    using Stream stream2 = await client.GetStreamAsync(new Uri(url));
-                    Console.WriteLine("Received response for client.GetStreamAsync(Uri)");
-                }
+                        client.GetAsync(new Uri(url), HttpCompletionOption.ResponseContentRead, CancellationToken.None).Wait();
+                        Console.WriteLine("Received response for client.GetAsync(Uri, HttpCompletionOption, CancellationToken)");
+                    }
 
-                using (Tracer.Instance.StartActive("GetStringAsync"))
-                {
-                    await client.GetStringAsync(url);
-                    Console.WriteLine("Received response for client.GetStringAsync(String)");
+                    using (Tracer.Instance.StartActive("GetByteArrayAsync"))
+                    {
+                        client.GetByteArrayAsync(url).Wait();
+                        Console.WriteLine("Received response for client.GetByteArrayAsync(String)");
 
-                    await client.GetStringAsync(new Uri(url));
-                    Console.WriteLine("Received response for client.GetStringAsync(Uri)");
-                }
+                        client.GetByteArrayAsync(new Uri(url)).Wait();
+                        Console.WriteLine("Received response for client.GetByteArrayAsync(Uri)");
+                    }
+
+                    using (Tracer.Instance.StartActive("GetStreamAsync"))
+                    {
+                        using Stream stream1 = client.GetStreamAsync(url).Result;
+                        Console.WriteLine("Received response for client.GetStreamAsync(String)");
+
+                        using Stream stream2 = client.GetStreamAsync(new Uri(url)).Result;
+                        Console.WriteLine("Received response for client.GetStreamAsync(Uri)");
+                    }
+
+                    using (Tracer.Instance.StartActive("GetStringAsync"))
+                    {
+                        client.GetStringAsync(url).Wait();
+                        Console.WriteLine("Received response for client.GetStringAsync(String)");
+
+                        client.GetStringAsync(new Uri(url)).Wait();
+                        Console.WriteLine("Received response for client.GetStringAsync(Uri)");
+                    }
 
 #if NETCOREAPP
-                using (Tracer.Instance.StartActive("PatchAsync"))
-                {
-                    await client.PatchAsync(url, new StringContent(requestContent, Utf8));
-                    Console.WriteLine("Received response for client.PatchAsync(String, HttpContent)");
+                    using (Tracer.Instance.StartActive("PatchAsync"))
+                    {
+                        client.PatchAsync(url, new StringContent(requestContent, Utf8)).Wait();
+                        Console.WriteLine("Received response for client.PatchAsync(String, HttpContent)");
 
-                    await client.PatchAsync(new Uri(url), new StringContent(requestContent, Utf8));
-                    Console.WriteLine("Received response for client.PatchAsync(Uri, HttpContent)");
+                        client.PatchAsync(new Uri(url), new StringContent(requestContent, Utf8)).Wait();
+                        Console.WriteLine("Received response for client.PatchAsync(Uri, HttpContent)");
 
-                    await client.PatchAsync(url, new StringContent(requestContent, Utf8), CancellationToken.None);
-                    Console.WriteLine("Received response for client.PatchAsync(String, HttpContent, CancellationToken)");
+                        client.PatchAsync(url, new StringContent(requestContent, Utf8), CancellationToken.None).Wait();
+                        Console.WriteLine("Received response for client.PatchAsync(String, HttpContent, CancellationToken)");
 
-                    await client.PatchAsync(new Uri(url), new StringContent(requestContent, Utf8), CancellationToken.None);
-                    Console.WriteLine("Received response for client.PatchAsync(Uri, HttpContent, CancellationToken)");
-                }
+                        client.PatchAsync(new Uri(url), new StringContent(requestContent, Utf8), CancellationToken.None).Wait();
+                        Console.WriteLine("Received response for client.PatchAsync(Uri, HttpContent, CancellationToken)");
+                    }
 
 #endif
-                using (Tracer.Instance.StartActive("PostAsync"))
-                {
-                    await client.PostAsync(url, new StringContent(requestContent, Utf8));
-                    Console.WriteLine("Received response for client.PostAsync(String, HttpContent)");
+                    using (Tracer.Instance.StartActive("PostAsync"))
+                    {
+                        client.PostAsync(url, new StringContent(requestContent, Utf8)).Wait();
+                        Console.WriteLine("Received response for client.PostAsync(String, HttpContent)");
 
-                    await client.PostAsync(new Uri(url), new StringContent(requestContent, Utf8));
-                    Console.WriteLine("Received response for client.PostAsync(Uri, HttpContent)");
+                        client.PostAsync(new Uri(url), new StringContent(requestContent, Utf8)).Wait();
+                        Console.WriteLine("Received response for client.PostAsync(Uri, HttpContent)");
 
-                    await client.PostAsync(url, new StringContent(requestContent, Utf8), CancellationToken.None);
-                    Console.WriteLine("Received response for client.PostAsync(String, HttpContent, CancellationToken)");
+                        client.PostAsync(url, new StringContent(requestContent, Utf8), CancellationToken.None).Wait();
+                        Console.WriteLine("Received response for client.PostAsync(String, HttpContent, CancellationToken)");
 
-                    await client.PostAsync(new Uri(url), new StringContent(requestContent, Utf8), CancellationToken.None);
-                    Console.WriteLine("Received response for client.PostAsync(Uri, HttpContent, CancellationToken)");
-                }
+                        client.PostAsync(new Uri(url), new StringContent(requestContent, Utf8), CancellationToken.None).Wait();
+                        Console.WriteLine("Received response for client.PostAsync(Uri, HttpContent, CancellationToken)");
+                    }
 
-                using (Tracer.Instance.StartActive("PutAsync"))
-                {
-                    await client.PutAsync(url, new StringContent(requestContent, Utf8));
-                    Console.WriteLine("Received response for client.PutAsync(String, HttpContent)");
+                    using (Tracer.Instance.StartActive("PutAsync"))
+                    {
+                        client.PutAsync(url, new StringContent(requestContent, Utf8)).Wait();
+                        Console.WriteLine("Received response for client.PutAsync(String, HttpContent)");
 
-                    await client.PutAsync(new Uri(url), new StringContent(requestContent, Utf8));
-                    Console.WriteLine("Received response for client.PutAsync(Uri, HttpContent)");
+                        client.PutAsync(new Uri(url), new StringContent(requestContent, Utf8)).Wait();
+                        Console.WriteLine("Received response for client.PutAsync(Uri, HttpContent)");
 
-                    await client.PutAsync(url, new StringContent(requestContent, Utf8), CancellationToken.None);
-                    Console.WriteLine("Received response for client.PutAsync(String, HttpContent, CancellationToken)");
+                        client.PutAsync(url, new StringContent(requestContent, Utf8), CancellationToken.None).Wait();
+                        Console.WriteLine("Received response for client.PutAsync(String, HttpContent, CancellationToken)");
 
-                    await client.PutAsync(new Uri(url), new StringContent(requestContent, Utf8), CancellationToken.None);
-                    Console.WriteLine("Received response for client.PutAsync(Uri, HttpContent, CancellationToken)");
-                }
+                        client.PutAsync(new Uri(url), new StringContent(requestContent, Utf8), CancellationToken.None).Wait();
+                        Console.WriteLine("Received response for client.PutAsync(Uri, HttpContent, CancellationToken)");
+                    }
 
-                using (Tracer.Instance.StartActive("SendAsync"))
-                {
-                    await client.SendAsync(new HttpRequestMessage(HttpMethod.Get, url));
-                    Console.WriteLine("Received response for client.SendAsync(HttpRequestMessage)");
+                    using (Tracer.Instance.StartActive("SendAsync"))
+                    {
+                        client.SendAsync(new HttpRequestMessage(HttpMethod.Get, url)).Wait();
+                        Console.WriteLine("Received response for client.SendAsync(HttpRequestMessage)");
 
-                    await client.SendAsync(new HttpRequestMessage(HttpMethod.Get, url), CancellationToken.None);
-                    Console.WriteLine("Received response for client.SendAsync(HttpRequestMessage, CancellationToken)");
+                        client.SendAsync(new HttpRequestMessage(HttpMethod.Get, url), CancellationToken.None).Wait();
+                        Console.WriteLine("Received response for client.SendAsync(HttpRequestMessage, CancellationToken)");
 
-                    await client.SendAsync(new HttpRequestMessage(HttpMethod.Get, url), HttpCompletionOption.ResponseContentRead);
-                    Console.WriteLine("Received response for client.SendAsync(HttpRequestMessage, HttpCompletionOption)");
+                        client.SendAsync(new HttpRequestMessage(HttpMethod.Get, url), HttpCompletionOption.ResponseContentRead).Wait();
+                        Console.WriteLine("Received response for client.SendAsync(HttpRequestMessage, HttpCompletionOption)");
 
-                    await client.SendAsync(new HttpRequestMessage(HttpMethod.Get, url), HttpCompletionOption.ResponseContentRead, CancellationToken.None);
-                    Console.WriteLine("Received response for client.SendAsync(HttpRequestMessage, HttpCompletionOption, CancellationToken)");
-                }
+                        client.SendAsync(new HttpRequestMessage(HttpMethod.Get, url), HttpCompletionOption.ResponseContentRead, CancellationToken.None).Wait();
+                        Console.WriteLine("Received response for client.SendAsync(HttpRequestMessage, HttpCompletionOption, CancellationToken)");
+                    }
 
-                using (Tracer.Instance.StartActive("ErrorSpanBelow"))
-                {
-                    await client.GetAsync($"{url}HttpErrorCode");
-                    Console.WriteLine("Received response for client.GetAsync Error Span");
+                    using (Tracer.Instance.StartActive("ErrorSpanBelow"))
+                    {
+                        client.GetAsync($"{url}HttpErrorCode").Wait();
+                        Console.WriteLine("Received response for client.GetAsync Error Span");
+                    }
                 }
             }
+
+            // Wait for the tasks in a single threaded synchronization context, to detect potential deadlocks
+            var synchronizationContext = new SingleThreadedSynchronizationContext();
+            SynchronizationContext.SetSynchronizationContext(synchronizationContext);
+            synchronizationContext.Send(_ => Invoke(), null);
+            SynchronizationContext.SetSynchronizationContext(null);
         }
 
 #if NET5_0
@@ -277,6 +286,33 @@ namespace Samples.HttpMessageHandler
 
             Console.WriteLine("Received response for HttpMessageInvoker.SendAsync");
             await invoker.SendAsync(httpRequest, CancellationToken.None);
+        }
+
+        private class SingleThreadedSynchronizationContext : SynchronizationContext
+        {
+            private int _queuedOperations;
+
+            public override void Post(SendOrPostCallback d, object state)
+            {
+                Send(d, state);
+            }
+
+            public override void Send(SendOrPostCallback d, object state)
+            {
+                if (Interlocked.Increment(ref _queuedOperations) > 1)
+                {
+                    throw new InvalidOperationException("Deadlock condition detected");
+                }
+
+                try
+                {
+                    d(state);
+                }
+                finally
+                {
+                    Interlocked.Decrement(ref _queuedOperations);
+                }
+            }
         }
     }
 }
