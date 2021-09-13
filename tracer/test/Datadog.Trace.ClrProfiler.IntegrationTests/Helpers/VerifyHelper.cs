@@ -1,4 +1,4 @@
-﻿// <copyright file="VerifyHelper.cs" company="Datadog">
+// <copyright file="VerifyHelper.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -17,7 +17,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     internal static class VerifyHelper
     {
-        public const string SnapshotDirectory = "Snapshots";
         private static readonly Regex LocalhostRegex = new(@"localhost\:\d+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex KeepRateRegex = new(@"_dd.tracer_kr: \d\.\d+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
@@ -37,7 +36,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static VerifySettings GetSpanVerifierSettings(params object[] parameters)
         {
             var settings = new VerifySettings();
-            settings.UseDirectory(SnapshotDirectory);
+
+            VerifierSettings.DerivePathInfo(
+                (sourceFile, projectDirectory, type, method) =>
+                {
+                    return new(directory: Path.Combine(projectDirectory, "..", "snapshots"));
+                });
+
             if (parameters.Length > 0)
             {
                 settings.UseParameters(parameters);
