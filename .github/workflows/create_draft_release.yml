@@ -20,15 +20,15 @@ jobs:
 
       - name: "Get current version"
         id: version
-        run: ./build.sh OutputCurrentVersionToGitHub
+        run: ./tracer/build.sh OutputCurrentVersionToGitHub
 
       - name: "Download assets from Azure Pipelines"
         id: assets
-        run: ./build.sh DownloadAzurePipelineArtifacts
+        run: ./tracer/build.sh DownloadAzurePipelineArtifacts
 
       - name: "Extract release notes from changelog"
         id: release_notes
-        run: ./build.sh ExtractReleaseNotes
+        run: ./tracer/build.sh ExtractReleaseNotes
         env:
           PIPELINE_ARTIFACTS_LINK: ${{steps.assets.outputs.artifacts_link}}
 
