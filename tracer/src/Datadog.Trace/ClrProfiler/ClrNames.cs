@@ -45,7 +45,5 @@ namespace Datadog.Trace.ClrProfiler
         public const string GenericParameterTask = "System.Threading.Tasks.Task`1<T>";
         public const string ObjectTask = "System.Threading.Tasks.Task`1<System.Object>";
         public const string Int32Task = "System.Threading.Tasks.Task`1<System.Int32>";
-
-        public const string HttpConfigurationAction = "System.Action`1<System.Web.Http.HttpConfiguration>";
     }
 }
