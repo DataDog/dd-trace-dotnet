@@ -14,4 +14,7 @@
     <Compile Include="..\..\aspnet\Samples.AspNetMvc5\Controllers\ApiController.cs" Link="Controllers\ApiController.cs" />
     <Compile Include="..\..\aspnet\Samples.AspNetMvc5\Controllers\ConventionsController.cs" Link="Controllers\ConventionsController.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
+  </ItemGroup>
 </Project>
