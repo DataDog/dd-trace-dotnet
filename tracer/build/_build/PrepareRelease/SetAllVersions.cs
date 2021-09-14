@@ -44,6 +44,9 @@ namespace PrepareRelease
 
             // Sample application package updates
             SynchronizeVersion(
+                "samples/AutomaticTraceIdInjection/MicrosoftExtensionsExample/MicrosoftExtensionsExample.csproj",
+                DatadogTraceNugetDependencyVersionReplace);
+            SynchronizeVersion(
                 "samples/AutomaticTraceIdInjection/Log4NetExample/Log4NetExample.csproj",
                 DatadogTraceNugetDependencyVersionReplace);
             SynchronizeVersion(
