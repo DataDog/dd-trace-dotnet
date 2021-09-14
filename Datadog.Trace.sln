@@ -392,6 +392,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.Analyze
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.Analyzers.Tests", "test\Datadog.Trace.Tools.Analyzers.Tests\Datadog.Trace.Tools.Analyzers.Tests.csproj", "{6BB875B5-9FA7-4FB4-9224-B0FA2245CE0B}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "azure-functions", "azure-functions", "{EF5499E0-4952-465B-BD7A-4B5F35D0645E}"
+	ProjectSection(SolutionItems) = preProject
+		test\test-applications\azure-functions\Directory.Build.props = test\test-applications\azure-functions\Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AzureFunctions.AllTriggers", "test\test-applications\azure-functions\Samples.AzureFunctions.AllTriggers\Samples.AzureFunctions.AllTriggers.csproj", "{C1500E73-68BD-4E7D-8FF4-D17BEE17FF07}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		src\Datadog.Trace.Ci.Shared\Datadog.Trace.Ci.Shared.projitems*{1f146d40-8b21-4630-8049-14fa4bbbb217}*SharedItemsImports = 5
@@ -1589,6 +1596,16 @@ Global
 		{6BB875B5-9FA7-4FB4-9224-B0FA2245CE0B}.Release|x64.Build.0 = Release|Any CPU
 		{6BB875B5-9FA7-4FB4-9224-B0FA2245CE0B}.Release|x86.ActiveCfg = Release|Any CPU
 		{6BB875B5-9FA7-4FB4-9224-B0FA2245CE0B}.Release|x86.Build.0 = Release|Any CPU
+		{C1500E73-68BD-4E7D-8FF4-D17BEE17FF07}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{C1500E73-68BD-4E7D-8FF4-D17BEE17FF07}.Debug|x64.ActiveCfg = Debug|x64
+		{C1500E73-68BD-4E7D-8FF4-D17BEE17FF07}.Debug|x64.Build.0 = Debug|x64
+		{C1500E73-68BD-4E7D-8FF4-D17BEE17FF07}.Debug|x86.ActiveCfg = Debug|x86
+		{C1500E73-68BD-4E7D-8FF4-D17BEE17FF07}.Debug|x86.Build.0 = Debug|x86
+		{C1500E73-68BD-4E7D-8FF4-D17BEE17FF07}.Release|Any CPU.ActiveCfg = Release|x86
+		{C1500E73-68BD-4E7D-8FF4-D17BEE17FF07}.Release|x64.ActiveCfg = Release|x64
+		{C1500E73-68BD-4E7D-8FF4-D17BEE17FF07}.Release|x64.Build.0 = Release|x64
+		{C1500E73-68BD-4E7D-8FF4-D17BEE17FF07}.Release|x86.ActiveCfg = Release|x86
+		{C1500E73-68BD-4E7D-8FF4-D17BEE17FF07}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1714,6 +1731,8 @@ Global
 		{BF1E5BA6-C0E5-4472-9D5D-2622231DD275} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{5450EA0B-56D3-4E29-932E-094AD037B345} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{6BB875B5-9FA7-4FB4-9224-B0FA2245CE0B} = {8CEC2042-F11C-49F5-A674-2355793B600A}
+		{EF5499E0-4952-465B-BD7A-4B5F35D0645E} = {9518425A-36A5-4B8F-B0B8-6137DB88441D}
+		{C1500E73-68BD-4E7D-8FF4-D17BEE17FF07} = {EF5499E0-4952-465B-BD7A-4B5F35D0645E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
