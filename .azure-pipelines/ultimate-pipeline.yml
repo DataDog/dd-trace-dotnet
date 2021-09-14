@@ -247,6 +247,7 @@ stages:
           testResultsFiles: tracer/build_data/results/**/*.trx
         condition: succeededOrFailed()
 
+
     - job: native
       steps:
       - template: steps/install-dotnet.yml
@@ -290,7 +291,6 @@ stages:
         condition: succeededOrFailed()
 
 
-
 - stage: unit_tests_linux
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: [build_linux]
@@ -327,6 +327,7 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
+
 
 - stage: unit_tests_arm64
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
@@ -417,6 +418,9 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
+    - script: tracer\build.cmd CheckBuildLogsForErrors
+      displayName: Check logs for errors
+
 - stage: integration_tests_windows_iis
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: [build_windows, package_windows]
@@ -487,6 +491,9 @@ stages:
       artifact: integration_tests_windows_iis_tracer_logs_$(platform)
       condition: succeededOrFailed()
       continueOnError: true
+
+    - script: tracer\build.cmd CheckBuildLogsForErrors
+      displayName: Check logs for errors
 
 - stage: integration_tests_linux
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
@@ -587,6 +594,11 @@ stages:
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
+    - template: steps/run-in-docker.yml
+      parameters:
+        baseImage: $(baseImage)
+        command: "CheckBuildLogsForErrors"
+
 - stage: integration_tests_arm64
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: [build_arm64]
@@ -664,6 +676,11 @@ stages:
             testResultsFormat: VSTest
             testResultsFiles: tracer/build_data/results/**/*.trx
           condition: succeededOrFailed()
+
+        - template: steps/run-in-docker.yml
+          parameters:
+            baseImage: $(baseImage)
+            command: "CheckBuildLogsForErrors"
 
 - stage: benchmarks
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
