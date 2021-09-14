@@ -375,6 +375,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.Analyze
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.AspNet", "src\Datadog.Trace.AspNet\Datadog.Trace.AspNet.csproj", "{04B3C44A-D21B-40A8-A167-CB6C035D613B}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "azure-functions", "azure-functions", "{1AD4C957-219A-4ABA-9E90-A7EB5CE95633}"
+	ProjectSection(SolutionItems) = preProject
+		test\test-applications\azure-functions\Directory.Build.props = test\test-applications\azure-functions\Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AzureFunctions.AllTriggers", "test\test-applications\azure-functions\Samples.AzureFunctions.AllTriggers\Samples.AzureFunctions.AllTriggers.csproj", "{FEC6914C-A7CD-444D-A00F-840EF7068B37}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1540,6 +1547,16 @@ Global
 		{04B3C44A-D21B-40A8-A167-CB6C035D613B}.Release|x64.Build.0 = Release|Any CPU
 		{04B3C44A-D21B-40A8-A167-CB6C035D613B}.Release|x86.ActiveCfg = Release|Any CPU
 		{04B3C44A-D21B-40A8-A167-CB6C035D613B}.Release|x86.Build.0 = Release|Any CPU
+		{FEC6914C-A7CD-444D-A00F-840EF7068B37}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{FEC6914C-A7CD-444D-A00F-840EF7068B37}.Debug|x64.ActiveCfg = Debug|x64
+		{FEC6914C-A7CD-444D-A00F-840EF7068B37}.Debug|x64.Build.0 = Debug|x64
+		{FEC6914C-A7CD-444D-A00F-840EF7068B37}.Debug|x86.ActiveCfg = Debug|x86
+		{FEC6914C-A7CD-444D-A00F-840EF7068B37}.Debug|x86.Build.0 = Debug|x86
+		{FEC6914C-A7CD-444D-A00F-840EF7068B37}.Release|Any CPU.ActiveCfg = Release|x86
+		{FEC6914C-A7CD-444D-A00F-840EF7068B37}.Release|x64.ActiveCfg = Release|x64
+		{FEC6914C-A7CD-444D-A00F-840EF7068B37}.Release|x64.Build.0 = Release|x64
+		{FEC6914C-A7CD-444D-A00F-840EF7068B37}.Release|x86.ActiveCfg = Release|x86
+		{FEC6914C-A7CD-444D-A00F-840EF7068B37}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1662,6 +1679,8 @@ Global
 		{5450EA0B-56D3-4E29-932E-094AD037B345} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{6BB875B5-9FA7-4FB4-9224-B0FA2245CE0B} = {8CEC2042-F11C-49F5-A674-2355793B600A}
 		{04B3C44A-D21B-40A8-A167-CB6C035D613B} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
+		{1AD4C957-219A-4ABA-9E90-A7EB5CE95633} = {9518425A-36A5-4B8F-B0B8-6137DB88441D}
+		{FEC6914C-A7CD-444D-A00F-840EF7068B37} = {1AD4C957-219A-4ABA-9E90-A7EB5CE95633}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
