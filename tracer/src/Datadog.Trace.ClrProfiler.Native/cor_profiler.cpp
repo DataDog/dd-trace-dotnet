@@ -695,8 +695,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         // subscribe to DiagnosticSource events.
         // don't skip Dapper: it makes ADO.NET calls even though it doesn't reference
         // System.Data or System.Data.Common
+        // don't skip Datadog.Trace: we need to ensure we do the PInvokesMap rewrites.
         if (module_info.assembly.name != microsoft_aspnetcore_hosting_assemblyName &&
-            module_info.assembly.name != dapper_assemblyName)
+            module_info.assembly.name != dapper_assemblyName &&
+            module_info.assembly.name != managed_profiler_name)
         {
             filtered_integrations = FilterIntegrationsByTarget(filtered_integrations, assembly_import);
 
