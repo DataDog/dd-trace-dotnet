@@ -411,9 +411,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServiceBus.Minimal.Rebus", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServiceBus.Minimal.MassTransit", "tracer\test\test-applications\regression\ServiceBus.Minimal.MassTransit\ServiceBus.Minimal.MassTransit.csproj", "{B0E671B9-78DE-410F-A0AA-612FF1F900F2}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.GraphQL3", "test\test-applications\integrations\Samples.GraphQL3\Samples.GraphQL3.csproj", "{CA3D605F-8DD7-4041-B024-70A24036AFA1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.GraphQL3", "tracer\test\test-applications\integrations\Samples.GraphQL3\Samples.GraphQL3.csproj", "{CA3D605F-8DD7-4041-B024-70A24036AFA1}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.GraphQL4", "test\test-applications\integrations\Samples.GraphQL4\Samples.GraphQL4.csproj", "{DA81EF3E-FDB3-417F-AA20-60FC495E3596}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.GraphQL4", "tracer\test\test-applications\integrations\Samples.GraphQL4\Samples.GraphQL4.csproj", "{DA81EF3E-FDB3-417F-AA20-60FC495E3596}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

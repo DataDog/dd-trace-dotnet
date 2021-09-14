@@ -8,7 +8,7 @@
     }
   },
   "profiles": {
-    "Samples.GraphQL": {
+    "Samples.GraphQL4": {
       "commandName": "Project",
       "launchBrowser": false,
       "environmentVariables": {
