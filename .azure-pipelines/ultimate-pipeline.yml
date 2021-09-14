@@ -1185,3 +1185,16 @@ stages:
       inputs:
         targetType: 'inline'
         script: 'Start-Sleep -s 20'
+
+    - script: tracer\build.cmd CopyLogsToBuildData
+      displayName: Copy logs to build_data folder
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: tracer/build_data
+      artifact: profiler-logs_execution_benchmarks_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - script: tracer\build.cmd CheckBuildLogsForErrors
+      displayName: Copy logs to build_data folder

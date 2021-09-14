@@ -1212,6 +1212,11 @@ partial class Build
             }
         });
 
+    Target CopyLogsToBuildData => _ => _
+       .Unlisted()
+       .Description("Copies logs and coredumps to build_data directory")
+       .Executes(() => MoveLogsToBuildData());
+
     Target CheckBuildLogsForErrors => _ => _
        .Unlisted()
        .Description("Reads the logs from build_data and checks for error lines")
