@@ -1,5 +1,12 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
+## [Release 1.28.7](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.28.7)
+
+## Fixes
+* Update WAF version (#1768)
+
+[Changes since 1.28.6](https://github.com/DataDog/dd-trace-dotnet/compare/v1.28.6...v1.28.7)
+
 ## [Release 1.28.6](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.28.6)
 
 ## Changes
