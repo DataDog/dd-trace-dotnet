@@ -11,15 +11,15 @@ using Microsoft.Extensions.Logging;
 namespace Samples.AzureFunctions.AllTriggers
 {
     public class AllTriggers
-	{
-		private const string EveryTenSeconds = "*/10 * * * * *";
+    {
+        private const string EveryTenSeconds = "*/10 * * * * *";
 
-		private readonly HttpClient _httpClient;
+        private readonly HttpClient _httpClient;
 
-		public AllTriggers(IHttpClientFactory httpClientFactory)
-		{
-			_httpClient = httpClientFactory.CreateClient();
-		}
+        public AllTriggers(IHttpClientFactory httpClientFactory)
+        {
+            _httpClient = httpClientFactory.CreateClient();
+        }
 
         [FunctionName("TriggerAllTimer")]
         public async Task TriggerAllTimer([TimerTrigger(EveryTenSeconds)] TimerInfo myTimer, ILogger log)
@@ -35,49 +35,49 @@ namespace Samples.AzureFunctions.AllTriggers
         }
 
         [FunctionName("SimpleHttpTrigger")]
-		public async Task<IActionResult> SimpleHttpTrigger(
-			[HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = "simple")] HttpRequest req,
-			ILogger log)
-		{
-			log.LogInformation("C# HTTP trigger function processed a request.");
-			return new OkObjectResult("This HTTP triggered function executed successfully. ");
-		}
+        public async Task<IActionResult> SimpleHttpTrigger(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = "simple")] HttpRequest req,
+            ILogger log)
+        {
+            log.LogInformation("C# HTTP trigger function processed a request.");
+            return new OkObjectResult("This HTTP triggered function executed successfully. ");
+        }
 
-		[FunctionName("TriggerCaller")]
-		public async Task<IActionResult> Trigger(
-				[HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = "trigger")] HttpRequest req,
-				ILogger log)
-		{
-			string triggersText = req.Query["types"];
-			var triggers = triggersText?.ToLower()?.Split(",");
-			var doAll = triggers == null || triggers.Length == 0 || triggers.Contains("all");
+        [FunctionName("TriggerCaller")]
+        public async Task<IActionResult> Trigger(
+                [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = "trigger")] HttpRequest req,
+                ILogger log)
+        {
+            string triggersText = req.Query["types"];
+            var triggers = triggersText?.ToLower()?.Split(",");
+            var doAll = triggers == null || triggers.Length == 0 || triggers.Contains("all");
 
-			if (doAll || triggers.Contains("http"))
-			{
-				await Attempt(() => CallFunctionHttp("simple"), log);
-			}
+            if (doAll || triggers.Contains("http"))
+            {
+                await Attempt(() => CallFunctionHttp("simple"), log);
+            }
 
-			return new OkObjectResult("Attempting triggers.");
-		}
+            return new OkObjectResult("Attempting triggers.");
+        }
 
-		private async Task<string> CallFunctionHttp(string path)
-		{
-			var httpFunctionUrl = Environment.GetEnvironmentVariable("WEBSITE_HOSTNAME") ?? "localhost:7071";
-			var url = $"http://{httpFunctionUrl}";
-			var simpleResponse = await _httpClient.GetStringAsync($"{url}/api/{path}");
-			return simpleResponse;
-		}
+        private async Task<string> CallFunctionHttp(string path)
+        {
+            var httpFunctionUrl = Environment.GetEnvironmentVariable("WEBSITE_HOSTNAME") ?? "localhost:7071";
+            var url = $"http://{httpFunctionUrl}";
+            var simpleResponse = await _httpClient.GetStringAsync($"{url}/api/{path}");
+            return simpleResponse;
+        }
 
-		private async Task Attempt(Func<Task> action, ILogger log)
-		{
-			try
-			{
-				await action();
-			}
-			catch (Exception ex)
-			{
-				log.LogError(ex, "Trigger attempt failure");
-			}
-		}
-	}
+        private async Task Attempt(Func<Task> action, ILogger log)
+        {
+            try
+            {
+                await action();
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, "Trigger attempt failure");
+            }
+        }
+    }
 }

@@ -24,14 +24,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         public static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.AzureFunctions));
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AzureFunctionsCommon));
-        private static readonly AspNetCoreHttpRequestHandler AspNetCoreRequestSniffer = new AspNetCoreHttpRequestHandler(Log, OperationName, IntegrationId);
+        private static readonly AspNetCoreHttpRequestHandler AspNetCoreRequestHandler = new AspNetCoreHttpRequestHandler(Log, OperationName, IntegrationId);
 
         public static CallTargetState OnFunctionMiddlewareBegin<TTarget>(TTarget instance, HttpContext httpContext)
         {
             var tracer = Tracer.Instance;
             var security = Security.Instance;
 
-            var scope = AspNetCoreRequestSniffer.StartAspNetCorePipelineScope(tracer, security, httpContext);
+            var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, security, httpContext);
 
             if (scope != null)
             {
@@ -41,7 +41,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             return CallTargetState.GetDefault();
         }
 
-        public static CallTargetState OnFunctionExecutionBegin<TTarget>(TTarget instance, IFunctionInstance instanceParam)
+        public static CallTargetState OnFunctionExecutionBegin<TTarget, TFunction>(TTarget instance, TFunction instanceParam)
+            where TFunction : IFunctionInstance
         {
             var tracer = Tracer.Instance;
 

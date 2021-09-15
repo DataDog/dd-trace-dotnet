@@ -52,7 +52,7 @@ namespace Datadog.Trace.DiagnosticListeners
                    ?.GetType("Microsoft.AspNetCore.Http.Features.IEndpointFeature", throwOnError: false);
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AspNetCoreDiagnosticObserver>();
-        private static readonly AspNetCoreHttpRequestHandler AspNetCoreRequestSniffer = new AspNetCoreHttpRequestHandler(Log, HttpRequestInOperationName, IntegrationId);
+        private static readonly AspNetCoreHttpRequestHandler AspNetCoreRequestHandler = new AspNetCoreHttpRequestHandler(Log, HttpRequestInOperationName, IntegrationId);
 
         private readonly Tracer _tracer;
         private readonly Security _security;
@@ -562,7 +562,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 Span span = null;
                 if (shouldTrace)
                 {
-                    span = AspNetCoreRequestSniffer.StartAspNetCorePipelineScope(tracer, security, httpContext).Span;
+                    span = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, security, httpContext).Span;
                 }
 
                 if (shouldSecure)
