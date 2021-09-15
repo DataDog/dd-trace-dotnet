@@ -112,6 +112,9 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="Handlers\CustomTracingExceptionHandler.cs" />
+    <Compile Include="Handlers\PassThroughQuerySuccessMessageHandler.cs" />
+    <Compile Include="Handlers\TerminatingQuerySuccessMessageHandler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

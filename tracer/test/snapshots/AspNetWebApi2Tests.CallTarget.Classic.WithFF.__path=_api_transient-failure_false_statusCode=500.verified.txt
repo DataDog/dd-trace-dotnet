@@ -2,6 +2,19 @@
   {
     TraceId: Id_1,
     SpanId: Id_2,
+    Name: CustomTracingExceptionHandler.handle-async,
+    Resource: CustomTracingExceptionHandler.handle-async,
+    Service: sample,
+    ParentId: Id_3,
+    Tags: {
+      env: integration_tests,
+      span.kind: server,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
     Name: aspnet.request,
     Resource: GET /api/transient-failure/false,
     Service: sample,
@@ -27,12 +40,12 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_3,
+    SpanId: Id_4,
     Name: aspnet-webapi.request,
     Resource: GET api/transient-failure/{value},
     Service: sample,
     Type: web,
-    ParentId: Id_2,
+    ParentId: Id_3,
     Error: 1,
     Tags: {
       aspnet.route: api/transient-failure/{value},

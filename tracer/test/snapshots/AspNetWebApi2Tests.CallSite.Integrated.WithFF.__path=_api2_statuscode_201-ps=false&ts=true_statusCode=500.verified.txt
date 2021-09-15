@@ -1,0 +1,45 @@
+[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: CustomTracingExceptionHandler.handle-async,
+    Resource: CustomTracingExceptionHandler.handle-async,
+    Service: sample,
+    ParentId: Id_3,
+    Tags: {
+      env: integration_tests,
+      span.kind: server,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: aspnet.request,
+    Resource: GET /api2/statuscode/?,
+    Service: sample,
+    Type: web,
+    Error: 1,
+    Tags: {
+      env: integration_tests,
+      error.msg: Source: PassThroughQuerySuccessMessageHandler. Error: Query param ps was set to a non-true value,
+      error.stack: 
+System.ArgumentException: Source: PassThroughQuerySuccessMessageHandler. Error: Query param ps was set to a non-true value
+at Samples.AspNetMvc5.Handlers.PassThroughQuerySuccessMessageHandler.<SendAsync>d__1.MoveNext(),
+      error.type: System.ArgumentException,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.status_code: 500,
+      http.url: /api2/statuscode/201?ps=false&ts=true,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0
+    },
+    Metrics: {
+      _sampling_priority_v1: 1.0,
+      _dd.tracer_kr: 1.0,
+      _dd.top_level: 1.0
+    }
+  }
+]
