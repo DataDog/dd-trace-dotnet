@@ -41,20 +41,50 @@ namespace Datadog.Trace.AppSec.Waf
             }
         }
 
+        // null rulesFile means use rules embedded in the manifest
         public static Waf Initialize(string rulesFile)
         {
-            var wafHandle = CreateWafHandle(rulesFile);
-
-            if (wafHandle == null)
+            var argCache = new List<Obj>();
+            Obj configObj;
+            try
             {
-                Log.Error("Failed to create rules.");
+                using var stream = GetRulesStream(rulesFile);
+
+                if (stream == null)
+                {
+                    return null;
+                }
+
+                configObj = CreatObjFromRulesStream(argCache, stream);
             }
-            else
+            catch (Exception ex)
             {
-                Log.Information("Rules successfully created.");
+                if (rulesFile != null)
+                {
+                    Log.Error(ex, "AppSec could not read the rule file \"{RulesFile}\" as it was invalid. AppSec will not run any protections in this application.", rulesFile);
+                }
+                else
+                {
+                    Log.Error(ex, "AppSec could not read the rule file emmbeded in the manifest as it was invalid. AppSec will not run any protections in this application.");
+                }
+
+                return null;
             }
 
-            return wafHandle == null ? null : new Waf(wafHandle);
+            try
+            {
+                DdwafConfigStruct args = default;
+                var ruleHandle = WafNative.Init(configObj.RawPtr, ref args);
+                return new Waf(new WafHandle(ruleHandle));
+            }
+            finally
+            {
+                configObj?.Dispose();
+                foreach (var arg in argCache)
+                {
+                    arg.Dispose();
+                }
+            }
         }
 
         public IContext CreateContext()
@@ -87,10 +117,7 @@ namespace Datadog.Trace.AppSec.Waf
             using var jsonReader = new JsonTextReader(reader);
             var root = JToken.ReadFrom(jsonReader);
 
-            if (Log.IsEnabled(LogEventLevel.Debug))
-            {
-                LogRuleDetails(root);
-            }
+            LogRuleDetailsIfDebugEnabled(root);
 
             return Encoder.Encode(root, argCache);
         }
@@ -105,72 +132,32 @@ namespace Datadog.Trace.AppSec.Waf
         {
             if (!File.Exists(rulesFile))
             {
-                Log.Error($"AppSec could not find the rules file in path \"{rulesFile}\". AppSec will not run any protections in this application.");
+                Log.Error("AppSec could not find the rules file in path \"{RulesFile}\". AppSec will not run any protections in this application.", rulesFile);
                 return null;
             }
 
             return File.OpenRead(rulesFile);
         }
 
-        // null rulesFile means use rules embedded in the manifest
-        private static WafHandle CreateWafHandle(string rulesFile)
+        private static void LogRuleDetailsIfDebugEnabled(JToken root)
         {
-            var argCache = new List<Obj>();
-            Obj configObj;
-            try
+            if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                using var stream = GetRulesStream(rulesFile);
-
-                if (stream == null)
+                try
                 {
-                    return null;
+                    var eventsProp = root.Value<JArray>("events");
+                    foreach (var ev in eventsProp)
+                    {
+                        var idProp = ev.Value<JValue>("id");
+                        var nameProp = ev.Value<JValue>("name");
+                        var addresses = ev.Value<JArray>("conditions").SelectMany(x => x.Value<JObject>("parameters").Value<JArray>("inputs"));
+                        Log.Debug($"Loaded rule: {idProp.Value} - {nameProp.Value} on addresses: {string.Join(", ", addresses)}");
+                    }
                 }
-
-                configObj = CreatObjFromRulesStream(argCache, stream);
-            }
-            catch (Exception ex)
-            {
-                var message =
-                    rulesFile != null ?
-                    $"AppSec could not read the rule file \"{rulesFile}\" as it was invalid. AppSec will not run any protections in this application." :
-                    "AppSec could not read the rule file emmbeded in the manifest as it was invalid. AppSec will not run any protections in this application.";
-                Log.Error(ex, message);
-
-                return null;
-            }
-
-            try
-            {
-                DdwafConfigStruct args = default;
-                var ruleHandle = WafNative.Init(configObj.RawPtr, ref args);
-                return new WafHandle(ruleHandle);
-            }
-            finally
-            {
-                configObj?.Dispose();
-                foreach (var arg in argCache)
+                catch (Exception ex)
                 {
-                    arg.Dispose();
+                    Log.Error(ex, "Error occured logging the ddwaf rules");
                 }
-            }
-        }
-
-        private static void LogRuleDetails(JToken root)
-        {
-            try
-            {
-                var eventsProp = root.Value<JArray>("events");
-                foreach (var ev in eventsProp)
-                {
-                    var idProp = ev.Value<JValue>("id");
-                    var nameProp = ev.Value<JValue>("name");
-                    var addresses = ev.Value<JArray>("conditions").SelectMany(x => x.Value<JObject>("parameters").Value<JArray>("inputs"));
-                    Log.Debug($"Loaded rule: {idProp.Value} - {nameProp.Value} on addresses: {string.Join(", ", addresses)}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error occured logging the ddwaf rules");
             }
         }
 
