@@ -35,7 +35,7 @@ namespace Datadog.Trace.Util.Http
                 cookiesDic.Add(k, request.Cookies[k]);
             }
 
-            var queryStringDic = new Dictionary<string, List<string>>();
+            var queryStringDic = new Dictionary<string, List<string>>(request.Query.Count);
             foreach (var kvp in request.Query)
             {
                 queryStringDic.Add(kvp.Key, kvp.Value.ToList());
