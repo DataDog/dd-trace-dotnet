@@ -83,51 +83,51 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                       + (enableRouteTemplateResourceNames ? ".NoFF" : ".WithFF");
         }
 
-        public static TheoryData<string, int> Data() => new()
+        public static TheoryData<string, int, int> Data() => new()
         {
-            { "/api/environment", 200 },
-            { "/api/absolute-route", 200 },
-            { "/api/delay/0", 200 },
-            { "/api/delay-optional", 200 },
-            { "/api/delay-optional/1", 200 },
-            { "/api/delay-async/0", 200 },
-            { "/api/transient-failure/true", 200 },
-            { "/api/transient-failure/false", 500 },
-            { "/api/statuscode/201", 201 },
-            { "/api/statuscode/503", 503 },
-            { "/api2/delay/0", 200 },
-            { "/api2/optional", 200 },
-            { "/api2/optional/1", 200 },
-            { "/api2/delayAsync/0", 200 },
-            { "/api2/transientfailure/true", 200 },
-            { "/api2/transientfailure/false", 500 },
-            { "/api2/statuscode/201", 201 },
-            { "/api2/statuscode/503", 503 },
+            { "/api/environment", 200, 1 },
+            { "/api/absolute-route", 200, 1 },
+            { "/api/delay/0", 200, 1 },
+            { "/api/delay-optional", 200, 1 },
+            { "/api/delay-optional/1", 200, 1 },
+            { "/api/delay-async/0", 200, 1 },
+            { "/api/transient-failure/true", 200, 1 },
+            { "/api/transient-failure/false", 500, 2 },
+            { "/api/statuscode/201", 201, 1 },
+            { "/api/statuscode/503", 503, 1 },
+            { "/api2/delay/0", 200, 1 },
+            { "/api2/optional", 200, 1 },
+            { "/api2/optional/1", 200, 1 },
+            { "/api2/delayAsync/0", 200, 1 },
+            { "/api2/transientfailure/true", 200, 1 },
+            { "/api2/transientfailure/false", 500, 2 },
+            { "/api2/statuscode/201", 201, 1 },
+            { "/api2/statuscode/503", 503, 2 },
 
             // The global message handler will fail when ps=false
             // The per-route message handler is not invoked with the route /api2, so ts=true|false has no effect
-            { "/api2/statuscode/201?ps=true&ts=true", 201 },
-            { "/api2/statuscode/201?ps=true&ts=false", 201 },
-            { "/api2/statuscode/201?ps=false&ts=true", 500 },
-            { "/api2/statuscode/201?ps=false&ts=false", 500 },
+            { "/api2/statuscode/201?ps=true&ts=true", 201, 1 },
+            { "/api2/statuscode/201?ps=true&ts=false", 201, 1 },
+            { "/api2/statuscode/201?ps=false&ts=true", 500, 1 },
+            { "/api2/statuscode/201?ps=false&ts=false", 500, 1 },
 
             // The global message handler will fail when ps=false
             // The global and per-route message handler is invoked with the route /handler-api, so ts=false will also fail the request
-            { "/handler-api/api?ps=true&ts=true", 200 },
-            { "/handler-api/api?ps=true&ts=false", 500 },
-            { "/handler-api/api?ps=false&ts=true", 500 },
-            { "/handler-api/api?ps=false&ts=false", 500 },
+            { "/handler-api/api?ps=true&ts=true", 200, 0 },
+            { "/handler-api/api?ps=true&ts=false", 500, 1 },
+            { "/handler-api/api?ps=false&ts=true", 500, 1 },
+            { "/handler-api/api?ps=false&ts=false", 500, 1 },
         };
 
         [Theory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [MemberData(nameof(Data))]
-        public async Task SubmitsTraces(string path, HttpStatusCode statusCode)
+        public async Task SubmitsTraces(string path, HttpStatusCode statusCode, int expectedSpanCount)
         {
             await _fixture.TryStartApp(this, _output);
 
-            var spans = await _fixture.WaitForSpans(Output, path);
+            var spans = await _fixture.WaitForSpans(Output, path, expectedSpanCount);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
 
@@ -206,12 +206,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Agent?.Dispose();
             }
 
-            public async Task<IImmutableList<MockTracerAgent.Span>> WaitForSpans(ITestOutputHelper output, string path)
+            public async Task<IImmutableList<MockTracerAgent.Span>> WaitForSpans(ITestOutputHelper output, string path, int expectedSpanCount)
             {
                 var testStart = DateTime.UtcNow;
 
                 await SubmitRequest(output, path);
-                return Agent.WaitForSpans(count: 1, minDateTime: testStart, returnAllOperations: true);
+                return Agent.WaitForSpans(count: expectedSpanCount, minDateTime: testStart, returnAllOperations: true);
             }
 
             private async Task EnsureServerStarted(ITestOutputHelper output)
