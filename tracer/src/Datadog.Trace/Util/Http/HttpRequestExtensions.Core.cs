@@ -35,11 +35,17 @@ namespace Datadog.Trace.Util.Http
                 cookiesDic.Add(k, request.Cookies[k]);
             }
 
+            var queryStringDic = new Dictionary<string, List<string>>();
+            foreach (var kvp in request.Query)
+            {
+                queryStringDic.Add(kvp.Key, kvp.Value.ToList());
+            }
+
             var dict = new Dictionary<string, object>()
             {
                 { AddressesConstants.RequestMethod, request.Method },
                 { AddressesConstants.RequestUriRaw, url },
-                { AddressesConstants.RequestQuery, request.QueryString.ToString() },
+                { AddressesConstants.RequestQuery, queryStringDic },
                 { AddressesConstants.RequestHeaderNoCookies, headersDic },
                 { AddressesConstants.RequestCookies, cookiesDic },
             };
