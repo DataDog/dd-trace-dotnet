@@ -21,20 +21,20 @@ namespace Samples.AzureFunctions.AllTriggers
 			_httpClient = httpClientFactory.CreateClient();
 		}
 
-		[FunctionName("TriggerAllTimer")]
-		public async Task TriggerAllTimer([TimerTrigger(EveryTenSeconds)] TimerInfo myTimer, ILogger log)
-		{
-			log.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
-			await CallFunctionHttp("trigger");
-		}
+        [FunctionName("TriggerAllTimer")]
+        public async Task TriggerAllTimer([TimerTrigger(EveryTenSeconds)] TimerInfo myTimer, ILogger log)
+        {
+            log.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
+            await CallFunctionHttp("trigger");
+        }
 
-		[FunctionName("TimerTrigger")]
-		public void TimerTrigger([TimerTrigger(EveryTenSeconds)] TimerInfo myTimer, ILogger log)
-		{
-			log.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
-		}
+        [FunctionName("TimerTrigger")]
+        public void TimerTrigger([TimerTrigger(EveryTenSeconds)] TimerInfo myTimer, ILogger log)
+        {
+            log.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
+        }
 
-		[FunctionName("SimpleHttpTrigger")]
+        [FunctionName("SimpleHttpTrigger")]
 		public async Task<IActionResult> SimpleHttpTrigger(
 			[HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = "simple")] HttpRequest req,
 			ILogger log)

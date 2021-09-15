@@ -5,22 +5,43 @@
 
 #if !NETFRAMEWORK
 using System;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Tagging;
+using Microsoft.AspNetCore.Http;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 {
     internal static class AzureFunctionsCommon
     {
+        public const string IntegrationName = nameof(IntegrationIds.AzureFunctions);
+
         public const string OperationName = "azure-functions.invoke";
         public const string SpanType = SpanTypes.Serverless;
         public static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.AzureFunctions));
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AzureFunctionsCommon));
+        private static readonly AspNetCoreHttpRequestHandler AspNetCoreRequestSniffer = new AspNetCoreHttpRequestHandler(Log, OperationName, IntegrationId);
 
-        public static CallTargetState OnMethodBegin<TTarget>(TTarget instance, IFunctionInstance instanceParam)
+        public static CallTargetState OnFunctionMiddlewareBegin<TTarget>(TTarget instance, HttpContext httpContext)
+        {
+            var tracer = Tracer.Instance;
+            var security = Security.Instance;
+
+            var scope = AspNetCoreRequestSniffer.StartAspNetCorePipelineScope(tracer, security, httpContext);
+
+            if (scope != null)
+            {
+                return new CallTargetState(scope);
+            }
+
+            return CallTargetState.GetDefault();
+        }
+
+        public static CallTargetState OnFunctionExecutionBegin<TTarget>(TTarget instance, IFunctionInstance instanceParam)
         {
             var tracer = Tracer.Instance;
 

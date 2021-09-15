@@ -1,4 +1,4 @@
-// <copyright file="AzureFunctionsExecutorTryExecuteAsyncIntegration.cs" company="Datadog">
+// <copyright file="FunctionInvocationMiddlewareInvokeIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,7 +7,7 @@
 using System;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
+using Microsoft.AspNetCore.Http;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 {
@@ -15,29 +15,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
     /// Azure Function calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
-        AssemblyName = "Microsoft.Azure.WebJobs.Host",
-        TypeName = "Microsoft.Azure.WebJobs.Host.Executors.FunctionExecutor",
-        MethodName = "TryExecuteAsync",
-        ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.Azure.WebJobs.Host.Executors.IDelayedException]",
-        ParameterTypeNames = new[] { "Microsoft.Azure.WebJobs.Host.Executors.IFunctionInstance", ClrNames.CancellationToken },
+        AssemblyName = "Microsoft.Azure.WebJobs.Script.WebHost",
+        TypeName = "Microsoft.Azure.WebJobs.Script.WebHost.Middleware.FunctionInvocationMiddleware",
+        MethodName = "Invoke",
+        ReturnTypeName = "System.Threading.Tasks.Task",
+        ParameterTypeNames = new[] { "Microsoft.AspNetCore.Http.HttpContext" },
         MinimumVersion = "3.0.0",
         MaximumVersion = "3.*.*",
         IntegrationName = AzureFunctionsCommon.IntegrationName)]
-    public class AzureFunctionsExecutorTryExecuteAsyncIntegration
+    public class FunctionInvocationMiddlewareInvokeIntegration
     {
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
         /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TFunction">Type of the invoker</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="functionInstance">First argument</param>
-        /// <param name="cancellationToken">Second argument</param>
+        /// <param name="httpContext">First argument</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget, TFunction>(TTarget instance, TFunction functionInstance, CancellationToken cancellationToken)
-            where TFunction : IFunctionInstance
+        public static CallTargetState OnMethodBegin<TTarget>(TTarget instance, HttpContext httpContext)
         {
-            return AzureFunctionsCommon.OnFunctionExecutionBegin(instance, functionInstance);
+            return AzureFunctionsCommon.OnFunctionMiddlewareBegin(instance, httpContext);
         }
 
         /// <summary>
