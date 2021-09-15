@@ -66,8 +66,8 @@ namespace Datadog.Trace.AppSec.Agent
 
                 if (_events.Count == 0)
                 {
-                    _senderMutex.Wait();
                     _senderMutex.Reset();
+                    _senderMutex.Wait();
                 }
 
                 try
