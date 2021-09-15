@@ -12,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler
         internal static NativeCallTargetDefinition[] GetAllDefinitions(TracerSettings settings, out int size)
         {
             var index = 0;
-            var definitions = new NativeCallTargetDefinition[219];
+            var definitions = new NativeCallTargetDefinition[222];
 
             if (settings.IsIntegrationEnabled("Aerospike"))
             {
@@ -69,9 +69,12 @@ namespace Datadog.Trace.ClrProfiler
 
             if (settings.IsIntegrationEnabled("GraphQL"))
             {
-                definitions[index++] = new("GraphQL", "GraphQL.Execution.ExecutionStrategy", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>", "GraphQL.Execution.ExecutionContext" }, 2, 3, 0, 2, 65535, 65535, "Datadog.Trace, Version=1.28.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb", "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.ExecuteAsyncIntegration");
-                definitions[index++] = new("GraphQL", "GraphQL.Execution.SubscriptionExecutionStrategy", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>", "GraphQL.Execution.ExecutionContext" }, 2, 3, 0, 2, 65535, 65535, "Datadog.Trace, Version=1.28.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb", "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.ExecuteAsyncIntegration");
+                definitions[index++] = new("GraphQL", "GraphQL.Execution.ExecutionStrategy", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>", "GraphQL.Execution.ExecutionContext" }, 2, 3, 0, 4, 65535, 65535, "Datadog.Trace, Version=1.28.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb", "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.ExecuteAsyncIntegration");
+                definitions[index++] = new("GraphQL", "GraphQL.Execution.SubscriptionExecutionStrategy", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>", "GraphQL.Execution.ExecutionContext" }, 2, 3, 0, 3, 65535, 65535, "Datadog.Trace, Version=1.28.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb", "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.ExecuteAsyncIntegration");
                 definitions[index++] = new("GraphQL", "GraphQL.Validation.DocumentValidator", "Validate",  new[] { "GraphQL.Validation.IValidationResult", "System.String", "GraphQL.Types.ISchema", "GraphQL.Language.AST.Document", "System.Collections.Generic.IEnumerable`1[GraphQL.Validation.IValidationRule]", "_", "GraphQL.Inputs" }, 2, 3, 0, 2, 65535, 65535, "Datadog.Trace, Version=1.28.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb", "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.ValidateIntegration");
+                definitions[index++] = new("GraphQL", "GraphQL.Validation.DocumentValidator", "ValidateAsync",  new[] { "System.Threading.Tasks.Task`1<T>", "GraphQL.Types.ISchema", "GraphQL.Language.AST.Document", "GraphQL.Language.AST.VariableDefinitions", "System.Collections.Generic.IEnumerable`1[GraphQL.Validation.IValidationRule]", "_", "GraphQL.Inputs" }, 4, 0, 0, 4, 65535, 65535, "Datadog.Trace, Version=1.28.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb", "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.ValidateAsync4Integration");
+                definitions[index++] = new("GraphQL", "GraphQL.Validation.DocumentValidator", "ValidateAsync",  new[] { "System.Threading.Tasks.Task`1<T>", "System.String", "GraphQL.Types.ISchema", "GraphQL.Language.AST.Document", "System.Collections.Generic.IEnumerable`1[GraphQL.Validation.IValidationRule]", "_", "GraphQL.Inputs" }, 3, 0, 0, 3, 65535, 65535, "Datadog.Trace, Version=1.28.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb", "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.ValidateAsyncIntegration");
+                definitions[index++] = new("GraphQL.SystemReactive", "GraphQL.Execution.SubscriptionExecutionStrategy", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>", "GraphQL.Execution.ExecutionContext" }, 4, 0, 0, 4, 65535, 65535, "Datadog.Trace, Version=1.28.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb", "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.ExecuteAsyncIntegration");
             }
 
             if (settings.IsIntegrationEnabled("AspNetCore"))
