@@ -117,38 +117,38 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static TheoryData<string, int> Data() => new()
         {
-            { "/api/environment", 200 },
-            { "/api/absolute-route", 200 },
-            { "/api/delay/0", 200 },
-            { "/api/delay-optional", 200 },
-            { "/api/delay-optional/1", 200 },
-            { "/api/delay-async/0", 200 },
-            { "/api/transient-failure/true", 200 },
-            { "/api/transient-failure/false", 500 },
-            { "/api/statuscode/201", 201 },
-            { "/api/statuscode/503", 503 },
-            { "/api2/delay/0", 200 },
-            { "/api2/optional", 200 },
-            { "/api2/optional/1", 200 },
-            { "/api2/delayAsync/0", 200 },
-            { "/api2/transientfailure/true", 200 },
-            { "/api2/transientfailure/false", 500 },
-            { "/api2/statuscode/201", 201 },
-            { "/api2/statuscode/503", 503 },
+            { "/api/environment", 200, 2 },
+            { "/api/absolute-route", 200, 2 },
+            { "/api/delay/0", 200, 2 },
+            { "/api/delay-optional", 200, 2 },
+            { "/api/delay-optional/1", 200, 2 },
+            { "/api/delay-async/0", 200, 2 },
+            { "/api/transient-failure/true", 200, 2 },
+            { "/api/transient-failure/false", 500, 3 },
+            { "/api/statuscode/201", 201, 2 },
+            { "/api/statuscode/503", 503, 2 },
+            { "/api2/delay/0", 200, 2 },
+            { "/api2/optional", 200, 2 },
+            { "/api2/optional/1", 200, 2 },
+            { "/api2/delayAsync/0", 200, 2 },
+            { "/api2/transientfailure/true", 200, 2 },
+            { "/api2/transientfailure/false", 500, 3 },
+            { "/api2/statuscode/201", 201, 2 },
+            { "/api2/statuscode/503", 503, 3 },
 
             // The global message handler will fail when ps=false
             // The per-route message handler is not invoked with the route /api2, so ts=true|false has no effect
-            { "/api2/statuscode/201?ps=true&ts=true", 201 },
-            { "/api2/statuscode/201?ps=true&ts=false", 201 },
-            { "/api2/statuscode/201?ps=false&ts=true", 500 },
-            { "/api2/statuscode/201?ps=false&ts=false", 500 },
+            { "/api2/statuscode/201?ps=true&ts=true", 201, 2 },
+            { "/api2/statuscode/201?ps=true&ts=false", 201, 2 },
+            { "/api2/statuscode/201?ps=false&ts=true", 500, 2 },
+            { "/api2/statuscode/201?ps=false&ts=false", 500, 2 },
 
             // The global message handler will fail when ps=false
             // The global and per-route message handler is invoked with the route /handler-api, so ts=false will also fail the request
-            { "/handler-api/api?ps=true&ts=true", 200 },
-            { "/handler-api/api?ps=true&ts=false", 500 },
-            { "/handler-api/api?ps=false&ts=true", 500 },
-            { "/handler-api/api?ps=false&ts=false", 500 },
+            { "/handler-api/api?ps=true&ts=true", 200, 1 },
+            { "/handler-api/api?ps=true&ts=false", 500, 2 },
+            { "/handler-api/api?ps=false&ts=true", 500, 2 },
+            { "/handler-api/api?ps=false&ts=false", 500, 2 },
         };
 
         [Theory]
@@ -156,9 +156,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [Trait("LoadFromGAC", "True")]
         [MemberData(nameof(Data))]
-        public async Task SubmitsTraces(string path, HttpStatusCode statusCode)
+        public async Task SubmitsTraces(string path, HttpStatusCode statusCode, int expectedSpanCount)
         {
-            var spans = await GetWebServerSpans(path, _iisFixture.Agent, _iisFixture.HttpPort, statusCode);
+            var spans = await GetWebServerSpans(path, _iisFixture.Agent, _iisFixture.HttpPort, statusCode, expectedSpanCount);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
 
