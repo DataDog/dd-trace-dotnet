@@ -62,6 +62,7 @@ variables:
   artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
   ddApiKey: $(DD_API_KEY)
   isMainBranch: $[eq(variables['Build.SourceBranch'], 'refs/heads/master')]
+  isPullRequest: $[eq(variables['Build.Reason'], 'PullRequest')]
   DD_DOTNET_TRACER_MSBUILD:
   NugetPackageDirectory: $(System.DefaultWorkingDirectory)/packages
   relativeNugetPackageDirectory: packages
@@ -410,7 +411,7 @@ stages:
 
     - publish: tracer/build_data
       displayName: Uploading integration_tests_windows tracer logs
-      artifact: integration_tests_windows_tracer_logs_$(platform)_$(target)
+      artifact: integration_tests_windows_tracer_logs_$(platform)_$(target)_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -1071,6 +1072,7 @@ stages:
         vmImage: windows-2019
 
       steps:
+      - template: steps/install-dotnet-5-sdk.yml
       - template: steps/restore-working-directory.yml
 
       - task: DownloadPipelineArtifact@2
@@ -1091,7 +1093,13 @@ stages:
           summaryFileLocation: '$(Build.SourcesDirectory)/coveragereport/Cobertura.xml'
           pathToSources: '$(Build.SourcesDirectory)'
 
-
+      - script: tracer\build.cmd CompareCodeCoverageReports
+        displayName: Compare code coverage
+        condition: and(succeeded(), eq(variables.isPullRequest, true))
+        env:
+          PR_NUMBER: $(System.PullRequest.PullRequestNumber)
+          AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
+          GITHUB_TOKEN: $(GITHUB_TOKEN)
 
 - stage: execution_benchmarks
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
@@ -1104,7 +1112,7 @@ stages:
     services:
       dd_agent: dd_agent
     steps:
-    - template: steps/install-dotnet.yml
+    - template: steps/install-dotnet-5-sdk.yml
     - template: steps/restore-working-directory.yml
 
     - task: DownloadPipelineArtifact@2
