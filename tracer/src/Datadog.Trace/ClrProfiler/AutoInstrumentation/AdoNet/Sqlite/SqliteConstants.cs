@@ -3,11 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Configuration;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Sqlite
 {
     internal static class SqliteConstants
     {
-        public const string SqlCommandIntegrationName = "SqliteCommand";
+        public const string SqlCommandIntegrationName = nameof(IntegrationIds.AdoNet);
 
         internal struct MicrosoftDataSqliteClientData : IAdoNetClientData
         {

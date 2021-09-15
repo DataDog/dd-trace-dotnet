@@ -23,15 +23,15 @@ namespace Datadog.Trace.ClrProfiler
             return NonWindows.IsProfilerAttached();
         }
 
-        public static void InitializeProfiler(NativeCallTargetDefinition[] methodArrays)
+        public static void InitializeProfiler(NativeCallTargetDefinition[] methodArrays, int size)
         {
             if (IsWindows)
             {
-                Windows.InitializeProfiler(methodArrays, methodArrays.Length);
+                Windows.InitializeProfiler(methodArrays, size);
             }
             else
             {
-                NonWindows.InitializeProfiler(methodArrays, methodArrays.Length);
+                NonWindows.InitializeProfiler(methodArrays, size);
             }
         }
 

@@ -88,7 +88,10 @@ namespace Datadog.Trace.ClrProfiler
 
         public void Dispose()
         {
-            Marshal.FreeHGlobal(TargetSignatureTypes);
+            if (TargetSignatureTypes != IntPtr.Zero)
+            {
+                Marshal.FreeHGlobal(TargetSignatureTypes);
+            }
         }
     }
 }
