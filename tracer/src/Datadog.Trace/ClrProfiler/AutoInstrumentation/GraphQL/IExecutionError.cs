@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.Collections.Generic;
+using System.Collections;
 using System.ComponentModel;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
@@ -23,7 +23,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
         /// <summary>
         /// Gets a list of locations in the document where the error applies
         /// </summary>
-        IEnumerable<object> Locations { get; }
+        // See comment for Path
+        IEnumerable Locations { get; }
 
         /// <summary>
         /// Gets a message for the error
@@ -33,6 +34,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
         /// <summary>
         /// Gets the path in the document where the error applies
         /// </summary>
-        IEnumerable<string> Path { get; }
+        // GraphQL2 uses IEnumerable<string> and GraphQL3 uses IEnumerable<object>
+        // Declaring the property as IEnumerable allows to support both at once
+        IEnumerable Path { get; }
     }
 }

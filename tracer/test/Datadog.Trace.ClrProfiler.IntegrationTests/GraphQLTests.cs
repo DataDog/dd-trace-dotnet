@@ -3,6 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#pragma warning disable SA1402 // File may only contain a single type
+#pragma warning disable SA1649 // File name should match first type name
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -18,52 +21,52 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class GraphQLTests : TestHelper
+#if NETCOREAPP3_1 || NET5_0
+    public class GraphQL4Tests : GraphQLTests
+    {
+        public GraphQL4Tests(ITestOutputHelper output)
+            : base("GraphQL4", output, callTargetOnly: true)
+        {
+        }
+    }
+#endif
+
+    public class GraphQL3Tests : GraphQLTests
+    {
+        public GraphQL3Tests(ITestOutputHelper output)
+            : base("GraphQL3", output, callTargetOnly: true)
+        {
+        }
+    }
+
+    public class GraphQL2Tests : GraphQLTests
+    {
+        public GraphQL2Tests(ITestOutputHelper output)
+            : base("GraphQL", output, callTargetOnly: false)
+        {
+        }
+    }
+
+    public abstract class GraphQLTests : TestHelper
     {
         private const string ServiceVersion = "1.0.0";
 
         private static readonly string _graphQLValidateOperationName = "graphql.validate";
         private static readonly string _graphQLExecuteOperationName = "graphql.execute";
 
-        private static readonly List<RequestInfo> _requests;
-        private static readonly List<WebServerSpanExpectation> _expectations;
-        private static int _expectedGraphQLValidateSpanCount;
-        private static int _expectedGraphQLExecuteSpanCount;
+        private readonly bool _callTargetOnly;
 
-        static GraphQLTests()
+        private List<RequestInfo> _requests;
+        private List<WebServerSpanExpectation> _expectations;
+        private int _expectedGraphQLValidateSpanCount;
+        private int _expectedGraphQLExecuteSpanCount;
+
+        protected GraphQLTests(string sampleAppName, ITestOutputHelper output, bool callTargetOnly = false)
+            : base(sampleAppName, output)
         {
-            _requests = new List<RequestInfo>(0);
-            _expectations = new List<WebServerSpanExpectation>();
-            _expectedGraphQLValidateSpanCount = 0;
-            _expectedGraphQLExecuteSpanCount = 0;
-
-            // SUCCESS: query using GET
-            CreateGraphQLRequestsAndExpectations(url: "/graphql?query=" + WebUtility.UrlEncode("query{hero{name appearsIn}}"), httpMethod: "GET", resourceName: "Query operation", graphQLRequestBody: null, graphQLOperationType: "Query", graphQLOperationName: null, graphQLSource: "query{hero{name appearsIn} }");
-
-            // SUCCESS: query using POST (default)
-            CreateGraphQLRequestsAndExpectations(url: "/graphql", httpMethod: "POST", resourceName: "Query HeroQuery", graphQLRequestBody: @"{""query"":""query HeroQuery{hero {name appearsIn}}"",""operationName"": ""HeroQuery""}", graphQLOperationType: "Query", graphQLOperationName: "HeroQuery", graphQLSource: "query HeroQuery{hero{name appearsIn}}");
-
-            // SUCCESS: mutation
-            CreateGraphQLRequestsAndExpectations(url: "/graphql", httpMethod: "POST", resourceName: "Mutation AddBobaFett", graphQLRequestBody: @"{""query"":""mutation AddBobaFett($human:HumanInput!){createHuman(human: $human){id name}}"",""variables"":{""human"":{""name"": ""Boba Fett""}}}", graphQLOperationType: "Mutation", graphQLOperationName: "AddBobaFett", graphQLSource: "mutation AddBobaFett($human:HumanInput!){createHuman(human: $human){id name}}");
-
-            // SUCCESS: subscription
-            CreateGraphQLRequestsAndExpectations(url: "/graphql", httpMethod: "POST", resourceName: "Subscription HumanAddedSub", graphQLRequestBody: @"{ ""query"":""subscription HumanAddedSub{humanAdded{name}}""}", graphQLOperationType: "Subscription", graphQLOperationName: "HumanAddedSub", graphQLSource: "subscription HumanAddedSub{humanAdded{name}}");
-
-            // TODO: When parse is implemented, add a test that fails 'parse' step
-
-            // FAILURE: query fails 'validate' step
-            CreateGraphQLRequestsAndExpectations(url: "/graphql", httpMethod: "POST", resourceName: "Query HumanError", graphQLRequestBody: @"{""query"":""query HumanError{human(id:1){name apearsIn}}""}", graphQLOperationType: "Query", graphQLOperationName: null, failsValidation: true, graphQLSource: "query HumanError{human(id:1){name apearsIn}}");
-
-            // FAILURE: query fails 'execute' step
-            CreateGraphQLRequestsAndExpectations(url: "/graphql", httpMethod: "POST", resourceName: "Subscription NotImplementedSub", graphQLRequestBody: @"{""query"":""subscription NotImplementedSub{throwNotImplementedException{name}}""}", graphQLOperationType: "Subscription", graphQLOperationName: "NotImplementedSub", graphQLSource: "subscription NotImplementedSub{throwNotImplementedException{name}}", failsExecution: true);
-
-            // TODO: When parse is implemented, add a test that fails 'resolve' step
-        }
-
-        public GraphQLTests(ITestOutputHelper output)
-            : base("GraphQL", output)
-        {
-            SetServiceVersion("1.0.0");
+            InitializeExpectations(sampleAppName);
+            _callTargetOnly = callTargetOnly;
+            SetServiceVersion(ServiceVersion);
         }
 
         [Theory]
@@ -73,6 +76,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [InlineData(true)]
         public void SubmitsTraces(bool enableCallTarget)
         {
+            if (_callTargetOnly && !enableCallTarget)
+            {
+                return;
+            }
+
             SetCallTargetSettings(enableCallTarget);
 
             int agentPort = TcpPortProvider.GetOpenPort();
@@ -169,7 +177,38 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        private static void CreateGraphQLRequestsAndExpectations(
+        private void InitializeExpectations(string sampleName)
+        {
+            _requests = new List<RequestInfo>(0);
+            _expectations = new List<WebServerSpanExpectation>();
+            _expectedGraphQLValidateSpanCount = 0;
+            _expectedGraphQLExecuteSpanCount = 0;
+
+            // SUCCESS: query using GET
+            CreateGraphQLRequestsAndExpectations(sampleName, url: "/graphql?query=" + WebUtility.UrlEncode("query{hero{name appearsIn}}"), httpMethod: "GET", resourceName: "Query operation", graphQLRequestBody: null, graphQLOperationType: "Query", graphQLOperationName: null, graphQLSource: "query{hero{name appearsIn} }");
+
+            // SUCCESS: query using POST (default)
+            CreateGraphQLRequestsAndExpectations(sampleName, url: "/graphql", httpMethod: "POST", resourceName: "Query HeroQuery", graphQLRequestBody: @"{""query"":""query HeroQuery{hero {name appearsIn}}"",""operationName"": ""HeroQuery""}", graphQLOperationType: "Query", graphQLOperationName: "HeroQuery", graphQLSource: "query HeroQuery{hero{name appearsIn}}");
+
+            // SUCCESS: mutation
+            CreateGraphQLRequestsAndExpectations(sampleName, url: "/graphql", httpMethod: "POST", resourceName: "Mutation AddBobaFett", graphQLRequestBody: @"{""query"":""mutation AddBobaFett($human:HumanInput!){createHuman(human: $human){id name}}"",""variables"":{""human"":{""name"": ""Boba Fett""}}}", graphQLOperationType: "Mutation", graphQLOperationName: "AddBobaFett", graphQLSource: "mutation AddBobaFett($human:HumanInput!){createHuman(human: $human){id name}}");
+
+            // SUCCESS: subscription
+            CreateGraphQLRequestsAndExpectations(sampleName, url: "/graphql", httpMethod: "POST", resourceName: "Subscription HumanAddedSub", graphQLRequestBody: @"{ ""query"":""subscription HumanAddedSub{humanAdded{name}}""}", graphQLOperationType: "Subscription", graphQLOperationName: "HumanAddedSub", graphQLSource: "subscription HumanAddedSub{humanAdded{name}}");
+
+            // TODO: When parse is implemented, add a test that fails 'parse' step
+
+            // FAILURE: query fails 'validate' step
+            CreateGraphQLRequestsAndExpectations(sampleName, url: "/graphql", httpMethod: "POST", resourceName: "Query HumanError", graphQLRequestBody: @"{""query"":""query HumanError{human(id:1){name apearsIn}}""}", graphQLOperationType: "Query", graphQLOperationName: null, failsValidation: true, graphQLSource: "query HumanError{human(id:1){name apearsIn}}");
+
+            // FAILURE: query fails 'execute' step
+            CreateGraphQLRequestsAndExpectations(sampleName, url: "/graphql", httpMethod: "POST", resourceName: "Subscription NotImplementedSub", graphQLRequestBody: @"{""query"":""subscription NotImplementedSub{throwNotImplementedException{name}}""}", graphQLOperationType: "Subscription", graphQLOperationName: "NotImplementedSub", graphQLSource: "subscription NotImplementedSub{throwNotImplementedException{name}}", failsExecution: true);
+
+            // TODO: When parse is implemented, add a test that fails 'resolve' step
+        }
+
+        private void CreateGraphQLRequestsAndExpectations(
+            string sampleName,
             string url,
             string httpMethod,
             string resourceName,
@@ -188,7 +227,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             });
 
             // Expect a 'validate' span
-            _expectations.Add(new GraphQLSpanExpectation("Samples.GraphQL-graphql", _graphQLValidateOperationName, _graphQLValidateOperationName)
+            _expectations.Add(new GraphQLSpanExpectation($"Samples.{sampleName}-graphql", _graphQLValidateOperationName, _graphQLValidateOperationName)
             {
                 OriginalUri = url,
                 GraphQLRequestBody = graphQLRequestBody,
@@ -203,7 +242,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             if (failsValidation) { return; }
 
             // Expect an 'execute' span
-            _expectations.Add(new GraphQLSpanExpectation("Samples.GraphQL-graphql", _graphQLExecuteOperationName, resourceName)
+            _expectations.Add(new GraphQLSpanExpectation($"Samples.{sampleName}-graphql", _graphQLExecuteOperationName, resourceName)
             {
                 OriginalUri = url,
                 GraphQLRequestBody = graphQLRequestBody,
