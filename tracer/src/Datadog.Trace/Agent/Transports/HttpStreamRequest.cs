@@ -93,19 +93,32 @@ namespace Datadog.Trace.Agent.Transports
 
         public async Task<string> RequestContent()
         {
-            var payload = string.Empty;
-            if (_request.Content != null)
+            if (_request != null)
             {
-                var buffer = new byte[_request.Content.Length.Value];
-                var requestStream = new MemoryStream(buffer);
-                await _request.Content.CopyToAsync(buffer).ConfigureAwait(false);
-                using var sr = new StreamReader(requestStream);
-                payload = await sr.ReadToEndAsync();
+                var payload = string.Empty;
+                if (_request.Content != null)
+                {
+                    var buffer = new byte[_request.Content.Length.Value];
+                    var requestStream = new MemoryStream(buffer);
+                    await _request.Content.CopyToAsync(buffer).ConfigureAwait(false);
+                    using var sr = new StreamReader(requestStream);
+                    payload = await sr.ReadToEndAsync();
+                }
+
+                return $"Headers: {string.Join(", ", _request.Headers.Select(h => $"{h.Name}: {h.Value}"))} / Payload: {payload}";
             }
 
-            return $"Headers: {string.Join(", ", _request.Headers.Select(h => $"{h.Name}: {h.Value}"))} / Payload: {payload}";
+            return string.Empty;
         }
 
-        public IDictionary<string, string> Headers() => _request.Headers.ToDictionary(h => h.Name, h => h.Value);
+        public IDictionary<string, string> Headers()
+        {
+            if (_request != null)
+            {
+                return _request.Headers.ToDictionary(h => h.Name, h => h.Value);
+            }
+
+            return new Dictionary<string, string>();
+        }
     }
 }
