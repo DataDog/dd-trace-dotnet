@@ -4,7 +4,9 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.HttpOverStreams;
@@ -27,6 +29,7 @@ namespace Datadog.Trace.Agent.Transports
         private readonly DatadogHttpClient _client;
         private readonly IStreamFactory _streamFactory;
         private readonly HttpHeaders _headers = new HttpHeaders();
+        private HttpRequest _request;
 
         public HttpStreamRequest(DatadogHttpClient client, Uri uri, IStreamFactory streamFactory)
         {
@@ -48,8 +51,12 @@ namespace Datadog.Trace.Agent.Transports
             {
                 serializer.Serialize(writer, events);
                 await writer.FlushAsync();
+                await memoryStream.FlushAsync();
+                memoryStream.Seek(0, SeekOrigin.Begin);
                 var buffer = memoryStream.GetBuffer();
-                return await PostSegmentAsync(new ArraySegment<byte>(buffer, 0, (int)memoryStream.Length)).ConfigureAwait(false);
+                _headers.Add("Content-Type", "application/json");
+                var response = PostSegmentAsync(new ArraySegment<byte>(buffer, 0, (int)memoryStream.Length));
+                return await response.ConfigureAwait(false);
             }
         }
 
@@ -63,10 +70,9 @@ namespace Datadog.Trace.Agent.Transports
             using (var bidirectionalStream = _streamFactory.GetBidirectionalStream())
             {
                 var content = new BufferContent(segment);
-                var request = new HttpRequest("POST", _uri.Host, _uri.PathAndQuery, _headers, content);
-
+                _request = new HttpRequest("POST", _uri.Host, _uri.PathAndQuery, _headers, content);
                 // send request, get response
-                var response = await _client.SendAsync(request, bidirectionalStream, bidirectionalStream).ConfigureAwait(false);
+                var response = await _client.SendAsync(_request, bidirectionalStream, bidirectionalStream).ConfigureAwait(false);
 
                 // Content-Length is required as we don't support chunked transfer
                 var contentLength = response.Content.Length;
@@ -84,5 +90,22 @@ namespace Datadog.Trace.Agent.Transports
                 return new HttpStreamResponse(response.StatusCode, responseContentStream.Length, response.GetContentEncoding(), responseContentStream, response.Headers);
             }
         }
+
+        public async Task<string> RequestContent()
+        {
+            if (_request.Content == null)
+            {
+                return string.Empty;
+            }
+
+            var buffer = new byte[_request.Content.Length.Value];
+            var requestStream = new MemoryStream(buffer);
+            await _request.Content.CopyToAsync(buffer).ConfigureAwait(false);
+            using var sr = new StreamReader(requestStream);
+            var payload = await sr.ReadToEndAsync();
+            return $"Headers: {string.Join(", ", _request.Headers.Select(h => $"{h.Name}: {h.Value}"))} / Payload: {payload}";
+        }
+
+        public IDictionary<string, string> Headers() => _request.Headers.ToDictionary(h => h.Name, h => h.Value);
     }
 }

@@ -5,7 +5,9 @@
 
 #if NETCOREAPP
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
@@ -28,6 +30,14 @@ namespace Datadog.Trace.Agent.Transports
         public void AddHeader(string name, string value)
         {
             _request.Headers.Add(name, value);
+        }
+
+        public IDictionary<string, string> Headers() => _request.Headers.ToDictionary(h => h.Key, h => string.Join(", ", h.Value));
+
+        public async Task<string> RequestContent()
+        {
+            var payload = _request.Content != null ? (await _request.Content.ReadAsStringAsync()) : string.Empty;
+            return $"Headers: {string.Join(", ", _request.Headers.Select(h => $"{h.Key}: {h.Value}"))} / Payload is not available for now.";
         }
 
         public async Task<IApiResponse> PostAsJsonAsync(IEvent events, JsonSerializer serializer)

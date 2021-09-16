@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -17,5 +18,7 @@ namespace Datadog.Trace.Agent
         Task<IApiResponse> PostAsync(ArraySegment<byte> traces);
 
         Task<IApiResponse> PostAsJsonAsync(IEvent events, JsonSerializer serializer);
+
+        Task<string> RequestContent();
     }
 }

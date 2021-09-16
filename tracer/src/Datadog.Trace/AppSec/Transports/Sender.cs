@@ -41,11 +41,14 @@ namespace Datadog.Trace.AppSec.Transports
             };
             var request = _apiRequestFactory.Create(_uri);
             request.AddHeader(AppSecHeaderKey, AppSecHeaderValue);
-            var response = await request.PostAsJsonAsync(batch, _serializer);
-            if (response.StatusCode != 200 && response.StatusCode != 202)
+            using (var response = await request.PostAsJsonAsync(batch, _serializer))
             {
-                var responseText = await response.ReadAsStringAsync();
-                Log.Warning($"AppSec event not correctly sent to backend {response.StatusCode} with response {responseText}");
+                if (response.StatusCode != 200 && response.StatusCode != 202)
+                {
+                    var statusCode = response.StatusCode;
+                    var responseText = await response.ReadAsStringAsync();
+                    Log.Warning($"AppSec event not correctly sent to backend {statusCode} with response {responseText}, request content was {await request.RequestContent()}");
+                }
             }
         }
     }
