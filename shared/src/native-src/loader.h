@@ -95,6 +95,32 @@ namespace shared
         ULONG HashAlgId;
     };
 
+    struct LoaderOptions
+    {
+        // Rewrite options
+        bool RewriteModulesInitializers = true;
+        bool RewriteMSCorLibMethods = true;
+        bool RewriteModulesEntrypoint = true;
+
+        // Log options
+        bool LogDebugIsEnabled = true;
+        std::function<void(const std::string& str)> LogDebugCallback = nullptr;
+        std::function<void(const std::string& str)> LogInfoCallback = nullptr;
+        std::function<void(const std::string& str)> LogErrorCallback = nullptr;
+
+        // .NET Framework
+        bool IsNet46OrGreater = true;
+
+        // NGEN support
+        bool DisableNGENImagesSupport = false;
+    };
+
+    struct EntryPointItem
+    {
+        ModuleID ModuleId;
+        mdToken Token;
+    };
+
     class Loader {
     private:
         RuntimeInfo _runtimeInformation;
@@ -102,15 +128,13 @@ namespace shared
 
         std::mutex _loadersLoadedMutex;
         std::unordered_set<AppDomainID> _loadersLoadedSet;
+        std::vector<EntryPointItem> _processedEntryPoints;
         AssemblyMetadata _corlibMetadata{};
 
         std::vector<WSTRING> _assemblyStringDefaultAppDomainVector;
         std::vector<WSTRING> _assemblyStringNonDefaultAppDomainVector;
 
-        const bool _logDebugIsEnabled;
-        std::function<void(const std::string& str)> _logDebugCallback = nullptr;
-        std::function<void(const std::string& str)> _logInfoCallback = nullptr;
-        std::function<void(const std::string& str)> _logErrorCallback = nullptr;
+        const LoaderOptions _loaderOptions;
 
         FunctionID _specificMethodToInjectFunctionId;
 
@@ -122,10 +146,7 @@ namespace shared
 
         static Loader* CreateNewLoaderInstance(
                     ICorProfilerInfo4* pCorProfilerInfo,
-                    bool logDebugIsEnabled,
-                    std::function<void(const std::string& str)> logDebugCallback,
-                    std::function<void(const std::string& str)> logInfoCallback,
-                    std::function<void(const std::string& str)> logErrorCallback,
+                    const LoaderOptions& loaderOptions,
                     const LoaderResourceMonikerIDs& resourceMonikerIDs,
                     const WCHAR* pNativeProfilerLibraryFilename,
                     const std::vector<WSTRING>& nonIISAssemblyStringDefaultAppDomainVector,
@@ -137,28 +158,28 @@ namespace shared
                     ICorProfilerInfo4* pCorProfilerInfo,
                     const std::vector<WSTRING>& assemblyStringDefaultAppDomainVector,
                     const std::vector<WSTRING>& assemblyStringNonDefaultAppDomainVector,
-                    bool logDebugIsEnabled,
-                    std::function<void(const std::string& str)> logDebugCallback,
-                    std::function<void(const std::string& str)> logInfoCallback,
-                    std::function<void(const std::string& str)> logErrorCallback,
+                    const LoaderOptions& loaderOptions,
                     const LoaderResourceMonikerIDs& resourceMonikerIDs,
                     const WCHAR* pNativeProfilerLibraryFilename);
 
         inline void Debug(const std::string& value) {
-            if (_logDebugIsEnabled && _logDebugCallback != nullptr) {
-                _logDebugCallback(value);
+            if (_loaderOptions.LogDebugIsEnabled && _loaderOptions.LogDebugCallback != nullptr)
+            {
+                _loaderOptions.LogDebugCallback(value);
             }
         }
 
         inline void Info(const std::string& value) {
-            if (_logInfoCallback != nullptr) {
-                _logInfoCallback(value);
+            if (_loaderOptions.LogInfoCallback != nullptr)
+            {
+                _loaderOptions.LogInfoCallback(value);
             }
         }
 
         inline void Error(const std::string& value) {
-            if (_logErrorCallback != nullptr) {
-                _logErrorCallback(value);
+            if (_loaderOptions.LogErrorCallback != nullptr)
+            {
+                _loaderOptions.LogErrorCallback(value);
             }
         }
 
@@ -195,6 +216,8 @@ namespace shared
             AppDomainID appDomainId,
             mdMethodDef loaderMethodDef);
 
+        mdToken GetModuleEntryPointToken(LPCBYTE moduleBaseLoadAddress, DWORD moduleFlags);
+
         inline RuntimeInfo GetRuntimeInformation() {
             COR_PRF_RUNTIME_TYPE runtimeType;
             USHORT majorVersion;
@@ -211,14 +234,9 @@ namespace shared
         }
 
     public:
-        static const DWORD LoaderProfilerEventMask = COR_PRF_MONITOR_CACHE_SEARCHES | COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST;
-
         static void CreateNewSingletonInstance(
                     ICorProfilerInfo4* pCorProfilerInfo,
-                    bool logDebugIsEnabled,
-                    std::function<void(const std::string& str)> logDebugCallback,
-                    std::function<void(const std::string& str)> logInfoCallback,
-                    std::function<void(const std::string& str)> logErrorCallback,
+                    const LoaderOptions& loaderOptions,
                     const LoaderResourceMonikerIDs& resourceMonikerIDs,
                     const WCHAR* pNativeProfilerLibraryFilename,
                     const std::vector<WSTRING>& nonIISAssemblyStringDefaultAppDomainVector,
@@ -233,6 +251,21 @@ namespace shared
         HRESULT HandleJitCachedFunctionSearchStarted(FunctionID functionId, BOOL* pbUseCachedFunction);
 
         bool GetAssemblyAndSymbolsBytes(void** ppAssemblyArray, int* pAssemblySize, void** ppSymbolsArray, int* pSymbolsSize, WCHAR* pModuleName);
+
+        DWORD GetLoaderProfilerEventMask()
+        {
+            DWORD eventMask = COR_PRF_MONITOR_MODULE_LOADS | COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST;
+            if (_loaderOptions.DisableNGENImagesSupport)
+            {
+                eventMask |= COR_PRF_DISABLE_ALL_NGEN_IMAGES;
+            }
+            else
+            {
+                eventMask |= COR_PRF_MONITOR_CACHE_SEARCHES;
+            }
+
+            return eventMask;
+        }
     };
 
 }  // namespace shared

@@ -56,10 +56,7 @@ namespace shared
 
     void Loader::CreateNewSingletonInstance(
         ICorProfilerInfo4* pCorProfilerInfo,
-        bool logDebugIsEnabled,
-        std::function<void(const std::string& str)> logDebugCallback,
-        std::function<void(const std::string& str)> logInfoCallback,
-        std::function<void(const std::string& str)> logErrorCallback,
+        const LoaderOptions& loaderOptions,
         const LoaderResourceMonikerIDs& resourceMonikerIDs,
         const WCHAR* pNativeProfilerLibraryFilename,
         const std::vector<WSTRING>& nonIISAssemblyStringDefaultAppDomainVector,
@@ -68,10 +65,7 @@ namespace shared
         const std::vector<WSTRING>& iisAssemblyStringNonDefaultAppDomainVector)
     {
         Loader* newSingletonInstance = Loader::CreateNewLoaderInstance(pCorProfilerInfo,
-                                                                       logDebugIsEnabled,
-                                                                       logDebugCallback,
-                                                                       logInfoCallback,
-                                                                       logErrorCallback,
+                                                                       loaderOptions,
                                                                        resourceMonikerIDs,
                                                                        pNativeProfilerLibraryFilename,
                                                                        nonIISAssemblyStringDefaultAppDomainVector,
@@ -106,10 +100,7 @@ namespace shared
 
     Loader* Loader::CreateNewLoaderInstance(
         ICorProfilerInfo4* pCorProfilerInfo,
-        bool logDebugIsEnabled,
-        std::function<void(const std::string& str)> logDebugCallback,
-        std::function<void(const std::string& str)> logInfoCallback,
-        std::function<void(const std::string& str)> logErrorCallback,
+        const LoaderOptions& loaderOptions,
         const LoaderResourceMonikerIDs& resourceMonikerIDs,
         const WCHAR* pNativeProfilerLibraryFilename,
         const std::vector<WSTRING>& nonIISAssemblyStringDefaultAppDomainVector,
@@ -121,22 +112,20 @@ namespace shared
 
         const bool isIIS = processName == WStr("w3wp.exe") || processName == WStr("iisexpress.exe");
 
-        if (logInfoCallback != nullptr)
+        if (loaderOptions.LogInfoCallback != nullptr)
         {
-            logInfoCallback("Loader::InjectLoaderToModuleInitializer: Process name: " + ToString(processName));
+            loaderOptions.LogInfoCallback("Loader::InjectLoaderToModuleInitializer: Process name: " +
+                                          ToString(processName));
             if (isIIS)
             {
-                logInfoCallback("Loader::InjectLoaderToModuleInitializer: IIS process detected.");
+                loaderOptions.LogInfoCallback("Loader::InjectLoaderToModuleInitializer: IIS process detected.");
             }
         }
 
         return new Loader(pCorProfilerInfo,
                           isIIS ? iisAssemblyStringDefaultAppDomainVector : nonIISAssemblyStringDefaultAppDomainVector,
                           isIIS ? iisAssemblyStringNonDefaultAppDomainVector : nonIISAssemblyStringNonDefaultAppDomainVector,
-                          logDebugIsEnabled,
-                          logDebugCallback,
-                          logInfoCallback,
-                          logErrorCallback,
+                          loaderOptions,
                           resourceMonikerIDs,
                           pNativeProfilerLibraryFilename);
     }
@@ -145,23 +134,17 @@ namespace shared
         ICorProfilerInfo4* pCorProfilerInfo,
         const std::vector<WSTRING>& assemblyStringDefaultAppDomainVector,
         const std::vector<WSTRING>& assemblyStringNonDefaultAppDomainVector,
-        bool logDebugIsEnabled,
-        std::function<void(const std::string& str)> logDebugCallback,
-        std::function<void(const std::string& str)> logInfoCallback,
-        std::function<void(const std::string& str)> logErrorCallback,
+        const LoaderOptions& loaderOptions,
         const LoaderResourceMonikerIDs& resourceMonikerIDs,
         const WCHAR* pNativeProfilerLibraryFilename)
         :
-        _logDebugIsEnabled{ logDebugIsEnabled },
+        _loaderOptions(loaderOptions),
         _specificMethodToInjectFunctionId { 0 }
     {
         _resourceMonikerIDs = LoaderResourceMonikerIDs(resourceMonikerIDs);
         _pCorProfilerInfo = pCorProfilerInfo;
         _assemblyStringDefaultAppDomainVector = assemblyStringDefaultAppDomainVector;
         _assemblyStringNonDefaultAppDomainVector = assemblyStringNonDefaultAppDomainVector;
-        _logDebugCallback = logDebugCallback;
-        _logInfoCallback = logInfoCallback;
-        _logErrorCallback = logErrorCallback;
         _runtimeInformation = GetRuntimeInformation();
         _pNativeProfilerLibraryFilename = pNativeProfilerLibraryFilename;
 
@@ -169,6 +152,16 @@ namespace shared
         {
             Error("No native profiler library filename was provided. You must pass one to the loader.");
             throw std::runtime_error("No native profiler library filename was provided. You must pass one to the loader.");
+        }
+
+        if (_loaderOptions.LogDebugIsEnabled)
+        {
+            Debug("Loader::.ctor: Loader options { IsNet46OrGreater: " + ToString(_loaderOptions.IsNet46OrGreater) +
+                  ", RewriteModulesEntrypoint: " + ToString(_loaderOptions.RewriteModulesEntrypoint) +
+                  ", RewriteModulesInitializers: " + ToString(_loaderOptions.RewriteModulesInitializers) +
+                  ", RewriteMSCorLibMethods: " + ToString(_loaderOptions.RewriteMSCorLibMethods) +
+                  ", DisableNGENImagesSupport: " + ToString(_loaderOptions.DisableNGENImagesSupport) + " }"
+            );
         }
     }
 
@@ -186,7 +179,10 @@ namespace shared
         std::string moduleIdHex = "0x" + HexStr(moduleId);
 
         AssemblyID assemblyId = 0;
-        HRESULT hr = this->_pCorProfilerInfo->GetModuleInfo2(moduleId, NULL, 0, NULL, NULL, &assemblyId, NULL);
+        LPCBYTE moduleBaseLoadAddress = nullptr;
+        DWORD moduleFlags = 0;
+        HRESULT hr = this->_pCorProfilerInfo
+                         ->GetModuleInfo2(moduleId, &moduleBaseLoadAddress, 0, NULL, NULL, &assemblyId, &moduleFlags);
         if (FAILED(hr))
         {
             Error("Loader::InjectLoaderToModuleInitializer: failed fetching AssemblyID for ModuleID=" + moduleIdHex);
@@ -218,7 +214,7 @@ namespace shared
         //
         if (assemblyNameString == _managedLoaderAssemblyName)
         {
-            if (_logDebugIsEnabled)
+            if (_loaderOptions.LogDebugIsEnabled)
             {
                 Debug("Loader::InjectLoaderToModuleInitializer: The module is the loader itself, skipping it.");
             }
@@ -231,7 +227,7 @@ namespace shared
         //
         if (_loadersLoadedSet.find(appDomainId) != _loadersLoadedSet.end())
         {
-            if (_logDebugIsEnabled)
+            if (_loaderOptions.LogDebugIsEnabled)
             {
                 Debug("Loader::InjectLoaderToModuleInitializer: The loader was already loaded in the AppDomain.  [AppDomainID=" + appDomainIdHex + "]");
             }
@@ -246,7 +242,7 @@ namespace shared
         {
             if (assemblyNameString == asm_name)
             {
-                if (_logDebugIsEnabled)
+                if (_loaderOptions.LogDebugIsEnabled)
                 {
                     Debug("Loader::InjectLoaderToModuleInitializer: Skipping " + ToString(assemblyNameString) + " [AppDomainID=" + appDomainIdHex + "]");
                 }
@@ -273,13 +269,14 @@ namespace shared
         const ComPtr<IMetaDataImport2> metadataImport = metadataInterfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
         const ComPtr<IMetaDataEmit2> metadataEmit = metadataInterfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
         const ComPtr<IMetaDataAssemblyImport> assemblyImport = metadataInterfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
+        const ComPtr<IMetaDataAssemblyEmit> assmeblyEmit = metadataInterfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
         //
         // Check and store assembly metadata if the corlib is found.
         //
         if (assemblyNameString == WStr("mscorlib") || assemblyNameString == WStr("System.Private.CoreLib"))
         {
-            if (_logDebugIsEnabled)
+            if (_loaderOptions.LogDebugIsEnabled)
             {
                 Debug("Loader::InjectLoaderToModuleInitializer: extracting metadata of the corlib assembly: " + ToString(assemblyNameString));
             }
@@ -313,7 +310,7 @@ namespace shared
 
             _corlibMetadata.Name = WSTRING(name);
 
-            if (_logDebugIsEnabled)
+            if (_loaderOptions.LogDebugIsEnabled)
             {
                 Debug("Loader::InjectLoaderToModuleInitializer: [" +
                       ToString(_corlibMetadata.Name) + ", " +
@@ -324,24 +321,140 @@ namespace shared
                       "]");
             }
 
-            mdTypeDef appDomainTypeDef;
-            hr = metadataImport->FindTypeDefByName(SpecificTypeToInjectName, mdTokenNil, &appDomainTypeDef);
-            if (FAILED(hr))
+            if (_loaderOptions.RewriteMSCorLibMethods && _loaderOptions.IsNet46OrGreater)
             {
-                Debug("Loader::InjectLoaderToModuleInitializer: " + ToString(SpecificTypeToInjectName) + " not found.");
-                return S_FALSE;
+                mdTypeDef appDomainTypeDef;
+                hr = metadataImport->FindTypeDefByName(SpecificTypeToInjectName, mdTokenNil, &appDomainTypeDef);
+                if (FAILED(hr))
+                {
+                    Debug("Loader::InjectLoaderToModuleInitializer: " + ToString(SpecificTypeToInjectName) + " not found.");
+                    return S_FALSE;
+                }
+
+                auto enumMethods = EnumMethodsWithName(metadataImport, appDomainTypeDef, SpecificMethodToInjectName);
+                auto enumIterator = enumMethods.begin();
+                if (enumIterator != enumMethods.end()) {
+                    auto methodDef = *enumIterator;
+
+                    //
+                    // get a TypeRef for System.Object
+                    //
+                    mdTypeRef systemObjectTypeRef;
+                    hr = metadataEmit->DefineTypeRefByName(corLibAssembly, WStr("System.Object"), &systemObjectTypeRef);
+                    if (FAILED(hr))
+                    {
+                        Error("Loader::InjectLoaderToModuleInitializer: failed to define typeref: System.Object");
+                        return hr;
+                    }
+
+                    //
+                    // Define a new TypeDef DD_LoaderMethodsType that extends System.Object
+                    //
+                    mdTypeDef newTypeDef;
+                    hr = metadataEmit->DefineTypeDef(WStr("DD_LoaderMethodsType"), tdAbstract | tdSealed, systemObjectTypeRef, NULL, &newTypeDef);
+                    if (FAILED(hr)) {
+                        Error("Loader::InjectLoaderToModuleInitializer: failed to define typedef: DD_LoaderMethodsType");
+                        return hr;
+                    }
+
+                    //
+                    // Emit the DD_LoaderMethodsType.DD_LoadInitializationAssemblies() mdMethodDef
+                    //
+                    mdMethodDef loaderMethodDef;
+                    mdMemberRef securitySafeCriticalCtorMemberRef;
+                    hr = EmitDDLoadInitializationAssembliesMethod(moduleId, newTypeDef, assemblyNameString, &loaderMethodDef, &securitySafeCriticalCtorMemberRef);
+                    if (FAILED(hr))
+                    {
+                        return hr;
+                    }
+
+                    //
+                    // Emit Call to the loader.
+                    //
+                    hr = EmitLoaderCallInMethod(moduleId, methodDef, loaderMethodDef);
+                    if (SUCCEEDED(hr))
+                    {
+                        Info("Loader::InjectLoaderToModuleInitializer: Loader injected successfully (in " +
+                             ToString(SpecificTypeToInjectName) + "." + ToString(SpecificMethodToInjectName) + "). [ModuleID=" + moduleIdHex +
+                             ", AssemblyID=" + assemblyIdHex +
+                             ", AssemblyName=" + ToString(assemblyNameString) +
+                             ", AppDomainID=" + appDomainIdHex +
+                             ", methodDef=" + HexStr(methodDef) +
+                             ", loaderMethodDef=" + HexStr(loaderMethodDef) +
+                             "]");
+                    }
+                }
             }
 
-            auto enumMethods = EnumMethodsWithName(metadataImport, appDomainTypeDef, SpecificMethodToInjectName);
-            auto enumIterator = enumMethods.begin();
-            if (enumIterator != enumMethods.end()) {
-                auto methodDef = *enumIterator;
+            return hr;
+        }
+
+        if (_loaderOptions.RewriteModulesEntrypoint)
+        {
+            //
+            // Rewrite Module EntryPoint
+            //
+            const mdToken moduleEntryPoint = GetModuleEntryPointToken(moduleBaseLoadAddress, moduleFlags);
+            if (moduleEntryPoint != NULL && moduleEntryPoint != mdTokenNil && _corlibMetadata.Token != mdAssemblyNil)
+            {
+                constexpr DWORD NameBuffSize = 1024;
+
+                mdToken moduleEntryPointParent;
+                WCHAR moduleEntryPointName[NameBuffSize]{};
+                DWORD moduleEntryPointNameLength = 0;
+                hr = metadataImport->GetMemberProps(moduleEntryPoint, &moduleEntryPointParent, moduleEntryPointName,
+                                                    NameBuffSize, &moduleEntryPointNameLength, nullptr, nullptr,
+                                                    nullptr, nullptr, nullptr,
+                                                    nullptr, nullptr, nullptr);
+                if (FAILED(hr))
+                {
+                    Error("Loader::InjectLoaderToModuleInitializer: Call to GetMemberProps(..) returned a FAILED "
+                          "HResult: " + ToString(hr) + ".");
+                    return S_FALSE;
+                }
+
+                WCHAR typeName[NameBuffSize]{};
+                DWORD typeNameLength = 0;
+                DWORD typeFlags;
+                hr = metadataImport->GetTypeDefProps(moduleEntryPointParent, typeName, NameBuffSize, &typeNameLength,
+                                                     &typeFlags, NULL);
+                if (FAILED(hr))
+                {
+                    Error("Loader::InjectLoaderToModuleInitializer: Call to GetTypeDefProps(..) returned a FAILED "
+                          "HResult: " + ToString(hr) + ".");
+                    return S_FALSE;
+                }
+
+                const std::string moduleEntryPointFullName = ToString(typeName) + "." + ToString(moduleEntryPointName);
+
+                if (_loaderOptions.LogDebugIsEnabled)
+                {
+                    const std::string moduleEntryPointHex = HexStr(moduleEntryPoint);
+
+                    Debug("Loader::InjectLoaderToModuleInitializer: Module entrypoint found at: " +
+                          moduleEntryPointHex + " (" + moduleEntryPointFullName + ").");
+                }
+
+                mdAssemblyRef corlibAssemblyRef = mdAssemblyRefNil;
+                hr = assmeblyEmit->DefineAssemblyRef(_corlibMetadata.pPublicKey,
+                                                     _corlibMetadata.PublicKeyLength,
+                                                     _corlibMetadata.Name.c_str(),
+                                                     &_corlibMetadata.Metadata,
+                                                     NULL,
+                                                     0,
+                                                     _corlibMetadata.Flags,
+                                                     &corlibAssemblyRef);
+                if (FAILED(hr))
+                {
+                    Error("Loader::EmitDDLoadInitializationAssemblies: Error creating assembly reference to mscorlib.");
+                    return hr;
+                }
 
                 //
                 // get a TypeRef for System.Object
                 //
                 mdTypeRef systemObjectTypeRef;
-                hr = metadataEmit->DefineTypeRefByName(corLibAssembly, WStr("System.Object"), &systemObjectTypeRef);
+                hr = metadataEmit->DefineTypeRefByName(corlibAssemblyRef, WStr("System.Object"), &systemObjectTypeRef);
                 if (FAILED(hr))
                 {
                     Error("Loader::InjectLoaderToModuleInitializer: failed to define typeref: System.Object");
@@ -352,8 +465,13 @@ namespace shared
                 // Define a new TypeDef DD_LoaderMethodsType that extends System.Object
                 //
                 mdTypeDef newTypeDef;
-                hr = metadataEmit->DefineTypeDef(WStr("DD_LoaderMethodsType"), tdAbstract | tdSealed, systemObjectTypeRef, NULL, &newTypeDef);
-                if (FAILED(hr)) {
+                hr = metadataEmit->DefineTypeDef(WStr("DD_LoaderMethodsType"),
+                                                 tdAbstract | tdSealed,
+                                                 systemObjectTypeRef,
+                                                 NULL,
+                                                 &newTypeDef);
+                if (FAILED(hr))
+                {
                     Error("Loader::InjectLoaderToModuleInitializer: failed to define typedef: DD_LoaderMethodsType");
                     return hr;
                 }
@@ -363,7 +481,11 @@ namespace shared
                 //
                 mdMethodDef loaderMethodDef;
                 mdMemberRef securitySafeCriticalCtorMemberRef;
-                hr = EmitDDLoadInitializationAssembliesMethod(moduleId, newTypeDef, assemblyNameString, &loaderMethodDef, &securitySafeCriticalCtorMemberRef);
+                hr = EmitDDLoadInitializationAssembliesMethod(moduleId,
+                                                              newTypeDef,
+                                                              assemblyNameString,
+                                                              &loaderMethodDef,
+                                                              &securitySafeCriticalCtorMemberRef);
                 if (FAILED(hr))
                 {
                     return hr;
@@ -372,76 +494,82 @@ namespace shared
                 //
                 // Emit Call to the loader.
                 //
-                hr = EmitLoaderCallInMethod(moduleId, methodDef, loaderMethodDef);
+                hr = EmitLoaderCallInMethod(moduleId, moduleEntryPoint, loaderMethodDef);
                 if (SUCCEEDED(hr))
                 {
-                    Info("Loader::InjectLoaderToModuleInitializer: Loader injected successfully (in " +
-                         ToString(SpecificTypeToInjectName) + "." + ToString(SpecificMethodToInjectName) + "). [ModuleID=" + moduleIdHex +
-                         ", AssemblyID=" + assemblyIdHex +
-                         ", AssemblyName=" + ToString(assemblyNameString) +
-                         ", AppDomainID=" + appDomainIdHex +
-                         ", methodDef=" + HexStr(methodDef) +
-                         ", loaderMethodDef=" + HexStr(loaderMethodDef) +
+                    Info("Loader::InjectLoaderToModuleInitializer: Loader injected successfully in module entrypoint " +
+                         moduleEntryPointFullName +
+                         " [ModuleID=" +
+                         moduleIdHex + ", AssemblyID=" + assemblyIdHex +
+                         ", AssemblyName=" + ToString(assemblyNameString) + ", AppDomainID=" + appDomainIdHex +
+                         ", methodDef=" + HexStr(moduleEntryPoint) + ", loaderMethodDef=" + HexStr(loaderMethodDef) +
                          "]");
                 }
+
+                _processedEntryPoints.push_back({moduleId, moduleEntryPoint});
+
+                return S_OK;
+            }
+        }
+
+        if (_loaderOptions.RewriteModulesInitializers)
+        {
+            // **************************************************************************************************************
+            //
+            // We need to rewrite the <Module> to something like this:
+            //
+            //  using System;
+            //  using System.Reflection;
+            //  using System.Runtime.InteropServices;
+            //
+            //  [SecuritySafeCritical]
+            //  class <Module> {
+            //
+            //      [DllImport("NativeProfilerFile.extension", CharSet = CharSet.Unicode)]
+            //      static extern bool GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int assemblySize, out
+            //      IntPtr symbolsPtr, out int symbolsSize, string moduleName);
+            //
+            //      static <Module>() {
+            //          DD_LoadInitializationAssemblies();
+            //      }
+            //
+            //      static void DD_LoadInitializationAssemblies()
+            //      {
+            //          if (GetAssemblyAndSymbolsBytes(out var assemblyPtr, out var assemblySize, out var symbolsPtr,
+            //          out var symbolsSize, "[ModuleName]"))
+            //          {
+            //              byte[] assemblyBytes = new byte[assemblySize];
+            //              Marshal.Copy(assemblyPtr, assemblyBytes, 0, assemblySize);
+            //
+            //              byte[] symbolsBytes = new byte[symbolsSize];
+            //              Marshal.Copy(symbolsPtr, symbolsBytes, 0, symbolsSize);
+            //
+            //              Assembly loadedAssembly = Assembly.Load(assemblyBytes, symbolsBytes);
+            //              loadedAssembly
+            //                  .GetType("Datadog.AutoInstrumentation.ManagedLoader.AssemblyLoader", true)
+            //                  .GetMethod("Run")
+            //                  .Invoke(null, new object[] {
+            //                      new string[] { "Assembly01", "Assembly02" },
+            //                      new string[] { "Assembly11", "Assembly12" }
+            //                  });
+            //          }
+            //      }
+            //
+            //  }
+            //
+            // **************************************************************************************************************
+            hr = EmitLoaderInModule(metadataImport, metadataEmit, moduleId, appDomainId, assemblyNameString);
+            if (FAILED(hr))
+            {
+                return hr;
             }
 
-            return hr;
-        }
+            Info("Loader::InjectLoaderToModuleInitializer: Loader injected successfully. [ModuleID=" + moduleIdHex +
+                 ", AssemblyID=" + assemblyIdHex + ", AssemblyName=" + ToString(assemblyNameString) +
+                 ", AppDomainID=" + appDomainIdHex + "]");
 
-        // **************************************************************************************************************
-        //
-        // We need to rewrite the <Module> to something like this:
-        //
-        //  using System;
-        //  using System.Reflection;
-        //  using System.Runtime.InteropServices;
-        //
-        //  [SecuritySafeCritical]
-        //  class <Module> {
-        //
-        //      [DllImport("NativeProfilerFile.extension", CharSet = CharSet.Unicode)]
-        //      static extern bool GetAssemblyAndSymbolsBytes(out IntPtr assemblyPtr, out int assemblySize, out IntPtr symbolsPtr, out int symbolsSize, string moduleName);
-        //
-        //      static <Module>() {
-        //          DD_LoadInitializationAssemblies();
-        //      }
-        //
-        //      static void DD_LoadInitializationAssemblies()
-        //      {
-        //          if (GetAssemblyAndSymbolsBytes(out var assemblyPtr, out var assemblySize, out var symbolsPtr, out var symbolsSize, "[ModuleName]"))
-        //          {
-        //              byte[] assemblyBytes = new byte[assemblySize];
-        //              Marshal.Copy(assemblyPtr, assemblyBytes, 0, assemblySize);
-        //
-        //              byte[] symbolsBytes = new byte[symbolsSize];
-        //              Marshal.Copy(symbolsPtr, symbolsBytes, 0, symbolsSize);
-        //
-        //              Assembly loadedAssembly = Assembly.Load(assemblyBytes, symbolsBytes);
-        //              loadedAssembly
-        //                  .GetType("Datadog.AutoInstrumentation.ManagedLoader.AssemblyLoader", true)
-        //                  .GetMethod("Run")
-        //                  .Invoke(null, new object[] {
-        //                      new string[] { "Assembly01", "Assembly02" },
-        //                      new string[] { "Assembly11", "Assembly12" }
-        //                  });
-        //          }
-        //      }
-        //
-        //  }
-        //
-        // **************************************************************************************************************
-        hr = EmitLoaderInModule(metadataImport, metadataEmit, moduleId, appDomainId, assemblyNameString);
-        if (FAILED(hr))
-        {
-            return hr;
+            return S_OK;
         }
-
-        Info("Loader::InjectLoaderToModuleInitializer: Loader injected successfully. [ModuleID=" + moduleIdHex +
-              ", AssemblyID=" + assemblyIdHex +
-              ", AssemblyName=" + ToString(assemblyNameString) +
-              ", AppDomainID=" + appDomainIdHex +
-              "]");
 
         return S_OK;
     }
@@ -461,7 +589,7 @@ namespace shared
         {
             bool disableNGenForFunction = (functionId == _specificMethodToInjectFunctionId);
 
-            if (ExtraVerboseLogging && _logDebugIsEnabled)
+            if (ExtraVerboseLogging && _loaderOptions.LogDebugIsEnabled)
             {
                 Debug("Loader::HandleJitCachedFunctionSearchStarted:"
                       " (functionId=" + ToString(functionId) + ")"
@@ -481,6 +609,28 @@ namespace shared
         {
             Error("Loader::HandleJitCachedFunctionSearchStarted: Call to GetFunctionInfo(..) returned a FAILED HResult: " + ToString(hr) + ".");
             return S_FALSE;
+        }
+
+        // Disable NGEN images for any entrypoint we processed.
+        {
+            std::lock_guard<std::mutex> guard(_loadersLoadedMutex);
+            for (const auto& entrypoint : _processedEntryPoints)
+            {
+                if (entrypoint.ModuleId == moduleId && entrypoint.Token == functionToken)
+                {
+                    if (_loaderOptions.LogDebugIsEnabled)
+                    {
+                        const std::string moduleIdHex = "0x" + HexStr(moduleId);
+                        const std::string moduleEntryPointHex = HexStr(functionToken);
+
+                        Debug("Loader::HandleJitCachedFunctionSearchStarted: Disabled module entrypoint NGEN image. "
+                              "[FunctionId=" + ToString(functionId) + ", ModuleId=" + moduleIdHex +
+                              ", MethodDef=" + moduleEntryPointHex + "]");
+                    }
+                    *pbUseCachedFunction = false;
+                    return S_OK;
+                }
+            }
         }
 
         ComPtr<IUnknown> metadataInterfaces;
@@ -507,7 +657,6 @@ namespace shared
             return S_FALSE;
         }
 
-        mdToken typeParentToken = mdTokenNil;
         WCHAR typeName[NameBuffSize]{};
         DWORD typeNameLength = 0;
         DWORD typeFlags;
@@ -526,7 +675,7 @@ namespace shared
             _specificMethodToInjectFunctionId = functionId;
         }
 
-        if ((ExtraVerboseLogging || disableNGenForFunction) && _logDebugIsEnabled)
+        if ((ExtraVerboseLogging || disableNGenForFunction) && _loaderOptions.LogDebugIsEnabled)
         {
             Debug("Loader::HandleJitCachedFunctionSearchStarted:"
                   " (functionId=" + ToString(functionId) + ","
@@ -545,7 +694,7 @@ namespace shared
         std::string moduleIdHex = "0x" + HexStr(moduleId);
 
         //
-        // rewrite method IsCompatibilitySwitchSet to call the startup loader.
+        // rewrite method to call the startup loader.
         //
         ILRewriter rewriter(this->_pCorProfilerInfo, nullptr, moduleId, methodDef);
         hr = rewriter.Import();
@@ -1012,7 +1161,7 @@ namespace shared
             return hr;
         }
 
-        if (_logDebugIsEnabled)
+        if (_loaderOptions.LogDebugIsEnabled)
         {
             Debug("Loader::EmitDDLoadInitializationAssemblies: Creating " + ToString(typeNameString) + "." + ToString(loaderMethodName) + "() in ModuleID = " + moduleIdHex);
         }
@@ -1343,7 +1492,7 @@ namespace shared
         hr = metadataImport->FindMethod(typeDef, cctorName, cctorSignature, sizeof(cctorSignature), &cctorMethodDef);
         if (FAILED(hr))
         {
-            if (_logDebugIsEnabled)
+            if (_loaderOptions.LogDebugIsEnabled)
             {
                 Debug("Loader::EmitModuleCCtor: failed fetching <Module>..ctor mdMethodDef, creating new .ctor [ModuleID=" +
                     moduleIdHex + ", AppDomainID=" + appDomainIdHex + "]");
@@ -1391,6 +1540,136 @@ namespace shared
 
     //
 
+    mdToken Loader::GetModuleEntryPointToken(LPCBYTE moduleBaseLoadAddress, DWORD moduleFlags)
+    {
+        if (moduleBaseLoadAddress == nullptr || (moduleFlags & COR_PRF_MODULE_RESOURCE) != 0 ||
+            (moduleFlags & COR_PRF_MODULE_WINDOWS_RUNTIME) != 0)
+        {
+            return mdTokenNil;
+        }
+
+        try
+        {
+
+            // Get NT Headers from module DOS Header
+            const auto pHeaders = moduleBaseLoadAddress + VAL32(((IMAGE_DOS_HEADER*) moduleBaseLoadAddress)->e_lfanew);
+            const auto ntHeaders = (IMAGE_NT_HEADERS*) (pHeaders);
+
+            // We detect the module bitness and extract the IMAGE_DATA_DIRECTORY for CLR Data
+            IMAGE_DATA_DIRECTORY directoryEntry;
+            if (ntHeaders->OptionalHeader.Magic == VAL16(IMAGE_NT_OPTIONAL_HDR32_MAGIC))
+            {
+                directoryEntry =
+                    ((IMAGE_NT_HEADERS32*) pHeaders)->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_COMHEADER];
+            }
+            else
+            {
+                directoryEntry =
+                    ((IMAGE_NT_HEADERS64*) pHeaders)->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_COMHEADER];
+            }
+
+            const auto clrDataVirtualAddress = VAL32(directoryEntry.VirtualAddress);
+
+            LPCBYTE pCorHeader = nullptr;
+
+            // Special handling in case the module has a Flat or BySection layout.
+            // https://github.com/dotnet/runtime/issues/11878#issuecomment-457149220
+            if ((moduleFlags & COR_PRF_MODULE_FLAT_LAYOUT) != 0)
+            {
+                Debug("Loader::GetModuleEntryPointToken: Module with flat layout detected.");
+                IMAGE_SECTION_HEADER* sectionRet = nullptr;
+                const auto pSection = pHeaders + FIELD_OFFSET(IMAGE_NT_HEADERS, OptionalHeader) +
+                                      VAL16(ntHeaders->FileHeader.SizeOfOptionalHeader);
+
+                if (_loaderOptions.LogDebugIsEnabled)
+                {
+                    Debug("Loader::GetModuleEntryPointToken: Number of sections: " +
+                          ToString(VAL16(ntHeaders->FileHeader.NumberOfSections)));
+                }
+
+                // We need to iterate and find the right section
+                auto section = (IMAGE_SECTION_HEADER*) pSection;
+                for (auto i = 0; i < VAL16(ntHeaders->FileHeader.NumberOfSections); i++)
+                {
+                    // https://docs.microsoft.com/en-us/windows/win32/debug/pe-format#section-data
+                    const auto sectionVirtualAddress = VAL32(section->VirtualAddress);
+                    const auto sectionVirtualSize = (UINT) VAL32(section->Misc.VirtualSize);
+
+                    // The alignment (in bytes) of sections when they are loaded into memory.
+                    // It must be greater than or equal to FileAlignment. The default is the page size for the
+                    // architecture.
+                    const auto sectionAlignment = (UINT) VAL32(ntHeaders->OptionalHeader.SectionAlignment);
+
+                    const auto sectionAlignUpValue =
+                        (sectionVirtualSize + sectionAlignment - 1) & ~(sectionAlignment - 1);
+
+                    if (clrDataVirtualAddress < sectionVirtualAddress + sectionAlignUpValue)
+                    {
+                        if (clrDataVirtualAddress < sectionVirtualAddress)
+                        {
+                            if (_loaderOptions.LogDebugIsEnabled)
+                            {
+                                Debug("Loader::GetModuleEntryPointToken: " + ToString(i) + ". sectionRet = nullptr");
+                            }
+
+                            sectionRet = nullptr;
+                        }
+                        else
+                        {
+                            if (_loaderOptions.LogDebugIsEnabled)
+                            {
+                                Debug("Loader::GetModuleEntryPointToken: " + ToString(i) + ". sectionRet = (found)");
+                            }
+
+                            sectionRet = section;
+                            break;
+                        }
+                    }
+
+                    // Advance to the next section.
+                    section++;
+                }
+
+                if (sectionRet == nullptr)
+                {
+                    pCorHeader = moduleBaseLoadAddress + clrDataVirtualAddress;
+                }
+                else
+                {
+                    pCorHeader = moduleBaseLoadAddress + clrDataVirtualAddress - VAL32(sectionRet->VirtualAddress) +
+                                 VAL32(sectionRet->PointerToRawData);
+                }
+            }
+            else
+            {
+                pCorHeader = moduleBaseLoadAddress + clrDataVirtualAddress;
+            }
+
+            // Get the COR Header
+            const auto corHeader = (IMAGE_COR20_HEADER*) pCorHeader;
+            return corHeader->EntryPointToken;
+        }
+        catch (...)
+        {
+            auto ex = std::current_exception();
+            try
+            {
+                if (ex)
+                {
+                    std::rethrow_exception(ex);
+                }
+            }
+            catch (const std::exception& ex)
+            {
+                Error("Failed getting module entrypoint: " + ToString(ex.what()));
+            }
+        }
+
+        return mdTokenNil;
+    }
+
+    //
+
     bool Loader::GetAssemblyAndSymbolsBytes(void** ppAssemblyArray, int* pAssemblySize, void** ppSymbolsArray, int* pSymbolsSize, WCHAR* pModuleName)
     {
         //
@@ -1432,7 +1711,7 @@ namespace shared
         //
         if (_loadersLoadedSet.find(appDomainId) != _loadersLoadedSet.end())
         {
-            if (_logDebugIsEnabled)
+            if (_loaderOptions.LogDebugIsEnabled)
             {
                 Debug("Loader::GetAssemblyAndSymbolsBytes: The loader was already loaded. " + trait);
             }
@@ -1469,7 +1748,7 @@ namespace shared
         *pSymbolsSize = SizeofResource(hInstance, hResSymbolsInfo);
         *ppSymbolsArray = (LPBYTE)LockResource(hResSymbols);
 
-        if (_logDebugIsEnabled)
+        if (_loaderOptions.LogDebugIsEnabled)
         {
             Debug("Loader::GetAssemblyAndSymbolsBytes: Loaded resouces for " + trait + " (platform=_WIN32)."
                   " *assemblySize=" + ToString(*pAssemblySize) + ","
@@ -1490,7 +1769,7 @@ namespace shared
         *pSymbolsSize = pdb_end - pdb_start;
         *ppSymbolsArray = (void*)pdb_start;
 
-        if (_logDebugIsEnabled)
+        if (_loaderOptions.LogDebugIsEnabled)
         {
             Debug("Loader::GetAssemblyAndSymbolsBytes: Loaded resouces for " + trait + " (platform=LINUX)."
                   " *assemblySize=" + ToString(*pAssemblySize) + ", "
@@ -1524,7 +1803,7 @@ namespace shared
             }
         }
 
-        if (_logDebugIsEnabled)
+        if (_loaderOptions.LogDebugIsEnabled)
         {
             Debug("Loader::GetAssemblyAndSymbolsBytes: Loaded resouces for " + trait + " (platform=MACOS)."
                 " *assemblySize=" + ToString(*pAssemblySize) + ", "
