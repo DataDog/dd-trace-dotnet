@@ -41,8 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             var httpContext = instance.HttpContext;
             if (httpContext.Items.Contains(HttpContextScopeKey))
             {
-                var scope = httpContext.Items[HttpContextScopeKey] as Scope;
-                if (scope is not null && ((IDatadogTracer)Tracer.Instance).ScopeManager is IScopeRawAccess rawAccess)
+                if (httpContext.Items[HttpContextScopeKey] is Scope scope && ((IDatadogTracer)Tracer.Instance).ScopeManager is IScopeRawAccess rawAccess)
                 {
                     rawAccess.Active = scope;
                 }
