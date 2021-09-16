@@ -32,13 +32,7 @@ namespace Datadog.Trace.Agent.Transports
             _request.Headers.Add(name, value);
         }
 
-        public IDictionary<string, string> Headers() => _request.Headers.ToDictionary(h => h.Key, h => string.Join(", ", h.Value));
-
-        public async Task<string> RequestContent()
-        {
-            var payload = _request.Content != null ? (await _request.Content.ReadAsStringAsync()) : string.Empty;
-            return $"Headers: {string.Join(", ", _request.Headers.Select(h => $"{h.Key}: {h.Value}"))} / Payload is not available for now.";
-        }
+        public Task<string> RequestContent() => Task.FromResult($"Headers: {string.Join(", ", _request.Headers.Select(h => $"{h.Key}: {string.Join(", ", h.Value)}"))} / Payload is not available for now.");
 
         public async Task<IApiResponse> PostAsJsonAsync(IEvent events, JsonSerializer serializer)
         {

@@ -47,7 +47,7 @@ namespace Datadog.Trace.AppSec.Transports
                 {
                     var statusCode = response.StatusCode;
                     var responseText = await response.ReadAsStringAsync();
-                    Log.Warning($"AppSec event not correctly sent to backend {statusCode} with response {responseText}, request content was {await request.RequestContent()}");
+                    Log.Warning($"AppSec event not correctly sent to backend {statusCode} with response {responseText}, request content was: {await request.RequestContent()}");
                 }
             }
         }

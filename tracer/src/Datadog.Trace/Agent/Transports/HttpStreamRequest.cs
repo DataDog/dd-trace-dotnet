@@ -93,16 +93,16 @@ namespace Datadog.Trace.Agent.Transports
 
         public async Task<string> RequestContent()
         {
-            if (_request.Content == null)
+            var payload = string.Empty;
+            if (_request.Content != null)
             {
-                return string.Empty;
+                var buffer = new byte[_request.Content.Length.Value];
+                var requestStream = new MemoryStream(buffer);
+                await _request.Content.CopyToAsync(buffer).ConfigureAwait(false);
+                using var sr = new StreamReader(requestStream);
+                payload = await sr.ReadToEndAsync();
             }
 
-            var buffer = new byte[_request.Content.Length.Value];
-            var requestStream = new MemoryStream(buffer);
-            await _request.Content.CopyToAsync(buffer).ConfigureAwait(false);
-            using var sr = new StreamReader(requestStream);
-            var payload = await sr.ReadToEndAsync();
             return $"Headers: {string.Join(", ", _request.Headers.Select(h => $"{h.Name}: {h.Value}"))} / Payload: {payload}";
         }
 

@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Text;
@@ -83,18 +82,16 @@ namespace Datadog.Trace.Agent.Transports
             }
         }
 
-        public async Task<string> RequestContent()
+        public Task<string> RequestContent()
         {
             var sb = new StringBuilder();
             foreach (var item in _request.Headers)
             {
-                sb.Append(item.ToString());
+                sb.Append($"{item}: {_request.Headers[item.ToString()]} ");
                 sb.Append(", ");
             }
 
-            // we cant seem to be able re read the request stream once response has been read so just return headers
-
-            return $"Headers: {sb}. With {nameof(ApiWebRequest)}, request's payload can't be displayed for now.{(await _request.GetRequestStreamAsync())}";
+            return Task.FromResult($"Headers: {sb}. With {nameof(ApiWebRequest)}, request's payload can't be displayed for now.");
         }
     }
 }
