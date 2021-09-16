@@ -73,7 +73,7 @@ namespace PrepareRelease
                 File.WriteAllText(filename, json, utf8NoBom);
 
                 // CallTarget
-                var calltargetPath = Path.Combine(outputDirectory, "src", "Datadog.Trace", "ClrProfiler", "InstrumentationDefinitions.cs");
+                var calltargetPath = Path.Combine(outputDirectory, "src", "Datadog.Trace", "ClrProfiler", "InstrumentationDefinitions.Generated.cs");
                 Console.WriteLine($"Writing {calltargetPath}...");
                 using var fs = new FileStream(calltargetPath, FileMode.Create, FileAccess.Write, FileShare.None);
                 using var sw = new StreamWriter(fs, utf8NoBom);
@@ -83,49 +83,56 @@ namespace PrepareRelease
 
         static void WriteCallTargetDefinitionFile(StreamWriter swriter, IEnumerable<CallTargetDefinitionSource> callTargetIntegrations)
         {
-            swriter.WriteLine("// <copyright file=\"InstrumentationDefinitions.cs\" company=\"Datadog\">");
+            swriter.WriteLine("// <copyright file=\"InstrumentationDefinitions.Generated.cs\" company=\"Datadog\">");
             swriter.WriteLine("// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.");
             swriter.WriteLine("// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.");
-            swriter.WriteLine("// </copyright>\n");
+            swriter.WriteLine("// </copyright>");
+            swriter.WriteLine();
             swriter.WriteLine("namespace Datadog.Trace.ClrProfiler");
             swriter.WriteLine("{");
-            swriter.WriteLine("    internal static class InstrumentationDefinitions");
+            swriter.WriteLine("    internal static partial class InstrumentationDefinitions");
             swriter.WriteLine("    {");
-            swriter.WriteLine("        internal static NativeCallTargetDefinition[] GetAllDefinitions()");
+            swriter.WriteLine("        private static NativeCallTargetDefinition[] GetDefinitionsArray()");
             swriter.WriteLine("        {");
             swriter.WriteLine("            return new NativeCallTargetDefinition[]");
             swriter.WriteLine("            {");
-            foreach (var integration in callTargetIntegrations.Distinct())
+            foreach (var integrationGroup in callTargetIntegrations.Distinct().GroupBy(i => i.IntegrationName))
             {
-                swriter.Write($"                new(");
-                swriter.Write($"\"{integration.TargetAssembly}\", ");
-                swriter.Write($"\"{integration.TargetType}\", ");
-                swriter.Write($"\"{integration.TargetMethod}\", ");
+                swriter.WriteLine($"                // {integrationGroup.Key}");
 
-                swriter.Write($" new[] {{ ");
-                for (var s = 0; s < integration.TargetSignatureTypes.Length; s++)
+                foreach (var integration in integrationGroup)
                 {
-                    if (s == integration.TargetSignatureTypes.Length - 1)
+                    swriter.Write($"                new(");
+                    swriter.Write($"\"{integration.TargetAssembly}\", ");
+                    swriter.Write($"\"{integration.TargetType}\", ");
+                    swriter.Write($"\"{integration.TargetMethod}\", ");
+
+                    swriter.Write($" new[] {{ ");
+                    for (var s = 0; s < integration.TargetSignatureTypes.Length; s++)
                     {
-                        swriter.Write($"\"{integration.TargetSignatureTypes[s]}\"");
+                        if (s == integration.TargetSignatureTypes.Length - 1)
+                        {
+                            swriter.Write($"\"{integration.TargetSignatureTypes[s]}\"");
+                        }
+                        else
+                        {
+                            swriter.Write($"\"{integration.TargetSignatureTypes[s]}\", ");
+                        }
                     }
-                    else
-                    {
-                        swriter.Write($"\"{integration.TargetSignatureTypes[s]}\", ");
-                    }
+
+                    swriter.Write(" }, ");
+
+                    swriter.Write($"{integration.TargetMinimumMajor}, ");
+                    swriter.Write($"{integration.TargetMinimumMinor}, ");
+                    swriter.Write($"{integration.TargetMinimumPatch}, ");
+                    swriter.Write($"{integration.TargetMaximumMajor}, ");
+                    swriter.Write($"{integration.TargetMaximumMinor}, ");
+                    swriter.Write($"{integration.TargetMaximumPatch}, ");
+                    swriter.Write($"assemblyFullName, ");
+                    swriter.Write($"\"{integration.WrapperType}\"");
+                    swriter.WriteLine($"),");
                 }
-
-                swriter.Write(" }, ");
-
-                swriter.Write($"{integration.TargetMinimumMajor}, ");
-                swriter.Write($"{integration.TargetMinimumMinor}, ");
-                swriter.Write($"{integration.TargetMinimumPatch}, ");
-                swriter.Write($"{integration.TargetMaximumMajor}, ");
-                swriter.Write($"{integration.TargetMaximumMinor}, ");
-                swriter.Write($"{integration.TargetMaximumPatch}, ");
-                swriter.Write($"\"{integration.WrapperAssembly}\", ");
-                swriter.Write($"\"{integration.WrapperType}\"");
-                swriter.WriteLine($"),");
+                swriter.WriteLine();
             }
             swriter.WriteLine("            };");
             swriter.WriteLine("        }");
@@ -164,9 +171,10 @@ namespace PrepareRelease
                                          let wrapperType = callTargetType
                                          from assemblyNames in GetPropertyValue<string[]>(attribute, "AssemblyNames")
                                          let versionRange = GetPropertyValue<object>(attribute, "VersionRange")
-                                         orderby assemblyNames, GetPropertyValue<string>(attribute, "TypeName"), GetPropertyValue<string>(attribute, "MethodName")
+                                         orderby integrationName, assemblyNames, GetPropertyValue<string>(attribute, "TypeName"), GetPropertyValue<string>(attribute, "MethodName")
                                          select new CallTargetDefinitionSource
                                          {
+                                             IntegrationName = integrationName,
                                              TargetAssembly = assemblyNames,
                                              TargetType = GetPropertyValue<string>(attribute, "TypeName"),
                                              TargetMethod = GetPropertyValue<string>(attribute, "MethodName"),
@@ -536,6 +544,8 @@ namespace PrepareRelease
 
         public class CallTargetDefinitionSource
         {
+            public string IntegrationName { get; init; }
+
             public string TargetAssembly { get; init; }
 
             public string TargetType { get; init; }
@@ -561,6 +571,7 @@ namespace PrepareRelease
             public string WrapperType { get; init; }
 
             protected bool Equals(CallTargetDefinitionSource other) =>
+                IntegrationName == other.IntegrationName &&
                 TargetAssembly == other.TargetAssembly &&
                 TargetType == other.TargetType &&
                 TargetMethod == other.TargetMethod &&
@@ -595,7 +606,7 @@ namespace PrepareRelease
                 return Equals((CallTargetDefinitionSource)obj);
             }
 
-            public override int GetHashCode() => HashCode.Combine(TargetAssembly, TargetType, TargetMethod) + HashCode.Combine(TargetMinimumMajor, TargetMinimumMinor, TargetMinimumPatch,
+            public override int GetHashCode() => HashCode.Combine(IntegrationName, TargetAssembly, TargetType, TargetMethod) + HashCode.Combine(TargetMinimumMajor, TargetMinimumMinor, TargetMinimumPatch,
                                                                                                                                TargetMaximumMajor, TargetMaximumMinor, TargetMaximumPatch,
                                                                                                                                WrapperAssembly, WrapperType);
         }

@@ -1095,7 +1095,7 @@ void CorProfiler::InitializeProfiler(CallTargetDefinition* items, int size)
 {
     auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
 
-    Logger::Info("InitializeProfiler:: received from managed side: ", size, " integrations.");
+    Logger::Info("InitializeProfiler: received from managed side: ", size, " integrations.");
     if (items != nullptr && rejit_handler != nullptr)
     {
         std::vector<IntegrationMethod> integrationMethods;
@@ -1180,7 +1180,7 @@ void CorProfiler::InitializeProfiler(CallTargetDefinition* items, int size)
             integration_methods_.push_back(integration);
         }
 
-        Logger::Info("InitializeProfiler:: Total integrations in profiler: ", integration_methods_.size());
+        Logger::Info("InitializeProfiler: Total integrations in profiler: ", integration_methods_.size());
     }
 }
 
