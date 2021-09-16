@@ -32,11 +32,7 @@
                     .EntityFrameworkRepository(r =>
                     {
                         r.ConcurrencyMode = ConcurrencyMode.Pessimistic;
-
-                        r.AddDbContext<DbContext, SampleBatchDbContext>((provider, optionsBuilder) =>
-                        {
-                            optionsBuilder.UseSqlServer(connectionString);
-                        });
+                        r.ExistingDbContext<SampleBatchDbContext>();
 
                         // I specified the MsSqlLockStatements because in my State Entities EFCore EntityConfigurations, I changed the column name from CorrelationId, to "BatchId" and "BatchJobId"
                         // Otherwise, I could just use r.UseSqlServer(), which uses the default, which are "... WHERE CorrelationId = @p0"
@@ -48,11 +44,7 @@
                     .EntityFrameworkRepository(r =>
                     {
                         r.ConcurrencyMode = ConcurrencyMode.Pessimistic;
-
-                        r.AddDbContext<DbContext, SampleBatchDbContext>((provider, optionsBuilder) =>
-                        {
-                            optionsBuilder.UseSqlServer(connectionString);
-                        });
+                        r.ExistingDbContext<SampleBatchDbContext>();
 
                         // I specified the MsSqlLockStatements because in my State Entities EFCore EntityConfigurations, I changed the column name from CorrelationId, to "BatchId" and "BatchJobId"
                         // Otherwise, I could just use r.UseSqlServer(), which uses the default, which are "... WHERE CorrelationId = @p0"
@@ -174,7 +166,7 @@
         {
             using (var scope = provider.CreateScope())
             {
-                var db = scope.ServiceProvider.GetRequiredService<DbContext>();
+                var db = scope.ServiceProvider.GetRequiredService<SampleBatchDbContext>();
 
                 db.Database.EnsureCreated();
             }
