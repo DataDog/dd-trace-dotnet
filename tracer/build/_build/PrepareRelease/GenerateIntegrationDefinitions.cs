@@ -99,6 +99,7 @@ namespace PrepareRelease
             swriter.WriteLine("    {");
             swriter.WriteLine("        internal static NativeCallTargetDefinition[] GetAllDefinitions(TracerSettings settings, out int size)");
             swriter.WriteLine("        {");
+            swriter.WriteLine("            var assemblyName = typeof(InstrumentationDefinitions).Assembly.FullName;");
             swriter.WriteLine("            var index = 0;");
             swriter.WriteLine($"            var definitions = new NativeCallTargetDefinition[{integrations.Count}];");
             swriter.WriteLine();
@@ -135,7 +136,7 @@ namespace PrepareRelease
                     swriter.Write($"{integration.TargetMaximumMajor}, ");
                     swriter.Write($"{integration.TargetMaximumMinor}, ");
                     swriter.Write($"{integration.TargetMaximumPatch}, ");
-                    swriter.Write($"\"{integration.WrapperAssembly}\", ");
+                    swriter.Write($"assemblyName, ");
                     swriter.Write($"\"{integration.WrapperType}\"");
                     swriter.WriteLine($");");
                 }
