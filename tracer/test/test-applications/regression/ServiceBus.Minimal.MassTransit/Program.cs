@@ -70,7 +70,10 @@
                 logging.AddConsole();
             });
 
-            services.AddDbContext<SampleBatchDbContext>(x => x.UseSqlServer(connectionString));
+            services.AddDbContext<SampleBatchDbContext>(
+                x => x.UseSqlServer(
+                    connectionString,
+                    opts => opts.CommandTimeout(60)));
 
             await using var provider = services.BuildServiceProvider(true);
 
