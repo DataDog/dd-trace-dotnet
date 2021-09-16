@@ -5,7 +5,7 @@ set -euox pipefail
 cd "$(dirname "$0")"
 
 ROOT_DIR="$(pwd)"
-BUILD_DIR="$ROOT_DIR/build/_build"
+BUILD_DIR="$ROOT_DIR/tracer/build/_build"
 IMAGE_NAME="dd-trace-dotnet/debian-base"
 
 docker build \
@@ -17,8 +17,8 @@ docker build \
 docker run -it --rm \
     --mount type=bind,source="$ROOT_DIR",target=/project \
     --env NugetPackageDirectory=/project/packages \
-    --env tracerHome=/project/bin/tracer-home \
-    --env artifacts=/project/bin/artifacts \
+    --env tracerHome=/project/tracer/bin/tracer-home \
+    --env artifacts=/project/tracer/bin/artifacts \
     -p 5003:5003 \
     -v /ddlogs:/var/log/datadog/dotnet \
     $IMAGE_NAME \
