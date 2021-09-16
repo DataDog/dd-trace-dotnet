@@ -92,8 +92,6 @@
 
         static async Task SendMessagesAsync(IServiceProvider provider, int jobCount = 10, int activeThreshold = 10, int? delayInSeconds = null)
         {
-            IBus bus = provider.GetRequiredService<IBus>();
-
             var clientFactory = provider.GetRequiredService<IClientFactory>();
             var submitBatchClient = clientFactory.CreateRequestClient<SubmitBatch>();
             var batchStatusClient = clientFactory.CreateRequestClient<BatchStatusRequested>();
