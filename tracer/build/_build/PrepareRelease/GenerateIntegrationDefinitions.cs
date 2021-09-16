@@ -182,7 +182,7 @@ namespace PrepareRelease
                                          let wrapperType = callTargetType
                                          from assemblyNames in GetPropertyValue<string[]>(attribute, "AssemblyNames")
                                          let versionRange = GetPropertyValue<object>(attribute, "VersionRange")
-                                         orderby assemblyNames, GetPropertyValue<string>(attribute, "TypeName"), GetPropertyValue<string>(attribute, "MethodName")
+                                         orderby integrationName, assemblyNames, GetPropertyValue<string>(attribute, "TypeName"), GetPropertyValue<string>(attribute, "MethodName")
                                          select new CallTargetDefinitionSource
                                          {
                                              IntegrationName = integrationName,

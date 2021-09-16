@@ -15,93 +15,6 @@ namespace Datadog.Trace.ClrProfiler
             var index = 0;
             var definitions = new NativeCallTargetDefinition[222];
 
-            if (settings.IsIntegrationEnabled("Aerospike"))
-            {
-                definitions[index++] = new("AerospikeClient", "Aerospike.Client.AsyncCommand", "ExecuteCommand",  new[] { "System.Void" }, 4, 0, 0, 4, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.AsyncCommandIntegration");
-                definitions[index++] = new("AerospikeClient", "Aerospike.Client.SyncCommand", "ExecuteCommand",  new[] { "System.Void" }, 4, 0, 0, 4, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.SyncCommandIntegration");
-            }
-
-            if (settings.IsIntegrationEnabled("AwsSdk"))
-            {
-                definitions[index++] = new("AWSSDK.Core", "Amazon.Runtime.Internal.RuntimePipeline", "InvokeAsync",  new[] { "System.Threading.Tasks.Task`1<T>", "Amazon.Runtime.IExecutionContext" }, 3, 0, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.RuntimePipelineInvokeAsyncIntegration");
-                definitions[index++] = new("AWSSDK.Core", "Amazon.Runtime.Internal.RuntimePipeline", "InvokeSync",  new[] { "Amazon.Runtime.IResponseContext", "Amazon.Runtime.IExecutionContext" }, 3, 0, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.RuntimePipelineInvokeSyncIntegration");
-            }
-
-            if (settings.IsIntegrationEnabled("AwsSqs"))
-            {
-                definitions[index++] = new("AWSSDK.SQS", "Amazon.SQS.AmazonSQSClient", "CreateQueue",  new[] { "Amazon.SQS.Model.CreateQueueResponse", "Amazon.SQS.Model.CreateQueueRequest" }, 3, 0, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.CreateQueueIntegration");
-                definitions[index++] = new("AWSSDK.SQS", "Amazon.SQS.AmazonSQSClient", "CreateQueueAsync",  new[] { "System.Threading.Tasks.Task`1<Amazon.SQS.Model.CreateQueueResponse>", "Amazon.SQS.Model.CreateQueueRequest", "System.Threading.CancellationToken" }, 3, 0, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.CreateQueueAsyncIntegration");
-                definitions[index++] = new("AWSSDK.SQS", "Amazon.SQS.AmazonSQSClient", "DeleteMessage",  new[] { "Amazon.SQS.Model.DeleteMessageResponse", "Amazon.SQS.Model.DeleteMessageRequest" }, 3, 0, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.DeleteMessageIntegration");
-                definitions[index++] = new("AWSSDK.SQS", "Amazon.SQS.AmazonSQSClient", "DeleteMessageAsync",  new[] { "System.Threading.Tasks.Task`1<Amazon.SQS.Model.DeleteMessageResponse>", "Amazon.SQS.Model.DeleteMessageRequest", "System.Threading.CancellationToken" }, 3, 0, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.DeleteMessageAsyncIntegration");
-                definitions[index++] = new("AWSSDK.SQS", "Amazon.SQS.AmazonSQSClient", "DeleteMessageBatch",  new[] { "Amazon.SQS.Model.DeleteMessageBatchResponse", "Amazon.SQS.Model.DeleteMessageBatchRequest" }, 3, 0, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.DeleteMessageBatchIntegration");
-                definitions[index++] = new("AWSSDK.SQS", "Amazon.SQS.AmazonSQSClient", "DeleteMessageBatchAsync",  new[] { "System.Threading.Tasks.Task`1<Amazon.SQS.Model.DeleteMessageBatchResponse>", "Amazon.SQS.Model.DeleteMessageBatchRequest", "System.Threading.CancellationToken" }, 3, 0, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.DeleteMessageBatchAsyncIntegration");
-                definitions[index++] = new("AWSSDK.SQS", "Amazon.SQS.AmazonSQSClient", "DeleteQueue",  new[] { "Amazon.SQS.Model.DeleteQueueResponse", "Amazon.SQS.Model.DeleteQueueRequest" }, 3, 0, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.DeleteQueueIntegration");
-                definitions[index++] = new("AWSSDK.SQS", "Amazon.SQS.AmazonSQSClient", "DeleteQueueAsync",  new[] { "System.Threading.Tasks.Task`1<Amazon.SQS.Model.DeleteQueueResponse>", "Amazon.SQS.Model.DeleteQueueRequest", "System.Threading.CancellationToken" }, 3, 0, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.DeleteQueueAsyncIntegration");
-                definitions[index++] = new("AWSSDK.SQS", "Amazon.SQS.AmazonSQSClient", "ReceiveMessage",  new[] { "Amazon.SQS.Model.ReceiveMessageResponse", "Amazon.SQS.Model.ReceiveMessageRequest" }, 3, 0, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.ReceiveMessageIntegration");
-                definitions[index++] = new("AWSSDK.SQS", "Amazon.SQS.AmazonSQSClient", "ReceiveMessageAsync",  new[] { "System.Threading.Tasks.Task`1<Amazon.SQS.Model.ReceiveMessageResponse>", "Amazon.SQS.Model.ReceiveMessageRequest", "System.Threading.CancellationToken" }, 3, 0, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.ReceiveMessageAsyncIntegration");
-                definitions[index++] = new("AWSSDK.SQS", "Amazon.SQS.AmazonSQSClient", "SendMessage",  new[] { "Amazon.SQS.Model.SendMessageResponse", "Amazon.SQS.Model.SendMessageRequest" }, 3, 0, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.SendMessageIntegration");
-                definitions[index++] = new("AWSSDK.SQS", "Amazon.SQS.AmazonSQSClient", "SendMessageAsync",  new[] { "System.Threading.Tasks.Task`1<Amazon.SQS.Model.SendMessageResponse>", "Amazon.SQS.Model.SendMessageRequest", "System.Threading.CancellationToken" }, 3, 0, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.SendMessageAsyncIntegration");
-                definitions[index++] = new("AWSSDK.SQS", "Amazon.SQS.AmazonSQSClient", "SendMessageBatch",  new[] { "Amazon.SQS.Model.SendMessageBatchResponse", "Amazon.SQS.Model.SendMessageBatchRequest" }, 3, 0, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.SendMessageBatchIntegration");
-                definitions[index++] = new("AWSSDK.SQS", "Amazon.SQS.AmazonSQSClient", "SendMessageBatchAsync",  new[] { "System.Threading.Tasks.Task`1<Amazon.SQS.Model.SendMessageBatchResponse>", "Amazon.SQS.Model.SendMessageBatchRequest", "System.Threading.CancellationToken" }, 3, 0, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.SendMessageBatchAsyncIntegration");
-            }
-
-            if (settings.IsIntegrationEnabled("Kafka"))
-            {
-                definitions[index++] = new("Confluent.Kafka", "Confluent.Kafka.Consumer`2", "Close",  new[] { "System.Void" }, 1, 4, 0, 1, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerCloseIntegration");
-                definitions[index++] = new("Confluent.Kafka", "Confluent.Kafka.Consumer`2", "Consume",  new[] { "Confluent.Kafka.ConsumeResult`2[!0,!1]", "System.Int32" }, 1, 4, 0, 1, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerConsumeIntegration");
-                definitions[index++] = new("Confluent.Kafka", "Confluent.Kafka.Consumer`2", "Dispose",  new[] { "System.Void" }, 1, 4, 0, 1, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerDisposeIntegration");
-                definitions[index++] = new("Confluent.Kafka", "Confluent.Kafka.Consumer`2", "Unsubscribe",  new[] { "System.Void" }, 1, 4, 0, 1, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerUnsubscribeIntegration");
-                definitions[index++] = new("Confluent.Kafka", "Confluent.Kafka.Producer`2", "Produce",  new[] { "System.Void", "Confluent.Kafka.TopicPartition", "Confluent.Kafka.Message`2[!0,!1]", "System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]" }, 1, 4, 0, 1, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncIntegration");
-                definitions[index++] = new("Confluent.Kafka", "Confluent.Kafka.Producer`2", "ProduceAsync",  new[] { "System.Threading.Tasks.Task`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]", "Confluent.Kafka.TopicPartition", "Confluent.Kafka.Message`2[!0,!1]", "System.Threading.CancellationToken" }, 1, 4, 0, 1, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceAsyncIntegration");
-                definitions[index++] = new("Confluent.Kafka", "Confluent.Kafka.Producer`2+TypedDeliveryHandlerShim_Action", ".ctor",  new[] { "System.Void", "System.String", "!0", "!1", "System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]" }, 1, 4, 0, 1, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncDeliveryHandlerIntegration");
-            }
-
-            if (settings.IsIntegrationEnabled("ElasticsearchNet"))
-            {
-                definitions[index++] = new("Elasticsearch.Net", "Elasticsearch.Net.RequestPipeline", "CallElasticsearch",  new[] { "T", "Elasticsearch.Net.RequestData" }, 6, 0, 0, 6, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V6.RequestPipeline_CallElasticsearch_Integration");
-                definitions[index++] = new("Elasticsearch.Net", "Elasticsearch.Net.RequestPipeline", "CallElasticsearchAsync",  new[] { "System.Threading.Tasks.Task`1<T>", "Elasticsearch.Net.RequestData", "System.Threading.CancellationToken" }, 6, 0, 0, 6, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V6.RequestPipeline_CallElasticsearchAsync_Integration");
-            }
-
-            if (settings.IsIntegrationEnabled("ElasticsearchNet5"))
-            {
-                definitions[index++] = new("Elasticsearch.Net", "Elasticsearch.Net.RequestPipeline", "CallElasticsearch",  new[] { "Elasticsearch.Net.ElasticsearchResponse`1<T>", "Elasticsearch.Net.RequestData" }, 5, 0, 0, 5, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V5.RequestPipeline_CallElasticsearch_Integration");
-                definitions[index++] = new("Elasticsearch.Net", "Elasticsearch.Net.RequestPipeline", "CallElasticsearchAsync",  new[] { "System.Threading.Tasks.Task`1<Elasticsearch.Net.ElasticsearchResponse`1<T>>", "Elasticsearch.Net.RequestData", "System.Threading.CancellationToken" }, 5, 0, 0, 5, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V5.RequestPipeline_CallElasticsearchAsync_Integration");
-            }
-
-            if (settings.IsIntegrationEnabled("GraphQL"))
-            {
-                definitions[index++] = new("GraphQL", "GraphQL.Execution.ExecutionStrategy", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>", "GraphQL.Execution.ExecutionContext" }, 2, 3, 0, 4, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.ExecuteAsyncIntegration");
-                definitions[index++] = new("GraphQL", "GraphQL.Execution.SubscriptionExecutionStrategy", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>", "GraphQL.Execution.ExecutionContext" }, 2, 3, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.ExecuteAsyncIntegration");
-                definitions[index++] = new("GraphQL", "GraphQL.Validation.DocumentValidator", "Validate",  new[] { "GraphQL.Validation.IValidationResult", "System.String", "GraphQL.Types.ISchema", "GraphQL.Language.AST.Document", "System.Collections.Generic.IEnumerable`1[GraphQL.Validation.IValidationRule]", "_", "GraphQL.Inputs" }, 2, 3, 0, 2, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.ValidateIntegration");
-                definitions[index++] = new("GraphQL", "GraphQL.Validation.DocumentValidator", "ValidateAsync",  new[] { "System.Threading.Tasks.Task`1<T>", "GraphQL.Types.ISchema", "GraphQL.Language.AST.Document", "GraphQL.Language.AST.VariableDefinitions", "System.Collections.Generic.IEnumerable`1[GraphQL.Validation.IValidationRule]", "_", "GraphQL.Inputs" }, 4, 0, 0, 4, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.ValidateAsync4Integration");
-                definitions[index++] = new("GraphQL", "GraphQL.Validation.DocumentValidator", "ValidateAsync",  new[] { "System.Threading.Tasks.Task`1<T>", "System.String", "GraphQL.Types.ISchema", "GraphQL.Language.AST.Document", "System.Collections.Generic.IEnumerable`1[GraphQL.Validation.IValidationRule]", "_", "GraphQL.Inputs" }, 3, 0, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.ValidateAsyncIntegration");
-                definitions[index++] = new("GraphQL.SystemReactive", "GraphQL.Execution.SubscriptionExecutionStrategy", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>", "GraphQL.Execution.ExecutionContext" }, 4, 0, 0, 4, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.ExecuteAsyncIntegration");
-            }
-
-            if (settings.IsIntegrationEnabled("AspNetCore"))
-            {
-                definitions[index++] = new("Microsoft.AspNetCore.Http", "Microsoft.AspNetCore.Builder.ApplicationBuilder", "Build",  new[] { "System.Void" }, 3, 0, 0, 6, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.AspNetCoreMiddlewareIntegration");
-                definitions[index++] = new("Microsoft.AspNetCore.Http", "Microsoft.AspNetCore.Builder.Internal.ApplicationBuilder", "Build",  new[] { "Microsoft.AspNetCore.Http.RequestDelegate" }, 2, 0, 0, 2, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.AspNetCoreMiddlewareIntegration");
-            }
-
-            if (settings.IsIntegrationEnabled("CosmosDb"))
-            {
-                definitions[index++] = new("Microsoft.Azure.Cosmos.Client", "Microsoft.Azure.Cosmos.ContainerCore", "GetItemQueryIterator",  new[] { "Microsoft.Azure.Cosmos.FeedIterator`1<T>", "Microsoft.Azure.Cosmos.QueryDefinition", "System.String", "Microsoft.Azure.Cosmos.QueryRequestOptions" }, 3, 6, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.ContainerQueryIteratorsIntegrations");
-                definitions[index++] = new("Microsoft.Azure.Cosmos.Client", "Microsoft.Azure.Cosmos.ContainerCore", "GetItemQueryIterator",  new[] { "Microsoft.Azure.Cosmos.FeedIterator`1<T>", "System.String", "System.String", "Microsoft.Azure.Cosmos.QueryRequestOptions" }, 3, 6, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.ContainerQueryIteratorsIntegrations");
-                definitions[index++] = new("Microsoft.Azure.Cosmos.Client", "Microsoft.Azure.Cosmos.ContainerCore", "GetItemQueryStreamIterator",  new[] { "Microsoft.Azure.Cosmos.FeedIterator`1<T>", "Microsoft.Azure.Cosmos.QueryDefinition", "System.String", "Microsoft.Azure.Cosmos.QueryRequestOptions" }, 3, 6, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.ContainerQueryIteratorsIntegrations");
-                definitions[index++] = new("Microsoft.Azure.Cosmos.Client", "Microsoft.Azure.Cosmos.ContainerCore", "GetItemQueryStreamIterator",  new[] { "Microsoft.Azure.Cosmos.FeedIterator`1<T>", "System.String", "System.String", "Microsoft.Azure.Cosmos.QueryRequestOptions" }, 3, 6, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.ContainerQueryIteratorsIntegrations");
-                definitions[index++] = new("Microsoft.Azure.Cosmos.Client", "Microsoft.Azure.Cosmos.CosmosClient", "GetDatabaseQueryIterator",  new[] { "Microsoft.Azure.Cosmos.FeedIterator`1<T>", "Microsoft.Azure.Cosmos.QueryDefinition", "System.String", "Microsoft.Azure.Cosmos.QueryRequestOptions" }, 3, 6, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.ClientQueryIteratorsIntegrations");
-                definitions[index++] = new("Microsoft.Azure.Cosmos.Client", "Microsoft.Azure.Cosmos.CosmosClient", "GetDatabaseQueryIterator",  new[] { "Microsoft.Azure.Cosmos.FeedIterator`1<T>", "System.String", "System.String", "Microsoft.Azure.Cosmos.QueryRequestOptions" }, 3, 6, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.ClientQueryIteratorsIntegrations");
-                definitions[index++] = new("Microsoft.Azure.Cosmos.Client", "Microsoft.Azure.Cosmos.CosmosClient", "GetDatabaseQueryStreamIterator",  new[] { "Microsoft.Azure.Cosmos.FeedIterator`1<T>", "Microsoft.Azure.Cosmos.QueryDefinition", "System.String", "Microsoft.Azure.Cosmos.QueryRequestOptions" }, 3, 6, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.ClientQueryIteratorsIntegrations");
-                definitions[index++] = new("Microsoft.Azure.Cosmos.Client", "Microsoft.Azure.Cosmos.CosmosClient", "GetDatabaseQueryStreamIterator",  new[] { "Microsoft.Azure.Cosmos.FeedIterator`1<T>", "System.String", "System.String", "Microsoft.Azure.Cosmos.QueryRequestOptions" }, 3, 6, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.ClientQueryIteratorsIntegrations");
-                definitions[index++] = new("Microsoft.Azure.Cosmos.Client", "Microsoft.Azure.Cosmos.DatabaseCore", "GetContainerQueryIterator",  new[] { "Microsoft.Azure.Cosmos.FeedIterator`1<T>", "Microsoft.Azure.Cosmos.QueryDefinition", "System.String", "Microsoft.Azure.Cosmos.QueryRequestOptions" }, 3, 6, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.DatabaseQueryIteratorsIntegrations");
-                definitions[index++] = new("Microsoft.Azure.Cosmos.Client", "Microsoft.Azure.Cosmos.DatabaseCore", "GetContainerQueryIterator",  new[] { "Microsoft.Azure.Cosmos.FeedIterator`1<T>", "System.String", "System.String", "Microsoft.Azure.Cosmos.QueryRequestOptions" }, 3, 6, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.DatabaseQueryIteratorsIntegrations");
-                definitions[index++] = new("Microsoft.Azure.Cosmos.Client", "Microsoft.Azure.Cosmos.DatabaseCore", "GetContainerQueryStreamIterator",  new[] { "Microsoft.Azure.Cosmos.FeedIterator`1<T>", "Microsoft.Azure.Cosmos.QueryDefinition", "System.String", "Microsoft.Azure.Cosmos.QueryRequestOptions" }, 3, 6, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.DatabaseQueryIteratorsIntegrations");
-                definitions[index++] = new("Microsoft.Azure.Cosmos.Client", "Microsoft.Azure.Cosmos.DatabaseCore", "GetContainerQueryStreamIterator",  new[] { "Microsoft.Azure.Cosmos.FeedIterator`1<T>", "System.String", "System.String", "Microsoft.Azure.Cosmos.QueryRequestOptions" }, 3, 6, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.DatabaseQueryIteratorsIntegrations");
-                definitions[index++] = new("Microsoft.Azure.Cosmos.Client", "Microsoft.Azure.Cosmos.DatabaseCore", "GetUserQueryIterator",  new[] { "Microsoft.Azure.Cosmos.FeedIterator`1<T>", "Microsoft.Azure.Cosmos.QueryDefinition", "System.String", "Microsoft.Azure.Cosmos.QueryRequestOptions" }, 3, 6, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.DatabaseQueryIteratorsIntegrations");
-                definitions[index++] = new("Microsoft.Azure.Cosmos.Client", "Microsoft.Azure.Cosmos.DatabaseCore", "GetUserQueryIterator",  new[] { "Microsoft.Azure.Cosmos.FeedIterator`1<T>", "System.String", "System.String", "Microsoft.Azure.Cosmos.QueryRequestOptions" }, 3, 6, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.DatabaseQueryIteratorsIntegrations");
-            }
-
             if (settings.IsIntegrationEnabled("AdoNet"))
             {
                 definitions[index++] = new("Microsoft.Data.SqlClient", "Microsoft.Data.SqlClient.SqlCommand", "ExecuteDbDataReader",  new[] { "System.Data.Common.DbDataReader", "System.Data.CommandBehavior" }, 1, 0, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorIntegration");
@@ -200,17 +113,131 @@ namespace Datadog.Trace.ClrProfiler
                 definitions[index++] = new("System.Data.SQLite", "System.Data.SQLite.SQLiteCommand", "ExecuteScalar",  new[] { "System.Object", "System.Data.CommandBehavior" }, 1, 0, 0, 2, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarWithBehaviorIntegration");
             }
 
+            if (settings.IsIntegrationEnabled("Aerospike"))
+            {
+                definitions[index++] = new("AerospikeClient", "Aerospike.Client.AsyncCommand", "ExecuteCommand",  new[] { "System.Void" }, 4, 0, 0, 4, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.AsyncCommandIntegration");
+                definitions[index++] = new("AerospikeClient", "Aerospike.Client.SyncCommand", "ExecuteCommand",  new[] { "System.Void" }, 4, 0, 0, 4, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.SyncCommandIntegration");
+            }
+
+            if (settings.IsIntegrationEnabled("AspNet"))
+            {
+                definitions[index++] = new("System.Web", "System.Web.Compilation.BuildManager", "InvokePreStartInitMethodsCore",  new[] { "System.Void", "System.Collections.Generic.ICollection`1[System.Reflection.MethodInfo]", "System.Func`1[System.IDisposable]" }, 4, 0, 0, 4, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.HttpModule_Integration");
+            }
+
+            if (settings.IsIntegrationEnabled("AspNetCore"))
+            {
+                definitions[index++] = new("Microsoft.AspNetCore.Http", "Microsoft.AspNetCore.Builder.ApplicationBuilder", "Build",  new[] { "System.Void" }, 3, 0, 0, 6, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.AspNetCoreMiddlewareIntegration");
+                definitions[index++] = new("Microsoft.AspNetCore.Http", "Microsoft.AspNetCore.Builder.Internal.ApplicationBuilder", "Build",  new[] { "Microsoft.AspNetCore.Http.RequestDelegate" }, 2, 0, 0, 2, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.AspNetCoreMiddlewareIntegration");
+            }
+
+            if (settings.IsIntegrationEnabled("AspNetMvc"))
+            {
+                definitions[index++] = new("System.Web.Mvc", "System.Web.Mvc.Async.AsyncControllerActionInvoker", "BeginInvokeAction",  new[] { "System.IAsyncResult", "System.Web.Mvc.ControllerContext", "System.String", "System.AsyncCallback", "System.Object" }, 4, 0, 0, 5, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.AsyncControllerActionInvoker_BeginInvokeAction_Integration");
+                definitions[index++] = new("System.Web.Mvc", "System.Web.Mvc.Async.AsyncControllerActionInvoker", "EndInvokeAction",  new[] { "System.Boolean", "System.IAsyncResult" }, 4, 0, 0, 5, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.AsyncControllerActionInvoker_EndInvokeAction_Integration");
+            }
+
+            if (settings.IsIntegrationEnabled("AspNetWebApi2"))
+            {
+                definitions[index++] = new("System.Web.Http", "System.Web.Http.ApiController", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>", "System.Web.Http.Controllers.HttpControllerContext", "System.Threading.CancellationToken" }, 5, 1, 0, 5, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ApiController_ExecuteAsync_Integration");
+                definitions[index++] = new("System.Web.Http", "System.Web.Http.ExceptionHandling.ExceptionHandlerExtensions", "HandleAsync",  new[] { "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>", "System.Web.Http.ExceptionHandling.IExceptionHandler", "System.Web.Http.ExceptionHandling.ExceptionContext", "System.Threading.CancellationToken" }, 5, 1, 0, 5, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ExceptionHandlerExtensions_HandleAsync_Integration");
+            }
+
+            if (settings.IsIntegrationEnabled("AwsSdk"))
+            {
+                definitions[index++] = new("AWSSDK.Core", "Amazon.Runtime.Internal.RuntimePipeline", "InvokeAsync",  new[] { "System.Threading.Tasks.Task`1<T>", "Amazon.Runtime.IExecutionContext" }, 3, 0, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.RuntimePipelineInvokeAsyncIntegration");
+                definitions[index++] = new("AWSSDK.Core", "Amazon.Runtime.Internal.RuntimePipeline", "InvokeSync",  new[] { "Amazon.Runtime.IResponseContext", "Amazon.Runtime.IExecutionContext" }, 3, 0, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK.RuntimePipelineInvokeSyncIntegration");
+            }
+
+            if (settings.IsIntegrationEnabled("AwsSqs"))
+            {
+                definitions[index++] = new("AWSSDK.SQS", "Amazon.SQS.AmazonSQSClient", "CreateQueue",  new[] { "Amazon.SQS.Model.CreateQueueResponse", "Amazon.SQS.Model.CreateQueueRequest" }, 3, 0, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.CreateQueueIntegration");
+                definitions[index++] = new("AWSSDK.SQS", "Amazon.SQS.AmazonSQSClient", "CreateQueueAsync",  new[] { "System.Threading.Tasks.Task`1<Amazon.SQS.Model.CreateQueueResponse>", "Amazon.SQS.Model.CreateQueueRequest", "System.Threading.CancellationToken" }, 3, 0, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.CreateQueueAsyncIntegration");
+                definitions[index++] = new("AWSSDK.SQS", "Amazon.SQS.AmazonSQSClient", "DeleteMessage",  new[] { "Amazon.SQS.Model.DeleteMessageResponse", "Amazon.SQS.Model.DeleteMessageRequest" }, 3, 0, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.DeleteMessageIntegration");
+                definitions[index++] = new("AWSSDK.SQS", "Amazon.SQS.AmazonSQSClient", "DeleteMessageAsync",  new[] { "System.Threading.Tasks.Task`1<Amazon.SQS.Model.DeleteMessageResponse>", "Amazon.SQS.Model.DeleteMessageRequest", "System.Threading.CancellationToken" }, 3, 0, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.DeleteMessageAsyncIntegration");
+                definitions[index++] = new("AWSSDK.SQS", "Amazon.SQS.AmazonSQSClient", "DeleteMessageBatch",  new[] { "Amazon.SQS.Model.DeleteMessageBatchResponse", "Amazon.SQS.Model.DeleteMessageBatchRequest" }, 3, 0, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.DeleteMessageBatchIntegration");
+                definitions[index++] = new("AWSSDK.SQS", "Amazon.SQS.AmazonSQSClient", "DeleteMessageBatchAsync",  new[] { "System.Threading.Tasks.Task`1<Amazon.SQS.Model.DeleteMessageBatchResponse>", "Amazon.SQS.Model.DeleteMessageBatchRequest", "System.Threading.CancellationToken" }, 3, 0, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.DeleteMessageBatchAsyncIntegration");
+                definitions[index++] = new("AWSSDK.SQS", "Amazon.SQS.AmazonSQSClient", "DeleteQueue",  new[] { "Amazon.SQS.Model.DeleteQueueResponse", "Amazon.SQS.Model.DeleteQueueRequest" }, 3, 0, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.DeleteQueueIntegration");
+                definitions[index++] = new("AWSSDK.SQS", "Amazon.SQS.AmazonSQSClient", "DeleteQueueAsync",  new[] { "System.Threading.Tasks.Task`1<Amazon.SQS.Model.DeleteQueueResponse>", "Amazon.SQS.Model.DeleteQueueRequest", "System.Threading.CancellationToken" }, 3, 0, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.DeleteQueueAsyncIntegration");
+                definitions[index++] = new("AWSSDK.SQS", "Amazon.SQS.AmazonSQSClient", "ReceiveMessage",  new[] { "Amazon.SQS.Model.ReceiveMessageResponse", "Amazon.SQS.Model.ReceiveMessageRequest" }, 3, 0, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.ReceiveMessageIntegration");
+                definitions[index++] = new("AWSSDK.SQS", "Amazon.SQS.AmazonSQSClient", "ReceiveMessageAsync",  new[] { "System.Threading.Tasks.Task`1<Amazon.SQS.Model.ReceiveMessageResponse>", "Amazon.SQS.Model.ReceiveMessageRequest", "System.Threading.CancellationToken" }, 3, 0, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.ReceiveMessageAsyncIntegration");
+                definitions[index++] = new("AWSSDK.SQS", "Amazon.SQS.AmazonSQSClient", "SendMessage",  new[] { "Amazon.SQS.Model.SendMessageResponse", "Amazon.SQS.Model.SendMessageRequest" }, 3, 0, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.SendMessageIntegration");
+                definitions[index++] = new("AWSSDK.SQS", "Amazon.SQS.AmazonSQSClient", "SendMessageAsync",  new[] { "System.Threading.Tasks.Task`1<Amazon.SQS.Model.SendMessageResponse>", "Amazon.SQS.Model.SendMessageRequest", "System.Threading.CancellationToken" }, 3, 0, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.SendMessageAsyncIntegration");
+                definitions[index++] = new("AWSSDK.SQS", "Amazon.SQS.AmazonSQSClient", "SendMessageBatch",  new[] { "Amazon.SQS.Model.SendMessageBatchResponse", "Amazon.SQS.Model.SendMessageBatchRequest" }, 3, 0, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.SendMessageBatchIntegration");
+                definitions[index++] = new("AWSSDK.SQS", "Amazon.SQS.AmazonSQSClient", "SendMessageBatchAsync",  new[] { "System.Threading.Tasks.Task`1<Amazon.SQS.Model.SendMessageBatchResponse>", "Amazon.SQS.Model.SendMessageBatchRequest", "System.Threading.CancellationToken" }, 3, 0, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS.SendMessageBatchAsyncIntegration");
+            }
+
+            if (settings.IsIntegrationEnabled("CosmosDb"))
+            {
+                definitions[index++] = new("Microsoft.Azure.Cosmos.Client", "Microsoft.Azure.Cosmos.ContainerCore", "GetItemQueryIterator",  new[] { "Microsoft.Azure.Cosmos.FeedIterator`1<T>", "Microsoft.Azure.Cosmos.QueryDefinition", "System.String", "Microsoft.Azure.Cosmos.QueryRequestOptions" }, 3, 6, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.ContainerQueryIteratorsIntegrations");
+                definitions[index++] = new("Microsoft.Azure.Cosmos.Client", "Microsoft.Azure.Cosmos.ContainerCore", "GetItemQueryIterator",  new[] { "Microsoft.Azure.Cosmos.FeedIterator`1<T>", "System.String", "System.String", "Microsoft.Azure.Cosmos.QueryRequestOptions" }, 3, 6, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.ContainerQueryIteratorsIntegrations");
+                definitions[index++] = new("Microsoft.Azure.Cosmos.Client", "Microsoft.Azure.Cosmos.ContainerCore", "GetItemQueryStreamIterator",  new[] { "Microsoft.Azure.Cosmos.FeedIterator`1<T>", "Microsoft.Azure.Cosmos.QueryDefinition", "System.String", "Microsoft.Azure.Cosmos.QueryRequestOptions" }, 3, 6, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.ContainerQueryIteratorsIntegrations");
+                definitions[index++] = new("Microsoft.Azure.Cosmos.Client", "Microsoft.Azure.Cosmos.ContainerCore", "GetItemQueryStreamIterator",  new[] { "Microsoft.Azure.Cosmos.FeedIterator`1<T>", "System.String", "System.String", "Microsoft.Azure.Cosmos.QueryRequestOptions" }, 3, 6, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.ContainerQueryIteratorsIntegrations");
+                definitions[index++] = new("Microsoft.Azure.Cosmos.Client", "Microsoft.Azure.Cosmos.CosmosClient", "GetDatabaseQueryIterator",  new[] { "Microsoft.Azure.Cosmos.FeedIterator`1<T>", "Microsoft.Azure.Cosmos.QueryDefinition", "System.String", "Microsoft.Azure.Cosmos.QueryRequestOptions" }, 3, 6, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.ClientQueryIteratorsIntegrations");
+                definitions[index++] = new("Microsoft.Azure.Cosmos.Client", "Microsoft.Azure.Cosmos.CosmosClient", "GetDatabaseQueryIterator",  new[] { "Microsoft.Azure.Cosmos.FeedIterator`1<T>", "System.String", "System.String", "Microsoft.Azure.Cosmos.QueryRequestOptions" }, 3, 6, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.ClientQueryIteratorsIntegrations");
+                definitions[index++] = new("Microsoft.Azure.Cosmos.Client", "Microsoft.Azure.Cosmos.CosmosClient", "GetDatabaseQueryStreamIterator",  new[] { "Microsoft.Azure.Cosmos.FeedIterator`1<T>", "Microsoft.Azure.Cosmos.QueryDefinition", "System.String", "Microsoft.Azure.Cosmos.QueryRequestOptions" }, 3, 6, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.ClientQueryIteratorsIntegrations");
+                definitions[index++] = new("Microsoft.Azure.Cosmos.Client", "Microsoft.Azure.Cosmos.CosmosClient", "GetDatabaseQueryStreamIterator",  new[] { "Microsoft.Azure.Cosmos.FeedIterator`1<T>", "System.String", "System.String", "Microsoft.Azure.Cosmos.QueryRequestOptions" }, 3, 6, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.ClientQueryIteratorsIntegrations");
+                definitions[index++] = new("Microsoft.Azure.Cosmos.Client", "Microsoft.Azure.Cosmos.DatabaseCore", "GetContainerQueryIterator",  new[] { "Microsoft.Azure.Cosmos.FeedIterator`1<T>", "Microsoft.Azure.Cosmos.QueryDefinition", "System.String", "Microsoft.Azure.Cosmos.QueryRequestOptions" }, 3, 6, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.DatabaseQueryIteratorsIntegrations");
+                definitions[index++] = new("Microsoft.Azure.Cosmos.Client", "Microsoft.Azure.Cosmos.DatabaseCore", "GetContainerQueryIterator",  new[] { "Microsoft.Azure.Cosmos.FeedIterator`1<T>", "System.String", "System.String", "Microsoft.Azure.Cosmos.QueryRequestOptions" }, 3, 6, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.DatabaseQueryIteratorsIntegrations");
+                definitions[index++] = new("Microsoft.Azure.Cosmos.Client", "Microsoft.Azure.Cosmos.DatabaseCore", "GetContainerQueryStreamIterator",  new[] { "Microsoft.Azure.Cosmos.FeedIterator`1<T>", "Microsoft.Azure.Cosmos.QueryDefinition", "System.String", "Microsoft.Azure.Cosmos.QueryRequestOptions" }, 3, 6, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.DatabaseQueryIteratorsIntegrations");
+                definitions[index++] = new("Microsoft.Azure.Cosmos.Client", "Microsoft.Azure.Cosmos.DatabaseCore", "GetContainerQueryStreamIterator",  new[] { "Microsoft.Azure.Cosmos.FeedIterator`1<T>", "System.String", "System.String", "Microsoft.Azure.Cosmos.QueryRequestOptions" }, 3, 6, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.DatabaseQueryIteratorsIntegrations");
+                definitions[index++] = new("Microsoft.Azure.Cosmos.Client", "Microsoft.Azure.Cosmos.DatabaseCore", "GetUserQueryIterator",  new[] { "Microsoft.Azure.Cosmos.FeedIterator`1<T>", "Microsoft.Azure.Cosmos.QueryDefinition", "System.String", "Microsoft.Azure.Cosmos.QueryRequestOptions" }, 3, 6, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.DatabaseQueryIteratorsIntegrations");
+                definitions[index++] = new("Microsoft.Azure.Cosmos.Client", "Microsoft.Azure.Cosmos.DatabaseCore", "GetUserQueryIterator",  new[] { "Microsoft.Azure.Cosmos.FeedIterator`1<T>", "System.String", "System.String", "Microsoft.Azure.Cosmos.QueryRequestOptions" }, 3, 6, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb.DatabaseQueryIteratorsIntegrations");
+            }
+
+            if (settings.IsIntegrationEnabled("CurlHandler"))
+            {
+                definitions[index++] = new("System.Net.Http", "System.Net.Http.CurlHandler", "SendAsync",  new[] { "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>", "System.Net.Http.HttpRequestMessage", "System.Threading.CancellationToken" }, 4, 0, 0, 4, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.CurlHandler.CurlHandlerIntegration");
+            }
+
+            if (settings.IsIntegrationEnabled("ElasticsearchNet"))
+            {
+                definitions[index++] = new("Elasticsearch.Net", "Elasticsearch.Net.RequestPipeline", "CallElasticsearch",  new[] { "T", "Elasticsearch.Net.RequestData" }, 6, 0, 0, 6, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V6.RequestPipeline_CallElasticsearch_Integration");
+                definitions[index++] = new("Elasticsearch.Net", "Elasticsearch.Net.RequestPipeline", "CallElasticsearchAsync",  new[] { "System.Threading.Tasks.Task`1<T>", "Elasticsearch.Net.RequestData", "System.Threading.CancellationToken" }, 6, 0, 0, 6, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V6.RequestPipeline_CallElasticsearchAsync_Integration");
+            }
+
+            if (settings.IsIntegrationEnabled("ElasticsearchNet5"))
+            {
+                definitions[index++] = new("Elasticsearch.Net", "Elasticsearch.Net.RequestPipeline", "CallElasticsearch",  new[] { "Elasticsearch.Net.ElasticsearchResponse`1<T>", "Elasticsearch.Net.RequestData" }, 5, 0, 0, 5, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V5.RequestPipeline_CallElasticsearch_Integration");
+                definitions[index++] = new("Elasticsearch.Net", "Elasticsearch.Net.RequestPipeline", "CallElasticsearchAsync",  new[] { "System.Threading.Tasks.Task`1<Elasticsearch.Net.ElasticsearchResponse`1<T>>", "Elasticsearch.Net.RequestData", "System.Threading.CancellationToken" }, 5, 0, 0, 5, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V5.RequestPipeline_CallElasticsearchAsync_Integration");
+            }
+
+            if (settings.IsIntegrationEnabled("GraphQL"))
+            {
+                definitions[index++] = new("GraphQL", "GraphQL.Execution.ExecutionStrategy", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>", "GraphQL.Execution.ExecutionContext" }, 2, 3, 0, 4, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.ExecuteAsyncIntegration");
+                definitions[index++] = new("GraphQL", "GraphQL.Execution.SubscriptionExecutionStrategy", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>", "GraphQL.Execution.ExecutionContext" }, 2, 3, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.ExecuteAsyncIntegration");
+                definitions[index++] = new("GraphQL", "GraphQL.Validation.DocumentValidator", "Validate",  new[] { "GraphQL.Validation.IValidationResult", "System.String", "GraphQL.Types.ISchema", "GraphQL.Language.AST.Document", "System.Collections.Generic.IEnumerable`1[GraphQL.Validation.IValidationRule]", "_", "GraphQL.Inputs" }, 2, 3, 0, 2, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.ValidateIntegration");
+                definitions[index++] = new("GraphQL", "GraphQL.Validation.DocumentValidator", "ValidateAsync",  new[] { "System.Threading.Tasks.Task`1<T>", "GraphQL.Types.ISchema", "GraphQL.Language.AST.Document", "GraphQL.Language.AST.VariableDefinitions", "System.Collections.Generic.IEnumerable`1[GraphQL.Validation.IValidationRule]", "_", "GraphQL.Inputs" }, 4, 0, 0, 4, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.ValidateAsync4Integration");
+                definitions[index++] = new("GraphQL", "GraphQL.Validation.DocumentValidator", "ValidateAsync",  new[] { "System.Threading.Tasks.Task`1<T>", "System.String", "GraphQL.Types.ISchema", "GraphQL.Language.AST.Document", "System.Collections.Generic.IEnumerable`1[GraphQL.Validation.IValidationRule]", "_", "GraphQL.Inputs" }, 3, 0, 0, 3, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.ValidateAsyncIntegration");
+                definitions[index++] = new("GraphQL.SystemReactive", "GraphQL.Execution.SubscriptionExecutionStrategy", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>", "GraphQL.Execution.ExecutionContext" }, 4, 0, 0, 4, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.ExecuteAsyncIntegration");
+            }
+
+            if (settings.IsIntegrationEnabled("HttpMessageHandler"))
+            {
+                definitions[index++] = new("System.Net.Http", "System.Net.Http.HttpClientHandler", "Send",  new[] { "System.Net.Http.HttpResponseMessage", "System.Net.Http.HttpRequestMessage", "System.Threading.CancellationToken" }, 5, 0, 0, 5, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.HttpClientHandler.HttpClientHandlerSyncIntegration");
+                definitions[index++] = new("System.Net.Http", "System.Net.Http.HttpClientHandler", "SendAsync",  new[] { "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>", "System.Net.Http.HttpRequestMessage", "System.Threading.CancellationToken" }, 4, 0, 0, 5, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.HttpClientHandler.HttpClientHandlerIntegration");
+            }
+
+            if (settings.IsIntegrationEnabled("HttpSocketsHandler"))
+            {
+                definitions[index++] = new("System.Net.Http", "System.Net.Http.SocketsHttpHandler", "Send",  new[] { "System.Net.Http.HttpResponseMessage", "System.Net.Http.HttpRequestMessage", "System.Threading.CancellationToken" }, 5, 0, 0, 5, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.SocketsHttpHandler.SocketsHttpHandlerSyncIntegration");
+                definitions[index++] = new("System.Net.Http", "System.Net.Http.SocketsHttpHandler", "SendAsync",  new[] { "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>", "System.Net.Http.HttpRequestMessage", "System.Threading.CancellationToken" }, 4, 0, 0, 5, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.SocketsHttpHandler.SocketsHttpHandlerIntegration");
+            }
+
             if (settings.IsIntegrationEnabled("ILogger"))
             {
                 definitions[index++] = new("Microsoft.Extensions.Logging", "Microsoft.Extensions.Logging.LoggerFactoryScopeProvider", "ForEachScope",  new[] { "System.Void", "System.Action`2[System.Object,!!0]", "!!0" }, 2, 0, 0, 5, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.LoggerFactoryScopeProviderForEachScopeIntegration");
                 definitions[index++] = new("Microsoft.Extensions.Logging.Abstractions", "Microsoft.Extensions.Logging.LoggerExternalScopeProvider", "ForEachScope",  new[] { "System.Void", "System.Action`2[System.Object,!!0]", "!!0" }, 2, 0, 0, 5, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.LoggerExternalScopeProviderForEachScopeIntegration");
             }
 
-            if (settings.IsIntegrationEnabled("MsTestV2"))
+            if (settings.IsIntegrationEnabled("Kafka"))
             {
-                definitions[index++] = new("Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter", "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodRunner", "Execute",  new[] { "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.UnitTestResult" }, 14, 0, 0, 14, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodRunnerExecuteIntegration");
-                definitions[index++] = new("Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter", "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.UnitTestRunner", "RunCleanup",  new[] { "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.RunCleanupResult" }, 14, 0, 0, 14, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestRunnerRunCleanupIntegration");
-                definitions[index++] = new("Microsoft.VisualStudio.TestPlatform.TestFramework", "Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute", "Execute",  new[] { "Microsoft.VisualStudio.TestTools.UnitTesting.TestResult", "Microsoft.VisualStudio.TestTools.UnitTesting.ITestMethod" }, 14, 0, 0, 14, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodAttributeExecuteIntegration");
+                definitions[index++] = new("Confluent.Kafka", "Confluent.Kafka.Consumer`2", "Close",  new[] { "System.Void" }, 1, 4, 0, 1, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerCloseIntegration");
+                definitions[index++] = new("Confluent.Kafka", "Confluent.Kafka.Consumer`2", "Consume",  new[] { "Confluent.Kafka.ConsumeResult`2[!0,!1]", "System.Int32" }, 1, 4, 0, 1, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerConsumeIntegration");
+                definitions[index++] = new("Confluent.Kafka", "Confluent.Kafka.Consumer`2", "Dispose",  new[] { "System.Void" }, 1, 4, 0, 1, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerDisposeIntegration");
+                definitions[index++] = new("Confluent.Kafka", "Confluent.Kafka.Consumer`2", "Unsubscribe",  new[] { "System.Void" }, 1, 4, 0, 1, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerUnsubscribeIntegration");
+                definitions[index++] = new("Confluent.Kafka", "Confluent.Kafka.Producer`2", "Produce",  new[] { "System.Void", "Confluent.Kafka.TopicPartition", "Confluent.Kafka.Message`2[!0,!1]", "System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]" }, 1, 4, 0, 1, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncIntegration");
+                definitions[index++] = new("Confluent.Kafka", "Confluent.Kafka.Producer`2", "ProduceAsync",  new[] { "System.Threading.Tasks.Task`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]", "Confluent.Kafka.TopicPartition", "Confluent.Kafka.Message`2[!0,!1]", "System.Threading.CancellationToken" }, 1, 4, 0, 1, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceAsyncIntegration");
+                definitions[index++] = new("Confluent.Kafka", "Confluent.Kafka.Producer`2+TypedDeliveryHandlerShim_Action", ".ctor",  new[] { "System.Void", "System.String", "!0", "!1", "System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]" }, 1, 4, 0, 1, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncDeliveryHandlerIntegration");
             }
 
             if (settings.IsIntegrationEnabled("MongoDb"))
@@ -229,6 +256,20 @@ namespace Datadog.Trace.ClrProfiler
                 definitions[index++] = new("MongoDB.Driver.Core", "MongoDB.Driver.Core.WireProtocol.QueryWireProtocol`1", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<T>", "MongoDB.Driver.Core.Connections.IConnection", "System.Threading.CancellationToken" }, 2, 1, 0, 2, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration");
                 definitions[index++] = new("MongoDB.Driver.Core", "MongoDB.Driver.Core.WireProtocol.WriteWireProtocolBase`1", "Execute",  new[] { "T", "MongoDB.Driver.Core.Connections.IConnection", "System.Threading.CancellationToken" }, 2, 2, 0, 2, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration");
                 definitions[index++] = new("MongoDB.Driver.Core", "MongoDB.Driver.Core.WireProtocol.WriteWireProtocolBase`1", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<T>", "MongoDB.Driver.Core.Connections.IConnection", "System.Threading.CancellationToken" }, 2, 1, 0, 2, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_ExecuteAsync_Integration");
+            }
+
+            if (settings.IsIntegrationEnabled("Msmq"))
+            {
+                definitions[index++] = new("System.Messaging", "System.Messaging.MessageQueue", "Purge",  new[] { "System.Void" }, 4, 0, 0, 4, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq.MessageQueue_Purge_Integration");
+                definitions[index++] = new("System.Messaging", "System.Messaging.MessageQueue", "ReceiveCurrent",  new[] { "System.Messaging.Message", "System.TimeSpan", "System.Int32", "System.Messaging.Interop.CursorHandle", "System.Messaging.MessagePropertyFilter", "System.Messaging.MessageQueueTransaction", "System.Messaging.MessageQueueTransactionType" }, 4, 0, 0, 4, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq.MessageQueue_ReceiveCurrent_Integration");
+                definitions[index++] = new("System.Messaging", "System.Messaging.MessageQueue", "SendInternal",  new[] { "System.Void", "System.Object", "System.Messaging.MessageQueueTransaction", "System.Messaging.MessageQueueTransactionType" }, 4, 0, 0, 4, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq.MessageQueue_SendInternal_Integration");
+            }
+
+            if (settings.IsIntegrationEnabled("MsTestV2"))
+            {
+                definitions[index++] = new("Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter", "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodRunner", "Execute",  new[] { "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.UnitTestResult" }, 14, 0, 0, 14, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodRunnerExecuteIntegration");
+                definitions[index++] = new("Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter", "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.UnitTestRunner", "RunCleanup",  new[] { "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.RunCleanupResult" }, 14, 0, 0, 14, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestRunnerRunCleanupIntegration");
+                definitions[index++] = new("Microsoft.VisualStudio.TestPlatform.TestFramework", "Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute", "Execute",  new[] { "Microsoft.VisualStudio.TestTools.UnitTesting.TestResult", "Microsoft.VisualStudio.TestTools.UnitTesting.ITestMethod" }, 14, 0, 0, 14, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodAttributeExecuteIntegration");
             }
 
             if (settings.IsIntegrationEnabled("NUnit"))
@@ -271,6 +312,11 @@ namespace Datadog.Trace.ClrProfiler
                 definitions[index++] = new("StackExchange.Redis.StrongName", "StackExchange.Redis.RedisTransaction", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<T>", "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1[!!0]", "StackExchange.Redis.ServerEndPoint" }, 1, 0, 0, 2, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.RedisExecuteAsyncIntegration");
             }
 
+            if (settings.IsIntegrationEnabled("Wcf"))
+            {
+                definitions[index++] = new("System.ServiceModel", "System.ServiceModel.Dispatcher.ChannelHandler", "HandleRequest",  new[] { "System.Boolean", "System.ServiceModel.Channels.RequestContext", "System.ServiceModel.OperationContext" }, 4, 0, 0, 4, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf.ChannelHandlerIntegration");
+            }
+
             if (settings.IsIntegrationEnabled("WebRequest"))
             {
                 definitions[index++] = new("System", "System.Net.HttpWebRequest", "BeginGetRequestStream",  new[] { "System.IAsyncResult", "System.AsyncCallback", "System.Object" }, 4, 0, 0, 4, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest.HttpWebRequest_BeginGetRequestStream_Integration");
@@ -285,56 +331,10 @@ namespace Datadog.Trace.ClrProfiler
                 definitions[index++] = new("System.Net.Requests", "System.Net.WebRequest", "GetResponseAsync",  new[] { "System.Threading.Tasks.Task`1<System.Net.WebResponse>" }, 4, 0, 0, 5, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest.WebRequest_GetResponseAsync_Integration");
             }
 
-            if (settings.IsIntegrationEnabled("Msmq"))
-            {
-                definitions[index++] = new("System.Messaging", "System.Messaging.MessageQueue", "Purge",  new[] { "System.Void" }, 4, 0, 0, 4, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq.MessageQueue_Purge_Integration");
-                definitions[index++] = new("System.Messaging", "System.Messaging.MessageQueue", "ReceiveCurrent",  new[] { "System.Messaging.Message", "System.TimeSpan", "System.Int32", "System.Messaging.Interop.CursorHandle", "System.Messaging.MessagePropertyFilter", "System.Messaging.MessageQueueTransaction", "System.Messaging.MessageQueueTransactionType" }, 4, 0, 0, 4, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq.MessageQueue_ReceiveCurrent_Integration");
-                definitions[index++] = new("System.Messaging", "System.Messaging.MessageQueue", "SendInternal",  new[] { "System.Void", "System.Object", "System.Messaging.MessageQueueTransaction", "System.Messaging.MessageQueueTransactionType" }, 4, 0, 0, 4, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq.MessageQueue_SendInternal_Integration");
-            }
-
-            if (settings.IsIntegrationEnabled("CurlHandler"))
-            {
-                definitions[index++] = new("System.Net.Http", "System.Net.Http.CurlHandler", "SendAsync",  new[] { "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>", "System.Net.Http.HttpRequestMessage", "System.Threading.CancellationToken" }, 4, 0, 0, 4, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.CurlHandler.CurlHandlerIntegration");
-            }
-
-            if (settings.IsIntegrationEnabled("HttpMessageHandler"))
-            {
-                definitions[index++] = new("System.Net.Http", "System.Net.Http.HttpClientHandler", "Send",  new[] { "System.Net.Http.HttpResponseMessage", "System.Net.Http.HttpRequestMessage", "System.Threading.CancellationToken" }, 5, 0, 0, 5, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.HttpClientHandler.HttpClientHandlerSyncIntegration");
-                definitions[index++] = new("System.Net.Http", "System.Net.Http.HttpClientHandler", "SendAsync",  new[] { "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>", "System.Net.Http.HttpRequestMessage", "System.Threading.CancellationToken" }, 4, 0, 0, 5, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.HttpClientHandler.HttpClientHandlerIntegration");
-            }
-
-            if (settings.IsIntegrationEnabled("HttpSocketsHandler"))
-            {
-                definitions[index++] = new("System.Net.Http", "System.Net.Http.SocketsHttpHandler", "Send",  new[] { "System.Net.Http.HttpResponseMessage", "System.Net.Http.HttpRequestMessage", "System.Threading.CancellationToken" }, 5, 0, 0, 5, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.SocketsHttpHandler.SocketsHttpHandlerSyncIntegration");
-                definitions[index++] = new("System.Net.Http", "System.Net.Http.SocketsHttpHandler", "SendAsync",  new[] { "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>", "System.Net.Http.HttpRequestMessage", "System.Threading.CancellationToken" }, 4, 0, 0, 5, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.SocketsHttpHandler.SocketsHttpHandlerIntegration");
-            }
-
             if (settings.IsIntegrationEnabled("WinHttpHandler"))
             {
                 definitions[index++] = new("System.Net.Http", "System.Net.Http.WinHttpHandler", "SendAsync",  new[] { "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>", "System.Net.Http.HttpRequestMessage", "System.Threading.CancellationToken" }, 4, 0, 0, 5, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.WinHttpHandler.WinHttpHandlerIntegration");
                 definitions[index++] = new("System.Net.Http.WinHttpHandler", "System.Net.Http.WinHttpHandler", "SendAsync",  new[] { "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>", "System.Net.Http.HttpRequestMessage", "System.Threading.CancellationToken" }, 4, 0, 0, 5, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.WinHttpHandler.WinHttpHandlerIntegration");
-            }
-
-            if (settings.IsIntegrationEnabled("Wcf"))
-            {
-                definitions[index++] = new("System.ServiceModel", "System.ServiceModel.Dispatcher.ChannelHandler", "HandleRequest",  new[] { "System.Boolean", "System.ServiceModel.Channels.RequestContext", "System.ServiceModel.OperationContext" }, 4, 0, 0, 4, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf.ChannelHandlerIntegration");
-            }
-
-            if (settings.IsIntegrationEnabled("AspNet"))
-            {
-                definitions[index++] = new("System.Web", "System.Web.Compilation.BuildManager", "InvokePreStartInitMethodsCore",  new[] { "System.Void", "System.Collections.Generic.ICollection`1[System.Reflection.MethodInfo]", "System.Func`1[System.IDisposable]" }, 4, 0, 0, 4, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.HttpModule_Integration");
-            }
-
-            if (settings.IsIntegrationEnabled("AspNetWebApi2"))
-            {
-                definitions[index++] = new("System.Web.Http", "System.Web.Http.ApiController", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>", "System.Web.Http.Controllers.HttpControllerContext", "System.Threading.CancellationToken" }, 5, 1, 0, 5, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ApiController_ExecuteAsync_Integration");
-                definitions[index++] = new("System.Web.Http", "System.Web.Http.ExceptionHandling.ExceptionHandlerExtensions", "HandleAsync",  new[] { "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>", "System.Web.Http.ExceptionHandling.IExceptionHandler", "System.Web.Http.ExceptionHandling.ExceptionContext", "System.Threading.CancellationToken" }, 5, 1, 0, 5, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ExceptionHandlerExtensions_HandleAsync_Integration");
-            }
-
-            if (settings.IsIntegrationEnabled("AspNetMvc"))
-            {
-                definitions[index++] = new("System.Web.Mvc", "System.Web.Mvc.Async.AsyncControllerActionInvoker", "BeginInvokeAction",  new[] { "System.IAsyncResult", "System.Web.Mvc.ControllerContext", "System.String", "System.AsyncCallback", "System.Object" }, 4, 0, 0, 5, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.AsyncControllerActionInvoker_BeginInvokeAction_Integration");
-                definitions[index++] = new("System.Web.Mvc", "System.Web.Mvc.Async.AsyncControllerActionInvoker", "EndInvokeAction",  new[] { "System.Boolean", "System.IAsyncResult" }, 4, 0, 0, 5, 65535, 65535, assemblyName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.AsyncControllerActionInvoker_EndInvokeAction_Integration");
             }
 
             if (settings.IsIntegrationEnabled("XUnit"))
