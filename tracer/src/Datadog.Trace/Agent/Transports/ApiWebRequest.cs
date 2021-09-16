@@ -6,7 +6,6 @@
 using System;
 using System.IO;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -84,14 +83,14 @@ namespace Datadog.Trace.Agent.Transports
 
         public Task<string> RequestContent()
         {
-            var sb = new StringBuilder();
+            var sb = Datadog.Trace.Util.StringBuilderCache.Acquire(0);
             foreach (var item in _request.Headers)
             {
                 sb.Append($"{item}: {_request.Headers[item.ToString()]} ");
                 sb.Append(", ");
             }
 
-            return Task.FromResult($"Headers: {sb}. With {nameof(ApiWebRequest)}, request's payload can't be displayed for now.");
+            return Task.FromResult($"Headers: {Util.StringBuilderCache.GetStringAndRelease(sb)}. With {nameof(ApiWebRequest)}, request's payload can't be displayed for now.");
         }
     }
 }
