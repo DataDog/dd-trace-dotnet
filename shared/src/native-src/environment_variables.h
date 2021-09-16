@@ -22,17 +22,17 @@ namespace shared {
 		// LOADER FEATURE FLAGS
 		//
 
-		// Disables rewriting the module initializer
-		const WSTRING disable_rewrite_module_initializer = WStr("DD_LOADER_DISABLE_REWRITE_MODULE_INITIALIZER");
+		// Enables or disables the module initializer rewriting
+		const WSTRING loader_rewrite_module_initializer_enabled = WStr("DD_LOADER_REWRITE_MODULE_INITIALIZER_ENABLED");
 
-		// Disables rewriting the module entrypoint
-		const WSTRING disable_rewrite_module_entrypoint = WStr("DD_LOADER_DISABLE_REWRITE_MODULE_ENTRYPOINT");
+		// Enables or disables the module entrypoint rewriting
+		const WSTRING loader_rewrite_module_entrypoint_enabled = WStr("DD_LOADER_REWRITE_MODULE_ENTRYPOINT_ENABLED");
 
-		// Disables rewriting the mscorlib
-		const WSTRING disable_rewrite_mscorlib = WStr("DD_LOADER_DISABLE_REWRITE_MSCORLIB");
+		// Enables or disables the mscorlib rewriting
+		const WSTRING loader_rewrite_mscorlib_enabled = WStr("DD_LOADER_REWRITE_MSCORLIB_ENABLED");
 
-		// Disables NGEN images support
-		const WSTRING disable_ngen = WStr("DD_LOADER_DISABLE_NGEN");
+		// Enables or disables NGEN images support
+		const WSTRING loader_ngen_enabled = WStr("DD_LOADER_NGEN_ENABLED");
 
 	}  // namespace environment
 }  // namespace shared
