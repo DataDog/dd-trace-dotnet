@@ -165,10 +165,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, (int)statusCode);
 
             // Overriding the type name here as we have multiple test classes in the file
-            // Ensures that we get nice file nesting in Solution Explorer
+            // Overriding the method name to _
+            // Overriding the parameters to remove the expectedSpanCount parameter, which is necessary for operation but unnecessary for the filename
             await Verifier.Verify(spans, settings)
-                          .UseMethodName("_")
-                          .UseTypeName(_testName);
+                          .UseFileName($"{_testName}.__path={sanitisedPath}_statusCode={(int)statusCode}");
         }
     }
 }
