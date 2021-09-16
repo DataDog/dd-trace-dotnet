@@ -3,11 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Configuration;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Oracle
 {
     internal static class OracleConstants
     {
-        public const string SqlCommandIntegrationName = "OracleCommand";
+        public const string SqlCommandIntegrationName = nameof(IntegrationIds.AdoNet);
 
         internal struct OracleClientData : IAdoNetClientData
         {

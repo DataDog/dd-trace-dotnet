@@ -3,11 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Configuration;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.SqlClient
 {
     internal static class SqlClientConstants
     {
-        public const string SqlCommandIntegrationName = "SqlCommand";
+        public const string SqlCommandIntegrationName = nameof(IntegrationIds.AdoNet);
 
         internal struct SystemDataAdoNetClientData : IAdoNetClientData
         {
