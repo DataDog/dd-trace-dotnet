@@ -89,12 +89,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AspNet
             if (threadContext.TryDuckCast<ThreadContextStruct>(out var threadContextStruct))
             {
                 var httpContext = threadContextStruct.HttpContext;
-                if (httpContext.Items.Contains(HttpContextScopeKey))
+                if (httpContext.Items[HttpContextScopeKey] is Scope scope && ((IDatadogTracer)Tracer.Instance).ScopeManager is IScopeRawAccess rawAccess)
                 {
-                    if (httpContext.Items[HttpContextScopeKey] is Scope scope && ((IDatadogTracer)Tracer.Instance).ScopeManager is IScopeRawAccess rawAccess)
-                    {
-                        rawAccess.Active = scope;
-                    }
+                    rawAccess.Active = scope;
                 }
             }
 
