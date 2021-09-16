@@ -92,6 +92,14 @@ stages:
       vmImage: windows-2019
     steps:
     - template: steps/install-dotnet-5-sdk.yml
+    - task: Cache@2
+      inputs:
+        key: 'nuget | windows | BuildTracerHome'
+        restoreKeys: |
+          nuget | windows | BuildTracerHome
+        path: $(NugetPackageDirectory)
+      displayName: Cache NuGet packages
+      continueOnError: true
 
     - script: tracer\build.cmd BuildTracerHome
       displayName: Build tracer home
@@ -119,6 +127,15 @@ stages:
       vmImage: ubuntu-18.04
 
     steps:
+    - task: Cache@2
+      inputs:
+        key: 'nuget | "$(baseImage)" | BuildTracerHome'
+        restoreKeys: |
+          nuget | "$(baseImage)" | BuildTracerHome
+        path: $(NugetPackageDirectory)
+      displayName: Cache NuGet packages
+      continueOnError: true
+
     - template: steps/run-in-docker.yml
       parameters:
         build: true
@@ -147,6 +164,15 @@ stages:
       name: Arm64
 
     steps:
+    - task: Cache@2
+      inputs:
+        key: 'nuget | linux_arm6 | BuildTracerHome'
+        restoreKeys: |
+          nuget | linux_arm6 | BuildTracerHome
+        path: $(NugetPackageDirectory)
+      displayName: Cache NuGet packages
+      continueOnError: true
+
     - template: steps/run-in-docker.yml
       parameters:
         build: true
@@ -177,6 +203,14 @@ stages:
     steps:
     - template: steps/install-dotnet-5-sdk.yml
     - template: steps/downgrade-macos-cmake.yml
+    - task: Cache@2
+      inputs:
+        key: 'nuget | macos | BuildTracerHome'
+        restoreKeys: |
+          nuget | macos | BuildTracerHome
+        path: $(NugetPackageDirectory)
+      displayName: Cache NuGet packages
+      continueOnError: true
 
     - script: ./tracer/build.sh BuildTracerHome
       displayName: Build tracer home
