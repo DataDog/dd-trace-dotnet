@@ -46,6 +46,9 @@ partial class Build : NukeBuild
     [Parameter("The location to place NuGet packages and other packages. Default is ./bin/artifacts ")]
     readonly AbsolutePath Artifacts;
 
+    [Parameter("The location to the find the profiler build artifacts. Default is /_build/DDProf-Deploy ")]
+    readonly AbsolutePath ProfilerBuildArtifacts;
+
     [Parameter("The location to restore Nuget packages (optional) ")]
     readonly AbsolutePath NugetPackageDirectory;
 
@@ -145,6 +148,11 @@ partial class Build : NukeBuild
         .DependsOn(ZipTracerHome)
         .DependsOn(BuildMsi)
         .DependsOn(PackNuGet);
+
+    Target PackageTracerHomeBeta => _ => _
+        .Description("Packages the already built src")
+        .After(Clean, BuildTracerHome)
+        .DependsOn(BuildMsiBeta);
 
     Target BuildAndRunManagedUnitTests => _ => _
         .Description("Builds the managed unit tests and runs them")

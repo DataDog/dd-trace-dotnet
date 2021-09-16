@@ -33,6 +33,7 @@ partial class Build
 {
     [Solution("Datadog.Trace.sln")] readonly Solution Solution;
     AbsolutePath TracerDirectory => RootDirectory / "tracer";
+    AbsolutePath SharedDirectory => RootDirectory / "shared";
     AbsolutePath MsBuildProject => TracerDirectory / "Datadog.Trace.proj";
 
     AbsolutePath OutputDirectory => TracerDirectory / "bin";
@@ -43,6 +44,8 @@ partial class Build
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath WindowsSymbolsZip => ArtifactsDirectory / "windows-native-symbols.zip";
     AbsolutePath BuildDataDirectory => TracerDirectory / "build_data";
+
+    AbsolutePath ProfilerHomeDirectory => ProfilerBuildArtifacts ?? RootDirectory / "_build" / "DDProf-Deploy";
 
     const string LibDdwafVersion = "1.0.10";
     AbsolutePath LibDdwafDirectory => (NugetPackageDirectory ?? (RootDirectory / "packages")) / $"libddwaf.{LibDdwafVersion}";
@@ -459,6 +462,28 @@ partial class Build
                     .AddProperty("RunWixToolsOutOfProc", true)
                     .SetProperty("TracerHomeDirectory", TracerHomeDirectory)
                     .SetProperty("LibDdwafDirectory", LibDdwafDirectory)
+                    .SetMaxCpuCount(null)
+                    .CombineWith(ArchitecturesForPlatform, (o, arch) => o
+                        .SetProperty("MsiOutputPath", ArtifactsDirectory / arch.ToString())
+                        .SetTargetPlatform(arch)),
+                degreeOfParallelism: 2);
+        });
+
+    Target BuildMsiBeta => _ => _
+        .Unlisted()
+        .Description("Builds the .msi files from the repo")
+        .After(BuildTracerHome)
+        .OnlyWhenStatic(() => IsWin)
+        .Executes(() =>
+        {
+            MSBuild(s => s
+                    .SetTargetPath(SharedDirectory / "src" / "msi-installer" / "WindowsInstaller.wixproj")
+                    .SetConfiguration(BuildConfiguration)
+                    .SetMSBuildPath()
+                    .AddProperty("RunWixToolsOutOfProc", true)
+                    .SetProperty("TracerHomeDirectory", TracerHomeDirectory)
+                    .SetProperty("LibDdwafDirectory", LibDdwafDirectory)
+                    .SetProperty("ProfilerHomeDirectory", ProfilerHomeDirectory)
                     .SetMaxCpuCount(null)
                     .CombineWith(ArchitecturesForPlatform, (o, arch) => o
                         .SetProperty("MsiOutputPath", ArtifactsDirectory / arch.ToString())
