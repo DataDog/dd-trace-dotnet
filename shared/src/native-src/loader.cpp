@@ -425,11 +425,15 @@ namespace shared
                     return S_FALSE;
                 }
 
-                const std::string moduleEntryPointHex = HexStr(moduleEntryPoint);
                 const std::string moduleEntryPointFullName = ToString(typeName) + "." + ToString(moduleEntryPointName);
 
-                Debug("Loader::InjectLoaderToModuleInitializer: Module entrypoint found at: " + moduleEntryPointHex +
-                      " (" + moduleEntryPointFullName + ").");
+                if (_loaderOptions.LogDebugIsEnabled)
+                {
+                    const std::string moduleEntryPointHex = HexStr(moduleEntryPoint);
+
+                    Debug("Loader::InjectLoaderToModuleInitializer: Module entrypoint found at: " +
+                          moduleEntryPointHex + " (" + moduleEntryPointFullName + ").");
+                }
 
                 mdAssemblyRef corlibAssemblyRef = mdAssemblyRefNil;
                 hr = assmeblyEmit->DefineAssemblyRef(_corlibMetadata.pPublicKey,
@@ -1577,8 +1581,11 @@ namespace shared
                 const auto pSection = pHeaders + FIELD_OFFSET(IMAGE_NT_HEADERS, OptionalHeader) +
                                       VAL16(ntHeaders->FileHeader.SizeOfOptionalHeader);
 
-                Debug("Loader::GetModuleEntryPointToken: Number of sections: " +
-                      ToString(VAL16(ntHeaders->FileHeader.NumberOfSections)));
+                if (_loaderOptions.LogDebugIsEnabled)
+                {
+                    Debug("Loader::GetModuleEntryPointToken: Number of sections: " +
+                          ToString(VAL16(ntHeaders->FileHeader.NumberOfSections)));
+                }
 
                 // We need to iterate and find the right section
                 auto section = (IMAGE_SECTION_HEADER*) pSection;
@@ -1600,12 +1607,20 @@ namespace shared
                     {
                         if (clrDataVirtualAddress < sectionVirtualAddress)
                         {
-                            Debug("Loader::GetModuleEntryPointToken: " + ToString(i) + ". sectionRet = nullptr");
+                            if (_loaderOptions.LogDebugIsEnabled)
+                            {
+                                Debug("Loader::GetModuleEntryPointToken: " + ToString(i) + ". sectionRet = nullptr");
+                            }
+
                             sectionRet = nullptr;
                         }
                         else
                         {
-                            Debug("Loader::GetModuleEntryPointToken: " + ToString(i) + ". sectionRet = (found)");
+                            if (_loaderOptions.LogDebugIsEnabled)
+                            {
+                                Debug("Loader::GetModuleEntryPointToken: " + ToString(i) + ". sectionRet = (found)");
+                            }
+
                             sectionRet = section;
                             break;
                         }
