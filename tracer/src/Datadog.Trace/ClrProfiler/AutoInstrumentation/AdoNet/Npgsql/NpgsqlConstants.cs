@@ -9,12 +9,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Npgsql
 {
     internal static class NpgsqlConstants
     {
-        public const string SqlCommandIntegrationName = nameof(IntegrationIds.AdoNet);
-
         internal struct NpgsqlClientData : IAdoNetClientData
         {
-            public string IntegrationName => SqlCommandIntegrationName;
-
             public string AssemblyName => "Npgsql";
 
             public string SqlCommandType => "Npgsql.NpgsqlCommand";

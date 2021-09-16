@@ -9,12 +9,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Sqlite
 {
     internal static class SqliteConstants
     {
-        public const string SqlCommandIntegrationName = nameof(IntegrationIds.AdoNet);
-
         internal struct MicrosoftDataSqliteClientData : IAdoNetClientData
         {
-            public string IntegrationName => SqlCommandIntegrationName;
-
             public string AssemblyName => "Microsoft.Data.Sqlite";
 
             public string SqlCommandType => "Microsoft.Data.Sqlite.SqliteCommand";
@@ -30,8 +26,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Sqlite
 
         internal struct SystemDataSqliteClientData : IAdoNetClientData
         {
-            public string IntegrationName => SqlCommandIntegrationName;
-
             public string AssemblyName => "System.Data.SQLite";
 
             public string SqlCommandType => "System.Data.SQLite.SQLiteCommand";

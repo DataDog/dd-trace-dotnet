@@ -9,12 +9,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.MySql
 {
     internal static class MySqlConstants
     {
-        public const string SqlCommandIntegrationName = nameof(IntegrationIds.AdoNet);
-
         internal struct MySqlDataClientData : IAdoNetClientData
         {
-            public string IntegrationName => SqlCommandIntegrationName;
-
             public string AssemblyName => "MySql.Data";
 
             public string SqlCommandType => "MySql.Data.MySqlClient.MySqlCommand";
@@ -30,8 +26,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.MySql
 
         internal struct MySqlData8ClientData : IAdoNetClientData
         {
-            public string IntegrationName => SqlCommandIntegrationName;
-
             public string AssemblyName => "MySql.Data";
 
             public string SqlCommandType => "MySql.Data.MySqlClient.MySqlCommand";
@@ -47,8 +41,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.MySql
 
         internal struct MySqlConnectorClientData : IAdoNetClientData
         {
-            public string IntegrationName => SqlCommandIntegrationName;
-
             public string AssemblyName => "MySqlConnector";
 
             public string SqlCommandType => "MySqlConnector.MySqlCommand";

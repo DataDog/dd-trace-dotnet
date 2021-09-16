@@ -9,12 +9,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Oracle
 {
     internal static class OracleConstants
     {
-        public const string SqlCommandIntegrationName = nameof(IntegrationIds.AdoNet);
-
         internal struct OracleClientData : IAdoNetClientData
         {
-            public string IntegrationName => SqlCommandIntegrationName;
-
             public string AssemblyName => "Oracle.ManagedDataAccess";
 
             public string SqlCommandType => "Oracle.ManagedDataAccess.Client.OracleCommand";
@@ -30,8 +26,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Oracle
 
         internal struct OracleCoreClientData : IAdoNetClientData
         {
-            public string IntegrationName => SqlCommandIntegrationName;
-
             public string AssemblyName => "Oracle.ManagedDataAccess";
 
             public string SqlCommandType => "Oracle.ManagedDataAccess.Client.OracleCommand";
@@ -47,8 +41,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Oracle
 
         internal struct OracleDataAccessClientData : IAdoNetClientData
         {
-            public string IntegrationName => SqlCommandIntegrationName;
-
             public string AssemblyName => "Oracle.DataAccess";
 
             public string SqlCommandType => "Oracle.DataAccess.Client.OracleCommand";
