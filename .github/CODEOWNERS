@@ -1,8 +1,8 @@
 # See https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/creating-a-repository-on-github/about-code-owners
 
-*                                 @DataDog/apm-dotnet
-/shared                           @DataDog/apm-dotnet @DataDog/profiling-dotnet
-/tracer                           @DataDog/apm-dotnet
-/tracer/src/Datadog.Trace/Ci      @DataDog/apm-dotnet @DataDog/ci-app-tracers
-# /tracer/src/Datadog.Trace/AppSec  @DataDog/apm-dotnet @DataDog/appsec-dotnet
-/profiler                         @DataDog/profiling-dotnet
+*                                  @DataDog/apm-dotnet
+/shared/                           @DataDog/apm-dotnet @DataDog/profiling-dotnet
+/tracer/                           @DataDog/apm-dotnet
+/tracer/src/Datadog.Trace/Ci/      @DataDog/apm-dotnet @DataDog/ci-app-tracers
+# /tracer/src/Datadog.Trace/AppSec/  @DataDog/apm-dotnet @DataDog/appsec-dotnet
+/profiler/                         @DataDog/profiling-dotnet
