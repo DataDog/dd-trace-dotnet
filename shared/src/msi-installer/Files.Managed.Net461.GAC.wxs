@@ -7,6 +7,12 @@
     <ComponentGroup Id="Files.Managed.Net461.GAC" Directory="net461.GAC">
       <Component Win64="$(var.Win64)">
         <Condition>WIX_IS_NETFRAMEWORK_461_OR_LATER_INSTALLED</Condition>
+        <File Id="net461_GAC_Datadog.AutoInstrumentation.Profiler.Managed.dll"
+              Source="$(var.ProfilerHomeDirectory)\net461\Datadog.AutoInstrumentation.Profiler.Managed.dll"
+              KeyPath="yes" Checksum="yes" Assembly=".net"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <Condition>WIX_IS_NETFRAMEWORK_461_OR_LATER_INSTALLED</Condition>
         <File Id="net461_GAC_Datadog.Trace.AspNet.dll"
               Source="$(var.TracerHomeDirectory)\net461\Datadog.Trace.AspNet.dll"
               KeyPath="yes" Checksum="yes" Assembly=".net"/>
@@ -21,6 +27,12 @@
         <Condition>WIX_IS_NETFRAMEWORK_461_OR_LATER_INSTALLED</Condition>
         <File Id="net461_GAC_Datadog.Trace.MSBuild.dll"
               Source="$(var.TracerHomeDirectory)\net461\Datadog.Trace.MSBuild.dll"
+              KeyPath="yes" Checksum="yes" Assembly=".net"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <Condition>WIX_IS_NETFRAMEWORK_461_OR_LATER_INSTALLED</Condition>
+        <File Id="net461_GAC_Google.Protobuf.dll"
+              Source="$(var.ProfilerHomeDirectory)\net461\Google.Protobuf.dll"
               KeyPath="yes" Checksum="yes" Assembly=".net"/>
       </Component>
     </ComponentGroup>

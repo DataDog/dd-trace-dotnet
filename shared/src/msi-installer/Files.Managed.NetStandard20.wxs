@@ -6,6 +6,16 @@
   <Fragment>
     <ComponentGroup Id="Files.Managed.NetStandard20" Directory="netstandard2.0">
       <Component Win64="$(var.Win64)">
+        <File Id="netstandard20_Datadog.AutoInstrumentation.Profiler.Managed.dll"
+              Source="$(var.ProfilerHomeDirectory)\netstandard2.0\Datadog.AutoInstrumentation.Profiler.Managed.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="netstandard20_Datadog.AutoInstrumentation.Profiler.Managed.pdb"
+              Source="$(var.ProfilerHomeDirectory)\netstandard2.0\Datadog.AutoInstrumentation.Profiler.Managed.pdb"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
         <File Id="netstandard20_Datadog.Trace.dll"
               Source="$(var.TracerHomeDirectory)\netstandard2.0\Datadog.Trace.dll"
               KeyPath="yes" Checksum="yes"/>
@@ -23,6 +33,11 @@
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_Datadog.Trace.pdb"
               Source="$(var.TracerHomeDirectory)\netstandard2.0\Datadog.Trace.pdb"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="netstandard20_Google.Protobuf.dll"
+              Source="$(var.ProfilerHomeDirectory)\netstandard2.0\Google.Protobuf.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">

@@ -113,6 +113,12 @@
   <Fragment>
     <ComponentGroup Id="Files" Directory="INSTALLFOLDER">
       <Component Win64="$(var.Win64)">
+        <File Id="DDProf_SetEnv.bat" Source="$(var.ProfilerHomeDirectory)\DDProf-SetEnv.bat" />
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="DDProf_SetEnv.sh" Source="$(var.ProfilerHomeDirectory)\DDProf-SetEnv.sh" />
+      </Component>
+      <Component Win64="$(var.Win64)">
         <File Id="integrations.json" Source="$(var.TracerHomeDirectory)\integrations.json" />
       </Component>
     </ComponentGroup>
@@ -125,8 +131,22 @@
               Checksum="yes">
           <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
         </File>
+      </Component>
+      <Component Win64="yes">
         <File Id="LibDdwaf"
               Source="$(var.LibDdwafDirectory)\runtimes\win-x64\native\ddwaf.dll"
+              Checksum="yes">
+        </File>
+      </Component>
+      <Component Win64="yes">
+        <File Id="Datadog.AutoInstrumentation.Profiler.Native.x64.dll"
+              Source="$(var.ProfilerHomeDirectory)\Datadog.AutoInstrumentation.Profiler.Native.x64.dll"
+              Checksum="yes">
+        </File>
+      </Component>
+      <Component Win64="yes">
+        <File Id="Datadog.AutoInstrumentation.Profiler.Native.x64.pdb"
+              Source="$(var.ProfilerHomeDirectory)\Datadog.AutoInstrumentation.Profiler.Native.x64.pdb"
               Checksum="yes">
         </File>
       </Component>
