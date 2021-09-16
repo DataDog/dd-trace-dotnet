@@ -115,7 +115,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                       + (enableRouteTemplateResourceNames ? ".NoFF" : ".WithFF");
         }
 
-        public static TheoryData<string, int> Data() => new()
+        public static TheoryData<string, int, int> Data() => new()
         {
             { "/api/environment", 200, 2 },
             { "/api/absolute-route", 200, 2 },
