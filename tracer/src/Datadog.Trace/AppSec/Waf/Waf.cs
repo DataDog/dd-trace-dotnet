@@ -151,7 +151,7 @@ namespace Datadog.Trace.AppSec.Waf
                         var idProp = ev.Value<JValue>("id");
                         var nameProp = ev.Value<JValue>("name");
                         var addresses = ev.Value<JArray>("conditions").SelectMany(x => x.Value<JObject>("parameters").Value<JArray>("inputs"));
-                        Log.Debug($"Loaded rule: {idProp.Value} - {nameProp.Value} on addresses: {string.Join(", ", addresses)}");
+                        Log.Debug("Loaded rule: {id} - {name} on addresses: {addresses}", idProp.Value, nameProp.Value, string.Join(", ", addresses));
                     }
                 }
                 catch (Exception ex)
