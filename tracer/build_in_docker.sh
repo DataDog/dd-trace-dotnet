@@ -9,7 +9,7 @@ BUILD_DIR="$ROOT_DIR/build/_build"
 IMAGE_NAME="dd-trace-dotnet/debian-base"
 
 docker build \
-   --build-arg DOTNETSDK_VERSION=5.0.103 \
+   --build-arg DOTNETSDK_VERSION=5.0.401 \
    --tag $IMAGE_NAME \
    --file "$BUILD_DIR/docker/debian.dockerfile" \
    "$BUILD_DIR"
