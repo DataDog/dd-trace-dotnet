@@ -110,15 +110,5 @@ namespace Datadog.Trace.Agent.Transports
 
             return string.Empty;
         }
-
-        public IDictionary<string, string> Headers()
-        {
-            if (_request != null)
-            {
-                return _request.Headers.ToDictionary(h => h.Name, h => h.Value);
-            }
-
-            return new Dictionary<string, string>();
-        }
     }
 }
