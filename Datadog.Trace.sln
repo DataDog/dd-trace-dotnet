@@ -415,7 +415,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.GraphQL3", "tracer\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.GraphQL4", "tracer\test\test-applications\integrations\Samples.GraphQL4\Samples.GraphQL4.csproj", "{DA81EF3E-FDB3-417F-AA20-60FC495E3596}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Elasticsearch.V7", "test\test-applications\integrations\Samples.Elasticsearch.V7\Samples.Elasticsearch.V7.csproj", "{3CB0B2C2-7664-4D71-8F43-3D207EE80DB7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Elasticsearch.V7", "tracer\test\test-applications\integrations\Samples.Elasticsearch.V7\Samples.Elasticsearch.V7.csproj", "{3CB0B2C2-7664-4D71-8F43-3D207EE80DB7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
