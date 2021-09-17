@@ -11,6 +11,10 @@
         "DD_INTEGRATIONS": "$(ProjectDir)$(OutputPath)profiler-lib\\integrations.json",
         "DD_VERSION": "1.0.0",
 
+        // local.settings.json only applies to the function script, not the host, so this needs to exist here
+        "FUNCTIONS_WORKER_RUNTIME": "dotnet",
+
+        "DD_AZURE_APP_SERVICES": "1",
         "DD_TRACE_AZURE_FUNCTIONS_ENABLED": "1",
         "DD_LOGS_INJECTION": "1",
         "DD_TRACE_DEBUG": "0"

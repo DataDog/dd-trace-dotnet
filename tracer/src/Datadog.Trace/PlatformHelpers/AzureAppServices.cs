@@ -192,7 +192,8 @@ namespace Datadog.Trace.PlatformHelpers
 
         private static bool ShouldSkipClientSpanWithinFunctions(Scope scope)
         {
-            return scope.Root == null;
+            // Ignore isolated client spans within azure functions
+            return scope == null;
         }
 
         private string CompileResourceId()

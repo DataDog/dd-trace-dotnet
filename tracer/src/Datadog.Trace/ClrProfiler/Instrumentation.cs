@@ -79,6 +79,13 @@ namespace Datadog.Trace.ClrProfiler
                 }
 
                 Log.Information("IsProfilerAttached: true");
+
+                var asm = typeof(Instrumentation).Assembly;
+                Log.Information($"[Assembly metadata] Location: {asm.Location}");
+                Log.Information($"[Assembly metadata] CodeBase: {asm.CodeBase}");
+                Log.Information($"[Assembly metadata] GAC: {asm.GlobalAssemblyCache}");
+                Log.Information($"[Assembly metadata] HostContext: {asm.HostContext}");
+                Log.Information($"[Assembly metadata] SecurityRuleSet: {asm.SecurityRuleSet}");
             }
             catch (Exception ex)
             {
@@ -160,7 +167,16 @@ namespace Datadog.Trace.ClrProfiler
 #if !NETFRAMEWORK
         private static void StartDiagnosticManager()
         {
-            var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver() };
+            var observers = new List<DiagnosticObserver>();
+
+            if (!PlatformHelpers.AzureAppServices.Metadata.IsFunctionsApp)
+            {
+                // Not adding the `AspNetCoreDiagnosticObserver` is particularly important for Azure Functions.
+                // The AspNetCoreDiagnosticObserver will be loaded in a separate Assembly Load Context, breaking the connection of AsyncLocal
+                // This is because user code is loaded within the functions host in a separate context
+                observers.Add(new AspNetCoreDiagnosticObserver());
+            }
+
             var diagnosticManager = new DiagnosticManager(observers);
             diagnosticManager.Start();
             DiagnosticManager.Instance = diagnosticManager;
