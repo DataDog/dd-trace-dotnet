@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Retry;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -31,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        [Theory]
+        [RetryTheory]
         [MemberData(nameof(GetElasticsearch))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]

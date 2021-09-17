@@ -8,6 +8,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Retry;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
@@ -40,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetCallTargetSettings(enableCallTarget: true);
         }
 
-        [Theory]
+        [RetryTheory]
         [MemberData(nameof(PackageVersions.Kafka), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
