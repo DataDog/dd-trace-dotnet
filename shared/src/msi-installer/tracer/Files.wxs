@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+  <?include $(sys.CURRENTDIR)\Config.wxi?>
+  <Fragment>
+    <ComponentGroup Id="tracer.Files" Directory="tracer">
+      <Component Win64="$(var.Win64)">
+        <File Id="integrations.json" Source="$(var.TracerHomeDirectory)\integrations.json" />
+      </Component>
+    </ComponentGroup>
+
+    <?if $(var.Win64) = yes ?>
+    <ComponentGroup Id="Files.Native.64" Directory="tracer">
+      <Component Win64="yes">
+        <File Id="Datadog.Trace.ClrProfiler.Native"
+              Source="$(var.TracerHomeDirectory)\win-x64\Datadog.Trace.ClrProfiler.Native.dll"
+              Checksum="yes">
+          <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
+        </File>
+      </Component>
+      <Component Win64="yes">
+        <File Id="LibDdwaf"
+              Source="$(var.LibDdwafDirectory)\runtimes\win-x64\native\ddwaf.dll"
+              Checksum="yes">
+        </File>
+      </Component>
+      <Component Win64="yes">
+        <File Id="Datadog.AutoInstrumentation.Profiler.Native.x64.dll"
+              Source="$(var.ProfilerHomeDirectory)\Datadog.AutoInstrumentation.Profiler.Native.x64.dll"
+              Checksum="yes">
+        </File>
+      </Component>
+      <Component Win64="yes">
+        <File Id="Datadog.AutoInstrumentation.Profiler.Native.x64.pdb"
+              Source="$(var.ProfilerHomeDirectory)\Datadog.AutoInstrumentation.Profiler.Native.x64.pdb"
+              Checksum="yes">
+        </File>
+      </Component>
+    </ComponentGroup>
+
+    <!-- For the 64-bit installer, also install the 32-bit binaries -->
+    <ComponentGroup Id="Files.Native.32" Directory="tracer.32">
+      <Component Win64="no" Id="Datadog.Trace.ClrProfiler.Native.32">
+        <File Id="Datadog.Trace.ClrProfiler.Native.32"
+              Source="$(var.TracerHomeDirectory)\win-x86\Datadog.Trace.ClrProfiler.Native.dll"
+              Checksum="yes">
+          <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
+        </File>
+        <File Id="LibDdwaf.32"
+              Source="$(var.LibDdwafDirectory)\runtimes\win-x86\native\ddwaf.dll"
+              Checksum="yes">
+        </File>
+      </Component>
+    </ComponentGroup>
+
+    <?else ?>
+
+    <!-- note that for the 32-bit build, we need to install into INSTALLFOLDER instead of INSTALLFOLDER.32 -->
+    <ComponentGroup Id="Files.Native.32" Directory="tracer">
+      <Component Win64="no" Id="Datadog.Trace.ClrProfiler.Native.32">
+        <File Id="Datadog.Trace.ClrProfiler.Native.32"
+              Source="$(var.TracerHomeDirectory)\win-x86\Datadog.Trace.ClrProfiler.Native.dll"
+              Checksum="yes">
+          <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
+        </File>
+        <File Id="LibDdwaf.32"
+              Source="$(var.LibDdwafDirectory)\runtimes\win-x86\native\ddwaf.dll"
+              Checksum="yes">
+        </File>
+      </Component>
+    </ComponentGroup>
+
+    <?endif ?>
+  </Fragment>
+</Wix>

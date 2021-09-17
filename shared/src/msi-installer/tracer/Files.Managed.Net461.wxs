@@ -4,7 +4,7 @@
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
   <?include $(sys.CURRENTDIR)\Config.wxi?>
   <Fragment>
-    <ComponentGroup Id="Files.Managed.Net461" Directory="net461">
+    <ComponentGroup Id="Files.Managed.Net461" Directory="tracer.net461">
       <Component Win64="$(var.Win64)">
         <File Id="net461_Datadog.Trace.AspNet.dll"
               Source="$(var.TracerHomeDirectory)\net461\Datadog.Trace.AspNet.dll"

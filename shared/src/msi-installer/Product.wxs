@@ -35,6 +35,7 @@
 
     <Feature Id="ProductFeature" Title="Datadog.Trace.ClrProfiler" Level="1">
       <ComponentGroupRef Id="Files"/>
+      <ComponentGroupRef Id="tracer.Files"/>
       <ComponentGroupRef Id="Files.Managed.Net45.GAC"/>
       <ComponentGroupRef Id="Files.Managed.Net461.GAC"/>
       <ComponentGroupRef Id="Files.Managed.Net45"/>
@@ -63,24 +64,27 @@
           <!-- ".\Datadog" -->
           <Directory Id="INSTALLFOLDER" Name="$(var.BaseProductName)">
             <!-- ".\.NET Tracer" -->
-              <Directory Id="net45" Name="net45">
+            <Directory Id="tracer" Name="tracer">
+              <!-- tracer -->
+              <Directory Id="tracer.net45" Name="net45">
                 <!-- ".\net45" -->
               </Directory>
-              <Directory Id="net461" Name="net461">
+              <Directory Id="tracer.net461" Name="net461">
                 <!-- ".\net461" -->
               </Directory>
-              <Directory Id="netstandard2.0" Name="netstandard2.0">
+              <Directory Id="tracer.netstandard2.0" Name="netstandard2.0">
                 <!-- ".\netstandard2.0" -->
               </Directory>
-            <Directory Id="netcoreapp3.1" Name="netcoreapp3.1">
-                <!-- ".\netcoreapp3.1" -->
+              <Directory Id="tracer.netcoreapp3.1" Name="netcoreapp3.1">
+                  <!-- ".\netcoreapp3.1" -->
+              </Directory>
+              <Directory Id="tracer.net45.GAC" Name="net45.GAC">
+                <!-- Ignored as all of its components will be installed in the GAC -->
+              </Directory>
+              <Directory Id="tracer.net461.GAC" Name="net461.GAC">
+                <!-- Ignored as all of its components will be installed in the GAC -->
+              </Directory>
             </Directory>
-              <Directory Id="net45.GAC" Name="net45.GAC">
-                <!-- Ignored as all of its components will be installed in the GAC -->
-              </Directory>
-              <Directory Id="net461.GAC" Name="net461.GAC">
-                <!-- Ignored as all of its components will be installed in the GAC -->
-              </Directory>
           </Directory>
         </Directory>
       </Directory>
@@ -93,6 +97,9 @@
           <!-- ".\Datadog" -->
           <Directory Id="INSTALLFOLDER.32" Name="$(var.BaseProductName)">
             <!-- ".\.NET Tracer" -->
+            <Directory Id="tracer.32" Name="tracer">
+            <!-- tracer -->
+            </Directory>
           </Directory>
         </Directory>
       </Directory>
@@ -118,73 +125,7 @@
       <Component Win64="$(var.Win64)">
         <File Id="DDProf_SetEnv.sh" Source="$(var.ProfilerHomeDirectory)\DDProf-SetEnv.sh" />
       </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="integrations.json" Source="$(var.TracerHomeDirectory)\integrations.json" />
-      </Component>
     </ComponentGroup>
-
-    <?if $(var.Win64) = yes ?>
-    <ComponentGroup Id="Files.Native.64" Directory="INSTALLFOLDER">
-      <Component Win64="yes">
-        <File Id="Datadog.Trace.ClrProfiler.Native"
-              Source="$(var.TracerHomeDirectory)\win-x64\Datadog.Trace.ClrProfiler.Native.dll"
-              Checksum="yes">
-          <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
-        </File>
-      </Component>
-      <Component Win64="yes">
-        <File Id="LibDdwaf"
-              Source="$(var.LibDdwafDirectory)\runtimes\win-x64\native\ddwaf.dll"
-              Checksum="yes">
-        </File>
-      </Component>
-      <Component Win64="yes">
-        <File Id="Datadog.AutoInstrumentation.Profiler.Native.x64.dll"
-              Source="$(var.ProfilerHomeDirectory)\Datadog.AutoInstrumentation.Profiler.Native.x64.dll"
-              Checksum="yes">
-        </File>
-      </Component>
-      <Component Win64="yes">
-        <File Id="Datadog.AutoInstrumentation.Profiler.Native.x64.pdb"
-              Source="$(var.ProfilerHomeDirectory)\Datadog.AutoInstrumentation.Profiler.Native.x64.pdb"
-              Checksum="yes">
-        </File>
-      </Component>
-    </ComponentGroup>
-
-    <!-- For the 64-bit installer, also install the 32-bit binaries -->
-    <ComponentGroup Id="Files.Native.32" Directory="INSTALLFOLDER.32">
-      <Component Win64="no" Id="Datadog.Trace.ClrProfiler.Native.32">
-        <File Id="Datadog.Trace.ClrProfiler.Native.32"
-              Source="$(var.TracerHomeDirectory)\win-x86\Datadog.Trace.ClrProfiler.Native.dll"
-              Checksum="yes">
-          <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
-        </File>
-        <File Id="LibDdwaf.32"
-              Source="$(var.LibDdwafDirectory)\runtimes\win-x86\native\ddwaf.dll"
-              Checksum="yes">
-        </File>
-      </Component>
-    </ComponentGroup>
-
-    <?else ?>
-
-    <!-- note that for the 32-bit build, we need to install into INSTALLFOLDER instead of INSTALLFOLDER.32 -->
-    <ComponentGroup Id="Files.Native.32" Directory="INSTALLFOLDER">
-      <Component Win64="no" Id="Datadog.Trace.ClrProfiler.Native.32">
-        <File Id="Datadog.Trace.ClrProfiler.Native.32"
-              Source="$(var.TracerHomeDirectory)\win-x86\Datadog.Trace.ClrProfiler.Native.dll"
-              Checksum="yes">
-          <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
-        </File>
-        <File Id="LibDdwaf.32"
-              Source="$(var.LibDdwafDirectory)\runtimes\win-x86\native\ddwaf.dll"
-              Checksum="yes">
-        </File>
-      </Component>
-    </ComponentGroup>
-
-    <?endif ?>
 
     <ComponentGroup Id="EmptyFolders" Directory="CommonAppDataFolder.DatadogDotNetTracer.logs">
       <Component Id="EmptyFolders.Logs" Guid="0A9B510D-44F6-41A9-9EFE-E2CEB7314CF3">
@@ -204,11 +145,11 @@
       </Component>
     </ComponentGroup>
 
-    <ComponentGroup Id="EnvironmentVariables.Machine" Directory="INSTALLFOLDER">
+    <ComponentGroup Id="EnvironmentVariables.Machine" Directory="tracer">
       <Component Id="EnvironmentVariablesShared" Guid="{C314A305-9C24-4E46-9ECF-E5EEA703BDEA}" Win64="$(var.Win64)">
         <CreateFolder/>
-        <Environment Id="DD_INTEGRATIONS" Name="DD_INTEGRATIONS" Action="set" Permanent="no" System="yes" Value="[INSTALLFOLDER]integrations.json" Part="all" />
-        <Environment Id="DD_DOTNET_TRACER_HOME" Name="DD_DOTNET_TRACER_HOME" Action="set" Permanent="no" System="yes" Value="[INSTALLFOLDER]" Part="all" />
+        <Environment Id="DD_INTEGRATIONS" Name="DD_INTEGRATIONS" Action="set" Permanent="no" System="yes" Value="[tracer]integrations.json" Part="all" />
+        <Environment Id="DD_DOTNET_TRACER_HOME" Name="DD_DOTNET_TRACER_HOME" Action="set" Permanent="no" System="yes" Value="[tracer]" Part="all" />
       </Component>
     </ComponentGroup>
 

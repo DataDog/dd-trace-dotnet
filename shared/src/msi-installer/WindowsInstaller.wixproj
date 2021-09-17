@@ -36,12 +36,13 @@
     <DefineConstants>$(DefineConstants)</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Files.Managed.Net45.GAC.wxs" />
-    <Compile Include="Files.Managed.Net45.wxs" />
-    <Compile Include="Files.Managed.Net461.GAC.wxs" />
-    <Compile Include="Files.Managed.Net461.wxs" />
-    <Compile Include="Files.Managed.NetStandard20.wxs" />
-    <Compile Include="Files.Managed.Netcoreapp31.wxs" />
+    <Compile Include="tracer\Files.wxs" />
+    <Compile Include="tracer\Files.Managed.Net45.GAC.wxs" />
+    <Compile Include="tracer\Files.Managed.Net45.wxs" />
+    <Compile Include="tracer\Files.Managed.Net461.GAC.wxs" />
+    <Compile Include="tracer\Files.Managed.Net461.wxs" />
+    <Compile Include="tracer\Files.Managed.NetStandard20.wxs" />
+    <Compile Include="tracer\Files.Managed.Netcoreapp31.wxs" />
     <Compile Include="Product.wxs" />
     <Compile Include="WixUI_InstallDir_Custom.wxs" />
   </ItemGroup>

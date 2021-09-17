@@ -4,7 +4,7 @@
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
   <?include $(sys.CURRENTDIR)\Config.wxi?>
   <Fragment>
-    <ComponentGroup Id="Files.Managed.Netcoreapp31" Directory="netcoreapp3.1">
+    <ComponentGroup Id="Files.Managed.Netcoreapp31" Directory="tracer.netcoreapp3.1">
       <Component Win64="$(var.Win64)">
         <File Id="netcoreapp31_Datadog.AutoInstrumentation.Profiler.Managed.dll"
               Source="$(var.ProfilerHomeDirectory)\netcoreapp3.1\Datadog.AutoInstrumentation.Profiler.Managed.dll"
