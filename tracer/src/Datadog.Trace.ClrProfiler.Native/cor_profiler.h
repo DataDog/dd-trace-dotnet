@@ -71,12 +71,6 @@ private:
     bool GetWrapperMethodRef(ModuleMetadata* module_metadata, ModuleID module_id,
                              const MethodReplacement& method_replacement, mdMemberRef& wrapper_method_ref,
                              mdTypeRef& wrapper_type_ref);
-    HRESULT ProcessReplacementCalls(ModuleMetadata* module_metadata, const FunctionID function_id,
-                                    const ModuleID module_id, const mdToken function_token, const FunctionInfo& caller,
-                                    const std::vector<MethodReplacement> method_replacements);
-    HRESULT ProcessInsertionCalls(ModuleMetadata* module_metadata, const FunctionID function_id,
-                                  const ModuleID module_id, const mdToken function_token, const FunctionInfo& caller,
-                                  const std::vector<MethodReplacement> method_replacements);
     bool ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id);
     std::string GetILCodes(const std::string& title, ILRewriter* rewriter, const FunctionInfo& caller,
                            ModuleMetadata* module_metadata);
