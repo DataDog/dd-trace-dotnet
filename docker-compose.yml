@@ -13,6 +13,7 @@ services:
     - "9300"
     environment:
     - discovery.type=single-node
+    - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
 
   mongo_arm64:
     image: mongo:4.0.9
@@ -118,6 +119,7 @@ services:
     - "127.0.0.1:9300:9300"
     environment:
     - discovery.type=single-node
+    - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
 
   elasticsearch5:
     image: docker.elastic.co/elasticsearch/elasticsearch:5.6.16
@@ -126,6 +128,7 @@ services:
     - "127.0.0.1:9305:9300"
     environment:
     - discovery.type=single-node
+    - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
 
   postgres:
     image: postgres:10.5-alpine
