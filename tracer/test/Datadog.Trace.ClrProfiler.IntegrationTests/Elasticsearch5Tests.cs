@@ -35,6 +35,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(GetElasticsearch))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
+        [Trait("Slice", "elasticsearch")]
         public void SubmitsTraces(string packageVersion, bool enableCallTarget)
         {
             SetCallTargetSettings(enableCallTarget);

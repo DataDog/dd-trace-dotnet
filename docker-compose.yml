@@ -352,9 +352,6 @@ services:
       - TIMEOUT_LENGTH=120
     command: elasticsearch5:9200 elasticsearch6:9200
 
-  StartDependencies.none:
-    image: rwgrim/docker-noop
-
   StartDependencies.aspnetcore:
     image: rwgrim/docker-noop
 

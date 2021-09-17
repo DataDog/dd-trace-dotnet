@@ -16,6 +16,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Collection(nameof(KafkaTestsCollection))]
+    [Trait("Slice", "kafka")]
     public class KafkaTests : TestHelper
     {
         private const int ExpectedSuccessProducerWithHandlerSpans = 20;

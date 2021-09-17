@@ -499,7 +499,7 @@ stages:
 
         for framework in "netcoreapp2.1" "netcoreapp3.0" "netcoreapp3.1" "net5.0"; do
           for distro in "debian" "alpine"; do
-            for slice in "aspnetcore" "elasticsearch" "kafka" "other" "none"; do
+            for slice in "aspnetcore" "elasticsearch" "kafka" "others"; do
               name="${framework//./_}_${distro}_${slice}"
               matrix="${matrix} '${name}':"
               matrix="${matrix} { 'publishTargetFramework': '${framework}', "

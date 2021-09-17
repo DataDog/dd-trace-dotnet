@@ -65,6 +65,9 @@ partial class Build : NukeBuild
     [Parameter("Enables code coverage")]
     readonly bool CodeCoverage;
 
+    [Parameter("Only build and run a specific splice of tests")]
+    readonly string Slice;
+
     Target Info => _ => _
         .Description("Describes the current configuration")
         .Before(Clean, Restore, BuildTracerHome)

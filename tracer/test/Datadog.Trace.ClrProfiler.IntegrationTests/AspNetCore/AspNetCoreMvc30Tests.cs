@@ -59,6 +59,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         [Theory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("Slice", "aspnetcore")]
         [MemberData(nameof(Data))]
         public async Task MeetsAllAspNetCoreMvcExpectations(string path, HttpStatusCode statusCode)
         {

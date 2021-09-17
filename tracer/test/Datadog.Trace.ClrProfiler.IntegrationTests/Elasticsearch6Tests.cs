@@ -15,6 +15,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    [Trait("Slice", "elasticsearch")]
     public class Elasticsearch6Tests : TestHelper
     {
         public Elasticsearch6Tests(ITestOutputHelper output)

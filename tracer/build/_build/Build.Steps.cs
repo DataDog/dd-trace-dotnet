@@ -1160,6 +1160,15 @@ partial class Build
             ParallelIntegrationTests.ForEach(EnsureResultsDirectory);
             ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
 
+            var sliceFilter = Slice switch
+            {
+                "aspnetcore" => "&(Slice=aspnetcore)",
+                "elasticsearch" => "&(Slice=elasticsearch)",
+                "kafka" => "&(Slice=kafka)",
+                // TODO: add a "none" category for apps that don't have external dependencies
+                "others" => "&(Slice!=kafka)&(Slice!=elasticsearch)&(Slice!=aspnetcore)",
+                _ => string.Empty,
+            };
 
             var filter = (string.IsNullOrEmpty(Filter), IsArm64) switch
             {
