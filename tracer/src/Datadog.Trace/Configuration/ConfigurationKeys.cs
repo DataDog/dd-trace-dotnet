@@ -346,6 +346,12 @@ namespace Datadog.Trace.Configuration
         public const string KafkaCreateConsumerScopeEnabled = "DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED";
 
         /// <summary>
+        /// Configuration key for enabling or disabling CI Visibility.
+        /// Default is value is false (disabled).
+        /// </summary>
+        public const string CIVisibilityEnabled = "DD_CIVISIBILITY_ENABLED";
+
+        /// <summary>
         /// String format patterns used to match integration-specific configuration keys.
         /// </summary>
         public static class Integrations

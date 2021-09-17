@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.Ci;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Logging;
@@ -88,8 +89,15 @@ namespace Datadog.Trace.ClrProfiler
             try
             {
                 // ensure global instance is created if it's not already
-                Log.Debug("Initializing tracer singleton instance.");
-                _ = Tracer.Instance;
+                if (CIVisibility.Enabled)
+                {
+                    CIVisibility.Initialize();
+                }
+                else
+                {
+                    Log.Debug("Initializing tracer singleton instance.");
+                    _ = Tracer.Instance;
+                }
             }
             catch (Exception ex)
             {

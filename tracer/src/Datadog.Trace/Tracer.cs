@@ -213,6 +213,11 @@ namespace Datadog.Trace
             {
                 lock (_globalInstanceLock)
                 {
+                    if (_instance is ILockedTracer)
+                    {
+                        throw new Exception("The current tracer instance cannot be replaced.");
+                    }
+
                     _instance = value;
                     _globalInstanceInitialized = true;
                 }

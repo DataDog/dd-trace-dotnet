@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
         internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MsTestIntegration));
 
-        internal static bool IsEnabled => Common.TestTracer.Settings.IsIntegrationEnabled(IntegrationId);
+        internal static bool IsEnabled => CIVisibility.Enabled && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
         internal static Scope OnMethodBegin<TTestMethod>(TTestMethod testMethodInfo, Type type)
             where TTestMethod : ITestMethod
@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
             string testSuite = testMethodInfo.TestClassName;
             string testName = testMethodInfo.TestMethodName;
 
-            Scope scope = Common.TestTracer.StartActive("mstest.test", serviceName: Common.TestTracer.DefaultServiceName);
+            Scope scope = Tracer.Instance.StartActive("mstest.test", serviceName: Tracer.Instance.DefaultServiceName);
             Span span = scope.Span;
 
             span.Type = SpanTypes.Test;

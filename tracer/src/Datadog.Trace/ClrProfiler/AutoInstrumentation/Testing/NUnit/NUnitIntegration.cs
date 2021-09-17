@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(NUnitIntegration));
 
-        internal static bool IsEnabled => Common.TestTracer.Settings.IsIntegrationEnabled(IntegrationId);
+        internal static bool IsEnabled => CIVisibility.Enabled && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
         internal static Scope CreateScope(ITest currentTest, Type targetType)
         {
@@ -48,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
             string skipReason = null;
 
-            Scope scope = Common.TestTracer.StartActive("nunit.test", serviceName: Common.TestTracer.DefaultServiceName);
+            Scope scope = Tracer.Instance.StartActive("nunit.test", serviceName: Tracer.Instance.DefaultServiceName);
             Span span = scope.Span;
 
             span.Type = SpanTypes.Test;
