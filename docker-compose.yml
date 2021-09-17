@@ -316,26 +316,40 @@ services:
       - kafka-zookeeper
       - aws_sqs
 
-  StartDependencies:
+  StartDependencies.others:
     image: andrewlock/wait-for-dependencies
     depends_on:
       - aerospike
       - servicestackredis
       - stackexchangeredis
-      - elasticsearch6
-      - elasticsearch5
       - sqlserver
       - mongo
       - postgres
       - mysql
       - mysql57
       - rabbitmq
-      - kafka-broker
-      - kafka-zookeeper
       - aws_sqs
     environment:
       - TIMEOUT_LENGTH=120
-    command: aerospike:3000 servicestackredis:6379 stackexchangeredis:6379 elasticsearch5:9200 elasticsearch6:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 aws_sqs:9324
+    command: aerospike:3000 servicestackredis:6379 stackexchangeredis:6379 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 aws_sqs:9324
+
+  StartDependencies.kafka:
+    image: andrewlock/wait-for-dependencies
+    depends_on:
+      - kafka-broker
+      - kafka-zookeeper
+    environment:
+      - TIMEOUT_LENGTH=120
+    command: kafka-broker:9092 kafka-zookeeper:2181
+
+  StartDependencies.elasticsearch:
+    image: andrewlock/wait-for-dependencies
+    depends_on:
+      - elasticsearch6
+      - elasticsearch5
+    environment:
+      - TIMEOUT_LENGTH=120
+    command: elasticsearch5:9200 elasticsearch6:9200
 
   IntegrationTests.ARM64:
     build:

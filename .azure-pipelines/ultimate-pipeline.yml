@@ -495,29 +495,26 @@ stages:
   - job: generator
     steps:
     - bash: |
-        declare -a framework=("netcoreapp2.1" "netcoreapp3.0" "netcoreapp3.1" "net5.0")
-        declare -a distro=("debian" "alpine")
-        declare -a filters=("elasticsearch" "kafka" "others")
         matrix="{"
 
         for framework in "netcoreapp2.1" "netcoreapp3.0" "netcoreapp3.1" "net5.0"; do
-        for distro in "debian" "alpine"; do
-        for deps in "elasticsearch" "kafka" "other"; do
-        name="${framework//./_}_${distro}_${deps}"
-        matrix="${matrix} '${name}':"
-        matrix="${matrix} { 'publishTargetFramework': '${framework}', "
-                    matrix="${matrix} 'baseImage': '${distro}', "
-                    matrix="${matrix} 'dependencies': '${deps}' },"
-                done
+          for distro in "debian" "alpine"; do
+            for deps in "aspnetcore" "elasticsearch" "kafka" "other" "none"; do
+              name="${framework//./_}_${distro}_${deps}"
+              matrix="${matrix} '${name}':"
+              matrix="${matrix} { 'publishTargetFramework': '${framework}', "
+              matrix="${matrix} 'baseImage': '${distro}', "
+              matrix="${matrix} 'dependencies': '${deps}' },"
             done
+          done
         done
 
         matrix="${matrix::-1} }"
         echo "##vso[task.setVariable variable=values;isOutput=true]${matrix}"
       name: mtrx
 
-
   - job: Test
+    dependsOn: generator
     strategy:
       matrix: $[ dependencies.generator.outputs['mtrx.values'] ]
 
@@ -528,16 +525,6 @@ stages:
       vmImage: ubuntu-18.04
 
     steps:
-    # Doing a clean of obj files _before_ restore to remove build output from previous runs
-    # Can't do a full clean, as otherwise restore-working-directory fails
-    # Only necessary for ARM64, but shouldn't cause any harm on others
-    # Can't ifdef it as depends on a matrix variable
-    - template: steps/run-in-docker.yml
-      parameters:
-        build: true
-        baseImage: $(baseImage)
-        command: "CleanObjFiles"
-
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-linux-$(baseImage)-working-directory
@@ -556,6 +543,7 @@ stages:
 
     - task: DockerCompose@0
       displayName: docker-compose start dependencies
+      condition: ne(variables['deps'], 'none)
       inputs:
         containerregistrytype: Container Registry
         dockerComposeCommand: run --rm StartDependencies
