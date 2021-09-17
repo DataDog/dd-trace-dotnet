@@ -273,7 +273,7 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdk5Version:-5.0.103}
+        - DOTNETSDK_VERSION=${dotnetCoreSdk5Version:-5.0.401}
     image: dd-trace-dotnet/${baseImage:-debian}-tester
     command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1} --code-coverage
     volumes:
@@ -342,7 +342,7 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdk5Version:-5.0.103}
+        - DOTNETSDK_VERSION=${dotnetCoreSdk5Version:-5.0.401}
     image: dd-trace-dotnet/${baseImage:-debian}-tester
     command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1}
     volumes:
