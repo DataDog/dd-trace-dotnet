@@ -606,9 +606,23 @@ namespace PrepareRelease
                 return Equals((CallTargetDefinitionSource)obj);
             }
 
-            public override int GetHashCode() => HashCode.Combine(IntegrationName, TargetAssembly, TargetType, TargetMethod) + HashCode.Combine(TargetMinimumMajor, TargetMinimumMinor, TargetMinimumPatch,
-                                                                                                                               TargetMaximumMajor, TargetMaximumMinor, TargetMaximumPatch,
-                                                                                                                               WrapperAssembly, WrapperType);
+            public override int GetHashCode()
+            {
+                var hash = new HashCode();
+                hash.Add(IntegrationName);
+                hash.Add(TargetAssembly);
+                hash.Add(TargetType);
+                hash.Add(TargetMethod);
+                hash.Add(TargetMinimumMajor);
+                hash.Add(TargetMinimumMinor);
+                hash.Add(TargetMinimumPatch);
+                hash.Add(TargetMaximumMajor);
+                hash.Add(TargetMaximumMinor);
+                hash.Add(TargetMaximumPatch);
+                hash.Add(WrapperAssembly);
+                hash.Add(WrapperType);
+                return hash.ToHashCode();
+            }
         }
     }
 }
