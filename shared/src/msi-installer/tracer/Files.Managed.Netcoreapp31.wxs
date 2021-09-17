@@ -6,16 +6,6 @@
   <Fragment>
     <ComponentGroup Id="Files.Managed.Netcoreapp31" Directory="tracer.netcoreapp3.1">
       <Component Win64="$(var.Win64)">
-        <File Id="netcoreapp31_Datadog.AutoInstrumentation.Profiler.Managed.dll"
-              Source="$(var.ProfilerHomeDirectory)\netcoreapp3.1\Datadog.AutoInstrumentation.Profiler.Managed.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="netcoreapp31_Datadog.AutoInstrumentation.Profiler.Managed.pdb"
-              Source="$(var.ProfilerHomeDirectory)\netcoreapp3.1\Datadog.AutoInstrumentation.Profiler.Managed.pdb"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
         <File Id="netcoreapp31_Datadog.Trace.dll"
               Source="$(var.TracerHomeDirectory)\netcoreapp3.1\Datadog.Trace.dll"
               KeyPath="yes" Checksum="yes"/>
@@ -33,11 +23,6 @@
       <Component Win64="$(var.Win64)">
         <File Id="netcoreapp31_Datadog.Trace.pdb"
               Source="$(var.TracerHomeDirectory)\netcoreapp3.1\Datadog.Trace.pdb"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="netcoreapp31_Google.Protobuf.dll"
-              Source="$(var.ProfilerHomeDirectory)\netcoreapp3.1\Google.Protobuf.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
     </ComponentGroup>

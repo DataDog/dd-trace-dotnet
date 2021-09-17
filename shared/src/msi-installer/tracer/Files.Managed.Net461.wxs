@@ -16,16 +16,6 @@
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
-        <File Id="net461_Datadog.AutoInstrumentation.Profiler.Managed.dll"
-              Source="$(var.ProfilerHomeDirectory)\net461\Datadog.AutoInstrumentation.Profiler.Managed.dll"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="net461_Datadog.AutoInstrumentation.Profiler.Managed.pdb"
-              Source="$(var.ProfilerHomeDirectory)\net461\Datadog.AutoInstrumentation.Profiler.Managed.pdb"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
         <File Id="net461_Datadog.Trace.dll"
               Source="$(var.TracerHomeDirectory)\net461\Datadog.Trace.dll"
               KeyPath="yes" Checksum="yes"/>
@@ -43,11 +33,6 @@
       <Component Win64="$(var.Win64)">
         <File Id="net461_Datadog.Trace.pdb"
               Source="$(var.TracerHomeDirectory)\net461\Datadog.Trace.pdb"
-              KeyPath="yes" Checksum="yes"/>
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="net461_Google.Protobuf.dll"
-              Source="$(var.ProfilerHomeDirectory)\net461\Google.Protobuf.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
     </ComponentGroup>

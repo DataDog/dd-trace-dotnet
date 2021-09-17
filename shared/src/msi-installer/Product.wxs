@@ -34,7 +34,13 @@
     <MediaTemplate EmbedCab="yes"/>
 
     <Feature Id="ProductFeature" Title="Datadog.Trace.ClrProfiler" Level="1">
-      <ComponentGroupRef Id="Files"/>
+      <ComponentGroupRef Id="ContinuousProfiler.Files"/>
+      <ComponentGroupRef Id="ContinuousProfiler.Files.Managed.Net45.GAC"/>
+      <ComponentGroupRef Id="ContinuousProfiler.Files.Managed.Net461.GAC"/>
+      <ComponentGroupRef Id="ContinuousProfiler.Files.Managed.Net45"/>
+      <ComponentGroupRef Id="ContinuousProfiler.Files.Managed.Net461"/>
+      <ComponentGroupRef Id="ContinuousProfiler.Files.Managed.NetStandard20"/>
+      <ComponentGroupRef Id="ContinuousProfiler.Files.Managed.Netcoreapp31"/>
       <ComponentGroupRef Id="tracer.Files"/>
       <ComponentGroupRef Id="Files.Managed.Net45.GAC"/>
       <ComponentGroupRef Id="Files.Managed.Net461.GAC"/>
@@ -48,10 +54,12 @@
       <ComponentGroupRef Id="EnvironmentVariables.IIS"/>
 
       <?if $(var.Win64) = yes ?>
+      <ComponentGroupRef Id="ContinuousProfiler.Files.Native.64"/>
       <ComponentGroupRef Id="Files.Native.64"/>
       <?endif ?>
 
       <!-- The 32-bit profiler is always included, even in 64-bit builds -->
+      <ComponentGroupRef Id="ContinuousProfiler.Files.Native.32"/>
       <ComponentGroupRef Id="Files.Native.32"/>
     </Feature>
   </Product>
@@ -85,6 +93,27 @@
                 <!-- Ignored as all of its components will be installed in the GAC -->
               </Directory>
             </Directory>
+            <Directory Id="ContinuousProfiler" Name="ContinuousProfiler">
+              <!-- ContinuousProfiler -->
+              <Directory Id="ContinuousProfiler.net45" Name="net45">
+                <!-- ".\net45" -->
+              </Directory>
+              <Directory Id="ContinuousProfiler.net461" Name="net461">
+                <!-- ".\net461" -->
+              </Directory>
+              <Directory Id="ContinuousProfiler.netstandard2.0" Name="netstandard2.0">
+                <!-- ".\netstandard2.0" -->
+              </Directory>
+              <Directory Id="ContinuousProfiler.netcoreapp3.1" Name="netcoreapp3.1">
+                  <!-- ".\netcoreapp3.1" -->
+              </Directory>
+              <Directory Id="ContinuousProfiler.net45.GAC" Name="net45.GAC">
+                <!-- Ignored as all of its components will be installed in the GAC -->
+              </Directory>
+              <Directory Id="ContinuousProfiler.net461.GAC" Name="net461.GAC">
+                <!-- Ignored as all of its components will be installed in the GAC -->
+              </Directory>
+            </Directory>
           </Directory>
         </Directory>
       </Directory>
@@ -99,6 +128,9 @@
             <!-- ".\.NET Tracer" -->
             <Directory Id="tracer.32" Name="tracer">
             <!-- tracer -->
+            </Directory>
+            <Directory Id="ContinuousProfiler.32" Name="ContinuousProfiler">
+              <!-- ContinuousProfiler -->
             </Directory>
           </Directory>
         </Directory>
@@ -118,15 +150,6 @@
   </Fragment>
 
   <Fragment>
-    <ComponentGroup Id="Files" Directory="INSTALLFOLDER">
-      <Component Win64="$(var.Win64)">
-        <File Id="DDProf_SetEnv.bat" Source="$(var.ProfilerHomeDirectory)\DDProf-SetEnv.bat" />
-      </Component>
-      <Component Win64="$(var.Win64)">
-        <File Id="DDProf_SetEnv.sh" Source="$(var.ProfilerHomeDirectory)\DDProf-SetEnv.sh" />
-      </Component>
-    </ComponentGroup>
-
     <ComponentGroup Id="EmptyFolders" Directory="CommonAppDataFolder.DatadogDotNetTracer.logs">
       <Component Id="EmptyFolders.Logs" Guid="0A9B510D-44F6-41A9-9EFE-E2CEB7314CF3">
         <CreateFolder Directory="CommonAppDataFolder.DatadogDotNetTracer"/>

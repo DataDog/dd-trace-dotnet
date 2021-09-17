@@ -25,18 +25,6 @@
               Checksum="yes">
         </File>
       </Component>
-      <Component Win64="yes">
-        <File Id="Datadog.AutoInstrumentation.Profiler.Native.x64.dll"
-              Source="$(var.ProfilerHomeDirectory)\Datadog.AutoInstrumentation.Profiler.Native.x64.dll"
-              Checksum="yes">
-        </File>
-      </Component>
-      <Component Win64="yes">
-        <File Id="Datadog.AutoInstrumentation.Profiler.Native.x64.pdb"
-              Source="$(var.ProfilerHomeDirectory)\Datadog.AutoInstrumentation.Profiler.Native.x64.pdb"
-              Checksum="yes">
-        </File>
-      </Component>
     </ComponentGroup>
 
     <!-- For the 64-bit installer, also install the 32-bit binaries -->
