@@ -3,16 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Configuration;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Sqlite
 {
     internal static class SqliteConstants
     {
-        public const string SqlCommandIntegrationName = "SqliteCommand";
-
         internal struct MicrosoftDataSqliteClientData : IAdoNetClientData
         {
-            public string IntegrationName => SqlCommandIntegrationName;
-
             public string AssemblyName => "Microsoft.Data.Sqlite";
 
             public string SqlCommandType => "Microsoft.Data.Sqlite.SqliteCommand";
@@ -28,8 +26,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Sqlite
 
         internal struct SystemDataSqliteClientData : IAdoNetClientData
         {
-            public string IntegrationName => SqlCommandIntegrationName;
-
             public string AssemblyName => "System.Data.SQLite";
 
             public string SqlCommandType => "System.Data.SQLite.SQLiteCommand";

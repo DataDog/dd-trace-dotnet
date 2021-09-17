@@ -3,16 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Configuration;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Oracle
 {
     internal static class OracleConstants
     {
-        public const string SqlCommandIntegrationName = "OracleCommand";
-
         internal struct OracleClientData : IAdoNetClientData
         {
-            public string IntegrationName => SqlCommandIntegrationName;
-
             public string AssemblyName => "Oracle.ManagedDataAccess";
 
             public string SqlCommandType => "Oracle.ManagedDataAccess.Client.OracleCommand";
@@ -28,8 +26,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Oracle
 
         internal struct OracleCoreClientData : IAdoNetClientData
         {
-            public string IntegrationName => SqlCommandIntegrationName;
-
             public string AssemblyName => "Oracle.ManagedDataAccess";
 
             public string SqlCommandType => "Oracle.ManagedDataAccess.Client.OracleCommand";
@@ -45,8 +41,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Oracle
 
         internal struct OracleDataAccessClientData : IAdoNetClientData
         {
-            public string IntegrationName => SqlCommandIntegrationName;
-
             public string AssemblyName => "Oracle.DataAccess";
 
             public string SqlCommandType => "Oracle.DataAccess.Client.OracleCommand";

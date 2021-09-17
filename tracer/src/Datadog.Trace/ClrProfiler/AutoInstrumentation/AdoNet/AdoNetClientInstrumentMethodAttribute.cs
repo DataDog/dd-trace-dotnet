@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             TypeName = AdoNetClientData.SqlCommandType;
             MinimumVersion = AdoNetClientData.MinimumVersion;
             MaximumVersion = AdoNetClientData.MaximumVersion;
-            IntegrationName = AdoNetClientData.IntegrationName;
+            IntegrationName = AdoNetConstants.IntegrationName;
         }
 
         protected IAdoNetClientData AdoNetClientData { get; }

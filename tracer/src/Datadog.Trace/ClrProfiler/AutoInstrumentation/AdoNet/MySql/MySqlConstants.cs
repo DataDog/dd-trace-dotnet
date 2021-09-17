@@ -3,16 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Configuration;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.MySql
 {
     internal static class MySqlConstants
     {
-        public const string SqlCommandIntegrationName = "MySqlCommand";
-
         internal struct MySqlDataClientData : IAdoNetClientData
         {
-            public string IntegrationName => SqlCommandIntegrationName;
-
             public string AssemblyName => "MySql.Data";
 
             public string SqlCommandType => "MySql.Data.MySqlClient.MySqlCommand";
@@ -28,8 +26,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.MySql
 
         internal struct MySqlData8ClientData : IAdoNetClientData
         {
-            public string IntegrationName => SqlCommandIntegrationName;
-
             public string AssemblyName => "MySql.Data";
 
             public string SqlCommandType => "MySql.Data.MySqlClient.MySqlCommand";
@@ -45,8 +41,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.MySql
 
         internal struct MySqlConnectorClientData : IAdoNetClientData
         {
-            public string IntegrationName => SqlCommandIntegrationName;
-
             public string AssemblyName => "MySqlConnector";
 
             public string SqlCommandType => "MySqlConnector.MySqlCommand";

@@ -15,8 +15,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
         internal struct SystemDataClientData : IAdoNetClientData
         {
-            public string IntegrationName => AdoNet.AdoNetConstants.IntegrationName;
-
             public string AssemblyName => "System.Data";
 
             public string SqlCommandType => "System.Data.Common.DbCommand";
@@ -32,8 +30,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
         internal struct SystemDataCommonClientData : IAdoNetClientData
         {
-            public string IntegrationName => AdoNet.AdoNetConstants.IntegrationName;
-
             public string AssemblyName => "System.Data.Common";
 
             public string SqlCommandType => "System.Data.Common.DbCommand";
