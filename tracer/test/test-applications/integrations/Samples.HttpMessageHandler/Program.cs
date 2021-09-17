@@ -205,6 +205,7 @@ namespace Samples.HttpMessageHandler
                     {
                         context.Response.StatusCode = 502;
                     }
+
                     context.Response.OutputStream.Write(responseBytes, 0, responseBytes.Length);
 
                     // we must close the response
@@ -213,6 +214,11 @@ namespace Samples.HttpMessageHandler
                 catch (HttpListenerException)
                 {
                     // listener was stopped,
+                    // ignore to let the loop end and the method return
+                }
+                catch (ObjectDisposedException)
+                {
+                    // can happen when the listener is stopped
                     // ignore to let the loop end and the method return
                 }
             }

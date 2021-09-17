@@ -3,16 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Configuration;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Npgsql
 {
     internal static class NpgsqlConstants
     {
-        public const string SqlCommandIntegrationName = "NpgsqlCommand";
-
         internal struct NpgsqlClientData : IAdoNetClientData
         {
-            public string IntegrationName => SqlCommandIntegrationName;
-
             public string AssemblyName => "Npgsql";
 
             public string SqlCommandType => "Npgsql.NpgsqlCommand";

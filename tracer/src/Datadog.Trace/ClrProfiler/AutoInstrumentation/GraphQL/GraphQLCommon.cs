@@ -15,8 +15,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
     internal class GraphQLCommon
     {
         internal const string GraphQLAssembly = "GraphQL";
+        internal const string GraphQLReactiveAssembly = "GraphQL.SystemReactive";
         internal const string Major2 = "2";
         internal const string Major2Minor3 = "2.3";
+        internal const string Major3 = "3";
+        internal const string Major4 = "4";
 
         internal const string IntegrationName = nameof(IntegrationIds.GraphQL);
         internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);

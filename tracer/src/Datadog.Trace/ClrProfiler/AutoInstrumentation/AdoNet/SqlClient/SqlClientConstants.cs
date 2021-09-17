@@ -3,16 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Configuration;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.SqlClient
 {
     internal static class SqlClientConstants
     {
-        public const string SqlCommandIntegrationName = "SqlCommand";
-
         internal struct SystemDataAdoNetClientData : IAdoNetClientData
         {
-            public string IntegrationName => SqlCommandIntegrationName;
-
             public string AssemblyName => "System.Data";
 
             public string SqlCommandType => "System.Data.SqlClient.SqlCommand";
@@ -28,8 +26,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.SqlClient
 
         internal struct SystemDataSqlClientAdoNetClientData : IAdoNetClientData
         {
-            public string IntegrationName => SqlCommandIntegrationName;
-
             public string AssemblyName => "System.Data.SqlClient";
 
             public string SqlCommandType => "System.Data.SqlClient.SqlCommand";
@@ -45,8 +41,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.SqlClient
 
         internal struct MicrosoftDataAdoNetClientData : IAdoNetClientData
         {
-            public string IntegrationName => SqlCommandIntegrationName;
-
             public string AssemblyName => "Microsoft.Data.SqlClient";
 
             public string SqlCommandType => "Microsoft.Data.SqlClient.SqlCommand";

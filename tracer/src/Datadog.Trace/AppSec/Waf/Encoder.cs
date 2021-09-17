@@ -86,8 +86,10 @@ namespace Datadog.Trace.AppSec.Waf
                     ulong i => new Obj(WafNative.ObjectUnsigned(i)),
                     IEnumerable<KeyValuePair<string, JToken>> objDict => EncodeDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), argCache, remainingDepth),
                     IEnumerable<KeyValuePair<string, string>> objDict => EncodeDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), argCache, remainingDepth),
+                    IEnumerable<KeyValuePair<string, List<string>>> objDict => EncodeDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), argCache, remainingDepth),
                     IEnumerable<KeyValuePair<string, object>> objDict => EncodeDictionary(objDict, argCache, remainingDepth),
                     IList<JToken> objs => EncodeList(objs.Select(x => (object)x), argCache, remainingDepth),
+                    IList<string> objs => EncodeList(objs.Select(x => (object)x), argCache, remainingDepth),
                     IList<object> objs => EncodeList(objs, argCache, remainingDepth),
                     _ => throw new Exception($"Couldn't encode: {o}, type: {o.GetType()}")
                 };

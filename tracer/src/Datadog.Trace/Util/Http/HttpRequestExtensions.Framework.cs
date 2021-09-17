@@ -17,7 +17,7 @@ namespace Datadog.Trace.Util.Http
     {
         internal static Dictionary<string, object> PrepareArgsForWaf(this HttpRequest request, RouteData routeDatas = null)
         {
-            var headersDic = new Dictionary<string, string>();
+            var headersDic = new Dictionary<string, string>(request.Headers.Keys.Count);
             var headerKeys = request.Headers.Keys;
             foreach (string k in headerKeys)
             {
@@ -27,17 +27,24 @@ namespace Datadog.Trace.Util.Http
                 }
             }
 
-            var cookiesDic = new Dictionary<string, string>();
+            var cookiesDic = new Dictionary<string, string>(request.Cookies.AllKeys.Length);
             foreach (var k in request.Cookies.AllKeys)
             {
                 cookiesDic.Add(k, request.Cookies[k].Value);
             }
 
-            var dict = new Dictionary<string, object>()
+            var queryDic = new Dictionary<string, string>(request.QueryString.AllKeys.Length);
+            foreach (var k in request.QueryString.AllKeys)
+            {
+                var values = request.QueryString[k];
+                queryDic.Add(k, values);
+            }
+
+            var dict = new Dictionary<string, object>
             {
                 { AddressesConstants.RequestMethod, request.HttpMethod },
                 { AddressesConstants.RequestUriRaw, request.Url.AbsoluteUri },
-                { AddressesConstants.RequestQuery, request.Url.Query },
+                { AddressesConstants.RequestQuery, queryDic },
                 { AddressesConstants.RequestHeaderNoCookies, headersDic },
                 { AddressesConstants.RequestCookies, cookiesDic },
             };

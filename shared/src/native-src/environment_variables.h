@@ -17,6 +17,23 @@ namespace shared {
 		// "/var/log/datadog/dotnet/" on Linux.
 		const WSTRING log_directory = WStr("DD_TRACE_LOG_DIRECTORY");
 
+
+		//
+		// LOADER FEATURE FLAGS
+		//
+
+		// Enables or disables the module initializer rewriting
+		const WSTRING loader_rewrite_module_initializer_enabled = WStr("DD_LOADER_REWRITE_MODULE_INITIALIZER_ENABLED");
+
+		// Enables or disables the module entrypoint rewriting
+		const WSTRING loader_rewrite_module_entrypoint_enabled = WStr("DD_LOADER_REWRITE_MODULE_ENTRYPOINT_ENABLED");
+
+		// Enables or disables the mscorlib rewriting
+		const WSTRING loader_rewrite_mscorlib_enabled = WStr("DD_LOADER_REWRITE_MSCORLIB_ENABLED");
+
+		// Enables or disables NGEN images support
+		const WSTRING loader_ngen_enabled = WStr("DD_LOADER_NGEN_ENABLED");
+
 	}  // namespace environment
 }  // namespace shared
 
