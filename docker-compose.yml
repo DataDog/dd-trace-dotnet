@@ -109,6 +109,7 @@ services:
     - "127.0.0.1:9310:9300"
     environment:
     - discovery.type=single-node
+    - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
 
   elasticsearch6:
     image: docker.elastic.co/elasticsearch/elasticsearch:6.4.2
