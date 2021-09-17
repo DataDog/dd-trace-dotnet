@@ -1036,17 +1036,27 @@ partial class Build
                     var project = Solution.GetProject(path);
                     return project?.Name switch
                     {
+                        var name when projectsToSkip.Contains(name) => false,
+                        var name when multiPackageProjects.Contains(name) => false,
+                        _ when !string.IsNullOrWhiteSpace(SampleName) => project?.Name?.Contains(SampleName) ?? false,
                         "Samples.AspNetCoreMvc21" => Framework == TargetFramework.NETCOREAPP2_1,
                         "Samples.AspNetCoreMvc30" => Framework == TargetFramework.NETCOREAPP3_0,
                         "Samples.AspNetCoreMvc31" => Framework == TargetFramework.NETCOREAPP3_1,
                         "Samples.AspNetCore2" => Framework == TargetFramework.NETCOREAPP2_1,
                         "Samples.AspNetCore5" => Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NETCOREAPP3_0,
                         "Samples.GraphQL4" => Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0,
-                        var name when projectsToSkip.Contains(name) => false,
-                        var name when multiPackageProjects.Contains(name) => false,
-                        _ when !string.IsNullOrWhiteSpace(SampleName) => project?.Name?.Contains(SampleName) ?? false,
                         _ => true,
                     };
+                })
+                .Where(path => Slice switch
+                {
+                    "aspnetcore" => Solution.GetProject(path).Name.Contains("AspNetCore"),
+                    "kafka" => Solution.GetProject(path).Name.Contains("Kafka"),
+                    "elasticsearch" => Solution.GetProject(path).Name.Contains("ElasticSearch"),
+                    "others" => !Solution.GetProject(path).Name.Contains("AspNetCore")
+                                    && Solution.GetProject(path).Name.Contains("Kafka")
+                                    && Solution.GetProject(path).Name.Contains("ElasticSearch"),
+                      _ => true,
                 });
 
             // do the build and publish separately to avoid dependency issues
@@ -1172,8 +1182,8 @@ partial class Build
 
             var filter = (string.IsNullOrEmpty(Filter), IsArm64) switch
             {
-                (true, false) => "Category!=LinuxUnsupported",
-                (true, true) => "(Category!=ArmUnsupported)&(Category!=LinuxUnsupported)",
+                (true, false) => "(Category!=LinuxUnsupported)" + sliceFilter,
+                (true, true) => "(Category!=ArmUnsupported)&(Category!=LinuxUnsupported)" + sliceFilter,
                 _ => Filter
             };
 
