@@ -284,6 +284,7 @@ services:
       - artifacts=/project/${relativeArtifacts:-src/bin/artifacts}
       - framework=${framework:-netcoreapp3.1}
       - baseImage=${baseImage:-default}
+      - slice=${slice:-}
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-0}
       - MONGO_HOST=mongo
       - SERVICESTACK_REDIS_HOST=servicestackredis:6379
@@ -350,6 +351,12 @@ services:
     environment:
       - TIMEOUT_LENGTH=120
     command: elasticsearch5:9200 elasticsearch6:9200
+
+  StartDependencies.none:
+    image: rwgrim/docker-noop
+
+  StartDependencies.aspnetcore:
+    image: rwgrim/docker-noop
 
   IntegrationTests.ARM64:
     build:

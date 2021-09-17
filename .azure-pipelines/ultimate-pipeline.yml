@@ -499,12 +499,12 @@ stages:
 
         for framework in "netcoreapp2.1" "netcoreapp3.0" "netcoreapp3.1" "net5.0"; do
           for distro in "debian" "alpine"; do
-            for deps in "aspnetcore" "elasticsearch" "kafka" "other" "none"; do
-              name="${framework//./_}_${distro}_${deps}"
+            for slice in "aspnetcore" "elasticsearch" "kafka" "other" "none"; do
+              name="${framework//./_}_${distro}_${slice}"
               matrix="${matrix} '${name}':"
               matrix="${matrix} { 'publishTargetFramework': '${framework}', "
               matrix="${matrix} 'baseImage': '${distro}', "
-              matrix="${matrix} 'dependencies': '${deps}' },"
+              matrix="${matrix} 'slice': '${slice}' },"
             done
           done
         done
@@ -539,14 +539,13 @@ stages:
       displayName: docker-compose build IntegrationTests
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests
+        dockerComposeCommand: build --build-arg slice=$(slice) --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests
 
     - task: DockerCompose@0
       displayName: docker-compose start dependencies
-      condition: ne(variables['deps'], 'none)
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: run --rm StartDependencies
+        dockerComposeCommand: run --rm StartDependencies.$(slice)
 
     - task: DockerCompose@0
       displayName: docker-compose run IntegrationTests
@@ -555,7 +554,8 @@ stages:
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
-        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) IntegrationTests
+          slice=$(slice)
+        dockerComposeCommand: run --no-deps --rm -e slice=$(slice) -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) IntegrationTests
 
     - task: DockerCompose@0
       displayName: docker-compose stop services
