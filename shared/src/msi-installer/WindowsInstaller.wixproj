@@ -43,6 +43,7 @@
     <Compile Include="ContinuousProfiler\Files.Managed.Net461.wxs" />
     <Compile Include="ContinuousProfiler\Files.Managed.NetStandard20.wxs" />
     <Compile Include="ContinuousProfiler\Files.Managed.Netcoreapp31.wxs" />
+    <Compile Include="tracer\EnvironmentVariables.wxs" />
     <Compile Include="tracer\Files.wxs" />
     <Compile Include="tracer\Files.Managed.Net45.GAC.wxs" />
     <Compile Include="tracer\Files.Managed.Net45.wxs" />
