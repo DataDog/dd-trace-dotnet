@@ -492,33 +492,34 @@ stages:
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: [build_linux]
   jobs:
+  - job: generator
+    steps:
+    - bash: |
+        declare -a framework=("netcoreapp2.1" "netcoreapp3.0" "netcoreapp3.1" "net5.0")
+        declare -a distro=("debian" "alpine")
+        declare -a filters=("elasticsearch" "kafka" "others")
+        matrix="{"
+
+        for framework in "netcoreapp2.1" "netcoreapp3.0" "netcoreapp3.1" "net5.0"; do
+        for distro in "debian" "alpine"; do
+        for deps in "elasticsearch" "kafka" "other"; do
+        name="${framework//./_}_${distro}_${deps}"
+        matrix="${matrix} '${name}':"
+        matrix="${matrix} { 'publishTargetFramework': '${framework}', "
+                    matrix="${matrix} 'baseImage': '${distro}', "
+                    matrix="${matrix} 'dependencies': '${deps}' },"
+                done
+            done
+        done
+
+        matrix="${matrix::-1} }"
+        echo "##vso[task.setVariable variable=values;isOutput=true]${matrix}"
+      name: mtrx
+
+
   - job: Test
     strategy:
-      matrix:
-        debian_netcoreapp2_1:
-          publishTargetFramework: netcoreapp2.1
-          baseImage: debian
-        debian_netcoreapp3_0:
-          publishTargetFramework: netcoreapp3.0
-          baseImage: debian
-        debian_netcoreapp3_1:
-          publishTargetFramework: netcoreapp3.1
-          baseImage: debian
-        debian_net5_0:
-          publishTargetFramework: net5.0
-          baseImage: debian
-        alpine_netcoreapp2_1:
-          publishTargetFramework: netcoreapp2.1
-          baseImage: alpine
-        alpine_netcoreapp3_0:
-          publishTargetFramework: netcoreapp3.0
-          baseImage: alpine
-        alpine_netcoreapp3_1:
-          publishTargetFramework: netcoreapp3.1
-          baseImage: alpine
-        alpine_net5_0:
-          publishTargetFramework: net5.0
-          baseImage: alpine
+      matrix: $[ dependencies.generator.outputs['mtrx.values'] ]
 
     variables:
       TestAllPackageVersions: true
