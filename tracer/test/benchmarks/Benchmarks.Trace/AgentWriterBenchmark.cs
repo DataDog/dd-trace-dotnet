@@ -112,6 +112,9 @@ namespace Benchmarks.Trace
 
                 return new FakeApiResponse();
             }
+
+            public Task<string> RequestContent() => Task.FromResult(string.Empty);
+            
         }
 
         private class FakeApiResponse : IApiResponse
