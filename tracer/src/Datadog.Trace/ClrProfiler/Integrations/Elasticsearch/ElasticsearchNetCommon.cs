@@ -32,28 +32,40 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 return null;
             }
 
-            var requestParameters = pipeline.RequestParameters;
-            string requestName = requestParameters?.GetType().Name.Replace("RequestParameters", string.Empty);
-
             var pathAndQuery = requestData.Path;
-
             string method = requestData.Method;
             var url = requestData.Uri?.ToString();
+
+            var scope = CreateScope(tracer, integrationId, pathAndQuery, method, pipeline.RequestParameters, out var tags);
+            tags.Url = url;
+            return scope;
+        }
+
+        public static Scope CreateScope(Tracer tracer, IntegrationInfo integrationId, string path, string method, object requestParameters, out ElasticsearchTags tags)
+        {
+            if (!tracer.Settings.IsIntegrationEnabled(integrationId))
+            {
+                // integration disabled, don't create a scope, skip this trace
+                tags = null;
+                return null;
+            }
+
+            string requestName = requestParameters?.GetType().Name.Replace("RequestParameters", string.Empty);
 
             string serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
 
             Scope scope = null;
 
+            tags = new ElasticsearchTags();
+
             try
             {
-                var tags = new ElasticsearchTags();
                 scope = tracer.StartActiveWithTags(OperationName, serviceName: serviceName, tags: tags);
                 var span = scope.Span;
-                span.ResourceName = requestName ?? pathAndQuery ?? string.Empty;
+                span.ResourceName = requestName ?? path ?? string.Empty;
                 span.Type = SpanType;
                 tags.Action = requestName;
                 tags.Method = method;
-                tags.Url = url;
 
                 tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
             }
