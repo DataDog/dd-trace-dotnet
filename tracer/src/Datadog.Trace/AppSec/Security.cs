@@ -139,10 +139,10 @@ namespace Datadog.Trace.AppSec
             using var wafResult = additiveContext.Run(args);
             if (wafResult.ReturnCode == ReturnCode.Monitor || wafResult.ReturnCode == ReturnCode.Block)
             {
-                Log.Information($"AppSec: Attack detected! Action: {wafResult.ReturnCode}, Blocking enabled : {_settings.BlockingEnabled}");
+                Log.Information("AppSec: Attack detected! Action: {ReturnCode}, Blocking enabled : {BlockingEnabled}", wafResult.ReturnCode, _settings.BlockingEnabled);
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
-                    Log.Information($"AppSec: Attack arguments " + Encoder.FormatArgs(args));
+                    Log.Information("AppSec: Attack arguments {Args}", Encoder.FormatArgs(args));
                 }
 
                 var managedWafResult = Waf.ReturnTypes.Managed.Return.From(wafResult);
@@ -195,7 +195,11 @@ namespace Datadog.Trace.AppSec
 
             if (!osSupported || !archSupported)
             {
-                Log.Warning($"AppSec could not start because the current environment is not supported. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help. Host information: {{ operating_system:{frameworkDescription.OSPlatform} }}, arch:{{ {frameworkDescription.ProcessArchitecture} }}, runtime_infos: {{ {frameworkDescription.ProductVersion} }}");
+                Log.Warning(
+                    "AppSec could not start because the current environment is not supported. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help. Host information: {{ operating_system:{frameworkDescription.OSPlatform} }}, arch:{{ {frameworkDescription.ProcessArchitecture} }}, runtime_infos: {{ {frameworkDescription.ProductVersion} }}",
+                    frameworkDescription.OSPlatform,
+                    frameworkDescription.ProcessArchitecture,
+                    frameworkDescription.ProductVersion);
             }
 
             return osSupported && archSupported;

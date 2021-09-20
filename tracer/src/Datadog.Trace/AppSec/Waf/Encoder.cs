@@ -73,7 +73,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         private static Obj EncodeInternal(object o, List<Obj> argCache, int remainingDepth)
         {
-            Log.Debug($"Encoding: {o?.GetType()}");
+            Log.Debug("Encoding type: {Type}", o?.GetType());
 
             var value =
                 o switch
@@ -91,7 +91,7 @@ namespace Datadog.Trace.AppSec.Waf
                     IList<JToken> objs => EncodeList(objs.Select(x => (object)x), argCache, remainingDepth),
                     IList<string> objs => EncodeList(objs.Select(x => (object)x), argCache, remainingDepth),
                     IList<object> objs => EncodeList(objs, argCache, remainingDepth),
-                    _ => throw new Exception($"Couldn't encode: {o}, type: {o.GetType()}")
+                    _ => throw new Exception($"Couldn't encod type: {o?.GetType()}")
                 };
 
             argCache.Add(value);
@@ -101,20 +101,20 @@ namespace Datadog.Trace.AppSec.Waf
 
         private static Obj EncodeList(IEnumerable<object> objEnumerator, List<Obj> argCache, int remainingDepth)
         {
-            Log.Debug($"Encoding list: {objEnumerator?.GetType()}");
+            Log.Debug("Encoding list: {Type}", objEnumerator?.GetType());
 
             var arrNat = WafNative.ObjectArray();
 
             if (remainingDepth-- <= 0)
             {
-                Log.Warning($"EncodeList: object graph too deep, truncating nesting " + string.Join(", ", objEnumerator));
+                Log.Warning("EncodeList: object graph too deep, truncating nesting {Items}", string.Join(", ", objEnumerator));
                 return new Obj(arrNat);
             }
 
             var count = objEnumerator is IList<object> objs ? objs.Count : objEnumerator.Count();
             if (count > MaxMapOrArrayLength)
             {
-                Log.Warning($"EncodeList: list too long, it will be truncated, count: {count}, MaxMapOrArrayLength {MaxMapOrArrayLength}");
+                Log.Warning<int, int>("EncodeList: list too long, it will be truncated, count: {Count}, MaxMapOrArrayLength {MaxMapOrArrayLength}", count, MaxMapOrArrayLength);
                 objEnumerator = objEnumerator.Take(MaxMapOrArrayLength);
             }
 
@@ -129,13 +129,13 @@ namespace Datadog.Trace.AppSec.Waf
 
         private static Obj EncodeDictionary(IEnumerable<KeyValuePair<string, object>> objDictEnumerator, List<Obj> argCache, int remainingDepth)
         {
-            Log.Debug($"Encoding dictionary: {objDictEnumerator?.GetType()}");
+            Log.Debug("Encoding dictionary: {Type}", objDictEnumerator?.GetType());
 
             var mapNat = WafNative.ObjectMap();
 
             if (remainingDepth-- <= 0)
             {
-                Log.Warning($"EncodeDictionary: object graph too deep, truncating nesting " + string.Join(", ", objDictEnumerator.Select(x => $"{x.Key}, {x.Value}")));
+                Log.Warning("EncodeDictionary: object graph too deep, truncating nesting {Items}", string.Join(", ", objDictEnumerator.Select(x => $"{x.Key}, {x.Value}")));
                 return new Obj(mapNat);
             }
 
@@ -143,7 +143,7 @@ namespace Datadog.Trace.AppSec.Waf
 
             if (count > MaxMapOrArrayLength)
             {
-                Log.Warning($"EncodeDictionary: list too long, it will be truncated, count: {count}, MaxMapOrArrayLength {MaxMapOrArrayLength}");
+                Log.Warning<int, int>("EncodeDictionary: list too long, it will be truncated, count: {Count}, MaxMapOrArrayLength {MaxMapOrArrayLength}", count, MaxMapOrArrayLength);
                 objDictEnumerator = objDictEnumerator.Take(MaxMapOrArrayLength);
             }
 
@@ -157,7 +157,7 @@ namespace Datadog.Trace.AppSec.Waf
                 }
                 else
                 {
-                    Log.Warning($"EncodeDictionary: ignoring dictionary member with null name");
+                    Log.Warning("EncodeDictionary: ignoring dictionary member with null name");
                 }
             }
 
@@ -198,10 +198,14 @@ namespace Datadog.Trace.AppSec.Waf
                     long i => sb.Append(i),
                     uint i => sb.Append(i),
                     ulong i => sb.Append(i),
-                    IList<object> objs => FormatList(objs, sb),
-                    IEnumerable<KeyValuePair<string, object>> objDict => FormatDictionary(objDict, sb),
+                    IEnumerable<KeyValuePair<string, JToken>> objDict => FormatDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), sb),
                     IEnumerable<KeyValuePair<string, string>> objDict => FormatDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), sb),
-                    _ => throw new Exception($"Couldn't encode: {o}, type: {o.GetType()}")
+                    IEnumerable<KeyValuePair<string, List<string>>> objDict => FormatDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), sb),
+                    IEnumerable<KeyValuePair<string, object>> objDict => FormatDictionary(objDict, sb),
+                    IList<JToken> objs => FormatList(objs.Select(x => (object)x), sb),
+                    IList<string> objs => FormatList(objs.Select(x => (object)x), sb),
+                    IList<object> objs => FormatList(objs, sb),
+                    _ => throw new Exception($"Couldn't format type: {o?.GetType()}")
                 };
         }
 
@@ -237,7 +241,7 @@ namespace Datadog.Trace.AppSec.Waf
             return sb;
         }
 
-        private static StringBuilder FormatList(IList<object> objs, StringBuilder sb)
+        private static StringBuilder FormatList(IEnumerable<object> objs, StringBuilder sb)
         {
             sb.Append("[ ");
             using var enumerator = objs.GetEnumerator();

@@ -20,7 +20,8 @@ RUN apt-get update \
         ruby \
         ruby-dev \
         rubygems \
-    && gem install --no-document fpm
+    && gem install --no-document fpm \
+    && dotnet dev-certs https
 
 
 ENV CXX=clang++

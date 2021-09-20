@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -euox pipefail
 
-# in case we are being run from outside this directory
-cd "$(dirname "$0")"
 
 ROOT_DIR="$(pwd)"
 BUILD_DIR="$ROOT_DIR/tracer/build/_build"
