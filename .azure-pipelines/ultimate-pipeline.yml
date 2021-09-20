@@ -689,6 +689,10 @@ stages:
       continueOnError: true
       displayName: RunBenchmarks
 
+    - publish: tracer/build_data/benchmarks
+      artifact: benchmarks_results
+      continueOnError: true
+
     ## Is this really necessary?
     - task: PowerShell@2
       inputs:
