@@ -5,19 +5,21 @@
 
 using System.Collections;
 using System.ComponentModel;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 {
     /// <summary>
     /// System.Web.HttpContext interface for ducktyping
     /// </summary>
+    [DuckCopy]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface IHttpContext
+    public struct IHttpContext
     {
         /// <summary>
         /// Gets the items dictionary
         /// </summary>
-        IDictionary Items { get; }
+        public IDictionary Items;
     }
 }
