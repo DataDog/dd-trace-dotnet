@@ -26,6 +26,7 @@ private:
     std::atomic_bool is_attached_ = {false};
     RuntimeInformation runtime_information_;
     std::vector<IntegrationMethod> integration_methods_;
+    std::unordered_set<WSTRING> definitions_ids_;
 
     // Startup helper variables
     bool first_jit_compilation_completed = false;
@@ -146,7 +147,7 @@ public:
     //
     // Add Integrations methods
     //
-    void InitializeProfiler(CallTargetDefinition* items, int size);
+    void InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int size);
 };
 
 // Note: Generally you should not have a single, global callback implementation,

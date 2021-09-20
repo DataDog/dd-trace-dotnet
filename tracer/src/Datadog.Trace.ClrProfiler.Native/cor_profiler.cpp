@@ -1091,11 +1091,20 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId, Function
 //
 // InitializeProfiler method
 //
-void CorProfiler::InitializeProfiler(CallTargetDefinition* items, int size)
+void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int size)
 {
     auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
 
-    Logger::Info("InitializeProfiler: received from managed side: ", size, " integrations.");
+    WSTRING definitionsId = WSTRING(id);
+    Logger::Info("InitializeProfiler: received id: ", definitionsId, " from managed side with ", size,
+                 " integrations.");
+
+    if (definitions_ids_.find(definitionsId) != definitions_ids_.end())
+    {
+        Logger::Info("InitializeProfiler: Id already processed.");
+        return;
+    }
+
     if (items != nullptr && rejit_handler != nullptr)
     {
         std::vector<IntegrationMethod> integrationMethods;
@@ -1168,6 +1177,8 @@ void CorProfiler::InitializeProfiler(CallTargetDefinition* items, int size)
         }
 
         std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
+
+        definitions_ids_.emplace(definitionsId);
 
         for (const auto& moduleItem : module_id_to_info_map_)
         {

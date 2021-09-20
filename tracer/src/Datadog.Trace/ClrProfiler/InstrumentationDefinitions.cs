@@ -9,9 +9,22 @@ namespace Datadog.Trace.ClrProfiler
     {
         private static string assemblyFullName = typeof(InstrumentationDefinitions).Assembly.FullName;
 
-        internal static NativeCallTargetDefinition[] GetAllDefinitions()
+        internal static Payload GetAllDefinitions()
         {
-            return GetDefinitionsArray();
+            var definitionsArray = GetDefinitionsArray();
+
+            return new Payload
+            {
+                DefinitionsId = "FFAFA5168C4F4718B40CA8788875C2DA",
+                Definitions = definitionsArray,
+            };
+        }
+
+        internal struct Payload
+        {
+            public string DefinitionsId { get; set; }
+
+            public NativeCallTargetDefinition[] Definitions { get; set; }
         }
     }
 }
