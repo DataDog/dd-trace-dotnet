@@ -18,9 +18,10 @@
     <SuppressPdbOutput>True</SuppressPdbOutput>
     <DefineSolutionProperties>false</DefineSolutionProperties>
     <OutputName>datadog-dotnet-apm-1.28.6-$(Platform)-profiler-beta</OutputName>
+    <MonitoringHomeDirectory Condition="'$(MonitoringHomeDirectory)' == ''">$(MSBuildThisFileDirectory)..\..\bin\monitoring-home</MonitoringHomeDirectory>
     <TracerHomeDirectory Condition="'$(TracerHomeDirectory)' == ''">$(MSBuildThisFileDirectory)..\bin\windows-tracer-home</TracerHomeDirectory>
     <ProfilerHomeDirectory Condition="'$(ProfilerHomeDirectory)' == ''">$(MSBuildThisFileDirectory)..\bin\DDProf-Deploy</ProfilerHomeDirectory>
-    <DefineConstants>InstallerVersion=1.28.6;TracerHomeDirectory=$(TracerHomeDirectory);LibDdwafDirectory=$(LibDdwafDirectory);ProfilerHomeDirectory=$(ProfilerHomeDirectory)</DefineConstants>
+    <DefineConstants>InstallerVersion=1.28.6;MonitoringHomeDirectory=$(MonitoringHomeDirectory);TracerHomeDirectory=$(TracerHomeDirectory);LibDdwafDirectory=$(LibDdwafDirectory);ProfilerHomeDirectory=$(ProfilerHomeDirectory)</DefineConstants>
     <LibDdwafDirectory Condition="'$(LibDdwafDirectory)' == ''">$(LibDdwafDirectory)..\..\packages\libddwaf.1.0.7</LibDdwafDirectory>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
@@ -36,6 +37,7 @@
     <DefineConstants>$(DefineConstants)</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="shared\Files.wxs" />
     <Compile Include="ContinuousProfiler\Files.wxs" />
     <Compile Include="ContinuousProfiler\Files.Managed.Net45.GAC.wxs" />
     <Compile Include="ContinuousProfiler\Files.Managed.Net45.wxs" />

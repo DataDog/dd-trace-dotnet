@@ -34,6 +34,7 @@
     <MediaTemplate EmbedCab="yes"/>
 
     <Feature Id="ProductFeature" Title="Datadog.Trace.ClrProfiler" Level="1">
+      <ComponentGroupRef Id="shared.Files" />
       <ComponentGroupRef Id="ContinuousProfiler.Files"/>
       <ComponentGroupRef Id="ContinuousProfiler.Files.Managed.Net45.GAC"/>
       <ComponentGroupRef Id="ContinuousProfiler.Files.Managed.Net461.GAC"/>
@@ -54,11 +55,13 @@
       <ComponentGroupRef Id="EnvironmentVariables.IIS"/>
 
       <?if $(var.Win64) = yes ?>
+      <ComponentGroupRef Id="shared.Files.NativeLoader.64"/>
       <ComponentGroupRef Id="ContinuousProfiler.Files.Native.64"/>
       <ComponentGroupRef Id="Files.Native.64"/>
       <?endif ?>
 
       <!-- The 32-bit profiler is always included, even in 64-bit builds -->
+      <ComponentGroupRef Id="shared.Files.NativeLoader.32"/>
       <ComponentGroupRef Id="ContinuousProfiler.Files.Native.32"/>
       <ComponentGroupRef Id="Files.Native.32"/>
     </Feature>
