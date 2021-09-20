@@ -150,7 +150,15 @@ namespace Covertura
             return comparison;
         }
 
-        public static string RenderAsMarkdown(CoverturaReportComparison comparison, int prNumber, string oldReportLink, string newReportlink, string oldCommit, string newCommit)
+        public static string RenderAsMarkdown(
+            CoverturaReportComparison comparison,
+            int prNumber,
+            string oldDownloadLink,
+            string newDownloadLink,
+            string oldReportLink,
+            string newReportLink,
+            string oldCommit,
+            string newCommit)
         {
             var oldBranchMarkdown = $"[master](https://github.com/DataDog/dd-trace-dotnet/tree/{oldCommit})";
             var newBranchMarkdown = $"#{prNumber}";
@@ -176,8 +184,8 @@ namespace Covertura
 
 View the full report for further details:
 
-* [For master]({oldReportLink})
-* [For this PR #{prNumber}]({newReportlink})
+* [HTML report for master]({oldReportLink}) | [Source file]({oldDownloadLink})  
+* [HTML report for this PR #{prNumber}]({newReportLink}) | [Source file]({newDownloadLink})
 
 ");
               foreach (var package in comparison.MatchedPackages)
@@ -308,8 +316,8 @@ The following classes were added in {newBranchMarkdown}:
               sb.AppendLine($@"
 View the full reports for further details:
 
-* [For master]({oldReportLink})
-* [For this PR #{prNumber}]({newReportlink})");
+* [HTML report for master]({oldReportLink}) | [Source file]({oldDownloadLink})  
+* [HTML report for this PR #{prNumber}]({newReportLink}) | [Source file]({newDownloadLink})");
 
               static string GetIcon(decimal value) => value switch
               {
