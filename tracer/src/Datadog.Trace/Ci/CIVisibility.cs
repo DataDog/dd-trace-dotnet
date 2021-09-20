@@ -17,74 +17,9 @@ namespace Datadog.Trace.Ci
     {
         private static readonly CIVisibilitySettings _settings = CIVisibilitySettings.FromDefaultSources();
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIVisibility));
-        private static bool? _enabled;
+        private static Lazy<bool> _enabledLazy = new Lazy<bool>(() => InternalEnabled(), true);
 
-        public static bool Enabled
-        {
-            get
-            {
-                if (_enabled.HasValue)
-                {
-                    return _enabled.Value;
-                }
-
-                var isEnabled = InternalEnabled();
-                _enabled = isEnabled;
-                return isEnabled;
-            }
-        }
-
-        private static bool InternalEnabled()
-        {
-            if (_settings.Enabled)
-            {
-                Log.Information("CI Visibility Enabled by Configuration");
-                return true;
-            }
-
-            // Try to autodetect based in the domain name.
-            string domainName = AppDomain.CurrentDomain.FriendlyName;
-            if (domainName?.StartsWith("testhost") == true ||
-                domainName?.StartsWith("vstest") == true ||
-                domainName?.StartsWith("xunit") == true ||
-                domainName?.StartsWith("nunit") == true ||
-                domainName?.StartsWith("MSBuild") == true)
-            {
-                Log.Information("CI Visibility Enabled by Domain name whitelist");
-
-                try
-                {
-                    // Set the configuration key to propagate the configuration to child processes.
-                    Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibilityEnabled, "1", EnvironmentVariableTarget.Process);
-                }
-                catch
-                {
-                    // .
-                }
-
-                return true;
-            }
-
-            // Try to autodetect based in the process name.
-            if (Process.GetCurrentProcess()?.ProcessName?.StartsWith("testhost.") == true)
-            {
-                Log.Information("CI Visibility Enabled by Process name whitelist");
-
-                try
-                {
-                    // Set the configuration key to propagate the configuration to child processes.
-                    Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibilityEnabled, "1", EnvironmentVariableTarget.Process);
-                }
-                catch
-                {
-                    // .
-                }
-
-                return true;
-            }
-
-            return false;
-        }
+        public static bool Enabled => _enabledLazy.Value;
 
         public static void Initialize()
         {
@@ -181,6 +116,59 @@ namespace Datadog.Trace.Ci
                     Log.Error(ex, "Exception occurred when flushing spans.");
                 }
             }
+        }
+
+        private static bool InternalEnabled()
+        {
+            if (_settings.Enabled)
+            {
+                Log.Information("CI Visibility Enabled by Configuration");
+                return true;
+            }
+
+            // Try to autodetect based in the domain name.
+            string domainName = AppDomain.CurrentDomain.FriendlyName;
+            if (domainName != null &&
+                (domainName.StartsWith("testhost") == true ||
+                 domainName.StartsWith("vstest") == true ||
+                 domainName.StartsWith("xunit") == true ||
+                 domainName.StartsWith("nunit") == true ||
+                 domainName.StartsWith("MSBuild") == true))
+            {
+                Log.Information("CI Visibility Enabled by Domain name whitelist");
+
+                try
+                {
+                    // Set the configuration key to propagate the configuration to child processes.
+                    Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibilityEnabled, "1", EnvironmentVariableTarget.Process);
+                }
+                catch
+                {
+                    // .
+                }
+
+                return true;
+            }
+
+            // Try to autodetect based in the process name.
+            if (Process.GetCurrentProcess()?.ProcessName?.StartsWith("testhost.") == true)
+            {
+                Log.Information("CI Visibility Enabled by Process name whitelist");
+
+                try
+                {
+                    // Set the configuration key to propagate the configuration to child processes.
+                    Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibilityEnabled, "1", EnvironmentVariableTarget.Process);
+                }
+                catch
+                {
+                    // .
+                }
+
+                return true;
+            }
+
+            return false;
         }
 
         private static void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
