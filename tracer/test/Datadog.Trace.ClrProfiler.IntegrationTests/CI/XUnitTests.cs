@@ -45,6 +45,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             try
             {
                 SetCallTargetSettings(enableCallTarget);
+                SetEnvironmentVariable("DD_CIVISIBILITY_ENABLED", "1");
                 SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
                 SetEnvironmentVariable("DD_DUMP_ILREWRITE_ENABLED", "1");
 
