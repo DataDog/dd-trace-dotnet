@@ -28,17 +28,22 @@
         </File>
       </Component>
     </ComponentGroup>
-
-    <!-- For the 64-bit installer, also install the 32-bit binaries -->
-    <ComponentGroup Id="ContinuousProfiler.Files.Native.32" Directory="ContinuousProfiler.32">
-    </ComponentGroup>
-
-    <?else ?>
-
-    <!-- note that for the 32-bit build, we need to install into INSTALLFOLDER instead of INSTALLFOLDER.32 -->
-    <ComponentGroup Id="ContinuousProfiler.Files.Native.32" Directory="ContinuousProfiler">
-    </ComponentGroup>
-
     <?endif ?>
+
+    <!-- Always install the 32-bit binaries, even for the 64-bit installer -->
+    <ComponentGroup Id="ContinuousProfiler.Files.Native.32" Directory="ContinuousProfiler">
+      <Component Win64="$(var.Win64)">
+        <File Id="Datadog.AutoInstrumentation.Profiler.Native.x86.dll"
+              Source="$(var.ProfilerHomeDirectory)\Datadog.AutoInstrumentation.Profiler.Native.x86.dll"
+              Checksum="yes">
+        </File>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="Datadog.AutoInstrumentation.Profiler.Native.86.pdb"
+              Source="$(var.ProfilerHomeDirectory)\Datadog.AutoInstrumentation.Profiler.Native.x86.pdb"
+              Checksum="yes">
+        </File>
+      </Component>
+    </ComponentGroup>
   </Fragment>
 </Wix>

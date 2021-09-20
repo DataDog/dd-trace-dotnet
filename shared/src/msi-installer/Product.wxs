@@ -95,6 +95,12 @@
               <Directory Id="tracer.net461.GAC" Name="net461.GAC">
                 <!-- Ignored as all of its components will be installed in the GAC -->
               </Directory>
+              <Directory Id="tracer.win_x86" Name="win-x86">
+                <!-- ".\win-x86" -->
+              </Directory>
+              <Directory Id="tracer.win_x64" Name="win-x64">
+                <!-- ".\win-x64" -->
+              </Directory>
             </Directory>
             <Directory Id="ContinuousProfiler" Name="ContinuousProfiler">
               <!-- ContinuousProfiler -->
@@ -168,6 +174,13 @@
         <RegistryKey Root="HKLM" Key="Software\$(var.Company)\$(var.ProductName)">
           <RegistryValue Type="string" Name="InstallPath" Value="[INSTALLFOLDER]" Action="write"/>
         </RegistryKey>
+      </Component>
+    </ComponentGroup>
+
+    <ComponentGroup Id="EnvironmentVariables.Machine" Directory="INSTALLFOLDER">
+      <Component Id="EnvironmentVariablesShared" Guid="{C314A305-9C24-4E46-9ECF-E5EEA703BDEA}" Win64="$(var.Win64)">
+        <CreateFolder/>
+        <Environment Id="DD_NATIVELOADER_CONFIGFILE" Name="DD_NATIVELOADER_CONFIGFILE" Action="set" Permanent="no" System="yes" Value="[INSTALLFOLDER]loader.conf" Part="all" />
       </Component>
     </ComponentGroup>
 
