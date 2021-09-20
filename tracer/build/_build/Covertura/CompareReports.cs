@@ -169,9 +169,9 @@ namespace Covertura
 |           | {oldBranchMarkdown} | {newBranchMarkdown}       | Change   | 
 |:----------|:-----------:|:-----------:|:--------:|
 | Lines     | `{oldReport.LinesCovered}` / `{oldReport.LinesValid}` | `{newReport.LinesCovered}` / `{newReport.LinesValid}` |          |
-| Lines %   | `{oldReport.LineRate:F2}%`      | `{newReport.LineRate:F2}%`      |  `{comparison.LineCoverageChange:F2}%` {GetIcon(comparison.LineCoverageChange)}  |
+| Lines %   | `{oldReport.LineRate:P0}`      | `{newReport.LineRate:P0}`      |  `{comparison.LineCoverageChange:P0}` {GetIcon(comparison.LineCoverageChange)}  |
 | Branches  | `{oldReport.BranchesCovered}` / `{oldReport.BranchesValid}` | `{newReport.BranchesCovered}` / `{newReport.BranchesValid}` |          |
-| Branches %| `{oldReport.BranchRate:F2}%`      | `{newReport.BranchRate:F2}%`      |  `{comparison.BranchCoverageChange:F2}%` {GetIcon(comparison.BranchCoverageChange)}  |
+| Branches %| `{oldReport.BranchRate:P0}`      | `{newReport.BranchRate:P0}`      |  `{comparison.BranchCoverageChange:P0}` {GetIcon(comparison.BranchCoverageChange)}  |
 | Complexity|   `{oldReport.Complexity}`      | `{newReport.Complexity}`        |  `{comparison.ComplexityChange}`  {GetIcon(-comparison.ComplexityChange)}    |
 
 View the full report for further details:
@@ -186,8 +186,8 @@ View the full report for further details:
 
 |        | {oldBranchMarkdown} | {newBranchMarkdown}       | Change   | 
 |:-------|:-----------:|:-----------:|:--------:|
-| Lines %| `{package.Old.LineRate:F2}%`      | `{package.New.LineRate:F2}%`       |  `{package.LineCoverageChange:F2}%` {GetIcon(package.LineCoverageChange)}  |
-| Branches %| `{package.Old.BranchRate:F2}%`      | `{package.New.BranchRate:F2}%`       |  `{package.BranchCoverageChange:F2}%` {GetIcon(package.BranchCoverageChange)}  |
+| Lines %| `{package.Old.LineRate:P0}`      | `{package.New.LineRate:P0}`       |  `{package.LineCoverageChange:P0}` {GetIcon(package.LineCoverageChange)}  |
+| Branches %| `{package.Old.BranchRate:P0}`      | `{package.New.BranchRate:P0}`       |  `{package.BranchCoverageChange:P0}` {GetIcon(package.BranchCoverageChange)}  |
 | Complexity| `{package.Old.Complexity}`      | `{package.New.Complexity}`       |  `{package.ComplexityChange}` {GetIcon(-package.ComplexityChange)}  |
 ");
                   if (package.ClassChanges.Any())
@@ -209,7 +209,7 @@ The following classes have significant coverage changes.
                       {
                           var change = classChange.Value;
                           sb.Append($@"
-| [{change.Name}]({FixFilename(change.Filename)}) | `{change.LineCoverageChange:F2}%` {GetIcon(change.LineCoverageChange)} | `{change.BranchCoverageChange:F2}%` {GetIcon(change.BranchCoverageChange)}   | `{change.ComplexityChange}` {GetIcon(-change.ComplexityChange)} |");
+| [{change.Name}]({FixFilename(change.Filename)}) | `{change.LineCoverageChange:P0}` {GetIcon(change.LineCoverageChange)} | `{change.BranchCoverageChange:P0}` {GetIcon(change.BranchCoverageChange)}   | `{change.ComplexityChange}` {GetIcon(-change.ComplexityChange)} |");
                       }
 
                       var extras = significantChanges.Count - maxFileDisplay;
@@ -234,7 +234,7 @@ The following classes were added in {newBranchMarkdown}:
                       foreach (var newClass in package.NewClasses.Take(maxFileDisplay))
                       {
                           sb.Append($@"
-| [{FixClassName(newClass.Name)}]({prFiles}) | `{newClass.LineRate:F2}%` | `{newClass.BranchRate:F2}%` | `{newClass.Complexity}` |");
+| [{FixClassName(newClass.Name)}]({prFiles}) | `{newClass.LineRate:P0}` | `{newClass.BranchRate:P0}` | `{newClass.Complexity}` |");
                       }
 
                       var extras = package.NewClasses.Count - maxFileDisplay;
@@ -269,7 +269,7 @@ The following classes were added in {newBranchMarkdown}:
                   foreach (var newProject in comparison.NewPackages.Take(maxDisplay))
                   {
                       sb.Append($@"
-| [{newProject.Name}]({prFiles}) | `{newProject.LineRate:F2}%` | `{newProject.BranchRate:F2}%` | `{newProject.Complexity}` |");
+| [{newProject.Name}]({prFiles}) | `{newProject.LineRate:P0}` | `{newProject.BranchRate:P0}` | `{newProject.Complexity}` |");
                   }
 
                   var extras = comparison.NewPackages.Count - maxDisplay;
@@ -294,7 +294,7 @@ The following classes were added in {newBranchMarkdown}:
                   foreach (var oldProject in comparison.RemovedPackages.Take(maxDisplay))
                   {
                       sb.Append($@"
-| [{oldProject.Name}]({prFiles}) | `{oldProject.LineRate:F2}%` | `{oldProject.BranchRate:F2}%` | `{oldProject.Complexity}` |");
+| [{oldProject.Name}]({prFiles}) | `{oldProject.LineRate:P0}` | `{oldProject.BranchRate:P0}` | `{oldProject.Complexity}` |");
                   }
 
                   var extras = comparison.RemovedPackages.Count - maxDisplay;
@@ -320,8 +320,8 @@ View the full reports for further details:
 
               static string GetDescription(decimal value, string metric) => value switch
               {
-                  < 0 => $"will **decrease** {metric} by `{-value:F2}%`",
-                  > 0 => $"will **increase** {metric} by `{value:F2}%`",
+                  < 0 => $"will **decrease** {metric} by `{-value:P0}`",
+                  > 0 => $"will **increase** {metric} by `{value:P0}`",
                   _ => $"**not change** {metric}",
               };
 
