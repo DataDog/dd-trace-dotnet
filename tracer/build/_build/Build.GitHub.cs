@@ -442,30 +442,35 @@ partial class Build
                   oldBuild.SourceVersion,
                   newBuild.SourceVersion);
 
-              Console.WriteLine("Posting comment to GitHub");
-
-              // post directly to GitHub as
-              var httpClient = new HttpClient();
-              httpClient.DefaultRequestHeaders.Add("Accept", "application/vnd.github.v3+json");
-              httpClient.DefaultRequestHeaders.Add("Authorization", $"token {GitHubToken}");
-              httpClient.DefaultRequestHeaders.UserAgent.Add(new(new System.Net.Http.Headers.ProductHeaderValue("nuke-ci-client")));
-
-              var url = $"https://api.github.com/repos/{GitHubRepositoryOwner}/{GitHubRepositoryName}/issues/{prNumber}/comments";
-              Console.WriteLine($"Sending request to '{url}'");
-
-              var result = await httpClient.PostAsJsonAsync(url, new { body = markdown });
-
-              if (result.IsSuccessStatusCode)
-              {
-                  Console.WriteLine("Comment posted successfully");
-              }
-              else
-              {
-                  var response = await result.Content.ReadAsStringAsync();
-                  Console.WriteLine("Error: " + response);
-                  result.EnsureSuccessStatusCode();
-              }
+              await PostCommentToPullRequest(prNumber, markdown);
           });
+
+    async Task PostCommentToPullRequest(int prNumber, string markdown)
+    {
+        Console.WriteLine("Posting comment to GitHub");
+
+        // post directly to GitHub as
+        var httpClient = new HttpClient();
+        httpClient.DefaultRequestHeaders.Add("Accept", "application/vnd.github.v3+json");
+        httpClient.DefaultRequestHeaders.Add("Authorization", $"token {GitHubToken}");
+        httpClient.DefaultRequestHeaders.UserAgent.Add(new(new System.Net.Http.Headers.ProductHeaderValue("nuke-ci-client")));
+
+        var url = $"https://api.github.com/repos/{GitHubRepositoryOwner}/{GitHubRepositoryName}/issues/{prNumber}/comments";
+        Console.WriteLine($"Sending request to '{url}'");
+
+        var result = await httpClient.PostAsJsonAsync(url, new { body = markdown });
+
+        if (result.IsSuccessStatusCode)
+        {
+            Console.WriteLine("Comment posted successfully");
+        }
+        else
+        {
+            var response = await result.Content.ReadAsStringAsync();
+            Console.WriteLine("Error: " + response);
+            result.EnsureSuccessStatusCode();
+        }
+    }
 
     async Task<(Microsoft.TeamFoundation.Build.WebApi.Build, BuildArtifact)> DownloadAzureArtifact(
         BuildHttpClient buildHttpClient,
