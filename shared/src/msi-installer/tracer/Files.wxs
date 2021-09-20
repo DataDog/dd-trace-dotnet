@@ -16,7 +16,6 @@
         <File Id="Datadog.Trace.ClrProfiler.Native"
               Source="$(var.TracerHomeDirectory)\win-x64\Datadog.Trace.ClrProfiler.Native.dll"
               Checksum="yes">
-          <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
         </File>
       </Component>
       <Component Win64="yes">
@@ -33,7 +32,6 @@
         <File Id="Datadog.Trace.ClrProfiler.Native.32"
               Source="$(var.TracerHomeDirectory)\win-x86\Datadog.Trace.ClrProfiler.Native.dll"
               Checksum="yes">
-          <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
         </File>
         <File Id="LibDdwaf.32"
               Source="$(var.LibDdwafDirectory)\runtimes\win-x86\native\ddwaf.dll"
@@ -50,7 +48,6 @@
         <File Id="Datadog.Trace.ClrProfiler.Native.32"
               Source="$(var.TracerHomeDirectory)\win-x86\Datadog.Trace.ClrProfiler.Native.dll"
               Checksum="yes">
-          <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
         </File>
         <File Id="LibDdwaf.32"
               Source="$(var.LibDdwafDirectory)\runtimes\win-x86\native\ddwaf.dll"
