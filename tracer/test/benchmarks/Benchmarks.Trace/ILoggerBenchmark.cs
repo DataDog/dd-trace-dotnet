@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Benchmarks.Trace
 {
+    [JsonExporterAttribute.FullCompressed]
     [MemoryDiagnoser]
     public class ILoggerBenchmark
     {

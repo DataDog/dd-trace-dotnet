@@ -10,6 +10,7 @@ using log4net.Repository.Hierarchy;
 
 namespace Benchmarks.Trace
 {
+    [JsonExporterAttribute.FullCompressed]
     [MemoryDiagnoser]
     public class Log4netBenchmark
     {

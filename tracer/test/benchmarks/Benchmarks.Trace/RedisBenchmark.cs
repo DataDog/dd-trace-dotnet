@@ -9,6 +9,7 @@ using ServiceStack.Redis;
 
 namespace Benchmarks.Trace
 {
+    [JsonExporterAttribute.FullCompressed]
     [MemoryDiagnoser]
     public class RedisBenchmark
     {

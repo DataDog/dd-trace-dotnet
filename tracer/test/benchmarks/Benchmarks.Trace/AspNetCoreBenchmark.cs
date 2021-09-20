@@ -16,6 +16,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Benchmarks.Trace
 {
+    [JsonExporterAttribute.FullCompressed]
     [MemoryDiagnoser]
     public class AspNetCoreBenchmark
     {

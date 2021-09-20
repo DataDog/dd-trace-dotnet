@@ -9,6 +9,7 @@ using NLog.Targets;
 
 namespace Benchmarks.Trace
 {
+    [JsonExporterAttribute.FullCompressed]
     [MemoryDiagnoser]
     public class NLogBenchmark
     {

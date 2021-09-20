@@ -8,6 +8,7 @@ using GraphQL.Execution;
 
 namespace Benchmarks.Trace
 {
+    [JsonExporterAttribute.FullCompressed]
     [MemoryDiagnoser]
     public class GraphQLBenchmark
     {

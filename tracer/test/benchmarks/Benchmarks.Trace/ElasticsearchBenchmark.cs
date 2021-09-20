@@ -9,6 +9,7 @@ using Elasticsearch.Net;
 
 namespace Benchmarks.Trace
 {
+    [JsonExporterAttribute.FullCompressed]
     [MemoryDiagnoser]
     public class ElasticsearchBenchmark
     {
