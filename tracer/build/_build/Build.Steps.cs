@@ -45,6 +45,8 @@ partial class Build
     AbsolutePath WindowsSymbolsZip => ArtifactsDirectory / "windows-native-symbols.zip";
     AbsolutePath BuildDataDirectory => TracerDirectory / "build_data";
 
+    AbsolutePath MonitoringHomeDirectory => MonitoringHome ?? (SharedDirectory / "bin" / "monitoring-home");
+
     AbsolutePath ProfilerHomeDirectory => ProfilerBuildArtifacts ?? RootDirectory / "_build" / "DDProf-Deploy";
 
     const string LibDdwafVersion = "1.0.10";
@@ -62,6 +64,7 @@ partial class Build
         : "/var/log/datadog/dotnet/";
 
     Project NativeProfilerProject => Solution.GetProject(Projects.ClrProfilerNative);
+    Project NativeLoaderProject => Solution.GetProject(Projects.NativeLoader);
 
     [LazyPathExecutable(name: "cmake")] readonly Lazy<Tool> CMake;
     [LazyPathExecutable(name: "make")] readonly Lazy<Tool> Make;
@@ -153,11 +156,23 @@ partial class Build
                     : new[] { MSBuildTargetPlatform.x86 };
 
             // Can't use dotnet msbuild, as needs to use the VS version of MSBuild
+            // Build native tracer assets
             MSBuild(s => s
                 .SetTargetPath(MsBuildProject)
                 .SetConfiguration(BuildConfiguration)
                 .SetMSBuildPath()
                 .SetTargets("BuildCppSrc")
+                .DisableRestore()
+                .SetMaxCpuCount(null)
+                .CombineWith(platforms, (m, platform) => m
+                    .SetTargetPlatform(platform)));
+
+            // Build native loader assets
+            MSBuild(s => s
+                .SetTargetPath(NativeLoaderProject)
+                .SetConfiguration(BuildConfiguration)
+                .SetMSBuildPath()
+                // .SetTargets("BuildCppSrc")
                 .DisableRestore()
                 .SetMaxCpuCount(null)
                 .CombineWith(platforms, (m, platform) => m
@@ -359,11 +374,31 @@ partial class Build
         {
             foreach (var architecture in ArchitecturesForPlatform)
             {
+                // Copy native tracer assets
                 var source = NativeProfilerProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
                              $"{NativeProfilerProject.Name}.dll";
                 var dest = TracerHomeDirectory / $"win-{architecture}";
                 Logger.Info($"Copying '{source}' to '{dest}'");
                 CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+
+                // Copy native loader assets
+                source = NativeLoaderProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
+                             "loader.conf";
+                dest = MonitoringHomeDirectory;
+                Logger.Info($"Copying '{source}' to '{dest}'");
+                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+
+                source = NativeLoaderProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
+                             $"{NativeLoaderProject.Name}.dll";
+                var destFile = MonitoringHomeDirectory / $"{NativeLoaderProject.Name}.{architecture.ToString()}.dll";
+                Logger.Info($"Copying file '{source}' to 'file {destFile}'");
+                CopyFile(source, destFile, FileExistsPolicy.Overwrite);
+
+                source = NativeLoaderProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
+                             $"{NativeLoaderProject.Name}.pdb";
+                destFile = MonitoringHomeDirectory / $"{NativeLoaderProject.Name}.{architecture.ToString()}.pdb";
+                Logger.Info($"Copying '{source}' to '{destFile}'");
+                CopyFile(source, destFile, FileExistsPolicy.Overwrite);
             }
         });
 

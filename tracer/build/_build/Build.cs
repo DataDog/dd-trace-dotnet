@@ -39,6 +39,8 @@ partial class Build : NukeBuild
     [Parameter("Should all versions of integration NuGet packages be tested, or just the defaults")]
     readonly bool TestAllPackageVersions;
 
+    [Parameter("The location to create the monitoring home directory. Default is ./shared/bin/monitoring-home ")]
+    readonly AbsolutePath MonitoringHome;
     [Parameter("The location to create the tracer home directory. Default is ./bin/tracer-home ")]
     readonly AbsolutePath TracerHome;
     [Parameter("The location to create the dd-trace home directory. Default is ./bin/dd-tracer-home ")]
