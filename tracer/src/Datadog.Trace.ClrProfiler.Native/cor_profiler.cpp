@@ -1099,6 +1099,8 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
     Logger::Info("InitializeProfiler: received id: ", definitionsId, " from managed side with ", size,
                  " integrations.");
 
+    std::scoped_lock<std::mutex> definitionsLock(definitions_ids_lock_);
+
     if (definitions_ids_.find(definitionsId) != definitions_ids_.end())
     {
         Logger::Info("InitializeProfiler: Id already processed.");
@@ -1176,7 +1178,7 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
             integrationMethods.push_back(integration);
         }
 
-        std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
+        std::scoped_lock<std::mutex> moduleLock(module_id_to_info_map_lock_);
 
         definitions_ids_.emplace(definitionsId);
 

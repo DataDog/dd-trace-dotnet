@@ -26,7 +26,9 @@ private:
     std::atomic_bool is_attached_ = {false};
     RuntimeInformation runtime_information_;
     std::vector<IntegrationMethod> integration_methods_;
+
     std::unordered_set<WSTRING> definitions_ids_;
+    std::mutex definitions_ids_lock_;
 
     // Startup helper variables
     bool first_jit_compilation_completed = false;
