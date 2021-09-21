@@ -411,7 +411,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServiceBus.Minimal.Rebus", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServiceBus.Minimal.MassTransit", "tracer\test\test-applications\regression\ServiceBus.Minimal.MassTransit\ServiceBus.Minimal.MassTransit.csproj", "{B0E671B9-78DE-410F-A0AA-612FF1F900F2}"
 EndProject
-<<<<<<< HEAD
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.GraphQL3", "tracer\test\test-applications\integrations\Samples.GraphQL3\Samples.GraphQL3.csproj", "{CA3D605F-8DD7-4041-B024-70A24036AFA1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.GraphQL4", "tracer\test\test-applications\integrations\Samples.GraphQL4\Samples.GraphQL4.csproj", "{DA81EF3E-FDB3-417F-AA20-60FC495E3596}"
@@ -420,16 +419,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Elasticsearch.V7", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EnumerateAssemblyReferences", "tracer\test\test-applications\regression\EnumerateAssemblyReferences\EnumerateAssemblyReferences.csproj", "{B22311CE-EC71-4ADD-ADC6-C466B2D10230}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AzureFunctions.AllTriggers", "test\test-applications\azure-functions\Samples.AzureFunctions.AllTriggers\Samples.AzureFunctions.AllTriggers.csproj", "{E1795184-DAAC-45FE-9A5B-2A3C76E81AA8}"
-EndProject
-=======
->>>>>>> e619a4e4 (Move files to new structure (rebase))
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "azure-functions", "azure-functions", "{C4C1E313-C7C1-4490-AECE-0DD0062380A4}"
 	ProjectSection(SolutionItems) = preProject
 		tracer\test\test-applications\azure-functions\Directory.Build.props = tracer\test\test-applications\azure-functions\Directory.Build.props
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AzureFunctions.AllTriggers", "tracer\test\test-applications\azure-functions\Samples.AzureFunctions.AllTriggers\Samples.AzureFunctions.AllTriggers.csproj", "{4D60A8D6-9D4F-4C71-9AB4-CE7E7F887343}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AzureFunctions.AllTriggers", "tracer\test\test-applications\azure-functions\Samples.AzureFunctions.AllTriggers\Samples.AzureFunctions.AllTriggers.csproj", "{536F1D82-D40C-4E33-B7FA-76A0F17BF672}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1788,28 +1783,16 @@ Global
 		{B22311CE-EC71-4ADD-ADC6-C466B2D10230}.Release|x64.Build.0 = Release|x64
 		{B22311CE-EC71-4ADD-ADC6-C466B2D10230}.Release|x86.ActiveCfg = Release|x86
 		{B22311CE-EC71-4ADD-ADC6-C466B2D10230}.Release|x86.Build.0 = Release|x86
-		{463A6FB2-1ABE-4B92-A470-97134D0BBC7E}.Debug|Any CPU.ActiveCfg = Debug|x86
-		{463A6FB2-1ABE-4B92-A470-97134D0BBC7E}.Release|Any CPU.ActiveCfg = Release|x86
-		{E1795184-DAAC-45FE-9A5B-2A3C76E81AA8}.Debug|Any CPU.ActiveCfg = Debug|x86
-		{E1795184-DAAC-45FE-9A5B-2A3C76E81AA8}.Debug|x64.ActiveCfg = Debug|x64
-		{E1795184-DAAC-45FE-9A5B-2A3C76E81AA8}.Debug|x64.Build.0 = Debug|x64
-		{E1795184-DAAC-45FE-9A5B-2A3C76E81AA8}.Debug|x86.ActiveCfg = Debug|x86
-		{E1795184-DAAC-45FE-9A5B-2A3C76E81AA8}.Debug|x86.Build.0 = Debug|x86
-		{E1795184-DAAC-45FE-9A5B-2A3C76E81AA8}.Release|Any CPU.ActiveCfg = Release|x86
-		{E1795184-DAAC-45FE-9A5B-2A3C76E81AA8}.Release|x64.ActiveCfg = Release|x64
-		{E1795184-DAAC-45FE-9A5B-2A3C76E81AA8}.Release|x64.Build.0 = Release|x64
-		{E1795184-DAAC-45FE-9A5B-2A3C76E81AA8}.Release|x86.ActiveCfg = Release|x86
-		{E1795184-DAAC-45FE-9A5B-2A3C76E81AA8}.Release|x86.Build.0 = Release|x86
-		{4D60A8D6-9D4F-4C71-9AB4-CE7E7F887343}.Debug|Any CPU.ActiveCfg = Debug|x86
-		{4D60A8D6-9D4F-4C71-9AB4-CE7E7F887343}.Debug|x64.ActiveCfg = Debug|x64
-		{4D60A8D6-9D4F-4C71-9AB4-CE7E7F887343}.Debug|x64.Build.0 = Debug|x64
-		{4D60A8D6-9D4F-4C71-9AB4-CE7E7F887343}.Debug|x86.ActiveCfg = Debug|x86
-		{4D60A8D6-9D4F-4C71-9AB4-CE7E7F887343}.Debug|x86.Build.0 = Debug|x86
-		{4D60A8D6-9D4F-4C71-9AB4-CE7E7F887343}.Release|Any CPU.ActiveCfg = Release|x86
-		{4D60A8D6-9D4F-4C71-9AB4-CE7E7F887343}.Release|x64.ActiveCfg = Release|x64
-		{4D60A8D6-9D4F-4C71-9AB4-CE7E7F887343}.Release|x64.Build.0 = Release|x64
-		{4D60A8D6-9D4F-4C71-9AB4-CE7E7F887343}.Release|x86.ActiveCfg = Release|x86
-		{4D60A8D6-9D4F-4C71-9AB4-CE7E7F887343}.Release|x86.Build.0 = Release|x86
+		{536F1D82-D40C-4E33-B7FA-76A0F17BF672}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{536F1D82-D40C-4E33-B7FA-76A0F17BF672}.Debug|x64.ActiveCfg = Debug|x64
+		{536F1D82-D40C-4E33-B7FA-76A0F17BF672}.Debug|x64.Build.0 = Debug|x64
+		{536F1D82-D40C-4E33-B7FA-76A0F17BF672}.Debug|x86.ActiveCfg = Debug|x86
+		{536F1D82-D40C-4E33-B7FA-76A0F17BF672}.Debug|x86.Build.0 = Debug|x86
+		{536F1D82-D40C-4E33-B7FA-76A0F17BF672}.Release|Any CPU.ActiveCfg = Release|x86
+		{536F1D82-D40C-4E33-B7FA-76A0F17BF672}.Release|x64.ActiveCfg = Release|x64
+		{536F1D82-D40C-4E33-B7FA-76A0F17BF672}.Release|x64.Build.0 = Release|x64
+		{536F1D82-D40C-4E33-B7FA-76A0F17BF672}.Release|x86.ActiveCfg = Release|x86
+		{536F1D82-D40C-4E33-B7FA-76A0F17BF672}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1954,10 +1937,8 @@ Global
 		{DA81EF3E-FDB3-417F-AA20-60FC495E3596} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{3CB0B2C2-7664-4D71-8F43-3D207EE80DB7} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{B22311CE-EC71-4ADD-ADC6-C466B2D10230} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
-		{E1795184-DAAC-45FE-9A5B-2A3C76E81AA8} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
-		{E1795184-DAAC-45FE-9A5B-2A3C76E81AA8} = {C4C1E313-C7C1-4490-AECE-0DD0062380A4}
 		{C4C1E313-C7C1-4490-AECE-0DD0062380A4} = {9518425A-36A5-4B8F-B0B8-6137DB88441D}
-		{4D60A8D6-9D4F-4C71-9AB4-CE7E7F887343} = {C4C1E313-C7C1-4490-AECE-0DD0062380A4}
+		{536F1D82-D40C-4E33-B7FA-76A0F17BF672} = {C4C1E313-C7C1-4490-AECE-0DD0062380A4}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
