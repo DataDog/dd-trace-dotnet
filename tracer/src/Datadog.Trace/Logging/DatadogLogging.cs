@@ -79,7 +79,8 @@ namespace Datadog.Trace.Logging
                             outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}{Properties}{NewLine}",
                             rollingInterval: RollingInterval.Day,
                             rollOnFileSizeLimit: true,
-                            fileSizeLimitBytes: MaxLogFileSize);
+                            fileSizeLimitBytes: MaxLogFileSize,
+                            shared: true);
 
                 try
                 {
