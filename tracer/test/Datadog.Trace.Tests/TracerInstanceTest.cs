@@ -17,13 +17,37 @@ namespace Datadog.Trace.Tests
             var tracerOne = new Tracer();
             var tracerTwo = new Tracer();
 
-            Tracer.Instance = tracerOne;
+            if (Ci.CIVisibility.IsRunning)
+            {
+                Tracer.UnsafeSetTracerInstance(tracerOne);
+            }
+            else
+            {
+                Tracer.Instance = tracerOne;
+            }
+
             Assert.Equal(tracerOne, Tracer.Instance);
 
-            Tracer.Instance = tracerTwo;
+            if (Ci.CIVisibility.IsRunning)
+            {
+                Tracer.UnsafeSetTracerInstance(tracerTwo);
+            }
+            else
+            {
+                Tracer.Instance = tracerTwo;
+            }
+
             Assert.Equal(tracerTwo, Tracer.Instance);
 
-            Tracer.Instance = null;
+            if (Ci.CIVisibility.IsRunning)
+            {
+                Tracer.UnsafeSetTracerInstance(null);
+            }
+            else
+            {
+                Tracer.Instance = null;
+            }
+
             Assert.Null(Tracer.Instance);
         }
 
@@ -33,14 +57,38 @@ namespace Datadog.Trace.Tests
             var tracerOne = new Tracer();
             var tracerTwo = new LockedTracer();
 
-            Tracer.Instance = tracerOne;
+            if (Ci.CIVisibility.IsRunning)
+            {
+                Tracer.UnsafeSetTracerInstance(tracerOne);
+            }
+            else
+            {
+                Tracer.Instance = tracerOne;
+            }
+
             Assert.Equal(tracerOne, Tracer.Instance);
 
-            Tracer.Instance = null;
+            if (Ci.CIVisibility.IsRunning)
+            {
+                Tracer.UnsafeSetTracerInstance(null);
+            }
+            else
+            {
+                Tracer.Instance = null;
+            }
+
             Assert.Null(Tracer.Instance);
 
             // Set the locked tracer
-            Tracer.Instance = tracerTwo;
+            if (Ci.CIVisibility.IsRunning)
+            {
+                Tracer.UnsafeSetTracerInstance(tracerTwo);
+            }
+            else
+            {
+                Tracer.Instance = tracerTwo;
+            }
+
             Assert.Equal(tracerTwo, Tracer.Instance);
 
             // We test the locked tracer cannot be replaced.

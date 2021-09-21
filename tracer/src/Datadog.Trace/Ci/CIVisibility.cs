@@ -16,13 +16,22 @@ namespace Datadog.Trace.Ci
     internal class CIVisibility
     {
         private static readonly CIVisibilitySettings _settings = CIVisibilitySettings.FromDefaultSources();
-        internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIVisibility));
+        private static int _firstInitialization = 1;
         private static Lazy<bool> _enabledLazy = new Lazy<bool>(() => InternalEnabled(), true);
+        internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIVisibility));
 
         public static bool Enabled => _enabledLazy.Value;
 
+        public static bool IsRunning => _enabledLazy.Value && Interlocked.CompareExchange(ref _firstInitialization, 0, 0) == 0;
+
         public static void Initialize()
         {
+            if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
+            {
+                // Initialize() was already called before
+                return;
+            }
+
             Log.Information("Initializing CI Visibility");
 
             // Set exit handlers

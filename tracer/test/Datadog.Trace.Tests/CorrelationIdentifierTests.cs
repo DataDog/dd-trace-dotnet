@@ -59,7 +59,14 @@ namespace Datadog.Trace.Tests
                 Environment = env
             };
             var tracer = new Tracer(settings);
-            Tracer.Instance = tracer;
+            if (Ci.CIVisibility.IsRunning)
+            {
+                Tracer.UnsafeSetTracerInstance(tracer);
+            }
+            else
+            {
+                Tracer.Instance = tracer;
+            }
 
             using (var parentScope = Tracer.Instance.StartActive("parent"))
             using (var childScope = Tracer.Instance.StartActive("child"))
@@ -79,7 +86,14 @@ namespace Datadog.Trace.Tests
         {
             var settings = new TracerSettings();
             var tracer = new Tracer(settings);
-            Tracer.Instance = tracer;
+            if (Ci.CIVisibility.IsRunning)
+            {
+                Tracer.UnsafeSetTracerInstance(tracer);
+            }
+            else
+            {
+                Tracer.Instance = tracer;
+            }
 
             using (var parentScope = Tracer.Instance.StartActive("parent"))
             using (var childScope = Tracer.Instance.StartActive("child"))
@@ -97,7 +111,14 @@ namespace Datadog.Trace.Tests
         {
             var settings = new TracerSettings();
             var tracer = new Tracer(settings);
-            Tracer.Instance = tracer;
+            if (Ci.CIVisibility.IsRunning)
+            {
+                Tracer.UnsafeSetTracerInstance(tracer);
+            }
+            else
+            {
+                Tracer.Instance = tracer;
+            }
 
             using (var parentScope = Tracer.Instance.StartActive("parent"))
             using (var childScope = Tracer.Instance.StartActive("child"))
@@ -121,7 +142,15 @@ namespace Datadog.Trace.Tests
 
             public override void After(MethodInfo methodUnderTest)
             {
-                Tracer.Instance = _tracer;
+                if (Ci.CIVisibility.IsRunning)
+                {
+                    Tracer.UnsafeSetTracerInstance(_tracer);
+                }
+                else
+                {
+                    Tracer.Instance = _tracer;
+                }
+
                 base.After(methodUnderTest);
             }
         }
