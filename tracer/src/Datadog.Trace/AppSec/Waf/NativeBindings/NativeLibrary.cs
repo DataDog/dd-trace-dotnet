@@ -71,7 +71,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             if (errorPtr != IntPtr.Zero)
             {
                 var error = Marshal.PtrToStringAnsi(errorPtr);
-                Log.Error($"Error during '{op}': {error}");
+                // warning, since in some cases dddlerror returns a message when an error didn't occur or was recoverable
+                Log.Warning("'{Op}' dddlerror returned: {Error}", op, error);
             }
         }
 

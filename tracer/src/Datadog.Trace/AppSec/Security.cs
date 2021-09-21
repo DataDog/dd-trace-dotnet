@@ -53,7 +53,7 @@ namespace Datadog.Trace.AppSec
                 _settings.Enabled = _settings.Enabled && AreArchitectureAndOsSupported();
                 if (_settings.Enabled)
                 {
-                    _powerWaf = powerWaf ?? Waf.Waf.Initialize();
+                    _powerWaf = powerWaf ?? Waf.Waf.Initialize(_settings.Rules);
                     if (_powerWaf != null)
                     {
                         _agentWriter = agentWriter ?? new AppSecAgentWriter();

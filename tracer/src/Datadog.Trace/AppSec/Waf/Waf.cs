@@ -6,10 +6,12 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec.Waf
 {
@@ -17,12 +19,12 @@ namespace Datadog.Trace.AppSec.Waf
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Waf));
 
-        private readonly WafHandle rule;
+        private readonly WafHandle wafHandle;
         private bool disposed = false;
 
-        private Waf(WafHandle rule)
+        private Waf(WafHandle wafHandle)
         {
-            this.rule = rule;
+            this.wafHandle = wafHandle;
         }
 
         ~Waf()
@@ -39,15 +41,55 @@ namespace Datadog.Trace.AppSec.Waf
             }
         }
 
-        public static Waf Initialize()
+        // null rulesFile means use rules embedded in the manifest
+        public static Waf Initialize(string rulesFile)
         {
-            var rule = NewRule();
-            return rule == null ? null : new Waf(rule);
+            var argCache = new List<Obj>();
+            Obj configObj;
+            try
+            {
+                using var stream = GetRulesStream(rulesFile);
+
+                if (stream == null)
+                {
+                    return null;
+                }
+
+                configObj = CreatObjFromRulesStream(argCache, stream);
+            }
+            catch (Exception ex)
+            {
+                if (rulesFile != null)
+                {
+                    Log.Error(ex, "AppSec could not read the rule file \"{RulesFile}\" as it was invalid. AppSec will not run any protections in this application.", rulesFile);
+                }
+                else
+                {
+                    Log.Error(ex, "AppSec could not read the rule file emmbeded in the manifest as it was invalid. AppSec will not run any protections in this application.");
+                }
+
+                return null;
+            }
+
+            try
+            {
+                DdwafConfigStruct args = default;
+                var ruleHandle = WafNative.Init(configObj.RawPtr, ref args);
+                return new Waf(new WafHandle(ruleHandle));
+            }
+            finally
+            {
+                configObj?.Dispose();
+                foreach (var arg in argCache)
+                {
+                    arg.Dispose();
+                }
+            }
         }
 
         public IContext CreateContext()
         {
-            var handle = WafNative.InitContext(rule.Handle, WafNative.ObjectFreeFuncPtr);
+            var handle = WafNative.InitContext(wafHandle.Handle, WafNative.ObjectFreeFuncPtr);
             return new Context(handle);
         }
 
@@ -66,53 +108,64 @@ namespace Datadog.Trace.AppSec.Waf
 
             disposed = true;
 
-            rule?.Dispose();
+            wafHandle?.Dispose();
         }
 
-        private static Obj RuleSetFromManifest(List<Obj> argCache)
+        private static Obj CreatObjFromRulesStream(List<Obj> argCache, Stream stream)
         {
-            var assembly = typeof(Waf).Assembly;
-            var resource = assembly.GetManifestResourceStream("Datadog.Trace.AppSec.Waf.rule-set.json");
-            using var reader = new JsonTextReader(new StreamReader(resource));
-            var root = JToken.ReadFrom(reader);
+            using var reader = new StreamReader(stream);
+            using var jsonReader = new JsonTextReader(reader);
+            var root = JToken.ReadFrom(jsonReader);
+
+            LogRuleDetailsIfDebugEnabled(root);
 
             return Encoder.Encode(root, argCache);
         }
 
-        private static WafHandle NewRule()
+        private static Stream GetRulesManifestStream()
         {
-            try
+            var assembly = typeof(Waf).Assembly;
+            return assembly.GetManifestResourceStream("Datadog.Trace.AppSec.Waf.rule-set.json");
+        }
+
+        private static Stream GetRulesFileStream(string rulesFile)
+        {
+            if (!File.Exists(rulesFile))
             {
-                DdwafConfigStruct args = default;
-
-                var argCache = new List<Obj>();
-                var rules = RuleSetFromManifest(argCache);
-
-                var ruleHandle = WafNative.Init(rules.RawPtr, ref args);
-
-                rules.Dispose();
-                foreach (var arg in argCache)
-                {
-                    arg.Dispose();
-                }
-
-                if (ruleHandle == IntPtr.Zero)
-                {
-                    Log.Error("Failed to create rules.");
-                    return null;
-                }
-                else
-                {
-                    Log.Information("Rules successfully created.");
-                }
-
-                return new WafHandle(ruleHandle);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error loading the power WAF rules");
+                Log.Error("AppSec could not find the rules file in path \"{RulesFile}\". AppSec will not run any protections in this application.", rulesFile);
                 return null;
             }
+
+            return File.OpenRead(rulesFile);
+        }
+
+        private static void LogRuleDetailsIfDebugEnabled(JToken root)
+        {
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                try
+                {
+                    var eventsProp = root.Value<JArray>("events");
+                    foreach (var ev in eventsProp)
+                    {
+                        var idProp = ev.Value<JValue>("id");
+                        var nameProp = ev.Value<JValue>("name");
+                        var addresses = ev.Value<JArray>("conditions").SelectMany(x => x.Value<JObject>("parameters").Value<JArray>("inputs"));
+                        Log.Debug("Loaded rule: {id} - {name} on addresses: {addresses}", idProp.Value, nameProp.Value, string.Join(", ", addresses));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error occured logging the ddwaf rules");
+                }
+            }
+        }
+
+        private static Stream GetRulesStream(string rulesFile)
+        {
+            return string.IsNullOrWhiteSpace(rulesFile) ?
+                    GetRulesManifestStream() :
+                    GetRulesFileStream(rulesFile);
         }
     }
 }
