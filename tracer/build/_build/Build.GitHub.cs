@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
+using BenchmarkComparison;
 using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
@@ -444,6 +445,37 @@ partial class Build
 
               await PostCommentToPullRequest(prNumber, markdown);
           });
+
+    Target CompareBenchmarksResults => _ => _
+         .Unlisted()
+         .DependsOn(CreateRequiredDirectories)
+         .Requires(() => AzureDevopsToken)
+         .Requires(() => GitHubToken)
+         .Executes(async () =>
+         {
+             if (!int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var prNumber))
+             {
+                 Logger.Warn("No PR_NUMBER variable found. Skipping benchmark comparison");
+                 return;
+             }
+
+             var masterDir = BuildDataDirectory / "previous_benchmarks";
+             var prDir = BuildDataDirectory / "benchmarks";
+
+             FileSystemTasks.EnsureCleanDirectory(masterDir);
+
+             // Connect to Azure DevOps Services
+             var connection = new VssConnection(
+                 new Uri(AzureDevopsOrganisation),
+                 new VssBasicCredential(string.Empty, AzureDevopsToken));
+
+             using var buildHttpClient = connection.GetClient<BuildHttpClient>();
+
+             var (oldBuild, _) = await DownloadAzureArtifact(buildHttpClient, "refs/heads/master", build => "benchmarks_results", masterDir, buildReason: null);
+
+             var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, oldBuild.SourceVersion);
+             await PostCommentToPullRequest(prNumber, markdown);
+         });
 
     async Task PostCommentToPullRequest(int prNumber, string markdown)
     {

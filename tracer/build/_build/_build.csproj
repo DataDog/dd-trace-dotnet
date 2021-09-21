@@ -19,6 +19,8 @@
     <PackageReference Include="NuGet.Protocol" Version="5.10.0" />
     <PackageReference Include="Nuke.Common" Version="5.0.2" />
     <PackageReference Include="Colorful.Console" Version="1.2.15" />
+    <PackageReference Include="Perfolizer" Version="0.2.1" />
+    <PackageReference Include="CsvHelper" Version="27.1.1" />
   </ItemGroup>
 
   <ItemGroup>
