@@ -4,11 +4,7 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using System.Runtime.InteropServices;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler
 {
@@ -88,6 +84,13 @@ namespace Datadog.Trace.ClrProfiler
 
         public void Dispose()
         {
+            var ptr = TargetSignatureTypes;
+            for (var i = 0; i < TargetSignatureTypesLength; i++)
+            {
+                Marshal.FreeHGlobal(Marshal.ReadIntPtr(ptr));
+                ptr += Marshal.SizeOf(typeof(IntPtr));
+            }
+
             Marshal.FreeHGlobal(TargetSignatureTypes);
         }
     }
