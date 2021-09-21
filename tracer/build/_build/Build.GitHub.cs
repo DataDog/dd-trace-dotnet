@@ -422,6 +422,9 @@ partial class Build
               var oldReportPath = oldReportdir / oldArtifact.Name / $"summary{oldBuildId}" / "Cobertura.xml";
               var newReportPath = newReportdir / newArtifact.Name / $"summary{newBuildId}" / "Cobertura.xml";
 
+              var reportOldLink = $"{AzureDevopsOrganisation}/dd-trace-dotnet/_build/results?buildId={oldBuildId}&view=codecoverage-tab";
+              var reportNewLink = $"{AzureDevopsOrganisation}/dd-trace-dotnet/_build/results?buildId={newBuildId}&view=codecoverage-tab";
+
               var downloadOldLink = oldArtifact.Resource.DownloadUrl;
               var downloadNewLink = newArtifact.Resource.DownloadUrl;
 
@@ -429,7 +432,15 @@ partial class Build
               var newReport = Covertura.CodeCoverage.ReadReport(newReportPath);
 
               var comparison = Covertura.CodeCoverage.Compare(oldReport, newReport);
-              var markdown = Covertura.CodeCoverage.RenderAsMarkdown(comparison, prNumber, downloadOldLink, downloadNewLink, oldBuild.SourceVersion, newBuild.SourceVersion);
+              var markdown = Covertura.CodeCoverage.RenderAsMarkdown(
+                  comparison,
+                  prNumber,
+                  downloadOldLink,
+                  downloadNewLink,
+                  reportOldLink,
+                  reportNewLink,
+                  oldBuild.SourceVersion,
+                  newBuild.SourceVersion);
 
               Console.WriteLine("Posting comment to GitHub");
 
