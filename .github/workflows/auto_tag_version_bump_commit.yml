@@ -33,28 +33,28 @@ jobs:
           git tag "v${{steps.versions.outputs.full_version}}"
           git push origin "v${{steps.versions.outputs.full_version}}"
 
-      -name: "Clean up old benchmark branches"
-       run: |
-         # find all remote benchmarks/* branches (by literal string)
-         # Exclude the branches we want to permenantly keep using -e for each value
-         # trim "remotes/origin" from start
-         # Reverse the order
-         # Skip the 1st result (so we will have 2 benchmarks at most)
-         # Then do the complex dance to rename all the branches
-         BRANCHES=$(git branch -a  \
-           | grep -F 'origin/benchmarks' \
-           | grep -Fv -e 'benchmarks/1.27.1' \
-           | cut -c 18- \
-           | tac | tail -n +2)
-         for orig in $BRANCHES; do
-          archived=archived_$orig;
-          git branch $orig origin/$orig
-          git branch -m $orig $archived;
-          git push origin --delete $orig;
-          git branch --unset-upstream $archived;
-          git push origin -u $archived;
-          git branch -d $archived;
-         done
+      - name: "Clean up old benchmark branches"
+        run: |
+          # find all remote benchmarks/* branches (by literal string)
+          # Exclude the branches we want to permenantly keep using -e for each value
+          # trim "remotes/origin" from start
+          # Reverse the order
+          # Skip the 1st result (so we will have 2 benchmarks at most)
+          # Then do the complex dance to rename all the branches
+          BRANCHES=$(git branch -a  \
+            | grep -F 'origin/benchmarks' \
+            | grep -Fv -e 'benchmarks/1.27.1' \
+            | cut -c 18- \
+            | tac | tail -n +2)
+          for orig in $BRANCHES; do
+           archived=archived_$orig;
+           git branch $orig origin/$orig
+           git branch -m $orig $archived;
+           git push origin --delete $orig;
+           git branch --unset-upstream $archived;
+           git push origin -u $archived;
+           git branch -d $archived;
+          done
 
       - name: Create benchmarks branch
         uses: peterjgrainger/action-create-branch@v2.0.1
