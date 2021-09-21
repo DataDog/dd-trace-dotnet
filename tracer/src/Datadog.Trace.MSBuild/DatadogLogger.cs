@@ -8,6 +8,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -30,13 +31,14 @@ namespace Datadog.Trace.MSBuild
         {
             try
             {
-                // Preload environment variables.
-                CIEnvironmentValues.DecorateSpan(null);
+                Environment.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibilityEnabled, "1", EnvironmentVariableTarget.Process);
             }
-            catch (Exception ex)
+            catch
             {
-                Log.Error(ex, "Error initializing DatadogLogger type.");
+                // .
             }
+
+            CIVisibility.Initialize();
         }
 
         /// <summary>

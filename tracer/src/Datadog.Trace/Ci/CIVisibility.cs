@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
@@ -22,7 +23,7 @@ namespace Datadog.Trace.Ci
 
         public static bool Enabled => _enabledLazy.Value;
 
-        public static bool IsRunning => _enabledLazy.Value && Interlocked.CompareExchange(ref _firstInitialization, 0, 0) == 0;
+        public static bool IsRunning => Interlocked.CompareExchange(ref _firstInitialization, 0, 0) == 0;
 
         public static void Initialize()
         {
@@ -91,6 +92,7 @@ namespace Datadog.Trace.Ci
 
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");
+            tracerSettings.Freeze();
             Tracer.Instance = new CITracer(tracerSettings);
         }
 

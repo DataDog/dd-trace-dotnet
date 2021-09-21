@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Vendors.Newtonsoft.Json;

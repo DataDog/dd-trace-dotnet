@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Ci.Agent;
+using Datadog.Trace.Ci.Sampling;
 using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.Ci
@@ -10,7 +12,7 @@ namespace Datadog.Trace.Ci
     internal class CITracer : Tracer, ILockedTracer
     {
         public CITracer(TracerSettings settings)
-            : base(settings, agentWriter: null, sampler: new CISampler(), scopeManager: null, statsd: null)
+            : base(settings, agentWriter: new CIAgentWriter(settings), sampler: new CISampler(), scopeManager: null, statsd: null)
         {
         }
     }

@@ -5,7 +5,7 @@
 
 using Datadog.Trace.Configuration;
 
-namespace Datadog.Trace.Ci
+namespace Datadog.Trace.Ci.Configuration
 {
     internal class CIVisibilitySettings
     {

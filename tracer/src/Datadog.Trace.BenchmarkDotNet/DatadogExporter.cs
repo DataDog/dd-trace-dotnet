@@ -11,6 +11,7 @@ using BenchmarkDotNet.Exporters;
 using BenchmarkDotNet.Loggers;
 using BenchmarkDotNet.Reports;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 
@@ -30,8 +31,16 @@ namespace Datadog.Trace.BenchmarkDotNet
 
         static DatadogExporter()
         {
-            // Preload environment variables.
-            CIEnvironmentValues.DecorateSpan(null);
+            try
+            {
+                Environment.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibilityEnabled, "1", EnvironmentVariableTarget.Process);
+            }
+            catch
+            {
+                // .
+            }
+
+            CIVisibility.Initialize();
         }
 
         /// <inheritdoc />
@@ -50,7 +59,7 @@ namespace Datadog.Trace.BenchmarkDotNet
 
             try
             {
-                Tracer tracer = new Tracer();
+                Tracer tracer = Tracer.Instance;
 
                 foreach (var report in summary.Reports)
                 {

@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 
-namespace Datadog.Trace.Ci
+namespace Datadog.Trace.Ci.Sampling
 {
     internal class CISampler : ISampler
     {
