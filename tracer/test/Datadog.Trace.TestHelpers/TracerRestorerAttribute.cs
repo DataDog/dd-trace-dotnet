@@ -16,15 +16,8 @@ namespace Datadog.Trace.TestHelpers
 
         public static void SetTracer(Tracer tracer)
         {
-            if (Ci.CIVisibility.IsRunning)
-            {
-                // CI Visibility tracer cannot be replaced, so we use an internal api to do it.
-                Tracer.UnsafeSetTracerInstance(tracer);
-            }
-            else
-            {
-                Tracer.Instance = tracer;
-            }
+            // CI Visibility tracer cannot be replaced, so we use an internal api to ensure the set.
+            Tracer.UnsafeSetTracerInstance(tracer);
         }
 
         public override void Before(MethodInfo methodUnderTest)
