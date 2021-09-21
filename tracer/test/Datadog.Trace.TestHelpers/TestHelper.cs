@@ -359,7 +359,8 @@ namespace Datadog.Trace.TestHelpers
             MockTracerAgent agent,
             int httpPort,
             HttpStatusCode expectedHttpStatusCode,
-            int expectedSpanCount = 2)
+            int expectedSpanCount = 2,
+            bool filterServerSpans = true)
         {
             using var httpClient = new HttpClient();
 
@@ -371,7 +372,10 @@ namespace Datadog.Trace.TestHelpers
             Output.WriteLine($"[http] {response.StatusCode} {content}");
             Assert.Equal(expectedHttpStatusCode, response.StatusCode);
 
-            agent.SpanFilters.Add(IsServerSpan);
+            if (filterServerSpans)
+            {
+                agent.SpanFilters.Add(IsServerSpan);
+            }
 
             return agent.WaitForSpans(
                 count: expectedSpanCount,

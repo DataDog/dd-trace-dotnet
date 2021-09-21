@@ -1,0 +1,50 @@
+// <copyright file="ThreadContext_AssociateWithCurrentThread_Integration.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+using System.ComponentModel;
+using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Configuration;
+
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
+{
+    /// <summary>
+    /// System.Web.ThreadContext.AssociateWithCurrentThread calltarget instrumentation
+    /// </summary>
+    [InstrumentMethod(
+        AssemblyName = "System.Web",
+        TypeName = "System.Web.ThreadContext",
+        MethodName = "AssociateWithCurrentThread",
+        ReturnTypeName = ClrNames.Void,
+        ParameterTypeNames = new[] { ClrNames.Bool },
+        MinimumVersion = "4.0.0",
+        MaximumVersion = "4.*.*",
+        IntegrationName = IntegrationName)]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public class ThreadContext_AssociateWithCurrentThread_Integration
+    {
+        private const string IntegrationName = nameof(IntegrationIds.AspNet);
+        private const string HttpContextScopeKey = "__Datadog.Trace.AspNet.TracingHttpModule-aspnet.request";
+
+        /// <summary>
+        /// OnMethodBegin callback
+        /// </summary>
+        /// <typeparam name="TTarget">Type of the target</typeparam>
+        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
+        /// <param name="setImpersonationContext">A flag to set the impersonation context</param>
+        /// <returns>Calltarget state value</returns>
+        public static CallTargetState OnMethodBegin<TTarget>(TTarget instance, bool setImpersonationContext)
+            where TTarget : IThreadContext
+        {
+            var httpContext = instance.HttpContext;
+            if (httpContext.Items[HttpContextScopeKey] is Scope scope && ((IDatadogTracer)Tracer.Instance).ScopeManager is IScopeRawAccess rawAccess)
+            {
+                rawAccess.Active = scope;
+            }
+
+            return CallTargetState.GetDefault();
+        }
+    }
+}
