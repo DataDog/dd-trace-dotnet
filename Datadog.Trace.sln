@@ -417,6 +417,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.GraphQL4", "tracer\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Elasticsearch.V7", "tracer\test\test-applications\integrations\Samples.Elasticsearch.V7\Samples.Elasticsearch.V7.csproj", "{3CB0B2C2-7664-4D71-8F43-3D207EE80DB7}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EnumerateAssemblyReferences", "tracer\test\test-applications\regression\EnumerateAssemblyReferences\EnumerateAssemblyReferences.csproj", "{B22311CE-EC71-4ADD-ADC6-C466B2D10230}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1764,6 +1766,16 @@ Global
 		{3CB0B2C2-7664-4D71-8F43-3D207EE80DB7}.Release|x64.Build.0 = Release|x64
 		{3CB0B2C2-7664-4D71-8F43-3D207EE80DB7}.Release|x86.ActiveCfg = Release|x86
 		{3CB0B2C2-7664-4D71-8F43-3D207EE80DB7}.Release|x86.Build.0 = Release|x86
+		{B22311CE-EC71-4ADD-ADC6-C466B2D10230}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{B22311CE-EC71-4ADD-ADC6-C466B2D10230}.Debug|x64.ActiveCfg = Debug|x64
+		{B22311CE-EC71-4ADD-ADC6-C466B2D10230}.Debug|x64.Build.0 = Debug|x64
+		{B22311CE-EC71-4ADD-ADC6-C466B2D10230}.Debug|x86.ActiveCfg = Debug|x86
+		{B22311CE-EC71-4ADD-ADC6-C466B2D10230}.Debug|x86.Build.0 = Debug|x86
+		{B22311CE-EC71-4ADD-ADC6-C466B2D10230}.Release|Any CPU.ActiveCfg = Release|x86
+		{B22311CE-EC71-4ADD-ADC6-C466B2D10230}.Release|x64.ActiveCfg = Release|x64
+		{B22311CE-EC71-4ADD-ADC6-C466B2D10230}.Release|x64.Build.0 = Release|x64
+		{B22311CE-EC71-4ADD-ADC6-C466B2D10230}.Release|x86.ActiveCfg = Release|x86
+		{B22311CE-EC71-4ADD-ADC6-C466B2D10230}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1907,6 +1919,7 @@ Global
 		{CA3D605F-8DD7-4041-B024-70A24036AFA1} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{DA81EF3E-FDB3-417F-AA20-60FC495E3596} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{3CB0B2C2-7664-4D71-8F43-3D207EE80DB7} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{B22311CE-EC71-4ADD-ADC6-C466B2D10230} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
