@@ -225,20 +225,6 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Sets the global tracer instace without any validation.
-        /// Intended use is for unit testing
-        /// </summary>
-        /// <param name="instance">Tracer instance</param>
-        internal static void UnsafeSetTracerInstance(Tracer instance)
-        {
-            lock (_globalInstanceLock)
-            {
-                _instance = instance;
-                _globalInstanceInitialized = true;
-            }
-        }
-
-        /// <summary>
         /// Gets the active scope
         /// </summary>
         public Scope ActiveScope => _scopeManager.Active;
@@ -317,6 +303,20 @@ namespace Datadog.Trace
             }
 
             return new Tracer(configuration);
+        }
+
+        /// <summary>
+        /// Sets the global tracer instace without any validation.
+        /// Intended use is for unit testing
+        /// </summary>
+        /// <param name="instance">Tracer instance</param>
+        internal static void UnsafeSetTracerInstance(Tracer instance)
+        {
+            lock (_globalInstanceLock)
+            {
+                _instance = instance;
+                _globalInstanceInitialized = true;
+            }
         }
 
         /// <summary>
