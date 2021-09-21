@@ -23,15 +23,15 @@ namespace Datadog.Trace.ClrProfiler
             return NonWindows.IsProfilerAttached();
         }
 
-        public static void InitializeProfiler(NativeCallTargetDefinition[] methodArrays)
+        public static void InitializeProfiler(string id, NativeCallTargetDefinition[] methodArrays)
         {
             if (IsWindows)
             {
-                Windows.InitializeProfiler(methodArrays, methodArrays.Length);
+                Windows.InitializeProfiler(id, methodArrays, methodArrays.Length);
             }
             else
             {
-                NonWindows.InitializeProfiler(methodArrays, methodArrays.Length);
+                NonWindows.InitializeProfiler(id, methodArrays, methodArrays.Length);
             }
         }
 
@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler
             public static extern bool IsProfilerAttached();
 
             [DllImport("Datadog.Trace.ClrProfiler.Native.dll")]
-            public static extern void InitializeProfiler([In] NativeCallTargetDefinition[] methodArrays, int size);
+            public static extern void InitializeProfiler([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
         }
 
         // assume .NET Core if not running on Windows
@@ -53,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler
             public static extern bool IsProfilerAttached();
 
             [DllImport("Datadog.Trace.ClrProfiler.Native")]
-            public static extern void InitializeProfiler([In] NativeCallTargetDefinition[] methodArrays, int size);
+            public static extern void InitializeProfiler([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
         }
     }
 }

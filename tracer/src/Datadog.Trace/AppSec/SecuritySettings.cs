@@ -19,11 +19,14 @@ namespace Datadog.Trace.AppSec
             // both should default to false
             Enabled = source?.GetBool(ConfigurationKeys.AppSecEnabled) ?? false;
             BlockingEnabled = source?.GetBool(ConfigurationKeys.AppSecBlockingEnabled) ?? false;
+            Rules = source?.GetString(ConfigurationKeys.AppSecRules);
         }
 
         public bool Enabled { get; set; }
 
         public bool BlockingEnabled { get; }
+
+        public string Rules { get; }
 
         public static SecuritySettings FromDefaultSources()
         {

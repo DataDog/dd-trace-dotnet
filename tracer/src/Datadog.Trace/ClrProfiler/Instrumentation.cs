@@ -72,9 +72,9 @@ namespace Datadog.Trace.ClrProfiler
             try
             {
                 Log.Debug("Sending CallTarget integration definitions to native library.");
-                var definitions = InstrumentationDefinitions.GetAllDefinitions();
-                NativeMethods.InitializeProfiler(definitions);
-                foreach (var def in definitions)
+                var payload = InstrumentationDefinitions.GetAllDefinitions();
+                NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
+                foreach (var def in payload.Definitions)
                 {
                     def.Dispose();
                 }

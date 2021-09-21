@@ -24,9 +24,9 @@ EXTERN_C VOID STDAPICALLTYPE GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, i
     return trace::profiler->GetAssemblyAndSymbolsBytes(pAssemblyArray, assemblySize, pSymbolsArray, symbolsSize);
 }
 
-EXTERN_C VOID STDAPICALLTYPE InitializeProfiler(trace::CallTargetDefinition* items, int size)
+EXTERN_C VOID STDAPICALLTYPE InitializeProfiler(WCHAR* id, trace::CallTargetDefinition* items, int size)
 {
-    return trace::profiler->InitializeProfiler(items, size);
+    return trace::profiler->InitializeProfiler(id, items, size);
 }
 
 #ifndef _WIN32
@@ -43,7 +43,7 @@ EXTERN_C char *dddlerror (void)
     {
         trace::Logger::Error("dlerror: ", errorPtr);
     }
-    
+
     return errorPtr;
 }
 

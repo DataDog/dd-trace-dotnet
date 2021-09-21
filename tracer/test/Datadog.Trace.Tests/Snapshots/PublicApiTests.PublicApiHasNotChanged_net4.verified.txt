@@ -23,6 +23,7 @@ namespace Datadog.Trace.Configuration
         public const string ApiKey = "DD_API_KEY";
         public const string AppSecBlockingEnabled = "DD_APPSEC_BLOCKING_ENABLED";
         public const string AppSecEnabled = "DD_APPSEC_ENABLED";
+        public const string AppSecRules = "DD_APPSEC_RULES";
         public const string BufferSize = "DD_TRACE_BUFFER_SIZE";
         public const string CIVisibilityEnabled = "DD_CIVISIBILITY_ENABLED";
         public const string ConfigurationFileName = "DD_TRACE_CONFIG_FILE";
