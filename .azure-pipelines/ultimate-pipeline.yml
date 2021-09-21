@@ -95,7 +95,7 @@ stages:
     steps:
     - template: steps/install-dotnet-5-sdk.yml
 
-    - script: tracer\build.cmd BuildTracerHome
+    - script: tracer\build.cmd BuildTracerHome --PrintDriveSpace
       displayName: Build tracer home
 
     - publish: $(tracerHome)
