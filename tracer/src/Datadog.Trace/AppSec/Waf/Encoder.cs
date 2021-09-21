@@ -91,7 +91,7 @@ namespace Datadog.Trace.AppSec.Waf
                     IList<JToken> objs => EncodeList(objs.Select(x => (object)x), argCache, remainingDepth),
                     IList<string> objs => EncodeList(objs.Select(x => (object)x), argCache, remainingDepth),
                     IList<object> objs => EncodeList(objs, argCache, remainingDepth),
-                    _ => throw new Exception($"Couldn't encod type: {o?.GetType()}")
+                    _ => throw new Exception($"Couldn't encode type: {o?.GetType()}")
                 };
 
             argCache.Add(value);
