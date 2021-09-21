@@ -59,6 +59,8 @@ variables:
   relativeArtifacts: /tracer/src/bin/artifacts
   ddTracerHome: $(System.DefaultWorkingDirectory)/tracer/src/bin/dd-tracer-home
   tracerHome: $(System.DefaultWorkingDirectory)/tracer/src/bin/windows-tracer-home
+  monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
+  profilerHome: $(System.DefaultWorkingDirectory)/profiler/bin/profiler-home
   artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
   ddApiKey: $(DD_API_KEY)
   isMainBranch: $[eq(variables['Build.SourceBranch'], 'refs/heads/master')]
@@ -225,6 +227,9 @@ stages:
 
       - script: tracer\build.cmd PackageTracerHome
         displayName: Build MSI and Tracer home
+
+      - script: tracer\build.cmd PackageMonitoringHomeBeta
+        displayName: Build beta MSI
 
       - publish: $(artifacts)/windows-tracer-home.zip
         displayName: Publish tracer-home.zip

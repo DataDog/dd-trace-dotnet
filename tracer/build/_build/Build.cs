@@ -49,7 +49,7 @@ partial class Build : NukeBuild
     readonly AbsolutePath Artifacts;
 
     [Parameter("The location to the find the profiler build artifacts. Default is /_build/DDProf-Deploy ")]
-    readonly AbsolutePath ProfilerBuildArtifacts;
+    readonly AbsolutePath ProfilerHome;
 
     [Parameter("The location to restore Nuget packages (optional) ")]
     readonly AbsolutePath NugetPackageDirectory;
@@ -151,7 +151,7 @@ partial class Build : NukeBuild
         .DependsOn(BuildMsi)
         .DependsOn(PackNuGet);
 
-    Target PackageTracerHomeBeta => _ => _
+    Target PackageMonitoringHomeBeta => _ => _
         .Description("Packages the already built src")
         .After(Clean, BuildTracerHome)
         .DependsOn(BuildMsiBeta);
