@@ -29,6 +29,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> MongoDB => IsComprehensive ? PackageVersionsComprehensive.MongoDB : PackageVersionsLatestMinors.MongoDB;
 
+        public static IEnumerable<object[]> ElasticSearch7 => IsComprehensive ? PackageVersionsComprehensive.ElasticSearch7 : PackageVersionsLatestMinors.ElasticSearch7;
+
         public static IEnumerable<object[]> ElasticSearch6 => IsComprehensive ? PackageVersionsComprehensive.ElasticSearch6 : PackageVersionsLatestMinors.ElasticSearch6;
 
         public static IEnumerable<object[]> ElasticSearch5 => IsComprehensive ? PackageVersionsComprehensive.ElasticSearch5 : PackageVersionsLatestMinors.ElasticSearch5;

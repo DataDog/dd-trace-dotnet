@@ -60,6 +60,33 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
+        public static IEnumerable<object[]> ElasticSearch7 =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETFRAMEWORK
+#endif
+                new object[] { "7.0.1" },
+                new object[] { "7.1.0" },
+                new object[] { "7.2.1" },
+                new object[] { "7.3.1" },
+                new object[] { "7.4.2" },
+                new object[] { "7.5.1" },
+                new object[] { "7.6.2" },
+                new object[] { "7.7.1" },
+                new object[] { "7.8.2" },
+                new object[] { "7.9.0" },
+                new object[] { "7.10.1" },
+                new object[] { "7.11.1" },
+                new object[] { "7.12.1" },
+                new object[] { "7.13.2" },
+                new object[] { "7.14.1" },
+#endif
+            };
+
         public static IEnumerable<object[]> ElasticSearch6 =>
 
             new List<object[]>
