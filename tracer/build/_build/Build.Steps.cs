@@ -59,6 +59,9 @@ partial class Build
 
     Project NativeProfilerProject => Solution.GetProject(Projects.ClrProfilerNative);
 
+    // Temporary solutions to try and optimise CI
+    AbsolutePath SrcSolution => RootDirectory / "Datadog.Trace.Src.sln";
+
     [LazyPathExecutable(name: "cmake")] readonly Lazy<Tool> CMake;
     [LazyPathExecutable(name: "make")] readonly Lazy<Tool> Make;
     [LazyPathExecutable(name: "fpm")] readonly Lazy<Tool> Fpm;
@@ -111,28 +114,48 @@ partial class Build
             EnsureExistingDirectory(BuildDataDirectory);
         });
 
+    Target CreateTemporarySolutions => _ => _
+        .Unlisted()
+        .DependsOn(CreateSrcSolution);
+
+
+    Target CreateSrcSolution => _ => _
+       .After(Clean)
+       .Unlisted()
+       .Executes(() =>
+       {
+           DotNet($"new sln -o \"{SrcSolution.Parent}\" -n {Path.GetFileNameWithoutExtension(SrcSolution)}");
+           var srcProjects = (TracerDirectory / "src").GlobFiles("**/*.csproj");
+           foreach (var project in srcProjects)
+           {
+               DotNet($"sln \"{SrcSolution}\" add \"{project}\"");
+           }
+       });
+
     Target Restore => _ => _
         .After(Clean)
+        .After(CreateSrcSolution)
         .Unlisted()
         .Executes(() =>
         {
+            DotNetRestore(s => s
+                .SetProjectFile(SrcSolution)
+                .SetProperty("configuration", BuildConfiguration.ToString())
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
+                   o.SetPackageDirectory(NugetPackageDirectory)));
+
             if (IsWin)
             {
-                NuGetTasks.NuGetRestore(s => s
-                    .SetTargetPath(Solution)
-                    .SetVerbosity(NuGetVerbosity.Normal)
-                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
-                        o.SetPackagesDirectory(NugetPackageDirectory)));
-            }
-            else
-            {
-                DotNetRestore(s => s
-                    .SetProjectFile(Solution)
-                    .SetVerbosity(DotNetVerbosity.Normal)
-                    // .SetTargetPlatform(Platform) // necessary to ensure we restore every project
-                    .SetProperty("configuration", BuildConfiguration.ToString())
-                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
-                        o.SetPackageDirectory(NugetPackageDirectory)));
+                var restoreDirectory = string.IsNullOrEmpty(NugetPackageDirectory)
+                    ? RootDirectory / "packages" // _must_ provide a directory for these (apparently)
+                    : NugetPackageDirectory;
+
+                foreach (var cppProject in (TracerDirectory / "src").GlobFiles("**/*.vcxproj"))
+                {
+                    NuGetTasks.NuGetRestore(s => s
+                        .SetTargetPath(cppProject)
+                        .SetPackagesDirectory(restoreDirectory));
+                }
             }
         });
 

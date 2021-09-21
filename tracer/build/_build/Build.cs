@@ -103,6 +103,7 @@ partial class Build : NukeBuild
             EnsureCleanDirectory(NativeProfilerProject.Directory / "deps");
             EnsureCleanDirectory(BuildDataDirectory);
             DeleteFile(WindowsTracerHomeZip);
+            DeleteFile(SrcSolution);
 
             void DeleteReparsePoints(string path)
             {
@@ -125,6 +126,7 @@ partial class Build : NukeBuild
         .Description("Builds the native and managed src, and publishes the tracer home directory")
         .After(Clean)
         .DependsOn(CreateRequiredDirectories)
+        .DependsOn(CreateTemporarySolutions)
         .DependsOn(Restore)
         .DependsOn(CompileManagedSrc)
         .DependsOn(PublishManagedProfiler)
