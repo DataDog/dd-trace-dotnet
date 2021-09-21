@@ -32,11 +32,7 @@
                     .EntityFrameworkRepository(r =>
                     {
                         r.ConcurrencyMode = ConcurrencyMode.Pessimistic;
-
-                        r.AddDbContext<DbContext, SampleBatchDbContext>((provider, optionsBuilder) =>
-                        {
-                            optionsBuilder.UseSqlServer(connectionString);
-                        });
+                        r.ExistingDbContext<SampleBatchDbContext>();
 
                         // I specified the MsSqlLockStatements because in my State Entities EFCore EntityConfigurations, I changed the column name from CorrelationId, to "BatchId" and "BatchJobId"
                         // Otherwise, I could just use r.UseSqlServer(), which uses the default, which are "... WHERE CorrelationId = @p0"
@@ -48,11 +44,7 @@
                     .EntityFrameworkRepository(r =>
                     {
                         r.ConcurrencyMode = ConcurrencyMode.Pessimistic;
-
-                        r.AddDbContext<DbContext, SampleBatchDbContext>((provider, optionsBuilder) =>
-                        {
-                            optionsBuilder.UseSqlServer(connectionString);
-                        });
+                        r.ExistingDbContext<SampleBatchDbContext>();
 
                         // I specified the MsSqlLockStatements because in my State Entities EFCore EntityConfigurations, I changed the column name from CorrelationId, to "BatchId" and "BatchJobId"
                         // Otherwise, I could just use r.UseSqlServer(), which uses the default, which are "... WHERE CorrelationId = @p0"
@@ -78,7 +70,10 @@
                 logging.AddConsole();
             });
 
-            services.AddDbContext<SampleBatchDbContext>(x => x.UseSqlServer(connectionString));
+            services.AddDbContext<SampleBatchDbContext>(
+                x => x.UseSqlServer(
+                    connectionString,
+                    opts => opts.CommandTimeout(60)));
 
             await using var provider = services.BuildServiceProvider(true);
 
@@ -100,8 +95,6 @@
 
         static async Task SendMessagesAsync(IServiceProvider provider, int jobCount = 10, int activeThreshold = 10, int? delayInSeconds = null)
         {
-            IBus bus = provider.GetRequiredService<IBus>();
-
             var clientFactory = provider.GetRequiredService<IClientFactory>();
             var submitBatchClient = clientFactory.CreateRequestClient<SubmitBatch>();
             var batchStatusClient = clientFactory.CreateRequestClient<BatchStatusRequested>();
@@ -174,7 +167,7 @@
         {
             using (var scope = provider.CreateScope())
             {
-                var db = scope.ServiceProvider.GetRequiredService<DbContext>();
+                var db = scope.ServiceProvider.GetRequiredService<SampleBatchDbContext>();
 
                 db.Database.EnsureCreated();
             }
