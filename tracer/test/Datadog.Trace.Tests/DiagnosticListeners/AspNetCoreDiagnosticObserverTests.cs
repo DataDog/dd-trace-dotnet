@@ -12,6 +12,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.TestHelpers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Internal;
@@ -32,7 +33,7 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
         [Fact]
         public async Task<string> CompleteDiagnosticObserverTest()
         {
-            Tracer.Instance = GetTracer();
+            TracerRestorerAttribute.SetTracer(GetTracer());
 
             var builder = new WebHostBuilder()
                 .UseStartup<Startup>();
@@ -122,24 +123,6 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             public void Configure(IApplicationBuilder builder)
             {
                 builder.UseMvcWithDefaultRoute();
-            }
-        }
-
-        [AttributeUsage(AttributeTargets.Class, Inherited = true)]
-        private class TracerRestorerAttribute : BeforeAfterTestAttribute
-        {
-            private Tracer _tracer;
-
-            public override void Before(MethodInfo methodUnderTest)
-            {
-                _tracer = Tracer.Instance;
-                base.Before(methodUnderTest);
-            }
-
-            public override void After(MethodInfo methodUnderTest)
-            {
-                Tracer.Instance = _tracer;
-                base.After(methodUnderTest);
             }
         }
     }

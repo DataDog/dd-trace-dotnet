@@ -128,31 +128,5 @@ namespace Datadog.Trace.Tests
 
             Assert.Equal(CorrelationIdentifier.Service, Tracer.Instance.DefaultServiceName);
         }
-
-        [AttributeUsage(AttributeTargets.Class, Inherited = true)]
-        private class TracerRestorerAttribute : BeforeAfterTestAttribute
-        {
-            private Tracer _tracer;
-
-            public override void Before(MethodInfo methodUnderTest)
-            {
-                _tracer = Tracer.Instance;
-                base.Before(methodUnderTest);
-            }
-
-            public override void After(MethodInfo methodUnderTest)
-            {
-                if (Ci.CIVisibility.IsRunning)
-                {
-                    Tracer.UnsafeSetTracerInstance(_tracer);
-                }
-                else
-                {
-                    Tracer.Instance = _tracer;
-                }
-
-                base.After(methodUnderTest);
-            }
-        }
     }
 }

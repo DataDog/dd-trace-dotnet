@@ -4,11 +4,13 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.TestHelpers;
 using Xunit;
 
 namespace Datadog.Trace.Tests
 {
     [CollectionDefinition(nameof(TracerInstanceTest), DisableParallelization = true)]
+    [TracerRestorer]
     public class TracerInstanceTest
     {
         [Fact]
@@ -17,37 +19,13 @@ namespace Datadog.Trace.Tests
             var tracerOne = new Tracer();
             var tracerTwo = new Tracer();
 
-            if (Ci.CIVisibility.IsRunning)
-            {
-                Tracer.UnsafeSetTracerInstance(tracerOne);
-            }
-            else
-            {
-                Tracer.Instance = tracerOne;
-            }
-
+            TracerRestorerAttribute.SetTracer(tracerOne);
             Assert.Equal(tracerOne, Tracer.Instance);
 
-            if (Ci.CIVisibility.IsRunning)
-            {
-                Tracer.UnsafeSetTracerInstance(tracerTwo);
-            }
-            else
-            {
-                Tracer.Instance = tracerTwo;
-            }
-
+            TracerRestorerAttribute.SetTracer(tracerTwo);
             Assert.Equal(tracerTwo, Tracer.Instance);
 
-            if (Ci.CIVisibility.IsRunning)
-            {
-                Tracer.UnsafeSetTracerInstance(null);
-            }
-            else
-            {
-                Tracer.Instance = null;
-            }
-
+            TracerRestorerAttribute.SetTracer(null);
             Assert.Null(Tracer.Instance);
         }
 
@@ -57,38 +35,14 @@ namespace Datadog.Trace.Tests
             var tracerOne = new Tracer();
             var tracerTwo = new LockedTracer();
 
-            if (Ci.CIVisibility.IsRunning)
-            {
-                Tracer.UnsafeSetTracerInstance(tracerOne);
-            }
-            else
-            {
-                Tracer.Instance = tracerOne;
-            }
-
+            TracerRestorerAttribute.SetTracer(tracerOne);
             Assert.Equal(tracerOne, Tracer.Instance);
 
-            if (Ci.CIVisibility.IsRunning)
-            {
-                Tracer.UnsafeSetTracerInstance(null);
-            }
-            else
-            {
-                Tracer.Instance = null;
-            }
-
+            TracerRestorerAttribute.SetTracer(null);
             Assert.Null(Tracer.Instance);
 
             // Set the locked tracer
-            if (Ci.CIVisibility.IsRunning)
-            {
-                Tracer.UnsafeSetTracerInstance(tracerTwo);
-            }
-            else
-            {
-                Tracer.Instance = tracerTwo;
-            }
-
+            TracerRestorerAttribute.SetTracer(tracerTwo);
             Assert.Equal(tracerTwo, Tracer.Instance);
 
             // We test the locked tracer cannot be replaced.
