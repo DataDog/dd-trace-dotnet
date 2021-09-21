@@ -26,6 +26,59 @@
           "signature": "00 00 01",
           "action": "InsertFirst"
         }
+      },
+      {
+        "caller": {
+          "assembly": "System.Web"
+        },
+        "target": {
+          "assembly": "System.Web",
+          "type": "System.Web.ThreadContext",
+          "method": "AssociateWithCurrentThread",
+          "signature_types": [
+            "System.Void",
+            "System.Boolean"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace, Version=1.28.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AspNet.AspNetThreadContextIntegration",
+          "method": "AssociateWithCurrentThread",
+          "signature": "00 05 01 1C 02 08 08 0A",
+          "action": "ReplaceTargetMethod"
+        }
+      },
+      {
+        "caller": {
+          "assembly": "System.Web"
+        },
+        "target": {
+          "assembly": "System.Web",
+          "type": "System.Web.ThreadContext",
+          "method": "DisassociateFromCurrentThread",
+          "signature_types": [
+            "System.Void"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace, Version=1.28.6.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.AspNet.AspNetThreadContextIntegration",
+          "method": "DisassociateFromCurrentThread",
+          "signature": "00 04 01 1C 08 08 0A",
+          "action": "ReplaceTargetMethod"
+        }
       }
     ]
   },

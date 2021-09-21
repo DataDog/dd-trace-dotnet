@@ -113,6 +113,8 @@ namespace Datadog.Trace.ClrProfiler
 
                 // AspNet
                 new("System.Web", "System.Web.Compilation.BuildManager", "InvokePreStartInitMethodsCore",  new[] { "System.Void", "System.Collections.Generic.ICollection`1[System.Reflection.MethodInfo]", "System.Func`1[System.IDisposable]" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.HttpModule_Integration"),
+                new("System.Web", "System.Web.ThreadContext", "AssociateWithCurrentThread",  new[] { "System.Void", "System.Boolean" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ThreadContext_AssociateWithCurrentThread_Integration"),
+                new("System.Web", "System.Web.ThreadContext", "DisassociateFromCurrentThread",  new[] { "System.Void" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ThreadContext_DisassociateFromCurrentThread_Integration"),
 
                 // AspNetCore
                 new("Microsoft.AspNetCore.Http", "Microsoft.AspNetCore.Builder.ApplicationBuilder", "Build",  new[] { "System.Void" }, 3, 0, 0, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.AspNetCoreMiddlewareIntegration"),
