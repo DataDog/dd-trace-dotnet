@@ -205,7 +205,7 @@ namespace Datadog.Trace.AppSec.Waf
                     IList<JToken> objs => FormatList(objs.Select(x => (object)x), sb),
                     IList<string> objs => FormatList(objs.Select(x => (object)x), sb),
                     IList<object> objs => FormatList(objs, sb),
-                    _ => throw new Exception($"Couldn't format type: {o?.GetType()}")
+                    _ => sb.Append($"Error: couldn't format type: {o?.GetType()}")
                 };
         }
 
