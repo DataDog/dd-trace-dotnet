@@ -5,6 +5,7 @@
 
 using System;
 using Datadog.Trace.Util;
+using FluentAssertions;
 using Moq;
 using Xunit;
 
@@ -109,6 +110,99 @@ namespace Datadog.Trace.Tests
             {
                 tracer.Verify(t => t.Write(It.Is<ArraySegment<Span>>(s => s.Count == 11)), Times.Once);
             }
+        }
+
+        [Fact]
+        public void FullFlushShouldNotPropagateSamplingPriority()
+        {
+            const int partialFlushThreshold = 3;
+
+            Span CreateSpan() => new Span(new SpanContext(42, SpanIdGenerator.ThreadInstance.CreateNew()), DateTimeOffset.UtcNow);
+
+            var tracer = new Mock<IDatadogTracer>();
+
+            tracer.Setup(t => t.Settings).Returns(new Trace.Configuration.TracerSettings
+            {
+                PartialFlushEnabled = true,
+                PartialFlushMinSpans = partialFlushThreshold
+            });
+
+            ArraySegment<Span>? spans = null;
+
+            tracer.Setup(t => t.Write(It.IsAny<ArraySegment<Span>>()))
+                  .Callback<ArraySegment<Span>>(s => spans = s);
+
+            var traceContext = new TraceContext(tracer.Object)
+            {
+                SamplingPriority = SamplingPriority.UserKeep
+            };
+
+            var rootSpan = CreateSpan();
+
+            traceContext.AddSpan(rootSpan);
+
+            for (int i = 0; i < partialFlushThreshold - 1; i++)
+            {
+                var span = CreateSpan();
+                traceContext.AddSpan(span);
+                traceContext.CloseSpan(span);
+            }
+
+            // At this point, only one span is missing to reach the threshold for partial flush
+            spans.Should().BeNull("partial flush should not have been triggered");
+
+            // Closing the root span brings the number of closed spans to the threshold
+            // but a full flush should be triggered rather than a partial, because every span in the trace has been closed
+            traceContext.CloseSpan(rootSpan);
+
+            spans.Should().NotBeNullOrEmpty("a full flush should have been triggered");
+
+            rootSpan.GetMetric(Metrics.SamplingPriority).Should().Be((int)SamplingPriority.UserKeep, "priority should be assigned to the root span");
+
+            spans.Value.Should().OnlyContain(s => s == rootSpan || s.GetMetric(Metrics.SamplingPriority) == null, "only the root span should have a priority");
+        }
+
+        [Fact]
+        public void PartialFlushShouldPropagateSamplingPriority()
+        {
+            const int partialFlushThreshold = 2;
+
+            Span CreateSpan() => new Span(new SpanContext(42, SpanIdGenerator.ThreadInstance.CreateNew()), DateTimeOffset.UtcNow);
+
+            var tracer = new Mock<IDatadogTracer>();
+
+            tracer.Setup(t => t.Settings).Returns(new Trace.Configuration.TracerSettings
+            {
+                PartialFlushEnabled = true,
+                PartialFlushMinSpans = partialFlushThreshold
+            });
+
+            ArraySegment<Span>? spans = null;
+
+            tracer.Setup(t => t.Write(It.IsAny<ArraySegment<Span>>()))
+                  .Callback<ArraySegment<Span>>(s => spans = s);
+
+            var traceContext = new TraceContext(tracer.Object)
+            {
+                SamplingPriority = SamplingPriority.UserKeep
+            };
+
+            var rootSpan = CreateSpan();
+
+            // Root span will stay open for the duration of the test
+            traceContext.AddSpan(rootSpan);
+
+            // Add enough child spans to trigger partial flush
+            for (int i = 0; i < partialFlushThreshold; i++)
+            {
+                var span = CreateSpan();
+                traceContext.AddSpan(span);
+                traceContext.CloseSpan(span);
+            }
+
+            spans.Should().NotBeNullOrEmpty("partial flush should have been triggered");
+
+            spans.Value.Should().OnlyContain(s => (int)s.GetMetric(Metrics.SamplingPriority) == (int)SamplingPriority.UserKeep);
         }
     }
 }
