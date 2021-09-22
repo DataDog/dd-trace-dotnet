@@ -1,2 +1,6 @@
 <Project>
+  <PropertyGroup>
+    <ExcludeNativeProfiler>true</ExcludeNativeProfiler>
+    <ExcludeManagedProfiler>true</ExcludeManagedProfiler>
+  </PropertyGroup>
 </Project>

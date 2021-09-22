@@ -3,4 +3,9 @@
   This file intentionally left blank...
   to stop msbuild from looking up the folder hierarchy
   -->
+
+  <PropertyGroup>
+    <ExcludeNativeProfiler>true</ExcludeNativeProfiler>
+    <ExcludeManagedProfiler>true</ExcludeManagedProfiler>
+  </PropertyGroup>
 </Project>

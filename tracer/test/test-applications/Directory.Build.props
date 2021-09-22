@@ -23,6 +23,9 @@
 
     <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp3.0) -->
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
+
+    <ExcludeNativeProfiler>true</ExcludeNativeProfiler>
+    <ExcludeManagedProfiler>true</ExcludeManagedProfiler>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(ExcludeManagedProfiler)' != 'true' and
