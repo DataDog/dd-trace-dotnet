@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Ci.Tags;
@@ -37,13 +38,44 @@ namespace Datadog.Trace.Ci.Agent
 
         public void WriteTrace(ArraySegment<Span> trace)
         {
-            // We ensure all spans in a trace has the origin tag (required for billing)
+            // We ensure there's no trace (local root span) without a test tag.
+            // And ensure all remaining spans have the origin tag.
+
+            HashSet<ulong> removeIds = null;
+            Span[] finalTrace = new Span[trace.Count];
+            int idx = 0;
             foreach (var span in trace)
             {
+                // Remove traces non test, benchmarks or build traces.
+                if (span.Context.Parent is null)
+                {
+                    if (span.Type != SpanTypes.Test &&
+                        span.Type != SpanTypes.Benchmark &&
+                        span.Type != SpanTypes.Build)
+                    {
+                        if (removeIds == null)
+                        {
+                            removeIds = new HashSet<ulong>();
+                        }
+
+                        removeIds.Add(span.SpanId);
+                        CIVisibility.Log.Warning($"Non Test or Benchmark trace was dropped: {span}");
+                        continue;
+                    }
+                }
+                else if (removeIds != null && removeIds.Contains(span.Context.ParentId.Value))
+                {
+                    removeIds.Add(span.SpanId);
+                    CIVisibility.Log.Warning($"Non Test or Benchmark trace was dropped: {span}");
+                    continue;
+                }
+
+                // Sets the origin tag to any other spans to ensure the CI track.
                 span.Context.Origin = TestTags.CIAppTestOriginName;
+                finalTrace[idx++] = span;
             }
 
-            _agentWriter.WriteTrace(trace);
+            _agentWriter.WriteTrace(new ArraySegment<Span>(finalTrace, 0, idx));
         }
     }
 }
