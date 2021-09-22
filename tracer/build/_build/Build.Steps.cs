@@ -879,6 +879,7 @@ partial class Build
                     .SetTargetPlatform(Platform)
                     .EnableNoRestore()
                     .EnableNoBuild()
+                    .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
                     .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ParallelIntegrationTests, (s, project) => s
@@ -895,6 +896,7 @@ partial class Build
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "RunOnWindows=True&LoadFromGAC!=True&IIS!=True")
+                    .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
@@ -926,6 +928,7 @@ partial class Build
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "Category=Smoke&LoadFromGAC!=True")
+                    .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
@@ -958,6 +961,7 @@ partial class Build
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "(RunOnWindows=True)&LoadFromGAC=True")
+                    .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
@@ -1180,6 +1184,7 @@ partial class Build
                         .SetFramework(Framework)
                         .EnableMemoryDumps()
                         .SetFilter(filter)
+                        .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
                         .When(TestAllPackageVersions, o => o
                             .SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                         .When(CodeCoverage, ConfigureCodeCoverage)
@@ -1197,6 +1202,7 @@ partial class Build
                     .SetFramework(Framework)
                     .EnableMemoryDumps()
                     .SetFilter(filter)
+                    .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
                     .When(TestAllPackageVersions, o => o
                         .SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                     .When(CodeCoverage, ConfigureCodeCoverage)

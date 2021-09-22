@@ -62,9 +62,6 @@ namespace Datadog.Trace.TestHelpers
                 throw new Exception($"application not found: {sampleAppPath}");
             }
 
-            // get full paths to integration definitions
-            IEnumerable<string> integrationPaths = Directory.EnumerateFiles(".", "*integrations.json").Select(Path.GetFullPath);
-
             Output.WriteLine($"Starting Application: {sampleAppPath}");
             string testCli = EnvironmentHelper.GetDotNetTest();
             string exec = testCli;
