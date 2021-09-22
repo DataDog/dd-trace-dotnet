@@ -307,7 +307,7 @@ namespace Datadog.Trace
         public const string Language = "language";
 
         /// <summary>
-        /// The resource id of the site instance in Azure App Services where the traced application is running.
+        /// The resource ID of the site instance in Azure App Services where the traced application is running.
         /// </summary>
         public const string AzureAppServicesResourceId = "aas.resource.id";
 
@@ -332,7 +332,7 @@ namespace Datadog.Trace
         public const string AzureAppServicesInstanceName = "aas.environment.instance_name";
 
         /// <summary>
-        /// The instance id in Azure where the traced application is running.
+        /// The instance ID in Azure where the traced application is running.
         /// </summary>
         public const string AzureAppServicesInstanceId = "aas.environment.instance_id";
 
@@ -359,9 +359,29 @@ namespace Datadog.Trace
         public const string AzureAppServicesSiteType = "aas.site.type";
 
         /// <summary>
-        /// The subscription id of the site instance in Azure App Services where the traced application is running.
+        /// The subscription ID of the site instance in Azure App Services where the traced application is running.
         /// </summary>
         public const string AzureAppServicesSubscriptionId = "aas.subscription.id";
+
+        /// <summary>
+        /// The type of trigger for an azure function
+        /// </summary>
+        internal const string AzureFunctionTriggerType = "aas.function.trigger";
+
+        /// <summary>
+        /// The UI name of the azure function
+        /// </summary>
+        internal const string AzureFunctionName = "aas.function.name";
+
+        /// <summary>
+        /// The full method name of the azure function
+        /// </summary>
+        internal const string AzureFunctionMethod = "aas.function.method";
+
+        /// <summary>
+        /// The literal type of the binding for the azure function trigger
+        /// </summary>
+        internal const string AzureFunctionBindingSource = "aas.function.binding";
 
         /// <summary>
         /// Configures the origin of the trace

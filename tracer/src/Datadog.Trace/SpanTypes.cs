@@ -71,5 +71,10 @@ namespace Datadog.Trace
         /// The span type for an Aerospike integration.
         /// </summary>
         public const string Aerospike = "aerospike";
+
+        /// <summary>
+        /// The span type for serverless integrations.
+        /// </summary>
+        public const string Serverless = "serverless";
     }
 }
