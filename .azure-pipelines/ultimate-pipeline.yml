@@ -130,6 +130,10 @@ stages:
       displayName: Upload Windows tracer home directory
       artifact: windows-tracer-home
 
+    - publish: $(System.DefaultWorkingDirectory)/../_build/DDProf-Deploy
+      displayName: Upload Windows profiler home directory
+      artifact: windows-profiler-home
+
     - publish: $(System.DefaultWorkingDirectory)
       displayName: Upload working directory after the managed build
       artifact: build-windows-working-directory
@@ -246,6 +250,12 @@ stages:
     steps:
       - template: steps/install-dotnet-5-sdk.yml
       - template: steps/restore-working-directory.yml
+
+      - task: DownloadPipelineArtifact@2
+        displayName: Download windows profiler home
+        inputs:
+          artifact: windows-profiler-home
+          path: $(profilerHome)
 
       - script: tracer\build.cmd PackageTracerHome
         displayName: Build MSI and Tracer home
