@@ -86,18 +86,6 @@ namespace Datadog.Trace.TestHelpers
             return RuntimeFrameworkDescription.Contains("core") || IsNet5();
         }
 
-        public static string GetRuntimeIdentifier()
-        {
-            return IsCoreClr()
-                       ? string.Empty
-                       : $"{EnvironmentTools.GetOS()}-{EnvironmentTools.GetPlatform()}";
-        }
-
-        public static string GetSolutionDirectory()
-        {
-            return EnvironmentTools.GetSolutionDirectory();
-        }
-
         public static IEnumerable<string> GetProfilerPathCandidates(string sampleApplicationOutputDirectory)
         {
             string extension = EnvironmentTools.GetOS() switch
