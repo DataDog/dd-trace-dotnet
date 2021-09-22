@@ -198,7 +198,8 @@ stages:
     dependsOn: []
     pool:
       name: Arm64
-
+    workspace:
+      clean: all
     steps:
     - template: steps/run-in-docker.yml
       parameters:
