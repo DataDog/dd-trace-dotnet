@@ -15,6 +15,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TFunction>(TTarget instance, TFunction functionInstance, System.Threading.CancellationToken cancellationToken)
             where TFunction : Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions.IFunctionInstance { }
     }
+    public class FunctionInvocationMiddlewareInvokeIntegration
+    {
+        public FunctionInvocationMiddlewareInvokeIntegration() { }
+        public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
+        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget>(TTarget instance, Microsoft.AspNetCore.Http.HttpContext httpContext) { }
+    }
     public interface IFunctionDescriptor
     {
         string FullName { get; }
