@@ -48,6 +48,8 @@ partial class Build : NukeBuild
     [Parameter("The location to place NuGet packages and other packages. Default is ./bin/artifacts ")]
     readonly AbsolutePath Artifacts;
 
+    [Parameter("The location to the find the profiler repository. Default is ./../dd-continuous-profiler-dotnet")]
+    readonly AbsolutePath ProfilerSrcDirectory;
     [Parameter("The location to the find the profiler build artifacts. Default is ./../_build/DDProf-Deploy")]
     readonly AbsolutePath ProfilerHome;
 
