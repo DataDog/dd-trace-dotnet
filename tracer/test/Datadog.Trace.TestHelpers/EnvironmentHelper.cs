@@ -131,7 +131,7 @@ namespace Datadog.Trace.TestHelpers
                 ("win", "X64") => ("dll", "win-x64"),
                 ("win", "X86") => ("dll", "win-x86"),
                 ("linux", "X64") => ("so", null),
-                ("linux", "ARM64") => ("so", null),
+                ("linux", "Arm64") => ("so", null),
                 ("osx", _) => ("dylib", null),
                 _ => throw new PlatformNotSupportedException()
             };
