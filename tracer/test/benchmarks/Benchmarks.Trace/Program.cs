@@ -22,7 +22,10 @@ namespace Benchmarks.Trace
             }
             else
             {
-                var config = DefaultConfig.Instance.AddExporter(DatadogExporter.Default);
+                var config = DefaultConfig.Instance
+                    .AddExporter(DatadogExporter.Default)
+                    .AddExporter(JsonExporter.Compact);
+
                 BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, config);
             }
         }
