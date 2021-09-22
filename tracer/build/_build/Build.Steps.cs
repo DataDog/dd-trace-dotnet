@@ -34,6 +34,7 @@ partial class Build
     [Solution("Datadog.Trace.sln")] readonly Solution Solution;
     AbsolutePath TracerDirectory => RootDirectory / "tracer";
     AbsolutePath SharedDirectory => RootDirectory / "shared";
+    AbsolutePath ProfilerDirectory => ProfilerSrcDirectory ?? RootDirectory / ".." / "dd-continuous-profiler-dotnet";
     AbsolutePath MsBuildProject => TracerDirectory / "Datadog.Trace.proj";
 
     AbsolutePath OutputDirectory => TracerDirectory / "bin";
@@ -47,7 +48,7 @@ partial class Build
 
     AbsolutePath MonitoringHomeDirectory => MonitoringHome ?? (SharedDirectory / "bin" / "monitoring-home");
 
-    AbsolutePath ProfilerHomeDirectory => ProfilerHome ?? RootDirectory / "_build" / "DDProf-Deploy";
+    AbsolutePath ProfilerHomeDirectory => ProfilerHome ?? RootDirectory / ".." / "_build" / "DDProf-Deploy";
 
     const string LibDdwafVersion = "1.0.10";
     AbsolutePath LibDdwafDirectory => (NugetPackageDirectory ?? (RootDirectory / "packages")) / $"libddwaf.{LibDdwafVersion}";
@@ -162,17 +163,6 @@ partial class Build
                 .SetConfiguration(BuildConfiguration)
                 .SetMSBuildPath()
                 .SetTargets("BuildCppSrc")
-                .DisableRestore()
-                .SetMaxCpuCount(null)
-                .CombineWith(platforms, (m, platform) => m
-                    .SetTargetPlatform(platform)));
-
-            // Build native loader assets
-            MSBuild(s => s
-                .SetTargetPath(NativeLoaderProject)
-                .SetConfiguration(BuildConfiguration)
-                .SetMSBuildPath()
-                // .SetTargets("BuildCppSrc")
                 .DisableRestore()
                 .SetMaxCpuCount(null)
                 .CombineWith(platforms, (m, platform) => m
@@ -380,25 +370,6 @@ partial class Build
                 var dest = TracerHomeDirectory / $"win-{architecture}";
                 Logger.Info($"Copying '{source}' to '{dest}'");
                 CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
-
-                // Copy native loader assets
-                source = NativeLoaderProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
-                             "loader.conf";
-                dest = MonitoringHomeDirectory;
-                Logger.Info($"Copying '{source}' to '{dest}'");
-                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
-
-                source = NativeLoaderProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
-                             $"{NativeLoaderProject.Name}.dll";
-                var destFile = MonitoringHomeDirectory / $"{NativeLoaderProject.Name}.{architecture.ToString()}.dll";
-                Logger.Info($"Copying file '{source}' to 'file {destFile}'");
-                CopyFile(source, destFile, FileExistsPolicy.Overwrite);
-
-                source = NativeLoaderProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
-                             $"{NativeLoaderProject.Name}.pdb";
-                destFile = MonitoringHomeDirectory / $"{NativeLoaderProject.Name}.{architecture.ToString()}.pdb";
-                Logger.Info($"Copying '{source}' to '{destFile}'");
-                CopyFile(source, destFile, FileExistsPolicy.Overwrite);
             }
         });
 

@@ -48,7 +48,7 @@ partial class Build : NukeBuild
     [Parameter("The location to place NuGet packages and other packages. Default is ./bin/artifacts ")]
     readonly AbsolutePath Artifacts;
 
-    [Parameter("The location to the find the profiler build artifacts. Default is /_build/DDProf-Deploy ")]
+    [Parameter("The location to the find the profiler build artifacts. Default is ./../_build/DDProf-Deploy")]
     readonly AbsolutePath ProfilerHome;
 
     [Parameter("The location to restore Nuget packages (optional) ")]
@@ -142,6 +142,17 @@ partial class Build : NukeBuild
         .DependsOn(CopyLibDdwaf)
         .DependsOn(CreateDdTracerHome);
 
+    Target BuildProfilerHome => _ => _
+        .Description("Builds the Profiler native and managed src, and publishes the profiler home directory")
+        .After(Clean)
+        .DependsOn(CompileProfilerManagedSrc)
+        .DependsOn(CompileProfilerNativeSrc);
+
+    Target BuildMonitoringHome => _ => _
+        .Description("Builds the native and managed src for the entire .NET APM product. Publishes to the monitoring home directory")
+        .After(Clean)
+        .DependsOn(CompileNativeLoader)
+        .DependsOn(PublishNativeLoader);
 
     Target PackageTracerHome => _ => _
         .Description("Packages the already built src")
@@ -153,7 +164,7 @@ partial class Build : NukeBuild
 
     Target PackageMonitoringHomeBeta => _ => _
         .Description("Packages the already built src")
-        .After(Clean, BuildTracerHome)
+        .After(Clean, BuildTracerHome, BuildProfilerHome, BuildMonitoringHome)
         .DependsOn(BuildMsiBeta);
 
     Target BuildAndRunManagedUnitTests => _ => _
