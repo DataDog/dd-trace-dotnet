@@ -196,7 +196,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
                         {
                             // Give the process a bit to finish flushing spans
                             Thread.Sleep(5_000);
-                            process.Kill();
+                            throw new TimeoutException("Nope, I won't kill the process");
                         }
 
                         process.Dispose();

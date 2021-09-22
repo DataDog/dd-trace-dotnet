@@ -104,7 +104,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
                         {
                             try
                             {
-                                process.Kill();
+                                throw new TimeoutException("Nope, I won't kill the process");
                             }
                             catch
                             {

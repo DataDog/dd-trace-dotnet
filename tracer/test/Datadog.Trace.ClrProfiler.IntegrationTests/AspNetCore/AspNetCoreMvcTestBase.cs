@@ -132,7 +132,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                         {
                             if (!_process.WaitForExit(5000))
                             {
-                                _process.Kill();
+                                throw new TimeoutException("Nope, I won't kill the process");
                             }
                         }
                     }

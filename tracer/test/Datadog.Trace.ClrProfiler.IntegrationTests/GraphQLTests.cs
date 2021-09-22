@@ -168,7 +168,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                     if (!process.WaitForExit(5000))
                     {
-                        process.Kill();
+                        throw new TimeoutException("Nope, I won't kill the process");
                     }
                 }
 
