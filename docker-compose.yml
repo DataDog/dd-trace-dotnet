@@ -292,8 +292,8 @@ services:
       - ./:/project
     environment:
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
-      - tracerHome=/project/${relativeTracerHome:-src/bin/windows-tracer-home}
-      - artifacts=/project/${relativeArtifacts:-src/bin/artifacts}
+      - tracerHome=/project/${relativeTracerHome:-tracer/src/bin/windows-tracer-home}
+      - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
       - framework=${framework:-netcoreapp3.1}
       - baseImage=${baseImage:-default}
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-0}
@@ -364,8 +364,8 @@ services:
       - ./:/project
     environment:
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
-      - tracerHome=/project/${relativeTracerHome:-src/bin/windows-tracer-home}
-      - artifacts=/project/${relativeArtifacts:-src/bin/artifacts}
+      - tracerHome=/project/${relativeTracerHome:-tracer/src/bin/windows-tracer-home}
+      - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
       - framework=${framework:-netcoreapp3.1}
       - baseImage=${baseImage:-debian}
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-0}
