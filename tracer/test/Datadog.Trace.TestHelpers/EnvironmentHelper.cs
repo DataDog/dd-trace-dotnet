@@ -482,6 +482,7 @@ namespace Datadog.Trace.TestHelpers
         {
             return Path.Combine(
                 EnvironmentTools.GetSolutionDirectory(),
+                "tracer",
                 "src",
                 "Datadog.Trace.ClrProfiler.Native",
                 "bin",
