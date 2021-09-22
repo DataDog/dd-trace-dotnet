@@ -4,10 +4,8 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.HttpOverStreams;
@@ -102,26 +100,6 @@ namespace Datadog.Trace.Agent.Transports
 
                 return new HttpStreamResponse(response.StatusCode, responseContentStream.Length, response.GetContentEncoding(), responseContentStream, response.Headers);
             }
-        }
-
-        public async Task<string> RequestContent()
-        {
-            if (_request != null)
-            {
-                var payload = string.Empty;
-                if (_request.Content != null)
-                {
-                    var buffer = new byte[_request.Content.Length.Value];
-                    var requestStream = new MemoryStream(buffer);
-                    await _request.Content.CopyToAsync(buffer).ConfigureAwait(false);
-                    using var sr = new StreamReader(requestStream);
-                    payload = await sr.ReadToEndAsync();
-                }
-
-                return $"Headers: {string.Join(", ", _request.Headers.Select(h => $"{h.Name}: {h.Value}"))} / Payload: {payload}";
-            }
-
-            return string.Empty;
         }
     }
 }
