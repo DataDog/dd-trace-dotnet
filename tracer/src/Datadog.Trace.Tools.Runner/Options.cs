@@ -26,6 +26,9 @@ namespace Datadog.Trace.Tools.Runner
         [Option("set-ci", Required = false, Default = false, HelpText = "Setup the clr profiler environment variables for the CI job and exit. (only supported in Azure Pipelines)")]
         public bool SetEnvironmentVariables { get; set; }
 
+        [Option("ci-visibility", Required = false, Default = false, HelpText = "Run the command in CI Visibility Mode")]
+        public bool EnableVisibilityMode { get; set; }
+
         [Option("dd-env", Required = false, HelpText = "Sets the environment name for the unified service tagging.")]
         public string Environment { get; set; }
 

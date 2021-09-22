@@ -85,6 +85,12 @@ namespace Datadog.Trace.Tools.Runner
                 return 1;
             }
 
+            if (options.EnableVisibilityMode)
+            {
+                // Enable CI Visibility mode by configuration
+                profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibilityEnabled] = "1";
+            }
+
             if (options.SetEnvironmentVariables)
             {
                 Console.WriteLine("Setting up the environment variables.");
