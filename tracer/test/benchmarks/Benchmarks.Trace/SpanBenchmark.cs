@@ -9,8 +9,6 @@ namespace Benchmarks.Trace
     /// <summary>
     /// Span benchmarks
     /// </summary>
-    [DatadogExporter]
-    [JsonExporterAttribute.FullCompressed]
     [MemoryDiagnoser]
     public class SpanBenchmark
     {

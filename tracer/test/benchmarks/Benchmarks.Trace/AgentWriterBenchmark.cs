@@ -13,8 +13,6 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Benchmarks.Trace
 {
-    [JsonExporterAttribute.FullCompressed]
-    [DatadogExporter]
     [MemoryDiagnoser]
     public class AgentWriterBenchmark
     {

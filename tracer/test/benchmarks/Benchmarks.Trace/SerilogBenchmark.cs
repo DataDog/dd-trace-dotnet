@@ -10,7 +10,6 @@ using Logger = Serilog.Core.Logger;
 
 namespace Benchmarks.Trace
 {
-    [JsonExporterAttribute.FullCompressed]
     [MemoryDiagnoser]
     public class SerilogBenchmark
     {

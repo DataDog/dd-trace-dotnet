@@ -7,7 +7,6 @@ using Datadog.Trace.Configuration;
 
 namespace Benchmarks.Trace
 {
-    [JsonExporterAttribute.FullCompressed]
     [MemoryDiagnoser]
     public class DbCommandBenchmark
     {
