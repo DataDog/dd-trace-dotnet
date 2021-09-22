@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
             {
                 return index switch
                 {
-                    0 => new KeyValuePair<string, object>("dd_service", _tracer.ActiveScope?.Span.ServiceName ?? _service),
+                    0 => new KeyValuePair<string, object>("dd_service", _service),
                     1 => new KeyValuePair<string, object>("dd_env", _env),
                     2 => new KeyValuePair<string, object>("dd_version", _version),
                     3 => new KeyValuePair<string, object>("dd_trace_id", (_tracer.ActiveScope?.Span.TraceId ?? 0).ToString()),
@@ -65,18 +65,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
 
             return string.Format(
                 CultureInfo.InvariantCulture,
-                "dd_service:\"{0}\", dd_env:\"{1}\", dd_version:\"{2}\", dd_trace_id:\"{3}\", dd_span_id:\"{4}\"",
-                span?.ServiceName ?? _service,
-                _env,
-                _version,
-                _tracer.ActiveScope?.Span.TraceId,
-                _tracer.ActiveScope?.Span.SpanId);
+                "{0}, dd_trace_id:\"{1}\", dd_span_id:\"{2}\"",
+                _cachedFormat,
+                span.TraceId,
+                span.SpanId);
         }
 
         public IEnumerator<KeyValuePair<string, object>> GetEnumerator()
         {
             var span = _tracer.ActiveScope?.Span;
-            yield return new KeyValuePair<string, object>("dd_service", span?.ServiceName ?? _service);
+            yield return new KeyValuePair<string, object>("dd_service", _service);
             yield return new KeyValuePair<string, object>("dd_env", _env);
             yield return new KeyValuePair<string, object>("dd_version", _version);
 

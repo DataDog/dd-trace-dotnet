@@ -287,6 +287,10 @@ namespace Datadog.Trace.ClrProfiler
                 new("xunit.execution.dotnet", "Xunit.Sdk.TestInvoker`1", "RunAsync",  new[] { "System.Threading.Tasks.Task`1<System.Decimal>" }, 2, 2, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestInvokerRunAsyncIntegration"),
                 new("xunit.execution.dotnet", "Xunit.Sdk.TestRunner`1", "RunAsync",  new[] { "System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>" }, 2, 2, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestRunnerRunAsyncIntegration"),
 
+                // AzureFunctions
+                new("Microsoft.Azure.WebJobs.Host", "Microsoft.Azure.WebJobs.Host.Executors.FunctionExecutor", "TryExecuteAsync",  new[] { "System.Threading.Tasks.Task`1[Microsoft.Azure.WebJobs.Host.Executors.IDelayedException]", "Microsoft.Azure.WebJobs.Host.Executors.IFunctionInstance", "System.Threading.CancellationToken" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions.AzureFunctionsExecutorTryExecuteAsyncIntegration"),
+                new("Microsoft.Azure.WebJobs.Script.WebHost", "Microsoft.Azure.WebJobs.Script.WebHost.Middleware.FunctionInvocationMiddleware", "Invoke",  new[] { "System.Threading.Tasks.Task", "Microsoft.AspNetCore.Http.HttpContext" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions.FunctionInvocationMiddlewareInvokeIntegration"),
+
             };
         }
     }

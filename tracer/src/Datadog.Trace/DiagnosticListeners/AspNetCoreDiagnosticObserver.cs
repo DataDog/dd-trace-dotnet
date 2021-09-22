@@ -17,6 +17,7 @@ using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Http;
@@ -51,6 +52,8 @@ namespace Datadog.Trace.DiagnosticListeners
                    ?.GetType("Microsoft.AspNetCore.Http.Features.IEndpointFeature", throwOnError: false);
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AspNetCoreDiagnosticObserver>();
+        private static readonly AspNetCoreHttpRequestHandler AspNetCoreRequestHandler = new AspNetCoreHttpRequestHandler(Log, HttpRequestInOperationName, IntegrationId);
+
         private readonly Tracer _tracer;
         private readonly Security _security;
 
@@ -271,51 +274,6 @@ namespace Datadog.Trace.DiagnosticListeners
         }
 #endif
 
-        private static SpanContext ExtractPropagatedContext(HttpRequest request)
-        {
-            try
-            {
-                // extract propagation details from http headers
-                var requestHeaders = request.Headers;
-
-                if (requestHeaders != null)
-                {
-                    return SpanContextPropagator.Instance.Extract(new HeadersCollectionAdapter(requestHeaders));
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error extracting propagated HTTP headers.");
-            }
-
-            return null;
-        }
-
-        private static IEnumerable<KeyValuePair<string, string>> ExtractHeaderTags(HttpRequest request, IDatadogTracer tracer)
-        {
-            var settings = tracer.Settings;
-
-            if (!settings.HeaderTags.IsNullOrEmpty())
-            {
-                try
-                {
-                    // extract propagation details from http headers
-                    var requestHeaders = request.Headers;
-
-                    if (requestHeaders != null)
-                    {
-                        return SpanContextPropagator.Instance.ExtractHeaderTags(new HeadersCollectionAdapter(requestHeaders), settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error extracting propagated HTTP headers.");
-                }
-            }
-
-            return Enumerable.Empty<KeyValuePair<string, string>>();
-        }
-
         private static string SimplifyRoutePattern(
             RoutePattern routePattern,
             RouteValueDictionary routeValueDictionary,
@@ -487,7 +445,7 @@ namespace Datadog.Trace.DiagnosticListeners
             var span = mvcScope.Span;
             span.Type = SpanTypes.Web;
 
-            var trackingFeature = httpContext.Features.Get<RequestTrackingFeature>();
+            var trackingFeature = httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>();
             var isUsingEndpointRouting = trackingFeature.IsUsingEndpointRouting;
 
             var isFirstExecution = trackingFeature.IsFirstPipelineExecution;
@@ -584,46 +542,6 @@ namespace Datadog.Trace.DiagnosticListeners
             return span;
         }
 
-        private Span StartCoreSpan(Tracer tracer, HttpContext httpContext, HttpRequest request)
-        {
-            string host = request.Host.Value;
-            string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
-            string url = request.GetUrl();
-
-            if (tracer.Settings.RouteTemplateResourceNamesEnabled)
-            {
-                httpContext.Features.Set(new RequestTrackingFeature
-                {
-                    HttpMethod = httpMethod,
-                    OriginalUrl = url,
-                });
-            }
-
-            string absolutePath = request.Path.Value;
-
-            if (request.PathBase.HasValue)
-            {
-                absolutePath = request.PathBase.Value + absolutePath;
-            }
-
-            string resourceUrl = UriHelpers.GetCleanUriPath(absolutePath)
-                                           .ToLowerInvariant();
-
-            string resourceName = $"{httpMethod} {resourceUrl}";
-
-            SpanContext propagatedContext = ExtractPropagatedContext(request);
-            var tagsFromHeaders = ExtractHeaderTags(request, tracer);
-
-            var tags = tracer.Settings.RouteTemplateResourceNamesEnabled ? new AspNetCoreEndpointTags() : new AspNetCoreTags();
-            var scope = tracer.StartActiveWithTags(HttpRequestInOperationName, propagatedContext, tags: tags);
-
-            scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, tags, tagsFromHeaders);
-
-            tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
-
-            return scope.Span;
-        }
-
         private void OnHostingHttpRequestInStart(object arg)
         {
             var tracer = CurrentTracer;
@@ -644,7 +562,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 Span span = null;
                 if (shouldTrace)
                 {
-                    span = StartCoreSpan(tracer, httpContext, request);
+                    span = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, security, httpContext).Span;
                 }
 
                 if (shouldSecure)
@@ -689,7 +607,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 }
 
                 HttpContext httpContext = typedArg.HttpContext;
-                var trackingFeature = httpContext.Features.Get<RequestTrackingFeature>();
+                var trackingFeature = httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>();
                 var isFirstExecution = trackingFeature.IsFirstPipelineExecution;
                 if (isFirstExecution)
                 {
@@ -947,7 +865,7 @@ namespace Datadog.Trace.DiagnosticListeners
         }
 
         /// <summary>
-        /// Proxy for ducktyping IEndpointFeature when the interface is not implemented explictly
+        /// Proxy for ducktyping IEndpointFeature when the interface is not implemented explicitly
         /// </summary>
         /// <seealso cref="IEndpointFeature"/>
         [DuckCopy]
@@ -1028,42 +946,6 @@ namespace Datadog.Trace.DiagnosticListeners
             {
                 throw new NotImplementedException();
             }
-        }
-
-        /// <summary>
-        /// Holds state that we want to pass between diagnostic source events
-        /// </summary>
-        private class RequestTrackingFeature
-        {
-            /// <summary>
-            /// Gets or sets a value indicating whether the pipeline using endpoint routing
-            /// </summary>
-            public bool IsUsingEndpointRouting { get; set; }
-
-            /// <summary>
-            /// Gets or sets a value indicating whether this is the first pipeline execution
-            /// </summary>
-            public bool IsFirstPipelineExecution { get; set; } = true;
-
-            /// <summary>
-            /// Gets or sets a value indicating the route as calculated by endpoint routing (if available)
-            /// </summary>
-            public string Route { get; set; }
-
-            /// <summary>
-            /// Gets or sets a value indicating the resource name as calculated by the endpoint routing(if available)
-            /// </summary>
-            public string ResourceName { get; set; }
-
-            /// <summary>
-            /// Gets or sets the HTTP method, as it requires normalization, so avoids repeatedly calculations
-            /// </summary>
-            public string HttpMethod { get; set; }
-
-            /// <summary>
-            /// Gets or Sets the original URL received by the pipeline
-            /// </summary>
-            public string OriginalUrl { get; set; }
         }
     }
 }
