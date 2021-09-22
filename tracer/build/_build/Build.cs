@@ -113,28 +113,6 @@ partial class Build : NukeBuild
             }
         });
 
-    Target CleanPackages => _ => _
-        .Unlisted()
-        .Description("Cleans the packages folder output")
-        .Requires(() => NugetPackageDirectory)
-        .Before(RunWindowsIntegrationTests, RunWindowsRegressionTests, RunWindowsIisIntegrationTests)
-        .After(BuildWindowsIntegrationTests, BuildWindowsRegressionIntegrationTests)
-        .Executes(()=>
-        {
-            // clean each individual directory, instead of the top level, as some packages will often be locked
-            foreach (var directory in Directory.EnumerateDirectories(NugetPackageDirectory))
-            {
-                try
-                {
-                    EnsureCleanDirectory(directory);
-                }
-                catch (Exception ex)
-                {
-                    Logger.Info($"Error cleaning packages directory {directory}: {ex}");
-                }
-            }
-        });
-
     Target CleanObjFiles => _ => _
          .Unlisted()
          .Description("Deletes all build output files, but preserves folders to work around AzDo issues")
