@@ -199,7 +199,7 @@ namespace Datadog.Trace.PlatformHelpers
         /// <summary>
         /// Holds state that we want to pass between diagnostic source events
         /// </summary>
-        private class RequestTrackingFeature
+        internal class RequestTrackingFeature
         {
             /// <summary>
             /// Gets or sets a value indicating whether the pipeline using endpoint routing

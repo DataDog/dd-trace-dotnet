@@ -445,7 +445,7 @@ namespace Datadog.Trace.DiagnosticListeners
             var span = mvcScope.Span;
             span.Type = SpanTypes.Web;
 
-            var trackingFeature = httpContext.Features.Get<RequestTrackingFeature>();
+            var trackingFeature = httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>();
             var isUsingEndpointRouting = trackingFeature.IsUsingEndpointRouting;
 
             var isFirstExecution = trackingFeature.IsFirstPipelineExecution;
@@ -607,7 +607,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 }
 
                 HttpContext httpContext = typedArg.HttpContext;
-                var trackingFeature = httpContext.Features.Get<RequestTrackingFeature>();
+                var trackingFeature = httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>();
                 var isFirstExecution = trackingFeature.IsFirstPipelineExecution;
                 if (isFirstExecution)
                 {
@@ -865,7 +865,7 @@ namespace Datadog.Trace.DiagnosticListeners
         }
 
         /// <summary>
-        /// Proxy for ducktyping IEndpointFeature when the interface is not implemented explictly
+        /// Proxy for ducktyping IEndpointFeature when the interface is not implemented explicitly
         /// </summary>
         /// <seealso cref="IEndpointFeature"/>
         [DuckCopy]
@@ -946,42 +946,6 @@ namespace Datadog.Trace.DiagnosticListeners
             {
                 throw new NotImplementedException();
             }
-        }
-
-        /// <summary>
-        /// Holds state that we want to pass between diagnostic source events
-        /// </summary>
-        private class RequestTrackingFeature
-        {
-            /// <summary>
-            /// Gets or sets a value indicating whether the pipeline using endpoint routing
-            /// </summary>
-            public bool IsUsingEndpointRouting { get; set; }
-
-            /// <summary>
-            /// Gets or sets a value indicating whether this is the first pipeline execution
-            /// </summary>
-            public bool IsFirstPipelineExecution { get; set; } = true;
-
-            /// <summary>
-            /// Gets or sets a value indicating the route as calculated by endpoint routing (if available)
-            /// </summary>
-            public string Route { get; set; }
-
-            /// <summary>
-            /// Gets or sets a value indicating the resource name as calculated by the endpoint routing(if available)
-            /// </summary>
-            public string ResourceName { get; set; }
-
-            /// <summary>
-            /// Gets or sets the HTTP method, as it requires normalization, so avoids repeatedly calculations
-            /// </summary>
-            public string HttpMethod { get; set; }
-
-            /// <summary>
-            /// Gets or Sets the original URL received by the pipeline
-            /// </summary>
-            public string OriginalUrl { get; set; }
         }
     }
 }
