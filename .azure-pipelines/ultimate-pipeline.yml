@@ -59,7 +59,7 @@ variables:
   relativeArtifacts: /tracer/src/bin/artifacts
   ddTracerHome: $(System.DefaultWorkingDirectory)/tracer/src/bin/dd-tracer-home
   tracerHome: $(System.DefaultWorkingDirectory)/tracer/src/bin/windows-tracer-home
-  profilerSrcDirectory: $(System.DefaultWorkingDirectory)/dd-continuous-profiler-dotnet
+  profilerSrcDirectory: $(System.DefaultWorkingDirectory)/../dd-continuous-profiler-dotnet
   profilerHome: $(System.DefaultWorkingDirectory)/profiler/bin/profiler-home # Important, put the profiler assets into the working directory so it can be saved across build stages more easily
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
   artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
@@ -111,10 +111,11 @@ stages:
     - template: steps/install-dotnet-5-sdk.yml
 
     - checkout: dd-continuous-profiler-dotnet
+      path: dd-continuous-profiler-dotnet
 
     - powershell: |
-        New-Item -Path $(System.DefaultWorkingDirectory)\dd-trace-dotnet -ItemType SymbolicLink -Value $(System.DefaultWorkingDirectory)
-      displayName: Create symlink from $(System.DefaultWorkingDirectory)/dd-trace-dotnet to $(System.DefaultWorkingDirectory)
+        New-Item -Path $(System.DefaultWorkingDirectory)\..\dd-trace-dotnet -ItemType SymbolicLink -Value $(System.DefaultWorkingDirectory)
+      displayName: Create symlink from $(System.DefaultWorkingDirectory)\..\dd-trace-dotnet to $(System.DefaultWorkingDirectory)
 
     - script: tracer\build.cmd BuildTracerHome
       displayName: Build tracer home
