@@ -8,12 +8,14 @@ using System.IO;
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Agent.Transports
 {
     internal class ApiWebRequest : IApiRequest
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ApiWebRequest>();
         private readonly HttpWebRequest _request;
 
         public ApiWebRequest(HttpWebRequest request)
@@ -61,36 +63,46 @@ namespace Datadog.Trace.Agent.Transports
 
             using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
             {
-                using (var writer = new JsonTextWriter(new StreamWriter(requestStream)))
+                Task WriteStream(Stream stream)
                 {
-                    serializer.Serialize(writer, events);
-                    await writer.FlushAsync();
+                    var streamWriter = new StreamWriter(stream, System.Text.Encoding.UTF8, 1024, true);
+                    using (var writer = new JsonTextWriter(streamWriter))
+                    {
+                        serializer.Serialize(writer, events);
+                        return writer.FlushAsync();
+                    }
+                }
+
+                await WriteStream(requestStream);
+                try
+                {
+                    var httpWebResponse = (HttpWebResponse)await _request.GetResponseAsync().ConfigureAwait(false);
+                    var apiWebResponse = new ApiWebResponse(httpWebResponse);
+                    if (httpWebResponse.StatusCode != HttpStatusCode.OK || httpWebResponse.StatusCode != HttpStatusCode.Accepted)
+                    {
+                        var sb = Util.StringBuilderCache.Acquire(0);
+                        foreach (var item in _request.Headers)
+                        {
+                            sb.Append($"{item}: {_request.Headers[item.ToString()]} ");
+                            sb.Append(", ");
+                        }
+
+                        using var ms = new MemoryStream();
+                        await WriteStream(ms);
+                        ms.Position = 0;
+                        using var sr = new StreamReader(ms);
+                        Log.Warning("AppSec event not correctly sent to backend {statusCode} by class {className} with response {responseText}, request's headers were {headers}, request's payload was {payload}", new object[] { httpWebResponse.StatusCode, nameof(HttpStreamRequest), await apiWebResponse.ReadAsStringAsync(), Util.StringBuilderCache.GetStringAndRelease(sb), await sr.ReadToEndAsync() });
+                    }
+
+                    return apiWebResponse;
+                }
+                catch (WebException exception)
+                    when (exception.Status == WebExceptionStatus.ProtocolError && exception.Response != null)
+                {
+                    // If the exception is caused by an error status code, ignore it and let the caller handle the result
+                    return new ApiWebResponse((HttpWebResponse)exception.Response);
                 }
             }
-
-            try
-            {
-                var httpWebResponse = (HttpWebResponse)await _request.GetResponseAsync().ConfigureAwait(false);
-                return new ApiWebResponse(httpWebResponse);
-            }
-            catch (WebException exception)
-                when (exception.Status == WebExceptionStatus.ProtocolError && exception.Response != null)
-            {
-                // If the exception is caused by an error status code, ignore it and let the caller handle the result
-                return new ApiWebResponse((HttpWebResponse)exception.Response);
-            }
-        }
-
-        public Task<string> RequestContent()
-        {
-            var sb = Datadog.Trace.Util.StringBuilderCache.Acquire(0);
-            foreach (var item in _request.Headers)
-            {
-                sb.Append($"{item}: {_request.Headers[item.ToString()]} ");
-                sb.Append(", ");
-            }
-
-            return Task.FromResult($"Headers: {Util.StringBuilderCache.GetStringAndRelease(sb)}. With {nameof(ApiWebRequest)}, request's payload can't be displayed for now.");
         }
     }
 }

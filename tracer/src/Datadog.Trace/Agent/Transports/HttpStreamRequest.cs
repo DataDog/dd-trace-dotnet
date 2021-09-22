@@ -7,10 +7,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.HttpOverStreams.HttpContent;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Agent.Transports
@@ -25,6 +27,7 @@ namespace Datadog.Trace.Agent.Transports
         /// </summary>
         private const int ResponseReadBufferSize = 12_228;
 
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<HttpStreamRequest>();
         private readonly Uri _uri;
         private readonly DatadogHttpClient _client;
         private readonly IStreamFactory _streamFactory;
@@ -55,8 +58,18 @@ namespace Datadog.Trace.Agent.Transports
                 memoryStream.Seek(0, SeekOrigin.Begin);
                 var buffer = memoryStream.GetBuffer();
                 _headers.Add("Content-Type", "application/json");
-                var response = PostSegmentAsync(new ArraySegment<byte>(buffer, 0, (int)memoryStream.Length));
-                return await response.ConfigureAwait(false);
+                var response = await PostSegmentAsync(new ArraySegment<byte>(buffer, 0, (int)memoryStream.Length)).ConfigureAwait(false);
+                if (response.StatusCode != 200 || response.StatusCode != 202)
+                {
+                    memoryStream.Seek(0, SeekOrigin.Begin);
+                    using var sr = new StreamReader(memoryStream);
+                    var headers = string.Join(", ", _request.Headers.Select(h => $"{h.Name}: {h.Value}"));
+                    var payload = await sr.ReadToEndAsync();
+
+                    Log.Warning("AppSec event not correctly sent to backend {statusCode} by class {className} with response {responseText}, request headers: were {headers}, payload was: {payload}", new object[] { response.StatusCode, nameof(HttpStreamRequest), await response.ReadAsStringAsync(), headers, payload });
+                }
+
+                return response;
             }
         }
 

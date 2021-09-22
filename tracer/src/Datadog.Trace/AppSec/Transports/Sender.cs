@@ -32,7 +32,7 @@ namespace Datadog.Trace.AppSec.Transports
             _serializer = JsonSerializer.CreateDefault();
         }
 
-        internal async Task Send(IEnumerable<IEvent> events)
+        internal Task Send(IEnumerable<IEvent> events)
         {
             var batch = new Intake()
             {
@@ -41,15 +41,7 @@ namespace Datadog.Trace.AppSec.Transports
             };
             var request = _apiRequestFactory.Create(_uri);
             request.AddHeader(AppSecHeaderKey, AppSecHeaderValue);
-            using (var response = await request.PostAsJsonAsync(batch, _serializer))
-            {
-                if (response.StatusCode != 200 && response.StatusCode != 202)
-                {
-                    var statusCode = response.StatusCode;
-                    var responseText = await response.ReadAsStringAsync();
-                    Log.Warning($"AppSec event not correctly sent to backend {statusCode} with response {responseText}, request content was: {await request.RequestContent()}");
-                }
-            }
+            return request.PostAsJsonAsync(batch, _serializer);
         }
     }
 }

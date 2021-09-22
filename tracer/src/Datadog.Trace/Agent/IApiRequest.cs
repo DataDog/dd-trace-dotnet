@@ -17,7 +17,5 @@ namespace Datadog.Trace.Agent
         Task<IApiResponse> PostAsync(ArraySegment<byte> traces);
 
         Task<IApiResponse> PostAsJsonAsync(IEvent events, JsonSerializer serializer);
-
-        Task<string> RequestContent();
     }
 }
