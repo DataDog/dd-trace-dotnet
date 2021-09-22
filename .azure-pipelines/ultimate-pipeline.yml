@@ -401,7 +401,7 @@ stages:
       condition: eq(variables.requiresCosmos, true)
       workingDirectory: $(Pipeline.Workspace)
 
-    - script: tracer\build.cmd $(target) --PrintDriveSpace --code-coverage
+    - script: tracer\build.cmd $(target) CleanPackages --PrintDriveSpace --code-coverage
       displayName: Run integration tests
 
     - task: PublishTestResults@2
