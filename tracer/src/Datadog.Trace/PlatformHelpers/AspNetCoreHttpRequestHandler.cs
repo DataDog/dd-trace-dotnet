@@ -140,25 +140,7 @@ namespace Datadog.Trace.PlatformHelpers
                 scope = StartCoreScope(tracer, httpContext, httpContext.Request);
             }
 
-            if (shouldSecure)
-            {
-                RaiseInstrumentationEvent(security, httpContext, httpContext.Request, scope.Span);
-            }
-
             return scope;
-        }
-
-        private void RaiseInstrumentationEvent(IDatadogSecurity security, HttpContext context, HttpRequest request, Span span, RouteData routeData = null)
-        {
-            try
-            {
-                var dic = request.PrepareArgsForWaf(routeData);
-                security.InstrumentationGateway.RaiseEvent(dic, new HttpTransport(context), span);
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex, "Error occurred raising instrumentation event");
-            }
         }
 
         private readonly struct HeadersCollectionAdapter : IHeadersCollection
