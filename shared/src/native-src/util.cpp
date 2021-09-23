@@ -54,6 +54,48 @@ namespace shared
         return trimmed;
     }
 
+    bool TryParseBooleanEnvironmentValue(const WSTRING& valueToParse, bool& parsedValue)
+    {
+        WSTRING trimmedValueToParse = Trim(valueToParse);
+        
+        // In the future we should convert trimmedValueToParse to lower case in a portable manner and simplify the IFs below.
+        // Being pragmatic for now.
+
+        if (trimmedValueToParse == WStr("false")
+                || trimmedValueToParse == WStr("False")
+                || trimmedValueToParse == WStr("FALSE")
+                || trimmedValueToParse == WStr("no")
+                || trimmedValueToParse == WStr("No")
+                || trimmedValueToParse == WStr("NO")
+                || trimmedValueToParse == WStr("f")
+                || trimmedValueToParse == WStr("F")
+                || trimmedValueToParse == WStr("N")
+                || trimmedValueToParse == WStr("n")
+                || trimmedValueToParse == WStr("0"))
+        {
+            parsedValue = false;
+            return true;
+        }
+
+        if (trimmedValueToParse == WStr("true")
+                || trimmedValueToParse == WStr("True")
+                || trimmedValueToParse == WStr("TRUE")
+                || trimmedValueToParse == WStr("yes")
+                || trimmedValueToParse == WStr("Yes")
+                || trimmedValueToParse == WStr("YES")
+                || trimmedValueToParse == WStr("t")
+                || trimmedValueToParse == WStr("T")
+                || trimmedValueToParse == WStr("Y")
+                || trimmedValueToParse == WStr("y")
+                || trimmedValueToParse == WStr("1"))
+        {
+            parsedValue = true;
+            return true;
+        }
+
+        return false;
+    }
+
     WSTRING GetEnvironmentValue(const WSTRING& name)
     {
 #ifdef _WIN32
