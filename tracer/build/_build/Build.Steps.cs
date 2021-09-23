@@ -299,7 +299,7 @@ partial class Build
             }
             else
             {
-                var (architecture, ext) = GetUnixArchitectureAndExtention();
+                var (architecture, ext) = GetUnixArchitectureAndExtension(includeMuslSuffixOnAlpine: true);
                 var ddwafFileName = $"libddwaf.{ext}";
 
                 var source = LibDdwafDirectory / "runtimes" / architecture / "native" / ddwafFileName;
@@ -422,7 +422,7 @@ partial class Build
            }
 
            // Move the native file to the architecture-specific folder
-           var (architecture, ext) = GetUnixArchitectureAndExtention();
+           var (architecture, ext) = GetUnixArchitectureAndExtension(includeMuslSuffixOnAlpine: false);
 
            var profilerFileName = $"{NativeProfilerProject.Name}.{ext}";
            var ddwafFileName = $"libddwaf.{ext}";
@@ -1208,13 +1208,14 @@ partial class Build
 
     private void EnsureResultsDirectory(Project proj) => EnsureCleanDirectory(GetResultsDirectory(proj));
 
-    private (string, string) GetUnixArchitectureAndExtention()
+    private (string, string) GetUnixArchitectureAndExtension(bool includeMuslSuffixOnAlpine)
     {
-        var archExt = IsOsx
-            ? ("osx-x64", "dylib")
-            : ($"linux-{LinuxArchitectureIdentifier}", "so");
-
-        return archExt;
+        return (IsOsx, IsAlpine, includeMuslSuffixOnAlpine) switch
+        {
+            (true, _, _) => ("osx-x64", "dylib"),
+            (_, true, true) => ($"linux-musl-{LinuxArchitectureIdentifier}", "so"),
+            _ => ($"linux-{LinuxArchitectureIdentifier}", "so"),
+        };
     }
 
     // the integration tests need their own copy of the profiler, this achived through build.props on Windows, but doesn't seem to work under Linux
