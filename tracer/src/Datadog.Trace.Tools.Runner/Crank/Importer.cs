@@ -101,18 +101,17 @@ namespace Datadog.Trace.Tools.Runner.Crank
                         }
 
                         var duration = (maxTimeStamp - minTimeStamp);
-                        string suite = $"Crank.{fileName}";
 
                         Span span = tracer.StartSpan("crank.test", startTime: minTimeStamp);
 
                         span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
                         span.Type = SpanTypes.Test;
-                        span.ResourceName = $"{suite}/{jobItem.Key}";
+                        span.ResourceName = $"{fileName}/{jobItem.Key}";
                         CIEnvironmentValues.DecorateSpan(span);
 
                         span.SetTag(TestTags.Name, jobItem.Key);
                         span.SetTag(TestTags.Type, TestTags.TypeBenchmark);
-                        span.SetTag(TestTags.Suite, suite);
+                        span.SetTag(TestTags.Suite, $"Crank.{fileName}");
                         span.SetTag(TestTags.Framework, $"Crank");
                         span.SetTag(TestTags.Status, result.ReturnCode == 0 ? TestTags.StatusPass : TestTags.StatusFail);
 
@@ -144,6 +143,7 @@ namespace Datadog.Trace.Tools.Runner.Crank
                                 }
                             }
 
+                            string suite = fileName;
                             if (!string.IsNullOrEmpty(scenario))
                             {
                                 suite = scenario;
