@@ -1125,7 +1125,7 @@ stages:
       displayName: Download windows native binary
       inputs:
         artifact: windows-tracer-home
-        path: $(System.DefaultWorkingDirectory)/bin/tracer-home
+        path: $(System.DefaultWorkingDirectory)/tracer/bin/tracer-home
 
     - task: DotNetCoreCLI@2
       inputs:
