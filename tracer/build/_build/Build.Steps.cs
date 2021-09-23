@@ -1009,21 +1009,22 @@ partial class Build
 
             // These sample projects are built using RestoreAndBuildSamplesForPackageVersions
             // so no point building them now
-            List<string> multiPackageProjects;
-            var samplesFile = BuildDirectory / "PackageVersionsGeneratorDefinitions.json";
-            using (var fs = File.OpenRead(samplesFile))
+            var multiPackageProjects = new List<string>();
+            if (TestAllPackageVersions)
             {
+                var samplesFile = BuildDirectory / "PackageVersionsGeneratorDefinitions.json";
+                using var fs = File.OpenRead(samplesFile);
                 var json = JsonDocument.Parse(fs);
                 multiPackageProjects = json.RootElement
-                                       .EnumerateArray()
-                                       .Select(e => e.GetProperty("SampleProjectName").GetString())
-                                       .Distinct()
-                                       .Where(name => name switch
-                                        {
-                                            "Samples.MySql" => false, // the "non package version" is _ALSO_ tested separately
-                                            _ => true
-                                        })
-                                       .ToList();
+                                           .EnumerateArray()
+                                           .Select(e => e.GetProperty("SampleProjectName").GetString())
+                                           .Distinct()
+                                           .Where(name => name switch
+                                            {
+                                                "Samples.MySql" => false, // the "non package version" is _ALSO_ tested separately
+                                                _ => true
+                                            })
+                                           .ToList();
             }
 
             var projectsToBuild = sampleProjects
@@ -1102,7 +1103,6 @@ partial class Build
                 .SetProperty("TargetFramework", Framework.ToString())
                 .SetProperty("BuildInParallel", "true")
                 .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
-                .AddProcessEnvironmentVariable("TestAllPackageVersions", "true")
                 .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
                 .CombineWith(targets, (c, target) => c.SetTargets(target))
             );
@@ -1129,9 +1129,7 @@ partial class Build
                     .SetFramework(Framework)
                     // .SetTargetPlatform(Platform)
                     .SetNoWarnDotNetCore3()
-                    .When(TestAllPackageVersions, o => o
-                        .SetProperty("TestAllPackageVersions", "true"))
-                    .AddProcessEnvironmentVariable("TestAllPackageVersions", "true")
+                    .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
                         o.SetPackageDirectory(NugetPackageDirectory))
                     .CombineWith(integrationTestProjects, (c, project) => c
@@ -1172,8 +1170,7 @@ partial class Build
                         .EnableMemoryDumps()
                         .SetFilter(filter)
                         .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
-                        .When(TestAllPackageVersions, o => o
-                            .SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
+                        .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                         .When(CodeCoverage, ConfigureCodeCoverage)
                         .CombineWith(ParallelIntegrationTests, (s, project) => s
                             .EnableTrxLogOutput(GetResultsDirectory(project))
@@ -1190,8 +1187,7 @@ partial class Build
                     .EnableMemoryDumps()
                     .SetFilter(filter)
                     .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
-                    .When(TestAllPackageVersions, o => o
-                        .SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
+                    .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
