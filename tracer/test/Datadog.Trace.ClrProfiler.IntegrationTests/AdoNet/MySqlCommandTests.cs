@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         {
             foreach (object[] item in PackageVersions.MySqlData)
             {
-                if (!((string)item[0]).StartsWith("8"))
+                if (!((string)item[0]).StartsWith("8") && !string.IsNullOrEmpty((string)item[0]))
                 {
                     continue;
                 }
