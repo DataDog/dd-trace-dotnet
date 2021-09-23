@@ -5,8 +5,8 @@
     <TargetFramework>net5.0</TargetFramework>
     <RootNamespace></RootNamespace>
     <NoWarn>CS0649;CS0169;SA1652</NoWarn>
-    <NukeRootDirectory>..\..</NukeRootDirectory>
-    <NukeScriptDirectory>..\..</NukeScriptDirectory>
+    <NukeRootDirectory>..\..\..</NukeRootDirectory>
+    <NukeScriptDirectory>..\..\..</NukeScriptDirectory>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,8 +22,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\..\.azure-pipelines\steps\*" Link="ci\steps\%(Filename)%(Extension)" />
-    <Content Include="..\..\.azure-pipelines\ultimate-pipeline.yml" Link="ci\ultimate-pipeline.yml" />
+    <Content Include="..\..\..\.azure-pipelines\steps\*" Link="ci\steps\%(Filename)%(Extension)" />
+    <Content Include="..\..\..\.azure-pipelines\ultimate-pipeline.yml" Link="ci\ultimate-pipeline.yml" />
     <Content Include="..\..\build_in_docker.sh" Link="boot\build_in_docker.sh" />
   </ItemGroup>
 
