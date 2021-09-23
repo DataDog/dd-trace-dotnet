@@ -163,36 +163,20 @@ namespace Datadog.Trace.Tests.Configuration
             Func<TracerSettings, object> settingGetter,
             object expectedValue)
         {
+            IConfigurationSource source = new EnvironmentConfigurationSource();
+
             // save original value so we can restore later
             var originalValue = Environment.GetEnvironmentVariable(key);
 
-            TracerSettings settings;
-
-            if (key == "DD_SERVICE_NAME")
-            {
-                // We need to ensure DD_SERVICE is empty.
-                string originalServiceName = Environment.GetEnvironmentVariable(ConfigurationKeys.ServiceName);
-                Environment.SetEnvironmentVariable(ConfigurationKeys.ServiceName, null, EnvironmentVariableTarget.Process);
-
-                Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
-                IConfigurationSource source = new EnvironmentConfigurationSource();
-                settings = new TracerSettings(source);
-
-                // after load settings we can restore the original DD_SERVICE
-                Environment.SetEnvironmentVariable(ConfigurationKeys.ServiceName, originalServiceName, EnvironmentVariableTarget.Process);
-            }
-            else
-            {
-                Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
-                IConfigurationSource source = new EnvironmentConfigurationSource();
-                settings = new TracerSettings(source);
-            }
-
-            object actualValue = settingGetter(settings);
-            Assert.Equal(expectedValue, actualValue);
+            // Set new value
+            Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
+            var settings = new TracerSettings(source);
 
             // restore original value
             Environment.SetEnvironmentVariable(key, originalValue, EnvironmentVariableTarget.Process);
+
+            object actualValue = settingGetter(settings);
+            Assert.Equal(expectedValue, actualValue);
         }
 
         [Theory]
@@ -244,14 +228,16 @@ namespace Datadog.Trace.Tests.Configuration
             Func<GlobalSettings, object> settingGetter,
             object expectedValue)
         {
+            IConfigurationSource source = new EnvironmentConfigurationSource();
+
             // save original value so we can restore later
             var originalValue = Environment.GetEnvironmentVariable(key);
             Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
-            IConfigurationSource source = new EnvironmentConfigurationSource();
             var settings = new GlobalSettings(source);
+            Environment.SetEnvironmentVariable(key, originalValue, EnvironmentVariableTarget.Process);
+
             object actualValue = settingGetter(settings);
             Assert.Equal(expectedValue, actualValue);
-            Environment.SetEnvironmentVariable(key, originalValue, EnvironmentVariableTarget.Process);
         }
 
         // Special case for dictionary-typed settings in JSON
