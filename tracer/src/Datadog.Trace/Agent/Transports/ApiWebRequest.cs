@@ -63,7 +63,7 @@ namespace Datadog.Trace.Agent.Transports
 
             using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
             {
-                Task WriteStream(Stream stream)
+                static Task WriteStream(Stream stream, JsonSerializer serializer, object events)
                 {
                     var streamWriter = new StreamWriter(stream, System.Text.Encoding.UTF8, 1024, true);
                     using (var writer = new JsonTextWriter(streamWriter))
@@ -73,7 +73,7 @@ namespace Datadog.Trace.Agent.Transports
                     }
                 }
 
-                await WriteStream(requestStream);
+                await WriteStream(requestStream, serializer, events);
                 try
                 {
                     var httpWebResponse = (HttpWebResponse)await _request.GetResponseAsync().ConfigureAwait(false);
@@ -88,10 +88,10 @@ namespace Datadog.Trace.Agent.Transports
                         }
 
                         using var ms = new MemoryStream();
-                        await WriteStream(ms);
+                        await WriteStream(ms, serializer, events);
                         ms.Position = 0;
                         using var sr = new StreamReader(ms);
-                        Log.Warning("AppSec event not correctly sent to backend {statusCode} by class {className} with response {responseText}, request's headers were {headers}, request's payload was {payload}", new object[] { httpWebResponse.StatusCode, nameof(HttpStreamRequest), await apiWebResponse.ReadAsStringAsync(), Util.StringBuilderCache.GetStringAndRelease(sb), await sr.ReadToEndAsync() });
+                        Log.Warning("AppSec event not correctly sent to backend {statusCode} by class {className} with response {responseText}, request's headers were {headers}, request's payload was {payload}", new object[] { httpWebResponse.StatusCode, nameof(HttpStreamRequest), await apiWebResponse.ReadAsStringAsync().ConfigureAwait(false), Util.StringBuilderCache.GetStringAndRelease(sb), await sr.ReadToEndAsync().ConfigureAwait(false) });
                     }
 
                     return apiWebResponse;

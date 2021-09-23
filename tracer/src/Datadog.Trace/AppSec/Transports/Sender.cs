@@ -18,7 +18,6 @@ namespace Datadog.Trace.AppSec.Transports
     {
         internal const string AppSecHeaderValue = "v0.1.0";
         internal const string AppSecHeaderKey = "X-Api-Version";
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Sender>();
         private readonly IApiRequestFactory _apiRequestFactory;
         private readonly Uri _uri;
         private readonly JsonSerializer _serializer;
@@ -32,7 +31,7 @@ namespace Datadog.Trace.AppSec.Transports
             _serializer = JsonSerializer.CreateDefault();
         }
 
-        internal Task Send(IEnumerable<IEvent> events)
+        internal async Task Send(IEnumerable<IEvent> events)
         {
             var batch = new Intake()
             {
@@ -41,7 +40,7 @@ namespace Datadog.Trace.AppSec.Transports
             };
             var request = _apiRequestFactory.Create(_uri);
             request.AddHeader(AppSecHeaderKey, AppSecHeaderValue);
-            return request.PostAsJsonAsync(batch, _serializer);
+            await request.PostAsJsonAsync(batch, _serializer);
         }
     }
 }
