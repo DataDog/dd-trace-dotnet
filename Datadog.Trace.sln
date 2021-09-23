@@ -428,6 +428,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "azure-functions", "azure-fu
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AzureFunctions.AllTriggers", "tracer\test\test-applications\azure-functions\Samples.AzureFunctions.AllTriggers\Samples.AzureFunctions.AllTriggers.csproj", "{536F1D82-D40C-4E33-B7FA-76A0F17BF672}"
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Samples.Shared", "tracer\test\test-applications\Samples.Shared\Samples.Shared.shproj", "{5A806F4B-39E7-4F38-B36F-F5CFC4F8760A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1954,6 +1956,7 @@ Global
 		{B22311CE-EC71-4ADD-ADC6-C466B2D10230} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
 		{C4C1E313-C7C1-4490-AECE-0DD0062380A4} = {9518425A-36A5-4B8F-B0B8-6137DB88441D}
 		{536F1D82-D40C-4E33-B7FA-76A0F17BF672} = {C4C1E313-C7C1-4490-AECE-0DD0062380A4}
+		{5A806F4B-39E7-4F38-B36F-F5CFC4F8760A} = {9518425A-36A5-4B8F-B0B8-6137DB88441D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
