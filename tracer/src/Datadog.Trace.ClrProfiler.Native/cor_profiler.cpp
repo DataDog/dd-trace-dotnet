@@ -747,15 +747,18 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
     Logger::Debug("ModuleLoadFinished stored metadata for ", module_id, " ", module_info.assembly.name, " AppDomain ",
                   module_info.assembly.app_domain_id, " ", module_info.assembly.app_domain_name);
 
-#ifndef _WIN32
-    // Fix PInvokeMap (Non windows only)
+    // Fix PInvokeMap
     if (module_info.assembly.name == managed_profiler_name)
     {
         Logger::Info("ModuleLoadFinished: ", managed_profiler_name, " - Fix PInvoke maps");
+#ifdef _WIN32
+        RewritingPInvokeMaps(metadata_interfaces, module_metadata, windows_nativemethods_type);
+        RewritingPInvokeMaps(metadata_interfaces, module_metadata, appsec_windows_nativemethods_type);
+#else
         RewritingPInvokeMaps(metadata_interfaces, module_metadata, nonwindows_nativemethods_type);
         RewritingPInvokeMaps(metadata_interfaces, module_metadata, appsec_nonwindows_nativemethods_type);
+#endif // _WIN32
     }
-#endif
 
     return S_OK;
 }
@@ -2435,9 +2438,6 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         return hr;
     }
 
-#ifdef _WIN32
-    WSTRING native_profiler_file = WStr("DATADOG.TRACE.CLRPROFILER.NATIVE.DLL");
-#else // _WIN32
     WSTRING native_profiler_file = GetEnvironmentValue(environment::internal_trace_profiler_path);
     Logger::Debug("GenerateVoidILStartupMethod: ", environment::internal_trace_profiler_path,
                   " defined as: ", native_profiler_file);
@@ -2448,7 +2448,6 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     }
     Logger::Debug("GenerateVoidILStartupMethod: Setting the PInvoke native profiler library path to ",
                   native_profiler_file);
-#endif // _WIN32
 
     mdModuleRef profiler_ref;
     hr = metadata_emit->DefineModuleRef(native_profiler_file.c_str(), &profiler_ref);
