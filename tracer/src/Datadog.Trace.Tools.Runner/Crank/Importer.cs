@@ -159,7 +159,7 @@ namespace Datadog.Trace.Tools.Runner.Crank
                                 }
                             }
 
-                            span.SetTag(TestTags.Suite, suite);
+                            span.SetTag(TestTags.Suite, $"Crank.{suite}");
                             span.SetTag(TestTags.Name, testName);
                             span.ResourceName = $"{suite}/{testName}";
                         }
