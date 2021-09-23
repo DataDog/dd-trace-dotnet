@@ -169,7 +169,7 @@ partial class Build : NukeBuild
         .DependsOn(PublishIisSamples)
         .DependsOn(CompileIntegrationTests);
 
-    Target BuildWindowsRegressionIntegrationTests => _ => _
+    Target BuildWindowsRegressionTests => _ => _
         .Unlisted()
         .Requires(() => IsWin)
         .Description("Builds the integration tests for Windows")
@@ -189,7 +189,7 @@ partial class Build : NukeBuild
     Target BuildAndRunWindowsRegressionTests => _ => _
         .Requires(() => IsWin)
         .Description("Builds and runs the Windows regression tests")
-        .DependsOn(BuildWindowsRegressionIntegrationTests)
+        .DependsOn(BuildWindowsRegressionTests)
         .DependsOn(RunWindowsRegressionTests);
 
     Target BuildAndRunWindowsIisIntegrationTests => _ => _

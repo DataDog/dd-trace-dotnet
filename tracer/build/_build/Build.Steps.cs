@@ -720,16 +720,26 @@ partial class Build
         .After(Restore)
         .After(CreatePlatformlessSymlinks)
         .After(CompileRegressionDependencyLibs)
+        .Requires(() => Framework)
         .Executes(() =>
         {
             var regressionsDirectory = Solution.GetProject(Projects.EntityFramework6xMdTokenLookupFailure)
                 .Directory.Parent;
-            var regressionLibs = GlobFiles(regressionsDirectory / "**" / "*.csproj")
-                .Where(x => !x.Contains("EntityFramework6x.MdTokenLookupFailure")
-                            && !x.Contains("ExpenseItDemo")
-                            && !x.Contains("StackExchange.Redis.AssemblyConflict.LegacyProject")
-                            && !x.Contains("MismatchedTracerVersions")
-                            && !x.Contains("dependency-libs"));
+
+            var regressionLibs =  GlobFiles(regressionsDirectory / "**" / "*.csproj")
+                 .Where(path =>
+                    (path, Solution.GetProject(path).TryGetTargetFrameworks()) switch
+                    {
+                        _ when path.Contains("EntityFramework6x.MdTokenLookupFailure") => false,
+                        _ when path.Contains("ExpenseItDemo") => false,
+                        _ when path.Contains("StackExchange.Redis.AssemblyConflict.LegacyProject") => false,
+                        _ when path.Contains("MismatchedTracerVersions") => false,
+                        _ when path.Contains("dependency-libs") => false,
+                        _ when !string.IsNullOrWhiteSpace(SampleName) => path.Contains(SampleName),
+                        (_ , var targets) when targets is not null => targets.Contains(Framework),
+                        _ => true,
+                    }
+                  );
 
             // Allow restore here, otherwise things go wonky with runtime identifiers
             // in some target frameworks. No, I don't know why
@@ -738,6 +748,7 @@ partial class Build
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatform(Platform)
+                .SetFramework(Framework)
                 .SetNoWarnDotNetCore3()
                 .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
                     o.SetPackageDirectory(NugetPackageDirectory))
@@ -773,11 +784,13 @@ partial class Build
         .After(CompileRegressionSamples)
         .After(CompileFrameworkReproductions)
         .After(PublishIisSamples)
+        .Requires(() => Framework)
         .Requires(() => TracerHomeDirectory != null)
         .Executes(() =>
         {
             DotNetMSBuild(s => s
                 .SetTargetPath(MsBuildProject)
+                .SetProperty("TargetFramework", Framework.ToString())
                 .DisableRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
@@ -792,6 +805,7 @@ partial class Build
         .After(CreatePlatformlessSymlinks)
         .After(CompileFrameworkReproductions)
         .Requires(() => TracerHomeDirectory != null)
+        .Requires(() => Framework)
         .Executes(() =>
         {
             // This does some "unnecessary" rebuilding and restoring
@@ -803,13 +817,15 @@ partial class Build
 
             var projects =  includeIntegration
                 .Concat(includeSecurity)
-                .Where(projectPath =>
-                projectPath switch
+                .Select(x => Solution.GetProject(x))
+                .Where(project =>
+                (project, project.TryGetTargetFrameworks()) switch
                 {
-                    _ when exclude.Contains(projectPath) => false,
-                    _ when projectPath.ToString().Contains("Samples.OracleMDA") => false,
-                    _ when !string.IsNullOrWhiteSpace(SampleName) => projectPath.ToString().Contains(SampleName),
-                     _ => true,
+                    _ when exclude.Contains(project.Path) => false,
+                    _ when project.Path.ToString().Contains("Samples.OracleMDA") => false,
+                    _ when !string.IsNullOrWhiteSpace(SampleName) => project.Path.ToString().Contains(SampleName),
+                    (_ , var targets) when targets is not null => targets.Contains(Framework),
+                    _ => true,
                 }
             );
 
@@ -821,6 +837,8 @@ partial class Build
                 .SetProperty("BuildInParallel", "false")
                 .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
                 .CombineWith(projects, (s, project) => s
+                    // we have to build this one for all frameworks (because of reasons)
+                    .When(!project.Name.Contains("MultiDomainHost"), x => x.SetFramework(Framework))
                     .SetProjectFile(project)));
         });
 
@@ -861,6 +879,7 @@ partial class Build
         .After(CompileFrameworkReproductions)
         .After(BuildWindowsIntegrationTests)
         .Requires(() => IsWin)
+        .Requires(() => Framework)
         .Executes(() =>
         {
             ParallelIntegrationTests.ForEach(EnsureResultsDirectory);
@@ -872,6 +891,7 @@ partial class Build
                     .SetDotnetPath(Platform)
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatform(Platform)
+                    .SetFramework(Framework)
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
@@ -888,6 +908,7 @@ partial class Build
                     .SetDotnetPath(Platform)
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatform(Platform)
+                    .SetFramework(Framework)
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "RunOnWindows=True&LoadFromGAC!=True&IIS!=True")
@@ -910,6 +931,7 @@ partial class Build
         .After(CompileRegressionSamples)
         .After(CompileFrameworkReproductions)
         .Requires(() => IsWin)
+        .Requires(() => Framework)
         .Executes(() =>
         {
             ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
@@ -920,6 +942,7 @@ partial class Build
                     .SetDotnetPath(Platform)
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatform(Platform)
+                    .SetFramework(Framework)
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "Category=Smoke&LoadFromGAC!=True")
@@ -942,6 +965,7 @@ partial class Build
         .After(CompileSamples)
         .After(CompileFrameworkReproductions)
         .After(PublishIisSamples)
+        .Requires(() => Framework)
         .Executes(() =>
         {
             ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
@@ -952,7 +976,7 @@ partial class Build
                     .SetDotnetPath(Platform)
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatform(Platform)
-                    .When(Framework != null, o => o.SetFramework(Framework))
+                    .SetFramework(Framework)
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "(RunOnWindows=True)&LoadFromGAC=True")
