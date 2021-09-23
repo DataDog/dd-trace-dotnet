@@ -315,7 +315,6 @@ partial class Build : NukeBuild
             }
             finally
             {
-                MoveLogsToBuildData();
                 if (Directory.Exists(resultsDirectory))
                 {
                     CopyDirectoryRecursively(resultsDirectory, BuildDataDirectory / "benchmarks",
