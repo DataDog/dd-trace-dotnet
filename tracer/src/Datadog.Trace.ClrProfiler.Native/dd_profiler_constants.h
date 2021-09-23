@@ -99,6 +99,8 @@ const WSTRING appsec_windows_nativemethods_type = WStr("Datadog.Trace.AppSec.Waf
 
 const WSTRING calltarget_modification_action = WStr("CallTargetModification");
 
+const WSTRING native_dll_filename = WStr("DATADOG.TRACE.CLRPROFILER.NATIVE.DLL");
+
 } // namespace trace
 
 #endif // DD_PROFILER_CONSTANTS_H
