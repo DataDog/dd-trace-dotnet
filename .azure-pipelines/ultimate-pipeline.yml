@@ -1118,7 +1118,7 @@ stages:
     services:
       dd_agent: dd_agent
     steps:
-    - template: steps/install-dotnet-5-sdk.yml
+    - template: steps/install-dotnet-sdks.yml
     - template: steps/restore-working-directory.yml
 
     - task: DownloadPipelineArtifact@2
