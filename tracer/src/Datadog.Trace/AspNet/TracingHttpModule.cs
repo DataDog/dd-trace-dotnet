@@ -182,6 +182,12 @@ namespace Datadog.Trace.AspNet
                             scope.Span.ResourceName = $"{app.Request.HttpMethod.ToUpperInvariant()} {path.ToLowerInvariant()}";
                         }
 
+                        var security = Security.Instance;
+                        if (security.Settings.Enabled)
+                        {
+                            RaiseEmptyInstrumentationEvent(security, app.Context, scope.Span);
+                        }
+
                         scope.Dispose();
                     }
                     finally
@@ -267,6 +273,18 @@ namespace Datadog.Trace.AspNet
             catch (Exception ex)
             {
                 Log.Error(ex, "Error occurred raising instrumentation event");
+            }
+        }
+
+        private void RaiseEmptyInstrumentationEvent(IDatadogSecurity security, HttpContext context, Span relatedSpan)
+        {
+            try
+            {
+                security.InstrumentationGateway.RaiseEvent(new Dictionary<string, object>(), new HttpTransport(context), relatedSpan);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error occurred raising an empty instrumentation event");
             }
         }
     }

@@ -585,6 +585,18 @@ namespace Datadog.Trace.DiagnosticListeners
             }
         }
 
+        private void RaiseEmptyInstrumentationEvent(IDatadogSecurity security, HttpContext context, Span span)
+        {
+            try
+            {
+                security.InstrumentationGateway.RaiseEvent(new Dictionary<string, object>(), new HttpTransport(context), span);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error occurred raising instrumentation event");
+            }
+        }
+
         private void OnRoutingEndpointMatched(object arg)
         {
             var tracer = CurrentTracer;
@@ -779,11 +791,20 @@ namespace Datadog.Trace.DiagnosticListeners
             if (scope != null)
             {
                 // if we had an unhandled exception, the status code is already updated
-                if (!scope.Span.Error && arg.TryDuckCast<HttpRequestInStopStruct>(out var httpRequest))
+                if (arg.TryDuckCast<HttpRequestInStopStruct>(out var httpRequest))
                 {
                     HttpContext httpContext = httpRequest.HttpContext;
-                    scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true);
-                    scope.Span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                    if (!scope.Span.Error)
+                    {
+                        scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true);
+                        scope.Span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                    }
+
+                    var security = Security.Instance;
+                    if (security.Settings.Enabled)
+                    {
+                        RaiseEmptyInstrumentationEvent(security, httpRequest.HttpContext, scope.Span);
+                    }
                 }
 
                 scope.Dispose();

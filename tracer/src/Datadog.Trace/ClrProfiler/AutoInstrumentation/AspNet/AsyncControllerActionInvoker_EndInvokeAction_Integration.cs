@@ -7,6 +7,7 @@
 using System;
 using System.ComponentModel;
 using System.Web;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.ClrProfiler.Integrations;
 using Datadog.Trace.ClrProfiler.Integrations.AspNet;
@@ -65,6 +66,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
             if (scope != null)
             {
+                var security = Security.Instance;
+                if (security.Settings.Enabled)
+                {
+                    AspNetMvcIntegration.RaiseEmptyInstrumentationEvent(security, httpContext, scope.Span);
+                }
+
                 if (exception != null)
                 {
                     scope.Span.SetException(exception);

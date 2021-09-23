@@ -134,15 +134,24 @@ namespace Datadog.Trace.AppSec
                 additiveContext = _powerWaf.CreateContext();
                 transport.SetAdditiveContext(additiveContext);
             }
+            else
+            {
+                if (args.Count == 0)
+                {
+                    additiveContext.Dispose();
+                    transport.SetAdditiveContext(null);
+                    return;
+                }
+            }
 
             // run the WAF and execute the results
             using var wafResult = additiveContext.Run(args);
-            if (wafResult.ReturnCode == ReturnCode.Monitor || wafResult.ReturnCode == ReturnCode.Block)
+            if (wafResult.ReturnCode is ReturnCode.Monitor or ReturnCode.Block)
             {
                 Log.Information($"AppSec: Attack detected! Action: {wafResult.ReturnCode}, Blocking enabled : {_settings.BlockingEnabled}");
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
-                    Log.Information($"AppSec: Attack arguments " + Encoder.FormatArgs(args));
+                    Log.Debug($"AppSec: Attack arguments ", Encoder.FormatArgs(args));
                 }
 
                 var managedWafResult = Waf.ReturnTypes.Managed.Return.From(wafResult);

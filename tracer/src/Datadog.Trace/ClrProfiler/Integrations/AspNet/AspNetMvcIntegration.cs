@@ -212,7 +212,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         /// <summary>
         /// Raising instrumentation event
         /// </summary>
-        /// <param name="security">security></param>
+        /// <param name="security">security</param>
         /// <param name="context">context</param>
         /// <param name="relatedSpan">related span</param>
         /// <param name="routeDatas">routeDatas</param>
@@ -226,6 +226,24 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             catch (Exception ex)
             {
                 Log.Error(ex, "Error occurred raising instrumentation event");
+            }
+        }
+
+        /// <summary>
+        /// Raising instrumentation event
+        /// </summary>
+        /// <param name="security">security</param>
+        /// <param name="context">context</param>
+        /// <param name="relatedSpan">related span</param>
+        internal static void RaiseEmptyInstrumentationEvent(IDatadogSecurity security, HttpContext context, Span relatedSpan)
+        {
+            try
+            {
+                security.InstrumentationGateway.RaiseEvent(new Dictionary<string, object>(), new HttpTransport(context), relatedSpan);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error occurred raising empty instrumentation event");
             }
         }
 
@@ -396,6 +414,13 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 {
                     HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, scope);
                     scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true);
+
+                    var security = Security.Instance;
+                    if (security.Settings.Enabled)
+                    {
+                        RaiseEmptyInstrumentationEvent(security, HttpContext.Current, scope.Span);
+                    }
+
                     scope.Dispose();
                 }
 
