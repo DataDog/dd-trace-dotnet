@@ -12,34 +12,14 @@ namespace Samples.AspNetMvc5.Controllers
     {
         public ActionResult Index()
         {
-            var prefixes = new[] { "COR_", "CORECLR_", "DD_", "DATADOG_" };
-
-            var envVars = from envVar in Environment.GetEnvironmentVariables().Cast<DictionaryEntry>()
-                          from prefix in prefixes
-                          let key = (envVar.Key as string)?.ToUpperInvariant()
-                          let value = envVar.Value as string
-                          where key.StartsWith(prefix)
-                          orderby key
-                          select new KeyValuePair<string, string>(key, value);
+            var envVars = SampleHelpers.GetDatadogEnvironmentVariables();
 
             return View(envVars.ToList());
         }
 
         public ActionResult Shutdown()
         {
-            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-
-            foreach (var assembly in assemblies)
-            {
-                foreach (var type in assembly.DefinedTypes)
-                {
-                    if (type.Namespace == "Coverlet.Core.Instrumentation.Tracker")
-                    {
-                        var unloadModuleMethod = type.GetMethod("UnloadModule", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-                        unloadModuleMethod.Invoke(null, new object[] { this, EventArgs.Empty });
-                    }
-                }
-            }
+            SampleHelpers.RunShutDownTasks(this);
 
             return RedirectToAction("Index");
         }

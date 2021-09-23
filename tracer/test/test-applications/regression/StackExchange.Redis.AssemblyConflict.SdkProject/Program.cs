@@ -17,9 +17,8 @@ namespace StackExchange.Redis.AssemblyConflict.SdkProject
             }
             finally
             {
-                var instrumentationType = Type.GetType("Datadog.Trace.ClrProfiler.Instrumentation, Datadog.Trace");
-                var profilerAttached = instrumentationType?.GetProperty("ProfilerAttached", BindingFlags.Public | BindingFlags.Static)?.GetValue(null) ?? false;
-                var tracerAssemblyLocation = Type.GetType("Datadog.Trace.Tracer, Datadog.Trace")?.Assembly.Location ?? "(none)";
+                var profilerAttached = Samples.SampleHelpers.IsProfilerAttached();
+                var tracerAssemblyLocation = Samples.SampleHelpers.GetTracerAssemblyLocation();
 
                 Console.WriteLine();
                 Console.WriteLine($"Profile attached: {profilerAttached}");
