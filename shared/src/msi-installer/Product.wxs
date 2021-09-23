@@ -42,6 +42,7 @@
       <ComponentGroupRef Id="ContinuousProfiler.Files.Managed.Net461"/>
       <ComponentGroupRef Id="ContinuousProfiler.Files.Managed.NetStandard20"/>
       <ComponentGroupRef Id="ContinuousProfiler.Files.Managed.Netcoreapp31"/>
+      <ComponentGroupRef Id="tracer.EnvironmentVariables.Machine"/>
       <ComponentGroupRef Id="tracer.Files"/>
       <ComponentGroupRef Id="Files.Managed.Net45.GAC"/>
       <ComponentGroupRef Id="Files.Managed.Net461.GAC"/>
