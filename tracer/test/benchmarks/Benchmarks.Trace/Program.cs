@@ -6,6 +6,7 @@ using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Running;
 using Datadog.Trace.BenchmarkDotNet;
+using BenchmarkDotNet.Exporters.Json;
 
 namespace Benchmarks.Trace
 {
@@ -22,7 +23,10 @@ namespace Benchmarks.Trace
             }
             else
             {
-                var config = DefaultConfig.Instance.AddExporter(DatadogExporter.Default);
+                var config = DefaultConfig.Instance
+                    .AddExporter(DatadogExporter.Default)
+                    .AddExporter(JsonExporter.FullCompressed);
+
                 BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, config);
             }
         }
