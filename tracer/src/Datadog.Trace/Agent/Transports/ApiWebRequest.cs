@@ -73,7 +73,7 @@ namespace Datadog.Trace.Agent.Transports
                     }
                 }
 
-                await WriteStream(requestStream, serializer, events);
+                await WriteStream(requestStream, serializer, events).ConfigureAwait(false);
                 try
                 {
                     var httpWebResponse = (HttpWebResponse)await _request.GetResponseAsync().ConfigureAwait(false);
@@ -88,7 +88,7 @@ namespace Datadog.Trace.Agent.Transports
                         }
 
                         using var ms = new MemoryStream();
-                        await WriteStream(ms, serializer, events);
+                        await WriteStream(ms, serializer, events).ConfigureAwait(false);
                         ms.Position = 0;
                         using var sr = new StreamReader(ms);
                         Log.Warning("AppSec event not correctly sent to backend {statusCode} by class {className} with response {responseText}, request's headers were {headers}, request's payload was {payload}", new object[] { httpWebResponse.StatusCode, nameof(HttpStreamRequest), await apiWebResponse.ReadAsStringAsync().ConfigureAwait(false), Util.StringBuilderCache.GetStringAndRelease(sb), await sr.ReadToEndAsync().ConfigureAwait(false) });

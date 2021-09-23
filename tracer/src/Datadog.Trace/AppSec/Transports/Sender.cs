@@ -40,7 +40,7 @@ namespace Datadog.Trace.AppSec.Transports
             };
             var request = _apiRequestFactory.Create(_uri);
             request.AddHeader(AppSecHeaderKey, AppSecHeaderValue);
-            await request.PostAsJsonAsync(batch, _serializer);
+            await request.PostAsJsonAsync(batch, _serializer).ConfigureAwait(false);
         }
     }
 }
