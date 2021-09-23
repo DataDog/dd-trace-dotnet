@@ -1118,14 +1118,14 @@ stages:
     services:
       dd_agent: dd_agent
     steps:
-    - template: steps/install-dotnet-5-sdk.yml
+    - template: steps/install-dotnet-sdks.yml
     - template: steps/restore-working-directory.yml
 
     - task: DownloadPipelineArtifact@2
       displayName: Download windows native binary
       inputs:
         artifact: windows-tracer-home
-        path: $(System.DefaultWorkingDirectory)/bin/tracer-home
+        path: $(System.DefaultWorkingDirectory)/tracer/bin/tracer-home
 
     - task: DotNetCoreCLI@2
       inputs:
