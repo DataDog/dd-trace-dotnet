@@ -158,6 +158,11 @@ namespace Datadog.Trace.TestHelpers
                 Output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
             }
 
+            if (exitCode != 0)
+            {
+                throw new Exception("Process failed with exit code " + exitCode);
+            }
+
             return new ProcessResult(process, standardOutput, standardError, exitCode);
         }
 
