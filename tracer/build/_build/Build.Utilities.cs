@@ -79,7 +79,7 @@ partial class Build
         {
             MSBuild(s => s
                 .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatform(Platform)
+                .SetTargetPlatform(TargetPlatform)
                 .SetProjectFile(Solution.GetProject(SampleName)));
         });
 
@@ -173,16 +173,16 @@ partial class Build
                 .SetProjectFile(project)
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
-                .SetProperty("platform", Platform));
+                .SetProperty("platform", TargetPlatform));
 
             DotNetRun(s => s
-                .SetDotnetPath(Platform)
+                .SetDotnetPath(TargetPlatform)
                 .SetFramework(Framework)
                 .EnableNoLaunchProfile()
                 .SetProjectFile(project)
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
-                .SetProperty("platform", Platform)
+                .SetProperty("platform", TargetPlatform)
                 .SetProcessEnvironmentVariables(envVars));
 
         });

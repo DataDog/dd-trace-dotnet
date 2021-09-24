@@ -376,7 +376,7 @@ stages:
             if [ $target == "BuildAndRunWindowsIntegrationTests" ]; then cosmos=true; else cosmos=false; fi
             matrix="${matrix} '${name}':"
             matrix="${matrix} { 'framework': '${framework}', "
-            matrix="${matrix} 'platform': '${platform}' },"
+            matrix="${matrix} 'targetPlatform': '${platform}' },"
           done
         done
         matrix="${matrix::-1} }"
@@ -416,7 +416,7 @@ stages:
 
     - publish: tracer/build_data
       displayName: Uploading integration_tests_windows tracer logs
-      artifact: integration_tests_windows_tracer_logs_$(platform)_$(framework)_$(System.JobAttempt)
+      artifact: integration_tests_windows_tracer_logs_$(targetPlatform)_$(framework)_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -437,7 +437,7 @@ stages:
               if [ $platform == "x86" ]; then enable32bit=true; else enable32bit=false; fi
               matrix="${matrix} '${name}':"
               matrix="${matrix} { 'framework': '${framework}', "
-              matrix="${matrix} 'platform': '${platform}', "
+              matrix="${matrix} 'targetPlatform': '${platform}', "
               matrix="${matrix} 'enable32bit': ${enable32bit} },"
             done
           done
@@ -453,7 +453,7 @@ stages:
     pool:
       vmImage: windows-2019
     variables:
-      relativeMsiOutputDirectory: $(relativeArtifacts)/$(platform)/en-us
+      relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
 
     steps:
 
@@ -465,7 +465,7 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download MSI
       inputs:
-        artifact: windows-msi-$(platform)
+        artifact: windows-msi-$(targetPlatform)
         patterns: '**/*.msi'
         path: $(System.DefaultWorkingDirectory)/$(relativeMsiOutputDirectory)
 
@@ -503,7 +503,7 @@ stages:
 
     - publish: tracer/build_data
       displayName: Uploading integration_tests_windows_iis tracer logs
-      artifact: integration_tests_windows_iis_tracer_logs_$(platform)_$(framework)
+      artifact: integration_tests_windows_iis_tracer_logs_$(targetPlatform)_$(framework)
       condition: succeededOrFailed()
       continueOnError: true
 

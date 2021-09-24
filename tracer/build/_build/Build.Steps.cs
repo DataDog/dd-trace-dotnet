@@ -66,12 +66,12 @@ partial class Build
     [LazyPathExecutable(name: "cmd")] readonly Lazy<Tool> Cmd;
 
     IEnumerable<MSBuildTargetPlatform> ArchitecturesForPlatform =>
-        Equals(Platform, MSBuildTargetPlatform.x64)
+        Equals(TargetPlatform, MSBuildTargetPlatform.x64)
             ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
             : new[] { MSBuildTargetPlatform.x86 };
 
     bool IsArm64 => RuntimeInformation.ProcessArchitecture == Architecture.Arm64;
-    string LinuxArchitectureIdentifier => IsArm64 ? "arm64" : Platform.ToString();
+    string LinuxArchitectureIdentifier => IsArm64 ? "arm64" : TargetPlatform.ToString();
 
     IEnumerable<string> LinuxPackageTypes => IsAlpine ? new[] { "tar" } : new[] { "deb", "rpm", "tar" };
 
@@ -144,7 +144,7 @@ partial class Build
         {
             // If we're building for x64, build for x86 too
             var platforms =
-                Equals(Platform, MSBuildTargetPlatform.x64)
+                Equals(TargetPlatform, MSBuildTargetPlatform.x64)
                     ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
                     : new[] { MSBuildTargetPlatform.x86 };
 
@@ -219,7 +219,7 @@ partial class Build
         {
             // If we're building for x64, build for x86 too
             var platforms =
-                Equals(Platform, MSBuildTargetPlatform.x64)
+                Equals(TargetPlatform, MSBuildTargetPlatform.x64)
                     ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
                     : new[] { MSBuildTargetPlatform.x86 };
 
@@ -501,7 +501,7 @@ partial class Build
 
             directories.ForEach(existingDir =>
             {
-                var newDir = existingDir.Parent / $"{Platform}" / BuildConfiguration;
+                var newDir = existingDir.Parent / $"{TargetPlatform}" / BuildConfiguration;
                 if (DirectoryExists(newDir))
                 {
                     Logger.Info($"Skipping '{newDir}' as already exists");
@@ -657,7 +657,7 @@ partial class Build
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
-            var workingDirectory = TestsDirectory / "Datadog.Trace.ClrProfiler.Native.Tests" / "bin" / BuildConfiguration.ToString() / Platform.ToString();
+            var workingDirectory = TestsDirectory / "Datadog.Trace.ClrProfiler.Native.Tests" / "bin" / BuildConfiguration.ToString() / TargetPlatform.ToString();
             var exePath = workingDirectory / "Datadog.Trace.ClrProfiler.Native.Tests.exe";
             var testExe = ToolResolver.GetLocalTool(exePath);
             testExe("--gtest_output=xml", workingDirectory: workingDirectory);
@@ -702,7 +702,7 @@ partial class Build
         .Executes(() =>
         {
             // We run linux integration tests in AnyCPU, but Windows on the specific architecture
-            var platform = IsLinux ? MSBuildTargetPlatform.MSIL : Platform;
+            var platform = IsLinux ? MSBuildTargetPlatform.MSIL : TargetPlatform;
 
             DotNetMSBuild(x => x
                 .SetTargetPath(MsBuildProject)
@@ -747,7 +747,7 @@ partial class Build
                 // .EnableNoRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatform(Platform)
+                .SetTargetPlatform(TargetPlatform)
                 .SetFramework(Framework)
                 .SetNoWarnDotNetCore3()
                 .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
@@ -773,7 +773,7 @@ partial class Build
                 .DisableRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatform(Platform)
+                .SetTargetPlatform(TargetPlatform)
                 .SetTargets("BuildFrameworkReproductions")
                 .SetMaxCpuCount(null));
         });
@@ -794,7 +794,7 @@ partial class Build
                 .DisableRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatform(Platform)
+                .SetTargetPlatform(TargetPlatform)
                 .SetTargets("BuildCsharpIntegrationTests")
                 .SetMaxCpuCount(null));
         });
@@ -832,7 +832,7 @@ partial class Build
             // /nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
             DotNetBuild(config => config
                 .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatform(Platform)
+                .SetTargetPlatform(TargetPlatform)
                 .EnableNoDependencies()
                 .SetProperty("BuildInParallel", "false")
                 .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
@@ -862,7 +862,7 @@ partial class Build
                 // .DisableRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatform(Platform)
+                .SetTargetPlatform(TargetPlatform)
                 .SetProperty("DeployOnBuild", true)
                 .SetProperty("PublishProfile", publishProfile)
                 .SetMaxCpuCount(null)
@@ -888,9 +888,9 @@ partial class Build
             try
             {
                 DotNetTest(config => config
-                    .SetDotnetPath(Platform)
+                    .SetDotnetPath(TargetPlatform)
                     .SetConfiguration(BuildConfiguration)
-                    .SetTargetPlatform(Platform)
+                    .SetTargetPlatform(TargetPlatform)
                     .SetFramework(Framework)
                     .EnableNoRestore()
                     .EnableNoBuild()
@@ -905,9 +905,9 @@ partial class Build
                 // TODO: I think we should change this filter to run on Windows by default
                 // (RunOnWindows!=False|Category=Smoke)&LoadFromGAC!=True&IIS!=True
                 DotNetTest(config => config
-                    .SetDotnetPath(Platform)
+                    .SetDotnetPath(TargetPlatform)
                     .SetConfiguration(BuildConfiguration)
-                    .SetTargetPlatform(Platform)
+                    .SetTargetPlatform(TargetPlatform)
                     .SetFramework(Framework)
                     .EnableNoRestore()
                     .EnableNoBuild()
@@ -939,9 +939,9 @@ partial class Build
             try
             {
                 DotNetTest(config => config
-                    .SetDotnetPath(Platform)
+                    .SetDotnetPath(TargetPlatform)
                     .SetConfiguration(BuildConfiguration)
-                    .SetTargetPlatform(Platform)
+                    .SetTargetPlatform(TargetPlatform)
                     .SetFramework(Framework)
                     .EnableNoRestore()
                     .EnableNoBuild()
@@ -973,9 +973,9 @@ partial class Build
             {
                 // Different filter from RunWindowsIntegrationTests
                 DotNetTest(config => config
-                    .SetDotnetPath(Platform)
+                    .SetDotnetPath(TargetPlatform)
                     .SetConfiguration(BuildConfiguration)
-                    .SetTargetPlatform(Platform)
+                    .SetTargetPlatform(TargetPlatform)
                     .SetFramework(Framework)
                     .EnableNoRestore()
                     .EnableNoBuild()

@@ -29,7 +29,7 @@ partial class Build : NukeBuild
     readonly Configuration BuildConfiguration = Configuration.Release;
 
     [Parameter("Platform to build - x86 or x64. Default is x64")]
-    readonly MSBuildTargetPlatform Platform = MSBuildTargetPlatform.x64;
+    readonly MSBuildTargetPlatform TargetPlatform = MSBuildTargetPlatform.x64;
 
     [Parameter("The TargetFramework to execute when running or building a sample app, or linux integration tests")]
     readonly TargetFramework Framework;
@@ -71,7 +71,7 @@ partial class Build : NukeBuild
         .Executes(() =>
         {
             Logger.Info($"Configuration: {BuildConfiguration}");
-            Logger.Info($"Platform: {Platform}");
+            Logger.Info($"Platform: {TargetPlatform}");
             Logger.Info($"Framework: {Framework}");
             Logger.Info($"TestAllPackageVersions: {TestAllPackageVersions}");
             Logger.Info($"TracerHomeDirectory: {TracerHomeDirectory}");
