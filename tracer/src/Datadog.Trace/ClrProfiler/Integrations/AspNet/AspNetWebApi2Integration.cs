@@ -40,6 +40,9 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         private const string SystemWebHttpAssemblyName = "System.Web.Http";
         private const string HttpControllerTypeName = "System.Web.Http.Controllers.IHttpController";
         private const string HttpControllerContextTypeName = "System.Web.Http.Controllers.HttpControllerContext";
+        private const string ExceptionHandlerExtensionsTypeName = "System.Web.Http.ExceptionHandling.ExceptionHandlerExtensions";
+        private const string IExceptionHandlerTypeName = "System.Web.Http.ExceptionHandling.IExceptionHandler";
+        private const string ExecutionContextTypeName = "System.Web.Http.ExceptionHandling.ExceptionContext";
 
         private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.AspNetWebApi2));
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AspNetWebApi2Integration));
@@ -146,6 +149,108 @@ namespace Datadog.Trace.ClrProfiler.Integrations
         }
 
         /// <summary>
+        /// Calls the underlying HandleAsync and traces the request.
+        /// </summary>
+        /// <param name="handler">The exception handler</param>
+        /// <param name="context">The exception context for the call</param>
+        /// <param name="boxedCancellationToken">The cancellation token</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
+        /// <returns>A task with the result</returns>
+        [InterceptMethod(
+            TargetAssembly = SystemWebHttpAssemblyName,
+            TargetType = ExceptionHandlerExtensionsTypeName,
+            TargetSignatureTypes = new[] { ClrNames.HttpResponseMessageTask, IExceptionHandlerTypeName, ExecutionContextTypeName, ClrNames.CancellationToken },
+            TargetMinimumVersion = Major5Minor1,
+            TargetMaximumVersion = Major5MinorX)]
+        public static object HandleAsync(
+            object handler,
+            object context,
+            object boxedCancellationToken,
+            int opCode,
+            int mdToken,
+            long moduleVersionPtr)
+        {
+            if (handler == null) { throw new ArgumentNullException(nameof(handler)); }
+
+            var cancellationToken = (CancellationToken)boxedCancellationToken;
+            var handlerType = handler.GetInstrumentedInterface(IExceptionHandlerTypeName);
+
+            Type taskResultType;
+
+            try
+            {
+                var request = context.GetProperty<object>("Request").GetValueOrDefault();
+                var httpRequestMessageType = request.GetInstrumentedType("System.Net.Http.HttpRequestMessage");
+
+                // The request should never be null, so get the base type found in System.Net.Http.dll
+                if (httpRequestMessageType != null)
+                {
+                    var systemNetHttpAssembly = httpRequestMessageType.Assembly;
+                    taskResultType = systemNetHttpAssembly.GetType("System.Net.Http.HttpResponseMessage", true);
+                }
+
+                // This should never happen, but put in a reasonable fallback of finding the first System.Net.Http.dll in the AppDomain
+                else
+                {
+                    Log.Warning($"{nameof(AspNetWebApi2Integration)}.{nameof(HandleAsync)}: Unable to find System.Net.Http.HttpResponseMessage Type from method arguments. Using fallback logic to find the Type needed for return type.");
+                    var statsd = Tracer.Instance.Statsd;
+                    statsd?.Warning(source: $"{nameof(AspNetWebApi2Integration)}.{nameof(HandleAsync)}", message: "Unable to find System.Net.Http.HttpResponseMessage Type from method arguments. Using fallback logic to find the Type needed for return type.", null);
+
+                    var systemNetHttpAssemblies = AppDomain.CurrentDomain.GetAssemblies().Where(assembly => assembly.GetName().Name.Equals("System.Net.Http", StringComparison.OrdinalIgnoreCase));
+                    var firstSystemNetHttpAssembly = systemNetHttpAssemblies.First();
+                    taskResultType = firstSystemNetHttpAssembly.GetType("System.Net.Http.HttpResponseMessage", true);
+                }
+            }
+            catch (Exception ex)
+            {
+                // This shouldn't happen because the System.Net.Http assembly should have been loaded if this method was called
+                // The profiled app will not continue working as expected without this method
+                Log.Error(ex, "Error finding types in the user System.Net.Http assembly.");
+                throw;
+            }
+
+            Func<object, object, CancellationToken, object> instrumentedMethod = null;
+
+            try
+            {
+                instrumentedMethod = MethodBuilder<Func<object, object, CancellationToken, object>>
+                                    .Start(moduleVersionPtr, mdToken, opCode, nameof(HandleAsync))
+                                    .WithConcreteType(handlerType)
+                                    .WithParameters(handler, context, cancellationToken)
+                                    .WithNamespaceAndNameFilters(
+                                         ClrNames.HttpResponseMessageTask,
+                                         IExceptionHandlerTypeName,
+                                         ExecutionContextTypeName,
+                                         ClrNames.CancellationToken)
+                                    .Build();
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: HttpControllerTypeName,
+                    methodName: nameof(ExecuteAsync),
+                    instanceType: handler.GetType().AssemblyQualifiedName);
+                throw;
+            }
+
+            return AsyncHelper.InvokeGenericTaskDelegate(
+                owningType: handler.GetType(),
+                taskResultType: taskResultType,
+                nameOfIntegrationMethod: nameof(HandleAsyncInternal),
+                integrationType: typeof(AspNetWebApi2Integration),
+                instrumentedMethod,
+                handler,
+                context,
+                cancellationToken);
+        }
+
+        /// <summary>
         /// Calls the underlying ExecuteAsync and traces the request.
         /// </summary>
         /// <typeparam name="T">The type of the generic Task instantiation</typeparam>
@@ -209,6 +314,39 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Calls the underlying ExecuteAsync and traces the request.
+        /// </summary>
+        /// <typeparam name="T">The type of the generic Task instantiation</typeparam>
+        /// <param name="instrumentedMethod">The underlying ExecuteAsync method</param>
+        /// <param name="apiController">The Api Controller</param>
+        /// <param name="context">The controller context for the call</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <returns>A task with the result</returns>
+        private static async Task<T> HandleAsyncInternal<T>(
+            Func<object, object, CancellationToken, object> instrumentedMethod,
+            object apiController,
+            object context,
+            CancellationToken cancellationToken)
+        {
+            if (context.TryDuckCast<ExceptionContextStruct>(out var exceptionContextStruct))
+            {
+                var scope = Tracer.Instance.ActiveScope;
+                var exception = exceptionContextStruct.Exception;
+
+                if (scope is not null && exception is not null)
+                {
+                    // Only try setting an exception if there's an active span
+                    // The rest of the instrumentation will handle disposing the scope
+                    scope.Span.SetException(exception);
+                }
+            }
+
+            // call the original method and return
+            var task = (Task<T>)instrumentedMethod(apiController, context, cancellationToken);
+            return await task.ConfigureAwait(false);
         }
 
         internal static Scope CreateScope(IHttpControllerContext controllerContext, out AspNetTags tags)
@@ -355,6 +493,21 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true);
             scope.Span.Finish(finishTime);
             scope.Dispose();
+        }
+
+        /********************
+         * Duck Typing Types
+         */
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable SA1201 // Elements must appear in the correct order
+#pragma warning disable SA1600 // Elements must be documented
+
+        [DuckCopy]
+        [Browsable(false)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public struct ExceptionContextStruct
+        {
+            public Exception Exception;
         }
     }
 }
