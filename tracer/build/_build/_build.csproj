@@ -6,7 +6,7 @@
     <RootNamespace></RootNamespace>
     <NoWarn>CS0649;CS0169;SA1652</NoWarn>
     <NukeRootDirectory>..\..\..</NukeRootDirectory>
-    <NukeScriptDirectory>..\..\..</NukeScriptDirectory>
+    <NukeScriptDirectory>..\..</NukeScriptDirectory>
   </PropertyGroup>
 
   <ItemGroup>
