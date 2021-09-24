@@ -137,9 +137,55 @@ namespace Datadog.Trace.TestHelpers
                 processToProfile: executable);
         }
 
+        public Process StartAzureFunction(int traceAgentPort, int azureFunctionsPort)
+        {
+            var projectDirectory = EnvironmentHelper.GetSampleProjectDirectory();
+            if (!Directory.Exists(projectDirectory))
+            {
+                throw new Exception($"Functions root not found: {projectDirectory}");
+            }
+
+            var functionsCommand = $"func start --script-root {projectDirectory} --port {azureFunctionsPort} --csharp";
+            return ProfilerHelper.StartCommandWithProfiler(
+                command: functionsCommand,
+                environmentHelper: EnvironmentHelper,
+                traceAgentPort: traceAgentPort,
+                functionsPort: azureFunctionsPort);
+        }
+
         public ProcessResult RunSampleAndWaitForExit(int traceAgentPort, int? statsdPort = null, string arguments = null, string packageVersion = "", string framework = "", int aspNetCorePort = 5000)
         {
             var process = StartSample(traceAgentPort, arguments, packageVersion, aspNetCorePort: aspNetCorePort, statsdPort: statsdPort, framework: framework);
+
+            using var helper = new ProcessHelper(process);
+
+            process.WaitForExit();
+            helper.Drain();
+            var exitCode = process.ExitCode;
+
+            Output.WriteLine($"ProcessId: " + process.Id);
+            Output.WriteLine($"Exit Code: " + exitCode);
+
+            var standardOutput = helper.StandardOutput;
+
+            if (!string.IsNullOrWhiteSpace(standardOutput))
+            {
+                Output.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
+            }
+
+            var standardError = helper.ErrorOutput;
+
+            if (!string.IsNullOrWhiteSpace(standardError))
+            {
+                Output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
+            }
+
+            return new ProcessResult(process, standardOutput, standardError, exitCode);
+        }
+
+        public ProcessResult RunAzureFunctionAndWaitForExit(int traceAgentPort, int azureFunctionsPort)
+        {
+            var process = StartAzureFunction(traceAgentPort, azureFunctionsPort);
 
             using var helper = new ProcessHelper(process);
 

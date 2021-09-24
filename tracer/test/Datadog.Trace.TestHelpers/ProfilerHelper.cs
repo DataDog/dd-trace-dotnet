@@ -43,5 +43,37 @@ namespace Datadog.Trace.TestHelpers
 
             return Process.Start(startInfo);
         }
+
+        public static Process StartCommandWithProfiler(
+            string command,
+            EnvironmentHelper environmentHelper,
+            int traceAgentPort,
+            int functionsPort,
+            bool redirectStandardInput = false)
+        {
+            if (environmentHelper == null)
+            {
+                throw new ArgumentNullException(nameof(environmentHelper));
+            }
+
+            // clear all relevant environment variables to start with a clean slate
+            EnvironmentHelper.ClearProfilerEnvironmentVariables();
+
+            var startInfo = new ProcessStartInfo("cmd.exe", command);
+
+            environmentHelper.SetEnvironmentVariables(
+                agentPort: traceAgentPort,
+                aspNetCorePort: functionsPort,
+                statsdPort: null,
+                environmentVariables: startInfo.EnvironmentVariables);
+
+            startInfo.UseShellExecute = false;
+            startInfo.CreateNoWindow = true;
+            startInfo.RedirectStandardOutput = true;
+            startInfo.RedirectStandardError = true;
+            startInfo.RedirectStandardInput = redirectStandardInput;
+
+            return Process.Start(startInfo);
+        }
     }
 }
