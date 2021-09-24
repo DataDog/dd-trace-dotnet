@@ -55,17 +55,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         /// <returns>Calltarget state value</returns>
         public static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         {
-// AppSec doesn't support Asp.Net Core on .NET Framework
-// but this class is needed as it could be called by a
-// .NET Framework app and should be an no-op in this case
-#if !NETFRAMEWORK
-            if (Security.Instance.Settings.Enabled)
-            {
-                Log.Information("Inserting Middleware");
-                BlockingMiddleware.ModifyApplicationBuilder(instance);
-            }
-#endif
-
             return default;
         }
     }
