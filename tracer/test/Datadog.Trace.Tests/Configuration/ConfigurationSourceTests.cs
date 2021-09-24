@@ -187,7 +187,7 @@ namespace Datadog.Trace.Tests.Configuration
 
                 settings = GetTracerSettings(key, value);
 
-                // after load settings we can restore the original DD_SERVICE
+                // after load settings we can restore the original DD_TRACE_AGENT_URL
                 Environment.SetEnvironmentVariable(ConfigurationKeys.AgentUri, originalAgentUri, EnvironmentVariableTarget.Process);
             }
             else
