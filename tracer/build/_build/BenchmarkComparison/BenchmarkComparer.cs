@@ -16,7 +16,7 @@ namespace BenchmarkComparison
 {
     public static class BenchmarkComparer
     {
-        public static readonly Threshold StatisticalTestThreshold = Threshold.Create(ThresholdUnit.Ratio, 0.05);
+        public static readonly Threshold StatisticalTestThreshold = Threshold.Create(ThresholdUnit.Ratio, 0.01);
         public static readonly Threshold NoiseThreshold = Threshold.Create(ThresholdUnit.Nanoseconds, 0.3);
         public static readonly double AllocationThresholdPercent = 0.5;//%
 
