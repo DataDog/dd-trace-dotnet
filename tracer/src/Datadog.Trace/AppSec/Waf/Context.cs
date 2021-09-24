@@ -30,7 +30,11 @@ namespace Datadog.Trace.AppSec.Waf
 
         public IResult Run(IDictionary<string, object> args)
         {
+#if NETFRAMEWORK
             var pwArgs = Encoder.Encode(args, argCache);
+#else
+            var pwArgs = DirectEncoder.Encode(args, argCache);
+#endif
 
             var rawAgs = pwArgs.RawPtr;
             DdwafResultStruct retNative = default;
