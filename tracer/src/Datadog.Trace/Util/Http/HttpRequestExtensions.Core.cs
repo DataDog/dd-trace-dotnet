@@ -19,23 +19,7 @@ namespace Datadog.Trace.Util.Http
 
         internal static Dictionary<string, object> PrepareArgsForWaf(this HttpRequest request, RouteData routeDatas = null)
         {
-            var url = GetUrl(request);
-
-            var dict = new Dictionary<string, object>
-            {
-                { AddressesConstants.RequestMethod, request.Method },
-                { AddressesConstants.RequestUriRaw, url },
-                { AddressesConstants.RequestQuery, request.Query },
-                { AddressesConstants.RequestHeaderNoCookies, request.Headers },
-                { AddressesConstants.RequestCookies, request.Cookies },
-            };
-
-            if (routeDatas != null && routeDatas.Values.Any())
-            {
-                dict.Add(AddressesConstants.RequestPathParams, routeDatas.Values);
-            }
-
-            return dict;
+            return new Dictionary<string, object>();
         }
 
         internal static string GetUrl(this HttpRequest request)
