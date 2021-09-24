@@ -30,18 +30,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         public IResult Run(IDictionary<string, object> args)
         {
-#if NETFRAMEWORK
-            var pwArgs = Encoder.Encode(args, argCache);
-#else
-            var pwArgs = DirectEncoder.Encode(args, argCache);
-#endif
-
-            var rawAgs = pwArgs.RawPtr;
-            DdwafResultStruct retNative = default;
-
-            // var code = WafNative.Run(contextHandle, rawAgs, ref retNative, 1000000);
-
-            var ret = new Result(retNative, DDWAF_RET_CODE.DDWAF_GOOD);
+            var ret = new Result(default, DDWAF_RET_CODE.DDWAF_GOOD);
 
             return ret;
         }
