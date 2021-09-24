@@ -225,7 +225,7 @@ partial class Build
 
             var integrations = GenerateIntegrationDefinitions.GetAllIntegrations(assemblies);
 
-            GenerateIntegrationDefinitions.Run(integrations, RootDirectory);
+            GenerateIntegrationDefinitions.Run(integrations, TracerDirectory);
 
             var honeypotProject = RootDirectory / "honeypot" / "Datadog.Dependabot.Integrations.Honeypot.csproj";
             await UpdateHoneypot.UpdateIntegrations(honeypotProject, integrations);

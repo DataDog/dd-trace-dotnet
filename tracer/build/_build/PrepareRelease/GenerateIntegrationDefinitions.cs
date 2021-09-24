@@ -46,7 +46,7 @@ namespace PrepareRelease
                 File.WriteAllText(filename, json, utf8NoBom);
 
                 // CallTarget
-                var calltargetPath = Path.Combine(outputDirectory, "tracer", "src", "Datadog.Trace", "ClrProfiler", "InstrumentationDefinitions.Generated.cs");
+                var calltargetPath = Path.Combine(outputDirectory, "src", "Datadog.Trace", "ClrProfiler", "InstrumentationDefinitions.Generated.cs");
                 Console.WriteLine($"Writing {calltargetPath}...");
                 using var fs = new FileStream(calltargetPath, FileMode.Create, FileAccess.Write, FileShare.None);
                 using var sw = new StreamWriter(fs, utf8NoBom);
