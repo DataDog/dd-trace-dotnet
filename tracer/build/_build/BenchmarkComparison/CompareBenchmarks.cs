@@ -351,7 +351,10 @@ Benchmarks for {newBranchMarkdown} compared to {oldBranchMarkdown}:
         {
             try
             {
-                var config = new CsvConfiguration(CultureInfo.InvariantCulture) { HasHeaderRecord = true, };
+                var config = new CsvConfiguration(CultureInfo.InvariantCulture)
+                {
+                    HasHeaderRecord = true,
+                };
                 using var reader = new StreamReader(resultFilePath);
                 using var csv = new CsvReader(reader, config);
                 var summaries = csv.GetRecords<BdnBenchmarkSummary>().ToList();
@@ -531,31 +534,21 @@ Benchmarks for {newBranchMarkdown} compared to {oldBranchMarkdown}:
 
         public class BdnBenchmarkSummary
         {
-            [Index(0)]
             public string Method { get; set; }
-            [Index(1)]
             public string Job { get; set; }
-            [Index(14)]
             public string Runtime { get; set; }
-            [Index(29)]
             public string Toolchain { get; set; }
-            [Index(33)]
             public string IterationTime { get; set; }
-            [Index(42)]
             public string Mean { get; set; }
-            [Index(43)]
             public string Error { get; set; }
-            [Index(44)]
             public string StdDev { get; set; }
-            [Index(45)]
             public string Ratio { get; set; }
-            [Index(46)]
+            [Name("Gen 0")]
             public string Gen0 { get; set; }
-            [Index(47)]
+            [Name("Gen 1")]
             public string Gen1 { get; set; }
-            [Index(48)]
+            [Name("Gen 2")]
             public string Gen2 { get; set; }
-            [Index(49)]
             public string Allocated { get; set; }
         }
     }
