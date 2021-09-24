@@ -174,19 +174,25 @@ namespace Datadog.Trace.Tests.Configuration
                 string originalServiceName = Environment.GetEnvironmentVariable(ConfigurationKeys.ServiceName);
                 Environment.SetEnvironmentVariable(ConfigurationKeys.ServiceName, null, EnvironmentVariableTarget.Process);
 
-                Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
-                IConfigurationSource source = new EnvironmentConfigurationSource();
-                settings = new TracerSettings(source);
+                settings = GetTracerSettings(key, value);
 
                 // after load settings we can restore the original DD_SERVICE
                 Environment.SetEnvironmentVariable(ConfigurationKeys.ServiceName, originalServiceName, EnvironmentVariableTarget.Process);
+            }
+            else if (key == ConfigurationKeys.AgentHost || key == ConfigurationKeys.AgentPort)
+            {
+                // We need to ensure DD_TRACE_AGENT_URL is empty.
+                string originalAgentUri = Environment.GetEnvironmentVariable(ConfigurationKeys.AgentUri);
+                Environment.SetEnvironmentVariable(ConfigurationKeys.AgentUri, null, EnvironmentVariableTarget.Process);
 
+                settings = GetTracerSettings(key, value);
+
+                // after load settings we can restore the original DD_SERVICE
+                Environment.SetEnvironmentVariable(ConfigurationKeys.AgentUri, originalAgentUri, EnvironmentVariableTarget.Process);
             }
             else
             {
-                Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
-                IConfigurationSource source = new EnvironmentConfigurationSource();
-                settings = new TracerSettings(source);
+                settings = GetTracerSettings(key, value);
             }
 
             // restore original value
@@ -194,6 +200,13 @@ namespace Datadog.Trace.Tests.Configuration
 
             object actualValue = settingGetter(settings);
             Assert.Equal(expectedValue, actualValue);
+
+            static TracerSettings GetTracerSettings(string key, string value)
+            {
+                Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
+                IConfigurationSource source = new EnvironmentConfigurationSource();
+                return new TracerSettings(source);
+            }
         }
 
         [Theory]
