@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using GeneratePackageVersions;
+using Honeypot;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.Tooling;
@@ -201,8 +202,8 @@ partial class Build
        .Description("Updates the vendored dependency code and dependabot template")
        .Executes(() =>
        {
-            var honeypotProject = RootDirectory / "honeypot"  /  "Datadog.Dependabot.Honeypot.csproj";
-            UpdateVendorsTool.UpdateHoneypotProject(honeypotProject);
+            var honeypotProject = RootDirectory / "honeypot"  /  "Datadog.Dependabot.Vendors.Honeypot.csproj";
+            UpdateHoneypot.UpdateVendors(honeypotProject);
 
             var vendorDirectory = Solution.GetProject(Projects.DatadogTrace).Directory / "Vendors";
             var downloadDirectory = TemporaryDirectory / "Downloads";
@@ -214,14 +215,20 @@ partial class Build
        .Description("Update the integrations.json file")
        .DependsOn(Clean, Restore, CreateRequiredDirectories, CompileManagedSrc, PublishManagedProfiler) // We load the dlls from the output, so need to do a clean build
        .Before(CopyIntegrationsJson)
-       .Executes(() =>
+       .Executes(async () =>
         {
             var assemblies = TracerHomeDirectory
                             .GlobFiles("**/Datadog.Trace.dll")
                             .Select(x => x.ToString())
                             .ToList();
 
-            GenerateIntegrationDefinitions.Run(assemblies, TracerDirectory);
+
+            var integrations = GenerateIntegrationDefinitions.GetAllIntegrations(assemblies);
+
+            GenerateIntegrationDefinitions.Run(integrations, RootDirectory);
+
+            var honeypotProject = RootDirectory / "honeypot" / "Datadog.Dependabot.Integrations.Honeypot.csproj";
+            await UpdateHoneypot.UpdateIntegrations(honeypotProject, integrations);
         });
 
     Target UpdateVersion => _ => _

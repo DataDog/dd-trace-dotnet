@@ -28,7 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="UpdateVendors\Datadog.Dependabot.Honeypot.template" />
-    <EmbeddedResource Include="UpdateVendors\Datadog.Dependabot.Honeypot.template" />
+    <None Remove="Honeypot\Datadog.Dependabot.Honeypot.template" />
+    <EmbeddedResource Include="Honeypot\Datadog.Dependabot.Honeypot.template" />
   </ItemGroup>
 </Project>

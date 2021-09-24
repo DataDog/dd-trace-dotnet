@@ -1,13 +1,13 @@
 version: 2
 updates:
-  # Dependency notifications for vendored libraries
+  # Mocked projects for dependency notifications
   - package-ecosystem: "nuget"
     directory: "/honeypot"
     schedule:
       interval: "daily"
     labels:
       - "dependencies"
-      - "area:vendors"
+      - "area:honeypot"
     ignore:
       - dependency-name: "MessagePack" # Locked at a version that supports our net452 build target
   # Src libraries
