@@ -39,9 +39,9 @@ namespace Datadog.Trace.AppSec.Waf
             var rawAgs = pwArgs.RawPtr;
             DdwafResultStruct retNative = default;
 
-            var code = WafNative.Run(contextHandle, rawAgs, ref retNative, 1000000);
+            // var code = WafNative.Run(contextHandle, rawAgs, ref retNative, 1000000);
 
-            var ret = new Result(retNative, code);
+            var ret = new Result(retNative, DDWAF_RET_CODE.DDWAF_GOOD);
 
             return ret;
         }

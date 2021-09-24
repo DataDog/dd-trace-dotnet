@@ -48,7 +48,10 @@ namespace Datadog.Trace.AppSec.Waf
 
             disposed = true;
 
-            WafNative.ResultFree(ref returnStruct);
+            if (returnCode != default)
+            {
+                WafNative.ResultFree(ref returnStruct);
+            }
         }
 
         public void Dispose()
