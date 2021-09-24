@@ -181,18 +181,16 @@ namespace Datadog.Trace.Tests.Configuration
                 // after load settings we can restore the original DD_SERVICE
                 Environment.SetEnvironmentVariable(ConfigurationKeys.ServiceName, originalServiceName, EnvironmentVariableTarget.Process);
 
-                // restore original value
-                Environment.SetEnvironmentVariable(key, originalValue, EnvironmentVariableTarget.Process);
             }
             else
             {
                 Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
                 IConfigurationSource source = new EnvironmentConfigurationSource();
                 settings = new TracerSettings(source);
-
-                // restore original value
-                Environment.SetEnvironmentVariable(key, originalValue, EnvironmentVariableTarget.Process);
             }
+
+            // restore original value
+            Environment.SetEnvironmentVariable(key, originalValue, EnvironmentVariableTarget.Process);
 
             object actualValue = settingGetter(settings);
             Assert.Equal(expectedValue, actualValue);
@@ -251,7 +249,6 @@ namespace Datadog.Trace.Tests.Configuration
 
             // save original value so we can restore later
             var originalValue = Environment.GetEnvironmentVariable(key);
-            Environment.SetEnvironmentVariable(key, string.Empty, EnvironmentVariableTarget.Process);
             Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
             var settings = new GlobalSettings(source);
             Environment.SetEnvironmentVariable(key, originalValue, EnvironmentVariableTarget.Process);
