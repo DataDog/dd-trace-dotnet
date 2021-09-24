@@ -59,14 +59,14 @@ namespace Datadog.Trace.Ci.Agent
                         }
 
                         removeIds.Add(span.SpanId);
-                        CIVisibility.Log.Warning($"Non Test or Benchmark trace was dropped: {span}");
+                        CIVisibility.Log.Warning("Non Test or Benchmark trace was dropped: {Span}", span);
                         continue;
                     }
                 }
                 else if (removeIds != null && removeIds.Contains(span.Context.ParentId.Value))
                 {
                     removeIds.Add(span.SpanId);
-                    CIVisibility.Log.Warning($"Non Test or Benchmark trace was dropped: {span}");
+                    CIVisibility.Log.Warning("Non Test or Benchmark trace was dropped: {Span}", span);
                     continue;
                 }
 
