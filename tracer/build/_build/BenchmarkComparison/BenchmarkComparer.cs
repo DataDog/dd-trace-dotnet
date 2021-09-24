@@ -142,8 +142,10 @@ namespace BenchmarkComparison
                     continue;
                 }
 
+                var zero = ByteSize.FromBytes(0);
                 var difference = baseBytes - diffBytes;
-                var percentageDifference = baseBytes.Bytes / difference.Bytes;
+                // handle divide by zero
+                var percentageDifference = difference == zero ? 0 : baseBytes.Bytes / difference.Bytes;
 
                 var conclusion = percentageDifference switch
                 {

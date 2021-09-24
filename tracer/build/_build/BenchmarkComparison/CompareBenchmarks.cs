@@ -21,7 +21,7 @@ namespace BenchmarkComparison
 
             var comparison = BenchmarkComparer.MatchAndCompareResults(baseJsonResults, prJsonResults, baseCsvResults, prCsvResults);
 
-            return BenchmarkMarkdownGenerator.GetMarkdown(comparison, newBranchMarkdown, oldBranchMarkdown);
+            return BenchmarkMarkdownGenerator.GetMarkdown(comparison, oldBranchMarkdown, newBranchMarkdown);
         }
     }
 }
