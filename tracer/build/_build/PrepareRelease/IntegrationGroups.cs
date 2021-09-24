@@ -4,14 +4,12 @@
 // </copyright>
 
 using System.Collections.Generic;
-using System.Linq;
 
 namespace PrepareRelease
 {
     public class IntegrationGroups
     {
         public List<Integration> CallSite { get; set; }
-        public List<Integration> CallTarget { get; set; }
-        public List<Integration> All => CallSite.Concat(CallTarget).OrderBy(i => i.Name).ToList();
+        public List<CallTargetDefinitionSource> CallTarget { get; set; }
     }
 }

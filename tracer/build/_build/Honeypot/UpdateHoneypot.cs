@@ -36,16 +36,28 @@ namespace Honeypot
         {
             var fakeRefs = string.Empty;
 
-            var targets = integrations.All.SelectMany(i => i.MethodReplacements.Select(mr => mr.Target));
+            var targets = integrations.CallTarget;
 
             var distinctIntegrations = new List<IntegrationMap>();
 
-            foreach (var tg in targets.GroupBy(t => t.Assembly))
+            foreach (var tg in targets.GroupBy(t => t.TargetAssembly))
             {
-
-                var maxVersionTarget = tg.OrderByDescending(a => a.MaximumMajor).ThenByDescending(a => a.MaximumMinor).ThenByDescending(a => a.MaximumPatch).First();
-                var maxVersion = new Version(maxVersionTarget.MaximumMajor, maxVersionTarget.MaximumMinor, maxVersionTarget.MaximumPatch);
-                distinctIntegrations.Add(await IntegrationMap.Create(name: tg.Key, assemblyName: maxVersionTarget.Assembly, maxVersion));
+                var maxVersionTarget =
+                    tg
+                      .OrderByDescending(a => a.TargetMaximumMajor)
+                      .ThenByDescending(a => a.TargetMaximumMinor)
+                      .ThenByDescending(a => a.TargetMaximumPatch)
+                      .First();
+                var maxVersion =
+                    new Version(
+                        maxVersionTarget.TargetMaximumMajor,
+                        maxVersionTarget.TargetMaximumMinor,
+                        maxVersionTarget.TargetMaximumPatch);
+                distinctIntegrations.Add(
+                    await IntegrationMap.Create(
+                        name: tg.Key,
+                        assemblyName: maxVersionTarget.TargetAssembly,
+                        maxVersion));
             }
 
             foreach (var integration in distinctIntegrations)
