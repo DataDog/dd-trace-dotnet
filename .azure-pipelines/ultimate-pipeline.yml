@@ -575,6 +575,11 @@ stages:
         dockerComposeCommand: down
       condition: succeededOrFailed()
 
+    - publish: tracer/build_data/logs
+      artifact: profiler-logs-only_integration_tests_linux_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
     - publish: tracer/build_data
       artifact: profiler-logs_integration_tests_linux_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
       condition: succeededOrFailed()
