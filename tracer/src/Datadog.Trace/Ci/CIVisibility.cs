@@ -69,25 +69,7 @@ namespace Datadog.Trace.Ci
             if (string.IsNullOrEmpty(tracerSettings.ServiceName))
             {
                 // Extract repository name from the git url and use it as a default service name.
-                string repository = CIEnvironmentValues.Repository;
-                if (!string.IsNullOrEmpty(repository))
-                {
-                    Regex regex = new Regex(@"/([a-zA-Z0-9\\\-_.]*)$");
-                    Match match = regex.Match(repository);
-                    if (match.Success && match.Groups.Count > 1)
-                    {
-                        const string gitSuffix = ".git";
-                        string repoName = match.Groups[1].Value;
-                        if (repoName.EndsWith(gitSuffix))
-                        {
-                            tracerSettings.ServiceName = repoName.Substring(0, repoName.Length - gitSuffix.Length);
-                        }
-                        else
-                        {
-                            tracerSettings.ServiceName = repoName;
-                        }
-                    }
-                }
+                tracerSettings.ServiceName = GetServiceNameFromRepository(CIEnvironmentValues.Repository);
             }
 
             // Initialize Tracer
@@ -127,6 +109,35 @@ namespace Datadog.Trace.Ci
                     Log.Error(ex, "Exception occurred when flushing spans.");
                 }
             }
+        }
+
+        internal static string GetServiceNameFromRepository(string repository)
+        {
+            if (!string.IsNullOrEmpty(repository))
+            {
+                if (repository.EndsWith("/"))
+                {
+                    repository = repository.Substring(0, repository.Length - 1);
+                }
+
+                Regex regex = new Regex(@"/([a-zA-Z0-9\\\-_.]*)$");
+                Match match = regex.Match(repository);
+                if (match.Success && match.Groups.Count > 1)
+                {
+                    const string gitSuffix = ".git";
+                    string repoName = match.Groups[1].Value;
+                    if (repoName.EndsWith(gitSuffix))
+                    {
+                        return repoName.Substring(0, repoName.Length - gitSuffix.Length);
+                    }
+                    else
+                    {
+                        return repoName;
+                    }
+                }
+            }
+
+            return string.Empty;
         }
 
         private static bool InternalEnabled()
