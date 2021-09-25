@@ -59,14 +59,7 @@ namespace Datadog.Trace.Tests
                 Environment = env
             };
             var tracer = new Tracer(settings);
-            if (Ci.CIVisibility.IsRunning)
-            {
-                Tracer.UnsafeSetTracerInstance(tracer);
-            }
-            else
-            {
-                Tracer.Instance = tracer;
-            }
+            Tracer.UnsafeSetTracerInstance(tracer);
 
             using (var parentScope = Tracer.Instance.StartActive("parent"))
             using (var childScope = Tracer.Instance.StartActive("child"))
@@ -86,14 +79,7 @@ namespace Datadog.Trace.Tests
         {
             var settings = new TracerSettings();
             var tracer = new Tracer(settings);
-            if (Ci.CIVisibility.IsRunning)
-            {
-                Tracer.UnsafeSetTracerInstance(tracer);
-            }
-            else
-            {
-                Tracer.Instance = tracer;
-            }
+            Tracer.UnsafeSetTracerInstance(tracer);
 
             using (var parentScope = Tracer.Instance.StartActive("parent"))
             using (var childScope = Tracer.Instance.StartActive("child"))
@@ -111,14 +97,7 @@ namespace Datadog.Trace.Tests
         {
             var settings = new TracerSettings();
             var tracer = new Tracer(settings);
-            if (Ci.CIVisibility.IsRunning)
-            {
-                Tracer.UnsafeSetTracerInstance(tracer);
-            }
-            else
-            {
-                Tracer.Instance = tracer;
-            }
+            Tracer.UnsafeSetTracerInstance(tracer);
 
             using (var parentScope = Tracer.Instance.StartActive("parent"))
             using (var childScope = Tracer.Instance.StartActive("child"))
