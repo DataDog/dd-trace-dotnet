@@ -16,7 +16,7 @@ namespace BenchmarkComparison
 {
     public static class BenchmarkComparer
     {
-        public static readonly Threshold StatisticalTestThreshold = Threshold.Create(ThresholdUnit.Ratio, 0.01);
+        public static readonly Threshold SignificantResultThreshold = Threshold.Create(ThresholdUnit.Ratio, 0.10);
         public static readonly Threshold NoiseThreshold = Threshold.Create(ThresholdUnit.Nanoseconds, 0.3);
         public static readonly double AllocationThresholdPercent = 0.5;//%
 
@@ -67,7 +67,7 @@ namespace BenchmarkComparison
 
                                              return new BenchmarkComparison(id, baseBenchmark, diffBenchmark, EquivalenceTestConclusion.Unknown);
                                          })
-                                        .Compare(StatisticalTestThreshold, NoiseThreshold)
+                                        .Compare(SignificantResultThreshold, NoiseThreshold)
                                         .ToList();
 
                        var baseSummariesByName = baseSummary.Results
