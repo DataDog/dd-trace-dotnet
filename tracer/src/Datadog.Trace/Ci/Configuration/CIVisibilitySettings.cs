@@ -18,9 +18,9 @@ namespace Datadog.Trace.Ci.Configuration
             }
         }
 
-        public bool Enabled { get; set; }
+        public bool Enabled { get; }
 
-        public TracerSettings TracerSettings { get; set; }
+        public TracerSettings TracerSettings { get; }
 
         public static CIVisibilitySettings FromDefaultSources()
         {
