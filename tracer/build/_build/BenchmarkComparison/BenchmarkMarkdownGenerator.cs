@@ -145,8 +145,8 @@ Benchmarks for {newBranchMarkdown} compared to {oldBranchMarkdown}:
             stringBuilder.AppendLine($@"
 
 The following thresholds were used for comparing the benchmark speeds:
-* Mann–Whitney U test with statistical threshold of **{BenchmarkComparer.StatisticalTestThreshold}**
-* When the above indicates significance, a Mann–Whitney U test with statistical threshold of **{BenchmarkComparer.NoiseThreshold}** to reduce noise
+* Mann–Whitney U test with statistical test for significance of **5%**
+* Only results indicating a difference greater than **{BenchmarkComparer.SignificantResultThreshold}** and **{BenchmarkComparer.NoiseThreshold}** are considered.
 
 Allocation changes below **{BenchmarkComparer.AllocationThresholdPercent:N1}%** are ignored.
 ");
