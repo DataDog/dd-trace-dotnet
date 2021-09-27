@@ -117,6 +117,12 @@ stages:
         New-Item -Path $(System.DefaultWorkingDirectory)\..\dd-trace-dotnet -ItemType SymbolicLink -Value $(System.DefaultWorkingDirectory)
       displayName: Create symlink from $(System.DefaultWorkingDirectory)\..\dd-trace-dotnet to $(System.DefaultWorkingDirectory)
 
+    - powershell: |
+        $sha = git rev-parse --short HEAD
+        echo "##vso[task.setvariable variable=BetaMsiSuffix]v$(Build.BuildId)-$sha"
+      workingDirectory: $(System.DefaultWorkingDirectory)\..\dd-continuous-profiler-dotnet
+      displayName: Persist the commit sha for the dd-continuous-profiler repo (temporary)
+
     - script: tracer\build.cmd BuildTracerHome
       displayName: Build tracer home
 

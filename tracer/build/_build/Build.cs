@@ -47,6 +47,8 @@ partial class Build : NukeBuild
     readonly AbsolutePath DDTracerHome;
     [Parameter("The location to place NuGet packages and other packages. Default is ./bin/artifacts ")]
     readonly AbsolutePath Artifacts;
+    [Parameter("An optional suffix for the beta profiler-tracer MSI. Default is '' ")]
+    readonly string BetaMsiSuffix = string.Empty;
 
     [Parameter("The location to the find the profiler repository. Default is ./../dd-continuous-profiler-dotnet")]
     readonly AbsolutePath ProfilerSrcDirectory;
