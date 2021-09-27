@@ -564,24 +564,6 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     span = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, security, httpContext).Span;
                 }
-
-                if (shouldSecure)
-                {
-                    RaiseInstrumentationEvent(security, httpContext, request, span);
-                }
-            }
-        }
-
-        private void RaiseInstrumentationEvent(IDatadogSecurity security, HttpContext context, HttpRequest request, Span span, RouteData routeData = null)
-        {
-            try
-            {
-                var dic = request.PrepareArgsForWaf(routeData);
-                security.InstrumentationGateway.RaiseEvent(dic, new HttpTransport(context), span);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error occurred raising instrumentation event");
             }
         }
 
