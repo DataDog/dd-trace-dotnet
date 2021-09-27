@@ -445,7 +445,13 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             // For debug builds only we also support F5-running from within VS.
             // For that we use the relavite path from where our build places the native profiler engine DLL to where the build
             // places the managed profiler engine DLL.
-            const string NativeToManagedRelativePath = @"..\..\..\..\Debug-AnyCPU\src\ProfilerEngine\Datadog.AutoInstrumentation.Profiler.Managed\";
+            const string NativeToManagedRelativePath =
+#if DEBUG
+                @"..\..\..\..\Debug-AnyCPU\src\ProfilerEngine\Datadog.AutoInstrumentation.Profiler.Managed\";
+#else
+                @"..\..\..\..\Release-AnyCPU\src\ProfilerEngine\Datadog.AutoInstrumentation.Profiler.Managed\";
+#endif
+
 
             string managedBinariesRoot = Path.Combine(profilerHomeDirectory, NativeToManagedRelativePath);
 
