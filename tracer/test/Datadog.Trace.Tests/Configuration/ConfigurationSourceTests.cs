@@ -174,25 +174,39 @@ namespace Datadog.Trace.Tests.Configuration
                 string originalServiceName = Environment.GetEnvironmentVariable(ConfigurationKeys.ServiceName);
                 Environment.SetEnvironmentVariable(ConfigurationKeys.ServiceName, null, EnvironmentVariableTarget.Process);
 
-                Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
-                IConfigurationSource source = new EnvironmentConfigurationSource();
-                settings = new TracerSettings(source);
+                settings = GetTracerSettings(key, value);
 
                 // after load settings we can restore the original DD_SERVICE
                 Environment.SetEnvironmentVariable(ConfigurationKeys.ServiceName, originalServiceName, EnvironmentVariableTarget.Process);
             }
+            else if (key == ConfigurationKeys.AgentHost || key == ConfigurationKeys.AgentPort)
+            {
+                // We need to ensure DD_TRACE_AGENT_URL is empty.
+                string originalAgentUri = Environment.GetEnvironmentVariable(ConfigurationKeys.AgentUri);
+                Environment.SetEnvironmentVariable(ConfigurationKeys.AgentUri, null, EnvironmentVariableTarget.Process);
+
+                settings = GetTracerSettings(key, value);
+
+                // after load settings we can restore the original DD_TRACE_AGENT_URL
+                Environment.SetEnvironmentVariable(ConfigurationKeys.AgentUri, originalAgentUri, EnvironmentVariableTarget.Process);
+            }
             else
             {
-                Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
-                IConfigurationSource source = new EnvironmentConfigurationSource();
-                settings = new TracerSettings(source);
+                settings = GetTracerSettings(key, value);
             }
+
+            // restore original value
+            Environment.SetEnvironmentVariable(key, originalValue, EnvironmentVariableTarget.Process);
 
             object actualValue = settingGetter(settings);
             Assert.Equal(expectedValue, actualValue);
 
-            // restore original value
-            Environment.SetEnvironmentVariable(key, originalValue, EnvironmentVariableTarget.Process);
+            static TracerSettings GetTracerSettings(string key, string value)
+            {
+                Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
+                IConfigurationSource source = new EnvironmentConfigurationSource();
+                return new TracerSettings(source);
+            }
         }
 
         [Theory]
@@ -244,14 +258,16 @@ namespace Datadog.Trace.Tests.Configuration
             Func<GlobalSettings, object> settingGetter,
             object expectedValue)
         {
+            IConfigurationSource source = new EnvironmentConfigurationSource();
+
             // save original value so we can restore later
             var originalValue = Environment.GetEnvironmentVariable(key);
             Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
-            IConfigurationSource source = new EnvironmentConfigurationSource();
             var settings = new GlobalSettings(source);
+            Environment.SetEnvironmentVariable(key, originalValue, EnvironmentVariableTarget.Process);
+
             object actualValue = settingGetter(settings);
             Assert.Equal(expectedValue, actualValue);
-            Environment.SetEnvironmentVariable(key, originalValue, EnvironmentVariableTarget.Process);
         }
 
         // Special case for dictionary-typed settings in JSON
