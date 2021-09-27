@@ -20,7 +20,7 @@ namespace Datadog.Trace.Tests
             responseMock.Setup(x => x.StatusCode).Returns(200);
 
             var requestMock = new Mock<IApiRequest>();
-            requestMock.Setup(x => x.PostAsync(It.IsAny<ArraySegment<byte>>())).ReturnsAsync(responseMock.Object);
+            requestMock.Setup(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), "application/msgpack")).ReturnsAsync(responseMock.Object);
 
             var factoryMock = new Mock<IApiRequestFactory>();
             factoryMock.Setup(x => x.Create(It.IsAny<Uri>())).Returns(requestMock.Object);
@@ -29,7 +29,7 @@ namespace Datadog.Trace.Tests
 
             await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1);
 
-            requestMock.Verify(x => x.PostAsync(It.IsAny<ArraySegment<byte>>()), Times.Once());
+            requestMock.Verify(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), "application/msgpack"), Times.Once());
         }
 
         [Fact]
@@ -39,7 +39,7 @@ namespace Datadog.Trace.Tests
             responseMock.Setup(x => x.StatusCode).Returns(500);
 
             var requestMock = new Mock<IApiRequest>();
-            requestMock.Setup(x => x.PostAsync(It.IsAny<ArraySegment<byte>>())).ReturnsAsync(responseMock.Object);
+            requestMock.Setup(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), "application/msgpack")).ReturnsAsync(responseMock.Object);
 
             var factoryMock = new Mock<IApiRequestFactory>();
             factoryMock.Setup(x => x.Create(It.IsAny<Uri>())).Returns(requestMock.Object);
@@ -48,7 +48,7 @@ namespace Datadog.Trace.Tests
 
             await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1);
 
-            requestMock.Verify(x => x.PostAsync(It.IsAny<ArraySegment<byte>>()), Times.Exactly(5));
+            requestMock.Verify(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), "application/msgpack"), Times.Exactly(5));
         }
 
         [Fact]
@@ -63,7 +63,7 @@ namespace Datadog.Trace.Tests
             responseMock.Setup(x => x.GetHeader(AgentHttpHeaderNames.AgentVersion)).Returns(agentVersion);
 
             var requestMock = new Mock<IApiRequest>();
-            requestMock.Setup(x => x.PostAsync(It.IsAny<ArraySegment<byte>>())).ReturnsAsync(responseMock.Object);
+            requestMock.Setup(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), "application/msgpack")).ReturnsAsync(responseMock.Object);
 
             var factoryMock = new Mock<IApiRequestFactory>();
             factoryMock.Setup(x => x.Create(It.IsAny<Uri>())).Returns(requestMock.Object);

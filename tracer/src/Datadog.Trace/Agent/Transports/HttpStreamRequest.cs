@@ -54,8 +54,7 @@ namespace Datadog.Trace.Agent.Transports
                 await memoryStream.FlushAsync().ConfigureAwait(false);
                 memoryStream.Seek(0, SeekOrigin.Begin);
                 var buffer = memoryStream.GetBuffer();
-                _headers.Add("Content-Type", "application/json");
-                var result = await PostSegmentAsync(new ArraySegment<byte>(buffer, 0, (int)memoryStream.Length)).ConfigureAwait(false);
+                var result = await PostSegmentAsync(new ArraySegment<byte>(buffer, 0, (int)memoryStream.Length), "application/json").ConfigureAwait(false);
                 var response = result.Item1;
                 var request = result.Item2;
                 if (response.StatusCode != 200 && response.StatusCode != 202)
@@ -72,13 +71,14 @@ namespace Datadog.Trace.Agent.Transports
             }
         }
 
-        public async Task<IApiResponse> PostAsync(ArraySegment<byte> traces) => (await PostSegmentAsync(traces).ConfigureAwait(false)).Item1;
+        public async Task<IApiResponse> PostAsync(ArraySegment<byte> traces, string contentType) => (await PostSegmentAsync(traces, contentType).ConfigureAwait(false)).Item1;
 
-        private async Task<Tuple<IApiResponse, HttpRequest>> PostSegmentAsync(ArraySegment<byte> segment)
+        private async Task<Tuple<IApiResponse, HttpRequest>> PostSegmentAsync(ArraySegment<byte> segment, string contentType)
         {
             using (var bidirectionalStream = _streamFactory.GetBidirectionalStream())
             {
                 var content = new BufferContent(segment);
+                _headers.Add("Content-Type", contentType);
                 var request = new HttpRequest("POST", _uri.Host, _uri.PathAndQuery, _headers, content);
                 // send request, get response
                 var response = await _client.SendAsync(request, bidirectionalStream, bidirectionalStream).ConfigureAwait(false);
