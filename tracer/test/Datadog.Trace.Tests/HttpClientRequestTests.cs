@@ -27,7 +27,7 @@ namespace Datadog.Trace.Tests
 
             request.AddHeader("Hello", "World");
 
-            await request.PostAsync(ArraySegment<byte>.Empty);
+            await request.PostAsync(ArraySegment<byte>.Empty, "application/msgpack");
 
             var message = handler.Message;
 
@@ -46,7 +46,7 @@ namespace Datadog.Trace.Tests
             var factory = new HttpClientRequestFactory(handler);
             var request = factory.Create(new Uri("http://localhost/"));
 
-            await request.PostAsync(ArraySegment<byte>.Empty);
+            await request.PostAsync(ArraySegment<byte>.Empty, "application/msgpack");
 
             var message = handler.Message;
 

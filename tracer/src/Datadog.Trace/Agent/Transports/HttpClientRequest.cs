@@ -5,7 +5,6 @@
 
 #if NETCOREAPP
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -64,12 +63,12 @@ namespace Datadog.Trace.Agent.Transports
             }
         }
 
-        public async Task<IApiResponse> PostAsync(ArraySegment<byte> traces)
+        public async Task<IApiResponse> PostAsync(ArraySegment<byte> traces, string contentType)
         {
             // re-create HttpContent on every retry because some versions of HttpClient always dispose of it, so we can't reuse.
             using (var content = new ByteArrayContent(traces.Array, traces.Offset, traces.Count))
             {
-                content.Headers.ContentType = new MediaTypeHeaderValue("application/msgpack");
+                content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
                 _request.Content = content;
 
                 var response = await _client.SendAsync(_request).ConfigureAwait(false);
