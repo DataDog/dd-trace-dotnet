@@ -167,8 +167,8 @@ namespace datadog::shared::nativeloader
         }
 
         // Gets the initial value for the event mask
-        DWORD mask_low;
-        DWORD mask_hi;
+        DWORD mask_low = 0;
+        DWORD mask_hi = 0;
         if (info5 != nullptr)
         {
             hr = info5->GetEventMask2(&mask_low, &mask_hi);
@@ -195,8 +195,8 @@ namespace datadog::shared::nativeloader
             if (SUCCEEDED(localResult))
             {
                 // let's get the event mask set by the CP.
-                DWORD local_mask_low;
-                DWORD local_mask_hi;
+                DWORD local_mask_low = 0;
+                DWORD local_mask_hi = 0;
                 HRESULT hr;
                 if (info5 != nullptr)
                 {
@@ -236,8 +236,8 @@ namespace datadog::shared::nativeloader
             if (SUCCEEDED(localResult))
             {
                 // let's get the event mask set by the CP.
-                DWORD local_mask_low;
-                DWORD local_mask_hi;
+                DWORD local_mask_low = 0;
+                DWORD local_mask_hi = 0;
                 HRESULT hr;
                 if (info5 != nullptr)
                 {
@@ -277,8 +277,8 @@ namespace datadog::shared::nativeloader
             if (SUCCEEDED(localResult))
             {
                 // let's get the event mask set by the CP.
-                DWORD local_mask_low;
-                DWORD local_mask_hi;
+                DWORD local_mask_low = 0;
+                DWORD local_mask_hi = 0;
                 HRESULT hr;
                 if (info5 != nullptr)
                 {
