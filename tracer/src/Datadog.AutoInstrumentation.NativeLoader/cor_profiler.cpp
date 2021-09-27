@@ -126,40 +126,57 @@ namespace datadog::shared::nativeloader
             m_customProfiler = customInstance->GetProfilerCallback();
         }
 
-        // ********************************************************************************************
-        // We get the ICorProfilerInfo5 interface from the pICorProfilerInfoUnk given by the runtime.
+        // *******************************************************************************************************
+        // We get the ICorProfilerInfo4 and ICorProfilerInfo5 interface from the pICorProfilerInfoUnk
+        // given by the runtime.
         // Note: pICorProfilerInfoUnk is shared with CP and Tracer profilers, so their ICorProfilerInfoX
         // will be extracted the same way we do here. And in fact, the mask is global and shared with
         // all profilers.
         //
         // So for event masks we do the following:
         //
-        // 1. Read the Profiler mask using the ICorProfilerInfo5 instance.
+        // 1. Read the Profiler mask using the ICorProfilerInfo4 or ICorProfilerInfo5 instance.
         // 2. Call the `Initialize` function from the ContinousProfiler with the same pICorProfilerInfoUnk
         // instance. In this step the Continous Profiler will set the required event mask to work.
-        // 3. Read again the event mask from the ICorProfilerInfo5 instance, and because it's using the
-        // same pICorProfilerInfoUnk we will see here the event masks that the continuous profiler set.
+        // 3. Read again the event mask from the ICorProfilerInfo4 or ICorProfilerInfo5 instance, and
+        // because it's using the same pICorProfilerInfoUnk we will see here the event masks that the
+        // continuous profiler set.
         // 4. We do the bitwise OR operation with the global `mask_low` and `mask_hi`.
         // 5. Repeat the steps 2,3,4 for other target profilers.
-        // 6. Use the ICorProfilerInfo5 instance to set the final `mask_low` and `mask_hi`.
-        // ********************************************************************************************
+        // 6. Use the ICorProfilerInfo4 or ICorProfilerInfo5 instance to set the final `mask_low` and `mask_hi`.
+        // *******************************************************************************************************
 
         //
-        // Get Profiler interface ICorProfilerInfo5 for net46+
+        // Get Profiler interface ICorProfilerInfo4 and ICorProfilerInfo5
         //
-        ICorProfilerInfo5* info5 = nullptr;
-        HRESULT hr = pICorProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo5), (void**) &info5);
+        ICorProfilerInfo4* info4 = nullptr;
+        HRESULT hr = pICorProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo4), (void**) &info4);
         if (FAILED(hr))
         {
-            Warn("CorProfiler::Initialize: Failed to attach profiler, interface ICorProfilerInfo5 not found.");
+            Warn("CorProfiler::Initialize: Failed to attach profiler, interface ICorProfilerInfo4 not found.");
             return E_FAIL;
         }
-        InspectRuntimeVersion(info5);
+        InspectRuntimeVersion(info4);
+
+        ICorProfilerInfo5* info5 = nullptr;
+        hr = pICorProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo5), (void**) &info5);
+        if (FAILED(hr))
+        {
+            Info("CorProfiler::Initialize: ICorProfilerInfo5 interface not found.");
+            info5 = nullptr;
+        }
 
         // Gets the initial value for the event mask
         DWORD mask_low;
         DWORD mask_hi;
-        hr = info5->GetEventMask2(&mask_low, &mask_hi);
+        if (info5 != nullptr)
+        {
+            hr = info5->GetEventMask2(&mask_low, &mask_hi);
+        }
+        else
+        {
+            hr = info4->GetEventMask(&mask_low);
+        }
         if (FAILED(hr))
         {
             Warn("CorProfiler::Initialize: Error getting the event mask.");
@@ -180,7 +197,15 @@ namespace datadog::shared::nativeloader
                 // let's get the event mask set by the CP.
                 DWORD local_mask_low;
                 DWORD local_mask_hi;
-                HRESULT hr = info5->GetEventMask2(&local_mask_low, &local_mask_hi);
+                HRESULT hr;
+                if (info5 != nullptr)
+                {
+                    hr = info5->GetEventMask2(&local_mask_low, &local_mask_hi);
+                }
+                else
+                {
+                    hr = info4->GetEventMask(&local_mask_low);
+                }
                 if (SUCCEEDED(hr))
                 {
                     mask_low = mask_low | local_mask_low;
@@ -213,7 +238,15 @@ namespace datadog::shared::nativeloader
                 // let's get the event mask set by the CP.
                 DWORD local_mask_low;
                 DWORD local_mask_hi;
-                HRESULT hr = info5->GetEventMask2(&local_mask_low, &local_mask_hi);
+                HRESULT hr;
+                if (info5 != nullptr)
+                {
+                    hr = info5->GetEventMask2(&local_mask_low, &local_mask_hi);
+                }
+                else
+                {
+                    hr = info4->GetEventMask(&local_mask_low);
+                }
                 if (SUCCEEDED(hr))
                 {
                     mask_low = mask_low | local_mask_low;
@@ -246,7 +279,15 @@ namespace datadog::shared::nativeloader
                 // let's get the event mask set by the CP.
                 DWORD local_mask_low;
                 DWORD local_mask_hi;
-                HRESULT hr = info5->GetEventMask2(&local_mask_low, &local_mask_hi);
+                HRESULT hr;
+                if (info5 != nullptr)
+                {
+                    hr = info5->GetEventMask2(&local_mask_low, &local_mask_hi);
+                }
+                else
+                {
+                    hr = info4->GetEventMask(&local_mask_low);
+                }
                 if (SUCCEEDED(hr))
                 {
                     mask_low = mask_low | local_mask_low;
@@ -275,7 +316,14 @@ namespace datadog::shared::nativeloader
         Debug("CorProfiler::Initialize: *MaskHi : ", mask_hi);
 
         // Sets the final event mask for the profiler
-        hr = info5->SetEventMask2(mask_low, mask_hi);
+        if (info5 != nullptr)
+        {
+            hr = info5->SetEventMask2(mask_low, mask_hi);
+        }
+        else
+        {
+            hr = info4->SetEventMask(mask_low);
+        }
         if (FAILED(hr))
         {
             Warn("CorProfiler::Initialize: Error setting the event mask.");
