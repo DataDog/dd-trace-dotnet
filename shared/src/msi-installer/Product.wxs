@@ -35,6 +35,7 @@
 
     <Feature Id="ProductFeature" Title="Datadog.Trace.ClrProfiler" Level="1">
       <ComponentGroupRef Id="shared.Files" />
+      <ComponentGroupRef Id="ContinuousProfiler.EnvironmentVariables.Machine"/>
       <ComponentGroupRef Id="ContinuousProfiler.Files"/>
       <ComponentGroupRef Id="ContinuousProfiler.Files.Managed.Net45.GAC"/>
       <ComponentGroupRef Id="ContinuousProfiler.Files.Managed.Net461.GAC"/>
