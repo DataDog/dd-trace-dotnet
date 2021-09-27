@@ -203,20 +203,6 @@ RejitHandlerModuleMethod* RejitHandlerModule::GetOrAddMethod(mdMethodDef methodD
     return methodHandler;
 }
 
-bool RejitHandlerModule::TryGetMethod(mdMethodDef methodDef, RejitHandlerModuleMethod** methodHandler)
-{
-    std::lock_guard<std::mutex> guard(m_methods_lock);
-
-    auto find_res = m_methods.find(methodDef);
-    if (find_res != m_methods.end())
-    {
-        *methodHandler = find_res->second.get();
-        return true;
-    }
-    *methodHandler = nullptr;
-    return false;
-}
-
 bool RejitHandlerModule::ContainsMethod(mdMethodDef methodDef)
 {
     std::lock_guard<std::mutex> guard(m_methods_lock);
@@ -355,17 +341,17 @@ RejitHandlerModule* RejitHandler::GetOrAddModule(ModuleID moduleId)
     return moduleHandler;
 }
 
-bool RejitHandler::TryGetModule(ModuleID moduleId, RejitHandlerModule** moduleHandler)
+bool RejitHandler::HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef)
 {
     std::lock_guard<std::mutex> guard(m_modules_lock);
 
     auto find_res = m_modules.find(moduleId);
     if (find_res != m_modules.end())
     {
-        *moduleHandler = find_res->second.get();
-        return true;
+        auto moduleHandler = find_res->second.get();
+        return moduleHandler->ContainsMethod(methodDef);
     }
-    *moduleHandler = nullptr;
+
     return false;
 }
 
@@ -405,6 +391,9 @@ void RejitHandler::EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::ve
 
 void RejitHandler::Shutdown()
 {
+    std::lock_guard<std::mutex> moduleGuard(m_modules_lock);
+    std::lock_guard<std::mutex> ngenModuleGuard(m_ngenModules_lock);
+
     m_rejit_queue->push(RejitItem::CreateEndRejitThread());
     if (m_rejit_queue_thread->joinable())
     {
