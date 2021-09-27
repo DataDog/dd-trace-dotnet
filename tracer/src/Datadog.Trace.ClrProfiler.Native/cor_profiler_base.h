@@ -14,7 +14,7 @@ private:
     std::atomic<int> ref_count_;
 
 protected:
-    ICorProfilerInfo4* info_;
+    ICorProfilerInfo6* info_;
 
 public:
     CorProfilerBase();

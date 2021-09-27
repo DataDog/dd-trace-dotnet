@@ -96,27 +96,17 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         return E_FAIL;
     }
 
-    // get Profiler interface
-    HRESULT hr = cor_profiler_info_unknown->QueryInterface(__uuidof(ICorProfilerInfo4), (void**) &this->info_);
+    // get Profiler interface (for net46+)
+    HRESULT hr = cor_profiler_info_unknown->QueryInterface(__uuidof(ICorProfilerInfo6), (void**) &this->info_);
     if (FAILED(hr))
     {
-        Logger::Warn("DATADOG TRACER DIAGNOSTICS - Failed to attach profiler: interface ICorProfilerInfo4 not found.");
+        Logger::Warn("DATADOG TRACER DIAGNOSTICS - Failed to attach profiler: interface ICorProfilerInfo6 not found.");
         return E_FAIL;
-    }
-
-    // get ICorProfilerInfo6 for net46+
-    ICorProfilerInfo6* info6;
-    hr = cor_profiler_info_unknown->QueryInterface(__uuidof(ICorProfilerInfo6), (void**)&info6);
-
-    if (SUCCEEDED(hr)) {
-        Logger::Debug("Interface ICorProfilerInfo6 found.");
-        is_net46_or_greater = true;
     }
 
     // get ICorProfilerInfo10 for >= .NET Core 3.0
     ICorProfilerInfo10* info10 = nullptr;
     hr = cor_profiler_info_unknown->QueryInterface(__uuidof(ICorProfilerInfo10), (void**) &info10);
-
     if (SUCCEEDED(hr))
     {
         Logger::Debug("Interface ICorProfilerInfo10 found.");
@@ -130,7 +120,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     for (auto&& env_var : env_vars_to_display)
     {
         WSTRING env_var_value = GetEnvironmentValue(env_var);
-        if (Logger::IsDebugEnabled() || !env_var_value.empty())
+        if (IsDebugEnabled() || !env_var_value.empty())
         {
             Logger::Info("  ", env_var, "=", env_var_value);
         }
@@ -176,7 +166,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     };
 
     rejit_handler = info10 != nullptr     ? new RejitHandler(info10, callback)
-                    : is_net46_or_greater ? new RejitHandler(info6, callback)
                                           : new RejitHandler(this->info_, callback);
 
     DWORD event_mask = COR_PRF_MONITOR_JIT_COMPILATION | COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
@@ -199,7 +188,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         event_mask |= COR_PRF_DISABLE_OPTIMIZATIONS;
     }
 
-    if (is_net46_or_greater && IsNGENEnabled())
+    if (IsNGENEnabled())
     {
         Logger::Info("NGEN is enabled.");
         event_mask |= COR_PRF_MONITOR_CACHE_SEARCHES;
@@ -218,35 +207,18 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     }
 
     // set event mask to subscribe to events and disable NGEN images
-    if (is_net46_or_greater)
-    {
-        hr = info6->SetEventMask2(event_mask, COR_PRF_HIGH_ADD_ASSEMBLY_REFERENCES);
-
-        if (instrument_domain_neutral_assemblies)
-        {
-            Logger::Info("Note: The ", environment::domain_neutral_instrumentation,
-                         " environment variable is not needed when running on .NET Framework 4.5.2 or higher, and will be "
-                         "ignored.");
-        }
-    }
-    else
-    {
-        hr = this->info_->SetEventMask(event_mask);
-
-        if (instrument_domain_neutral_assemblies)
-        {
-            Logger::Info("Detected environment variable ", environment::domain_neutral_instrumentation, "=",
-                         domain_neutral_instrumentation);
-            Logger::Info("Enabling automatic instrumentation of methods called from domain-neutral assemblies. ",
-                         "Please ensure that there is only one AppDomain or, if applications are being hosted in IIS, ",
-                         "ensure that all Application Pools have at most one application each. ",
-                         "Otherwise, a sharing violation (HRESULT 0x80131401) may occur.");
-        }
-    }
+    hr = this->info_->SetEventMask2(event_mask, COR_PRF_HIGH_ADD_ASSEMBLY_REFERENCES);
     if (FAILED(hr))
     {
         Logger::Warn("DATADOG TRACER DIAGNOSTICS - Failed to attach profiler: unable to set event mask.");
         return E_FAIL;
+    }
+
+    if (instrument_domain_neutral_assemblies)
+    {
+        Logger::Info("Note: The ", environment::domain_neutral_instrumentation,
+                     " environment variable is not needed when running on .NET Framework 4.5.2 or higher, and will be "
+                     "ignored.");
     }
 
     runtime_information_ = GetRuntimeInformation(this->info_);
@@ -1593,141 +1565,102 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         return hr;
     }
 
-    // If .NET Framework 4.6 or greater
-    if (is_net46_or_greater)
+    // Define a new static int field _isAssemblyLoaded on the new type.
+    mdFieldDef isAssemblyLoadedFieldToken = mdFieldDefNil;
+    BYTE field_signature[] = {IMAGE_CEE_CS_CALLCONV_FIELD, ELEMENT_TYPE_I4};
+    hr = metadata_emit->DefineField(new_type_def, WStr("_isAssemblyLoaded"), fdStatic | fdPrivate, field_signature,
+                                    sizeof(field_signature), 0, nullptr, 0, &isAssemblyLoadedFieldToken);
+    if (FAILED(hr))
     {
-
-        // Define a new static int field _isAssemblyLoaded on the new type.
-        mdFieldDef isAssemblyLoadedFieldToken = mdFieldDefNil;
-        BYTE field_signature[] = {IMAGE_CEE_CS_CALLCONV_FIELD, ELEMENT_TYPE_I4};
-        hr = metadata_emit->DefineField(new_type_def, WStr("_isAssemblyLoaded"), fdStatic | fdPrivate, field_signature,
-                                        sizeof(field_signature), 0, nullptr, 0, &isAssemblyLoadedFieldToken);
-        if (FAILED(hr))
-        {
-            Logger::Warn("GenerateVoidILStartupMethod: DefineField _isAssemblyLoaded failed");
-            return hr;
-        }
-
-        // Get a TypeRef for System.Threading.Interlocked
-        mdTypeRef interlocked_type_ref;
-        hr =
-            metadata_emit->DefineTypeRefByName(corlib_ref, WStr("System.Threading.Interlocked"), &interlocked_type_ref);
-        if (FAILED(hr))
-        {
-            Logger::Warn("GenerateVoidILStartupMethod: DefineTypeRefByName interlocked_type_ref failed");
-            return hr;
-        }
-
-        // Create method signature for System.Threading.Interlocked::CompareExchange(int32&, int32, int32)
-        COR_SIGNATURE interlocked_compare_exchange_signature[] = {IMAGE_CEE_CS_CALLCONV_DEFAULT,
-                                                                  3,
-                                                                  ELEMENT_TYPE_I4,
-                                                                  ELEMENT_TYPE_BYREF,
-                                                                  ELEMENT_TYPE_I4,
-                                                                  ELEMENT_TYPE_I4,
-                                                                  ELEMENT_TYPE_I4};
-
-        mdMemberRef interlocked_compare_member_ref;
-        hr = metadata_emit->DefineMemberRef(
-            interlocked_type_ref, WStr("CompareExchange"), interlocked_compare_exchange_signature,
-            sizeof(interlocked_compare_exchange_signature), &interlocked_compare_member_ref);
-        if (FAILED(hr))
-        {
-            Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef CompareExchange failed");
-            return hr;
-        }
-
-        /////////////////////////////////////////////
-        // Add IL instructions into the IsAlreadyLoaded method
-        //
-        //  static int _isAssemblyLoaded = 0;
-        //
-        //  public static bool IsAlreadyLoaded() {
-        //      return Interlocked.CompareExchange(ref _isAssemblyLoaded, 1, 0) == 1;
-        //  }
-        //
-        ILRewriter rewriter_already_loaded(this->info_, nullptr, module_id, alreadyLoadedMethodToken);
-        rewriter_already_loaded.InitializeTiny();
-
-        ILInstr* pALFirstInstr = rewriter_already_loaded.GetILList()->m_pNext;
-        ILInstr* pALNewInstr = NULL;
-
-        // ldsflda _isAssemblyLoaded : Load the address of the "_isAssemblyLoaded" static var
-        pALNewInstr = rewriter_already_loaded.NewILInstr();
-        pALNewInstr->m_opcode = CEE_LDSFLDA;
-        pALNewInstr->m_Arg32 = isAssemblyLoadedFieldToken;
-        rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
-
-        // ldc.i4.1 : Load the constant 1 (int) to the stack
-        pALNewInstr = rewriter_already_loaded.NewILInstr();
-        pALNewInstr->m_opcode = CEE_LDC_I4_1;
-        rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
-
-        // ldc.i4.0 : Load the constant 0 (int) to the stack
-        pALNewInstr = rewriter_already_loaded.NewILInstr();
-        pALNewInstr->m_opcode = CEE_LDC_I4_0;
-        rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
-
-        // call int Interlocked.CompareExchange(ref int, int, int) method
-        pALNewInstr = rewriter_already_loaded.NewILInstr();
-        pALNewInstr->m_opcode = CEE_CALL;
-        pALNewInstr->m_Arg32 = interlocked_compare_member_ref;
-        rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
-
-        // ldc.i4.1 : Load the constant 1 (int) to the stack
-        pALNewInstr = rewriter_already_loaded.NewILInstr();
-        pALNewInstr->m_opcode = CEE_LDC_I4_1;
-        rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
-
-        // ceq : Compare equality from two values from the stack
-        pALNewInstr = rewriter_already_loaded.NewILInstr();
-        pALNewInstr->m_opcode = CEE_CEQ;
-        rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
-
-        // ret : Return the value of the comparison
-        pALNewInstr = rewriter_already_loaded.NewILInstr();
-        pALNewInstr->m_opcode = CEE_RET;
-        rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
-
-        hr = rewriter_already_loaded.Export();
-        if (FAILED(hr))
-        {
-            Logger::Warn("GenerateVoidILStartupMethod: Call to ILRewriter.Export() failed for ModuleID=", module_id);
-            return hr;
-        }
+        Logger::Warn("GenerateVoidILStartupMethod: DefineField _isAssemblyLoaded failed");
+        return hr;
     }
-    else
+
+    // Get a TypeRef for System.Threading.Interlocked
+    mdTypeRef interlocked_type_ref;
+    hr = metadata_emit->DefineTypeRefByName(corlib_ref, WStr("System.Threading.Interlocked"), &interlocked_type_ref);
+    if (FAILED(hr))
     {
+        Logger::Warn("GenerateVoidILStartupMethod: DefineTypeRefByName interlocked_type_ref failed");
+        return hr;
+    }
 
-        /////////////////////////////////////////////
-        // Add IL instructions into the IsAlreadyLoaded method
-        //
-        //  public static bool IsAlreadyLoaded() {
-        //      return false;
-        //  }
-        //
-        ILRewriter rewriter_already_loaded(this->info_, nullptr, module_id, alreadyLoadedMethodToken);
-        rewriter_already_loaded.InitializeTiny();
+    // Create method signature for System.Threading.Interlocked::CompareExchange(int32&, int32, int32)
+    COR_SIGNATURE interlocked_compare_exchange_signature[] = {IMAGE_CEE_CS_CALLCONV_DEFAULT,
+                                                              3,
+                                                              ELEMENT_TYPE_I4,
+                                                              ELEMENT_TYPE_BYREF,
+                                                              ELEMENT_TYPE_I4,
+                                                              ELEMENT_TYPE_I4,
+                                                              ELEMENT_TYPE_I4};
 
-        ILInstr* pALFirstInstr = rewriter_already_loaded.GetILList()->m_pNext;
-        ILInstr* pALNewInstr = NULL;
+    mdMemberRef interlocked_compare_member_ref;
+    hr = metadata_emit->DefineMemberRef(
+        interlocked_type_ref, WStr("CompareExchange"), interlocked_compare_exchange_signature,
+        sizeof(interlocked_compare_exchange_signature), &interlocked_compare_member_ref);
+    if (FAILED(hr))
+    {
+        Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef CompareExchange failed");
+        return hr;
+    }
 
-        // ldc.i4.0 : Load the constant 0 (int) to the stack
-        pALNewInstr = rewriter_already_loaded.NewILInstr();
-        pALNewInstr->m_opcode = CEE_LDC_I4_0;
-        rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
+    /////////////////////////////////////////////
+    // Add IL instructions into the IsAlreadyLoaded method
+    //
+    //  static int _isAssemblyLoaded = 0;
+    //
+    //  public static bool IsAlreadyLoaded() {
+    //      return Interlocked.CompareExchange(ref _isAssemblyLoaded, 1, 0) == 1;
+    //  }
+    //
+    ILRewriter rewriter_already_loaded(this->info_, nullptr, module_id, alreadyLoadedMethodToken);
+    rewriter_already_loaded.InitializeTiny();
 
-        // ret : Return
-        pALNewInstr = rewriter_already_loaded.NewILInstr();
-        pALNewInstr->m_opcode = CEE_RET;
-        rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
+    ILInstr* pALFirstInstr = rewriter_already_loaded.GetILList()->m_pNext;
+    ILInstr* pALNewInstr = NULL;
 
-        hr = rewriter_already_loaded.Export();
-        if (FAILED(hr))
-        {
-            Logger::Warn("GenerateVoidILStartupMethod: Call to ILRewriter.Export() failed for ModuleID=", module_id);
-            return hr;
-        }
+    // ldsflda _isAssemblyLoaded : Load the address of the "_isAssemblyLoaded" static var
+    pALNewInstr = rewriter_already_loaded.NewILInstr();
+    pALNewInstr->m_opcode = CEE_LDSFLDA;
+    pALNewInstr->m_Arg32 = isAssemblyLoadedFieldToken;
+    rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
+
+    // ldc.i4.1 : Load the constant 1 (int) to the stack
+    pALNewInstr = rewriter_already_loaded.NewILInstr();
+    pALNewInstr->m_opcode = CEE_LDC_I4_1;
+    rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
+
+    // ldc.i4.0 : Load the constant 0 (int) to the stack
+    pALNewInstr = rewriter_already_loaded.NewILInstr();
+    pALNewInstr->m_opcode = CEE_LDC_I4_0;
+    rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
+
+    // call int Interlocked.CompareExchange(ref int, int, int) method
+    pALNewInstr = rewriter_already_loaded.NewILInstr();
+    pALNewInstr->m_opcode = CEE_CALL;
+    pALNewInstr->m_Arg32 = interlocked_compare_member_ref;
+    rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
+
+    // ldc.i4.1 : Load the constant 1 (int) to the stack
+    pALNewInstr = rewriter_already_loaded.NewILInstr();
+    pALNewInstr->m_opcode = CEE_LDC_I4_1;
+    rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
+
+    // ceq : Compare equality from two values from the stack
+    pALNewInstr = rewriter_already_loaded.NewILInstr();
+    pALNewInstr->m_opcode = CEE_CEQ;
+    rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
+
+    // ret : Return the value of the comparison
+    pALNewInstr = rewriter_already_loaded.NewILInstr();
+    pALNewInstr->m_opcode = CEE_RET;
+    rewriter_already_loaded.InsertBefore(pALFirstInstr, pALNewInstr);
+
+    hr = rewriter_already_loaded.Export();
+    if (FAILED(hr))
+    {
+        Logger::Warn("GenerateVoidILStartupMethod: Call to ILRewriter.Export() failed for ModuleID=", module_id);
+        return hr;
     }
 
     // Define a method on the managed side that will PInvoke into the profiler method:

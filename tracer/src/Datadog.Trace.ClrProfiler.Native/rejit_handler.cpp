@@ -90,7 +90,7 @@ void RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
     ModuleID currentModuleId = m_module->GetModuleId();
     mdMethodDef currentMethodDef = m_methodDef;
     RejitHandler* handler = m_module->GetHandler();
-    ICorProfilerInfo6* pInfo = handler->GetCorProfilerInfo6();
+    ICorProfilerInfo6* pInfo = handler->GetCorProfilerInfo();
 
     if (pInfo != nullptr)
     {
@@ -283,32 +283,17 @@ void RejitHandler::EnqueueThreadLoop(RejitHandler* handler)
 
 void RejitHandler::RequestRejitForInlinersInModule(ModuleID moduleId)
 {
-    if (m_profilerInfo6 != nullptr)
+    std::lock_guard<std::mutex> guard(m_modules_lock);
+    for (const auto& mod : m_modules)
     {
-        std::lock_guard<std::mutex> guard(m_modules_lock);
-        for (const auto& mod : m_modules)
-        {
-            mod.second->RequestRejitForInlinersInModule(moduleId);
-        }
+        mod.second->RequestRejitForInlinersInModule(moduleId);
     }
-}
-
-RejitHandler::RejitHandler(ICorProfilerInfo4* pInfo,
-                           std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> rewriteCallback)
-{
-    m_profilerInfo = pInfo;
-    m_profilerInfo6 = nullptr;
-    m_profilerInfo10 = nullptr;
-    m_rewriteCallback = rewriteCallback;
-    m_rejit_queue = std::make_unique<UniqueBlockingQueue<RejitItem>>();
-    m_rejit_queue_thread = std::make_unique<std::thread>(EnqueueThreadLoop, this);
 }
 
 RejitHandler::RejitHandler(ICorProfilerInfo6* pInfo,
                            std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> rewriteCallback)
 {
     m_profilerInfo = pInfo;
-    m_profilerInfo6 = pInfo;
     m_profilerInfo10 = nullptr;
     m_rewriteCallback = rewriteCallback;
     m_rejit_queue = std::make_unique<UniqueBlockingQueue<RejitItem>>();
@@ -319,7 +304,6 @@ RejitHandler::RejitHandler(ICorProfilerInfo10* pInfo,
                            std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> rewriteCallback)
 {
     m_profilerInfo = pInfo;
-    m_profilerInfo6 = pInfo;
     m_profilerInfo10 = pInfo;
     m_rewriteCallback = rewriteCallback;
     m_rejit_queue = std::make_unique<UniqueBlockingQueue<RejitItem>>();
@@ -470,25 +454,17 @@ HRESULT RejitHandler::NotifyReJITCompilationStarted(FunctionID functionId, ReJIT
     return S_OK;
 }
 
-ICorProfilerInfo4* RejitHandler::GetCorProfilerInfo()
+ICorProfilerInfo6* RejitHandler::GetCorProfilerInfo()
 {
     return m_profilerInfo;
 }
 
-ICorProfilerInfo6* RejitHandler::GetCorProfilerInfo6()
-{
-    return m_profilerInfo6;
-}
-
 void RejitHandler::RequestRejitForNGenInliners()
 {
-    if (m_profilerInfo6 != nullptr)
+    std::lock_guard<std::mutex> guard(m_ngenModules_lock);
+    for (const auto& mod : m_ngenModules)
     {
-        std::lock_guard<std::mutex> guard(m_ngenModules_lock);
-        for (const auto& mod : m_ngenModules)
-        {
-            RequestRejitForInlinersInModule(mod);
-        }
+        RequestRejitForInlinersInModule(mod);
     }
 }
 
