@@ -287,25 +287,40 @@ partial class Build : NukeBuild
         .Description("Runs the Benchmarks project")
         .Executes(() =>
         {
-            DotNetBuild(s => s
-                .SetProjectFile(Solution.GetProject(Projects.BenchmarksTrace))
-                .SetConfiguration(BuildConfiguration)
-                .SetFramework(TargetFramework.NETCOREAPP3_1)
-                .EnableNoDependencies()
-                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
-            );
+            var benchmarksProject = Solution.GetProject(Projects.BenchmarksTrace);
+            var resultsDirectory = benchmarksProject.Directory / "BenchmarkDotNet.Artifacts" / "results";
+            EnsureCleanDirectory(resultsDirectory);
 
-            DotNetRun(s => s
-                .SetProjectFile(Solution.GetProject(Projects.BenchmarksTrace))
-                .SetConfiguration(BuildConfiguration)
-                .SetFramework(TargetFramework.NETCOREAPP3_1)
-                .EnableNoRestore()
-                .EnableNoBuild()
-                .SetApplicationArguments("-r net472 netcoreapp3.1 -m -f * --iterationTime 2000")
-                .SetProcessEnvironmentVariable("DD_SERVICE", "dd-trace-dotnet")
-                .SetProcessEnvironmentVariable("DD_ENV", "CI")
-                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
-            );
+            try
+            {
+                DotNetBuild(s => s
+                    .SetProjectFile(benchmarksProject)
+                    .SetConfiguration(BuildConfiguration)
+                    .SetFramework(TargetFramework.NETCOREAPP3_1)
+                    .EnableNoDependencies()
+                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
+                );
+
+                DotNetRun(s => s
+                    .SetProjectFile(benchmarksProject)
+                    .SetConfiguration(BuildConfiguration)
+                    .SetFramework(TargetFramework.NETCOREAPP3_1)
+                    .EnableNoRestore()
+                    .EnableNoBuild()
+                    .SetApplicationArguments("-r net472 netcoreapp3.1 -m -f * --iterationTime 2000")
+                    .SetProcessEnvironmentVariable("DD_SERVICE", "dd-trace-dotnet")
+                    .SetProcessEnvironmentVariable("DD_ENV", "CI")
+                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
+                );
+            }
+            finally
+            {
+                if (Directory.Exists(resultsDirectory))
+                {
+                    CopyDirectoryRecursively(resultsDirectory, BuildDataDirectory / "benchmarks",
+                                             DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+                }
+            }
         });
 
     /// <summary>

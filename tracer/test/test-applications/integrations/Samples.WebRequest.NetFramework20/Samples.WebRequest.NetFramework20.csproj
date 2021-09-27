@@ -3,7 +3,6 @@
   <PropertyGroup>
     <!-- override to only build/run net452 -->
     <TargetFrameworks>net452</TargetFrameworks>
-    <LoadManagedProfilerFromProfilerDirectory>true</LoadManagedProfilerFromProfilerDirectory>
   </PropertyGroup>
 
   <ItemGroup>

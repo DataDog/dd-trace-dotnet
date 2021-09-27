@@ -5,10 +5,12 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.HttpOverStreams.HttpContent;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Agent.Transports
@@ -23,6 +25,7 @@ namespace Datadog.Trace.Agent.Transports
         /// </summary>
         private const int ResponseReadBufferSize = 12_228;
 
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<HttpStreamRequest>();
         private readonly Uri _uri;
         private readonly DatadogHttpClient _client;
         private readonly IStreamFactory _streamFactory;
@@ -47,24 +50,36 @@ namespace Datadog.Trace.Agent.Transports
             using (JsonWriter writer = new JsonTextWriter(sw))
             {
                 serializer.Serialize(writer, events);
-                await writer.FlushAsync();
+                await writer.FlushAsync().ConfigureAwait(false);
+                await memoryStream.FlushAsync().ConfigureAwait(false);
+                memoryStream.Seek(0, SeekOrigin.Begin);
                 var buffer = memoryStream.GetBuffer();
-                return await PostSegmentAsync(new ArraySegment<byte>(buffer, 0, (int)memoryStream.Length)).ConfigureAwait(false);
+                _headers.Add("Content-Type", "application/json");
+                var result = await PostSegmentAsync(new ArraySegment<byte>(buffer, 0, (int)memoryStream.Length)).ConfigureAwait(false);
+                var response = result.Item1;
+                var request = result.Item2;
+                if (response.StatusCode != 200 || response.StatusCode != 202)
+                {
+                    memoryStream.Seek(0, SeekOrigin.Begin);
+                    using var sr = new StreamReader(memoryStream);
+                    var headers = string.Join(", ", request.Headers.Select(h => $"{h.Name}: {h.Value}"));
+                    var payload = await sr.ReadToEndAsync().ConfigureAwait(false);
+
+                    Log.Warning("AppSec event not correctly sent to backend {statusCode} by class {className} with response {responseText}, request headers: were {headers}, payload was: {payload}", new object[] { response.StatusCode, nameof(HttpStreamRequest), await response.ReadAsStringAsync().ConfigureAwait(false), headers, payload });
+                }
+
+                return response;
             }
         }
 
-        public Task<IApiResponse> PostAsync(ArraySegment<byte> traces)
-        {
-            return PostSegmentAsync(traces);
-        }
+        public async Task<IApiResponse> PostAsync(ArraySegment<byte> traces) => (await PostSegmentAsync(traces).ConfigureAwait(false)).Item1;
 
-        private async Task<IApiResponse> PostSegmentAsync(ArraySegment<byte> segment)
+        private async Task<Tuple<IApiResponse, HttpRequest>> PostSegmentAsync(ArraySegment<byte> segment)
         {
             using (var bidirectionalStream = _streamFactory.GetBidirectionalStream())
             {
                 var content = new BufferContent(segment);
                 var request = new HttpRequest("POST", _uri.Host, _uri.PathAndQuery, _headers, content);
-
                 // send request, get response
                 var response = await _client.SendAsync(request, bidirectionalStream, bidirectionalStream).ConfigureAwait(false);
 
@@ -81,7 +96,7 @@ namespace Datadog.Trace.Agent.Transports
                 await response.Content.CopyToAsync(buffer).ConfigureAwait(false);
                 responseContentStream.Position = 0;
 
-                return new HttpStreamResponse(response.StatusCode, responseContentStream.Length, response.GetContentEncoding(), responseContentStream, response.Headers);
+                return new Tuple<IApiResponse, HttpRequest>(new HttpStreamResponse(response.StatusCode, responseContentStream.Length, response.GetContentEncoding(), responseContentStream, response.Headers), request);
             }
         }
     }

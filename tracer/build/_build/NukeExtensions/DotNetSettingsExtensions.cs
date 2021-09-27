@@ -84,14 +84,6 @@ internal static partial class DotNetSettingsExtensions
         return settings.SetProperty("BuildProjectReferences", false);
     }
 
-    public static DotNetTestSettings EnableMemoryDumps(this DotNetTestSettings settings, MiniDumpType dumpType = MiniDumpType.MiniDumpWithPrivateReadWriteMemory)
-    {
-        dumpType = dumpType != MiniDumpType.Default ? dumpType : MiniDumpType.MiniDumpWithPrivateReadWriteMemory;
-        return settings
-            .SetProcessEnvironmentVariable("COMPlus_DbgEnableMiniDump", "1")
-            .SetProcessEnvironmentVariable("COMPlus_DbgMiniDumpType", ((int) dumpType).ToString());
-    }
-
     public static DotNetTestSettings EnableTrxLogOutput(this DotNetTestSettings settings, string resultsDirectory)
     {
         return settings

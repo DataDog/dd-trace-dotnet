@@ -822,6 +822,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
 
 HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
 {
+    is_attached_.store(false);
+
     CorProfilerBase::Shutdown();
 
     // keep this lock until we are done using the module,
@@ -835,7 +837,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
         rejit_handler = nullptr;
     }
     Logger::Info("Exiting. Stats: ", Stats::Instance()->ToString());
-    is_attached_.store(false);
     Logger::Shutdown();
     return S_OK;
 }
@@ -1080,17 +1081,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId, Function
         return S_OK;
     }
 
-
-    RejitHandlerModule* handlerModule = nullptr;
-    if (rejit_handler->TryGetModule(calleeModuleId, &handlerModule))
+    if (is_attached_ && rejit_handler != nullptr && rejit_handler->HasModuleAndMethod(calleeModuleId, calleFunctionToken))
     {
-        if (handlerModule->ContainsMethod(calleFunctionToken))
-        {
-            Logger::Debug("*** JITInlining: Inlining disabled for [ModuleId=", calleeModuleId,
-                          ", MethodDef=", TokenStr(&calleFunctionToken), "]");
-            *pfShouldInline = false;
-            return S_OK;
-        }
+        Logger::Debug("*** JITInlining: Inlining disabled for [ModuleId=", calleeModuleId,
+                      ", MethodDef=", TokenStr(&calleFunctionToken), "]");
+        *pfShouldInline = false;
     }
 
     return S_OK;

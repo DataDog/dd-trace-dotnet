@@ -1,7 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <LoadManagedProfilerFromProfilerDirectory>true</LoadManagedProfilerFromProfilerDirectory>
-  </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="NServiceBus" Version="7.5.0" />

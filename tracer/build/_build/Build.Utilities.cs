@@ -130,7 +130,7 @@ partial class Build
                 {"CORECLR_PROFILER", "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"},
                 {"DD_INTEGRATIONS", TracerHomeDirectory / "integrations.json" },
                 {"DD_DOTNET_TRACER_HOME", TracerHomeDirectory },
-                {"ASPNETCORE_URLS", "https://*:5003" },
+                {"ASPNETCORE_URLS", "http://*:5003" },
             };
 
             if (IsWin)

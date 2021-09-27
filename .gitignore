@@ -324,6 +324,7 @@ tracer/deploy/AzureAppServices/
 !tracer/build/artifacts
 
 # profiler build files
+build_data
 tracer/src/Datadog.Trace.ClrProfiler.Native/build/
 tracer/src/Datadog.Trace.ClrProfiler.Native/deps/
 tracer/src/Datadog.Trace.ClrProfiler.Native/CMakeFiles/
