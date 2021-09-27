@@ -12,6 +12,7 @@ using Datadog.Trace.AppSec.Agent;
 using Datadog.Trace.AppSec.EventModel;
 using Datadog.Trace.AppSec.Transport;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -129,14 +130,7 @@ namespace Datadog.Trace.AppSec
 
             var additiveContext = transport.GetAdditiveContext();
 
-            if (additiveContext == null)
-            {
-                additiveContext = _powerWaf.CreateContext();
-                transport.SetAdditiveContext(additiveContext);
-            }
-
-            // run the WAF and execute the results
-            using var wafResult = additiveContext.Run(args);
+            var wafResult = new Result(default, DDWAF_RET_CODE.DDWAF_GOOD);
             if (wafResult.ReturnCode == ReturnCode.Monitor || wafResult.ReturnCode == ReturnCode.Block)
             {
                 Log.Information($"AppSec: Attack detected! Action: {wafResult.ReturnCode}, Blocking enabled : {_settings.BlockingEnabled}");
