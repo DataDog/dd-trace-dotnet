@@ -115,12 +115,12 @@ namespace Datadog.Trace.Ci
         {
             if (!string.IsNullOrEmpty(repository))
             {
-                if (repository.EndsWith("/"))
+                if (repository.EndsWith("/") || repository.EndsWith("\\"))
                 {
                     repository = repository.Substring(0, repository.Length - 1);
                 }
 
-                Regex regex = new Regex(@"/([a-zA-Z0-9\\\-_.]*)$");
+                Regex regex = new Regex(@"[/\\]?([a-zA-Z0-9\-_.]*)$");
                 Match match = regex.Match(repository);
                 if (match.Success && match.Groups.Count > 1)
                 {

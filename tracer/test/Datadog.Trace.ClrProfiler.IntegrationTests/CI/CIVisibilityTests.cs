@@ -21,6 +21,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [InlineData("user@host.xz:~user/path/to/repo.git/", "repo")]
         [InlineData("ssh://login@server.com:12345/absolute/path/to/repository", "repository")]
         [InlineData("ssh://login@server.com:12345/repository.git", "repository")]
+        [InlineData("repo.git", "repo")]
+        [InlineData("./repo", "repo")]
+        [InlineData(@".\repo", "repo")]
+        [InlineData(@"\\wsl$\path\to\repo", "repo")]
+        [InlineData(@"C:\path\to\repo", "repo")]
+        [InlineData("", "")]
+        [InlineData("%^&*", "")]
         public void GetServiceNameFromRepository(string repository, string serviceName)
         {
             Assert.Equal(serviceName, Ci.CIVisibility.GetServiceNameFromRepository(repository));
