@@ -102,18 +102,13 @@ namespace Datadog.Trace
                 }
                 else
                 {
-                    if (span.Tags is CommonTags tags)
-                    {
-                        tags.SamplingPriority = (int)_samplingPriority;
-                    }
-                    else
-                    {
-                        span.SetMetric(Metrics.SamplingPriority, (int)_samplingPriority);
-                    }
+                    SetSamplingPriority(span, _samplingPriority.Value);
                 }
             }
 
             ArraySegment<Span> spansToWrite = default;
+
+            bool shouldPropagateMetadata = false;
 
             lock (this)
             {
@@ -133,6 +128,10 @@ namespace Datadog.Trace
                         span.TraceId,
                         _spans.Count);
 
+                    // We may not be sending the root span, so we need to propagate the metadata to other spans of the partial trace
+                    // There's no point in doing that inside of the lock, so we set a flag for later
+                    shouldPropagateMetadata = true;
+
                     spansToWrite = _spans.GetArray();
 
                     // Making the assumption that, if the number of closed spans was big enough to trigger partial flush,
@@ -140,6 +139,11 @@ namespace Datadog.Trace
                     // Therefore, we bypass the resize logic and immediately allocate the array to its maximum size
                     _spans = new ArrayBuilder<Span>(spansToWrite.Count);
                 }
+            }
+
+            if (shouldPropagateMetadata)
+            {
+                PropagateMetadata(spansToWrite);
             }
 
             if (spansToWrite.Count > 0)
@@ -163,6 +167,37 @@ namespace Datadog.Trace
         public TimeSpan ElapsedSince(DateTimeOffset date)
         {
             return Elapsed + (_utcStart - date);
+        }
+
+        private static void SetSamplingPriority(Span span, SamplingPriority samplingPriority)
+        {
+            if (span.Tags is CommonTags tags)
+            {
+                tags.SamplingPriority = (int)samplingPriority;
+            }
+            else
+            {
+                span.Tags.SetMetric(Metrics.SamplingPriority, (int)samplingPriority);
+            }
+        }
+
+        private void PropagateMetadata(ArraySegment<Span> spans)
+        {
+            // The agent looks for the sampling priority on the first span that has no parent
+            // Finding those spans is not trivial, so instead we apply the priority to every span
+
+            var samplingPriority = _samplingPriority;
+
+            if (samplingPriority == null)
+            {
+                return;
+            }
+
+            // Using a for loop to avoid the boxing allocation on ArraySegment.GetEnumerator
+            for (int i = 0; i < spans.Count; i++)
+            {
+                SetSamplingPriority(spans.Array[i + spans.Offset], samplingPriority.Value);
+            }
         }
 
         private void DecorateRootSpan(Span span)
