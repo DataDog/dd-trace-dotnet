@@ -433,12 +433,12 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                 binaryDirs.Add(managedBinariesDirectory);
             }
 
-#if DEBUG
-            AddProfilerLibrariesInDebug(profilerHomeDirectory, binaryDirs);
-#endif  // #if DEBUG
+            if (System.Diagnostics.Debugger.IsAttached)
+            {
+                AddProfilerLibrariesInDebug(profilerHomeDirectory, binaryDirs);
+            }
         }
 
-#if DEBUG
         private static void AddProfilerLibrariesInDebug(string profilerHomeDirectory, List<string> binaryDirs)
         {
             // OPTION C (Debug builds only!):
@@ -467,7 +467,6 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                 binaryDirs.Add(managedBinariesDirectory);
             }
         }
-#endif  // #if DEBUG
 
         private static string GetRuntimeBasedProductBinariesSubdir()
         {
