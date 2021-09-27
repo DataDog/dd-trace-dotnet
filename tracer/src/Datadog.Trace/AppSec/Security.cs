@@ -120,54 +120,8 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        private void RunWafAndReact(IDictionary<string, object> args, ITransport transport, Span span)
-        {
-            void Report(ITransport transport, Span span, Waf.ReturnTypes.Managed.Return result)
-            {
-                var attack = Attack.From(result, span, transport);
-                _agentWriter.AddEvent(attack);
-            }
-
-            var additiveContext = transport.GetAdditiveContext();
-
-            var wafResult = new Result(default, DDWAF_RET_CODE.DDWAF_GOOD);
-            if (wafResult.ReturnCode == ReturnCode.Monitor || wafResult.ReturnCode == ReturnCode.Block)
-            {
-                Log.Information($"AppSec: Attack detected! Action: {wafResult.ReturnCode}, Blocking enabled : {_settings.BlockingEnabled}");
-                if (Log.IsEnabled(LogEventLevel.Debug))
-                {
-                    Log.Information($"AppSec: Attack arguments " + Encoder.FormatArgs(args));
-                }
-
-                var managedWafResult = Waf.ReturnTypes.Managed.Return.From(wafResult);
-                if (_settings.BlockingEnabled && wafResult.ReturnCode == ReturnCode.Block)
-                {
-                    transport.Block();
-#if !NETFRAMEWORK
-                    var guid = Guid.NewGuid();
-                    toExecute.TryAdd(guid, () => Report(transport, span, managedWafResult));
-                    transport.AddRequestScope(guid);
-#else
-                    Report(transport, span, managedWafResult);
-#endif
-                }
-                else
-                {
-                    Report(transport, span, managedWafResult);
-                }
-            }
-        }
-
         private void InstrumentationGatewayInstrumentationGatewayEvent(object sender, InstrumentationGatewayEventArgs e)
         {
-            try
-            {
-                RunWafAndReact(e.EventData, e.Transport, e.RelatedSpan);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Call into the security module failed");
-            }
         }
 
         private bool AreArchitectureAndOsSupported()
