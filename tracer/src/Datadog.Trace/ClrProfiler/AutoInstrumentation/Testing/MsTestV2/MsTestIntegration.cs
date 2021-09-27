@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
         internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MsTestIntegration));
 
-        internal static bool IsEnabled => CIVisibility.Enabled && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
+        internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
         internal static Scope OnMethodBegin<TTestMethod>(TTestMethod testMethodInfo, Type type)
             where TTestMethod : ITestMethod

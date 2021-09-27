@@ -27,7 +27,7 @@ namespace Datadog.Trace.Tools.Runner
         public bool SetEnvironmentVariables { get; set; }
 
         [Option("ci-visibility", Required = false, Default = false, HelpText = "Run the command in CI Visibility Mode")]
-        public bool EnableVisibilityMode { get; set; }
+        public bool EnableCIVisibilityMode { get; set; }
 
         [Option("dd-env", Required = false, HelpText = "Sets the environment name for the unified service tagging.")]
         public string Environment { get; set; }
