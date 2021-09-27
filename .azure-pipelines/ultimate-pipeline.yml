@@ -34,7 +34,7 @@ trigger:
 #     - Fmt lib:
       - shared/src/native-lib/fmt_x64-windows-static/*
       - shared/src/native-lib/fmt_x86-windows-static/*
-#     - Spglob lib:      
+#     - Spdlob lib:      
       - shared/src/native-lib/spdlog/*
 #     - Mics common native sources:
       - shared/src/native-src/*
