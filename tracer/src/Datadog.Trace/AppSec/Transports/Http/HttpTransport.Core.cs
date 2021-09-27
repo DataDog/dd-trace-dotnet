@@ -63,7 +63,6 @@ namespace Datadog.Trace.AppSec.Transport.Http
         public void SetAdditiveContext(IContext additiveContext)
         {
             context.Features.Set(additiveContext);
-            context.Response.RegisterForDispose(additiveContext);
         }
 
         public void AddRequestScope(Guid guid) => context.Items.Add("Security", guid);

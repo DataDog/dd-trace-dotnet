@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.AppSec.DataFormat;
 #if NETFRAMEWORK
 using System.Web.Routing;
 #endif
@@ -18,21 +19,24 @@ namespace Datadog.Trace.Util.Http
 {
     internal static partial class HttpRequestExtensions
     {
-        private static object ConvertRouteValueDictionary(RouteValueDictionary routeDataDict)
+        private static Node ConvertRouteValueDictionary(RouteValueDictionary routeDataDict)
         {
-            return routeDataDict.ToDictionary(
+            var dict = routeDataDict.ToDictionary(
                 c => c.Key,
                 c =>
                     c.Value switch
                     {
                         List<RouteData> routeDataList => ConvertRouteValueList(routeDataList),
-                        _ => c.Value?.ToString()
+                        _ => Node.NewString(c.Value?.ToString())
                     });
+
+            return Node.NewMap(dict);
         }
 
-        private static object ConvertRouteValueList(List<RouteData> routeDataList)
+        private static Node ConvertRouteValueList(List<RouteData> routeDataList)
         {
-            return routeDataList.Select(x => ConvertRouteValueDictionary(x.Values)).ToList();
+             var list = routeDataList.Select(x => ConvertRouteValueDictionary(x.Values)).ToList();
+             return Node.NewList(list);
         }
     }
 }

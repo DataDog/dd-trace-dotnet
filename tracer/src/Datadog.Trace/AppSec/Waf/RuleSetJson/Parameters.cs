@@ -1,16 +1,18 @@
-// <copyright file="IWaf.cs" company="Datadog">
+// <copyright file="Parameters.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Collections.Generic;
-using System.Text;
 
-namespace Datadog.Trace.AppSec.Waf
+namespace Datadog.Trace.AppSec.Waf.RuleSetJson
 {
-    internal interface IWaf
+    internal class Parameters
     {
-        public IContext CreateContext();
+        public List<string> Inputs { get; set; }
+
+        public List<string> List { get; set; }
+
+        public string Regex { get; set; }
     }
 }

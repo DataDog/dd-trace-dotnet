@@ -4,7 +4,9 @@
 // </copyright>
 
 using System;
+using System.Linq;
 using System.Net;
+using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec.EventModel
@@ -23,9 +25,9 @@ namespace Datadog.Trace.AppSec.EventModel
         [JsonProperty("context")]
         public Context Context { get; set; }
 
-        public static Attack From(Waf.ReturnTypes.Managed.Return result, Trace.Span span, Transport.ITransport transport)
+        public static Attack From(IResult result, Trace.Span span, Transport.ITransport transport)
         {
-            var ruleMatch = result.ResultData.Filter[0];
+            var ruleMatch = result.Data.First();
             var request = transport.Request();
             var frameworkDescription = FrameworkDescription.Instance;
             var attack = new Attack
@@ -41,7 +43,7 @@ namespace Datadog.Trace.AppSec.EventModel
                     Http = new Http
                     {
                         Request = request,
-                        Response = transport.Response(result.Blocked)
+                        Response = transport.Response(false)
                     },
                     Actor = new Actor { Ip = new Ip { Address = request.RemoteIp } },
                     Tracer = new Tracer
@@ -50,17 +52,17 @@ namespace Datadog.Trace.AppSec.EventModel
                         RuntimeVersion = frameworkDescription.ProductVersion,
                     }
                 },
-                Blocked = result.Blocked,
-                Rule = new Rule { Name = result.ResultData.Flow, Id = result.ResultData.Rule },
+                Blocked = false,
+                Rule = new Rule { Name = ruleMatch.Name, Id = ruleMatch.Id },
                 DetectedAt = DateTime.UtcNow,
                 RuleMatch = new RuleMatch
                 {
                     Operator = ruleMatch.Operator,
-                    OperatorValue = ruleMatch.OperatorValue,
-                    Highlight = new string[] { ruleMatch.MatchStatus },
+                    OperatorValue = ruleMatch.Operator,
+                    Highlight = new string[] { ruleMatch.ResolvedValue },
                     Parameters = new Parameter[] { new Parameter { Name = ruleMatch.BindingAccessor, Value = ruleMatch.ResolvedValue } }
                 },
-                Type = result.ResultData.Flow
+                Type = ruleMatch.Operator
             };
             if (span != null)
             {

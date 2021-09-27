@@ -4,13 +4,14 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 
 namespace Datadog.Trace.AppSec.Waf
 {
-    internal interface IResult : IDisposable
+    internal interface IResult
     {
         ReturnCode ReturnCode { get; }
 
-        string Data { get; }
+        IReadOnlyList<RuleMatch> Data { get; }
     }
 }

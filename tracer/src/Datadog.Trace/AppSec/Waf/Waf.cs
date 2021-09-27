@@ -7,7 +7,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Datadog.Trace.AppSec.Waf.Rules;
+using Datadog.Trace.AppSec.Waf.RuleSetJson;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -19,33 +20,22 @@ namespace Datadog.Trace.AppSec.Waf
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Waf));
 
-        private readonly WafHandle wafHandle;
-        private bool disposed = false;
+        private readonly RuleSet ruleSet;
+        private readonly List<Rule> rules;
 
-        private Waf(WafHandle wafHandle)
+        private Waf(RuleSet ruleSet)
         {
-            this.wafHandle = wafHandle;
-        }
-
-        ~Waf()
-        {
-            Dispose(false);
-        }
-
-        public Version Version
-        {
-            get
+            this.ruleSet = ruleSet;
+            this.rules = new List<Rule>();
+            foreach (var e in ruleSet.Events)
             {
-                var ver = WafNative.GetVersion();
-                return new Version(ver.Major, ver.Minor, ver.Patch);
+                rules.Add(new Rule(e.Id, e.Name, e.Conditions, e.Transformers));
             }
         }
 
         // null rulesFile means use rules embedded in the manifest
         public static Waf Initialize(string rulesFile)
         {
-            var argCache = new List<Obj>();
-            Obj configObj;
             try
             {
                 using var stream = GetRulesStream(rulesFile);
@@ -55,7 +45,12 @@ namespace Datadog.Trace.AppSec.Waf
                     return null;
                 }
 
-                configObj = CreatObjFromRulesStream(argCache, stream);
+                var jsonSerializer = new JsonSerializer();
+                using var streamReader = new StreamReader(stream);
+                using var jsonReader = new JsonTextReader(streamReader);
+                var ruleFile = (RuleSet)jsonSerializer.Deserialize(jsonReader, typeof(RuleSet));
+
+                return new Waf(ruleFile);
             }
             catch (Exception ex)
             {
@@ -65,61 +60,16 @@ namespace Datadog.Trace.AppSec.Waf
                 }
                 else
                 {
-                    Log.Error(ex, "AppSec could not read the rule file emmbeded in the manifest as it was invalid. AppSec will not run any protections in this application.");
+                    Log.Error(ex, "AppSec could not read the rule file embedded in the manifest as it was invalid. AppSec will not run any protections in this application.");
                 }
 
                 return null;
-            }
-
-            try
-            {
-                DdwafConfigStruct args = default;
-                var ruleHandle = WafNative.Init(configObj.RawPtr, ref args);
-                return new Waf(new WafHandle(ruleHandle));
-            }
-            finally
-            {
-                configObj?.Dispose();
-                foreach (var arg in argCache)
-                {
-                    arg.Dispose();
-                }
             }
         }
 
         public IContext CreateContext()
         {
-            var handle = WafNative.InitContext(wafHandle.Handle, WafNative.ObjectFreeFuncPtr);
-            return new Context(handle);
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        public void Dispose(bool disposing)
-        {
-            if (disposed)
-            {
-                return;
-            }
-
-            disposed = true;
-
-            wafHandle?.Dispose();
-        }
-
-        private static Obj CreatObjFromRulesStream(List<Obj> argCache, Stream stream)
-        {
-            using var reader = new StreamReader(stream);
-            using var jsonReader = new JsonTextReader(reader);
-            var root = JToken.ReadFrom(jsonReader);
-
-            LogRuleDetailsIfDebugEnabled(root);
-
-            return Encoder.Encode(root, argCache);
+            return new Context(rules);
         }
 
         private static Stream GetRulesManifestStream()

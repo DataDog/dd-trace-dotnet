@@ -132,7 +132,6 @@ namespace Datadog.Trace.PlatformHelpers
         public Scope StartAspNetCorePipelineScope(Tracer tracer, IDatadogSecurity security, HttpContext httpContext)
         {
             var shouldTrace = tracer.Settings.IsIntegrationEnabled(_integrationId);
-            var shouldSecure = security.Settings.Enabled;
             Scope scope = null;
 
             if (shouldTrace)
@@ -140,25 +139,7 @@ namespace Datadog.Trace.PlatformHelpers
                 scope = StartCoreScope(tracer, httpContext, httpContext.Request);
             }
 
-            if (shouldSecure)
-            {
-                RaiseInstrumentationEvent(security, httpContext, httpContext.Request, scope.Span);
-            }
-
             return scope;
-        }
-
-        private void RaiseInstrumentationEvent(IDatadogSecurity security, HttpContext context, HttpRequest request, Span span, RouteData routeData = null)
-        {
-            try
-            {
-                var dic = request.PrepareArgsForWaf(routeData);
-                security.InstrumentationGateway.RaiseEvent(dic, new HttpTransport(context), span);
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex, "Error occurred raising instrumentation event");
-            }
         }
 
         private readonly struct HeadersCollectionAdapter : IHeadersCollection

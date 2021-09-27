@@ -11,11 +11,11 @@ using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
-// #pragma warning disable SA1306
-// #pragma warning disable SA1134
-// #pragma warning disable SA1111
-// #pragma warning disable SA1400
-// #pragma warning disable SA1401
+#pragma warning disable SA1306
+#pragma warning disable SA1134
+#pragma warning disable SA1111
+#pragma warning disable SA1400
+#pragma warning disable SA1401
 
 partial class Build : NukeBuild
 {

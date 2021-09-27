@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Datadog.Trace.AppSec.Agent;
+using Datadog.Trace.AppSec.DataFormat;
 using Datadog.Trace.AppSec.EventModel;
 using Datadog.Trace.AppSec.Transport;
 using Datadog.Trace.AppSec.Waf;
@@ -20,7 +21,7 @@ namespace Datadog.Trace.AppSec
     /// <summary>
     /// The Secure is responsible coordinating app sec
     /// </summary>
-    internal class Security : IDatadogSecurity, IDisposable
+    internal class Security : IDatadogSecurity
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Security>();
 
@@ -106,11 +107,6 @@ namespace Datadog.Trace.AppSec
 
         internal SecuritySettings Settings => _settings;
 
-        /// <summary>
-        /// Frees resouces
-        /// </summary>
-        public void Dispose() => _powerWaf?.Dispose();
-
         internal void Execute(Guid guid)
         {
             if (toExecute.TryRemove(guid, out var value))
@@ -119,9 +115,9 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        private void RunWafAndReact(IDictionary<string, object> args, ITransport transport, Span span)
+        private void RunWafAndReact(Node args, ITransport transport, Span span)
         {
-            void Report(ITransport transport, Span span, Waf.ReturnTypes.Managed.Return result)
+            void Report(ITransport transport, Span span, IResult result)
             {
                 var attack = Attack.From(result, span, transport);
                 _agentWriter.AddEvent(attack);
@@ -136,30 +132,29 @@ namespace Datadog.Trace.AppSec
             }
 
             // run the WAF and execute the results
-            using var wafResult = additiveContext.Run(args);
+            var wafResult = additiveContext.Run(args);
             if (wafResult.ReturnCode == ReturnCode.Monitor || wafResult.ReturnCode == ReturnCode.Block)
             {
                 Log.Information($"AppSec: Attack detected! Action: {wafResult.ReturnCode}, Blocking enabled : {_settings.BlockingEnabled}");
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
-                    Log.Information($"AppSec: Attack arguments " + Encoder.FormatArgs(args));
+                    Log.Debug($"AppSec: Attack arguments TODO");
                 }
 
-                var managedWafResult = Waf.ReturnTypes.Managed.Return.From(wafResult);
                 if (_settings.BlockingEnabled && wafResult.ReturnCode == ReturnCode.Block)
                 {
                     transport.Block();
 #if !NETFRAMEWORK
                     var guid = Guid.NewGuid();
-                    toExecute.TryAdd(guid, () => Report(transport, span, managedWafResult));
+                    toExecute.TryAdd(guid, () => Report(transport, span, wafResult));
                     transport.AddRequestScope(guid);
 #else
-                    Report(transport, span, managedWafResult);
+                    Report(transport, span, wafResult);
 #endif
                 }
                 else
                 {
-                    Report(transport, span, managedWafResult);
+                    Report(transport, span, wafResult);
                 }
             }
         }
@@ -208,8 +203,6 @@ namespace Datadog.Trace.AppSec
             {
                 _instrumentationGateway.InstrumentationGatewayEvent -= InstrumentationGatewayInstrumentationGatewayEvent;
             }
-
-            Dispose();
         }
 
         private void RegisterShutdownTasks()

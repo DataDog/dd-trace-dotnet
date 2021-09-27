@@ -6,11 +6,12 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Datadog.Trace.AppSec.DataFormat;
 
 namespace Datadog.Trace.AppSec.Waf
 {
-    internal interface IContext : IDisposable
+    internal interface IContext
     {
-        IResult Run(IDictionary<string, object> args);
+        IResult Run(Node args);
     }
 }

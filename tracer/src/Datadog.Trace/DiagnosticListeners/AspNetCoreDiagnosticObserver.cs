@@ -739,11 +739,6 @@ namespace Datadog.Trace.DiagnosticListeners
                         span = StartMvcCoreSpan(tracer, parentSpan, typedArg, httpContext, request);
                     }
                 }
-
-                if (shouldSecure)
-                {
-                    RaiseInstrumentationEvent(security, httpContext, request, span ?? parentSpan, typedArg.RouteData);
-                }
             }
         }
 

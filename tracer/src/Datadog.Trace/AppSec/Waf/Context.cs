@@ -6,7 +6,8 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Datadog.Trace.AppSec.DataFormat;
+using Datadog.Trace.AppSec.Waf.Rules;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.AppSec.Waf
@@ -14,55 +15,29 @@ namespace Datadog.Trace.AppSec.Waf
     internal class Context : IContext
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Context>();
-        private readonly IntPtr contextHandle;
-        private readonly List<Obj> argCache = new List<Obj>();
-        private bool disposed = false;
 
-        public Context(IntPtr contextHandle)
+        private readonly List<Rule> rules;
+
+        public Context(List<Rule> rules)
         {
-            this.contextHandle = contextHandle;
+            this.rules = rules;
         }
 
-        ~Context()
+        public IResult Run(Node args)
         {
-            Dispose(false);
-        }
+            var matches = new List<RuleMatch>();
+            foreach (var rule in rules)
+            {
+                if (rule.IsMatch(args))
+                {
+                    matches.Add(new RuleMatch() { Id = rule.Id, Name = rule.Name });
+                }
+            }
 
-        public IResult Run(IDictionary<string, object> args)
-        {
-            var pwArgs = Encoder.Encode(args, argCache);
-
-            var rawAgs = pwArgs.RawPtr;
-            DdwafResultStruct retNative = default;
-
-            var code = WafNative.Run(contextHandle, rawAgs, ref retNative, 1000000);
-
-            var ret = new Result(retNative, code);
+            var result = matches.Count > 0 ? ReturnCode.Monitor : ReturnCode.Good;
+            var ret = new Result(result, matches);
 
             return ret;
-        }
-
-        public void Dispose(bool disposing)
-        {
-            if (disposed)
-            {
-                return;
-            }
-
-            disposed = true;
-
-            foreach (var arg in argCache)
-            {
-                arg.Dispose();
-            }
-
-            WafNative.ContextDestroy(contextHandle);
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
         }
     }
 }
