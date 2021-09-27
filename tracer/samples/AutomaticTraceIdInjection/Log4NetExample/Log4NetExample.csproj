@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Datadog.Trace" Version="1.28.3-prerelease" />
+    <PackageReference Include="Datadog.Trace" Version="1.28.6" />
     <PackageReference Include="log4net" Version="2.0.12" />
     <PackageReference Include="log4net.Ext.Json" Version="2.0.8.3" />
   </ItemGroup>
