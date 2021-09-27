@@ -14,7 +14,7 @@ using UpdateVendors;
 
 namespace Honeypot
 {
-    public static class UpdateHoneypot
+    public static class DependabotFileManager
     {
         public static void UpdateVendors(AbsolutePath honeypotProject)
         {

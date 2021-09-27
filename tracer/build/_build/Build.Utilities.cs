@@ -202,8 +202,8 @@ partial class Build
        .Description("Updates the vendored dependency code and dependabot template")
        .Executes(() =>
        {
-            var honeypotProject = RootDirectory / "honeypot"  /  "Datadog.Dependabot.Vendors.Honeypot.csproj";
-            UpdateHoneypot.UpdateVendors(honeypotProject);
+            var dependabotProj = TracerDirectory / "dependabot"  /  "Datadog.Dependabot.Vendors.csproj";
+            DependabotFileManager.UpdateVendors(dependabotProj);
 
             var vendorDirectory = Solution.GetProject(Projects.DatadogTrace).Directory / "Vendors";
             var downloadDirectory = TemporaryDirectory / "Downloads";
@@ -227,8 +227,8 @@ partial class Build
 
             GenerateIntegrationDefinitions.Run(integrations, TracerDirectory);
 
-            var honeypotProject = RootDirectory / "honeypot" / "Datadog.Dependabot.Integrations.Honeypot.csproj";
-            await UpdateHoneypot.UpdateIntegrations(honeypotProject, integrations);
+            var dependabotProj = TracerDirectory / "dependabot" / "Datadog.Dependabot.Integrations.csproj";
+            await DependabotFileManager.UpdateIntegrations(dependabotProj, integrations);
         });
 
     Target UpdateVersion => _ => _
