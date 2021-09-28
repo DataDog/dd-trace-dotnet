@@ -1,0 +1,83 @@
+﻿// <copyright file="LoggerFactoryIntegrationCommon.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+using System;
+using System.Reflection;
+using System.Reflection.Emit;
+using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Logging;
+using Datadog.Trace.Logging.DirectSubmission;
+
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission
+{
+    internal static class LoggerFactoryIntegrationCommon<TLoggerFactory>
+    {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LoggerFactoryIntegrationCommon<TLoggerFactory>));
+
+        // ReSharper disable once StaticMemberInGenericType
+        private static readonly Type ProviderInterfaces;
+
+        static LoggerFactoryIntegrationCommon()
+        {
+            // The ILoggerProvider type is in a different assembly to the LoggerFactory, so go via the ILogger type
+            // returned by CreateLogger
+            var loggerFactoryType = typeof(TLoggerFactory);
+            var abstractionsAssembly = loggerFactoryType.GetMethod("CreateLogger")?.ReturnType.Assembly;
+            var iLoggerProviderType = abstractionsAssembly.GetType("Microsoft.Extensions.Logging.ILoggerProvider");
+            var iSupportExternalScopeType = abstractionsAssembly.GetType("Microsoft.Extensions.Logging.ISupportExternalScope");
+
+            if (iSupportExternalScopeType is null)
+            {
+                // ISupportExternalScope is only available in v2.1+
+                // We can just duck type ILoggerProvider directly
+                ProviderInterfaces = iLoggerProviderType;
+            }
+
+            // We need to implement both ILoggerProvider and ISupportExternalScope
+            // because LoggerFactory uses pattern matching to check if we implement the latter
+            // Duck Typing can currently only implement a single interface, so emit
+            // a new interface that implements both ILoggerProvider and ISupportExternalScope
+            // and duck cast to that
+            var thisAssembly = typeof(DirectSubmissionLoggerProvider).Assembly;
+            var assemblyName = new AssemblyName("DirectLogSubmissionILoggerFactoryAssembly")
+            {
+                Version = thisAssembly.GetName().Version
+            };
+
+            var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
+            var moduleBuilder = (ModuleBuilder)assemblyBuilder.DefineDynamicModule("MainModule");
+
+            var typeBuilder = moduleBuilder.DefineType(
+                "DirectSubmissionLoggerProviderProxy",
+                TypeAttributes.Interface | TypeAttributes.Public | TypeAttributes.Abstract,
+                parent: null,
+                interfaces: new[] { iLoggerProviderType, iSupportExternalScopeType });
+
+            ProviderInterfaces = typeBuilder.CreateTypeInfo().AsType();
+        }
+
+        internal static object AddDirectSubmissionLoggerProvider(TLoggerFactory loggerFactory)
+        {
+            var provider = new DirectSubmissionLoggerProvider(
+                DirectLogSubmission.Instance.Sink,
+                DirectLogSubmission.Instance.Formatter,
+                DirectLogSubmission.Instance.Settings.MinimumLevel);
+
+            return AddDirectSubmissionLoggerProvider(loggerFactory, provider);
+        }
+
+        // Internal for testing
+        internal static object AddDirectSubmissionLoggerProvider(TLoggerFactory loggerFactory, DirectSubmissionLoggerProvider provider)
+        {
+            // Need tto use the
+            var proxy = provider.DuckCast(ProviderInterfaces);
+            var loggerFactoryProxy = loggerFactory.DuckCast<ILoggerFactory>();
+            loggerFactoryProxy.AddProvider(proxy);
+
+            Log.Information("Direct log submission via ILogger enabled");
+            return proxy;
+        }
+    }
+}

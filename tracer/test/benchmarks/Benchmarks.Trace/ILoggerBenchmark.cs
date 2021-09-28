@@ -7,6 +7,7 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger;
 using Datadog.Trace.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using IExternalScopeProvider = Microsoft.Extensions.Logging.IExternalScopeProvider;
 
 namespace Benchmarks.Trace
 {
