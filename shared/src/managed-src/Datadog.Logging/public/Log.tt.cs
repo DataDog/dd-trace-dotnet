@@ -38,10 +38,10 @@ namespace <#= LogNamespace #>
     /// <para>
     /// For example:
     /// 
-    /// Library "Datadog.AutoInstrumentation.Profiler.Managed.dll" gets a copy of this file with the adjusted namespace:
+    /// Library "Datadog.Monitoring.Profiler.Managed.dll" gets a copy of this file with the adjusted namespace:
     /// 
     /// <code>
-    ///   namespace Datadog.AutoInstrumentation.Profiler
+    ///   namespace Datadog.Monitoring.Profiler
     ///   {
     ///       public static class Log
     ///       {
@@ -50,10 +50,10 @@ namespace <#= LogNamespace #>
     ///   }
     /// </code>
     /// 
-    /// Library "Datadog.AutoInstrumentation.Tracer.Managed.dll" also gets a copy of this file with the adjusted namespace:
+    /// Library "Datadog.Monitoring.Tracer.Managed.dll" also gets a copy of this file with the adjusted namespace:
     /// 
     /// <code>
-    ///   namespace Datadog.AutoInstrumentation.Tracer.Managed
+    ///   namespace Datadog.Monitoring.Tracer.Managed
     ///   {
     ///       public static class Log
     ///       {
@@ -71,7 +71,7 @@ namespace <#= LogNamespace #>
     /// 
     /// <para>COMPOSING AND PERSISTING LOGS.</para>
     /// <para>
-    /// To continue the above example, assume that the entrypoint of the application is another library "Datadog.AutoInstrumentation.TracerAndProfilerLoader.dll".
+    /// To continue the above example, assume that the entrypoint of the application is another library "Datadog.Monitoring.TracerAndProfilerLoader.dll".
     /// It uses the the two above libraries and it wants to direct the logs to some particular logging destnation (sink).
     /// For that, the TracerAndProfilerLoader takes a dependencty on a few additional source files.
     /// Those are also small, do not have any non-framework dependencies and run on Net Fx and Core Fx (see also <c>Datadog.Logging.Composition.props</c>).
@@ -83,11 +83,11 @@ namespace <#= LogNamespace #>
     ///  - COmposing multiple sinks together
     /// 
     /// <code>
-    ///   namespace Datadog.AutoInstrumentation.TracerAndProfilerLoader
+    ///   namespace Datadog.Monitoring.TracerAndProfilerLoader
     ///   {
-    ///       using ComposerLogAdapter = Datadog.AutoInstrumentation.ProductComposer.LogAdapter;
-    ///       using ProfilerLog = Datadog.AutoInstrumentation.Profiler.Log;
-    ///       using TracerLog = Datadog.AutoInstrumentation.Tracer.Managed.Log;
+    ///       using ComposerLogAdapter = Datadog.Monitoring.ProductComposer.LogAdapter;
+    ///       using ProfilerLog = Datadog.Monitoring.Profiler.Log;
+    ///       using TracerLog = Datadog.Monitoring.Tracer.Managed.Log;
     ///       
     ///       internal static class LogComposer
     ///       {
