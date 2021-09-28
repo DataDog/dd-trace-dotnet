@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
         MethodName = "AppendLoopOnAppenders",
         ReturnTypeName = ClrNames.Int32,
         ParameterTypeNames = new[] { "log4net.Core.LoggingEvent" },
-        MinimumVersion = "2.0.0",
+        MinimumVersion = "1.0.0",
         MaximumVersion = "2.*.*",
         IntegrationName = "Log4Net")]
     [Browsable(false)]

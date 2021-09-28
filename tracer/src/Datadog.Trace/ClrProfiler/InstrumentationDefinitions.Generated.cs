@@ -205,7 +205,7 @@ namespace Datadog.Trace.ClrProfiler
                 new("Confluent.Kafka", "Confluent.Kafka.Producer`2+TypedDeliveryHandlerShim_Action", ".ctor",  new[] { "System.Void", "System.String", "!0", "!1", "System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceSyncDeliveryHandlerIntegration"),
 
                 // Log4Net
-                new("log4net", "log4net.Util.AppenderAttachedImpl", "AppendLoopOnAppenders",  new[] { "System.Int32", "log4net.Core.LoggingEvent" }, 2, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net.AppenderAttachedImplIntegration"),
+                new("log4net", "log4net.Util.AppenderAttachedImpl", "AppendLoopOnAppenders",  new[] { "System.Int32", "log4net.Core.LoggingEvent" }, 1, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net.AppenderAttachedImplIntegration"),
 
                 // MongoDb
                 new("MongoDB.Driver.Core", "MongoDB.Driver.Core.WireProtocol.CommandUsingCommandMessageWireProtocol`1", "Execute",  new[] { "T", "MongoDB.Driver.Core.Connections.IConnection", "System.Threading.CancellationToken" }, 2, 2, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.IWireProtocol_Generic_Execute_Integration"),
