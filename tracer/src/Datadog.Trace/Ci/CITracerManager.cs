@@ -6,6 +6,7 @@
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -14,8 +15,8 @@ namespace Datadog.Trace.Ci
 {
     internal class CITracerManager : TracerManager, ILockedTracer
     {
-        public CITracerManager(ImmutableTracerSettings settings, IAgentWriter agentWriter, ISampler sampler, IScopeManager scopeManager, IDogStatsd statsd, RuntimeMetricsWriter runtimeMetricsWriter, string defaultServiceName)
-            : base(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetricsWriter, defaultServiceName)
+        public CITracerManager(ImmutableTracerSettings settings, IAgentWriter agentWriter, ISampler sampler, IScopeManager scopeManager, IDogStatsd statsd, RuntimeMetricsWriter runtimeMetricsWriter, DirectLogSubmissionManager logSubmissionManager, string defaultServiceName)
+            : base(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetricsWriter, logSubmissionManager, defaultServiceName)
         {
         }
     }

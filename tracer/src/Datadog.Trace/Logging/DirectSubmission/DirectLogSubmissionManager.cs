@@ -1,0 +1,59 @@
+﻿// <copyright file="DirectLogSubmissionManager.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+using System;
+using Datadog.Trace.Logging.DirectSubmission.Formatting;
+using Datadog.Trace.Logging.DirectSubmission.Sink;
+using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
+
+namespace Datadog.Trace.Logging.DirectSubmission
+{
+    internal class DirectLogSubmissionManager : IDisposable
+    {
+        private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<DirectLogSubmissionManager>();
+
+        private DirectLogSubmissionManager(DirectLogSubmissionSettings settings, IDatadogSink sink, LogFormatter formatter)
+        {
+            Settings = settings;
+            Sink = sink;
+            Formatter = formatter;
+        }
+
+        public DirectLogSubmissionSettings Settings { get; }
+
+        public IDatadogSink Sink { get; }
+
+        public LogFormatter Formatter { get; }
+
+        public static DirectLogSubmissionManager Create(DirectLogSubmissionSettings settings, string serviceName)
+        {
+            var formatter = new LogFormatter(settings, serviceName);
+            if (!settings.IsEnabled)
+            {
+                return new DirectLogSubmissionManager(settings, new NullDatadogSink(), formatter);
+            }
+
+            // TODO: create batching options from config? Or should we not expose these options, and stick to the defaults?
+            var batchingOptions = new BatchingSinkOptions();
+            var apiFactory = LogsTransportStrategy.Get(settings);
+            var logsApi = new LogsApi(settings.IntakeUrl, settings.ApiKey, apiFactory);
+
+            return new DirectLogSubmissionManager(settings, new DatadogSink(logsApi, formatter, batchingOptions), formatter);
+        }
+
+        public void Dispose()
+        {
+            try
+            {
+                Logger.Debug("Running shutdown tasks for logs direct submission");
+                Sink?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error flushing logs on shutdown");
+            }
+        }
+    }
+}

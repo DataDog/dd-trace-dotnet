@@ -1,4 +1,4 @@
-// <copyright file="TracerManagerFactory.cs" company="Datadog">
+﻿// <copyright file="TracerManagerFactory.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,6 +11,7 @@ using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
@@ -39,7 +40,8 @@ namespace Datadog.Trace
                 sampler: null,
                 scopeManager: previous?.ScopeManager, // no configuration, so can always use the same one
                 statsd: null,
-                runtimeMetrics: null);
+                runtimeMetrics: null,
+                logSubmissionManager: null);
         }
 
         /// <summary>
@@ -52,7 +54,8 @@ namespace Datadog.Trace
             ISampler sampler,
             IScopeManager scopeManager,
             IDogStatsd statsd,
-            RuntimeMetricsWriter runtimeMetrics)
+            RuntimeMetricsWriter runtimeMetrics,
+            DirectLogSubmissionManager logSubmissionManager)
         {
             settings ??= ImmutableTracerSettings.FromDefaultSources();
 
@@ -72,7 +75,9 @@ namespace Datadog.Trace
                 runtimeMetrics ??= new RuntimeMetricsWriter(statsd ?? CreateDogStatsdClient(settings, defaultServiceName, settings.Exporter.DogStatsdPort), TimeSpan.FromSeconds(10));
             }
 
-            var tracerManager = CreateTracerManagerFrom(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, defaultServiceName);
+            logSubmissionManager ??= DirectLogSubmissionManager.Create(settings.LogSubmissionSettings, defaultServiceName);
+
+            var tracerManager = CreateTracerManagerFrom(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, defaultServiceName);
             return tracerManager;
         }
 
@@ -86,8 +91,9 @@ namespace Datadog.Trace
             IScopeManager scopeManager,
             IDogStatsd statsd,
             RuntimeMetricsWriter runtimeMetrics,
+            DirectLogSubmissionManager logSubmissionManager,
             string defaultServiceName)
-            => new TracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, defaultServiceName);
+            => new TracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, defaultServiceName);
 
         protected virtual ISampler GetSampler(ImmutableTracerSettings settings)
         {
