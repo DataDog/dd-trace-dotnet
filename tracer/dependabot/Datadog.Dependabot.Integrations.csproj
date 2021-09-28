@@ -121,6 +121,11 @@
     <!-- Latest package https://www.nuget.org/packages/Confluent.Kafka/1.8.1 -->
     <PackageReference Include="Confluent.Kafka" Version="1.8.1" />
 
+    <!-- Integration: log4net -->
+    <!-- Assembly: log4net -->
+    <!-- Latest package https://www.nuget.org/packages/log4net/2.0.12 -->
+    <PackageReference Include="log4net" Version="2.0.12" />
+
     <!-- Integration: MongoDB.Driver.Core -->
     <!-- Assembly: MongoDB.Driver.Core -->
     <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver.Core/2.13.1 -->
@@ -155,6 +160,11 @@
     <!-- Assembly: RabbitMQ.Client -->
     <!-- Latest package https://www.nuget.org/packages/RabbitMQ.Client/6.2.2 -->
     <PackageReference Include="RabbitMQ.Client" Version="6.2.2" />
+
+    <!-- Integration: Serilog -->
+    <!-- Assembly: Serilog -->
+    <!-- Latest package https://www.nuget.org/packages/Serilog/2.10.0 -->
+    <PackageReference Include="Serilog" Version="2.10.0" />
 
     <!-- Integration: ServiceStack.Redis -->
     <!-- Assembly: ServiceStack.Redis -->
