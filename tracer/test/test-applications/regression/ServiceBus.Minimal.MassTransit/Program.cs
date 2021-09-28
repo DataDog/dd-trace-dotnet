@@ -1,4 +1,4 @@
-﻿namespace ServiceBus.Minimal.MassTransit
+namespace ServiceBus.Minimal.MassTransit
 {
     using System;
     using System.Collections.Generic;
@@ -96,8 +96,8 @@
         static async Task SendMessagesAsync(IServiceProvider provider, int jobCount = 10, int activeThreshold = 10, int? delayInSeconds = null)
         {
             var clientFactory = provider.GetRequiredService<IClientFactory>();
-            var submitBatchClient = clientFactory.CreateRequestClient<SubmitBatch>();
-            var batchStatusClient = clientFactory.CreateRequestClient<BatchStatusRequested>();
+            var submitBatchClient = clientFactory.CreateRequestClient<SubmitBatch>(TimeSpan.FromSeconds(60));
+            var batchStatusClient = clientFactory.CreateRequestClient<BatchStatusRequested>(TimeSpan.FromSeconds(60));
 
             List<Task> batchCompletedTasks = new();
 
