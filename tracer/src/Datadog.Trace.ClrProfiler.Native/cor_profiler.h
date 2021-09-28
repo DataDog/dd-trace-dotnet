@@ -43,7 +43,7 @@ private:
     //
     // CallTarget Members
     //
-    RejitHandler* rejit_handler = nullptr;
+    std::unique_ptr<RejitHandler> rejit_handler = nullptr;
 
     // Cor assembly properties
     AssemblyProperty corAssemblyProperty{};
