@@ -304,6 +304,7 @@ partial class Build
                     "area:customer-samples",
                     "area:samples-and-test-apps",
                     "area:third-party-test-suites",
+                    "area:test-apps",
                     "area:tools",
                     "area:vendors",
                 };
