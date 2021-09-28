@@ -70,6 +70,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                         // check the test framework
                         AssertTargetSpanContains(targetSpan, TestTags.Framework, "MSTestV2");
+                        Assert.True(targetSpan.Tags.Remove(TestTags.FrameworkVersion));
 
                         // check the version
                         AssertTargetSpanEqual(targetSpan, "version", "1.0.0");
