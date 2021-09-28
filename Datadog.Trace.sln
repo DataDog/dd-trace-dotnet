@@ -434,6 +434,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.N
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Samples.Giraffe", "tracer\test\test-applications\integrations\Samples.Giraffe\Samples.Giraffe.fsproj", "{56D6CF7A-B36A-4552-AF5A-1C16B7B089ED}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AzureFunctions.Version3.OutOfProcess", "tracer\test\test-applications\azure-functions\Samples.AzureFunctions.Version3.OutOfProcess\Samples.AzureFunctions.Version3.OutOfProcess.csproj", "{5B2C6A8C-60CF-43EE-A05A-8FAE30FB6EB0}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{24d3e547-8897-4111-baa2-b92f50cc13d4}*SharedItemsImports = 5
@@ -1848,6 +1850,16 @@ Global
 		{56D6CF7A-B36A-4552-AF5A-1C16B7B089ED}.Release|x64.Build.0 = Release|x64
 		{56D6CF7A-B36A-4552-AF5A-1C16B7B089ED}.Release|x86.ActiveCfg = Release|x86
 		{56D6CF7A-B36A-4552-AF5A-1C16B7B089ED}.Release|x86.Build.0 = Release|x86
+		{5B2C6A8C-60CF-43EE-A05A-8FAE30FB6EB0}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{5B2C6A8C-60CF-43EE-A05A-8FAE30FB6EB0}.Debug|x64.ActiveCfg = Debug|x64
+		{5B2C6A8C-60CF-43EE-A05A-8FAE30FB6EB0}.Debug|x64.Build.0 = Debug|x64
+		{5B2C6A8C-60CF-43EE-A05A-8FAE30FB6EB0}.Debug|x86.ActiveCfg = Debug|x86
+		{5B2C6A8C-60CF-43EE-A05A-8FAE30FB6EB0}.Debug|x86.Build.0 = Debug|x86
+		{5B2C6A8C-60CF-43EE-A05A-8FAE30FB6EB0}.Release|Any CPU.ActiveCfg = Release|x86
+		{5B2C6A8C-60CF-43EE-A05A-8FAE30FB6EB0}.Release|x64.ActiveCfg = Release|x64
+		{5B2C6A8C-60CF-43EE-A05A-8FAE30FB6EB0}.Release|x64.Build.0 = Release|x64
+		{5B2C6A8C-60CF-43EE-A05A-8FAE30FB6EB0}.Release|x86.ActiveCfg = Release|x86
+		{5B2C6A8C-60CF-43EE-A05A-8FAE30FB6EB0}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1998,6 +2010,7 @@ Global
 		{5A806F4B-39E7-4F38-B36F-F5CFC4F8760A} = {9518425A-36A5-4B8F-B0B8-6137DB88441D}
 		{7DFDD339-30C5-4C1D-AB07-F9106256AF77} = {933F1D4B-1216-4BC1-956E-8C30818BAA0F}
 		{56D6CF7A-B36A-4552-AF5A-1C16B7B089ED} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{5B2C6A8C-60CF-43EE-A05A-8FAE30FB6EB0} = {C4C1E313-C7C1-4490-AECE-0DD0062380A4}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
