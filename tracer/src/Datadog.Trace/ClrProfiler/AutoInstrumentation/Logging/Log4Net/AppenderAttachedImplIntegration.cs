@@ -41,15 +41,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
             if (tracer.Settings.LogsInjectionEnabled &&
                 !loggingEvent.Properties.Contains(CorrelationIdentifier.ServiceKey))
             {
-                var span = tracer.ActiveScope?.Span;
-                loggingEvent.Properties[CorrelationIdentifier.ServiceKey] = CorrelationIdentifier.Service;
-                loggingEvent.Properties[CorrelationIdentifier.VersionKey] = CorrelationIdentifier.Version;
-                loggingEvent.Properties[CorrelationIdentifier.EnvKey] = CorrelationIdentifier.Env;
+                loggingEvent.Properties[CorrelationIdentifier.ServiceKey] = tracer.DefaultServiceName ?? string.Empty;
+                loggingEvent.Properties[CorrelationIdentifier.VersionKey] = tracer.Settings.ServiceVersion ?? string.Empty;
+                loggingEvent.Properties[CorrelationIdentifier.EnvKey] = tracer.Settings.Environment ?? string.Empty;
 
+                var span = tracer.ActiveScope?.Span;
                 if (span is not null)
                 {
-                    loggingEvent.Properties[CorrelationIdentifier.TraceIdKey] = CorrelationIdentifier.TraceId;
-                    loggingEvent.Properties[CorrelationIdentifier.SpanIdKey] = CorrelationIdentifier.SpanId;
+                    loggingEvent.Properties[CorrelationIdentifier.TraceIdKey] = span.TraceId;
+                    loggingEvent.Properties[CorrelationIdentifier.SpanIdKey] = span.SpanId;
                 }
             }
 

@@ -85,15 +85,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
                 loggingEvent.TryDuckCast<LoggingEventStruct>(out var loggingEventStruct) &&
                 !loggingEventStruct.Properties.Contains(CorrelationIdentifier.ServiceKey))
             {
-                var span = tracer.ActiveScope?.Span;
-                loggingEventStruct.Properties[CorrelationIdentifier.ServiceKey] = CorrelationIdentifier.Service;
-                loggingEventStruct.Properties[CorrelationIdentifier.VersionKey] = CorrelationIdentifier.Version;
-                loggingEventStruct.Properties[CorrelationIdentifier.EnvKey] = CorrelationIdentifier.Env;
+                loggingEventStruct.Properties[CorrelationIdentifier.ServiceKey] = tracer.DefaultServiceName ?? string.Empty;
+                loggingEventStruct.Properties[CorrelationIdentifier.VersionKey] = tracer.Settings.ServiceVersion ?? string.Empty;
+                loggingEventStruct.Properties[CorrelationIdentifier.EnvKey] = tracer.Settings.Environment ?? string.Empty;
 
+                var span = tracer.ActiveScope?.Span;
                 if (span is not null)
                 {
-                    loggingEventStruct.Properties[CorrelationIdentifier.TraceIdKey] = CorrelationIdentifier.TraceId;
-                    loggingEventStruct.Properties[CorrelationIdentifier.SpanIdKey] = CorrelationIdentifier.SpanId;
+                    loggingEventStruct.Properties[CorrelationIdentifier.TraceIdKey] = span.TraceId;
+                    loggingEventStruct.Properties[CorrelationIdentifier.SpanIdKey] = span.SpanId;
                 }
             }
 
