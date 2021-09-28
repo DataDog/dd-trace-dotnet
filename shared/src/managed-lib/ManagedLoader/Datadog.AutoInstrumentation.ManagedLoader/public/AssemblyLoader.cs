@@ -432,46 +432,6 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             {
                 binaryDirs.Add(managedBinariesDirectory);
             }
-
-            if (System.Diagnostics.Debugger.IsAttached)
-            {
-                AddProfilerLibrariesInDebug(profilerHomeDirectory, binaryDirs);
-            }
-        }
-
-        private static void AddProfilerLibrariesInDebug(string profilerHomeDirectory, List<string> binaryDirs)
-        {
-            // OPTION C (Debug builds only!):
-            // For debug builds only we also support F5-running from within VS.
-            // For that we use the relavite path from where our build places the native profiler engine DLL to where the build
-            // places the managed profiler engine DLL.
-            const string NativeToManagedRelativePath =
-#if DEBUG
-                @"..\..\..\..\Debug-AnyCPU\src\ProfilerEngine\Datadog.AutoInstrumentation.Profiler.Managed\";
-#else
-                @"..\..\..\..\Release-AnyCPU\src\ProfilerEngine\Datadog.AutoInstrumentation.Profiler.Managed\";
-#endif
-
-
-            string managedBinariesRoot = Path.Combine(profilerHomeDirectory, NativeToManagedRelativePath);
-
-            string managedBinariesRootFull;
-            try
-            {
-                managedBinariesRootFull = Path.GetFullPath(managedBinariesRoot);
-            }
-            catch
-            {
-                managedBinariesRootFull = managedBinariesRoot;
-            }
-
-            string managedBinariesSubdir = GetRuntimeBasedProductBinariesSubdir();
-            string managedBinariesDirectory = Path.Combine(managedBinariesRootFull, managedBinariesSubdir);
-
-            if (binaryDirs != null && !String.IsNullOrWhiteSpace(managedBinariesDirectory))
-            {
-                binaryDirs.Add(managedBinariesDirectory);
-            }
         }
 
         private static string GetRuntimeBasedProductBinariesSubdir()
