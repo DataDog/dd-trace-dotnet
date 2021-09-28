@@ -36,13 +36,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
         public static CallTargetState OnMethodBegin<TTarget, TLoggingEvent>(TTarget instance, TLoggingEvent loggingEvent)
             where TLoggingEvent : ILoggingEvent
         {
-            if (!loggingEvent.Properties.Contains(CorrelationIdentifier.TraceIdKey))
+            var tracer = Tracer.Instance;
+
+            if (tracer.Settings.LogsInjectionEnabled &&
+                !loggingEvent.Properties.Contains(CorrelationIdentifier.ServiceKey))
             {
+                var span = tracer.ActiveScope?.Span;
                 loggingEvent.Properties[CorrelationIdentifier.ServiceKey] = CorrelationIdentifier.Service;
                 loggingEvent.Properties[CorrelationIdentifier.VersionKey] = CorrelationIdentifier.Version;
                 loggingEvent.Properties[CorrelationIdentifier.EnvKey] = CorrelationIdentifier.Env;
-                loggingEvent.Properties[CorrelationIdentifier.TraceIdKey] = CorrelationIdentifier.TraceId;
-                loggingEvent.Properties[CorrelationIdentifier.SpanIdKey] = CorrelationIdentifier.SpanId;
+
+                if (span is not null)
+                {
+                    loggingEvent.Properties[CorrelationIdentifier.TraceIdKey] = CorrelationIdentifier.TraceId;
+                    loggingEvent.Properties[CorrelationIdentifier.SpanIdKey] = CorrelationIdentifier.SpanId;
+                }
             }
 
             return new CallTargetState(scope: null, state: null);
