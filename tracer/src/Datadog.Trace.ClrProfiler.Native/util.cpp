@@ -11,8 +11,6 @@
 namespace trace
 {
 
-bool dump_il_rewrite_enabled = false;
-
 template <typename Out>
 void Split(const WSTRING& s, wchar_t delim, Out result)
 {

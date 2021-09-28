@@ -44,9 +44,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         Logger::EnableDebug();
     }
 
-    // check if dump il rewrite is enabled
-    dump_il_rewrite_enabled = IsDumpILRewriteEnabled();
-
     CorProfilerBase::Initialize(cor_profiler_info_unknown);
 
     // check if tracing is completely disabled
@@ -74,6 +71,26 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     }
 #endif
 
+    // get Profiler interface (for net46+)
+    HRESULT hr = cor_profiler_info_unknown->QueryInterface(__uuidof(ICorProfilerInfo6), (void**) &this->info_);
+    if (FAILED(hr))
+    {
+        Logger::Warn("DATADOG TRACER DIAGNOSTICS - Failed to attach profiler: interface ICorProfilerInfo6 not found.");
+        return E_FAIL;
+    }
+
+    // get ICorProfilerInfo10 for >= .NET Core 3.0
+    ICorProfilerInfo10* info10 = nullptr;
+    hr = cor_profiler_info_unknown->QueryInterface(__uuidof(ICorProfilerInfo10), (void**) &info10);
+    if (SUCCEEDED(hr))
+    {
+        Logger::Debug("Interface ICorProfilerInfo10 found.");
+    }
+    else
+    {
+        info10 = nullptr;
+    }
+
     const auto process_name = GetCurrentProcessName();
     const auto include_process_names = GetEnvironmentValues(environment::include_process_names);
 
@@ -96,26 +113,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         return E_FAIL;
     }
 
-    // get Profiler interface (for net46+)
-    HRESULT hr = cor_profiler_info_unknown->QueryInterface(__uuidof(ICorProfilerInfo6), (void**) &this->info_);
-    if (FAILED(hr))
-    {
-        Logger::Warn("DATADOG TRACER DIAGNOSTICS - Failed to attach profiler: interface ICorProfilerInfo6 not found.");
-        return E_FAIL;
-    }
-
-    // get ICorProfilerInfo10 for >= .NET Core 3.0
-    ICorProfilerInfo10* info10 = nullptr;
-    hr = cor_profiler_info_unknown->QueryInterface(__uuidof(ICorProfilerInfo10), (void**) &info10);
-    if (SUCCEEDED(hr))
-    {
-        Logger::Debug("Interface ICorProfilerInfo10 found.");
-    }
-    else
-    {
-        info10 = nullptr;
-    }
-
     Logger::Info("Environment variables:");
     for (auto&& env_var : env_vars_to_display)
     {
@@ -129,7 +126,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     if (IsAzureAppServices())
     {
         Logger::Info("Profiler is operating within Azure App Services context.");
-        in_azure_app_services = true;
 
         const auto app_pool_id_value = GetEnvironmentValue(environment::azure_app_services_app_pool_id);
 
@@ -199,26 +195,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         event_mask |= COR_PRF_DISABLE_ALL_NGEN_IMAGES;
     }
 
-    const WSTRING domain_neutral_instrumentation = GetEnvironmentValue(environment::domain_neutral_instrumentation);
-
-    if (domain_neutral_instrumentation == WStr("1") || domain_neutral_instrumentation == WStr("true"))
-    {
-        instrument_domain_neutral_assemblies = true;
-    }
-
     // set event mask to subscribe to events and disable NGEN images
     hr = this->info_->SetEventMask2(event_mask, COR_PRF_HIGH_ADD_ASSEMBLY_REFERENCES);
     if (FAILED(hr))
     {
         Logger::Warn("DATADOG TRACER DIAGNOSTICS - Failed to attach profiler: unable to set event mask.");
         return E_FAIL;
-    }
-
-    if (instrument_domain_neutral_assemblies)
-    {
-        Logger::Info("Note: The ", environment::domain_neutral_instrumentation,
-                     " environment variable is not needed when running on .NET Framework 4.5.2 or higher, and will be "
-                     "ignored.");
     }
 
     runtime_information_ = GetRuntimeInformation(this->info_);
@@ -228,7 +210,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     }
 
     // writing opcodes vector for the IL dumper
-    if (dump_il_rewrite_enabled)
+    if (IsDumpILRewriteEnabled())
     {
 #define OPDEF(c, s, pop, push, args, type, l, s1, s2, flow) opcodes_names.push_back(s);
 #include "opcode.def"
@@ -257,6 +239,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
         // if assembly failed to load, skip it entirely,
         // otherwise we can crash the process if module is not valid
         CorProfilerBase::AssemblyLoadFinished(assembly_id, hr_status);
+        return S_OK;
+    }
+
+    if (!is_attached_)
+    {
         return S_OK;
     }
 
@@ -614,8 +601,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
     // store module info for later lookup
     module_id_to_info_map_[module_id] = module_metadata;
 
-    // We call the function to analyze the module and request the ReJIT of integrations defined in this module.
-    CallTarget_RequestRejitForModule(module_id, module_metadata, integration_methods_);
     Logger::Debug("ModuleLoadFinished stored metadata for ", module_id, " ", module_info.assembly.name, " AppDomain ",
                   module_info.assembly.app_domain_id, " ", module_info.assembly.app_domain_name);
 
@@ -1037,7 +1022,7 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
 HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(const WCHAR* wszAssemblyPath,
                                                              ICorProfilerAssemblyReferenceProvider* pAsmRefProvider)
 {
-    if (in_azure_app_services)
+    if (IsAzureAppServices())
     {
         Logger::Debug("GetAssemblyReferences skipping entire callback because this is running in Azure App Services, which "
                       "isn't yet supported for this feature. AssemblyPath=",
@@ -1128,7 +1113,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(const WCHAR* wszAss
 
     Logger::Debug("GetAssemblyReferences extending assembly closure for ", assembly_name, " to include ", asmRefInfo.szName,
                   ". Path=", wszAssemblyPath);
-    instrument_domain_neutral_assemblies = true;
 
     return S_OK;
 }
@@ -2744,7 +2728,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
 
     // *** Store the original il code text if the dump_il option is enabled.
     std::string original_code;
-    if (dump_il_rewrite_enabled)
+    if (IsDumpILRewriteEnabled())
     {
         original_code =
             GetILCodes("*** CallTarget_RewriterCallback(): Original Code: ", &rewriter, *caller, module_metadata);
@@ -3117,7 +3101,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
     newEHClauses[ehCount - 1] = finallyClause;
     rewriter.SetEHClause(newEHClauses, ehCount);
 
-    if (dump_il_rewrite_enabled)
+    if (IsDumpILRewriteEnabled())
     {
         Logger::Info(original_code);
         Logger::Info(GetILCodes("*** CallTarget_RewriterCallback(): Modified Code: ", &rewriter, *caller, module_metadata));
