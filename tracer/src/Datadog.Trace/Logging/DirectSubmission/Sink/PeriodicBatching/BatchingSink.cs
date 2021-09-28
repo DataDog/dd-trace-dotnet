@@ -29,11 +29,11 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
     {
         private readonly IDatadogLogger _logger = DatadogLogging.GetLoggerFor<BatchingSink>();
         private readonly int _batchSizeLimit;
-        private readonly BoundedConcurrentQueue<string> _queue;
+        private readonly BoundedConcurrentQueue<DatadogLogEvent> _queue;
         private readonly BatchedConnectionStatus _status;
         private readonly PortableTimer _timer;
         private readonly object _stateLock = new();
-        private readonly Queue<string> _waitingBatch = new();
+        private readonly Queue<DatadogLogEvent> _waitingBatch = new();
 
         private bool _unloading;
         private bool _started;
@@ -56,7 +56,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
             }
 
             _batchSizeLimit = sinkOptions.BatchSizeLimit;
-            _queue = new BoundedConcurrentQueue<string>(sinkOptions.QueueLimit);
+            _queue = new BoundedConcurrentQueue<DatadogLogEvent>(sinkOptions.QueueLimit);
             _status = new BatchedConnectionStatus(sinkOptions.Period);
             _timer = new PortableTimer(_ => OnTick());
         }
@@ -69,7 +69,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
         /// </summary>
         /// <param name="logEvent">Log event to emit.</param>
         /// <exception cref="ArgumentNullException">The event is null.</exception>
-        public void EnqueueLog(string logEvent)
+        public void EnqueueLog(DatadogLogEvent logEvent)
         {
             if (logEvent == null)
             {
@@ -125,7 +125,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
         /// Emit a batch of log events, running to completion synchronously.
         /// </summary>
         /// <param name="events">The events to emit.</param>
-        protected abstract Task EmitBatch(Queue<string> events);
+        protected abstract Task EmitBatch(Queue<DatadogLogEvent> events);
 
         /// <summary>
         /// Free resources held by the sink.
@@ -152,10 +152,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
                     while (_waitingBatch.Count < _batchSizeLimit &&
                            _queue.TryDequeue(out var next))
                     {
-                        if (CanInclude(next))
-                        {
-                            _waitingBatch.Enqueue(next);
-                        }
+                        _waitingBatch.Enqueue(next);
                     }
 
                     if (_waitingBatch.Count == 0)
@@ -224,9 +221,6 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
             // Dispose anything used in child implementations
             AdditionalDispose();
         }
-
-        // TODO: Remove this if we don't need it?
-        private bool CanInclude(string @event) => true;
 
         protected abstract void AdditionalDispose();
     }
