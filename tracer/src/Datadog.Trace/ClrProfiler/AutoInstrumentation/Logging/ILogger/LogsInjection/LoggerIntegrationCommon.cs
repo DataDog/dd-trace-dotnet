@@ -10,15 +10,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
 {
     internal static class LoggerIntegrationCommon
     {
-        public const string IntegrationName = nameof(Configuration.IntegrationId.ILogger);
-        private const IntegrationId IntegrationId = Configuration.IntegrationId.ILogger;
+        public const string IntegrationName = nameof(IntegrationId.ILogger);
 
         private static readonly DatadogLoggingScope DatadogScope = new();
 
         public static void AddScope<TAction, TState>(Tracer tracer, TAction callback, TState state)
         {
             if (tracer.Settings.LogsInjectionEnabled
-             && tracer.Settings.IsIntegrationEnabled(IntegrationId)
+             && tracer.Settings.IsIntegrationEnabled(IntegrationId.ILogger)
              && callback is Action<object, TState> foreachCallback)
             {
                 foreachCallback.Invoke(DatadogScope, state);
