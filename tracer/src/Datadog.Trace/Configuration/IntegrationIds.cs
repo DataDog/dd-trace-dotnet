@@ -36,6 +36,7 @@ namespace Datadog.Trace.Configuration
         AwsSqs,
         ILogger,
         Aerospike,
-        AzureFunctions
+        AzureFunctions,
+        Serilog,
     }
 }
