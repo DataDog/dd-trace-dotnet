@@ -7,8 +7,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Logging.DirectSubmission.Formatting;
+using Datadog.Trace.Logging.DirectSubmission.Sink;
 using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
 using FluentAssertions;
 using Xunit;
@@ -26,7 +29,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
         public void WhenAnEventIsEnqueuedItIsWrittenToABatch_OnFlush()
         {
             var pbs = new InMemoryBatchedSink(TimeSpan.Zero, new BatchingSinkOptions(batchSizeLimit: 2, periodMs: TinyWaitMs));
-            var evt = "Some event";
+            var evt = new TestEvent("Some event");
             pbs.EnqueueLog(evt);
             pbs.Dispose();
 
@@ -41,9 +44,9 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
         public void WhenAnEventIsEnqueuedItIsWrittenToABatch_OnTimer()
         {
             var pbs = new InMemoryBatchedSink(TimeSpan.Zero, new BatchingSinkOptions(batchSizeLimit: 2, periodMs: TinyWaitMs));
-            var evt = "Some event";
+            var evt = new TestEvent("Some event");
             pbs.EnqueueLog(evt);
-            Thread.Sleep(TinyWaitMs + TinyWaitMs);
+            WaitForBatches(pbs);
             pbs.Stop();
             pbs.Dispose();
 
@@ -58,14 +61,38 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
             var batchEmitDelay = TimeSpan.FromMilliseconds(TinyWaitMs + TinyWaitMs);
             var pbs = new InMemoryBatchedSink(batchEmitDelay, new BatchingSinkOptions(batchSizeLimit: 2, periodMs: MicroWaitMs));
 
-            var evt = "Some event";
+            var evt = new TestEvent("Some event");
             pbs.EnqueueLog(evt);
-            Thread.Sleep(TinyWaitMs);
+            WaitForBatches(pbs);
             pbs.Dispose();
 
             pbs.Batches.Count.Should().Be(1);
             pbs.IsDisposed.Should().BeTrue();
             pbs.WasCalledAfterDisposal.Should().BeFalse();
+        }
+
+        private static void WaitForBatches(InMemoryBatchedSink pbs)
+        {
+            var deadline = DateTime.UtcNow.AddMinutes(2);
+            while (pbs.Batches.Count == 0 && DateTime.UtcNow < deadline)
+            {
+                Thread.Sleep(TinyWaitMs);
+            }
+        }
+
+        internal class TestEvent : DatadogLogEvent
+        {
+            private readonly string _evt;
+
+            public TestEvent(string evt)
+            {
+                _evt = evt;
+            }
+
+            public override void Format(StringBuilder sb, LogFormatter formatter)
+            {
+                sb.Append(_evt);
+            }
         }
 
         internal class InMemoryBatchedSink : BatchingSink, IDisposable
@@ -83,7 +110,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
             // Postmortem only
             public bool WasCalledAfterDisposal { get; private set; }
 
-            public IList<IList<string>> Batches { get; } = new List<IList<string>>();
+            public IList<IList<DatadogLogEvent>> Batches { get; } = new List<IList<DatadogLogEvent>>();
 
             public bool IsDisposed { get; private set; }
 
@@ -95,7 +122,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
                 }
             }
 
-            protected override Task EmitBatch(Queue<string> events)
+            protected override Task EmitBatch(Queue<DatadogLogEvent> events)
             {
                 lock (_stateLock)
                 {
