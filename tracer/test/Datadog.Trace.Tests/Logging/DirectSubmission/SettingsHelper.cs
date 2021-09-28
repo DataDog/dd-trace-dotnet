@@ -7,11 +7,14 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging.DirectSubmission;
+using Datadog.Trace.Logging.DirectSubmission.Formatting;
 
 namespace Datadog.Trace.Tests.Logging.DirectSubmission
 {
     internal class SettingsHelper
     {
+        public static LogFormatter GetFormatter() => new(GetValidSettings(), "MyTestService");
+
         public static DirectLogSubmissionSettings GetValidSettings()
         {
             return DirectLogSubmissionSettings.Create(
@@ -20,7 +23,6 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
                 transport: "HTTP",
                 intakeUrl: "https://localhost:1234",
                 apiKey: "abcdef",
-                serviceName: "MyTestService",
                 minimumLevel: DirectSubmissionLogLevel.Debug,
                 globalTags: new Dictionary<string, string>(),
                 enabledLogShippingIntegrations: DirectLogSubmissionSettings.SupportedIntegrations.Select(x => x.ToString()).ToList(),
