@@ -71,6 +71,18 @@ namespace PrepareRelease
                 assemblyLoadContext.Unload();
             }
 
+            // remove duplicates
+            callSiteIntegrations = callSiteIntegrations
+                                  .GroupBy(x => x.Name)
+                                  .Select(x => new Integration()
+                                  {
+                                      Name = x.Key,
+                                      MethodReplacements = x
+                                                           .SelectMany(y => y.MethodReplacements)
+                                                           .Distinct()
+                                                           .ToArray(),
+                                  });
+
             var integrations = new IntegrationGroups()
             {
                 CallSite = callSiteIntegrations.ToList(),
@@ -254,6 +266,7 @@ namespace PrepareRelease
                                                              }
                                                          }).ToArray()
                                };
+
             return integrations.ToList();
         }
 
