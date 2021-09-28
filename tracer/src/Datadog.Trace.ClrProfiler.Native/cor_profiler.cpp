@@ -599,12 +599,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         new ModuleMetadata(metadata_import, metadata_emit, assembly_import, assembly_emit,
                                          module_info.assembly.name, app_domain_id, &corAssemblyProperty);
 
-    // store module info for later lookup
-    module_id_to_info_map_[module_id] = module_metadata;
-
-    Logger::Debug("ModuleLoadFinished stored metadata for ", module_id, " ", module_info.assembly.name, " AppDomain ",
-                  module_info.assembly.app_domain_id, " ", module_info.assembly.app_domain_name);
-
 #ifndef _WIN32
     // Fix PInvokeMap (Non windows only)
     if (module_info.assembly.name == managed_profiler_name)
@@ -614,6 +608,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         RewritingPInvokeMaps(metadata_interfaces, module_metadata, appsec_nonwindows_nativemethods_type);
     }
 #endif
+
+    // store module info for later lookup
+    module_id_to_info_map_[module_id] = std::unique_ptr<ModuleMetadata>(module_metadata);
+
+    Logger::Debug("ModuleLoadFinished stored metadata for ", module_id, " ", module_info.assembly.name, " AppDomain ",
+                  module_info.assembly.app_domain_id, " ", module_info.assembly.app_domain_name);
 
     return S_OK;
 }
@@ -656,22 +656,22 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
     auto findRes = module_id_to_info_map_.find(module_id);
     if (findRes != module_id_to_info_map_.end())
     {
-        ModuleMetadata* metadata = findRes->second;
+        auto appDomainId = findRes->second->app_domain_id;
 
         // remove appdomain id from managed_profiler_loaded_app_domains set
-        if (managed_profiler_loaded_app_domains.find(metadata->app_domain_id) !=
+        if (managed_profiler_loaded_app_domains.find(appDomainId) !=
             managed_profiler_loaded_app_domains.end())
         {
-            managed_profiler_loaded_app_domains.erase(metadata->app_domain_id);
+            managed_profiler_loaded_app_domains.erase(appDomainId);
         }
 
+        module_id_to_info_map_[module_id] = nullptr;
         module_id_to_info_map_.erase(module_id);
 
         if (rejit_handler != nullptr)
         {
             rejit_handler->RemoveModule(module_id);
         }
-        delete metadata;
     }
 
     return S_OK;
@@ -757,7 +757,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     auto findRes = module_id_to_info_map_.find(module_id);
     if (findRes != module_id_to_info_map_.end())
     {
-        module_metadata = findRes->second;
+        module_metadata = findRes->second.get();
     }
 
     if (module_metadata == nullptr)
@@ -1003,7 +1003,7 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
 
         for (const auto& moduleItem : module_id_to_info_map_)
         {
-            CallTarget_RequestRejitForModule(moduleItem.first, moduleItem.second, integrationMethods);
+            CallTarget_RequestRejitForModule(moduleItem.first, moduleItem.second.get(), integrationMethods);
         }
 
         integration_methods_.reserve(integration_methods_.size() + integrationMethods.size());
@@ -2353,21 +2353,25 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetReJITParameters(ModuleID moduleId, mdM
         return S_OK;
     }
 
+    std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
+
+    if (!is_attached_)
+    {
+        return S_OK;
+    }
+
     Logger::Debug("GetReJITParameters: [moduleId: ", moduleId, ", methodId: ", methodId, "]");
 
     // we get the module_metadata from the moduleId.
     ModuleMetadata* module_metadata = nullptr;
+    auto findRes = module_id_to_info_map_.find(moduleId);
+    if (findRes != module_id_to_info_map_.end())
     {
-        std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
-        auto findRes = module_id_to_info_map_.find(moduleId);
-        if (findRes != module_id_to_info_map_.end())
-        {
-            module_metadata = findRes->second;
-        }
-        else
-        {
-            return S_FALSE;
-        }
+        module_metadata = findRes->second.get();
+    }
+    else
+    {
+        return S_FALSE;
     }
 
     // we notify the reJIT handler of this event and pass the module_metadata.
@@ -2431,7 +2435,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     auto findRes = module_id_to_info_map_.find(module_id);
     if (findRes != module_id_to_info_map_.end())
     {
-        module_metadata = findRes->second;
+        module_metadata = findRes->second.get();
     }
 
     if (module_metadata == nullptr)
