@@ -59,10 +59,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
                         var key = item.Key;
                         if (key != MessageTemplateKey)
                         {
-                            haveSource = haveSource || LogFormatter.IsSourceProperty(key);
-                            haveService = haveService || LogFormatter.IsServiceProperty(key);
-                            haveHost = haveHost || LogFormatter.IsHostProperty(key);
-                            haveTags = haveTags || LogFormatter.IsTagsProperty(key);
+                            haveSource |= LogFormatter.IsSourceProperty(key);
+                            haveService |= LogFormatter.IsServiceProperty(key);
+                            haveHost |= LogFormatter.IsHostProperty(key);
+                            haveTags |= LogFormatter.IsTagsProperty(key);
 
                             writer.WritePropertyName(key);
                             LogFormatter.WriteValue(writer, item.Value);
@@ -86,18 +86,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
                 scopeProvider.ForEachScope(
                     (scope, wrapper) =>
                     {
-                        // Add dictionary scopes to the "root" object
-                        // TODO: Need to handle "duplicate" values, where the property has been added as state,
-                        // And then we try and add it again
+                        // Add dictionary scopes to a properties object
+                        // TODO: We _should_ handle "duplicate" values, where the property has been added as state,
+                        // And then we try and add it again, but I don't know if that's entirely necessary
                         if (scope is IEnumerable<KeyValuePair<string, object>> scopeItems)
                         {
                             foreach (var item in scopeItems)
                             {
                                 var key = item.Key;
-                                haveSource = haveSource || LogFormatter.IsSourceProperty(key);
-                                haveService = haveService || LogFormatter.IsServiceProperty(key);
-                                haveHost = haveHost || LogFormatter.IsHostProperty(key);
-                                haveTags = haveTags || LogFormatter.IsTagsProperty(key);
+                                haveSource |= LogFormatter.IsSourceProperty(key);
+                                haveService |= LogFormatter.IsServiceProperty(key);
+                                haveHost |= LogFormatter.IsHostProperty(key);
+                                haveTags |= LogFormatter.IsTagsProperty(key);
 
                                 wrapper.Writer.WritePropertyName(key);
                                 LogFormatter.WriteValue(wrapper.Writer, item.Value);

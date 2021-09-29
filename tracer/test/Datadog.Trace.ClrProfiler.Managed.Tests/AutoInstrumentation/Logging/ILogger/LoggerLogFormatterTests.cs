@@ -6,12 +6,16 @@
 #if NETCOREAPP
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.Formatting;
 using Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.Serilog;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.ILogger
@@ -36,6 +40,47 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
             var expected = @"{""@t"":""2021-09-13T10:40:57.0000000Z"",""@m"":""This is a test with a 123"",""@l"":""Debug"",""@x"":""System.InvalidOperationException: Oops, just a test!"",""Value"":123,""OtherProperty"":62,""@i"":""a9a87aee"",""ddsource"":""csharp"",""ddservice"":""MyTestService"",""host"":""some_host""}";
 
             logger.Logs.Should().ContainSingle(expected);
+        }
+
+        [Fact]
+        public void DoesntAddPropertiesThatAreAlreadyAddedTwice()
+        {
+            var formatter = new LogFormatter(SettingsHelper.GetValidSettings());
+            var scopeProvider = new LoggerExternalScopeProvider();
+            var logger = new TestLogger(scopeProvider, formatter, new DateTime(2021, 09, 13, 10, 40, 57));
+            var properties  = new Dictionary<string, object>
+            {
+                { "Host", nameof(DoesntAddPropertiesThatAreAlreadyAddedTwice) + "host" },
+                { "dd_service", nameof(DoesntAddPropertiesThatAreAlreadyAddedTwice) + "service" },
+                { "ddsource", nameof(DoesntAddPropertiesThatAreAlreadyAddedTwice) + "source" },
+                { "ddtags", nameof(DoesntAddPropertiesThatAreAlreadyAddedTwice) + ":tag" },
+            };
+
+            using (var s = scopeProvider.Push(properties))
+            {
+                logger.Log(
+                    LogLevel.Debug,
+                    new InvalidOperationException("Oops, just a test!"),
+                    "This is a test with a {Value}",
+                    123,
+                    "some host");
+            }
+
+            var log = logger.Logs.Should().ContainSingle().Subject;
+
+            var json = JObject.Parse(log);
+
+            // should have all the added properties
+            foreach (var property in properties)
+            {
+                json.Properties()
+                    .Where(x => string.Equals(property.Key, x.Name, StringComparison.OrdinalIgnoreCase))
+                    .Should()
+                    .ContainSingle()
+                    .Which.Value.ToString()
+                    .Should()
+                    .Be(property.Value.ToString());
+            }
         }
 
         internal class TestLogger : Microsoft.Extensions.Logging.ILogger

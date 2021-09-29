@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public abstract class LogsInjectionTestBase : TestHelper
     {
-        private readonly string _excludeMessagePrefix = "[ExcludeMessage]";
+        protected static readonly string ExcludeMessagePrefix = "[ExcludeMessage]";
 
         public LogsInjectionTestBase(ITestOutputHelper output, string sampleName)
             : base(
@@ -109,7 +109,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 // Assumes we _only_ have logs for logs within traces + our startup log
                 additionalInjectedLogFilter ??= (_) => true;
-                var tracedLogs = logs.Where(log => !log.Contains(_excludeMessagePrefix)).Where(additionalInjectedLogFilter).ToList();
+                var tracedLogs = logs.Where(log => !log.Contains(ExcludeMessagePrefix)).Where(additionalInjectedLogFilter).ToList();
 
                 // Ensure that all spans are represented (when correlated) or no spans are represented (when not correlated) in the traced logs
                 if (tracedLogs.Any())
@@ -179,7 +179,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     }
                 }
 
-                var unTracedLogs = logs.Where(log => log.Contains(_excludeMessagePrefix)).ToList();
+                var unTracedLogs = logs.Where(log => log.Contains(ExcludeMessagePrefix)).ToList();
 
                 foreach (var log in unTracedLogs)
                 {
