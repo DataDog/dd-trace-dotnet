@@ -46,9 +46,9 @@ namespace Datadog.Trace.Tests
             Assert.Equal(tracerTwo, Tracer.Instance);
 
             // We test the locked tracer cannot be replaced.
-            Assert.Throws<Exception>(() => Tracer.Instance = tracerOne);
+            Assert.Throws<InvalidOperationException>(() => Tracer.Instance = tracerOne);
 
-            Assert.Throws<Exception>(() => Tracer.Instance = null);
+            Assert.Throws<InvalidOperationException>(() => Tracer.Instance = null);
         }
 
         private class LockedTracer : Tracer, ILockedTracer
