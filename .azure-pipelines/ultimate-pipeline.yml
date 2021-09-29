@@ -540,7 +540,7 @@ stages:
           baseImage: alpine
 
     variables:
-      TestAllPackageVersions: true
+      TestAllPackageVersions: $(isMainBranch)
 
     pool:
       vmImage: ubuntu-18.04
@@ -612,7 +612,7 @@ stages:
   jobs:
     - job: Test
       variables:
-        TestAllPackageVersions: true
+        TestAllPackageVersions: $(isMainBranch)
         publishTargetFramework: net5.0
         baseImage: debian
 
