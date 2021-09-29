@@ -48,7 +48,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var agentPort = TcpPortProvider.GetOpenPort();
             using var agent = new MockTracerAgent(agentPort);
             using var processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"5 5");
-            Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode} and exception: {processResult.StandardError}");
 
             var spans = agent.WaitForSpans(totalTransactions);
             Assert.True(spans.Count >= totalTransactions, $"Expecting at least {totalTransactions} spans, only received {spans.Count}");

@@ -52,8 +52,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 Assert.True(contentionRequestsCount > 0, "No contention metrics received. Metrics received: " + string.Join("\n", requests));
             }
-
-            Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
         }
 
         [Fact]
@@ -74,7 +72,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var requests = agent.StatsdRequests;
 
             Assert.True(requests.Count == 0, "Received metrics despite being disabled. Metrics received: " + string.Join("\n", requests));
-            Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
         }
     }
 }
