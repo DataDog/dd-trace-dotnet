@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
+using BenchmarkComparison;
 using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
@@ -443,30 +444,66 @@ partial class Build
                   oldBuild.SourceVersion,
                   newBuild.SourceVersion);
 
-              Console.WriteLine("Posting comment to GitHub");
-
-              // post directly to GitHub as
-              var httpClient = new HttpClient();
-              httpClient.DefaultRequestHeaders.Add("Accept", "application/vnd.github.v3+json");
-              httpClient.DefaultRequestHeaders.Add("Authorization", $"token {GitHubToken}");
-              httpClient.DefaultRequestHeaders.UserAgent.Add(new(new System.Net.Http.Headers.ProductHeaderValue("nuke-ci-client")));
-
-              var url = $"https://api.github.com/repos/{GitHubRepositoryOwner}/{GitHubRepositoryName}/issues/{prNumber}/comments";
-              Console.WriteLine($"Sending request to '{url}'");
-
-              var result = await httpClient.PostAsJsonAsync(url, new { body = markdown });
-
-              if (result.IsSuccessStatusCode)
-              {
-                  Console.WriteLine("Comment posted successfully");
-              }
-              else
-              {
-                  var response = await result.Content.ReadAsStringAsync();
-                  Console.WriteLine("Error: " + response);
-                  result.EnsureSuccessStatusCode();
-              }
+              await PostCommentToPullRequest(prNumber, markdown);
           });
+
+    Target CompareBenchmarksResults => _ => _
+         .Unlisted()
+         .DependsOn(CreateRequiredDirectories)
+         .Requires(() => AzureDevopsToken)
+         .Requires(() => GitHubToken)
+         .Executes(async () =>
+         {
+             if (!int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var prNumber))
+             {
+                 Logger.Warn("No PR_NUMBER variable found. Skipping benchmark comparison");
+                 return;
+             }
+
+             var masterDir = BuildDataDirectory / "previous_benchmarks";
+             var prDir = BuildDataDirectory / "benchmarks";
+
+             FileSystemTasks.EnsureCleanDirectory(masterDir);
+
+             // Connect to Azure DevOps Services
+             var connection = new VssConnection(
+                 new Uri(AzureDevopsOrganisation),
+                 new VssBasicCredential(string.Empty, AzureDevopsToken));
+
+             using var buildHttpClient = connection.GetClient<BuildHttpClient>();
+
+             var (oldBuild, _) = await DownloadAzureArtifact(buildHttpClient, "refs/heads/master", build => "benchmarks_results", masterDir, buildReason: null);
+
+             var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, oldBuild.SourceVersion);
+             await PostCommentToPullRequest(prNumber, markdown);
+         });
+
+    async Task PostCommentToPullRequest(int prNumber, string markdown)
+    {
+        Console.WriteLine("Posting comment to GitHub");
+
+        // post directly to GitHub as
+        var httpClient = new HttpClient();
+        httpClient.DefaultRequestHeaders.Add("Accept", "application/vnd.github.v3+json");
+        httpClient.DefaultRequestHeaders.Add("Authorization", $"token {GitHubToken}");
+        httpClient.DefaultRequestHeaders.UserAgent.Add(new(new System.Net.Http.Headers.ProductHeaderValue("nuke-ci-client")));
+
+        var url = $"https://api.github.com/repos/{GitHubRepositoryOwner}/{GitHubRepositoryName}/issues/{prNumber}/comments";
+        Console.WriteLine($"Sending request to '{url}'");
+
+        var result = await httpClient.PostAsJsonAsync(url, new { body = markdown });
+
+        if (result.IsSuccessStatusCode)
+        {
+            Console.WriteLine("Comment posted successfully");
+        }
+        else
+        {
+            var response = await result.Content.ReadAsStringAsync();
+            Console.WriteLine("Error: " + response);
+            result.EnsureSuccessStatusCode();
+        }
+    }
 
     async Task<(Microsoft.TeamFoundation.Build.WebApi.Build, BuildArtifact)> DownloadAzureArtifact(
         BuildHttpClient buildHttpClient,
