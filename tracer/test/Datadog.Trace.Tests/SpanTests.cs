@@ -160,5 +160,65 @@ namespace Datadog.Trace.Tests
                 scope.Span.Should().Match<Span>(s => s.IsTopLevel == expectedResult);
             }
         }
+
+        [Fact]
+        public void SpanIds()
+        {
+            {
+                Span span = _tracer.StartSpan("Operation Galactic Storm");
+
+                span.SpanId.Should().NotBe(0);
+                span.LocalRootSpanId.Should().Be(span.SpanId);
+            }
+
+            {
+                const ulong remoteParentSpanId = 1234567890123456789;
+                SpanContext remoteParentSpanCtx = new SpanContext(traceId: null, spanId: remoteParentSpanId);
+                Span span = _tracer.StartSpan(operationName: "Operation Galactic Storm", parent: remoteParentSpanCtx);
+                using (span)
+                {
+                    span.SpanId.Should().NotBe(0);
+                    span.SpanId.Should().NotBe(remoteParentSpanId);     // There is an expected 1 in 2^64 chance of this line failing
+                    span.LocalRootSpanId.Should().Be(span.SpanId);
+                }
+            }
+
+            {
+                const ulong remoteParentSpanId = 1234567890123456789;
+                SpanContext remoteParentSpanCtx = new SpanContext(traceId: null, spanId: remoteParentSpanId);
+
+                using (Span span1 = _tracer.StartSpan(operationName: "Operation Root", parent: remoteParentSpanCtx))
+                using (Span span2 = _tracer.StartSpan(operationName: "Operation Middle", parent: span1.Context))
+                using (Span span3 = _tracer.StartSpan(operationName: "Operation Leaf", parent: span2.Context))
+                {
+                    span1.SpanId.Should().NotBe(0);
+                    span2.SpanId.Should().NotBe(0);
+                    span3.SpanId.Should().NotBe(0);
+
+                    span1.SpanId.Should().NotBe(remoteParentSpanId);    // There is an expected 1 in 2^64 chance of this line failing
+                    span2.SpanId.Should().NotBe(remoteParentSpanId);    // There is an expected 1 in 2^64 chance of this line failing
+                    span3.SpanId.Should().NotBe(remoteParentSpanId);    // There is an expected 1 in 2^64 chance of this line failing
+
+                    span1.LocalRootSpanId.Should().Be(span1.SpanId);
+                    span2.LocalRootSpanId.Should().Be(span1.SpanId);
+                    span3.LocalRootSpanId.Should().Be(span1.SpanId);
+                }
+            }
+
+            {
+                using (Scope scope1 = _tracer.StartActive(operationName: "Operation Root"))
+                using (Scope scope2 = _tracer.StartActive(operationName: "Operation Middle"))
+                using (Scope scope3 = _tracer.StartActive(operationName: "Operation Leaf"))
+                {
+                    scope1.Span.SpanId.Should().NotBe(0);
+                    scope2.Span.SpanId.Should().NotBe(0);
+                    scope3.Span.SpanId.Should().NotBe(0);
+
+                    scope1.Span.LocalRootSpanId.Should().Be(scope1.Span.SpanId);
+                    scope2.Span.LocalRootSpanId.Should().Be(scope1.Span.SpanId);
+                    scope3.Span.LocalRootSpanId.Should().Be(scope1.Span.SpanId);
+                }
+            }
+        }
     }
 }
