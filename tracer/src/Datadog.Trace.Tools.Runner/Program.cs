@@ -85,6 +85,28 @@ namespace Datadog.Trace.Tools.Runner
                 return 1;
             }
 
+            // We try to autodetect the CI Visibility Mode
+            if (!options.EnableCIVisibilityMode)
+            {
+                // Support for VSTest.Console.exe and dotcover
+                if (args.Length > 0 && (
+                    string.Equals(args[0], "VSTest.Console", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(args[0], "dotcover", StringComparison.OrdinalIgnoreCase)))
+                {
+                    options.EnableCIVisibilityMode = true;
+                }
+
+                // Support for dotnet test and dotnet vstest command
+                if (args.Length > 1 && string.Equals(args[0], "dotnet", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (string.Equals(args[1], "test", StringComparison.OrdinalIgnoreCase) ||
+                       string.Equals(args[1], "vstest", StringComparison.OrdinalIgnoreCase))
+                    {
+                        options.EnableCIVisibilityMode = true;
+                    }
+                }
+            }
+
             if (options.EnableCIVisibilityMode)
             {
                 // Enable CI Visibility mode by configuration
