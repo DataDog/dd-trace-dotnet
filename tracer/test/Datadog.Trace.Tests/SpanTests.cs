@@ -166,9 +166,20 @@ namespace Datadog.Trace.Tests
         {
             {
                 Span span = _tracer.StartSpan("Operation Galactic Storm");
+                using (span)
+                {
+                    span.SpanId.Should().NotBe(0);
+                    span.LocalRootSpanId.Should().Be(span.SpanId);
+                }
+            }
 
-                span.SpanId.Should().NotBe(0);
-                span.LocalRootSpanId.Should().Be(span.SpanId);
+            {
+                Scope scope = _tracer.StartActive("Operation Galactic Storm");
+                using (scope)
+                {
+                    scope.Span.SpanId.Should().NotBe(0);
+                    scope.Span.LocalRootSpanId.Should().Be(scope.Span.SpanId);
+                }
             }
 
             {
@@ -178,8 +189,20 @@ namespace Datadog.Trace.Tests
                 using (span)
                 {
                     span.SpanId.Should().NotBe(0);
-                    span.SpanId.Should().NotBe(remoteParentSpanId);     // There is an expected 1 in 2^64 chance of this line failing
+                    span.SpanId.Should().NotBe(remoteParentSpanId);             // There is an expected 1 in 2^64 chance of this line failing
                     span.LocalRootSpanId.Should().Be(span.SpanId);
+                }
+            }
+
+            {
+                const ulong remoteParentSpanId = 1234567890123456789;
+                SpanContext remoteParentSpanCtx = new SpanContext(traceId: null, spanId: remoteParentSpanId);
+                Scope scope = _tracer.StartActive(operationName: "Operation Galactic Storm", parent: remoteParentSpanCtx);
+                using (scope)
+                {
+                    scope.Span.SpanId.Should().NotBe(0);
+                    scope.Span.SpanId.Should().NotBe(remoteParentSpanId);       // There is an expected 1 in 2^64 chance of this line failing
+                    scope.Span.LocalRootSpanId.Should().Be(scope.Span.SpanId);
                 }
             }
 
@@ -217,6 +240,32 @@ namespace Datadog.Trace.Tests
                     scope1.Span.LocalRootSpanId.Should().Be(scope1.Span.SpanId);
                     scope2.Span.LocalRootSpanId.Should().Be(scope1.Span.SpanId);
                     scope3.Span.LocalRootSpanId.Should().Be(scope1.Span.SpanId);
+                }
+            }
+
+            {
+                const ulong remoteParentSpanId = 1234567890123456789;
+                SpanContext remoteParentSpanCtx = new SpanContext(traceId: null, spanId: remoteParentSpanId);
+
+                using (Scope scope1 = _tracer.StartActive(operationName: "Operation Root", parent: remoteParentSpanCtx))
+                using (Span span2 = _tracer.StartSpan(operationName: "Operation Middle 1"))
+                using (Scope scope3 = _tracer.StartActive(operationName: "Operation Middle 2"))
+                using (Span span4 = _tracer.StartSpan(operationName: "Operation Leaf"))
+                {
+                    scope1.Span.SpanId.Should().NotBe(0);
+                    span2.SpanId.Should().NotBe(0);
+                    scope3.Span.SpanId.Should().NotBe(0);
+                    span4.SpanId.Should().NotBe(0);
+
+                    scope1.Span.SpanId.Should().NotBe(remoteParentSpanId);      // There is an expected 1 in 2^64 chance of this line failing
+                    span2.SpanId.Should().NotBe(remoteParentSpanId);            // There is an expected 1 in 2^64 chance of this line failing
+                    scope3.Span.SpanId.Should().NotBe(remoteParentSpanId);      // There is an expected 1 in 2^64 chance of this line failing
+                    span4.SpanId.Should().NotBe(remoteParentSpanId);            // There is an expected 1 in 2^64 chance of this line failing
+
+                    scope1.Span.LocalRootSpanId.Should().Be(scope1.Span.SpanId);
+                    span2.LocalRootSpanId.Should().Be(scope1.Span.SpanId);
+                    scope3.Span.LocalRootSpanId.Should().Be(scope1.Span.SpanId);
+                    span4.LocalRootSpanId.Should().Be(scope1.Span.SpanId);
                 }
             }
         }
