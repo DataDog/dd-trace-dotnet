@@ -29,7 +29,7 @@ partial class Build : NukeBuild
     readonly Configuration BuildConfiguration = Configuration.Release;
 
     [Parameter("Platform to build - x86 or x64. Default is x64")]
-    readonly MSBuildTargetPlatform Platform = MSBuildTargetPlatform.x64;
+    readonly MSBuildTargetPlatform TargetPlatform = MSBuildTargetPlatform.x64;
 
     [Parameter("The TargetFramework to execute when running or building a sample app, or linux integration tests")]
     readonly TargetFramework Framework;
@@ -51,7 +51,7 @@ partial class Build : NukeBuild
     readonly bool IsAlpine = false;
 
     [Parameter("The build version. Default is latest")]
-    readonly string Version = "1.28.6";
+    readonly string Version = "1.28.8";
 
     [Parameter("Whether the build version is a prerelease(for packaging purposes). Default is latest")]
     readonly bool IsPrerelease = false;
@@ -71,7 +71,7 @@ partial class Build : NukeBuild
         .Executes(() =>
         {
             Logger.Info($"Configuration: {BuildConfiguration}");
-            Logger.Info($"Platform: {Platform}");
+            Logger.Info($"Platform: {TargetPlatform}");
             Logger.Info($"Framework: {Framework}");
             Logger.Info($"TestAllPackageVersions: {TestAllPackageVersions}");
             Logger.Info($"TracerHomeDirectory: {TracerHomeDirectory}");
@@ -169,7 +169,7 @@ partial class Build : NukeBuild
         .DependsOn(PublishIisSamples)
         .DependsOn(CompileIntegrationTests);
 
-    Target BuildWindowsRegressionIntegrationTests => _ => _
+    Target BuildWindowsRegressionTests => _ => _
         .Unlisted()
         .Requires(() => IsWin)
         .Description("Builds the integration tests for Windows")
@@ -189,7 +189,7 @@ partial class Build : NukeBuild
     Target BuildAndRunWindowsRegressionTests => _ => _
         .Requires(() => IsWin)
         .Description("Builds and runs the Windows regression tests")
-        .DependsOn(BuildWindowsRegressionIntegrationTests)
+        .DependsOn(BuildWindowsRegressionTests)
         .DependsOn(RunWindowsRegressionTests);
 
     Target BuildAndRunWindowsIisIntegrationTests => _ => _

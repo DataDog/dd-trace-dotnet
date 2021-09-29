@@ -66,12 +66,12 @@ partial class Build
     [LazyPathExecutable(name: "cmd")] readonly Lazy<Tool> Cmd;
 
     IEnumerable<MSBuildTargetPlatform> ArchitecturesForPlatform =>
-        Equals(Platform, MSBuildTargetPlatform.x64)
+        Equals(TargetPlatform, MSBuildTargetPlatform.x64)
             ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
             : new[] { MSBuildTargetPlatform.x86 };
 
     bool IsArm64 => RuntimeInformation.ProcessArchitecture == Architecture.Arm64;
-    string LinuxArchitectureIdentifier => IsArm64 ? "arm64" : Platform.ToString();
+    string LinuxArchitectureIdentifier => IsArm64 ? "arm64" : TargetPlatform.ToString();
 
     IEnumerable<string> LinuxPackageTypes => IsAlpine ? new[] { "tar" } : new[] { "deb", "rpm", "tar" };
 
@@ -144,7 +144,7 @@ partial class Build
         {
             // If we're building for x64, build for x86 too
             var platforms =
-                Equals(Platform, MSBuildTargetPlatform.x64)
+                Equals(TargetPlatform, MSBuildTargetPlatform.x64)
                     ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
                     : new[] { MSBuildTargetPlatform.x86 };
 
@@ -219,7 +219,7 @@ partial class Build
         {
             // If we're building for x64, build for x86 too
             var platforms =
-                Equals(Platform, MSBuildTargetPlatform.x64)
+                Equals(TargetPlatform, MSBuildTargetPlatform.x64)
                     ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
                     : new[] { MSBuildTargetPlatform.x86 };
 
@@ -501,7 +501,7 @@ partial class Build
 
             directories.ForEach(existingDir =>
             {
-                var newDir = existingDir.Parent / $"{Platform}" / BuildConfiguration;
+                var newDir = existingDir.Parent / $"{TargetPlatform}" / BuildConfiguration;
                 if (DirectoryExists(newDir))
                 {
                     Logger.Info($"Skipping '{newDir}' as already exists");
@@ -656,7 +656,7 @@ partial class Build
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
-            var workingDirectory = TestsDirectory / "Datadog.Trace.ClrProfiler.Native.Tests" / "bin" / BuildConfiguration.ToString() / Platform.ToString();
+            var workingDirectory = TestsDirectory / "Datadog.Trace.ClrProfiler.Native.Tests" / "bin" / BuildConfiguration.ToString() / TargetPlatform.ToString();
             var exePath = workingDirectory / "Datadog.Trace.ClrProfiler.Native.Tests.exe";
             var testExe = ToolResolver.GetLocalTool(exePath);
             testExe("--gtest_output=xml", workingDirectory: workingDirectory);
@@ -701,7 +701,7 @@ partial class Build
         .Executes(() =>
         {
             // We run linux integration tests in AnyCPU, but Windows on the specific architecture
-            var platform = IsLinux ? MSBuildTargetPlatform.MSIL : Platform;
+            var platform = IsLinux ? MSBuildTargetPlatform.MSIL : TargetPlatform;
 
             DotNetMSBuild(x => x
                 .SetTargetPath(MsBuildProject)
@@ -719,16 +719,26 @@ partial class Build
         .After(Restore)
         .After(CreatePlatformlessSymlinks)
         .After(CompileRegressionDependencyLibs)
+        .Requires(() => Framework)
         .Executes(() =>
         {
             var regressionsDirectory = Solution.GetProject(Projects.EntityFramework6xMdTokenLookupFailure)
                 .Directory.Parent;
-            var regressionLibs = GlobFiles(regressionsDirectory / "**" / "*.csproj")
-                .Where(x => !x.Contains("EntityFramework6x.MdTokenLookupFailure")
-                            && !x.Contains("ExpenseItDemo")
-                            && !x.Contains("StackExchange.Redis.AssemblyConflict.LegacyProject")
-                            && !x.Contains("MismatchedTracerVersions")
-                            && !x.Contains("dependency-libs"));
+
+            var regressionLibs =  GlobFiles(regressionsDirectory / "**" / "*.csproj")
+                 .Where(path =>
+                    (path, Solution.GetProject(path).TryGetTargetFrameworks()) switch
+                    {
+                        _ when path.Contains("EntityFramework6x.MdTokenLookupFailure") => false,
+                        _ when path.Contains("ExpenseItDemo") => false,
+                        _ when path.Contains("StackExchange.Redis.AssemblyConflict.LegacyProject") => false,
+                        _ when path.Contains("MismatchedTracerVersions") => false,
+                        _ when path.Contains("dependency-libs") => false,
+                        _ when !string.IsNullOrWhiteSpace(SampleName) => path.Contains(SampleName),
+                        (_ , var targets) when targets is not null => targets.Contains(Framework),
+                        _ => true,
+                    }
+                  );
 
             // Allow restore here, otherwise things go wonky with runtime identifiers
             // in some target frameworks. No, I don't know why
@@ -736,7 +746,8 @@ partial class Build
                 // .EnableNoRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatform(Platform)
+                .SetTargetPlatform(TargetPlatform)
+                .SetFramework(Framework)
                 .SetNoWarnDotNetCore3()
                 .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
                     o.SetPackageDirectory(NugetPackageDirectory))
@@ -761,7 +772,7 @@ partial class Build
                 .DisableRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatform(Platform)
+                .SetTargetPlatform(TargetPlatform)
                 .SetTargets("BuildFrameworkReproductions")
                 .SetMaxCpuCount(null));
         });
@@ -772,15 +783,17 @@ partial class Build
         .After(CompileRegressionSamples)
         .After(CompileFrameworkReproductions)
         .After(PublishIisSamples)
+        .Requires(() => Framework)
         .Requires(() => TracerHomeDirectory != null)
         .Executes(() =>
         {
             DotNetMSBuild(s => s
                 .SetTargetPath(MsBuildProject)
+                .SetProperty("TargetFramework", Framework.ToString())
                 .DisableRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatform(Platform)
+                .SetTargetPlatform(TargetPlatform)
                 .SetTargets("BuildCsharpIntegrationTests")
                 .SetMaxCpuCount(null));
         });
@@ -791,6 +804,7 @@ partial class Build
         .After(CreatePlatformlessSymlinks)
         .After(CompileFrameworkReproductions)
         .Requires(() => TracerHomeDirectory != null)
+        .Requires(() => Framework)
         .Executes(() =>
         {
             // This does some "unnecessary" rebuilding and restoring
@@ -802,24 +816,28 @@ partial class Build
 
             var projects =  includeIntegration
                 .Concat(includeSecurity)
-                .Where(projectPath =>
-                projectPath switch
+                .Select(x => Solution.GetProject(x))
+                .Where(project =>
+                (project, project.TryGetTargetFrameworks()) switch
                 {
-                    _ when exclude.Contains(projectPath) => false,
-                    _ when projectPath.ToString().Contains("Samples.OracleMDA") => false,
-                    _ when !string.IsNullOrWhiteSpace(SampleName) => projectPath.ToString().Contains(SampleName),
-                     _ => true,
+                    _ when exclude.Contains(project.Path) => false,
+                    _ when project.Path.ToString().Contains("Samples.OracleMDA") => false,
+                    _ when !string.IsNullOrWhiteSpace(SampleName) => project.Path.ToString().Contains(SampleName),
+                    (_ , var targets) when targets is not null => targets.Contains(Framework),
+                    _ => true,
                 }
             );
 
             // /nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
             DotNetBuild(config => config
                 .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatform(Platform)
+                .SetTargetPlatform(TargetPlatform)
                 .EnableNoDependencies()
                 .SetProperty("BuildInParallel", "false")
                 .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
                 .CombineWith(projects, (s, project) => s
+                    // we have to build this one for all frameworks (because of reasons)
+                    .When(!project.Name.Contains("MultiDomainHost"), x => x.SetFramework(Framework))
                     .SetProjectFile(project)));
         });
 
@@ -843,7 +861,7 @@ partial class Build
                 // .DisableRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatform(Platform)
+                .SetTargetPlatform(TargetPlatform)
                 .SetProperty("DeployOnBuild", true)
                 .SetProperty("PublishProfile", publishProfile)
                 .SetMaxCpuCount(null)
@@ -860,6 +878,7 @@ partial class Build
         .After(CompileFrameworkReproductions)
         .After(BuildWindowsIntegrationTests)
         .Requires(() => IsWin)
+        .Requires(() => Framework)
         .Executes(() =>
         {
             ParallelIntegrationTests.ForEach(EnsureResultsDirectory);
@@ -868,9 +887,10 @@ partial class Build
             try
             {
                 DotNetTest(config => config
-                    .SetDotnetPath(Platform)
+                    .SetDotnetPath(TargetPlatform)
                     .SetConfiguration(BuildConfiguration)
-                    .SetTargetPlatform(Platform)
+                    .SetTargetPlatform(TargetPlatform)
+                    .SetFramework(Framework)
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
@@ -884,9 +904,10 @@ partial class Build
                 // TODO: I think we should change this filter to run on Windows by default
                 // (RunOnWindows!=False|Category=Smoke)&LoadFromGAC!=True&IIS!=True
                 DotNetTest(config => config
-                    .SetDotnetPath(Platform)
+                    .SetDotnetPath(TargetPlatform)
                     .SetConfiguration(BuildConfiguration)
-                    .SetTargetPlatform(Platform)
+                    .SetTargetPlatform(TargetPlatform)
+                    .SetFramework(Framework)
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "RunOnWindows=True&LoadFromGAC!=True&IIS!=True")
@@ -909,6 +930,7 @@ partial class Build
         .After(CompileRegressionSamples)
         .After(CompileFrameworkReproductions)
         .Requires(() => IsWin)
+        .Requires(() => Framework)
         .Executes(() =>
         {
             ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
@@ -916,9 +938,10 @@ partial class Build
             try
             {
                 DotNetTest(config => config
-                    .SetDotnetPath(Platform)
+                    .SetDotnetPath(TargetPlatform)
                     .SetConfiguration(BuildConfiguration)
-                    .SetTargetPlatform(Platform)
+                    .SetTargetPlatform(TargetPlatform)
+                    .SetFramework(Framework)
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "Category=Smoke&LoadFromGAC!=True")
@@ -941,6 +964,7 @@ partial class Build
         .After(CompileSamples)
         .After(CompileFrameworkReproductions)
         .After(PublishIisSamples)
+        .Requires(() => Framework)
         .Executes(() =>
         {
             ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
@@ -948,10 +972,10 @@ partial class Build
             {
                 // Different filter from RunWindowsIntegrationTests
                 DotNetTest(config => config
-                    .SetDotnetPath(Platform)
+                    .SetDotnetPath(TargetPlatform)
                     .SetConfiguration(BuildConfiguration)
-                    .SetTargetPlatform(Platform)
-                    .When(Framework != null, o => o.SetFramework(Framework))
+                    .SetTargetPlatform(TargetPlatform)
+                    .SetFramework(Framework)
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "(RunOnWindows=True)&LoadFromGAC=True")
@@ -1008,21 +1032,22 @@ partial class Build
 
             // These sample projects are built using RestoreAndBuildSamplesForPackageVersions
             // so no point building them now
-            List<string> multiPackageProjects;
-            var samplesFile = BuildDirectory / "PackageVersionsGeneratorDefinitions.json";
-            using (var fs = File.OpenRead(samplesFile))
+            var multiPackageProjects = new List<string>();
+            if (TestAllPackageVersions)
             {
+                var samplesFile = BuildDirectory / "PackageVersionsGeneratorDefinitions.json";
+                using var fs = File.OpenRead(samplesFile);
                 var json = JsonDocument.Parse(fs);
                 multiPackageProjects = json.RootElement
-                                       .EnumerateArray()
-                                       .Select(e => e.GetProperty("SampleProjectName").GetString())
-                                       .Distinct()
-                                       .Where(name => name switch
-                                        {
-                                            "Samples.MySql" => false, // the "non package version" is _ALSO_ tested separately
-                                            _ => true
-                                        })
-                                       .ToList();
+                                           .EnumerateArray()
+                                           .Select(e => e.GetProperty("SampleProjectName").GetString())
+                                           .Distinct()
+                                           .Where(name => name switch
+                                            {
+                                                "Samples.MySql" => false, // the "non package version" is _ALSO_ tested separately
+                                                _ => true
+                                            })
+                                           .ToList();
             }
 
             var projectsToBuild = sampleProjects
@@ -1101,7 +1126,6 @@ partial class Build
                 .SetProperty("TargetFramework", Framework.ToString())
                 .SetProperty("BuildInParallel", "true")
                 .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
-                .AddProcessEnvironmentVariable("TestAllPackageVersions", "true")
                 .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
                 .CombineWith(targets, (c, target) => c.SetTargets(target))
             );
@@ -1128,9 +1152,7 @@ partial class Build
                     .SetFramework(Framework)
                     // .SetTargetPlatform(Platform)
                     .SetNoWarnDotNetCore3()
-                    .When(TestAllPackageVersions, o => o
-                        .SetProperty("TestAllPackageVersions", "true"))
-                    .AddProcessEnvironmentVariable("TestAllPackageVersions", "true")
+                    .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
                         o.SetPackageDirectory(NugetPackageDirectory))
                     .CombineWith(integrationTestProjects, (c, project) => c
@@ -1170,8 +1192,7 @@ partial class Build
                         .SetFramework(Framework)
                         .SetFilter(filter)
                         .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
-                        .When(TestAllPackageVersions, o => o
-                            .SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
+                        .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                         .When(CodeCoverage, ConfigureCodeCoverage)
                         .CombineWith(ParallelIntegrationTests, (s, project) => s
                             .EnableTrxLogOutput(GetResultsDirectory(project))
@@ -1187,8 +1208,7 @@ partial class Build
                     .SetFramework(Framework)
                     .SetFilter(filter)
                     .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
-                    .When(TestAllPackageVersions, o => o
-                        .SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
+                    .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))

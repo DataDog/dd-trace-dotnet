@@ -362,30 +362,34 @@ stages:
 - stage: integration_tests_windows
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: build_windows
-  pool:
-    vmImage: windows-2019
-  jobs:
 
-  - job: Windows
+  jobs:
+  - job: generator
+    pool:
+      vmImage: ubuntu-18.04
+    steps:
+    - bash: |
+        matrix="{"
+        for framework in "net452" "net461" "netcoreapp2.1" "netcoreapp3.0" "netcoreapp3.1" "net5.0"; do
+          for platform in "x64" "x86"; do
+            name="${platform}_${framework//./_}"
+            if [ $target == "BuildAndRunWindowsIntegrationTests" ]; then cosmos=true; else cosmos=false; fi
+            matrix="${matrix} '${name}':"
+            matrix="${matrix} { 'framework': '${framework}', "
+            matrix="${matrix} 'targetPlatform': '${platform}' },"
+          done
+        done
+        matrix="${matrix::-1} }"
+        echo "##vso[task.setVariable variable=values;isOutput=true]${matrix}"
+      name: mtrx
+
+  - job: Win
+    dependsOn: generator
+    pool:
+      vmImage: windows-2019
     timeoutInMinutes: 100
     strategy:
-      matrix:
-        x64_integration:
-          platform: x64
-          target: BuildAndRunWindowsIntegrationTests
-          requiresCosmos: true
-        x86_interation:
-          platform: x86
-          target: BuildAndRunWindowsIntegrationTests
-          requiresCosmos: true
-        x64_regression:
-          platform: x64
-          target: BuildAndRunWindowsRegressionTests
-          requiresCosmos: false
-        x86_regression:
-          platform: x86
-          target: BuildAndRunWindowsRegressionTests
-          requiresCosmos: false
+      matrix: $[ dependencies.generator.outputs['mtrx.values'] ]
 
     steps:
     - template: steps/install-dotnet-sdks.yml
@@ -398,10 +402,9 @@ stages:
         Import-Module "C:/Program Files/Azure Cosmos DB Emulator/PSModules/Microsoft.Azure.CosmosDB.Emulator"
         Start-CosmosDbEmulator -Timeout 300
       displayName: 'Start CosmosDB Emulator'
-      condition: eq(variables.requiresCosmos, true)
       workingDirectory: $(Pipeline.Workspace)
 
-    - script: tracer\build.cmd $(target) --PrintDriveSpace --code-coverage
+    - script: tracer\build.cmd BuildAndRunWindowsIntegrationTests BuildAndRunWindowsRegressionTests -Framework $(framework) --PrintDriveSpace --code-coverage
       displayName: Run integration tests
 
     - task: PublishTestResults@2
@@ -413,28 +416,44 @@ stages:
 
     - publish: tracer/build_data
       displayName: Uploading integration_tests_windows tracer logs
-      artifact: integration_tests_windows_tracer_logs_$(platform)_$(target)_$(System.JobAttempt)
+      artifact: integration_tests_windows_tracer_logs_$(targetPlatform)_$(framework)_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
 - stage: integration_tests_windows_iis
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: [build_windows, package_windows]
+
   jobs:
-  - job: Windows_IIS
+  - job: generator
+    pool:
+      vmImage: ubuntu-18.04
+    steps:
+      - bash: |
+          matrix="{"
+          for framework in "net452" "net461" "netcoreapp2.1" "netcoreapp3.0" "netcoreapp3.1" "net5.0"; do
+            for platform in "x64" "x86"; do
+              name="${framework//./_}_${platform}"
+              if [ $platform == "x86" ]; then enable32bit=true; else enable32bit=false; fi
+              matrix="${matrix} '${name}':"
+              matrix="${matrix} { 'framework': '${framework}', "
+              matrix="${matrix} 'targetPlatform': '${platform}', "
+              matrix="${matrix} 'enable32bit': ${enable32bit} },"
+            done
+          done
+          matrix="${matrix::-1} }"
+          echo "##vso[task.setVariable variable=values;isOutput=true]${matrix}"
+        name: mtrx
+
+  - job: IIS
     timeoutInMinutes: 100
+    dependsOn: generator
     strategy:
-      matrix:
-        x64:
-          platform: x64
-          enable32bit: false
-        x86:
-          platform: x86
-          enable32bit: true
+      matrix: $[ dependencies.generator.outputs['mtrx.values'] ]
     pool:
       vmImage: windows-2019
     variables:
-      relativeMsiOutputDirectory: $(relativeArtifacts)/$(platform)/en-us
+      relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
 
     steps:
 
@@ -446,11 +465,11 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download MSI
       inputs:
-        artifact: windows-msi-$(platform)
+        artifact: windows-msi-$(targetPlatform)
         patterns: '**/*.msi'
         path: $(System.DefaultWorkingDirectory)/$(relativeMsiOutputDirectory)
 
-    - script: tracer\build.cmd BuildWindowsIntegrationTests
+    - script: tracer\build.cmd BuildWindowsIntegrationTests -Framework $(framework)
       displayName: BuildWindowsIntegrationTests
 
     - task: DockerCompose@0
@@ -465,7 +484,7 @@ stages:
         containerregistrytype: Container Registry
         dockerComposeCommand: up -d IntegrationTests.IIS
 
-    - script: tracer\build.cmd RunWindowsIisIntegrationTests --code-coverage
+    - script: tracer\build.cmd RunWindowsIisIntegrationTests -Framework $(framework) --code-coverage
       displayName: RunWindowsIisIntegrationTests
 
     - task: PublishTestResults@2
@@ -484,7 +503,7 @@ stages:
 
     - publish: tracer/build_data
       displayName: Uploading integration_tests_windows_iis tracer logs
-      artifact: integration_tests_windows_iis_tracer_logs_$(platform)
+      artifact: integration_tests_windows_iis_tracer_logs_$(targetPlatform)_$(framework)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -521,7 +540,7 @@ stages:
           baseImage: alpine
 
     variables:
-      TestAllPackageVersions: true
+      TestAllPackageVersions: $(isMainBranch)
 
     pool:
       vmImage: ubuntu-18.04
@@ -593,7 +612,7 @@ stages:
   jobs:
     - job: Test
       variables:
-        TestAllPackageVersions: true
+        TestAllPackageVersions: $(isMainBranch)
         publishTargetFramework: net5.0
         baseImage: debian
 
@@ -692,6 +711,15 @@ stages:
     - publish: tracer/build_data/benchmarks
       artifact: benchmarks_results
       continueOnError: true
+
+    - script: tracer\build.cmd CompareBenchmarksResults
+      continueOnError: true
+      displayName: Compare Benchmarks
+      condition: and(succeeded(), eq(variables.isPullRequest, true))
+      env:
+        PR_NUMBER: $(System.PullRequest.PullRequestNumber)
+        AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
+        GITHUB_TOKEN: $(GITHUB_TOKEN)
 
     ## Is this really necessary?
     - task: PowerShell@2

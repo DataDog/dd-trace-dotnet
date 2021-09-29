@@ -22,7 +22,11 @@
     Error: 1,
     Tags: {
       env: integration_tests,
-      error.msg: The HTTP response has status code 500.,
+      error.msg: Source: TerminatingQuerySuccessMessageHandler. Error: Query param ts was set to a non-true value,
+      error.stack: 
+System.ArgumentException: Source: TerminatingQuerySuccessMessageHandler. Error: Query param ts was set to a non-true value
+at Samples.AspNetMvc5.Handlers.TerminatingQuerySuccessMessageHandler.SendAsync(HttpRequestMessage request, CancellationToken cancellationToken),
+      error.type: System.ArgumentException,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 500,

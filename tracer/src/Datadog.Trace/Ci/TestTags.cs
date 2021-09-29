@@ -45,6 +45,12 @@ namespace Datadog.Trace.Ci
         public const string Framework = "test.framework";
 
         /// <summary>
+        /// Test framework version
+        /// </summary>
+        [FeatureTracking]
+        public const string FrameworkVersion = "test.framework_version";
+
+        /// <summary>
         /// Test parameters
         /// </summary>
         [FeatureTracking]

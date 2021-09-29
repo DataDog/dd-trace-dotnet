@@ -1,4 +1,4 @@
-// <copyright file="Program.cs" company="Datadog">
+// <copyright file="UpdateVendors.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -15,22 +15,6 @@ namespace UpdateVendors
 {
     public static class UpdateVendorsTool
     {
-        public static void UpdateHoneypotProject(AbsolutePath honeypotProject)
-        {
-            var fakeRefs = string.Empty;
-
-            foreach (var dependency in VendoredDependency.All)
-            {
-                fakeRefs += $@"{Environment.NewLine}    <!-- https://www.nuget.org/packages/{dependency.LibraryName}/{dependency.Version} -->";
-                fakeRefs += $@"{Environment.NewLine}    <PackageReference Include=""{dependency.LibraryName}"" Version=""{dependency.Version}"" />{Environment.NewLine}";
-            }
-
-            var honeypotProjTemplate = GetHoneyPotProjTemplate();
-            honeypotProjTemplate = honeypotProjTemplate.Replace("##PACKAGE_REFS##", fakeRefs);
-
-            File.WriteAllText(honeypotProject, honeypotProjTemplate);
-        }
-
         public static void UpdateVendors(
             AbsolutePath downloadDirectory,
             AbsolutePath vendorDirectory)
@@ -39,15 +23,6 @@ namespace UpdateVendors
             {
                 UpdateVendor(dependency, downloadDirectory, vendorDirectory);
             }
-        }
-
-        private static string GetHoneyPotProjTemplate()
-        {
-            var thisAssembly = typeof(UpdateVendorsTool).Assembly;
-            var resourceStream = thisAssembly.GetManifestResourceStream("UpdateVendors.Datadog.Dependabot.Honeypot.template");
-            using var reader = new StreamReader(resourceStream);
-
-            return reader.ReadToEnd();
         }
 
         private static void UpdateVendor(VendoredDependency dependency, AbsolutePath downloadDirectory, AbsolutePath vendorDirectory)

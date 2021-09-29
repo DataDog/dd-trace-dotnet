@@ -255,7 +255,7 @@ namespace shared
         DWORD GetLoaderProfilerEventMask()
         {
             DWORD eventMask = COR_PRF_MONITOR_MODULE_LOADS | COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST;
-            if (_loaderOptions.DisableNGENImagesSupport)
+            if (_loaderOptions.DisableNGENImagesSupport || !_loaderOptions.IsNet46OrGreater)
             {
                 eventMask |= COR_PRF_DISABLE_ALL_NGEN_IMAGES;
             }

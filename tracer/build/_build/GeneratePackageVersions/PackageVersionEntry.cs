@@ -5,7 +5,7 @@
 
 namespace GeneratePackageVersions
 {
-    public class PackageVersionEntry
+    public class PackageVersionEntry : IPackageVersionEntry
     {
         public string IntegrationName { get; set; }
 
