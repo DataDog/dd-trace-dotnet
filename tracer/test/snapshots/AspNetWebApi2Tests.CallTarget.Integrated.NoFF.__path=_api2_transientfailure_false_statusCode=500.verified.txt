@@ -22,7 +22,11 @@
     Error: 1,
     Tags: {
       env: integration_tests,
-      error.msg: The HTTP response has status code 500.,
+      error.msg: Passed in value was not 'true': false,
+      error.stack: 
+System.ArgumentException: Passed in value was not 'true': false
+at Samples.AspNetMvc5.Controllers.ConventionsController.TransientFailure(String value),
+      error.type: System.ArgumentException,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 500,
