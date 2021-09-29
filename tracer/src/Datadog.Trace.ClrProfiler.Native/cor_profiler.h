@@ -68,6 +68,7 @@ private:
     //
     void RewritingPInvokeMaps(ComPtr<IUnknown> metadata_interfaces, ModuleMetadata* module_metadata, WSTRING nativemethods_type_name);
     WSTRING GetCoreCLRProfilerPath();
+    void CheckFilenameDefinitions();
     bool GetWrapperMethodRef(ModuleMetadata* module_metadata, ModuleID module_id,
                              const MethodReplacement& method_replacement, mdMemberRef& wrapper_method_ref,
                              mdTypeRef& wrapper_type_ref);

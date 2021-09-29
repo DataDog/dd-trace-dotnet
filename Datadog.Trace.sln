@@ -401,7 +401,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCore2", "trac
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Monitoring.Distribution", "tracer\src\Datadog.Monitoring.Distribution\Datadog.Monitoring.Distribution.csproj", "{CF364E70-F5B5-4D44-B29E-2165525D3A69}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LogsInjection.ILogger", "tracer\test\test-applications\integrations\LogsInjection.ILogger\LogsInjection.ILogger.csproj", "{463A6FB2-1ABE-4B92-A470-97134D0BBC7E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LogsInjection.ILogger", "tracer\test\test-applications\integrations\LogsInjection.ILogger\LogsInjection.ILogger.csproj", "{463A6FB2-1ABE-4B92-A470-97134D0BBC7E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Aerospike", "tracer\test\test-applications\integrations\Samples.Aerospike\Samples.Aerospike.csproj", "{7471A7A8-B89C-4C94-8EB1-24180E71CA1F}"
 EndProject
@@ -427,6 +427,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "azure-functions", "azure-fu
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AzureFunctions.AllTriggers", "tracer\test\test-applications\azure-functions\Samples.AzureFunctions.AllTriggers\Samples.AzureFunctions.AllTriggers.csproj", "{536F1D82-D40C-4E33-B7FA-76A0F17BF672}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.Trace.ClrProfiler.Native.Checks", "tracer\test\test-applications\instrumentation\Datadog.Trace.ClrProfiler.Native.Checks\Datadog.Trace.ClrProfiler.Native.Checks.csproj", "{E978A08E-0133-42E0-815C-F8EF3A061597}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1807,6 +1809,16 @@ Global
 		{536F1D82-D40C-4E33-B7FA-76A0F17BF672}.Release|x64.Build.0 = Release|x64
 		{536F1D82-D40C-4E33-B7FA-76A0F17BF672}.Release|x86.ActiveCfg = Release|x86
 		{536F1D82-D40C-4E33-B7FA-76A0F17BF672}.Release|x86.Build.0 = Release|x86
+		{E978A08E-0133-42E0-815C-F8EF3A061597}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{E978A08E-0133-42E0-815C-F8EF3A061597}.Debug|x64.ActiveCfg = Debug|x64
+		{E978A08E-0133-42E0-815C-F8EF3A061597}.Debug|x64.Build.0 = Debug|x64
+		{E978A08E-0133-42E0-815C-F8EF3A061597}.Debug|x86.ActiveCfg = Debug|x86
+		{E978A08E-0133-42E0-815C-F8EF3A061597}.Debug|x86.Build.0 = Debug|x86
+		{E978A08E-0133-42E0-815C-F8EF3A061597}.Release|Any CPU.ActiveCfg = Release|x86
+		{E978A08E-0133-42E0-815C-F8EF3A061597}.Release|x64.ActiveCfg = Release|x64
+		{E978A08E-0133-42E0-815C-F8EF3A061597}.Release|x64.Build.0 = Release|x64
+		{E978A08E-0133-42E0-815C-F8EF3A061597}.Release|x86.ActiveCfg = Release|x86
+		{E978A08E-0133-42E0-815C-F8EF3A061597}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1954,6 +1966,7 @@ Global
 		{B22311CE-EC71-4ADD-ADC6-C466B2D10230} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
 		{C4C1E313-C7C1-4490-AECE-0DD0062380A4} = {9518425A-36A5-4B8F-B0B8-6137DB88441D}
 		{536F1D82-D40C-4E33-B7FA-76A0F17BF672} = {C4C1E313-C7C1-4490-AECE-0DD0062380A4}
+		{E978A08E-0133-42E0-815C-F8EF3A061597} = {933F1D4B-1216-4BC1-956E-8C30818BAA0F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}

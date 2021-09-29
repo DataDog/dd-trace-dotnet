@@ -76,6 +76,18 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
 #endif
 
     const auto process_name = GetCurrentProcessName();
+
+#if DEBUG
+
+    // This enable a path to assert over checks inside the profiler code.
+    // Only in DEBUG compilations and for the Datadog.Trace.ClrProfiler.Native.Checks process
+    if (std::filesystem::path(process_name).replace_extension("").wstring() == WStr("Datadog.Trace.ClrProfiler.Native.Checks"))
+    {
+        CheckFilenameDefinitions();
+    }
+
+#endif
+
     const auto include_process_names = GetEnvironmentValues(environment::include_process_names);
 
     // if there is a process inclusion list, attach profiler only if this
@@ -1341,6 +1353,27 @@ WSTRING CorProfiler::GetCoreCLRProfilerPath()
     }
 #endif // BIT64
     return native_profiler_file;
+}
+
+void CorProfiler::CheckFilenameDefinitions()
+{
+    auto runtimeFileName = std::filesystem::path(GetCoreCLRProfilerPath()).filename().string();
+    transform(runtimeFileName.begin(), runtimeFileName.end(), runtimeFileName.begin(), ::tolower);
+
+    auto definedFileName = ToString(WSTRING(native_dll_filename));
+    transform(definedFileName.begin(), definedFileName.end(), definedFileName.begin(), ::tolower);
+
+    std::cout << runtimeFileName << std::endl;
+    std::cout << definedFileName << std::endl;
+
+    if (runtimeFileName == definedFileName)
+    {
+        std::cout << "CHECK: FILENAME OK." << std::endl;
+    }
+    else
+    {
+        std::cout << "CHECK: FILENAME ERROR." << std::endl;
+    }
 }
 
 HRESULT CorProfiler::ProcessReplacementCalls(ModuleMetadata* module_metadata, const FunctionID function_id,
