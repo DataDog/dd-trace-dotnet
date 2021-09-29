@@ -11,26 +11,32 @@ using log4net.Repository.Hierarchy;
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
+    [InProcess]
     public class Log4netBenchmark
     {
-        private static readonly Tracer LogInjectionTracer;
-        private static readonly log4net.ILog Logger;
+        private static Tracer LogInjectionTracer;
+        private static log4net.ILog Logger;
 
-        static Log4netBenchmark()
+        public int N { get; } = 100;
+
+        private static void InitializeTracer(bool useLibLogSubscriber)
         {
             LogProvider.SetCurrentLogProvider(new CustomLog4NetLogProvider());
 
             var logInjectionSettings = new TracerSettings
             {
                 StartupDiagnosticLogEnabled = false,
-                LogsInjectionEnabled = true,
+                LogsInjectionEnabled = useLibLogSubscriber,
                 Environment = "env",
                 ServiceVersion = "version"
             };
 
             LogInjectionTracer = new Tracer(logInjectionSettings, new DummyAgentWriter(), null, null, null);
             Tracer.Instance = LogInjectionTracer;
+        }
 
+        private static void InitializeLogger(bool useDatadogAppender)
+        {
             var repository = (Hierarchy)log4net.LogManager.GetRepository();
             var patternLayout = new PatternLayout { ConversionPattern = "%date [%thread] %-5level %logger {dd.env=%property{dd.env}, dd.service=%property{dd.service}, dd.version=%property{dd.version}, dd.trace_id=%property{dd.trace_id}, dd.span_id=%property{dd.span_id}} - %message%newline" };
             patternLayout.ActivateOptions();
@@ -40,8 +46,15 @@ namespace Benchmarks.Trace
 #else
             var writer = TextWriter.Null;
 #endif
+            var textWriterAppender = new TextWriterAppender { Layout = patternLayout, Writer = writer };
+            IAppender appender = textWriterAppender;
 
-            var appender = new TextWriterAppender { Layout = patternLayout, Writer = writer };
+            if (useDatadogAppender)
+            {
+                var logCorrelationAppender = new LogCorrelationAppender();
+                logCorrelationAppender.AddAppender(textWriterAppender);
+                appender = logCorrelationAppender;
+            }
 
             repository.Root.AddAppender(appender);
 
@@ -51,15 +64,50 @@ namespace Benchmarks.Trace
             Logger = log4net.LogManager.GetLogger(typeof(Log4netBenchmark));
         }
 
+        [GlobalSetup]
+        public void GlobalSetup()
+        {
+            InitializeTracer(useLibLogSubscriber: false);
+            InitializeLogger(useDatadogAppender: true);
+        }
+
         [Benchmark]
-        public void EnrichedLog()
+        public void WriteLogs()
         {
             using (LogInjectionTracer.StartActive("Test"))
             {
                 using (LogInjectionTracer.StartActive("Child"))
                 {
-                    Logger.Info("Hello");
+                    for (int i = 0; i < N; i++)
+                    {
+                        Logger.Info("Hello");
+                    }
                 }
+            }
+        }
+
+        class LogCorrelationAppender : ForwardingAppender
+        {
+            protected override void Append(LoggingEvent loggingEvent)
+            {
+                var tracer = Tracer.Instance;
+
+                if (// tracer.Settings.LogsInjectionEnabled && // Run this appender regardless of logs injection
+                    !loggingEvent.Properties.Contains(CorrelationIdentifier.ServiceKey))
+                {
+                    loggingEvent.Properties[CorrelationIdentifier.ServiceKey] = tracer.DefaultServiceName ?? string.Empty;
+                    loggingEvent.Properties[CorrelationIdentifier.VersionKey] = tracer.Settings.ServiceVersion ?? string.Empty;
+                    loggingEvent.Properties[CorrelationIdentifier.EnvKey] = tracer.Settings.Environment ?? string.Empty;
+
+                    var span = tracer.ActiveScope?.Span;
+                    if (span is not null)
+                    {
+                        loggingEvent.Properties[CorrelationIdentifier.TraceIdKey] = span.TraceId.ToString();
+                        loggingEvent.Properties[CorrelationIdentifier.SpanIdKey] = span.SpanId.ToString();
+                    }
+                }
+
+                base.Append(loggingEvent);
             }
         }
     }
