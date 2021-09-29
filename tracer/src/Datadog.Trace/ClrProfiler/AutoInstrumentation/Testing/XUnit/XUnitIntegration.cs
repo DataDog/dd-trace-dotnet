@@ -25,8 +25,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
             string testSuite = runnerInstance.TestClass.ToString();
             string testName = runnerInstance.TestMethod.Name;
 
-            AssemblyName testInvokerAssemblyName = targetType.Assembly.GetName();
-
             string testFramework = "xUnit";
 
             Scope scope = Tracer.Instance.StartActive("xunit.test", serviceName: Tracer.Instance.DefaultServiceName);
@@ -39,6 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
             span.SetTag(TestTags.Suite, testSuite);
             span.SetTag(TestTags.Name, testName);
             span.SetTag(TestTags.Framework, testFramework);
+            span.SetTag(TestTags.FrameworkVersion, targetType.Assembly?.GetName().Version.ToString());
             span.SetTag(TestTags.Type, TestTags.TypeTest);
             CIEnvironmentValues.DecorateSpan(span);
 

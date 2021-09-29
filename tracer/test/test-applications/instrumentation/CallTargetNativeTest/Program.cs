@@ -83,8 +83,13 @@ namespace CallTargetNativeTest
                     }
                 default:
                     Console.WriteLine("Run with the profiler and use a number from 0-9/all as an argument.");
-                    break;
+                    return;
             }
+
+#if NETCOREAPP2_1
+            // Sleep to minimize the risk of segfault caused by https://github.com/dotnet/runtime/issues/11885
+            Thread.Sleep(5000);
+#endif
         }
 
 

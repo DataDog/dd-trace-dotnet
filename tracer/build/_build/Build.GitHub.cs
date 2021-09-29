@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
+using BenchmarkComparison;
 using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
@@ -102,34 +103,34 @@ partial class Build
             var expectedFileChanges = new []
             {
                 "docs/CHANGELOG.md",
-                "build/_build/Build.cs",
-                "integrations.json",
-                "samples/AutomaticTraceIdInjection/MicrosoftExtensionsExample/MicrosoftExtensionsExample.csproj",
-                "samples/AutomaticTraceIdInjection/Log4NetExample/Log4NetExample.csproj",
-                "samples/AutomaticTraceIdInjection/NLog40Example/NLog40Example.csproj",
-                "samples/AutomaticTraceIdInjection/NLog45Example/NLog45Example.csproj",
-                "samples/AutomaticTraceIdInjection/NLog46Example/NLog46Example.csproj",
-                "samples/AutomaticTraceIdInjection/SerilogExample/SerilogExample.csproj",
-                "samples/ConsoleApp/Alpine3.10.dockerfile",
-                "samples/ConsoleApp/Alpine3.9.dockerfile",
-                "samples/ConsoleApp/Debian.dockerfile",
-                "samples/WindowsContainer/Dockerfile",
-                "src/Datadog.Monitoring.Distribution/Datadog.Monitoring.Distribution.csproj",
-                "src/Datadog.Trace.AspNet/Datadog.Trace.AspNet.csproj",
-                "src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj",
-                "src/Datadog.Trace.ClrProfiler.Managed.Loader/Startup.cs",
-                "src/Datadog.Trace.ClrProfiler.Native/CMakeLists.txt",
-                "src/Datadog.Trace.ClrProfiler.Native/dd_profiler_constants.h",
-                "src/Datadog.Trace.ClrProfiler.Native/Resource.rc",
-                "src/Datadog.Trace.ClrProfiler.Native/version.h",
-                "src/Datadog.Trace.MSBuild/Datadog.Trace.MSBuild.csproj",
-                "src/Datadog.Trace.OpenTracing/Datadog.Trace.OpenTracing.csproj",
-                "src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.Standalone.csproj",
-                "src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.Tool.csproj",
-                "src/Datadog.Trace/Datadog.Trace.csproj",
-                "src/Datadog.Trace/TracerConstants.cs",
-                "src/WindowsInstaller/WindowsInstaller.wixproj",
-                "test/test-applications/regression/AutomapperTest/Dockerfile",
+                "tracer/build/_build/Build.cs",
+                "tracer/integrations.json",
+                "tracer/samples/AutomaticTraceIdInjection/MicrosoftExtensionsExample/MicrosoftExtensionsExample.csproj",
+                "tracer/samples/AutomaticTraceIdInjection/Log4NetExample/Log4NetExample.csproj",
+                "tracer/samples/AutomaticTraceIdInjection/NLog40Example/NLog40Example.csproj",
+                "tracer/samples/AutomaticTraceIdInjection/NLog45Example/NLog45Example.csproj",
+                "tracer/samples/AutomaticTraceIdInjection/NLog46Example/NLog46Example.csproj",
+                "tracer/samples/AutomaticTraceIdInjection/SerilogExample/SerilogExample.csproj",
+                "tracer/samples/ConsoleApp/Alpine3.10.dockerfile",
+                "tracer/samples/ConsoleApp/Alpine3.9.dockerfile",
+                "tracer/samples/ConsoleApp/Debian.dockerfile",
+                "tracer/samples/WindowsContainer/Dockerfile",
+                "tracer/src/Datadog.Monitoring.Distribution/Datadog.Monitoring.Distribution.csproj",
+                "tracer/src/Datadog.Trace.AspNet/Datadog.Trace.AspNet.csproj",
+                "tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj",
+                "tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Startup.cs",
+                "tracer/src/Datadog.Trace.ClrProfiler.Native/CMakeLists.txt",
+                "tracer/src/Datadog.Trace.ClrProfiler.Native/dd_profiler_constants.h",
+                "tracer/src/Datadog.Trace.ClrProfiler.Native/Resource.rc",
+                "tracer/src/Datadog.Trace.ClrProfiler.Native/version.h",
+                "tracer/src/Datadog.Trace.MSBuild/Datadog.Trace.MSBuild.csproj",
+                "tracer/src/Datadog.Trace.OpenTracing/Datadog.Trace.OpenTracing.csproj",
+                "tracer/src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.Standalone.csproj",
+                "tracer/src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.Tool.csproj",
+                "tracer/src/Datadog.Trace/Datadog.Trace.csproj",
+                "tracer/src/Datadog.Trace/TracerConstants.cs",
+                "tracer/src/WindowsInstaller/WindowsInstaller.wixproj",
+                "tracer/test/test-applications/regression/AutomapperTest/Dockerfile",
             };
 
             Logger.Info("Verifying that all expected files changed...");
@@ -304,6 +305,7 @@ partial class Build
                     "area:customer-samples",
                     "area:samples-and-test-apps",
                     "area:third-party-test-suites",
+                    "area:test-apps",
                     "area:tools",
                     "area:vendors",
                 };
@@ -442,30 +444,66 @@ partial class Build
                   oldBuild.SourceVersion,
                   newBuild.SourceVersion);
 
-              Console.WriteLine("Posting comment to GitHub");
-
-              // post directly to GitHub as
-              var httpClient = new HttpClient();
-              httpClient.DefaultRequestHeaders.Add("Accept", "application/vnd.github.v3+json");
-              httpClient.DefaultRequestHeaders.Add("Authorization", $"token {GitHubToken}");
-              httpClient.DefaultRequestHeaders.UserAgent.Add(new(new System.Net.Http.Headers.ProductHeaderValue("nuke-ci-client")));
-
-              var url = $"https://api.github.com/repos/{GitHubRepositoryOwner}/{GitHubRepositoryName}/issues/{prNumber}/comments";
-              Console.WriteLine($"Sending request to '{url}'");
-
-              var result = await httpClient.PostAsJsonAsync(url, new { body = markdown });
-
-              if (result.IsSuccessStatusCode)
-              {
-                  Console.WriteLine("Comment posted successfully");
-              }
-              else
-              {
-                  var response = await result.Content.ReadAsStringAsync();
-                  Console.WriteLine("Error: " + response);
-                  result.EnsureSuccessStatusCode();
-              }
+              await PostCommentToPullRequest(prNumber, markdown);
           });
+
+    Target CompareBenchmarksResults => _ => _
+         .Unlisted()
+         .DependsOn(CreateRequiredDirectories)
+         .Requires(() => AzureDevopsToken)
+         .Requires(() => GitHubToken)
+         .Executes(async () =>
+         {
+             if (!int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var prNumber))
+             {
+                 Logger.Warn("No PR_NUMBER variable found. Skipping benchmark comparison");
+                 return;
+             }
+
+             var masterDir = BuildDataDirectory / "previous_benchmarks";
+             var prDir = BuildDataDirectory / "benchmarks";
+
+             FileSystemTasks.EnsureCleanDirectory(masterDir);
+
+             // Connect to Azure DevOps Services
+             var connection = new VssConnection(
+                 new Uri(AzureDevopsOrganisation),
+                 new VssBasicCredential(string.Empty, AzureDevopsToken));
+
+             using var buildHttpClient = connection.GetClient<BuildHttpClient>();
+
+             var (oldBuild, _) = await DownloadAzureArtifact(buildHttpClient, "refs/heads/master", build => "benchmarks_results", masterDir, buildReason: null);
+
+             var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, oldBuild.SourceVersion);
+             await PostCommentToPullRequest(prNumber, markdown);
+         });
+
+    async Task PostCommentToPullRequest(int prNumber, string markdown)
+    {
+        Console.WriteLine("Posting comment to GitHub");
+
+        // post directly to GitHub as
+        var httpClient = new HttpClient();
+        httpClient.DefaultRequestHeaders.Add("Accept", "application/vnd.github.v3+json");
+        httpClient.DefaultRequestHeaders.Add("Authorization", $"token {GitHubToken}");
+        httpClient.DefaultRequestHeaders.UserAgent.Add(new(new System.Net.Http.Headers.ProductHeaderValue("nuke-ci-client")));
+
+        var url = $"https://api.github.com/repos/{GitHubRepositoryOwner}/{GitHubRepositoryName}/issues/{prNumber}/comments";
+        Console.WriteLine($"Sending request to '{url}'");
+
+        var result = await httpClient.PostAsJsonAsync(url, new { body = markdown });
+
+        if (result.IsSuccessStatusCode)
+        {
+            Console.WriteLine("Comment posted successfully");
+        }
+        else
+        {
+            var response = await result.Content.ReadAsStringAsync();
+            Console.WriteLine("Error: " + response);
+            result.EnsureSuccessStatusCode();
+        }
+    }
 
     async Task<(Microsoft.TeamFoundation.Build.WebApi.Build, BuildArtifact)> DownloadAzureArtifact(
         BuildHttpClient buildHttpClient,

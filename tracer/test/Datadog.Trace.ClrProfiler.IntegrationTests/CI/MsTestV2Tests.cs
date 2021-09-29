@@ -31,8 +31,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [Trait("Category", "TestIntegrations")]
         public void SubmitTraces(string packageVersion)
         {
+            var version = string.IsNullOrEmpty(packageVersion) ? new Version("2.0.0") : new Version(packageVersion);
             List<MockTracerAgent.Span> spans = null;
-            var expectedSpanCount = new Version(packageVersion).CompareTo(new Version("2.2.5")) < 0 ? 13 : 15;
+            var expectedSpanCount = version.CompareTo(new Version("2.2.5")) < 0 ? 13 : 15;
 
             try
             {
@@ -72,6 +73,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                         // check the test framework
                         AssertTargetSpanContains(targetSpan, TestTags.Framework, "MSTestV2");
+                        Assert.True(targetSpan.Tags.Remove(TestTags.FrameworkVersion));
 
                         // check the version
                         AssertTargetSpanEqual(targetSpan, "version", "1.0.0");
