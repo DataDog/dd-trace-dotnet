@@ -50,7 +50,14 @@
 
   <!-- Used by CompileIntegrationTests-->
   <Target Name="BuildCsharpIntegrationTests">
-    <MSBuild Targets="Build" Projects="@(RazorPagesProject);@(CsharpIntegrationTestProject);@(CsharpIntegrationTestRegressionProject);@(ExcludeExpenseItDemoProject);@(ExcludeEF6DemoProject);@(ExcludeLegacyRedisProject)">
+
+    <!-- Filter the sample projects by TargetFramework -->
+    <ItemGroup>
+      <IntegrationTestProjects Include="@(RazorPagesProject)" Condition="!$(TargetFramework.StartsWith('net4'))" />
+      <IntegrationTestProjects Include="@(CsharpIntegrationTestProject);@(CsharpIntegrationTestRegressionProject);@(ExcludeExpenseItDemoProject);@(ExcludeEF6DemoProject);@(ExcludeLegacyRedisProject)" />
+    </ItemGroup>
+
+    <MSBuild Targets="Build" Projects="@(IntegrationTestProjects)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
