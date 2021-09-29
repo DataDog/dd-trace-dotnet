@@ -36,18 +36,18 @@ namespace Datadog.Trace.AppSec.AspNetCore
             {
                 if (context.Items.ContainsKey(SecurityConstants.KillKey) && context.Items[SecurityConstants.KillKey] is bool killKey && killKey)
                 {
-                    await BlockRequest(context);
+                    await BlockRequest(context).ConfigureAwait(true);
                 }
                 else
                 {
                     try
                     {
                         context.Items[SecurityConstants.InHttpPipeKey] = true;
-                        await next.Invoke();
+                        await next.Invoke().ConfigureAwait(true);
                     }
                     catch (BlockActionException)
                     {
-                        await BlockRequest(context);
+                        await BlockRequest(context).ConfigureAwait(true);
                     }
                 }
             }
@@ -70,7 +70,7 @@ namespace Datadog.Trace.AppSec.AspNetCore
                 blockByThrow = false;
                 context.Response.StatusCode = 403;
                 context.Response.ContentType = "text/html";
-                await context.Response.WriteAsync(SecurityConstants.AttackBlockedHtml);
+                await context.Response.WriteAsync(SecurityConstants.AttackBlockedHtml).ConfigureAwait(true);
             }
 
             var callbackExists = context.Items.TryGetValue("Security", out var result);
