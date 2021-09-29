@@ -27,14 +27,11 @@ namespace Datadog.Trace.Tools.Runner
         private static void Main(string[] args)
         {
             // Initializing
-            string executablePath = (Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly()).Location;
-            string location = executablePath;
-            if (string.IsNullOrEmpty(location))
+            RunnerFolder = AppContext.BaseDirectory;
+            if (string.IsNullOrEmpty(RunnerFolder))
             {
-                location = Environment.GetCommandLineArgs().FirstOrDefault();
+                RunnerFolder = Path.GetDirectoryName(Environment.GetCommandLineArgs().FirstOrDefault());
             }
-
-            RunnerFolder = Path.GetDirectoryName(location);
 
             if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
             {
