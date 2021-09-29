@@ -404,7 +404,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                     }
                 }
 
-                string testFramework = "xUnit " + testInvokerAssemblyName.Version.ToString();
+                string testFramework = "xUnit";
 
                 scope = Common.TestTracer.StartActive("xunit.test", serviceName: Common.TestTracer.DefaultServiceName);
                 Span span = scope.Span;
@@ -416,6 +416,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 span.SetTag(TestTags.Suite, testSuite);
                 span.SetTag(TestTags.Name, testName);
                 span.SetTag(TestTags.Framework, testFramework);
+                span.SetTag(TestTags.FrameworkVersion, testInvokerAssemblyName.Version.ToString());
                 span.SetTag(TestTags.Type, TestTags.TypeTest);
                 CIEnvironmentValues.DecorateSpan(span);
 

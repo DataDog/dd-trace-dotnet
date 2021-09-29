@@ -7,7 +7,6 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
 
-    <LoadManagedProfilerFromProfilerDirectory>true</LoadManagedProfilerFromProfilerDirectory>
   </PropertyGroup>
 
   <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">

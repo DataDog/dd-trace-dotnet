@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Exporters.Json;
 using Datadog.Trace;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
@@ -12,7 +13,6 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Benchmarks.Trace
 {
-    [DatadogExporter]
     [MemoryDiagnoser]
     public class AgentWriterBenchmark
     {

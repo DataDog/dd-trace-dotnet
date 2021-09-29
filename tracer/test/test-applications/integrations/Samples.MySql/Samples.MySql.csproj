@@ -6,7 +6,6 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
 
-    <LoadManagedProfilerFromProfilerDirectory>true</LoadManagedProfilerFromProfilerDirectory>
   </PropertyGroup>
 
   <ItemGroup>

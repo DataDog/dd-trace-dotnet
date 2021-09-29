@@ -7,16 +7,11 @@
     <DefineConstants Condition="'$(BuildingInsideVisualStudio)'=='true' or '$(TestAllPackageVersions)'!='true'">$(DefineConstants);DEFAULT_SAMPLES</DefineConstants>
     <DefineConstants Condition="'$(PerformComprehensiveTesting)'=='true'">$(DefineConstants);COMPREHENSIVE_TESTS</DefineConstants>
 
-    <ManagedProfilerOutputDirectory Condition="'$(ManagedProfilerOutputDirectory)' == ''">$(MSBuildThisFileDirectory)\..\src\Datadog.Trace.ClrProfiler.Managed\bin\$(Configuration)</ManagedProfilerOutputDirectory>
-    <NativeProfilerOutputDirectory Condition="'$(NativeProfilerOutputDirectory)' == ''">$(MSBuildThisFileDirectory)\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$()</NativeProfilerOutputDirectory>
-
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\..\src\Datadog.Trace.ClrProfiler.Native\bin\$(Configuration)\$(Platform)\**" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" Link="profiler-lib\%(RecursiveDir)\%(Filename)%(Extension)" />
     <None Remove="applicationHost.config" />
     <None Remove="xunit.runner.json" />
-    <Content Include="..\..\integrations.json" CopyToOutputDirectory="Always" CopyToPublishDirectory="Always" Link="profiler-lib\integrations.json" />
     <Content Include="applicationHost.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -43,18 +38,6 @@
   <ItemGroup Condition=" $(TargetFramework.StartsWith('netcoreapp')) ">
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
   </ItemGroup>
-
-  <Target Name="AfterBuildCopyManagedProfiler" AfterTargets="AfterBuild">
-    <ItemGroup>
-      <!-- Subfolders of the output directory should each be a target framework -->
-      <ManagedProfilerFiles Include="$(ManagedProfilerOutputDirectory)\**\*.dll" Exclude="$(ManagedProfilerOutputDirectory)\*\runtimes\**\*.dll" />
-      <ManagedProfilerFiles Include="$(ManagedProfilerOutputDirectory)\**\*.pdb" Exclude="$(ManagedProfilerOutputDirectory)\*\runtimes\**\*.pdb" />
-      <SecurityLibraryFiles Include="$(Pkglibddwaf)\runtimes\**\*.*" />
-    </ItemGroup>
-
-    <Copy SourceFiles="@(ManagedProfilerFiles)" DestinationFolder="$(OutputPath)profiler-lib\%(RecursiveDir)" />
-    <Copy SourceFiles="@(SecurityLibraryFiles)" DestinationFolder="$(OutputPath)profiler-lib\%(RecursiveDir)" />
-  </Target>
 
   <ItemGroup>
     <None Update="CI\Data\*.*">

@@ -29,7 +29,7 @@ partial class Build : NukeBuild
     readonly Configuration BuildConfiguration = Configuration.Release;
 
     [Parameter("Platform to build - x86 or x64. Default is x64")]
-    readonly MSBuildTargetPlatform Platform = MSBuildTargetPlatform.x64;
+    readonly MSBuildTargetPlatform TargetPlatform = MSBuildTargetPlatform.x64;
 
     [Parameter("The TargetFramework to execute when running or building a sample app, or linux integration tests")]
     readonly TargetFramework Framework;
@@ -51,7 +51,7 @@ partial class Build : NukeBuild
     readonly bool IsAlpine = false;
 
     [Parameter("The build version. Default is latest")]
-    readonly string Version = "1.28.6";
+    readonly string Version = "1.28.8";
 
     [Parameter("Whether the build version is a prerelease(for packaging purposes). Default is latest")]
     readonly bool IsPrerelease = false;
@@ -71,7 +71,7 @@ partial class Build : NukeBuild
         .Executes(() =>
         {
             Logger.Info($"Configuration: {BuildConfiguration}");
-            Logger.Info($"Platform: {Platform}");
+            Logger.Info($"Platform: {TargetPlatform}");
             Logger.Info($"Framework: {Framework}");
             Logger.Info($"TestAllPackageVersions: {TestAllPackageVersions}");
             Logger.Info($"TracerHomeDirectory: {TracerHomeDirectory}");
@@ -169,7 +169,7 @@ partial class Build : NukeBuild
         .DependsOn(PublishIisSamples)
         .DependsOn(CompileIntegrationTests);
 
-    Target BuildWindowsRegressionIntegrationTests => _ => _
+    Target BuildWindowsRegressionTests => _ => _
         .Unlisted()
         .Requires(() => IsWin)
         .Description("Builds the integration tests for Windows")
@@ -189,7 +189,7 @@ partial class Build : NukeBuild
     Target BuildAndRunWindowsRegressionTests => _ => _
         .Requires(() => IsWin)
         .Description("Builds and runs the Windows regression tests")
-        .DependsOn(BuildWindowsRegressionIntegrationTests)
+        .DependsOn(BuildWindowsRegressionTests)
         .DependsOn(RunWindowsRegressionTests);
 
     Target BuildAndRunWindowsIisIntegrationTests => _ => _
@@ -287,25 +287,40 @@ partial class Build : NukeBuild
         .Description("Runs the Benchmarks project")
         .Executes(() =>
         {
-            DotNetBuild(s => s
-                .SetProjectFile(Solution.GetProject(Projects.BenchmarksTrace))
-                .SetConfiguration(BuildConfiguration)
-                .SetFramework(TargetFramework.NETCOREAPP3_1)
-                .EnableNoDependencies()
-                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
-            );
+            var benchmarksProject = Solution.GetProject(Projects.BenchmarksTrace);
+            var resultsDirectory = benchmarksProject.Directory / "BenchmarkDotNet.Artifacts" / "results";
+            EnsureCleanDirectory(resultsDirectory);
 
-            DotNetRun(s => s
-                .SetProjectFile(Solution.GetProject(Projects.BenchmarksTrace))
-                .SetConfiguration(BuildConfiguration)
-                .SetFramework(TargetFramework.NETCOREAPP3_1)
-                .EnableNoRestore()
-                .EnableNoBuild()
-                .SetApplicationArguments("-r net472 netcoreapp3.1 -m -f * --iterationTime 2000")
-                .SetProcessEnvironmentVariable("DD_SERVICE", "dd-trace-dotnet")
-                .SetProcessEnvironmentVariable("DD_ENV", "CI")
-                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
-            );
+            try
+            {
+                DotNetBuild(s => s
+                    .SetProjectFile(benchmarksProject)
+                    .SetConfiguration(BuildConfiguration)
+                    .SetFramework(TargetFramework.NETCOREAPP3_1)
+                    .EnableNoDependencies()
+                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
+                );
+
+                DotNetRun(s => s
+                    .SetProjectFile(benchmarksProject)
+                    .SetConfiguration(BuildConfiguration)
+                    .SetFramework(TargetFramework.NETCOREAPP3_1)
+                    .EnableNoRestore()
+                    .EnableNoBuild()
+                    .SetApplicationArguments("-r net472 netcoreapp3.1 -m -f * --iterationTime 2000")
+                    .SetProcessEnvironmentVariable("DD_SERVICE", "dd-trace-dotnet")
+                    .SetProcessEnvironmentVariable("DD_ENV", "CI")
+                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
+                );
+            }
+            finally
+            {
+                if (Directory.Exists(resultsDirectory))
+                {
+                    CopyDirectoryRecursively(resultsDirectory, BuildDataDirectory / "benchmarks",
+                                             DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+                }
+            }
         });
 
     /// <summary>

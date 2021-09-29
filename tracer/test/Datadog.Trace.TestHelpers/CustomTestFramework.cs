@@ -42,19 +42,14 @@ namespace Datadog.Trace.TestHelpers
 
         internal static string GetProfilerTargetFolder()
         {
-            var targetFrameworkDirectory = GetTargetFrameworkDirectory();
+            var tracerHome = EnvironmentHelper.GetTracerHomePath();
+            var targetFrameworkDirectory = EnvironmentTools.GetTracerTargetFrameworkDirectory();
 
-            var paths = EnvironmentHelper.GetProfilerPathCandidates(null).ToArray();
+            var finalDirectory = Path.Combine(tracerHome, targetFrameworkDirectory);
 
-            foreach (var path in paths)
+            if (Directory.Exists(finalDirectory))
             {
-                var baseDirectory = Path.GetDirectoryName(path);
-                var finalDirectory = Path.Combine(baseDirectory, targetFrameworkDirectory);
-
-                if (Directory.Exists(finalDirectory))
-                {
-                    return finalDirectory;
-                }
+                return finalDirectory;
             }
 
             return null;
@@ -63,23 +58,6 @@ namespace Datadog.Trace.TestHelpers
         protected override ITestFrameworkExecutor CreateExecutor(AssemblyName assemblyName)
         {
             return new CustomExecutor(assemblyName, SourceInformationProvider, DiagnosticMessageSink);
-        }
-
-        private static string GetTargetFrameworkDirectory()
-        {
-            // The conditions looks weird, but it seems like _OR_GREATER is not supported yet in all environments
-            // We can trim all the additional conditions when this is fixed
-#if NETCOREAPP3_1_OR_GREATER || NETCOREAPP3_1 || NET5_0
-            return "netcoreapp3.1";
-#elif NETCOREAPP || NETSTANDARD
-            return "netstandard2.0";
-#elif NET461_OR_GREATER || NET461 || NET47 || NET471 || NET472 || NET48
-            return "net461";
-#elif NET45_OR_GREATER || NET45 || NET451 || NET452 || NET46
-            return "net45";
-#else
-#error Unexpected TFM
-#endif
         }
 
         private class CustomExecutor : XunitTestFrameworkExecutor

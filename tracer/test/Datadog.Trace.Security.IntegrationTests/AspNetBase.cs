@@ -128,9 +128,6 @@ namespace Datadog.Trace.Security.IntegrationTests
                 throw new Exception($"application not found: {sampleAppPath}");
             }
 
-            // get full paths to integration definitions
-            var integrationPaths = Directory.EnumerateFiles(".", "*integrations.json").Select(Path.GetFullPath);
-
             // EnvironmentHelper.DebugModeEnabled = true;
 
             Output.WriteLine($"Starting Application: {sampleAppPath}");

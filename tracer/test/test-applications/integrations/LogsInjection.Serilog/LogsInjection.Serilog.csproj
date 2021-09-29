@@ -10,8 +10,6 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
 
-    <ExcludeManagedProfiler>true</ExcludeManagedProfiler>
-    <ExcludeNativeProfiler>true</ExcludeNativeProfiler>
   </PropertyGroup>
 
   <ItemGroup>

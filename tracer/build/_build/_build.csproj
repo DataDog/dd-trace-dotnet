@@ -5,7 +5,7 @@
     <TargetFramework>net5.0</TargetFramework>
     <RootNamespace></RootNamespace>
     <NoWarn>CS0649;CS0169;SA1652</NoWarn>
-    <NukeRootDirectory>..\..</NukeRootDirectory>
+    <NukeRootDirectory>..\..\..</NukeRootDirectory>
     <NukeScriptDirectory>..\..</NukeScriptDirectory>
   </PropertyGroup>
 
@@ -19,16 +19,19 @@
     <PackageReference Include="NuGet.Protocol" Version="5.10.0" />
     <PackageReference Include="Nuke.Common" Version="5.0.2" />
     <PackageReference Include="Colorful.Console" Version="1.2.15" />
+    <PackageReference Include="Perfolizer" Version="0.2.1" />
+    <PackageReference Include="CsvHelper" Version="27.1.1" />
+    <PackageReference Include="ByteSize" Version="2.1.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\..\.azure-pipelines\steps\*" Link="ci\steps\%(Filename)%(Extension)" />
-    <Content Include="..\..\.azure-pipelines\ultimate-pipeline.yml" Link="ci\ultimate-pipeline.yml" />
+    <Content Include="..\..\..\.azure-pipelines\steps\*" Link="ci\steps\%(Filename)%(Extension)" />
+    <Content Include="..\..\..\.azure-pipelines\ultimate-pipeline.yml" Link="ci\ultimate-pipeline.yml" />
     <Content Include="..\..\build_in_docker.sh" Link="boot\build_in_docker.sh" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="UpdateVendors\Datadog.Dependabot.Honeypot.template" />
-    <EmbeddedResource Include="UpdateVendors\Datadog.Dependabot.Honeypot.template" />
+    <None Remove="Honeypot\Datadog.Dependabot.Honeypot.template" />
+    <EmbeddedResource Include="Honeypot\Datadog.Dependabot.Honeypot.template" />
   </ItemGroup>
 </Project>

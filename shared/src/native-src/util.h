@@ -23,6 +23,9 @@ namespace shared
     template <typename Out>
     void Split(const WSTRING& s, wchar_t delim, Out result);
 
+    // Permissively parse a boolean envirinment variable value in a way similar to how we parse settings in managed code.
+    bool TryParseBooleanEnvironmentValue(const WSTRING& valueToParse, bool& parsedValue);
+
     // Split splits a string by the given delimiter.
     std::vector<WSTRING> Split(const WSTRING& s, wchar_t delim);
 

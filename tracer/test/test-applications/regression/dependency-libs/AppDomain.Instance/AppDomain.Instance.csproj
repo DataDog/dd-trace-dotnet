@@ -6,7 +6,6 @@
     <Platforms>x64;x86</Platforms>
     <PlatformTarget>$(Platform)</PlatformTarget>
     <IsPackable>false</IsPackable>
-    <LoadManagedProfilerFromProfilerDirectory>true</LoadManagedProfilerFromProfilerDirectory>
   </PropertyGroup>
 
   <ItemGroup>

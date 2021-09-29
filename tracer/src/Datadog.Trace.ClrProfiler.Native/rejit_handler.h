@@ -82,7 +82,6 @@ public:
     void SetModuleMetadata(ModuleMetadata* metadata);
 
     RejitHandlerModuleMethod* GetOrAddMethod(mdMethodDef methodDef);
-    bool TryGetMethod(mdMethodDef methodDef, RejitHandlerModuleMethod** methodHandler);
     bool ContainsMethod(mdMethodDef methodDef);
 
     void RequestRejitForInlinersInModule(ModuleID moduleId);
@@ -123,8 +122,8 @@ public:
 
     RejitHandlerModule* GetOrAddModule(ModuleID moduleId);
 
-    bool TryGetModule(ModuleID moduleId, RejitHandlerModule** moduleHandler);
     void RemoveModule(ModuleID moduleId);
+    bool HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef);
 
     void AddNGenModule(ModuleID moduleId);
 

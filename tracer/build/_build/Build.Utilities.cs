@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using GeneratePackageVersions;
+using Honeypot;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.Tooling;
@@ -79,7 +80,7 @@ partial class Build
         {
             MSBuild(s => s
                 .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatform(Platform)
+                .SetTargetPlatform(TargetPlatform)
                 .SetProjectFile(Solution.GetProject(SampleName)));
         });
 
@@ -130,7 +131,7 @@ partial class Build
                 {"CORECLR_PROFILER", "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"},
                 {"DD_INTEGRATIONS", TracerHomeDirectory / "integrations.json" },
                 {"DD_DOTNET_TRACER_HOME", TracerHomeDirectory },
-                {"ASPNETCORE_URLS", "https://*:5003" },
+                {"ASPNETCORE_URLS", "http://*:5003" },
             };
 
             if (IsWin)
@@ -173,16 +174,16 @@ partial class Build
                 .SetProjectFile(project)
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
-                .SetProperty("platform", Platform));
+                .SetProperty("platform", TargetPlatform));
 
             DotNetRun(s => s
-                .SetDotnetPath(Platform)
+                .SetDotnetPath(TargetPlatform)
                 .SetFramework(Framework)
                 .EnableNoLaunchProfile()
                 .SetProjectFile(project)
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
-                .SetProperty("platform", Platform)
+                .SetProperty("platform", TargetPlatform)
                 .SetProcessEnvironmentVariables(envVars));
 
         });
@@ -201,8 +202,8 @@ partial class Build
        .Description("Updates the vendored dependency code and dependabot template")
        .Executes(() =>
        {
-            var honeypotProject = RootDirectory / "honeypot"  /  "Datadog.Dependabot.Honeypot.csproj";
-            UpdateVendorsTool.UpdateHoneypotProject(honeypotProject);
+            var dependabotProj = TracerDirectory / "dependabot"  /  "Datadog.Dependabot.Vendors.csproj";
+            DependabotFileManager.UpdateVendors(dependabotProj);
 
             var vendorDirectory = Solution.GetProject(Projects.DatadogTrace).Directory / "Vendors";
             var downloadDirectory = TemporaryDirectory / "Downloads";
@@ -214,14 +215,20 @@ partial class Build
        .Description("Update the integrations.json file")
        .DependsOn(Clean, Restore, CreateRequiredDirectories, CompileManagedSrc, PublishManagedProfiler) // We load the dlls from the output, so need to do a clean build
        .Before(CopyIntegrationsJson)
-       .Executes(() =>
+       .Executes(async () =>
         {
             var assemblies = TracerHomeDirectory
                             .GlobFiles("**/Datadog.Trace.dll")
                             .Select(x => x.ToString())
                             .ToList();
 
-            GenerateIntegrationDefinitions.Run(assemblies, TracerDirectory);
+
+            var integrations = GenerateIntegrationDefinitions.GetAllIntegrations(assemblies);
+
+            GenerateIntegrationDefinitions.Run(integrations, TracerDirectory);
+
+            var dependabotProj = TracerDirectory / "dependabot" / "Datadog.Dependabot.Integrations.csproj";
+            await DependabotFileManager.UpdateIntegrations(dependabotProj, integrations);
         });
 
     Target UpdateVersion => _ => _

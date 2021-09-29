@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
@@ -33,8 +32,6 @@ namespace Datadog.Trace.TestHelpers
         private readonly TargetFrameworkAttribute _targetFramework;
 
         private bool _requiresProfiling;
-        private string _integrationsFileLocation;
-        private string _profilerFileLocation;
 
         public EnvironmentHelper(
             string sampleName,
@@ -49,6 +46,9 @@ namespace Datadog.Trace.TestHelpers
             _targetFramework = Assembly.GetAssembly(anchorType).GetCustomAttribute<TargetFrameworkAttribute>();
             _output = output;
             _requiresProfiling = requiresProfiling;
+            TracerHome = GetTracerHomePath();
+            ProfilerPath = GetProfilerPath();
+            IntegrationsJsonPath = GetIntegrationsJsonFilePath();
 
             var parts = _targetFramework.FrameworkName.Split(',');
             _runtime = parts[0];
@@ -74,6 +74,12 @@ namespace Datadog.Trace.TestHelpers
 
         public string SampleName { get; }
 
+        public string ProfilerPath { get; }
+
+        public string TracerHome { get; }
+
+        public string IntegrationsJsonPath { get; }
+
         public string FullSampleName => $"{_appNamePrepend}{SampleName}";
 
         public static bool IsNet5()
@@ -86,39 +92,74 @@ namespace Datadog.Trace.TestHelpers
             return RuntimeFrameworkDescription.Contains("core") || IsNet5();
         }
 
-        public static string GetRuntimeIdentifier()
+        public static string GetTracerHomePath()
         {
-            return IsCoreClr()
-                       ? string.Empty
-                       : $"{EnvironmentTools.GetOS()}-{EnvironmentTools.GetPlatform()}";
-        }
-
-        public static string GetSolutionDirectory()
-        {
-            return EnvironmentTools.GetSolutionDirectory();
-        }
-
-        public static IEnumerable<string> GetProfilerPathCandidates(string sampleApplicationOutputDirectory)
-        {
-            string extension = EnvironmentTools.GetOS() switch
+            var tracerHomeDirectoryEnvVar = "TracerHomeDirectory";
+            var tracerHome = Environment.GetEnvironmentVariable(tracerHomeDirectoryEnvVar);
+            if (string.IsNullOrEmpty(tracerHome))
             {
-                "win" => "dll",
-                "linux" => "so",
-                "osx" => "dylib",
+                // default
+                return Path.Combine(
+                    EnvironmentTools.GetSolutionDirectory(),
+                    "tracer",
+                    "bin",
+                    "tracer-home");
+            }
+
+            if (!Directory.Exists(tracerHome))
+            {
+                throw new InvalidOperationException($"{tracerHomeDirectoryEnvVar} was set to '{tracerHome}', but directory does not exist");
+            }
+
+            // basic verification
+            var tfmDirectory = EnvironmentTools.GetTracerTargetFrameworkDirectory();
+            var dllLocation = Path.Combine(tracerHome, tfmDirectory);
+            if (!Directory.Exists(dllLocation))
+            {
+                throw new InvalidOperationException($"{tracerHomeDirectoryEnvVar} was set to '{tracerHome}', but location does not contain expected folder '{tfmDirectory}'");
+            }
+
+            return tracerHome;
+        }
+
+        public static string GetProfilerPath()
+        {
+            var tracerHome = GetTracerHomePath();
+
+            var (extension, dir) = (EnvironmentTools.GetOS(), EnvironmentTools.GetPlatform()) switch
+            {
+                ("win", "X64") => ("dll", "win-x64"),
+                ("win", "X86") => ("dll", "win-x86"),
+                ("linux", "X64") => ("so", null),
+                ("linux", "Arm64") => ("so", null),
+                ("osx", _) => ("dylib", null),
                 _ => throw new PlatformNotSupportedException()
             };
 
-            string fileName = $"Datadog.Trace.ClrProfiler.Native.{extension}";
+            var fileName = $"Datadog.Trace.ClrProfiler.Native.{extension}";
 
-            var relativePath = Path.Combine("profiler-lib", fileName);
+            var path = dir is null
+                           ? Path.Combine(tracerHome, fileName)
+                           : Path.Combine(tracerHome, dir, fileName);
 
-            if (sampleApplicationOutputDirectory != null)
+            if (!File.Exists(path))
             {
-                yield return Path.Combine(sampleApplicationOutputDirectory, relativePath);
+                throw new Exception($"Unable to find profiler at {path}");
             }
 
-            yield return Path.Combine(GetExecutingProjectBin(), relativePath);
-            yield return Path.Combine(GetProfilerProjectBin(), fileName);
+            return path;
+        }
+
+        public static string GetIntegrationsJsonFilePath()
+        {
+            string fileName = "integrations.json";
+            var path = Path.Combine(GetTracerHomePath(), fileName);
+            if (!File.Exists(path))
+            {
+                throw new Exception($"Attempt 3: Unable to find integrations at {path}");
+            }
+
+            return path;
         }
 
         public static void ClearProfilerEnvironmentVariables()
@@ -166,25 +207,19 @@ namespace Datadog.Trace.TestHelpers
             bool callTargetEnabled = false)
         {
             string profilerEnabled = _requiresProfiling ? "1" : "0";
-            string profilerPath;
+            environmentVariables["DD_DOTNET_TRACER_HOME"] = TracerHome;
 
             if (IsCoreClr())
             {
                 environmentVariables["CORECLR_ENABLE_PROFILING"] = profilerEnabled;
                 environmentVariables["CORECLR_PROFILER"] = EnvironmentTools.ProfilerClsId;
-
-                profilerPath = GetProfilerPath();
-                environmentVariables["CORECLR_PROFILER_PATH"] = profilerPath;
-                environmentVariables["DD_DOTNET_TRACER_HOME"] = Path.GetDirectoryName(profilerPath);
+                environmentVariables["CORECLR_PROFILER_PATH"] = ProfilerPath;
             }
             else
             {
                 environmentVariables["COR_ENABLE_PROFILING"] = profilerEnabled;
                 environmentVariables["COR_PROFILER"] = EnvironmentTools.ProfilerClsId;
-
-                profilerPath = GetProfilerPath();
-                environmentVariables["COR_PROFILER_PATH"] = profilerPath;
-                environmentVariables["DD_DOTNET_TRACER_HOME"] = Path.GetDirectoryName(profilerPath);
+                environmentVariables["COR_PROFILER_PATH"] = ProfilerPath;
             }
 
             if (DebugModeEnabled)
@@ -202,8 +237,7 @@ namespace Datadog.Trace.TestHelpers
                 environmentVariables["DD_PROFILER_PROCESSES"] = Path.GetFileName(processToProfile);
             }
 
-            string integrations = string.Join(";", GetIntegrationsFilePaths());
-            environmentVariables["DD_INTEGRATIONS"] = integrations;
+            environmentVariables["DD_INTEGRATIONS"] = IntegrationsJsonPath;
             environmentVariables["DD_TRACE_AGENT_HOSTNAME"] = "127.0.0.1";
             environmentVariables["DD_TRACE_AGENT_PORT"] = agentPort.ToString();
 
@@ -248,79 +282,6 @@ namespace Datadog.Trace.TestHelpers
             {
                 environmentVariables[key] = CustomEnvironmentVariables[key];
             }
-        }
-
-        public string[] GetIntegrationsFilePaths()
-        {
-            if (_integrationsFileLocation == null)
-            {
-                string fileName = "integrations.json";
-
-                var directory = GetSampleApplicationOutputDirectory();
-
-                var relativePath = Path.Combine(
-                    "profiler-lib",
-                    fileName);
-
-                _integrationsFileLocation = Path.Combine(
-                    directory,
-                    relativePath);
-
-                // TODO: get rid of the fallback options when we have a consistent convention
-
-                if (!File.Exists(_integrationsFileLocation))
-                {
-                    _output?.WriteLine($"Attempt 1: Unable to find integrations at {_integrationsFileLocation}.");
-                    // Let's try the executing directory, as dotnet publish ignores the Copy attributes we currently use
-                    _integrationsFileLocation = Path.Combine(
-                        GetExecutingProjectBin(),
-                        relativePath);
-                }
-
-                if (!File.Exists(_integrationsFileLocation))
-                {
-                    _output?.WriteLine($"Attempt 2: Unable to find integrations at {_integrationsFileLocation}.");
-                    // One last attempt at the solution root
-                    _integrationsFileLocation = Path.Combine(
-                        EnvironmentTools.GetSolutionDirectory(),
-                        "tracer",
-                        fileName);
-                }
-
-                if (!File.Exists(_integrationsFileLocation))
-                {
-                    throw new Exception($"Attempt 3: Unable to find integrations at {_integrationsFileLocation}");
-                }
-
-                _output?.WriteLine($"Found integrations at {_integrationsFileLocation}.");
-            }
-
-            return new[]
-            {
-                _integrationsFileLocation
-            };
-        }
-
-        public string GetProfilerPath()
-        {
-            if (_profilerFileLocation == null)
-            {
-                var paths = GetProfilerPathCandidates(GetSampleApplicationOutputDirectory()).ToArray();
-
-                foreach (var candidate in paths)
-                {
-                    if (File.Exists(candidate))
-                    {
-                        _profilerFileLocation = candidate;
-                        _output?.WriteLine($"Found profiler at {_profilerFileLocation}.");
-                        return candidate;
-                    }
-                }
-
-                throw new Exception($"Unable to find profiler in any of the paths: {string.Join("; ", paths)}");
-            }
-
-            return _profilerFileLocation;
         }
 
         public string GetSampleApplicationPath(string packageVersion = "", string framework = "")
@@ -488,22 +449,6 @@ namespace Datadog.Trace.TestHelpers
             }
 
             return $"net{_major}{_minor}{_patch ?? string.Empty}";
-        }
-
-        private static string GetProfilerProjectBin()
-        {
-            return Path.Combine(
-                EnvironmentTools.GetSolutionDirectory(),
-                "src",
-                "Datadog.Trace.ClrProfiler.Native",
-                "bin",
-                EnvironmentTools.GetBuildConfiguration(),
-                EnvironmentTools.GetPlatform().ToLower());
-        }
-
-        private static string GetExecutingProjectBin()
-        {
-            return Path.GetDirectoryName(ExecutingAssembly.Location);
         }
     }
 }
