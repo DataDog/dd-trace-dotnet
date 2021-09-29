@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -46,6 +47,30 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         }
 
         [Fact]
+        public async Task SinkRejectsGiantMessages()
+        {
+            var logsApi = new TestLogsApi();
+            var options = new BatchingSinkOptions(batchSizeLimit: 2, periodMs: TinyWaitMs);
+            var sink = new DatadogSink(logsApi, SettingsHelper.GetFormatter(), options);
+
+            var message = new StringBuilder().Append('x', repeatCount: 1024 * 1024).ToString();
+            sink.EnqueueLog(new TestLogEvent(DirectSubmissionLogLevel.Debug, message));
+
+            for (var i = 0; i < 10; i++)
+            {
+                if (logsApi.Logs.Count > 0)
+                {
+                    // done
+                    return;
+                }
+
+                await Task.Delay(TinyWaitMs);
+            }
+
+            logsApi.Logs.Count.Should().Be(0);
+        }
+
+        [Fact]
         public async Task SinkSendsMessageAsJsonBatch()
         {
             var logsApi = new TestLogsApi();
@@ -83,6 +108,45 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             logs[1].Message.Should().Be(secondMessage);
         }
 
+        [Fact]
+        public async Task SinkSendsMultipleBatches()
+        {
+            var logsApi = new TestLogsApi();
+            var options = new BatchingSinkOptions(batchSizeLimit: 2, periodMs: TinyWaitMs);
+            var sink = new DatadogSink(logsApi, SettingsHelper.GetFormatter(), options);
+
+            sink.EnqueueLog(new TestLogEvent(DirectSubmissionLogLevel.Debug, "First message"));
+            sink.EnqueueLog(new TestLogEvent(DirectSubmissionLogLevel.Information, "Second message"));
+            sink.EnqueueLog(new TestLogEvent(DirectSubmissionLogLevel.Information, "Third message"));
+            sink.EnqueueLog(new TestLogEvent(DirectSubmissionLogLevel.Information, "Fourth message"));
+            sink.EnqueueLog(new TestLogEvent(DirectSubmissionLogLevel.Information, "Fifth message"));
+
+            List<SentMessage> batches = new();
+            for (var i = 0; i < 10; i++)
+            {
+                if (logsApi.Logs.Count > 0)
+                {
+                    var batch = logsApi.Logs.Dequeue();
+                    if (batch is not null)
+                    {
+                        batches.Add(batch);
+                    }
+                }
+
+                await Task.Delay(TinyWaitMs);
+            }
+
+            batches.Should().HaveCountGreaterOrEqualTo(3); // batch size is 2, so at least 3 batches
+
+            var logs = batches
+                      .Select(batch => Encoding.UTF8.GetString(batch.Logs.Array))
+                      .SelectMany(batch => JsonConvert.DeserializeObject<List<TestLogEvent>>(batch))
+                      .ToList();
+
+            logs.Count.Should().Be(5);
+            logs.Select(x => x.Message).Should().OnlyHaveUniqueItems();
+        }
+
         internal class TestLogEvent : DatadogLogEvent
         {
             public TestLogEvent(DirectSubmissionLogLevel level, string message)
@@ -112,7 +176,8 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
 
             public Task SendLogsAsync(ArraySegment<byte> logs, int numberOfLogs)
             {
-                Logs.Enqueue(new SentMessage(logs, numberOfLogs));
+                // create a copy of it
+                Logs.Enqueue(new SentMessage(new ArraySegment<byte>(logs.ToArray()), numberOfLogs));
                 return Task.FromResult(0);
             }
         }

@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
@@ -14,26 +15,34 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
 {
     internal class DatadogSink : BatchingSink, IDatadogSink
     {
-        // Maximum size for a single log is 1MB, we are currently only estimating the message size in bytes
-        // so stay conservative here
-        internal const int MaxMessageSizeBytes = 800 * 1024;
+        // Maximum size for a single log is 1MB, we slightly on the cautious side
+        internal const int MaxMessageSizeBytes = 1000 * 1024;
 
         // Maximum content size per payload is 5MB compressed
         // Stay conservative with max payload size of 3MB
-        internal const int MaxSizeBytes = (3 * 1024 * 1024);
+        internal const int MaxTotalSizeBytes = (3 * 1024 * 1024);
 
-        internal const int InitialBuilderSizeBytes = 500 * 1024; // 0.5 MB
+        // Initial size of the per-event string builder
+        // Should be big enough to handle _most_ logs to avoid too many initial resizes
+        internal const int InitialBuilderSizeBytes = 10 * 1024; // 10 KB
+
+        // Initial size of the full serialized set of logs
+        // Should be big enough to handle _most_ cases to avoid too many resizes
+        internal const int InitialAllLogsSizeBytes = 100 * 1024; // 0.1 MB
 
         // These are specific to the JSON/HTTP formatting, so probably shouldn't be constants
         // but this will do for now
-        private const char Prefix = '[';
-        private const char Suffix = ']';
-        private const char Separator = ',';
+        private const byte PrefixAsUtf8Byte = 0x5b; // '['
+        private const byte SuffixAsUtf8Byte = 0x5D; // ']'
+        private const byte SeparatorAsUtf8Byte = 0x2C; // ','
 
         private readonly IDatadogLogger _logger = DatadogLogging.GetLoggerFor<DatadogSink>();
         private readonly ILogsApi _api;
         private readonly LogFormatter _formatter;
-        private StringBuilder _sb = new(InitialBuilderSizeBytes);
+        private readonly StringBuilder _logStringBuilder = new(InitialBuilderSizeBytes);
+        private byte[] _serializedLogs = new byte[InitialAllLogsSizeBytes];
+        private int _byteCount = 0;
+        private int _logCount = 0;
 
         public DatadogSink(ILogsApi api, LogFormatter formatter, BatchingSinkOptions sinkOptions)
             : base(sinkOptions)
@@ -55,84 +64,91 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
                     return;
                 }
 
-                _sb.Append(Prefix);
-                var previousLength = _sb.Length;
-                var logCount = 0;
+                // Add to the first log
+                _serializedLogs[0] = PrefixAsUtf8Byte;
+                _logCount = 0;
+                _byteCount = 1;
 
                 foreach (var log in events)
                 {
-                    // TODO: Check for oversize log during serialization?
-                    // Currently a rogue giant message still pays the serialization cost but is then thrown away
-                    log.Format(_sb, _formatter);
-                    var logLength = _sb.Length - previousLength;
-                    logCount++;
-
-                    // We should be using Encoding.UTF8.GetByteCount(), but that requires allocating
-                    // the string for every individual log. If we have to do that, maybe this should
-                    // be restructured generally
-                    if (logLength > MaxMessageSizeBytes)
+                    // reset the string builder
+                    _logStringBuilder.Clear();
+                    if (_logStringBuilder.Capacity > MaxMessageSizeBytes)
                     {
-                        // remove the last event
-                        _logger.Error("Log dropped as too large to send to logs intake: {Log}", _sb.ToString(previousLength, logLength));
-                        _sb.Remove(previousLength, logLength);
-                        logCount--;
+                        // A rogue giant message could cause the builder to grow significantly more than MaxMessageSizeBytes
+                        // so reset the string builder when we get very large
+                        _logStringBuilder.Capacity = InitialBuilderSizeBytes;
+                    }
+
+                    log.Format(_logStringBuilder, _formatter);
+
+                    // would be nice to avoid this, but can't see a way without direct UTF8 serialization (System.Text.Json)
+                    // Currently a rogue giant message still pays the serialization cost but is then thrown away
+                    var serializedLog = _logStringBuilder.ToString();
+
+                    var logSize = Encoding.UTF8.GetByteCount(serializedLog);
+                    if (logSize > MaxMessageSizeBytes)
+                    {
+                        _logger.Error<int, string>("Log dropped as too large ({Size} bytes) to send to logs intake: {Log}", logSize, serializedLog);
                         continue;
                     }
 
-                    if (_sb.Length > MaxSizeBytes)
+                    var requiredTotalSize = _byteCount + logSize + 1; // + 1 for the separate/suffix
+                    if (requiredTotalSize > _serializedLogs.Length && requiredTotalSize <= MaxTotalSizeBytes)
                     {
-                        _sb.Append(Suffix);
-                        await SendLogsChunk(_sb.ToString(), logCount).ConfigureAwait(false);
-                        logCount = 0;
-                        _sb.Clear();
-                        _sb.Append(Prefix);
-                    }
-                    else
-                    {
-                        _sb.Append(Separator);
+                        // grow the array
+                        var newSize = Math.Min(_serializedLogs.Length * 2, MaxTotalSizeBytes);
+                        var newArray = new byte[newSize];
+                        Array.Copy(_serializedLogs, 0, newArray, 0, _serializedLogs.Length);
+                        _serializedLogs = newArray;
                     }
 
-                    previousLength = _sb.Length;
+                    if (requiredTotalSize > MaxTotalSizeBytes)
+                    {
+                        // send what we have, add the log to the subsequent chunk
+                        await ReplaceFinalSeparatorAndSendChunk().ConfigureAwait(false);
+                    }
+
+                    // add the log to the batch
+                    var bytesWritten = Encoding.UTF8.GetBytes(serializedLog, 0, serializedLog.Length, _serializedLogs, _byteCount);
+                    Debug.Assert(bytesWritten == logSize, "Actual bytes written should equal the log size");
+
+                    _byteCount += bytesWritten;
+
+                    // add the separator
+                    _serializedLogs[_byteCount] = SeparatorAsUtf8Byte;
+                    _byteCount++;
+                    _logCount++;
                 }
 
-                if (logCount > 0)
+                if (_logCount > 0)
                 {
-                    // remove the final separator and replace with suffix
-                    _sb.Remove(_sb.Length - 1, length: 1);
-                    _sb.Append(Suffix);
-                    await SendLogsChunk(_sb.ToString(), logCount).ConfigureAwait(false);
+                    await ReplaceFinalSeparatorAndSendChunk().ConfigureAwait(false);
                 }
             }
             catch (Exception e)
             {
                 _logger.Error(e, "An error occured sending logs to Datadog");
             }
-
-            // We use a "shared" string builder, as this method is called by the BatchingSink
-            // and is invoked serially. Depending on the number of logs, it can grow to ~MaxSizeBytes
-            // A rogue giant message could cause it to grow significantly more than this, to be on the
-            // safe size, reset the string builder when we get very large
-            // We don't use MaxMessageSizeBytes as the upper limit here, otherwise we will repeatedly
-            // shrink and grow the builder when we are commonly hitting the trace size limit
-            if (_sb.Capacity > MaxMessageSizeBytes + InitialBuilderSizeBytes)
-            {
-                _sb = new StringBuilder(InitialBuilderSizeBytes);
-            }
-            else
-            {
-                _sb.Clear();
-            }
-        }
-
-        private async Task SendLogsChunk(string formattedLogs, int logCount)
-        {
-            var content = Encoding.UTF8.GetBytes(formattedLogs);
-            await _api.SendLogsAsync(new ArraySegment<byte>(content), logCount).ConfigureAwait(false);
         }
 
         protected override void AdditionalDispose()
         {
             _api.Dispose();
+        }
+
+        private async Task ReplaceFinalSeparatorAndSendChunk()
+        {
+            // Too large for this batch, so replace final separator and send what we have
+            Debug.Assert(_byteCount > 0, "Shouldn't ever be in a situation where we have 0 bytes");
+
+            _serializedLogs[_byteCount - 1] = SuffixAsUtf8Byte;
+            await _api.SendLogsAsync(new ArraySegment<byte>(_serializedLogs, 0, _byteCount), _logCount).ConfigureAwait(false);
+
+            // reset everything and on to the next log
+            _logCount = 0;
+            // keep the initial suffix
+            _byteCount = 1;
         }
     }
 }
