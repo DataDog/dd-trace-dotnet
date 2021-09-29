@@ -1,4 +1,4 @@
-// <copyright file="CustomLog4NetLogProvider.cs" company="Datadog">
+// <copyright file="NoOpLog4NetLogProvider.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,7 +10,7 @@ using Datadog.Trace.Logging.LogProviders;
 
 namespace Datadog.Trace.Logging
 {
-    internal class CustomLog4NetLogProvider : Log4NetLogProvider
+    internal class NoOpLog4NetLogProvider : Log4NetLogProvider
     {
         private static readonly IDisposable NoopDisposableInstance = new DisposableAction();
 

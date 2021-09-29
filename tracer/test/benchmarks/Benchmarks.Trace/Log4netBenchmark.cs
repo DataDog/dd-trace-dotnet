@@ -19,14 +19,14 @@ namespace Benchmarks.Trace
 
         public int N { get; } = 100;
 
-        private static void InitializeTracer(bool useLibLogSubscriber)
+        private static void InitializeTracer()
         {
-            LogProvider.SetCurrentLogProvider(new CustomLog4NetLogProvider());
+            LogProvider.SetCurrentLogProvider(new NoOpLog4NetLogProvider());
 
             var logInjectionSettings = new TracerSettings
             {
                 StartupDiagnosticLogEnabled = false,
-                LogsInjectionEnabled = useLibLogSubscriber,
+                LogsInjectionEnabled = true,
                 Environment = "env",
                 ServiceVersion = "version"
             };
@@ -67,7 +67,7 @@ namespace Benchmarks.Trace
         [GlobalSetup]
         public void GlobalSetup()
         {
-            InitializeTracer(useLibLogSubscriber: false);
+            InitializeTracer();
             InitializeLogger(useDatadogAppender: true);
         }
 
@@ -92,7 +92,7 @@ namespace Benchmarks.Trace
             {
                 var tracer = Tracer.Instance;
 
-                if (// tracer.Settings.LogsInjectionEnabled && // Run this appender regardless of logs injection
+                if (tracer.Settings.LogsInjectionEnabled &&
                     !loggingEvent.Properties.Contains(CorrelationIdentifier.ServiceKey))
                 {
                     loggingEvent.Properties[CorrelationIdentifier.ServiceKey] = tracer.DefaultServiceName ?? string.Empty;
