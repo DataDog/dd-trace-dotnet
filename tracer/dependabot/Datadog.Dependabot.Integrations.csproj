@@ -94,7 +94,7 @@
     <!-- Integration: GraphQL.SystemReactive -->
     <!-- Assembly: GraphQL.SystemReactive -->
     <!-- Latest package https://www.nuget.org/packages/GraphQL.SystemReactive/4.6.0 -->
-    <PackageReference Include="GraphQL.SystemReactive" Version="4.6.0" />
+    <PackageReference Include="GraphQL.SystemReactive" Version="4.6.1" />
 
     <!-- Integration: System.Net.Http -->
     <!-- Assembly: System.Net.Http -->
