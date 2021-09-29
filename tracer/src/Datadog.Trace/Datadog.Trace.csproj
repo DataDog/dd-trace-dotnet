@@ -95,7 +95,6 @@
   <PropertyGroup>
     <DefineConstants>$(DefineConstants);NAMED_PIPE_AVAILABLE</DefineConstants>
     <AnalysisLevel>latest</AnalysisLevel>
-    <AnalysisMode>AllEnabledByDefault</AnalysisMode>
   </PropertyGroup>
 
 </Project>
