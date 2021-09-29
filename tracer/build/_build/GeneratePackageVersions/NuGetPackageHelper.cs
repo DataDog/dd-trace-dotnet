@@ -16,28 +16,9 @@ namespace GeneratePackageVersions
 {
     public class NuGetPackageHelper
     {
-        public static async Task<IEnumerable<string>> GetNugetPackageVersions(PackageVersionEntry entry)
+        public static async Task<IEnumerable<string>> GetNugetPackageVersions(IPackageVersionEntry entry)
         {
-            var packageSource = new PackageSource("https://api.nuget.org/v3/index.json");
-
-            var providers = new List<Lazy<INuGetResourceProvider>>();
-            providers.AddRange(Repository.Provider.GetCoreV3()); // Add v3 API support
-            // providers.AddRange(Repository.Provider.GetCoreV2()); // Add v2 API support
-
-            var sourceRepository = new SourceRepository(packageSource, providers);
-            var packageMetadataResource = await sourceRepository.GetResourceAsync<PackageMetadataResource>();
-            var downloadResource = await sourceRepository.GetResourceAsync<DownloadResource>();
-
-            var sourceCacheContext = new SourceCacheContext();
-            var logger = new Logger();
-
-            var searchMetadata = await packageMetadataResource.GetMetadataAsync(
-                                                                     entry.NugetPackageSearchName,
-                                                                     includePrerelease: false,
-                                                                     includeUnlisted: true,
-                                                                     sourceCacheContext,
-                                                                     logger,
-                                                                     CancellationToken.None);
+            var searchMetadata = await GetPackageMetadatas(entry);
 
             SemanticVersion minSemanticVersion, maxSemanticVersionExclusive;
 
@@ -61,6 +42,30 @@ namespace GeneratePackageVersions
             }
 
             return packageVersions;
+        }
+
+        public static async Task<IEnumerable<IPackageSearchMetadata>> GetPackageMetadatas(IPackageVersionEntry entry)
+        {
+            var packageSource = new PackageSource("https://api.nuget.org/v3/index.json");
+
+            var providers = new List<Lazy<INuGetResourceProvider>>();
+            providers.AddRange(Repository.Provider.GetCoreV3()); // Add v3 API support
+            // providers.AddRange(Repository.Provider.GetCoreV2()); // Add v2 API support
+
+            var sourceRepository = new SourceRepository(packageSource, providers);
+            var packageMetadataResource = await sourceRepository.GetResourceAsync<PackageMetadataResource>();
+
+            var sourceCacheContext = new SourceCacheContext();
+            var logger = new Logger();
+
+            var searchMetadata = await packageMetadataResource.GetMetadataAsync(
+                                                                     entry.NugetPackageSearchName,
+                                                                     includePrerelease: false,
+                                                                     includeUnlisted: true,
+                                                                     sourceCacheContext,
+                                                                     logger,
+                                                                     CancellationToken.None);
+            return searchMetadata;
         }
 
         public class Logger : ILogger
