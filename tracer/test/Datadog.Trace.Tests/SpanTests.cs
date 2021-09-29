@@ -218,9 +218,9 @@ namespace Datadog.Trace.Tests
                     span2.SpanId.Should().NotBe(0);
                     span3.SpanId.Should().NotBe(0);
 
-                    span1.SpanId.Should().NotBe(remoteParentSpanId);    // There is an expected 1 in 2^64 chance of this line failing
-                    span2.SpanId.Should().NotBe(remoteParentSpanId);    // There is an expected 1 in 2^64 chance of this line failing
-                    span3.SpanId.Should().NotBe(remoteParentSpanId);    // There is an expected 1 in 2^64 chance of this line failing
+                    span1.SpanId.Should().NotBe(remoteParentSpanId);            // There is an expected 1 in 2^64 chance of this line failing
+                    span2.SpanId.Should().NotBe(remoteParentSpanId);            // There is an expected 1 in 2^64 chance of this line failing
+                    span3.SpanId.Should().NotBe(remoteParentSpanId);            // There is an expected 1 in 2^64 chance of this line failing
 
                     span1.LocalRootSpanId.Should().Be(span1.SpanId);
                     span2.LocalRootSpanId.Should().Be(span1.SpanId);

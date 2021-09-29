@@ -36,10 +36,6 @@ namespace Datadog.Trace
             Tags = tags ?? new CommonTags();
             Context = context;
             StartTime = start ?? Context.TraceContext.UtcNow;
-            SpanId = Context.SpanId;
-
-            Span localRootSpan = Context.TraceContext?.RootSpan;
-            LocalRootSpanId = (localRootSpan == null || localRootSpan == this) ? SpanId : localRootSpan.SpanId;
 
             Log.Debug(
                 "Span started: [s_id: {SpanID}, p_id: {ParentId}, t_id: {TraceId}]",
@@ -87,13 +83,20 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the span's unique identifier.
         /// </summary>
-        public ulong SpanId { get; }
+        public ulong SpanId => Context.SpanId;
 
         /// <summary>
         /// Gets the id of the span that is the root of the local, non-reentrant
         /// part of the distributed trace that contains this span.
         /// </summary>
-        internal ulong LocalRootSpanId { get; }
+        internal ulong LocalRootSpanId
+        {
+            get
+            {
+                Span localRootSpan = Context.TraceContext?.RootSpan;
+                return (localRootSpan == null || localRootSpan == this) ? SpanId : localRootSpan.SpanId;
+            }
+        }
 
         internal ITags Tags { get; set; }
 
