@@ -96,15 +96,8 @@ resources:
 
 # Stages
 stages:
-  # have to have a stage without any dependencies, but we don't need it
-- stage: on_your_marks
-  jobs:
-  - job: get_set
-    steps:
-    - script: |
-        echo "GO!"
-
 - stage: benchmarks
+  dependsOn: []    # this removes the implicit dependency on previous stage and causes this to run in parallel
   condition: succeeded()
   jobs:
 
@@ -149,6 +142,7 @@ stages:
         script: 'Start-Sleep -s 120'
 
 - stage: throughput
+  dependsOn: [ ]    # this removes the implicit dependency on previous stage and causes this to run in parallel
   condition: succeeded()
   pool: Throughput
   jobs:
@@ -240,6 +234,7 @@ stages:
         DD_ENV: CI
 
 - stage: execution_benchmarks
+  dependsOn: [ ]    # this removes the implicit dependency on previous stage and causes this to run in parallel
   condition: succeeded()
   jobs:
   - job: windows
