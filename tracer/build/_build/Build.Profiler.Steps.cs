@@ -45,7 +45,7 @@ partial class Build
             // run: msbuild /property:Configuration=${{matrix.configuration}} /property:Platform=${{matrix.platform}}  dd-continuous-profiler-dotnet\src\ProfilerEngine\Datadog.AutoInstrumentation.Profiler.Native.Windows\Datadog.AutoInstrumentation.Profiler.Native.Windows.WithTests.proj
             // If we're building for x64, build for x86 too
             var platforms =
-                Equals(Platform, MSBuildTargetPlatform.x64)
+                Equals(TargetPlatform, MSBuildTargetPlatform.x64)
                     ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
                     : new[] { MSBuildTargetPlatform.x86 };
 
