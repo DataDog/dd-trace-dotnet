@@ -96,6 +96,13 @@ resources:
 
 # Stages
 stages:
+  # have to have a stage without any dependencies, but we don't need it
+- stage: on_your_marks
+  jobs:
+  - job: get_set
+    steps:
+    - script: |
+        echo "GO!"
 
 - stage: benchmarks
   condition: succeeded()
