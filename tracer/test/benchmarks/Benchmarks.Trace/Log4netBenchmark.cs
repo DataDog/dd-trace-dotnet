@@ -11,15 +11,12 @@ using log4net.Repository.Hierarchy;
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
-    [InProcess]
     public class Log4netBenchmark
     {
-        private static Tracer LogInjectionTracer;
-        private static log4net.ILog Logger;
+        private static readonly Tracer LogInjectionTracer;
+        private static readonly log4net.ILog Logger;
 
-        public int N { get; } = 100;
-
-        private static void InitializeTracer()
+        static Log4netBenchmark()
         {
             LogProvider.SetCurrentLogProvider(new NoOpLog4NetLogProvider());
 
@@ -33,10 +30,7 @@ namespace Benchmarks.Trace
 
             LogInjectionTracer = new Tracer(logInjectionSettings, new DummyAgentWriter(), null, null, null);
             Tracer.Instance = LogInjectionTracer;
-        }
 
-        private static void InitializeLogger(bool useDatadogAppender)
-        {
             var repository = (Hierarchy)log4net.LogManager.GetRepository();
             var patternLayout = new PatternLayout { ConversionPattern = "%date [%thread] %-5level %logger {dd.env=%property{dd.env}, dd.service=%property{dd.service}, dd.version=%property{dd.version}, dd.trace_id=%property{dd.trace_id}, dd.span_id=%property{dd.span_id}} - %message%newline" };
             patternLayout.ActivateOptions();
@@ -47,14 +41,8 @@ namespace Benchmarks.Trace
             var writer = TextWriter.Null;
 #endif
             var textWriterAppender = new TextWriterAppender { Layout = patternLayout, Writer = writer };
-            IAppender appender = textWriterAppender;
-
-            if (useDatadogAppender)
-            {
-                var logCorrelationAppender = new LogCorrelationAppender();
-                logCorrelationAppender.AddAppender(textWriterAppender);
-                appender = logCorrelationAppender;
-            }
+            var appender = new LogCorrelationAppender();
+            appender.AddAppender(textWriterAppender);
 
             repository.Root.AddAppender(appender);
 
@@ -64,24 +52,14 @@ namespace Benchmarks.Trace
             Logger = log4net.LogManager.GetLogger(typeof(Log4netBenchmark));
         }
 
-        [GlobalSetup]
-        public void GlobalSetup()
-        {
-            InitializeTracer();
-            InitializeLogger(useDatadogAppender: true);
-        }
-
         [Benchmark]
-        public void WriteLogs()
+        public void EnrichedLog()
         {
             using (LogInjectionTracer.StartActive("Test"))
             {
                 using (LogInjectionTracer.StartActive("Child"))
                 {
-                    for (int i = 0; i < N; i++)
-                    {
-                        Logger.Info("Hello");
-                    }
+                    Logger.Info("Hello");
                 }
             }
         }
