@@ -1342,8 +1342,8 @@ WSTRING CorProfiler::GetCLRProfilerPath()
 
     if (native_profiler_file == EmptyWStr)
     {
-        native_profiler_file = GetEnvironmentValue(WStr("CLR_PROFILER_PATH_64"));
-        Logger::Debug("GetProfilerFilePath: CLR_PROFILER_PATH_64 defined as: ", native_profiler_file);
+        native_profiler_file = GetEnvironmentValue(WStr("COR_PROFILER_PATH_64"));
+        Logger::Debug("GetProfilerFilePath: COR_PROFILER_PATH_64 defined as: ", native_profiler_file);
     }
 #else // BIT64
     native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_32"));
@@ -1351,8 +1351,8 @@ WSTRING CorProfiler::GetCLRProfilerPath()
 
     if (native_profiler_file == EmptyWStr)
     {
-        native_profiler_file = GetEnvironmentValue(WStr("CLR_PROFILER_PATH_32"));
-        Logger::Debug("GetProfilerFilePath: CLR_PROFILER_PATH_32 defined as: ", native_profiler_file);
+        native_profiler_file = GetEnvironmentValue(WStr("COR_PROFILER_PATH_32"));
+        Logger::Debug("GetProfilerFilePath: COR_PROFILER_PATH_32 defined as: ", native_profiler_file);
     }
 #endif // BIT64
 
@@ -1364,8 +1364,8 @@ WSTRING CorProfiler::GetCLRProfilerPath()
 
     if (native_profiler_file == EmptyWStr)
     {
-        native_profiler_file = GetEnvironmentValue(WStr("CLR_PROFILER_PATH"));
-        Logger::Debug("GetProfilerFilePath: CLR_PROFILER_PATH defined as: ", native_profiler_file);
+        native_profiler_file = GetEnvironmentValue(WStr("COR_PROFILER_PATH"));
+        Logger::Debug("GetProfilerFilePath: COR_PROFILER_PATH defined as: ", native_profiler_file);
     }
 
     return native_profiler_file;
