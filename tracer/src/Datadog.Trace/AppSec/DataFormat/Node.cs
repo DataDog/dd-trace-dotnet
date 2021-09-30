@@ -10,7 +10,7 @@ namespace Datadog.Trace.AppSec.DataFormat
 {
     internal class Node
     {
-        private Node(NodeType type, IReadOnlyDictionary<string, Node> mapValue, IReadOnlyList<Node> listValue, string stringValue)
+        private Node(NodeType type, Dictionary<string, Node> mapValue, List<Node> listValue, string stringValue)
         {
             Type = type;
             MapValue = mapValue;
@@ -20,18 +20,30 @@ namespace Datadog.Trace.AppSec.DataFormat
 
         public NodeType Type { get; }
 
-        public Dictionary<string, Node> MapValue { get; }
+        public Dictionary<string, Node> MapValue
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get;
+        }
 
-        public List<Node> ListValue { get; }
+        public List<Node> ListValue
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get;
+        }
 
-        public string StringValue { get; }
+        public string StringValue
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get;
+        }
 
-        public static Node NewMap(IReadOnlyDictionary<string, Node> mapValue)
+        public static Node NewMap(Dictionary<string, Node> mapValue)
         {
             return new Node(NodeType.Map, mapValue, null, null);
         }
 
-        public static Node NewList(IReadOnlyList<Node> listValue)
+        public static Node NewList(List<Node> listValue)
         {
             return new Node(NodeType.List, null, listValue, null);
         }
