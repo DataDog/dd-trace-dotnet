@@ -14,7 +14,7 @@ namespace Datadog.Trace.AppSec
     {
         public event EventHandler<InstrumentationGatewayEventArgs> InstrumentationGatewayEvent;
 
-        public void RaiseEvent(Node eventData, ITransport transport, Span relatedSpan)
+        public void RaiseEvent(Dictionary<string, object> eventData, ITransport transport, Span relatedSpan)
         {
             InstrumentationGatewayEvent?.Invoke(this, new InstrumentationGatewayEventArgs(eventData, transport, relatedSpan));
         }

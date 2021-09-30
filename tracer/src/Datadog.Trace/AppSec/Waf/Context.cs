@@ -23,7 +23,7 @@ namespace Datadog.Trace.AppSec.Waf
             this.rules = rules;
         }
 
-        public IResult Run(Node args)
+        public IResult Run(Dictionary<string, object> args)
         {
             var matches = new List<RuleMatch>();
             foreach (var rule in rules)

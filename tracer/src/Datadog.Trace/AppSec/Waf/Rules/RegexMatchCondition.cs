@@ -25,22 +25,17 @@ namespace Datadog.Trace.AppSec.Waf.Rules
             this.pattern = RE2.compile(pattern);
         }
 
-        public bool IsMatch(Node data)
+        public bool IsMatch(Dictionary<string, object> data)
         {
-            if (data.Type != NodeType.Map)
-            {
-                throw new ArgumentException("Top level object must be a map", nameof(data));
-            }
-
             return IsMatchInternal(data);
         }
 
-        private bool IsMatchInternal(Node data, string transformKey = null)
+        private bool IsMatchInternal(Dictionary<string, object> data, string transformKey = null)
         {
             foreach (var input in inputs)
             {
                 var key = transformKey == null ? input : RuleUtils.MakeTransformInputKey(transformKey, input);
-                if (data.MapValue.TryGetValue(key, out var currentValue))
+                if (data.TryGetValue(key, out var currentValue))
                 {
                     return Visitor.DepthFirstSearch(data, stringNodeValue => pattern.match(stringNodeValue));
                 }
@@ -49,13 +44,8 @@ namespace Datadog.Trace.AppSec.Waf.Rules
             return false;
         }
 
-        public bool IsTransformedMatch(Node data, string transformation)
+        public bool IsTransformedMatch(Dictionary<string, object> data, string transformation)
         {
-            if (data.Type != NodeType.Map)
-            {
-                throw new ArgumentException("Top level object must be a map", nameof(data));
-            }
-
             return IsMatchInternal(data, transformation);
         }
     }

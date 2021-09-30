@@ -12,6 +12,6 @@ namespace Datadog.Trace.AppSec.Waf
 {
     internal interface IContext
     {
-        IResult Run(Node args);
+        IResult Run(Dictionary<string, object> args);
     }
 }

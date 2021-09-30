@@ -16,38 +16,38 @@ namespace Datadog.Trace.Util.Http
 {
     internal static partial class HttpRequestExtensions
     {
-        internal static Node PrepareArgsForWaf(this HttpRequest request, RouteData routeDatas = null)
+        internal static Dictionary<string, object> PrepareArgsForWaf(this HttpRequest request, RouteData routeDatas = null)
         {
-            var headersDic = new Dictionary<string, Node>(request.Headers.Keys.Count);
+            var headersDic = new Dictionary<string, string>(request.Headers.Keys.Count);
             var headerKeys = request.Headers.Keys;
             foreach (string k in headerKeys)
             {
                 if (!k.Equals("cookie", System.StringComparison.OrdinalIgnoreCase))
                 {
-                    headersDic.Add(k.ToLowerInvariant(), Node.NewString(request.Headers[k]));
+                    headersDic.Add(k.ToLowerInvariant(), request.Headers[k]);
                 }
             }
 
-            var cookiesDic = new Dictionary<string, Node>(request.Cookies.AllKeys.Length);
+            var cookiesDic = new Dictionary<string, string>(request.Cookies.AllKeys.Length);
             foreach (var k in request.Cookies.AllKeys)
             {
-                cookiesDic.Add(k, Node.NewString(request.Cookies[k].Value));
+                cookiesDic.Add(k, request.Cookies[k].Value);
             }
 
-            var queryDic = new Dictionary<string, Node>(request.QueryString.AllKeys.Length);
+            var queryDic = new Dictionary<string, string>(request.QueryString.AllKeys.Length);
             foreach (var k in request.QueryString.AllKeys)
             {
-                var values = Node.NewString(request.QueryString[k]);
+                var values = request.QueryString[k];
                 queryDic.Add(k, values);
             }
 
-            var dict = new Dictionary<string, Node>
+            var dict = new Dictionary<string, object>
             {
-                { AddressesConstants.RequestMethod, Node.NewString(request.HttpMethod) },
-                { AddressesConstants.RequestUriRaw, Node.NewString(request.Url.AbsoluteUri) },
-                { AddressesConstants.RequestQuery, Node.NewMap(queryDic) },
-                { AddressesConstants.RequestHeaderNoCookies, Node.NewMap(headersDic) },
-                { AddressesConstants.RequestCookies, Node.NewMap(cookiesDic) },
+                { AddressesConstants.RequestMethod, request.HttpMethod },
+                { AddressesConstants.RequestUriRaw, request.Url.AbsoluteUri },
+                { AddressesConstants.RequestQuery, queryDic },
+                { AddressesConstants.RequestHeaderNoCookies, headersDic },
+                { AddressesConstants.RequestCookies, cookiesDic },
             };
 
             if (routeDatas != null && routeDatas.Values.Any())
@@ -56,7 +56,7 @@ namespace Datadog.Trace.Util.Http
                 dict.Add(AddressesConstants.RequestPathParams, routeDataDict);
             }
 
-            return Node.NewMap(dict);
+            return dict;
         }
     }
 }

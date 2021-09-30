@@ -10,8 +10,8 @@ namespace Datadog.Trace.AppSec.Waf.Rules
 {
     internal interface ICondition
     {
-        bool IsMatch(Node data);
+        bool IsMatch(Dictionary<string, object> data);
 
-        bool IsTransformedMatch(Node data, string transformation);
+        bool IsTransformedMatch(Dictionary<string, object> data, string transformation);
     }
 }

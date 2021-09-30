@@ -115,7 +115,7 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        private void RunWafAndReact(Node args, ITransport transport, Span span)
+        private void RunWafAndReact(Dictionary<string, object> args, ITransport transport, Span span)
         {
             void Report(ITransport transport, Span span, IResult result)
             {

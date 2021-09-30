@@ -52,13 +52,8 @@ namespace Datadog.Trace.AppSec.Waf.Rules
 
         public string Name { get; set; }
 
-        public bool IsMatch(Node data)
+        public bool IsMatch(Dictionary<string, object> data)
         {
-            if (data.Type != NodeType.Map)
-            {
-                throw new ArgumentException("Top level object must be a map", nameof(data));
-            }
-
             if (conditions.Any(condition => condition.IsMatch(data)))
             {
                 return true;

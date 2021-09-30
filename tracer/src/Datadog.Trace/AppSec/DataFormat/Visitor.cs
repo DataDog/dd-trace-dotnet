@@ -14,17 +14,17 @@ namespace Datadog.Trace.AppSec.DataFormat
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Visitor));
 
-        public static bool DepthFirstSearch(Node rootNode, Predicate<string> func)
+        public static bool DepthFirstSearch(Dictionary<string, object> rootNode, Predicate<string> func)
         {
             var stack = new NodeHolder[10];
             var i = 0;
             stack[i] = new NodeHolder() { Loop = null, Node = rootNode };
             while (i >= 0)
             {
-                switch (stack[i].Node.Type)
+                switch (stack[i].Node)
                 {
-                    case NodeType.Map:
-                        stack[i].Loop ??= stack[i].Node.MapValue.Values.GetEnumerator();
+                    case Dictionary<string, object> dict:
+                        stack[i].Loop ??= dict.Values.GetEnumerator();
 
                         if (stack[i].Loop.MoveNext())
                         {
@@ -38,8 +38,19 @@ namespace Datadog.Trace.AppSec.DataFormat
                         }
 
                         break;
-                    case NodeType.List:
-                        stack[i].Loop ??= stack[i].Node.ListValue.GetEnumerator();
+                    case Dictionary<string, string> dict:
+                        foreach (var s in dict.Values)
+                        {
+                            if (func(s))
+                            {
+                                return true;
+                            }
+                        }
+
+                        i--;
+                        break;
+                    case List<object> list:
+                        stack[i].Loop ??= list.GetEnumerator();
 
                         if (stack[i].Loop.MoveNext())
                         {
@@ -53,8 +64,19 @@ namespace Datadog.Trace.AppSec.DataFormat
                         }
 
                         break;
-                    case NodeType.String:
-                        if (func(stack[i].Node.StringValue))
+                    case List<string> list:
+                        foreach (var s in list)
+                        {
+                            if (func(s))
+                            {
+                                return true;
+                            }
+                        }
+
+                        i--;
+                        break;
+                    case string s:
+                        if (func(s))
                         {
                             return true;
                         }
@@ -63,7 +85,7 @@ namespace Datadog.Trace.AppSec.DataFormat
                         break;
 
                     default:
-                        Log.Warning("Ignoring unknown value of type: {Type}", stack[i].Node.Type);
+                        Log.Warning("Ignoring unknown value of type: {Type}", stack[i].Node?.GetType());
                         break;
                 }
             }
@@ -71,31 +93,10 @@ namespace Datadog.Trace.AppSec.DataFormat
             return false;
         }
 
-        public static Node Map(Node rootNode, Func<Node, Node> func)
-        {
-            switch (rootNode.Type)
-            {
-                case NodeType.Map:
-                    var newDict = rootNode.MapValue.ToDictionary(x => x.Key, x => Map(x.Value, func));
-                    return Node.NewMap(newDict);
-
-                case NodeType.List:
-                    var newList = rootNode.ListValue.Select(x => Map(x, func)).ToList();
-
-                    return Node.NewList(newList);
-                case NodeType.String:
-                    return func(rootNode);
-
-                default:
-                    Log.Error("Unknown value of type: {Type}", rootNode.Type);
-                    throw new Exception($"Unknown value of type: {rootNode.Type}");
-            }
-        }
-
         private struct NodeHolder
         {
-            public Node Node;
-            public IEnumerator<Node> Loop;
+            public object Node;
+            public IEnumerator<object> Loop;
         }
     }
 }

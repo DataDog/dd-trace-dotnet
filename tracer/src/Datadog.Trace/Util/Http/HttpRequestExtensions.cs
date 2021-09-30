@@ -19,7 +19,7 @@ namespace Datadog.Trace.Util.Http
 {
     internal static partial class HttpRequestExtensions
     {
-        private static Node ConvertRouteValueDictionary(RouteValueDictionary routeDataDict)
+        private static Dictionary<string, object> ConvertRouteValueDictionary(RouteValueDictionary routeDataDict)
         {
             var dict = routeDataDict.ToDictionary(
                 c => c.Key,
@@ -27,16 +27,16 @@ namespace Datadog.Trace.Util.Http
                     c.Value switch
                     {
                         List<RouteData> routeDataList => ConvertRouteValueList(routeDataList),
-                        _ => Node.NewString(c.Value?.ToString())
+                        _ => c.Value?.ToString()
                     });
 
-            return Node.NewMap(dict);
+            return dict;
         }
 
-        private static Node ConvertRouteValueList(List<RouteData> routeDataList)
+        private static object ConvertRouteValueList(List<RouteData> routeDataList)
         {
              var list = routeDataList.Select(x => ConvertRouteValueDictionary(x.Values)).ToList();
-             return Node.NewList(list);
+             return list;
         }
     }
 }
