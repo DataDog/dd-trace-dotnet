@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Logging;
 
@@ -15,28 +16,56 @@ namespace Datadog.Trace.AppSec.DataFormat
 
         public static bool DepthFirstSearch(Node rootNode, Predicate<string> func)
         {
-            switch (rootNode.Type)
+            var stack = new NodeHolder[10];
+            var i = 0;
+            stack[i] = new NodeHolder() { Loop = null, Node = rootNode };
+            while (i >= 0)
             {
-                case NodeType.Map:
-                    if (rootNode.MapValue.Values.Any(valueItem => DepthFirstSearch(valueItem, func)))
-                    {
-                        return true;
-                    }
+                switch (stack[i].Node.Type)
+                {
+                    case NodeType.Map:
+                        stack[i].Loop ??= stack[i].Node.MapValue.Values.GetEnumerator();
 
-                    break;
-                case NodeType.List:
-                    if (rootNode.ListValue.Any(valueItem => DepthFirstSearch(valueItem, func)))
-                    {
-                        return true;
-                    }
+                        if (stack[i].Loop.MoveNext())
+                        {
+                            var nextNode = stack[i].Loop.Current;
+                            i++;
+                            stack[i] = new NodeHolder() { Loop = null, Node = nextNode };
+                        }
+                        else
+                        {
+                            i--;
+                        }
 
-                    break;
-                case NodeType.String:
-                    return func(rootNode.StringValue);
+                        break;
+                    case NodeType.List:
+                        stack[i].Loop ??= stack[i].Node.ListValue.GetEnumerator();
 
-                default:
-                    Log.Warning("Ignoring unknown value of type: {Type}", rootNode.Type);
-                    break;
+                        if (stack[i].Loop.MoveNext())
+                        {
+                            var nextNode = stack[i].Loop.Current;
+                            i++;
+                            stack[i] = new NodeHolder() { Loop = null, Node = nextNode };
+                        }
+                        else
+                        {
+                            i--;
+                        }
+
+                        break;
+                    case NodeType.String:
+                        if (func(stack[i].Node.StringValue))
+                        {
+                            return true;
+                        }
+
+                        i--;
+                        break;
+
+                    default:
+                        Log.Warning("Ignoring unknown value of type: {Type}", stack[i].Node.Type);
+                        break;
+                }
             }
 
             return false;
@@ -61,6 +90,12 @@ namespace Datadog.Trace.AppSec.DataFormat
                     Log.Error("Unknown value of type: {Type}", rootNode.Type);
                     throw new Exception($"Unknown value of type: {rootNode.Type}");
             }
+        }
+
+        private struct NodeHolder
+        {
+            public Node Node;
+            public IEnumerator<Node> Loop;
         }
     }
 }
