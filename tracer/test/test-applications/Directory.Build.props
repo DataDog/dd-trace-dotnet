@@ -22,4 +22,6 @@
     <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp3.0) -->
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
   </PropertyGroup>
+
+  <Import Project=".\Samples.Shared\Samples.Shared.projitems" Label="Shared" />
 </Project>

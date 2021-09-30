@@ -68,15 +68,11 @@
             </tr>
             <tr>
                 <th scope="row">Profiler attached</th>
-                <td>@Datadog.Trace.ClrProfiler.Instrumentation.ProfilerAttached</td>
+                <td>@Samples.SampleHelpers.IsProfilerAttached()</td>
             </tr>
             <tr>
                 <th scope="row">Datadog.Trace.dll path</th>
-                <td>@typeof(Datadog.Trace.Tracer).Assembly.Location</td>
-            </tr>
-            <tr>
-                <th scope="row">Datadog.Trace.ClrProfiler.Managed.dll</th>
-                <td>@typeof(Datadog.Trace.ClrProfiler.Instrumentation).Assembly.Location</td>
+                <td>@Samples.SampleHelpers.GetTracerAssemblyLocation()</td>
             </tr>
         </tbody>
     </table>

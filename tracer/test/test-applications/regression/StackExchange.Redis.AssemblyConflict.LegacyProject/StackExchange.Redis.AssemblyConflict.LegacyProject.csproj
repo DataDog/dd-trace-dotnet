@@ -105,4 +105,5 @@
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="..\..\Samples.Shared\Samples.Shared.projitems" Label="Shared" />
 </Project>

@@ -9,7 +9,7 @@ namespace AutomapperTest
     {
         public static void Main()
         {
-            Console.WriteLine($"Profiler attached: {IsProfilerAttached()}");
+            Console.WriteLine($"Profiler attached: {Samples.SampleHelpers.IsProfilerAttached()}");
 
             Mapper.Initialize(
                 configuration =>
@@ -18,22 +18,6 @@ namespace AutomapperTest
                 });
 
             Console.WriteLine("Done");
-        }
-
-        private static bool IsProfilerAttached()
-        {
-            Type nativeMethodsType = Type.GetType("Datadog.Trace.ClrProfiler.NativeMethods, Datadog.Trace");
-            MethodInfo profilerAttachedMethodInfo = nativeMethodsType.GetMethod("IsProfilerAttached");
-            try
-            {
-                return (bool)profilerAttachedMethodInfo.Invoke(null, null);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex);
-            }
-
-            return false;
         }
     }
 

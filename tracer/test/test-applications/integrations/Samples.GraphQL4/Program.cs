@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -28,39 +27,15 @@ namespace Samples.GraphQL4
 
             var logger = host.Services.GetRequiredService<ILogger<Program>>();
 
-            logger.LogInformation($"Instrumentation.ProfilerAttached = {IsProfilerAttached()}");
+            logger.LogInformation($"Instrumentation.ProfilerAttached = {SampleHelpers.IsProfilerAttached()}");
 
-            var prefixes = new[] { "COR_", "CORECLR_", "DD_", "DATADOG_" };
-            var envVars = from envVar in Environment.GetEnvironmentVariables().Cast<DictionaryEntry>()
-                          from prefix in prefixes
-                          let key = (envVar.Key as string)?.ToUpperInvariant()
-                          let value = envVar.Value as string
-                          where key.StartsWith(prefix)
-                          orderby key
-                          select new KeyValuePair<string, string>(key, value);
-
+            var envVars = SampleHelpers.GetDatadogEnvironmentVariables();
             foreach (var kvp in envVars)
             {
                 logger.LogInformation($"{kvp.Key} = {kvp.Value}");
             }
 
             host.Run();
-        }
-
-        private static bool IsProfilerAttached()
-        {
-            var instrumentationType = Type.GetType("Datadog.Trace.ClrProfiler.Instrumentation", throwOnError: false);
-
-            if (instrumentationType == null)
-            {
-                return false;
-            }
-
-            var property = instrumentationType.GetProperty("ProfilerAttached");
-
-            var isAttached = property?.GetValue(null) as bool?;
-
-            return isAttached ?? false;
         }
     }
 }
