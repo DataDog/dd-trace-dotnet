@@ -3,6 +3,7 @@
 #include "corhlpr.h"
 #include <corprof.h>
 #include <string>
+#include <filesystem>
 
 #include "clr_helpers.h"
 #include "dd_profiler_constants.h"
@@ -81,8 +82,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     {
         // This enable a path to assert over checks inside the profiler code.
         // Only in Debug mode and for the Datadog.Trace.ClrProfiler.Native.Checks process
-        if (std::filesystem::path(process_name).replace_extension("").wstring() ==
-            WStr("Datadog.Trace.ClrProfiler.Native.Checks"))
+        if (std::filesystem::path(process_name).replace_extension("").string() ==
+            "Datadog.Trace.ClrProfiler.Native.Checks")
         {
             CheckFilenameDefinitions();
         }
