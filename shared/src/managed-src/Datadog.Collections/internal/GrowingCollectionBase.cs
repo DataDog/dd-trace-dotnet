@@ -1,0 +1,330 @@
+using System;
+using System.Runtime.CompilerServices;
+using System.Threading;
+
+using Datadog.Util;
+
+#pragma warning disable SA1124 // Do not use regions
+#pragma warning disable SA1131 // Use readable conditions
+namespace Datadog.Collections
+{
+    #region class GrowingCollectionBase<T>
+
+    /// <summary>A very fast, lock free, unordered collection to which items can be added, but never removed.
+    /// Items in the collection must be value types and boxing/unboxing is always avoided during access.</summary>
+    /// <remarks>The name suffix <c>Internal</c> indicates that this class implements only internal interfaces.
+    /// There is a subclass without that suffix (<see cref="GrowingNonBoxingCollection{T}" />) that implements the
+    /// equivalent public interfaces.
+    /// Application can choose which to use in the context of allowing vs. avoiding adding any public types.
+    /// </remarks>
+    /// <typeparam name="T">Type of collection elements.</typeparam>
+    internal class GrowingCollectionBase<T> : GrowingCollectionSegment<T>
+    {
+        public static class SegmentSizes
+        {
+            public const int Default = 32;
+            public const int Max = 4096;
+        }
+
+        private GrowingCollectionSegment<T> _dataHead;
+
+        /// <summary>Initializes a new instance of the <see cref="GrowingCollectionBase{T}"/> class.
+        /// </summary>
+        public GrowingCollectionBase()
+            : base(SegmentSizes.Default)
+        {
+            _dataHead = this;
+        }
+
+        /// <summary>Initializes a new instance of the <see cref="GrowingCollectionBase{T}"/> class.
+        /// </summary>
+        /// <param name="segmentSize">The collection will grow in chunks of <c>segmentSize</c> items.</param>
+        public GrowingCollectionBase(int segmentSize)
+            : base(segmentSize)
+        {
+            _dataHead = this;
+        }
+
+        private protected GrowingCollectionSegment<T> DataHead
+        {
+            get { return _dataHead; }
+        }
+
+        /// <summary>Gets the current number of items in the collection.</summary>
+        public int Count
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                GrowingCollectionSegment<T> currHead = _dataHead;
+                return currHead.Segment_GlobalCount;
+            }
+        }
+
+        /// <summary>Adds an item that equals to <c>default(T)</c> to the collection.</summary>
+        /// <param name="item">Reference to the item that was added.</param>
+        private protected ref T AddDefault()
+        {
+            GrowingCollectionSegment<T> currHead = Volatile.Read(ref _dataHead);
+
+            bool added = currHead.Segment_TryAddDefault(out int index);
+            while (!added)
+            {
+                var newHead = new GrowingCollectionSegment<T>(currHead);
+                currHead = Concurrent.CompareExchangeResult(ref _dataHead, newHead, currHead);
+
+                added = currHead.Segment_TryAddDefault(out index);
+            }
+
+            return ref currHead.Segment_GetItemRef(index);
+        }
+
+        /// <summary>Adds an item to the collection.</summary>
+        /// <param name="item">Item to be added.</param>
+        private protected void AddItem(T item)
+        {
+            GrowingCollectionSegment<T> currHead = Volatile.Read(ref _dataHead);
+
+            bool added = currHead.Segment_TryAddItem(item);
+            while (!added)
+            {
+                var newHead = new GrowingCollectionSegment<T>(currHead);
+                currHead = Concurrent.CompareExchangeResult(ref _dataHead, newHead, currHead);
+
+                added = currHead.Segment_TryAddItem(item);
+            }
+        }
+
+        #region class Enumerator
+
+        /// <summary>An enumerator implementation for a <see cref="GrowingCollectionBase{T}"/>.
+        /// The enumerator is resilient to concurrent additions to the collection.
+        /// No particular element order is guaranteed.</summary>
+        internal class Enumerator
+        {
+            private readonly GrowingCollectionSegment<T> _head;
+            private readonly int _headOffset;
+            private readonly int _count;
+            private GrowingCollectionSegment<T> _currentSegment;
+            private int _currentSegmentOffset;
+
+            internal Enumerator(GrowingCollectionSegment<T> head)
+            {
+                Validate.NotNull(head, nameof(head));
+
+                _head = _currentSegment = head;
+                _headOffset = _currentSegmentOffset = head.Segment_LocalCount;
+                _count = _headOffset + (_head.Segment_Next == null ? 0 : _head.Segment_Next.Segment_GlobalCount);
+            }
+
+            /// <summary>Gets the total number of elements returned by this enumerator.</summary>
+            public int Count
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get
+                {
+                    return _count;
+                }
+            }
+
+            /// <summary>Gets a reference to the current element.</summary>
+            private protected ref T CurrentItemRef
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get
+                {
+                    return ref _currentSegment.Segment_GetItemRef(_currentSegmentOffset);
+                }
+            }
+
+            /// <summary>Gets the current element.</summary>
+            private protected T CurrentItem
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get
+                {
+                    return _currentSegment.Segment_GetItem(_currentSegmentOffset);
+                }
+            }
+
+            /// <summary>Disposes this enumerator.</summary>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Dispose()
+            {
+                Dispose(true);
+                GC.SuppressFinalize(this);
+            }
+
+            /// <summary>Move to the next element in the underlying colection.</summary>
+            /// <returns>The next element in the underlying collection.</returns>
+            public bool MoveNext()
+            {
+                if (_currentSegmentOffset == 0)
+                {
+                    if (_currentSegment.Segment_Next == null)
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        _currentSegment = _currentSegment.Segment_Next;
+                        _currentSegmentOffset = _currentSegment.Segment_LocalCount - 1;
+                        return true;
+                    }
+                }
+                else
+                {
+                    _currentSegmentOffset--;
+                    return true;
+                }
+            }
+
+            /// <summary>Restarts this enumerator to the same state as it was created in.</summary>
+            public void Reset()
+            {
+                _currentSegment = _head;
+                _currentSegmentOffset = _headOffset;
+            }
+
+            protected virtual void Dispose(bool disposing)
+            {
+                if (disposing)
+                {
+                }
+            }
+        }
+
+        #endregion class Enumerator
+    }
+
+    #endregion class GrowingCollectionBase<T>
+
+    #region class GrowingCollectionSegment<T>
+
+    internal class GrowingCollectionSegment<T>
+    {
+        private readonly GrowingCollectionSegment<T> _nextSegment;
+        private readonly int _segmentSize;
+        private readonly int _nextSegmentGlobalCount;
+        private readonly T[] _data;
+        private int _localCount;
+
+        public GrowingCollectionSegment(int segmentSize)
+        {
+            if (segmentSize < 1 || GrowingCollectionBase<T>.SegmentSizes.Max < segmentSize)
+            {
+                throw new ArgumentOutOfRangeException(
+                                nameof(segmentSize),
+                                $"{segmentSize} must be in range 1..{GrowingCollectionBase<T>.SegmentSizes.Max}, but the specified value is {segmentSize}.");
+            }
+
+            _segmentSize = segmentSize;
+            _nextSegment = null;
+            _nextSegmentGlobalCount = 0;
+
+            _data = new T[segmentSize];
+            _localCount = 0;
+        }
+
+        public GrowingCollectionSegment(GrowingCollectionSegment<T> nextSegment)
+        {
+            if (nextSegment == null)
+            {
+                throw new ArgumentNullException(
+                                nameof(nextSegment),
+                                $"{nextSegment} may not be null; if there is no {nextSegment}, use another ctor overload.");
+            }
+
+            _segmentSize = nextSegment.Segment_Size;
+            _nextSegment = nextSegment;
+            _nextSegmentGlobalCount = nextSegment.Segment_GlobalCount;
+
+            _data = new T[_segmentSize];
+            _localCount = 0;
+        }
+
+        internal int Segment_Size
+        {
+            get
+            {
+                return _segmentSize;
+            }
+        }
+
+        internal int Segment_LocalCount
+        {
+            get
+            {
+                int lc = _localCount;
+                return (lc > _segmentSize) ? _segmentSize : lc;
+            }
+        }
+
+        internal GrowingCollectionSegment<T> Segment_Next
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                return _nextSegment;
+            }
+        }
+
+        internal int Segment_GlobalCount
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                return this.Segment_LocalCount + _nextSegmentGlobalCount;
+            }
+        }
+
+        internal ref T Segment_GetItemRef(int index)
+        {
+            if (index < 0 || _localCount <= index || _segmentSize <= index)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index), $"Invalid index ({index})");
+            }
+
+            return ref _data[index];
+        }
+
+        internal T Segment_GetItem(int index)
+        {
+            if (index < 0 || _localCount <= index || _segmentSize <= index)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index), $"Invalid index ({index})");
+            }
+
+            return _data[index];
+        }
+
+        internal bool Segment_TryAddDefault(out int addedItemIndex)
+        {
+            int index = Interlocked.Increment(ref _localCount) - 1;
+            if (index >= _segmentSize)
+            {
+                Interlocked.Decrement(ref _localCount);
+                addedItemIndex = -1;
+                return false;
+            }
+
+            addedItemIndex = index;
+            return true;
+        }
+
+        internal bool Segment_TryAddItem(T item)
+        {
+            int index = Interlocked.Increment(ref _localCount) - 1;
+            if (index >= _segmentSize)
+            {
+                Interlocked.Decrement(ref _localCount);
+                return false;
+            }
+
+            _data[index] = item;
+            return true;
+        }
+    }
+
+    #endregion class GrowingCollectionSegment<T>
+}
