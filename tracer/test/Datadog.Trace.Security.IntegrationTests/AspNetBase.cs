@@ -182,9 +182,18 @@ namespace Datadog.Trace.Security.IntegrationTests
             // wait for server to be ready to receive requests
             while (intervals-- > 0)
             {
-                var response = await SubmitRequest(path);
-                responseText = response.ResponseText;
-                serverReady = response.StatusCode == HttpStatusCode.OK;
+                HttpStatusCode statusCode = default;
+
+                try
+                {
+                    (statusCode, responseText) = await SubmitRequest(path);
+                }
+                catch (Exception ex)
+                {
+                    Output.WriteLine("SubmitRequest failed during warmup with error " + ex);
+                }
+
+                serverReady = statusCode == HttpStatusCode.OK;
                 if (!serverReady)
                 {
                     Output.WriteLine(responseText);
