@@ -14,89 +14,64 @@ namespace Datadog.Trace.AppSec.DataFormat
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Visitor));
 
-        public static bool DepthFirstSearch(Dictionary<string, object> rootNode, Predicate<string> func)
+        public static bool DepthFirstSearch(object node, Predicate<string> func)
         {
-            var stack = new NodeHolder[10];
-            var i = 0;
-            stack[i] = new NodeHolder() { Loop = null, Node = rootNode };
-            while (i >= 0)
+            switch (node)
             {
-                switch (stack[i].Node)
-                {
-                    case Dictionary<string, object> dict:
-                        stack[i].Loop ??= dict.Values.GetEnumerator();
-
-                        if (stack[i].Loop.MoveNext())
+                case Dictionary<string, object> dict:
+                    foreach (var value in dict.Values)
+                    {
+                        if (DepthFirstSearch(value, func))
                         {
-                            var nextNode = stack[i].Loop.Current;
-                            i++;
-                            stack[i] = new NodeHolder() { Loop = null, Node = nextNode };
+                            return true;
                         }
-                        else
-                        {
-                            i--;
-                        }
+                    }
 
-                        break;
-                    case Dictionary<string, string> dict:
-                        foreach (var s in dict.Values)
-                        {
-                            if (func(s))
-                            {
-                                return true;
-                            }
-                        }
-
-                        i--;
-                        break;
-                    case List<object> list:
-                        stack[i].Loop ??= list.GetEnumerator();
-
-                        if (stack[i].Loop.MoveNext())
-                        {
-                            var nextNode = stack[i].Loop.Current;
-                            i++;
-                            stack[i] = new NodeHolder() { Loop = null, Node = nextNode };
-                        }
-                        else
-                        {
-                            i--;
-                        }
-
-                        break;
-                    case List<string> list:
-                        foreach (var s in list)
-                        {
-                            if (func(s))
-                            {
-                                return true;
-                            }
-                        }
-
-                        i--;
-                        break;
-                    case string s:
+                    break;
+                case Dictionary<string, string> dict:
+                    foreach (var s in dict.Values)
+                    {
                         if (func(s))
                         {
                             return true;
                         }
+                    }
 
-                        i--;
-                        break;
+                    break;
+                case List<object> list:
+                    foreach (var value in list)
+                    {
+                        if (DepthFirstSearch(value, func))
+                        {
+                            return true;
+                        }
+                    }
 
-                    default:
-                        Log.Warning("Ignoring unknown value of type: {Type}", stack[i].Node?.GetType());
-                        break;
-                }
+                    break;
+                case List<string> list:
+                    foreach (var s in list)
+                    {
+                        if (func(s))
+                        {
+                            return true;
+                        }
+                    }
+
+                    break;
+                case string s:
+                    if (func(s))
+                    {
+                        return true;
+                    }
+
+                    break;
+
+                default:
+                    Log.Warning("Ignoring unknown value of type: {Type}", node?.GetType());
+                    break;
             }
 
             return false;
-        }
-
-        private struct NodeHolder
-        {
-            public object Node;
-            public IEnumerator<object> Loop;
         }
     }
 }
