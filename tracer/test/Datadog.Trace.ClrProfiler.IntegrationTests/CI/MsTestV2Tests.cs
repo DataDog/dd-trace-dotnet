@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -37,6 +38,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             try
             {
                 SetCallTargetSettings(true);
+                SetEnvironmentVariable("DD_CIVISIBILITY_ENABLED", "1");
                 SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
                 SetEnvironmentVariable("DD_DUMP_ILREWRITE_ENABLED", "1");
 
