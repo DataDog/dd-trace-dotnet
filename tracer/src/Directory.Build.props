@@ -5,6 +5,9 @@
     <TargetFrameworks>net45;net461;netstandard2.0;netcoreapp3.1</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
 
+    <!-- Code analysis -->
+    <AnalysisLevel>latest</AnalysisLevel>
+
     <!-- NuGet packages -->
     <IsPackable>true</IsPackable>
     <PackageIconUrl>https://github.com/DataDog/dd-trace-dotnet/raw/master/datadog-logo-64x64.png</PackageIconUrl>

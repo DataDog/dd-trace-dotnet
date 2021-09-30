@@ -78,7 +78,7 @@ namespace Datadog.Trace.AppSec.Agent
                         appsecEvents.Add(result);
                     }
 
-                    await _sender.Send(appsecEvents);
+                    await _sender.Send(appsecEvents).ConfigureAwait(false);
                 }
 
                 // see ThreadAbortAnalyzer and related .net framework bug
@@ -93,7 +93,7 @@ namespace Datadog.Trace.AppSec.Agent
                 }
                 finally
                 {
-                    await Task.Delay(BatchInterval, _batchCancelationSource.Token);
+                    await Task.Delay(BatchInterval, _batchCancelationSource.Token).ConfigureAwait(false);
                 }
             }
         }

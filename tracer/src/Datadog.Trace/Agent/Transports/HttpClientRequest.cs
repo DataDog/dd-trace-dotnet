@@ -55,7 +55,7 @@ namespace Datadog.Trace.Agent.Transports
                         using var sr = new StreamReader(memoryStream);
                         var headers = string.Join(", ", _request.Headers.Select(h => $"{h.Key}: {string.Join(", ", h.Value)}"));
 
-                        var payload = await sr.ReadToEndAsync();
+                        var payload = await sr.ReadToEndAsync().ConfigureAwait(false);
                         Log.Warning("AppSec event not correctly sent to backend {statusCode} by class {className} with response {responseText}, request headers: were {headers}, payload was: {payload}", new object[] { response.StatusCode, nameof(HttpClientRequest), await response.ReadAsStringAsync().ConfigureAwait(false), headers, payload });
                     }
 
