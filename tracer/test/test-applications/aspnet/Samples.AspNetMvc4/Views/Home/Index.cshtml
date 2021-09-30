@@ -5,9 +5,6 @@
 @{
     ViewBag.Title = "Index";
 
-    var instrumentationType = Type.GetType("Datadog.Trace.ClrProfiler.Instrumentation, Datadog.Trace");
-    var profilerAttached = instrumentationType?.GetProperty("ProfilerAttached", BindingFlags.Public | BindingFlags.Static)?.GetValue(null) ?? false;
-    var tracerAssemblyLocation = instrumentationType?.Assembly.Location ?? "(none)";
 }
 
 <div class="container">
@@ -19,11 +16,11 @@
             </tr>
             <tr>
                 <th scope="row">Profiler attached</th>
-                <td>@profilerAttached</td>
+                <td>@Samples.SampleHelpers.IsProfilerAttached()</td>
             </tr>
             <tr>
                 <th scope="row">Datadog.Trace.dll path</th>
-                <td>@tracerAssemblyLocation</td>
+                <td>@Samples.SampleHelpers.GetTracerAssemblyLocation()</td>
             </tr>
         </tbody>
     </table>

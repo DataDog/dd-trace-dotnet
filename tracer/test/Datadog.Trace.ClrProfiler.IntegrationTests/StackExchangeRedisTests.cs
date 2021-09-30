@@ -42,10 +42,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             int agentPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = new MockTracerAgent(agentPort))
-            using (var processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"{TestPrefix}", packageVersion: packageVersion))
+            using (RunSampleAndWaitForExit(agent.Port, arguments: $"{TestPrefix}", packageVersion: packageVersion))
             {
-                Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
-
                 var expected = new TupleList<string, string>
                 {
                     { "SET", $"SET {TestPrefix}StackExchange.Redis.INCR" },

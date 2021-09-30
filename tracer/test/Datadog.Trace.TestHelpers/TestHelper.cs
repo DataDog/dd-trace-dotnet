@@ -158,6 +158,16 @@ namespace Datadog.Trace.TestHelpers
                 Output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
             }
 
+#if NETCOREAPP2_1
+            if (exitCode == 139)
+            {
+                // Segmentation faults are expected on .NET Core because of a bug in the runtime: https://github.com/dotnet/runtime/issues/11885
+                throw new InconclusiveException("Segmentation fault on .NET Core 2.1");
+            }
+#endif
+
+            Assert.True(exitCode >= 0, $"Process exited with code {exitCode}");
+
             return new ProcessResult(process, standardOutput, standardError, exitCode);
         }
 

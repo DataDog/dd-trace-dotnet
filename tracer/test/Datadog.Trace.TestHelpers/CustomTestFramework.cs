@@ -153,6 +153,11 @@ namespace Datadog.Trace.TestHelpers
 
                     return result;
                 }
+                catch (InconclusiveException ex)
+                {
+                    _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"INCONCLUSIVE: {test} ({ex.Message})"));
+                    return new RunSummary { Skipped = 1, Total = 1 };
+                }
                 catch (Exception ex)
                 {
                     _diagnosticMessageSink.OnMessage(new DiagnosticMessage($"ERROR: {test} ({ex.Message})"));

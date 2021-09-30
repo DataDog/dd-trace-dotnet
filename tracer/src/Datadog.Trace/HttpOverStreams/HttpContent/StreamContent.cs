@@ -43,7 +43,7 @@ namespace Datadog.Trace.HttpOverStreams.HttpContent
             while (true)
             {
                 var bytesToRead = (int)Math.Min(remaining, int.MaxValue);
-                var bytesRead = await Stream.ReadAsync(buffer, offset: length, count: bytesToRead);
+                var bytesRead = await Stream.ReadAsync(buffer, offset: length, count: bytesToRead).ConfigureAwait(false);
 
                 length += bytesRead;
                 remaining -= bytesRead;

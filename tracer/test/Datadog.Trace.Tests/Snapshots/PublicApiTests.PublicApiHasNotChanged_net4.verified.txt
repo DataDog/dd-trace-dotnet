@@ -25,6 +25,7 @@ namespace Datadog.Trace.Configuration
         public const string AppSecEnabled = "DD_APPSEC_ENABLED";
         public const string AppSecRules = "DD_APPSEC_RULES";
         public const string BufferSize = "DD_TRACE_BUFFER_SIZE";
+        public const string CIVisibilityEnabled = "DD_CIVISIBILITY_ENABLED";
         public const string ConfigurationFileName = "DD_TRACE_CONFIG_FILE";
         public const string CustomSamplingRules = "DD_TRACE_SAMPLING_RULES";
         public const string DebugEnabled = "DD_TRACE_DEBUG";

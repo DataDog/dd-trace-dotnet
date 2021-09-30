@@ -124,7 +124,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 TResult result = default;
                 try
                 {
-                    result = await previousTask;
+                    result = await previousTask.ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -145,15 +145,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
                 TResult result = default;
                 try
                 {
-                    result = await previousTask;
+                    result = await previousTask.ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
-                    await continuation(result, ex, state);
+                    await continuation(result, ex, state).ConfigureAwait(false);
                     throw;
                 }
 
-                return (TResult)await continuation(result, null, state);
+                return (TResult)await continuation(result, null, state).ConfigureAwait(false);
             }
         }
 
@@ -180,7 +180,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             {
                 try
                 {
-                    await previousTask;
+                    await previousTask.ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -205,15 +205,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations.Testing
             {
                 try
                 {
-                    await previousTask;
+                    await previousTask.ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
-                    await continuation(null, ex, state);
+                    await continuation(null, ex, state).ConfigureAwait(false);
                     throw;
                 }
 
-                await continuation(null, null, state);
+                await continuation(null, null, state).ConfigureAwait(false);
             }
         }
     }

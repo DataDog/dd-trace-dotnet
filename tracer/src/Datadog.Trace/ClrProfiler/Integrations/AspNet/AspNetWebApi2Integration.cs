@@ -273,7 +273,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             {
                 // call the original method, inspecting (and rethrowing) any unhandled exceptions
                 var task = (Task<T>)instrumentedMethod(apiController, context, cancellationToken);
-                var responseMessage = await task;
+                var responseMessage = await task.ConfigureAwait(true);
 
                 if (scope != null)
                 {

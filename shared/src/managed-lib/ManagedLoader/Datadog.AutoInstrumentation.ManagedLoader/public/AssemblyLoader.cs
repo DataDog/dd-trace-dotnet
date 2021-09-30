@@ -390,8 +390,8 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
         private static void GetTracerManagedBinariesDirectories(List<string> binaryDirs)
         {
             // E.g.:
-            //  - c:\Program Files\Datadog\.NET Tracer\net45\
-            //  - c:\Program Files\Datadog\.NET Tracer\netcoreapp3.1\
+            //  - c:\Program Files\Datadog\.NET Tracer\tracer\net45\
+            //  - c:\Program Files\Datadog\.NET Tracer\tracer\netcoreapp3.1\
             //  - ...
 
             string tracerHomeDirectory = ReadEnvironmentVariable("DD_DOTNET_TRACER_HOME");
@@ -412,103 +412,26 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
 
         private static void GetProfilerManagedBinariesDirectories(List<string> binaryDirs)
         {
-            // Assumed folder structure
-            // (support the below options for now; be aware that this may change while we are still in Alpha):
-            // OPTION A (SxS Profiler & Tracer):
-            //  - c:\Program Files\Datadog\.NET Tracer\                                     <= Native Tracer/Profiler loader binary
-            //  - c:\Program Files\Datadog\.NET Tracer\                                     <= Also, native Tracer binaries for Win-x64
-            //  - c:\Program Files\Datadog\.NET Tracer\net45\                               <= Managed Tracer binaries for Net Fx 4.5
-            //  - c:\Program Files\Datadog\.NET Tracer\netcoreapp3.1\                       <= Managed Tracer binaries for Net Core 3.1 +
-            //  - c:\Program Files\Datadog\.NET Tracer\ContinuousProfiler\win-x64\          <= Native Profiler binaries for Win-x64
-            //  - c:\Program Files\Datadog\.NET Tracer\ContinuousProfiler\net45\            <= Managed Profiler binaries for Net Fx 4.5
-            //  - c:\Program Files\Datadog\.NET Tracer\ContinuousProfiler\netcoreapp3.1\    <= Managed Profiler binaries for Net Core 3.1 +
+            // E.g.:
+            //  - c:\Program Files\Datadog\.NET Tracer\ContinuousProfiler\net45\
+            //  - c:\Program Files\Datadog\.NET Tracer\ContinuousProfiler\netcoreapp3.1\
             //  - ...
-            // OPTION B (Profiler only):
-            //  - c:\Program Files\Datadog\Some Dir\                                        <= Native Profiler binaries (x86 & x64 .dll)
-            //  - c:\Program Files\Datadog\Some Dir\net45\                                  <= Managed Profiler binaries for Net Fx 4.5
-            //  - c:\Program Files\Datadog\Some Dir\netcoreapp3.1\                          <= Managed Profiler binaries for Net Core 3.1 +
-            //  - ...
-            // OPTION C (Debug builds only!):
-            //  - Use the relavite path from where our build places the native profiler engine DLL to where the build 
-            //    places the managed profiler engine DLL.
-            //  - This is for F5-running from within VS.
 
-            string managedBinariesSubdir = GetRuntimeBasedProductBinariesSubdir(out bool isCoreFx);
-
-            string nativeProfilerLoaderAssemblyFile;
-            if (isCoreFx)
-            {
-                nativeProfilerLoaderAssemblyFile = ReadEnvironmentVariable(Environment.Is64BitProcess ? "CORECLR_PROFILER_PATH_64" : "CORECLR_PROFILER_PATH_32");
-                nativeProfilerLoaderAssemblyFile = nativeProfilerLoaderAssemblyFile ?? ReadEnvironmentVariable("CORECLR_PROFILER_PATH");
-            }
-            else
-            {
-                nativeProfilerLoaderAssemblyFile = ReadEnvironmentVariable(Environment.Is64BitProcess ? "COR_PROFILER_PATH_64" : "COR_PROFILER_PATH_32");
-                nativeProfilerLoaderAssemblyFile = nativeProfilerLoaderAssemblyFile ?? ReadEnvironmentVariable("COR_PROFILER_PATH");
-            }
+            string profilerHomeDirectory = ReadEnvironmentVariable("DD_DOTNET_PROFILER_HOME");
 
             // Be defensive against env var not being set.
-            if (String.IsNullOrWhiteSpace(nativeProfilerLoaderAssemblyFile))
+            if (string.IsNullOrWhiteSpace(profilerHomeDirectory))
             {
                 return;
             }
 
-            string nativeProfilerLoaderAssemblyDirectory = Path.GetDirectoryName(nativeProfilerLoaderAssemblyFile);
+            string managedBinariesSubdir = GetRuntimeBasedProductBinariesSubdir();
+            string managedBinariesDirectory = Path.Combine(profilerHomeDirectory, managedBinariesSubdir);
 
+            if (binaryDirs != null && !string.IsNullOrWhiteSpace(managedBinariesDirectory))
             {
-                // OPTION A from above (SxS with Tracer):
-
-                string tracerHomeDirectory = nativeProfilerLoaderAssemblyDirectory;                             // Shared Tracer/Profiler loader is in Tracer HOME
-                string profilerHomeDirectory = Path.Combine(tracerHomeDirectory, "ContinuousProfiler");         // Profiler-HOME is in <Tracer-HOME>/ContinuousProfiler
-
-                string managedBinariesDirectory = Path.Combine(profilerHomeDirectory, managedBinariesSubdir);   // Managed binaries are in <Profiler-HOME>/net-ver-moniker/
-                if (binaryDirs != null && !String.IsNullOrWhiteSpace(managedBinariesDirectory))
-                {
-                    binaryDirs.Add(managedBinariesDirectory);
-                }
+                binaryDirs.Add(managedBinariesDirectory);
             }
-
-            {
-                // OPTION B from above (Profiler only):
-
-                string profilerHomeDirectory = nativeProfilerLoaderAssemblyDirectory;                           // Profiler-HOME
-                string managedBinariesDirectory = Path.Combine(profilerHomeDirectory, managedBinariesSubdir);   // Managed binaries are in <Profiler-HOME>/net-ver-moniker/
-
-                if (binaryDirs != null && !String.IsNullOrWhiteSpace(managedBinariesDirectory))
-                {
-                    binaryDirs.Add(managedBinariesDirectory);
-                }
-            }
-
-#if DEBUG
-            {
-                // OPTION C (Debug builds only!):
-                // For debug builds only we also support F5-running from within VS.
-                // For that we use the relavite path from where our build places the native profiler engine DLL to where the build
-                // places the managed profiler engine DLL.
-                const string NativeToManagedRelativePath = @"..\..\..\..\Debug-AnyCPU\src\ProfilerEngine\Datadog.AutoInstrumentation.Profiler.Managed\";
-
-                string profilerHomeDirectory = nativeProfilerLoaderAssemblyDirectory;
-                string managedBinariesRoot = Path.Combine(profilerHomeDirectory, NativeToManagedRelativePath);
-
-                string managedBinariesRootFull;
-                try
-                {
-                    managedBinariesRootFull = Path.GetFullPath(managedBinariesRoot);
-                }
-                catch
-                {
-                    managedBinariesRootFull = managedBinariesRoot;
-                }
-
-                string managedBinariesDirectory = Path.Combine(managedBinariesRootFull, managedBinariesSubdir);
-
-                if (binaryDirs != null && !String.IsNullOrWhiteSpace(managedBinariesDirectory))
-                {
-                    binaryDirs.Add(managedBinariesDirectory);
-                }
-            }
-#endif  // #if DEBUG
         }
 
         private static string GetRuntimeBasedProductBinariesSubdir()
@@ -615,7 +538,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
         /// In such cases, the value cached in AppDomainSetup.TargetFrameworkName is also null, and it does not get updated when the
         /// entry assembly becomes known later.This can break applications that use the target framework name to guide their behavior
         /// (e.g., this is known to break some WCF applications).
-        /// 
+        ///
         /// This method attempts to clear the respective internal cache in AppDomainSetup.
         /// It must be resilient to the internal API being accessed not being present
         /// (in fact, it is known not to be present on some Net Core versions).

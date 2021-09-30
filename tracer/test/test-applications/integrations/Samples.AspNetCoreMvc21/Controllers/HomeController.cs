@@ -16,20 +16,11 @@ namespace Samples.AspNetCoreMvc.Controllers
 
         public IActionResult Index()
         {
-            var instrumentationType = Type.GetType("Datadog.Trace.ClrProfiler.Instrumentation, Datadog.Trace");
-            ViewBag.ProfilerAttached = instrumentationType?.GetProperty("ProfilerAttached", BindingFlags.Public | BindingFlags.Static)?.GetValue(null) ?? false;
-            ViewBag.TracerAssemblyLocation = instrumentationType?.Assembly.Location;
+            ViewBag.ProfilerAttached = SampleHelpers.IsProfilerAttached();
+            ViewBag.TracerAssemblyLocation = SampleHelpers.GetTracerAssemblyLocation();
             ViewBag.StackTrace = StackTraceHelper.GetUsefulStack();
 
-            var prefixes = new[] { "COR_", "CORECLR_", "DD_", "DATADOG_" };
-
-            var envVars = from envVar in Environment.GetEnvironmentVariables().Cast<DictionaryEntry>()
-                          from prefix in prefixes
-                          let key = (envVar.Key as string)?.ToUpperInvariant()
-                          let value = envVar.Value as string
-                          where key.StartsWith(prefix)
-                          orderby key
-                          select new KeyValuePair<string, string>(key, value);
+            var envVars = SampleHelpers.GetDatadogEnvironmentVariables();
 
             AddCorrelationIdentifierToResponse();
             return View(envVars.ToList());
