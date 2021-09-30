@@ -17,7 +17,7 @@ namespace Datadog.Trace
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Tracer>();
         private static LifetimeManager _instance;
-        private readonly ConcurrentStack<Action> _shutdownHooks = new();
+        private readonly ConcurrentQueue<Action> _shutdownHooks = new();
 
         public LifetimeManager()
         {
@@ -57,7 +57,7 @@ namespace Datadog.Trace
 
         public void AddShutdownTask(Action action)
         {
-            _shutdownHooks.Push(action);
+            _shutdownHooks.Enqueue(action);
         }
 
         private void CurrentDomain_ProcessExit(object sender, EventArgs e)
@@ -89,7 +89,7 @@ namespace Datadog.Trace
         {
             try
             {
-                while (_shutdownHooks.TryPop(out var action))
+                while (_shutdownHooks.TryDequeue(out var action))
                 {
                     action();
                 }
