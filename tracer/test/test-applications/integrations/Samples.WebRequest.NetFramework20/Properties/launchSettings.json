@@ -12,7 +12,7 @@
           "CORECLR_PROFILER_PATH": "$(SolutionDir)tracer\\bin\\tracer-home\\win-$(Platform)\\Datadog.Trace.ClrProfiler.Native.dll",
   
           "DD_DOTNET_TRACER_HOME": "$(SolutionDir)tracer\\bin\\tracer-home",
-          "DD_INTEGRATIONS": "$(ProjectDir)$(OutputPath)profiler-lib\\integrations.json"
+          "DD_INTEGRATIONS": "$(SolutionDir)tracer\\bin\\tracer-home\\integrations.json"
         },
         "nativeDebugging": true
       }
