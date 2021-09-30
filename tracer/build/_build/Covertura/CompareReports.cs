@@ -16,6 +16,13 @@ namespace Covertura
     {
         // somewhat arbitrary, but used to exclude noise
         const decimal SignificantChangeThreshold = 0.05m;
+        // These classes change from run to run, so don't list them in expected changes
+        static readonly string[] IgnoredClassPrefixes =
+        {
+            "Datadog.Trace.Logging.LogRateLimiter",
+            "Datadog.Trace.RuntimeMetrics.",
+            "Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations.TaskContinuationGenerator",
+        };
 
         public static CoverturaReport ReadReport(AbsolutePath path)
         {
@@ -198,7 +205,11 @@ View the full report for further details:
 | Branches %| `{package.Old.BranchRate:P0}`      | `{package.New.BranchRate:P0}`       |  `{package.BranchCoverageChange:P0}` {GetIcon(package.BranchCoverageChange)}  |
 | Complexity| `{package.Old.Complexity}`      | `{package.New.Complexity}`       |  `{package.ComplexityChange}` {GetIcon(-package.ComplexityChange)}  |
 ");
-                  if (package.ClassChanges.Any())
+
+                  var changes = package.ClassChanges.Values
+                                       .Where(change => !IgnoredClassPrefixes.Any(toIgnore => change.Name.StartsWith(toIgnore)))
+                                       .ToList();
+                  if (changes.Any())
                   {
                       sb.Append($@"
 The following classes have significant coverage changes.
@@ -207,15 +218,15 @@ The following classes have significant coverage changes.
 |:--------|:--------------------:|:----------:|:--------:|");
 
                       var maxFileDisplay = 10;
-                      var significantChanges = package.ClassChanges
-                                                .Where(x => x.Value.IsSignificantChange)
-                                                .OrderBy(x => x.Value.LineCoverageChange)
-                                                .ThenBy(x => x.Value.BranchCoverageChange)
-                                                .ThenBy(x => x.Value.Name)
-                                                .ToList();
+                      var significantChanges = changes
+                                              .Where(x => x.IsSignificantChange)
+                                              .OrderBy(x => x.LineCoverageChange)
+                                              .ThenBy(x => x.BranchCoverageChange)
+                                              .ThenBy(x => x.Name)
+                                              .ToList();
                       foreach (var classChange in significantChanges.Take(maxFileDisplay))
                       {
-                          var change = classChange.Value;
+                          var change = classChange;
                           sb.Append($@"
 | [{change.Name}]({FixFilename(change.Filename)}) | `{change.LineCoverageChange:P0}` {GetIcon(change.LineCoverageChange)} | `{change.BranchCoverageChange:P0}` {GetIcon(change.BranchCoverageChange)}   | `{change.ComplexityChange}` {GetIcon(-change.ComplexityChange)} |");
                       }
