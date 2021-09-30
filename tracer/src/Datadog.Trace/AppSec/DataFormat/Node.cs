@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.AppSec.DataFormat
 {
@@ -19,9 +20,9 @@ namespace Datadog.Trace.AppSec.DataFormat
 
         public NodeType Type { get; }
 
-        public IReadOnlyDictionary<string, Node> MapValue { get; }
+        public Dictionary<string, Node> MapValue { get; }
 
-        public IReadOnlyList<Node> ListValue { get; }
+        public List<Node> ListValue { get; }
 
         public string StringValue { get; }
 
