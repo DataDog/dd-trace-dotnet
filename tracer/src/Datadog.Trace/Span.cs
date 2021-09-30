@@ -93,7 +93,7 @@ namespace Datadog.Trace
         /// <para>If the trace has been propagated from a remote service, the <i>remote global root</i> is not relevant for this API.</para>
         /// <para>A distributed operation represented by a trace may be re-entrant (e.g. service-A calls service-B, which calls service-A again).
         /// In such cases, the local process may be concurrently executing multiple local root spans.
-        /// This API returns the if of the root span of the non-reentrant trace sub-set.</para></remarks>
+        /// This API returns the id of the root span of the non-reentrant trace sub-set.</para></remarks>
         internal ulong RootSpanId
         {
             get
