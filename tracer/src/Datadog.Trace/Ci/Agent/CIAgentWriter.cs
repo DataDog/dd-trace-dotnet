@@ -93,7 +93,7 @@ namespace Datadog.Trace.Ci.Agent
 
             if (spanIdsToRemove != null)
             {
-                CIVisibility.Log.Warning($"Spans dropped because not having a test or benchmark root span: {spanIdsToRemove.Count}");
+                CIVisibility.Log.Warning<int>("Spans dropped because not having a test or benchmark root span: {Count}", spanIdsToRemove.Count);
             }
 
             if (idx > 0)
