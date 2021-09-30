@@ -169,7 +169,7 @@ namespace Datadog.Trace.Tests
                 using (span)
                 {
                     span.SpanId.Should().NotBe(0);
-                    span.LocalRootSpanId.Should().Be(span.SpanId);
+                    span.RootSpanId.Should().Be(span.SpanId);
                 }
             }
 
@@ -178,7 +178,7 @@ namespace Datadog.Trace.Tests
                 using (scope)
                 {
                     scope.Span.SpanId.Should().NotBe(0);
-                    scope.Span.LocalRootSpanId.Should().Be(scope.Span.SpanId);
+                    scope.Span.RootSpanId.Should().Be(scope.Span.SpanId);
                 }
             }
 
@@ -190,7 +190,7 @@ namespace Datadog.Trace.Tests
                 {
                     span.SpanId.Should().NotBe(0);
                     span.SpanId.Should().NotBe(remoteParentSpanId);             // There is an expected 1 in 2^64 chance of this line failing
-                    span.LocalRootSpanId.Should().Be(span.SpanId);
+                    span.RootSpanId.Should().Be(span.SpanId);
                 }
             }
 
@@ -202,7 +202,7 @@ namespace Datadog.Trace.Tests
                 {
                     scope.Span.SpanId.Should().NotBe(0);
                     scope.Span.SpanId.Should().NotBe(remoteParentSpanId);       // There is an expected 1 in 2^64 chance of this line failing
-                    scope.Span.LocalRootSpanId.Should().Be(scope.Span.SpanId);
+                    scope.Span.RootSpanId.Should().Be(scope.Span.SpanId);
                 }
             }
 
@@ -222,9 +222,9 @@ namespace Datadog.Trace.Tests
                     span2.SpanId.Should().NotBe(remoteParentSpanId);            // There is an expected 1 in 2^64 chance of this line failing
                     span3.SpanId.Should().NotBe(remoteParentSpanId);            // There is an expected 1 in 2^64 chance of this line failing
 
-                    span1.LocalRootSpanId.Should().Be(span1.SpanId);
-                    span2.LocalRootSpanId.Should().Be(span1.SpanId);
-                    span3.LocalRootSpanId.Should().Be(span1.SpanId);
+                    span1.RootSpanId.Should().Be(span1.SpanId);
+                    span2.RootSpanId.Should().Be(span1.SpanId);
+                    span3.RootSpanId.Should().Be(span1.SpanId);
                 }
             }
 
@@ -237,9 +237,9 @@ namespace Datadog.Trace.Tests
                     scope2.Span.SpanId.Should().NotBe(0);
                     scope3.Span.SpanId.Should().NotBe(0);
 
-                    scope1.Span.LocalRootSpanId.Should().Be(scope1.Span.SpanId);
-                    scope2.Span.LocalRootSpanId.Should().Be(scope1.Span.SpanId);
-                    scope3.Span.LocalRootSpanId.Should().Be(scope1.Span.SpanId);
+                    scope1.Span.RootSpanId.Should().Be(scope1.Span.SpanId);
+                    scope2.Span.RootSpanId.Should().Be(scope1.Span.SpanId);
+                    scope3.Span.RootSpanId.Should().Be(scope1.Span.SpanId);
                 }
             }
 
@@ -262,10 +262,10 @@ namespace Datadog.Trace.Tests
                     scope3.Span.SpanId.Should().NotBe(remoteParentSpanId);      // There is an expected 1 in 2^64 chance of this line failing
                     span4.SpanId.Should().NotBe(remoteParentSpanId);            // There is an expected 1 in 2^64 chance of this line failing
 
-                    scope1.Span.LocalRootSpanId.Should().Be(scope1.Span.SpanId);
-                    span2.LocalRootSpanId.Should().Be(scope1.Span.SpanId);
-                    scope3.Span.LocalRootSpanId.Should().Be(scope1.Span.SpanId);
-                    span4.LocalRootSpanId.Should().Be(scope1.Span.SpanId);
+                    scope1.Span.RootSpanId.Should().Be(scope1.Span.SpanId);
+                    span2.RootSpanId.Should().Be(scope1.Span.SpanId);
+                    scope3.Span.RootSpanId.Should().Be(scope1.Span.SpanId);
+                    span4.RootSpanId.Should().Be(scope1.Span.SpanId);
                 }
             }
         }
