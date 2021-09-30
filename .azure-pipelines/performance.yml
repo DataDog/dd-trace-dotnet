@@ -106,7 +106,6 @@ stages:
 
 - stage: benchmarks
   condition: succeeded()
-  dependsOn: build_windows
   jobs:
 
   #### Windows
@@ -151,7 +150,6 @@ stages:
 
 - stage: throughput
   condition: succeeded()
-  dependsOn: [build_linux, build_arm64, build_windows]
   pool: Throughput
   jobs:
 
@@ -243,7 +241,6 @@ stages:
 
 - stage: execution_benchmarks
   condition: succeeded()
-  dependsOn: [build_windows]
   jobs:
   - job: windows
     pool:
