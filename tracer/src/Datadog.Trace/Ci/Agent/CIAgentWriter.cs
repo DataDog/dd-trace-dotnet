@@ -41,32 +41,48 @@ namespace Datadog.Trace.Ci.Agent
             // We ensure there's no trace (local root span) without a test tag.
             // And ensure all remaining spans have the origin tag.
 
-            HashSet<ulong> removeIds = null;
+            // **
+            // * Filter entire traces without test or benchmark root span
+            // **
+
+            HashSet<ulong> spanIdsToRemove = null;
+            bool continueFiltering = true;
+            while (continueFiltering)
+            {
+                continueFiltering = false;
+
+                foreach (var span in trace)
+                {
+                    if (span.Context.Parent is null)
+                    {
+                        if (span.Type != SpanTypes.Test &&
+                            span.Type != SpanTypes.Benchmark &&
+                            span.Type != SpanTypes.Build)
+                        {
+                            if (spanIdsToRemove == null)
+                            {
+                                spanIdsToRemove = new HashSet<ulong>();
+                            }
+
+                            continueFiltering |= spanIdsToRemove.Add(span.SpanId);
+                            continue;
+                        }
+                    }
+                    else if (spanIdsToRemove != null && spanIdsToRemove.Contains(span.Context.ParentId.Value))
+                    {
+                        continueFiltering |= spanIdsToRemove.Add(span.SpanId);
+                        continue;
+                    }
+                }
+            }
+
             Span[] finalTrace = new Span[trace.Count];
             int idx = 0;
             foreach (var span in trace)
             {
-                // Remove traces non test, benchmarks or build traces.
-                if (span.Context.Parent is null)
+                // Remove non test, benchmarks or build traces.
+                if (spanIdsToRemove != null && spanIdsToRemove.Contains(span.SpanId))
                 {
-                    if (span.Type != SpanTypes.Test &&
-                        span.Type != SpanTypes.Benchmark &&
-                        span.Type != SpanTypes.Build)
-                    {
-                        if (removeIds == null)
-                        {
-                            removeIds = new HashSet<ulong>();
-                        }
-
-                        removeIds.Add(span.SpanId);
-                        CIVisibility.Log.Warning("Non Test or Benchmark trace was dropped: {Span}", span);
-                        continue;
-                    }
-                }
-                else if (removeIds != null && removeIds.Contains(span.Context.ParentId.Value))
-                {
-                    removeIds.Add(span.SpanId);
-                    CIVisibility.Log.Warning("Non Test or Benchmark trace was dropped: {Span}", span);
                     continue;
                 }
 
@@ -75,7 +91,15 @@ namespace Datadog.Trace.Ci.Agent
                 finalTrace[idx++] = span;
             }
 
-            _agentWriter.WriteTrace(new ArraySegment<Span>(finalTrace, 0, idx));
+            if (spanIdsToRemove != null)
+            {
+                CIVisibility.Log.Warning($"Spans dropped because not having a test or benchmark root span: {spanIdsToRemove.Count}");
+            }
+
+            if (idx > 0)
+            {
+                _agentWriter.WriteTrace(new ArraySegment<Span>(finalTrace, 0, idx));
+            }
         }
     }
 }
