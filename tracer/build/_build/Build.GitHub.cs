@@ -348,7 +348,7 @@ partial class Build
 
            var sb = new StringBuilder();
            sb.AppendLine($"⚠ 1. Download the NuGet packages for the release from [this link]({artifactsLink}) and upload to nuget.org");
-           sb.AppendLine("⚠ 2. Download the signed MSI assets from GitLab and attach to this release before publishing");
+           sb.AppendLine("⚠ 2. Download the signed MSI assets and native symbols from GitLab and attach to this release before publishing");
            sb.AppendLine();
            sb.Append(changelog, firstContent, releaseNotesEnd - firstContent);
 

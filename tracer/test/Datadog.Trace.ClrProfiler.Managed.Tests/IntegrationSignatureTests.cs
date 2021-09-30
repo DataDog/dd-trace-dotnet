@@ -15,7 +15,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         // This is a list of instrumented methods that are static, i.e., the target method is static.
         private static readonly List<MethodInfo> StaticInstrumentations = new List<MethodInfo>()
         {
-            // This list is currently empty
+#if NETFRAMEWORK
+            typeof(Integrations.AspNetWebApi2Integration).GetRuntimeMethod(nameof(Integrations.AspNetWebApi2Integration.HandleAsync), new[] { typeof(object), typeof(object), typeof(object), typeof(int), typeof(int), typeof(long) }),
+#endif
         };
 
         public static IEnumerable<object[]> GetCallSiteMethodsWithInterceptionAttribute()

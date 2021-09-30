@@ -428,9 +428,19 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "azure-functions", "azure-fu
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AzureFunctions.AllTriggers", "tracer\test\test-applications\azure-functions\Samples.AzureFunctions.AllTriggers\Samples.AzureFunctions.AllTriggers.csproj", "{536F1D82-D40C-4E33-B7FA-76A0F17BF672}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.Trace.ClrProfiler.Native.Checks", "tracer\test\test-applications\instrumentation\Datadog.Trace.ClrProfiler.Native.Checks\Datadog.Trace.ClrProfiler.Native.Checks.csproj", "{E978A08E-0133-42E0-815C-F8EF3A061597}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.Native.Checks", "tracer\test\test-applications\instrumentation\Datadog.Trace.ClrProfiler.Native.Checks\Datadog.Trace.ClrProfiler.Native.Checks.csproj", "{E978A08E-0133-42E0-815C-F8EF3A061597}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Samples.Shared", "tracer\test\test-applications\Samples.Shared\Samples.Shared.shproj", "{5A806F4B-39E7-4F38-B36F-F5CFC4F8760A}"
 EndProject
 Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{3c6dd42e-9214-4747-92ba-78de29aace59}*SharedItemsImports = 4
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{6d86109f-b7c9-477d-86d7-45735a3a0818}*SharedItemsImports = 4
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{7b0822f6-80de-4b49-8125-93975678d0d5}*SharedItemsImports = 4
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{99a62ccf-8e7f-4d57-8383-d38c371c8087}*SharedItemsImports = 4
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{b6a98887-4a47-4c19-9c6f-d833e24f4b1c}*SharedItemsImports = 4
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{bbb60b0f-bf01-4499-936a-4a299a9acfd4}*SharedItemsImports = 4
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Debug|x64 = Debug|x64
@@ -1967,6 +1977,7 @@ Global
 		{C4C1E313-C7C1-4490-AECE-0DD0062380A4} = {9518425A-36A5-4B8F-B0B8-6137DB88441D}
 		{536F1D82-D40C-4E33-B7FA-76A0F17BF672} = {C4C1E313-C7C1-4490-AECE-0DD0062380A4}
 		{E978A08E-0133-42E0-815C-F8EF3A061597} = {933F1D4B-1216-4BC1-956E-8C30818BAA0F}
+		{5A806F4B-39E7-4F38-B36F-F5CFC4F8760A} = {9518425A-36A5-4B8F-B0B8-6137DB88441D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}

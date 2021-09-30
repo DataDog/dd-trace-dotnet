@@ -21,19 +21,7 @@ namespace Samples.WebForms.Account
 
         private void Shutdown()
         {
-            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-
-            foreach (var assembly in assemblies)
-            {
-                foreach (var type in assembly.DefinedTypes)
-                {
-                    if (type.Namespace == "Coverlet.Core.Instrumentation.Tracker")
-                    {
-                        var unloadModuleMethod = type.GetMethod("UnloadModule", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-                        unloadModuleMethod.Invoke(null, new object[] { this, EventArgs.Empty });
-                    }
-                }
-            }
+            SampleHelpers.RunShutDownTasks(this);
         }
     }
 }

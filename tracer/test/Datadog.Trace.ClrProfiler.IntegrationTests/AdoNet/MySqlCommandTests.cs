@@ -84,10 +84,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             int agentPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = new MockTracerAgent(agentPort))
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port))
+            using (RunSampleAndWaitForExit(agent.Port))
             {
-                Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
-
                 var spans = agent.WaitForSpans(totalSpanCount, returnAllOperations: true);
                 Assert.NotEmpty(spans);
                 Assert.Empty(spans.Where(s => s.Name.Equals(expectedOperationName)));
@@ -143,10 +141,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             int agentPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = new MockTracerAgent(agentPort))
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
+            using (RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
             {
-                Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
-
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
                 int actualSpanCount = spans.Where(s => s.ParentId.HasValue && !s.Resource.Equals("SHOW WARNINGS", System.StringComparison.OrdinalIgnoreCase)).Count(); // Remove unexpected DB spans from the calculation
                 Assert.Equal(expectedSpanCount, actualSpanCount);

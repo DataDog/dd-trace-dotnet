@@ -72,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                 try
                 {
                     // The only supported way to extract the cancellation exception is to await the task
-                    await previousTask;
+                    await previousTask.ConfigureAwait(_preserveContext);
                 }
                 catch (Exception ex)
                 {

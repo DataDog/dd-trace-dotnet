@@ -22,7 +22,11 @@
     Error: 1,
     Tags: {
       env: integration_tests,
-      error.msg: The HTTP response has status code 500.,
+      error.msg: Source: PassThroughQuerySuccessMessageHandler. Error: Query param ps was set to a non-true value,
+      error.stack: 
+System.ArgumentException: Source: PassThroughQuerySuccessMessageHandler. Error: Query param ps was set to a non-true value
+at Samples.AspNetMvc5.Handlers.PassThroughQuerySuccessMessageHandler.<SendAsync>d__1.MoveNext(),
+      error.type: System.ArgumentException,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 500,

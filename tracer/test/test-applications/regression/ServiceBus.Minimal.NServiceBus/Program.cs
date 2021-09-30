@@ -1,5 +1,6 @@
 using System;
 using System.Data.SqlClient;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus;
@@ -31,24 +32,28 @@ namespace ServiceBus.Minimal.NServiceBus
 
             EnsureDatabaseExists(connectionString);
 
-            endpointConfiguration.UseTransport<LearningTransport>();
+            var storageDirectory = Path.Combine(Path.GetTempPath(), "learningtransport");
+
+            endpointConfiguration.UseTransport<LearningTransport>()
+                                 .StorageDirectory(storageDirectory);
             endpointConfiguration.EnableInstallers();
             endpointConfiguration.EnableOutbox();
 
             var endpointInstance = await Endpoint.Start(endpointConfiguration)
                 .ConfigureAwait(false);
 
-            await SendMessagesAsync();
+            await SendMessagesAsync(storageDirectory);
 
             await endpointInstance.Stop()
                 .ConfigureAwait(false);
         }
 
-        static async Task SendMessagesAsync()
+        static async Task SendMessagesAsync(string storageDirectory)
         {
             var endpointConfiguration = new EndpointConfiguration(EndpointName);
             endpointConfiguration.UsePersistence<LearningPersistence>();
-            endpointConfiguration.UseTransport<LearningTransport>();
+            endpointConfiguration.UseTransport<LearningTransport>()
+                                 .StorageDirectory(storageDirectory);
 
             var endpointInstance = await Endpoint.Start(endpointConfiguration)
                 .ConfigureAwait(false);

@@ -5,7 +5,7 @@
       "commandLineArgs": "all",
       "environmentVariables": {
         "DD_CTARGET_TESTMODE": "True",
-        "DD_DOTNET_TRACER_HOME": "$(ProjectDir)$(OutputPath)profiler-lib",
+        "DD_DOTNET_TRACER_HOME": "$(SolutionDir)tracer\\bin\\tracer-home",
         "COR_ENABLE_PROFILING": "1",
         "CORECLR_ENABLE_PROFILING": "1",
         "COR_PROFILER_PATH": "$(ProjectDir)$(OutputPath)profiler-lib\\Datadog.Trace.ClrProfiler.Native.dll",
@@ -13,7 +13,7 @@
         "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
         "DD_TRACE_CALLTARGET_ENABLED": "1",
         "DD_INTEGRATIONS": "$(ProjectDir)$(OutputPath)integrations.json",
-        "CORECLR_PROFILER_PATH": "$(ProjectDir)$(OutputPath)profiler-lib\\Datadog.Trace.ClrProfiler.Native.dll",
+        "CORECLR_PROFILER_PATH": "$(SolutionDir)tracer\\bin\\tracer-home\\win-$(Platform)\\Datadog.Trace.ClrProfiler.Native.dll",
         "DD_VERSION": "1.0.0",
         "DD_CLR_ENABLE_INLINING": "1",
         "COR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
