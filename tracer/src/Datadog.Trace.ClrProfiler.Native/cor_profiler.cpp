@@ -77,16 +77,16 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
 
     const auto process_name = GetCurrentProcessName();
 
-#if DEBUG
-
-    // This enable a path to assert over checks inside the profiler code.
-    // Only in DEBUG compilations and for the Datadog.Trace.ClrProfiler.Native.Checks process
-    if (std::filesystem::path(process_name).replace_extension("").wstring() == WStr("Datadog.Trace.ClrProfiler.Native.Checks"))
+    if (IsDebugEnabled())
     {
-        CheckFilenameDefinitions();
+        // This enable a path to assert over checks inside the profiler code.
+        // Only in Debug mode and for the Datadog.Trace.ClrProfiler.Native.Checks process
+        if (std::filesystem::path(process_name).replace_extension("").wstring() ==
+            WStr("Datadog.Trace.ClrProfiler.Native.Checks"))
+        {
+            CheckFilenameDefinitions();
+        }
     }
-
-#endif
 
     const auto include_process_names = GetEnvironmentValues(environment::include_process_names);
 
@@ -449,7 +449,7 @@ void CorProfiler::RewritingPInvokeMaps(ComPtr<IUnknown> metadata_interfaces, Mod
         WSTRING native_profiler_file = GetEnvironmentValue(environment::internal_trace_profiler_path);
         if (native_profiler_file.empty())
         {
-            native_profiler_file = GetCoreCLRProfilerPath();
+            native_profiler_file = GetCLRProfilerPath();
         }
 
         if (native_profiler_file.empty())
@@ -1332,47 +1332,65 @@ bool CorProfiler::IsAttached() const
 //
 // Helper methods
 //
-WSTRING CorProfiler::GetCoreCLRProfilerPath()
+WSTRING CorProfiler::GetCLRProfilerPath()
 {
     WSTRING native_profiler_file;
+
 #ifdef BIT64
     native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_64"));
     Logger::Debug("GetProfilerFilePath: CORECLR_PROFILER_PATH_64 defined as: ", native_profiler_file);
+
     if (native_profiler_file == EmptyWStr)
     {
-        native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH"));
-        Logger::Debug("GetProfilerFilePath: CORECLR_PROFILER_PATH defined as: ", native_profiler_file);
+        native_profiler_file = GetEnvironmentValue(WStr("CLR_PROFILER_PATH_64"));
+        Logger::Debug("GetProfilerFilePath: CLR_PROFILER_PATH_64 defined as: ", native_profiler_file);
     }
 #else // BIT64
     native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_32"));
     Logger::Debug("GetProfilerFilePath: CORECLR_PROFILER_PATH_32 defined as: ", native_profiler_file);
+
+    if (native_profiler_file == EmptyWStr)
+    {
+        native_profiler_file = GetEnvironmentValue(WStr("CLR_PROFILER_PATH_32"));
+        Logger::Debug("GetProfilerFilePath: CLR_PROFILER_PATH_32 defined as: ", native_profiler_file);
+    }
+#endif // BIT64
+
     if (native_profiler_file == EmptyWStr)
     {
         native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH"));
         Logger::Debug("GetProfilerFilePath: CORECLR_PROFILER_PATH defined as: ", native_profiler_file);
     }
-#endif // BIT64
+
+    if (native_profiler_file == EmptyWStr)
+    {
+        native_profiler_file = GetEnvironmentValue(WStr("CLR_PROFILER_PATH"));
+        Logger::Debug("GetProfilerFilePath: CLR_PROFILER_PATH defined as: ", native_profiler_file);
+    }
+
     return native_profiler_file;
 }
 
 void CorProfiler::CheckFilenameDefinitions()
 {
-    auto runtimeFileName = std::filesystem::path(GetCoreCLRProfilerPath()).filename().string();
-    transform(runtimeFileName.begin(), runtimeFileName.end(), runtimeFileName.begin(), ::tolower);
+    auto runtimeFileName = std::filesystem::path(GetCLRProfilerPath()).filename().string();
+    auto definedFileName = native_dll_filename;
 
-    auto definedFileName = ToString(WSTRING(native_dll_filename));
-    transform(definedFileName.begin(), definedFileName.end(), definedFileName.begin(), ::tolower);
+    auto transformedRuntimeFileName = std::string(runtimeFileName);
+    transform(transformedRuntimeFileName.begin(), transformedRuntimeFileName.end(), transformedRuntimeFileName.begin(),
+              ::tolower);
 
-    std::cout << runtimeFileName << std::endl;
-    std::cout << definedFileName << std::endl;
+    auto transformedDefinedFileName = ToString(definedFileName);
+    transform(transformedDefinedFileName.begin(), transformedDefinedFileName.end(), transformedDefinedFileName.begin(),
+              ::tolower);
 
-    if (runtimeFileName == definedFileName)
+    if (transformedRuntimeFileName == transformedDefinedFileName)
     {
-        std::cout << "CHECK: FILENAME OK." << std::endl;
+        Logger::Info("CHECK: FILENAME OK. [Runtime: ", runtimeFileName, " | Defined: ", definedFileName, "]");
     }
     else
     {
-        std::cout << "CHECK: FILENAME ERROR." << std::endl;
+        Logger::Error("CHECK: FILENAME ERROR. [Runtime: ", runtimeFileName, " | Defined: ", definedFileName, "]");
     }
 }
 
@@ -2478,7 +2496,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
 
     if (native_profiler_file.empty())
     {
-        native_profiler_file = GetCoreCLRProfilerPath();
+        native_profiler_file = GetCLRProfilerPath();
     }
 
     if (native_profiler_file.empty())
