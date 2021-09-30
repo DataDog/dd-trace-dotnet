@@ -53,7 +53,7 @@ namespace Datadog.Trace.Ci.Agent
             if (!_isPartialFlushEnabled)
             {
                 // Check if the last span (the root) is a test, bechmark or build span
-                Span lastSpan = trace.Array[trace.Count - trace.Offset - 1];
+                Span lastSpan = trace.Array[trace.Offset + trace.Count - 1];
                 if (lastSpan.Context.Parent is null &&
                     lastSpan.Type != SpanTypes.Test &&
                     lastSpan.Type != SpanTypes.Benchmark &&
