@@ -64,25 +64,6 @@ namespace Datadog.Trace.AppSec.Waf.Rules
                 return true;
             }
 
-            foreach (var transformation in transformations)
-            {
-                foreach (var input in inputSet)
-                {
-                    var transformInputKey = RuleUtils.MakeTransformInputKey(transformation, input);
-                    if (!data.MapValue.ContainsKey(transformInputKey) && data.MapValue.TryGetValue(input, out var targetNode))
-                    {
-                        var transformedNode = Transforms.Transform(targetNode, transformation);
-                        // naughty, naughty, very naughty
-                        ((Dictionary<string, Node>)data.MapValue).Add(transformInputKey, transformedNode);
-                    }
-                }
-
-                if (conditions.Any(condition => condition.IsTransformedMatch(data, transformation)))
-                {
-                    return true;
-                }
-            }
-
             return false;
         }
     }
