@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         public static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.AzureFunctions));
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AzureFunctionsCommon));
-        private static readonly AspNetCoreHttpRequestHandler AspNetCoreRequestHandler = new AspNetCoreHttpRequestHandler(Log, OperationName, IntegrationId);
+        private static readonly AspNetCoreHttpRequestHandler AspNetCoreRequestHandler = new AspNetCoreHttpRequestHandler(Log, "mid_" + OperationName, IntegrationId);
 
         public static CallTargetState OnFunctionMiddlewareBegin<TTarget>(TTarget instance, HttpContext httpContext)
         {

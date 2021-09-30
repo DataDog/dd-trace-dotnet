@@ -15,8 +15,8 @@ namespace Samples.AzureFunctions.Version3.OutOfProcess
                 .ConfigureFunctionsWorkerDefaults()
                 .ConfigureServices(s =>
                 {
-                    s.AddHttpClient();
-                    s.AddLogging();
+                    //s.AddHttpClient();
+                    //s.AddLogging();
                 })
                 .Build();
 

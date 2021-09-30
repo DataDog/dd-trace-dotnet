@@ -14,4 +14,30 @@
 
   </PropertyGroup>
 
+  <!--<ItemGroup Condition="'$(ExcludeManagedProfiler)' != 'true' and
+                        '$(LoadManagedProfilerFromProfilerDirectory)' != 'true' ">
+    <ProjectReference Include="$(MSBuildThisFileDirectory)\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
+  </ItemGroup>-->
+
+  <ItemGroup Condition="'$(ExcludeNativeProfiler)' != 'true'">
+    <None Include="$(ProfilerOutputDirectory)\*.dll;$(ProfilerOutputDirectory)\*.so;$(ProfilerOutputDirectory)\*.pdb"
+          CopyToOutputDirectory="Always"
+          CopyToPublishDirectory="Always"
+          Link="profiler-lib\%(RecursiveDir)\%(Filename)%(Extension)" />
+    <Content Include="$(MSBuildThisFileDirectory)\..\..\..\integrations.json"
+             CopyToOutputDirectory="Always"
+             CopyToPublishDirectory="Always"
+             Link="profiler-lib\integrations.json" />
+  </ItemGroup>
+
+  <Target Name="AfterBuildCopyManagedProfiler" AfterTargets="AfterBuild">
+    <ItemGroup>
+      <!-- Subfolders of the output directory should each be a target framework -->
+      <ManagedProfilerFiles Include="$(ManagedProfilerOutputDirectory)\**\*.dll" Exclude="$(ManagedProfilerOutputDirectory)\*\runtimes\**\*.dll" />
+      <ManagedProfilerFiles Include="$(ManagedProfilerOutputDirectory)\**\*.lib" Exclude="$(ManagedProfilerOutputDirectory)\*\runtimes\**\*.lib" />
+      <ManagedProfilerFiles Include="$(ManagedProfilerOutputDirectory)\**\*.pdb" Exclude="$(ManagedProfilerOutputDirectory)\*\runtimes\**\*.pdb" />
+    </ItemGroup>
+
+    <Copy SourceFiles="@(ManagedProfilerFiles)" DestinationFolder="$(OutputPath)profiler-lib\%(RecursiveDir)" />
+  </Target>
 </Project>

@@ -103,6 +103,12 @@ namespace Datadog.Trace.ClrProfiler
         internal static Scope CreateOutboundHttpScope(Tracer tracer, string httpMethod, Uri requestUri, IntegrationInfo integrationId, out HttpTags tags, ulong? spanId, DateTimeOffset? startTime)
         {
             tags = null;
+            Log.Information($"[{tracer.InstanceGuid}] Request made to {requestUri}");
+
+            if (requestUri.ToString().Contains("simple"))
+            {
+                PlatformHelpers.PlatformStrategy.ShouldSkipClientSpan(tracer.ActiveScope);
+            }
 
             if (!tracer.Settings.IsIntegrationEnabled(integrationId) || PlatformHelpers.PlatformStrategy.ShouldSkipClientSpan(tracer.ActiveScope) || HttpBypassHelper.UriContainsAnyOf(requestUri, tracer.Settings.HttpClientExcludedUrlSubstrings))
             {

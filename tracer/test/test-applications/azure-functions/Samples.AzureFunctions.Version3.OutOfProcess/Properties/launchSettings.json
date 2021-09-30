@@ -19,7 +19,8 @@
         "DD_AZURE_APP_SERVICES": "1",
         "DD_TRACE_AZURE_FUNCTIONS_ENABLED": "1",
         "DD_LOGS_INJECTION": "1",
-        "DD_TRACE_DEBUG": "0"
+        "DD_TRACE_DEBUG": "1",
+        "COMPLUS_LoaderOptimization": "1"
       },
       "nativeDebugging": true
     }

@@ -47,6 +47,8 @@ namespace Datadog.Trace
         /// </summary>
         private static int _firstInitialization = 1;
 
+        private static Guid _instanceGuid = Guid.NewGuid();
+
         private static Tracer _instance;
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new object();
@@ -256,6 +258,8 @@ namespace Datadog.Trace
 
         internal IDogStatsd Statsd { get; private set; }
 
+        internal Guid InstanceGuid => _instanceGuid;
+
         /// <summary>
         /// Create a new Tracer with the given parameters
         /// </summary>
@@ -425,6 +429,8 @@ namespace Datadog.Trace
 
         internal Span StartSpan(string operationName, ITags tags, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false, ulong? spanId = null)
         {
+            Log.Information($"[{_instanceGuid}] Span starting: {operationName}");
+
             var spanContext = CreateSpanContext(parent, serviceName, ignoreActiveScope, spanId);
 
             var span = new Span(spanContext, startTime, tags)
@@ -600,7 +606,7 @@ namespace Datadog.Trace
                     writer.WriteEndObject();
                 }
 
-                Log.Information("DATADOG TRACER CONFIGURATION - {Configuration}", stringWriter.ToString());
+                Log.Information("DATADOG TRACER CONFIGURATION [{InstanceId}] - {Configuration}", _instanceGuid, stringWriter.ToString());
             }
             catch (Exception ex)
             {
