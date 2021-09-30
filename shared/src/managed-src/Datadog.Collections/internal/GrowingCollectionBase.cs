@@ -13,7 +13,7 @@ namespace Datadog.Collections
     /// <summary>A very fast, lock free, unordered collection to which items can be added, but never removed.
     /// Items in the collection must be value types and boxing/unboxing is always avoided during access.</summary>
     /// <remarks>The name suffix <c>Internal</c> indicates that this class implements only internal interfaces.
-    /// There is a subclass without that suffix (<see cref="GrowingNonBoxingCollection{T}" />) that implements the
+    /// There is a subclass without that suffix (<see cref="GrowingRefCollection{T}" />) that implements the
     /// equivalent public interfaces.
     /// Application can choose which to use in the context of allowing vs. avoiding adding any public types.
     /// </remarks>

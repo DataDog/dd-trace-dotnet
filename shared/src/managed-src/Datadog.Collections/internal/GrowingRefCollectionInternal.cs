@@ -7,25 +7,24 @@ namespace Datadog.Collections
     /// Access to items is provided by reference:
     /// If collection items are of a value type, boxing/unboxing is always avoided during access.</summary>
     /// <remarks>The name suffix <c>Internal</c> indicates that this class implements only internal interfaces.
-    /// There is a subclass without that suffix (<see cref="GrowingNonBoxingCollection{T}" />) that implements the
+    /// There is a subclass without that suffix (<see cref="GrowingRefCollection{T}" />) that implements the
     /// equivalent public interfaces.
     /// Application can choose which to use in the context of allowing vs. avoiding adding any public types.
     /// </remarks>
     /// <typeparam name="T">Type of collection elements.</typeparam>
-    internal class GrowingNonBoxingCollectionInternal<T>
-                                        : GrowingCollectionBase<T>, IRefEnumerableInternal<T>, IReadOnlyRefCollectionInternal<T>
+    internal class GrowingRefCollectionInternal<T> : GrowingCollectionBase<T>, IRefEnumerableInternal<T>, IReadOnlyRefCollectionInternal<T>
     {
-        /// <summary>Initializes a new instance of the <see cref="GrowingNonBoxingCollectionInternal{T}"/> class.
+        /// <summary>Initializes a new instance of the <see cref="GrowingRefCollectionInternal{T}"/> class.
         /// </summary>
-        public GrowingNonBoxingCollectionInternal()
+        public GrowingRefCollectionInternal()
             : base()
         {
         }
 
-        /// <summary>Initializes a new instance of the <see cref="GrowingNonBoxingCollectionInternal{T}"/> class.
+        /// <summary>Initializes a new instance of the <see cref="GrowingRefCollectionInternal{T}"/> class.
         /// </summary>
         /// <param name="segmentSize">The collection will grow in chunks of <c>segmentSize</c> items.</param>
-        public GrowingNonBoxingCollectionInternal(int segmentSize)
+        public GrowingRefCollectionInternal(int segmentSize)
             : base(segmentSize)
         {
         }
@@ -42,9 +41,9 @@ namespace Datadog.Collections
         /// The enumerator is resilient to concurrent additions to the collection.</summary>
         /// <returns>A new enumerator that will cover all items already in the collection.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public virtual GrowingNonBoxingCollectionInternal<T>.Enumerator GetEnumerator()
+        public virtual GrowingRefCollectionInternal<T>.Enumerator GetEnumerator()
         {
-            var enumerator = new GrowingNonBoxingCollectionInternal<T>.Enumerator(DataHead);
+            var enumerator = new GrowingRefCollectionInternal<T>.Enumerator(DataHead);
             return enumerator;
         }
 
@@ -57,7 +56,7 @@ namespace Datadog.Collections
             return this.GetEnumerator();
         }
 
-        /// <summary>An enumerator implementation for a <see cref="GrowingNonBoxingCollectionInternal{T}"/>.
+        /// <summary>An enumerator implementation for a <see cref="GrowingRefCollectionInternal{T}"/>.
         /// The enumerator is resilient to concurrent additions to the collection.
         /// No particular element order is guaranteed.</summary>
         public new class Enumerator : GrowingCollectionBase<T>.Enumerator, IRefEnumeratorInternal<T>
