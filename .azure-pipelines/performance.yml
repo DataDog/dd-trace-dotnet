@@ -1,55 +1,24 @@
-trigger:
-  branches:
-    include:
-      - master
-      - release/*
-      - hotfix/*
-      - refs/tags/*
-    exclude:
-      - refs/pull/*/head
-  paths:
-    exclude:
-      - docs/*
-      - .github/*
-# The following is a list of shared asset locations.
-# This is the config for the Tracer CI pipeline,
-# so we are excluding shared assets that are not currently used by the Tracer.
-# We make this list granular, rather than catch-all, on purpose.
-# It makes it easier to selectively remove items from the list, once the Tracer starts using them.
-#     - The Managed Loader:
-      - shared/samples/Datadog.AutoInstrumentation.ManagedLoader.Demo/*
-      - shared/src/managed-lib/ManagedLoader/*
-#     - Dynamic Bindings for DiagnosticSource:
-      - shared/samples/Datadog.DynamicDiagnosticSourceBindings.Demo/*
-      - shared/src/managed-lib/DynamicDiagnosticSourceBindings/*
-#     - Logging damo samples:
-      - shared/samples/Datadog.Logging.Demo/*
-#     - Managed utility APIs (may be used transitively):
-      - shared/src/managed-src/Datadog.Collections/*
-      - shared/src/managed-src/Datadog.Util/*
-#     - Managed Logging APIs (may be used transitively):      
-      - shared/src/managed-src/Datadog.Logging.Emission/*
-      - shared/src/managed-src/Datadog.Logging.Composition/*
-      - shared/src/managed-src/Datadog.Logging/*
-#     - Fmt lib:
-      - shared/src/native-lib/fmt_x64-windows-static/*
-      - shared/src/native-lib/fmt_x86-windows-static/*
-#     - Spdlob lib:      
-      - shared/src/native-lib/spdlog/*
-#     - Mics common native sources:
-      - shared/src/native-src/*
+# This pipeline is only triggered when the ci pipeline finishes
+resources:
+  # wait for the dependent pipeline to complete
+  pipelines:
+    - pipeline: build_pipeline
+      source: consolidated-pipeline
+      trigger:
+        stages:
+          - build_windows
+          - build_linux
+          - build_arm64
 
-
-schedules:
-  - cron: "0 3 * * *"
-    displayName: Daily 3am (UTC) build
-    branches:
-      include:
-        - master
-        - release/*
-        - hotfix/*
-        - /benchmarks/*
-    always: true
+  # Declare the datadog agent as a resource to be used as a pipeline service
+  containers:
+    - container: dd_agent
+      image: datadog/agent
+      ports:
+        - 8126:8126
+      env:
+        DD_API_KEY: $(ddApiKey)
+        DD_INSIDE_CI: true
 
 # Global variables
 variables:
@@ -72,27 +41,6 @@ variables:
   # The following are used for cross-pipeline artifact downloads
   consolidatedPipelineProject: dd-trace-dotnet
   consolidatedPipelineDefinitionId: 54
-
-resources:
-  # wait for the dependent pipeline to complete
-  pipelines:
-  - pipeline: build_pipeline
-    source: consolidated-pipeline
-    trigger:
-      stages:
-      - build_windows
-      - build_linux
-      - build_arm64
-
-  # Declare the datadog agent as a resource to be used as a pipeline service
-  containers:
-  - container: dd_agent
-    image: datadog/agent
-    ports:
-    - 8126:8126
-    env:
-      DD_API_KEY: $(ddApiKey)
-      DD_INSIDE_CI: true
 
 # Stages
 stages:
