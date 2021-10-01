@@ -1,55 +1,28 @@
-trigger:
-  branches:
-    include:
-      - master
-      - release/*
-      - hotfix/*
-      - refs/tags/*
-    exclude:
-      - refs/pull/*/head
-  paths:
-    exclude:
-      - docs/*
-      - .github/*
-# The following is a list of shared asset locations.
-# This is the config for the Tracer CI pipeline,
-# so we are excluding shared assets that are not currently used by the Tracer.
-# We make this list granular, rather than catch-all, on purpose.
-# It makes it easier to selectively remove items from the list, once the Tracer starts using them.
-#     - The Managed Loader:
-      - shared/samples/Datadog.AutoInstrumentation.ManagedLoader.Demo/*
-      - shared/src/managed-lib/ManagedLoader/*
-#     - Dynamic Bindings for DiagnosticSource:
-      - shared/samples/Datadog.DynamicDiagnosticSourceBindings.Demo/*
-      - shared/src/managed-lib/DynamicDiagnosticSourceBindings/*
-#     - Logging damo samples:
-      - shared/samples/Datadog.Logging.Demo/*
-#     - Managed utility APIs (may be used transitively):
-      - shared/src/managed-src/Datadog.Collections/*
-      - shared/src/managed-src/Datadog.Util/*
-#     - Managed Logging APIs (may be used transitively):      
-      - shared/src/managed-src/Datadog.Logging.Emission/*
-      - shared/src/managed-src/Datadog.Logging.Composition/*
-      - shared/src/managed-src/Datadog.Logging/*
-#     - Fmt lib:
-      - shared/src/native-lib/fmt_x64-windows-static/*
-      - shared/src/native-lib/fmt_x86-windows-static/*
-#     - Spdlob lib:      
-      - shared/src/native-lib/spdlog/*
-#     - Mics common native sources:
-      - shared/src/native-src/*
+# This pipeline is only triggered when the ci pipeline finishes
+trigger: none
+pr: none
 
+resources:
+  # wait for the dependent pipeline to complete
+  pipelines:
+    - pipeline: build_pipeline
+      source: consolidated-pipeline
+      trigger:
+        stages:
+          - build_windows
+          - build_linux
+          - build_arm64
+          - record_src_details
 
-schedules:
-  - cron: "0 3 * * *"
-    displayName: Daily 3am (UTC) build
-    branches:
-      include:
-        - master
-        - release/*
-        - hotfix/*
-        - /benchmarks/*
-    always: true
+  # Declare the datadog agent as a resource to be used as a pipeline service
+  containers:
+    - container: dd_agent
+      image: datadog/agent
+      ports:
+        - 8126:8126
+      env:
+        DD_API_KEY: $(ddApiKey)
+        DD_INSIDE_CI: true
 
 # Global variables
 variables:
@@ -70,29 +43,8 @@ variables:
   Verify_DisableClipboard: true
   DiffEngine_Disabled: true
   # The following are used for cross-pipeline artifact downloads
-  consolidatedPipelineProject: dd-trace-dotnet
-  consolidatedPipelineDefinitionId: 54
-
-resources:
-  # wait for the dependent pipeline to complete
-  pipelines:
-  - pipeline: build_pipeline
-    source: consolidated-pipeline
-    trigger:
-      stages:
-      - build_windows
-      - build_linux
-      - build_arm64
-
-  # Declare the datadog agent as a resource to be used as a pipeline service
-  containers:
-  - container: dd_agent
-    image: datadog/agent
-    ports:
-    - 8126:8126
-    env:
-      DD_API_KEY: $(ddApiKey)
-      DD_INSIDE_CI: true
+  consolidatedPipelineProject: $(resources.pipeline.build_pipeline.projectID)
+  consolidatedPipelineDefinitionId: $(resources.pipeline.build_pipeline.pipelineID)
 
 # Stages
 stages:
@@ -119,7 +71,6 @@ stages:
         pipelineRunId: $(resources.pipeline.build_pipeline.runID)
 
     - script: tracer\build.cmd RunBenchmarks
-      continueOnError: true
       displayName: RunBenchmarks
 
     - publish: tracer/build_data/benchmarks
@@ -147,10 +98,40 @@ stages:
   pool: Throughput
   jobs:
 
-  #### Throughput Linux 64, windows 64, linux arm 64 
+  - job: get_values
+    steps:
+    - task: DownloadPipelineArtifact@2
+      displayName: Download source details
+      inputs:
+        artifact: build-src-details
+        path: $(System.DefaultWorkingDirectory)/tracer/build-src-details
+        # download from main build pipeline
+        source: specific
+        project: $(consolidatedPipelineProject)
+        pipeline: $(consolidatedPipelineDefinitionId)
+        runVersion: specific
+        runId: $(resources.pipeline.build_pipeline.runID)
+        patterns: "*.txt"
+        preferTriggeringPipeline: true
+
+    - script: |
+        repo=`cat $(System.DefaultWorkingDirectory)/tracer/build-src-details/repo.txt`
+        commit_sha=`cat $(System.DefaultWorkingDirectory)/tracer/build-src-details/commit_sha.txt`
+        echo "repo=$repo"
+        echo "commit_sha=$commit_sha"
+        echo "##vso[task.setvariable variable=original_repo;isOutput=true]$repo"
+        echo "##vso[task.setvariable variable=original_commit_sha;isOutput=true]$commit_sha"
+      displayName: Set repository values
+      name: setVars
+
+    #### Throughput Linux 64, windows 64, linux arm 64
 
   - job: Linux64
     timeoutInMinutes: 60
+    dependsOn: get_values
+    variables:
+      original_repo: $[ dependencies.get_values.outputs['setVars.original_repo'] ]
+      original_commit_sha: $[ dependencies.get_values.outputs['setVars.original_commit_sha'] ]
 
     steps:
     - task: DownloadPipelineArtifact@2
@@ -172,13 +153,17 @@ stages:
         test ! -s "tracer/tracer-home-linux/libddwaf.so" && echo "tracer/tracer-home-linux/libddwaf.so does not exist" && exit 1
         cd $(System.DefaultWorkingDirectory)/tracer/build/crank
         chmod +x ./run.sh
-        ./run.sh "linux"
+        ./run.sh "linux" $(original_repo) $(original_commit_sha)
       displayName: Crank
       env:
         DD_SERVICE: dd-trace-dotnet
 
   - job: Windows64
     timeoutInMinutes: 60
+    dependsOn: get_values
+    variables:
+      original_repo: $[ dependencies.get_values.outputs['setVars.original_repo'] ]
+      original_commit_sha: $[ dependencies.get_values.outputs['setVars.original_commit_sha'] ]
 
     steps:
     - task: DownloadPipelineArtifact@2
@@ -200,13 +185,17 @@ stages:
         test ! -s "tracer/tracer-home-win/win-x64/ddwaf.dll" && echo "tracer/tracer-home-win/win-x64/ddwaf.dll does not exist" && exit 1
         cd $(System.DefaultWorkingDirectory)/tracer/build/crank
         chmod +x ./run.sh
-        ./run.sh "windows"
+        ./run.sh "windows" $(original_repo) $(original_commit_sha)
       displayName: Crank
       env:
         DD_SERVICE: dd-trace-dotnet
 
   - job: LinuxArm64
     timeoutInMinutes: 60
+    dependsOn: get_values
+    variables:
+      original_repo: $[ dependencies.get_values.outputs['setVars.original_repo'] ]
+      original_commit_sha: $[ dependencies.get_values.outputs['setVars.original_commit_sha'] ]
 
     steps:
     - task: DownloadPipelineArtifact@2
@@ -227,7 +216,7 @@ stages:
         test ! -s "tracer/tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
         cd $(System.DefaultWorkingDirectory)/tracer/build/crank
         chmod +x ./run.sh
-        ./run.sh "linux_arm64"
+        ./run.sh "linux_arm64" $(original_repo) $(original_commit_sha)
       displayName: Crank
       env:
         DD_SERVICE: dd-trace-dotnet
