@@ -11,6 +11,29 @@ namespace Datadog.Collections
     #region class GrowingCollectionBase<T>
 
     /// <summary>A very fast, lock free, unordered collection to which items can be added, but never removed.
+    /// This class is the base for specific implementations and should not be used directly. Implementations include:
+    /// <ul>
+    ///   <li><see cref="GrowingCollection{T}" />
+    ///         A "normal" collection where items are accessed by value.
+    ///         If <c>T</c> is a class type or a primitive type, you propably (but not certainly) want this favor.
+    ///   </li>
+    ///   <li><see cref="GrowingRefCollectionInternal{T}" />
+    ///         A by-ref collection where items are accessed by reference directly inside the underlying memory.
+    ///         If <c>T</c> is a custom value type, you propably (but not certainly) want this favor.
+    ///         Values will be acced directly within the underlying storage, modified in-place and never boxed.
+    ///         Pattern based for-each-iteration is supported using an internal interface (<see cref="IRefEnumerableInternal{T}" />),
+    ///         so using this class does not expose any public types form the assembly.
+    ///         Other than the implemented by-ref iteration iface, this class is equivalent to <see cref="GrowingRefCollection{T}" />.
+    ///   </li>
+    ///   <li><see cref="GrowingRefCollection{T}" />
+    ///         A by-ref collection where items are accessed by reference directly inside the underlying memory.
+    ///         If <c>T</c> is a custom value type, you propably (but not certainly) want this favor.
+    ///         Values will be acced directly within the underlying storage, modified in-place and never boxed.
+    ///         Pattern based for-each-iteration is supported using a public interface (<see cref="IRefEnumerable{T}" />),
+    ///         collections backd by this class can be exposed through public APIs via that iface.
+    ///         Other than the implemented by-ref iteration iface, this class is equivalent to <see cref="GrowingRefCollectionInternal{T}" />.
+    ///   </li>
+    /// </ul>
     /// Items in the collection must be value types and boxing/unboxing is always avoided during access.</summary>
     /// <remarks>The name suffix <c>Internal</c> indicates that this class implements only internal interfaces.
     /// There is a subclass without that suffix (<see cref="GrowingRefCollection{T}" />) that implements the

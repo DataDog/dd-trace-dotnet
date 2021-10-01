@@ -10,6 +10,7 @@ namespace Datadog.Collections
     /// There is a subclass without that suffix (<see cref="GrowingRefCollection{T}" />) that implements the
     /// equivalent public interfaces.
     /// Application can choose which to use in the context of allowing vs. avoiding adding any public types.
+    /// <para>See <see cref="GrowingCollectionBase{T}" /> for an overview of different Growing-Collection-Style collection types.</para>
     /// </remarks>
     /// <typeparam name="T">Type of collection elements.</typeparam>
     internal class GrowingRefCollectionInternal<T> : GrowingCollectionBase<T>, IRefEnumerableInternal<T>, IReadOnlyRefCollectionInternal<T>

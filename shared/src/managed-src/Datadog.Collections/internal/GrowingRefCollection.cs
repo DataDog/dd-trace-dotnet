@@ -8,7 +8,8 @@ namespace Datadog.Collections
     /// If collection items are of a value type, boxing/unboxing is always avoided during access.</summary>
     /// <remarks>This class subclasses <seealso cref="GrowingRefCollectionInternal{T}" />. The only difference is that
     /// it additionally implements public iteration ifaces (<seealso cref="IRefEnumerable{T}" />, <seealso cref="IReadOnlyRefCollection{T}" />).
-    /// That allows exposing instances of this collection via those ifaces.</remarks>
+    /// That allows exposing instances of this collection via those ifaces.
+    /// <para>See <see cref="GrowingCollectionBase{T}" /> for an overview of different Growing-Collection-Style collection types.</para></remarks>
     /// <typeparam name="T">Type of collection elements.</typeparam>
     internal class GrowingRefCollection<T> : GrowingRefCollectionInternal<T>, IRefEnumerable<T>, IReadOnlyRefCollection<T>
     {

@@ -5,7 +5,9 @@ using System.Runtime.CompilerServices;
 
 namespace Datadog.Collections
 {
-    /// <summary>A very fast, lock free, unordered collection to which items can be added, but never removed.    
+    /// <summary>A very fast, lock free, unordered collection to which items can be added, but never removed.</summary>
+    /// <remarks><para>See <see cref="GrowingCollectionBase{T}" /> for an overview of different Growing-Collection-Style
+    /// collection types.</para></remarks>
     /// <typeparam name="T">Type of collection elements.</typeparam>
     internal class GrowingCollection<T> : GrowingCollectionBase<T>, IEnumerable, IEnumerable<T>, IReadOnlyCollection<T>
     {
