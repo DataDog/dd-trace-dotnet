@@ -61,9 +61,10 @@ variables:
   tracerHome: $(System.DefaultWorkingDirectory)/tracer/src/bin/windows-tracer-home
   artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
   ddApiKey: $(DD_API_KEY)
+  sourceBranch: $(variables['Build.SourceBranch'])
   isMainBranch: $[eq(variables['Build.SourceBranch'], 'refs/heads/master')]
   isPullRequest: $[eq(variables['Build.Reason'], 'PullRequest')]
-  isMockDependabot: $[contains(variables['Build.SourceBranch'], 'tracer/dependabot')]
+  isMockDependabot: $[startsWith(variables['Build.SourceBranch'], 'refs/heads/dependabot/nuget/tracer/dependabot')]
   DD_DOTNET_TRACER_MSBUILD:
   NugetPackageDirectory: $(System.DefaultWorkingDirectory)/packages
   relativeNugetPackageDirectory: packages
@@ -206,7 +207,7 @@ stages:
       artifact: build-linux-arm64-working-directory
 
 - stage: build_macos
-  condition: and(succeeded(), eq(variables.isMockDependabot, false), eq(variables['isScheduledBuild'], 'False'))
+  condition: and(succeeded(), eq(variables.isMockDependabot, false), eq(variables.isScheduledBuild, 'False'))
   dependsOn: []
   jobs:
   - job: build
@@ -229,7 +230,7 @@ stages:
       artifact: build-macos-working-directory
 
 - stage: package_windows
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  condition: and(succeeded(), eq(variables.isScheduledBuild, 'False'))
   dependsOn: build_windows
   pool:
     vmImage: windows-2019
@@ -259,7 +260,7 @@ stages:
         artifact: nuget-packages
 
 - stage: unit_tests_windows
-  condition: and(succeeded(), eq(variables.isMockDependabot, false), eq(variables['isScheduledBuild'], 'False'))
+  condition: and(succeeded(), eq(variables.isMockDependabot, false), eq(variables.isScheduledBuild, 'False'))
   dependsOn: build_windows
   pool:
     vmImage: windows-2019
@@ -299,7 +300,7 @@ stages:
         condition: succeededOrFailed()
 
 - stage: unit_tests_macos
-  condition: and(succeeded(), eq(variables.isMockDependabot, false), eq(variables['isScheduledBuild'], 'False'))
+  condition: and(succeeded(), eq(variables.isMockDependabot, false), eq(variables.isScheduledBuild, 'False'))
   dependsOn: build_macos
   jobs:
   - job: managed
@@ -329,7 +330,7 @@ stages:
 
 
 - stage: unit_tests_linux
-  condition: and(succeeded(), eq(variables.isMockDependabot, false), eq(variables['isScheduledBuild'], 'False'))
+  condition: and(succeeded(), eq(variables.isMockDependabot, false), eq(variables.isScheduledBuild, 'False'))
   dependsOn: [build_linux]
   jobs:
   - job: test
@@ -366,7 +367,7 @@ stages:
       condition: succeededOrFailed()
 
 - stage: unit_tests_arm64
-  condition: and(succeeded(), eq(variables.isMockDependabot, false), eq(variables['isScheduledBuild'], 'False'))
+  condition: and(succeeded(), eq(variables.isMockDependabot, false), eq(variables.isScheduledBuild, 'False'))
   dependsOn: [build_arm64]
   jobs:
     - job: test
@@ -397,7 +398,7 @@ stages:
           condition: succeededOrFailed()
 
 - stage: integration_tests_windows
-  condition: and(succeeded(), eq(variables.isMockDependabot, false), eq(variables['isScheduledBuild'], 'False'))
+  condition: and(succeeded(), eq(variables.isMockDependabot, false), eq(variables.isScheduledBuild, 'False'))
   dependsOn: build_windows
 
   jobs:
@@ -458,7 +459,7 @@ stages:
       continueOnError: true
 
 - stage: integration_tests_windows_iis
-  condition: and(succeeded(), eq(variables.isMockDependabot, false), eq(variables['isScheduledBuild'], 'False'))
+  condition: and(succeeded(), eq(variables.isMockDependabot, false), eq(variables.isScheduledBuild, 'False'))
   dependsOn: [build_windows, package_windows]
 
   jobs:
@@ -545,7 +546,7 @@ stages:
       continueOnError: true
 
 - stage: integration_tests_linux
-  condition: and(succeeded(), eq(variables.isMockDependabot, false), eq(variables['isScheduledBuild'], 'False'))
+  condition: and(succeeded(), eq(variables.isMockDependabot, false), eq(variables.isScheduledBuild, 'False'))
   dependsOn: [build_linux]
   jobs:
   - job: Test
@@ -644,7 +645,7 @@ stages:
       condition: succeededOrFailed()
 
 - stage: integration_tests_arm64
-  condition: and(succeeded(), eq(variables.isMockDependabot, false), eq(variables['isScheduledBuild'], 'False'))
+  condition: and(succeeded(), eq(variables.isMockDependabot, false), eq(variables.isScheduledBuild, 'False'))
   dependsOn: [build_arm64]
   jobs:
     - job: Test
@@ -722,7 +723,7 @@ stages:
           condition: succeededOrFailed()
 
 - stage: dotnet_tool
-  condition: and(succeeded(), eq(variables.isMockDependabot, false), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
+  condition: and(succeeded(), eq(variables.isMockDependabot, false), eq(variables.isScheduledBuild, 'False'), ne(variables['isNgenTestBuild'], 'True'))
   dependsOn: [build_windows, build_linux, build_arm64, build_macos]
   jobs:
   - job: build_runner_tool_and_standalone
@@ -844,7 +845,7 @@ stages:
       displayName: Add $(dotnetToolTag) build tag
 
 - stage: upload_to_s3
-  condition: and(succeeded(), eq(variables.isMockDependabot, false), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
+  condition: and(succeeded(), eq(variables.isMockDependabot, false), eq(variables.isScheduledBuild, 'False'), ne(variables['isNgenTestBuild'], 'True'))
   dependsOn: [package_windows, build_linux, build_arm64]
   jobs:
   - job: s3_upload
@@ -938,7 +939,7 @@ stages:
         )
 
 - stage: upload_to_azure
-  condition: and(succeeded(), eq(variables.isMockDependabot, false), eq(variables['isScheduledBuild'], 'False'))
+  condition: and(succeeded(), eq(variables.isMockDependabot, false), eq(variables.isScheduledBuild, 'False'))
   dependsOn: [package_windows, build_linux, build_arm64, dotnet_tool]
   jobs:
     - job: upload
@@ -1042,7 +1043,7 @@ stages:
             AZURE_STORAGE_SAS_TOKEN: $(AZURE_STORAGE_SHARED_ACCESS_TOKEN)
 
 - stage: coverage
-  condition: and(succeeded(), eq(variables.isMockDependabot, false), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
+  condition: and(succeeded(), eq(variables.isMockDependabot, false), eq(variables.isScheduledBuild, 'False'), ne(variables['isNgenTestBuild'], 'True'))
   dependsOn: [integration_tests_windows, integration_tests_windows_iis, integration_tests_linux, unit_tests_linux, unit_tests_macos, unit_tests_windows]
   jobs:
     - job: Windows
