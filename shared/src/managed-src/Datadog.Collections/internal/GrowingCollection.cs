@@ -16,9 +16,11 @@ namespace Datadog.Collections
         {
         }
 
-        /// <summary>Initializes a new instance of the <see cref="GrowingCollection{T}"/> class.
-        /// </summary>
-        /// <param name="segmentSize">The collection will grow in chunks of <c>segmentSize</c> items.</param>
+        /// <summary>Initializes a new instance of the <see cref="GrowingCollection{T}"/> class.</summary>
+        /// <param name="segmentSize">The collection will grow in chunks of <c>segmentSize</c> items.
+        /// Be very careful to avoid LOH allocations when chosing segment sizes for storing custom value-type items.
+        /// Unless working with very large numbers of items, smaller segment sizes (order of a few dozen to a few thousand) yield better performance.
+        /// See also: <seealso cref="GrowingCollectionBase{T}.SegmentSizes.Max" /></param>
         public GrowingCollection(int segmentSize)
             : base(segmentSize)
         {

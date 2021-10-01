@@ -20,10 +20,48 @@ namespace Datadog.Collections
     /// <typeparam name="T">Type of collection elements.</typeparam>
     internal class GrowingCollectionBase<T> : GrowingCollectionSegment<T>
     {
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0049:Simplify Names", Justification = "Max Size logic reasons on Framework rather than language type names")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0055:Formatting", Justification = "Using spaces to lay out Max Size table")]
         public static class SegmentSizes
         {
+            /// <summary>
+            /// When working with a ralatively small number of elements, a small defualt size allows wasting little memory.
+            /// If you know to process hundreds or thousands of objects, use larger segment sizes.
+            /// </summary>
             public const int Default = 32;
-            public const int Max = 4096;
+
+            private const int MaxMax = 50000;
+
+            /// <summary>
+            /// We restrict the max segment size to make it less likely that huge segments get allocated and end up on the
+            /// large object heap (LOH). Note that if the collection items are of a custom value-type, this can still happen.
+            /// For example, if the size of a value-typed collection item is just 18 bytes (e.g. 2 longs and 2 bytes),
+            /// it would only take 4,723 items per segment to cross the LOH threshold of 85,000 bytes.
+            /// We restrict the max segment sizes for built-in types to avoid LOH allocations.
+            /// E.g., in 64 bit systems, a segment of 10000 class-type items takes up 78.125 KBytes, a sizable block,
+            /// but still safely within the Large Object Head threshold.
+            /// <para>! However, be very careful to avoid LOH allocations when chosing segment sizes for storing custom value-type items !</para>
+            /// <para>Unless working with very large amounts of items, smaller segment sizes of a few KBytes or less will yield better
+            /// application performance.</para>
+            /// </summary>
+            public static readonly int Max = (typeof(T) == typeof(Boolean)) ? MaxMax
+                                           : (typeof(T) == typeof(Byte))    ? MaxMax
+                                           : (typeof(T) == typeof(SByte))   ? MaxMax
+                                           : (typeof(T) == typeof(Char))    ?  40000
+                                           : (typeof(T) == typeof(Decimal)) ?   5000
+                                           : (typeof(T) == typeof(Double))  ?  10000
+                                           : (typeof(T) == typeof(Single))  ?  20000
+                                           : (typeof(T) == typeof(Int32))   ?  20000
+                                           : (typeof(T) == typeof(UInt32))  ?  20000
+                                           : (typeof(T) == typeof(IntPtr))  ?  10000
+                                           : (typeof(T) == typeof(UIntPtr)) ?  10000
+                                           : (typeof(T) == typeof(Int64))   ?  10000
+                                           : (typeof(T) == typeof(UInt64))  ?  10000
+                                           : (typeof(T) == typeof(Int16))   ?  40000
+                                           : (typeof(T) == typeof(UInt16))  ?  40000
+                                           : (typeof(T).IsClass)            ?  10000
+                                           : (typeof(T).IsInterface)        ?  10000
+                                           :                                   4700;
         }
 
         private GrowingCollectionSegment<T> _dataHead;
@@ -36,9 +74,11 @@ namespace Datadog.Collections
             _dataHead = this;
         }
 
-        /// <summary>Initializes a new instance of the <see cref="GrowingCollectionBase{T}"/> class.
-        /// </summary>
-        /// <param name="segmentSize">The collection will grow in chunks of <c>segmentSize</c> items.</param>
+        /// <summary>Initializes a new instance of the <see cref="GrowingCollectionBase{T}"/> class.</summary>
+        /// <param name="segmentSize">The collection will grow in chunks of <c>segmentSize</c> items.
+        /// Be very careful to avoid LOH allocations when chosing segment sizes for storing custom value-type items.
+        /// Unless working with very large numbers of items, smaller segment sizes (order of a few dozen to a few thousand) yield better performance.
+        /// See also: <seealso cref="GrowingCollectionBase{T}.SegmentSizes.Max" /></param>
         public GrowingCollectionBase(int segmentSize)
             : base(segmentSize)
         {
@@ -209,13 +249,18 @@ namespace Datadog.Collections
         private readonly T[] _data;
         private int _localCount;
 
+        /// <summary>Creates a new Growing Collection Segment and allocated the underlying memory.</summary>
+        /// <param name="segmentSize">The capacity of this segment in terms of the number of collection items.
+        /// Be very careful to avoid LOH allocations when chosing segment sizes for storing custom value-type items.
+        /// Unless working with very large numbers of items, smaller segment sizes (order of a few dozen to a few thousand) yield better performance.
+        /// See also: <seealso cref="GrowingCollectionBase{T}.SegmentSizes.Max" /></param>
         public GrowingCollectionSegment(int segmentSize)
         {
             if (segmentSize < 1 || GrowingCollectionBase<T>.SegmentSizes.Max < segmentSize)
             {
-                throw new ArgumentOutOfRangeException(
-                                nameof(segmentSize),
-                                $"{segmentSize} must be in range 1..{GrowingCollectionBase<T>.SegmentSizes.Max}, but the specified value is {segmentSize}.");
+                throw new ArgumentOutOfRangeException(nameof(segmentSize),
+                                                      $"{segmentSize} must be in range 1..{GrowingCollectionBase<T>.SegmentSizes.Max}"
+                                                    + $" for items of type \"{typeof(T).FullName}\", but the specified value is {segmentSize}.");
             }
 
             _segmentSize = segmentSize;
@@ -230,9 +275,8 @@ namespace Datadog.Collections
         {
             if (nextSegment == null)
             {
-                throw new ArgumentNullException(
-                                nameof(nextSegment),
-                                $"{nextSegment} may not be null; if there is no {nextSegment}, use another ctor overload.");
+                throw new ArgumentNullException(nameof(nextSegment),
+                                                $"{nextSegment} may not be null; if there is no {nextSegment}, use another ctor overload.");
             }
 
             _segmentSize = nextSegment.Segment_Size;
