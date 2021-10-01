@@ -1,0 +1,309 @@
+trigger:
+  branches:
+    include:
+      - master
+      - release/*
+      - hotfix/*
+      - refs/tags/*
+    exclude:
+      - refs/pull/*/head
+  paths:
+    exclude:
+      - docs/*
+      - .github/*
+# The following is a list of shared asset locations.
+# This is the config for the Tracer CI pipeline,
+# so we are excluding shared assets that are not currently used by the Tracer.
+# We make this list granular, rather than catch-all, on purpose.
+# It makes it easier to selectively remove items from the list, once the Tracer starts using them.
+#     - The Managed Loader:
+      - shared/samples/Datadog.AutoInstrumentation.ManagedLoader.Demo/*
+      - shared/src/managed-lib/ManagedLoader/*
+#     - Dynamic Bindings for DiagnosticSource:
+      - shared/samples/Datadog.DynamicDiagnosticSourceBindings.Demo/*
+      - shared/src/managed-lib/DynamicDiagnosticSourceBindings/*
+#     - Logging damo samples:
+      - shared/samples/Datadog.Logging.Demo/*
+#     - Managed utility APIs (may be used transitively):
+      - shared/src/managed-src/Datadog.Collections/*
+      - shared/src/managed-src/Datadog.Util/*
+#     - Managed Logging APIs (may be used transitively):      
+      - shared/src/managed-src/Datadog.Logging.Emission/*
+      - shared/src/managed-src/Datadog.Logging.Composition/*
+      - shared/src/managed-src/Datadog.Logging/*
+#     - Fmt lib:
+      - shared/src/native-lib/fmt_x64-windows-static/*
+      - shared/src/native-lib/fmt_x86-windows-static/*
+#     - Spdlob lib:      
+      - shared/src/native-lib/spdlog/*
+#     - Mics common native sources:
+      - shared/src/native-src/*
+
+
+schedules:
+  - cron: "0 3 * * *"
+    displayName: Daily 3am (UTC) build
+    branches:
+      include:
+        - master
+        - release/*
+        - hotfix/*
+        - /benchmarks/*
+    always: true
+
+# Global variables
+variables:
+  buildConfiguration: Release
+  dotnetCoreSdk5Version: 5.0.401
+  relativeTracerHome: /tracer/src/bin/windows-tracer-home
+  relativeArtifacts: /tracer/src/bin/artifacts
+  ddTracerHome: $(System.DefaultWorkingDirectory)/tracer/src/bin/dd-tracer-home
+  tracerHome: $(System.DefaultWorkingDirectory)/tracer/src/bin/windows-tracer-home
+  artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
+  ddApiKey: $(DD_API_KEY)
+  isMainBranch: $[eq(variables['Build.SourceBranch'], 'refs/heads/master')]
+  isPullRequest: $[eq(variables['Build.Reason'], 'PullRequest')]
+  DD_DOTNET_TRACER_MSBUILD:
+  NugetPackageDirectory: $(System.DefaultWorkingDirectory)/packages
+  relativeNugetPackageDirectory: packages
+  dotnetToolTag: build-dotnet-tool
+  Verify_DisableClipboard: true
+  DiffEngine_Disabled: true
+  # The following are used for cross-pipeline artifact downloads
+  consolidatedPipelineProject: dd-trace-dotnet
+  consolidatedPipelineDefinitionId: 54
+
+resources:
+  # wait for the dependent pipeline to complete
+  pipelines:
+  - pipeline: build_pipeline
+    source: consolidated-pipeline
+    trigger:
+      stages:
+      - build_windows
+      - build_linux
+      - build_arm64
+
+  # Declare the datadog agent as a resource to be used as a pipeline service
+  containers:
+  - container: dd_agent
+    image: datadog/agent
+    ports:
+    - 8126:8126
+    env:
+      DD_API_KEY: $(ddApiKey)
+      DD_INSIDE_CI: true
+
+# Stages
+stages:
+- stage: benchmarks
+  dependsOn: []    # this removes the implicit dependency on previous stage and causes this to run in parallel
+  condition: succeeded()
+  jobs:
+
+  #### Windows
+
+  - job: Windows
+    timeoutInMinutes: 100
+    pool: Benchmarks
+
+    # Enable the Datadog Agent service for this job
+    services:
+      dd_agent: dd_agent
+
+    steps:
+
+    - template: steps/install-dotnet-5-sdk.yml
+    - template: steps/restore-working-directory.yml
+      parameters:
+        pipelineRunId: $(resources.pipeline.build_pipeline.runID)
+
+    - script: tracer\build.cmd RunBenchmarks
+      continueOnError: true
+      displayName: RunBenchmarks
+
+    - publish: tracer/build_data/benchmarks
+      artifact: benchmarks_results
+      continueOnError: true
+
+    - script: tracer\build.cmd CompareBenchmarksResults
+      continueOnError: true
+      displayName: Compare Benchmarks
+      condition: and(succeeded(), eq(variables.isPullRequest, true))
+      env:
+        PR_NUMBER: $(System.PullRequest.PullRequestNumber)
+        AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
+        GITHUB_TOKEN: $(GITHUB_TOKEN)
+
+    ## Is this really necessary?
+    - task: PowerShell@2
+      inputs:
+        targetType: 'inline'
+        script: 'Start-Sleep -s 120'
+
+- stage: throughput
+  dependsOn: [ ]    # this removes the implicit dependency on previous stage and causes this to run in parallel
+  condition: succeeded()
+  pool: Throughput
+  jobs:
+
+  #### Throughput Linux 64, windows 64, linux arm 64 
+
+  - job: Linux64
+    timeoutInMinutes: 60
+
+    steps:
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux native binary
+      inputs:
+        artifact: linux-tracer-home-debian
+        path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux
+        # download from main build pipeline
+        source: specific
+        project: $(consolidatedPipelineProject)
+        pipeline: $(consolidatedPipelineDefinitionId)
+        runVersion: specific
+        runId: $(resources.pipeline.build_pipeline.runID)
+        preferTriggeringPipeline: true
+
+    - script: |
+        test ! -s "tracer/tracer-home-linux/integrations.json" && echo "tracer/tracer-home-linux/integrations.json does not exist" && exit 1
+        test ! -s "tracer/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
+        test ! -s "tracer/tracer-home-linux/libddwaf.so" && echo "tracer/tracer-home-linux/libddwaf.so does not exist" && exit 1
+        cd $(System.DefaultWorkingDirectory)/tracer/build/crank
+        chmod +x ./run.sh
+        ./run.sh "linux"
+      displayName: Crank
+      env:
+        DD_SERVICE: dd-trace-dotnet
+
+  - job: Windows64
+    timeoutInMinutes: 60
+
+    steps:
+    - task: DownloadPipelineArtifact@2
+      displayName: Download windows native binary
+      inputs:
+        artifact: windows-tracer-home
+        path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-win
+        # download from main build pipeline
+        source: specific
+        project: $(consolidatedPipelineProject)
+        pipeline: $(consolidatedPipelineDefinitionId)
+        runVersion: specific
+        runId: $(resources.pipeline.build_pipeline.runID)
+        preferTriggeringPipeline: true
+
+    - script: |
+        test ! -s "tracer/tracer-home-win/integrations.json" && echo "tracer/tracer-home-win/integrations.json does not exist" && exit 1
+        test ! -s "tracer/tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll" && echo "tracer/tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll does not exist" && exit 1
+        test ! -s "tracer/tracer-home-win/win-x64/ddwaf.dll" && echo "tracer/tracer-home-win/win-x64/ddwaf.dll does not exist" && exit 1
+        cd $(System.DefaultWorkingDirectory)/tracer/build/crank
+        chmod +x ./run.sh
+        ./run.sh "windows"
+      displayName: Crank
+      env:
+        DD_SERVICE: dd-trace-dotnet
+
+  - job: LinuxArm64
+    timeoutInMinutes: 60
+
+    steps:
+    - task: DownloadPipelineArtifact@2
+      displayName: Download arm64 native binary
+      inputs:
+        artifact: linux-tracer-home-arm64
+        path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux-arm64
+        # download from main build pipeline
+        source: specific
+        project: $(consolidatedPipelineProject)
+        pipeline: $(consolidatedPipelineDefinitionId)
+        runVersion: specific
+        runId: $(resources.pipeline.build_pipeline.runID)
+        preferTriggeringPipeline: true
+
+    - script: |
+        test ! -s "tracer/tracer-home-linux-arm64/integrations.json" && echo "tracer/tracer-home-linux-arm64/integrations.json does not exist" && exit 1
+        test ! -s "tracer/tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
+        cd $(System.DefaultWorkingDirectory)/tracer/build/crank
+        chmod +x ./run.sh
+        ./run.sh "linux_arm64"
+      displayName: Crank
+      env:
+        DD_SERVICE: dd-trace-dotnet
+        DD_ENV: CI
+
+- stage: execution_benchmarks
+  dependsOn: [ ]    # this removes the implicit dependency on previous stage and causes this to run in parallel
+  condition: succeeded()
+  jobs:
+  - job: windows
+    pool:
+      vmImage: windows-2019
+    # Enable the Datadog Agent service for this job
+    services:
+      dd_agent: dd_agent
+    steps:
+    - template: steps/install-dotnet-sdks.yml
+    - template: steps/restore-working-directory.yml
+      parameters:
+        pipelineRunId: $(resources.pipeline.build_pipeline.runID)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download windows native binary
+      inputs:
+        artifact: windows-tracer-home
+        path: $(System.DefaultWorkingDirectory)/tracer/bin/tracer-home
+        # download from main build pipeline
+        source: specific
+        project: $(consolidatedPipelineProject)
+        pipeline: $(consolidatedPipelineDefinitionId)
+        runVersion: specific
+        runId: $(resources.pipeline.build_pipeline.runID)
+        preferTriggeringPipeline: true
+
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: 'build'
+        arguments: '-c Release'
+        workingDirectory: $(System.DefaultWorkingDirectory)/tracer/test/test-applications/integrations/Samples.HttpMessageHandler
+      displayName: 'dotnet build Release'
+
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: 'build'
+        arguments: '-c Release'
+        workingDirectory: $(System.DefaultWorkingDirectory)/tracer/test/test-applications/integrations/Samples.FakeDbCommand
+      displayName: 'dotnet build Release'
+
+    - task: GoTool@0
+      displayName: 'Install Go 1.16'
+      inputs:
+        version: '1.16'
+        goPath: '$(System.DefaultWorkingDirectory)'
+        workingDirectory: $(System.DefaultWorkingDirectory)
+
+    - task: Go@0
+      displayName: 'Install timeit tool'
+      inputs:
+        command: 'install'
+        arguments: 'github.com/tonyredondo/timeit@latest'
+        workingDirectory: $(System.DefaultWorkingDirectory)
+
+    - script: run.cmd
+      workingDirectory: $(System.DefaultWorkingDirectory)/tracer/build/timeit/Samples.HttpMessageHandler
+      displayName: Execute Samples.HttpMessageHandler benchmark
+      env:
+        DD_SERVICE: dd-trace-dotnet
+
+    - script: run.cmd
+      workingDirectory: $(System.DefaultWorkingDirectory)/tracer/build/timeit/Samples.FakeDbCommand
+      displayName: Execute Samples.FakeDbCommand benchmark
+      env:
+        DD_SERVICE: dd-trace-dotnet
+
+    - task: PowerShell@2
+      displayName: Wait 20 seconds to agent flush before finishing pipeline
+      inputs:
+        targetType: 'inline'
+        script: 'Start-Sleep -s 20'
