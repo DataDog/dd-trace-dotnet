@@ -123,8 +123,11 @@ namespace Datadog.Trace.AppSec
         {
             void Report(ITransport transport, Span span, Waf.ReturnTypes.Managed.Return result)
             {
-                var attack = Attack.From(result, span, transport);
-                _agentWriter.AddEvent(attack);
+                transport.OnCompleted(() =>
+                {
+                    var attack = Attack.From(result, span, transport);
+                    _agentWriter.AddEvent(attack);
+                });
             }
 
             var additiveContext = transport.GetAdditiveContext();
