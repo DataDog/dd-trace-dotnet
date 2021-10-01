@@ -106,7 +106,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
 
                 if (!_cancel.Token.IsCancellationRequested)
                 {
-                    await _onTick(_cancel.Token);
+                    await _onTick(_cancel.Token).ConfigureAwait(false);
                 }
             }
             catch (OperationCanceledException ex)

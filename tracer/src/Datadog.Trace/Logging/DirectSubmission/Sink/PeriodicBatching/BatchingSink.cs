@@ -163,7 +163,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
                         return;
                     }
 
-                    await EmitBatch(_waitingBatch);
+                    await EmitBatch(_waitingBatch).ConfigureAwait(false);
 
                     batchWasFull = _waitingBatch.Count >= _batchSizeLimit;
                     _waitingBatch.Clear();
