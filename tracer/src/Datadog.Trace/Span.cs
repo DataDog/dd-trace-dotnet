@@ -85,6 +85,24 @@ namespace Datadog.Trace
         /// </summary>
         public ulong SpanId => Context.SpanId;
 
+        /// <summary>
+        /// Gets <i>local root span id</i>, i.e. the <c>SpanId</c> of the span that is the root of the local, non-reentrant
+        /// sub-operation of the distributed operation that is represented by the trace that contains this span.
+        /// </summary>
+        /// <remarks>
+        /// <para>If the trace has been propagated from a remote service, the <i>remote global root</i> is not relevant for this API.</para>
+        /// <para>A distributed operation represented by a trace may be re-entrant (e.g. service-A calls service-B, which calls service-A again).
+        /// In such cases, the local process may be concurrently executing multiple local root spans.
+        /// This API returns the id of the root span of the non-reentrant trace sub-set.</para></remarks>
+        internal ulong RootSpanId
+        {
+            get
+            {
+                Span localRootSpan = Context.TraceContext?.RootSpan;
+                return (localRootSpan == null || localRootSpan == this) ? SpanId : localRootSpan.SpanId;
+            }
+        }
+
         internal ITags Tags { get; set; }
 
         internal SpanContext Context { get; }
