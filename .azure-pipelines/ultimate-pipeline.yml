@@ -85,6 +85,40 @@ resources:
 
 # Stages
 stages:
+- stage: record_src_details
+  dependsOn: []
+  jobs:
+  - job: record_src_details
+    pool:
+      vmImage: ubuntu-18.04
+    steps:
+    - script: |
+        echo "SYSTEM_PULLREQUEST_SOURCECOMMITID=$SYSTEM_PULLREQUEST_SOURCECOMMITID"
+        echo "BUILD_SOURCEVERSION=$BUILD_SOURCEVERSION"
+        echo "SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI=$SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI"
+        echo "BUILD_REPOSITORY_URI=$BUILD_REPOSITORY_URI"
+
+        repo="$SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI"
+        commit_sha="$SYSTEM_PULLREQUEST_SOURCECOMMITID"
+
+        if [ -z "$repo" ]; then
+            repo="$BUILD_REPOSITORY_URI"
+        fi
+
+        if [ -z "$commit_sha" ]; then
+            commit_sha="$BUILD_SOURCEVERSION"
+        fi
+
+        mkdir $(System.DefaultWorkingDirectory)/src_details
+        cd $(System.DefaultWorkingDirectory)/src_details
+        echo "$repo" > repo.txt
+        echo "$commit_sha" > commit_sha.txt
+      displayName: Write trigger values to txt files
+
+    - publish: $(System.DefaultWorkingDirectory)/src_details
+      displayName: Upload src details
+      artifact: build-src-details
+
 - stage: build_windows
   dependsOn: []
   jobs:
