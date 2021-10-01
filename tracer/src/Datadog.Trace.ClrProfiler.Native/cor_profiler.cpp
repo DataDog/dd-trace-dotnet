@@ -469,13 +469,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         return S_OK;
     }
 
-    if (module_info.IsNGEN())
-    {
-        // We check if the Module contains NGEN images and added to the
-        // rejit handler list to verify the inlines.
-        rejit_handler->AddNGenModule(module_id);
-    }
-
     if (Logger::IsDebugEnabled())
     {
         Logger::Debug("ModuleLoadFinished: ", module_id, " ", module_info.assembly.name, " AppDomain ",
@@ -485,6 +478,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
                       " | IsDynamic = ", module_info.IsDynamic(),
                       " | IsResource = ", module_info.IsResource(),
                       std::noboolalpha);
+    }
+
+    if (module_info.IsNGEN())
+    {
+        // We check if the Module contains NGEN images and added to the
+        // rejit handler list to verify the inlines.
+        rejit_handler->AddNGenModule(module_id);
     }
 
     AppDomainID app_domain_id = module_info.assembly.app_domain_id;
@@ -577,8 +577,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
     }
 
     ComPtr<IUnknown> metadata_interfaces;
-
-
     auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2,
                                              metadata_interfaces.GetAddressOf());
 
@@ -702,6 +700,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ProfilerDetachSucceeded()
     {
         return S_OK;
     }
+
     CorProfilerBase::ProfilerDetachSucceeded();
 
     // keep this lock until we are done using the module,
@@ -743,7 +742,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     mdToken function_token = mdTokenNil;
 
     HRESULT hr = this->info_->GetFunctionInfo(function_id, nullptr, &module_id, &function_token);
-
     if (FAILED(hr))
     {
         Logger::Warn("JITCompilationStarted: Call to ICorProfilerInfo4.GetFunctionInfo() failed for ", function_id);
@@ -825,7 +823,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
         first_jit_compilation_app_domains.insert(module_metadata->app_domain_id);
 
         hr = RunILStartupHook(module_metadata->metadata_emit, module_id, function_token);
-
         if (FAILED(hr))
         {
             Logger::Warn("JITCompilationStarted: Call to RunILStartupHook() failed for ", module_id, " ", function_token);
@@ -835,7 +832,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
         if (is_desktop_iis)
         {
             hr = AddIISPreStartInitFlags(module_id, function_token);
-
             if (FAILED(hr))
             {
                 Logger::Warn("JITCompilationStarted: Call to AddIISPreStartInitFlags() failed for ", module_id, " ",
@@ -857,8 +853,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainShutdownFinished(AppDomainID app
 
     // take this lock so we block until the
     // module metadata is not longer being used
-    std::lock_guard<std::mutex>
-        guard(module_id_to_info_map_lock_);
+    std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
 
     // double check if is_attached_ has changed to avoid possible race condition with shutdown function
     if (!is_attached_)
@@ -905,7 +900,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId, Function
     return S_OK;
 }
 
-
 //
 // InitializeProfiler method
 //
@@ -933,34 +927,12 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
         {
             const CallTargetDefinition& current = items[i];
 
-            WSTRING targetAssembly;
-            WSTRING targetType;
-            WSTRING targetMethod;
+            WSTRING targetAssembly = WSTRING(current.targetAssembly);
+            WSTRING targetType = WSTRING(current.targetType);
+            WSTRING targetMethod = WSTRING(current.targetMethod);
 
-            if (current.targetAssembly != nullptr)
-            {
-                targetAssembly = WSTRING(current.targetAssembly);
-            }
-            if (current.targetType != nullptr)
-            {
-                targetType = WSTRING(current.targetType);
-            }
-            if (current.targetMethod != nullptr)
-            {
-                targetMethod = WSTRING(current.targetMethod);
-            }
-
-            WSTRING wrapperAssembly;
-            WSTRING wrapperType;
-
-            if (current.wrapperAssembly != nullptr)
-            {
-                wrapperAssembly = WSTRING(current.wrapperAssembly);
-            }
-            if (current.wrapperType != nullptr)
-            {
-                wrapperType = WSTRING(current.wrapperType);
-            }
+            WSTRING wrapperAssembly = WSTRING(current.wrapperAssembly);
+            WSTRING wrapperType = WSTRING(current.wrapperType);
 
             std::vector<WSTRING> signatureTypes;
             for (int sIdx = 0; sIdx < current.signatureTypesLength; sIdx++)
@@ -2421,7 +2393,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     mdToken function_token = mdTokenNil;
 
     HRESULT hr = this->info_->GetFunctionInfo(functionId, nullptr, &module_id, &function_token);
-
     if (FAILED(hr))
     {
         Logger::Warn("JITCachedFunctionSearchStarted: Call to ICorProfilerInfo4.GetFunctionInfo() failed for ", functionId);
@@ -2493,12 +2464,6 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
             continue;
         }
 
-        // If the integration mode is not CallTarget we skip.
-        if (integration.replacement.wrapper_method.action != calltarget_modification_action)
-        {
-            continue;
-        }
-
         // Check min version
         if (integration.replacement.target_method.min_version > assembly_metadata.version)
         {
@@ -2521,9 +2486,12 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
             continue;
         }
 
-        Logger::Debug("  Looking for '", integration.replacement.target_method.type_name, ".",
+        if (IsDebugEnabled())
+        {
+            Logger::Debug("  Looking for '", integration.replacement.target_method.type_name, ".",
                       integration.replacement.target_method.method_name, "(",
                       (integration.replacement.target_method.signature_types.size() - 1), " params)' method.");
+        }
 
         // Now we enumerate all methods with the same target method name. (All overloads of the method)
         auto enumMethods = Enumerator<mdMethodDef>(
@@ -2563,8 +2531,12 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
             const auto numOfArgs = functionInfo.method_signature.NumberOfArguments();
             if (numOfArgs != integration.replacement.target_method.signature_types.size() - 1)
             {
-                Logger::Debug("    * The caller for the methoddef: ", integration.replacement.target_method.method_name,
-                              " doesn't have the right number of arguments (", numOfArgs, " arguments).");
+                if (IsDebugEnabled())
+                {
+                    Logger::Debug("    * The caller for the methoddef: ",
+                                  integration.replacement.target_method.method_name,
+                                  " doesn't have the right number of arguments (", numOfArgs, " arguments).");
+                }
                 enumIterator = ++enumIterator;
                 continue;
             }
@@ -2572,8 +2544,12 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
             // Compare each mdMethodDef argument type to the instrumentation target
             bool argumentsMismatch = false;
             const auto methodArguments = functionInfo.method_signature.GetMethodArguments();
-            Logger::Debug("    * Comparing signature for method: ", integration.replacement.target_method.type_name, ".",
-                          integration.replacement.target_method.method_name);
+            if (IsDebugEnabled())
+            {
+                Logger::Debug("    * Comparing signature for method: ", integration.replacement.target_method.type_name,
+                              ".",
+                              integration.replacement.target_method.method_name);
+            }
             for (unsigned int i = 0; i < numOfArgs; i++)
             {
                 const auto argumentTypeName = methodArguments[i].GetTypeTokName(metadata_import);
@@ -2587,8 +2563,12 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
             }
             if (argumentsMismatch)
             {
-                Logger::Debug("    * The caller for the methoddef: ", integration.replacement.target_method.method_name,
-                              " doesn't have the right type of arguments.");
+                if (IsDebugEnabled())
+                {
+                    Logger::Debug("    * The caller for the methoddef: ",
+                                  integration.replacement.target_method.method_name,
+                                  " doesn't have the right type of arguments.");
+                }
                 enumIterator = ++enumIterator;
                 continue;
             }
@@ -2607,10 +2587,15 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleM
             bool caller_assembly_is_domain_neutral = runtime_information_.is_desktop() && corlib_module_loaded &&
                                                      module_metadata->app_domain_id == corlib_app_domain_id;
 
-            Logger::Debug("    * Enqueue for ReJIT [ModuleId=", module_id, ", MethodDef=", TokenStr(&methodDef),
-                          ", AppDomainId=", module_metadata->app_domain_id,
-                          ", IsDomainNeutral=", caller_assembly_is_domain_neutral, ", Assembly=", module_metadata->assemblyName, ", Type=", caller.type.name,
-                          ", Method=", caller.name, "(", numOfArgs , " params), Signature=", caller.signature.str(), "]");
+            if (IsDebugEnabled())
+            {
+                Logger::Debug("    * Enqueue for ReJIT [ModuleId=", module_id, ", MethodDef=", TokenStr(&methodDef),
+                              ", AppDomainId=", module_metadata->app_domain_id,
+                              ", IsDomainNeutral=", caller_assembly_is_domain_neutral, ", Assembly=",
+                              module_metadata->assemblyName, ", Type=", caller.type.name,
+                              ", Method=", caller.name, "(", numOfArgs, " params), Signature=", caller.signature.str(),
+                              "]");
+            }
             enumIterator = ++enumIterator;
         }
     }
@@ -2704,9 +2689,13 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
     mdTypeRef wrapper_type_ref = mdTypeRefNil;
     GetWrapperMethodRef(module_metadata, module_id, *method_replacement, wrapper_method_ref, wrapper_type_ref);
 
-    Logger::Debug("*** CallTarget_RewriterCallback() Start: ", caller->type.name, ".", caller->name, "() [IsVoid=", isVoid,
-                  ", IsStatic=", isStatic, ", IntegrationType=", method_replacement->wrapper_method.type_name,
-                  ", Arguments=", numArgs, "]");
+    if (IsDebugEnabled())
+    {
+        Logger::Debug("*** CallTarget_RewriterCallback() Start: ", caller->type.name, ".", caller->name, "() [IsVoid=",
+                      isVoid,
+                      ", IsStatic=", isStatic, ", IntegrationType=", method_replacement->wrapper_method.type_name,
+                      ", Arguments=", numArgs, "]");
+    }
 
     // First we check if the managed profiler has not been loaded yet
     if (!ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata->app_domain_id))
@@ -2849,7 +2838,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
     }
 
     // *** Emit BeginMethod call
-    if (Logger::IsDebugEnabled())
+    if (IsDebugEnabled())
     {
         Logger::Debug("Caller Type.Id: ", HexStr(&caller->type.id, sizeof(mdToken)));
         Logger::Debug("Caller Type.IsGeneric: ", caller->type.isGeneric);
