@@ -72,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var objectResult = someInstance.CallMethod<object>("GetTheAnswerToTheUniverse");
             var actualResult = someInstance.CallMethod<int>("GetTheAnswerToTheUniverse");
 
-            Assert.Throws<Exception>(() => someInstance.CallMethod<double>("GetTheAnswerToTheUniverse"));
+            Assert.Throws<ArgumentException>(() => someInstance.CallMethod<double>("GetTheAnswerToTheUniverse"));
 
             Assert.AreEqual(expected, (int)objectResult.GetValueOrDefault());
             Assert.AreEqual(expected, actualResult.GetValueOrDefault());
@@ -87,7 +87,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var objectResult = someInstance.CallMethod<object>("ReturnThis");
             var actualResult = someInstance.CallMethod<SomeClass>("ReturnThis");
 
-            Assert.Throws<Exception>(() => someInstance.CallMethod<int>("ReturnThis"));
+            Assert.Throws<ArgumentException>(() => someInstance.CallMethod<int>("ReturnThis"));
 
             Assert.AreEqual(expected, objectResult.GetValueOrDefault());
             Assert.AreEqual(expected, actualResult.GetValueOrDefault());
@@ -102,7 +102,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var objectResult = someInstance.CallMethod<int, object>("AddOne", 0);
             var actualResult = someInstance.CallMethod<int, int>("AddOne", 0);
 
-            Assert.Throws<Exception>(() => someInstance.CallMethod<int, double>("AddOne", 0));
+            Assert.Throws<ArgumentException>(() => someInstance.CallMethod<int, double>("AddOne", 0));
 
             Assert.AreEqual(expected, (int)objectResult.GetValueOrDefault());
             Assert.AreEqual(expected, actualResult.GetValueOrDefault());
@@ -119,7 +119,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var actualResult = someInstance.CallMethod<SomeClass, SomeClass>("ReturnParam", paramInstance);
             var baseClassResult = someInstance.CallMethod<SomeClass, SomeBaseClass>("ReturnParam", paramInstance);
 
-            Assert.Throws<Exception>(() => someInstance.CallMethod<SomeClass, int>("ReturnParam", paramInstance));
+            Assert.Throws<ArgumentException>(() => someInstance.CallMethod<SomeClass, int>("ReturnParam", paramInstance));
 
             Assert.AreEqual(expected, objectResult.GetValueOrDefault());
             Assert.AreEqual(expected, actualResult.GetValueOrDefault());

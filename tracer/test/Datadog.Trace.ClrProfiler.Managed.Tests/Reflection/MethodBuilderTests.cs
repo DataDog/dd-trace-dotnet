@@ -300,7 +300,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var methodToInvoke = MethodReference.Get(() => instance.ReturnInputInt(arg));
 
             // Throws
-            Assert.Throws<Exception>(() =>
+            Assert.Throws<ArgumentException>(() =>
                 MethodBuilder<Func<object, int, double>>
                                 .Start(_moduleVersionId, methodToInvoke.MetadataToken, (int)OpCodeValue.Callvirt, "ReturnInputInt")
                                 .WithConcreteType(typeof(ObscenelyAnnoyingClass))
@@ -368,7 +368,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var methodToInvoke = MethodReference.Get(() => instance.ReturnInputObject(arg));
 
             // Throws
-            Assert.Throws<Exception>(() =>
+            Assert.Throws<ArgumentException>(() =>
                 MethodBuilder<Func<object, object, int>>
                                 .Start(_moduleVersionId, methodToInvoke.MetadataToken, (int)OpCodeValue.Callvirt, "ReturnInputObject")
                                 .WithConcreteType(typeof(ObscenelyAnnoyingClass))

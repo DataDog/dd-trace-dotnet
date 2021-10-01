@@ -25,13 +25,13 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 {
     public class AspNetCoreDiagnosticObserverTests
     {
-        [TestCaseSource(nameof(AspNetCoreMvcTestData.WithoutFeatureFlag))]
+        [TestCaseSource(typeof(AspNetCoreMvcTestData), nameof(AspNetCoreMvcTestData.WithoutFeatureFlag))]
         public async Task DiagnosticObserver_ForMvcEndpoints_SubmitsSpans(string path, HttpStatusCode statusCode, bool isError, string resourceName, IReadOnlyDictionary<string, string> expectedTags)
         {
             await AssertDiagnosticObserverSubmitsSpans<MvcStartup>(path, statusCode, isError, resourceName, expectedTags);
         }
 
-        [TestCaseSource(nameof(AspNetCoreMvcTestData.WithFeatureFlag))]
+        [TestCaseSource(typeof(AspNetCoreMvcTestData), nameof(AspNetCoreMvcTestData.WithFeatureFlag))]
         public async Task DiagnosticObserver_ForMvcEndpoints_WithFeatureFlag_SubmitsSpans(
             string path,
             HttpStatusCode statusCode,
@@ -58,13 +58,13 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
                 secondChildSpanTags);
         }
 
-        [TestCaseSource(nameof(AspNetCoreRazorPagesTestData.WithoutFeatureFlag))]
+        [TestCaseSource(typeof(AspNetCoreRazorPagesTestData), nameof(AspNetCoreRazorPagesTestData.WithoutFeatureFlag))]
         public async Task DiagnosticObserver_ForRazorPages_SubmitsSpans(string path, HttpStatusCode statusCode, bool isError, string resourceName, IReadOnlyDictionary<string, string> expectedTags)
         {
             await AssertDiagnosticObserverSubmitsSpans<Samples.AspNetCoreRazorPages.Startup>(path, statusCode, isError, resourceName, expectedTags);
         }
 
-        [TestCaseSource(nameof(AspNetCoreRazorPagesTestData.WithFeatureFlag))]
+        [TestCaseSource(typeof(AspNetCoreRazorPagesTestData), nameof(AspNetCoreRazorPagesTestData.WithFeatureFlag))]
         public async Task DiagnosticObserver_ForRazorPages_WithFeatureFlag_SubmitsSpans(
             string path,
             HttpStatusCode statusCode,
@@ -92,13 +92,13 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
         }
 
 #if !NETCOREAPP2_1
-        [TestCaseSource(nameof(AspNetCoreEndpointRoutingTestData.WithoutFeatureFlag))]
+        [TestCaseSource(typeof(AspNetCoreEndpointRoutingTestData), nameof(AspNetCoreEndpointRoutingTestData.WithoutFeatureFlag))]
         public async Task DiagnosticObserver_ForEndpointRouting_SubmitsSpans(string path, HttpStatusCode statusCode, bool isError, string resourceName, IReadOnlyDictionary<string, string> expectedTags)
         {
             await AssertDiagnosticObserverSubmitsSpans<EndpointRoutingStartup>(path, statusCode, isError, resourceName, expectedTags);
         }
 
-        [TestCaseSource(nameof(AspNetCoreEndpointRoutingTestData.WithFeatureFlag))]
+        [TestCaseSource(typeof(AspNetCoreEndpointRoutingTestData), nameof(AspNetCoreEndpointRoutingTestData.WithFeatureFlag))]
         public async Task DiagnosticObserver_ForEndpointRouting_WithFeatureFlag_SubmitsSpans(
             string path,
             HttpStatusCode statusCode,

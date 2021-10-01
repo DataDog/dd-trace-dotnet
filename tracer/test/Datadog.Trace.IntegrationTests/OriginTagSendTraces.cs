@@ -52,7 +52,7 @@ namespace Datadog.Trace.IntegrationTests
             var spanDictio = objects[0].FirstDictionary();
             var metaDictio = spanDictio["meta"].AsDictionary();
             Assert.True(metaDictio.ContainsKey(Tags.Origin));
-            Assert.AreEqual(originValue, metaDictio[Tags.Origin]);
+            Assert.AreEqual(originValue, metaDictio[Tags.Origin].AsString());
         }
 
         [Test]
@@ -81,7 +81,7 @@ namespace Datadog.Trace.IntegrationTests
                 var spanDictio = objValue.FirstDictionary();
                 var metaDictio = spanDictio["meta"].AsDictionary();
                 Assert.True(metaDictio.ContainsKey(Tags.Origin));
-                Assert.AreEqual(originValue, metaDictio[Tags.Origin]);
+                Assert.AreEqual(originValue, metaDictio[Tags.Origin].AsString());
             }
         }
 

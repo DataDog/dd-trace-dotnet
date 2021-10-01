@@ -6,6 +6,7 @@
 using System;
 using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -36,7 +37,7 @@ namespace Datadog.Trace.OpenTracing.IntegrationTests
 
         [Test]
         [Ignore("Run manually")]
-        public async void MinimalSpan()
+        public async Task MinimalSpan()
         {
             var span = (OpenTracingSpan)_tracer.BuildSpan("Operation")
                                                .Start();
@@ -54,7 +55,7 @@ namespace Datadog.Trace.OpenTracing.IntegrationTests
 
         [Test]
         [Ignore("Run manually")]
-        public async void CustomServiceName()
+        public async Task CustomServiceName()
         {
             const string ServiceName = "MyService";
 
@@ -76,7 +77,7 @@ namespace Datadog.Trace.OpenTracing.IntegrationTests
 
         [Test]
         [Ignore("Run manually")]
-        public async void Utf8Everywhere()
+        public async Task Utf8Everywhere()
         {
             var span = (OpenTracingSpan)_tracer.BuildSpan("Aᛗᚪᚾᚾᚪ")
                                                .WithTag(DatadogTags.ResourceName, "η γλώσσα μου έδωσαν ελληνική")
