@@ -64,7 +64,7 @@ variables:
   sourceBranch: $(variables['Build.SourceBranch'])
   isMainBranch: $[eq(variables['Build.SourceBranch'], 'refs/heads/master')]
   isPullRequest: $[eq(variables['Build.Reason'], 'PullRequest')]
-  isMockDependabot: $[startsWith(variables['Build.SourceBranch'], 'refs/heads/dependabot/nuget/tracer/dependabot')]
+  isMockDependabot: $[contains(variables['System.PullRequest.TargetBranch'], 'dependabot/nuget/tracer/dependabot')]
   DD_DOTNET_TRACER_MSBUILD:
   NugetPackageDirectory: $(System.DefaultWorkingDirectory)/packages
   relativeNugetPackageDirectory: packages
