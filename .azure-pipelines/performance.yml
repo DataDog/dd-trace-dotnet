@@ -67,7 +67,6 @@ stages:
         pipelineRunId: $(resources.pipeline.build_pipeline.runID)
 
     - script: tracer\build.cmd RunBenchmarks
-      continueOnError: true
       displayName: RunBenchmarks
 
     - publish: tracer/build_data/benchmarks
