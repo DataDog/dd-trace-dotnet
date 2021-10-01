@@ -6,13 +6,13 @@
 #pragma warning disable SA1201 // Elements must appear in the correct order
 
 using FluentAssertions;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.DuckTyping.Tests
 {
     public class DuckExplicitInterfacePrivateTests
     {
-        [Fact]
+        [Test]
         public void PrivateNormalTest()
         {
             var targetObject = new PrivateTargetObject();
@@ -22,7 +22,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             proxy.SayHiWithWildcard().Should().Be("Hello World (*)");
         }
 
-        [Fact]
+        [Test]
         public void PrivateGenericTest()
         {
             var targetObject = new PrivateTargetGenericObject();
@@ -32,7 +32,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             proxy.Sum(1.0f, 1.0f).Should().Be(2.0f);
         }
 
-        [Fact]
+        [Test]
         public void PrivateNormalGenericInstanceTest()
         {
             var targetObject = new PrivateTargetObject<object>();
@@ -42,7 +42,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             proxy.SayHiWithWildcard().Should().Be("Hello World (*)");
         }
 
-        [Fact]
+        [Test]
         public void PrivateGenericWithGenericInstanceTest()
         {
             var targetObject = new PrivateTargetGenericObject<object>();
@@ -52,7 +52,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             proxy.Sum(1.0f, 1.0f).Should().Be(2.0f);
         }
 
-        [Fact]
+        [Test]
         public void PrivateNormalGenericPrivateInstanceTest()
         {
             var targetObject = new PrivateTargetObject<PrivateObject>();
@@ -62,7 +62,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             proxy.SayHiWithWildcard().Should().Be("Hello World (*)");
         }
 
-        [Fact]
+        [Test]
         public void PrivateGenericWithGenericPrivateInstanceTest()
         {
             var targetObject = new PrivateTargetGenericObject<PrivateObject>();

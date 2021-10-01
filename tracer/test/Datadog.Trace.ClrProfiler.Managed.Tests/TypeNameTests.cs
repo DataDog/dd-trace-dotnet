@@ -9,7 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests
 {
@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             yield return new object[] { ClrNames.TimeSpan, "System.TimeSpan" };
         }
 
-        [Fact]
+        [Test]
         public void EveryMemberOfTypeNamesIsRepresented()
         {
             var associations = GetConstTypeAssociations().Select(i => i[0]).ToList();
@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                    .Where(fi => fi.IsLiteral && !fi.IsInitOnly && fi.FieldType == typeof(string))
                    .ToList();
 
-            Assert.Equal(actual: associations.Count, expected: expectedItems.Count);
+            Assert.AreEqual(actual: associations.Count, expected: expectedItems.Count);
 
             var missing = new List<string>();
             foreach (var expectedItem in expectedItems)
@@ -70,21 +70,20 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                 missing.Add(value);
             }
 
-            Assert.Empty(missing);
+            CollectionAssert.IsEmpty(missing);
         }
 
-        [Theory]
-        [MemberData(nameof(GetConstTypeAssociations))]
+        [TestCaseSource(nameof(GetConstTypeAssociations))]
         public void MatchesExpectedTypeName(string constant, object type)
         {
             if (type is Type)
             {
-                Assert.Equal(constant, ((Type)type).FullName);
+                Assert.AreEqual(constant, ((Type)type).FullName);
             }
 
             if (type is string)
             {
-                Assert.Equal(constant, (string)type);
+                Assert.AreEqual(constant, (string)type);
             }
         }
     }

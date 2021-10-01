@@ -8,8 +8,7 @@ using System;
 using System.Linq;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
@@ -17,15 +16,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     {
         private const string ExpectedServiceName = "Samples.Msmq-msmq";
 
-        public MsmqTests(ITestOutputHelper output)
-            : base("Msmq", output)
+        public MsmqTests()
+            : base("Msmq")
         {
             SetServiceVersion("1.0.0");
         }
 
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        [Fact]
+        [Property("Category", "EndToEnd")]
+        [Property("RunOnWindows", "True")]
+        [Test]
         public void SubmitTraces()
         {
             SetCallTargetSettings(true);
@@ -100,7 +99,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
                 else
                 {
-                    throw new Xunit.Sdk.XunitException($"msmq.command {command} not recognized.");
+                    Assert.Fail($"msmq.command {command} not recognized.");
                 }
             }
 

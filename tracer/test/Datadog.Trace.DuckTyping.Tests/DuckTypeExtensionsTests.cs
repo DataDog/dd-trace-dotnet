@@ -4,7 +4,7 @@
 // </copyright>
 
 using System.Threading.Tasks;
-using Xunit;
+using NUnit.Framework;
 
 #pragma warning disable SA1201 // Elements must appear in the correct order
 #pragma warning disable SA1402 // File may only contain a single class
@@ -13,7 +13,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 {
     public class DuckTypeExtensionsTests
     {
-        [Fact]
+        [Test]
         public void DuckCastTest()
         {
             Task task = (Task)Task.FromResult("Hello World");
@@ -21,11 +21,11 @@ namespace Datadog.Trace.DuckTyping.Tests
             var iTaskString = task.DuckCast<ITaskString>();
             var objTaskString = task.DuckCast(typeof(ITaskString));
 
-            Assert.Equal("Hello World", iTaskString.Result);
+            Assert.AreEqual("Hello World", iTaskString.Result);
             Assert.True(iTaskString.GetType() == objTaskString.GetType());
         }
 
-        [Fact]
+        [Test]
         public void NullCheck()
         {
             object obj = null;
@@ -34,21 +34,21 @@ namespace Datadog.Trace.DuckTyping.Tests
             Assert.Null(iTaskString);
         }
 
-        [Fact]
+        [Test]
         public void TryDuckCastTest()
         {
             Task task = (Task)Task.FromResult("Hello World");
 
             bool tskResultBool = task.TryDuckCast<ITaskString>(out var tskResult);
             Assert.True(tskResultBool);
-            Assert.Equal("Hello World", tskResult.Result);
+            Assert.AreEqual("Hello World", tskResult.Result);
 
             bool tskErrorBool = task.TryDuckCast<ITaskError>(out var tskResultError);
             Assert.False(tskErrorBool);
             Assert.Null(tskResultError);
         }
 
-        [Fact]
+        [Test]
         public void DuckAsTest()
         {
             Task task = (Task)Task.FromResult("Hello World");
@@ -56,11 +56,11 @@ namespace Datadog.Trace.DuckTyping.Tests
             var tskResult = task.DuckAs<ITaskString>();
             var tskResultError = task.DuckAs<ITaskError>();
 
-            Assert.Equal("Hello World", tskResult.Result);
+            Assert.AreEqual("Hello World", tskResult.Result);
             Assert.Null(tskResultError);
         }
 
-        [Fact]
+        [Test]
         public void DuckIsTest()
         {
             Task task = (Task)Task.FromResult("Hello World");

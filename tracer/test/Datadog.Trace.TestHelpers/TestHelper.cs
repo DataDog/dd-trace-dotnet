@@ -14,8 +14,7 @@ using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Threading;
 using System.Threading.Tasks;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 #if NETFRAMEWORK
 using Datadog.Trace.ExtensionMethods; // needed for Dictionary<K,V>.GetValueOrDefault()
@@ -25,33 +24,30 @@ namespace Datadog.Trace.TestHelpers
 {
     public abstract class TestHelper
     {
-        protected TestHelper(string sampleAppName, string samplePathOverrides, ITestOutputHelper output)
-            : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper), output, samplePathOverrides), output)
+        protected TestHelper(string sampleAppName, string samplePathOverrides)
+            : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper), samplePathOverrides))
         {
         }
 
-        protected TestHelper(string sampleAppName, ITestOutputHelper output)
-            : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper), output), output)
+        protected TestHelper(string sampleAppName)
+            : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper)))
         {
         }
 
-        protected TestHelper(EnvironmentHelper environmentHelper, ITestOutputHelper output)
+        protected TestHelper(EnvironmentHelper environmentHelper)
         {
             EnvironmentHelper = environmentHelper;
-            Output = output;
 
-            Output.WriteLine($"Platform: {EnvironmentTools.GetPlatform()}");
-            Output.WriteLine($"Configuration: {EnvironmentTools.GetBuildConfiguration()}");
-            Output.WriteLine($"TargetFramework: {EnvironmentHelper.GetTargetFramework()}");
-            Output.WriteLine($".NET Core: {EnvironmentHelper.IsCoreClr()}");
-            Output.WriteLine($"Profiler DLL: {EnvironmentHelper.GetProfilerPath()}");
+            Console.WriteLine($"Platform: {EnvironmentTools.GetPlatform()}");
+            Console.WriteLine($"Configuration: {EnvironmentTools.GetBuildConfiguration()}");
+            Console.WriteLine($"TargetFramework: {EnvironmentHelper.GetTargetFramework()}");
+            Console.WriteLine($".NET Core: {EnvironmentHelper.IsCoreClr()}");
+            Console.WriteLine($"Profiler DLL: {EnvironmentHelper.GetProfilerPath()}");
         }
 
         protected EnvironmentHelper EnvironmentHelper { get; }
 
         protected string TestPrefix => $"{EnvironmentTools.GetBuildConfiguration()}.{EnvironmentHelper.GetTargetFramework()}";
-
-        protected ITestOutputHelper Output { get; }
 
         public Process StartDotnetTestSample(int traceAgentPort, string arguments, string packageVersion, int aspNetCorePort, int? statsdPort = null, string framework = "")
         {
@@ -62,12 +58,12 @@ namespace Datadog.Trace.TestHelpers
                 throw new Exception($"application not found: {sampleAppPath}");
             }
 
-            Output.WriteLine($"Starting Application: {sampleAppPath}");
+            Console.WriteLine($"Starting Application: {sampleAppPath}");
             string testCli = EnvironmentHelper.GetDotNetTest();
             string exec = testCli;
             string appPath = testCli.StartsWith("dotnet") ? $"vstest {sampleAppPath}" : sampleAppPath;
-            Output.WriteLine("Executable: " + exec);
-            Output.WriteLine("ApplicationPath: " + appPath);
+            Console.WriteLine("Executable: " + exec);
+            Console.WriteLine("ApplicationPath: " + appPath);
             return ProfilerHelper.StartProcessWithProfiler(
                 exec,
                 EnvironmentHelper,
@@ -88,21 +84,21 @@ namespace Datadog.Trace.TestHelpers
             helper.Drain();
             var exitCode = process.ExitCode;
 
-            Output.WriteLine($"ProcessId: " + process.Id);
-            Output.WriteLine($"Exit Code: " + exitCode);
+            Console.WriteLine($"ProcessId: " + process.Id);
+            Console.WriteLine($"Exit Code: " + exitCode);
 
             var standardOutput = helper.StandardOutput;
 
             if (!string.IsNullOrWhiteSpace(standardOutput))
             {
-                Output.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
+                Console.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
             }
 
             var standardError = helper.ErrorOutput;
 
             if (!string.IsNullOrWhiteSpace(standardError))
             {
-                Output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
+                Console.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
             }
 
             return new ProcessResult(process, standardOutput, standardError, exitCode);
@@ -117,7 +113,7 @@ namespace Datadog.Trace.TestHelpers
                 throw new Exception($"application not found: {sampleAppPath}");
             }
 
-            Output.WriteLine($"Starting Application: {sampleAppPath}");
+            Console.WriteLine($"Starting Application: {sampleAppPath}");
             var executable = EnvironmentHelper.IsCoreClr() ? EnvironmentHelper.GetSampleExecutionSource() : sampleAppPath;
             var args = EnvironmentHelper.IsCoreClr() ? $"{sampleAppPath} {arguments ?? string.Empty}" : arguments;
 
@@ -141,21 +137,21 @@ namespace Datadog.Trace.TestHelpers
             helper.Drain();
             var exitCode = process.ExitCode;
 
-            Output.WriteLine($"ProcessId: " + process.Id);
-            Output.WriteLine($"Exit Code: " + exitCode);
+            Console.WriteLine($"ProcessId: " + process.Id);
+            Console.WriteLine($"Exit Code: " + exitCode);
 
             var standardOutput = helper.StandardOutput;
 
             if (!string.IsNullOrWhiteSpace(standardOutput))
             {
-                Output.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
+                Console.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
             }
 
             var standardError = helper.ErrorOutput;
 
             if (!string.IsNullOrWhiteSpace(standardError))
             {
-                Output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
+                Console.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
             }
 
 #if NETCOREAPP2_1
@@ -222,7 +218,7 @@ namespace Datadog.Trace.TestHelpers
                     "/trace:info"
                 };
 
-            Output.WriteLine($"[webserver] starting {iisExpress} {string.Join(" ", args)}");
+            Console.WriteLine($"[webserver] starting {iisExpress} {string.Join(" ", args)}");
 
             var process = ProfilerHelper.StartProcessWithProfiler(
                 iisExpress,
@@ -239,7 +235,7 @@ namespace Datadog.Trace.TestHelpers
                 string line;
                 while ((line = process.StandardOutput.ReadLine()) != null)
                 {
-                    Output.WriteLine($"[webserver][stdout] {line}");
+                    Console.WriteLine($"[webserver][stdout] {line}");
 
                     if (line.Contains("IIS Express is running"))
                     {
@@ -253,7 +249,7 @@ namespace Datadog.Trace.TestHelpers
                 string line;
                 while ((line = process.StandardError.ReadLine()) != null)
                 {
-                    Output.WriteLine($"[webserver][stderr] {line}");
+                    Console.WriteLine($"[webserver][stderr] {line}");
                 }
             });
 
@@ -370,8 +366,8 @@ namespace Datadog.Trace.TestHelpers
             var testStart = DateTime.UtcNow;
             var response = await httpClient.GetAsync($"http://localhost:{httpPort}" + path);
             var content = await response.Content.ReadAsStringAsync();
-            Output.WriteLine($"[http] {response.StatusCode} {content}");
-            Assert.Equal(expectedHttpStatusCode, response.StatusCode);
+            Console.WriteLine($"[http] {response.StatusCode} {content}");
+            Assert.AreEqual(expectedHttpStatusCode, response.StatusCode);
 
             if (filterServerSpans)
             {
@@ -400,7 +396,7 @@ namespace Datadog.Trace.TestHelpers
             string expectedAspNetResourceName,
             string expectedResourceName,
             string expectedServiceVersion,
-            SerializableDictionary expectedTags = null)
+            IReadOnlyDictionary<string, string> expectedTags = null)
         {
             IImmutableList<MockTracerAgent.Span> spans;
 
@@ -411,8 +407,8 @@ namespace Datadog.Trace.TestHelpers
                 var testStart = DateTime.UtcNow;
                 var response = await httpClient.GetAsync($"http://localhost:{httpPort}" + path);
                 var content = await response.Content.ReadAsStringAsync();
-                Output.WriteLine($"[http] {response.StatusCode} {content}");
-                Assert.Equal(expectedHttpStatusCode, response.StatusCode);
+                Console.WriteLine($"[http] {response.StatusCode} {content}");
+                Assert.AreEqual(expectedHttpStatusCode, response.StatusCode);
 
                 agent.SpanFilters.Add(IsServerSpan);
 
@@ -428,39 +424,39 @@ namespace Datadog.Trace.TestHelpers
             MockTracerAgent.Span innerSpan = spans.Where(s => s.Name == expectedOperationName).FirstOrDefault();
 
             Assert.NotNull(aspnetSpan);
-            Assert.Equal(expectedAspNetResourceName, aspnetSpan.Resource);
+            Assert.AreEqual(expectedAspNetResourceName, aspnetSpan.Resource);
 
             Assert.NotNull(innerSpan);
-            Assert.Equal(expectedResourceName, innerSpan.Resource);
+            Assert.AreEqual(expectedResourceName, innerSpan.Resource);
 
             foreach (MockTracerAgent.Span span in spans)
             {
                 // base properties
-                Assert.Equal(expectedSpanType, span.Type);
+                Assert.AreEqual(expectedSpanType, span.Type);
 
                 // errors
-                Assert.Equal(isError, span.Error == 1);
+                Assert.AreEqual(isError, span.Error == 1);
                 if (span == aspnetSpan)
                 {
-                    Assert.Equal(expectedAspNetErrorType, span.Tags.GetValueOrDefault(Tags.ErrorType));
-                    Assert.Equal(expectedAspNetErrorMessage, span.Tags.GetValueOrDefault(Tags.ErrorMsg));
+                    Assert.AreEqual(expectedAspNetErrorType, span.Tags.GetValueOrDefault(Tags.ErrorType));
+                    Assert.AreEqual(expectedAspNetErrorMessage, span.Tags.GetValueOrDefault(Tags.ErrorMsg));
                 }
                 else if (span == innerSpan)
                 {
-                    Assert.Equal(expectedErrorType, span.Tags.GetValueOrDefault(Tags.ErrorType));
-                    Assert.Equal(expectedErrorMessage, span.Tags.GetValueOrDefault(Tags.ErrorMsg));
+                    Assert.AreEqual(expectedErrorType, span.Tags.GetValueOrDefault(Tags.ErrorType));
+                    Assert.AreEqual(expectedErrorMessage, span.Tags.GetValueOrDefault(Tags.ErrorMsg));
                 }
 
                 // other tags
-                Assert.Equal(SpanKinds.Server, span.Tags.GetValueOrDefault(Tags.SpanKind));
-                Assert.Equal(expectedServiceVersion, span.Tags.GetValueOrDefault(Tags.Version));
+                Assert.AreEqual(SpanKinds.Server, span.Tags.GetValueOrDefault(Tags.SpanKind));
+                Assert.AreEqual(expectedServiceVersion, span.Tags.GetValueOrDefault(Tags.Version));
             }
 
             if (expectedTags?.Values is not null)
             {
                 foreach (var expectedTag in expectedTags)
                 {
-                    Assert.Equal(expectedTag.Value, innerSpan.Tags.GetValueOrDefault(expectedTag.Key));
+                    Assert.AreEqual(expectedTag.Value, innerSpan.Tags.GetValueOrDefault(expectedTag.Key));
                 }
             }
         }
@@ -486,8 +482,8 @@ namespace Datadog.Trace.TestHelpers
                 var testStart = DateTime.UtcNow;
                 var response = await httpClient.GetAsync($"http://localhost:{httpPort}" + path);
                 var content = await response.Content.ReadAsStringAsync();
-                Output.WriteLine($"[http] {response.StatusCode} {content}");
-                Assert.Equal(expectedHttpStatusCode, response.StatusCode);
+                Console.WriteLine($"[http] {response.StatusCode} {content}");
+                Assert.AreEqual(expectedHttpStatusCode, response.StatusCode);
 
                 spans = agent.WaitForSpans(
                     count: 1,
@@ -501,17 +497,17 @@ namespace Datadog.Trace.TestHelpers
             MockTracerAgent.Span span = spans[0];
 
             // base properties
-            Assert.Equal(expectedResourceName, span.Resource);
-            Assert.Equal(expectedSpanType, span.Type);
+            Assert.AreEqual(expectedResourceName, span.Resource);
+            Assert.AreEqual(expectedSpanType, span.Type);
 
             // errors
-            Assert.Equal(isError, span.Error == 1);
-            Assert.Equal(expectedErrorType, span.Tags.GetValueOrDefault(Tags.ErrorType));
-            Assert.Equal(expectedErrorMessage, span.Tags.GetValueOrDefault(Tags.ErrorMsg));
+            Assert.AreEqual(isError, span.Error == 1);
+            Assert.AreEqual(expectedErrorType, span.Tags.GetValueOrDefault(Tags.ErrorType));
+            Assert.AreEqual(expectedErrorMessage, span.Tags.GetValueOrDefault(Tags.ErrorMsg));
 
             // other tags
-            Assert.Equal(SpanKinds.Server, span.Tags.GetValueOrDefault(Tags.SpanKind));
-            Assert.Equal(expectedServiceVersion, span.Tags.GetValueOrDefault(Tags.Version));
+            Assert.AreEqual(SpanKinds.Server, span.Tags.GetValueOrDefault(Tags.SpanKind));
+            Assert.AreEqual(expectedServiceVersion, span.Tags.GetValueOrDefault(Tags.Version));
         }
 
         private bool IsServerSpan(MockTracerAgent.Span span) =>

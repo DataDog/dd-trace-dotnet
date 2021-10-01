@@ -8,31 +8,32 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests.Logging
 {
-    [Collection(nameof(Datadog.Trace.Tests.Logging))]
+    [NonParallelizable]
     public class LogRateLimiterTests : IDisposable
     {
         private const int SecondsBetweenLogs = 60;
-        private readonly LogRateLimiter _rateLimiter;
-        private readonly SimpleClock _clock;
+        private LogRateLimiter _rateLimiter;
+        private SimpleClock _clock;
         private IDisposable _clockDisposable;
 
-        public LogRateLimiterTests()
+        public static IEnumerable<object[]> GetSecondIntervals(int count, int increment)
+            => Enumerable.Range(1, count).Select(x => new object[] { x * increment });
+
+        [SetUp]
+        public void Setup()
         {
             _rateLimiter = new LogRateLimiter(SecondsBetweenLogs);
             _clock = new SimpleClock();
             _clockDisposable = Clock.SetForCurrentThread(_clock);
         }
 
-        public static IEnumerable<object[]> GetSecondIntervals(int count, int increment)
-            => Enumerable.Range(1, count).Select(x => new object[] { x * increment });
-
         public void Dispose() => _clockDisposable?.Dispose();
 
-        [Fact]
+        [Test]
         public void IdenticalLogs_WhenFasterThanAllowedRate_DoesNotWriteSubsequentLogs()
         {
             const string filePath = @"C:\some\path";
@@ -50,7 +51,7 @@ namespace Datadog.Trace.Tests.Logging
             }
         }
 
-        [Fact]
+        [Test]
         public void IdenticalLogs_WhenFasterThanAllowedRate_OnlyRecordsOneLogPerTimePeriod()
         {
             const string filePath = @"C:\some\path";
@@ -74,11 +75,10 @@ namespace Datadog.Trace.Tests.Logging
                 }
             }
 
-            Assert.Equal(1, messagesLogged);
+            Assert.AreEqual(1, messagesLogged);
         }
 
-        [Theory]
-        [MemberData(nameof(GetSecondIntervals), 10, SecondsBetweenLogs)]
+        [TestCaseSource(nameof(GetSecondIntervals), new object[] { 10, SecondsBetweenLogs })]
         public void IdenticalLogs_WhenSlowerThanAllowedRate_AreNotFiltered(int secondsPassed)
         {
             const string filePath = @"C:\some\path";
@@ -92,7 +92,7 @@ namespace Datadog.Trace.Tests.Logging
             Assert.True(shouldLogSecondMessage);
         }
 
-        [Fact]
+        [Test]
         public void IdenticalLogs_WhenUnfiltered_ReturnsNumberOfSkippedMessages()
         {
             const string filePath = @"C:\some\path";
@@ -100,7 +100,7 @@ namespace Datadog.Trace.Tests.Logging
             const uint expectedSkipCount = 10u;
 
             _rateLimiter.ShouldLog(filePath, lineNo, out var initialSkipCount);
-            Assert.Equal(0u, initialSkipCount);
+            Assert.AreEqual(0u, initialSkipCount);
 
             for (var i = 0; i < expectedSkipCount; i++)
             {
@@ -110,14 +110,13 @@ namespace Datadog.Trace.Tests.Logging
             _clock.UtcNow = _clock.UtcNow.AddSeconds(SecondsBetweenLogs);
 
             _rateLimiter.ShouldLog(filePath, lineNo, out var actualSkipCount);
-            Assert.Equal(expectedSkipCount, actualSkipCount);
+            Assert.AreEqual(expectedSkipCount, actualSkipCount);
         }
 
-        [Theory]
-        [InlineData(@"C:\some\path")]
-        [InlineData(@"C:\some\other_path")]
-        [InlineData(@"C:\some\Path")]
-        [InlineData(@"note%aR34LPath")] // not valid, but shouldn't throw
+        [TestCase(@"C:\some\path")]
+        [TestCase(@"C:\some\other_path")]
+        [TestCase(@"C:\some\Path")]
+        [TestCase(@"note%aR34LPath")] // not valid, but shouldn't throw
         public void LogsFromDifferentFiles_AreAlwaysLogged(string filePath)
         {
             const int lineNo = 123;
@@ -126,7 +125,7 @@ namespace Datadog.Trace.Tests.Logging
             Assert.True(shouldLog);
         }
 
-        [Fact]
+        [Test]
         public void LogsFromDifferentFiles_WithinTimePeriod_AreAlwaysLogged()
         {
             const int lineNo = 123;
@@ -145,11 +144,10 @@ namespace Datadog.Trace.Tests.Logging
             }
         }
 
-        [Theory]
-        [InlineData(0)]
-        [InlineData(10)]
-        [InlineData(123)]
-        [InlineData(-1)] // not valid, but shouldn't throw
+        [TestCase(0)]
+        [TestCase(10)]
+        [TestCase(123)]
+        [TestCase(-1)] // not valid, but shouldn't throw
         public void LogsFromDifferentLines_AreAlwaysLogged(int lineNo)
         {
             const string filePath = @"C:\some\path";
@@ -158,7 +156,7 @@ namespace Datadog.Trace.Tests.Logging
             Assert.True(shouldLog);
         }
 
-        [Fact]
+        [Test]
         public void LogsFromDifferentLines_WithinTimePeriod_AreAlwaysLogged()
         {
             const string filePath = @"C:\some\path";
@@ -171,7 +169,7 @@ namespace Datadog.Trace.Tests.Logging
             }
         }
 
-        [Fact]
+        [Test]
         public void WhenCallerLineNumberAndCallerFilePathHaveDefaults_AlwaysLogs()
         {
             const int lineNo = 0;

@@ -9,70 +9,61 @@
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
-using VerifyXunit;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
+using VerifyNUnit;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
-    [Collection("IisTests")]
     public class AspNetCoreIisMvc30TestsInProcess : AspNetCoreIisMvc30Tests
     {
-        public AspNetCoreIisMvc30TestsInProcess(IisFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, inProcess: true, enableRouteTemplateResourceNames: false)
+        public AspNetCoreIisMvc30TestsInProcess()
+            : base(inProcess: true, enableRouteTemplateResourceNames: false)
         {
         }
     }
 
-    [Collection("IisTests")]
     public class AspNetCoreIisMvc30TestsInProcessWithFeatureFlag : AspNetCoreIisMvc30Tests
     {
-        public AspNetCoreIisMvc30TestsInProcessWithFeatureFlag(IisFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, inProcess: true, enableRouteTemplateResourceNames: true)
+        public AspNetCoreIisMvc30TestsInProcessWithFeatureFlag()
+            : base(inProcess: true, enableRouteTemplateResourceNames: true)
         {
         }
     }
 
-    [Collection("IisTests")]
     public class AspNetCoreIisMvc30TestsOutOfProcess : AspNetCoreIisMvc30Tests
     {
-        public AspNetCoreIisMvc30TestsOutOfProcess(IisFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, inProcess: false, enableRouteTemplateResourceNames: false)
+        public AspNetCoreIisMvc30TestsOutOfProcess()
+            : base(inProcess: false, enableRouteTemplateResourceNames: false)
         {
         }
     }
 
-    [Collection("IisTests")]
     public class AspNetCoreIisMvc30TestsOutOfProcessWithFeatureFlag : AspNetCoreIisMvc30Tests
     {
-        public AspNetCoreIisMvc30TestsOutOfProcessWithFeatureFlag(IisFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, inProcess: false, enableRouteTemplateResourceNames: true)
+        public AspNetCoreIisMvc30TestsOutOfProcessWithFeatureFlag()
+            : base(inProcess: false, enableRouteTemplateResourceNames: true)
         {
         }
     }
 
     public abstract class AspNetCoreIisMvc30Tests : AspNetCoreIisMvcTestBase
     {
-        private readonly IisFixture _iisFixture;
         private readonly string _testName;
 
-        protected AspNetCoreIisMvc30Tests(IisFixture fixture, ITestOutputHelper output, bool inProcess, bool enableRouteTemplateResourceNames)
-            : base("AspNetCoreMvc30", fixture, output, inProcess, enableRouteTemplateResourceNames)
+        protected AspNetCoreIisMvc30Tests(bool inProcess, bool enableRouteTemplateResourceNames)
+            : base("AspNetCoreMvc30", inProcess, enableRouteTemplateResourceNames)
         {
             _testName = GetTestName(nameof(AspNetCoreIisMvc30Tests));
-            _iisFixture = fixture;
-            _iisFixture.TryStartIis(this, inProcess ? IisAppType.AspNetCoreInProcess : IisAppType.AspNetCoreOutOfProcess);
         }
 
-        [Theory]
-        [Trait("Category", "EndToEnd")]
-        [Trait("Category", "LinuxUnsupported")]
-        [Trait("RunOnWindows", "True")]
-        [MemberData(nameof(Data))]
+        [Property("Category", "EndToEnd")]
+        [Property("Category", "LinuxUnsupported")]
+        [Property("RunOnWindows", "True")]
+        [TestCaseSource(nameof(Data))]
         public async Task MeetsAllAspNetCoreMvcExpectations(string path, HttpStatusCode statusCode)
         {
             // We actually sometimes expect 2, but waiting for 1 is good enough
-            var spans = await GetWebServerSpans(path, _iisFixture.Agent, _iisFixture.HttpPort, statusCode, expectedSpanCount: 1);
+            var spans = await GetWebServerSpans(path, Agent, HttpPort, statusCode, expectedSpanCount: 1);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
 

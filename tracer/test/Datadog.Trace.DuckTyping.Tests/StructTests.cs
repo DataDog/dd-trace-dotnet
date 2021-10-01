@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Xunit;
+using NUnit.Framework;
 
 #pragma warning disable SA1201 // Elements must appear in the correct order
 #pragma warning disable SA1402 // File may only contain a single class
@@ -12,36 +12,36 @@ namespace Datadog.Trace.DuckTyping.Tests
 {
     public class StructTests
     {
-        [Fact]
+        [Test]
         public void NonPublicStructCopyTest()
         {
             PrivateStruct instance = default;
             CopyStruct copy = instance.DuckCast<CopyStruct>();
-            Assert.Equal(instance.Value, copy.Value);
+            Assert.AreEqual(instance.Value, copy.Value);
         }
 
-        [Fact]
+        [Test]
         public void NonPublicStructInterfaceProxyTest()
         {
             PrivateStruct instance = default;
             IPrivateStruct proxy = instance.DuckCast<IPrivateStruct>();
-            Assert.Equal(instance.Value, proxy.Value);
+            Assert.AreEqual(instance.Value, proxy.Value);
         }
 
-        [Fact]
+        [Test]
         public void NonPublicStructAbstractProxyTest()
         {
             PrivateStruct instance = default;
             AbstractPrivateProxy proxy = instance.DuckCast<AbstractPrivateProxy>();
-            Assert.Equal(instance.Value, proxy.Value);
+            Assert.AreEqual(instance.Value, proxy.Value);
         }
 
-        [Fact]
+        [Test]
         public void NonPublicStructVirtualProxyTest()
         {
             PrivateStruct instance = default;
             VirtualPrivateProxy proxy = instance.DuckCast<VirtualPrivateProxy>();
-            Assert.Equal(instance.Value, proxy.Value);
+            Assert.AreEqual(instance.Value, proxy.Value);
         }
 
         [DuckCopy]
@@ -70,20 +70,20 @@ namespace Datadog.Trace.DuckTyping.Tests
             public readonly string Value => "Hello World";
         }
 
-        [Fact]
+        [Test]
         public void DuckChainingStructInterfaceProxyTest()
         {
             PrivateDuckChainingTarget instance = new PrivateDuckChainingTarget();
             IPrivateDuckChainingTarget proxy = instance.DuckCast<IPrivateDuckChainingTarget>();
-            Assert.Equal(instance.ChainingTestField.Name, proxy.ChainingTestField.Name);
-            Assert.Equal(instance.ChainingTest.Name, proxy.ChainingTest.Name);
-            Assert.Equal(instance.ChainingTestMethod().Name, proxy.ChainingTestMethod().Name);
+            Assert.AreEqual(instance.ChainingTestField.Name, proxy.ChainingTestField.Name);
+            Assert.AreEqual(instance.ChainingTest.Name, proxy.ChainingTest.Name);
+            Assert.AreEqual(instance.ChainingTestMethod().Name, proxy.ChainingTestMethod().Name);
 
             PublicDuckChainingTarget instance2 = new PublicDuckChainingTarget();
             IPrivateDuckChainingTarget proxy2 = instance2.DuckCast<IPrivateDuckChainingTarget>();
-            Assert.Equal(instance2.ChainingTestField.Name, proxy2.ChainingTestField.Name);
-            Assert.Equal(instance2.ChainingTest.Name, proxy2.ChainingTest.Name);
-            Assert.Equal(instance2.ChainingTestMethod().Name, proxy2.ChainingTestMethod().Name);
+            Assert.AreEqual(instance2.ChainingTestField.Name, proxy2.ChainingTestField.Name);
+            Assert.AreEqual(instance2.ChainingTest.Name, proxy2.ChainingTest.Name);
+            Assert.AreEqual(instance2.ChainingTestMethod().Name, proxy2.ChainingTestMethod().Name);
         }
 
         public interface IPrivateDuckChainingTarget

@@ -6,7 +6,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Configuration;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests.Configuration
 {
@@ -25,34 +25,31 @@ namespace Datadog.Trace.Tests.Configuration
             });
         }
 
-        [Theory]
-        [InlineData("sql-server", "custom-db")]
-        [InlineData("http-client", "some-service")]
-        [InlineData("mongodb", "my-mongo")]
+        [TestCase("sql-server", "custom-db")]
+        [TestCase("http-client", "some-service")]
+        [TestCase("mongodb", "my-mongo")]
         public void RetrievesMappedServiceNames(string serviceName, string expected)
         {
             var actual = _serviceNames.GetServiceName(ApplicationName, serviceName);
 
-            Assert.Equal(expected, actual);
+            Assert.AreEqual(expected, actual);
         }
 
-        [Theory]
-        [InlineData("elasticsearch")]
-        [InlineData("postgres")]
-        [InlineData("custom-service")]
+        [TestCase("elasticsearch")]
+        [TestCase("postgres")]
+        [TestCase("custom-service")]
         public void RetrievesUnmappedServiceNames(string serviceName)
         {
             var expected = $"{ApplicationName}-{serviceName}";
 
             var actual = _serviceNames.GetServiceName(ApplicationName, serviceName);
 
-            Assert.Equal(expected, actual);
+            Assert.AreEqual(expected, actual);
         }
 
-        [Theory]
-        [InlineData("elasticsearch")]
-        [InlineData("postgres")]
-        [InlineData("custom-service")]
+        [TestCase("elasticsearch")]
+        [TestCase("postgres")]
+        [TestCase("custom-service")]
         public void DoesNotRequireAnyMappings(string serviceName)
         {
             var serviceNames = new ServiceNames(new Dictionary<string, string>());
@@ -60,10 +57,10 @@ namespace Datadog.Trace.Tests.Configuration
 
             var actual = serviceNames.GetServiceName(ApplicationName, serviceName);
 
-            Assert.Equal(expected, actual);
+            Assert.AreEqual(expected, actual);
         }
 
-        [Fact]
+        [Test]
         public void CanPassNullToConstructor()
         {
             var serviceName = "elasticsearch";
@@ -72,10 +69,10 @@ namespace Datadog.Trace.Tests.Configuration
 
             var actual = serviceNames.GetServiceName(ApplicationName, serviceName);
 
-            Assert.Equal(expected, actual);
+            Assert.AreEqual(expected, actual);
         }
 
-        [Fact]
+        [Test]
         public void CanAddMappingsLater()
         {
             var serviceName = "elasticsearch";
@@ -85,10 +82,10 @@ namespace Datadog.Trace.Tests.Configuration
 
             var actual = serviceNames.GetServiceName(ApplicationName, serviceName);
 
-            Assert.Equal(expected, actual);
+            Assert.AreEqual(expected, actual);
         }
 
-        [Fact]
+        [Test]
         public void ReplacesExistingMappings()
         {
             var serviceNames = new ServiceNames(new Dictionary<string, string>
@@ -102,9 +99,9 @@ namespace Datadog.Trace.Tests.Configuration
             var elasticActual = serviceNames.GetServiceName(ApplicationName, "elasticsearch");
             var sqlActual = serviceNames.GetServiceName(ApplicationName, "sql-server");
 
-            Assert.Equal($"{ApplicationName}-mongodb", mongodbActual);
-            Assert.Equal("custom-name", elasticActual);
-            Assert.Equal($"{ApplicationName}-sql-server", sqlActual);
+            Assert.AreEqual($"{ApplicationName}-mongodb", mongodbActual);
+            Assert.AreEqual("custom-name", elasticActual);
+            Assert.AreEqual($"{ApplicationName}-sql-server", sqlActual);
         }
     }
 }

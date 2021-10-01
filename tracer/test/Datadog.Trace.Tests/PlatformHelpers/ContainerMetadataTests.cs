@@ -6,7 +6,7 @@
 using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.PlatformHelpers;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests.PlatformHelpers
 {
@@ -119,8 +119,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
             }
         }
 
-        [Theory]
-        [MemberData(nameof(GetCgroupFiles))]
+        [TestCaseSource(nameof(GetCgroupFiles))]
         public void Parse_ContainerId_From_Cgroup_File(string file, string expected)
         {
             // arrange
@@ -130,7 +129,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
             string actual = ContainerMetadata.ParseCgroupLines(lines);
 
             // assert
-            Assert.Equal(expected, actual);
+            Assert.AreEqual(expected, actual);
         }
     }
 }

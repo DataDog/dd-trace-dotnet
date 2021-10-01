@@ -10,8 +10,8 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
-using Xunit;
-using Xunit.Abstractions;
+using FluentAssertions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
@@ -19,8 +19,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     {
         private const string ExpectedServiceName = "Samples.RabbitMQ-rabbitmq";
 
-        public RabbitMQTests(ITestOutputHelper output)
-            : base("RabbitMQ", output)
+        public RabbitMQTests()
+            : base("RabbitMQ")
         {
             SetServiceVersion("1.0.0");
         }
@@ -34,9 +34,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        [Theory]
-        [MemberData(nameof(GetRabbitMQVersions))]
-        [Trait("Category", "EndToEnd")]
+        [TestCaseSource(nameof(GetRabbitMQVersions))]
+        [Property("Category", "EndToEnd")]
         public void SubmitsTraces(string packageVersion, bool enableCallTarget)
         {
             SetCallTargetSettings(enableCallTarget);
@@ -65,11 +64,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in rabbitmqSpans)
                 {
-                    Assert.Equal(SpanTypes.Queue, span.Type);
-                    Assert.Equal("RabbitMQ", span.Tags[Tags.InstrumentationName]);
+                    Assert.AreEqual(SpanTypes.Queue, span.Type);
+                    Assert.AreEqual("RabbitMQ", span.Tags[Tags.InstrumentationName]);
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
                     Assert.NotNull(span.Tags[Tags.AmqpCommand]);
-                    Assert.Equal("amqp.command", span.Name);
+                    Assert.AreEqual("amqp.command", span.Name);
 
                     var command = span.Tags[Tags.AmqpCommand];
 
@@ -78,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         if (string.Equals(command, "basic.publish", StringComparison.OrdinalIgnoreCase))
                         {
                             basicPublishCount++;
-                            Assert.Equal(SpanKinds.Producer, span.Tags[Tags.SpanKind]);
+                            Assert.AreEqual(SpanKinds.Producer, span.Tags[Tags.SpanKind]);
                             Assert.NotNull(span.Tags[Tags.AmqpExchange]);
                             Assert.NotNull(span.Tags[Tags.AmqpRoutingKey]);
 
@@ -122,7 +121,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                 emptyBasicGetCount++;
                             }
 
-                            Assert.Equal(SpanKinds.Consumer, span.Tags[Tags.SpanKind]);
+                            Assert.AreEqual(SpanKinds.Consumer, span.Tags[Tags.SpanKind]);
                             Assert.NotNull(span.Tags[Tags.AmqpQueue]);
 
                             // Enforce that the resource name has the following structure: "basic.get [<generated>|{actual queueName}]"
@@ -148,7 +147,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                 distributedParentSpans[span.ParentId.Value] = 1;
                             }
 
-                            Assert.Equal(SpanKinds.Consumer, span.Tags[Tags.SpanKind]);
+                            Assert.AreEqual(SpanKinds.Consumer, span.Tags[Tags.SpanKind]);
                             // Assert.NotNull(span.Tags[Tags.AmqpQueue]); // Java does this but we're having difficulty doing this. Push to v2?
                             Assert.NotNull(span.Tags[Tags.AmqpExchange]);
                             Assert.NotNull(span.Tags[Tags.AmqpRoutingKey]);
@@ -166,13 +165,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         }
                         else
                         {
-                            throw new Xunit.Sdk.XunitException($"amqp.command {command} not recognized.");
+                            Assert.Fail($"amqp.command {command} not recognized.");
                         }
                     }
                     else
                     {
-                        Assert.Equal(SpanKinds.Client, span.Tags[Tags.SpanKind]);
-                        Assert.Equal(command, span.Resource);
+                        Assert.AreEqual(SpanKinds.Client, span.Tags[Tags.SpanKind]);
+                        Assert.AreEqual(command, span.Resource);
 
                         if (string.Equals(command, "exchange.declare", StringComparison.OrdinalIgnoreCase))
                         {
@@ -193,32 +192,35 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         }
                         else
                         {
-                            throw new Xunit.Sdk.XunitException($"amqp.command {command} not recognized.");
+                            Assert.Fail($"amqp.command {command} not recognized.");
                         }
                     }
                 }
 
                 foreach (var span in manualSpans)
                 {
-                    Assert.Equal("Samples.RabbitMQ", span.Service);
-                    Assert.Equal("1.0.0", span.Tags[Tags.Version]);
+                    Assert.AreEqual("Samples.RabbitMQ", span.Service);
+                    Assert.AreEqual("1.0.0", span.Tags[Tags.Version]);
                 }
             }
 
             // Assert that all empty get results are expected
-            Assert.Equal(2, emptyBasicGetCount);
+            Assert.AreEqual(2, emptyBasicGetCount);
 
             // Assert that each span that started a distributed trace (basic.publish)
             // has only one child span (basic.deliver or basic.get)
-            Assert.All(distributedParentSpans, kvp => Assert.Equal(1, kvp.Value));
+            foreach (var kvp in distributedParentSpans)
+            {
+                Assert.AreEqual(1, kvp.Value);
+            }
 
-            Assert.Equal(5, basicPublishCount);
-            Assert.Equal(4, basicGetCount);
-            Assert.Equal(3, basicDeliverCount);
+            Assert.AreEqual(5, basicPublishCount);
+            Assert.AreEqual(4, basicGetCount);
+            Assert.AreEqual(3, basicDeliverCount);
 
-            Assert.Equal(1, exchangeDeclareCount);
-            Assert.Equal(1, queueBindCount);
-            Assert.Equal(4, queueDeclareCount);
+            Assert.AreEqual(1, exchangeDeclareCount);
+            Assert.AreEqual(1, queueBindCount);
+            Assert.AreEqual(4, queueDeclareCount);
         }
     }
 }

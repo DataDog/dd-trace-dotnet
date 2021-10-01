@@ -13,8 +13,8 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
-using Xunit;
-using Xunit.Abstractions;
+using FluentAssertions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
@@ -25,8 +25,8 @@ namespace Datadog.Trace.Security.IntegrationTests
         private int httpPort;
         private Process process;
 
-        public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath, string samplesDir = null)
-            : base(sampleName, samplesDir ?? "test/test-applications/security", outputHelper)
+        public AspNetBase(string sampleName, string shutdownPath, string samplesDir = null)
+            : base(sampleName, samplesDir ?? "test/test-applications/security")
         {
             httpClient = new HttpClient();
             this.shutdownPath = shutdownPath;
@@ -42,7 +42,8 @@ namespace Datadog.Trace.Security.IntegrationTests
             return agent;
         }
 
-        public void Dispose()
+        [OneTimeTearDown]
+        public void Shutdown()
         {
             var request = WebRequest.CreateHttp($"http://localhost:{httpPort}{shutdownPath}");
             request.GetResponse().Close();
@@ -67,7 +68,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             var resultRequests = await Task.WhenAll(attack(), attack(), attack(), attack(), attack());
             agent.SpanFilters.Add(s => s.Tags["http.url"].IndexOf("Health", StringComparison.InvariantCultureIgnoreCase) > 0);
             var spans = agent.WaitForSpans(expectedSpans);
-            Assert.Equal(expectedSpans, spans.Count());
+            Assert.AreEqual(expectedSpans, spans.Count());
             foreach (var span in spans)
             {
                 foreach (var assert in assertOnSpans)
@@ -79,24 +80,24 @@ namespace Datadog.Trace.Security.IntegrationTests
             var expectedAppSecEvents = enableSecurity ? 5 : 0;
 
             // asserts on request status code
-            Assert.All(resultRequests, r => Assert.Equal(r.StatusCode, expectedStatusCode));
+            resultRequests.Should().OnlyContain(r => r.StatusCode == expectedStatusCode);
 
             var appSecEvents = mockTracerAgentAppSecWrapper.WaitForAppSecEvents(expectedAppSecEvents);
 
             // asserts on the security events
-            Assert.Equal(expectedAppSecEvents, appSecEvents.Count);
+            Assert.AreEqual(expectedAppSecEvents, appSecEvents.Count);
             var spanIds = spans.Select(s => s.SpanId);
             var usedIds = new List<ulong>();
             foreach (var item in appSecEvents)
             {
-                Assert.IsType<AppSec.EventModel.Attack>(item);
+                Assert.IsInstanceOf<AppSec.EventModel.Attack>(item);
                 var attackEvent = (AppSec.EventModel.Attack)item;
                 var shouldBlock = expectedStatusCode == HttpStatusCode.Forbidden;
-                Assert.Equal(shouldBlock, attackEvent.Blocked);
+                Assert.AreEqual(shouldBlock, attackEvent.Blocked);
                 var spanId = spanIds.FirstOrDefault(s => s == attackEvent.Context.Span.Id);
-                Assert.NotEqual(0m, spanId);
-                Assert.DoesNotContain(spanId, usedIds);
-                Assert.Equal("nosqli", attackEvent.Rule.Name);
+                Assert.AreNotEqual(0m, spanId);
+                CollectionAssert.DoesNotContain(usedIds, spanId);
+                Assert.AreEqual("nosqli", attackEvent.Rule.Name);
                 usedIds.Add(spanId);
             }
 
@@ -130,7 +131,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             // EnvironmentHelper.DebugModeEnabled = true;
 
-            Output.WriteLine($"Starting Application: {sampleAppPath}");
+            Console.WriteLine($"Starting Application: {sampleAppPath}");
             var executable = EnvironmentHelper.IsCoreClr() ? EnvironmentHelper.GetSampleExecutionSource() : sampleAppPath;
             var args = EnvironmentHelper.IsCoreClr() ? $"{sampleAppPath} {arguments ?? string.Empty}" : arguments;
 
@@ -156,7 +157,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                         wh.Set();
                     }
 
-                    Output.WriteLine($"[webserver][stdout] {args.Data}");
+                    Console.WriteLine($"[webserver][stdout] {args.Data}");
                 }
             };
             process.BeginOutputReadLine();
@@ -165,7 +166,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             {
                 if (args.Data != null)
                 {
-                    Output.WriteLine($"[webserver][stderr] {args.Data}");
+                    Console.WriteLine($"[webserver][stderr] {args.Data}");
                 }
             };
 
@@ -190,13 +191,13 @@ namespace Datadog.Trace.Security.IntegrationTests
                 }
                 catch (Exception ex)
                 {
-                    Output.WriteLine("SubmitRequest failed during warmup with error " + ex);
+                    Console.WriteLine("SubmitRequest failed during warmup with error " + ex);
                 }
 
                 serverReady = statusCode == HttpStatusCode.OK;
                 if (!serverReady)
                 {
-                    Output.WriteLine(responseText);
+                    Console.WriteLine(responseText);
                 }
 
                 if (serverReady)

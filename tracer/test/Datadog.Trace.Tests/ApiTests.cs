@@ -7,13 +7,13 @@ using System;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Moq;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests
 {
     public class ApiTests
     {
-        [Fact]
+        [Test]
         public async Task SendTraceAsync_200OK_AllGood()
         {
             var responseMock = new Mock<IApiResponse>();
@@ -32,7 +32,7 @@ namespace Datadog.Trace.Tests
             requestMock.Verify(x => x.PostAsync(It.IsAny<ArraySegment<byte>>()), Times.Once());
         }
 
-        [Fact]
+        [Test]
         public async Task SendTracesAsync_500_ErrorIsCaught()
         {
             var responseMock = new Mock<IApiResponse>();
@@ -51,7 +51,7 @@ namespace Datadog.Trace.Tests
             requestMock.Verify(x => x.PostAsync(It.IsAny<ArraySegment<byte>>()), Times.Exactly(5));
         }
 
-        [Fact]
+        [Test]
         public async Task ExtractAgentVersionHeader()
         {
             const string agentVersion = "1.2.3";

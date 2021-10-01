@@ -4,14 +4,13 @@
 // </copyright>
 
 using System;
-using System.IO;
 using System.Linq;
 using Datadog.Trace.Sampling;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests.Sampling
 {
-    [Collection(nameof(Datadog.Trace.Tests.Sampling))]
+    [NonParallelizable]
     public class CustomSamplingRuleTests
     {
         private static readonly ulong Id = 1;
@@ -21,7 +20,7 @@ namespace Datadog.Trace.Tests.Sampling
         private static readonly Span ShippingRevertSpan = new Span(new SpanContext(Id++, Id++, null, serviceName: "shipping-auth-service"), DateTimeOffset.Now) { OperationName = "authorize-revert" };
         private static readonly Span RequestShippingSpan = new Span(new SpanContext(Id++, Id++, null, serviceName: "request-shipping"), DateTimeOffset.Now) { OperationName = "submit" };
 
-        [Fact]
+        [Test]
         public void Constructs_ZeroRateOnly_From_Config_String()
         {
             var config = "[{\"sample_rate\":0}]";
@@ -33,7 +32,7 @@ namespace Datadog.Trace.Tests.Sampling
             VerifySingleRule(config, RequestShippingSpan, true);
         }
 
-        [Fact]
+        [Test]
         public void Constructs_CartOnlyRule_From_Config_String()
         {
             var config = "[{\"sample_rate\":0.3, \"service\":\"shopping-cart.*\"}]";
@@ -45,7 +44,7 @@ namespace Datadog.Trace.Tests.Sampling
             VerifySingleRule(config, RequestShippingSpan, false);
         }
 
-        [Fact]
+        [Test]
         public void Constructs_AuthOperationRule_From_Config_String()
         {
             var config = "[{\"sample_rate\":0.5, \"name\":\"auth.*\"}]";
@@ -57,14 +56,14 @@ namespace Datadog.Trace.Tests.Sampling
             VerifySingleRule(config, RequestShippingSpan, false);
         }
 
-        [Fact]
+        [Test]
         public void Constructs_All_Expected_From_Config_String()
         {
             var config = "[{\"sample_rate\":0.5, \"service\":\".*cart.*\"}, {\"sample_rate\":1, \"service\":\".*shipping.*\", \"name\":\"authorize\"}, {\"sample_rate\":0.1, \"service\":\".*shipping.*\"}, {\"sample_rate\":0.05}]";
             var rules = CustomSamplingRule.BuildFromConfigurationString(config).ToArray();
 
             var cartRule = rules[0];
-            Assert.Equal(expected: 0.5f, actual: cartRule.GetSamplingRate(CartCheckoutSpan));
+            Assert.AreEqual(expected: 0.5f, actual: cartRule.GetSamplingRate(CartCheckoutSpan));
 
             VerifySingleRule(cartRule, CartCheckoutSpan, true);
             VerifySingleRule(cartRule, AddToCartSpan, true);
@@ -73,7 +72,7 @@ namespace Datadog.Trace.Tests.Sampling
             VerifySingleRule(cartRule, RequestShippingSpan, false);
 
             var shippingAuthRule = rules[1];
-            Assert.Equal(expected: 1f, actual: shippingAuthRule.GetSamplingRate(CartCheckoutSpan));
+            Assert.AreEqual(expected: 1f, actual: shippingAuthRule.GetSamplingRate(CartCheckoutSpan));
 
             VerifySingleRule(shippingAuthRule, CartCheckoutSpan, false);
             VerifySingleRule(shippingAuthRule, AddToCartSpan, false);
@@ -82,7 +81,7 @@ namespace Datadog.Trace.Tests.Sampling
             VerifySingleRule(shippingAuthRule, RequestShippingSpan, false);
 
             var fallbackShippingRule = rules[2];
-            Assert.Equal(expected: 0.1f, actual: fallbackShippingRule.GetSamplingRate(CartCheckoutSpan));
+            Assert.AreEqual(expected: 0.1f, actual: fallbackShippingRule.GetSamplingRate(CartCheckoutSpan));
 
             VerifySingleRule(fallbackShippingRule, CartCheckoutSpan, false);
             VerifySingleRule(fallbackShippingRule, AddToCartSpan, false);
@@ -91,7 +90,7 @@ namespace Datadog.Trace.Tests.Sampling
             VerifySingleRule(fallbackShippingRule, RequestShippingSpan, true);
 
             var fallbackRule = rules[3];
-            Assert.Equal(expected: 0.05f, actual: fallbackRule.GetSamplingRate(CartCheckoutSpan));
+            Assert.AreEqual(expected: 0.05f, actual: fallbackRule.GetSamplingRate(CartCheckoutSpan));
 
             VerifySingleRule(fallbackRule, CartCheckoutSpan, true);
             VerifySingleRule(fallbackRule, AddToCartSpan, true);
@@ -101,18 +100,18 @@ namespace Datadog.Trace.Tests.Sampling
         }
 
         [Theory]
-        [InlineData("\"rate:0.5, \"name\":\"auth.*\"}]")]
-        [InlineData("[{\"name\":\"wat\"}]")]
+        [TestCase("\"rate:0.5, \"name\":\"auth.*\"}]")]
+        [TestCase("[{\"name\":\"wat\"}]")]
         public void Malformed_Rules_Do_Not_Register_Or_Crash(string ruleConfig)
         {
             var rules = CustomSamplingRule.BuildFromConfigurationString(ruleConfig).ToArray();
-            Assert.Empty(rules);
+            CollectionAssert.IsEmpty(rules);
         }
 
         private void VerifyRate(string config, float expectedRate)
         {
             var rule = CustomSamplingRule.BuildFromConfigurationString(config).Single();
-            Assert.Equal(expected: expectedRate, actual: rule.GetSamplingRate(CartCheckoutSpan));
+            Assert.AreEqual(expected: expectedRate, actual: rule.GetSamplingRate(CartCheckoutSpan));
         }
 
         private void VerifySingleRule(string config, Span span, bool isMatch)
@@ -123,7 +122,7 @@ namespace Datadog.Trace.Tests.Sampling
 
         private void VerifySingleRule(ISamplingRule rule, Span span, bool isMatch)
         {
-            Assert.Equal(rule.IsMatch(span), isMatch);
+            Assert.AreEqual(rule.IsMatch(span), isMatch);
         }
     }
 }

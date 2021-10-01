@@ -4,7 +4,7 @@
 // </copyright>
 
 using Datadog.Trace.Util;
-using Xunit;
+using NUnit.Framework;
 
 #pragma warning disable SA1201 // Elements must appear in the correct order
 #pragma warning disable SA1402 // File may only contain a single class
@@ -13,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 {
     public class PropertyFetcherTests
     {
-        [Fact]
+        [Test]
         public void ReferenceTypeObject_FetchesReferenceTypeProperty()
         {
             const string expected = "ReferenceType";
@@ -22,10 +22,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var fetcher = new PropertyFetcher("Name");
             var actual = fetcher.Fetch<string>(element);
 
-            Assert.Equal(expected, actual);
+            Assert.AreEqual(expected, actual);
         }
 
-        [Fact]
+        [Test]
         public void ReferenceTypeObject_FetchesValueTypeProperty()
         {
             const int expected = 123;
@@ -34,10 +34,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var fetcher = new PropertyFetcher("Id");
             var actual = fetcher.Fetch<int>(element);
 
-            Assert.Equal(expected, actual);
+            Assert.AreEqual(expected, actual);
         }
 
-        [Fact]
+        [Test]
         public void ValueTypeObject_FetchesReferenceTypeProperty()
         {
             const string expected = "ValueType";
@@ -46,10 +46,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var fetcher = new PropertyFetcher("Name");
             var actual = fetcher.Fetch<string>(element);
 
-            Assert.Equal(expected, actual);
+            Assert.AreEqual(expected, actual);
         }
 
-        [Fact]
+        [Test]
         public void ValueTypeObject_FetchesValueTypeProperty()
         {
             const int expected = 123;
@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var fetcher = new PropertyFetcher("Id");
             var actual = fetcher.Fetch<int>(element);
 
-            Assert.Equal(expected, actual);
+            Assert.AreEqual(expected, actual);
         }
     }
 

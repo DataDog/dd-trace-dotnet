@@ -10,21 +10,21 @@ using NLog;
 using NLog.Config;
 using NLog.Layouts;
 using NLog.Targets;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests.Logging
 {
-    [Collection(nameof(Datadog.Trace.Tests.Logging))]
-    [TestCaseOrderer("Datadog.Trace.TestHelpers.AlphabeticalOrderer", "Datadog.Trace.TestHelpers")]
+    [NonParallelizable]
     public class NLogLogProviderTests
     {
         private const string NLogExpectedStringFormat = "\"{0}\": \"{1}\"";
 
-        private readonly CustomNLogLogProvider _logProvider;
-        private readonly ILog _logger;
-        private readonly MemoryTarget _target;
+        private CustomNLogLogProvider _logProvider;
+        private ILog _logger;
+        private MemoryTarget _target;
 
-        public NLogLogProviderTests()
+        [SetUp]
+        public void Setup()
         {
             var config = new LoggingConfiguration();
             var layout = new JsonLayout();
@@ -47,11 +47,11 @@ namespace Datadog.Trace.Tests.Logging
             _logger = new LoggerExecutionWrapper(_logProvider.GetLogger("test"));
         }
 
-        [Fact]
+        [Test]
         public void LogsInjectionEnabledAddsParentCorrelationIdentifiers()
         {
             // Assert that the NLog log provider is correctly being used
-            Assert.IsType<CustomNLogLogProvider>(LogProvider.CurrentLogProvider);
+            Assert.IsInstanceOf<CustomNLogLogProvider>(LogProvider.CurrentLogProvider);
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
@@ -60,14 +60,18 @@ namespace Datadog.Trace.Tests.Logging
             // Filter the logs
             List<string> filteredLogs = new List<string>(_target.Logs);
             filteredLogs.RemoveAll(log => !log.Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(filteredLogs, e => LogEventContains(e, tracer.DefaultServiceName, tracer.Settings.ServiceVersion, tracer.Settings.Environment, parentScope));
+
+            foreach (var log in filteredLogs)
+            {
+                LogEventContains(log, tracer.DefaultServiceName, tracer.Settings.ServiceVersion, tracer.Settings.Environment, parentScope);
+            }
         }
 
-        [Fact]
+        [Test]
         public void LogsInjectionEnabledAddsChildCorrelationIdentifiers()
         {
             // Assert that the NLog log provider is correctly being used
-            Assert.IsType<CustomNLogLogProvider>(LogProvider.CurrentLogProvider);
+            Assert.IsInstanceOf<CustomNLogLogProvider>(LogProvider.CurrentLogProvider);
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
@@ -76,14 +80,18 @@ namespace Datadog.Trace.Tests.Logging
             // Filter the logs
             List<string> filteredLogs = new List<string>(_target.Logs);
             filteredLogs.RemoveAll(log => !log.Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(filteredLogs, e => LogEventContains(e, tracer.DefaultServiceName, tracer.Settings.ServiceVersion, tracer.Settings.Environment, childScope));
+
+            foreach (var log in filteredLogs)
+            {
+                LogEventContains(log, tracer.DefaultServiceName, tracer.Settings.ServiceVersion, tracer.Settings.Environment, childScope);
+            }
         }
 
-        [Fact]
+        [Test]
         public void LogsInjectionEnabledDoesNotAddCorrelationIdentifiersOutsideSpans()
         {
             // Assert that the NLog log provider is correctly being used
-            Assert.IsType<CustomNLogLogProvider>(LogProvider.CurrentLogProvider);
+            Assert.IsInstanceOf<CustomNLogLogProvider>(LogProvider.CurrentLogProvider);
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
@@ -92,14 +100,18 @@ namespace Datadog.Trace.Tests.Logging
             // Filter the logs
             List<string> filteredLogs = new List<string>(_target.Logs);
             filteredLogs.RemoveAll(log => !log.Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(filteredLogs, e => LogEventDoesNotContainCorrelationIdentifiers(e));
+
+            foreach (var log in filteredLogs)
+            {
+                LogEventDoesNotContainCorrelationIdentifiers(log);
+            }
         }
 
-        [Fact]
+        [Test]
         public void LogsInjectionEnabledUsesTracerServiceName()
         {
             // Assert that the NLog log provider is correctly being used
-            Assert.IsType<CustomNLogLogProvider>(LogProvider.CurrentLogProvider);
+            Assert.IsInstanceOf<CustomNLogLogProvider>(LogProvider.CurrentLogProvider);
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
@@ -108,14 +120,18 @@ namespace Datadog.Trace.Tests.Logging
             // Filter the logs
             List<string> filteredLogs = new List<string>(_target.Logs);
             filteredLogs.RemoveAll(log => !log.Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(filteredLogs, e => LogEventContains(e, tracer.DefaultServiceName, tracer.Settings.ServiceVersion, tracer.Settings.Environment, scope));
+
+            foreach (var log in filteredLogs)
+            {
+                LogEventContains(log, tracer.DefaultServiceName, tracer.Settings.ServiceVersion, tracer.Settings.Environment, scope);
+            }
         }
 
-        [Fact]
+        [Test]
         public void DisabledLibLogSubscriberDoesNotAddCorrelationIdentifiers()
         {
             // Assert that the NLog log provider is correctly being used
-            Assert.IsType<CustomNLogLogProvider>(LogProvider.CurrentLogProvider);
+            Assert.IsInstanceOf<CustomNLogLogProvider>(LogProvider.CurrentLogProvider);
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: false);
@@ -124,16 +140,20 @@ namespace Datadog.Trace.Tests.Logging
             // Filter the logs
             List<string> filteredLogs = new List<string>(_target.Logs);
             filteredLogs.RemoveAll(log => !log.Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(filteredLogs, e => LogEventDoesNotContainCorrelationIdentifiers(e));
+
+            foreach (var log in filteredLogs)
+            {
+                LogEventDoesNotContainCorrelationIdentifiers(log);
+            }
         }
 
         internal static void LogEventContains(string nLogString, string service, string version, string env, Scope scope)
         {
-            Assert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.ServiceKey, service), nLogString);
-            Assert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.EnvKey, env), nLogString);
-            Assert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.VersionKey, version), nLogString);
-            Assert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.SpanIdKey, scope.Span.SpanId), nLogString);
-            Assert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.TraceIdKey, scope.Span.TraceId), nLogString);
+            StringAssert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.ServiceKey, service), nLogString);
+            StringAssert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.EnvKey, env), nLogString);
+            StringAssert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.VersionKey, version), nLogString);
+            StringAssert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.SpanIdKey, scope.Span.SpanId), nLogString);
+            StringAssert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.TraceIdKey, scope.Span.TraceId), nLogString);
         }
 
         internal static void LogEventDoesNotContainCorrelationIdentifiers(string nLogString)

@@ -8,16 +8,16 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Util;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests.Sampling
 {
-    [Collection(nameof(Datadog.Trace.Tests.Sampling))]
+    [NonParallelizable]
     public class RateLimiterTests
     {
         private const int DefaultLimitPerSecond = 100;
 
-        [Fact]
+        [Test]
         public void One_Is_Allowed()
         {
             var traceContext = new TraceContext(new Tracer());
@@ -28,37 +28,37 @@ namespace Datadog.Trace.Tests.Sampling
             Assert.True(allowed);
         }
 
-        [Fact]
+        [Test]
         public void All_Traces_Disabled()
         {
             var rateLimiter = new RateLimiter(maxTracesPerInterval: 0);
             var allowedCount = AskTheRateLimiterABunchOfTimes(rateLimiter, 500);
-            Assert.Equal(expected: 0, actual: allowedCount);
+            Assert.AreEqual(expected: 0, actual: allowedCount);
         }
 
-        [Fact]
+        [Test]
         public void All_Traces_Allowed()
         {
             var rateLimiter = new RateLimiter(maxTracesPerInterval: -1);
             var allowedCount = AskTheRateLimiterABunchOfTimes(rateLimiter, 500);
-            Assert.Equal(expected: 500, actual: allowedCount);
+            Assert.AreEqual(expected: 500, actual: allowedCount);
         }
 
-        [Fact]
+        [Test]
         public void Only_100_Allowed_In_500_Burst_For_Default()
         {
             var rateLimiter = new RateLimiter(maxTracesPerInterval: null);
             var allowedCount = AskTheRateLimiterABunchOfTimes(rateLimiter, 500);
-            Assert.Equal(expected: DefaultLimitPerSecond, actual: allowedCount);
+            Assert.AreEqual(expected: DefaultLimitPerSecond, actual: allowedCount);
         }
 
-        [Fact]
+        [Test]
         public void Limits_Approximately_To_Defaults()
         {
             Run_Limit_Test(intervalLimit: null, numberPerBurst: 100, numberOfBursts: 18, millisecondsBetweenBursts: 247);
         }
 
-        [Fact]
+        [Test]
         public void Limits_To_Custom_Amount_Per_Second()
         {
             Run_Limit_Test(intervalLimit: 500, numberPerBurst: 200, numberOfBursts: 18, millisecondsBetweenBursts: 247);

@@ -4,19 +4,18 @@
 // </copyright>
 
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.Emit;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests
 {
     public class ModuleLookupTests
     {
-        [Fact]
+        [Test]
         public void Lookup_SystemData_Succeeds_WithTwentyConcurrentTries()
         {
             var tasks = new Task[20];
@@ -40,36 +39,36 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             Assert.True(bag.All(m => m.ModuleVersionId == systemDataGuid) && bag.Count() == tasks.Length);
         }
 
-        [Fact]
+        [Test]
         public void Lookup_Self_Succeeds()
         {
             var expectedModule = typeof(ModuleLookupTests).Assembly.ManifestModule;
             var lookup = ModuleLookup.Get(expectedModule.ModuleVersionId);
-            Assert.Equal(expectedModule, lookup);
+            Assert.AreEqual(expectedModule, lookup);
         }
 
-        [Fact]
+        [Test]
         public void Lookup_DatadogTraceClrProfilerManaged_Succeeds()
         {
             var expectedModule = typeof(MethodBuilder<>).Assembly.ManifestModule;
             var lookup = ModuleLookup.Get(expectedModule.ModuleVersionId);
-            Assert.Equal(expectedModule, lookup);
+            Assert.AreEqual(expectedModule, lookup);
         }
 
-        [Fact]
+        [Test]
         public void Lookup_DatadogTrace_Succeeds()
         {
             var expectedModule = typeof(Span).Assembly.ManifestModule;
             var lookup = ModuleLookup.Get(expectedModule.ModuleVersionId);
-            Assert.Equal(expectedModule, lookup);
+            Assert.AreEqual(expectedModule, lookup);
         }
 
-        [Fact]
+        [Test]
         public void Lookup_SystemData_Succeeds()
         {
             var expectedModule = typeof(System.Data.DataTable).Assembly.ManifestModule;
             var lookup = ModuleLookup.Get(expectedModule.ModuleVersionId);
-            Assert.Equal(expectedModule, lookup);
+            Assert.AreEqual(expectedModule, lookup);
         }
     }
 }

@@ -5,45 +5,43 @@
 
 using System;
 using Datadog.Trace.TestHelpers;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests
 {
-    [CollectionDefinition(nameof(TracerInstanceTest), DisableParallelization = true)]
-    [TracerRestorer]
-    public class TracerInstanceTest
+    public class TracerInstanceTest : TracerInstanceTestsBase
     {
-        [Fact]
+        [Test]
         public void NormalTracerInstanceSwap()
         {
             var tracerOne = new Tracer();
             var tracerTwo = new Tracer();
 
-            TracerRestorerAttribute.SetTracer(tracerOne);
-            Assert.Equal(tracerOne, Tracer.Instance);
+            SetTracer(tracerOne);
+            Assert.AreEqual(tracerOne, Tracer.Instance);
 
-            TracerRestorerAttribute.SetTracer(tracerTwo);
-            Assert.Equal(tracerTwo, Tracer.Instance);
+            SetTracer(tracerTwo);
+            Assert.AreEqual(tracerTwo, Tracer.Instance);
 
-            TracerRestorerAttribute.SetTracer(null);
+            SetTracer(null);
             Assert.Null(Tracer.Instance);
         }
 
-        [Fact]
+        [Test]
         public void LockedTracerInstanceSwap()
         {
             var tracerOne = new Tracer();
             var tracerTwo = new LockedTracer();
 
-            TracerRestorerAttribute.SetTracer(tracerOne);
-            Assert.Equal(tracerOne, Tracer.Instance);
+            SetTracer(tracerOne);
+            Assert.AreEqual(tracerOne, Tracer.Instance);
 
-            TracerRestorerAttribute.SetTracer(null);
+            SetTracer(null);
             Assert.Null(Tracer.Instance);
 
             // Set the locked tracer
-            TracerRestorerAttribute.SetTracer(tracerTwo);
-            Assert.Equal(tracerTwo, Tracer.Instance);
+            SetTracer(tracerTwo);
+            Assert.AreEqual(tracerTwo, Tracer.Instance);
 
             // We test the locked tracer cannot be replaced.
             Assert.Throws<InvalidOperationException>(() => Tracer.Instance = tracerOne);

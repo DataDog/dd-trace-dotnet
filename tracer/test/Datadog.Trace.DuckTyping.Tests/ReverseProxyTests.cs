@@ -6,8 +6,8 @@
 using System;
 using System.IO;
 using System.Threading;
+using NUnit.Framework;
 using Serilog;
-using Xunit;
 
 #pragma warning disable SA1201 // Elements should appear in the correct order
 #pragma warning disable SA1602 // Enumeration items should be documented
@@ -16,7 +16,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 {
     public class ReverseProxyTests
     {
-        [Fact]
+        [Test]
         public void PrivateInterfaceReverseProxyTest()
         {
             Type iLogEventEnricherType = typeof(Datadog.Trace.Vendors.Serilog.Core.ILogEventEnricher);
@@ -44,7 +44,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 #endif
         }
 
-        [Fact]
+        [Test]
         public void PrivateAbstractClassReverseProxyTest()
         {
             var resetEvent = new ManualResetEventSlim();
@@ -67,7 +67,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 #endif
         }
 
-        [Fact]
+        [Test]
         public void PublicInterfaceReverseProxyTest()
         {
             Type iLogEventEnricherType = typeof(Serilog.Core.ILogEventEnricher);
@@ -88,7 +88,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             Assert.True(resetEvent.Wait(5_000));
         }
 
-        [Fact]
+        [Test]
         public void PublicAbstractClassReverseProxyTest()
         {
             var resetEvent = new ManualResetEventSlim();
@@ -124,10 +124,10 @@ namespace Datadog.Trace.DuckTyping.Tests
                 Assert.NotNull(logEvent);
                 Assert.NotNull(propertyFactory);
 
-                Assert.Equal(LogEventLevel.Information, logEvent.Level);
-                Assert.NotEqual(DateTimeOffset.MinValue, logEvent.Timestamp);
+                Assert.AreEqual(LogEventLevel.Information, logEvent.Level);
+                Assert.AreNotEqual(DateTimeOffset.MinValue, logEvent.Timestamp);
                 Assert.Null(logEvent.Exception);
-                Assert.Equal("Hello world", logEvent.MessageTemplate.Text);
+                Assert.AreEqual("Hello world", logEvent.MessageTemplate.Text);
 
                 _manualResetEventSlim.Set();
             }
@@ -152,10 +152,10 @@ namespace Datadog.Trace.DuckTyping.Tests
                 Assert.NotNull(logEvent);
                 Assert.NotNull(propertyFactory);
 
-                Assert.Equal(LogEventLevel.Information, logEvent.Level);
-                Assert.NotEqual(DateTimeOffset.MinValue, logEvent.Timestamp);
+                Assert.AreEqual(LogEventLevel.Information, logEvent.Level);
+                Assert.AreNotEqual(DateTimeOffset.MinValue, logEvent.Timestamp);
                 Assert.Null(logEvent.Exception);
-                Assert.Equal("Hello world", logEvent.MessageTemplate.Text);
+                Assert.AreEqual("Hello world", logEvent.MessageTemplate.Text);
 
                 _manualResetEventSlim.Set();
             }
@@ -226,7 +226,7 @@ namespace Datadog.Trace.DuckTyping.Tests
                 output.WriteLine(format);
 
                 Assert.NotNull(output);
-                Assert.Equal("Hello world", format);
+                Assert.AreEqual("Hello world", format);
 
                 _manualResetEventSlim.Set();
             }

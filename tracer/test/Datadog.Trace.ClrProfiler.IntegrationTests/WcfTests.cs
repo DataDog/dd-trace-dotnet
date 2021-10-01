@@ -5,11 +5,10 @@
 
 #if NET461
 
+using System;
 using System.Collections.Generic;
 using Datadog.Trace.TestHelpers;
-using Xunit;
-using Xunit.Abstractions;
-using Xunit.Sdk;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
@@ -17,22 +16,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     {
         private const string ServiceVersion = "1.0.0";
 
-        public WcfTests(ITestOutputHelper output)
-            : base("Wcf", output)
+        public WcfTests()
+            : base("Wcf")
         {
             SetServiceVersion(ServiceVersion);
         }
 
-        [Theory]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        [InlineData(false)]
-        [InlineData(true)]
+        [Property("Category", "EndToEnd")]
+        [Property("RunOnWindows", "True")]
+        [TestCase(false)]
+        [TestCase(true)]
         public void SubmitsTraces(bool enableCallTarget)
         {
             SetCallTargetSettings(enableCallTarget);
 
-            Output.WriteLine("Starting WcfTests.SubmitsTraces. Starting the Samples.Wcf requires ADMIN privileges");
+            Console.WriteLine("Starting WcfTests.SubmitsTraces. Starting the Samples.Wcf requires ADMIN privileges");
 
             var expectedSpanCount = 4;
 
@@ -58,19 +56,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 foreach (var span in spans)
                 {
                     // Validate server fields
-                    Assert.Equal(expectedServiceName, span.Service);
-                    Assert.Equal(ServiceVersion, span.Tags[Tags.Version]);
-                    Assert.Equal(expectedOperationName, span.Name);
-                    Assert.Equal(SpanTypes.Web, span.Type);
-                    Assert.Equal(SpanKinds.Server, span.Tags[Tags.SpanKind]);
+                    Assert.AreEqual(expectedServiceName, span.Service);
+                    Assert.AreEqual(ServiceVersion, span.Tags[Tags.Version]);
+                    Assert.AreEqual(expectedOperationName, span.Name);
+                    Assert.AreEqual(SpanTypes.Web, span.Type);
+                    Assert.AreEqual(SpanKinds.Server, span.Tags[Tags.SpanKind]);
 
                     // Validate resource name
-                    Assert.Contains(span.Resource, expectedResourceNames);
+                    CollectionAssert.Contains(span.Resource, expectedResourceNames);
 
                     // Test HTTP tags
-                    Assert.Equal("POST", span.Tags[Tags.HttpMethod]);
-                    Assert.Equal("http://localhost:8585/WcfSample/CalculatorService", span.Tags[Tags.HttpUrl]);
-                    Assert.Equal($"localhost:{wcfPort}", span.Tags[Tags.HttpRequestHeadersHost]);
+                    Assert.AreEqual("POST", span.Tags[Tags.HttpMethod]);
+                    Assert.AreEqual("http://localhost:8585/WcfSample/CalculatorService", span.Tags[Tags.HttpUrl]);
+                    Assert.AreEqual($"localhost:{wcfPort}", span.Tags[Tags.HttpRequestHeadersHost]);
                 }
             }
         }

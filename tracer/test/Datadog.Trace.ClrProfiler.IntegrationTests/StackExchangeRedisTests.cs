@@ -6,19 +6,17 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.ClrProfiler.IntegrationTests.TestCollections;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    [Collection(nameof(StackExchangeRedisTestCollection))]
+    [NonParallelizable]
     public class StackExchangeRedisTests : TestHelper
     {
-        public StackExchangeRedisTests(ITestOutputHelper output)
-            : base("StackExchange.Redis", output)
+        public StackExchangeRedisTests()
+            : base("StackExchange.Redis")
         {
             SetServiceVersion("1.0.0");
         }
@@ -32,9 +30,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        [Theory]
-        [MemberData(nameof(GetStackExchangeRedisData))]
-        [Trait("Category", "EndToEnd")]
+        [TestCaseSource(nameof(GetStackExchangeRedisData))]
+        [Property("Category", "EndToEnd")]
         public void SubmitsTraces(string packageVersion, bool enableCallTarget)
         {
             SetCallTargetSettings(enableCallTarget);
@@ -273,11 +270,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    Assert.Equal("redis.command", span.Name);
-                    Assert.Equal("Samples.StackExchange.Redis-redis", span.Service);
-                    Assert.Equal(SpanTypes.Redis, span.Type);
-                    Assert.Equal(host, DictionaryExtensions.GetValueOrDefault(span.Tags, "out.host"));
-                    Assert.Equal(port, DictionaryExtensions.GetValueOrDefault(span.Tags, "out.port"));
+                    Assert.AreEqual("redis.command", span.Name);
+                    Assert.AreEqual("Samples.StackExchange.Redis-redis", span.Service);
+                    Assert.AreEqual(SpanTypes.Redis, span.Type);
+                    Assert.AreEqual(host, DictionaryExtensions.GetValueOrDefault(span.Tags, "out.host"));
+                    Assert.AreEqual(port, DictionaryExtensions.GetValueOrDefault(span.Tags, "out.port"));
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
                 }
 

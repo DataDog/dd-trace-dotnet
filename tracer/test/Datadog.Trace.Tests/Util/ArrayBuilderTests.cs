@@ -6,7 +6,7 @@
 using System.Linq;
 using Datadog.Trace.Util;
 using FluentAssertions;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests.Util
 {
@@ -16,7 +16,7 @@ namespace Datadog.Trace.Tests.Util
         // of how the type is expected to be used
         private ArrayBuilder<int> _builder;
 
-        [Fact]
+        [Test]
         public void BuildArray()
         {
             const int numberOfElements = 20;
@@ -35,7 +35,7 @@ namespace Datadog.Trace.Tests.Util
             result.Should().BeEquivalentTo(Enumerable.Range(0, numberOfElements));
         }
 
-        [Fact]
+        [Test]
         public void InitialCapacity()
         {
             const int numberOfElements = 10;
@@ -48,7 +48,7 @@ namespace Datadog.Trace.Tests.Util
             result.Array.Length.Should().Be(numberOfElements);
         }
 
-        [Fact]
+        [Test]
         public void Empty()
         {
             ArrayBuilder<int> builder = default;
@@ -58,7 +58,7 @@ namespace Datadog.Trace.Tests.Util
             result.Count.Should().Be(0);
         }
 
-        [Fact]
+        [Test]
         public void DoubleSizeWhenGrowing()
         {
             ArrayBuilder<int> builder = default;

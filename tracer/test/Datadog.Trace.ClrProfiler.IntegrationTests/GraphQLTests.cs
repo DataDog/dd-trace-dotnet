@@ -14,8 +14,7 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using Datadog.Trace.TestHelpers;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 #if !NET452
 
@@ -24,8 +23,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NETCOREAPP3_1 || NET5_0
     public class GraphQL4Tests : GraphQLTests
     {
-        public GraphQL4Tests(ITestOutputHelper output)
-            : base("GraphQL4", output, callTargetOnly: true)
+        public GraphQL4Tests()
+            : base("GraphQL4", callTargetOnly: true)
         {
         }
     }
@@ -33,16 +32,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
     public class GraphQL3Tests : GraphQLTests
     {
-        public GraphQL3Tests(ITestOutputHelper output)
-            : base("GraphQL3", output, callTargetOnly: true)
+        public GraphQL3Tests()
+            : base("GraphQL3", callTargetOnly: true)
         {
         }
     }
 
     public class GraphQL2Tests : GraphQLTests
     {
-        public GraphQL2Tests(ITestOutputHelper output)
-            : base("GraphQL", output, callTargetOnly: false)
+        public GraphQL2Tests()
+            : base("GraphQL", callTargetOnly: false)
         {
         }
     }
@@ -61,19 +60,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private int _expectedGraphQLValidateSpanCount;
         private int _expectedGraphQLExecuteSpanCount;
 
-        protected GraphQLTests(string sampleAppName, ITestOutputHelper output, bool callTargetOnly = false)
-            : base(sampleAppName, output)
+        protected GraphQLTests(string sampleAppName, bool callTargetOnly = false)
+            : base(sampleAppName)
         {
             InitializeExpectations(sampleAppName);
             _callTargetOnly = callTargetOnly;
             SetServiceVersion(ServiceVersion);
         }
 
-        [Theory]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        [InlineData(false)]
-        [InlineData(true)]
+        [Property("Category", "EndToEnd")]
+        [Property("RunOnWindows", "True")]
+        [TestCase(false)]
+        [TestCase(true)]
         public void SubmitsTraces(bool enableCallTarget)
         {
             if (_callTargetOnly && !enableCallTarget)
@@ -100,7 +98,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                             wh.Set();
                         }
 
-                        Output.WriteLine($"[webserver][stdout] {args.Data}");
+                        Console.WriteLine($"[webserver][stdout] {args.Data}");
                     }
                 };
                 process.BeginOutputReadLine();
@@ -109,7 +107,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     if (args.Data != null)
                     {
-                        Output.WriteLine($"[webserver][stderr] {args.Data}");
+                        Console.WriteLine($"[webserver][stderr] {args.Data}");
                     }
                 };
                 process.BeginErrorReadLine();
@@ -136,7 +134,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                     if (serverReady)
                     {
-                        Output.WriteLine("The server is ready.");
+                        Console.WriteLine("The server is ready.");
                         break;
                     }
 
@@ -297,12 +295,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     catch (Exception ex)
                     {
                         responseText = "ENCOUNTERED AN ERROR WHEN READING RESPONSE.";
-                        Output.WriteLine(ex.ToString());
+                        Console.WriteLine(ex.ToString());
                     }
 
                     if (printResponseText)
                     {
-                        Output.WriteLine($"[http] {response.StatusCode} {responseText}");
+                        Console.WriteLine($"[http] {response.StatusCode} {responseText}");
                     }
 
                     return response.StatusCode;
@@ -310,13 +308,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
             catch (WebException wex)
             {
-                Output.WriteLine($"[http] exception: {wex}");
+                Console.WriteLine($"[http] exception: {wex}");
                 if (wex.Response is HttpWebResponse response)
                 {
                     using (var stream = response.GetResponseStream())
                     using (var reader = new StreamReader(stream))
                     {
-                        Output.WriteLine($"[http] {response.StatusCode} {reader.ReadToEnd()}");
+                        Console.WriteLine($"[http] {response.StatusCode} {reader.ReadToEnd()}");
                     }
 
                     return response.StatusCode;

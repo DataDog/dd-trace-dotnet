@@ -4,20 +4,19 @@
 // </copyright>
 
 #if !NETFRAMEWORK
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 {
     public class NetCoreAssemblyLoadFailureOlderNuGetSmokeTest : SmokeTestBase
     {
-        public NetCoreAssemblyLoadFailureOlderNuGetSmokeTest(ITestOutputHelper output)
-            : base(output, "NetCoreAssemblyLoadFailureOlderNuGet")
+        public NetCoreAssemblyLoadFailureOlderNuGetSmokeTest()
+            : base("NetCoreAssemblyLoadFailureOlderNuGet")
         {
         }
 
-        [Fact]
-        [Trait("Category", "Smoke")]
+        [Test]
+        [Property("Category", "Smoke")]
         public void NoExceptions()
         {
             CheckForSmoke(shouldDeserializeTraces: false);

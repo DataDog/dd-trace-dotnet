@@ -9,13 +9,13 @@ using System;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Vendors.StatsdClient;
 using Moq;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests.RuntimeMetrics
 {
     public class AzurePerformanceCountersListenerTests
     {
-        [Fact]
+        [Test]
         public void PushEvents()
         {
             Environment.SetEnvironmentVariable(

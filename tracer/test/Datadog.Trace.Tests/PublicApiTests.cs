@@ -1,4 +1,4 @@
-﻿// <copyright file="PublicApiTests.cs" company="Datadog">
+// <copyright file="PublicApiTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,8 +12,8 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Versioning;
 using FluentAssertions;
+using NUnit.Framework;
 using PublicApiGenerator;
-using Xunit;
 
 namespace Datadog.Trace.Tests
 {
@@ -24,7 +24,7 @@ namespace Datadog.Trace.Tests
             ExcludeAttributes = new[] { typeof(InternalsVisibleToAttribute).FullName, },
         };
 
-        [Fact]
+        [Test]
         public void PublicApiHasNotChanged()
         {
             var assembly = typeof(Tracer).Assembly;
@@ -46,14 +46,13 @@ namespace Datadog.Trace.Tests
             publicApi.Should().Be(expected, "Public API should match the verified API. Update verified snapshot when the public API changes as appropriate");
         }
 
-        [Theory]
-        [InlineData(typeof(Hidden), true)]
-        [InlineData(typeof(NotHidden1), false)]
-        [InlineData(typeof(NotHidden2), false)]
-        [InlineData(typeof(NotHidden3), false)]
-        [InlineData(typeof(NotHidden4), false)]
-        [InlineData(typeof(NotHidden5), false)]
-        [InlineData(typeof(NotHidden6), false)]
+        [TestCase(typeof(Hidden), true)]
+        [TestCase(typeof(NotHidden1), false)]
+        [TestCase(typeof(NotHidden2), false)]
+        [TestCase(typeof(NotHidden3), false)]
+        [TestCase(typeof(NotHidden4), false)]
+        [TestCase(typeof(NotHidden5), false)]
+        [TestCase(typeof(NotHidden6), false)]
         public void CalculatesHiddenCorrectly(Type type, bool isHidden)
         {
             var actual = HasHideInIntellisenseAttributes(type);

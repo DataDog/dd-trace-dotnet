@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Xunit;
+using NUnit.Framework;
 
 #pragma warning disable SA1201 // Elements must appear in the correct order
 #pragma warning disable SA1402 // File may only contain a single class
@@ -12,48 +12,48 @@ namespace Datadog.Trace.DuckTyping.Tests
 {
     public class DuckIgnoreTests
     {
-        [Fact]
+        [Test]
         public void NonPublicStructCopyTest()
         {
             PrivateStruct instance = default;
             CopyStruct copy = instance.DuckCast<CopyStruct>();
-            Assert.Equal((int)instance.Value, (int)copy.Value);
-            Assert.Equal(ValuesDuckType.Third.ToString(), copy.GetValue());
-            Assert.Equal(ValuesDuckType.Third.ToString(), ((IGetValue)copy).GetValueProp);
+            Assert.AreEqual((int)instance.Value, (int)copy.Value);
+            Assert.AreEqual(ValuesDuckType.Third.ToString(), copy.GetValue());
+            Assert.AreEqual(ValuesDuckType.Third.ToString(), ((IGetValue)copy).GetValueProp);
         }
 
 #if NETCOREAPP3_0_OR_GREATER
-        [Fact]
+        [Test]
         public void NonPublicStructInterfaceProxyTest()
         {
             PrivateStruct instance = default;
             IPrivateStruct proxy = instance.DuckCast<IPrivateStruct>();
-            Assert.Equal((int)instance.Value, (int)proxy.Value);
-            Assert.Equal(ValuesDuckType.Third.ToString(), proxy.GetValue());
-            Assert.Equal(ValuesDuckType.Third.ToString(), proxy.GetValueProp);
+            Assert.AreEqual((int)instance.Value, (int)proxy.Value);
+            Assert.AreEqual(ValuesDuckType.Third.ToString(), proxy.GetValue());
+            Assert.AreEqual(ValuesDuckType.Third.ToString(), proxy.GetValueProp);
         }
 #endif
 
-        [Fact]
+        [Test]
         public void NonPublicStructAbstractProxyTest()
         {
             PrivateStruct instance = default;
             AbstractPrivateProxy proxy = instance.DuckCast<AbstractPrivateProxy>();
-            Assert.Equal((int)instance.Value, (int)proxy.Value);
-            Assert.Equal(ValuesDuckType.Third.ToString(), proxy.GetValue());
-            Assert.Equal(ValuesDuckType.Third.ToString(), ((IGetValue)proxy).GetValueProp);
-            Assert.Equal(42, proxy.GetAnswerToMeaningOfLife());
+            Assert.AreEqual((int)instance.Value, (int)proxy.Value);
+            Assert.AreEqual(ValuesDuckType.Third.ToString(), proxy.GetValue());
+            Assert.AreEqual(ValuesDuckType.Third.ToString(), ((IGetValue)proxy).GetValueProp);
+            Assert.AreEqual(42, proxy.GetAnswerToMeaningOfLife());
         }
 
-        [Fact]
+        [Test]
         public void NonPublicStructVirtualProxyTest()
         {
             PrivateStruct instance = default;
             VirtualPrivateProxy proxy = instance.DuckCast<VirtualPrivateProxy>();
-            Assert.Equal((int)instance.Value, (int)proxy.Value);
-            Assert.Equal(ValuesDuckType.Third.ToString(), proxy.GetValue());
-            Assert.Equal(ValuesDuckType.Third.ToString(), ((IGetValue)proxy).GetValueProp);
-            Assert.Equal(42, proxy.GetAnswerToMeaningOfLife());
+            Assert.AreEqual((int)instance.Value, (int)proxy.Value);
+            Assert.AreEqual(ValuesDuckType.Third.ToString(), proxy.GetValue());
+            Assert.AreEqual(ValuesDuckType.Third.ToString(), ((IGetValue)proxy).GetValueProp);
+            Assert.AreEqual(42, proxy.GetAnswerToMeaningOfLife());
         }
 
         [DuckCopy]

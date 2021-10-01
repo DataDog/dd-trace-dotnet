@@ -5,13 +5,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.TestHelpers;
-using Xunit;
-using Xunit.Abstractions;
+using FluentAssertions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
@@ -19,16 +18,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
     {
         private const string TestSuiteName = "Samples.MSTestTests.TestSuite";
 
-        public MsTestV2Tests(ITestOutputHelper output)
-            : base("MSTestTests", output)
+        public MsTestV2Tests()
+            : base("MSTestTests")
         {
             SetServiceVersion("1.0.0");
         }
 
-        [Theory]
-        [MemberData(nameof(PackageVersions.MSTest), MemberType = typeof(PackageVersions))]
-        [Trait("Category", "EndToEnd")]
-        [Trait("Category", "TestIntegrations")]
+        [TestCaseSource(nameof(PackageVersions.MSTest))]
+        [Property("Category", "EndToEnd")]
+        [Property("Category", "TestIntegrations")]
         public void SubmitTraces(string packageVersion)
         {
             var version = string.IsNullOrEmpty(packageVersion) ? new Version("2.0.0") : new Version(packageVersion);
@@ -52,12 +50,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         .ToList();
 
                     // Check the span count
-                    Assert.Equal(expectedSpanCount, spans.Count);
+                    Assert.AreEqual(expectedSpanCount, spans.Count);
 
                     foreach (var targetSpan in spans)
                     {
                         // check the name
-                        Assert.Equal("mstest.test", targetSpan.Name);
+                        Assert.AreEqual("mstest.test", targetSpan.Name);
 
                         // check the CIEnvironmentValues decoration.
                         CheckCIEnvironmentValuesDecoration(targetSpan);
@@ -149,7 +147,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         }
 
                         // check remaining tag (only the name)
-                        Assert.Single(targetSpan.Tags);
+                        targetSpan.Tags.Should().HaveCount(1);
                     }
                 }
             }
@@ -202,7 +200,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
         private static void AssertTargetSpanEqual(MockTracerAgent.Span targetSpan, string key, string value)
         {
-            Assert.Equal(value, targetSpan.Tags[key]);
+            Assert.AreEqual(value, targetSpan.Tags[key]);
             targetSpan.Tags.Remove(key);
         }
 
@@ -214,7 +212,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
         private static void AssertTargetSpanContains(MockTracerAgent.Span targetSpan, string key, string value)
         {
-            Assert.Contains(value, targetSpan.Tags[key]);
+            StringAssert.Contains(value, targetSpan.Tags[key]);
             targetSpan.Tags.Remove(key);
         }
 
@@ -250,7 +248,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             {
                 if (span.GetTag(key) is not null)
                 {
-                    Assert.Equal(span.GetTag(key), targetSpan.Tags[key]);
+                    Assert.AreEqual(span.GetTag(key), targetSpan.Tags[key]);
                     targetSpan.Tags.Remove(key);
                 }
             }
@@ -301,7 +299,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             AssertTargetSpanEqual(targetSpan, TestTags.Status, TestTags.StatusFail);
 
             // Check the span error flag
-            Assert.Equal(1, targetSpan.Error);
+            Assert.AreEqual(1, targetSpan.Error);
 
             // Check the error type
             AssertTargetSpanEqual(targetSpan, Tags.ErrorType, typeof(DivideByZeroException).FullName);

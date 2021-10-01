@@ -4,19 +4,18 @@
 // </copyright>
 
 #if NET461
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 {
     public class SandboxManualTracingSmokeTest : SmokeTestBase
     {
-        public SandboxManualTracingSmokeTest(ITestOutputHelper output)
-            : base(output, "Sandbox.ManualTracing")
+        public SandboxManualTracingSmokeTest()
+            : base("Sandbox.ManualTracing")
         {
         }
 
-        [Fact]
+        [Test]
         public void NoExceptions()
         {
             CheckForSmoke(shouldDeserializeTraces: false);

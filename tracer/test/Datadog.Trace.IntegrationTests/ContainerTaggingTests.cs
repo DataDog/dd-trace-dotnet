@@ -8,21 +8,13 @@ using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.IntegrationTests
 {
     public class ContainerTaggingTests
     {
-        private readonly ITestOutputHelper _output;
-
-        public ContainerTaggingTests(ITestOutputHelper output)
-        {
-            _output = output;
-        }
-
-        [Fact]
+        [Test]
         public async Task Http_Headers_Contain_ContainerId()
         {
             string expectedContainedId = ContainerMetadata.GetContainerId();
@@ -47,8 +39,8 @@ namespace Datadog.Trace.IntegrationTests
                 await tracer.FlushAsync();
 
                 var spans = agent.WaitForSpans(1);
-                Assert.Equal(1, spans.Count);
-                Assert.Equal(expectedContainedId, actualContainerId);
+                Assert.AreEqual(1, spans.Count);
+                Assert.AreEqual(expectedContainedId, actualContainerId);
 
                 if (EnvironmentTools.IsWindows())
                 {

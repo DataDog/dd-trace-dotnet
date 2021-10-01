@@ -9,22 +9,22 @@ using System.Data;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Util;
 using Moq;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests.ExtensionMethods
 {
     public class SpanExtensionsTests
     {
-        public SpanExtensionsTests()
+        [SetUp]
+        public void Setup()
         {
             // Reset the cache
             DbCommandCache.Cache = new ConcurrentDictionary<string, KeyValuePair<string, string>[]>();
         }
 
-        [Theory]
-        [InlineData("Server=myServerName,myPortNumber;Database=myDataBase;User Id=myUsername;Password=myPassword;", "myDataBase", "myUsername", "myServerName,myPortNumber")]
-        [InlineData(@"Server=myServerName\myInstanceName;Database=myDataBase;User Id=myUsername;Password=myPassword;", "myDataBase", "myUsername", @"myServerName\myInstanceName")]
-        [InlineData(@"Server=.\SQLExpress;AttachDbFilename=|DataDirectory|mydbfile.mdf;Database=dbname;Trusted_Connection=Yes;", "dbname", null, @".\SQLExpress")]
+        [TestCase("Server=myServerName,myPortNumber;Database=myDataBase;User Id=myUsername;Password=myPassword;", "myDataBase", "myUsername", "myServerName,myPortNumber")]
+        [TestCase(@"Server=myServerName\myInstanceName;Database=myDataBase;User Id=myUsername;Password=myPassword;", "myDataBase", "myUsername", @"myServerName\myInstanceName")]
+        [TestCase(@"Server=.\SQLExpress;AttachDbFilename=|DataDirectory|mydbfile.mdf;Database=dbname;Trusted_Connection=Yes;", "dbname", null, @".\SQLExpress")]
         public void ExtractProperTagsFromConnectionString(
             string connectionString,
             string expectedDbName,
@@ -36,12 +36,12 @@ namespace Datadog.Trace.Tests.ExtensionMethods
 
             span.AddTagsFromDbCommand(CreateDbCommand(connectionString));
 
-            Assert.Equal(expectedDbName, span.GetTag(Tags.DbName));
-            Assert.Equal(expectedUserId, span.GetTag(Tags.DbUser));
-            Assert.Equal(expectedHost, span.GetTag(Tags.OutHost));
+            Assert.AreEqual(expectedDbName, span.GetTag(Tags.DbName));
+            Assert.AreEqual(expectedUserId, span.GetTag(Tags.DbUser));
+            Assert.AreEqual(expectedHost, span.GetTag(Tags.OutHost));
         }
 
-        [Fact]
+        [Test]
         public void SetSpanTypeToSql()
         {
             const string connectionString = "Server=myServerName;Database=myDataBase;User Id=myUsername;Password=myPassword;";
@@ -52,11 +52,11 @@ namespace Datadog.Trace.Tests.ExtensionMethods
 
             span.AddTagsFromDbCommand(CreateDbCommand(connectionString, commandText));
 
-            Assert.Equal(SpanTypes.Sql, span.Type);
-            Assert.Equal(commandText, span.ResourceName);
+            Assert.AreEqual(SpanTypes.Sql, span.Type);
+            Assert.AreEqual(commandText, span.ResourceName);
         }
 
-        [Fact]
+        [Test]
         public void ShouldDisableCacheIfTooManyConnectionStrings()
         {
             const string connectionStringTemplate = "Server=myServerName{0};Database=myDataBase;User Id=myUsername;Password=myPassword;";
@@ -72,7 +72,7 @@ namespace Datadog.Trace.Tests.ExtensionMethods
                 span.AddTagsFromDbCommand(CreateDbCommand(connectionString));
 
                 Assert.NotNull(DbCommandCache.Cache);
-                Assert.Equal("myServerName" + i, span.GetTag(Tags.OutHost));
+                Assert.AreEqual("myServerName" + i, span.GetTag(Tags.OutHost));
             }
 
             // Test the logic with cache disabled
@@ -83,7 +83,7 @@ namespace Datadog.Trace.Tests.ExtensionMethods
                 span.AddTagsFromDbCommand(CreateDbCommand(connectionString));
 
                 Assert.Null(DbCommandCache.Cache);
-                Assert.Equal("myServerName" + "NoCache" + i, span.GetTag(Tags.OutHost));
+                Assert.AreEqual("myServerName" + "NoCache" + i, span.GetTag(Tags.OutHost));
             }
         }
 

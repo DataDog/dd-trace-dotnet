@@ -4,12 +4,12 @@
 // </copyright>
 
 #if NETFRAMEWORK
+using System;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.IIS
 {
@@ -17,16 +17,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.IIS
     {
         private const string Url = "http://localhost:8080";
 
-        public LoaderOptimizationStartup(ITestOutputHelper output)
-        {
-            Output = output;
-        }
-
-        private ITestOutputHelper Output { get; }
-
-        [Fact]
-        [Trait("RunOnWindows", "True")]
-        [Trait("IIS", "True")]
+        [Test]
+        [Property("RunOnWindows", "True")]
+        [Property("IIS", "True")]
         public async Task ApplicationDoesNotReturnErrors()
         {
             var intervalMilliseconds = 500;
@@ -49,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.IIS
 
                 if (serverReady)
                 {
-                    Output.WriteLine("The server is ready.");
+                    Console.WriteLine("The server is ready.");
                     break;
                 }
 
@@ -58,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.IIS
 
             // Server is ready to receive requests
             var responseMessage = await client.GetAsync(Url);
-            Assert.Equal(HttpStatusCode.OK, responseMessage.StatusCode);
+            Assert.AreEqual(HttpStatusCode.OK, responseMessage.StatusCode);
         }
     }
 }

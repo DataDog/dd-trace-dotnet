@@ -6,7 +6,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests
 {
@@ -41,46 +41,44 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             return GetCallSiteMethodsWithInterceptionAttribute().Select(i => new[] { i[0] }).Distinct();
         }
 
-        [Theory]
-        [MemberData(nameof(GetCallSiteMethods))]
+        [TestCaseSource(nameof(GetCallSiteMethods))]
         public void CallSiteMethodHasOpCodeArgument(MethodInfo wrapperMethod)
         {
             // all wrapper methods should have an additional Int32
             // parameter for the original method call's opcode
             var parameters = wrapperMethod.GetParameters();
             var param = parameters[parameters.Length - 3];
-            Assert.Equal(typeof(int), param.ParameterType);
-            Assert.Equal("opCode", param.Name);
+            Assert.AreEqual(typeof(int), param.ParameterType);
+            Assert.AreEqual("opCode", param.Name);
         }
 
-        [Theory]
-        [MemberData(nameof(GetCallSiteMethods))]
+        [TestCaseSource(nameof(GetCallSiteMethods))]
         public void CallSiteMethodHasMdTokenArgument(MethodInfo wrapperMethod)
         {
             // all wrapper methods should have an additional Int32
             // parameter for the original method call's mdToken
             var parameters = wrapperMethod.GetParameters();
             var param = parameters[parameters.Length - 2];
-            Assert.Equal(typeof(int), param.ParameterType);
-            Assert.Equal("mdToken", param.Name);
+            Assert.AreEqual(typeof(int), param.ParameterType);
+            Assert.AreEqual("mdToken", param.Name);
         }
 
-        [Theory]
-        [MemberData(nameof(GetCallSiteMethods))]
+        [TestCaseSource(nameof(GetCallSiteMethods))]
         public void CallSiteMethodHasModuleVersionPtrArgument(MethodInfo wrapperMethod)
         {
             // all wrapper methods should have an additional Int64
             // parameter for the address of calling module's moduleVersionId
             var parameters = wrapperMethod.GetParameters();
             var param = parameters[parameters.Length - 1];
-            Assert.Equal(typeof(long), param.ParameterType);
-            Assert.Equal("moduleVersionPtr", param.Name);
+            Assert.AreEqual(typeof(long), param.ParameterType);
+            Assert.AreEqual("moduleVersionPtr", param.Name);
         }
 
-        [Theory]
-        [MemberData(nameof(GetCallSiteMethodsWithInterceptionAttribute))]
-        internal void AllMethodsHaveProperlyFormedTargetSignatureTypes(MethodInfo wrapperMethod, InterceptMethodAttribute attribute)
+        [TestCaseSource(nameof(GetCallSiteMethodsWithInterceptionAttribute))]
+        public void AllMethodsHaveProperlyFormedTargetSignatureTypes(MethodInfo wrapperMethod, object objAttribute)
         {
+            var attribute = (InterceptMethodAttribute)objAttribute;
+
             Assert.True(
                 attribute.TargetSignatureTypes != null,
                 $"{wrapperMethod.DeclaringType.Name}.{wrapperMethod.Name}: {nameof(attribute.TargetSignatureTypes)} definition missing.");

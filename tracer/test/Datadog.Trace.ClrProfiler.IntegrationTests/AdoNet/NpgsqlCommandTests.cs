@@ -8,15 +8,14 @@ using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     public class NpgsqlCommandTests : TestHelper
     {
-        public NpgsqlCommandTests(ITestOutputHelper output)
-            : base("Npgsql", output)
+        public NpgsqlCommandTests()
+            : base("Npgsql")
         {
             SetServiceVersion("1.0.0");
         }
@@ -30,9 +29,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             }
         }
 
-        [Theory]
-        [MemberData(nameof(GetNpgsql))]
-        [Trait("Category", "EndToEnd")]
+        [TestCaseSource(nameof(GetNpgsql))]
+        [Property("Category", "EndToEnd")]
         public void SubmitsTracesWithNetStandard(string packageVersion, bool enableCallTarget)
         {
             SetCallTargetSettings(enableCallTarget);
@@ -85,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
                 if (enableCallTarget)
                 {
-                    Assert.Equal(expectedSpanCount, actualSpanCount);
+                    Assert.AreEqual(expectedSpanCount, actualSpanCount);
                 }
                 else
                 {
@@ -94,19 +92,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
                 foreach (var span in spans)
                 {
-                    Assert.Equal(expectedOperationName, span.Name);
-                    Assert.Equal(expectedServiceName, span.Service);
-                    Assert.Equal(SpanTypes.Sql, span.Type);
-                    Assert.Equal(dbType, span.Tags[Tags.DbType]);
+                    Assert.AreEqual(expectedOperationName, span.Name);
+                    Assert.AreEqual(expectedServiceName, span.Service);
+                    Assert.AreEqual(SpanTypes.Sql, span.Type);
+                    Assert.AreEqual(dbType, span.Tags[Tags.DbType]);
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
                 }
             }
         }
 
-        [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        [Trait("Category", "EndToEnd")]
+        [TestCase(false)]
+        [TestCase(true)]
+        [Property("Category", "EndToEnd")]
         public void SpansDisabledByAdoNetExcludedTypes(bool enableCallTarget)
         {
             SetCallTargetSettings(enableCallTarget);
@@ -125,8 +122,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             using (RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
             {
                 var spans = agent.WaitForSpans(totalSpanCount, returnAllOperations: true);
-                Assert.NotEmpty(spans);
-                Assert.Empty(spans.Where(s => s.Name.Equals(expectedOperationName)));
+                CollectionAssert.IsNotEmpty(spans);
+                CollectionAssert.IsEmpty(spans.Where(s => s.Name.Equals(expectedOperationName)));
             }
         }
     }

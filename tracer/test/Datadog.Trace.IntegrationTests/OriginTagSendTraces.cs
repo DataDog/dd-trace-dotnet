@@ -3,22 +3,22 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Collections.Generic;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using MsgPack;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.IntegrationTests
 {
     public class OriginTagSendTraces
     {
-        private readonly Tracer _tracer;
-        private readonly TestApi _testApi;
+        private Tracer _tracer;
+        private TestApi _testApi;
 
-        public OriginTagSendTraces()
+        [SetUp]
+        public void Before()
         {
             var settings = new TracerSettings();
             _testApi = new TestApi();
@@ -26,7 +26,7 @@ namespace Datadog.Trace.IntegrationTests
             _tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
         }
 
-        [Fact]
+        [Test]
         public void NormalSpan()
         {
             var scope = _tracer.StartActive("Operation");
@@ -38,7 +38,7 @@ namespace Datadog.Trace.IntegrationTests
             Assert.False(metaDictio.ContainsKey(Tags.Origin));
         }
 
-        [Fact]
+        [Test]
         public void NormalOriginSpan()
         {
             const string originValue = "ciapp-test";
@@ -52,10 +52,10 @@ namespace Datadog.Trace.IntegrationTests
             var spanDictio = objects[0].FirstDictionary();
             var metaDictio = spanDictio["meta"].AsDictionary();
             Assert.True(metaDictio.ContainsKey(Tags.Origin));
-            Assert.Equal(originValue, metaDictio[Tags.Origin]);
+            Assert.AreEqual(originValue, metaDictio[Tags.Origin]);
         }
 
-        [Fact]
+        [Test]
         public void OriginInMultipleSpans()
         {
             const string originValue = "ciapp-test";
@@ -81,11 +81,11 @@ namespace Datadog.Trace.IntegrationTests
                 var spanDictio = objValue.FirstDictionary();
                 var metaDictio = spanDictio["meta"].AsDictionary();
                 Assert.True(metaDictio.ContainsKey(Tags.Origin));
-                Assert.Equal(originValue, metaDictio[Tags.Origin]);
+                Assert.AreEqual(originValue, metaDictio[Tags.Origin]);
             }
         }
 
-        [Fact]
+        [Test]
         public void MultipleOriginsSpans()
         {
             const string originValue = "ciapp-test_";

@@ -8,8 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 #if !NET452
 
@@ -17,8 +16,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class Elasticsearch7Tests : TestHelper
     {
-        public Elasticsearch7Tests(ITestOutputHelper output)
-            : base("Elasticsearch.V7", output)
+        public Elasticsearch7Tests()
+            : base("Elasticsearch.V7")
         {
             SetServiceVersion("1.0.0");
             SetCallTargetSettings(true);
@@ -26,9 +25,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> GetElasticsearch() => PackageVersions.ElasticSearch7;
 
-        [Theory]
-        [MemberData(nameof(GetElasticsearch))]
-        [Trait("Category", "EndToEnd")]
+        [TestCaseSource(nameof(GetElasticsearch))]
+        [Property("Category", "EndToEnd")]
         public void SubmitsTraces(string packageVersion)
         {
             int agentPort = TcpPortProvider.GetOpenPort();
@@ -144,9 +142,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    Assert.Equal("elasticsearch.query", span.Name);
-                    Assert.Equal("Samples.Elasticsearch.V7-elasticsearch", span.Service);
-                    Assert.Equal("elasticsearch", span.Type);
+                    Assert.AreEqual("elasticsearch.query", span.Name);
+                    Assert.AreEqual("Samples.Elasticsearch.V7-elasticsearch", span.Service);
+                    Assert.AreEqual("elasticsearch", span.Type);
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
                 }
 

@@ -9,15 +9,14 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Agent.Transports;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests
 {
     public class HttpClientRequestTests
     {
-        [Fact]
+        [Test]
         public async Task SetHeaders()
         {
             var handler = new CustomHandler();
@@ -32,13 +31,13 @@ namespace Datadog.Trace.Tests
             var message = handler.Message;
 
             Assert.NotNull(message);
-            Assert.Equal(".NET", message.Headers.GetValues(AgentHttpHeaderNames.Language).First());
-            Assert.Equal(TracerConstants.AssemblyVersion, message.Headers.GetValues(AgentHttpHeaderNames.TracerVersion).First());
-            Assert.Equal("false", message.Headers.GetValues(HttpHeaderNames.TracingEnabled).First());
-            Assert.Equal("World", message.Headers.GetValues("Hello").First());
+            Assert.AreEqual(".NET", message.Headers.GetValues(AgentHttpHeaderNames.Language).First());
+            Assert.AreEqual(TracerConstants.AssemblyVersion, message.Headers.GetValues(AgentHttpHeaderNames.TracerVersion).First());
+            Assert.AreEqual("false", message.Headers.GetValues(HttpHeaderNames.TracingEnabled).First());
+            Assert.AreEqual("World", message.Headers.GetValues("Hello").First());
         }
 
-        [Fact]
+        [Test]
         public async Task SerializeSpans()
         {
             var handler = new CustomHandler();

@@ -10,16 +10,15 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.TestHelpers;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    [CollectionDefinition(nameof(HttpMessageHandlerTests), DisableParallelization = true)]
+    [NonParallelizable]
     public class HttpMessageHandlerTests : TestHelper
     {
-        public HttpMessageHandlerTests(ITestOutputHelper output)
-            : base("HttpMessageHandler", output)
+        public HttpMessageHandlerTests()
+            : base("HttpMessageHandler")
         {
             SetEnvironmentVariable("DD_HTTP_CLIENT_ERROR_STATUSES", "400-499, 502,-343,11-53, 500-500-200");
             SetServiceVersion("1.0.0");
@@ -40,10 +39,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             from socketHandlerEnabled in new[] { true, false }
             select new object[] { enableCallTarget, instrumentationOptions, socketHandlerEnabled };
 
-        [Theory]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        [MemberData(nameof(IntegrationConfig))]
+        [Property("Category", "EndToEnd")]
+        [Property("RunOnWindows", "True")]
+        [TestCaseSource(nameof(IntegrationConfig))]
         public void HttpClient_SubmitsTraces(bool enableCallTarget, InstrumentationOptions instrumentation, bool enableSocketsHandler)
         {
             ConfigureInstrumentation(enableCallTarget, instrumentation, enableSocketsHandler);
@@ -59,26 +57,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             int agentPort = TcpPortProvider.GetOpenPort();
             int httpPort = TcpPortProvider.GetOpenPort();
 
-            Output.WriteLine($"Assigning port {agentPort} for the agentPort.");
-            Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
+            Console.WriteLine($"Assigning port {agentPort} for the agentPort.");
+            Console.WriteLine($"Assigning port {httpPort} for the httpPort.");
 
             using (var agent = new MockTracerAgent(agentPort))
             using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"Port={httpPort}"))
             {
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
-                Assert.Equal(expectedSpanCount, spans.Count);
+                Assert.AreEqual(expectedSpanCount, spans.Count);
 
                 foreach (var span in spans)
                 {
-                    Assert.Equal(expectedOperationName, span.Name);
-                    Assert.Equal(expectedServiceName, span.Service);
-                    Assert.Equal(SpanTypes.Http, span.Type);
-                    Assert.Equal("HttpMessageHandler", span.Tags[Tags.InstrumentationName]);
+                    Assert.AreEqual(expectedOperationName, span.Name);
+                    Assert.AreEqual(expectedServiceName, span.Service);
+                    Assert.AreEqual(SpanTypes.Http, span.Type);
+                    Assert.AreEqual("HttpMessageHandler", span.Tags[Tags.InstrumentationName]);
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
 
                     if (span.Tags[Tags.HttpStatusCode] == "502")
                     {
-                        Assert.Equal(1, span.Error);
+                        Assert.AreEqual(1, span.Error);
                     }
                 }
 
@@ -86,15 +84,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
                 var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
 
-                Assert.Equal(firstSpan.TraceId.ToString(CultureInfo.InvariantCulture), traceId);
-                Assert.Equal(firstSpan.SpanId.ToString(CultureInfo.InvariantCulture), parentSpanId);
+                Assert.AreEqual(firstSpan.TraceId.ToString(CultureInfo.InvariantCulture), traceId);
+                Assert.AreEqual(firstSpan.SpanId.ToString(CultureInfo.InvariantCulture), parentSpanId);
             }
         }
 
-        [Theory]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        [MemberData(nameof(IntegrationConfig))]
+        [Property("Category", "EndToEnd")]
+        [Property("RunOnWindows", "True")]
+        [TestCaseSource(nameof(IntegrationConfig))]
         public void TracingDisabled_DoesNotSubmitsTraces(bool enableCallTarget, InstrumentationOptions instrumentation, bool enableSocketsHandler)
         {
             ConfigureInstrumentation(enableCallTarget, instrumentation, enableSocketsHandler);
@@ -108,7 +105,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"TracingDisabled Port={httpPort}"))
             {
                 var spans = agent.WaitForSpans(1, 2000, operationName: expectedOperationName);
-                Assert.Equal(0, spans.Count);
+                Assert.AreEqual(0, spans.Count);
 
                 var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
                 var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
@@ -116,7 +113,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 Assert.Null(traceId);
                 Assert.Null(parentSpanId);
-                Assert.Equal("false", tracingEnabled);
+                Assert.AreEqual("false", tracingEnabled);
             }
         }
 
@@ -195,13 +192,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        public class InstrumentationOptions : IXunitSerializable
+        public class InstrumentationOptions
         {
-            // ReSharper disable once UnusedMember.Global
-            public InstrumentationOptions()
-            {
-            }
-
             internal InstrumentationOptions(
                 bool? instrumentSocketHandler,
                 bool? instrumentWinHttpOrCurlHandler)
@@ -213,18 +205,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             internal bool? InstrumentSocketHandler { get; private set; }
 
             internal bool? InstrumentWinHttpOrCurlHandler { get; private set; }
-
-            public void Deserialize(IXunitSerializationInfo info)
-            {
-                InstrumentSocketHandler = info.GetValue<bool?>(nameof(InstrumentSocketHandler));
-                InstrumentWinHttpOrCurlHandler = info.GetValue<bool?>(nameof(InstrumentWinHttpOrCurlHandler));
-            }
-
-            public void Serialize(IXunitSerializationInfo info)
-            {
-                info.AddValue(nameof(InstrumentSocketHandler), InstrumentSocketHandler);
-                info.AddValue(nameof(InstrumentWinHttpOrCurlHandler), InstrumentWinHttpOrCurlHandler);
-            }
 
             public override string ToString() =>
                 $"InstrumentSocketHandler={InstrumentSocketHandler},InstrumentWinHttpOrCurlHandler={InstrumentWinHttpOrCurlHandler}";

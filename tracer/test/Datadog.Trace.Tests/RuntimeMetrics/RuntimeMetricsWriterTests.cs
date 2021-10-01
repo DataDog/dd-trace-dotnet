@@ -4,20 +4,18 @@
 // </copyright>
 
 using System;
-using System.Linq;
 using System.Threading;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Vendors.StatsdClient;
 using Moq;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests.RuntimeMetrics
 {
-    [CollectionDefinition(nameof(RuntimeMetricsWriterTests), DisableParallelization = true)]
-    [Collection(nameof(RuntimeMetricsWriterTests))]
+    [NonParallelizable]
     public class RuntimeMetricsWriterTests
     {
-        [Fact]
+        [Test]
         public void PushEvents()
         {
             var listener = new Mock<IRuntimeMetricsListener>();
@@ -33,7 +31,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
             }
         }
 
-        [Fact]
+        [Test]
         public void ShouldSwallowFactoryExceptions()
         {
             Func<IDogStatsd, TimeSpan, IRuntimeMetricsListener> factory = (_, d) => throw new InvalidOperationException("This exception should be caught");
@@ -42,7 +40,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
             writer.Dispose();
         }
 
-        [Fact]
+        [Test]
         public void ShouldCaptureFirstChanceExceptions()
         {
             var statsd = new Mock<IDogStatsd>();
@@ -102,7 +100,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
             }
         }
 
-        [Fact]
+        [Test]
         public void CleanupResources()
         {
             var statsd = new Mock<IDogStatsd>();
@@ -125,7 +123,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
 
             writer.ExceptionCounts.TryGetValue(nameof(CustomException1), out var count);
 
-            Assert.Equal(0, count);
+            Assert.AreEqual(0, count);
         }
 
         private class CustomException1 : Exception

@@ -9,24 +9,17 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    // Not actually an IIS test but it shouldn't run concurrently with them
-    [Collection("IisTests")]
-    public class MultiDomainHostTests : TestHelper, IClassFixture<GacFixture>
+    [NonParallelizable]
+    public class MultiDomainHostTests : GacTestsBase
     {
-        private readonly GacFixture _gacFixture;
-
-        public MultiDomainHostTests(GacFixture gacFixture, ITestOutputHelper output)
-            : base("MultiDomainHost.Runner", output)
+        public MultiDomainHostTests()
+            : base("MultiDomainHost.Runner")
         {
-            _gacFixture = gacFixture;
             SetServiceVersion("1.0.0");
         }
 
@@ -47,11 +40,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
-        [Theory]
-        [MemberData(nameof(TargetFrameworks))]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        [Trait("LoadFromGAC", "False")]
+        [TestCaseSource(nameof(TargetFrameworks))]
+        [Property("Category", "EndToEnd")]
+        [Property("RunOnWindows", "True")]
+        [Property("LoadFromGAC", "False")]
         public void WorksOutsideTheGAC(string targetFramework)
         {
             Assert.False(typeof(Instrumentation).Assembly.GlobalAssemblyCache, "Datadog.Trace was loaded from the GAC. Ensure that the assembly and its dependencies are not installed in the GAC when running this test.");
@@ -70,14 +62,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             RunSampleAndAssertAgainstExpectations(targetFramework, expectedMap);
         }
 
-        [Theory]
-        [MemberData(nameof(TargetFrameworks))]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        [Trait("LoadFromGAC", "True")]
+        [TestCaseSource(nameof(TargetFrameworks))]
+        [Property("Category", "EndToEnd")]
+        [Property("RunOnWindows", "True")]
+        [Property("LoadFromGAC", "True")]
         public void WorksInsideTheGAC(string targetFramework)
         {
-            _gacFixture.AddAssembliesToGac();
+            AddAssembliesToGac();
 
             try
             {
@@ -96,14 +87,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
             finally
             {
-                _gacFixture.RemoveAssembliesFromGac();
+                RemoveAssembliesFromGac();
             }
         }
 
-        [Theory]
-        [MemberData(nameof(TargetFrameworks))]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
+        [TestCaseSource(nameof(TargetFrameworks))]
+        [Property("Category", "EndToEnd")]
+        [Property("RunOnWindows", "True")]
         public void DoesNotCrashInBadConfiguration(string targetFramework)
         {
             // Set bad configuration
@@ -112,8 +102,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             int agentPort = TcpPortProvider.GetOpenPort();
             int httpPort = TcpPortProvider.GetOpenPort();
 
-            Output.WriteLine($"Assigning port {agentPort} for the agentPort.");
-            Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
+            Console.WriteLine($"Assigning port {agentPort} for the agentPort.");
+            Console.WriteLine($"Assigning port {httpPort} for the httpPort.");
 
             using (var agent = new MockTracerAgent(agentPort))
             using (RunSampleAndWaitForExit(agent.Port, framework: targetFramework))
@@ -129,7 +119,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var actualMap = new Dictionary<string, int>();
 
             int agentPort = TcpPortProvider.GetOpenPort();
-            Output.WriteLine($"Assigning port {agentPort} for the agentPort.");
+            Console.WriteLine($"Assigning port {agentPort} for the agentPort.");
 
             using (var agent = new MockTracerAgent(agentPort))
             using (RunSampleAndWaitForExit(agent.Port, framework: targetFramework))
@@ -139,8 +129,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    Assert.Equal(expectedOperationName, span.Name);
-                    Assert.Equal(SpanTypes.Http, span.Type);
+                    Assert.AreEqual(expectedOperationName, span.Name);
+                    Assert.AreEqual(SpanTypes.Http, span.Type);
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
 
                     // Register the service to our service<->span map
@@ -153,7 +143,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     actualMap[span.Service] = newCount;
                 }
 
-                Assert.Equal(expectedMap, actualMap);
+                Assert.AreEqual(expectedMap, actualMap);
             }
         }
     }

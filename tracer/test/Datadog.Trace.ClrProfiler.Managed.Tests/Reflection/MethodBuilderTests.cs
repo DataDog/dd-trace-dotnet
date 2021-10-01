@@ -6,7 +6,7 @@
 using System;
 using System.Reflection;
 using Datadog.Trace.ClrProfiler.Emit;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests
 {
@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         private readonly Guid _moduleVersionId = Assembly.GetExecutingAssembly().ManifestModule.ModuleVersionId;
         private readonly Type _testType = typeof(ObscenelyAnnoyingClass);
 
-        [Fact]
+        [Test]
         public void AmbiguousParameters_ClassASystemObjectClassA_CallsExpectedMethod()
         {
             var instance = new ObscenelyAnnoyingClass();
@@ -28,10 +28,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var expected = MethodReference.Get(() => instance.Method(p1, p2, p3));
             var methodResult = Build<Action<object, object, object, object>>(expected.Name).WithParameters(p1, p2, p3).Build();
             methodResult(instance, p1, p2, p3);
-            Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
+            Assert.AreEqual(expected: expected.ToString(), instance.LastCall.MethodString);
         }
 
-        [Fact]
+        [Test]
         public void AmbiguousParameters_ClassAClassAClassA_CallsExpectedMethod()
         {
             var instance = new ObscenelyAnnoyingClass();
@@ -41,10 +41,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var expected = MethodReference.Get(() => instance.Method(p1, p2, p3));
             var methodResult = Build<Action<object, object, object, object>>(expected.Name).WithParameters(p1, p2, p3).Build();
             methodResult(instance, p1, p2, p3);
-            Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
+            Assert.AreEqual(expected: expected.ToString(), instance.LastCall.MethodString);
         }
 
-        [Fact]
+        [Test]
         public void AmbiguousParameters_ClassAClassBClassB_CallsExpectedMethod()
         {
             var instance = new ObscenelyAnnoyingClass();
@@ -54,10 +54,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var expected = MethodReference.Get(() => instance.Method(p1, p2, p3));
             var methodResult = Build<Action<object, object, object, object>>(expected.Name).WithParameters(p1, p2, p3).Build();
             methodResult(instance, p1, p2, p3);
-            Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
+            Assert.AreEqual(expected: expected.ToString(), instance.LastCall.MethodString);
         }
 
-        [Fact]
+        [Test]
         public void AmbiguousParameters_ClassBClassCClassC_CallsExpectedMethod()
         {
             var instance = new ObscenelyAnnoyingClass();
@@ -67,10 +67,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var expected = MethodReference.Get(() => instance.Method(p1, p2, p3));
             var methodResult = Build<Action<object, object, object, object>>(expected.Name).WithParameters(p1, p2, p3).Build();
             methodResult(instance, p1, p2, p3);
-            Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
+            Assert.AreEqual(expected: expected.ToString(), instance.LastCall.MethodString);
         }
 
-        [Fact]
+        [Test]
         public void AmbiguousParameters_ClassCClassCClassC_CallsExpectedMethod_WithNamespaceNameFilter()
         {
             var instance = new ObscenelyAnnoyingClass();
@@ -90,10 +90,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                 .Build();
 
             methodResult(instance, p1, p2, p3);
-            Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
+            Assert.AreEqual(expected: expected.ToString(), instance.LastCall.MethodString);
         }
 
-        [Fact]
+        [Test]
         public void AmbiguousParameters_ClassCClassBClassA_CallsExpectedMethod_WithNamespaceNameFilter()
         {
             var instance = new ObscenelyAnnoyingClass();
@@ -113,20 +113,20 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                 .Build();
 
             methodResult(instance, p1, p2, p3);
-            Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
+            Assert.AreEqual(expected: expected.ToString(), instance.LastCall.MethodString);
         }
 
-        [Fact]
+        [Test]
         public void NoParameters_ProperlyCalled()
         {
             var instance = new ObscenelyAnnoyingClass();
             var expected = MethodReference.Get(() => instance.Method());
             var methodResult = Build<Action<object>>(expected.Name).Build();
             methodResult(instance);
-            Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
+            Assert.AreEqual(expected: expected.ToString(), instance.LastCall.MethodString);
         }
 
-        [Fact]
+        [Test]
         public void IntParameter_ProperlyCalled()
         {
             var instance = new ObscenelyAnnoyingClass();
@@ -134,10 +134,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var expected = MethodReference.Get(() => instance.Method(parameter));
             var methodResult = Build<Action<object, int>>(expected.Name).WithParameters(parameter).Build();
             methodResult(instance, parameter);
-            Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
+            Assert.AreEqual(expected: expected.ToString(), instance.LastCall.MethodString);
         }
 
-        [Fact]
+        [Test]
         public void LongParameter_ProperlyCalled()
         {
             var instance = new ObscenelyAnnoyingClass();
@@ -145,10 +145,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var expected = MethodReference.Get(() => instance.Method(parameter));
             var methodResult = Build<Action<object, long>>(expected.Name).WithParameters(parameter).Build();
             methodResult(instance, parameter);
-            Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
+            Assert.AreEqual(expected: expected.ToString(), instance.LastCall.MethodString);
         }
 
-        [Fact]
+        [Test]
         public void ShortParameter_ProperlyCalled()
         {
             var instance = new ObscenelyAnnoyingClass();
@@ -156,10 +156,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var expected = MethodReference.Get(() => instance.Method(parameter));
             var methodResult = Build<Action<object, short>>(expected.Name).WithParameters(parameter).Build();
             methodResult(instance, parameter);
-            Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
+            Assert.AreEqual(expected: expected.ToString(), instance.LastCall.MethodString);
         }
 
-        [Fact]
+        [Test]
         public void ObjectParameter_ProperlyCalled()
         {
             var instance = new ObscenelyAnnoyingClass();
@@ -167,10 +167,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var expected = MethodReference.Get(() => instance.Method(parameter));
             var methodResult = Build<Action<object, object>>(expected.Name).WithParameters(parameter).Build();
             methodResult(instance, parameter);
-            Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
+            Assert.AreEqual(expected: expected.ToString(), instance.LastCall.MethodString);
         }
 
-        [Fact]
+        [Test]
         public void StringParameter_ProperlyCalled()
         {
             var instance = new ObscenelyAnnoyingClass();
@@ -178,10 +178,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var expected = MethodReference.Get(() => instance.Method(parameter));
             var methodResult = Build<Action<object, string>>(expected.Name).WithParameters(parameter).Build();
             methodResult(instance, parameter);
-            Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
+            Assert.AreEqual(expected: expected.ToString(), instance.LastCall.MethodString);
         }
 
-        [Fact]
+        [Test]
         public void StringParameterAsObject_ProperlyCalls_ObjectMethod_WithNamespaceNameFilter()
         {
             var instance = new ObscenelyAnnoyingClass();
@@ -193,10 +193,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                 .WithNamespaceAndNameFilters(ClrNames.Void, ClrNames.Object)
                 .Build();
             methodResult(instance, parameter);
-            Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
+            Assert.AreEqual(expected: expected.ToString(), instance.LastCall.MethodString);
         }
 
-        [Fact]
+        [Test]
         public void DeclaringTypeGenericParameter_ProperlyCalls_ClosedGenericMethod()
         {
             var instance = new ObscenelyAnnoyingGenericClass<ClassA>();
@@ -204,10 +204,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var expected = MethodReference.Get(() => instance.Method(parameter));
             var methodResult = Build<Action<object, object>>(expected.Name, overrideType: instance.GetType()).WithParameters(parameter).Build();
             methodResult(instance, parameter);
-            Assert.Equal(expected: expected.MetadataToken, instance.LastCall.MetadataToken);
+            Assert.AreEqual(expected: expected.MetadataToken, instance.LastCall.MetadataToken);
         }
 
-        [Fact]
+        [Test]
         public void DeclaringTypeGenericParameter_WithOpenGenericMethod_ProperlyCalls_OpenGenericMethod()
         {
             var instance = new ObscenelyAnnoyingGenericClass<ClassA>();
@@ -219,10 +219,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                    .WithMethodGenerics(typeof(int))
                    .Build();
             methodResult(instance, parameter);
-            Assert.Equal(expected: expected.MetadataToken, instance.LastCall.MetadataToken);
+            Assert.AreEqual(expected: expected.MetadataToken, instance.LastCall.MetadataToken);
         }
 
-        [Fact]
+        [Test]
         public void DeclaringTypeGenericTypeParam_ThenMethodGenericParam_ProperlyCalls_Method()
         {
             var instance = new ObscenelyAnnoyingGenericClass<ClassA>();
@@ -235,10 +235,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                    .WithMethodGenerics(typeof(int))
                    .Build();
             methodResult(instance, parameter1, parameter2);
-            Assert.Equal(expected: expected.MetadataToken, instance.LastCall.MetadataToken);
+            Assert.AreEqual(expected: expected.MetadataToken, instance.LastCall.MetadataToken);
         }
 
-        [Fact]
+        [Test]
         public void WrongMetadataToken_NonSpecificDelegateSignature_GetsCorrectMethodAnyways()
         {
             var instance = new ObscenelyAnnoyingClass();
@@ -254,10 +254,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                               .Build();
 
             methodResult(instance, parameter);
-            Assert.Equal(expected: expected.ToString(), instance.LastCall.MethodString);
+            Assert.AreEqual(expected: expected.ToString(), instance.LastCall.MethodString);
         }
 
-        [Fact]
+        [Test]
         public void TargetReturnsValueType_DelegateReturnsSameValueType_IsOk()
         {
             var instance = new ObscenelyAnnoyingClass();
@@ -271,10 +271,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                                 .Build();
 
             var actual = methodCall(instance, arg);
-            Assert.Equal(arg, actual);
+            Assert.AreEqual(arg, actual);
         }
 
-        [Fact]
+        [Test]
         public void TargetReturnsValueType_DelegateReturnsObject_IsOk()
         {
             var instance = new ObscenelyAnnoyingClass();
@@ -288,10 +288,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                                 .Build();
 
             var actual = methodCall(instance, arg);
-            Assert.Equal(arg, actual);
+            Assert.AreEqual(arg, actual);
         }
 
-        [Fact]
+        [Test]
         public void TargetReturnsValueType_DelegateReturnsDifferentValueType_ThrowsException()
         {
             var instance = new ObscenelyAnnoyingClass();
@@ -300,7 +300,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var methodToInvoke = MethodReference.Get(() => instance.ReturnInputInt(arg));
 
             // Throws
-            Assert.ThrowsAny<Exception>(() =>
+            Assert.Throws<Exception>(() =>
                 MethodBuilder<Func<object, int, double>>
                                 .Start(_moduleVersionId, methodToInvoke.MetadataToken, (int)OpCodeValue.Callvirt, "ReturnInputInt")
                                 .WithConcreteType(typeof(ObscenelyAnnoyingClass))
@@ -308,7 +308,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                                 .Build());
         }
 
-        [Fact]
+        [Test]
         public void TargetReturnsObject_DelegateReturnsObject_IsOk()
         {
             var instance = new ObscenelyAnnoyingClass();
@@ -322,10 +322,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                                 .Build();
 
             var actual = methodCall(instance, arg);
-            Assert.Equal(arg, actual);
+            Assert.AreEqual(arg, actual);
         }
 
-        [Fact]
+        [Test]
         public void TargetReturnsReferenceType_DelegateReturnsObject_IsOk()
         {
             var instance = new ObscenelyAnnoyingClass();
@@ -339,10 +339,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                                 .Build();
 
             var actual = methodCall(instance, arg);
-            Assert.Equal(arg, actual);
+            Assert.AreEqual(arg, actual);
         }
 
-        [Fact]
+        [Test]
         public void TargetReturnsReferenceType_DelegateReturnsDifferentReferenceType_IsOk()
         {
             var instance = new ObscenelyAnnoyingClass();
@@ -356,10 +356,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                                 .Build();
 
             var actual = methodCall(instance, arg);
-            Assert.Equal(arg, actual);
+            Assert.AreEqual(arg, actual);
         }
 
-        [Fact]
+        [Test]
         public void TargetReturnsReferenceType_DelegateReturnsValueType_ThrowsException()
         {
             var instance = new ObscenelyAnnoyingClass();
@@ -368,7 +368,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var methodToInvoke = MethodReference.Get(() => instance.ReturnInputObject(arg));
 
             // Throws
-            Assert.ThrowsAny<Exception>(() =>
+            Assert.Throws<Exception>(() =>
                 MethodBuilder<Func<object, object, int>>
                                 .Start(_moduleVersionId, methodToInvoke.MetadataToken, (int)OpCodeValue.Callvirt, "ReturnInputObject")
                                 .WithConcreteType(typeof(ObscenelyAnnoyingClass))

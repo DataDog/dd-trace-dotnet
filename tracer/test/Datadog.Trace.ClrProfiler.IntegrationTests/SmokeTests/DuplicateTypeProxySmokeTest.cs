@@ -3,20 +3,19 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 {
     public class DuplicateTypeProxySmokeTest : SmokeTestBase
     {
-        public DuplicateTypeProxySmokeTest(ITestOutputHelper output)
-            : base(output, "DuplicateTypeProxy")
+        public DuplicateTypeProxySmokeTest()
+            : base("DuplicateTypeProxy")
         {
         }
 
-        [Fact]
-        [Trait("Category", "Smoke")]
+        [Test]
+        [Property("Category", "Smoke")]
         public void NoExceptions()
         {
             CheckForSmoke(shouldDeserializeTraces: false);

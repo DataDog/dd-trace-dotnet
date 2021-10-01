@@ -8,8 +8,7 @@ using System.Linq;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 {
@@ -113,14 +112,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             AwsSqsSpan.GetDefault("DeleteQueue"),
         };
 
-        public AwsSqsTests(ITestOutputHelper output)
-            : base("AWS.SQS", output)
+        public AwsSqsTests()
+            : base("AWS.SQS")
         {
         }
 
-        [Theory]
-        [MemberData(nameof(PackageVersions.AwsSqs), MemberType = typeof(PackageVersions))]
-        [Trait("Category", "EndToEnd")]
+        [TestCaseSource(nameof(PackageVersions.AwsSqs))]
+        [Property("Category", "EndToEnd")]
         public void SubmitsTraces(string packageVersion)
         {
             SetCallTargetSettings(true);

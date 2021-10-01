@@ -3,13 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests
 {
     public class DistributedTraceTests
     {
-        [Fact]
+        [Test]
         public void ManuallyDistributedTrace_CarriesExpectedValues()
         {
             var tracer = new Tracer();

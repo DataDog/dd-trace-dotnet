@@ -9,8 +9,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests
 {
@@ -30,40 +29,37 @@ namespace Datadog.Trace.Tests
         private static decimal _bucketSizePercentage = 100 / _numberOfBuckets;
         private static ulong _bucketSize = _maxId / (ulong)_numberOfBuckets;
 
-        private readonly ITestOutputHelper _output;
-
-        public SpanStatisticalTests(ITestOutputHelper output)
+        public SpanStatisticalTests()
         {
-            _output = output;
             BlastOff();
         }
 
-        [Fact]
+        [Test]
         public void GeneratedIds_Contain_High_Numbers()
         {
             var rangeBound = _maxId - _bucketSize;
             var keysWithinRange = _generatedIds.Keys.Where(i => i >= rangeBound).ToList();
-            _output.WriteLine($"Found {keysWithinRange.Count()} above {rangeBound}, the top {_bucketSizePercentage}% of values.");
+            Console.WriteLine($"Found {keysWithinRange.Count()} above {rangeBound}, the top {_bucketSizePercentage}% of values.");
             Assert.True(keysWithinRange.Count() > 0);
         }
 
-        [Fact]
+        [Test]
         public void GeneratedIds_Contain_Low_Numbers()
         {
             var rangeBound = _bucketSize;
             var keysWithinRange = _generatedIds.Keys.Where(i => i <= rangeBound).ToList();
-            _output.WriteLine($"Found {keysWithinRange.Count()} below {rangeBound}, the bottom {_bucketSizePercentage}% of values.");
+            Console.WriteLine($"Found {keysWithinRange.Count()} below {rangeBound}, the bottom {_bucketSizePercentage}% of values.");
             Assert.True(keysWithinRange.Count() > 0);
         }
 
-        [Fact]
+        [Test]
         public void GeneratedIds_Contain_Nothing_Above_Expected_Max()
         {
             var keysOutOfRange = _generatedIds.Keys.Any(i => i > _maxId);
             Assert.False(keysOutOfRange, $"We should never generate keys above {_maxId}.");
         }
 
-        [Fact]
+        [Test]
         public void GeneratedIds_Contain_Reasonably_Few_Duplicates()
         {
             var duplicateKeys = _generatedIds.Where(kvp => kvp.Value > 1).ToList();
@@ -76,11 +72,11 @@ namespace Datadog.Trace.Tests
             }
 
             var percentageOfDuplicates = (decimal)duplicateKeyCount / (decimal)_numberOfIdsToGenerate;
-            _output.WriteLine($"Found {duplicateKeyCount} duplicate keys.");
+            Console.WriteLine($"Found {duplicateKeyCount} duplicate keys.");
             Assert.True(percentageOfDuplicates <= acceptablePercentageOfDuplicates);
         }
 
-        [Fact]
+        [Test]
         public void GeneratedIds_Are_Evenly_Distributed()
         {
             var expectedApproximateBucketSize = _numberOfIdsToGenerate / (ulong)_numberOfBuckets;
@@ -91,10 +87,10 @@ namespace Datadog.Trace.Tests
                 buckets.Add(0);
             }
 
-            _output.WriteLine($"Requested {_numberOfIdsToGenerate} keys, received {_generatedIds.Keys.Count()} unique keys.");
-            _output.WriteLine($"Expected approximately {expectedApproximateBucketSize} keys per bucket.");
-            _output.WriteLine($"Receiving approximately {actualApproximateBucketSize} keys per bucket.");
-            _output.WriteLine($"Organizing {_numberOfBuckets} buckets with a range size of {_bucketSize} which is {_bucketSizePercentage}%.");
+            Console.WriteLine($"Requested {_numberOfIdsToGenerate} keys, received {_generatedIds.Keys.Count()} unique keys.");
+            Console.WriteLine($"Expected approximately {expectedApproximateBucketSize} keys per bucket.");
+            Console.WriteLine($"Receiving approximately {actualApproximateBucketSize} keys per bucket.");
+            Console.WriteLine($"Organizing {_numberOfBuckets} buckets with a range size of {_bucketSize} which is {_bucketSizePercentage}%.");
 
             foreach (var key in _generatedIds.Keys)
             {
@@ -129,7 +125,7 @@ namespace Datadog.Trace.Tests
                 var readableIndex = i + 1;
                 var lowerPercent = (readableIndex - 1) * _bucketSizePercentage;
                 var upperPercent = (readableIndex) * _bucketSizePercentage;
-                _output.WriteLine($"Bucket {readableIndex} has {buckets[i]} keys between {lowerPercent}-{upperPercent}%.");
+                Console.WriteLine($"Bucket {readableIndex} has {buckets[i]} keys between {lowerPercent}-{upperPercent}%.");
             }
 
             Assert.True(bucketsWithNoKeys.Count() == 0, "There should be no buckets which have no keys.");
@@ -141,7 +137,7 @@ namespace Datadog.Trace.Tests
             var variance = biggestDiff / actualApproximateBucketSize;
 
             var maximumVariance = 0.05m;
-            _output.WriteLine($"The maximum variance in all buckets is {variance}.");
+            Console.WriteLine($"The maximum variance in all buckets is {variance}.");
             Assert.True(maximumVariance >= variance, $"The variance between buckets should be less than {maximumVariance}, but it is {variance}.");
         }
 
@@ -154,7 +150,7 @@ namespace Datadog.Trace.Tests
                     return;
                 }
 
-                _output.WriteLine($"Starting key generation.");
+                Console.WriteLine($"Starting key generation.");
                 var stopwatch = new Stopwatch();
                 stopwatch.Start();
                 // populate the dictionary for all tests
@@ -167,7 +163,7 @@ namespace Datadog.Trace.Tests
                         updateValueFactory: (key, oldValue) => oldValue++);
                 });
                 stopwatch.Stop();
-                _output.WriteLine($"It took {stopwatch.ElapsedMilliseconds / 1000d} seconds to generate {_numberOfIdsToGenerate} keys.");
+                Console.WriteLine($"It took {stopwatch.ElapsedMilliseconds / 1000d} seconds to generate {_numberOfIdsToGenerate} keys.");
             }
         }
 

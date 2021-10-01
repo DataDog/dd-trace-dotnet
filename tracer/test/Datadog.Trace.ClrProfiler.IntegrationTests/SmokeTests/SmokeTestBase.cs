@@ -6,30 +6,23 @@
 using System;
 using System.Diagnostics;
 using Datadog.Trace.TestHelpers;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 {
     public abstract class SmokeTestBase
     {
         protected SmokeTestBase(
-            ITestOutputHelper output,
             string smokeTestName,
             int maxTestRunSeconds = 60)
         {
-            Output = output;
-
             MaxTestRunMilliseconds = maxTestRunSeconds * 1000;
             EnvironmentHelper = new EnvironmentHelper(
                 smokeTestName,
                 this.GetType(),
-                output,
                 samplesDirectory: "test/test-applications/regression",
                 prependSamplesToAppName: false);
         }
-
-        protected ITestOutputHelper Output { get; }
 
         protected EnvironmentHelper EnvironmentHelper { get; }
 
@@ -49,9 +42,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         protected void CheckForSmoke(bool shouldDeserializeTraces = true)
         {
             var applicationPath = EnvironmentHelper.GetSampleApplicationPath().Replace(@"\\", @"\");
-            Output.WriteLine($"Application path: {applicationPath}");
+            Console.WriteLine($"Application path: {applicationPath}");
             var executable = EnvironmentHelper.GetSampleExecutionSource();
-            Output.WriteLine($"Executable path: {executable}");
+            Console.WriteLine($"Executable path: {executable}");
 
             if (!System.IO.File.Exists(applicationPath))
             {
@@ -63,8 +56,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 
             int agentPort = TcpPortProvider.GetOpenPort();
             int aspNetCorePort = TcpPortProvider.GetOpenPort(); // unused for now
-            Output.WriteLine($"Assigning port {agentPort} for the agentPort.");
-            Output.WriteLine($"Assigning port {aspNetCorePort} for the aspNetCorePort.");
+            Console.WriteLine($"Assigning port {agentPort} for the agentPort.");
+            Console.WriteLine($"Assigning port {aspNetCorePort} for the aspNetCorePort.");
 
             ProcessResult result;
 
@@ -119,9 +112,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
                         }
                         else
                         {
-                            Output.WriteLine("The smoke test is running for too long or was lost.");
-                            Output.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
-                            Output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
+                            Console.WriteLine("The smoke test is running for too long or was lost.");
+                            Console.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
+                            Console.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
 
                             throw new TimeoutException("The smoke test is running for too long or was lost.");
                         }
@@ -129,12 +122,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 
                     if (!string.IsNullOrWhiteSpace(standardOutput))
                     {
-                        Output.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
+                        Console.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
                     }
 
                     if (!string.IsNullOrWhiteSpace(standardError))
                     {
-                        Output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
+                        Console.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
                     }
 
                     int exitCode = process.ExitCode;

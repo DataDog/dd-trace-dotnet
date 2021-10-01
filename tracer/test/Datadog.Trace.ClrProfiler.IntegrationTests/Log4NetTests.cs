@@ -5,8 +5,7 @@
 
 using System;
 using Datadog.Trace.TestHelpers;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
@@ -41,17 +40,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
             };
 
-        public Log4NetTests(ITestOutputHelper output)
-            : base(output, "LogsInjection.Log4Net")
+        public Log4NetTests()
+            : base("LogsInjection.Log4Net")
         {
             SetServiceVersion("1.0.0");
         }
 
-        [Theory]
-        [MemberData(nameof(PackageVersions.log4net), MemberType = typeof(PackageVersions))]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        [Trait("Category", "LinuxUnsupported")]
+        [TestCaseSource(nameof(PackageVersions.log4net))]
+        [Property("Category", "EndToEnd")]
+        [Property("RunOnWindows", "True")]
+        [Property("Category", "LinuxUnsupported")]
         public void InjectsLogsWhenEnabled(string packageVersion)
         {
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
@@ -79,11 +77,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        [Theory]
-        [MemberData(nameof(PackageVersions.log4net), MemberType = typeof(PackageVersions))]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        [Trait("Category", "LinuxUnsupported")]
+        [TestCaseSource(nameof(PackageVersions.log4net))]
+        [Property("Category", "EndToEnd")]
+        [Property("RunOnWindows", "True")]
+        [Property("Category", "LinuxUnsupported")]
         public void DoesNotInjectLogsWhenDisabled(string packageVersion)
         {
             SetEnvironmentVariable("DD_LOGS_INJECTION", "false");

@@ -10,12 +10,11 @@ using System.Text.RegularExpressions;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    [Collection(nameof(KafkaTestsCollection))]
+    [NonParallelizable]
     public class KafkaTests : TestHelper
     {
         private const int ExpectedSuccessProducerWithHandlerSpans = 20;
@@ -33,17 +32,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private const string ErrorProducerResourceName = "Produce Topic INVALID-TOPIC";
 
-        public KafkaTests(ITestOutputHelper output)
-            : base("Kafka", output)
+        public KafkaTests()
+            : base("Kafka")
         {
             SetServiceVersion("1.0.0");
             SetCallTargetSettings(enableCallTarget: true);
         }
 
-        [Theory]
-        [MemberData(nameof(PackageVersions.Kafka), MemberType = typeof(PackageVersions))]
-        [Trait("Category", "EndToEnd")]
-        [Trait("Category", "ArmUnsupported")]
+        [TestCaseSource(nameof(PackageVersions.Kafka))]
+        [Property("Category", "EndToEnd")]
+        [Property("Category", "ArmUnsupported")]
         public void SubmitsTraces(string packageVersion)
         {
             var topic = $"sample-topic-{TestPrefix}-{packageVersion}".Replace('.', '-');
@@ -159,11 +157,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private string GetSuccessfulResourceName(string type, string topic)
         {
             return $"{type} Topic {topic}";
-        }
-
-        [CollectionDefinition(nameof(KafkaTestsCollection), DisableParallelization = true)]
-        public class KafkaTestsCollection
-        {
         }
     }
 }

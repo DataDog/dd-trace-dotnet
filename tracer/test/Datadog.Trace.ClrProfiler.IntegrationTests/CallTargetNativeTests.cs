@@ -7,15 +7,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using Datadog.Trace.TestHelpers;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class CallTargetNativeTests : TestHelper
     {
-        public CallTargetNativeTests(ITestOutputHelper output)
-            : base(new EnvironmentHelper("CallTargetNativeTest", typeof(TestHelper), output, samplesDirectory: Path.Combine("test", "test-applications", "instrumentation"), prependSamplesToAppName: false), output)
+        public CallTargetNativeTests()
+            : base(new EnvironmentHelper("CallTargetNativeTest", typeof(TestHelper), samplesDirectory: Path.Combine("test", "test-applications", "instrumentation"), prependSamplesToAppName: false))
         {
             SetServiceVersion("1.0.0");
         }
@@ -30,8 +29,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        [Theory]
-        [MemberData(nameof(MethodArgumentsData))]
+        [TestCaseSource(nameof(MethodArgumentsData))]
         public void MethodArgumentsInstrumentation(int numberOfArguments, bool fastPath)
         {
             SetCallTargetSettings(enableCallTarget: true);
@@ -65,20 +63,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     // On number of arguments = 0 the throw exception on integrations async continuation runs.
                     // So we have 1 more case with an exception being reported from the integration.
-                    Assert.Equal(43, beginMethodCount);
-                    Assert.Equal(43, endMethodCount);
-                    Assert.Equal(11, exceptionCount);
+                    Assert.AreEqual(43, beginMethodCount);
+                    Assert.AreEqual(43, endMethodCount);
+                    Assert.AreEqual(11, exceptionCount);
                 }
                 else
                 {
-                    Assert.Equal(42, beginMethodCount);
-                    Assert.Equal(42, endMethodCount);
-                    Assert.Equal(10, exceptionCount);
+                    Assert.AreEqual(42, beginMethodCount);
+                    Assert.AreEqual(42, endMethodCount);
+                    Assert.AreEqual(10, exceptionCount);
                 }
 
                 foreach (var typeName in typeNames)
                 {
-                    Assert.Contains(typeName, processResult.StandardOutput);
+                    StringAssert.Contains(typeName, processResult.StandardOutput);
                 }
             }
         }

@@ -11,13 +11,13 @@ using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Vendors.StatsdClient;
 using FluentAssertions;
 using Moq;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests.RuntimeMetrics
 {
     public class PerformanceCountersListenerTests
     {
-        [Fact]
+        [Test]
         public async Task PushEvents()
         {
             var statsd = new Mock<IDogStatsd>();
@@ -52,7 +52,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
             statsd.VerifyNoOtherCalls();
         }
 
-        [Fact]
+        [Test]
         public void AsynchronousInitialization()
         {
             var barrier = new Barrier(2);

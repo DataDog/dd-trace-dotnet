@@ -11,13 +11,13 @@ using System.Threading;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Vendors.StatsdClient;
 using Moq;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests.RuntimeMetrics
 {
     public class RuntimeEventListenerTests
     {
-        [Fact]
+        [Test]
         public void PushEvents()
         {
             var statsd = new Mock<IDogStatsd>();
@@ -31,7 +31,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
             statsd.Verify(s => s.Gauge(MetricsNames.ThreadPoolWorkersCount, It.IsAny<double>(), 1, null), Times.Once);
         }
 
-        [Fact]
+        [Test]
         public void MonitorGarbageCollections()
         {
             string[] compactingGcTags = { "compacting_gc:true" };
@@ -67,7 +67,7 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
             statsd.Verify(s => s.Increment(MetricsNames.Gen2CollectionsCount, 1, It.IsAny<double>(), compactingGcTags), Times.AtLeastOnce);
         }
 
-        [Fact]
+        [Test]
         public void PushEventCounters()
         {
             // Pretending we're aspnetcore

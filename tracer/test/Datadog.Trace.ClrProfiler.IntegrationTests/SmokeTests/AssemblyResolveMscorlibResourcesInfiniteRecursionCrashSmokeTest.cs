@@ -3,25 +3,19 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 {
     public class AssemblyResolveMscorlibResourcesInfiniteRecursionCrashSmokeTest : SmokeTestBase
     {
-        public AssemblyResolveMscorlibResourcesInfiniteRecursionCrashSmokeTest(ITestOutputHelper output)
-            : base(output, "AssemblyResolveMscorlibResources.InfiniteRecursionCrash")
+        public AssemblyResolveMscorlibResourcesInfiniteRecursionCrashSmokeTest()
+            : base("AssemblyResolveMscorlibResources.InfiniteRecursionCrash")
         {
         }
 
-        [Fact]
-        [Trait("Category", "Smoke")]
+        [Test]
+        [Property("Category", "Smoke")]
         public void NoExceptions()
         {
             CheckForSmoke();

@@ -12,20 +12,21 @@ using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Core;
 using Datadog.Trace.Vendors.Serilog.Events;
+using FluentAssertions;
 using Moq;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests.Logging
 {
-    [CollectionDefinition(nameof(Datadog.Trace.Tests.Logging), DisableParallelization = true)]
-    [Collection(nameof(Datadog.Trace.Tests.Logging))]
+    [NonParallelizable]
     public class DatadogLoggingTests : IDisposable
     {
-        private readonly ILogger _logger = null;
-        private readonly CollectionSink _logEventSink;
+        private ILogger _logger = null;
+        private CollectionSink _logEventSink;
         private IDisposable _clockDisposable;
 
-        public DatadogLoggingTests()
+        [SetUp]
+        public void Setup()
         {
             GlobalSettings.Reload();
 
@@ -44,16 +45,16 @@ namespace Datadog.Trace.Tests.Logging
             _clockDisposable?.Dispose();
         }
 
-        [Fact]
+        [Test]
         public void InformationLevel_EnabledBy_Default()
         {
             _logger.Information("Information level message");
             _logger.Debug("Debug level message");
 
-            Assert.Single(_logEventSink.Events);
+            _logEventSink.Events.Count.Should().Be(1);
         }
 
-        [Fact]
+        [Test]
         public void DebugLevel_EnabledBy_GlobalSettings()
         {
             _logger.Information("Information level message");
@@ -69,21 +70,26 @@ namespace Datadog.Trace.Tests.Logging
                 $"Found {_logEventSink.Events.Count} messages: \r\n{string.Join("\r\n", _logEventSink.Events.Select(l => l.RenderMessage()))}");
         }
 
-        [Fact]
+        [Test]
         public void MessageTemplates_ReplacesArgumentsCorrectly()
         {
             var value = 123;
             _logger.Warning("Warning level message with argument '{MyArgument}'", value);
 
-            var log = Assert.Single(_logEventSink.Events);
-            var property = Assert.Single(log.Properties);
+            var log = _logEventSink.Events.FirstOrDefault();
 
-            Assert.Equal("MyArgument", property.Key);
-            Assert.Equal("123", property.Value.ToString());
-            Assert.Equal("Warning level message with argument '123'", log.RenderMessage());
+            Assert.IsNotNull(log);
+
+            var property = log.Properties.FirstOrDefault();
+
+            Assert.IsNotNull(property);
+
+            Assert.AreEqual("MyArgument", property.Key);
+            Assert.AreEqual("123", property.Value.ToString());
+            Assert.AreEqual("Warning level message with argument '123'", log.RenderMessage());
         }
 
-        [Fact]
+        [Test]
         public void RateLimiting_WhenLoggingIsOnSeparateLines_DoesntRateLimit()
         {
             const int secondsBetweenLogs = 60;
@@ -105,7 +111,7 @@ namespace Datadog.Trace.Tests.Logging
                 $"Found {_logEventSink.Events.Count} messages: \r\n{string.Join("\r\n", _logEventSink.Events.Select(l => l.RenderMessage()))}");
         }
 
-        [Fact]
+        [Test]
         public void RateLimiting_WhenLoggingIsASingleLocation_AppliesRateLimiting()
         {
             const int secondsBetweenLogs = 60;
@@ -127,7 +133,7 @@ namespace Datadog.Trace.Tests.Logging
                 $"Found {_logEventSink.Events.Count} messages: \r\n{string.Join("\r\n", _logEventSink.Events.Select(l => l.RenderMessage()))}");
         }
 
-        [Fact]
+        [Test]
         public void RateLimiting_ConsidersLogMessagesOnSameLineToBeSame()
         {
             const int secondsBetweenLogs = 60;
@@ -146,7 +152,7 @@ namespace Datadog.Trace.Tests.Logging
                 $"Found {_logEventSink.Events.Count} messages: \r\n{string.Join("\r\n", _logEventSink.Events.Select(l => l.RenderMessage()))}");
         }
 
-        [Fact]
+        [Test]
         public void MessageTemplates_WhenRateLimitingEnabled_IncludesTheNumberOfSkippedMessages()
         {
             const int secondsBetweenLogs = 60;
@@ -169,13 +175,13 @@ namespace Datadog.Trace.Tests.Logging
                 _logEventSink.Events.Count == 2,
                 $"Found {_logEventSink.Events.Count} messages: \r\n{string.Join("\r\n", _logEventSink.Events.Select(l => l.RenderMessage()))}");
 
-            Assert.Collection(
-                _logEventSink.Events,
-                log => log.RenderMessage().EndsWith(", 0 additional messages skipped"),
-                log => log.RenderMessage().EndsWith(", 3 additional messages skipped"));
+            _logEventSink.Events.Should()
+                         .SatisfyRespectively(
+                              log => log.RenderMessage().EndsWith(", 0 additional messages skipped"),
+                              log => log.RenderMessage().EndsWith(", 3 additional messages skipped"));
         }
 
-        [Fact]
+        [Test]
         public void ErrorsDuringRateLimiting_DontBubbleUp()
         {
             var rateLimiter = new FailingRateLimiter();
@@ -185,10 +191,10 @@ namespace Datadog.Trace.Tests.Logging
             logger.Warning("Warning level message");
 
             Assert.True(rateLimiter.WasInvoked);
-            Assert.Empty(_logEventSink.Events);
+            _logEventSink.Events.Should().BeEmpty();
         }
 
-        [Fact]
+        [Test]
         public void ErrorsDuringLogging_DontBubbleUp()
         {
             var mockLogger = new Mock<ILogger>();
@@ -201,7 +207,7 @@ namespace Datadog.Trace.Tests.Logging
             // Should not throw
             logger.Warning("Warning level message");
 
-            Assert.Empty(_logEventSink.Events);
+            _logEventSink.Events.Should().BeEmpty();
             mockLogger.Verify();
         }
 

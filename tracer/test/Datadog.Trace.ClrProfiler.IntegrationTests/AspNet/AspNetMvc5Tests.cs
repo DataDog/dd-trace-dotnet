@@ -7,97 +7,86 @@
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
 
+using System.Collections.Generic;
 using System.Net;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
-using VerifyXunit;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
+using VerifyNUnit;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    [Collection("IisTests")]
     public class AspNetMvc5TestsCallsiteClassic : AspNetMvc5Tests
     {
-        public AspNetMvc5TestsCallsiteClassic(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: false, classicMode: true, enableRouteTemplateResourceNames: false)
+        public AspNetMvc5TestsCallsiteClassic()
+            : base(enableCallTarget: false, classicMode: true, enableRouteTemplateResourceNames: false)
         {
         }
     }
 
-    [Collection("IisTests")]
     public class AspNetMvc5TestsCallsiteIntegrated : AspNetMvc5Tests
     {
-        public AspNetMvc5TestsCallsiteIntegrated(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: false, classicMode: false, enableRouteTemplateResourceNames: false)
+        public AspNetMvc5TestsCallsiteIntegrated()
+            : base(enableCallTarget: false, classicMode: false, enableRouteTemplateResourceNames: false)
         {
         }
     }
 
-    [Collection("IisTests")]
     public class AspNetMvc5TestsCallsiteClassicWithFeatureFlag : AspNetMvc5Tests
     {
-        public AspNetMvc5TestsCallsiteClassicWithFeatureFlag(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: false, classicMode: true, enableRouteTemplateResourceNames: true)
+        public AspNetMvc5TestsCallsiteClassicWithFeatureFlag()
+            : base(enableCallTarget: false, classicMode: true, enableRouteTemplateResourceNames: true)
         {
         }
     }
 
-    [Collection("IisTests")]
     public class AspNetMvc5TestsCallsiteIntegratedWithFeatureFlag : AspNetMvc5Tests
     {
-        public AspNetMvc5TestsCallsiteIntegratedWithFeatureFlag(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: false, classicMode: false, enableRouteTemplateResourceNames: true)
+        public AspNetMvc5TestsCallsiteIntegratedWithFeatureFlag()
+            : base(enableCallTarget: false, classicMode: false, enableRouteTemplateResourceNames: true)
         {
         }
     }
 
-    [Collection("IisTests")]
     public class AspNetMvc5TestsCallTargetClassic : AspNetMvc5Tests
     {
-        public AspNetMvc5TestsCallTargetClassic(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: true, classicMode: true, enableRouteTemplateResourceNames: false)
+        public AspNetMvc5TestsCallTargetClassic()
+            : base(enableCallTarget: true, classicMode: true, enableRouteTemplateResourceNames: false)
         {
         }
     }
 
-    [Collection("IisTests")]
     public class AspNetMvc5TestsCallTargetIntegrated : AspNetMvc5Tests
     {
-        public AspNetMvc5TestsCallTargetIntegrated(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: true, classicMode: false, enableRouteTemplateResourceNames: false)
+        public AspNetMvc5TestsCallTargetIntegrated()
+            : base(enableCallTarget: true, classicMode: false, enableRouteTemplateResourceNames: false)
         {
         }
     }
 
-    [Collection("IisTests")]
     public class AspNetMvc5TestsCallTargetClassicWithFeatureFlag : AspNetMvc5Tests
     {
-        public AspNetMvc5TestsCallTargetClassicWithFeatureFlag(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: true, classicMode: true, enableRouteTemplateResourceNames: true)
+        public AspNetMvc5TestsCallTargetClassicWithFeatureFlag()
+            : base(enableCallTarget: true, classicMode: true, enableRouteTemplateResourceNames: true)
         {
         }
     }
 
-    [Collection("IisTests")]
     public class AspNetMvc5TestsCallTargetIntegratedWithFeatureFlag : AspNetMvc5Tests
     {
-        public AspNetMvc5TestsCallTargetIntegratedWithFeatureFlag(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: true, classicMode: false, enableRouteTemplateResourceNames: true)
+        public AspNetMvc5TestsCallTargetIntegratedWithFeatureFlag()
+            : base(enableCallTarget: true, classicMode: false, enableRouteTemplateResourceNames: true)
         {
         }
     }
 
-    [UsesVerify]
-    public abstract class AspNetMvc5Tests : TestHelper, IClassFixture<IisFixture>
+    public abstract class AspNetMvc5Tests : IisTestsBase
     {
-        private readonly IisFixture _iisFixture;
         private readonly string _testName;
 
-        public AspNetMvc5Tests(IisFixture iisFixture, ITestOutputHelper output, bool enableCallTarget, bool classicMode, bool enableRouteTemplateResourceNames)
-            : base("AspNetMvc5", @"test\test-applications\aspnet", output)
+        public AspNetMvc5Tests(bool enableCallTarget, bool classicMode, bool enableRouteTemplateResourceNames)
+            : base("AspNetMvc5", @"test\test-applications\aspnet", classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated, "/home/shutdown")
         {
             SetServiceVersion("1.0.0");
             SetCallTargetSettings(enableCallTarget);
@@ -107,42 +96,38 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, "true");
             }
 
-            _iisFixture = iisFixture;
-            _iisFixture.ShutdownPath = "/home/shutdown";
-            _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
             _testName = nameof(AspNetMvc5Tests)
                       + (enableCallTarget ? ".CallSite" : ".CallTarget")
                       + (classicMode ? ".Classic" : ".Integrated")
                       + (enableRouteTemplateResourceNames ? ".NoFF" : ".WithFF");
         }
 
-        public static TheoryData<string, int> Data() => new()
+        public static IEnumerable<TestCaseData> Data() => new TestCaseData[]
         {
-            { "/DataDog", 200 },
-            { "/DataDog/DogHouse", 200 },
-            { "/DataDog/DogHouse/Woof", 200 },
-            { "/", 200 },
-            { "/Home", 200 },
-            { "/Home/Index", 200 },
-            { "/Home/Get", 500 },
-            { "/Home/Get/3", 200 },
-            { "/delay/0", 200 },
-            { "/delay-async/0", 200 },
-            { "/delay-optional", 200 },
-            { "/delay-optional/1", 200 },
-            { "/badrequest", 500 },
-            { "/statuscode/201", 201 },
-            { "/statuscode/503", 503 },
+            new("/DataDog", 200),
+            new("/DataDog/DogHouse", 200),
+            new("/DataDog/DogHouse/Woof", 200),
+            new("/", 200),
+            new("/Home", 200),
+            new("/Home/Index", 200),
+            new("/Home/Get", 500),
+            new("/Home/Get/3", 200),
+            new("/delay/0", 200),
+            new("/delay-async/0", 200),
+            new("/delay-optional", 200),
+            new("/delay-optional/1", 200),
+            new("/badrequest", 500),
+            new("/statuscode/201", 201),
+            new("/statuscode/503", 503),
         };
 
-        [Theory]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        [Trait("LoadFromGAC", "True")]
-        [MemberData(nameof(Data))]
+        [Property("Category", "EndToEnd")]
+        [Property("RunOnWindows", "True")]
+        [Property("LoadFromGAC", "True")]
+        [TestCaseSource(nameof(Data))]
         public async Task SubmitsTraces(string path, HttpStatusCode statusCode)
         {
-            var spans = await GetWebServerSpans(path, _iisFixture.Agent, _iisFixture.HttpPort, statusCode);
+            var spans = await GetWebServerSpans(path, Agent, HttpPort, statusCode);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
 

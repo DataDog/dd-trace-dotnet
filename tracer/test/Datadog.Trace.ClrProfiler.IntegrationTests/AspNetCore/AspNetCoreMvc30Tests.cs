@@ -8,40 +8,39 @@
 #pragma warning disable SA1649 // File name must match first type name
 using System.Net;
 using System.Threading.Tasks;
-using VerifyXunit;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
+using VerifyNUnit;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
     public class AspNetCoreMvc30TestsCallsite : AspNetCoreMvc30Tests
     {
-        public AspNetCoreMvc30TestsCallsite(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, enableCallTarget: false, enableRouteTemplateResourceNames: false)
+        public AspNetCoreMvc30TestsCallsite()
+            : base(enableCallTarget: false, enableRouteTemplateResourceNames: false)
         {
         }
     }
 
     public class AspNetCoreMvc30TestsCallsiteWithFeatureFlag : AspNetCoreMvc30Tests
     {
-        public AspNetCoreMvc30TestsCallsiteWithFeatureFlag(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, enableCallTarget: false, enableRouteTemplateResourceNames: true)
+        public AspNetCoreMvc30TestsCallsiteWithFeatureFlag()
+            : base(enableCallTarget: false, enableRouteTemplateResourceNames: true)
         {
         }
     }
 
     public class AspNetCoreMvc30TestsCallTarget : AspNetCoreMvc30Tests
     {
-        public AspNetCoreMvc30TestsCallTarget(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, enableCallTarget: true, enableRouteTemplateResourceNames: false)
+        public AspNetCoreMvc30TestsCallTarget()
+            : base(enableCallTarget: true, enableRouteTemplateResourceNames: false)
         {
         }
     }
 
     public class AspNetCoreMvc30TestsCallTargetWithFeatureFlag : AspNetCoreMvc30Tests
     {
-        public AspNetCoreMvc30TestsCallTargetWithFeatureFlag(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, enableCallTarget: true, enableRouteTemplateResourceNames: true)
+        public AspNetCoreMvc30TestsCallTargetWithFeatureFlag()
+            : base(enableCallTarget: true, enableRouteTemplateResourceNames: true)
         {
         }
     }
@@ -50,21 +49,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     {
         private readonly string _testName;
 
-        protected AspNetCoreMvc30Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output, bool enableCallTarget, bool enableRouteTemplateResourceNames)
-            : base("AspNetCoreMvc30", fixture, output, enableCallTarget, enableRouteTemplateResourceNames)
+        protected AspNetCoreMvc30Tests(bool enableCallTarget, bool enableRouteTemplateResourceNames)
+            : base("AspNetCoreMvc30", enableCallTarget, enableRouteTemplateResourceNames)
         {
             _testName = GetTestName(nameof(AspNetCoreMvc30Tests));
         }
 
-        [Theory]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        [MemberData(nameof(Data))]
+        [Property("Category", "EndToEnd")]
+        [Property("RunOnWindows", "True")]
+        [TestCaseSource(nameof(Data))]
         public async Task MeetsAllAspNetCoreMvcExpectations(string path, HttpStatusCode statusCode)
         {
-            await Fixture.TryStartApp(this, Output);
-
-            var spans = await Fixture.WaitForSpans(Output, path);
+            var spans = await WaitForSpans(path);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
 

@@ -7,17 +7,14 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Newtonsoft.Json;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
-    [CollectionDefinition(nameof(CIEnvironmentVariableTests), DisableParallelization = true)]
-    [Collection(nameof(CIEnvironmentVariableTests))]
+    [NonParallelizable]
     public class CIEnvironmentVariableTests
     {
         private IDictionary _originalEnvVars;
@@ -42,8 +39,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             }
         }
 
-        [Theory]
-        [MemberData(nameof(GetJsonItems))]
+        [TestCaseSource(nameof(GetJsonItems))]
         public void CheckEnvironmentVariables(JsonDataItem jsonData)
         {
             SpanContext context = new SpanContext(null, null, null);
@@ -86,13 +82,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         value = value.Replace(".000", string.Empty);
                     }
 
-                    Assert.Equal(spanDataItem.Value, value);
+                    Assert.AreEqual(spanDataItem.Value, value);
                 }
 
                 if (jsonData.Name != "usersupplied")
                 {
                     string providerName = span.Tags.GetTag(CommonTags.CIProvider);
-                    Assert.Equal(jsonData.Name, providerName);
+                    Assert.AreEqual(jsonData.Name, providerName);
                 }
             }
         }
@@ -123,7 +119,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             }
         }
 
-        public class JsonDataItem : IXunitSerializable
+        public class JsonDataItem
         {
             public JsonDataItem()
             {
@@ -135,33 +131,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 Data = data;
             }
 
-            internal string Name { get; private set; }
+            internal string Name { get; }
 
-            internal Dictionary<string, string>[][] Data { get; private set; }
-
-            private string DataString
-            {
-                get => JsonConvert.SerializeObject(Data) ?? string.Empty;
-                set
-                {
-                    if (!string.IsNullOrEmpty(value))
-                    {
-                        Data = JsonConvert.DeserializeObject<Dictionary<string, string>[][]>(value);
-                    }
-                }
-            }
-
-            public void Deserialize(IXunitSerializationInfo info)
-            {
-                Name = info.GetValue<string>(nameof(Name));
-                DataString = info.GetValue<string>(nameof(Data));
-            }
-
-            public void Serialize(IXunitSerializationInfo info)
-            {
-                info.AddValue(nameof(Name), Name);
-                info.AddValue(nameof(Data), DataString);
-            }
+            internal Dictionary<string, string>[][] Data { get; }
 
             public override string ToString() => $"Name={Name}";
         }

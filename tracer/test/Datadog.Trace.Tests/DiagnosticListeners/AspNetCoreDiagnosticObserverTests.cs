@@ -6,7 +6,6 @@
 #if !NETFRAMEWORK
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
@@ -21,19 +20,16 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using Xunit;
-using Xunit.Sdk;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests.DiagnosticListeners
 {
-    [Collection(nameof(TracerInstanceTestCollection))]
-    [TracerRestorer]
-    public class AspNetCoreDiagnosticObserverTests
+    public class AspNetCoreDiagnosticObserverTests : TracerInstanceTestsBase
     {
-        [Fact]
-        public async Task<string> CompleteDiagnosticObserverTest()
+        [Test]
+        public async Task CompleteDiagnosticObserverTest()
         {
-            TracerRestorerAttribute.SetTracer(GetTracer());
+            SetTracer(GetTracer());
 
             var builder = new WebHostBuilder()
                 .UseStartup<Startup>();
@@ -55,11 +51,9 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
                 catch { }
                 DiagnosticManager.Instance = null;
             }
-
-            return retValue;
         }
 
-        [Fact]
+        [Test]
         public void HttpRequestIn_PopulateSpan()
         {
             var tracer = GetTracer();
@@ -78,15 +72,15 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
 
             Assert.NotNull(span);
 
-            Assert.Equal("aspnet_core.request", span.OperationName);
-            Assert.Equal("aspnet_core", span.GetTag(Tags.InstrumentationName));
-            Assert.Equal(SpanTypes.Web, span.Type);
-            Assert.Equal("GET /home/?/action", span.ResourceName);
-            Assert.Equal(SpanKinds.Server, span.GetTag(Tags.SpanKind));
-            Assert.Equal("GET", span.GetTag(Tags.HttpMethod));
-            Assert.Equal("localhost", span.GetTag(Tags.HttpRequestHeadersHost));
-            Assert.Equal("http://localhost/home/1/action", span.GetTag(Tags.HttpUrl));
-            Assert.Equal(TracerConstants.Language, span.GetTag(Tags.Language));
+            Assert.AreEqual("aspnet_core.request", span.OperationName);
+            Assert.AreEqual("aspnet_core", span.GetTag(Tags.InstrumentationName));
+            Assert.AreEqual(SpanTypes.Web, span.Type);
+            Assert.AreEqual("GET /home/?/action", span.ResourceName);
+            Assert.AreEqual(SpanKinds.Server, span.GetTag(Tags.SpanKind));
+            Assert.AreEqual("GET", span.GetTag(Tags.HttpMethod));
+            Assert.AreEqual("localhost", span.GetTag(Tags.HttpRequestHeadersHost));
+            Assert.AreEqual("http://localhost/home/1/action", span.GetTag(Tags.HttpUrl));
+            Assert.AreEqual(TracerConstants.Language, span.GetTag(Tags.Language));
         }
 
         private static Tracer GetTracer()

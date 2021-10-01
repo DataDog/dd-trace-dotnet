@@ -8,38 +8,34 @@
 #if NETCOREAPP3_0 || NETCOREAPP3_1 || NET5_0
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
-    public class AspNetCore5 : AspNetBase, IDisposable
+    public class AspNetCore5 : AspNetBase
     {
-        public AspNetCore5(ITestOutputHelper outputHelper)
-            : base("AspNetCore5", outputHelper, "/shutdown")
+        public AspNetCore5()
+            : base("AspNetCore5", "/shutdown")
         {
         }
 
         // NOTE: by integrating the latest version of the WAF, blocking was disabled, as it does not support blocking yet
-        [Theory]
-        [InlineData(true, true, HttpStatusCode.OK)]
-        [InlineData(true, false, HttpStatusCode.OK)]
-        [InlineData(false, true, HttpStatusCode.OK)]
-        [InlineData(false, false, HttpStatusCode.OK)]
-        [Trait("RunOnWindows", "True")]
-        [Trait("Category", "ArmUnsupported")]
+        [TestCase(true, true, HttpStatusCode.OK)]
+        [TestCase(true, false, HttpStatusCode.OK)]
+        [TestCase(false, true, HttpStatusCode.OK)]
+        [TestCase(false, false, HttpStatusCode.OK)]
+        [Property("RunOnWindows", "True")]
+        [Property("Category", "ArmUnsupported")]
         public async Task TestSecurity(bool enableSecurity, bool enableBlocking, HttpStatusCode expectedStatusCode)
         {
             using var agent = await RunOnSelfHosted(enableSecurity, enableBlocking);
             await TestBlockedRequestAsync(agent, enableSecurity, expectedStatusCode, 5, new Action<TestHelpers.MockTracerAgent.Span>[]
             {
-             s => Assert.Equal("aspnet_core.request", s.Name),
-             s  => Assert.Equal("Samples.AspNetCore5", s.Service),
-             s  =>  Assert.Equal("web", s.Type)
+             s => Assert.AreEqual("aspnet_core.request", s.Name),
+             s => Assert.AreEqual("Samples.AspNetCore5", s.Service),
+             s => Assert.AreEqual("web", s.Type)
             });
         }
     }

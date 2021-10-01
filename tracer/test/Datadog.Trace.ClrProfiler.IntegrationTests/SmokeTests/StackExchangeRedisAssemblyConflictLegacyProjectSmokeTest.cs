@@ -3,22 +3,21 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.ClrProfiler.IntegrationTests.TestCollections;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 {
-    [Collection(nameof(StackExchangeRedisTestCollection))]
+    [NonParallelizable]
     public class StackExchangeRedisAssemblyConflictLegacyProjectSmokeTest : SmokeTestBase
     {
-        public StackExchangeRedisAssemblyConflictLegacyProjectSmokeTest(ITestOutputHelper output)
-            : base(output, "StackExchange.Redis.AssemblyConflict.LegacyProject", maxTestRunSeconds: 30)
+        public StackExchangeRedisAssemblyConflictLegacyProjectSmokeTest()
+            : base("StackExchange.Redis.AssemblyConflict.LegacyProject", maxTestRunSeconds: 30)
         {
         }
 
-        [Fact(Skip = ".NET Framework test, but cannot run on Windows because it requires Redis")]
-        [Trait("Category", "Smoke")]
+        [Test]
+        [Ignore(".NET Framework test, but cannot run on Windows because it requires Redis")]
+        [Property("Category", "Smoke")]
         public void NoExceptions()
         {
             CheckForSmoke(shouldDeserializeTraces: false);

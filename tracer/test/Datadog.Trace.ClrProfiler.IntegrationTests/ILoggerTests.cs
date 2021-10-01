@@ -4,11 +4,9 @@
 // </copyright>
 
 #if !NET452
-using System;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
@@ -26,17 +24,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             },
         };
 
-        public ILoggerTests(ITestOutputHelper output)
-            : base(output, "LogsInjection.ILogger")
+        public ILoggerTests()
+            : base("LogsInjection.ILogger")
         {
             SetServiceVersion("1.0.0");
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
             SetCallTargetSettings(true);
         }
 
-        [Fact]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
+        [Test]
+        [Property("Category", "EndToEnd")]
+        [Property("RunOnWindows", "True")]
         public void InjectsLogs()
         {
             int agentPort = TcpPortProvider.GetOpenPort();

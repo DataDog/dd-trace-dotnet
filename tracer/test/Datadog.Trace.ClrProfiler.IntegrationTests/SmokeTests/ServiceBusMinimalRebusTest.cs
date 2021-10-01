@@ -4,20 +4,19 @@
 // </copyright>
 
 #if !NET452
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 {
     public class ServiceBusMinimalRebusTest : SmokeTestBase
     {
-        public ServiceBusMinimalRebusTest(ITestOutputHelper output)
-            : base(output, "ServiceBus.Minimal.Rebus", maxTestRunSeconds: 90)
+        public ServiceBusMinimalRebusTest()
+            : base("ServiceBus.Minimal.Rebus", maxTestRunSeconds: 90)
         {
         }
 
-        [Fact]
-        [Trait("Category", "Smoke")]
+        [Test]
+        [Property("Category", "Smoke")]
         public void NoExceptions()
         {
             CheckForSmoke(shouldDeserializeTraces: false);

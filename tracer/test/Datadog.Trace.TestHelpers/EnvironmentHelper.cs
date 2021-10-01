@@ -11,7 +11,6 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using Datadog.Trace.Configuration;
-using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers
 {
@@ -20,7 +19,6 @@ namespace Datadog.Trace.TestHelpers
         private static readonly Assembly ExecutingAssembly = Assembly.GetExecutingAssembly();
         private static readonly string RuntimeFrameworkDescription = RuntimeInformation.FrameworkDescription.ToLower();
 
-        private readonly ITestOutputHelper _output;
         private readonly int _major;
         private readonly int _minor;
         private readonly string _patch = null;
@@ -36,7 +34,6 @@ namespace Datadog.Trace.TestHelpers
         public EnvironmentHelper(
             string sampleName,
             Type anchorType,
-            ITestOutputHelper output,
             string samplesDirectory = null,
             bool prependSamplesToAppName = true,
             bool requiresProfiling = true)
@@ -44,7 +41,6 @@ namespace Datadog.Trace.TestHelpers
             SampleName = sampleName;
             _samplesDirectory = samplesDirectory ?? Path.Combine("test", "test-applications", "integrations");
             _targetFramework = Assembly.GetAssembly(anchorType).GetCustomAttribute<TargetFrameworkAttribute>();
-            _output = output;
             _requiresProfiling = requiresProfiling;
             TracerHome = GetTracerHomePath();
             ProfilerPath = GetProfilerPath();

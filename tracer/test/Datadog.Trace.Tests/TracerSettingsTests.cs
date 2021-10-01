@@ -11,7 +11,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using Moq;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests
 {
@@ -27,10 +27,10 @@ namespace Datadog.Trace.Tests
         }
 
         [Theory]
-        [InlineData(ConfigurationKeys.Environment, Tags.Env, null)]
-        [InlineData(ConfigurationKeys.Environment, Tags.Env, "custom-env")]
-        [InlineData(ConfigurationKeys.ServiceVersion, Tags.Version, null)]
-        [InlineData(ConfigurationKeys.ServiceVersion, Tags.Version, "custom-version")]
+        [TestCase(ConfigurationKeys.Environment, Tags.Env, null)]
+        [TestCase(ConfigurationKeys.Environment, Tags.Env, "custom-env")]
+        [TestCase(ConfigurationKeys.ServiceVersion, Tags.Version, null)]
+        [TestCase(ConfigurationKeys.ServiceVersion, Tags.Version, "custom-version")]
         public void ConfiguredTracerSettings_DefaultTagsSetFromEnvironmentVariable(string environmentVariableKey, string tagKey, string value)
         {
             var collection = new NameValueCollection { { environmentVariableKey, value } };
@@ -41,12 +41,12 @@ namespace Datadog.Trace.Tests
             var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
             var span = tracer.StartSpan("Operation");
 
-            Assert.Equal(span.GetTag(tagKey), value);
+            Assert.AreEqual(span.GetTag(tagKey), value);
         }
 
         [Theory]
-        [InlineData(ConfigurationKeys.Environment, Tags.Env)]
-        [InlineData(ConfigurationKeys.ServiceVersion, Tags.Version)]
+        [TestCase(ConfigurationKeys.Environment, Tags.Env)]
+        [TestCase(ConfigurationKeys.ServiceVersion, Tags.Version)]
         public void DDVarTakesPrecedenceOverDDTags(string envKey, string tagKey)
         {
             string envValue = $"ddenv-custom-{tagKey}";
@@ -60,13 +60,13 @@ namespace Datadog.Trace.Tests
             var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
             var span = tracer.StartSpan("Operation");
 
-            Assert.Equal(span.GetTag(tagKey), envValue);
+            Assert.AreEqual(span.GetTag(tagKey), envValue);
         }
 
         [Theory]
-        [InlineData("", true)]
-        [InlineData("1", true)]
-        [InlineData("0", false)]
+        [TestCase("", true)]
+        [TestCase("1", true)]
+        [TestCase("0", false)]
         public void TraceEnabled(string value, bool areTracesEnabled)
         {
             var settings = new NameValueCollection
@@ -76,7 +76,7 @@ namespace Datadog.Trace.Tests
 
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(settings));
 
-            Assert.Equal(areTracesEnabled, tracerSettings.TraceEnabled);
+            Assert.AreEqual(areTracesEnabled, tracerSettings.TraceEnabled);
 
             _writerMock.Invocations.Clear();
 
@@ -90,8 +90,8 @@ namespace Datadog.Trace.Tests
         }
 
         [Theory]
-        [InlineData("http://localhost:7777/agent?querystring", "http://127.0.0.1:7777/agent?querystring")]
-        [InlineData("http://datadog:7777/agent?querystring", "http://datadog:7777/agent?querystring")]
+        [TestCase("http://localhost:7777/agent?querystring", "http://127.0.0.1:7777/agent?querystring")]
+        [TestCase("http://datadog:7777/agent?querystring", "http://datadog:7777/agent?querystring")]
         public void ReplaceLocalhost(string original, string expected)
         {
             var settings = new NameValueCollection
@@ -101,28 +101,28 @@ namespace Datadog.Trace.Tests
 
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(settings));
 
-            Assert.Equal(expected, tracerSettings.AgentUri.ToString());
+            Assert.AreEqual(expected, tracerSettings.AgentUri.ToString());
         }
 
         [Theory]
-        [InlineData("a,b,c,d,,f", new[] { "a", "b", "c", "d", "f" })]
-        [InlineData(" a, b ,c, ,,f ", new[] { "a", "b", "c", "f" })]
-        [InlineData("a,b, c ,d,      e      ,f  ", new[] { "a", "b", "c", "d", "e", "f" })]
-        [InlineData("a,b,c,d,e,f", new[] { "a", "b", "c", "d", "e", "f" })]
-        [InlineData("", new string[0])]
+        [TestCase("a,b,c,d,,f", new[] { "a", "b", "c", "d", "f" })]
+        [TestCase(" a, b ,c, ,,f ", new[] { "a", "b", "c", "f" })]
+        [TestCase("a,b, c ,d,      e      ,f  ", new[] { "a", "b", "c", "d", "e", "f" })]
+        [TestCase("a,b,c,d,e,f", new[] { "a", "b", "c", "d", "e", "f" })]
+        [TestCase("", new string[0])]
         public void ParseStringArraySplit(string input, string[] expected)
         {
             var tracerSettings = new TracerSettings();
             var result = tracerSettings.TrimSplitString(input, ',').ToArray();
-            Assert.Equal(expected: expected, actual: result);
+            Assert.AreEqual(expected: expected, actual: result);
         }
 
         [Theory]
-        [InlineData("404 -401, 419,344_ 23-302, 201,_5633-55, 409-411", "401,402,403,404,419,201,409,410,411")]
-        [InlineData("-33, 500-503,113#53,500-502-200,456_2, 590-590", "500,501,502,503,590")]
-        [InlineData("800", "")]
-        [InlineData("599-605,700-800", "599")]
-        [InlineData("400-403, 500-501-234, s342, 500-503", "400,401,402,403,500,501,502,503")]
+        [TestCase("404 -401, 419,344_ 23-302, 201,_5633-55, 409-411", "401,402,403,404,419,201,409,410,411")]
+        [TestCase("-33, 500-503,113#53,500-502-200,456_2, 590-590", "500,501,502,503,590")]
+        [TestCase("800", "")]
+        [TestCase("599-605,700-800", "599")]
+        [TestCase("400-403, 500-501-234, s342, 500-503", "400,401,402,403,500,501,502,503")]
         public void ParseHttpCodes(string original, string expected)
         {
             var tracerSettings = new TracerSettings();
@@ -136,13 +136,13 @@ namespace Datadog.Trace.Tests
             }
         }
 
-        [Fact]
+        [Test]
         public void SetClientHttpCodes()
         {
             SetAndValidateStatusCodes((s, c) => s.SetHttpClientErrorStatusCodes(c), s => s.HttpClientErrorStatusCodes);
         }
 
-        [Fact]
+        [Test]
         public void SetServerHttpCodes()
         {
             SetAndValidateStatusCodes((s, c) => s.SetHttpServerErrorStatusCodes(c), s => s.HttpServerErrorStatusCodes);
@@ -163,11 +163,11 @@ namespace Datadog.Trace.Tests
                 {
                     var code = statusCodes.Dequeue();
 
-                    Assert.Equal(code, i);
+                    Assert.AreEqual(code, i);
                 }
             }
 
-            Assert.Empty(statusCodes);
+            Assert.IsEmpty(statusCodes);
         }
     }
 }

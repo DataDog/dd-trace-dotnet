@@ -5,14 +5,13 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
-using Xunit;
-using Xunit.Abstractions;
+using FluentAssertions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
@@ -21,8 +20,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         private const string TestSuiteName = "Samples.XUnitTests.TestSuite";
         private const int ExpectedSpanCount = 13;
 
-        public XUnitTests(ITestOutputHelper output)
-            : base("XUnitTests", output)
+        public XUnitTests()
+            : base("XUnitTests")
         {
             SetServiceVersion("1.0.0");
         }
@@ -36,10 +35,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             }
         }
 
-        [Theory]
-        [MemberData(nameof(GetData))]
-        [Trait("Category", "EndToEnd")]
-        [Trait("Category", "TestIntegrations")]
+        [TestCaseSource(nameof(GetData))]
+        [Property("Category", "EndToEnd")]
+        [Property("Category", "TestIntegrations")]
         public void SubmitTraces(string packageVersion, bool enableCallTarget)
         {
             List<MockTracerAgent.Span> spans = null;
@@ -60,14 +58,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         .ToList();
 
                     // Check the span count
-                    Assert.Equal(ExpectedSpanCount, spans.Count);
+                    Assert.AreEqual(ExpectedSpanCount, spans.Count);
 
                     // ***************************************************************************
 
                     foreach (var targetSpan in spans)
                     {
                         // check the name
-                        Assert.Equal("xunit.test", targetSpan.Name);
+                        Assert.AreEqual("xunit.test", targetSpan.Name);
 
                         // check the CIEnvironmentValues decoration.
                         CheckCIEnvironmentValuesDecoration(targetSpan);
@@ -170,7 +168,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         }
 
                         // check remaining tag (only the name)
-                        Assert.Single(targetSpan.Tags);
+                        targetSpan.Tags.Should().HaveCount(1);
                     }
                 }
             }
@@ -223,7 +221,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
         private static void AssertTargetSpanEqual(MockTracerAgent.Span targetSpan, string key, string value)
         {
-            Assert.Equal(value, targetSpan.Tags[key]);
+            Assert.AreEqual(value, targetSpan.Tags[key]);
             targetSpan.Tags.Remove(key);
         }
 
@@ -235,7 +233,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
         private static void AssertTargetSpanContains(MockTracerAgent.Span targetSpan, string key, string value)
         {
-            Assert.Contains(value, targetSpan.Tags[key]);
+            StringAssert.Contains(value, targetSpan.Tags[key]);
             targetSpan.Tags.Remove(key);
         }
 
@@ -271,7 +269,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             {
                 if (span.GetTag(key) is not null)
                 {
-                    Assert.Equal(span.GetTag(key), targetSpan.Tags[key]);
+                    Assert.AreEqual(span.GetTag(key), targetSpan.Tags[key]);
                     targetSpan.Tags.Remove(key);
                 }
             }
@@ -322,7 +320,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             AssertTargetSpanEqual(targetSpan, TestTags.Status, TestTags.StatusFail);
 
             // Check the span error flag
-            Assert.Equal(1, targetSpan.Error);
+            Assert.AreEqual(1, targetSpan.Error);
 
             // Check the error type
             AssertTargetSpanEqual(targetSpan, Tags.ErrorType, typeof(DivideByZeroException).FullName);

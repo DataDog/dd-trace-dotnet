@@ -26,7 +26,7 @@ using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.StatsdClient;
 using FluentAssertions;
 using Moq;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests
 {
@@ -51,24 +51,24 @@ namespace Datadog.Trace.Tests
             _tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
         }
 
-        [Fact]
+        [Test]
         public void StartActive_SetOperationName_OperationNameIsSet()
         {
             var scope = _tracer.StartActive("Operation", null);
 
-            Assert.Equal("Operation", scope.Span.OperationName);
+            Assert.AreEqual("Operation", scope.Span.OperationName);
         }
 
-        [Fact]
+        [Test]
         public void StartActive_SetOperationName_ActiveScopeIsSet()
         {
             var scope = _tracer.StartActive("Operation", null);
 
             var activeScope = _tracer.ActiveScope;
-            Assert.Equal(scope, activeScope);
+            Assert.AreEqual(scope, activeScope);
         }
 
-        [Fact]
+        [Test]
         public void StartActive_NoActiveScope_RootSpan()
         {
             var scope = _tracer.StartActive("Operation", null);
@@ -76,16 +76,16 @@ namespace Datadog.Trace.Tests
             Assert.True(scope.Span.IsRootSpan);
         }
 
-        [Fact]
+        [Test]
         public void StartActive_ActiveScope_UseCurrentScopeAsParent()
         {
             var parentScope = _tracer.StartActive("Parent");
             var childScope = _tracer.StartActive("Child");
 
-            Assert.Equal(parentScope.Span.Context, childScope.Span.Context.Parent);
+            Assert.AreEqual(parentScope.Span.Context, childScope.Span.Context.Parent);
         }
 
-        [Fact]
+        [Test]
         public void StartActive_IgnoreActiveScope_RootSpan()
         {
             var firstScope = _tracer.StartActive("First");
@@ -94,7 +94,7 @@ namespace Datadog.Trace.Tests
             Assert.True(secondScope.Span.IsRootSpan);
         }
 
-        [Fact]
+        [Test]
         public void StartActive_FinishOnClose_SpanIsFinishedWhenScopeIsClosed()
         {
             var scope = _tracer.StartActive("Operation");
@@ -106,7 +106,7 @@ namespace Datadog.Trace.Tests
             Assert.Null(_tracer.ActiveScope);
         }
 
-        [Fact]
+        [Test]
         public void StartActive_FinishOnClose_SpanIsFinishedWhenScopeIsDisposed()
         {
             Scope scope;
@@ -119,7 +119,7 @@ namespace Datadog.Trace.Tests
             Assert.Null(_tracer.ActiveScope);
         }
 
-        [Fact]
+        [Test]
         public void StartActive_NoFinishOnClose_SpanIsNotFinishedWhenScopeIsClosed()
         {
             var scope = _tracer.StartActive("Operation", finishOnClose: false);
@@ -131,16 +131,16 @@ namespace Datadog.Trace.Tests
             Assert.Null(_tracer.ActiveScope);
         }
 
-        [Fact]
+        [Test]
         public void StartActive_SetParentManually_ParentIsSet()
         {
             var parent = _tracer.StartSpan("Parent");
             var child = _tracer.StartActive("Child", parent.Context);
 
-            Assert.Equal(parent.Context, child.Span.Context.Parent);
+            Assert.AreEqual(parent.Context, child.Span.Context.Parent);
         }
 
-        [Fact]
+        [Test]
         public void StartActive_SetParentManuallyFromExternalContext_ParentIsSet()
         {
             const ulong traceId = 11;
@@ -151,16 +151,16 @@ namespace Datadog.Trace.Tests
             var child = _tracer.StartActive("Child", parent);
 
             Assert.True(child.Span.IsRootSpan);
-            Assert.Equal(traceId, parent.TraceId);
-            Assert.Equal(parentId, parent.SpanId);
+            Assert.AreEqual(traceId, parent.TraceId);
+            Assert.AreEqual(parentId, parent.SpanId);
             Assert.Null(parent.TraceContext);
-            Assert.Equal(parent, child.Span.Context.Parent);
-            Assert.Equal(parentId, child.Span.Context.ParentId);
+            Assert.AreEqual(parent, child.Span.Context.Parent);
+            Assert.AreEqual(parentId, child.Span.Context.ParentId);
             Assert.NotNull(child.Span.Context.TraceContext);
-            Assert.Equal(samplingPriority, child.Span.Context.TraceContext.SamplingPriority);
+            Assert.AreEqual(samplingPriority, child.Span.Context.TraceContext.SamplingPriority);
         }
 
-        [Fact]
+        [Test]
         public void StartActive_NoServiceName_DefaultServiceName()
         {
             var scope = _tracer.StartActive("Operation");
@@ -168,41 +168,41 @@ namespace Datadog.Trace.Tests
             Assert.Contains(scope.Span.ServiceName, TestRunners.ValidNames);
         }
 
-        [Fact]
+        [Test]
         public void StartActive_SetServiceName_ServiceNameIsSet()
         {
             var scope = _tracer.StartActive("Operation", serviceName: "MyAwesomeService");
 
-            Assert.Equal("MyAwesomeService", scope.Span.ServiceName);
+            Assert.AreEqual("MyAwesomeService", scope.Span.ServiceName);
         }
 
-        [Fact]
+        [Test]
         public void StartActive_SetParentServiceName_ChildServiceNameIsSet()
         {
             var parent = _tracer.StartActive("Parent", serviceName: "MyAwesomeService");
             var child = _tracer.StartActive("Child");
 
-            Assert.Equal("MyAwesomeService", child.Span.ServiceName);
+            Assert.AreEqual("MyAwesomeService", child.Span.ServiceName);
         }
 
-        [Fact]
+        [Test]
         public void StartActive_SetStartTime_StartTimeIsProperlySet()
         {
             var startTime = new DateTimeOffset(2017, 01, 01, 0, 0, 0, TimeSpan.Zero);
             var scope = _tracer.StartActive("Operation", startTime: startTime);
 
-            Assert.Equal(startTime, scope.Span.StartTime);
+            Assert.AreEqual(startTime, scope.Span.StartTime);
         }
 
-        [Fact]
+        [Test]
         public void StartManual_SetOperationName_OperationNameIsSet()
         {
             var span = _tracer.StartSpan("Operation");
 
-            Assert.Equal("Operation", span.OperationName);
+            Assert.AreEqual("Operation", span.OperationName);
         }
 
-        [Fact]
+        [Test]
         public void StartManual_SetOperationName_ActiveScopeIsNotSet()
         {
             _tracer.StartSpan("Operation");
@@ -210,7 +210,7 @@ namespace Datadog.Trace.Tests
             Assert.Null(_tracer.ActiveScope);
         }
 
-        [Fact]
+        [Test]
         public void StartManual_NoActiveScope_RootSpan()
         {
             var scope = _tracer.StartActive("Operation");
@@ -218,17 +218,17 @@ namespace Datadog.Trace.Tests
             Assert.True(scope.Span.IsRootSpan);
         }
 
-        [Fact]
+        [Test]
         public void StartManula_ActiveScope_UseCurrentScopeAsParent()
         {
             var parentSpan = _tracer.StartSpan("Parent");
             _tracer.ActivateSpan(parentSpan);
             var childSpan = _tracer.StartSpan("Child");
 
-            Assert.Equal(parentSpan.Context, childSpan.Context.Parent);
+            Assert.AreEqual(parentSpan.Context, childSpan.Context.Parent);
         }
 
-        [Fact]
+        [Test]
         public void StartManual_IgnoreActiveScope_RootSpan()
         {
             var firstSpan = _tracer.StartSpan("First");
@@ -238,7 +238,7 @@ namespace Datadog.Trace.Tests
             Assert.True(secondSpan.IsRootSpan);
         }
 
-        [Fact]
+        [Test]
         public void StartActive_2ChildrenOfRoot_ChildrenParentProperlySet()
         {
             var root = _tracer.StartActive("Root");
@@ -246,26 +246,26 @@ namespace Datadog.Trace.Tests
             child1.Dispose();
             var child2 = _tracer.StartActive("Child2");
 
-            Assert.Equal(root.Span.Context.TraceContext, (ITraceContext)child1.Span.Context.TraceContext);
-            Assert.Equal(root.Span.Context.SpanId, child1.Span.Context.ParentId);
-            Assert.Equal(root.Span.Context.TraceContext, (ITraceContext)child2.Span.Context.TraceContext);
-            Assert.Equal(root.Span.Context.SpanId, child2.Span.Context.ParentId);
+            Assert.AreEqual(root.Span.Context.TraceContext, (ITraceContext)child1.Span.Context.TraceContext);
+            Assert.AreEqual(root.Span.Context.SpanId, child1.Span.Context.ParentId);
+            Assert.AreEqual(root.Span.Context.TraceContext, (ITraceContext)child2.Span.Context.TraceContext);
+            Assert.AreEqual(root.Span.Context.SpanId, child2.Span.Context.ParentId);
         }
 
-        [Fact]
+        [Test]
         public void StartActive_2LevelChildren_ChildrenParentProperlySet()
         {
             var root = _tracer.StartActive("Root");
             var child1 = _tracer.StartActive("Child1");
             var child2 = _tracer.StartActive("Child2");
 
-            Assert.Equal(root.Span.Context.TraceContext, (ITraceContext)child1.Span.Context.TraceContext);
-            Assert.Equal(root.Span.Context.SpanId, child1.Span.Context.ParentId);
-            Assert.Equal(root.Span.Context.TraceContext, (ITraceContext)child2.Span.Context.TraceContext);
-            Assert.Equal(child1.Span.Context.SpanId, child2.Span.Context.ParentId);
+            Assert.AreEqual(root.Span.Context.TraceContext, (ITraceContext)child1.Span.Context.TraceContext);
+            Assert.AreEqual(root.Span.Context.SpanId, child1.Span.Context.ParentId);
+            Assert.AreEqual(root.Span.Context.TraceContext, (ITraceContext)child2.Span.Context.TraceContext);
+            Assert.AreEqual(child1.Span.Context.SpanId, child2.Span.Context.ParentId);
         }
 
-        [Fact]
+        [Test]
         public async Task StartActive_AsyncChildrenCreation_ChildrenParentProperlySet()
         {
             var tcs = new TaskCompletionSource<bool>();
@@ -282,19 +282,18 @@ namespace Datadog.Trace.Tests
             var syncChild = _tracer.StartActive("SyncChild");
             tcs.SetResult(true);
 
-            Assert.Equal(root.Span.Context.TraceContext, (ITraceContext)syncChild.Span.Context.TraceContext);
-            Assert.Equal(root.Span.Context.SpanId, syncChild.Span.Context.ParentId);
+            Assert.AreEqual(root.Span.Context.TraceContext, (ITraceContext)syncChild.Span.Context.TraceContext);
+            Assert.AreEqual(root.Span.Context.SpanId, syncChild.Span.Context.ParentId);
             foreach (var task in tasks)
             {
                 var span = await task;
-                Assert.Equal(root.Span.Context.TraceContext, (ITraceContext)span.Span.Context.TraceContext);
-                Assert.Equal(root.Span.Context.SpanId, span.Span.Context.ParentId);
+                Assert.AreEqual(root.Span.Context.TraceContext, (ITraceContext)span.Span.Context.TraceContext);
+                Assert.AreEqual(root.Span.Context.SpanId, span.Span.Context.ParentId);
             }
         }
 
-        [Theory]
-        [InlineData(null)]
-        [InlineData("test")]
+        [TestCase(null)]
+        [TestCase("test")]
         public void SetEnv(string env)
         {
             var settings = new TracerSettings()
@@ -305,17 +304,16 @@ namespace Datadog.Trace.Tests
             var tracer = new Tracer(settings);
             Span span = tracer.StartSpan("operation");
 
-            Assert.Equal(env, span.GetTag(Tags.Env));
+            Assert.AreEqual(env, span.GetTag(Tags.Env));
         }
 
-        [Theory]
         // if no service name is specified, fallback to a best guess (e.g. assembly name, process name)
-        [InlineData(null, null, null)]
+        [TestCase(null, null, null)]
         // if only one is set, use that one
-        [InlineData("tracerService", null, "tracerService")]
-        [InlineData(null, "spanService", "spanService")]
+        [TestCase("tracerService", null, "tracerService")]
+        [TestCase(null, "spanService", "spanService")]
         // if more than one is set, follow precedence: span > tracer  > default
-        [InlineData("tracerService", "spanService", "spanService")]
+        [TestCase("tracerService", "spanService", "spanService")]
         public void SetServiceName(string tracerServiceName, string spanServiceName, string expectedServiceName)
         {
             var settings = new TracerSettings()
@@ -332,11 +330,11 @@ namespace Datadog.Trace.Tests
             }
             else
             {
-                Assert.Equal(expectedServiceName, span.ServiceName);
+                Assert.AreEqual(expectedServiceName, span.ServiceName);
             }
         }
 
-        [Fact]
+        [Test]
         public void OriginHeader_RootSpanTag()
         {
             const ulong traceId = 9;
@@ -345,20 +343,20 @@ namespace Datadog.Trace.Tests
             const string origin = "synthetics";
 
             var propagatedContext = new SpanContext(traceId, spanId, samplingPriority, null, origin);
-            Assert.Equal(origin, propagatedContext.Origin);
+            Assert.AreEqual(origin, propagatedContext.Origin);
 
             using var firstSpan = _tracer.StartActive("First Span", propagatedContext);
             Assert.True(firstSpan.Span.IsRootSpan);
-            Assert.Equal(origin, firstSpan.Span.Context.Origin);
-            Assert.Equal(origin, firstSpan.Span.GetTag(Tags.Origin));
+            Assert.AreEqual(origin, firstSpan.Span.Context.Origin);
+            Assert.AreEqual(origin, firstSpan.Span.GetTag(Tags.Origin));
 
             using var secondSpan = _tracer.StartActive("Child", firstSpan.Span.Context);
             Assert.False(secondSpan.Span.IsRootSpan);
-            Assert.Equal(origin, secondSpan.Span.Context.Origin);
-            Assert.Equal(origin, secondSpan.Span.GetTag(Tags.Origin));
+            Assert.AreEqual(origin, secondSpan.Span.Context.Origin);
+            Assert.AreEqual(origin, secondSpan.Span.GetTag(Tags.Origin));
         }
 
-        [Fact]
+        [Test]
         public void OriginHeader_InjectFromChildSpan()
         {
             const ulong traceId = 9;
@@ -377,19 +375,18 @@ namespace Datadog.Trace.Tests
             var resultContext = SpanContextPropagator.Instance.Extract(headers);
 
             Assert.NotNull(resultContext);
-            Assert.Equal(firstSpan.Span.Context.Origin, resultContext.Origin);
-            Assert.Equal(secondSpan.Span.Context.Origin, resultContext.Origin);
-            Assert.Equal(origin, resultContext.Origin);
+            Assert.AreEqual(firstSpan.Span.Context.Origin, resultContext.Origin);
+            Assert.AreEqual(secondSpan.Span.Context.Origin, resultContext.Origin);
+            Assert.AreEqual(origin, resultContext.Origin);
         }
 
-        [Theory]
-        [InlineData("7.25.0", true, true)] // Old agent, partial flush enabled
-        [InlineData("7.25.0", false, false)] // Old agent, partial flush disabled
-        [InlineData("7.26.0", true, false)] // New agent, partial flush enabled
-        [InlineData("invalid version", true, true)] // Version check fail, partial flush enabled
-        [InlineData("invalid version", false, false)] // Version check fail, partial flush disabled
-        [InlineData("", true, true)] // Version check fail, partial flush enabled
-        [InlineData("", false, false)] // Version check fail, partial flush disabled
+        [TestCase("7.25.0", true, true)] // Old agent, partial flush enabled
+        [TestCase("7.25.0", false, false)] // Old agent, partial flush disabled
+        [TestCase("7.26.0", true, false)] // New agent, partial flush enabled
+        [TestCase("invalid version", true, true)] // Version check fail, partial flush enabled
+        [TestCase("invalid version", false, false)] // Version check fail, partial flush disabled
+        [TestCase("", true, true)] // Version check fail, partial flush enabled
+        [TestCase("", false, false)] // Version check fail, partial flush disabled
         public void LogPartialFlushWarning(string agentVersion, bool partialFlushEnabled, bool expectedResult)
         {
             _tracer.Settings.PartialFlushEnabled = partialFlushEnabled;
@@ -401,7 +398,7 @@ namespace Datadog.Trace.Tests
             _tracer.ShouldLogPartialFlushWarning(agentVersion).Should().BeFalse();
         }
 
-        [Fact]
+        [Test]
         public void RuntimeId()
         {
             var runtimeId = Tracer.RuntimeId;
@@ -413,7 +410,7 @@ namespace Datadog.Trace.Tests
             Guid.TryParse(runtimeId, out _).Should().BeTrue();
         }
 
-        [Fact]
+        [Test]
         public async Task ForceFlush()
         {
             var agent = new Mock<IAgentWriter>();
@@ -435,7 +432,7 @@ namespace Datadog.Trace.Tests
         // Test that storage in the Logical Call Context does not expire
         // See GitHub issue https://github.com/serilog/serilog/issues/987
         // and the associated PR https://github.com/serilog/serilog/pull/992
-        [Fact]
+        [Test]
         public void DoesNotThrowOnCrossDomainCallsWhenLeaseExpired()
         {
             // Arrange
@@ -454,7 +451,7 @@ namespace Datadog.Trace.Tests
 
                     // After the lease expires, access the active scope
                     Scope scope = _tracer.ActiveScope;
-                    Assert.Equal(operationName, scope.Span.OperationName);
+                    Assert.AreEqual(operationName, scope.Span.OperationName);
                 }
             }
             finally
@@ -466,7 +463,7 @@ namespace Datadog.Trace.Tests
             // Nothing. We should just throw no exceptions here
         }
 
-        [Fact]
+        [Test]
         public void DisconnectRemoteObjectsAfterCrossDomainCallsOnDispose()
         {
             // Arrange
@@ -505,7 +502,7 @@ namespace Datadog.Trace.Tests
 
             // Assert
             Assert.True(eventSet);
-            Assert.Equal(2, tracker.DisconnectCount);
+            Assert.AreEqual(2, tracker.DisconnectCount);
         }
 
         // Static class with static methods that are publicly accessible so new sandbox AppDomain does not need special

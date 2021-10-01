@@ -11,13 +11,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.DuckTyping.Tests
 {
     public class DuckIncludeTests
     {
-        [Fact]
+        [Test]
         public void ShouldOverrideToString()
         {
             var instance = new SomeClassWithDuckInclude();
@@ -27,7 +27,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             proxy.ToString().Should().Be(instance.ToString());
         }
 
-        [Fact]
+        [Test]
         public void ShouldNotOverrideToString()
         {
             var instance = new SomeClassWithoutDuckInclude();

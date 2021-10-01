@@ -8,13 +8,13 @@
 
 using System;
 using FluentAssertions;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.DuckTyping.Tests
 {
     public class DuckChainingWithExplicitInterfaceTests
     {
-        [Fact]
+        [Test]
         public void NormalTest()
         {
             var targetObject = new T_HostingApplication();

@@ -3,28 +3,27 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.ClrProfiler.IntegrationTests.TestCollections;
+using System;
 using Datadog.Trace.TestHelpers;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 {
-    [Collection(nameof(StackExchangeRedisTestCollection))]
+    [NonParallelizable]
     public class StackExchangeRedisAssemblyConflictSdkProjectSmokeTest : SmokeTestBase
     {
-        public StackExchangeRedisAssemblyConflictSdkProjectSmokeTest(ITestOutputHelper output)
-            : base(output, "StackExchange.Redis.AssemblyConflict.SdkProject", maxTestRunSeconds: 30)
+        public StackExchangeRedisAssemblyConflictSdkProjectSmokeTest()
+            : base("StackExchange.Redis.AssemblyConflict.SdkProject", maxTestRunSeconds: 30)
         {
         }
 
-        [Fact]
-        [Trait("Category", "Smoke")]
+        [Test]
+        [Property("Category", "Smoke")]
         public void NoExceptions()
         {
             if (EnvironmentTools.IsWindows())
             {
-                Output.WriteLine("Ignored for Windows");
+                Console.WriteLine("Ignored for Windows");
                 return;
             }
 

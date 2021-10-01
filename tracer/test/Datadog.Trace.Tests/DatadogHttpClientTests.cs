@@ -1,4 +1,4 @@
-﻿// <copyright file="DatadogHttpClientTests.cs" company="Datadog">
+// <copyright file="DatadogHttpClientTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,13 +9,13 @@ using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.HttpOverStreams.HttpContent;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests
 {
     public class DatadogHttpClientTests
     {
-        [Fact]
+        [Test]
         public async Task DatadogHttpClient_CanParseResponse()
         {
             var client = new DatadogHttpClient();
@@ -27,26 +27,25 @@ namespace Datadog.Trace.Tests
             var request = new HttpRequest("POST", "localhost", string.Empty, new HttpHeaders(), requestContent);
             var response = await client.SendAsync(request, requestStream, responseStream);
 
-            Assert.Equal(200, response.StatusCode);
-            Assert.Equal("OK", response.ResponseMessage);
-            Assert.Equal("Test Server", response.Headers.GetValue(("Server")));
-            Assert.Equal(2, response.ContentLength);
-            Assert.Equal("application/json", response.ContentType);
+            Assert.AreEqual(200, response.StatusCode);
+            Assert.AreEqual("OK", response.ResponseMessage);
+            Assert.AreEqual("Test Server", response.Headers.GetValue(("Server")));
+            Assert.AreEqual(2, response.ContentLength);
+            Assert.AreEqual("application/json", response.ContentType);
 
             var buffer = new byte[2];
             await response.Content.CopyToAsync(buffer);
             var content = Encoding.UTF8.GetString(buffer);
-            Assert.Equal("{}", content);
+            Assert.AreEqual("{}", content);
         }
 
-        [Theory]
-        [InlineData(1)]
-        [InlineData(2)]
-        [InlineData(3)]
-        [InlineData(4)]
-        [InlineData(5)]
-        [InlineData(10)]
-        [InlineData(100)]
+        [TestCase(1)]
+        [TestCase(2)]
+        [TestCase(3)]
+        [TestCase(4)]
+        [TestCase(5)]
+        [TestCase(10)]
+        [TestCase(100)]
         public async Task DatadogHttpClient_WhenOnlyPartOfResponseIsAvailable_ParsesCorrectly(int bytesToRead)
         {
             var client = new DatadogHttpClient();
@@ -59,16 +58,16 @@ namespace Datadog.Trace.Tests
             var request = new HttpRequest("POST", "localhost", string.Empty, new HttpHeaders(), requestContent);
             var response = await client.SendAsync(request, requestStream, responseStream);
 
-            Assert.Equal(200, response.StatusCode);
-            Assert.Equal("OK", response.ResponseMessage);
-            Assert.Equal("Test Server", response.Headers.GetValue(("Server")));
-            Assert.Equal(2, response.ContentLength);
-            Assert.Equal("application/json", response.ContentType);
+            Assert.AreEqual(200, response.StatusCode);
+            Assert.AreEqual("OK", response.ResponseMessage);
+            Assert.AreEqual("Test Server", response.Headers.GetValue(("Server")));
+            Assert.AreEqual(2, response.ContentLength);
+            Assert.AreEqual("application/json", response.ContentType);
 
             var buffer = new byte[2];
             await response.Content.CopyToAsync(buffer);
             var content = Encoding.UTF8.GetString(buffer);
-            Assert.Equal("{}", content);
+            Assert.AreEqual("{}", content);
         }
 
         private static string[] HtmlResponseLines() =>

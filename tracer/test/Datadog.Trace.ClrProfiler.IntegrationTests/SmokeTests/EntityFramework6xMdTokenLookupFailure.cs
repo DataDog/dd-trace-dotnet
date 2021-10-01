@@ -4,20 +4,19 @@
 // </copyright>
 
 #if NET452
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 {
     public class EntityFramework6xMdTokenLookupFailure : SmokeTestBase
     {
-        public EntityFramework6xMdTokenLookupFailure(ITestOutputHelper output)
-            : base(output, "EntityFramework6x.MdTokenLookupFailure", maxTestRunSeconds: 480)
+        public EntityFramework6xMdTokenLookupFailure()
+            : base("EntityFramework6x.MdTokenLookupFailure", maxTestRunSeconds: 480)
         {
         }
 
-        [Fact]
-        [Trait("Category", "Smoke")]
+        [Test]
+        [Property("Category", "Smoke")]
         public void NoExceptions()
         {
             CheckForSmoke(shouldDeserializeTraces: false);

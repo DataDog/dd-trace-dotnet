@@ -6,31 +6,30 @@
 using System;
 using System.Linq;
 using Datadog.Trace.TestHelpers;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class RuntimeMetricsTests : TestHelper
     {
-        public RuntimeMetricsTests(ITestOutputHelper output)
-            : base("RuntimeMetrics", output)
+        public RuntimeMetricsTests()
+            : base("RuntimeMetrics")
         {
         }
 
-        [Fact]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
+        [Test]
+        [Property("Category", "EndToEnd")]
+        [Property("RunOnWindows", "True")]
         public void SubmitsMetrics()
         {
             int agentPort = TcpPortProvider.GetOpenPort();
 
-            Output.WriteLine($"Assigning port {agentPort} for the agentPort.");
+            Console.WriteLine($"Assigning port {agentPort} for the agentPort.");
 
             SetEnvironmentVariable("DD_RUNTIME_METRICS_ENABLED", "1");
 
             using var agent = new MockTracerAgent(agentPort, useStatsd: true);
-            Output.WriteLine($"Assigning port {agent.StatsdPort} for the statsdPort.");
+            Console.WriteLine($"Assigning port {agent.StatsdPort} for the statsdPort.");
 
             using var processResult = RunSampleAndWaitForExit(agent.Port, agent.StatsdPort);
             var requests = agent.StatsdRequests;
@@ -54,19 +53,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        [Fact]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
+        [Test]
+        [Property("Category", "EndToEnd")]
+        [Property("RunOnWindows", "True")]
         public void MetricsDisabled()
         {
             int agentPort = TcpPortProvider.GetOpenPort();
 
-            Output.WriteLine($"Assigning port {agentPort} for the agentPort.");
+            Console.WriteLine($"Assigning port {agentPort} for the agentPort.");
 
             SetEnvironmentVariable("DD_RUNTIME_METRICS_ENABLED", "0");
 
             using var agent = new MockTracerAgent(agentPort, useStatsd: true);
-            Output.WriteLine($"Assigning port {agent.StatsdPort} for the statsdPort.");
+            Console.WriteLine($"Assigning port {agent.StatsdPort} for the statsdPort.");
 
             using var processResult = RunSampleAndWaitForExit(agent.Port, agent.StatsdPort);
             var requests = agent.StatsdRequests;

@@ -16,7 +16,7 @@ using Datadog.Trace.Util;
 using Moq;
 using MySql.Data.MySqlClient;
 using Npgsql;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests
 {
@@ -35,38 +35,36 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 #endif
         }
 
-        [Theory]
-        [InlineData("users/", "users/")]
-        [InlineData("users", "users")]
-        [InlineData("123/", Id + "/")]
-        [InlineData("123", Id)]
-        [InlineData("4294967294/", Id + "/")]
-        [InlineData("4294967294", Id)]
-        [InlineData("E653C852-227B-4F0C-9E48-D30D83C68BF3/", Id + "/")]
-        [InlineData("E653C852-227B-4F0C-9E48-D30D83C68BF3", Id)]
-        [InlineData("E653C852227B4F0C9E48D30D83C68BF3/", Id + "/")]
-        [InlineData("E653C852227B4F0C9E48D30D83C68BF3", Id)]
+        [TestCase("users/", "users/")]
+        [TestCase("users", "users")]
+        [TestCase("123/", Id + "/")]
+        [TestCase("123", Id)]
+        [TestCase("4294967294/", Id + "/")]
+        [TestCase("4294967294", Id)]
+        [TestCase("E653C852-227B-4F0C-9E48-D30D83C68BF3/", Id + "/")]
+        [TestCase("E653C852-227B-4F0C-9E48-D30D83C68BF3", Id)]
+        [TestCase("E653C852227B4F0C9E48D30D83C68BF3/", Id + "/")]
+        [TestCase("E653C852227B4F0C9E48D30D83C68BF3", Id)]
         public void CleanUriSegment(string segment, string expected)
         {
             string actual = UriHelpers.GetCleanUriPath(segment);
 
-            Assert.Equal(expected, actual);
+            Assert.AreEqual(expected, actual);
         }
 
-        [Theory]
-        [InlineData("https://username:password@example.com/path/to/file.aspx?query=1#fragment", "GET", "GET example.com/path/to/file.aspx")]
-        [InlineData("https://username@example.com/path/to/file.aspx", "GET", "GET example.com/path/to/file.aspx")]
-        [InlineData("https://example.com/path/to/file.aspx?query=1", "GET", "GET example.com/path/to/file.aspx")]
-        [InlineData("https://example.com/path/to/file.aspx#fragment", "GET", "GET example.com/path/to/file.aspx")]
-        [InlineData("http://example.com/path/to/file.aspx", "GET", "GET example.com/path/to/file.aspx")]
-        [InlineData("https://example.com/path/123/file.aspx", "GET", "GET example.com/path/" + Id + "/file.aspx")]
-        [InlineData("https://example.com/path/123/", "GET", "GET example.com/path/" + Id + "/")]
-        [InlineData("https://example.com/path/123", "GET", "GET example.com/path/" + Id)]
-        [InlineData("https://example.com/path/4294967294/file.aspx", "GET", "GET example.com/path/" + Id + "/file.aspx")]
-        [InlineData("https://example.com/path/4294967294/", "GET", "GET example.com/path/" + Id + "/")]
-        [InlineData("https://example.com/path/4294967294", "GET", "GET example.com/path/" + Id)]
-        [InlineData("https://example.com/path/E653C852-227B-4F0C-9E48-D30D83C68BF3", "GET", "GET example.com/path/" + Id)]
-        [InlineData("https://example.com/path/E653C852227B4F0C9E48D30D83C68BF3", "GET", "GET example.com/path/" + Id)]
+        [TestCase("https://username:password@example.com/path/to/file.aspx?query=1#fragment", "GET", "GET example.com/path/to/file.aspx")]
+        [TestCase("https://username@example.com/path/to/file.aspx", "GET", "GET example.com/path/to/file.aspx")]
+        [TestCase("https://example.com/path/to/file.aspx?query=1", "GET", "GET example.com/path/to/file.aspx")]
+        [TestCase("https://example.com/path/to/file.aspx#fragment", "GET", "GET example.com/path/to/file.aspx")]
+        [TestCase("http://example.com/path/to/file.aspx", "GET", "GET example.com/path/to/file.aspx")]
+        [TestCase("https://example.com/path/123/file.aspx", "GET", "GET example.com/path/" + Id + "/file.aspx")]
+        [TestCase("https://example.com/path/123/", "GET", "GET example.com/path/" + Id + "/")]
+        [TestCase("https://example.com/path/123", "GET", "GET example.com/path/" + Id)]
+        [TestCase("https://example.com/path/4294967294/file.aspx", "GET", "GET example.com/path/" + Id + "/file.aspx")]
+        [TestCase("https://example.com/path/4294967294/", "GET", "GET example.com/path/" + Id + "/")]
+        [TestCase("https://example.com/path/4294967294", "GET", "GET example.com/path/" + Id)]
+        [TestCase("https://example.com/path/E653C852-227B-4F0C-9E48-D30D83C68BF3", "GET", "GET example.com/path/" + Id)]
+        [TestCase("https://example.com/path/E653C852227B4F0C9E48D30D83C68BF3", "GET", "GET example.com/path/" + Id)]
         public void CleanUri_ResourceName(string uri, string method, string expected)
         {
             // Set up Tracer
@@ -77,11 +75,11 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
             using (var automaticScope = ScopeFactory.CreateOutboundHttpScope(tracer, method, new Uri(uri), new IntegrationInfo((int)IntegrationIds.HttpMessageHandler), out _))
             {
-                Assert.Equal(expected, automaticScope.Span.ResourceName);
+                Assert.AreEqual(expected, automaticScope.Span.ResourceName);
             }
         }
 
-        [Fact]
+        [Test]
         public void CreateOutboundHttpScope_Null_ResourceUri()
         {
             // Set up Tracer
@@ -92,21 +90,20 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
             using (var automaticScope = ScopeFactory.CreateOutboundHttpScope(tracer, "GET", null, new IntegrationInfo((int)IntegrationIds.HttpMessageHandler), out _))
             {
-                Assert.Equal(expected: "GET ",  actual: automaticScope.Span.ResourceName);
+                Assert.AreEqual(expected: "GET ",  actual: automaticScope.Span.ResourceName);
             }
         }
 
-        [Theory]
-        [InlineData("https://username:password@example.com/path/to/file.aspx?query=1#fragment", "https://example.com/path/to/file.aspx")]
-        [InlineData("https://username@example.com/path/to/file.aspx", "https://example.com/path/to/file.aspx")]
-        [InlineData("https://example.com/path/to/file.aspx?query=1", "https://example.com/path/to/file.aspx")]
-        [InlineData("https://example.com/path/to/file.aspx#fragment", "https://example.com/path/to/file.aspx")]
-        [InlineData("http://example.com/path/to/file.aspx", "http://example.com/path/to/file.aspx")]
-        [InlineData("https://example.com/path/123/file.aspx", "https://example.com/path/123/file.aspx")]
-        [InlineData("https://example.com/path/123/", "https://example.com/path/123/")]
-        [InlineData("https://example.com/path/123", "https://example.com/path/123")]
-        [InlineData("https://example.com/path/E653C852-227B-4F0C-9E48-D30D83C68BF3", "https://example.com/path/E653C852-227B-4F0C-9E48-D30D83C68BF3")]
-        [InlineData("https://example.com/path/E653C852227B4F0C9E48D30D83C68BF3", "https://example.com/path/E653C852227B4F0C9E48D30D83C68BF3")]
+        [TestCase("https://username:password@example.com/path/to/file.aspx?query=1#fragment", "https://example.com/path/to/file.aspx")]
+        [TestCase("https://username@example.com/path/to/file.aspx", "https://example.com/path/to/file.aspx")]
+        [TestCase("https://example.com/path/to/file.aspx?query=1", "https://example.com/path/to/file.aspx")]
+        [TestCase("https://example.com/path/to/file.aspx#fragment", "https://example.com/path/to/file.aspx")]
+        [TestCase("http://example.com/path/to/file.aspx", "http://example.com/path/to/file.aspx")]
+        [TestCase("https://example.com/path/123/file.aspx", "https://example.com/path/123/file.aspx")]
+        [TestCase("https://example.com/path/123/", "https://example.com/path/123/")]
+        [TestCase("https://example.com/path/123", "https://example.com/path/123")]
+        [TestCase("https://example.com/path/E653C852-227B-4F0C-9E48-D30D83C68BF3", "https://example.com/path/E653C852-227B-4F0C-9E48-D30D83C68BF3")]
+        [TestCase("https://example.com/path/E653C852227B4F0C9E48D30D83C68BF3", "https://example.com/path/E653C852227B4F0C9E48D30D83C68BF3")]
         public void CleanUri_HttpUrlTag(string uri, string expected)
         {
             // Set up Tracer
@@ -119,14 +116,13 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
             using (var automaticScope = ScopeFactory.CreateOutboundHttpScope(tracer, method, new Uri(uri), new IntegrationInfo((int)IntegrationIds.HttpMessageHandler), out var tags))
             {
-                Assert.Equal(expected, automaticScope.Span.GetTag(Tags.HttpUrl));
-                Assert.Equal(expected, tags.HttpUrl);
+                Assert.AreEqual(expected, automaticScope.Span.GetTag(Tags.HttpUrl));
+                Assert.AreEqual(expected, tags.HttpUrl);
             }
         }
 
-        [Theory]
-        [InlineData((int)IntegrationIds.HttpMessageHandler, (int)IntegrationIds.HttpMessageHandler)] // This scenario may occur on any .NET runtime with nested HttpMessageHandler's and HttpSocketHandler's
-        [InlineData((int)IntegrationIds.WebRequest, (int)IntegrationIds.HttpMessageHandler)] // This scenario may occur on .NET Core where the underlying transport for WebRequest is HttpMessageHandler
+        [TestCase((int)IntegrationIds.HttpMessageHandler, (int)IntegrationIds.HttpMessageHandler)] // This scenario may occur on any .NET runtime with nested HttpMessageHandler's and HttpSocketHandler's
+        [TestCase((int)IntegrationIds.WebRequest, (int)IntegrationIds.HttpMessageHandler)] // This scenario may occur on .NET Core where the underlying transport for WebRequest is HttpMessageHandler
         public void CreateOutboundHttpScope_AlwaysCreatesOneAutomaticInstrumentationScope(int integration1, int integration2)
         {
             // Set up Tracer
@@ -157,8 +153,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             }
         }
 
-        [Theory]
-        [MemberData(nameof(GetDbCommandScopeData))]
+        [TestCaseSource(nameof(GetDbCommandScopeData))]
         public void CreateDbCommandScope_ReturnsNullForExcludedAdoNetTypes(IDbCommand command)
         {
             // Set up tracer
@@ -182,8 +177,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             }
         }
 
-        [Theory]
-        [MemberData(nameof(GetDbCommandScopeData))]
+        [TestCaseSource(nameof(GetDbCommandScopeData))]
         public void CreateDbCommandScope_UsesReplacementServiceNameWhenProvided(IDbCommand command)
         {
             // Set up tracer
@@ -200,12 +194,11 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             // Create scope
             using (var outerScope = ScopeFactory.CreateDbCommandScope(tracer, command))
             {
-                Assert.Equal("my-custom-type", outerScope.Span.ServiceName);
+                Assert.AreEqual("my-custom-type", outerScope.Span.ServiceName);
             }
         }
 
-        [Theory]
-        [MemberData(nameof(GetDbCommandScopeData))]
+        [TestCaseSource(nameof(GetDbCommandScopeData))]
         public void CreateDbCommandScope_IgnoresReplacementServiceNameWhenNotProvided(IDbCommand command)
         {
             // Set up tracer
@@ -220,7 +213,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             // Create scope
             using (var outerScope = ScopeFactory.CreateDbCommandScope(tracer, command))
             {
-                Assert.NotEqual("my-custom-type", outerScope.Span.ServiceName);
+                Assert.AreNotEqual("my-custom-type", outerScope.Span.ServiceName);
             }
         }
 

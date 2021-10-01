@@ -11,7 +11,7 @@ using System.Data.Common;
 using Datadog.Trace.Configuration;
 using MySql.Data.MySqlClient;
 using Npgsql;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests
 {
@@ -27,8 +27,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 #endif
         }
 
-        [Theory]
-        [MemberData(nameof(GetDbCommandScopeData))]
+        [TestCaseSource(nameof(GetDbCommandScopeData))]
         public void CreateDbCommandScope_ReturnsNullForExcludedAdoNetTypes(IDbCommand command)
         {
             // Set up tracer
@@ -52,8 +51,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             }
         }
 
-        [Theory]
-        [MemberData(nameof(GetDbCommandScopeData))]
+        [TestCaseSource(nameof(GetDbCommandScopeData))]
         public void CreateDbCommandScope_UsesReplacementServiceNameWhenProvided(IDbCommand command)
         {
             // Set up tracer
@@ -70,12 +68,11 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             // Create scope
             using (var outerScope = CreateDbCommandScope(tracer, command))
             {
-                Assert.Equal("my-custom-type", outerScope.Span.ServiceName);
+                Assert.AreEqual("my-custom-type", outerScope.Span.ServiceName);
             }
         }
 
-        [Theory]
-        [MemberData(nameof(GetDbCommandScopeData))]
+        [TestCaseSource(nameof(GetDbCommandScopeData))]
         public void CreateDbCommandScope_IgnoresReplacementServiceNameWhenNotProvided(IDbCommand command)
         {
             // Set up tracer
@@ -90,23 +87,22 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             // Create scope
             using (var outerScope = CreateDbCommandScope(tracer, command))
             {
-                Assert.NotEqual("my-custom-type", outerScope.Span.ServiceName);
+                Assert.AreNotEqual("my-custom-type", outerScope.Span.ServiceName);
             }
         }
 
-        [Theory]
-        [InlineData("System.Data.SqlClient", "SqlCommand", "sql-server")]
-        [InlineData("MySql.Data.MySqlClient", "MySqlCommand", "mysql")]
-        [InlineData("Npgsql", "NpgsqlCommand", "postgres")]
-        [InlineData("", "ProfiledDbCommand", null)]
-        [InlineData("", "ExampleCommand", "example")]
-        [InlineData("", "Example", "example")]
-        [InlineData("", "Command", "command")]
-        [InlineData("Custom.DB", "Command", "db")]
+        [TestCase("System.Data.SqlClient", "SqlCommand", "sql-server")]
+        [TestCase("MySql.Data.MySqlClient", "MySqlCommand", "mysql")]
+        [TestCase("Npgsql", "NpgsqlCommand", "postgres")]
+        [TestCase("", "ProfiledDbCommand", null)]
+        [TestCase("", "ExampleCommand", "example")]
+        [TestCase("", "Example", "example")]
+        [TestCase("", "Command", "command")]
+        [TestCase("Custom.DB", "Command", "db")]
         public void GetDbType_CorrectNameGenerated(string namespaceName, string commandTypeName, string expected)
         {
             var dbType = ScopeFactory.GetDbType(namespaceName, commandTypeName);
-            Assert.Equal(expected, dbType);
+            Assert.AreEqual(expected, dbType);
         }
 
         private static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command)

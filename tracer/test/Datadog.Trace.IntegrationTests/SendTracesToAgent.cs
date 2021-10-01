@@ -11,16 +11,18 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.HttpMessageHandlers;
-using Xunit;
+using FluentAssertions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.IntegrationTests
 {
     public class SendTracesToAgent
     {
-        private readonly Tracer _tracer;
-        private readonly RecordHttpHandler _httpRecorder;
+        private Tracer _tracer;
+        private RecordHttpHandler _httpRecorder;
 
-        public SendTracesToAgent()
+        [SetUp]
+        public void Before()
         {
             var settings = new TracerSettings();
 
@@ -32,7 +34,8 @@ namespace Datadog.Trace.IntegrationTests
             _tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
         }
 
-        [Fact(Skip = "Run manually")]
+        [Test]
+        [Ignore("Run manually")]
         public async Task MinimalSpan()
         {
             var scope = _tracer.StartActive("Operation");
@@ -40,15 +43,16 @@ namespace Datadog.Trace.IntegrationTests
 
             // Check that the HTTP calls went as expected
             await _httpRecorder.WaitForCompletion(1);
-            Assert.Single(_httpRecorder.Requests);
-            Assert.Single(_httpRecorder.Responses);
-            Assert.All(_httpRecorder.Responses, (x) => Assert.Equal(HttpStatusCode.OK, x.StatusCode));
+            _httpRecorder.Requests.Should().HaveCount(1);
+            _httpRecorder.Responses.Should().HaveCount(1);
+            _httpRecorder.Responses.Should().OnlyContain(x => x.StatusCode == HttpStatusCode.OK);
 
             var trace = _httpRecorder.Traces.Single();
             MsgPackHelpers.AssertSpanEqual(scope.Span, trace.Single());
         }
 
-        [Fact(Skip = "Run manually")]
+        [Test]
+        [Ignore("Run manually")]
         public async Task CustomServiceName()
         {
             const string ServiceName = "MyService";
@@ -59,15 +63,16 @@ namespace Datadog.Trace.IntegrationTests
 
             // Check that the HTTP calls went as expected
             await _httpRecorder.WaitForCompletion(1);
-            Assert.Single(_httpRecorder.Requests);
-            Assert.Single(_httpRecorder.Responses);
-            Assert.All(_httpRecorder.Responses, (x) => Assert.Equal(HttpStatusCode.OK, x.StatusCode));
+            _httpRecorder.Requests.Should().HaveCount(1);
+            _httpRecorder.Responses.Should().HaveCount(1);
+            _httpRecorder.Responses.Should().OnlyContain(x => x.StatusCode == HttpStatusCode.OK);
 
             var trace = _httpRecorder.Traces.Single();
             MsgPackHelpers.AssertSpanEqual(scope.Span, trace.Single());
         }
 
-        [Fact(Skip = "Run manually")]
+        [Test]
+        [Ignore("Run manually")]
         public async Task Utf8Everywhere()
         {
             var scope = _tracer.StartActive("Aᛗᚪᚾᚾᚪ", serviceName: "На берегу пустынных волн");
@@ -77,15 +82,16 @@ namespace Datadog.Trace.IntegrationTests
 
             // Check that the HTTP calls went as expected
             await _httpRecorder.WaitForCompletion(1);
-            Assert.Single(_httpRecorder.Requests);
-            Assert.Single(_httpRecorder.Responses);
-            Assert.All(_httpRecorder.Responses, (x) => Assert.Equal(HttpStatusCode.OK, x.StatusCode));
+            _httpRecorder.Requests.Should().HaveCount(1);
+            _httpRecorder.Responses.Should().HaveCount(1);
+            _httpRecorder.Responses.Should().OnlyContain(x => x.StatusCode == HttpStatusCode.OK);
 
             var trace = _httpRecorder.Traces.Single();
             MsgPackHelpers.AssertSpanEqual(scope.Span, trace.Single());
         }
 
-        [Fact(Skip = "Run manually")]
+        [Test]
+        [Ignore("Run manually")]
         public async Task SubmitsOutOfOrderSpans()
         {
             var scope1 = _tracer.StartActive("op1");
@@ -94,16 +100,17 @@ namespace Datadog.Trace.IntegrationTests
             scope2.Close();
 
             await _httpRecorder.WaitForCompletion(1);
-            Assert.Single(_httpRecorder.Requests);
-            Assert.Single(_httpRecorder.Responses);
-            Assert.All(_httpRecorder.Responses, (x) => Assert.Equal(HttpStatusCode.OK, x.StatusCode));
+            _httpRecorder.Requests.Should().HaveCount(1);
+            _httpRecorder.Responses.Should().HaveCount(1);
+            _httpRecorder.Responses.Should().OnlyContain(x => x.StatusCode == HttpStatusCode.OK);
 
             var trace = _httpRecorder.Traces.Single();
             MsgPackHelpers.AssertSpanEqual(scope1.Span, trace[0].AsList()[0]);
             MsgPackHelpers.AssertSpanEqual(scope2.Span, trace[0].AsList()[1]);
         }
 
-        [Fact(Skip = "Run manually")]
+        [Test]
+        [Ignore("Run manually")]
         public void WithDefaultFactory()
         {
             // This test does not check anything it validates that this codepath runs without exceptions
@@ -112,7 +119,8 @@ namespace Datadog.Trace.IntegrationTests
                   .Dispose();
         }
 
-        [Fact(Skip = "Run manually")]
+        [Test]
+        [Ignore("Run manually")]
         public void WithGlobalTracer()
         {
             // This test does not check anything it validates that this codepath runs without exceptions

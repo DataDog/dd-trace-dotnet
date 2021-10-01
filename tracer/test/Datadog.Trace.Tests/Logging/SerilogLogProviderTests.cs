@@ -8,20 +8,21 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
+using NUnit.Framework;
 using Serilog;
 using Serilog.Events;
-using Xunit;
 
 namespace Datadog.Trace.Tests.Logging
 {
-    [Collection(nameof(Datadog.Trace.Tests.Logging))]
+    [NonParallelizable]
     public class SerilogLogProviderTests
     {
-        private readonly ILogProvider _logProvider;
-        private readonly ILog _logger;
-        private readonly List<LogEvent> _logEvents;
+        private ILogProvider _logProvider;
+        private ILog _logger;
+        private List<LogEvent> _logEvents;
 
-        public SerilogLogProviderTests()
+        [SetUp]
+        public void Setup()
         {
             Serilog.Log.Logger = new LoggerConfiguration()
                 .Enrich.FromLogContext()
@@ -34,11 +35,11 @@ namespace Datadog.Trace.Tests.Logging
             _logger = new LoggerExecutionWrapper(_logProvider.GetLogger("Test"));
         }
 
-        [Fact]
+        [Test]
         public void LogsInjectionEnabledAddsParentCorrelationIdentifiers()
         {
             // Assert that the Serilog log provider is correctly being used
-            Assert.IsType<CustomSerilogLogProvider>(LogProvider.CurrentLogProvider);
+            Assert.IsInstanceOf<CustomSerilogLogProvider>(LogProvider.CurrentLogProvider);
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
@@ -46,14 +47,18 @@ namespace Datadog.Trace.Tests.Logging
 
             // Filter the logs
             _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(_logEvents, e => LogEventContains(e, tracer.DefaultServiceName, tracer.Settings.ServiceVersion, tracer.Settings.Environment, parentScope));
+
+            foreach (var log in _logEvents)
+            {
+                LogEventContains(log, tracer.DefaultServiceName, tracer.Settings.ServiceVersion, tracer.Settings.Environment, parentScope);
+            }
         }
 
-        [Fact]
+        [Test]
         public void LogsInjectionEnabledAddsChildCorrelationIdentifiers()
         {
             // Assert that the Serilog log provider is correctly being used
-            Assert.IsType<CustomSerilogLogProvider>(LogProvider.CurrentLogProvider);
+            Assert.IsInstanceOf<CustomSerilogLogProvider>(LogProvider.CurrentLogProvider);
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
@@ -61,14 +66,18 @@ namespace Datadog.Trace.Tests.Logging
 
             // Filter the logs
             _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(_logEvents, e => LogEventContains(e, tracer.DefaultServiceName, tracer.Settings.ServiceVersion, tracer.Settings.Environment, childScope));
+
+            foreach (var log in _logEvents)
+            {
+                LogEventContains(log, tracer.DefaultServiceName, tracer.Settings.ServiceVersion, tracer.Settings.Environment, childScope);
+            }
         }
 
-        [Fact]
+        [Test]
         public void LogsInjectionEnabledDoesNotAddCorrelationIdentifiersOutsideSpans()
         {
             // Assert that the Serilog log provider is correctly being used
-            Assert.IsType<CustomSerilogLogProvider>(LogProvider.CurrentLogProvider);
+            Assert.IsInstanceOf<CustomSerilogLogProvider>(LogProvider.CurrentLogProvider);
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
@@ -76,14 +85,18 @@ namespace Datadog.Trace.Tests.Logging
 
             // Filter the logs
             _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(_logEvents, e => LogEventDoesNotContainCorrelationIdentifiers(e));
+
+            foreach (var log in _logEvents)
+            {
+                LogEventDoesNotContainCorrelationIdentifiers(log);
+            }
         }
 
-        [Fact]
+        [Test]
         public void LogsInjectionEnabledUsesTracerServiceName()
         {
             // Assert that the Serilog log provider is correctly being used
-            Assert.IsType<CustomSerilogLogProvider>(LogProvider.CurrentLogProvider);
+            Assert.IsInstanceOf<CustomSerilogLogProvider>(LogProvider.CurrentLogProvider);
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
@@ -91,14 +104,18 @@ namespace Datadog.Trace.Tests.Logging
 
             // Filter the logs
             _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(_logEvents, e => LogEventContains(e, tracer.DefaultServiceName, tracer.Settings.ServiceVersion, tracer.Settings.Environment, scope));
+
+            foreach (var log in _logEvents)
+            {
+                LogEventContains(log, tracer.DefaultServiceName, tracer.Settings.ServiceVersion, tracer.Settings.Environment, scope);
+            }
         }
 
-        [Fact]
+        [Test]
         public void DisabledLibLogSubscriberDoesNotAddCorrelationIdentifiers()
         {
             // Assert that the Serilog log provider is correctly being used
-            Assert.IsType<CustomSerilogLogProvider>(LogProvider.CurrentLogProvider);
+            Assert.IsInstanceOf<CustomSerilogLogProvider>(LogProvider.CurrentLogProvider);
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to FALSE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: false);
@@ -106,14 +123,18 @@ namespace Datadog.Trace.Tests.Logging
 
             // Filter the logs
             _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(_logEvents, e => LogEventDoesNotContainCorrelationIdentifiers(e));
+
+            foreach (var log in _logEvents)
+            {
+                LogEventDoesNotContainCorrelationIdentifiers(log);
+            }
         }
 
-        [Fact]
+        [Test]
         public void LogTheRightSpan()
         {
             // Assert that the Serilog log provider is correctly being used
-            Assert.IsType<CustomSerilogLogProvider>(LogProvider.CurrentLogProvider);
+            Assert.IsInstanceOf<CustomSerilogLogProvider>(LogProvider.CurrentLogProvider);
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
@@ -143,20 +164,20 @@ namespace Datadog.Trace.Tests.Logging
             barrier1.SignalAndWait();
             task1.Wait();
 
-            Assert.Equal(2, _logEvents.Count);
+            Assert.AreEqual(2, _logEvents.Count);
 
             var spanLog = _logEvents[0];
 
-            Assert.StartsWith("Span", spanLog.MessageTemplate.Text);
-            Assert.Equal(5, spanLog.Properties.Count);
+            StringAssert.StartsWith("Span", spanLog.MessageTemplate.Text);
+            Assert.AreEqual(5, spanLog.Properties.Count);
 
             var expectedSpanId = spanLog.MessageTemplate.Text.Split('-')[1];
             var spanProperty = spanLog.Properties[CorrelationIdentifier.SerilogSpanIdKey];
-            Assert.Equal(expectedSpanId, spanProperty.ToString().Trim('\"'));
+            Assert.AreEqual(expectedSpanId, spanProperty.ToString().Trim('\"'));
 
             var noSpanLog = _logEvents[1];
-            Assert.StartsWith("NoSpan", noSpanLog.MessageTemplate.ToString());
-            Assert.Empty(noSpanLog.Properties);
+            StringAssert.StartsWith("NoSpan", noSpanLog.MessageTemplate.ToString());
+            CollectionAssert.IsEmpty(noSpanLog.Properties);
         }
 
         internal static void LogEventContains(Serilog.Events.LogEvent logEvent, string service, string version, string env, Scope scope)
@@ -167,19 +188,19 @@ namespace Datadog.Trace.Tests.Logging
         internal static void Contains(Serilog.Events.LogEvent logEvent, string service, string version, string env, ulong traceId, ulong spanId)
         {
             Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.SerilogServiceKey));
-            Assert.Equal(service, logEvent.Properties[CorrelationIdentifier.SerilogServiceKey].ToString().Trim(new[] { '\"' }), ignoreCase: true);
+            StringAssert.AreEqualIgnoringCase(service, logEvent.Properties[CorrelationIdentifier.SerilogServiceKey].ToString().Trim(new[] { '\"' }));
 
             Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.SerilogVersionKey));
-            Assert.Equal(version, logEvent.Properties[CorrelationIdentifier.SerilogVersionKey].ToString().Trim(new[] { '\"' }), ignoreCase: true);
+            StringAssert.AreEqualIgnoringCase(version, logEvent.Properties[CorrelationIdentifier.SerilogVersionKey].ToString().Trim(new[] { '\"' }));
 
             Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.SerilogEnvKey));
-            Assert.Equal(env, logEvent.Properties[CorrelationIdentifier.SerilogEnvKey].ToString().Trim(new[] { '\"' }), ignoreCase: true);
+            StringAssert.AreEqualIgnoringCase(env, logEvent.Properties[CorrelationIdentifier.SerilogEnvKey].ToString().Trim(new[] { '\"' }));
 
             Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.SerilogTraceIdKey));
-            Assert.Equal(traceId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.SerilogTraceIdKey].ToString().Trim(new[] { '\"' })));
+            Assert.AreEqual(traceId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.SerilogTraceIdKey].ToString().Trim(new[] { '\"' })));
 
             Assert.True(logEvent.Properties.ContainsKey(CorrelationIdentifier.SerilogSpanIdKey));
-            Assert.Equal(spanId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.SerilogSpanIdKey].ToString().Trim(new[] { '\"' })));
+            Assert.AreEqual(spanId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.SerilogSpanIdKey].ToString().Trim(new[] { '\"' })));
         }
 
         internal static void LogEventDoesNotContainCorrelationIdentifiers(Serilog.Events.LogEvent logEvent)

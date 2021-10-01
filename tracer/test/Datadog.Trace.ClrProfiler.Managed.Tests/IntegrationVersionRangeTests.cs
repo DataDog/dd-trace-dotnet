@@ -4,92 +4,92 @@
 // </copyright>
 
 using System;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests
 {
     public class IntegrationVersionRangeTests
     {
-        [Fact]
+        [Test]
         public void MinimumVersionTwoSetsResetsDefaultsForNonSpecifiedParts()
         {
             var range = new IntegrationVersionRange();
             range.MinimumVersion = "5.5.4";
             range.MinimumVersion = "6";
-            Assert.Equal(expected: 6, actual: range.MinimumMajor);
-            Assert.Equal(expected: 0, actual: range.MinimumMinor);
-            Assert.Equal(expected: 0, actual: range.MinimumPatch);
+            Assert.AreEqual(expected: 6, actual: range.MinimumMajor);
+            Assert.AreEqual(expected: 0, actual: range.MinimumMinor);
+            Assert.AreEqual(expected: 0, actual: range.MinimumPatch);
         }
 
-        [Fact]
+        [Test]
         public void ParsesMinimumMajor()
         {
             var range = new IntegrationVersionRange();
             range.MinimumVersion = "5";
-            Assert.Equal(expected: 5, actual: range.MinimumMajor);
+            Assert.AreEqual(expected: 5, actual: range.MinimumMajor);
         }
 
-        [Fact]
+        [Test]
         public void ParsesMinimumMajorAndMinor()
         {
             var range = new IntegrationVersionRange();
             range.MinimumVersion = "5.8";
-            Assert.Equal(expected: 5, actual: range.MinimumMajor);
-            Assert.Equal(expected: 8, actual: range.MinimumMinor);
+            Assert.AreEqual(expected: 5, actual: range.MinimumMajor);
+            Assert.AreEqual(expected: 8, actual: range.MinimumMinor);
         }
 
-        [Fact]
+        [Test]
         public void ParsesMinimumMajorAndMinorAndPatch()
         {
             var range = new IntegrationVersionRange();
             range.MinimumVersion = "5.8.82";
-            Assert.Equal(expected: 5, actual: range.MinimumMajor);
-            Assert.Equal(expected: 8, actual: range.MinimumMinor);
-            Assert.Equal(expected: 82, actual: range.MinimumPatch);
+            Assert.AreEqual(expected: 5, actual: range.MinimumMajor);
+            Assert.AreEqual(expected: 8, actual: range.MinimumMinor);
+            Assert.AreEqual(expected: 82, actual: range.MinimumPatch);
         }
 
-        [Fact]
+        [Test]
         public void MaximumVersionTwoSetsResetsDefaultsForNonSpecifiedParts()
         {
             var range = new IntegrationVersionRange();
             range.MaximumVersion = "5.5.4";
             range.MaximumVersion = "6";
-            Assert.Equal(expected: 6, actual: range.MaximumMajor);
-            Assert.Equal(expected: ushort.MaxValue, actual: range.MaximumMinor);
-            Assert.Equal(expected: ushort.MaxValue, actual: range.MaximumPatch);
+            Assert.AreEqual(expected: 6, actual: range.MaximumMajor);
+            Assert.AreEqual(expected: ushort.MaxValue, actual: range.MaximumMinor);
+            Assert.AreEqual(expected: ushort.MaxValue, actual: range.MaximumPatch);
         }
 
-        [Fact]
+        [Test]
         public void ParsesMaximumMajor()
         {
             var range = new IntegrationVersionRange();
             range.MaximumVersion = "5";
-            Assert.Equal(expected: 5, actual: range.MaximumMajor);
+            Assert.AreEqual(expected: 5, actual: range.MaximumMajor);
         }
 
-        [Fact]
+        [Test]
         public void ParsesMaximumMajorAndMinor()
         {
             var range = new IntegrationVersionRange();
             range.MaximumVersion = "5.8";
-            Assert.Equal(expected: 5, actual: range.MaximumMajor);
-            Assert.Equal(expected: 8, actual: range.MaximumMinor);
+            Assert.AreEqual(expected: 5, actual: range.MaximumMajor);
+            Assert.AreEqual(expected: 8, actual: range.MaximumMinor);
         }
 
-        [Fact]
+        [Test]
         public void ParsesMaximumMajorAndMinorAndPatch()
         {
             var range = new IntegrationVersionRange();
             range.MaximumVersion = "5.8.82";
-            Assert.Equal(expected: 5, actual: range.MaximumMajor);
-            Assert.Equal(expected: 8, actual: range.MaximumMinor);
-            Assert.Equal(expected: 82, actual: range.MaximumPatch);
+            Assert.AreEqual(expected: 5, actual: range.MaximumMajor);
+            Assert.AreEqual(expected: 8, actual: range.MaximumMinor);
+            Assert.AreEqual(expected: 82, actual: range.MaximumPatch);
         }
 
         /// <summary>
         /// We want to be sure that any versions we specify are explicit, so we'll throw as soon as we know there is anything unclear.
         /// </summary>
-        [Fact]
+        [Test]
         public void ThrowsExceptionForNonNumbers()
         {
             Exception exMin = null;

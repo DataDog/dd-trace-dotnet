@@ -4,7 +4,7 @@
 // </copyright>
 
 using System.Threading.Tasks;
-using Xunit;
+using NUnit.Framework;
 
 #pragma warning disable SA1201 // Elements must appear in the correct order
 #pragma warning disable SA1402 // File may only contain a single class
@@ -13,7 +13,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 {
     public class ExceptionsTests
     {
-        [Fact]
+        [Test]
         public void PropertyCantBeReadException()
         {
             object target = new PropertyCantBeReadExceptionClass();
@@ -49,7 +49,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         // *
 
-        [Fact]
+        [Test]
         public void PropertyCantBeWrittenException()
         {
             object target = new PropertyCantBeWrittenExceptionClass();
@@ -72,7 +72,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         // *
 
-        [Fact]
+        [Test]
         public void PropertyArgumentsLengthException()
         {
             object target = new PropertyArgumentsLengthExceptionClass();
@@ -120,7 +120,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         // *
 
-        [Fact]
+        [Test]
         public void FieldIsReadonlyException()
         {
             object target = new FieldIsReadonlyExceptionClass();
@@ -146,7 +146,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         // *
 
-        [Fact]
+        [Test]
         public void PropertyOrFieldNotFoundException()
         {
             object[] targets = new object[]
@@ -221,7 +221,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
 #if NET452
         // *
-        [Fact]
+        [Test]
         public void TypeIsNotPublicException()
         {
             object target = new TypeIsNotPublicExceptionClass();
@@ -249,7 +249,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 #endif
         // *
 
-        [Fact]
+        [Test]
         public void StructMembersCannotBeChangedException()
         {
             StructMembersCannotBeChangedExceptionStruct targetStruct = default;
@@ -273,7 +273,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         // *
 
-        [Fact]
+        [Test]
         public void StructMembersCannotBeChanged2Exception()
         {
             StructMembersCannotBeChanged2ExceptionStruct targetStruct = default;
@@ -300,7 +300,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         // *
 
-        [Fact]
+        [Test]
         public void TargetMethodNotFoundException()
         {
             object target = new TargetMethodNotFoundExceptionClass();
@@ -350,7 +350,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         // *
 
-        [Fact]
+        [Test]
         public void ProxyMethodParameterIsMissingException()
         {
             object target = new ProxyMethodParameterIsMissingExceptionClass();
@@ -376,7 +376,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         // *
 
-        [Fact]
+        [Test]
         public void ProxyAndTargetMethodParameterSignatureMismatchException()
         {
             object target = new ProxyAndTargetMethodParameterSignatureMismatchExceptionClass();
@@ -413,7 +413,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
 #if NET452
         // *
-        [Fact]
+        [Test]
         public void ProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException()
         {
             object target = new ProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesExceptionClass();
@@ -438,7 +438,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 #endif
         // *
 
-        [Fact]
+        [Test]
         public void TargetMethodAmbiguousMatchException()
         {
             object target = new TargetMethodAmbiguousMatchExceptionClass();
@@ -469,7 +469,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         // *
 
-        [Fact]
+        [Test]
         public void ProxyTypeDefinitionIsNull()
         {
             Assert.Throws<DuckTypeProxyTypeDefinitionIsNull>(() =>
@@ -480,7 +480,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         // *
 
-        [Fact]
+        [Test]
         public void TargetObjectInstanceIsNull()
         {
             Assert.Throws<DuckTypeTargetObjectInstanceIsNull>(() =>
@@ -495,7 +495,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         // *
 
-        [Fact]
+        [Test]
         public void InvalidTypeConversionException()
         {
             object target = new InvalidTypeConversionExceptionClass();
@@ -521,7 +521,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         // *
 
-        [Fact]
+        [Test]
         public void ObjectInvalidTypeConversionException()
         {
             object target = new ObjectInvalidTypeConversionExceptionClass();
@@ -544,7 +544,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         // *
 
-        [Fact]
+        [Test]
         public void ObjectInvalidTypeConversion2Exception()
         {
             object target = new ObjectInvalidTypeConversion2ExceptionClass();
@@ -567,7 +567,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         // *
 
-        [Fact]
+        [Test]
         public void ObjectInvalidTypeConversion3Exception()
         {
             object target = new ObjectInvalidTypeConversion3ExceptionClass();

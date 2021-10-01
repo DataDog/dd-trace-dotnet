@@ -11,33 +11,24 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    [Collection("IisTests")]
-    public class AspNetWebFormsTests : TestHelper, IClassFixture<IisFixture>
+    public class AspNetWebFormsTests : IisTestsBase
     {
-        private readonly IisFixture _iisFixture;
-
         // NOTE: Would pass this in addition to the name/output to the new constructor if we removed the Samples.WebForms copied project in favor of the demo repo source project...
         // $"../dd-trace-demo/dotnet-coffeehouse/Datadog.Coffeehouse.WebForms",
-        public AspNetWebFormsTests(IisFixture iisFixture, ITestOutputHelper output)
-            : base("WebForms", @"test\test-applications\aspnet", output)
+        public AspNetWebFormsTests()
+            : base("WebForms", @"test\test-applications\aspnet", IisAppType.AspNetIntegrated, "/account/login?shutdown=1")
         {
             SetServiceVersion("1.0.0");
-
-            _iisFixture = iisFixture;
-            _iisFixture.ShutdownPath = "/account/login?shutdown=1";
-            _iisFixture.TryStartIis(this, IisAppType.AspNetIntegrated);
         }
 
-        [Theory]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        [Trait("LoadFromGAC", "True")]
-        [InlineData("/Account/Login", "GET /account/login", false)]
+        [Property("Category", "EndToEnd")]
+        [Property("RunOnWindows", "True")]
+        [Property("LoadFromGAC", "True")]
+        [TestCase("/Account/Login", "GET /account/login", false)]
         public async Task SubmitsTraces(
             string path,
             string expectedResourceName,
@@ -45,8 +36,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             await AssertAspNetSpanOnly(
                 path,
-                _iisFixture.Agent,
-                _iisFixture.HttpPort,
+                Agent,
+                HttpPort,
                 HttpStatusCode.OK,
                 isError,
                 expectedErrorType: null,
@@ -56,10 +47,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 "1.0.0");
         }
 
-        [Fact(Skip = "This test requires Elasticsearch to be running on the host, which is not currently enabled in CI.")]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        [Trait("LoadFromGAC", "True")]
+        [Test]
+        [Ignore("This test requires Elasticsearch to be running on the host, which is not currently enabled in CI.")]
+        [Property("Category", "EndToEnd")]
+        [Property("RunOnWindows", "True")]
+        [Property("LoadFromGAC", "True")]
         public async Task NestedAsyncElasticCallSubmitsTrace()
         {
             var testStart = DateTime.UtcNow;
@@ -68,13 +60,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // disable tracing for this HttpClient request
                 httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
 
-                var response = await httpClient.GetAsync($"http://localhost:{_iisFixture.HttpPort}" + "/Database/Elasticsearch");
+                var response = await httpClient.GetAsync($"http://localhost:{HttpPort}" + "/Database/Elasticsearch");
                 var content = await response.Content.ReadAsStringAsync();
-                Output.WriteLine($"[http] {response.StatusCode} {content}");
-                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+                Console.WriteLine($"[http] {response.StatusCode} {content}");
+                Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
             }
 
-            var allSpans = _iisFixture.Agent.WaitForSpans(3, minDateTime: testStart)
+            var allSpans = Agent.WaitForSpans(3, minDateTime: testStart)
                                    .OrderBy(s => s.Start)
                                    .ToList();
 
@@ -88,9 +80,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             foreach (var span in elasticSpans)
             {
-                Assert.Equal("elasticsearch.query", span.Name);
-                Assert.Equal("Development Web Site-elasticsearch", span.Service);
-                Assert.Equal("elasticsearch", span.Type);
+                Assert.AreEqual("elasticsearch.query", span.Name);
+                Assert.AreEqual("Development Web Site-elasticsearch", span.Service);
+                Assert.AreEqual("elasticsearch", span.Type);
             }
         }
     }

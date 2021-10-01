@@ -1,80 +1,36 @@
-// <copyright file="AspNetCoreMvcTestBase.cs" company="Datadog">
+// <copyright file="OwinTestsBase.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-#if NETCOREAPP
+
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using NUnit.Framework;
 
-namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
+namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNet
 {
-    public abstract class AspNetCoreMvcTestBase : TestHelper
+    [NonParallelizable]
+    public abstract class OwinTestsBase : TestHelper
     {
-        protected const string HeaderName1WithMapping = "datadog-header-name";
-        protected const string HeaderName1UpperWithMapping = "DATADOG-HEADER-NAME";
-        protected const string HeaderTagName1WithMapping = "datadog-header-tag";
-        protected const string HeaderValue1 = "asp-net-core";
-        protected const string HeaderName2 = "sample.correlation.identifier";
-        protected const string HeaderValue2 = "0000-0000-0000";
-        protected const string HeaderName3 = "Server";
-        protected const string HeaderValue3 = "Kestrel";
-
-        private readonly bool _enableCallTarget;
-        private readonly bool _enableRouteTemplateResourceNames;
-
         private readonly HttpClient _httpClient;
         private Process _process;
-        private bool _enableLogging = true;
 
-        protected AspNetCoreMvcTestBase(string sampleName, bool enableCallTarget, bool enableRouteTemplateResourceNames)
-            : base(sampleName)
+        protected OwinTestsBase(string sampleAppName)
+            : base(sampleAppName)
         {
             _httpClient = new HttpClient();
             _httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
-            _httpClient.DefaultRequestHeaders.Add(HeaderName1WithMapping, HeaderValue1);
-            _httpClient.DefaultRequestHeaders.Add(HeaderName2, HeaderValue2);
-
-            _enableCallTarget = enableCallTarget;
-            _enableRouteTemplateResourceNames = enableRouteTemplateResourceNames;
-            SetEnvironmentVariable(ConfigurationKeys.HeaderTags, $"{HeaderName1UpperWithMapping}:{HeaderTagName1WithMapping},{HeaderName2},{HeaderName3}");
-            SetEnvironmentVariable(ConfigurationKeys.HttpServerErrorStatusCodes, "400-403, 500-503");
-
-            SetServiceVersion("1.0.0");
-
-            SetCallTargetSettings(enableCallTarget);
-            if (enableRouteTemplateResourceNames)
-            {
-                SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, "true");
-            }
         }
 
         public MockTracerAgent Agent { get; private set; }
 
         public int HttpPort { get; private set; }
-
-        public static IEnumerable<TestCaseData> Data() => new TestCaseData[]
-        {
-            new("/", 200),
-            new("/delay/0", 200),
-            new("/api/delay/0", 200),
-            new("/not-found", 404),
-            new("/status-code/203", 203),
-            new("/status-code/500", 500),
-            new("/bad-request", 500),
-            new("/status-code/402", 402),
-            new("/ping", 200),
-            new("/branch/ping", 200),
-            new("/branch/not-found", 404),
-        };
 
         [OneTimeSetUp]
         public async Task TryStartApp()
@@ -93,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
                     Agent = new MockTracerAgent(initialAgentPort);
                     Agent.SpanFilters.Add(IsNotServerLifeCheck);
-                    Console.WriteLine($"Starting aspnetcore sample, agentPort: {Agent.Port}, samplePort: {HttpPort}");
+                    Console.WriteLine($"Starting OWIN sample, agentPort: {Agent.Port}, samplePort: {HttpPort}");
                     _process = StartSample(Agent.Port, arguments: null, packageVersion: string.Empty, aspNetCorePort: HttpPort);
                 }
             }
@@ -104,46 +60,37 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         [OneTimeTearDown]
         public void Shutdown()
         {
-            _enableLogging = false;
-            var request = WebRequest.CreateHttp($"http://localhost:{HttpPort}/shutdown");
-            request.GetResponse().Close();
-
-            if (_process is not null)
+            lock (this)
             {
-                try
+                if (_process is not null)
                 {
-                    if (!_process.HasExited)
+                    try
                     {
-                        if (!_process.WaitForExit(5000))
+                        if (!_process.HasExited)
                         {
+                            SubmitRequest("/shutdown").GetAwaiter().GetResult();
+
                             _process.Kill();
                         }
                     }
-                }
-                catch
-                {
-                    // in some circumstances the HasExited property throws, this means the process probably hasn't even started correctly
-                }
+                    catch
+                    {
+                        // in some circumstances the HasExited property throws, this means the process probably hasn't even started correctly
+                    }
 
-                _process.Dispose();
+                    _process.Dispose();
+                }
             }
 
             Agent?.Dispose();
         }
 
-        protected string GetTestName(string testName)
-        {
-            return testName
-                 + (_enableCallTarget ? ".CallTarget" : ".CallSite")
-                 + (_enableRouteTemplateResourceNames ? ".WithFF" : ".NoFF");
-        }
-
-        protected async Task<IImmutableList<MockTracerAgent.Span>> WaitForSpans(string path)
+        public async Task<IImmutableList<MockTracerAgent.Span>> WaitForSpans(string path, int expectedSpanCount)
         {
             var testStart = DateTime.UtcNow;
 
             await SubmitRequest(path);
-            return Agent.WaitForSpans(count: 1, minDateTime: testStart, returnAllOperations: true);
+            return Agent.WaitForSpans(count: expectedSpanCount, minDateTime: testStart, returnAllOperations: true);
         }
 
         private async Task EnsureServerStarted()
@@ -159,10 +106,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                         wh.Set();
                     }
 
-                    if (_enableLogging)
-                    {
-                        Console.WriteLine($"[webserver][stdout] {args.Data}");
-                    }
+                    Console.WriteLine($"[webserver][stdout] {args.Data}");
                 }
             };
             _process.BeginOutputReadLine();
@@ -171,10 +115,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             {
                 if (args.Data != null)
                 {
-                    if (_enableLogging)
-                    {
-                        Console.WriteLine($"[webserver][stderr] {args.Data}");
-                    }
+                    Console.WriteLine($"[webserver][stderr] {args.Data}");
                 }
             };
 
@@ -233,4 +174,3 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         }
     }
 }
-#endif

@@ -7,15 +7,12 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using Datadog.Trace.PlatformHelpers;
-using Xunit;
-using Xunit.Sdk;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests.PlatformHelpers
 {
-    [CollectionDefinition(nameof(AzureAppServicesMetadataTests), DisableParallelization = true)]
-    [AzureAppServicesRestorer]
+    [NonParallelizable]
     public class AzureAppServicesMetadataTests
     {
         private const string AppServiceKind = "app";
@@ -41,17 +38,31 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         private static readonly string FunctionsVersion = "~3";
         private static readonly string FunctionsRuntime = "dotnet";
 
-        [Fact]
+        private AzureAppServices _metadata;
+
+        [SetUp]
+        public void Before()
+        {
+            _metadata = AzureAppServices.Metadata;
+        }
+
+        [TearDown]
+        public void After()
+        {
+            AzureAppServices.Metadata = _metadata;
+        }
+
+        [Test]
         public void AzureContext_AzureAppService_Default()
         {
             var vars = GetMockVariables(SubscriptionId, DeploymentId, PlanResourceGroup, SiteResourceGroup);
             var metadata = new AzureAppServices(vars);
-            Assert.Equal(expected: AzureContext.AzureAppService, actual: metadata.AzureContext);
-            Assert.Equal(expected: AppServiceKind, actual: metadata.SiteKind);
-            Assert.Equal(expected: AppServiceType, actual: metadata.SiteType);
+            Assert.AreEqual(expected: AzureContext.AzureAppService, actual: metadata.AzureContext);
+            Assert.AreEqual(expected: AppServiceKind, actual: metadata.SiteKind);
+            Assert.AreEqual(expected: AppServiceType, actual: metadata.SiteType);
         }
 
-        [Fact]
+        [Test]
         public void AzureContext_AzureFunction_WhenFunctionVariablesPresent()
         {
             var vars = GetMockVariables(
@@ -63,21 +74,21 @@ namespace Datadog.Trace.Tests.PlatformHelpers
                 functionsRuntime: FunctionsRuntime);
 
             var metadata = new AzureAppServices(vars);
-            Assert.Equal(expected: AzureContext.AzureFunctions, actual: metadata.AzureContext);
-            Assert.Equal(expected: FunctionKind, actual: metadata.SiteKind);
-            Assert.Equal(expected: FunctionType, actual: metadata.SiteType);
+            Assert.AreEqual(expected: AzureContext.AzureFunctions, actual: metadata.AzureContext);
+            Assert.AreEqual(expected: FunctionKind, actual: metadata.SiteKind);
+            Assert.AreEqual(expected: FunctionType, actual: metadata.SiteType);
         }
 
-        [Fact]
+        [Test]
         public void ResourceId_Created_WhenAllRequirementsExist()
         {
             var vars = GetMockVariables(SubscriptionId, DeploymentId, PlanResourceGroup, SiteResourceGroup);
             var metadata = new AzureAppServices(vars);
             var resourceId = metadata.ResourceId;
-            Assert.Equal(expected: ExpectedResourceId, actual: resourceId);
+            Assert.AreEqual(expected: ExpectedResourceId, actual: resourceId);
         }
 
-        [Fact]
+        [Test]
         public void IsRelevant_True_WhenVariableSetTrue()
         {
             var vars = GetMockVariables(null, null, null, null);
@@ -85,31 +96,31 @@ namespace Datadog.Trace.Tests.PlatformHelpers
             Assert.True(metadata.IsRelevant);
         }
 
-        [Fact]
+        [Test]
         public void OperatingSystem_Set()
         {
             var vars = GetMockVariables(null, null, null, null);
             var metadata = new AzureAppServices(vars);
-            Assert.Equal(expected: "windows", actual: metadata.OperatingSystem);
+            Assert.AreEqual(expected: "windows", actual: metadata.OperatingSystem);
         }
 
-        [Fact]
+        [Test]
         public void InstanceId_Set()
         {
             var vars = GetMockVariables(null, null, null, null);
             var metadata = new AzureAppServices(vars);
-            Assert.Equal(expected: "instance_id", actual: metadata.InstanceId);
+            Assert.AreEqual(expected: "instance_id", actual: metadata.InstanceId);
         }
 
-        [Fact]
+        [Test]
         public void InstanceName_Set()
         {
             var vars = GetMockVariables(null, null, null, null);
             var metadata = new AzureAppServices(vars);
-            Assert.Equal(expected: "instance_name", actual: metadata.InstanceName);
+            Assert.AreEqual(expected: "instance_name", actual: metadata.InstanceName);
         }
 
-        [Fact]
+        [Test]
         public void Runtime_Set()
         {
             var vars = GetMockVariables(null, null, null, null);
@@ -117,7 +128,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
             Assert.True(metadata.Runtime?.Length > 0);
         }
 
-        [Fact]
+        [Test]
         public void IsRelevant_False_WhenVariableDoesNotExist()
         {
             var vars = GetMockVariables(null, null, null, null);
@@ -127,13 +138,13 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         }
 
         [Theory]
-        [InlineData(null, "deploymentId", "siteResourceGroup")]
-        [InlineData("123", null, "siteResourceGroup")]
-        [InlineData("123", "deploymentId", null)]
-        [InlineData(null, null, "siteResourceGroup")]
-        [InlineData(null, "deploymentId", null)]
-        [InlineData("123", null, null)]
-        [InlineData(null, null, null)]
+        [TestCase(null, "deploymentId", "siteResourceGroup")]
+        [TestCase("123", null, "siteResourceGroup")]
+        [TestCase("123", "deploymentId", null)]
+        [TestCase(null, null, "siteResourceGroup")]
+        [TestCase(null, "deploymentId", null)]
+        [TestCase("123", null, null)]
+        [TestCase(null, null, null)]
         public void ResourceId_IsNull_WhenAnyRequirementsMissing(string subscriptionId, string deploymentId, string siteResourceGroup)
         {
             // plan resource group actually doesn't matter for the resource id we build
@@ -142,7 +153,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
             Assert.Null(metadata.ResourceId);
         }
 
-        [Fact]
+        [Test]
         public void PopulatesOnlyRootSpans()
         {
             var vars = GetMockVariables(SubscriptionId, DeploymentId, PlanResourceGroup, SiteResourceGroup);
@@ -176,8 +187,8 @@ namespace Datadog.Trace.Tests.PlatformHelpers
                 }
             }
 
-            Assert.Equal(expected: iterations, actual: rootSpans.Count);
-            Assert.NotEmpty(nonRootSpans);
+            Assert.AreEqual(expected: iterations, actual: rootSpans.Count);
+            CollectionAssert.IsNotEmpty(nonRootSpans);
 
             var rootSpansMissingExpectedTag =
                 rootSpans.Where(s => s.GetTag(Tags.AzureAppServicesResourceId) != ExpectedResourceId).ToList();
@@ -239,24 +250,6 @@ namespace Datadog.Trace.Tests.PlatformHelpers
             }
 
             return vars;
-        }
-
-        [AttributeUsage(AttributeTargets.Class, Inherited = true)]
-        private class AzureAppServicesRestorerAttribute : BeforeAfterTestAttribute
-        {
-            private AzureAppServices _metadata;
-
-            public override void Before(MethodInfo methodUnderTest)
-            {
-                _metadata = AzureAppServices.Metadata;
-                base.Before(methodUnderTest);
-            }
-
-            public override void After(MethodInfo methodUnderTest)
-            {
-                AzureAppServices.Metadata = _metadata;
-                base.After(methodUnderTest);
-            }
         }
     }
 }

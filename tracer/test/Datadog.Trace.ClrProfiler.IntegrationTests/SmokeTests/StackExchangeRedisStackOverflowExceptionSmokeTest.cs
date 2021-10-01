@@ -4,28 +4,27 @@
 // </copyright>
 
 #if !NET452
-using Datadog.Trace.ClrProfiler.IntegrationTests.TestCollections;
+using System;
 using Datadog.Trace.TestHelpers;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 {
-    [Collection(nameof(StackExchangeRedisTestCollection))]
+    [NonParallelizable]
     public class StackExchangeRedisStackOverflowExceptionSmokeTest : SmokeTestBase
     {
-        public StackExchangeRedisStackOverflowExceptionSmokeTest(ITestOutputHelper output)
-            : base(output, "StackExchange.Redis.StackOverflowException", maxTestRunSeconds: 30)
+        public StackExchangeRedisStackOverflowExceptionSmokeTest()
+            : base("StackExchange.Redis.StackOverflowException", maxTestRunSeconds: 30)
         {
         }
 
-        [Fact]
-        [Trait("Category", "Smoke")]
+        [Test]
+        [Property("Category", "Smoke")]
         public void NoExceptions()
         {
             if (EnvironmentTools.IsWindows())
             {
-                Output.WriteLine("Ignored for Windows");
+                Console.WriteLine("Ignored for Windows");
                 return;
             }
 

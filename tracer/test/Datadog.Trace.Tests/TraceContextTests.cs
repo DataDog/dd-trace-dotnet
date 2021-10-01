@@ -7,7 +7,7 @@ using System;
 using Datadog.Trace.Util;
 using FluentAssertions;
 using Moq;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests
 {
@@ -15,7 +15,7 @@ namespace Datadog.Trace.Tests
     {
         private readonly Mock<IDatadogTracer> _tracerMock = new Mock<IDatadogTracer>();
 
-        [Fact]
+        [Test]
         public void UtcNow_GivesLegitTime()
         {
             var traceContext = new TraceContext(_tracerMock.Object);
@@ -26,7 +26,7 @@ namespace Datadog.Trace.Tests
             Assert.True(expectedNow.Subtract(now) < TimeSpan.FromMilliseconds(30));
         }
 
-        [Fact]
+        [Test]
         public void UtcNow_IsMonotonic()
         {
             var traceContext = new TraceContext(_tracerMock.Object);
@@ -37,9 +37,8 @@ namespace Datadog.Trace.Tests
             Assert.True(t2.Subtract(t1) > TimeSpan.Zero);
         }
 
-        [Theory]
-        [InlineData(true)]
-        [InlineData(false)]
+        [TestCase(true)]
+        [TestCase(false)]
         public void FlushPartialTraces(bool partialFlush)
         {
             var tracer = new Mock<IDatadogTracer>();
@@ -112,7 +111,7 @@ namespace Datadog.Trace.Tests
             }
         }
 
-        [Fact]
+        [Test]
         public void FullFlushShouldNotPropagateSamplingPriority()
         {
             const int partialFlushThreshold = 3;
@@ -162,7 +161,7 @@ namespace Datadog.Trace.Tests
             spans.Value.Should().OnlyContain(s => s == rootSpan || s.GetMetric(Metrics.SamplingPriority) == null, "only the root span should have a priority");
         }
 
-        [Fact]
+        [Test]
         public void PartialFlushShouldPropagateSamplingPriority()
         {
             const int partialFlushThreshold = 2;

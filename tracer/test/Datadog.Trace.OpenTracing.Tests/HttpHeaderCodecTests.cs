@@ -4,7 +4,7 @@
 // </copyright>
 
 using System;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.OpenTracing.Tests
 {
@@ -17,7 +17,7 @@ namespace Datadog.Trace.OpenTracing.Tests
 
         private readonly HttpHeadersCodec _codec = new HttpHeadersCodec();
 
-        [Fact]
+        [Test]
         public void Extract_ValidParentAndTraceId_ProperSpanContext()
         {
             const ulong traceId = 10;
@@ -30,11 +30,11 @@ namespace Datadog.Trace.OpenTracing.Tests
             var spanContext = _codec.Extract(headers) as OpenTracingSpanContext;
 
             Assert.NotNull(spanContext);
-            Assert.Equal(traceId, spanContext.Context.TraceId);
-            Assert.Equal(parentId, spanContext.Context.SpanId);
+            Assert.AreEqual(traceId, spanContext.Context.TraceId);
+            Assert.AreEqual(parentId, spanContext.Context.SpanId);
         }
 
-        [Fact]
+        [Test]
         public void Extract_WrongHeaderCase_ExtractionStillWorks()
         {
             const ulong traceId = 10;
@@ -49,11 +49,11 @@ namespace Datadog.Trace.OpenTracing.Tests
             var spanContext = _codec.Extract(headers) as OpenTracingSpanContext;
 
             Assert.NotNull(spanContext);
-            Assert.Equal(traceId, spanContext.Context.TraceId);
-            Assert.Equal(parentId, spanContext.Context.SpanId);
+            Assert.AreEqual(traceId, spanContext.Context.TraceId);
+            Assert.AreEqual(parentId, spanContext.Context.SpanId);
         }
 
-        [Fact]
+        [Test]
         public void Inject_SpanContext_HeadersWithCorrectInfo()
         {
             const ulong spanId = 10;
@@ -66,9 +66,9 @@ namespace Datadog.Trace.OpenTracing.Tests
 
             _codec.Inject(spanContext, headers);
 
-            Assert.Equal(spanId.ToString(), headers.Get(HttpHeaderParentId));
-            Assert.Equal(traceId.ToString(), headers.Get(HttpHeaderTraceId));
-            Assert.Equal(((int)samplingPriority).ToString(), headers.Get(HttpHeaderSamplingPriority));
+            Assert.AreEqual(spanId.ToString(), headers.Get(HttpHeaderParentId));
+            Assert.AreEqual(traceId.ToString(), headers.Get(HttpHeaderTraceId));
+            Assert.AreEqual(((int)samplingPriority).ToString(), headers.Get(HttpHeaderSamplingPriority));
         }
     }
 }

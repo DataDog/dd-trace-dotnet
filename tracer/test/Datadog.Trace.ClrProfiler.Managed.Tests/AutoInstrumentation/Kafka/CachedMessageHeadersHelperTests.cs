@@ -10,7 +10,7 @@ using Confluent.Kafka;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 using Datadog.Trace.DuckTyping;
 using FluentAssertions;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Kafka
 {
@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Kafka
         private static readonly Type MessageType = typeof(Message<,>);
         private static readonly Type CachedMessageHeadersHelperType = typeof(CachedMessageHeadersHelper<>);
 
-        [Fact]
+        [Test]
         public void CanCreateAndAssignMessageHeaders()
         {
             var message = new Message<string, string>();

@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests
 {
@@ -15,58 +15,58 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
         public Person TestPerson { get; } = new Person(Name, Age);
 
-        [Fact]
+        [Test]
         public void TryCallMethod_Class()
         {
             var success = TestPerson.TryCallMethod("GetString", "test", out string result);
 
             Assert.True(success);
-            Assert.Equal("result: test", result);
+            Assert.AreEqual("result: test", result);
         }
 
-        [Fact]
+        [Test]
         public void TryCallMethod_Struct()
         {
             var success = TestPerson.TryCallMethod("GetInt32", 5, out int result);
 
             Assert.True(success);
-            Assert.Equal(6, result);
+            Assert.AreEqual(6, result);
         }
 
-        [Fact]
+        [Test]
         public void TryGetPropertyValue_Class()
         {
             var success = TestPerson.TryGetPropertyValue("Name", out string result);
 
             Assert.True(success);
-            Assert.Equal(Name, result);
+            Assert.AreEqual(Name, result);
         }
 
-        [Fact]
+        [Test]
         public void TryGetPropertyValue_Struct()
         {
             var success = TestPerson.TryGetPropertyValue("Age", out int result);
 
             Assert.True(success);
-            Assert.Equal(Age, result);
+            Assert.AreEqual(Age, result);
         }
 
-        [Fact]
+        [Test]
         public void TryGetFieldValue_Class()
         {
             var success = TestPerson.TryGetFieldValue("_name", out string result);
 
             Assert.True(success);
-            Assert.Equal(Name, result);
+            Assert.AreEqual(Name, result);
         }
 
-        [Fact]
+        [Test]
         public void TryGetFieldValue_Struct()
         {
             var success = TestPerson.TryGetFieldValue("_age", out int result);
 
             Assert.True(success);
-            Assert.Equal(Age, result);
+            Assert.AreEqual(Age, result);
         }
 
         public class Person

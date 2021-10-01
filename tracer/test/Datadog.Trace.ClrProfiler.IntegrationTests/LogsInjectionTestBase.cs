@@ -7,14 +7,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
-using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
-using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
@@ -22,14 +19,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     {
         private readonly string _excludeMessagePrefix = "[ExcludeMessage]";
 
-        public LogsInjectionTestBase(ITestOutputHelper output, string sampleName)
+        public LogsInjectionTestBase(string sampleName)
             : base(
                 new EnvironmentHelper(
                     sampleName: sampleName,
                     typeof(TestHelper),
-                    output,
-                    prependSamplesToAppName: false),
-                output)
+                    prependSamplesToAppName: false))
         {
         }
 

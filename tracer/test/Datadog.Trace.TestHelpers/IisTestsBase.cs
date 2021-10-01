@@ -1,26 +1,44 @@
-// <copyright file="IisFixture.cs" company="Datadog">
+// <copyright file="IisTestsBase.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
+using NUnit.Framework;
 
 namespace Datadog.Trace.TestHelpers
 {
-    public sealed class IisFixture : GacFixture, IDisposable
+    [NonParallelizable]
+    public class IisTestsBase : GacTestsBase
     {
         private (Process Process, string ConfigFile) _iisExpress;
+
+        public IisTestsBase(string sampleAppName, string samplePathOverrides, IisAppType appType, string shutdownPath = null)
+            : base(sampleAppName, samplePathOverrides)
+        {
+            AppType = appType;
+            ShutdownPath = shutdownPath;
+        }
+
+        public IisTestsBase(string sampleAppName, IisAppType appType, string shutdownPath = null)
+            : base(sampleAppName)
+        {
+            AppType = appType;
+            ShutdownPath = shutdownPath;
+        }
 
         public MockTracerAgent Agent { get; private set; }
 
         public int HttpPort { get; private set; }
 
-        public string ShutdownPath { get; set; }
+        public string ShutdownPath { get; }
 
-        public void TryStartIis(TestHelper helper, IisAppType appType)
+        public IisAppType AppType { get; }
+
+        [OneTimeSetUp]
+        public void TryStartIis()
         {
             lock (this)
             {
@@ -32,12 +50,13 @@ namespace Datadog.Trace.TestHelpers
                     Agent = new MockTracerAgent(initialAgentPort);
 
                     HttpPort = TcpPortProvider.GetOpenPort();
-                    _iisExpress = helper.StartIISExpress(Agent.Port, HttpPort, appType);
+                    _iisExpress = StartIISExpress(Agent.Port, HttpPort, AppType);
                 }
             }
         }
 
-        public void Dispose()
+        [OneTimeTearDown]
+        public void Shutdown()
         {
             if (ShutdownPath != null)
             {

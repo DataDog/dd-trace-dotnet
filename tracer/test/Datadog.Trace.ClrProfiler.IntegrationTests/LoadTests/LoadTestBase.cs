@@ -10,8 +10,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using Datadog.Trace.TestHelpers;
-using Xunit.Abstractions;
-using Xunit.Sdk;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
 {
@@ -27,15 +25,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
         /// </summary>
         private readonly List<LoadTestPart> _loadTestParts = new List<LoadTestPart>();
 
-        protected LoadTestBase(
-            ITestOutputHelper output,
-            int maxTestRunSeconds = 240)
+        protected LoadTestBase(int maxTestRunSeconds = 240)
         {
-            Output = output;
             MaxTestRunMilliseconds = maxTestRunSeconds * 1000;
         }
-
-        protected ITestOutputHelper Output { get; }
 
         protected int MaxTestRunMilliseconds { get; }
 
@@ -58,7 +51,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
             var env = new EnvironmentHelper(
                 sampleName: applicationName,
                 anchorType: this.GetType(),
-                output: Output,
                 samplesDirectory: directory,
                 requiresProfiling: requiresAgent);
 
@@ -120,9 +112,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
             var environmentHelper = loadTestPart.EnvironmentHelper;
 
             var applicationPath = environmentHelper.GetSampleApplicationPath().Replace(@"\\", @"\");
-            Output.WriteLine($"Application path: {applicationPath}");
+            Console.WriteLine($"Application path: {applicationPath}");
             var executable = environmentHelper.GetSampleExecutionSource();
-            Output.WriteLine($"Executable path: {executable}");
+            Console.WriteLine($"Executable path: {executable}");
 
             if (!System.IO.File.Exists(applicationPath))
             {
@@ -133,7 +125,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
                                       ? string.Join(" ", loadTestPart.CommandLineArgs)
                                       : string.Empty;
 
-            Output.WriteLine($"Starting load test part:{environmentHelper.SampleName}");
+            Console.WriteLine($"Starting load test part:{environmentHelper.SampleName}");
             Process process = null;
             try
             {
@@ -149,7 +141,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
 
                 if (process == null)
                 {
-                    throw new NullException("We need a reference to the process for this test.");
+                    throw new NullReferenceException("We need a reference to the process for this test.");
                 }
 
                 loadTestPart.Process = process;
@@ -172,17 +164,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
 
                 if (!string.IsNullOrWhiteSpace(standardOutput))
                 {
-                    Output.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
+                    Console.WriteLine($"StandardOutput:{Environment.NewLine}{standardOutput}");
                 }
 
                 if (!string.IsNullOrWhiteSpace(standardError))
                 {
-                    Output.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
+                    Console.WriteLine($"StandardError:{Environment.NewLine}{standardError}");
                 }
 
                 loadTestPart.ProcessResult = new ProcessResult(process, standardOutput, standardError, exitCode);
 
-                Output.WriteLine($"Closed load test part:{environmentHelper.SampleName}");
+                Console.WriteLine($"Closed load test part:{environmentHelper.SampleName}");
             }
             finally
             {
@@ -207,7 +199,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
                 catch (Exception ex)
                 {
                     // Don't care about any of this yet.
-                    Output.WriteLine(ex.ToString());
+                    Console.WriteLine(ex.ToString());
                 }
             }
         }

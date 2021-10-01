@@ -3,11 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests
 {
@@ -21,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         /// in the default load context and other assembly resolve events are registered, in addition
         /// to the ones added by the Datadog .NET Tracer
         /// </summary>
-        [Fact]
+        [Test]
         public void AttributesInstantiationsOnlyUseBuiltinTypes()
         {
             List<string> invalidAttributeUsages = new();

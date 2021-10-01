@@ -8,12 +8,11 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests.Configuration
 {
-    [CollectionDefinition(nameof(ConfigurationSourceTests), DisableParallelization = true)]
-    [Collection(nameof(ConfigurationSourceTests))]
+    [NonParallelizable]
     public class ConfigurationSourceTests
     {
         private static readonly Dictionary<string, string> TagsK1V1K2V2 = new Dictionary<string, string> { { "k1", "v1" }, { "k2", "v2" } };
@@ -28,10 +27,6 @@ namespace Datadog.Trace.Tests.Configuration
 
         public static IEnumerable<object[]> GetGlobalTestData()
         {
-            yield return new object[] { ConfigurationKeys.DebugEnabled, 1, CreateGlobalFunc(s => s.DebugEnabled), true };
-            yield return new object[] { ConfigurationKeys.DebugEnabled, 0, CreateGlobalFunc(s => s.DebugEnabled), false };
-            yield return new object[] { ConfigurationKeys.DebugEnabled, true, CreateGlobalFunc(s => s.DebugEnabled), true };
-            yield return new object[] { ConfigurationKeys.DebugEnabled, false, CreateGlobalFunc(s => s.DebugEnabled), false };
             yield return new object[] { ConfigurationKeys.DebugEnabled, "true", CreateGlobalFunc(s => s.DebugEnabled), true };
             yield return new object[] { ConfigurationKeys.DebugEnabled, "false", CreateGlobalFunc(s => s.DebugEnabled), false };
             yield return new object[] { ConfigurationKeys.DebugEnabled, "tRUe", CreateGlobalFunc(s => s.DebugEnabled), true };
@@ -45,7 +40,6 @@ namespace Datadog.Trace.Tests.Configuration
 
             // garbage checks
             yield return new object[] { ConfigurationKeys.DebugEnabled, "what_even_is_this", CreateGlobalFunc(s => s.DebugEnabled), false };
-            yield return new object[] { ConfigurationKeys.DebugEnabled, 42, CreateGlobalFunc(s => s.DebugEnabled), false };
             yield return new object[] { ConfigurationKeys.DebugEnabled, string.Empty, CreateGlobalFunc(s => s.DebugEnabled), false };
         }
 
@@ -131,17 +125,15 @@ namespace Datadog.Trace.Tests.Configuration
             return settingGetter;
         }
 
-        [Theory]
-        [MemberData(nameof(GetDefaultTestData))]
+        [TestCaseSource(nameof(GetDefaultTestData))]
         public void DefaultSetting(Func<TracerSettings, object> settingGetter, object expectedValue)
         {
             var settings = new TracerSettings();
             object actualValue = settingGetter(settings);
-            Assert.Equal(expectedValue, actualValue);
+            Assert.AreEqual(expectedValue, actualValue);
         }
 
-        [Theory]
-        [MemberData(nameof(GetTestData))]
+        [TestCaseSource(nameof(GetTestData))]
         public void NameValueConfigurationSource(
             string key,
             string value,
@@ -152,11 +144,10 @@ namespace Datadog.Trace.Tests.Configuration
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var settings = new TracerSettings(source);
             object actualValue = settingGetter(settings);
-            Assert.Equal(expectedValue, actualValue);
+            Assert.AreEqual(expectedValue, actualValue);
         }
 
-        [Theory]
-        [MemberData(nameof(GetTestData))]
+        [TestCaseSource(nameof(GetTestData))]
         public void EnvironmentConfigurationSource(
             string key,
             string value,
@@ -199,7 +190,7 @@ namespace Datadog.Trace.Tests.Configuration
             Environment.SetEnvironmentVariable(key, originalValue, EnvironmentVariableTarget.Process);
 
             object actualValue = settingGetter(settings);
-            Assert.Equal(expectedValue, actualValue);
+            Assert.AreEqual(expectedValue, actualValue);
 
             static TracerSettings GetTracerSettings(string key, string value)
             {
@@ -209,8 +200,7 @@ namespace Datadog.Trace.Tests.Configuration
             }
         }
 
-        [Theory]
-        [MemberData(nameof(GetTestData))]
+        [TestCaseSource(nameof(GetTestData))]
         public void JsonConfigurationSource(
             string key,
             string value,
@@ -223,20 +213,18 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new TracerSettings(source);
 
             object actualValue = settingGetter(settings);
-            Assert.Equal(expectedValue, actualValue);
+            Assert.AreEqual(expectedValue, actualValue);
         }
 
-        [Theory]
-        [MemberData(nameof(GetGlobalDefaultTestData))]
+        [TestCaseSource(nameof(GetGlobalDefaultTestData))]
         public void GlobalDefaultSetting(Func<GlobalSettings, object> settingGetter, object expectedValue)
         {
             var settings = new GlobalSettings();
             object actualValue = settingGetter(settings);
-            Assert.Equal(expectedValue, actualValue);
+            Assert.AreEqual(expectedValue, actualValue);
         }
 
-        [Theory]
-        [MemberData(nameof(GetGlobalTestData))]
+        [TestCaseSource(nameof(GetGlobalTestData))]
         public void GlobalNameValueConfigurationSource(
             string key,
             string value,
@@ -247,11 +235,10 @@ namespace Datadog.Trace.Tests.Configuration
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var settings = new GlobalSettings(source);
             object actualValue = settingGetter(settings);
-            Assert.Equal(expectedValue, actualValue);
+            Assert.AreEqual(expectedValue, actualValue);
         }
 
-        [Theory]
-        [MemberData(nameof(GetGlobalTestData))]
+        [TestCaseSource(nameof(GetGlobalTestData))]
         public void GlobalEnvironmentConfigurationSource(
             string key,
             string value,
@@ -267,12 +254,11 @@ namespace Datadog.Trace.Tests.Configuration
             Environment.SetEnvironmentVariable(key, originalValue, EnvironmentVariableTarget.Process);
 
             object actualValue = settingGetter(settings);
-            Assert.Equal(expectedValue, actualValue);
+            Assert.AreEqual(expectedValue, actualValue);
         }
 
         // Special case for dictionary-typed settings in JSON
-        [Theory]
-        [MemberData(nameof(GetJsonTestData))]
+        [TestCaseSource(nameof(GetJsonTestData))]
         public void JsonConfigurationSourceWithJsonTypedSetting(
             string value,
             Func<TracerSettings, object> settingGetter,
@@ -282,27 +268,24 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new TracerSettings(source);
 
             var actualValue = settingGetter(settings);
-            Assert.Equal(expectedValue, actualValue);
+            Assert.AreEqual(expectedValue, actualValue);
         }
 
-        [Theory]
-        [MemberData(nameof(GetBadJsonTestData1))]
+        [TestCaseSource(nameof(GetBadJsonTestData1))]
         public void JsonConfigurationSource_BadData1(
             string value)
         {
             Assert.Throws<JsonReaderException>(() => { new JsonConfigurationSource(value); });
         }
 
-        [Theory]
-        [MemberData(nameof(GetBadJsonTestData2))]
+        [TestCaseSource(nameof(GetBadJsonTestData2))]
         public void JsonConfigurationSource_BadData2(
             string value)
         {
             Assert.Throws<JsonSerializationException>(() => { new JsonConfigurationSource(value); });
         }
 
-        [Theory]
-        [MemberData(nameof(GetBadJsonTestData3))]
+        [TestCaseSource(nameof(GetBadJsonTestData3))]
         public void JsonConfigurationSource_BadData3(
             string value,
             Func<TracerSettings, object> settingGetter,
@@ -312,7 +295,7 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new TracerSettings(source);
 
             var actualValue = settingGetter(settings);
-            Assert.Equal(expectedValue, actualValue);
+            Assert.AreEqual(expectedValue, actualValue);
         }
     }
 }

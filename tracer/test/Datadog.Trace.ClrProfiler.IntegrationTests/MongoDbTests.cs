@@ -6,15 +6,14 @@
 using System.Linq;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class MongoDbTests : TestHelper
     {
-        public MongoDbTests(ITestOutputHelper output)
-            : base("MongoDB", output)
+        public MongoDbTests()
+            : base("MongoDB")
         {
             SetServiceVersion("1.0.0");
         }
@@ -28,9 +27,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        [Theory]
-        [MemberData(nameof(GetMongoDb))]
-        [Trait("Category", "EndToEnd")]
+        [TestCaseSource(nameof(GetMongoDb))]
+        [Property("Category", "EndToEnd")]
         public void SubmitsTraces(string packageVersion, bool enableCallTarget)
         {
             SetCallTargetSettings(enableCallTarget);
@@ -45,8 +43,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var rootSpan = spans.Single(s => s.ParentId == null);
 
                 // Check for manual trace
-                Assert.Equal("Main()", rootSpan.Name);
-                Assert.Equal("Samples.MongoDB", rootSpan.Service);
+                Assert.AreEqual("Main()", rootSpan.Name);
+                Assert.AreEqual("Samples.MongoDB", rootSpan.Service);
                 Assert.Null(rootSpan.Type);
 
                 int spansWithResourceName = 0;
@@ -60,8 +58,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                     if (span.Service == "Samples.MongoDB-mongodb")
                     {
-                        Assert.Equal("mongodb.query", span.Name);
-                        Assert.Equal(SpanTypes.MongoDb, span.Type);
+                        Assert.AreEqual("mongodb.query", span.Name);
+                        Assert.AreEqual(SpanTypes.MongoDb, span.Type);
                         Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
 
                         if (span.Resource != null && span.Resource != "mongodb.query")
@@ -73,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     else
                     {
                         // These are manual traces
-                        Assert.Equal("Samples.MongoDB", span.Service);
+                        Assert.AreEqual("Samples.MongoDB", span.Service);
                         Assert.True("1.0.0" == span.Tags?.GetValueOrDefault(Tags.Version), span.ToString());
                     }
                 }

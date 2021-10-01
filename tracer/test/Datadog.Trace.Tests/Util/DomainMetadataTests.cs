@@ -5,7 +5,7 @@
 
 using System;
 using Datadog.Trace.Util;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests.Util
 {
@@ -15,7 +15,7 @@ namespace Datadog.Trace.Tests.Util
 
         private const string TestDataKey = "ShouldAvoidAppInsightsAppDomain";
 
-        [Fact]
+        [Test]
         public void ShouldAvoidAppInsightsAppDomain()
         {
             static void AppDomainCallback()
@@ -30,7 +30,7 @@ namespace Datadog.Trace.Tests.Util
 
             var rawValue = domain1.GetData(TestDataKey);
 
-            Assert.IsType<bool>(rawValue);
+            Assert.IsInstanceOf<bool>(rawValue);
             Assert.True((bool)rawValue);
 
             var domain2 = AppDomain.CreateDomain("Test", null, AppDomain.CurrentDomain.SetupInformation);
@@ -39,7 +39,7 @@ namespace Datadog.Trace.Tests.Util
 
             rawValue = domain2.GetData(TestDataKey);
 
-            Assert.IsType<bool>(rawValue);
+            Assert.IsInstanceOf<bool>(rawValue);
             Assert.False((bool)rawValue);
         }
 #endif

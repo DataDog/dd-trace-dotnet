@@ -1,12 +1,13 @@
-﻿// <copyright file="ThreadAbortAnalyzerTests.cs" company="Datadog">
+// <copyright file="ThreadAbortAnalyzerTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Testing;
-using Xunit;
+using NUnit.Framework;
 using Verifier = Microsoft.CodeAnalysis.CSharp.Testing.XUnit.CodeFixVerifier<
     Datadog.Trace.Tools.Analyzers.ThreadAbortAnalyzer.ThreadAbortAnalyzer,
     Datadog.Trace.Tools.Analyzers.ThreadAbortAnalyzer.ThreadAbortCodeFixProvider>;
@@ -17,10 +18,10 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
     {
         private const string DiagnosticId = ThreadAbortAnalyzer.ThreadAbortAnalyzer.DiagnosticId;
 
-        public static TheoryData<string> GetExceptions() => new() { "Exception", "SystemException", "ThreadAbortException" };
+        public static IEnumerable<string> GetExceptions() => new string[] { "Exception", "SystemException", "ThreadAbortException" };
 
         // No diagnostics expected to show up
-        [Fact]
+        [Test]
         public async Task EmptySourceShouldNotHaveDiagnostics()
         {
             var test = string.Empty;
@@ -28,8 +29,7 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
             await Verifier.VerifyAnalyzerAsync(test);
         }
 
-        [Theory]
-        [MemberData(nameof(GetExceptions))]
+        [TestCaseSource(nameof(GetExceptions))]
         public async Task ShouldNotFlagWhileLoopThatRethrows(string exceptionType)
         {
             var code = GetTestCode(@"
@@ -52,8 +52,7 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
             await Verifier.VerifyAnalyzerAsync(code);
         }
 
-        [Theory]
-        [MemberData(nameof(GetExceptions))]
+        [TestCaseSource(nameof(GetExceptions))]
         public async Task ShouldNotFlagWhileLoopThatRethrowsInSecondCatchBlock(string exceptionType)
         {
             var code = GetTestCode(@"
@@ -80,8 +79,7 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
             await Verifier.VerifyAnalyzerAsync(code);
         }
 
-        [Theory]
-        [MemberData(nameof(GetExceptions))]
+        [TestCaseSource(nameof(GetExceptions))]
         public async Task ShouldNotFlagWhileLoopThatRethrowsNewException(string exceptionType)
         {
             var code = GetTestCode(@"
@@ -101,8 +99,7 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
             await Verifier.VerifyAnalyzerAsync(code);
         }
 
-        [Theory]
-        [MemberData(nameof(GetExceptions))]
+        [TestCaseSource(nameof(GetExceptions))]
         public async Task ShouldFlagWhileLoopThatCatchesException(string exceptionType)
         {
             var code = GetTestCode(@"
@@ -137,8 +134,7 @@ namespace Datadog.Trace.Tools.Analyzers.Tests
             await Verifier.VerifyCodeFixAsync(code, expected, fix);
         }
 
-        [Theory]
-        [MemberData(nameof(GetExceptions))]
+        [TestCaseSource(nameof(GetExceptions))]
         public async Task ShouldFlagWhileLoopWithFinally(string exceptionType)
         {
             var code = GetTestCode(@"

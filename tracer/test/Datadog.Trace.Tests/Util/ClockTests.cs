@@ -3,22 +3,16 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using Datadog.Trace.Util;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests.Util
 {
-    [CollectionDefinition(nameof(ClockTests), DisableParallelization = true)]
-    [Collection(nameof(ClockTests))]
+    [NonParallelizable]
     public class ClockTests
     {
-        [Fact]
+        [Test]
         public void Should_use_real_clock_if_not_overriden()
         {
             // If everything works, the fastpath should be used and this clock ignored
@@ -33,7 +27,7 @@ namespace Datadog.Trace.Tests.Util
 
             var then = Clock.UtcNow;
 
-            Assert.NotEqual(now, then);
+            Assert.AreNotEqual(now, then);
         }
     }
 }

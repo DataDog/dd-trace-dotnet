@@ -76,7 +76,7 @@ namespace Datadog.Trace.TestHelpers
                     Port = port;
                     _listener = listener;
 
-                    _listenerThread = new Thread(HandleHttpRequests);
+                    _listenerThread = new Thread(HandleHttpRequests) { IsBackground = true };
                     _listenerThread.Start();
 
                     return;

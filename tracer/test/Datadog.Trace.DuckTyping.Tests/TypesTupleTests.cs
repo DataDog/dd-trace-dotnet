@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Xunit;
+using NUnit.Framework;
 
 #pragma warning disable SA1201 // Elements must appear in the correct order
 #pragma warning disable SA1402 // File may only contain a single class
@@ -12,7 +12,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 {
     public class TypesTupleTests
     {
-        [Fact]
+        [Test]
         public void EqualsTupleTest()
         {
             TypesTuple tuple1 = new TypesTuple(typeof(string), typeof(int));

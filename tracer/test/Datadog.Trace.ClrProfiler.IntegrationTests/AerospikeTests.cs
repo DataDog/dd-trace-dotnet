@@ -7,24 +7,23 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class AerospikeTests : TestHelper
     {
-        public AerospikeTests(ITestOutputHelper output)
-            : base("Aerospike", output)
+        public AerospikeTests()
+            : base("Aerospike")
         {
             SetServiceVersion("1.0.0");
             SetCallTargetSettings(enableCallTarget: true);
         }
 
         [Theory]
-        [MemberData(nameof(PackageVersions.Aerospike), MemberType = typeof(PackageVersions))]
-        [Trait("Category", "EndToEnd")]
-        [Trait("Category", "ArmUnsupported")]
+        [TestCaseSource(nameof(PackageVersions.Aerospike))]
+        [Property("Category", "EndToEnd")]
+        [Property("Category", "ArmUnsupported")]
         public void SubmitTraces(string packageVersion)
         {
             int agentPort = TcpPortProvider.GetOpenPort();

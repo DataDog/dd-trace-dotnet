@@ -7,11 +7,11 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Util;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests.Sampling
 {
-    [Collection(nameof(Datadog.Trace.Tests.Sampling))]
+    [NonParallelizable]
     public class RuleBasedSamplerTests
     {
         private const float FallbackRate = 0.25f;
@@ -21,7 +21,7 @@ namespace Datadog.Trace.Tests.Sampling
 
         private static readonly IEnumerable<KeyValuePair<string, float>> MockAgentRates = new List<KeyValuePair<string, float>>() { new KeyValuePair<string, float>($"service:{ServiceName},env:{Env}", FallbackRate) };
 
-        [Fact]
+        [Test]
         public void RateLimiter_Never_Applied_For_DefaultRule()
         {
             var sampler = new RuleBasedSampler(new DenyAll());
@@ -32,7 +32,7 @@ namespace Datadog.Trace.Tests.Sampling
                 0);
         }
 
-        [Fact]
+        [Test]
         public void RateLimiter_Denies_All_Traces()
         {
             var sampler = new RuleBasedSampler(new DenyAll());
@@ -44,7 +44,7 @@ namespace Datadog.Trace.Tests.Sampling
                 0);
         }
 
-        [Fact]
+        [Test]
         public void Keep_Everything_Rule()
         {
             var sampler = new RuleBasedSampler(new NoLimits());
@@ -56,7 +56,7 @@ namespace Datadog.Trace.Tests.Sampling
                 0);
         }
 
-        [Fact]
+        [Test]
         public void Keep_Nothing_Rule()
         {
             var sampler = new RuleBasedSampler(new NoLimits());
@@ -68,7 +68,7 @@ namespace Datadog.Trace.Tests.Sampling
                 0);
         }
 
-        [Fact]
+        [Test]
         public void Keep_Half_Rule()
         {
             var sampler = new RuleBasedSampler(new NoLimits());
@@ -80,7 +80,7 @@ namespace Datadog.Trace.Tests.Sampling
                 0.05f);
         }
 
-        [Fact]
+        [Test]
         public void No_Registered_Rules_Uses_Legacy_Rates()
         {
             var sampler = new RuleBasedSampler(new NoLimits());

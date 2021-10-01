@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.ExtensionMethods;
 using MsgPack;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.TestHelpers
 {
@@ -76,27 +76,27 @@ namespace Datadog.Trace.TestHelpers
 
         public static void AssertSpanEqual(Span expected, MessagePackObject actual)
         {
-            Assert.Equal(expected.Context.TraceId, actual.TraceId());
-            Assert.Equal(expected.Context.SpanId, actual.SpanId());
+            Assert.AreEqual(expected.Context.TraceId, actual.TraceId());
+            Assert.AreEqual(expected.Context.SpanId, actual.SpanId());
             if (expected.Context.ParentId.HasValue)
             {
-                Assert.Equal(expected.Context.ParentId, actual.ParentId());
+                Assert.AreEqual(expected.Context.ParentId, actual.ParentId());
             }
 
-            Assert.Equal(expected.OperationName, actual.OperationName());
-            Assert.Equal(expected.ResourceName, actual.ResourceName());
-            Assert.Equal(expected.ServiceName, actual.ServiceName());
-            Assert.Equal(expected.Type, actual.Type());
-            Assert.Equal(expected.StartTime.ToUnixTimeNanoseconds(), actual.StartTime());
-            Assert.Equal(expected.Duration.ToNanoseconds(), actual.Duration());
+            Assert.AreEqual(expected.OperationName, actual.OperationName());
+            Assert.AreEqual(expected.ResourceName, actual.ResourceName());
+            Assert.AreEqual(expected.ServiceName, actual.ServiceName());
+            Assert.AreEqual(expected.Type, actual.Type());
+            Assert.AreEqual(expected.StartTime.ToUnixTimeNanoseconds(), actual.StartTime());
+            Assert.AreEqual(expected.Duration.ToNanoseconds(), actual.Duration());
             if (expected.Error)
             {
-                Assert.Equal("1", actual.Error());
+                Assert.AreEqual("1", actual.Error());
             }
 
             if (expected.Tags != null)
             {
-                Assert.Equal((Dictionary<string, string>)expected.Tags, actual.Tags());
+                Assert.AreEqual((Dictionary<string, string>)expected.Tags, actual.Tags());
             }
         }
 

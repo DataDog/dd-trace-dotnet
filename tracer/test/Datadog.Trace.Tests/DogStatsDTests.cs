@@ -12,21 +12,13 @@ using Datadog.Trace.DogStatsd;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.StatsdClient;
 using Moq;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests
 {
     public class DogStatsDTests
     {
-        private readonly ITestOutputHelper _output;
-
-        public DogStatsDTests(ITestOutputHelper output)
-        {
-            _output = output;
-        }
-
-        [Fact]
+        [Test]
         public void Do_not_send_metrics_when_disabled()
         {
             var statsd = new Mock<IDogStatsd>();
@@ -38,7 +30,7 @@ namespace Datadog.Trace.Tests
             statsd.VerifyNoOtherCalls();
         }
 
-        [Fact]
+        [Test]
         public void Send_metrics_when_enabled()
         {
             var statsd = new Mock<IDogStatsd>();

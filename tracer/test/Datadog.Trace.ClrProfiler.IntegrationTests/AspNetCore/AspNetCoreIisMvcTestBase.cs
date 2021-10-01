@@ -4,22 +4,20 @@
 // </copyright>
 #if NETCOREAPP
 
+using System.Collections.Generic;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
-using VerifyXunit;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
-    [UsesVerify]
-    public abstract class AspNetCoreIisMvcTestBase : TestHelper, IClassFixture<IisFixture>
+    public abstract class AspNetCoreIisMvcTestBase : IisTestsBase
     {
         private readonly bool _inProcess;
         private readonly bool _enableRouteTemplateResourceNames;
 
-        protected AspNetCoreIisMvcTestBase(string sampleName, IisFixture fixture, ITestOutputHelper output, bool inProcess, bool enableRouteTemplateResourceNames)
-            : base(sampleName, output)
+        protected AspNetCoreIisMvcTestBase(string sampleName, bool inProcess, bool enableRouteTemplateResourceNames)
+            : base(sampleName, inProcess ? IisAppType.AspNetCoreInProcess : IisAppType.AspNetCoreOutOfProcess)
         {
             _inProcess = inProcess;
             _enableRouteTemplateResourceNames = enableRouteTemplateResourceNames;
@@ -32,25 +30,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             {
                 SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, "true");
             }
-
-            Fixture = fixture;
         }
 
-        protected IisFixture Fixture { get; }
-
-        public static TheoryData<string, int> Data() => new()
+        public static IEnumerable<TestCaseData> Data() => new TestCaseData[]
         {
-            { "/", 200 },
-            { "/delay/0", 200 },
-            { "/api/delay/0", 200 },
-            { "/not-found", 404 },
-            { "/status-code/203", 203 },
-            { "/status-code/500", 500 },
-            { "/bad-request", 500 },
-            { "/status-code/402", 402 },
-            { "/ping", 200 },
-            { "/branch/ping", 200 },
-            { "/branch/not-found", 404 },
+            new("/", 200),
+            new("/delay/0", 200),
+            new("/api/delay/0", 200),
+            new("/not-found", 404),
+            new("/status-code/203", 203),
+            new("/status-code/500", 500),
+            new("/bad-request", 500),
+            new("/status-code/402", 402),
+            new("/ping", 200),
+            new("/branch/ping", 200),
+            new("/branch/not-found", 404),
         };
 
         protected string GetTestName(string testName)

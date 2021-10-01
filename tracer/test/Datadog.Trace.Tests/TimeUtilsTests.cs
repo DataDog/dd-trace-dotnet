@@ -6,24 +6,24 @@
 #if !NET45 && !NET451 && !NET452
 using System;
 using Datadog.Trace.ExtensionMethods;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests
 {
     public class TimeUtilsTests
     {
-        [Fact]
+        [Test]
         public void ToUnixTimeNanoseconds_UnixEpoch_Zero()
         {
             var date = DateTimeOffset.FromUnixTimeMilliseconds(0);
-            Assert.Equal(0, date.ToUnixTimeNanoseconds());
+            Assert.AreEqual(0, date.ToUnixTimeNanoseconds());
         }
 
-        [Fact]
+        [Test]
         public void ToUnixTimeNanoseconds_Now_CorrectMillisecondRoundedValue()
         {
             var date = DateTimeOffset.UtcNow;
-            Assert.Equal(date.ToUnixTimeMilliseconds(), date.ToUnixTimeNanoseconds() / 1000000);
+            Assert.AreEqual(date.ToUnixTimeMilliseconds(), date.ToUnixTimeNanoseconds() / 1000000);
         }
     }
 }

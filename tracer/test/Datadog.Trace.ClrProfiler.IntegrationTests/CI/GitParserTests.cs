@@ -3,12 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.Ci;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
@@ -109,29 +107,28 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             };
         }
 
-        [Theory]
-        [MemberData(nameof(GetData))]
+        [TestCaseSource(nameof(GetData))]
         public void ExtractGitDataFromFolder(TestItem testItem)
         {
             Assert.True(Directory.Exists(testItem.GitFolderPath));
 
             var gitInfo = GitInfo.GetFrom(testItem.GitFolderPath);
 
-            Assert.Equal(testItem.AuthorDate, gitInfo.AuthorDate.Value.ToString("u"));
-            Assert.Equal(testItem.AuthorEmail, gitInfo.AuthorEmail);
-            Assert.Equal(testItem.AuthorName, gitInfo.AuthorName);
-            Assert.Equal(testItem.Branch, gitInfo.Branch);
-            Assert.Equal(testItem.Commit, gitInfo.Commit);
-            Assert.Equal(testItem.CommitterDate, gitInfo.CommitterDate.Value.ToString("u"));
-            Assert.Equal(testItem.CommitterEmail, gitInfo.CommitterEmail);
-            Assert.Equal(testItem.CommitterName, gitInfo.CommitterName);
+            Assert.AreEqual(testItem.AuthorDate, gitInfo.AuthorDate.Value.ToString("u"));
+            Assert.AreEqual(testItem.AuthorEmail, gitInfo.AuthorEmail);
+            Assert.AreEqual(testItem.AuthorName, gitInfo.AuthorName);
+            Assert.AreEqual(testItem.Branch, gitInfo.Branch);
+            Assert.AreEqual(testItem.Commit, gitInfo.Commit);
+            Assert.AreEqual(testItem.CommitterDate, gitInfo.CommitterDate.Value.ToString("u"));
+            Assert.AreEqual(testItem.CommitterEmail, gitInfo.CommitterEmail);
+            Assert.AreEqual(testItem.CommitterName, gitInfo.CommitterName);
             Assert.NotNull(gitInfo.Message);
             Assert.NotNull(gitInfo.PgpSignature);
-            Assert.Equal(testItem.Repository, gitInfo.Repository);
-            Assert.Equal(testItem.SourceRoot, gitInfo.SourceRoot);
+            Assert.AreEqual(testItem.Repository, gitInfo.Repository);
+            Assert.AreEqual(testItem.SourceRoot, gitInfo.SourceRoot);
         }
 
-        public class TestItem : IXunitSerializable
+        public class TestItem
         {
             public TestItem()
             {
@@ -163,36 +160,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             internal string Repository { get; set; }
 
             internal string SourceRoot { get; set; }
-
-            public void Deserialize(IXunitSerializationInfo info)
-            {
-                GitFolderPath = info.GetValue<string>(nameof(GitFolderPath));
-                AuthorDate = info.GetValue<string>(nameof(AuthorDate));
-                AuthorEmail = info.GetValue<string>(nameof(AuthorEmail));
-                AuthorName = info.GetValue<string>(nameof(AuthorName));
-                Branch = info.GetValue<string>(nameof(Branch));
-                Commit = info.GetValue<string>(nameof(Commit));
-                CommitterDate = info.GetValue<string>(nameof(CommitterDate));
-                CommitterEmail = info.GetValue<string>(nameof(CommitterEmail));
-                CommitterName = info.GetValue<string>(nameof(CommitterName));
-                Repository = info.GetValue<string>(nameof(Repository));
-                SourceRoot = info.GetValue<string>(nameof(SourceRoot));
-            }
-
-            public void Serialize(IXunitSerializationInfo info)
-            {
-                info.AddValue(nameof(GitFolderPath), GitFolderPath);
-                info.AddValue(nameof(AuthorDate), AuthorDate);
-                info.AddValue(nameof(AuthorEmail), AuthorEmail);
-                info.AddValue(nameof(AuthorName), AuthorName);
-                info.AddValue(nameof(Branch), Branch);
-                info.AddValue(nameof(Commit), Commit);
-                info.AddValue(nameof(CommitterDate), CommitterDate);
-                info.AddValue(nameof(CommitterEmail), CommitterEmail);
-                info.AddValue(nameof(CommitterName), CommitterName);
-                info.AddValue(nameof(Repository), Repository);
-                info.AddValue(nameof(SourceRoot), SourceRoot);
-            }
 
             public override string ToString() => $"GitFolderPath={GitFolderPath}";
         }

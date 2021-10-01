@@ -13,21 +13,18 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using FluentAssertions;
 using Moq;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests
 {
     public class SpanTests
     {
-        private readonly ITestOutputHelper _output;
-        private readonly Mock<IAgentWriter> _writerMock;
-        private readonly Tracer _tracer;
+        private Mock<IAgentWriter> _writerMock;
+        private Tracer _tracer;
 
-        public SpanTests(ITestOutputHelper output)
+        [SetUp]
+        public void Setup()
         {
-            _output = output;
-
             var settings = new TracerSettings();
             _writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ISampler>();
@@ -35,7 +32,7 @@ namespace Datadog.Trace.Tests
             _tracer = new Tracer(settings, _writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
         }
 
-        [Fact]
+        [Test]
         public void SetTag_KeyValue_KeyValueSet()
         {
             const string key = "Key";
@@ -46,10 +43,10 @@ namespace Datadog.Trace.Tests
             span.SetTag(key, value);
 
             _writerMock.Verify(x => x.WriteTrace(It.IsAny<ArraySegment<Span>>()), Times.Never);
-            Assert.Equal(span.GetTag(key), value);
+            Assert.AreEqual(span.GetTag(key), value);
         }
 
-        [Fact]
+        [Test]
         public void Finish_StartTimeInThePastWithNoEndTime_DurationProperlyComputed()
         {
             // The 100 additional milliseconds account for the clock precision
@@ -61,7 +58,7 @@ namespace Datadog.Trace.Tests
             Assert.True(span.Duration >= TimeSpan.FromMinutes(1) && span.Duration < TimeSpan.FromMinutes(2));
         }
 
-        [Fact]
+        [Test]
         public async Task Finish_NoEndTimeProvided_SpanWriten()
         {
             var span = _tracer.StartSpan("Operation");
@@ -72,7 +69,7 @@ namespace Datadog.Trace.Tests
             Assert.True(span.Duration > TimeSpan.Zero);
         }
 
-        [Fact]
+        [Test]
         public void Finish_EndTimeProvided_SpanWritenWithCorrectDuration()
         {
             var startTime = DateTimeOffset.UtcNow;
@@ -81,10 +78,10 @@ namespace Datadog.Trace.Tests
 
             span.Finish(endTime);
 
-            Assert.Equal(endTime - startTime, span.Duration);
+            Assert.AreEqual(endTime - startTime, span.Duration);
         }
 
-        [Fact]
+        [Test]
         public void Finish_EndTimeInThePast_DurationIs0()
         {
             var startTime = DateTimeOffset.UtcNow;
@@ -93,10 +90,10 @@ namespace Datadog.Trace.Tests
 
             span.Finish(endTime);
 
-            Assert.Equal(TimeSpan.Zero, span.Duration);
+            Assert.AreEqual(TimeSpan.Zero, span.Duration);
         }
 
-        [Fact]
+        [Test]
         public void Accurate_Duration()
         {
             // Check that span has the same precision as stopwatch
@@ -144,7 +141,7 @@ namespace Datadog.Trace.Tests
             }
         }
 
-        [Fact]
+        [Test]
         public void TopLevelSpans()
         {
             var spans = new List<(Scope Scope, bool IsTopLevel)>();

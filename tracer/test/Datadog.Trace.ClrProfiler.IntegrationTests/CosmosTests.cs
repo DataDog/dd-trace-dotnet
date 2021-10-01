@@ -7,12 +7,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
@@ -21,8 +18,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private const string ExpectedOperationName = "cosmosdb.query";
         private const string ExpectedServiceName = "Samples.CosmosDb-cosmosdb";
 
-        public CosmosTests(ITestOutputHelper output)
-            : base("CosmosDb", output)
+        public CosmosTests()
+            : base("CosmosDb")
         {
             SetServiceVersion("1.0.0");
 
@@ -43,12 +40,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        [Theory]
-        [MemberData(nameof(GetCosmosVersions))]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        [Trait("Category", "LinuxUnsupported")]
-        [Trait("Category", "ArmUnsupported")]
+        [TestCaseSource(nameof(GetCosmosVersions))]
+        [Property("Category", "EndToEnd")]
+        [Property("RunOnWindows", "True")]
+        [Property("Category", "LinuxUnsupported")]
+        [Property("Category", "ArmUnsupported")]
         public void SubmitsTraces(string packageVersion)
         {
             SetCallTargetSettings(true);
@@ -62,11 +58,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: ExpectedOperationName);
                 spans.Count.Should().BeGreaterOrEqualTo(expectedSpanCount, $"Expecting at least {expectedSpanCount} spans, only received {spans.Count}");
 
-                Output.WriteLine($"spans.Count: {spans.Count}");
+                Console.WriteLine($"spans.Count: {spans.Count}");
 
                 foreach (var span in spans)
                 {
-                    Output.WriteLine(span.ToString());
+                    Console.WriteLine(span.ToString());
                 }
 
                 var dbTags = 0;

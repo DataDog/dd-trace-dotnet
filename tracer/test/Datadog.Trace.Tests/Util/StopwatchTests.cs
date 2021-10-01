@@ -7,13 +7,13 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Threading;
 using Datadog.Trace.Util;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests.Util
 {
     public class StopwatchTests
     {
-        [Fact]
+        [Test]
         public void ComputesCorrectTimespan()
         {
             var sw = Stopwatch.StartNew();
@@ -29,7 +29,7 @@ namespace Datadog.Trace.Tests.Util
 
             var elapsed = StopwatchHelpers.GetElapsed(stopwatchTicks);
 
-            Assert.Equal(sw.Elapsed, elapsed);
+            Assert.AreEqual(sw.Elapsed, elapsed);
         }
     }
 }

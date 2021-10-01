@@ -12,7 +12,7 @@ using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Vendors.StatsdClient;
 using Moq;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests
 {
@@ -30,7 +30,7 @@ namespace Datadog.Trace.Tests
             _agentWriter = new AgentWriter(_api.Object, statsd: null);
         }
 
-        [Fact]
+        [Test]
         public async Task WriteTrace_2Traces_SendToApi()
         {
             var trace = new[] { new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow) };
@@ -54,7 +54,7 @@ namespace Datadog.Trace.Tests
             await _agentWriter.FlushAndCloseAsync();
         }
 
-        [Fact]
+        [Test]
         public async Task FlushTwice()
         {
             var w = new AgentWriter(_api.Object, statsd: null);
@@ -62,7 +62,7 @@ namespace Datadog.Trace.Tests
             await w.FlushAndCloseAsync();
         }
 
-        [Fact]
+        [Test]
         public Task FaultyApi()
         {
             // The flush thread should be able to recover from an error when calling the API
@@ -91,7 +91,7 @@ namespace Datadog.Trace.Tests
             return agent.FlushAndCloseAsync();
         }
 
-        [Fact]
+        [Test]
         public Task SwitchBuffer()
         {
             // Make sure that the agent is able to switch to the secondary buffer when the primary is full/busy
@@ -116,8 +116,8 @@ namespace Datadog.Trace.Tests
             // At this point, the flush thread is stuck in Api.SendTracesAsync, and the frontBuffer should be active and locked
             Assert.True(agent.ActiveBuffer == agent.FrontBuffer);
             Assert.True(agent.FrontBuffer.IsLocked);
-            Assert.Equal(1, agent.FrontBuffer.TraceCount);
-            Assert.Equal(1, agent.FrontBuffer.SpanCount);
+            Assert.AreEqual(1, agent.FrontBuffer.TraceCount);
+            Assert.AreEqual(1, agent.FrontBuffer.SpanCount);
 
             var mutex = new ManualResetEventSlim();
 
@@ -128,8 +128,8 @@ namespace Datadog.Trace.Tests
 
             // Since the frontBuffer was locked, the buffers should have been swapped
             Assert.True(agent.ActiveBuffer == agent.BackBuffer);
-            Assert.Equal(1, agent.BackBuffer.TraceCount);
-            Assert.Equal(2, agent.BackBuffer.SpanCount);
+            Assert.AreEqual(1, agent.BackBuffer.TraceCount);
+            Assert.AreEqual(2, agent.BackBuffer.SpanCount);
 
             // Unblock the flush thread
             barrier.SignalAndWait();
@@ -147,7 +147,7 @@ namespace Datadog.Trace.Tests
             return agent.FlushAndCloseAsync();
         }
 
-        [Fact]
+        [Test]
         public async Task FlushBothBuffers()
         {
             // When the back buffer is full, both buffers should be flushed
@@ -163,9 +163,9 @@ namespace Datadog.Trace.Tests
 
             Assert.True(agent.ActiveBuffer == agent.BackBuffer);
             Assert.True(agent.FrontBuffer.IsFull);
-            Assert.Equal(1, agent.FrontBuffer.TraceCount);
+            Assert.AreEqual(1, agent.FrontBuffer.TraceCount);
             Assert.False(agent.BackBuffer.IsFull);
-            Assert.Equal(1, agent.BackBuffer.TraceCount);
+            Assert.AreEqual(1, agent.BackBuffer.TraceCount);
 
             await agent.FlushTracesAsync();
 
@@ -175,7 +175,7 @@ namespace Datadog.Trace.Tests
             api.Verify(a => a.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), 1), Times.Exactly(2));
         }
 
-        [Fact]
+        [Test]
         public void DropTraces()
         {
             // Traces should be dropped when both buffers are full
@@ -197,10 +197,10 @@ namespace Datadog.Trace.Tests
             Assert.False(agent.ActiveBuffer.IsFull);
 
             // Both buffers have 1 trace stored
-            Assert.Equal(1, agent.FrontBuffer.TraceCount);
-            Assert.Equal(1, agent.FrontBuffer.SpanCount);
-            Assert.Equal(1, agent.BackBuffer.TraceCount);
-            Assert.Equal(1, agent.BackBuffer.SpanCount);
+            Assert.AreEqual(1, agent.FrontBuffer.TraceCount);
+            Assert.AreEqual(1, agent.FrontBuffer.SpanCount);
+            Assert.AreEqual(1, agent.BackBuffer.TraceCount);
+            Assert.AreEqual(1, agent.BackBuffer.SpanCount);
 
             statsd.Verify(s => s.Increment(TracerMetricNames.Queue.EnqueuedTraces, 1, 1, null), Times.Exactly(2));
             statsd.Verify(s => s.Increment(TracerMetricNames.Queue.EnqueuedSpans, 1, 1, null), Times.Exactly(2));
@@ -215,11 +215,11 @@ namespace Datadog.Trace.Tests
 
             // Both buffers should be full with 1 trace stored
             Assert.True(agent.FrontBuffer.IsFull);
-            Assert.Equal(1, agent.FrontBuffer.TraceCount);
-            Assert.Equal(1, agent.FrontBuffer.SpanCount);
+            Assert.AreEqual(1, agent.FrontBuffer.TraceCount);
+            Assert.AreEqual(1, agent.FrontBuffer.SpanCount);
             Assert.True(agent.BackBuffer.IsFull);
-            Assert.Equal(1, agent.BackBuffer.TraceCount);
-            Assert.Equal(1, agent.BackBuffer.SpanCount);
+            Assert.AreEqual(1, agent.BackBuffer.TraceCount);
+            Assert.AreEqual(1, agent.BackBuffer.SpanCount);
 
             // Dropped trace should have been reported to statsd
             statsd.Verify(s => s.Increment(TracerMetricNames.Queue.EnqueuedTraces, 1, 1, null), Times.Once);
@@ -229,7 +229,7 @@ namespace Datadog.Trace.Tests
             statsd.VerifyNoOtherCalls();
         }
 
-        [Fact]
+        [Test]
         public Task WakeUpSerializationTask()
         {
             var agent = new AgentWriter(Mock.Of<IApi>(), statsd: null, batchInterval: 0);
@@ -253,7 +253,7 @@ namespace Datadog.Trace.Tests
             return agent.FlushAndCloseAsync();
         }
 
-        [Fact]
+        [Test]
         public async Task AddsTraceKeepRateMetricToRootSpan()
         {
             // Traces should be dropped when both buffers are full
@@ -303,7 +303,7 @@ namespace Datadog.Trace.Tests
             api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData)), It.Is<int>(i => i == 1)), Times.Once);
         }
 
-        [Fact]
+        [Test]
         public void AgentWriterEnqueueFlushTasks()
         {
             var api = new Mock<IApi>();

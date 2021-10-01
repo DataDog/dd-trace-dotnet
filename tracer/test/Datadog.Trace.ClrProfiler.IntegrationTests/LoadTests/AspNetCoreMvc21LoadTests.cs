@@ -3,10 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Linq;
 using Datadog.Trace.TestHelpers;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
 {
@@ -20,8 +20,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
         private static readonly int Threads = 10;
         private static readonly int IterationsPerThread = 20;
 
-        public AspNetCoreMvc21LoadTests(ITestOutputHelper output)
-            : base(output)
+        public AspNetCoreMvc21LoadTests()
         {
             var aspNetCoreMvc2Port = TcpPortProvider.GetOpenPort();
             var aspNetCoreMvc2Url = GetUrl(aspNetCoreMvc2Port);
@@ -34,13 +33,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.LoadTests
                 commandLineArgs: new[] { aspNetCoreMvc2Url, Threads.ToString(), IterationsPerThread.ToString() });
         }
 
-        [Fact(Skip = "Hangs continuous integration because dotnet.exe stays around.")]
-        [Trait("Category", "Load")]
+        [Test]
+        [Ignore("Hangs continuous integration because dotnet.exe stays around.")]
+        [Property("Category", "Load")]
         public void RunLoadTest_WithVerifications()
         {
             if (!EnvironmentHelper.IsCoreClr())
             {
-                Output.WriteLine("Ignored for .NET Framework");
+                Console.WriteLine("Ignored for .NET Framework");
                 return;
             }
 

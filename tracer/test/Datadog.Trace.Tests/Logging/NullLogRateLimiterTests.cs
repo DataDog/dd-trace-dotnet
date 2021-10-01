@@ -4,17 +4,13 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests.Logging
 {
-    [Collection(nameof(Datadog.Trace.Tests.Logging))]
+    [NonParallelizable]
     public class NullLogRateLimiterTests : IDisposable
     {
         private readonly NullLogRateLimiter _rateLimiter;
@@ -26,7 +22,7 @@ namespace Datadog.Trace.Tests.Logging
 
         public void Dispose() => Clock.Reset();
 
-        [Fact]
+        [Test]
         public void ShouldLog_AlwaysReturnsTrue()
         {
             const string filePath = @"C:\some\path";
@@ -38,7 +34,7 @@ namespace Datadog.Trace.Tests.Logging
                 var shouldLog = _rateLimiter.ShouldLog(filePath, lineNo, out var skipCount);
 
                 Assert.True(shouldLog, $"{nameof(shouldLog)} was false on iteration {i}");
-                Assert.Equal(0u, skipCount);
+                Assert.AreEqual(0u, skipCount);
             }
         }
 

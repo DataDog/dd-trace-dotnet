@@ -3,36 +3,29 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Reflection;
-using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
-using Moq;
-using Xunit;
-using Xunit.Sdk;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests
 {
-    [Collection(nameof(TracerInstanceTestCollection))]
-    [TracerRestorer]
-    public class CorrelationIdentifierTests
+    public class CorrelationIdentifierTests : TracerInstanceTestsBase
     {
-        [Fact]
+        [Test]
         public void TraceIdSpanId_MatchActiveSpan()
         {
             using (var parentScope = Tracer.Instance.StartActive("parent"))
             {
                 using (var childScope = Tracer.Instance.StartActive("child"))
                 {
-                    Assert.Equal<ulong>(childScope.Span.SpanId, CorrelationIdentifier.SpanId);
-                    Assert.Equal<ulong>(childScope.Span.TraceId, CorrelationIdentifier.TraceId);
+                    Assert.AreEqual(childScope.Span.SpanId, CorrelationIdentifier.SpanId);
+                    Assert.AreEqual(childScope.Span.TraceId, CorrelationIdentifier.TraceId);
                 }
             }
         }
 
-        [Fact(Skip = "This test is not compatible with the xUnit integration. Neither TraceId or SpanId are Zero.")]
+        [Test]
+        [Ignore("This test is not compatible with the test integration. Neither TraceId or SpanId are Zero.")]
         public void TraceIdSpanId_ZeroOutsideActiveSpan()
         {
             using (var parentScope = Tracer.Instance.StartActive("parent"))
@@ -41,11 +34,11 @@ namespace Datadog.Trace.Tests
                 // Do nothing
             }
 
-            Assert.Equal<ulong>(0, CorrelationIdentifier.SpanId);
-            Assert.Equal<ulong>(0, CorrelationIdentifier.TraceId);
+            Assert.AreEqual(0, CorrelationIdentifier.SpanId);
+            Assert.AreEqual(0, CorrelationIdentifier.TraceId);
         }
 
-        [Fact]
+        [Test]
         public void ServiceIdentifiers_MatchTracerInstanceSettings()
         {
             const string service = "unit-test";
@@ -64,17 +57,17 @@ namespace Datadog.Trace.Tests
             using (var parentScope = Tracer.Instance.StartActive("parent"))
             using (var childScope = Tracer.Instance.StartActive("child"))
             {
-                Assert.Equal(service, CorrelationIdentifier.Service);
-                Assert.Equal(version, CorrelationIdentifier.Version);
-                Assert.Equal(env, CorrelationIdentifier.Env);
+                Assert.AreEqual(service, CorrelationIdentifier.Service);
+                Assert.AreEqual(version, CorrelationIdentifier.Version);
+                Assert.AreEqual(env, CorrelationIdentifier.Env);
             }
 
-            Assert.Equal(service, CorrelationIdentifier.Service);
-            Assert.Equal(version, CorrelationIdentifier.Version);
-            Assert.Equal(env, CorrelationIdentifier.Env);
+            Assert.AreEqual(service, CorrelationIdentifier.Service);
+            Assert.AreEqual(version, CorrelationIdentifier.Version);
+            Assert.AreEqual(env, CorrelationIdentifier.Env);
         }
 
-        [Fact]
+        [Test]
         public void VersionAndEnv_EmptyStringIfUnset()
         {
             var settings = new TracerSettings();
@@ -84,15 +77,15 @@ namespace Datadog.Trace.Tests
             using (var parentScope = Tracer.Instance.StartActive("parent"))
             using (var childScope = Tracer.Instance.StartActive("child"))
             {
-                Assert.Equal(string.Empty, CorrelationIdentifier.Version);
-                Assert.Equal(string.Empty, CorrelationIdentifier.Env);
+                Assert.AreEqual(string.Empty, CorrelationIdentifier.Version);
+                Assert.AreEqual(string.Empty, CorrelationIdentifier.Env);
             }
 
-            Assert.Equal(string.Empty, CorrelationIdentifier.Version);
-            Assert.Equal(string.Empty, CorrelationIdentifier.Env);
+            Assert.AreEqual(string.Empty, CorrelationIdentifier.Version);
+            Assert.AreEqual(string.Empty, CorrelationIdentifier.Env);
         }
 
-        [Fact]
+        [Test]
         public void Service_DefaultServiceNameIfUnset()
         {
             var settings = new TracerSettings();
@@ -102,10 +95,10 @@ namespace Datadog.Trace.Tests
             using (var parentScope = Tracer.Instance.StartActive("parent"))
             using (var childScope = Tracer.Instance.StartActive("child"))
             {
-                Assert.Equal(CorrelationIdentifier.Service, Tracer.Instance.DefaultServiceName);
+                Assert.AreEqual(CorrelationIdentifier.Service, Tracer.Instance.DefaultServiceName);
             }
 
-            Assert.Equal(CorrelationIdentifier.Service, Tracer.Instance.DefaultServiceName);
+            Assert.AreEqual(CorrelationIdentifier.Service, Tracer.Instance.DefaultServiceName);
         }
     }
 }

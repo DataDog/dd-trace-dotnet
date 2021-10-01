@@ -4,28 +4,27 @@
 // </copyright>
 
 #if NET452
+using System;
 using System.Globalization;
 using System.Linq;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.TestHelpers;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class WebRequest20Tests : TestHelper
     {
-        public WebRequest20Tests(ITestOutputHelper output)
-            : base("WebRequest.NetFramework20", output)
+        public WebRequest20Tests()
+            : base("WebRequest.NetFramework20")
         {
             SetServiceVersion("1.0.0");
         }
 
-        [Theory]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        [InlineData(false)]
-        [InlineData(true)]
+        [Property("Category", "EndToEnd")]
+        [Property("RunOnWindows", "True")]
+        [TestCase(false)]
+        [TestCase(true)]
         public void SubmitsTraces(bool enableCallTarget)
         {
             SetCallTargetSettings(enableCallTarget);
@@ -37,21 +36,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             int agentPort = TcpPortProvider.GetOpenPort();
             int httpPort = TcpPortProvider.GetOpenPort();
 
-            Output.WriteLine($"Assigning port {agentPort} for the agentPort.");
-            Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
+            Console.WriteLine($"Assigning port {agentPort} for the agentPort.");
+            Console.WriteLine($"Assigning port {httpPort} for the httpPort.");
 
             using (var agent = new MockTracerAgent(agentPort))
             using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"Port={httpPort}"))
             {
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
-                Assert.Equal(expectedSpanCount, spans.Count);
+                Assert.AreEqual(expectedSpanCount, spans.Count);
 
                 foreach (var span in spans)
                 {
-                    Assert.Equal(expectedOperationName, span.Name);
-                    Assert.Equal(expectedServiceName, span.Service);
-                    Assert.Equal(SpanTypes.Http, span.Type);
-                    Assert.Equal("WebRequest", span.Tags[Tags.InstrumentationName]);
+                    Assert.AreEqual(expectedOperationName, span.Name);
+                    Assert.AreEqual(expectedServiceName, span.Service);
+                    Assert.AreEqual(SpanTypes.Http, span.Type);
+                    Assert.AreEqual("WebRequest", span.Tags[Tags.InstrumentationName]);
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
                 }
 
@@ -59,16 +58,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
                 var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
 
-                Assert.Equal(firstSpan.TraceId.ToString(CultureInfo.InvariantCulture), traceId);
-                Assert.Equal(firstSpan.SpanId.ToString(CultureInfo.InvariantCulture), parentSpanId);
+                Assert.AreEqual(firstSpan.TraceId.ToString(CultureInfo.InvariantCulture), traceId);
+                Assert.AreEqual(firstSpan.SpanId.ToString(CultureInfo.InvariantCulture), parentSpanId);
             }
         }
 
-        [Theory]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        [InlineData(false)]
-        [InlineData(true)]
+        [Property("Category", "EndToEnd")]
+        [Property("RunOnWindows", "True")]
+        [TestCase(false)]
+        [TestCase(true)]
         public void TracingDisabled_DoesNotSubmitsTraces(bool enableCallTarget)
         {
             SetCallTargetSettings(enableCallTarget);
@@ -82,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"TracingDisabled Port={httpPort}"))
             {
                 var spans = agent.WaitForSpans(1, 3000, operationName: expectedOperationName);
-                Assert.Equal(0, spans.Count);
+                Assert.AreEqual(0, spans.Count);
 
                 var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
                 var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
@@ -90,7 +88,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 Assert.Null(traceId);
                 Assert.Null(parentSpanId);
-                Assert.Equal("false", tracingEnabled);
+                Assert.AreEqual("false", tracingEnabled);
             }
         }
     }

@@ -4,26 +4,17 @@
 // </copyright>
 
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.IntegrationTests
 {
     public class DatadogHttpClientTests
     {
-        private readonly ITestOutputHelper _output;
-
-        public DatadogHttpClientTests(ITestOutputHelper output)
-        {
-            _output = output;
-        }
-
-        [Fact]
+        [Test]
         public async Task DatadogHttpClient_CanSendTracesToAgent()
         {
             var agentPort = TcpPortProvider.GetOpenPort();
@@ -45,7 +36,7 @@ namespace Datadog.Trace.IntegrationTests
                 await tracer.FlushAsync();
 
                 var spans = agent.WaitForSpans(1);
-                Assert.Equal(1, spans.Count);
+                Assert.AreEqual(1, spans.Count);
             }
         }
     }

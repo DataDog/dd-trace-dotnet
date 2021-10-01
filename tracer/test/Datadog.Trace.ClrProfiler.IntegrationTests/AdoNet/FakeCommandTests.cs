@@ -6,22 +6,20 @@
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     public class FakeCommandTests : TestHelper
     {
-        public FakeCommandTests(ITestOutputHelper output)
-            : base("FakeDbCommand", output)
+        public FakeCommandTests()
+            : base("FakeDbCommand")
         {
             SetServiceVersion("1.0.0");
         }
 
-        [Theory]
-        [InlineData(true)]
-        [Trait("Category", "EndToEnd")]
+        [TestCase(true)]
+        [Property("Category", "EndToEnd")]
         public void SubmitsTracesWithNetStandard(bool enableCallTarget)
         {
             SetCallTargetSettings(enableCallTarget);
@@ -45,23 +43,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             using (RunSampleAndWaitForExit(agent.Port))
             {
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
-                Assert.Equal(expectedSpanCount, spans.Count);
+                Assert.AreEqual(expectedSpanCount, spans.Count);
 
                 foreach (var span in spans)
                 {
-                    Assert.Equal(expectedOperationName, span.Name);
-                    Assert.Equal(expectedServiceName, span.Service);
-                    Assert.Equal(SpanTypes.Sql, span.Type);
-                    Assert.Equal(dbType, span.Tags[Tags.DbType]);
+                    Assert.AreEqual(expectedOperationName, span.Name);
+                    Assert.AreEqual(expectedServiceName, span.Service);
+                    Assert.AreEqual(SpanTypes.Sql, span.Type);
+                    Assert.AreEqual(dbType, span.Tags[Tags.DbType]);
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
                 }
             }
         }
 
-        [Theory]
-        [InlineData(true)]
-        [InlineData(false)]
-        [Trait("Category", "EndToEnd")]
+        [TestCase(true)]
+        [TestCase(false)]
+        [Property("Category", "EndToEnd")]
         public void SpansDisabledByAdoNetExcludedTypes(bool enableCallTarget)
         {
             SetCallTargetSettings(enableCallTarget);
@@ -79,8 +76,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             using (RunSampleAndWaitForExit(agent.Port))
             {
                 var spans = agent.WaitForSpans(totalSpanCount, returnAllOperations: true);
-                Assert.NotEmpty(spans);
-                Assert.Empty(spans.Where(s => s.Name.Equals(expectedOperationName)));
+                CollectionAssert.IsNotEmpty(spans);
+                CollectionAssert.IsEmpty(spans.Where(s => s.Name.Equals(expectedOperationName)));
             }
         }
     }

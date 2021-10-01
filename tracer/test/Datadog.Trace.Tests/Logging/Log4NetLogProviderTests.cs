@@ -7,24 +7,26 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using Datadog.Trace.Logging;
+using FluentAssertions;
 using log4net.Appender;
 using log4net.Config;
 using log4net.Core;
 using log4net.Layout;
 using Newtonsoft.Json;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests.Logging
 {
-    [Collection(nameof(Datadog.Trace.Tests.Logging))]
+    [NonParallelizable]
     public class Log4NetLogProviderTests
     {
         private const string Log4NetExpectedStringFormat = "\"{0}\":\"{1}\"";
-        private readonly ILogProvider _logProvider;
-        private readonly ILog _logger;
-        private readonly MemoryAppender _memoryAppender;
+        private ILogProvider _logProvider;
+        private ILog _logger;
+        private MemoryAppender _memoryAppender;
 
-        public Log4NetLogProviderTests()
+        [SetUp]
+        public void Setup()
         {
             _memoryAppender = new MemoryAppender();
             var repository = log4net.LogManager.GetRepository(Assembly.GetAssembly(typeof(log4net.LogManager)));
@@ -35,11 +37,11 @@ namespace Datadog.Trace.Tests.Logging
             _logger = new LoggerExecutionWrapper(_logProvider.GetLogger("Test"));
         }
 
-        [Fact]
+        [Test]
         public void LogsInjectionEnabledAddsParentCorrelationIdentifiers()
         {
             // Assert that the Log4Net log provider is correctly being used
-            Assert.IsType<CustomLog4NetLogProvider>(LogProvider.CurrentLogProvider);
+            Assert.IsInstanceOf<CustomLog4NetLogProvider>(LogProvider.CurrentLogProvider);
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
@@ -48,14 +50,18 @@ namespace Datadog.Trace.Tests.Logging
             // Filter the logs
             List<LoggingEvent> filteredLogs = new List<LoggingEvent>(_memoryAppender.GetEvents());
             filteredLogs.RemoveAll(log => !log.MessageObject.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(filteredLogs, e => LogEventContains(e, tracer.DefaultServiceName, tracer.Settings.ServiceVersion, tracer.Settings.Environment, parentScope));
+
+            foreach (var log in filteredLogs)
+            {
+                LogEventContains(log, tracer.DefaultServiceName, tracer.Settings.ServiceVersion, tracer.Settings.Environment, parentScope);
+            }
         }
 
-        [Fact]
+        [Test]
         public void LogsInjectionEnabledAddsChildCorrelationIdentifiers()
         {
             // Assert that the Log4Net log provider is correctly being used
-            Assert.IsType<CustomLog4NetLogProvider>(LogProvider.CurrentLogProvider);
+            Assert.IsInstanceOf<CustomLog4NetLogProvider>(LogProvider.CurrentLogProvider);
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
@@ -64,14 +70,18 @@ namespace Datadog.Trace.Tests.Logging
             // Filter the logs
             List<LoggingEvent> filteredLogs = new List<LoggingEvent>(_memoryAppender.GetEvents());
             filteredLogs.RemoveAll(log => !log.MessageObject.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(filteredLogs, e => LogEventContains(e, tracer.DefaultServiceName, tracer.Settings.ServiceVersion, tracer.Settings.Environment, childScope));
+
+            foreach (var log in filteredLogs)
+            {
+                LogEventContains(log, tracer.DefaultServiceName, tracer.Settings.ServiceVersion, tracer.Settings.Environment, childScope);
+            }
         }
 
-        [Fact]
+        [Test]
         public void LogsInjectionEnabledDoesNotAddCorrelationIdentifiersOutsideSpans()
         {
             // Assert that the Log4Net log provider is correctly being used
-            Assert.IsType<CustomLog4NetLogProvider>(LogProvider.CurrentLogProvider);
+            Assert.IsInstanceOf<CustomLog4NetLogProvider>(LogProvider.CurrentLogProvider);
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
@@ -80,14 +90,18 @@ namespace Datadog.Trace.Tests.Logging
             // Filter the logs
             List<LoggingEvent> filteredLogs = new List<LoggingEvent>(_memoryAppender.GetEvents());
             filteredLogs.RemoveAll(log => !log.MessageObject.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(filteredLogs, e => LogEventDoesNotContainCorrelationIdentifiers(e));
+
+            foreach (var log in filteredLogs)
+            {
+                LogEventDoesNotContainCorrelationIdentifiers(log);
+            }
         }
 
-        [Fact]
+        [Test]
         public void LogsInjectionEnabledUsesTracerServiceName()
         {
             // Assert that the Log4Net log provider is correctly being used
-            Assert.IsType<CustomLog4NetLogProvider>(LogProvider.CurrentLogProvider);
+            Assert.IsInstanceOf<CustomLog4NetLogProvider>(LogProvider.CurrentLogProvider);
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
@@ -96,14 +110,18 @@ namespace Datadog.Trace.Tests.Logging
             // Filter the logs
             List<LoggingEvent> filteredLogs = new List<LoggingEvent>(_memoryAppender.GetEvents());
             filteredLogs.RemoveAll(log => !log.MessageObject.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(filteredLogs, e => LogEventContains(e, tracer.DefaultServiceName, tracer.Settings.ServiceVersion, tracer.Settings.Environment, scope));
+
+            foreach (var log in filteredLogs)
+            {
+                LogEventContains(log, tracer.DefaultServiceName, tracer.Settings.ServiceVersion, tracer.Settings.Environment, scope);
+            }
         }
 
-        [Fact]
+        [Test]
         public void DisabledLibLogSubscriberDoesNotAddCorrelationIdentifiers()
         {
             // Assert that the Log4Net log provider is correctly being used
-            Assert.IsType<CustomLog4NetLogProvider>(LogProvider.CurrentLogProvider);
+            Assert.IsInstanceOf<CustomLog4NetLogProvider>(LogProvider.CurrentLogProvider);
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: false);
@@ -112,7 +130,11 @@ namespace Datadog.Trace.Tests.Logging
             // Filter the logs
             List<LoggingEvent> filteredLogs = new List<LoggingEvent>(_memoryAppender.GetEvents());
             filteredLogs.RemoveAll(log => !log.MessageObject.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(filteredLogs, e => LogEventDoesNotContainCorrelationIdentifiers(e));
+
+            foreach (var log in filteredLogs)
+            {
+                LogEventDoesNotContainCorrelationIdentifiers(log);
+            }
         }
 
         internal static void LogEventContains(log4net.Core.LoggingEvent logEvent, string service, string version, string env, Scope scope)
@@ -123,28 +145,28 @@ namespace Datadog.Trace.Tests.Logging
         internal static void LogEventContains(log4net.Core.LoggingEvent logEvent, string service, string version, string env, ulong traceId, ulong spanId)
         {
             Assert.Contains(CorrelationIdentifier.ServiceKey, logEvent.Properties.GetKeys());
-            Assert.Equal(service, logEvent.Properties[CorrelationIdentifier.ServiceKey].ToString());
+            Assert.AreEqual(service, logEvent.Properties[CorrelationIdentifier.ServiceKey].ToString());
 
             Assert.Contains(CorrelationIdentifier.VersionKey, logEvent.Properties.GetKeys());
-            Assert.Equal(version, logEvent.Properties[CorrelationIdentifier.VersionKey].ToString());
+            Assert.AreEqual(version, logEvent.Properties[CorrelationIdentifier.VersionKey].ToString());
 
             Assert.Contains(CorrelationIdentifier.EnvKey, logEvent.Properties.GetKeys());
-            Assert.Equal(env, logEvent.Properties[CorrelationIdentifier.EnvKey].ToString());
+            Assert.AreEqual(env, logEvent.Properties[CorrelationIdentifier.EnvKey].ToString());
 
             Assert.Contains(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
-            Assert.Equal(traceId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.TraceIdKey].ToString()));
+            Assert.AreEqual(traceId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.TraceIdKey].ToString()));
 
             Assert.Contains(CorrelationIdentifier.SpanIdKey, logEvent.Properties.GetKeys());
-            Assert.Equal(spanId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.SpanIdKey].ToString()));
+            Assert.AreEqual(spanId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.SpanIdKey].ToString()));
         }
 
         internal static void LogEventContains(log4net.Core.LoggingEvent logEvent, ulong traceId, ulong spanId)
         {
             Assert.Contains(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
-            Assert.Equal(traceId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.TraceIdKey].ToString()));
+            Assert.AreEqual(traceId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.TraceIdKey].ToString()));
 
             Assert.Contains(CorrelationIdentifier.SpanIdKey, logEvent.Properties.GetKeys());
-            Assert.Equal(spanId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.SpanIdKey].ToString()));
+            Assert.AreEqual(spanId, ulong.Parse(logEvent.Properties[CorrelationIdentifier.SpanIdKey].ToString()));
         }
 
         internal static void LogEventDoesNotContainCorrelationIdentifiers(log4net.Core.LoggingEvent logEvent)
@@ -156,8 +178,8 @@ namespace Datadog.Trace.Tests.Logging
             }
             else
             {
-                Assert.DoesNotContain(CorrelationIdentifier.SpanIdKey, logEvent.Properties.GetKeys());
-                Assert.DoesNotContain(CorrelationIdentifier.TraceIdKey, logEvent.Properties.GetKeys());
+                logEvent.Properties.GetKeys().Should().NotContain(CorrelationIdentifier.SpanIdKey);
+                logEvent.Properties.GetKeys().Should().NotContain(CorrelationIdentifier.TraceIdKey);
             }
         }
 

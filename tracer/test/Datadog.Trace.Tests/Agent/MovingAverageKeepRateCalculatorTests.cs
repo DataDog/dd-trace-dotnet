@@ -1,26 +1,24 @@
-﻿// <copyright file="MovingAverageKeepRateCalculatorTests.cs" company="Datadog">
+// <copyright file="MovingAverageKeepRateCalculatorTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
 using System.Threading;
-using System.Threading.Tasks;
 using Datadog.Trace.Agent;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.Tests.Agent
 {
     public class MovingAverageKeepRateCalculatorTests
     {
-        [Theory]
-        [InlineData(0, 0, 0)]
-        [InlineData(0, 10, 0)]
-        [InlineData(6, 4, 0.6)]
-        [InlineData(9, 1, 0.9)]
-        [InlineData(1, 9, 0.1)]
-        [InlineData(10, 0, 1)]
-        [InlineData(100, 1, 0.99)]
+        [TestCase(0, 0, 0)]
+        [TestCase(0, 10, 0)]
+        [TestCase(6, 4, 0.6)]
+        [TestCase(9, 1, 0.9)]
+        [TestCase(1, 9, 0.1)]
+        [TestCase(10, 0, 1)]
+        [TestCase(100, 1, 0.99)]
         public void Calculator_ShouldCalculateKeepRateCorrectly(int keep, int drop, double expected)
         {
             const int size = 5;
@@ -33,15 +31,15 @@ namespace Datadog.Trace.Tests.Agent
 
             var actualRate = calc.GetKeepRate();
 
-            Assert.Equal(expected, actualRate, precision: 2);
+            Assert.AreEqual(expected, actualRate, delta: 0.01);
         }
 
         [Theory]
-        [InlineData(1, 0.1, 0.2, 0.3, 0.4, 0.5)]
-        [InlineData(2, 0.1, 0.15, 0.25, 0.35, 0.45)]
-        [InlineData(3, 0.1, 0.15, 0.2, 0.3, 0.4)]
-        [InlineData(4, 0.1, 0.15, 0.2, 0.25, 0.35)]
-        [InlineData(5, 0.1, 0.15, 0.2, 0.25, 0.3)]
+        [TestCase(1, 0.1, 0.2, 0.3, 0.4, 0.5)]
+        [TestCase(2, 0.1, 0.15, 0.25, 0.35, 0.45)]
+        [TestCase(3, 0.1, 0.15, 0.2, 0.3, 0.4)]
+        [TestCase(4, 0.1, 0.15, 0.2, 0.25, 0.35)]
+        [TestCase(5, 0.1, 0.15, 0.2, 0.25, 0.3)]
         public void Calculator_ShouldUpdateRates_BasedOnBucketSize(
             int size, double rate1, double rate2, double rate3, double rate4, double rate5)
         {
@@ -65,11 +63,11 @@ namespace Datadog.Trace.Tests.Agent
 
                 var actualRate = calc.GetKeepRate();
 
-                Assert.Equal(value.expectedRate, actualRate, precision: 2);
+                Assert.AreEqual(value.expectedRate, actualRate, delta: 0.01);
             }
         }
 
-        [Fact]
+        [Test]
         public void Calculator_ShouldHandleOverflows()
         {
             const int size = 5;
@@ -83,10 +81,11 @@ namespace Datadog.Trace.Tests.Agent
             var actualRate = calc.GetKeepRate();
 
             // should not be negative!
-            Assert.Equal(expected: 1, actualRate);
+            Assert.AreEqual(expected: 1, actualRate);
         }
 
-        [Fact(Skip = "Flaky as is very timing/load dependent")]
+        [Test]
+        [Ignore("Flaky as is very timing/load dependent")]
         public void Calculator_ShouldUpdateAutomatically()
         {
             const int bucketSize = 10;
@@ -95,7 +94,7 @@ namespace Datadog.Trace.Tests.Agent
             var calc = new MovingAverageKeepRateCalculator(bucketSize, TimeSpan.FromMilliseconds(bucketDuration));
 
             // precondition
-            Assert.Equal(0, calc.GetKeepRate());
+            Assert.AreEqual(0, calc.GetKeepRate());
 
             calc.IncrementKeeps(10);
             calc.IncrementDrops(10);
@@ -120,7 +119,7 @@ namespace Datadog.Trace.Tests.Agent
             Thread.Sleep(bucketDuration * bucketSize);
 
             // buckets should all be empty again now
-            Assert.Equal(0, calc.GetKeepRate());
+            Assert.AreEqual(0, calc.GetKeepRate());
         }
     }
 }

@@ -6,98 +6,86 @@
 #if NET461
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
+using System.Collections.Generic;
 using System.Net;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
-using VerifyXunit;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
+using VerifyNUnit;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    [CollectionDefinition("IisTests", DisableParallelization = true)]
-    [Collection("IisTests")]
     public class AspNetMvc4TestsCallsiteClassic : AspNetMvc4Tests
     {
-        public AspNetMvc4TestsCallsiteClassic(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: false, classicMode: true, enableRouteTemplateResourceNames: false)
+        public AspNetMvc4TestsCallsiteClassic()
+            : base(enableCallTarget: false, classicMode: true, enableRouteTemplateResourceNames: false)
         {
         }
     }
 
-    [Collection("IisTests")]
     public class AspNetMvc4TestsCallsiteIntegrated : AspNetMvc4Tests
     {
-        public AspNetMvc4TestsCallsiteIntegrated(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: false, classicMode: false, enableRouteTemplateResourceNames: false)
+        public AspNetMvc4TestsCallsiteIntegrated()
+            : base(enableCallTarget: false, classicMode: false, enableRouteTemplateResourceNames: false)
         {
         }
     }
 
-    [Collection("IisTests")]
     public class AspNetMvc4TestsCallsiteClassicWithFeatureFlag : AspNetMvc4Tests
     {
-        public AspNetMvc4TestsCallsiteClassicWithFeatureFlag(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: false, classicMode: true, enableRouteTemplateResourceNames: true)
+        public AspNetMvc4TestsCallsiteClassicWithFeatureFlag()
+            : base(enableCallTarget: false, classicMode: true, enableRouteTemplateResourceNames: true)
         {
         }
     }
 
-    [Collection("IisTests")]
     public class AspNetMvc4TestsCallsiteIntegratedWithFeatureFlag : AspNetMvc4Tests
     {
-        public AspNetMvc4TestsCallsiteIntegratedWithFeatureFlag(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: false, classicMode: false, enableRouteTemplateResourceNames: true)
+        public AspNetMvc4TestsCallsiteIntegratedWithFeatureFlag()
+            : base(enableCallTarget: false, classicMode: false, enableRouteTemplateResourceNames: true)
         {
         }
     }
 
-    [Collection("IisTests")]
     public class AspNetMvc4TestsCallTargetClassic : AspNetMvc4Tests
     {
-        public AspNetMvc4TestsCallTargetClassic(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: true, classicMode: true, enableRouteTemplateResourceNames: false)
+        public AspNetMvc4TestsCallTargetClassic()
+            : base(enableCallTarget: true, classicMode: true, enableRouteTemplateResourceNames: false)
         {
         }
     }
 
-    [Collection("IisTests")]
     public class AspNetMvc4TestsCallTargetIntegrated : AspNetMvc4Tests
     {
-        public AspNetMvc4TestsCallTargetIntegrated(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: true, classicMode: false, enableRouteTemplateResourceNames: false)
+        public AspNetMvc4TestsCallTargetIntegrated()
+            : base(enableCallTarget: true, classicMode: false, enableRouteTemplateResourceNames: false)
         {
         }
     }
 
-    [Collection("IisTests")]
     public class AspNetMvc4TestsCallTargetClassicWithFeatureFlag : AspNetMvc4Tests
     {
-        public AspNetMvc4TestsCallTargetClassicWithFeatureFlag(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: true, classicMode: true, enableRouteTemplateResourceNames: true)
+        public AspNetMvc4TestsCallTargetClassicWithFeatureFlag()
+            : base(enableCallTarget: true, classicMode: true, enableRouteTemplateResourceNames: true)
         {
         }
     }
 
-    [Collection("IisTests")]
     public class AspNetMvc4TestsCallTargetIntegratedWithFeatureFlag : AspNetMvc4Tests
     {
-        public AspNetMvc4TestsCallTargetIntegratedWithFeatureFlag(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: true, classicMode: false, enableRouteTemplateResourceNames: true)
+        public AspNetMvc4TestsCallTargetIntegratedWithFeatureFlag()
+            : base(enableCallTarget: true, classicMode: false, enableRouteTemplateResourceNames: true)
         {
         }
     }
 
-    [UsesVerify]
-    public abstract class AspNetMvc4Tests : TestHelper, IClassFixture<IisFixture>
+    public abstract class AspNetMvc4Tests : IisTestsBase
     {
-        private readonly IisFixture _iisFixture;
         private readonly string _testName;
 
-        public AspNetMvc4Tests(IisFixture iisFixture, ITestOutputHelper output, bool enableCallTarget, bool classicMode, bool enableRouteTemplateResourceNames)
-            : base("AspNetMvc4", @"test\test-applications\aspnet", output)
+        protected AspNetMvc4Tests(bool enableCallTarget, bool classicMode, bool enableRouteTemplateResourceNames)
+            : base("AspNetMvc4", @"test\test-applications\aspnet", classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated, "/home/shutdown")
         {
             SetServiceVersion("1.0.0");
             SetCallTargetSettings(enableCallTarget);
@@ -106,42 +94,38 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, "true");
             }
 
-            _iisFixture = iisFixture;
-            _iisFixture.ShutdownPath = "/home/shutdown";
-            _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
             _testName = nameof(AspNetMvc4Tests)
                       + (enableCallTarget ? ".CallSite" : ".CallTarget")
                       + (classicMode ? ".Classic" : ".Integrated")
                       + (enableRouteTemplateResourceNames ? ".NoFF" : ".WithFF");
         }
 
-        public static TheoryData<string, int> Data() => new()
+        public static IEnumerable<TestCaseData> Data() => new TestCaseData[]
         {
-            { "/Admin", 200 },
-            { "/Admin/Home", 200 },
-            { "/Admin/Home/Index", 200 },
-            { "/", 200 },
-            { "/Home", 200 },
-            { "/Home/Index", 200 },
-            { "/Home/BadRequest", 500 },
-            { "/Home/identifier", 500 },
-            { "/Home/identifier/123", 200 },
-            { "/Home/identifier/BadValue", 500 },
-            { "/Home/OptionalIdentifier", 200 },
-            { "/Home/OptionalIdentifier/123", 200 },
-            { "/Home/OptionalIdentifier/BadValue", 200 },
-            { "/Home/StatusCode?value=201", 201 },
-            { "/Home/StatusCode?value=503", 503 },
+            new("/Admin", 200),
+            new("/Admin/Home", 200),
+            new("/Admin/Home/Index", 200),
+            new("/", 200),
+            new("/Home", 200),
+            new("/Home/Index", 200),
+            new("/Home/BadRequest", 500),
+            new("/Home/identifier", 500),
+            new("/Home/identifier/123", 200),
+            new("/Home/identifier/BadValue", 500),
+            new("/Home/OptionalIdentifier", 200),
+            new("/Home/OptionalIdentifier/123", 200),
+            new("/Home/OptionalIdentifier/BadValue", 200),
+            new("/Home/StatusCode?value=201", 201),
+            new("/Home/StatusCode?value=503", 503),
         };
 
-        [Theory]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        [Trait("LoadFromGAC", "True")]
-        [MemberData(nameof(Data))]
+        [Property("Category", "EndToEnd")]
+        [Property("RunOnWindows", "True")]
+        [Property("LoadFromGAC", "True")]
+        [TestCaseSource(nameof(Data))]
         public async Task SubmitsTraces(string path, HttpStatusCode statusCode)
         {
-            var spans = await GetWebServerSpans(path, _iisFixture.Agent, _iisFixture.HttpPort, statusCode);
+            var spans = await GetWebServerSpans(path, Agent, HttpPort, statusCode);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
 

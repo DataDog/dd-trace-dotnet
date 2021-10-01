@@ -5,8 +5,7 @@
 
 using System;
 using Datadog.Trace.TestHelpers;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
@@ -41,17 +40,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
             };
 
-        public NLogTests(ITestOutputHelper output)
-            : base(output, "LogsInjection.NLog")
+        public NLogTests()
+            : base("LogsInjection.NLog")
         {
             SetServiceVersion("1.0.0");
         }
 
-        [Theory]
-        [MemberData(nameof(PackageVersions.NLog), MemberType = typeof(PackageVersions))]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        [Trait("Category", "LinuxUnsupported")]
+        [TestCaseSource(nameof(PackageVersions.NLog))]
+        [Property("Category", "EndToEnd")]
+        [Property("RunOnWindows", "True")]
+        [Property("Category", "LinuxUnsupported")]
         public void InjectsLogsWhenEnabled(string packageVersion)
         {
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
@@ -74,11 +72,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        [Theory]
-        [MemberData(nameof(PackageVersions.NLog), MemberType = typeof(PackageVersions))]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        [Trait("Category", "LinuxUnsupported")]
+        [TestCaseSource(nameof(PackageVersions.NLog))]
+        [Property("Category", "EndToEnd")]
+        [Property("RunOnWindows", "True")]
+        [Property("Category", "LinuxUnsupported")]
         public void DoesNotInjectLogsWhenDisabled(string packageVersion)
         {
             SetEnvironmentVariable("DD_LOGS_INJECTION", "false");

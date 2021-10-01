@@ -15,37 +15,34 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Sampling;
-using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Moq;
-using Xunit;
+using NUnit.Framework;
 
 namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 {
     public class AspNetCoreDiagnosticObserverTests
     {
-        [Theory]
-        [MemberData(nameof(AspNetCoreMvcTestData.WithoutFeatureFlag), MemberType = typeof(AspNetCoreMvcTestData))]
-        public async Task DiagnosticObserver_ForMvcEndpoints_SubmitsSpans(string path, HttpStatusCode statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
+        [TestCaseSource(nameof(AspNetCoreMvcTestData.WithoutFeatureFlag))]
+        public async Task DiagnosticObserver_ForMvcEndpoints_SubmitsSpans(string path, HttpStatusCode statusCode, bool isError, string resourceName, IReadOnlyDictionary<string, string> expectedTags)
         {
             await AssertDiagnosticObserverSubmitsSpans<MvcStartup>(path, statusCode, isError, resourceName, expectedTags);
         }
 
-        [Theory]
-        [MemberData(nameof(AspNetCoreMvcTestData.WithFeatureFlag), MemberType = typeof(AspNetCoreMvcTestData))]
+        [TestCaseSource(nameof(AspNetCoreMvcTestData.WithFeatureFlag))]
         public async Task DiagnosticObserver_ForMvcEndpoints_WithFeatureFlag_SubmitsSpans(
             string path,
             HttpStatusCode statusCode,
             bool isError,
             string resourceName,
-            SerializableDictionary expectedTags,
+            IReadOnlyDictionary<string, string> expectedTags,
             int childSpanCount,
             string childSpan1ResourceName,
-            SerializableDictionary firstChildSpanTags,
+            IReadOnlyDictionary<string, string> firstChildSpanTags,
             string childSpan2ResourceName,
-            SerializableDictionary secondChildSpanTags)
+            IReadOnlyDictionary<string, string> secondChildSpanTags)
         {
             await AssertDiagnosticObserverSubmitsSpans<MvcStartup>(
                 path,
@@ -61,26 +58,24 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
                 secondChildSpanTags);
         }
 
-        [Theory]
-        [MemberData(nameof(AspNetCoreRazorPagesTestData.WithoutFeatureFlag), MemberType = typeof(AspNetCoreRazorPagesTestData))]
-        public async Task DiagnosticObserver_ForRazorPages_SubmitsSpans(string path, HttpStatusCode statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
+        [TestCaseSource(nameof(AspNetCoreRazorPagesTestData.WithoutFeatureFlag))]
+        public async Task DiagnosticObserver_ForRazorPages_SubmitsSpans(string path, HttpStatusCode statusCode, bool isError, string resourceName, IReadOnlyDictionary<string, string> expectedTags)
         {
             await AssertDiagnosticObserverSubmitsSpans<Samples.AspNetCoreRazorPages.Startup>(path, statusCode, isError, resourceName, expectedTags);
         }
 
-        [Theory]
-        [MemberData(nameof(AspNetCoreRazorPagesTestData.WithFeatureFlag), MemberType = typeof(AspNetCoreRazorPagesTestData))]
+        [TestCaseSource(nameof(AspNetCoreRazorPagesTestData.WithFeatureFlag))]
         public async Task DiagnosticObserver_ForRazorPages_WithFeatureFlag_SubmitsSpans(
             string path,
             HttpStatusCode statusCode,
             bool isError,
             string resourceName,
-            SerializableDictionary expectedTags,
+            IReadOnlyDictionary<string, string> expectedTags,
             int childSpanCount,
             string childSpan1ResourceName,
-            SerializableDictionary firstChildSpanTags,
+            IReadOnlyDictionary<string, string> firstChildSpanTags,
             string childSpan2ResourceName,
-            SerializableDictionary secondChildSpanTags)
+            IReadOnlyDictionary<string, string> secondChildSpanTags)
         {
             await AssertDiagnosticObserverSubmitsSpans<Samples.AspNetCoreRazorPages.Startup>(
                 path,
@@ -97,26 +92,24 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
         }
 
 #if !NETCOREAPP2_1
-        [Theory]
-        [MemberData(nameof(AspNetCoreEndpointRoutingTestData.WithoutFeatureFlag), MemberType = typeof(AspNetCoreEndpointRoutingTestData))]
-        public async Task DiagnosticObserver_ForEndpointRouting_SubmitsSpans(string path, HttpStatusCode statusCode, bool isError, string resourceName, SerializableDictionary expectedTags)
+        [TestCaseSource(nameof(AspNetCoreEndpointRoutingTestData.WithoutFeatureFlag))]
+        public async Task DiagnosticObserver_ForEndpointRouting_SubmitsSpans(string path, HttpStatusCode statusCode, bool isError, string resourceName, IReadOnlyDictionary<string, string> expectedTags)
         {
             await AssertDiagnosticObserverSubmitsSpans<EndpointRoutingStartup>(path, statusCode, isError, resourceName, expectedTags);
         }
 
-        [Theory]
-        [MemberData(nameof(AspNetCoreEndpointRoutingTestData.WithFeatureFlag), MemberType = typeof(AspNetCoreEndpointRoutingTestData))]
+        [TestCaseSource(nameof(AspNetCoreEndpointRoutingTestData.WithFeatureFlag))]
         public async Task DiagnosticObserver_ForEndpointRouting_WithFeatureFlag_SubmitsSpans(
             string path,
             HttpStatusCode statusCode,
             bool isError,
             string resourceName,
-            SerializableDictionary expectedTags,
+            IReadOnlyDictionary<string, string> expectedTags,
             int childSpanCount,
             string childSpan1ResourceName,
-            SerializableDictionary firstChildSpanTags,
+            IReadOnlyDictionary<string, string> firstChildSpanTags,
             string childSpan2ResourceName,
-            SerializableDictionary secondChildSpanTags)
+            IReadOnlyDictionary<string, string> secondChildSpanTags)
         {
             await AssertDiagnosticObserverSubmitsSpans<EndpointRoutingStartup>(
                 path,
@@ -138,13 +131,13 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             HttpStatusCode statusCode,
             bool isError,
             string resourceName,
-            SerializableDictionary expectedParentSpanTags,
+            IReadOnlyDictionary<string, string> expectedParentSpanTags,
             bool featureFlag = false,
             int spanCount = 1,
             string childSpan1ResourceName = null,
-            SerializableDictionary firstChildSpanTags = null,
+            IReadOnlyDictionary<string, string> firstChildSpanTags = null,
             string childSpan2ResourceName = null,
-            SerializableDictionary secondChildSpanTags = null)
+            IReadOnlyDictionary<string, string> secondChildSpanTags = null)
             where T : class
         {
             var writer = new AgentWriterStub();
@@ -168,7 +161,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
                 try
                 {
                     var response = await client.GetAsync(path);
-                    Assert.Equal(statusCode, response.StatusCode);
+                    Assert.AreEqual(statusCode, response.StatusCode);
                 }
                 catch (Exception ex)
                 {
@@ -191,7 +184,9 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
                 }
             }
 
-            var trace = Assert.Single(writer.Traces);
+            var trace = writer.Traces.FirstOrDefault();
+
+            Assert.IsNotNull(trace);
             trace.Should().HaveCount(spanCount);
 
             var parentSpan = trace.Should()
@@ -208,7 +203,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
             if (expectedParentSpanTags is not null)
             {
-                foreach (var expectedTag in expectedParentSpanTags.Values)
+                foreach (var expectedTag in expectedParentSpanTags)
                 {
                     AssertTagHasValue(parentSpan, expectedTag.Key, expectedTag.Value);
                 }
@@ -228,7 +223,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
                 if (firstChildSpanTags is not null)
                 {
-                    foreach (var expectedTag in firstChildSpanTags.Values)
+                    foreach (var expectedTag in firstChildSpanTags)
                     {
                         AssertTagHasValue(childSpan, expectedTag.Key, expectedTag.Value);
                     }
@@ -247,7 +242,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
                     if (secondChildSpanTags is not null)
                     {
-                        foreach (var expectedTag in secondChildSpanTags.Values)
+                        foreach (var expectedTag in secondChildSpanTags)
                         {
                             AssertTagHasValue(childSpan2, expectedTag.Key, expectedTag.Value);
                         }

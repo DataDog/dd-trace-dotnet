@@ -3,27 +3,26 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.TestHelpers;
-using Xunit;
-using Xunit.Abstractions;
+using NUnit.Framework;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    [Collection(nameof(WebRequestTests))]
+    [NonParallelizable]
     public class ServiceMappingTests : TestHelper
     {
-        public ServiceMappingTests(ITestOutputHelper output)
-            : base("WebRequest", output)
+        public ServiceMappingTests()
+            : base("WebRequest")
         {
             SetEnvironmentVariable("DD_TRACE_SERVICE_MAPPING", "some-trace:not-used,http-client:my-custom-client");
             SetServiceVersion("1.0.0");
         }
 
-        [Theory]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        [InlineData(false)]
-        [InlineData(true)]
+        [Property("Category", "EndToEnd")]
+        [Property("RunOnWindows", "True")]
+        [TestCase(false)]
+        [TestCase(true)]
         public void RenamesService(bool enableCallTarget)
         {
             SetCallTargetSettings(enableCallTarget);
@@ -41,21 +40,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             int httpPort = TcpPortProvider.GetOpenPort();
             var extraArgs = ignoreAsync ? "IgnoreAsync " : string.Empty;
 
-            Output.WriteLine($"Assigning port {agentPort} for the agentPort.");
-            Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
+            Console.WriteLine($"Assigning port {agentPort} for the agentPort.");
+            Console.WriteLine($"Assigning port {httpPort} for the httpPort.");
 
             using (var agent = new MockTracerAgent(agentPort))
             using (RunSampleAndWaitForExit(agent.Port, arguments: $"{extraArgs}Port={httpPort}"))
             {
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
-                Assert.Equal(expectedSpanCount, spans.Count);
+                Assert.AreEqual(expectedSpanCount, spans.Count);
 
                 foreach (var span in spans)
                 {
-                    Assert.Equal(expectedOperationName, span.Name);
-                    Assert.Equal(expectedServiceName, span.Service);
-                    Assert.Equal(SpanTypes.Http, span.Type);
-                    Assert.Matches("WebRequest|HttpMessageHandler", span.Tags[Tags.InstrumentationName]);
+                    Assert.AreEqual(expectedOperationName, span.Name);
+                    Assert.AreEqual(expectedServiceName, span.Service);
+                    Assert.AreEqual(SpanTypes.Http, span.Type);
+                    Assert.That(span.Tags[Tags.InstrumentationName], Is.EqualTo("WebRequest").Or.EqualTo("HttpMessageHandler"));
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
                 }
             }
