@@ -3,10 +3,29 @@ parameters:
     type: 'string'
     default: 'build-windows-working-directory'
 
+  - name: pipelineRunId
+    type: string
+    default: ''
+
 steps:
-- task: DownloadPipelineArtifact@2
-  displayName: Download working dir
-  inputs:
-    artifact: ${{ parameters.artifact }}
-    patterns: "**/@(bin|obj|packages)/**"
-    path: $(System.DefaultWorkingDirectory)
+- ${{if eq(parameters.pipelineRunId, '') }}:
+  - task: DownloadPipelineArtifact@2
+    displayName: Download working dir
+    inputs:
+      artifact: ${{ parameters.artifact }}
+      patterns: "**/@(bin|obj|packages)/**"
+      path: $(System.DefaultWorkingDirectory)
+
+- ${{if ne(parameters.pipelineRunId, '') }}:
+  - task: DownloadPipelineArtifact@2
+    displayName: Download working dir from build pipeline
+    inputs:
+      source: specific
+      project: $(consolidatedPipelineProject)
+      pipeline: $(consolidatedPipelineDefinitionId)
+      runVersion: specific
+      runId: ${{ parameters.pipelineRunId }}
+      preferTriggeringPipeline: true
+      artifact: ${{ parameters.artifact }}
+      patterns: "**/@(bin|obj|packages)/**"
+      path: $(System.DefaultWorkingDirectory)

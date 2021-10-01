@@ -35,6 +35,7 @@ partial class Build
     const string GitHubRepositoryName = "dd-trace-dotnet";
     const string AzureDevopsOrganisation = "https://dev.azure.com/datadoghq";
     const int AzureDevopsConsolidatePipelineId = 54;
+    const int AzureDevopsBenchmarksPipelineId = 61;
     static readonly Guid AzureDevopsProjectId = Guid.Parse("a51c4863-3eb4-4c5d-878a-58b41a049e4e");
 
     string FullVersion => IsPrerelease ? $"{Version}-prerelease" : Version;
@@ -383,7 +384,7 @@ partial class Build
 
             var branch = $"refs/tags/v{FullVersion}";
 
-            var (build, artifact) = await DownloadAzureArtifact(buildHttpClient, branch, _ => $"{FullVersion}-release-artifacts", OutputDirectory, BuildReason.IndividualCI);
+            var (build, artifact) = await DownloadAzureArtifact(buildHttpClient, branch, AzureDevopsConsolidatePipelineId, _ => $"{FullVersion}-release-artifacts", OutputDirectory, BuildReason.IndividualCI);
 
             var resourceDownloadUrl = artifact.Resource.DownloadUrl;
             Console.WriteLine("::set-output name=artifacts_link::" + resourceDownloadUrl);
@@ -415,8 +416,8 @@ partial class Build
               var branch = $"refs/pull/{prNumber}/merge";
               var fixedPrefix = "Code Coverage Report_";
 
-              var (newBuild, newArtifact) = await DownloadAzureArtifact(buildHttpClient, branch, build => $"{fixedPrefix}{build.Id}", newReportdir, buildReason: null, completedBuildsOnly: false);
-              var (oldBuild, oldArtifact) = await DownloadAzureArtifact(buildHttpClient, "refs/heads/master", build => $"{fixedPrefix}{build.Id}", oldReportdir, buildReason: null);
+              var (newBuild, newArtifact) = await DownloadAzureArtifact(buildHttpClient, branch, AzureDevopsConsolidatePipelineId, build => $"{fixedPrefix}{build.Id}", newReportdir, buildReason: null, completedBuildsOnly: false);
+              var (oldBuild, oldArtifact) = await DownloadAzureArtifact(buildHttpClient, "refs/heads/master", AzureDevopsConsolidatePipelineId, build => $"{fixedPrefix}{build.Id}", oldReportdir, buildReason: null);
 
               var oldBuildId = oldArtifact.Name.Substring(fixedPrefix.Length);
               var newBuildId = newArtifact.Name.Substring(fixedPrefix.Length);
@@ -472,7 +473,7 @@ partial class Build
 
              using var buildHttpClient = connection.GetClient<BuildHttpClient>();
 
-             var (oldBuild, _) = await DownloadAzureArtifact(buildHttpClient, "refs/heads/master", build => "benchmarks_results", masterDir, buildReason: null);
+             var (oldBuild, _) = await DownloadAzureArtifact(buildHttpClient, "refs/heads/master", AzureDevopsBenchmarksPipelineId, build => "benchmarks_results", masterDir, buildReason: null);
 
              var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, oldBuild.SourceVersion);
              await PostCommentToPullRequest(prNumber, markdown);
@@ -508,6 +509,7 @@ partial class Build
     async Task<(Microsoft.TeamFoundation.Build.WebApi.Build, BuildArtifact)> DownloadAzureArtifact(
         BuildHttpClient buildHttpClient,
         string branch,
+        int pipelineId,
         Func<Microsoft.TeamFoundation.Build.WebApi.Build, string> getArtifactName,
         AbsolutePath outputDirectory,
         BuildReason? buildReason = BuildReason.IndividualCI,
@@ -515,7 +517,7 @@ partial class Build
     {
         var builds = await buildHttpClient.GetBuildsAsync(
                          project: AzureDevopsProjectId,
-                         definitions: new[] { AzureDevopsConsolidatePipelineId },
+                         definitions: new[] { pipelineId },
                          reasonFilter: buildReason,
                          branchName: branch);
 
