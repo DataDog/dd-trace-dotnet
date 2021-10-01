@@ -12,6 +12,7 @@ resources:
           - build_windows
           - build_linux
           - build_arm64
+          - record_src_details
 
   # Declare the datadog agent as a resource to be used as a pipeline service
   containers:
@@ -95,14 +96,42 @@ stages:
   dependsOn: [ ]    # this removes the implicit dependency on previous stage and causes this to run in parallel
   condition: succeeded()
   pool: Throughput
-  variables:
-    SOURCE_PIPELINE_PULLREQUEST_SOURCECOMMITID: $(resources.pipeline.build_pipeline.sourceCommit)
   jobs:
 
-  #### Throughput Linux 64, windows 64, linux arm 64 
+  - job: get_values
+    steps:
+    - task: DownloadPipelineArtifact@2
+      displayName: Download source details
+      inputs:
+        artifact: build-src-details
+        path: $(System.DefaultWorkingDirectory)/tracer/build-src-details
+        # download from main build pipeline
+        source: specific
+        project: $(consolidatedPipelineProject)
+        pipeline: $(consolidatedPipelineDefinitionId)
+        runVersion: specific
+        runId: $(resources.pipeline.build_pipeline.runID)
+        patterns: "*.txt"
+        preferTriggeringPipeline: true
+
+    - script: |
+        repo=`cat $(System.DefaultWorkingDirectory)/tracer/build-src-details/repo.txt`
+        commit_sha=`cat $(System.DefaultWorkingDirectory)/tracer/build-src-details/commit_sha.txt`
+        echo "repo=$repo"
+        echo "commit_sha=$commit_sha"
+        echo "##vso[task.setvariable variable=original_repo;isOutput=true]$repo"
+        echo "##vso[task.setvariable variable=original_commit_sha;isOutput=true]$commit_sha"
+      displayName: Set repository values
+      name: setVars
+
+    #### Throughput Linux 64, windows 64, linux arm 64
 
   - job: Linux64
     timeoutInMinutes: 60
+    dependsOn: get_values
+    variables:
+      original_repo: $[ dependencies.get_values.outputs['setVars.original_repo'] ]
+      original_commit_sha: $[ dependencies.get_values.outputs['setVars.original_commit_sha'] ]
 
     steps:
     - task: DownloadPipelineArtifact@2
@@ -124,13 +153,17 @@ stages:
         test ! -s "tracer/tracer-home-linux/libddwaf.so" && echo "tracer/tracer-home-linux/libddwaf.so does not exist" && exit 1
         cd $(System.DefaultWorkingDirectory)/tracer/build/crank
         chmod +x ./run.sh
-        ./run.sh "linux"
+        ./run.sh "linux" $original_repo $original_commit_sha
       displayName: Crank
       env:
         DD_SERVICE: dd-trace-dotnet
 
   - job: Windows64
     timeoutInMinutes: 60
+    dependsOn: get_values
+    variables:
+      original_repo: $[ dependencies.get_values.outputs['setVars.original_repo'] ]
+      original_commit_sha: $[ dependencies.get_values.outputs['setVars.original_commit_sha'] ]
 
     steps:
     - task: DownloadPipelineArtifact@2
@@ -152,13 +185,17 @@ stages:
         test ! -s "tracer/tracer-home-win/win-x64/ddwaf.dll" && echo "tracer/tracer-home-win/win-x64/ddwaf.dll does not exist" && exit 1
         cd $(System.DefaultWorkingDirectory)/tracer/build/crank
         chmod +x ./run.sh
-        ./run.sh "windows"
+        ./run.sh "windows" $original_repo $original_commit_sha
       displayName: Crank
       env:
         DD_SERVICE: dd-trace-dotnet
 
   - job: LinuxArm64
     timeoutInMinutes: 60
+    dependsOn: get_values
+    variables:
+      original_repo: $[ dependencies.get_values.outputs['setVars.original_repo'] ]
+      original_commit_sha: $[ dependencies.get_values.outputs['setVars.original_commit_sha'] ]
 
     steps:
     - task: DownloadPipelineArtifact@2
@@ -179,7 +216,7 @@ stages:
         test ! -s "tracer/tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
         cd $(System.DefaultWorkingDirectory)/tracer/build/crank
         chmod +x ./run.sh
-        ./run.sh "linux_arm64"
+        ./run.sh "linux_arm64" $original_repo $original_commit_sha
       displayName: Crank
       env:
         DD_SERVICE: dd-trace-dotnet
