@@ -153,7 +153,7 @@ stages:
         test ! -s "tracer/tracer-home-linux/libddwaf.so" && echo "tracer/tracer-home-linux/libddwaf.so does not exist" && exit 1
         cd $(System.DefaultWorkingDirectory)/tracer/build/crank
         chmod +x ./run.sh
-        ./run.sh "linux" $original_repo $original_commit_sha
+        ./run.sh "linux" $(original_repo) $(original_commit_sha)
       displayName: Crank
       env:
         DD_SERVICE: dd-trace-dotnet
@@ -185,7 +185,7 @@ stages:
         test ! -s "tracer/tracer-home-win/win-x64/ddwaf.dll" && echo "tracer/tracer-home-win/win-x64/ddwaf.dll does not exist" && exit 1
         cd $(System.DefaultWorkingDirectory)/tracer/build/crank
         chmod +x ./run.sh
-        ./run.sh "windows" $original_repo $original_commit_sha
+        ./run.sh "windows" $(original_repo) $(original_commit_sha)
       displayName: Crank
       env:
         DD_SERVICE: dd-trace-dotnet
@@ -216,7 +216,7 @@ stages:
         test ! -s "tracer/tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
         cd $(System.DefaultWorkingDirectory)/tracer/build/crank
         chmod +x ./run.sh
-        ./run.sh "linux_arm64" $original_repo $original_commit_sha
+        ./run.sh "linux_arm64" $(original_repo) $(original_commit_sha)
       displayName: Crank
       env:
         DD_SERVICE: dd-trace-dotnet
