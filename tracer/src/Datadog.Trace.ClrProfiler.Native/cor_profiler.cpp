@@ -79,18 +79,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         return E_FAIL;
     }
 
-    // get ICorProfilerInfo10 for >= .NET Core 3.0
-    ICorProfilerInfo10* info10 = nullptr;
-    hr = cor_profiler_info_unknown->QueryInterface(__uuidof(ICorProfilerInfo10), (void**) &info10);
-    if (SUCCEEDED(hr))
-    {
-        Logger::Debug("Interface ICorProfilerInfo10 found.");
-    }
-    else
-    {
-        info10 = nullptr;
-    }
-
     const auto process_name = GetCurrentProcessName();
     const auto include_process_names = GetEnvironmentValues(environment::include_process_names);
 
@@ -106,7 +94,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     const auto exclude_process_names = GetEnvironmentValues(environment::exclude_process_names);
 
     // attach profiler only if this process's name is NOT on the list
-    if (Contains(exclude_process_names, process_name))
+    if (!exclude_process_names.empty() && Contains(exclude_process_names, process_name))
     {
         Logger::Info("DATADOG TRACER DIAGNOSTICS - Profiler disabled: ", process_name, " found in ",
                      environment::exclude_process_names, ".");
@@ -154,6 +142,18 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
             Logger::Info("DATADOG TRACER DIAGNOSTICS - Profiler disabled: Azure Functions are not officially supported. Enable instrumentation with DD_TRACE_AZURE_FUNCTIONS_ENABLED.");
             return E_FAIL;
         }
+    }
+
+    // get ICorProfilerInfo10 for >= .NET Core 3.0
+    ICorProfilerInfo10* info10 = nullptr;
+    hr = cor_profiler_info_unknown->QueryInterface(__uuidof(ICorProfilerInfo10), (void**) &info10);
+    if (SUCCEEDED(hr))
+    {
+        Logger::Debug("Interface ICorProfilerInfo10 found.");
+    }
+    else
+    {
+        info10 = nullptr;
     }
 
     // Initialize ReJIT handler and define the Rewriter Callback
@@ -248,16 +248,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
         return S_OK;
     }
 
-    // keep this lock until we are done using the module,
-    // to prevent it from unloading while in use
-    std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
-
-    // double check if is_attached_ has changed to avoid possible race condition with shutdown function
-    if (!is_attached_)
-    {
-        return S_OK;
-    }
-
     const auto assembly_info = GetAssemblyInfo(this->info_, assembly_id);
     if (!assembly_info.IsValid())
     {
@@ -265,7 +255,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
         return S_OK;
     }
 
-    const auto is_instrumentation_assembly = assembly_info.name == WStr("Datadog.Trace");
+    const auto is_instrumentation_assembly = assembly_info.name == managed_profiler_name;
 
     if (is_instrumentation_assembly || Logger::IsDebugEnabled())
     {
@@ -274,19 +264,28 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
             Logger::Debug("AssemblyLoadFinished: ", assembly_id, " ", hr_status);
         }
 
-        ComPtr<IUnknown> metadata_interfaces;
-        auto hr = this->info_->GetModuleMetaData(assembly_info.manifest_module_id, ofRead | ofWrite,
-                                                 IID_IMetaDataImport2, metadata_interfaces.GetAddressOf());
+        // keep this lock until we are done using the module,
+        // to prevent it from unloading while in use
+        std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
 
-        if (FAILED(hr))
+        // double check if is_attached_ has changed to avoid possible race condition with shutdown function
+        if (!is_attached_)
         {
-            Logger::Warn("AssemblyLoadFinished failed to get metadata interface for module id ",
-                         assembly_info.manifest_module_id, " from assembly ", assembly_info.name);
             return S_OK;
         }
 
-        // Get the IMetaDataAssemblyImport interface to get metadata from the managed assembly
-        const auto assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
+        auto findRes = module_id_to_info_map_.find(assembly_info.manifest_module_id);
+        if (findRes == module_id_to_info_map_.end())
+        {
+            Logger::Debug("Module data wasn't loaded.");
+            return S_OK;
+        }
+
+        // get the assembly import
+        ModuleMetadata* module_metadata = findRes->second.get();
+        const auto assembly_import = module_metadata->assembly_import;
+
+        // extract assembly metadata from assembly import
         const auto assembly_metadata = GetAssemblyImportMetadata(assembly_import);
 
         // used multiple times for logging
@@ -350,11 +349,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
     return S_OK;
 }
 
-void CorProfiler::RewritingPInvokeMaps(ComPtr<IUnknown> metadata_interfaces, ModuleMetadata* module_metadata, WSTRING nativemethods_type_name)
+void CorProfiler::RewritingPInvokeMaps(ModuleMetadata* module_metadata, WSTRING nativemethods_type_name)
 {
     HRESULT hr;
-    const auto metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
-    const auto metadata_emit = metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
+    const auto metadata_import = module_metadata->metadata_import;
+    const auto metadata_emit = module_metadata->metadata_emit;
 
     // We are in the right module, so we try to load the mdTypeDef from the target type name.
     mdTypeDef nativeMethodsTypeDef = mdTypeDefNil;
@@ -604,8 +603,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
     if (module_info.assembly.name == managed_profiler_name)
     {
         Logger::Info("ModuleLoadFinished: ", managed_profiler_name, " - Fix PInvoke maps");
-        RewritingPInvokeMaps(metadata_interfaces, module_metadata, nonwindows_nativemethods_type);
-        RewritingPInvokeMaps(metadata_interfaces, module_metadata, appsec_nonwindows_nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, nonwindows_nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, appsec_nonwindows_nativemethods_type);
     }
 #endif
 
