@@ -42,8 +42,8 @@ variables:
   Verify_DisableClipboard: true
   DiffEngine_Disabled: true
   # The following are used for cross-pipeline artifact downloads
-  consolidatedPipelineProject: dd-trace-dotnet
-  consolidatedPipelineDefinitionId: 54
+  consolidatedPipelineProject: $(resources.pipeline.build_pipeline.projectID)
+  consolidatedPipelineDefinitionId: $(resources.pipeline.build_pipeline.pipelineID)
 
 # Stages
 stages:
@@ -95,6 +95,8 @@ stages:
   dependsOn: [ ]    # this removes the implicit dependency on previous stage and causes this to run in parallel
   condition: succeeded()
   pool: Throughput
+  variables:
+    SOURCE_PIPELINE_PULLREQUEST_SOURCECOMMITID: $(resources.pipeline.build_pipeline.sourceCommit)
   jobs:
 
   #### Throughput Linux 64, windows 64, linux arm 64 
