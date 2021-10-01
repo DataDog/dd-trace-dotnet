@@ -11,7 +11,7 @@ namespace Datadog.Collections
     ///         ...
     ///     }
     ///     
-    ///     internal class SomeCollection : IRefEnumerable{InfoItem}
+    ///     internal class SomeCollection : IRefEnumerableInternal{InfoItem}
     ///     {
     ///         ...
     ///     }
@@ -23,6 +23,13 @@ namespace Datadog.Collections
     ///     foreach (ref InfoItem item in data)
     ///     {
     ///         ProcessItem(item);
+    ///     }
+    ///     
+    ///     . . .
+    ///     
+    ///     void ProcessItem(ref InfoItem item)
+    ///     {
+    ///         ...
     ///     }
     /// </code>
     /// </summary>

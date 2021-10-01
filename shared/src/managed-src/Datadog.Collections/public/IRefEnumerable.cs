@@ -24,6 +24,13 @@ namespace Datadog.Collections
     ///     {
     ///         ProcessItem(item);
     ///     }
+    ///
+    ///     . . .
+    ///     
+    ///     void ProcessItem(ref InfoItem item)
+    ///     {
+    ///         ...
+    ///     }
     /// </code>
     /// </summary>
     public interface IRefEnumerable<T>
