@@ -327,7 +327,7 @@ namespace Datadog.Trace.TestHelpers
 
         protected void SetEnvironmentVariable(string key, string value)
         {
-            EnvironmentHelper.CustomEnvironmentVariables.Add(key, value);
+            EnvironmentHelper.CustomEnvironmentVariables[key] = value;
         }
 
         protected void SetServiceVersion(string serviceVersion)
