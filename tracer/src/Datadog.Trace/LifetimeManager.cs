@@ -15,7 +15,7 @@ namespace Datadog.Trace
     /// </summary>
     internal class LifetimeManager
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Tracer>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<LifetimeManager>();
         private static LifetimeManager _instance;
         private readonly ConcurrentQueue<Action> _shutdownHooks = new();
 
