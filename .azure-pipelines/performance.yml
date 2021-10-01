@@ -1,4 +1,6 @@
 # This pipeline is only triggered when the ci pipeline finishes
+trigger: none
+
 resources:
   # wait for the dependent pipeline to complete
   pipelines:
