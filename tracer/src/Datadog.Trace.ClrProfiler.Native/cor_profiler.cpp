@@ -445,6 +445,8 @@ void CorProfiler::RewritingPInvokeMaps(ComPtr<IUnknown> metadata_interfaces, Mod
             native_profiler_file = native_dll_filename;
         }
 
+        Logger::Info("Rewriting PInvokes to native: ", native_profiler_file);
+
         mdModuleRef profiler_ref;
         hr = metadata_emit->DefineModuleRef(native_profiler_file.c_str(), &profiler_ref);
         if (SUCCEEDED(hr))
@@ -462,7 +464,7 @@ void CorProfiler::RewritingPInvokeMaps(ComPtr<IUnknown> metadata_interfaces, Mod
                 auto methodDef = *enumIterator;
 
                 const auto caller = GetFunctionInfo(module_metadata->metadata_import, methodDef);
-                Logger::Info("Rewriting pinvoke for: ", caller.name);
+                Logger::Info("Rewriting PInvoke method: ", caller.name);
 
                 // Get the current PInvoke map to extract the flags and the entrypoint name
                 DWORD pdwMappingFlags;
@@ -768,7 +770,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
 
     return S_OK;
 }
-
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
 {
