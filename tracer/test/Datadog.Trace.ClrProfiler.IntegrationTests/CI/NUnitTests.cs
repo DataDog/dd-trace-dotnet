@@ -34,20 +34,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             SetServiceVersion("1.0.0");
         }
 
-        public static IEnumerable<object[]> GetData()
-        {
-            foreach (object[] item in PackageVersions.NUnit)
-            {
-                yield return item.Concat(false);
-                yield return item.Concat(true);
-            }
-        }
-
         [Theory]
-        [MemberData(nameof(GetData))]
+        [MemberData(nameof(PackageVersions.NUnit), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "TestIntegrations")]
-        public void SubmitTraces(string packageVersion, bool enableCallTarget)
+        public void SubmitTraces(string packageVersion)
         {
             if (new Version(FrameworkDescription.Instance.ProductVersion).Major >= 5)
             {
@@ -61,7 +52,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             List<MockTracerAgent.Span> spans = null;
             try
             {
-                SetCallTargetSettings(enableCallTarget);
                 SetEnvironmentVariable("DD_CIVISIBILITY_ENABLED", "1");
                 SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
                 SetEnvironmentVariable("DD_DUMP_ILREWRITE_ENABLED", "1");

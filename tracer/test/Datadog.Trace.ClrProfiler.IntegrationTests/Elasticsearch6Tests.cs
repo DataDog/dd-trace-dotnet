@@ -23,17 +23,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        public static System.Collections.Generic.IEnumerable<object[]> GetElasticsearch()
-        {
-            foreach (var item in PackageVersions.ElasticSearch6)
-            {
-                yield return item.Concat(false);
-                yield return item.Concat(true);
-            }
-        }
-
         [Theory]
-        [MemberData(nameof(GetElasticsearch))]
+        [MemberData(nameof(PackageVersions.ElasticSearch6), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
         public void SubmitsTraces(string packageVersion, bool enableCallTarget)

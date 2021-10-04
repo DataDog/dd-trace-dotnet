@@ -26,20 +26,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         }
 
         [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void SubmitsTraces(bool enableCallTarget)
+        public void SubmitsTraces()
         {
-            SetCallTargetSettings(enableCallTarget);
-
-            var expectedSpanCount = 21; // 7 queries * 3 groups (The group of generic constraint calls is not currently supported)
-
-            if (enableCallTarget)
-            {
-                expectedSpanCount = 28; // CallTarget support instrumenting a constrained generic caller.
-            }
+            var expectedSpanCount = 28; // 7 queries * 3 groups + CallTarget support instrumenting a constrained generic caller.
 
             const string dbType = "sql-server";
             const string expectedOperationName = dbType + ".query";
@@ -64,15 +55,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             }
         }
 
-        [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
+        [Fact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void SpansDisabledByAdoNetExcludedTypes(bool enableCallTarget)
+        public void SpansDisabledByAdoNetExcludedTypes()
         {
-            SetCallTargetSettings(enableCallTarget);
-
             var totalSpanCount = 21;
 
             const string dbType = "sql-server";

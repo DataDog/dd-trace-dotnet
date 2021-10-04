@@ -27,25 +27,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             SetServiceVersion("1.0.0");
         }
 
-        public static IEnumerable<object[]> GetData()
-        {
-            foreach (object[] item in PackageVersions.XUnit)
-            {
-                yield return item.Concat(false);
-                yield return item.Concat(true);
-            }
-        }
-
         [Theory]
-        [MemberData(nameof(GetData))]
+        [MemberData(nameof(PackageVersions.XUnit), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "TestIntegrations")]
-        public void SubmitTraces(string packageVersion, bool enableCallTarget)
+        public void SubmitTraces(string packageVersion)
         {
             List<MockTracerAgent.Span> spans = null;
             try
             {
-                SetCallTargetSettings(enableCallTarget);
                 SetEnvironmentVariable("DD_CIVISIBILITY_ENABLED", "1");
                 SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
                 SetEnvironmentVariable("DD_DUMP_ILREWRITE_ENABLED", "1");
@@ -142,17 +132,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                             case "SimpleSkipParameterizedTest":
                                 CheckSimpleSkipFromAttributeTest(targetSpan);
-                                // On callsite the parameters tags are being sent with no parameters, this is not required due the whole test is skipped.
-                                // That behavior has changed in calltarget.
-                                if (!enableCallTarget)
-                                {
-                                    AssertTargetSpanAnyOf(
-                                        targetSpan,
-                                        TestTags.Parameters,
-                                        "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleSkipParameterizedTest\"},\"arguments\":{\"xValue\":\"(default)\",\"yValue\":\"(default)\",\"expectedResult\":\"(default)\"}}",
-                                        "{\"metadata\":{\"test_name\":\"SimpleSkipParameterizedTest\"},\"arguments\":{\"xValue\":\"(default)\",\"yValue\":\"(default)\",\"expectedResult\":\"(default)\"}}");
-                                }
-
                                 break;
 
                             case "SimpleErrorParameterizedTest":

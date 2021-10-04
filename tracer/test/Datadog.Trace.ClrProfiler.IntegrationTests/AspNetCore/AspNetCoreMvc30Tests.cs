@@ -14,22 +14,6 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
-    public class AspNetCoreMvc30TestsCallsite : AspNetCoreMvc30Tests
-    {
-        public AspNetCoreMvc30TestsCallsite(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, enableCallTarget: false, enableRouteTemplateResourceNames: false)
-        {
-        }
-    }
-
-    public class AspNetCoreMvc30TestsCallsiteWithFeatureFlag : AspNetCoreMvc30Tests
-    {
-        public AspNetCoreMvc30TestsCallsiteWithFeatureFlag(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, enableCallTarget: false, enableRouteTemplateResourceNames: true)
-        {
-        }
-    }
-
     public class AspNetCoreMvc30TestsCallTarget : AspNetCoreMvc30Tests
     {
         public AspNetCoreMvc30TestsCallTarget(AspNetCoreTestFixture fixture, ITestOutputHelper output)

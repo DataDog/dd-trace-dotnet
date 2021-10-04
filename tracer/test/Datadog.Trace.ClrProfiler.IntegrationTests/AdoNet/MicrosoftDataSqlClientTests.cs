@@ -22,28 +22,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
-        public static IEnumerable<object[]> GetMicrosoftDataSqlClient()
-        {
-            foreach (object[] item in PackageVersions.MicrosoftDataSqlClient)
-            {
-                // Callsite instrumentation is not supported with 3.*
-                if (!item.Cast<string>().First().StartsWith("3"))
-                {
-                    yield return item.Concat(false);
-                }
-
-                yield return item.Concat(true);
-            }
-        }
-
         [Theory]
-        [MemberData(nameof(GetMicrosoftDataSqlClient))]
+        [MemberData(nameof(PackageVersions.MicrosoftDataSqlClient), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void SubmitsTracesWithNetStandard(string packageVersion, bool enableCallTarget)
+        public void SubmitsTracesWithNetStandard(string packageVersion)
         {
-            SetCallTargetSettings(enableCallTarget);
-
             // ALWAYS: 133 spans
             // - SqlCommand: 21 spans (3 groups * 7 spans)
             // - DbCommand:  42 spans (6 groups * 7 spans)
@@ -51,22 +35,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             // - DbCommand-netstandard:  42 spans (6 groups * 7 spans)
             // - IDbCommand-netstandard: 14 spans (2 groups * 7 spans)
             //
-            // CALLSITE: +4 spans
-            // - IDbCommandGenericConstrant<T>: 4 spans (2 group * 2 spans)
-            //
             // CALLTARGET: +14 spans
             // - IDbCommandGenericConstrant<SqlCommand>: 7 spans (1 group * 7 spans)
             // - IDbCommandGenericConstrant<SqlCommand>-netstandard: 7 spans (1 group * 7 spans)
-#if NET461
-            var expectedSpanCount = 133;
-#else
-            var expectedSpanCount = 137;
-#endif
-
-            if (enableCallTarget)
-            {
-                expectedSpanCount = 147;
-            }
+            var expectedSpanCount = 147;
 
             const string dbType = "sql-server";
             const string expectedOperationName = dbType + ".query";
@@ -95,15 +67,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             }
         }
 
-        [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
+        [Fact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void SpansDisabledByAdoNetExcludedTypes(bool enableCallTarget)
+        public void SpansDisabledByAdoNetExcludedTypes()
         {
-            SetCallTargetSettings(enableCallTarget);
-
             var totalSpanCount = 21;
 
             const string dbType = "sql-server";

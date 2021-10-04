@@ -25,18 +25,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         {
             foreach (object[] item in PackageVersions.Npgsql)
             {
-                yield return item.Concat(false);
-                yield return item.Concat(true);
+                yield return item;
             }
         }
 
         [Theory]
         [MemberData(nameof(GetNpgsql))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTracesWithNetStandard(string packageVersion, bool enableCallTarget)
+        public void SubmitsTracesWithNetStandard(string packageVersion)
         {
-            SetCallTargetSettings(enableCallTarget);
-
             // ALWAYS: 77 spans
             // - NpgsqlCommand: 21 spans (3 groups * 7 spans)
             // - DbCommand:  42 spans (6 groups * 7 spans)
@@ -51,20 +48,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             //
             // NETSTANDARD + CALLTARGET: +7 spans
             // - IDbCommandGenericConstrant<NpgsqlCommand>-netstandard: 7 spans (1 group * 7 spans)
-#if NET452
-            var expectedSpanCount = 77;
-#else
-            var expectedSpanCount = 133;
-#endif
-
-            if (enableCallTarget)
-            {
-#if NET452
-                expectedSpanCount = 84;
-#else
-                expectedSpanCount = 147;
-#endif
-            }
+            var expectedSpanCount = 147;
 
             const string dbType = "postgres";
             const string expectedOperationName = dbType + ".query";
@@ -83,14 +67,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                 int actualSpanCount = spans.Where(s => s.ParentId.HasValue).Count(); // Remove unexpected DB spans from the calculation
                 // Assert.Equal(expectedSpanCount, spans.Count); // Assert an exact match once we can correctly instrument the generic constraint case
 
-                if (enableCallTarget)
-                {
-                    Assert.Equal(expectedSpanCount, actualSpanCount);
-                }
-                else
-                {
-                    Assert.True(actualSpanCount == expectedSpanCount || actualSpanCount == expectedSpanCount + 4, $"expectedSpanCount={expectedSpanCount}, expectedSpanCount+4={expectedSpanCount + 4}, actualSpanCount={actualSpanCount}");
-                }
+                Assert.Equal(expectedSpanCount, actualSpanCount);
 
                 foreach (var span in spans)
                 {
@@ -103,14 +80,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             }
         }
 
-        [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
+        [Fact]
         [Trait("Category", "EndToEnd")]
-        public void SpansDisabledByAdoNetExcludedTypes(bool enableCallTarget)
+        public void SpansDisabledByAdoNetExcludedTypes()
         {
-            SetCallTargetSettings(enableCallTarget);
-
             var totalSpanCount = 21;
 
             const string dbType = "postgres";

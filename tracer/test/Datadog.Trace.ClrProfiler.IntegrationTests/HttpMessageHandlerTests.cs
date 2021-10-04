@@ -35,10 +35,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             };
 
         public static IEnumerable<object[]> IntegrationConfig() =>
-            from enableCallTarget in new[] { true, false }
             from instrumentationOptions in InstrumentationOptionsValues
             from socketHandlerEnabled in new[] { true, false }
-            select new object[] { enableCallTarget, instrumentationOptions, socketHandlerEnabled };
+            select new object[] { true, instrumentationOptions, socketHandlerEnabled };
 
         [Theory]
         [Trait("Category", "EndToEnd")]

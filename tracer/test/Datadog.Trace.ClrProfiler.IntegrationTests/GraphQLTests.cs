@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class GraphQL2Tests : GraphQLTests
     {
         public GraphQL2Tests(ITestOutputHelper output)
-            : base("GraphQL", output, callTargetOnly: false)
+            : base("GraphQL", output, callTargetOnly: true)
         {
         }
     }

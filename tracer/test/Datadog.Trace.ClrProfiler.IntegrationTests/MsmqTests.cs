@@ -28,8 +28,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Fact]
         public void SubmitTraces()
         {
-            SetCallTargetSettings(true);
-
             const int expectedTransactionalTraces = 13;
             const int expectedNonTransactionalTracesTraces = 12;
             const int totalTransactions = expectedTransactionalTraces + expectedNonTransactionalTracesTraces;

@@ -24,28 +24,10 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Collection("IisTests")]
-    public class OwinWebApi2TestsCallsite : OwinWebApi2Tests
-    {
-        public OwinWebApi2TestsCallsite(OwinFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, enableCallTarget: false, enableRouteTemplateResourceNames: false)
-        {
-        }
-    }
-
-    [Collection("IisTests")]
     public class OwinWebApi2TestsCallTarget : OwinWebApi2Tests
     {
         public OwinWebApi2TestsCallTarget(OwinFixture fixture, ITestOutputHelper output)
             : base(fixture, output, enableCallTarget: true, enableRouteTemplateResourceNames: false)
-        {
-        }
-    }
-
-    [Collection("IisTests")]
-    public class OwinWebApi2TestsCallsiteWithFeatureFlag : OwinWebApi2Tests
-    {
-        public OwinWebApi2TestsCallsiteWithFeatureFlag(OwinFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, enableCallTarget: false, enableRouteTemplateResourceNames: true)
         {
         }
     }

@@ -18,7 +18,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base("Aerospike", output)
         {
             SetServiceVersion("1.0.0");
-            SetCallTargetSettings(enableCallTarget: true);
         }
 
         [Theory]

@@ -29,8 +29,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [Trait("Category", "ArmUnsupported")]
         public void SubmitsTracesWithNetStandard(string packageVersion)
         {
-            SetCallTargetSettings(enableCallTarget: true);
-
             var expectedSpanCount = 91;
 
             const string dbType = "sqlite";
@@ -59,16 +57,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             }
         }
 
-        [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
+        [Fact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("Category", "ArmUnsupported")]
-        public void SpansDisabledByAdoNetExcludedTypes(bool enableCallTarget)
+        public void SpansDisabledByAdoNetExcludedTypes()
         {
-            SetCallTargetSettings(enableCallTarget);
-
             var totalSpanCount = 21;
 
             const string dbType = "sql-server";

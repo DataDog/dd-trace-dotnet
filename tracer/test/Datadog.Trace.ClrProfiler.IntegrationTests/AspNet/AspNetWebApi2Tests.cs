@@ -19,42 +19,6 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Collection("IisTests")]
-    public class AspNetWebApi2TestsCallsiteClassic : AspNetWebApi2Tests
-    {
-        public AspNetWebApi2TestsCallsiteClassic(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: false, classicMode: true, enableRouteTemplateResourceNames: false)
-        {
-        }
-    }
-
-    [Collection("IisTests")]
-    public class AspNetWebApi2TestsCallsiteIntegrated : AspNetWebApi2Tests
-    {
-        public AspNetWebApi2TestsCallsiteIntegrated(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: false, classicMode: false, enableRouteTemplateResourceNames: false)
-        {
-        }
-    }
-
-    [Collection("IisTests")]
-    public class AspNetWebApi2TestsCallsiteClassicWithFeatureFlag : AspNetWebApi2Tests
-    {
-        public AspNetWebApi2TestsCallsiteClassicWithFeatureFlag(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: false, classicMode: true, enableRouteTemplateResourceNames: true)
-        {
-        }
-    }
-
-    [Collection("IisTests")]
-    public class AspNetWebApi2TestsCallsiteIntegratedWithFeatureFlag : AspNetWebApi2Tests
-    {
-        public AspNetWebApi2TestsCallsiteIntegratedWithFeatureFlag(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: false, classicMode: false, enableRouteTemplateResourceNames: true)
-        {
-        }
-    }
-
-    [Collection("IisTests")]
     public class AspNetWebApi2TestsCallTargetClassic : AspNetWebApi2Tests
     {
         public AspNetWebApi2TestsCallTargetClassic(IisFixture iisFixture, ITestOutputHelper output)
