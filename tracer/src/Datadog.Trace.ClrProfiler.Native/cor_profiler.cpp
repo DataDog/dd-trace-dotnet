@@ -306,6 +306,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     is_attached_.store(true);
     profiler = this;
 
+    /*
     if (IsDebugEnabled())
     {
         try
@@ -334,6 +335,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
             }
         }
     }
+    */
 
     return S_OK;
 }
@@ -801,7 +803,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
 
     return S_OK;
 }
-
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
 {
