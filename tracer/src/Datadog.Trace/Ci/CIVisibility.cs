@@ -35,29 +35,7 @@ namespace Datadog.Trace.Ci
 
             Log.Information("Initializing CI Visibility");
 
-            // Set exit handlers
-            AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
-            AppDomain.CurrentDomain.DomainUnload += CurrentDomain_DomainUnload;
-            try
-            {
-                // Registering for the AppDomain.UnhandledException event cannot be called by a security transparent method
-                // This will only happen if the Tracer is not run full-trust
-                AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "Unable to register a callback to the AppDomain.UnhandledException event.");
-            }
-
-            try
-            {
-                // Registering for the cancel key press event requires the System.Security.Permissions.UIPermission
-                Console.CancelKeyPress += Console_CancelKeyPress;
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "Unable to register a callback to the Console.CancelKeyPress event.");
-            }
+            LifetimeManager.Instance.AddShutdownTask(FlushSpans);
 
             TracerSettings tracerSettings = _settings.TracerSettings ?? TracerSettings.FromDefaultSources();
 
@@ -191,38 +169,6 @@ namespace Datadog.Trace.Ci
             }
 
             return false;
-        }
-
-        private static void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
-        {
-            Log.Information("Console Cancel key press detected");
-
-            // Let's ensure to flush the buffers.
-            FlushSpans();
-        }
-
-        private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
-        {
-            Log.Information("Domain UnhandledException received");
-
-            // Let's ensure to flush the buffers.
-            FlushSpans();
-        }
-
-        private static void CurrentDomain_DomainUnload(object sender, EventArgs e)
-        {
-            Log.Information("Domain Unload");
-
-            // Let's ensure to flush the buffers.
-            FlushSpans();
-        }
-
-        private static void CurrentDomain_ProcessExit(object sender, EventArgs e)
-        {
-            Log.Information("Exiting...");
-
-            // Let's ensure to flush the buffers.
-            FlushSpans();
         }
     }
 }
