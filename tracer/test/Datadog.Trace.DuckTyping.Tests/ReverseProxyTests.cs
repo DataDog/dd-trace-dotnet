@@ -5,6 +5,7 @@
 
 using System;
 using System.IO;
+using System.Text;
 using System.Threading;
 using Serilog;
 using Xunit;
@@ -105,6 +106,34 @@ namespace Datadog.Trace.DuckTyping.Tests
             Assert.True(resetEvent.Wait(5_000));
         }
 
+        [Fact]
+        public void InternalClassWithVirtualMembersReverseProxyTest()
+        {
+            var expected = "Some random string";
+
+            var formatterInstance = new JsonValueFormatterImpl(expected);
+
+            var type = typeof(Datadog.Trace.Vendors.Serilog.Formatting.Json.JsonValueFormatter);
+
+#if NET452
+            Assert.Throws<DuckTypeTypeIsNotPublicException>(() =>
+            {
+                formatterInstance.DuckCast(type);
+            });
+#else
+            var proxy2 = formatterInstance.DuckCast(type);
+
+            var value = new Vendors.Serilog.Events.ScalarValue("original");
+
+            var sb = new StringBuilder();
+            var sw = new StringWriter(sb);
+            ((Datadog.Trace.Vendors.Serilog.Formatting.Json.JsonValueFormatter)proxy2).Format(value, sw);
+
+            var actual = sb.ToString();
+            Assert.Equal(expected, actual);
+#endif
+        }
+
         // ************************************************************************************
         // Types for InterfaceReverseProxyTest
         // ***
@@ -158,6 +187,27 @@ namespace Datadog.Trace.DuckTyping.Tests
                 Assert.Equal("Hello world", logEvent.MessageTemplate.Text);
 
                 _manualResetEventSlim.Set();
+            }
+        }
+
+        // ************************************************************************************
+        // Types for InternalClassWithVirtualMembersReverseProxyTest
+        // ***
+
+        public class JsonValueFormatterImpl
+        {
+            private readonly string _valueToWrite;
+
+            public JsonValueFormatterImpl(string valueToWrite)
+            {
+                _valueToWrite = valueToWrite;
+            }
+
+            [DuckReverseMethod("System.IO.TextWriter", "Datadog.Trace.Vendors.Serilog.Events.ScalarValue")]
+            protected bool VisitScalarValue(TextWriter state, object scalar)
+            {
+                state.Write(_valueToWrite);
+                return true;
             }
         }
 
