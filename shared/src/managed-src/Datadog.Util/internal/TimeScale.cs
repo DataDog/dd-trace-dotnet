@@ -5,13 +5,17 @@ namespace Datadog.Util
 {
     internal static class TimeScale
     {
-        public const ulong NanosecsInMillisec_UInt64 = 1000000;
-        public const ulong NanosecsInSec_UInt64 = 1000000000;
-        public const ulong MillisecsInSec_UInt64 = 1000;
+        public const int NanosecsInMillisec_Int32 = 1000000;
+        public const int NanosecsInSec_Int32 = 1000000000;
+        public const int MillisecsInSec_Int32 = 1000;
 
-        public const double NanosecsInMillisec_Double = (double) NanosecsInMillisec_UInt64;
-        public const double NanosecsInSec_Double = (double) NanosecsInSec_UInt64;
-        public const double MillisecsInSec_Double = (double) MillisecsInSec_UInt64;
+        public const ulong NanosecsInMillisec_UInt64 = NanosecsInMillisec_Int32;
+        public const ulong NanosecsInSec_UInt64 = NanosecsInSec_Int32;
+        public const ulong MillisecsInSec_UInt64 = MillisecsInSec_Int32;
+
+        public const double NanosecsInMillisec_Double = (double) NanosecsInMillisec_Int32;
+        public const double NanosecsInSec_Double = (double) NanosecsInSec_Int32;
+        public const double MillisecsInSec_Double = (double) MillisecsInSec_Int32;
 
         public static readonly double StopwatchTicksPerNanosec = Stopwatch.Frequency / NanosecsInSec_Double;
 
