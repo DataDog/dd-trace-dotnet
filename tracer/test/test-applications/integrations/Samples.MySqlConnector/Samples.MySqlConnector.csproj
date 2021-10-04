@@ -12,14 +12,6 @@
     <PackageReference Include="MySqlConnector" Version="$(ApiVersion)" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' != 'net452'">
-    <PackageReference Include="System.Security.Permissions" Version="5.0.0" />
-    <PackageReference Include="System.Configuration.ConfigurationManager" Version="5.0.0" />
-    <PackageReference Include="System.Management" Version="5.0.0" />
-    <PackageReference Include="System.Text.Encoding" Version="4.3.0" />
-    <PackageReference Include="System.Text.Encoding.CodePages" Version="5.0.0" />
-  </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\dependency-libs\Samples.DatabaseHelper\Samples.DatabaseHelper.csproj" />
 
