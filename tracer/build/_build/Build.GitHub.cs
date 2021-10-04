@@ -30,6 +30,15 @@ partial class Build
     [Parameter("The Pull Request number for GitHub Actions")]
     readonly int? PullRequestNumber;
 
+    [Parameter("The Commit SHA being checked")]
+    readonly string CommitSha;
+
+    [Parameter("The type of check being run")]
+    readonly GitHubCheckType? CheckType;
+
+    [Parameter("The status of the check being run")]
+    readonly GitHubCheckStatus? CheckStatus;
+
     const string GitHubNextMilestoneName = "vNext";
     const string GitHubRepositoryOwner = "DataDog";
     const string GitHubRepositoryName = "dd-trace-dotnet";
@@ -477,6 +486,68 @@ partial class Build
 
              var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, oldBuild.SourceVersion);
              await PostCommentToPullRequest(prNumber, markdown);
+         });
+
+    Target SendStatusUpdateToGitHub => _ => _
+         .Unlisted()
+         .Requires(() => GitHubToken)
+         .Requires(() => CommitSha)
+         .Requires(() => CheckType)
+         .Requires(() => CheckStatus)
+         .Executes(async () =>
+         {
+             var buildUrl = Environment.GetEnvironmentVariable("Build.BuildUri");
+             if(string.IsNullOrEmpty(buildUrl))
+             {
+                 Logger.Warn("No 'Build.BuildUri' variable found. Check status will not have link to build");
+             }
+
+             var status = CheckStatus.Value;
+             var checkType = CheckType.Value;
+
+             var httpClient = new HttpClient();
+             httpClient.DefaultRequestHeaders.Add("Accept", "application/vnd.github.v3+json");
+             httpClient.DefaultRequestHeaders.Add("Authorization", $"token {GitHubToken}");
+             httpClient.DefaultRequestHeaders.UserAgent.Add(new(new System.Net.Http.Headers.ProductHeaderValue("nuke-ci-client")));
+
+             var url = $"https://api.github.com/repos/{GitHubRepositoryOwner}/{GitHubRepositoryName}/statuses/{CommitSha}";
+             Console.WriteLine($"Sending request to '{url}'");
+
+             var result = await httpClient.PostAsJsonAsync(url, new
+             {
+                 state = status.ToString().ToLowerInvariant(),
+                 target_url = buildUrl,
+                 description = GetDescription(status, checkType),
+                 context = GetContext(checkType),
+             });
+
+             if (result.IsSuccessStatusCode)
+             {
+                 Console.WriteLine("Check status updated successfully");
+             }
+             else
+             {
+                 var response = await result.Content.ReadAsStringAsync();
+                 Console.WriteLine("Error: " + response);
+                 result.EnsureSuccessStatusCode();
+             }
+
+             static string GetDescription(GitHubCheckStatus s, GitHubCheckType type) =>
+                 s switch
+                 {
+                     GitHubCheckStatus.Pending => $"The {type.ToString()} run has started",
+                     GitHubCheckStatus.Success => $"The {type.ToString()} run has succeeded",
+                     GitHubCheckStatus.Failure => $"The {type.ToString()} run has failed",
+                     _ => $"There was a problem with the {type.ToString()} run",
+                 };
+             static string GetContext(GitHubCheckType type) =>
+                 type switch
+                 {
+                     GitHubCheckType.Benchmarks => "performance/benchmarks",
+                     GitHubCheckType.Throughput => "performance/throughput",
+                     GitHubCheckType.ExecutionBenchmarks => "performance/execution-benchmarks",
+                     _ => throw new InvalidOperationException("Unknown GitHubCheckType: " + type)
+                 };
          });
 
     async Task PostCommentToPullRequest(int prNumber, string markdown)

@@ -1,0 +1,17 @@
+parameters:
+  - name: 'status'
+    type: 'string'
+
+  - name: 'check'
+    type: 'string'
+
+steps:
+- script: tracer\build.cmd SendStatusUpdateToGitHub
+  displayName: Update GitHub Status
+  condition: succeededOrFailed()
+  continueOnError: true
+  env:
+    GITHUB_TOKEN: $(GITHUB_TOKEN)
+    CheckStatus: ${{ parameters.status }}
+    CheckType: ${{ parameters.check }}
+    CommitSha: $(original_commit_sha)

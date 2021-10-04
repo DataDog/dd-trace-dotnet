@@ -48,57 +48,13 @@ variables:
 
 # Stages
 stages:
-- stage: benchmarks
+- stage: set_vars
   dependsOn: []    # this removes the implicit dependency on previous stage and causes this to run in parallel
   condition: succeeded()
+  pool:
+    vmImage: ubuntu-18.04
   jobs:
-
-  #### Windows
-
-  - job: Windows
-    timeoutInMinutes: 100
-    pool: Benchmarks
-
-    # Enable the Datadog Agent service for this job
-    services:
-      dd_agent: dd_agent
-
-    steps:
-
-    - template: steps/install-dotnet-5-sdk.yml
-    - template: steps/restore-working-directory.yml
-      parameters:
-        pipelineRunId: $(resources.pipeline.build_pipeline.runID)
-
-    - script: tracer\build.cmd RunBenchmarks
-      displayName: RunBenchmarks
-
-    - publish: tracer/build_data/benchmarks
-      artifact: benchmarks_results
-      continueOnError: true
-
-    - script: tracer\build.cmd CompareBenchmarksResults
-      continueOnError: true
-      displayName: Compare Benchmarks
-      condition: and(succeeded(), eq(variables.isPullRequest, true))
-      env:
-        PR_NUMBER: $(System.PullRequest.PullRequestNumber)
-        AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
-        GITHUB_TOKEN: $(GITHUB_TOKEN)
-
-    ## Is this really necessary?
-    - task: PowerShell@2
-      inputs:
-        targetType: 'inline'
-        script: 'Start-Sleep -s 120'
-
-- stage: throughput
-  dependsOn: [ ]    # this removes the implicit dependency on previous stage and causes this to run in parallel
-  condition: succeeded()
-  pool: Throughput
-  jobs:
-
-  - job: get_values
+  - job: setVars
     steps:
     - task: DownloadPipelineArtifact@2
       displayName: Download source details
@@ -124,14 +80,91 @@ stages:
       displayName: Set repository values
       name: setVars
 
+- stage: benchmarks
+  dependsOn: [set_vars]
+  condition: succeeded()
+  variables:
+    original_repo: $[ stageDependencies.set_vars.setVars.outputs['setVars.original_repo'] ]
+    original_commit_sha: $[ stageDependencies.set_vars.setVars.outputs['setVars.original_commit_sha'] ]
+  jobs:
+
+  #### Windows
+
+  - job: Windows
+    timeoutInMinutes: 100
+    pool: Benchmarks
+
+    # Enable the Datadog Agent service for this job
+    services:
+      dd_agent: dd_agent
+
+    steps:
+
+    - template: steps/install-dotnet-5-sdk.yml
+    - template: steps/restore-working-directory.yml
+      parameters:
+        pipelineRunId: $(resources.pipeline.build_pipeline.runID)
+    - template: steps/update-github-status.yml
+      parameters:
+        check: Benchmarks
+        status: Pending
+
+    - script: tracer\build.cmd RunBenchmarks
+      displayName: RunBenchmarks
+
+    - publish: tracer/build_data/benchmarks
+      artifact: benchmarks_results
+      continueOnError: true
+
+    - template: steps/update-github-status.yml
+      parameters:
+        check: Benchmarks
+        ${{ if succeeded() }}:
+          status: Success
+        ${{ else }}:
+          status: Failure
+
+    - script: tracer\build.cmd CompareBenchmarksResults
+      continueOnError: true
+      displayName: Compare Benchmarks
+      condition: and(succeeded(), eq(variables.isPullRequest, true))
+      env:
+        PR_NUMBER: $(System.PullRequest.PullRequestNumber)
+        AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
+        GITHUB_TOKEN: $(GITHUB_TOKEN)
+
+    ## Is this really necessary?
+    - task: PowerShell@2
+      inputs:
+        targetType: 'inline'
+        script: 'Start-Sleep -s 120'
+
+- stage: throughput
+  dependsOn: [set_vars]
+  condition: succeeded()
+  pool: Throughput
+  variables:
+    original_repo: $[ stageDependencies.set_vars.setVars.outputs['setVars.original_repo'] ]
+    original_commit_sha: $[ stageDependencies.set_vars.setVars.outputs['setVars.original_commit_sha'] ]
+
+  jobs:
+  - job: Update status
+    pool:
+      vmImage: ubuntu-18.04
+    steps:
+    - template: steps/install-dotnet-5-sdk.yml
+    - template: steps/restore-working-directory.yml
+      parameters:
+        pipelineRunId: $(resources.pipeline.build_pipeline.runID)
+    - template: steps/update-github-status.yml
+      parameters:
+        check: Throughput
+        status: Pending
+
     #### Throughput Linux 64, windows 64, linux arm 64
 
   - job: Linux64
     timeoutInMinutes: 60
-    dependsOn: get_values
-    variables:
-      original_repo: $[ dependencies.get_values.outputs['setVars.original_repo'] ]
-      original_commit_sha: $[ dependencies.get_values.outputs['setVars.original_commit_sha'] ]
 
     steps:
     - task: DownloadPipelineArtifact@2
@@ -160,10 +193,6 @@ stages:
 
   - job: Windows64
     timeoutInMinutes: 60
-    dependsOn: get_values
-    variables:
-      original_repo: $[ dependencies.get_values.outputs['setVars.original_repo'] ]
-      original_commit_sha: $[ dependencies.get_values.outputs['setVars.original_commit_sha'] ]
 
     steps:
     - task: DownloadPipelineArtifact@2
@@ -192,10 +221,6 @@ stages:
 
   - job: LinuxArm64
     timeoutInMinutes: 60
-    dependsOn: get_values
-    variables:
-      original_repo: $[ dependencies.get_values.outputs['setVars.original_repo'] ]
-      original_commit_sha: $[ dependencies.get_values.outputs['setVars.original_commit_sha'] ]
 
     steps:
     - task: DownloadPipelineArtifact@2
@@ -222,9 +247,30 @@ stages:
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
 
+  - job: Update status
+    dependsOn: [Linux64, Windows64, LinuxArm64]
+    condition: succeededOrFailed()
+    pool:
+      vmImage: ubuntu-18.04
+    steps:
+      - template: steps/install-dotnet-5-sdk.yml
+      - template: steps/restore-working-directory.yml
+        parameters:
+          pipelineRunId: $(resources.pipeline.build_pipeline.runID)
+      - template: steps/update-github-status.yml
+        parameters:
+          check: Throughput
+          ${{ if succeeded() }}:
+            status: Success
+          ${{ else }}:
+            status: Failure
+
 - stage: execution_benchmarks
-  dependsOn: [ ]    # this removes the implicit dependency on previous stage and causes this to run in parallel
+  dependsOn: [set_vars]
   condition: succeeded()
+  variables:
+    original_repo: $[ stageDependencies.set_vars.setVars.outputs['setVars.original_repo'] ]
+    original_commit_sha: $[ stageDependencies.set_vars.setVars.outputs['setVars.original_commit_sha'] ]
   jobs:
   - job: windows
     pool:
@@ -237,6 +283,10 @@ stages:
     - template: steps/restore-working-directory.yml
       parameters:
         pipelineRunId: $(resources.pipeline.build_pipeline.runID)
+    - template: steps/update-github-status.yml
+      parameters:
+        check: ExecutionBenchmarks
+        status: Pending
 
     - task: DownloadPipelineArtifact@2
       displayName: Download windows native binary
@@ -290,6 +340,14 @@ stages:
       displayName: Execute Samples.FakeDbCommand benchmark
       env:
         DD_SERVICE: dd-trace-dotnet
+
+    - template: steps/update-github-status.yml
+      parameters:
+        check: ExecutionBenchmarks
+        ${{ if succeeded() }}:
+          status: Success
+        ${{ else }}:
+          status: Failure
 
     - task: PowerShell@2
       displayName: Wait 20 seconds to agent flush before finishing pipeline
