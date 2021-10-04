@@ -102,23 +102,6 @@ public:
         return false;
     }
 
-    bool IsFailedWrapperMemberKey(const WSTRING& key) const
-    {
-        if (failed_wrapper_keys == nullptr)
-        {
-            return false;
-        }
-
-        const auto search = failed_wrapper_keys->find(key);
-
-        if (search != failed_wrapper_keys->end())
-        {
-            return true;
-        }
-
-        return false;
-    }
-
     void SetWrapperMemberRef(const WSTRING& keyIn, const mdMemberRef valueIn)
     {
         std::scoped_lock<std::mutex> lock(wrapper_mutex);
@@ -150,27 +133,6 @@ public:
         }
 
         failed_wrapper_keys->insert(key);
-    }
-
-    std::vector<MethodReplacement> GetMethodReplacementsForCaller(const trace::FunctionInfo& caller)
-    {
-        std::vector<MethodReplacement> enabled;
-        if (integrations == nullptr)
-        {
-            return enabled;
-        }
-
-        for (auto& i : *integrations.get())
-        {
-            if ((i.replacement.caller_method.type_name.empty() ||
-                 i.replacement.caller_method.type_name == caller.type.name) &&
-                (i.replacement.caller_method.method_name.empty() ||
-                 i.replacement.caller_method.method_name == caller.name))
-            {
-                enabled.push_back(i.replacement);
-            }
-        }
-        return enabled;
     }
 
     CallTargetTokens* GetCallTargetTokens()

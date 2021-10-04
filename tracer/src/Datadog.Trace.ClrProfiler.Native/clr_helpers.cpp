@@ -7,7 +7,6 @@
 #include "logger.h"
 #include "macros.h"
 #include "pal.h"
-#include "sig_helpers.h"
 #include <set>
 #include <stack>
 

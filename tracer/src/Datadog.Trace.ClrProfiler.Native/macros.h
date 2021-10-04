@@ -14,16 +14,6 @@
         }                                                                                                              \
     } while (0)
 
-#define RETURN_OK_IF_FAILED(EXPR)                                                                                      \
-    do                                                                                                                 \
-    {                                                                                                                  \
-        hr = (EXPR);                                                                                                   \
-        if (FAILED(hr))                                                                                                \
-        {                                                                                                              \
-            return S_OK;                                                                                               \
-        }                                                                                                              \
-    } while (0)
-
 #define IfFalseRetFAIL(EXPR)                                                                                           \
     do                                                                                                                 \
     {                                                                                                                  \

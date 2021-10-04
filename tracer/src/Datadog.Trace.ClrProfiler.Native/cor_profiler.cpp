@@ -16,7 +16,6 @@
 #include "module_metadata.h"
 #include "pal.h"
 #include "resource.h"
-#include "sig_helpers.h"
 #include "stats.h"
 #include "util.h"
 #include "version.h"
