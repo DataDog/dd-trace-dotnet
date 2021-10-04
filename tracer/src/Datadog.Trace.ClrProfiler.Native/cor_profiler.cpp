@@ -76,6 +76,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
 #endif
 
     const auto process_name = GetCurrentProcessName();
+    Logger::Info("ProcessName: ", process_name);
+
     const auto include_process_names = GetEnvironmentValues(environment::include_process_names);
 
     // if there is a process inclusion list, attach profiler only if this
@@ -306,17 +308,18 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     profiler = this;
 
 #ifndef _WIN32
-    /*
     if (IsDebugEnabled())
     {
         try
         {
             // This enable a path to assert over checks inside the profiler code.
             // Only in Debug mode and for the Datadog.Trace.ClrProfiler.Native.Checks process
-            if (std::filesystem::path(process_name).replace_extension("").string() ==
-                "Datadog.Trace.ClrProfiler.Native.Checks")
+            auto process_name_path = std::filesystem::path(process_name);
+            process_name_path.replace_extension("");
+
+            if (process_name_path.string() == "Datadog.Trace.ClrProfiler.Native.Checks")
             {
-                CheckFilenameDefinitions();
+                // CheckFilenameDefinitions();
             }
         }
         catch (...)
@@ -335,7 +338,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
             }
         }
     }
-    */
 #endif
 
     return S_OK;
