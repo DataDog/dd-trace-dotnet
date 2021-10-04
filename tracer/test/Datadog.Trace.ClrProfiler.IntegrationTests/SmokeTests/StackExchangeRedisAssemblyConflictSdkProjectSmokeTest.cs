@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         {
         }
 
-        [Fact]
+        [SkippableFact]
         [Trait("Category", "Smoke")]
         public void NoExceptions()
         {

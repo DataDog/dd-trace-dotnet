@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(TargetFrameworks))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
@@ -70,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             RunSampleAndAssertAgainstExpectations(targetFramework, expectedMap);
         }
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(TargetFrameworks))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
@@ -100,7 +100,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(TargetFrameworks))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]

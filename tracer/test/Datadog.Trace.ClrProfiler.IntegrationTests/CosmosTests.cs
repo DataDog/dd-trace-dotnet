@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(GetCosmosVersions))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]

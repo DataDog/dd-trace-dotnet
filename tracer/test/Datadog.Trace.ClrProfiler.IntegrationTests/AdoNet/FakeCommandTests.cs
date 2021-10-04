@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
-        [Theory]
+        [SkippableTheory]
         [InlineData(true)]
         [Trait("Category", "EndToEnd")]
         public void SubmitsTracesWithNetStandard(bool enableCallTarget)
@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             }
         }
 
-        [Theory]
+        [SkippableTheory]
         [InlineData(true)]
         [InlineData(false)]
         [Trait("Category", "EndToEnd")]

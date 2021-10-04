@@ -48,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             _iisFixture.TryStartIis(this, inProcess ? IisAppType.AspNetCoreInProcess : IisAppType.AspNetCoreOutOfProcess);
         }
 
-        [Theory]
+        [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "LinuxUnsupported")]
         [Trait("RunOnWindows", "True")]
