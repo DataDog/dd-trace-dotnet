@@ -1,0 +1,45 @@
+﻿// <copyright file="Log4NetHelper.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+using System.Collections.Concurrent;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSubmission;
+using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Logging.DirectSubmission;
+using Datadog.Trace.Logging.DirectSubmission.Sink;
+using log4net.Core;
+
+namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.Log4Net
+{
+    internal class Log4NetHelper
+    {
+#if LOG4NET_2
+        public static DirectSubmissionLog4NetAppender GetAppender(IDatadogSink sink, DirectSubmissionLogLevel level)
+            => new(sink, level);
+
+        public static LoggingEventDuck DuckCastLogEvent(LoggingEvent logEvent)
+            => logEvent.DuckCast<LoggingEventDuck>();
+#else
+        public static DirectSubmissionLog4NetLegacyAppender GetAppender(IDatadogSink sink, DirectSubmissionLogLevel level)
+            => new(sink, level);
+
+        public static LoggingEventLegacyDuck DuckCastLogEvent(LoggingEvent logEvent)
+            => logEvent.DuckCast<LoggingEventLegacyDuck>();
+#endif
+
+        internal class TestSink : IDatadogSink
+        {
+            public ConcurrentQueue<DatadogLogEvent> Events { get; } = new();
+
+            public void Dispose()
+            {
+            }
+
+            public void EnqueueLog(DatadogLogEvent logEvent)
+            {
+                Events.Enqueue(logEvent);
+            }
+        }
+    }
+}

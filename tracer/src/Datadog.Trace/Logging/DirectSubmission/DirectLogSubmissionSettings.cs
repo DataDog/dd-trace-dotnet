@@ -18,7 +18,9 @@ namespace Datadog.Trace.Logging.DirectSubmission
     {
         internal static readonly IntegrationId[] SupportedIntegrations =
         {
+            IntegrationId.Serilog,
             IntegrationId.ILogger,
+            IntegrationId.Log4Net,
         };
 
         private readonly bool[] _enabledIntegrations;
