@@ -38,5 +38,6 @@ namespace Datadog.Trace.Configuration
         Aerospike,
         AzureFunctions,
         Serilog,
+        Log4Net,
     }
 }
