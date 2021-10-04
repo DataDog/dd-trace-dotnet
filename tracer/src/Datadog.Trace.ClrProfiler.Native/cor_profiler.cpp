@@ -77,18 +77,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
 #endif
 
     const auto process_name = GetCurrentProcessName();
-
-    if (IsDebugEnabled())
-    {
-        // This enable a path to assert over checks inside the profiler code.
-        // Only in Debug mode and for the Datadog.Trace.ClrProfiler.Native.Checks process
-        if (std::filesystem::path(process_name).replace_extension("").string() ==
-            "Datadog.Trace.ClrProfiler.Native.Checks")
-        {
-            CheckFilenameDefinitions();
-        }
-    }
-
     const auto include_process_names = GetEnvironmentValues(environment::include_process_names);
 
     // if there is a process inclusion list, attach profiler only if this
@@ -317,6 +305,36 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     this->info_->AddRef();
     is_attached_.store(true);
     profiler = this;
+
+    if (IsDebugEnabled())
+    {
+        try
+        {
+            // This enable a path to assert over checks inside the profiler code.
+            // Only in Debug mode and for the Datadog.Trace.ClrProfiler.Native.Checks process
+            if (std::filesystem::path(process_name).replace_extension("").string() ==
+                "Datadog.Trace.ClrProfiler.Native.Checks")
+            {
+                CheckFilenameDefinitions();
+            }
+        }
+        catch (...)
+        {
+            auto ex = std::current_exception();
+            try
+            {
+                if (ex)
+                {
+                    std::rethrow_exception(ex);
+                }
+            }
+            catch (const std::exception& ex)
+            {
+                Logger::Error("Failed to do the Native Checks: ", ex.what());
+            }
+        }
+    }
+
     return S_OK;
 }
 
@@ -458,6 +476,8 @@ void CorProfiler::RewritingPInvokeMaps(ComPtr<IUnknown> metadata_interfaces, Mod
             native_profiler_file = native_dll_filename;
         }
 
+        Logger::Info("Rewriting PInvokes to native: ", native_profiler_file);
+
         mdModuleRef profiler_ref;
         hr = metadata_emit->DefineModuleRef(native_profiler_file.c_str(), &profiler_ref);
         if (SUCCEEDED(hr))
@@ -475,7 +495,7 @@ void CorProfiler::RewritingPInvokeMaps(ComPtr<IUnknown> metadata_interfaces, Mod
                 auto methodDef = *enumIterator;
 
                 const auto caller = GetFunctionInfo(module_metadata->metadata_import, methodDef);
-                Logger::Info("Rewriting pinvoke for: ", caller.name);
+                Logger::Info("Rewriting PInvoke method: ", caller.name);
 
                 // Get the current PInvoke map to extract the flags and the entrypoint name
                 DWORD pdwMappingFlags;
@@ -1337,36 +1357,37 @@ WSTRING CorProfiler::GetCLRProfilerPath()
 {
     WSTRING native_profiler_file;
 
+    if (runtime_information_.is_core())
+    {
 #ifdef BIT64
-    native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_64"));
-    Logger::Debug("GetProfilerFilePath: CORECLR_PROFILER_PATH_64 defined as: ", native_profiler_file);
-
-    if (native_profiler_file == EmptyWStr)
-    {
-        native_profiler_file = GetEnvironmentValue(WStr("COR_PROFILER_PATH_64"));
-        Logger::Debug("GetProfilerFilePath: COR_PROFILER_PATH_64 defined as: ", native_profiler_file);
-    }
-#else // BIT64
-    native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_32"));
-    Logger::Debug("GetProfilerFilePath: CORECLR_PROFILER_PATH_32 defined as: ", native_profiler_file);
-
-    if (native_profiler_file == EmptyWStr)
-    {
-        native_profiler_file = GetEnvironmentValue(WStr("COR_PROFILER_PATH_32"));
-        Logger::Debug("GetProfilerFilePath: COR_PROFILER_PATH_32 defined as: ", native_profiler_file);
-    }
+        native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_64"));
+        Logger::Debug("GetProfilerFilePath: CORECLR_PROFILER_PATH_64 defined as: ", native_profiler_file);
+#else  // BIT64
+        native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_32"));
+        Logger::Debug("GetProfilerFilePath: CORECLR_PROFILER_PATH_32 defined as: ", native_profiler_file);
 #endif // BIT64
 
-    if (native_profiler_file == EmptyWStr)
-    {
-        native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH"));
-        Logger::Debug("GetProfilerFilePath: CORECLR_PROFILER_PATH defined as: ", native_profiler_file);
+        if (native_profiler_file == EmptyWStr)
+        {
+            native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH"));
+            Logger::Debug("GetProfilerFilePath: CORECLR_PROFILER_PATH defined as: ", native_profiler_file);
+        }
     }
-
-    if (native_profiler_file == EmptyWStr)
+    else
     {
-        native_profiler_file = GetEnvironmentValue(WStr("COR_PROFILER_PATH"));
-        Logger::Debug("GetProfilerFilePath: COR_PROFILER_PATH defined as: ", native_profiler_file);
+#ifdef BIT64
+        native_profiler_file = GetEnvironmentValue(WStr("COR_PROFILER_PATH_64"));
+        Logger::Debug("GetProfilerFilePath: COR_PROFILER_PATH_64 defined as: ", native_profiler_file);
+#else  // BIT64
+        native_profiler_file = GetEnvironmentValue(WStr("COR_PROFILER_PATH_32"));
+        Logger::Debug("GetProfilerFilePath: COR_PROFILER_PATH_32 defined as: ", native_profiler_file);
+#endif // BIT64
+
+        if (native_profiler_file == EmptyWStr)
+        {
+            native_profiler_file = GetEnvironmentValue(WStr("COR_PROFILER_PATH"));
+            Logger::Debug("GetProfilerFilePath: COR_PROFILER_PATH defined as: ", native_profiler_file);
+        }
     }
 
     return native_profiler_file;
