@@ -38,8 +38,6 @@ const auto SystemException = WStr("System.Exception");
 const auto SystemTypeName = WStr("System.Type");
 const auto GetTypeFromHandleMethodName = WStr("GetTypeFromHandle");
 const auto RuntimeTypeHandleTypeName = WStr("System.RuntimeTypeHandle");
-const auto SystemReflectionMethodBaseName = WStr("System.Reflection.MethodBase");
-const auto GetMethodFromHandleMethodName = WStr("GetMethodFromHandle");
 const auto RuntimeMethodHandleTypeName = WStr("System.RuntimeMethodHandle");
 
 template <typename T>
@@ -154,25 +152,6 @@ static Enumerator<mdTypeRef> EnumTypeRefs(const ComPtr<IMetaDataImport2>& metada
     return Enumerator<mdTypeRef>(
         [metadata_import](HCORENUM* ptr, mdTypeRef arr[], ULONG max, ULONG* cnt) -> HRESULT {
             return metadata_import->EnumTypeRefs(ptr, arr, max, cnt);
-        },
-        [metadata_import](HCORENUM ptr) -> void { metadata_import->CloseEnum(ptr); });
-}
-
-static Enumerator<mdMethodDef> EnumMethods(const ComPtr<IMetaDataImport2>& metadata_import, const mdToken& parent_token)
-{
-    return Enumerator<mdMethodDef>(
-        [metadata_import, parent_token](HCORENUM* ptr, mdMethodDef arr[], ULONG max, ULONG* cnt) -> HRESULT {
-            return metadata_import->EnumMethods(ptr, parent_token, arr, max, cnt);
-        },
-        [metadata_import](HCORENUM ptr) -> void { metadata_import->CloseEnum(ptr); });
-}
-
-static Enumerator<mdMemberRef> EnumMemberRefs(const ComPtr<IMetaDataImport2>& metadata_import,
-                                              const mdToken& parent_token)
-{
-    return Enumerator<mdMemberRef>(
-        [metadata_import, parent_token](HCORENUM* ptr, mdMemberRef arr[], ULONG max, ULONG* cnt) -> HRESULT {
-            return metadata_import->EnumMemberRefs(ptr, parent_token, arr, max, cnt);
         },
         [metadata_import](HCORENUM ptr) -> void { metadata_import->CloseEnum(ptr); });
 }
@@ -511,8 +490,6 @@ RuntimeInformation GetRuntimeInformation(ICorProfilerInfo4* info);
 
 AssemblyInfo GetAssemblyInfo(ICorProfilerInfo4* info, const AssemblyID& assembly_id);
 
-AssemblyMetadata GetAssemblyMetadata(const ModuleID& module_id, const ComPtr<IMetaDataAssemblyImport>& assembly_import);
-
 AssemblyMetadata GetAssemblyImportMetadata(const ComPtr<IMetaDataAssemblyImport>& assembly_import);
 
 AssemblyMetadata GetReferencedAssemblyMetadata(const ComPtr<IMetaDataAssemblyImport>& assembly_import,
@@ -526,40 +503,8 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdTo
 
 mdAssemblyRef FindAssemblyRef(const ComPtr<IMetaDataAssemblyImport>& assembly_import, const WSTRING& assembly_name);
 
-// FilterIntegrationsByCaller removes any integrations which have a caller and
-// its not set to the module
-std::vector<IntegrationMethod> FilterIntegrationsByCaller(const std::vector<IntegrationMethod>& integration_methods,
-                                                          const AssemblyInfo assembly);
-
-// FilterIntegrationsByTarget removes any integrations which have a target not
-// referenced by the module's assembly import
-std::vector<IntegrationMethod> FilterIntegrationsByTarget(const std::vector<IntegrationMethod>& integration_methods,
-                                                          const ComPtr<IMetaDataAssemblyImport>& assembly_import);
-
-// FilterIntegrationsByTargetAssemblyName removes any integrations which target any
-// of the specified assemblies
-std::vector<IntegrationMethod>
-FilterIntegrationsByTargetAssemblyName(const std::vector<IntegrationMethod>& integration_methods,
-                                       const std::vector<WSTRING>& excluded_assembly_names);
-
-mdMethodSpec DefineMethodSpec(const ComPtr<IMetaDataEmit2>& metadata_emit, const mdToken& token,
-                              const MethodSignature& signature);
-
-bool DisableOptimizations();
-bool EnableInlining(bool defaultValue);
-bool IsCallTargetEnabled(bool defaultValue);
-
-bool TryParseSignatureTypes(const ComPtr<IMetaDataImport2>& metadata_import, const FunctionInfo& function_info,
-                            std::vector<WSTRING>& signature_result);
-
 HRESULT GetCorLibAssemblyRef(const ComPtr<IMetaDataAssemblyEmit>& assembly_emit, AssemblyProperty& corAssemblyProperty,
                              mdAssemblyRef* corlib_ref);
-
-bool ReturnTypeIsValueTypeOrGeneric(const ComPtr<IMetaDataImport2>& metadata_import,
-                                    const ComPtr<IMetaDataEmit2>& metadata_emit,
-                                    const ComPtr<IMetaDataAssemblyEmit>& assembly_emit,
-                                    AssemblyProperty& corAssemblyProperty, const mdToken targetFunctionToken,
-                                    const MethodSignature targetFunctionSignature, mdToken* ret_type_token);
 
 bool FindTypeDefByName(const trace::WSTRING instrumentationTargetMethodTypeName, const trace::WSTRING assemblyName,
                        const ComPtr<IMetaDataImport2>& metadata_import, mdTypeDef& typeDef);
