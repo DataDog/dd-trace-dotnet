@@ -439,6 +439,12 @@ void CorProfiler::RewritingPInvokeMaps(ComPtr<IUnknown> metadata_interfaces, Mod
         {
             native_profiler_file = GetCLRProfilerPath();
         }
+
+        if (native_profiler_file.empty())
+        {
+            native_profiler_file = native_dll_filename;
+        }
+
         mdModuleRef profiler_ref;
         hr = metadata_emit->DefineModuleRef(native_profiler_file.c_str(), &profiler_ref);
         if (SUCCEEDED(hr))
@@ -2444,7 +2450,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
 
     if (native_profiler_file.empty())
     {
-        native_profiler_file = WStr("DATADOG.TRACE.CLRPROFILER.NATIVE.DLL");
+        native_profiler_file = native_dll_filename;
     }
 
     Logger::Debug("GenerateVoidILStartupMethod: Setting the PInvoke native profiler library path to ",
