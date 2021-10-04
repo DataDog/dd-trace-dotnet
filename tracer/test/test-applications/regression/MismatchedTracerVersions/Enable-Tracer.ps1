@@ -16,7 +16,6 @@ $TracerGuid = '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}'
 $TracerPath32 = ''
 $TracerPath64 = ''
 $TracerHome = Resolve-Path $TracerHome
-$JsonPath = Join-Path $TracerHome 'integrations.json' -Resolve
 
 if ($LogPath -eq "") {
     $LogPath = Join-Path $TracerHome 'logs'
@@ -55,7 +54,6 @@ if ($IsWindows) {
 }
 
 Set-EnvironmentVariable 'DD_DOTNET_TRACER_HOME' $TracerHome
-Set-EnvironmentVariable 'DD_INTEGRATIONS' $JsonPath
 Set-EnvironmentVariable 'DD_TRACE_LOG_DIRECTORY' $LogPath
 
 Set-EnvironmentVariable 'CORECLR_ENABLE_PROFILING' '1'

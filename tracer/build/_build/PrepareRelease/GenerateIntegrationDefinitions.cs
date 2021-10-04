@@ -40,11 +40,6 @@ namespace PrepareRelease
 
             foreach (var outputDirectory in outputDirectories)
             {
-                var filename = Path.Combine(outputDirectory, "integrations.json");
-                var utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
-                Console.WriteLine($"Writing {filename}...");
-                File.WriteAllText(filename, json, utf8NoBom);
-
                 // CallTarget
                 var calltargetPath = Path.Combine(outputDirectory, "src", "Datadog.Trace", "ClrProfiler", "InstrumentationDefinitions.Generated.cs");
                 Console.WriteLine($"Writing {calltargetPath}...");

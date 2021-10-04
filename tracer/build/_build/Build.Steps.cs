@@ -250,20 +250,6 @@ partial class Build
         .DependsOn(CompileNativeTestsWindows)
         .DependsOn(CompileNativeTestsLinux);
 
-
-    Target CopyIntegrationsJson => _ => _
-        .Unlisted()
-        .After(Clean)
-        .After(CreateRequiredDirectories)
-        .Executes(() =>
-        {
-            var source = TracerDirectory / "integrations.json";
-            var dest = TracerHomeDirectory;
-
-            Logger.Info($"Copying '{source}' to '{dest}'");
-            CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
-        });
-
     Target DownloadLibDdwaf => _ => _
         .Unlisted()
         .After(CreateRequiredDirectories)
@@ -409,7 +395,7 @@ partial class Build
 
     Target CreateDdTracerHome => _ => _
        .Unlisted()
-       .After(PublishNativeProfiler, CopyIntegrationsJson, PublishManagedProfiler, DownloadLibDdwaf, CopyLibDdwaf)
+       .After(PublishNativeProfiler, PublishManagedProfiler, DownloadLibDdwaf, CopyLibDdwaf)
        .Executes(() =>
        {
            // start by copying everything from the tracer home dir
@@ -557,7 +543,6 @@ partial class Build
                         "netstandard2.0/",
                         "netcoreapp3.1/",
                         "Datadog.Trace.ClrProfiler.Native.so",
-                        "integrations.json",
                         "createLogPath.sh",
                     };
 

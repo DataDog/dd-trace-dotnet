@@ -34,7 +34,6 @@
     "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
     "CORECLR_PROFILER_PATH": "$(CWD)\\..\\..\\..\\bin\\tracer-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll",
     "DD_DOTNET_TRACER_HOME": "$(CWD)\\..\\..\\..\\bin\\tracer-home",
-    "DD_INTEGRATIONS": "$(CWD)\\..\\..\\..\\bin\\tracer-home\\integrations.json",
     "COR_ENABLE_PROFILING": "1",
     "COR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
     "COR_PROFILER_PATH": "$(CWD)\\..\\..\\..\\bin\\tracer-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll"

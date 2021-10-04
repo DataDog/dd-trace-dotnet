@@ -12,6 +12,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    /*
     public class CallTargetNativeTests : TestHelper
     {
         public CallTargetNativeTests(ITestOutputHelper output)
@@ -34,7 +35,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(MethodArgumentsData))]
         public void MethodArgumentsInstrumentation(int numberOfArguments, bool fastPath)
         {
-            SetEnvironmentVariable("DD_INTEGRATIONS", Path.Combine(EnvironmentHelper.GetSampleProjectDirectory(), "integrations.json"));
             int agentPort = TcpPortProvider.GetOpenPort();
 
             using (new MockTracerAgent(agentPort))
@@ -82,4 +82,5 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
     }
+    */
 }

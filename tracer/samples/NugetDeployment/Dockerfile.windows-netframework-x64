@@ -27,7 +27,6 @@ COPY --from=publish /app/publish .
 ENV COR_ENABLE_PROFILING=1
 ENV COR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}
 ENV COR_PROFILER_PATH=/app/datadog/win-x64/Datadog.Trace.ClrProfiler.Native.dll
-ENV DD_INTEGRATIONS=/app/datadog/integrations.json
 ENV DD_DOTNET_TRACER_HOME=/app/datadog
 
 ENTRYPOINT ["HttpListenerExample.exe"]

@@ -16,7 +16,6 @@ profiles:
           CORECLR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
           CORECLR_PROFILER_PATH: "{{ windowsProfilerPath }}\\{{ commit_hash }}\\tracer-home-win\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll"
           DD_DOTNET_TRACER_HOME: "{{ windowsProfilerPath }}\\{{ commit_hash }}\\tracer-home-win"
-          DD_INTEGRATIONS: "{{ windowsProfilerPath }}\\{{ commit_hash }}\\tracer-home-win\\integrations.json"
           DD_AGENT_HOST: "{{ controllerIp }}"
           DD_TRACE_LOGGING_RATE: 6
           DD_TRACE_DEBUG: 0
@@ -42,7 +41,6 @@ profiles:
           CORECLR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
           CORECLR_PROFILER_PATH: "{{ linuxProfilerPath }}/{{ commit_hash }}/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so"
           DD_DOTNET_TRACER_HOME: "{{ linuxProfilerPath }}/{{ commit_hash }}/tracer-home-linux"
-          DD_INTEGRATIONS: "{{ linuxProfilerPath }}/{{ commit_hash }}/tracer-home-linux/integrations.json"
           DD_AGENT_HOST: "{{ controllerIp }}"
           DD_TRACE_LOGGING_RATE: 6
           DD_TRACE_DEBUG: 0
@@ -68,7 +66,6 @@ profiles:
           CORECLR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
           CORECLR_PROFILER_PATH: "{{ linuxArm64ProfilerPath }}/{{ commit_hash }}/tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
           DD_DOTNET_TRACER_HOME: "{{ linuxArm64ProfilerPath }}/{{ commit_hash }}/tracer-home-linux-arm64"
-          DD_INTEGRATIONS: "{{ linuxArm64ProfilerPath }}/{{ commit_hash }}/tracer-home-linux-arm64/integrations.json"
           DD_AGENT_HOST: "{{ controllerIp }}"
           DD_TRACE_LOGGING_RATE: 6
           DD_TRACE_DEBUG: 0
