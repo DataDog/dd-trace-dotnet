@@ -80,6 +80,35 @@ stages:
       displayName: Set repository values
       name: setVars
 
+- stage: statuses
+  dependsOn: [ set_vars ]
+  condition: succeeded()
+  variables:
+    original_repo: $[ stageDependencies.set_vars.setVars.outputs['setVars.original_repo'] ]
+    original_commit_sha: $[ stageDependencies.set_vars.setVars.outputs['setVars.original_commit_sha'] ]
+  jobs:
+  - job: mark_pending
+    pool:
+      vmImage: windows-2019
+
+    steps:
+    - template: steps/install-dotnet-5-sdk.yml
+    - template: steps/restore-working-directory.yml
+      parameters:
+        pipelineRunId: $(resources.pipeline.build_pipeline.runID)
+    - template: steps/update-github-status.yml
+      parameters:
+        check: Benchmarks
+        isPending: true
+    - template: steps/update-github-status.yml
+      parameters:
+        check: Throughput
+        isPending: true
+    - template: steps/update-github-status.yml
+      parameters:
+        check: ExecutionBenchmarks
+        isPending: true
+
 - stage: benchmarks
   dependsOn: [set_vars]
   condition: succeeded()
@@ -104,10 +133,6 @@ stages:
     - template: steps/restore-working-directory.yml
       parameters:
         pipelineRunId: $(resources.pipeline.build_pipeline.runID)
-    - template: steps/update-github-status.yml
-      parameters:
-        check: Benchmarks
-        isPending: true
 
     - script: tracer\build.cmd RunBenchmarks
       displayName: RunBenchmarks
@@ -144,19 +169,6 @@ stages:
     original_commit_sha: $[ stageDependencies.set_vars.setVars.outputs['setVars.original_commit_sha'] ]
 
   jobs:
-  - job: set_status_pending
-    pool:
-      vmImage: ubuntu-18.04
-    steps:
-    - template: steps/install-dotnet-5-sdk.yml
-    - template: steps/restore-working-directory.yml
-      parameters:
-        pipelineRunId: $(resources.pipeline.build_pipeline.runID)
-    - template: steps/update-github-status.yml
-      parameters:
-        check: Throughput
-        isPending: true
-
     #### Throughput Linux 64, windows 64, linux arm 64
 
   - job: Linux64
@@ -275,10 +287,6 @@ stages:
     - template: steps/restore-working-directory.yml
       parameters:
         pipelineRunId: $(resources.pipeline.build_pipeline.runID)
-    - template: steps/update-github-status.yml
-      parameters:
-        check: ExecutionBenchmarks
-        isPending: true
 
     - task: DownloadPipelineArtifact@2
       displayName: Download windows native binary
