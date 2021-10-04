@@ -7,7 +7,7 @@ trigger:
       - refs/tags/*
     exclude:
       - refs/pull/*/head
-      - dependabot/nuget/tracer/dependabot
+      - dependabot/nuget/tracer/dependabot/*
   paths:
     exclude:
       - docs/*
