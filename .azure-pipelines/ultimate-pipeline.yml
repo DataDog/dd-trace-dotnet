@@ -7,6 +7,7 @@ trigger:
       - refs/tags/*
     exclude:
       - refs/pull/*/head
+      - dependabot/nuget/tracer/dependabot
   paths:
     exclude:
       - docs/*
@@ -64,7 +65,7 @@ variables:
   sourceBranch: $(variables['Build.SourceBranch'])
   isMainBranch: $[eq(variables['Build.SourceBranch'], 'refs/heads/master')]
   isPullRequest: $[eq(variables['Build.Reason'], 'PullRequest')]
-  isMockDependabot: $[contains(variables['System.PullRequest.SourceBranch'], 'dependabot/nuget/tracer/dependabot')]
+  isMockDependabot: false #$[contains(variables['System.PullRequest.SourceBranch'], 'dependabot/nuget/tracer/dependabot')]
   DD_DOTNET_TRACER_MSBUILD:
   NugetPackageDirectory: $(System.DefaultWorkingDirectory)/packages
   relativeNugetPackageDirectory: packages
