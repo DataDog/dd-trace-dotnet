@@ -1,17 +1,40 @@
 parameters:
-  - name: 'status'
-    type: 'string'
-
   - name: 'check'
     type: 'string'
 
+  - name: isPending
+    type: boolean
+    default: false
+
 steps:
-- script: tracer\build.cmd SendStatusUpdateToGitHub
-  displayName: Update GitHub Status
-  condition: succeededOrFailed()
-  continueOnError: true
-  env:
-    GITHUB_TOKEN: $(GITHUB_TOKEN)
-    CheckStatus: ${{ parameters.status }}
-    CheckType: ${{ parameters.check }}
-    CommitSha: $(original_commit_sha)
+- ${{ if eq(parameters.isPending, true) }}:
+  - script: tracer\build.cmd SendStatusUpdateToGitHub
+    displayName: Update GitHub Status
+    condition: succeededOrFailed()
+    continueOnError: true
+    env:
+      GITHUB_TOKEN: $(GITHUB_TOKEN)
+      CheckStatus: Pending
+      CheckType: ${{ parameters.check }}
+      CommitSha: $(original_commit_sha)
+
+- ${{ if eq(parameters.isPending, false) }}:
+  - script: tracer\build.cmd SendStatusUpdateToGitHub
+    displayName: Set GitHub Status Success
+    condition: succeeded()
+    continueOnError: true
+    env:
+      GITHUB_TOKEN: $(GITHUB_TOKEN)
+      CheckStatus: Success
+      CheckType: ${{ parameters.check }}
+      CommitSha: $(original_commit_sha)
+
+  - script: tracer\build.cmd SendStatusUpdateToGitHub
+    displayName: Set GitHub Status Failure
+    condition: not(succeeded())
+    continueOnError: true
+    env:
+      GITHUB_TOKEN: $(GITHUB_TOKEN)
+      CheckStatus: Failure
+      CheckType: ${{ parameters.check }}
+      CommitSha: $(original_commit_sha)

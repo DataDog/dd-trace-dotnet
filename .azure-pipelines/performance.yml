@@ -107,7 +107,7 @@ stages:
     - template: steps/update-github-status.yml
       parameters:
         check: Benchmarks
-        status: Pending
+        isPending: true
 
     - script: tracer\build.cmd RunBenchmarks
       displayName: RunBenchmarks
@@ -119,10 +119,6 @@ stages:
     - template: steps/update-github-status.yml
       parameters:
         check: Benchmarks
-        ${{ if succeeded() }}:
-          status: Success
-        ${{ else }}:
-          status: Failure
 
     - script: tracer\build.cmd CompareBenchmarksResults
       continueOnError: true
@@ -148,7 +144,7 @@ stages:
     original_commit_sha: $[ stageDependencies.set_vars.setVars.outputs['setVars.original_commit_sha'] ]
 
   jobs:
-  - job: Update status
+  - job: set_status_pending
     pool:
       vmImage: ubuntu-18.04
     steps:
@@ -159,7 +155,7 @@ stages:
     - template: steps/update-github-status.yml
       parameters:
         check: Throughput
-        status: Pending
+        isPending: true
 
     #### Throughput Linux 64, windows 64, linux arm 64
 
@@ -247,7 +243,7 @@ stages:
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
 
-  - job: Update status
+  - job: update_status
     dependsOn: [Linux64, Windows64, LinuxArm64]
     condition: succeededOrFailed()
     pool:
@@ -260,10 +256,6 @@ stages:
       - template: steps/update-github-status.yml
         parameters:
           check: Throughput
-          ${{ if succeeded() }}:
-            status: Success
-          ${{ else }}:
-            status: Failure
 
 - stage: execution_benchmarks
   dependsOn: [set_vars]
@@ -286,7 +278,7 @@ stages:
     - template: steps/update-github-status.yml
       parameters:
         check: ExecutionBenchmarks
-        status: Pending
+        isPending: true
 
     - task: DownloadPipelineArtifact@2
       displayName: Download windows native binary
@@ -344,10 +336,6 @@ stages:
     - template: steps/update-github-status.yml
       parameters:
         check: ExecutionBenchmarks
-        ${{ if succeeded() }}:
-          status: Success
-        ${{ else }}:
-          status: Failure
 
     - task: PowerShell@2
       displayName: Wait 20 seconds to agent flush before finishing pipeline
