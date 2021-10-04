@@ -44,6 +44,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> MySqlData => PackageVersionsLatestMinors.MySqlData;
 
+        public static IEnumerable<object[]> MySqlConnector => PackageVersionsLatestMinors.MySqlConnector;
+
         public static IEnumerable<object[]> MicrosoftDataSqlite => PackageVersionsLatestMinors.MicrosoftDataSqlite;
 
         public static IEnumerable<object[]> XUnit => PackageVersionsLatestMinors.XUnit;

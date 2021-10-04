@@ -255,6 +255,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
+        public static IEnumerable<object[]> MySqlConnector =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETFRAMEWORK
+#endif
+                new object[] { "1.0.1" },
+                new object[] { "1.1.0" },
+                new object[] { "1.2.1" },
+                new object[] { "1.3.13" },
+#endif
+            };
+
         public static IEnumerable<object[]> MicrosoftDataSqlite =>
 
             new List<object[]>
