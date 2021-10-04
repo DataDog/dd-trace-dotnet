@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
                 new object[] { "3.3.103.26" },
                 new object[] { "3.5.1.28" },
-                new object[] { "3.7.0.40" },
+                new object[] { "3.7.1.18" },
 #endif
             };
 
