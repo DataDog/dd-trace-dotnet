@@ -3,10 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Tagging;
 
-namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
 {
     internal class RedisTags : InstrumentationTags
     {
@@ -19,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
 
         public override string SpanKind => SpanKinds.Client;
 
-        public string InstrumentationName => RedisBatch.IntegrationName;
+        public string InstrumentationName => nameof(IntegrationIds.StackExchangeRedis);
 
         public string RawCommand { get; set; }
 

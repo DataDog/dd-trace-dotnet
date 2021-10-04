@@ -4,11 +4,10 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.ClrProfiler.Integrations
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
 {
     internal static class RedisHelper
     {

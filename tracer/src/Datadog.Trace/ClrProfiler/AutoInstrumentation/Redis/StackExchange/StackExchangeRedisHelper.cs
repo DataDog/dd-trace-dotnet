@@ -5,9 +5,8 @@
 
 using System;
 using System.Linq;
-using Datadog.Trace.ClrProfiler.Emit;
 
-namespace Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
 {
     /// <summary>
     /// Base class for redis integration.
