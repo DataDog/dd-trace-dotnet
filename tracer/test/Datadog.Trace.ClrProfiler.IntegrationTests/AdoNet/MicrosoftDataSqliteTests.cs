@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
-        [TestCaseSource(nameof(PackageVersions.MicrosoftDataSqlite))]
+        [TestCaseSource(typeof(PackageVersions), nameof(PackageVersions.MicrosoftDataSqlite))]
         [Property("Category", "EndToEnd")]
         [Property("RunOnWindows", "True")]
         [Property("Category", "ArmUnsupported")]

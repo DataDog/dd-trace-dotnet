@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             SetServiceVersion("1.0.0");
         }
 
-        [TestCaseSource(nameof(PackageVersions.MSTest))]
+        [TestCaseSource(typeof(PackageVersions), nameof(PackageVersions.MSTest))]
         [Property("Category", "EndToEnd")]
         [Property("Category", "TestIntegrations")]
         public void SubmitTraces(string packageVersion)

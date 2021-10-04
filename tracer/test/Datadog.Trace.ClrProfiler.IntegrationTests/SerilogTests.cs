@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        [TestCaseSource(nameof(PackageVersions.Serilog))]
+        [TestCaseSource(typeof(PackageVersions), nameof(PackageVersions.Serilog))]
         [Property("Category", "EndToEnd")]
         [Property("RunOnWindows", "True")]
         [Property("Category", "LinuxUnsupported")]
@@ -74,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        [TestCaseSource(nameof(PackageVersions.Serilog))]
+        [TestCaseSource(typeof(PackageVersions), nameof(PackageVersions.Serilog))]
         [Property("Category", "EndToEnd")]
         [Property("RunOnWindows", "True")]
         [Property("Category", "LinuxUnsupported")]

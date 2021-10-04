@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetCallTargetSettings(enableCallTarget: true);
         }
 
-        [TestCaseSource(nameof(PackageVersions.Kafka))]
+        [TestCaseSource(typeof(PackageVersions), nameof(PackageVersions.Kafka))]
         [Property("Category", "EndToEnd")]
         [Property("Category", "ArmUnsupported")]
         public void SubmitsTraces(string packageVersion)

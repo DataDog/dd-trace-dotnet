@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        [TestCaseSource(nameof(PackageVersions.log4net))]
+        [TestCaseSource(typeof(PackageVersions), nameof(PackageVersions.log4net))]
         [Property("Category", "EndToEnd")]
         [Property("RunOnWindows", "True")]
         [Property("Category", "LinuxUnsupported")]
@@ -77,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        [TestCaseSource(nameof(PackageVersions.log4net))]
+        [TestCaseSource(typeof(PackageVersions), nameof(PackageVersions.log4net))]
         [Property("Category", "EndToEnd")]
         [Property("RunOnWindows", "True")]
         [Property("Category", "LinuxUnsupported")]

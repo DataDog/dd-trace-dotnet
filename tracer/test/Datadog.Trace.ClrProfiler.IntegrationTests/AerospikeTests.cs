@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         [Theory]
-        [TestCaseSource(nameof(PackageVersions.Aerospike))]
+        [TestCaseSource(typeof(PackageVersions), nameof(PackageVersions.Aerospike))]
         [Property("Category", "EndToEnd")]
         [Property("Category", "ArmUnsupported")]
         public void SubmitTraces(string packageVersion)

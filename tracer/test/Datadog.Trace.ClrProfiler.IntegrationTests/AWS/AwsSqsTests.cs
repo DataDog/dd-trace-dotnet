@@ -117,7 +117,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         {
         }
 
-        [TestCaseSource(nameof(PackageVersions.AwsSqs))]
+        [TestCaseSource(typeof(PackageVersions), nameof(PackageVersions.AwsSqs))]
         [Property("Category", "EndToEnd")]
         public void SubmitsTraces(string packageVersion)
         {
