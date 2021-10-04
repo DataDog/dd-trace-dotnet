@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Agent.MessagePack;
-using Datadog.Trace.ClrProfiler.Integrations.AdoNet;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.MessagePack;
