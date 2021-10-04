@@ -305,7 +305,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     is_attached_.store(true);
     profiler = this;
 
-#ifdef _WIN32
+#ifndef _WIN32
     if (IsDebugEnabled())
     {
         try

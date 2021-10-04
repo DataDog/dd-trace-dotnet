@@ -19,7 +19,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         [Fact]
-        [Trait("RunOnWindows", "True")]
         public void RunChecksProject()
         {
             SetCallTargetSettings(enableCallTarget: true);
