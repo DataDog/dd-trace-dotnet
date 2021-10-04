@@ -158,7 +158,7 @@ namespace Datadog.Trace.Tests
             }
         }
 
-        [Fact]
+        [Test]
         public void SpanIds_SingleSpanIsRoot()
         {
             Span span = _tracer.StartSpan("Operation Galactic Storm");
@@ -169,7 +169,7 @@ namespace Datadog.Trace.Tests
             }
         }
 
-        [Fact]
+        [Test]
         public void SpanIds_SingleScopeIsRoot()
         {
             Scope scope = _tracer.StartActive("Operation Galactic Storm");
@@ -180,7 +180,7 @@ namespace Datadog.Trace.Tests
             }
         }
 
-        [Fact]
+        [Test]
         public void SpanIds_RemoteParentOfSpanIsNotLocalRoot()
         {
             const ulong remoteParentSpanId = 1234567890123456789;
@@ -194,7 +194,7 @@ namespace Datadog.Trace.Tests
             }
         }
 
-        [Fact]
+        [Test]
         public void SpanIds_RemoteParentOfScopeIsNotLocalRoot()
         {
             const ulong remoteParentSpanId = 1234567890123456789;
@@ -208,7 +208,7 @@ namespace Datadog.Trace.Tests
             }
         }
 
-        [Fact]
+        [Test]
         public void SpanIds_RootOfSpanHierarchy()
         {
             const ulong remoteParentSpanId = 1234567890123456789;
@@ -232,7 +232,7 @@ namespace Datadog.Trace.Tests
             }
         }
 
-        [Fact]
+        [Test]
         public void SpanIds_RootOfScopeHierarchy()
         {
             using (Scope scope1 = _tracer.StartActive(operationName: "Operation Root"))
@@ -249,7 +249,7 @@ namespace Datadog.Trace.Tests
             }
         }
 
-        [Fact]
+        [Test]
         public void SpanIds_RootOfScopeSpanMixedHierarchy()
         {
             const ulong remoteParentSpanId = 1234567890123456789;
