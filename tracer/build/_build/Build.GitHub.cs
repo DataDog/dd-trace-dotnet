@@ -496,10 +496,15 @@ partial class Build
          .Requires(() => CheckStatus)
          .Executes(async () =>
          {
-             var buildUrl = Environment.GetEnvironmentVariable("Build.BuildUri");
-             if(string.IsNullOrEmpty(buildUrl))
+             string buildUrl = null;
+             var buildId = Environment.GetEnvironmentVariable("Build.BuildId");
+             if(string.IsNullOrEmpty(buildId))
              {
-                 Logger.Warn("No 'Build.BuildUri' variable found. Check status will not have link to build");
+                 Logger.Warn("No 'Build.BuildId' variable found. Check status will not have link to build");
+             }
+             else
+             {
+                 buildUrl = $"{AzureDevopsOrganisation}/dd-trace-dotnet/_build/results?buildId={buildId}";
              }
 
              var status = CheckStatus.Value;
