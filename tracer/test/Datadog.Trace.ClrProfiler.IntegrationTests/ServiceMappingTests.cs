@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public void RenamesService()
         {
             var ignoreAsync = false;
-            var expectedSpanCount = true;
+            var expectedSpanCount = 74;
 
             const string expectedOperationName = "http.request";
             const string expectedServiceName = "my-custom-client";
