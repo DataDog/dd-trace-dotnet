@@ -15,11 +15,6 @@
 namespace trace
 {
 
-extern bool dump_il_rewrite_enabled;
-
-template <typename Out>
-void Split(const WSTRING& s, wchar_t delim, Out result);
-
 // Split splits a string by the given delimiter.
 std::vector<WSTRING> Split(const WSTRING& s, wchar_t delim);
 
