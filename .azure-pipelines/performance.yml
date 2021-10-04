@@ -259,7 +259,7 @@ stages:
     dependsOn: [Linux64, Windows64, LinuxArm64]
     condition: succeededOrFailed()
     pool:
-      vmImage: ubuntu-18.04
+      vmImage: windows-2019
     steps:
       - template: steps/install-dotnet-5-sdk.yml
       - template: steps/restore-working-directory.yml
