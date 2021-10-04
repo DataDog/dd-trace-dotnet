@@ -306,6 +306,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     profiler = this;
 
 #ifndef _WIN32
+    /*
     if (IsDebugEnabled())
     {
         try
@@ -334,6 +335,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
             }
         }
     }
+    */
 #endif
 
     return S_OK;
@@ -1395,7 +1397,8 @@ WSTRING CorProfiler::GetCLRProfilerPath()
 
 void CorProfiler::CheckFilenameDefinitions()
 {
-#ifdef _WIN32
+#ifndef _WIN32
+    /*
     auto runtimeFileName = std::filesystem::path(GetCLRProfilerPath()).filename().string();
     auto definedFileName = native_dll_filename;
 
@@ -1415,6 +1418,7 @@ void CorProfiler::CheckFilenameDefinitions()
     {
         Logger::Error("CHECK: FILENAME ERROR. [Runtime: ", runtimeFileName, " | Defined: ", definedFileName, "]");
     }
+    */
 #endif
 }
 
