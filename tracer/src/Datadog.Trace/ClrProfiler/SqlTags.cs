@@ -7,7 +7,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Tagging;
 
-namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
+namespace Datadog.Trace.ClrProfiler
 {
     internal class SqlTags : InstrumentationTags
     {
@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AdoNet
 
         public string DbType { get; set; }
 
-        public string InstrumentationName => AdoNetConstants.IntegrationName;
+        public string InstrumentationName => nameof(IntegrationIds.AdoNet);
 
         public string DbName { get; set; }
 
