@@ -607,6 +607,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
 
     // store module info for later lookup
     module_id_to_info_map_[module_id] = std::unique_ptr<ModuleMetadata>(module_metadata);
+    
+    // We call the function to analyze the module and request the ReJIT of integrations defined in this module.
+    CallTarget_RequestRejitForModule(module_id, module_metadata, integration_methods_);
 
     Logger::Debug("ModuleLoadFinished stored metadata for ", module_id, " ", module_info.assembly.name, " AppDomain ",
                   module_info.assembly.app_domain_id, " ", module_info.assembly.app_domain_name);
