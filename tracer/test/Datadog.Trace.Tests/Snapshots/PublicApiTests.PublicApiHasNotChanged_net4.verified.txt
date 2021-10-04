@@ -204,6 +204,7 @@ namespace Datadog.Trace
         AutoReject = 0,
         AutoKeep = 1,
         UserKeep = 2,
+        AppSecKeep = 4,
     }
     public class Scope : System.IDisposable
     {
@@ -268,6 +269,8 @@ namespace Datadog.Trace
         public const string AmqpQueue = "amqp.queue";
         public const string AmqpRoutingKey = "amqp.routing_key";
         public const string Analytics = "_dd1.sr.eausr";
+        public const string AppSecEnabled = "_dd.appsec.enabled";
+        public const string AppSecEvent = "appsec.event";
         public const string AspNetAction = "aspnet.action";
         public const string AspNetArea = "aspnet.area";
         public const string AspNetController = "aspnet.controller";
@@ -337,6 +340,7 @@ namespace Datadog.Trace
         public const string OutHost = "out.host";
         public const string OutPort = "out.port";
         public const string RedisRawCommand = "redis.raw_command";
+        public const string RuntimeFamily = "_dd.runtime_family";
         public const string SamplingPriority = "sampling.priority";
         public const string SpanKind = "span.kind";
         public const string SqlQuery = "sql.query";
