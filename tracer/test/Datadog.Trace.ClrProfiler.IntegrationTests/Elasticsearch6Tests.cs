@@ -27,10 +27,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(PackageVersions.ElasticSearch6), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
-        public void SubmitsTraces(string packageVersion, bool enableCallTarget)
+        public void SubmitsTraces(string packageVersion)
         {
-            SetCallTargetSettings(enableCallTarget);
-
             int agentPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = new MockTracerAgent(agentPort))
