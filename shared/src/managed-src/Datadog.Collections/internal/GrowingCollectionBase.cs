@@ -15,7 +15,7 @@ namespace Datadog.Collections
     /// <ul>
     ///   <li><see cref="GrowingCollection{T}" />
     ///         A "normal" collection where items are accessed by value.
-    ///         If <c>T</c> is a class type or a primitive type, you propably (but not certainly) want this favor.
+    ///         If <c>T</c> is a class type or a primitive type, you probably (but not certainly) want this flavor.
     ///   </li>
     ///   <li><see cref="GrowingRefCollectionInternal{T}" />
     ///         A by-ref collection where items are accessed by reference directly inside the underlying memory.
