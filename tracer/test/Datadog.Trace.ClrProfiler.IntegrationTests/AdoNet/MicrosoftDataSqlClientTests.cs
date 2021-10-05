@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             }
         }
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(GetMicrosoftDataSqlClient))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
@@ -95,7 +95,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             }
         }
 
-        [Theory]
+        [SkippableTheory]
         [InlineData(false)]
         [InlineData(true)]
         [Trait("Category", "EndToEnd")]

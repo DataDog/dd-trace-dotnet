@@ -15,9 +15,11 @@ namespace Datadog.Trace.Ci.Agent
     internal class CIAgentWriter : IAgentWriter
     {
         private readonly AgentWriter _agentWriter = null;
+        private readonly bool _isPartialFlushEnabled = false;
 
         public CIAgentWriter(TracerSettings settings)
         {
+            _isPartialFlushEnabled = settings.PartialFlushEnabled;
             _agentWriter = new AgentWriter(new Api(settings.AgentUri, TransportStrategy.Get(settings), null), null, maxBufferSize: settings.TraceBufferSize);
         }
 
@@ -39,43 +41,36 @@ namespace Datadog.Trace.Ci.Agent
         public void WriteTrace(ArraySegment<Span> trace)
         {
             // We ensure there's no trace (local root span) without a test tag.
-            // And ensure all remaining spans have the origin tag.
+            // And ensure all other spans have the origin tag.
 
-            HashSet<ulong> removeIds = null;
-            Span[] finalTrace = new Span[trace.Count];
-            int idx = 0;
-            foreach (var span in trace)
+            // Check if the trace has any span
+            if (trace.Count == 0)
             {
-                // Remove traces non test, benchmarks or build traces.
-                if (span.Context.Parent is null)
-                {
-                    if (span.Type != SpanTypes.Test &&
-                        span.Type != SpanTypes.Benchmark &&
-                        span.Type != SpanTypes.Build)
-                    {
-                        if (removeIds == null)
-                        {
-                            removeIds = new HashSet<ulong>();
-                        }
-
-                        removeIds.Add(span.SpanId);
-                        CIVisibility.Log.Warning("Non Test or Benchmark trace was dropped: {Span}", span);
-                        continue;
-                    }
-                }
-                else if (removeIds != null && removeIds.Contains(span.Context.ParentId.Value))
-                {
-                    removeIds.Add(span.SpanId);
-                    CIVisibility.Log.Warning("Non Test or Benchmark trace was dropped: {Span}", span);
-                    continue;
-                }
-
-                // Sets the origin tag to any other spans to ensure the CI track.
-                span.Context.Origin = TestTags.CIAppTestOriginName;
-                finalTrace[idx++] = span;
+                // No trace to write
+                return;
             }
 
-            _agentWriter.WriteTrace(new ArraySegment<Span>(finalTrace, 0, idx));
+            if (!_isPartialFlushEnabled)
+            {
+                // Check if the last span (the root) is a test, bechmark or build span
+                Span lastSpan = trace.Array[trace.Offset + trace.Count - 1];
+                if (lastSpan.Context.Parent is null &&
+                    lastSpan.Type != SpanTypes.Test &&
+                    lastSpan.Type != SpanTypes.Benchmark &&
+                    lastSpan.Type != SpanTypes.Build)
+                {
+                    CIVisibility.Log.Warning<int>("Spans dropped because not having a test or benchmark root span: {Count}", trace.Count);
+                    return;
+                }
+            }
+
+            foreach (var span in trace)
+            {
+                // Sets the origin tag to any other spans to ensure the CI track.
+                span.Context.Origin = TestTags.CIAppTestOriginName;
+            }
+
+            _agentWriter.WriteTrace(trace);
         }
     }
 }

@@ -140,29 +140,7 @@ namespace Datadog.Trace
             }
 
             // Register callbacks to make sure we flush the traces before exiting
-            AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
-            AppDomain.CurrentDomain.DomainUnload += CurrentDomain_DomainUnload;
-
-            try
-            {
-                // Registering for the AppDomain.UnhandledException event cannot be called by a security transparent method
-                // This will only happen if the Tracer is not run full-trust
-                AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "Unable to register a callback to the AppDomain.UnhandledException event.");
-            }
-
-            try
-            {
-                // Registering for the cancel key press event requires the System.Security.Permissions.UIPermission
-                Console.CancelKeyPress += Console_CancelKeyPress;
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "Unable to register a callback to the Console.CancelKeyPress event.");
-            }
+            LifetimeManager.Instance.AddShutdownTask(RunShutdownTasks);
 
             // start the heartbeat loop
             _heartbeatTimer = new Timer(HeartbeatCallback, state: null, dueTime: TimeSpan.Zero, period: TimeSpan.FromMinutes(1));
@@ -753,27 +731,6 @@ namespace Datadog.Trace
         private void InitializeLibLogScopeEventSubscriber(IScopeManager scopeManager, string defaultServiceName, string version, string env)
         {
             new LibLogScopeEventSubscriber(this, scopeManager, defaultServiceName, version ?? string.Empty, env ?? string.Empty);
-        }
-
-        private void CurrentDomain_ProcessExit(object sender, EventArgs e)
-        {
-            RunShutdownTasks();
-        }
-
-        private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
-        {
-            Log.Warning("Application threw an unhandled exception: {Exception}", e.ExceptionObject);
-            RunShutdownTasks();
-        }
-
-        private void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
-        {
-            RunShutdownTasks();
-        }
-
-        private void CurrentDomain_DomainUnload(object sender, EventArgs e)
-        {
-            RunShutdownTasks();
         }
 
         private void RunShutdownTasks()

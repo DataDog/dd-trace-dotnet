@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(GetElasticsearch))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]

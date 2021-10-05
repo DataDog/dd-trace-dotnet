@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(GetRabbitMQVersions))]
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces(string packageVersion, bool enableCallTarget)

@@ -64,7 +64,7 @@ namespace Datadog.Trace.AppSec
                         _settings.Enabled = false;
                     }
 
-                    RegisterShutdownTasks();
+                    LifetimeManager.Instance.AddShutdownTask(RunShutdown);
                 }
             }
             catch (Exception ex)
@@ -123,8 +123,11 @@ namespace Datadog.Trace.AppSec
         {
             void Report(ITransport transport, Span span, Waf.ReturnTypes.Managed.Return result)
             {
-                var attack = Attack.From(result, span, transport);
-                _agentWriter.AddEvent(attack);
+                transport.OnCompleted(() =>
+                {
+                    var attack = Attack.From(result, span, transport);
+                    _agentWriter.AddEvent(attack);
+                });
             }
 
             var additiveContext = transport.GetAdditiveContext();
@@ -214,58 +217,6 @@ namespace Datadog.Trace.AppSec
             }
 
             Dispose();
-        }
-
-        private void RegisterShutdownTasks()
-        {
-            // Register callbacks to make sure we flush the traces before exiting
-            AppDomain.CurrentDomain.ProcessExit += ProcessExit;
-            AppDomain.CurrentDomain.DomainUnload += DomainUnload;
-
-            try
-            {
-                // Registering for the AppDomain.UnhandledException event cannot be called by a security transparent method
-                // This will only happen if the Tracer is not run full-trust
-                AppDomain.CurrentDomain.UnhandledException += UnhandledException;
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "Unable to register a callback to the AppDomain.UnhandledException event.");
-            }
-
-            try
-            {
-                // Registering for the cancel key press event requires the System.Security.Permissions.UIPermission
-                Console.CancelKeyPress += CancelKeyPress;
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "Unable to register a callback to the Console.CancelKeyPress event.");
-            }
-        }
-
-        private void ProcessExit(object sender, EventArgs e)
-        {
-            AppDomain.CurrentDomain.ProcessExit -= ProcessExit;
-            RunShutdown();
-        }
-
-        private void DomainUnload(object sender, EventArgs e)
-        {
-            AppDomain.CurrentDomain.DomainUnload -= DomainUnload;
-            RunShutdown();
-        }
-
-        private void CancelKeyPress(object sender, EventArgs e)
-        {
-            Console.CancelKeyPress -= CancelKeyPress;
-            RunShutdown();
-        }
-
-        private void UnhandledException(object sender, EventArgs e)
-        {
-            AppDomain.CurrentDomain.UnhandledException -= UnhandledException;
-            RunShutdown();
         }
     }
 }

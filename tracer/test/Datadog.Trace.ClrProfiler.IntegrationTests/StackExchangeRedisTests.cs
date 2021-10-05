@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(GetStackExchangeRedisData))]
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces(string packageVersion, bool enableCallTarget)

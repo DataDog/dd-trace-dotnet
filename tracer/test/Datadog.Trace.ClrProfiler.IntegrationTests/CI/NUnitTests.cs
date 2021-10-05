@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             }
         }
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(GetData))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "TestIntegrations")]

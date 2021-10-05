@@ -67,6 +67,15 @@ namespace Datadog.Trace.AppSec.Transport.Http
         }
 
         public void AddRequestScope(Guid guid) => context.Items.Add("Security", guid);
+
+        public void OnCompleted(Action completedCallback)
+        {
+            context.Response.OnCompleted(() =>
+            {
+                completedCallback();
+                return Task.CompletedTask;
+            });
+        }
     }
 }
 #endif

@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(GetTestData))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
@@ -91,7 +91,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(GetTestData))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]

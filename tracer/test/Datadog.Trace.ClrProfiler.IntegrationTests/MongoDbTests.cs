@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(GetMongoDb))]
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces(string packageVersion, bool enableCallTarget)

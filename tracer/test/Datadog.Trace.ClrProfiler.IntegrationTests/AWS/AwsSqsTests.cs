@@ -118,7 +118,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         {
         }
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(PackageVersions.AwsSqs), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces(string packageVersion)

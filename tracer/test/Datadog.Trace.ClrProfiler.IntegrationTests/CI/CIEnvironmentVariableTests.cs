@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             }
         }
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(GetJsonItems))]
         public void CheckEnvironmentVariables(JsonDataItem jsonData)
         {
