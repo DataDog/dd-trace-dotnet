@@ -307,7 +307,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     is_attached_.store(true);
     profiler = this;
 
-#ifndef _WIN32_
+#ifndef _WIN32
     if (IsDebugEnabled())
     {
         try
@@ -316,7 +316,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
             // Only in Debug mode and for the Datadog.Trace.ClrProfiler.Native.Checks process
             if (process_name.rfind(WStr("Datadog.Trace.ClrProfiler.Native.Checks")) != std::string::npos)
             {
-                // CheckFilenameDefinitions();
+                CheckFilenameDefinitions();
             }
         }
         catch (...)
@@ -1386,11 +1386,10 @@ WSTRING CorProfiler::GetCLRProfilerPath()
 void CorProfiler::CheckFilenameDefinitions()
 {
 #ifndef _WIN32
-    /*
-    auto runtimeFileName = std::filesystem::path(GetCLRProfilerPath()).filename().string();
+    auto runtimeFileName = GetCLRProfilerPath();
     auto definedFileName = native_dll_filename;
 
-    auto transformedRuntimeFileName = std::string(runtimeFileName);
+    auto transformedRuntimeFileName = ToString(runtimeFileName);
     transform(transformedRuntimeFileName.begin(), transformedRuntimeFileName.end(), transformedRuntimeFileName.begin(),
               ::tolower);
 
@@ -1398,7 +1397,7 @@ void CorProfiler::CheckFilenameDefinitions()
     transform(transformedDefinedFileName.begin(), transformedDefinedFileName.end(), transformedDefinedFileName.begin(),
               ::tolower);
 
-    if (transformedRuntimeFileName == transformedDefinedFileName)
+    if (transformedRuntimeFileName.rfind(transformedDefinedFileName) != std::string::npos)
     {
         Logger::Info("CHECK: FILENAME OK. [Runtime: ", runtimeFileName, " | Defined: ", definedFileName, "]");
     }
@@ -1406,7 +1405,6 @@ void CorProfiler::CheckFilenameDefinitions()
     {
         Logger::Error("CHECK: FILENAME ERROR. [Runtime: ", runtimeFileName, " | Defined: ", definedFileName, "]");
     }
-    */
 #endif
 }
 
