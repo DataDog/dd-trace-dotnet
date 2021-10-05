@@ -1,36 +1,44 @@
 using System;
+using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace;
+using Datadog.Trace.TestHelpers;
 
 namespace HttpMessageHandler.StackOverflowException
 {
     internal class Program
     {
+        private static string _url;
+
         private static async Task<int> Main()
         {
             try
             {
                 Console.WriteLine($"Profiler attached: {Samples.SampleHelpers.IsProfilerAttached()}");
 
-                var baseAddress = new Uri("https://www.example.com/");
-                var regularHttpClient = new HttpClient { BaseAddress = baseAddress };
-                var customHandlerHttpClient = new HttpClient(new DerivedHandler()) { BaseAddress = baseAddress };
-
-                using (var scope = Tracer.Instance.StartActive("main"))
+                using (StartHttpListenerWithPortResilience())
                 {
-                    Console.WriteLine("Calling regularHttpClient.GetAsync");
-                    await regularHttpClient.GetAsync("default-handler");
-                    Console.WriteLine("Called regularHttpClient.GetAsync");
+                    var baseAddress = new Uri(_url);
+                    var regularHttpClient = new HttpClient { BaseAddress = baseAddress };
+                    var customHandlerHttpClient = new HttpClient(new DerivedHandler()) { BaseAddress = baseAddress };
 
-                    Console.WriteLine("Calling customHandlerHttpClient.GetAsync");
-                    await customHandlerHttpClient.GetAsync("derived-handler");
-                    Console.WriteLine("Called customHandlerHttpClient.GetAsync");
+                    using (var scope = Tracer.Instance.StartActive("main"))
+                    {
+                        Console.WriteLine("Calling regularHttpClient.GetAsync");
+                        await regularHttpClient.GetAsync("default-handler");
+                        Console.WriteLine("Called regularHttpClient.GetAsync");
+
+                        Console.WriteLine("Calling customHandlerHttpClient.GetAsync");
+                        await customHandlerHttpClient.GetAsync("derived-handler");
+                        Console.WriteLine("Called customHandlerHttpClient.GetAsync");
+                    }
+
+                    Console.WriteLine("No stack overflow exceptions!");
+                    Console.WriteLine("All is well!");
                 }
-
-                Console.WriteLine("No stack overflow exceptions!");
-                Console.WriteLine("All is well!");
             }
             catch (Exception ex)
             {
@@ -45,6 +53,68 @@ namespace HttpMessageHandler.StackOverflowException
 #endif
 
             return (int)ExitCode.Success;
+        }
+
+        public static HttpListener StartHttpListenerWithPortResilience(int retries = 5)
+        {
+            var port = TcpPortProvider.GetOpenPort().ToString();
+
+            // try up to 5 consecutive ports before giving up
+            while (true)
+            {
+                _url = $"http://localhost:{port}/StackOverflowException/";
+
+                // seems like we can't reuse a listener if it fails to start,
+                // so create a new listener each time we retry
+                var listener = new HttpListener();
+                listener.Prefixes.Add(_url);
+
+                try
+                {
+                    listener.Start();
+
+                    var listenerThread = new Thread(HandleHttpRequests) { IsBackground = true };
+                    listenerThread.Start(listener);
+
+                    return listener;
+                }
+                catch (HttpListenerException) when (retries > 0)
+                {
+                    // only catch the exception if there are retries left
+                    port = TcpPortProvider.GetOpenPort().ToString();
+                    retries--;
+                }
+
+                // always close listener if exception is thrown,
+                // whether it was caught or not
+                listener.Close();
+            }
+        }
+
+        private static void HandleHttpRequests(object state)
+        {
+            var listener = (HttpListener)state;
+
+            while (listener.IsListening)
+            {
+                try
+                {
+                    var context = listener.GetContext();
+
+                    var responseBytes = Encoding.UTF8.GetBytes("OK");
+                    context.Response.ContentEncoding = Encoding.UTF8;
+                    context.Response.ContentLength64 = responseBytes.Length;
+                    context.Response.OutputStream.Write(responseBytes, 0, responseBytes.Length);
+
+                    context.Response.Close();
+                }
+                catch (HttpListenerException)
+                {
+                }
+                catch (ObjectDisposedException)
+                {
+                }
+            }
         }
     }
 
