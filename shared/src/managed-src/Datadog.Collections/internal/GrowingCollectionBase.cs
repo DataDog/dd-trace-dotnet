@@ -49,7 +49,7 @@ namespace Datadog.Collections
         {
             /// <summary>
             /// When working with a ralatively small number of elements, a small defualt size allows wasting little memory.
-            /// If you know to process hundreds or thousands of objects, use larger segment sizes.
+            /// If you know you need to process hundreds or thousands of objects, use larger segment sizes.
             /// </summary>
             public const int Default = 32;
 
