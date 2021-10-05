@@ -124,6 +124,23 @@ public:
         (*wrapper_parent_type)[keyIn] = valueIn;
     }
 
+    bool IsFailedWrapperMemberKey(const WSTRING& key) const
+    {
+        if (failed_wrapper_keys == nullptr)
+        {
+            return false;
+        }
+
+        const auto search = failed_wrapper_keys->find(key);
+
+        if (search != failed_wrapper_keys->end())
+        {
+            return true;
+        }
+
+        return false;
+    }
+
     void SetFailedWrapperMemberKey(const WSTRING& key)
     {
         std::scoped_lock<std::mutex> lock(wrapper_mutex);
