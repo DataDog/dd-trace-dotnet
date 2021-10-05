@@ -1,6 +1,9 @@
+using System;
 using System.IO;
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Engines;
 using Datadog.Trace;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjection;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using NLog;
@@ -17,7 +20,7 @@ namespace Benchmarks.Trace
 
         static NLogBenchmark()
         {
-            LogProvider.SetCurrentLogProvider(new CustomNLogLogProvider());
+            LogProvider.SetCurrentLogProvider(new NoOpNLogLogProvider());
 
             var logInjectionSettings = new TracerSettings
             {
@@ -56,7 +59,27 @@ namespace Benchmarks.Trace
             {
                 using (LogInjectionTracer.StartActive("Child"))
                 {
+                    object state = null;
+
+                    if (DiagnosticContextHelper.Cache<NLog.Logger>.Mdlc is { } mdlc)
+                    {
+                        state = DiagnosticContextHelper.SetMdlcState(mdlc, LogInjectionTracer);
+                    }
+                    else if (DiagnosticContextHelper.Cache<NLog.Logger>.Mdc is { } mdc)
+                    {
+                        state = DiagnosticContextHelper.SetMdcState(mdc, LogInjectionTracer);
+                    }
+
                     Logger.Info("Hello");
+
+                    if (state is IDisposable disposable)
+                    {
+                        disposable.Dispose();
+                    }
+                    else if (state is bool removeTraceIds && DiagnosticContextHelper.Cache<NLog.Logger>.Mdc is { } mdc2)
+                    {
+                        DiagnosticContextHelper.RemoveMdcState(mdc2, removeTraceIds);
+                    }
                 }
             }
         }

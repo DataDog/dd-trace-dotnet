@@ -277,24 +277,20 @@ namespace Datadog.Trace.Logging
                     NoOpSerilogLogProvider.IsLoggerAvailable,
                     () => new NoOpSerilogLogProvider()));
 
-            // Register the custom NLog providers
+            // Register the no-op NLog provider
+            // Automatic logs injection will be handled by automatic instrumentation so make
+            // sure that calls to the LibLog Log Provider result in no-ops
             LogProvider.LogProviderResolvers.Insert(
                 2,
                 Tuple.Create<LogProvider.IsLoggerAvailable, LogProvider.CreateLogProvider>(
-                    CustomNLogLogProvider.IsLoggerAvailable,
-                    () => new CustomNLogLogProvider()));
-
-            LogProvider.LogProviderResolvers.Insert(
-                3,
-                Tuple.Create<LogProvider.IsLoggerAvailable, LogProvider.CreateLogProvider>(
-                    FallbackNLogLogProvider.IsLoggerAvailable,
-                    () => new FallbackNLogLogProvider()));
+                    NoOpNLogLogProvider.IsLoggerAvailable,
+                    () => new NoOpNLogLogProvider()));
 
             // Register the no-op log4net provider
             // Automatic logs injection will be handled by automatic instrumentation so make
             // sure that calls to the LibLog Log Provider result in no-ops
             LogProvider.LogProviderResolvers.Insert(
-                4,
+                3,
                 Tuple.Create<LogProvider.IsLoggerAvailable, LogProvider.CreateLogProvider>(
                     NoOpLog4NetLogProvider.IsLoggerAvailable,
                     () => new NoOpLog4NetLogProvider()));
