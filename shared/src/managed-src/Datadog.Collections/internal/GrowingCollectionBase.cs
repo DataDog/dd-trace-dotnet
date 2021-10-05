@@ -53,7 +53,7 @@ namespace Datadog.Collections
             /// </summary>
             public const int Default = 32;
 
-            private const int MaxMax = 50000;
+            private const int MaxMax = 50_000;
 
             /// <summary>
             /// We restrict the max segment size to make it less likely that huge segments get allocated and end up on the
