@@ -314,7 +314,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         {
             // This enable a path to assert over checks inside the profiler code.
             // Only in Debug mode and for the Datadog.Trace.ClrProfiler.Native.Checks process
-            auto process_name_path = std::filesystem::path(process_name);
+            auto process_name_path = std::filesystem::path(ToString(process_name));
             process_name_path.replace_extension("");
 
             if (process_name_path.string() == "Datadog.Trace.ClrProfiler.Native.Checks")
@@ -324,18 +324,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         }
         catch (...)
         {
-            auto ex = std::current_exception();
-            try
-            {
-                if (ex)
-                {
-                    std::rethrow_exception(ex);
-                }
-            }
-            catch (const std::exception& ex)
-            {
-                Logger::Error("Failed to do the Native Checks: ", ex.what());
-            }
+            Logger::Error("Failed to do the Native Checks.");
         }
     }
 #endif
