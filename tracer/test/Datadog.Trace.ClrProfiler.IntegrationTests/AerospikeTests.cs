@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetCallTargetSettings(enableCallTarget: true);
         }
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(PackageVersions.Aerospike), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]

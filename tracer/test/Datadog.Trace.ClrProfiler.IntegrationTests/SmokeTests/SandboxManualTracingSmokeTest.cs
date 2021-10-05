@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         {
         }
 
-        [Fact]
+        [SkippableFact]
         public void NoExceptions()
         {
             CheckForSmoke(shouldDeserializeTraces: false);

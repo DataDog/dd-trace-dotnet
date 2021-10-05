@@ -162,7 +162,7 @@ namespace Datadog.Trace.TestHelpers
             if (exitCode == 139)
             {
                 // Segmentation faults are expected on .NET Core because of a bug in the runtime: https://github.com/dotnet/runtime/issues/11885
-                throw new InconclusiveException("Segmentation fault on .NET Core 2.1");
+                throw new SkipException("Segmentation fault on .NET Core 2.1");
             }
 #endif
 

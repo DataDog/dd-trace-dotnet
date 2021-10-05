@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             _iisFixture.TryStartIis(this, IisAppType.AspNetIntegrated);
         }
 
-        [Theory]
+        [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("LoadFromGAC", "True")]

@@ -109,7 +109,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             };
         }
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(GetData))]
         public void ExtractGitDataFromFolder(TestItem testItem)
         {

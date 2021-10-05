@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.IIS
 
         private ITestOutputHelper Output { get; }
 
-        [Fact]
+        [SkippableFact]
         [Trait("RunOnWindows", "True")]
         [Trait("IIS", "True")]
         public async Task ApplicationDoesNotReturnErrors()

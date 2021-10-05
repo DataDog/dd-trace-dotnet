@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             _testName = GetTestName(nameof(AspNetCoreMvc21Tests));
         }
 
-        [Theory]
+        [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [MemberData(nameof(Data))]
