@@ -399,7 +399,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCore2", "trac
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Monitoring.Distribution", "tracer\src\Datadog.Monitoring.Distribution\Datadog.Monitoring.Distribution.csproj", "{CF364E70-F5B5-4D44-B29E-2165525D3A69}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LogsInjection.ILogger", "tracer\test\test-applications\integrations\LogsInjection.ILogger\LogsInjection.ILogger.csproj", "{463A6FB2-1ABE-4B92-A470-97134D0BBC7E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LogsInjection.ILogger", "tracer\test\test-applications\integrations\LogsInjection.ILogger\LogsInjection.ILogger.csproj", "{463A6FB2-1ABE-4B92-A470-97134D0BBC7E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Aerospike", "tracer\test\test-applications\integrations\Samples.Aerospike\Samples.Aerospike.csproj", "{7471A7A8-B89C-4C94-8EB1-24180E71CA1F}"
 EndProject
@@ -428,7 +428,17 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AzureFunctions.AllT
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Samples.Shared", "tracer\test\test-applications\Samples.Shared\Samples.Shared.shproj", "{5A806F4B-39E7-4F38-B36F-F5CFC4F8760A}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.Native.Checks", "tracer\test\test-applications\instrumentation\Datadog.Trace.ClrProfiler.Native.Checks\Datadog.Trace.ClrProfiler.Native.Checks.csproj", "{7DFDD339-30C5-4C1D-AB07-F9106256AF77}"
+EndProject
 Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{3c6dd42e-9214-4747-92ba-78de29aace59}*SharedItemsImports = 4
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{6d86109f-b7c9-477d-86d7-45735a3a0818}*SharedItemsImports = 4
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{7b0822f6-80de-4b49-8125-93975678d0d5}*SharedItemsImports = 4
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{99a62ccf-8e7f-4d57-8383-d38c371c8087}*SharedItemsImports = 4
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{b6a98887-4a47-4c19-9c6f-d833e24f4b1c}*SharedItemsImports = 4
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{bbb60b0f-bf01-4499-936a-4a299a9acfd4}*SharedItemsImports = 4
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Debug|x64 = Debug|x64
@@ -1795,6 +1805,16 @@ Global
 		{536F1D82-D40C-4E33-B7FA-76A0F17BF672}.Release|x64.Build.0 = Release|x64
 		{536F1D82-D40C-4E33-B7FA-76A0F17BF672}.Release|x86.ActiveCfg = Release|x86
 		{536F1D82-D40C-4E33-B7FA-76A0F17BF672}.Release|x86.Build.0 = Release|x86
+		{7DFDD339-30C5-4C1D-AB07-F9106256AF77}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{7DFDD339-30C5-4C1D-AB07-F9106256AF77}.Debug|x64.ActiveCfg = Debug|x64
+		{7DFDD339-30C5-4C1D-AB07-F9106256AF77}.Debug|x64.Build.0 = Debug|x64
+		{7DFDD339-30C5-4C1D-AB07-F9106256AF77}.Debug|x86.ActiveCfg = Debug|x86
+		{7DFDD339-30C5-4C1D-AB07-F9106256AF77}.Debug|x86.Build.0 = Debug|x86
+		{7DFDD339-30C5-4C1D-AB07-F9106256AF77}.Release|Any CPU.ActiveCfg = Release|x86
+		{7DFDD339-30C5-4C1D-AB07-F9106256AF77}.Release|x64.ActiveCfg = Release|x64
+		{7DFDD339-30C5-4C1D-AB07-F9106256AF77}.Release|x64.Build.0 = Release|x64
+		{7DFDD339-30C5-4C1D-AB07-F9106256AF77}.Release|x86.ActiveCfg = Release|x86
+		{7DFDD339-30C5-4C1D-AB07-F9106256AF77}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1942,6 +1962,7 @@ Global
 		{C4C1E313-C7C1-4490-AECE-0DD0062380A4} = {9518425A-36A5-4B8F-B0B8-6137DB88441D}
 		{536F1D82-D40C-4E33-B7FA-76A0F17BF672} = {C4C1E313-C7C1-4490-AECE-0DD0062380A4}
 		{5A806F4B-39E7-4F38-B36F-F5CFC4F8760A} = {9518425A-36A5-4B8F-B0B8-6137DB88441D}
+		{7DFDD339-30C5-4C1D-AB07-F9106256AF77} = {933F1D4B-1216-4BC1-956E-8C30818BAA0F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
