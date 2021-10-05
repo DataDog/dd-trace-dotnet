@@ -34,7 +34,13 @@
     <MediaTemplate EmbedCab="yes"/>
 
     <Feature Id="ProductFeature" Title="Datadog.Trace.ClrProfiler" Level="1">
+      <ComponentGroupRef Id="Product.EmptyFolders"/>
+      <ComponentGroupRef Id="Product.Registry"/>
+
+      <ComponentGroupRef Id="Shared.EnvironmentVariables.Machine"/>
+      <ComponentGroupRef Id="Shared.EnvironmentVariables.IIS"/>
       <ComponentGroupRef Id="Shared.Files" />
+
       <ComponentGroupRef Id="ContinuousProfiler.EnvironmentVariables.Machine"/>
       <ComponentGroupRef Id="ContinuousProfiler.Files"/>
       <ComponentGroupRef Id="ContinuousProfiler.Files.Managed.Net45.GAC"/>
@@ -43,6 +49,7 @@
       <ComponentGroupRef Id="ContinuousProfiler.Files.Managed.Net461"/>
       <ComponentGroupRef Id="ContinuousProfiler.Files.Managed.NetStandard20"/>
       <ComponentGroupRef Id="ContinuousProfiler.Files.Managed.Netcoreapp31"/>
+
       <ComponentGroupRef Id="Tracer.EnvironmentVariables.Machine"/>
       <ComponentGroupRef Id="Tracer.Files"/>
       <ComponentGroupRef Id="Tracer.Files.Managed.Net45.GAC"/>
@@ -51,10 +58,6 @@
       <ComponentGroupRef Id="Tracer.Files.Managed.Net461"/>
       <ComponentGroupRef Id="Tracer.Files.Managed.NetStandard20"/>
       <ComponentGroupRef Id="Tracer.Files.Managed.Netcoreapp31"/>
-      <ComponentGroupRef Id="EmptyFolders"/>
-      <ComponentGroupRef Id="Registry"/>
-      <ComponentGroupRef Id="EnvironmentVariables.Machine"/>
-      <ComponentGroupRef Id="EnvironmentVariables.IIS"/>
 
       <?if $(var.Win64) = yes ?>
       <ComponentGroupRef Id="Shared.Files.NativeLoader.64"/>
@@ -161,8 +164,8 @@
   </Fragment>
 
   <Fragment>
-    <ComponentGroup Id="EmptyFolders" Directory="CommonAppDataFolder.DatadogDotNetTracer.logs">
-      <Component Id="EmptyFolders.Logs" Guid="0A9B510D-44F6-41A9-9EFE-E2CEB7314CF3">
+    <ComponentGroup Id="Product.EmptyFolders" Directory="CommonAppDataFolder.DatadogDotNetTracer.logs">
+      <Component Id="Product.EmptyFolders.Logs" Guid="0A9B510D-44F6-41A9-9EFE-E2CEB7314CF3">
         <CreateFolder Directory="CommonAppDataFolder.DatadogDotNetTracer"/>
         <CreateFolder Directory="CommonAppDataFolder.DatadogDotNetTracer.logs">
           <util:PermissionEx User="Everyone" GenericWrite="yes" />
@@ -170,37 +173,11 @@
       </Component>
     </ComponentGroup>
 
-    <ComponentGroup Id="Registry" Directory="INSTALLFOLDER">
+    <ComponentGroup Id="Product.Registry" Directory="INSTALLFOLDER">
       <Component Win64="$(var.Win64)">
         <CreateFolder/>
         <RegistryKey Root="HKLM" Key="Software\$(var.Company)\$(var.ProductName)">
           <RegistryValue Type="string" Name="InstallPath" Value="[INSTALLFOLDER]" Action="write"/>
-        </RegistryKey>
-      </Component>
-    </ComponentGroup>
-
-    <ComponentGroup Id="EnvironmentVariables.Machine" Directory="INSTALLFOLDER">
-      <Component Id="EnvironmentVariablesShared" Guid="{C314A305-9C24-4E46-9ECF-E5EEA703BDEA}" Win64="$(var.Win64)">
-        <CreateFolder/>
-        <Environment Id="DD_NATIVELOADER_CONFIGFILE" Name="DD_NATIVELOADER_CONFIGFILE" Action="set" Permanent="no" System="yes" Value="[INSTALLFOLDER]loader.conf" Part="all" />
-        <!-- For now, turn on Continuous Profiling automatically and watch it work its magic -->
-        <Environment Id="DD_PROFILING_ENABLED" Name="DD_PROFILING_ENABLED" Action="set" Permanent="no" System="yes" Value="1" Part="all" />
-      </Component>
-    </ComponentGroup>
-
-    <ComponentGroup Id="EnvironmentVariables.IIS" Directory="INSTALLFOLDER">
-      <Component Id="Registry.EnvironmentVariables.W3SVC" Guid="{702DB265-F33E-47F4-A6B0-E21FA0FC21C1}" Win64="$(var.Win64)">
-        <CreateFolder/>
-        <RegistryKey Root="HKLM"
-                     Key="System\CurrentControlSet\Services\W3SVC">
-          <RegistryValue Type="multiString" Name="Environment" Value="COR_ENABLE_PROFILING=1[~]COR_PROFILER=$(var.ProfilerCLSIDBeta)[~]CORECLR_ENABLE_PROFILING=1[~]CORECLR_PROFILER=$(var.ProfilerCLSIDBeta)" Action="append"/>
-        </RegistryKey>
-      </Component>
-
-      <Component Id="Registry.EnvironmentVariables.WAS" Guid="{6CF8AB88-240E-4A0A-B630-43119C064AD4}" Win64="$(var.Win64)">
-        <RegistryKey Root="HKLM"
-                     Key="System\CurrentControlSet\Services\WAS">
-          <RegistryValue Type="multiString" Name="Environment" Value="COR_ENABLE_PROFILING=1[~]COR_PROFILER=$(var.ProfilerCLSIDBeta)[~]CORECLR_ENABLE_PROFILING=1[~]CORECLR_PROFILER=$(var.ProfilerCLSIDBeta)" Action="append"/>
         </RegistryKey>
       </Component>
     </ComponentGroup>

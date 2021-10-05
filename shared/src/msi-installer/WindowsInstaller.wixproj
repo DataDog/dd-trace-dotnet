@@ -39,6 +39,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="shared\Files.wxs" />
+    <Compile Include="shared\EnvironmentVariables.wxs" />
     <Compile Include="ContinuousProfiler\EnvironmentVariables.wxs" />
     <Compile Include="ContinuousProfiler\Files.wxs" />
     <Compile Include="ContinuousProfiler\Files.Managed.Net45.GAC.wxs" />
