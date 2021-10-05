@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             }
         }
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(GetMySql8Data))]
         [Trait("Category", "EndToEnd")]
         public void SubmitsTracesWithNetStandardInMySql8(string packageVersion, bool enableCallTarget)
@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SubmitsTracesWithNetStandard(packageVersion, enableCallTarget);
         }
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(GetOldMySqlData))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
@@ -66,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SubmitsTracesWithNetStandard(packageVersion, enableCallTarget);
         }
 
-        [Theory]
+        [SkippableTheory]
         [InlineData(false)]
         [InlineData(true)]
         [Trait("Category", "EndToEnd")]

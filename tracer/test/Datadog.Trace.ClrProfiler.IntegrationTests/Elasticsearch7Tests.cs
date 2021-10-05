@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> GetElasticsearch() => PackageVersions.ElasticSearch7;
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(GetElasticsearch))]
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces(string packageVersion)

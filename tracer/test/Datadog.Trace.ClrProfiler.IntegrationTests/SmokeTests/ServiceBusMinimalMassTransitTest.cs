@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
             AssumeSuccessOnTimeout = true;
         }
 
-        [Fact]
+        [SkippableFact]
         [Trait("Category", "Smoke")]
         public void NoExceptions()
         {

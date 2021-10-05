@@ -34,7 +34,7 @@ trigger:
 #     - Fmt lib:
       - shared/src/native-lib/fmt_x64-windows-static/*
       - shared/src/native-lib/fmt_x86-windows-static/*
-#     - Spdlob lib:      
+#     - Spdlob lib:
       - shared/src/native-lib/spdlog/*
 #     - Mics common native sources:
       - shared/src/native-src/*
@@ -85,6 +85,40 @@ resources:
 
 # Stages
 stages:
+- stage: record_src_details
+  dependsOn: []
+  jobs:
+  - job: record_src_details
+    pool:
+      vmImage: ubuntu-18.04
+    steps:
+    - script: |
+        echo "SYSTEM_PULLREQUEST_SOURCECOMMITID=$SYSTEM_PULLREQUEST_SOURCECOMMITID"
+        echo "BUILD_SOURCEVERSION=$BUILD_SOURCEVERSION"
+        echo "SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI=$SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI"
+        echo "BUILD_REPOSITORY_URI=$BUILD_REPOSITORY_URI"
+
+        repo="$SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI"
+        commit_sha="$SYSTEM_PULLREQUEST_SOURCECOMMITID"
+
+        if [ -z "$repo" ]; then
+            repo="$BUILD_REPOSITORY_URI"
+        fi
+
+        if [ -z "$commit_sha" ]; then
+            commit_sha="$BUILD_SOURCEVERSION"
+        fi
+
+        mkdir $(System.DefaultWorkingDirectory)/src_details
+        cd $(System.DefaultWorkingDirectory)/src_details
+        echo "$repo" > repo.txt
+        echo "$commit_sha" > commit_sha.txt
+      displayName: Write trigger values to txt files
+
+    - publish: $(System.DefaultWorkingDirectory)/src_details
+      displayName: Upload src details
+      artifact: build-src-details
+
 - stage: build_windows
   dependsOn: []
   jobs:
@@ -246,6 +280,7 @@ stages:
           testResultsFiles: tracer/build_data/results/**/*.trx
         condition: succeededOrFailed()
 
+
     - job: native
       steps:
       - template: steps/install-dotnet.yml
@@ -289,7 +324,6 @@ stages:
         condition: succeededOrFailed()
 
 
-
 - stage: unit_tests_linux
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: [build_linux]
@@ -326,6 +360,7 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
+
 
 - stage: unit_tests_arm64
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
@@ -419,6 +454,9 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
+    - script: tracer\build.cmd CheckBuildLogsForErrors
+      displayName: Check logs for errors
+
 - stage: integration_tests_windows_iis
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: [build_windows, package_windows]
@@ -505,6 +543,9 @@ stages:
       artifact: integration_tests_windows_iis_tracer_logs_$(targetPlatform)_$(framework)
       condition: succeededOrFailed()
       continueOnError: true
+
+    - script: tracer\build.cmd CheckBuildLogsForErrors
+      displayName: Check logs for errors
 
 - stage: integration_tests_linux
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
@@ -605,6 +646,11 @@ stages:
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
+    - template: steps/run-in-docker.yml
+      parameters:
+        baseImage: $(baseImage)
+        command: "CheckBuildLogsForErrors"
+
 - stage: integration_tests_arm64
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: [build_arm64]
@@ -682,6 +728,11 @@ stages:
             testResultsFormat: VSTest
             testResultsFiles: tracer/build_data/results/**/*.trx
           condition: succeededOrFailed()
+
+        - template: steps/run-in-docker.yml
+          parameters:
+            baseImage: $(baseImage)
+            command: "CheckBuildLogsForErrors"
 
 - stage: dotnet_tool
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))

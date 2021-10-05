@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             from socketHandlerEnabled in new[] { true, false }
             select new object[] { enableCallTarget, instrumentationOptions, socketHandlerEnabled };
 
-        [Theory]
+        [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [MemberData(nameof(IntegrationConfig))]
@@ -91,7 +91,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        [Theory]
+        [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [MemberData(nameof(IntegrationConfig))]

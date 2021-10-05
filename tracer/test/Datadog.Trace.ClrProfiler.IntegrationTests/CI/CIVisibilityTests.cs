@@ -9,7 +9,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
     public class CIVisibilityTests
     {
-        [Theory]
+        [SkippableTheory]
         [InlineData("https://github.com/DataDog/dd-trace-dotnet.git", "dd-trace-dotnet")]
         [InlineData("git@github.com:DataDog/dd-trace-dotnet.git", "dd-trace-dotnet")]
         [InlineData("ssh://user@host.xz:port/path/to/repo.git", "repo")]
