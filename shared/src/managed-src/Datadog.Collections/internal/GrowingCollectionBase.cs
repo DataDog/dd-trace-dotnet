@@ -19,8 +19,8 @@ namespace Datadog.Collections
     ///   </li>
     ///   <li><see cref="GrowingRefCollectionInternal{T}" />
     ///         A by-ref collection where items are accessed by reference directly inside the underlying memory.
-    ///         If <c>T</c> is a custom value type, you propably (but not certainly) want this favor.
-    ///         Values will be acced directly within the underlying storage, modified in-place and never boxed.
+    ///         If <c>T</c> is a custom value type, you probably (but not certainly) want this flavor.
+    ///         Values will be accessed directly within the underlying storage, modified in-place and never boxed.
     ///         Pattern based for-each-iteration is supported using an internal interface (<see cref="IRefEnumerableInternal{T}" />),
     ///         so using this class does not expose any public types form the assembly.
     ///         Other than the implemented by-ref iteration iface, this class is equivalent to <see cref="GrowingRefCollection{T}" />.
