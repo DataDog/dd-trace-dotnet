@@ -24,7 +24,7 @@ namespace PluginApplication
             File.Delete(jsonFilePath);
         }
 
-        public static int RunLoggingProcedure(Action<string> logAction, bool makeCrossAppDomainCall = true)
+        public static int RunLoggingProcedure(Action<string> logAction)
         {
 #if NETFRAMEWORK
             // Set up the secondary AppDomain first
@@ -54,10 +54,7 @@ namespace PluginApplication
                     // System.Runtime.Serialization.SerializationException: Type is not resolved for member 'log4net.Util.PropertiesDictionary,log4net, Version=2.0.12.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a'.
 #if NETFRAMEWORK
                     logAction("Calling the PluginApplication.Program in a separate AppDomain");
-                    if (makeCrossAppDomainCall)
-                    {
-                        AppDomainProxy.Call(applicationAppDomain, "PluginApplication", "PluginApplication.Program", "Invoke", null);
-                    }
+                    AppDomainProxy.Call(applicationAppDomain, "PluginApplication", "PluginApplication.Program", "Invoke", null);
                     logAction("Returned from the PluginApplication.Program call");
 #else
                     logAction("Skipping the cross-AppDomain call on .NET Core");
