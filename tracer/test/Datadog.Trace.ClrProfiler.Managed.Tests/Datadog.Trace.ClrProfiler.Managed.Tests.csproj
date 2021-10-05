@@ -13,6 +13,7 @@
   <ItemGroup>
     <PackageReference Include="Confluent.Kafka" Version="1.4.3" />
     <PackageReference Include="log4net" Version="$(Log4NetVersion)" />
+    <PackageReference Include="NLog" Version="$(NLogVersion)" Condition=" $(TargetFramework.StartsWith('net4'))" />
 
     <PackageReference Include="coverlet.collector" Version="3.0.4-preview.32">
       <PrivateAssets>all</PrivateAssets>

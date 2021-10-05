@@ -44,5 +44,6 @@ namespace Datadog.Trace.Configuration
         Sqlite,
         Serilog,
         Log4Net,
+        NLog,
     }
 }
