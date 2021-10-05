@@ -4,14 +4,14 @@
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
   <?include $(sys.CURRENTDIR)\Config.wxi?>
   <Fragment>
-    <ComponentGroup Id="tracer.Files" Directory="tracer">
+    <ComponentGroup Id="Tracer.Files" Directory="tracer">
       <Component Win64="$(var.Win64)">
         <File Id="integrations.json" Source="$(var.TracerHomeDirectory)\integrations.json" />
       </Component>
     </ComponentGroup>
 
     <?if $(var.Win64) = yes ?>
-    <ComponentGroup Id="Files.Native.64" Directory="tracer.win_x64">
+    <ComponentGroup Id="Tracer.Files.Native.64" Directory="tracer.win_x64">
       <Component Win64="yes">
         <File Id="Datadog.Trace.ClrProfiler.Native"
               Source="$(var.TracerHomeDirectory)\win-x64\Datadog.Trace.ClrProfiler.Native.dll"
@@ -28,7 +28,7 @@
     <?endif ?>
 
     <!-- Always install the 32-bit binaries, even for the 64-bit installer -->
-    <ComponentGroup Id="Files.Native.32" Directory="tracer.win_x86">
+    <ComponentGroup Id="Tracer.Files.Native.32" Directory="tracer.win_x86">
       <Component Win64="$(var.Win64)" Id="Datadog.Trace.ClrProfiler.Native.32">
         <File Id="Datadog.Trace.ClrProfiler.Native.32"
               Source="$(var.TracerHomeDirectory)\win-x86\Datadog.Trace.ClrProfiler.Native.dll"

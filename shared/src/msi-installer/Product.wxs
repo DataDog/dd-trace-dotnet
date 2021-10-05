@@ -34,7 +34,7 @@
     <MediaTemplate EmbedCab="yes"/>
 
     <Feature Id="ProductFeature" Title="Datadog.Trace.ClrProfiler" Level="1">
-      <ComponentGroupRef Id="shared.Files" />
+      <ComponentGroupRef Id="Shared.Files" />
       <ComponentGroupRef Id="ContinuousProfiler.EnvironmentVariables.Machine"/>
       <ComponentGroupRef Id="ContinuousProfiler.Files"/>
       <ComponentGroupRef Id="ContinuousProfiler.Files.Managed.Net45.GAC"/>
@@ -43,29 +43,29 @@
       <ComponentGroupRef Id="ContinuousProfiler.Files.Managed.Net461"/>
       <ComponentGroupRef Id="ContinuousProfiler.Files.Managed.NetStandard20"/>
       <ComponentGroupRef Id="ContinuousProfiler.Files.Managed.Netcoreapp31"/>
-      <ComponentGroupRef Id="tracer.EnvironmentVariables.Machine"/>
-      <ComponentGroupRef Id="tracer.Files"/>
-      <ComponentGroupRef Id="Files.Managed.Net45.GAC"/>
-      <ComponentGroupRef Id="Files.Managed.Net461.GAC"/>
-      <ComponentGroupRef Id="Files.Managed.Net45"/>
-      <ComponentGroupRef Id="Files.Managed.Net461"/>
-      <ComponentGroupRef Id="Files.Managed.NetStandard20"/>
-      <ComponentGroupRef Id="Files.Managed.Netcoreapp31"/>
+      <ComponentGroupRef Id="Tracer.EnvironmentVariables.Machine"/>
+      <ComponentGroupRef Id="Tracer.Files"/>
+      <ComponentGroupRef Id="Tracer.Files.Managed.Net45.GAC"/>
+      <ComponentGroupRef Id="Tracer.Files.Managed.Net461.GAC"/>
+      <ComponentGroupRef Id="Tracer.Files.Managed.Net45"/>
+      <ComponentGroupRef Id="Tracer.Files.Managed.Net461"/>
+      <ComponentGroupRef Id="Tracer.Files.Managed.NetStandard20"/>
+      <ComponentGroupRef Id="Tracer.Files.Managed.Netcoreapp31"/>
       <ComponentGroupRef Id="EmptyFolders"/>
       <ComponentGroupRef Id="Registry"/>
       <ComponentGroupRef Id="EnvironmentVariables.Machine"/>
       <ComponentGroupRef Id="EnvironmentVariables.IIS"/>
 
       <?if $(var.Win64) = yes ?>
-      <ComponentGroupRef Id="shared.Files.NativeLoader.64"/>
+      <ComponentGroupRef Id="Shared.Files.NativeLoader.64"/>
       <ComponentGroupRef Id="ContinuousProfiler.Files.Native.64"/>
-      <ComponentGroupRef Id="Files.Native.64"/>
+      <ComponentGroupRef Id="Tracer.Files.Native.64"/>
       <?endif ?>
 
       <!-- The 32-bit profiler is always included, even in 64-bit builds -->
-      <ComponentGroupRef Id="shared.Files.NativeLoader.32"/>
+      <ComponentGroupRef Id="Shared.Files.NativeLoader.32"/>
       <ComponentGroupRef Id="ContinuousProfiler.Files.Native.32"/>
-      <ComponentGroupRef Id="Files.Native.32"/>
+      <ComponentGroupRef Id="Tracer.Files.Native.32"/>
     </Feature>
   </Product>
 
