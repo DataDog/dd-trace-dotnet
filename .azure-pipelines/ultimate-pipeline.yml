@@ -71,6 +71,7 @@ variables:
   dotnetToolTag: build-dotnet-tool
   Verify_DisableClipboard: true
   DiffEngine_Disabled: true
+  OriginalCommitId: $[coalesce(variables['System.PullRequest.SourceCommitId'], variables['Build.SourceVersion'])]
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
@@ -88,6 +89,10 @@ stages:
 - stage: build_windows
   dependsOn: []
   jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [build]
+
   - job: build
     pool:
       vmImage: windows-2019
@@ -108,6 +113,10 @@ stages:
 - stage: build_linux
   dependsOn: []
   jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [build]
+
   - job: build
     dependsOn: []
     strategy:
@@ -120,6 +129,7 @@ stages:
       vmImage: ubuntu-18.04
 
     steps:
+
     - template: steps/run-in-docker.yml
       parameters:
         build: true
@@ -142,6 +152,10 @@ stages:
 - stage: build_arm64
   dependsOn: []
   jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [build]
+
   - job: build
     dependsOn: []
     pool:
@@ -171,6 +185,10 @@ stages:
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: []
   jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [build]
+
   - job: build
     dependsOn: [ ]
     pool:
@@ -196,6 +214,10 @@ stages:
   pool:
     vmImage: windows-2019
   jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [msi_and_pack]
+
   - job: msi_and_pack
     steps:
       - template: steps/install-dotnet-5-sdk.yml
@@ -226,6 +248,10 @@ stages:
   pool:
     vmImage: windows-2019
   jobs:
+    - template: steps/update-github-status-jobs.yml
+      parameters:
+        jobs: [managed, native]
+
     - job: managed
       steps:
       - template: steps/install-dotnet.yml
@@ -246,7 +272,6 @@ stages:
           testResultsFiles: tracer/build_data/results/**/*.trx
         condition: succeededOrFailed()
 
-
     - job: native
       steps:
       - template: steps/install-dotnet.yml
@@ -265,6 +290,10 @@ stages:
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: build_macos
   jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [managed]
+
   - job: managed
     pool:
       vmImage: macOS-10.15
@@ -289,11 +318,14 @@ stages:
           testResultsFiles: tracer/build_data/results/**/*.trx
         condition: succeededOrFailed()
 
-
 - stage: unit_tests_linux
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: [build_linux]
   jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [test]
+
   - job: test
     strategy:
       matrix:
@@ -327,11 +359,14 @@ stages:
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
-
 - stage: unit_tests_arm64
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: [build_arm64]
   jobs:
+    - template: steps/update-github-status-jobs.yml
+      parameters:
+        jobs: [test]
+
     - job: test
       pool:
         name: Arm64
@@ -364,6 +399,10 @@ stages:
   dependsOn: build_windows
 
   jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Win]
+
   - job: generator
     pool:
       vmImage: ubuntu-18.04
@@ -428,6 +467,10 @@ stages:
   dependsOn: [build_windows, package_windows]
 
   jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [IIS]
+
   - job: generator
     pool:
       vmImage: ubuntu-18.04
@@ -517,6 +560,10 @@ stages:
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: [build_linux]
   jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Test]
+
   - job: Test
     strategy:
       matrix:
@@ -621,6 +668,10 @@ stages:
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: [build_arm64]
   jobs:
+    - template: steps/update-github-status-jobs.yml
+      parameters:
+        jobs: [Test]
+
     - job: Test
       variables:
         TestAllPackageVersions: $(isMainBranch)
@@ -634,7 +685,6 @@ stages:
         # Doing a clean of obj files _before_ restore to remove build output from previous runs
         # Can't do a full clean, as otherwise restore-working-directory fails
         # Only necessary for ARM64, but shouldn't cause any harm on others
-        # Can't ifdef it as depends on a matrix variable
         - template: steps/run-in-docker.yml
           parameters:
             build: true
@@ -704,6 +754,9 @@ stages:
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
   dependsOn: build_windows
   jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Windows]
 
   #### Windows
 
@@ -721,7 +774,6 @@ stages:
     - template: steps/restore-working-directory.yml
 
     - script: tracer\build.cmd RunBenchmarks
-      continueOnError: true
       displayName: RunBenchmarks
 
     - publish: tracer/build_data/benchmarks
@@ -746,6 +798,10 @@ stages:
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
   dependsOn: [build_windows, build_linux, build_arm64, build_macos]
   jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [build_runner_tool_and_standalone]
+
   - job: build_runner_tool_and_standalone
 
     pool:
@@ -1062,14 +1118,14 @@ stages:
             AZURE_STORAGE_ACCOUNT: $(AZURE_STORAGE_ACCOUNT_NAME)
             AZURE_STORAGE_SAS_TOKEN: $(AZURE_STORAGE_SHARED_ACCESS_TOKEN)
 
-
-
 - stage: throughput
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
   dependsOn: [build_linux, build_arm64, build_windows]
   pool: Throughput
   jobs:
-
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Linux64, Windows64, LinuxArm64]
   #### Throughput Linux 64, windows 64, linux arm 64
 
   - job: Linux64
@@ -1179,6 +1235,10 @@ stages:
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
   dependsOn: [build_windows]
   jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [windows]
+
   - job: windows
     pool:
       vmImage: windows-2019
