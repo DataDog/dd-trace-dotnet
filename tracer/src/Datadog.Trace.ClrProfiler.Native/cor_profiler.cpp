@@ -313,11 +313,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         try
         {
             // This enable a path to assert over checks inside the profiler code.
-            // Only in Debug mode and for the Datadog.Trace.ClrProfiler.Native.Checks process
-            if (process_name.rfind(WStr("Datadog.Trace.ClrProfiler.Native.Checks")) != std::string::npos)
-            {
-                CheckFilenameDefinitions();
-            }
+            CheckFilenameDefinitions();
         }
         catch (...)
         {
