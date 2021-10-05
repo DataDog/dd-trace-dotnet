@@ -11,8 +11,9 @@ namespace Datadog.Trace.AppSec.Transports.Http
 {
     internal static class RequestHeadersHelper
     {
-        internal static void FillHeaders(Func<string, string> getHeader, string customIpHeader, string[] extraHeaders, string peerIp, Request request)
+        internal static void FillHeaders(Func<string, string> getHeader, string customIpHeader, string[] extraHeaders, string peerIp, bool https, Request request)
         {
+            var defaultPort = https ? 443 : 80;
             var headersDic = new Dictionary<string, string>();
             var ipPotentialValues = new List<string>();
 
@@ -45,15 +46,15 @@ namespace Datadog.Trace.AppSec.Transports.Http
                 }
             }
 
-            var ip = IpExtractor.GetRealIpFromValues(ipPotentialValues);
+            var reuslt = IpExtractor.GetRealIpFromValues(ipPotentialValues, defaultPort);
 
-            if (string.IsNullOrEmpty(ip.Item1))
+            if (string.IsNullOrEmpty(reuslt.Item1))
             {
-                ip = IpExtractor.ExtractAddressAndPort(peerIp);
+                reuslt = IpExtractor.ExtractAddressAndPort(peerIp, defaultPort);
             }
 
-            request.RemoteIp = ip.Item1;
-            request.RemotePort = ip.Item2;
+            request.RemoteIp = reuslt.Item1;
+            request.RemotePort = reuslt.Item2;
             request.Headers = headersDic;
         }
     }

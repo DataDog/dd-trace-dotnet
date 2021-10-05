@@ -45,7 +45,7 @@ namespace Datadog.Trace.AppSec.Transport.Http
                 Scheme = context.Request.Url.Scheme,
                 Host = context.Request.UserHostName,
             };
-            RequestHeadersHelper.FillHeaders(key => context.Request.Headers[key], customIpHeader, extraHeaders, context.Request.UserHostAddress, request);
+            RequestHeadersHelper.FillHeaders(key => context.Request.Headers[key], customIpHeader, extraHeaders, context.Request.UserHostAddress, context.Request.IsSecureConnection, request);
             return request;
         }
 

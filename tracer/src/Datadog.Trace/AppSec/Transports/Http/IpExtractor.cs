@@ -36,11 +36,12 @@ namespace Datadog.Trace.AppSec.Transports.Http
         /// Can be a list of single or comma separated values ips like [ "192.68.12.1", "172.53.22.11, 181.92.91.1, 193.92.91.1".. ]
         /// </summary>
         /// <param name="headerValues">all the extracted values from ip related headers</param>
+        /// <param name="defaultPort">default port if not in the values</param>
         /// <returns>return ip and port</returns>
-        internal static Tuple<string, int> GetRealIpFromValues(IEnumerable<string> headerValues)
+        internal static Tuple<string, int> GetRealIpFromValues(IEnumerable<string> headerValues, int defaultPort)
         {
             var privateIp = string.Empty;
-            int remotePort = 0;
+            var remotePort = defaultPort;
             foreach (var header in headerValues)
             {
                 var values = header.Split(',');
@@ -52,7 +53,7 @@ namespace Datadog.Trace.AppSec.Transports.Http
                         continue;
                     }
 
-                    var addressAndPort = ExtractAddressAndPort(consideredPotentialIp);
+                    var addressAndPort = ExtractAddressAndPort(consideredPotentialIp, remotePort);
                     consideredPotentialIp = addressAndPort.Item1;
                     remotePort = addressAndPort.Item2;
 
@@ -79,9 +80,9 @@ namespace Datadog.Trace.AppSec.Transports.Http
             return new Tuple<string, int>(privateIp, remotePort);
         }
 
-        internal static Tuple<string, int> ExtractAddressAndPort(string ip)
+        internal static Tuple<string, int> ExtractAddressAndPort(string ip, int defaultPort)
         {
-            var port = 0;
+            var port = defaultPort;
             var parts = ip.Split(':');
             if (parts.Length == 2)
             {
