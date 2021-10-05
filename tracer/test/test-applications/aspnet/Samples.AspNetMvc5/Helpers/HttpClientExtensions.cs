@@ -2,7 +2,7 @@ using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 
-namespace Samples.Shared.Web
+namespace Samples.AspNetMvc5.Helpers
 {
     public static class HttpClientExtensions
     {

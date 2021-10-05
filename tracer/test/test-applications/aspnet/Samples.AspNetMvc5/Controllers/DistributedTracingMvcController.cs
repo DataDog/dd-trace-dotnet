@@ -2,7 +2,8 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web.Mvc;
 using Datadog.Trace;
-using Samples.Shared.Web;
+using Samples.AspNetMvc5.Data;
+using Samples.AspNetMvc5.Helpers;
 
 namespace Samples.AspNetMvc5.Controllers
 {
