@@ -112,8 +112,6 @@
 
   <Fragment>
     <ComponentGroup Id="Files" Directory="INSTALLFOLDER">
-        <Component Win64="$(var.Win64)">
-        </Component>
     </ComponentGroup>
       
     <?if $(var.Win64) = yes ?>
