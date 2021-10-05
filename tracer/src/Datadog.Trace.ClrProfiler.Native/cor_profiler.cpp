@@ -307,20 +307,17 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     is_attached_.store(true);
     profiler = this;
 
-#ifndef _WIN32
+#ifndef _WIN32_
     if (IsDebugEnabled())
     {
         try
         {
             // This enable a path to assert over checks inside the profiler code.
             // Only in Debug mode and for the Datadog.Trace.ClrProfiler.Native.Checks process
-            auto process_name_path = std::filesystem::path(ToString(process_name));
-            // process_name_path.replace_extension("");
-
-            // if (process_name_path.string() == "Datadog.Trace.ClrProfiler.Native.Checks")
-            // {
+            if (process_name.rfind(WStr("Datadog.Trace.ClrProfiler.Native.Checks")) != std::string::npos)
+            {
                 // CheckFilenameDefinitions();
-            // }
+            }
         }
         catch (...)
         {
