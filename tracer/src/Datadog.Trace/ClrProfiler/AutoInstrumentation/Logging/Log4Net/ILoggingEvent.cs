@@ -9,7 +9,7 @@ using System.ComponentModel;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
 {
     /// <summary>
-    /// GraphQL.Language.AST.Document interface for ducktyping
+    /// log4net.Core.LoggingEvent interface for ducktyping
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
