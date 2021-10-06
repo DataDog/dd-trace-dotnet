@@ -648,7 +648,7 @@ namespace Datadog.Trace
                     Log.Error(ex, "Unable to get application name through ASP.NET settings");
                 }
 
-                return Assembly.GetEntryAssembly()?.GetName().Name ??
+                return Assembly.GetEntryAssembly()?.GetName()?.Name ??
                    ProcessHelpers.GetCurrentProcessName();
             }
             catch (Exception ex)
