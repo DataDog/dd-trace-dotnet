@@ -71,6 +71,7 @@ variables:
   dotnetToolTag: build-dotnet-tool
   Verify_DisableClipboard: true
   DiffEngine_Disabled: true
+  OriginalCommitId: $[coalesce(variables['System.PullRequest.SourceCommitId'], variables['Build.SourceVersion'])]
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
@@ -85,43 +86,13 @@ resources:
 
 # Stages
 stages:
-- stage: record_src_details
-  dependsOn: []
-  jobs:
-  - job: record_src_details
-    pool:
-      vmImage: ubuntu-18.04
-    steps:
-    - script: |
-        echo "SYSTEM_PULLREQUEST_SOURCECOMMITID=$SYSTEM_PULLREQUEST_SOURCECOMMITID"
-        echo "BUILD_SOURCEVERSION=$BUILD_SOURCEVERSION"
-        echo "SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI=$SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI"
-        echo "BUILD_REPOSITORY_URI=$BUILD_REPOSITORY_URI"
-
-        repo="$SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI"
-        commit_sha="$SYSTEM_PULLREQUEST_SOURCECOMMITID"
-
-        if [ -z "$repo" ]; then
-            repo="$BUILD_REPOSITORY_URI"
-        fi
-
-        if [ -z "$commit_sha" ]; then
-            commit_sha="$BUILD_SOURCEVERSION"
-        fi
-
-        mkdir $(System.DefaultWorkingDirectory)/src_details
-        cd $(System.DefaultWorkingDirectory)/src_details
-        echo "$repo" > repo.txt
-        echo "$commit_sha" > commit_sha.txt
-      displayName: Write trigger values to txt files
-
-    - publish: $(System.DefaultWorkingDirectory)/src_details
-      displayName: Upload src details
-      artifact: build-src-details
-
 - stage: build_windows
   dependsOn: []
   jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [build]
+
   - job: build
     pool:
       vmImage: windows-2019
@@ -142,6 +113,10 @@ stages:
 - stage: build_linux
   dependsOn: []
   jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [build]
+
   - job: build
     dependsOn: []
     strategy:
@@ -154,6 +129,7 @@ stages:
       vmImage: ubuntu-18.04
 
     steps:
+
     - template: steps/run-in-docker.yml
       parameters:
         build: true
@@ -176,6 +152,10 @@ stages:
 - stage: build_arm64
   dependsOn: []
   jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [build]
+
   - job: build
     dependsOn: []
     pool:
@@ -205,6 +185,10 @@ stages:
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: []
   jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [build]
+
   - job: build
     dependsOn: [ ]
     pool:
@@ -230,6 +214,10 @@ stages:
   pool:
     vmImage: windows-2019
   jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [msi_and_pack]
+
   - job: msi_and_pack
     steps:
       - template: steps/install-dotnet-5-sdk.yml
@@ -260,6 +248,10 @@ stages:
   pool:
     vmImage: windows-2019
   jobs:
+    - template: steps/update-github-status-jobs.yml
+      parameters:
+        jobs: [managed, native]
+
     - job: managed
       steps:
       - template: steps/install-dotnet.yml
@@ -280,7 +272,6 @@ stages:
           testResultsFiles: tracer/build_data/results/**/*.trx
         condition: succeededOrFailed()
 
-
     - job: native
       steps:
       - template: steps/install-dotnet.yml
@@ -299,6 +290,10 @@ stages:
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: build_macos
   jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [managed]
+
   - job: managed
     pool:
       vmImage: macOS-10.15
@@ -323,11 +318,14 @@ stages:
           testResultsFiles: tracer/build_data/results/**/*.trx
         condition: succeededOrFailed()
 
-
 - stage: unit_tests_linux
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: [build_linux]
   jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [test]
+
   - job: test
     strategy:
       matrix:
@@ -361,11 +359,14 @@ stages:
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
-
 - stage: unit_tests_arm64
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: [build_arm64]
   jobs:
+    - template: steps/update-github-status-jobs.yml
+      parameters:
+        jobs: [test]
+
     - job: test
       pool:
         name: Arm64
@@ -398,6 +399,10 @@ stages:
   dependsOn: build_windows
 
   jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Win]
+
   - job: generator
     pool:
       vmImage: ubuntu-18.04
@@ -462,6 +467,10 @@ stages:
   dependsOn: [build_windows, package_windows]
 
   jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [IIS]
+
   - job: generator
     pool:
       vmImage: ubuntu-18.04
@@ -551,6 +560,10 @@ stages:
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: [build_linux]
   jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Test]
+
   - job: Test
     strategy:
       matrix:
@@ -655,6 +668,10 @@ stages:
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: [build_arm64]
   jobs:
+    - template: steps/update-github-status-jobs.yml
+      parameters:
+        jobs: [Test]
+
     - job: Test
       variables:
         TestAllPackageVersions: $(isMainBranch)
@@ -668,7 +685,6 @@ stages:
         # Doing a clean of obj files _before_ restore to remove build output from previous runs
         # Can't do a full clean, as otherwise restore-working-directory fails
         # Only necessary for ARM64, but shouldn't cause any harm on others
-        # Can't ifdef it as depends on a matrix variable
         - template: steps/run-in-docker.yml
           parameters:
             build: true
@@ -734,10 +750,58 @@ stages:
             baseImage: $(baseImage)
             command: "CheckBuildLogsForErrors"
 
+- stage: benchmarks
+  condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
+  dependsOn: build_windows
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Windows]
+
+  #### Windows
+
+  - job: Windows
+    timeoutInMinutes: 100
+    pool: Benchmarks
+
+    # Enable the Datadog Agent service for this job
+    services:
+      dd_agent: dd_agent
+
+    steps:
+
+    - template: steps/install-dotnet-5-sdk.yml
+    - template: steps/restore-working-directory.yml
+
+    - script: tracer\build.cmd RunBenchmarks
+      displayName: RunBenchmarks
+
+    - publish: tracer/build_data/benchmarks
+      artifact: benchmarks_results
+
+    - script: tracer\build.cmd CompareBenchmarksResults
+      continueOnError: true
+      displayName: Compare Benchmarks
+      condition: and(succeeded(), eq(variables.isPullRequest, true))
+      env:
+        PR_NUMBER: $(System.PullRequest.PullRequestNumber)
+        AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
+        GITHUB_TOKEN: $(GITHUB_TOKEN)
+
+    ## Is this really necessary?
+    - task: PowerShell@2
+      inputs:
+        targetType: 'inline'
+        script: 'Start-Sleep -s 120'
+
 - stage: dotnet_tool
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
   dependsOn: [build_windows, build_linux, build_arm64, build_macos]
   jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [build_runner_tool_and_standalone]
+
   - job: build_runner_tool_and_standalone
 
     pool:
@@ -1054,6 +1118,79 @@ stages:
             AZURE_STORAGE_ACCOUNT: $(AZURE_STORAGE_ACCOUNT_NAME)
             AZURE_STORAGE_SAS_TOKEN: $(AZURE_STORAGE_SHARED_ACCESS_TOKEN)
 
+- stage: throughput
+  condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
+  dependsOn: [build_linux, build_arm64, build_windows]
+  pool: Throughput
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Linux64, Windows64, LinuxArm64]
+  #### Throughput Linux 64, windows 64, linux arm 64
+
+  - job: Linux64
+    timeoutInMinutes: 60
+
+    steps:
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux native binary
+      inputs:
+        artifact: linux-tracer-home-debian
+        path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux
+
+    - script: |
+        test ! -s "tracer/tracer-home-linux/integrations.json" && echo "tracer/tracer-home-linux/integrations.json does not exist" && exit 1
+        test ! -s "tracer/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
+        test ! -s "tracer/tracer-home-linux/libddwaf.so" && echo "tracer/tracer-home-linux/libddwaf.so does not exist" && exit 1
+        cd $(System.DefaultWorkingDirectory)/tracer/build/crank
+        chmod +x ./run.sh
+        ./run.sh "linux"
+      displayName: Crank
+      env:
+        DD_SERVICE: dd-trace-dotnet
+
+  - job: Windows64
+    timeoutInMinutes: 60
+
+    steps:
+    - task: DownloadPipelineArtifact@2
+      displayName: Download windows native binary
+      inputs:
+        artifact: windows-tracer-home
+        path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-win
+
+    - script: |
+        test ! -s "tracer/tracer-home-win/integrations.json" && echo "tracer/tracer-home-win/integrations.json does not exist" && exit 1
+        test ! -s "tracer/tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll" && echo "tracer/tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll does not exist" && exit 1
+        test ! -s "tracer/tracer-home-win/win-x64/ddwaf.dll" && echo "tracer/tracer-home-win/win-x64/ddwaf.dll does not exist" && exit 1
+        cd $(System.DefaultWorkingDirectory)/tracer/build/crank
+        chmod +x ./run.sh
+        ./run.sh "windows"
+      displayName: Crank
+      env:
+        DD_SERVICE: dd-trace-dotnet
+
+  - job: LinuxArm64
+    timeoutInMinutes: 60
+
+    steps:
+    - task: DownloadPipelineArtifact@2
+      displayName: Download arm64 native binary
+      inputs:
+        artifact: linux-tracer-home-arm64
+        path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux-arm64
+
+    - script: |
+        test ! -s "tracer/tracer-home-linux-arm64/integrations.json" && echo "tracer/tracer-home-linux-arm64/integrations.json does not exist" && exit 1
+        test ! -s "tracer/tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
+        cd $(System.DefaultWorkingDirectory)/tracer/build/crank
+        chmod +x ./run.sh
+        ./run.sh "linux_arm64"
+      displayName: Crank
+      env:
+        DD_SERVICE: dd-trace-dotnet
+        DD_ENV: CI
+
 - stage: coverage
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
   dependsOn: [integration_tests_windows, integration_tests_windows_iis, integration_tests_linux, unit_tests_linux, unit_tests_macos, unit_tests_windows]
@@ -1093,3 +1230,73 @@ stages:
           PR_NUMBER: $(System.PullRequest.PullRequestNumber)
           AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
           GITHUB_TOKEN: $(GITHUB_TOKEN)
+
+- stage: execution_benchmarks
+  condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
+  dependsOn: [build_windows]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [windows]
+
+  - job: windows
+    pool:
+      vmImage: windows-2019
+    # Enable the Datadog Agent service for this job
+    services:
+      dd_agent: dd_agent
+    steps:
+    - template: steps/install-dotnet-sdks.yml
+    - template: steps/restore-working-directory.yml
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download windows native binary
+      inputs:
+        artifact: windows-tracer-home
+        path: $(System.DefaultWorkingDirectory)/tracer/bin/tracer-home
+
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: 'build'
+        arguments: '-c Release'
+        workingDirectory: $(System.DefaultWorkingDirectory)/tracer/test/test-applications/integrations/Samples.HttpMessageHandler
+      displayName: 'dotnet build Release'
+
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: 'build'
+        arguments: '-c Release'
+        workingDirectory: $(System.DefaultWorkingDirectory)/tracer/test/test-applications/integrations/Samples.FakeDbCommand
+      displayName: 'dotnet build Release'
+
+    - task: GoTool@0
+      displayName: 'Install Go 1.16'
+      inputs:
+        version: '1.16'
+        goPath: '$(System.DefaultWorkingDirectory)'
+        workingDirectory: $(System.DefaultWorkingDirectory)
+
+    - task: Go@0
+      displayName: 'Install timeit tool'
+      inputs:
+        command: 'install'
+        arguments: 'github.com/tonyredondo/timeit@latest'
+        workingDirectory: $(System.DefaultWorkingDirectory)
+
+    - script: run.cmd
+      workingDirectory: $(System.DefaultWorkingDirectory)/tracer/build/timeit/Samples.HttpMessageHandler
+      displayName: Execute Samples.HttpMessageHandler benchmark
+      env:
+        DD_SERVICE: dd-trace-dotnet
+
+    - script: run.cmd
+      workingDirectory: $(System.DefaultWorkingDirectory)/tracer/build/timeit/Samples.FakeDbCommand
+      displayName: Execute Samples.FakeDbCommand benchmark
+      env:
+        DD_SERVICE: dd-trace-dotnet
+
+    - task: PowerShell@2
+      displayName: Wait 20 seconds to agent flush before finishing pipeline
+      inputs:
+        targetType: 'inline'
+        script: 'Start-Sleep -s 20'
