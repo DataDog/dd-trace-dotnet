@@ -442,6 +442,13 @@ stages:
         Start-CosmosDbEmulator -Timeout 300
       displayName: 'Start CosmosDB Emulator'
       workingDirectory: $(Pipeline.Workspace)
+      
+    - powershell: |
+        Write-Host "Initializing LocalDB"
+        sqllocaldb.exe start
+        sqlcmd.exe -S "(localdb)\MSSQLLocalDB" -i $(Build.Repository.LocalPath)\.azure-pipelines\prepare_localdb.sql
+      displayName: 'Initialize LocalDB'
+      workingDirectory: $(Build.Repository.LocalPath)
 
     - script: tracer\build.cmd BuildAndRunWindowsIntegrationTests BuildAndRunWindowsRegressionTests -Framework $(framework) --PrintDriveSpace --code-coverage
       displayName: Run integration tests
