@@ -175,6 +175,17 @@ namespace Datadog.Trace.DuckTyping
                     ctorIL.Emit(OpCodes.Ldarg_0);
                     ctorIL.Emit(OpCodes.Ldarg_1);
                     ctorIL.Emit(OpCodes.Stfld, instanceField);
+
+                    if (parentType == proxyDefinitionType)
+                    {
+                        var proxyCtor = proxyDefinitionType.GetConstructor(Type.EmptyTypes);
+                        if (proxyCtor != null)
+                        {
+                            ctorIL.Emit(OpCodes.Ldarg_0);
+                            ctorIL.Emit(OpCodes.Call, proxyCtor);
+                        }
+                    }
+
                     ctorIL.Emit(OpCodes.Ret);
 
                     if (proxyDefinitionType.IsValueType)
