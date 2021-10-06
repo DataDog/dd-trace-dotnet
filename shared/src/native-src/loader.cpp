@@ -698,7 +698,7 @@ namespace shared
 
         _specificMethodToInjectFunctionId = functionId;
 
-        if (ExtraVerboseLogging && _loaderOptions.LogDebugIsEnabled)
+        if (_loaderOptions.LogDebugIsEnabled)
         {
             Debug("Loader::HandleJitCachedFunctionSearchStarted:"
                   " (functionId=" + ToString(functionId) + ","
