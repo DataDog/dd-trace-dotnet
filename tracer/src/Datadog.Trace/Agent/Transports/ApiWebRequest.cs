@@ -78,7 +78,7 @@ namespace Datadog.Trace.Agent.Transports
                 {
                     var httpWebResponse = (HttpWebResponse)await _request.GetResponseAsync().ConfigureAwait(false);
                     var apiWebResponse = new ApiWebResponse(httpWebResponse);
-                    if (httpWebResponse.StatusCode != HttpStatusCode.OK || httpWebResponse.StatusCode != HttpStatusCode.Accepted)
+                    if (httpWebResponse.StatusCode != HttpStatusCode.OK && httpWebResponse.StatusCode != HttpStatusCode.Accepted)
                     {
                         var sb = Util.StringBuilderCache.Acquire(0);
                         foreach (var item in _request.Headers)
