@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include "loader.h"
 
 #ifdef _WIN32
@@ -37,8 +38,11 @@ namespace shared
         WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
     };
 
-    constexpr const WCHAR* SpecificTypeToInjectName = WStr("System.AppDomain");
-    constexpr const WCHAR* SpecificMethodToInjectName = WStr("IsCompatibilitySwitchSet");
+    const WCHAR* SpecificTypeToInjectName = WStr("System.AppDomain");
+    const size_t SpecificTypeToInjectNameSize = WStrLen(SpecificTypeToInjectName);
+
+    const WCHAR* SpecificMethodToInjectName = WStr("IsCompatibilitySwitchSet");
+    const size_t SpecificMethodToInjectNameSize = WStrLen(SpecificMethodToInjectName);
 
 
     static Enumerator<mdMethodDef> EnumMethodsWithName(
@@ -644,7 +648,7 @@ namespace shared
         const ComPtr<IMetaDataImport2> metadataImport = metadataInterfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
         const ComPtr<IMetaDataAssemblyImport> assemblyImport = metadataInterfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
 
-        constexpr DWORD NameBuffSize = 1024;
+        const size_t NameBuffSize = 1024;
 
         mdToken functionParentToken;
         WCHAR functionName[NameBuffSize]{};
@@ -667,8 +671,8 @@ namespace shared
             return S_FALSE;
         }
 
-        bool disableNGenForFunction = (0 == memcmp(functionName, SpecificMethodToInjectName, sizeof(WCHAR) * (std::min)(NameBuffSize, functionNameLength)))
-                                        && (0 == memcmp(typeName, SpecificTypeToInjectName, sizeof(WCHAR) * (std::min)(NameBuffSize, typeNameLength)));
+        bool disableNGenForFunction = (0 == memcmp(functionName, SpecificMethodToInjectName, sizeof(WCHAR) * std::min( { SpecificMethodToInjectNameSize, NameBuffSize, (size_t)functionNameLength } )))
+                                   && (0 == memcmp(typeName, SpecificTypeToInjectName, sizeof(WCHAR) * std::min( { SpecificTypeToInjectNameSize, NameBuffSize, (size_t)typeNameLength } )));
 
         if (disableNGenForFunction)
         {
