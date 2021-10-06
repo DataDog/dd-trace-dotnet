@@ -134,6 +134,24 @@ namespace Datadog.Trace.DuckTyping.Tests
 #endif
         }
 
+        [Fact]
+        public void PublicClassWithVirtualMembersReverseProxyTest()
+        {
+            var expected = nameof(PublicClassWithVirtualMembers);
+
+            var instance = new PublicClassWithVirtualMembers();
+
+            var type = typeof(PublicAbstractClassWithProperties);
+
+            var proxy2 = instance.DuckCast(type);
+
+            var actual = ((PublicAbstractClassWithProperties)proxy2).GetClassName();
+            var syncRoot = ((PublicAbstractClassWithProperties)proxy2).GetSyncRoot();
+
+            Assert.Equal(expected, actual);
+            Assert.NotNull(syncRoot);
+        }
+
         // ************************************************************************************
         // Types for InterfaceReverseProxyTest
         // ***
@@ -208,6 +226,33 @@ namespace Datadog.Trace.DuckTyping.Tests
             {
                 state.Write(_valueToWrite);
                 return true;
+            }
+        }
+
+        // ************************************************************************************
+        // Types for PublicClassWithVirtualMembersReverseProxyTest
+        // ***
+
+        public abstract class PublicAbstractClassWithProperties
+        {
+            protected object SyncRoot { get; } = new object();
+
+            public string GetClassName() => GetName();
+
+            public object GetSyncRoot() => SyncRoot;
+
+            protected virtual string GetName()
+            {
+                return nameof(PublicAbstractClassWithProperties);
+            }
+        }
+
+        public class PublicClassWithVirtualMembers
+        {
+            [DuckReverseMethod("System.IO.TextWriter", "Datadog.Trace.Vendors.Serilog.Events.ScalarValue")]
+            protected virtual string GetName()
+            {
+                return nameof(PublicClassWithVirtualMembers);
             }
         }
 
