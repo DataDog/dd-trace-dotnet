@@ -478,7 +478,7 @@ partial class Build
     Target BuildMsiBeta => _ => _
         .Unlisted()
         .Description("Builds the .msi files from the repo")
-        .After(BuildTracerHome)
+        .After(BuildTracerHome, BuildProfilerHome, BuildMonitoringHome)
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
