@@ -19,7 +19,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
     [UsesVerify]
-    public abstract class AspNetCoreMvcTestBase : TestHelper, IClassFixture<AspNetCoreMvcTestBase.AspNetCoreTestFixture>
+    public abstract class AspNetCoreMvcTestBase : TestHelper, IClassFixture<AspNetCoreMvcTestBase.AspNetCoreTestFixture>, IDisposable
     {
         protected const string HeaderName1WithMapping = "datadog-header-name";
         protected const string HeaderName1UpperWithMapping = "DATADOG-HEADER-NAME";
@@ -50,6 +50,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             }
 
             Fixture = fixture;
+            Fixture.SetOutput(output);
         }
 
         protected AspNetCoreTestFixture Fixture { get; }
@@ -68,6 +69,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             { "/branch/ping", 200 },
             { "/branch/not-found", 404 },
         };
+
+        public void Dispose()
+        {
+            Fixture.SetOutput(null);
+        }
 
         protected string GetTestName(string testName)
         {
@@ -94,10 +100,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             public int HttpPort { get; private set; }
 
-            public async Task TryStartApp(TestHelper helper, ITestOutputHelper output)
+            public void SetOutput(ITestOutputHelper output)
             {
                 _currentOutput = output;
+            }
 
+            public async Task TryStartApp(TestHelper helper)
+            {
                 if (_process is not null)
                 {
                     return;
@@ -112,7 +121,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
                         Agent = new MockTracerAgent(initialAgentPort);
                         Agent.SpanFilters.Add(IsNotServerLifeCheck);
-                        output.WriteLine($"Starting aspnetcore sample, agentPort: {Agent.Port}, samplePort: {HttpPort}");
+                        _currentOutput?.WriteLine($"Starting aspnetcore sample, agentPort: {Agent.Port}, samplePort: {HttpPort}");
                         _process = helper.StartSample(Agent.Port, arguments: null, packageVersion: string.Empty, aspNetCorePort: HttpPort);
                     }
                 }
@@ -148,19 +157,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 Agent?.Dispose();
             }
 
-            public async Task<IImmutableList<MockTracerAgent.Span>> WaitForSpans(ITestOutputHelper output, string path)
+            public async Task<IImmutableList<MockTracerAgent.Span>> WaitForSpans(string path)
             {
-                try
-                {
-                    var testStart = DateTime.UtcNow;
+                var testStart = DateTime.UtcNow;
 
-                    await SubmitRequest(output, path);
-                    return Agent.WaitForSpans(count: 1, minDateTime: testStart, returnAllOperations: true);
-                }
-                finally
-                {
-                    _currentOutput = null;
-                }
+                await SubmitRequest(_currentOutput, path);
+                return Agent.WaitForSpans(count: 1, minDateTime: testStart, returnAllOperations: true);
             }
 
             private async Task EnsureServerStarted()
