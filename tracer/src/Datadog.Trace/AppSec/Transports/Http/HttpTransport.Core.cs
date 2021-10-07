@@ -27,7 +27,7 @@ namespace Datadog.Trace.AppSec.Transport.Http
                 Path = context.Request.Path,
                 Scheme = context.Request.Scheme,
             };
-            RequestHeadersHelper.FillHeaders(key => context.Request.Headers[key], customIpHeader, extraHeaders, context.Connection.RemoteIpAddress.ToString(), context.Request.IsHttps, request);
+            RequestHeadersHelper.FillHeadersAndExtractIpAndPort(key => context.Request.Headers[key], customIpHeader, extraHeaders, context.Connection.RemoteIpAddress.ToString(), context.Request.IsHttps, request);
             if (context.Request.Host.HasValue)
             {
                 request.Host = context.Request.Host.ToString();

@@ -11,13 +11,16 @@ namespace Datadog.Trace.AppSec.Transports.Http
 {
     internal static class RequestHeadersHelper
     {
-        internal static void FillHeaders(Func<string, string> getHeader, string customIpHeader, string[] extraHeaders, string peerIp, bool https, Request request)
+        internal static readonly string[] IpHeaders = new string[] { "x-forwarded-for", "x-real-ip", "client-ip", "x-forwarded", "x-cluster-client-ip", "forwarded-for", "forwarded", "via" };
+        internal static readonly IEnumerable<string> OtherHeaders = new string[] { "user-agent", "referer" };
+
+        internal static void FillHeadersAndExtractIpAndPort(Func<string, string> getHeader, string customIpHeader, string[] extraHeaders, string peerIp, bool https, Request request)
         {
             var defaultPort = https ? 443 : 80;
             var headersDic = new Dictionary<string, string>();
             var ipPotentialValues = new List<string>();
 
-            foreach (var headerToSend in HeadersConstants.OtherHeaders)
+            foreach (var headerToSend in OtherHeaders)
             {
                 headersDic.Add(headerToSend, getHeader(headerToSend));
             }
@@ -36,7 +39,7 @@ namespace Datadog.Trace.AppSec.Transports.Http
                 }
             }
 
-            foreach (var headerIp in HeadersConstants.IpHeaders)
+            foreach (var headerIp in IpHeaders)
             {
                 var potentialIp = getHeader(headerIp);
                 headersDic.Add(headerIp, potentialIp);
@@ -46,16 +49,16 @@ namespace Datadog.Trace.AppSec.Transports.Http
                 }
             }
 
-            var reuslt = IpExtractor.GetRealIpFromValues(ipPotentialValues, defaultPort);
+            var result = IpExtractor.GetRealIpFromValues(ipPotentialValues, defaultPort);
 
-            if (string.IsNullOrEmpty(reuslt.Item1))
+            if (string.IsNullOrEmpty(result.IpAddress))
             {
-                reuslt = IpExtractor.ExtractAddressAndPort(peerIp, defaultPort);
+                result = IpExtractor.ExtractAddressAndPort(peerIp, defaultPort);
             }
 
-            request.RemoteIp = reuslt.Item1;
-            request.RemotePort = reuslt.Item2;
             request.Headers = headersDic;
+            request.RemoteIp = result.IpAddress;
+            request.RemotePort = result.Port;
         }
     }
 }

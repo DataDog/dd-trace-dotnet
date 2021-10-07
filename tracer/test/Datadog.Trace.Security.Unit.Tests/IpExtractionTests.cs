@@ -18,8 +18,8 @@ namespace Datadog.Trace.Security.UnitTests
         public void Ipv4PublicDetectedLocalIgnoredIfPublic(string expectedIp, int expectedPort, string[] ips)
         {
             var ip = IpExtractor.GetRealIpFromValues(ips, 80);
-            Assert.Equal(expectedIp, ip.Item1);
-            Assert.Equal(expectedPort, ip.Item2);
+            Assert.Equal(expectedIp, ip.IpAddress);
+            Assert.Equal(expectedPort, ip.Port);
         }
 
         [Theory]
@@ -29,8 +29,8 @@ namespace Datadog.Trace.Security.UnitTests
         public void Ipv6PublicDetectedPrivateIgnored(string expectedIp, int expectedPort, string[] ips)
         {
             var ip = IpExtractor.GetRealIpFromValues(ips, 80);
-            Assert.Equal(expectedIp, ip.Item1);
-            Assert.Equal(expectedPort, ip.Item2);
+            Assert.Equal(expectedIp, ip.IpAddress);
+            Assert.Equal(expectedPort, ip.Port);
         }
 
         [Theory]
@@ -40,8 +40,8 @@ namespace Datadog.Trace.Security.UnitTests
         public void Ipv4OverIpv6(string expectedIp, int expectedPort, string[] ips)
         {
             var ip = IpExtractor.GetRealIpFromValues(ips, 80);
-            Assert.Equal(expectedIp, ip.Item1);
-            Assert.Equal(expectedPort, ip.Item2);
+            Assert.Equal(expectedIp, ip.IpAddress);
+            Assert.Equal(expectedPort, ip.Port);
         }
 
         [Theory]
@@ -52,8 +52,8 @@ namespace Datadog.Trace.Security.UnitTests
         public void ExtractAddressAndPort(string expectedIp, int expectedPort, string ip, int defaultport)
         {
             var result = IpExtractor.ExtractAddressAndPort(ip, defaultport);
-            Assert.Equal(expectedIp, result.Item1);
-            Assert.Equal(expectedPort, result.Item2);
+            Assert.Equal(expectedIp, result.IpAddress);
+            Assert.Equal(expectedPort, result.Port);
         }
     }
 }

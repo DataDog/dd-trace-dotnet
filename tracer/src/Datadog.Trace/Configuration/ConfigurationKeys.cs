@@ -69,8 +69,8 @@ namespace Datadog.Trace.Configuration
         public const string AppSecCustomIpHeader = "DD_APPSEC_IPHEADER";
 
         /// <summary>
-        /// Configuration key indicating the optional name of the custom header to take into account for the ip address.
-        /// Default is value is null (do not override).
+        /// Comma separated keys indicating the optional custom headers the user wants to send.
+        /// Default is value is null.
         /// </summary>
         public const string AppSecExtraHeaders = "DD_APPSEC_EXTRA_HEADERS";
 

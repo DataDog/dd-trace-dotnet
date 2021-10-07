@@ -38,7 +38,7 @@ namespace Datadog.Trace.AppSec.Transports.Http
         /// <param name="headerValues">all the extracted values from ip related headers</param>
         /// <param name="defaultPort">default port if not in the values</param>
         /// <returns>return ip and port</returns>
-        internal static Tuple<string, int> GetRealIpFromValues(IEnumerable<string> headerValues, int defaultPort)
+        internal static IpInfo GetRealIpFromValues(IEnumerable<string> headerValues, int defaultPort)
         {
             var privateIp = string.Empty;
             var remotePort = defaultPort;
@@ -54,8 +54,8 @@ namespace Datadog.Trace.AppSec.Transports.Http
                     }
 
                     var addressAndPort = ExtractAddressAndPort(consideredPotentialIp, remotePort);
-                    consideredPotentialIp = addressAndPort.Item1;
-                    remotePort = addressAndPort.Item2;
+                    consideredPotentialIp = addressAndPort.IpAddress;
+                    remotePort = addressAndPort.Port;
 
                     var success = IPAddress.TryParse(consideredPotentialIp, out var ipAddress);
                     if (success)
@@ -71,23 +71,23 @@ namespace Datadog.Trace.AppSec.Transports.Http
                         }
                         else
                         {
-                            return new Tuple<string, int>(ipAddress.ToString(), remotePort);
+                            return new IpInfo(ipAddress.ToString(), remotePort);
                         }
                     }
                 }
             }
 
-            return new Tuple<string, int>(privateIp, remotePort);
+            return new IpInfo(privateIp, remotePort);
         }
 
-        internal static Tuple<string, int> ExtractAddressAndPort(string ip, int defaultPort)
+        internal static IpInfo ExtractAddressAndPort(string ip, int defaultPort)
         {
             var port = defaultPort;
             var parts = ip.Split(':');
             if (parts.Length == 2)
             {
                 int.TryParse(parts.Last(), out port);
-                return new Tuple<string, int>(parts[0], port);
+                return new IpInfo(parts[0], port);
             }
 
             var result = _ipv6Regex.Match(ip);
@@ -97,7 +97,7 @@ namespace Datadog.Trace.AppSec.Transports.Http
                 int.TryParse(result.Groups[2].Captures[0].Value, out port);
             }
 
-            return new Tuple<string, int>(ip, port);
+            return new IpInfo(ip, port);
         }
 
         internal static bool IsIpInRange(IPAddress ipAdd, IEnumerable<Tuple<int, int>> cidrs)
