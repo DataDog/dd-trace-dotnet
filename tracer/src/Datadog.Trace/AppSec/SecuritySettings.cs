@@ -20,9 +20,12 @@ namespace Datadog.Trace.AppSec
             Enabled = source?.GetBool(ConfigurationKeys.AppSecEnabled) ?? false;
             BlockingEnabled = source?.GetBool(ConfigurationKeys.AppSecBlockingEnabled) ?? false;
             Rules = source?.GetString(ConfigurationKeys.AppSecRules);
+            CustomIpHeader = source?.GetString(ConfigurationKeys.AppSecCustomIpHeader);
         }
 
         public bool Enabled { get; set; }
+
+        public string CustomIpHeader { get; }
 
         public bool BlockingEnabled { get; }
 

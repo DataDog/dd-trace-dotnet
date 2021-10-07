@@ -36,7 +36,7 @@ namespace Datadog.Trace.AppSec.EventModel
         public string RemoteIp { get; set; }
 
         [JsonProperty("remote_port")]
-        public long RemotePort { get; set; }
+        public int RemotePort { get; set; }
 
         [JsonProperty("headers")]
         public IDictionary<string, string> Headers { get; set; }

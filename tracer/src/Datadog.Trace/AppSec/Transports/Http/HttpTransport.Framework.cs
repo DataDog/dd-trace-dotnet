@@ -6,26 +6,19 @@
 #if NETFRAMEWORK
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Web;
 using Datadog.Trace.AppSec.EventModel;
 using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.AppSec.Transport.Http
 {
     internal class HttpTransport : ITransport
     {
         private const string WafKey = "waf";
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<HttpTransport>();
-        private readonly System.Web.HttpContext context;
+        private readonly HttpContext context;
 
-        public HttpTransport(HttpContext context)
-        {
-            this.context = context;
-        }
+        public HttpTransport(HttpContext context) => this.context = context;
 
         public void AddRequestScope(Guid guid)
         {
@@ -43,19 +36,17 @@ namespace Datadog.Trace.AppSec.Transport.Http
 
         public IContext GetAdditiveContext() => context.Items[WafKey] as IContext;
 
-        public Request Request()
+        public Request Request(string customIpHeader)
         {
-            var headersDic = RequestHeadersHelper.Get(key => context.Request.Headers[key]);
-
-            return new()
+            var request = new Request()
             {
                 Url = context.Request.Url,
                 Method = context.Request.HttpMethod,
                 Scheme = context.Request.Url.Scheme,
-                RemoteIp = context.Request.UserHostAddress,
                 Host = context.Request.UserHostName,
-                Headers = headersDic
             };
+            RequestHeadersHelper.FillHeaders(key => context.Request.Headers[key], customIpHeader, context.Request.UserHostAddress,  request);
+            return request;
         }
 
         public Response Response(bool blocked) => new()

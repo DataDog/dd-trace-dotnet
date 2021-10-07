@@ -63,6 +63,12 @@ namespace Datadog.Trace.Configuration
         public const string AppSecRules = "DD_APPSEC_RULES";
 
         /// <summary>
+        /// Configuration key indicating the optional name of the custom header to take into account for the ip address.
+        /// Default is value is null (do not override).
+        /// </summary>
+        public const string AppSecCustomIpHeader = "DD_APPSEC_IPHEADER";
+
+        /// <summary>
         /// Configuration key for enabling or disabling the Tracer's debug mode.
         /// Default is value is false (disabled).
         /// </summary>

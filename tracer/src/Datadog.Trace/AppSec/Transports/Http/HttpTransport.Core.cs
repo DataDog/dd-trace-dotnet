@@ -21,19 +21,16 @@ namespace Datadog.Trace.AppSec.Transport.Http
 
         public HttpTransport(HttpContext context) => this.context = context;
 
-        public Request Request()
+        public Request Request(string customIpHeader)
         {
-            var headersDic = RequestHeadersHelper.Get(key => context.Request.Headers[key]);
-
             var request = new Request
             {
                 Method = context.Request.Method,
                 Path = context.Request.Path,
                 Scheme = context.Request.Scheme,
-                RemoteIp = context.Connection.RemoteIpAddress.ToString(),
-                Headers = headersDic
             };
 
+            RequestHeadersHelper.FillHeaders(key => context.Request.Headers[key], customIpHeader, context.Connection.RemoteIpAddress.ToString(), request);
             if (context.Request.Host.HasValue)
             {
                 request.Host = context.Request.Host.ToString();

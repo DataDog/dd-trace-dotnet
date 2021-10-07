@@ -12,7 +12,7 @@ namespace Datadog.Trace.AppSec.Transport
 {
     internal interface ITransport
     {
-        Request Request();
+        Request Request(string customIpHeader);
 
         Response Response(bool blocked);
 

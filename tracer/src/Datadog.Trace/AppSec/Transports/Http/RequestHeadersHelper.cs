@@ -5,29 +5,51 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Datadog.Trace.AppSec.EventModel;
 
 namespace Datadog.Trace.AppSec.Transports.Http
 {
-    internal class RequestHeadersHelper
+    internal static class RequestHeadersHelper
     {
-        internal static readonly string[] HeadersToSend = new string[] { "user-agent", "referer", "x-forwarded-for", "x-real-ip", "client-ip", "x-forwarded", "x-cluster-client-ip", "forwarded-for", "forwarded", "via" };
-
-        internal static IDictionary<string, string> Get(Func<string, string> getHeader)
+        internal static void FillHeaders(Func<string, string> getHeader, string customIpHeader, string peerIp, Request request)
         {
             var headersDic = new Dictionary<string, string>();
-            foreach (var headerToSend in HeadersToSend)
+            var ipPotentialValues = new List<string>();
+
+            foreach (var headerToSend in HeadersConstants.OtherHeaders)
             {
-                var result = getHeader(headerToSend);
-                if (!string.IsNullOrEmpty(result))
+                headersDic.Add(headerToSend, getHeader(headerToSend));
+            }
+
+            if (!string.IsNullOrEmpty(customIpHeader))
+            {
+                var value = getHeader(customIpHeader);
+                if (!string.IsNullOrEmpty(value))
                 {
-                    headersDic.Add(headerToSend, result);
+                    ipPotentialValues.Add(getHeader(customIpHeader));
                 }
             }
 
-            return headersDic;
+            foreach (var headerIp in HeadersConstants.IpHeaders)
+            {
+                var potentialIp = getHeader(headerIp);
+                headersDic.Add(headerIp, potentialIp);
+                if (!string.IsNullOrEmpty(potentialIp))
+                {
+                    ipPotentialValues.Add(potentialIp);
+                }
+            }
+
+            var ip = IpExtractor.GetRealIpFromValues(ipPotentialValues);
+
+            if (string.IsNullOrEmpty(ip.Item1))
+            {
+                ip = IpExtractor.ExtractAddressAndPort(peerIp);
+            }
+
+            request.RemoteIp = ip.Item1;
+            request.RemotePort = ip.Item2;
+            request.Headers = headersDic;
         }
     }
 }
