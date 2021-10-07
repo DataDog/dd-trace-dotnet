@@ -129,7 +129,7 @@
     <!-- Integration: MongoDB.Driver.Core -->
     <!-- Assembly: MongoDB.Driver.Core -->
     <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver/2.13.1 -->
-    <PackageReference Include="MongoDB.Driver" Version="2.13.1" />
+    <PackageReference Include="MongoDB.Driver" Version="2.13.2" />
 
     <!-- Integration: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
     <!-- Assembly: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
