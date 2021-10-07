@@ -86,7 +86,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         {
             private readonly HttpClient _httpClient;
             private Process _process;
-            private volatile ITestOutputHelper _currentOutput;
+            private ITestOutputHelper _currentOutput;
 
             public AspNetCoreTestFixture()
             {
@@ -102,7 +102,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             public void SetOutput(ITestOutputHelper output)
             {
-                _currentOutput = output;
+                lock (this)
+                {
+                    _currentOutput = output;
+                }
             }
 
             public async Task TryStartApp(TestHelper helper)
@@ -121,7 +124,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
                         Agent = new MockTracerAgent(initialAgentPort);
                         Agent.SpanFilters.Add(IsNotServerLifeCheck);
-                        _currentOutput?.WriteLine($"Starting aspnetcore sample, agentPort: {Agent.Port}, samplePort: {HttpPort}");
+                        WriteToOutput($"Starting aspnetcore sample, agentPort: {Agent.Port}, samplePort: {HttpPort}");
                         _process = helper.StartSample(Agent.Port, arguments: null, packageVersion: string.Empty, aspNetCorePort: HttpPort);
                     }
                 }
@@ -178,7 +181,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                             wh.Set();
                         }
 
-                        _currentOutput?.WriteLine($"[webserver][stdout] {args.Data}");
+                        WriteToOutput($"[webserver][stdout] {args.Data}");
                     }
                 };
                 _process.BeginOutputReadLine();
@@ -187,7 +190,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 {
                     if (args.Data != null)
                     {
-                        _currentOutput?.WriteLine($"[webserver][stderr] {args.Data}");
+                        WriteToOutput($"[webserver][stderr] {args.Data}");
                     }
                 };
 
@@ -243,6 +246,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 string responseText = await response.Content.ReadAsStringAsync();
                 output?.WriteLine($"[http] {response.StatusCode} {responseText}");
                 return response.StatusCode;
+            }
+
+            private void WriteToOutput(string line)
+            {
+                lock (this)
+                {
+                    _currentOutput?.WriteLine(line);
+                }
             }
         }
     }
