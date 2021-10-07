@@ -80,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         {
             private readonly HttpClient _httpClient;
             private Process _process;
-            private bool _enableLogging = true;
+            private volatile ITestOutputHelper _currentOutput;
 
             public AspNetCoreTestFixture()
             {
@@ -96,6 +96,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             public async Task TryStartApp(TestHelper helper, ITestOutputHelper output)
             {
+                _currentOutput = output;
+
                 if (_process is not null)
                 {
                     return;
@@ -115,12 +117,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                     }
                 }
 
-                await EnsureServerStarted(output);
+                await EnsureServerStarted();
             }
 
             public void Dispose()
             {
-                _enableLogging = false;
                 var request = WebRequest.CreateHttp($"http://localhost:{HttpPort}/shutdown");
                 request.GetResponse().Close();
 
@@ -149,13 +150,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             public async Task<IImmutableList<MockTracerAgent.Span>> WaitForSpans(ITestOutputHelper output, string path)
             {
-                var testStart = DateTime.UtcNow;
+                try
+                {
+                    var testStart = DateTime.UtcNow;
 
-                await SubmitRequest(output, path);
-                return Agent.WaitForSpans(count: 1, minDateTime: testStart, returnAllOperations: true);
+                    await SubmitRequest(output, path);
+                    return Agent.WaitForSpans(count: 1, minDateTime: testStart, returnAllOperations: true);
+                }
+                finally
+                {
+                    _currentOutput = null;
+                }
             }
 
-            private async Task EnsureServerStarted(ITestOutputHelper output)
+            private async Task EnsureServerStarted()
             {
                 var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
 
@@ -168,10 +176,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                             wh.Set();
                         }
 
-                        if (_enableLogging)
-                        {
-                            output.WriteLine($"[webserver][stdout] {args.Data}");
-                        }
+                        _currentOutput?.WriteLine($"[webserver][stdout] {args.Data}");
                     }
                 };
                 _process.BeginOutputReadLine();
@@ -180,10 +185,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 {
                     if (args.Data != null)
                     {
-                        if (_enableLogging)
-                        {
-                            output.WriteLine($"[webserver][stderr] {args.Data}");
-                        }
+                        _currentOutput?.WriteLine($"[webserver][stderr] {args.Data}");
                     }
                 };
 
@@ -201,7 +203,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 {
                     try
                     {
-                        serverReady = await SubmitRequest(output, "/alive-check") == HttpStatusCode.OK;
+                        serverReady = await SubmitRequest(_currentOutput, "/alive-check") == HttpStatusCode.OK;
                     }
                     catch
                     {
