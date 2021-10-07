@@ -5,9 +5,7 @@ using System.Net;
 using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.TestHelpers;
 
 namespace Samples.HttpMessageHandler
 {
@@ -16,9 +14,6 @@ namespace Samples.HttpMessageHandler
         private const string RequestContent = "PING";
         private const string ResponseContent = "PONG";
         private static readonly Encoding Utf8 = Encoding.UTF8;
-        private static Thread listenerThread;
-
-        private static string Url;
 
 #pragma warning disable 1998
         public static async Task Main(string[] args)
@@ -30,17 +25,19 @@ namespace Samples.HttpMessageHandler
             string port = args.FirstOrDefault(arg => arg.StartsWith("Port="))?.Split('=')[1] ?? "9000";
             Console.WriteLine($"Port {port}");
 
-            using (var listener = StartHttpListenerWithPortResilience(port))
+            using (var server = WebServer.Start(port, out var url))
             {
+                server.RequestHandler = HandleHttpRequests;
+
                 Console.WriteLine();
-                Console.WriteLine($"Starting HTTP listener at {Url}");
+                Console.WriteLine($"Starting HTTP listener at {url}");
 
                 // send async http requests using HttpClient
                 Console.WriteLine();
                 Console.WriteLine("Sending async request with default HttpClient.");
                 using (var client = new HttpClient())
                 {
-                    RequestHelpers.SendAsyncHttpClientRequests(client, tracingDisabled, Url, RequestContent);
+                    RequestHelpers.SendAsyncHttpClientRequests(client, tracingDisabled, url, RequestContent);
                 }
 
                 // send async http requests using HttpClient with CustomHandler
@@ -48,7 +45,7 @@ namespace Samples.HttpMessageHandler
                 Console.WriteLine("Sending async request with HttpClient(CustomHandler).");
                 using (var client = new HttpClient(new CustomHandler()))
                 {
-                    RequestHelpers.SendAsyncHttpClientRequests(client, tracingDisabled, Url, RequestContent);
+                    RequestHelpers.SendAsyncHttpClientRequests(client, tracingDisabled, url, RequestContent);
                 }
 
 #if !NET452
@@ -59,7 +56,7 @@ namespace Samples.HttpMessageHandler
                     Console.WriteLine("Sending async request with HttpClient(WinHttpHandler).");
                     using (var client = new HttpClient(new WinHttpHandler()))
                     {
-                        RequestHelpers.SendAsyncHttpClientRequests(client, tracingDisabled, Url, RequestContent);
+                        RequestHelpers.SendAsyncHttpClientRequests(client, tracingDisabled, url, RequestContent);
                     }
                 }
 #endif
@@ -70,7 +67,7 @@ namespace Samples.HttpMessageHandler
                 Console.WriteLine("Sending async request with HttpClient(SocketsHttpHandler).");
                 using (var client = new HttpClient(new SocketsHttpHandler()))
                 {
-                    RequestHelpers.SendAsyncHttpClientRequests(client, tracingDisabled, Url, RequestContent);
+                    RequestHelpers.SendAsyncHttpClientRequests(client, tracingDisabled, url, RequestContent);
                 }
 #endif
 
@@ -80,7 +77,7 @@ namespace Samples.HttpMessageHandler
                 Console.WriteLine("Sending sync request with default HttpClient.");
                 using (var client = new HttpClient())
                 {
-                    RequestHelpers.SendHttpClientRequests(client, tracingDisabled, Url, RequestContent);
+                    RequestHelpers.SendHttpClientRequests(client, tracingDisabled, url, RequestContent);
                 }
 
                 // send async http requests using HttpClient with CustomHandler
@@ -88,7 +85,7 @@ namespace Samples.HttpMessageHandler
                 Console.WriteLine("Sending sync request with HttpClient(CustomHandler).");
                 using (var client = new HttpClient(new CustomHandler()))
                 {
-                    RequestHelpers.SendHttpClientRequests(client, tracingDisabled, Url, RequestContent);
+                    RequestHelpers.SendHttpClientRequests(client, tracingDisabled, url, RequestContent);
                 }
 
                 // send sync http requests using HttpClient with raw SocketsHttpHandler
@@ -96,7 +93,7 @@ namespace Samples.HttpMessageHandler
                 Console.WriteLine("Sending sync request with HttpClient(SocketsHttpHandler).");
                 using (var client = new HttpClient(new SocketsHttpHandler()))
                 {
-                    RequestHelpers.SendHttpClientRequests(client, tracingDisabled, Url, RequestContent);
+                    RequestHelpers.SendHttpClientRequests(client, tracingDisabled, url, RequestContent);
                 }
 
                 // sync http requests using HttpClient are not supported with WinHttpHandler
@@ -111,7 +108,7 @@ namespace Samples.HttpMessageHandler
                     System.Net.Http.HttpMessageHandler handler = (System.Net.Http.HttpMessageHandler)Activator.CreateInstance(winHttpHandler);
                     using (var invoker = new HttpMessageInvoker(handler, false))
                     {
-                        await RequestHelpers.SendHttpMessageInvokerRequestsAsync(invoker, tracingDisabled, Url);
+                        await RequestHelpers.SendHttpMessageInvokerRequestsAsync(invoker, tracingDisabled, url);
                     }
                 }
                 else
@@ -122,14 +119,13 @@ namespace Samples.HttpMessageHandler
                     System.Net.Http.HttpMessageHandler handler = (System.Net.Http.HttpMessageHandler)Activator.CreateInstance(curlHandlerType);
                     using (var invoker = new HttpMessageInvoker(handler, false))
                     {
-                        await RequestHelpers.SendHttpMessageInvokerRequestsAsync(invoker, tracingDisabled, Url);
+                        await RequestHelpers.SendHttpMessageInvokerRequestsAsync(invoker, tracingDisabled, url);
                     }
                 }
 #endif
 
                 Console.WriteLine();
                 Console.WriteLine("Stopping HTTP listener.");
-                listener.Stop();
             }
 
             // Force process to end, otherwise the background listener thread lives forever in .NET Core.
@@ -138,90 +134,36 @@ namespace Samples.HttpMessageHandler
             Environment.Exit(0);
         }
 
-        public static HttpListener StartHttpListenerWithPortResilience(string port, int retries = 5)
+        private static void HandleHttpRequests(HttpListenerContext context)
         {
-            // try up to 5 consecutive ports before giving up
-            while (true)
+            Console.WriteLine("[HttpListener] received request");
+
+            // read request content and headers
+            using (var reader = new StreamReader(context.Request.InputStream, context.Request.ContentEncoding))
             {
-                Url = $"http://localhost:{port}/Samples.HttpMessageHandler/";
+                string requestContent = reader.ReadToEnd();
+                Console.WriteLine($"[HttpListener] request content: {requestContent}");
 
-                // seems like we can't reuse a listener if it fails to start,
-                // so create a new listener each time we retry
-                var listener = new HttpListener();
-                listener.Prefixes.Add(Url);
-
-                try
+                foreach (string headerName in context.Request.Headers)
                 {
-                    listener.Start();
-
-                    listenerThread = new Thread(HandleHttpRequests);
-                    listenerThread.Start(listener);
-
-                    return listener;
-                }
-                catch (HttpListenerException) when (retries > 0)
-                {
-                    // only catch the exception if there are retries left
-                    port = TcpPortProvider.GetOpenPort().ToString();
-                    retries--;
-                }
-
-                // always close listener if exception is thrown,
-                // whether it was caught or not
-                listener.Close();
-            }
-        }
-
-        private static void HandleHttpRequests(object state)
-        {
-            var listener = (HttpListener)state;
-
-            while (listener.IsListening)
-            {
-                try
-                {
-                    var context = listener.GetContext();
-
-                    Console.WriteLine("[HttpListener] received request");
-
-                    // read request content and headers
-                    using (var reader = new StreamReader(context.Request.InputStream, context.Request.ContentEncoding))
-                    {
-                        string requestContent = reader.ReadToEnd();
-                        Console.WriteLine($"[HttpListener] request content: {requestContent}");
-
-                        foreach (string headerName in context.Request.Headers)
-                        {
-                            string headerValue = context.Request.Headers[headerName];
-                            Console.WriteLine($"[HttpListener] request header: {headerName}={headerValue}");
-                        }
-                    }
-
-                    // write response content
-                    byte[] responseBytes = Utf8.GetBytes(ResponseContent);
-                    context.Response.ContentEncoding = Utf8;
-                    context.Response.ContentLength64 = responseBytes.Length;
-                    if (context.Request.RawUrl == "/Samples.HttpMessageHandler/HttpErrorCode")
-                    {
-                        context.Response.StatusCode = 502;
-                    }
-
-                    context.Response.OutputStream.Write(responseBytes, 0, responseBytes.Length);
-
-                    // we must close the response
-                    context.Response.Close();
-                }
-                catch (HttpListenerException)
-                {
-                    // listener was stopped,
-                    // ignore to let the loop end and the method return
-                }
-                catch (ObjectDisposedException)
-                {
-                    // can happen when the listener is stopped
-                    // ignore to let the loop end and the method return
+                    string headerValue = context.Request.Headers[headerName];
+                    Console.WriteLine($"[HttpListener] request header: {headerName}={headerValue}");
                 }
             }
+
+            // write response content
+            byte[] responseBytes = Utf8.GetBytes(ResponseContent);
+            context.Response.ContentEncoding = Utf8;
+            context.Response.ContentLength64 = responseBytes.Length;
+            if (context.Request.RawUrl == "/Samples.HttpMessageHandler/HttpErrorCode")
+            {
+                context.Response.StatusCode = 502;
+            }
+
+            context.Response.OutputStream.Write(responseBytes, 0, responseBytes.Length);
+
+            // we must close the response
+            context.Response.Close();
         }
     }
 }

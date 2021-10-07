@@ -432,12 +432,16 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.N
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{24d3e547-8897-4111-baa2-b92f50cc13d4}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{3c6dd42e-9214-4747-92ba-78de29aace59}*SharedItemsImports = 4
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{6d86109f-b7c9-477d-86d7-45735a3a0818}*SharedItemsImports = 4
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{77eaf70b-4c16-499d-8096-91ac84e12ec4}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{7b0822f6-80de-4b49-8125-93975678d0d5}*SharedItemsImports = 4
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{99a62ccf-8e7f-4d57-8383-d38c371c8087}*SharedItemsImports = 4
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{aed23fc5-46d9-4990-b5ab-9d287a0a7bd6}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{b6a98887-4a47-4c19-9c6f-d833e24f4b1c}*SharedItemsImports = 4
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{bbb60b0f-bf01-4499-936a-4a299a9acfd4}*SharedItemsImports = 4
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{c41b289a-a344-49df-a1bd-081753f9a286}*SharedItemsImports = 5
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
