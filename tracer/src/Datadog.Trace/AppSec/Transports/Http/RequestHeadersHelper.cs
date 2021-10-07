@@ -11,12 +11,17 @@ namespace Datadog.Trace.AppSec.Transports.Http
 {
     internal static class RequestHeadersHelper
     {
-        internal static void FillHeaders(Func<string, string> getHeader, string customIpHeader, string peerIp, Request request)
+        internal static void FillHeaders(Func<string, string> getHeader, string customIpHeader, string[] extraHeaders, string peerIp, Request request)
         {
             var headersDic = new Dictionary<string, string>();
             var ipPotentialValues = new List<string>();
 
             foreach (var headerToSend in HeadersConstants.OtherHeaders)
+            {
+                headersDic.Add(headerToSend, getHeader(headerToSend));
+            }
+
+            foreach (var headerToSend in extraHeaders)
             {
                 headersDic.Add(headerToSend, getHeader(headerToSend));
             }

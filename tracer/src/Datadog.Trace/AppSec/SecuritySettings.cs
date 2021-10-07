@@ -21,11 +21,15 @@ namespace Datadog.Trace.AppSec
             BlockingEnabled = source?.GetBool(ConfigurationKeys.AppSecBlockingEnabled) ?? false;
             Rules = source?.GetString(ConfigurationKeys.AppSecRules);
             CustomIpHeader = source?.GetString(ConfigurationKeys.AppSecCustomIpHeader);
+            var extraHeaders = source?.GetString(ConfigurationKeys.AppSecExtraHeaders);
+            ExtraHeaders = !string.IsNullOrEmpty(extraHeaders) ? extraHeaders.Split(',') : new string[0];
         }
 
         public bool Enabled { get; set; }
 
         public string CustomIpHeader { get; }
+
+        public string[] ExtraHeaders { get; }
 
         public bool BlockingEnabled { get; }
 

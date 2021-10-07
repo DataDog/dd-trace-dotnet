@@ -12,8 +12,6 @@ namespace Datadog.Trace.AppSec.Transport
 {
     internal interface ITransport
     {
-        Request Request(string customIpHeader);
-
         Response Response(bool blocked);
 
         void Block();
@@ -25,5 +23,7 @@ namespace Datadog.Trace.AppSec.Transport
         void AddRequestScope(Guid guid);
 
         void OnCompleted(Action completedCallback);
+
+        Request Request(string customIpHeader, string[] extraHeaders);
     }
 }

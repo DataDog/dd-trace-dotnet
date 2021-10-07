@@ -130,7 +130,7 @@ namespace Datadog.Trace.AppSec
 
             transport.OnCompleted(() =>
             {
-                var attack = Attack.From(result, span, transport, _settings.CustomIpHeader);
+                var attack = Attack.From(result, span, transport, _settings.CustomIpHeader, _settings.ExtraHeaders);
                 _agentWriter.AddEvent(attack);
             });
         }

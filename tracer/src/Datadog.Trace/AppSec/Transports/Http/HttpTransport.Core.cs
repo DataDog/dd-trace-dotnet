@@ -5,8 +5,6 @@
 
 #if !NETFRAMEWORK
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.EventModel;
 using Datadog.Trace.AppSec.Transports.Http;
@@ -21,7 +19,7 @@ namespace Datadog.Trace.AppSec.Transport.Http
 
         public HttpTransport(HttpContext context) => this.context = context;
 
-        public Request Request(string customIpHeader)
+        public Request Request(string customIpHeader, string[] extraHeaders)
         {
             var request = new Request
             {
@@ -30,7 +28,7 @@ namespace Datadog.Trace.AppSec.Transport.Http
                 Scheme = context.Request.Scheme,
             };
 
-            RequestHeadersHelper.FillHeaders(key => context.Request.Headers[key], customIpHeader, context.Connection.RemoteIpAddress.ToString(), request);
+            RequestHeadersHelper.FillHeaders(key => context.Request.Headers[key], customIpHeader, extraHeaders, context.Connection.RemoteIpAddress.ToString(), request);
             if (context.Request.Host.HasValue)
             {
                 request.Host = context.Request.Host.ToString();

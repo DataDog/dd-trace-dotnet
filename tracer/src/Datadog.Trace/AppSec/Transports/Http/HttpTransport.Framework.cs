@@ -36,7 +36,7 @@ namespace Datadog.Trace.AppSec.Transport.Http
 
         public IContext GetAdditiveContext() => context.Items[WafKey] as IContext;
 
-        public Request Request(string customIpHeader)
+        public Request Request(string customIpHeader, string[] extraHeaders)
         {
             var request = new Request()
             {
@@ -45,7 +45,7 @@ namespace Datadog.Trace.AppSec.Transport.Http
                 Scheme = context.Request.Url.Scheme,
                 Host = context.Request.UserHostName,
             };
-            RequestHeadersHelper.FillHeaders(key => context.Request.Headers[key], customIpHeader, context.Request.UserHostAddress,  request);
+            RequestHeadersHelper.FillHeaders(key => context.Request.Headers[key], customIpHeader, extraHeaders, context.Request.UserHostAddress, request);
             return request;
         }
 
