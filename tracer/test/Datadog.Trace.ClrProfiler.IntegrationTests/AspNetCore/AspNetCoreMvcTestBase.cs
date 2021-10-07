@@ -164,7 +164,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             {
                 var testStart = DateTime.UtcNow;
 
-                await SubmitRequest(_currentOutput, path);
+                await SubmitRequest(path);
                 return Agent.WaitForSpans(count: 1, minDateTime: testStart, returnAllOperations: true);
             }
 
@@ -208,7 +208,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 {
                     try
                     {
-                        serverReady = await SubmitRequest(_currentOutput, "/alive-check") == HttpStatusCode.OK;
+                        serverReady = await SubmitRequest("/alive-check") == HttpStatusCode.OK;
                     }
                     catch
                     {
@@ -240,11 +240,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 return !url.Contains("alive-check") && !url.Contains("shutdown");
             }
 
-            private async Task<HttpStatusCode> SubmitRequest(ITestOutputHelper output, string path)
+            private async Task<HttpStatusCode> SubmitRequest(string path)
             {
                 HttpResponseMessage response = await _httpClient.GetAsync($"http://localhost:{HttpPort}{path}");
                 string responseText = await response.Content.ReadAsStringAsync();
-                output?.WriteLine($"[http] {response.StatusCode} {responseText}");
+                WriteToOutput($"[http] {response.StatusCode} {responseText}");
                 return response.StatusCode;
             }
 
