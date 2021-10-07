@@ -30,12 +30,20 @@ partial class Build
     [Parameter("The Pull Request number for GitHub Actions")]
     readonly int? PullRequestNumber;
 
+    [Parameter("The Commit SHA being checked")]
+    readonly string CommitSha;
+
+    [Parameter("The name of the check being run, typically the AzureDevops stage. Used for controlling required variables")]
+    readonly string CheckName;
+
+    [Parameter("The status of the check being run")]
+    readonly GitHubCheckStatus? CheckStatus;
+
     const string GitHubNextMilestoneName = "vNext";
     const string GitHubRepositoryOwner = "DataDog";
     const string GitHubRepositoryName = "dd-trace-dotnet";
     const string AzureDevopsOrganisation = "https://dev.azure.com/datadoghq";
     const int AzureDevopsConsolidatePipelineId = 54;
-    const int AzureDevopsBenchmarksPipelineId = 61;
     static readonly Guid AzureDevopsProjectId = Guid.Parse("a51c4863-3eb4-4c5d-878a-58b41a049e4e");
 
     string FullVersion => IsPrerelease ? $"{Version}-prerelease" : Version;
@@ -384,7 +392,7 @@ partial class Build
 
             var branch = $"refs/tags/v{FullVersion}";
 
-            var (build, artifact) = await DownloadAzureArtifact(buildHttpClient, branch, AzureDevopsConsolidatePipelineId, _ => $"{FullVersion}-release-artifacts", OutputDirectory, BuildReason.IndividualCI);
+            var (build, artifact) = await DownloadAzureArtifact(buildHttpClient, branch, _ => $"{FullVersion}-release-artifacts", OutputDirectory, BuildReason.IndividualCI);
 
             var resourceDownloadUrl = artifact.Resource.DownloadUrl;
             Console.WriteLine("::set-output name=artifacts_link::" + resourceDownloadUrl);
@@ -416,8 +424,8 @@ partial class Build
               var branch = $"refs/pull/{prNumber}/merge";
               var fixedPrefix = "Code Coverage Report_";
 
-              var (newBuild, newArtifact) = await DownloadAzureArtifact(buildHttpClient, branch, AzureDevopsConsolidatePipelineId, build => $"{fixedPrefix}{build.Id}", newReportdir, buildReason: null, completedBuildsOnly: false);
-              var (oldBuild, oldArtifact) = await DownloadAzureArtifact(buildHttpClient, "refs/heads/master", AzureDevopsConsolidatePipelineId, build => $"{fixedPrefix}{build.Id}", oldReportdir, buildReason: null);
+              var (newBuild, newArtifact) = await DownloadAzureArtifact(buildHttpClient, branch, build => $"{fixedPrefix}{build.Id}", newReportdir, buildReason: null, completedBuildsOnly: false);
+              var (oldBuild, oldArtifact) = await DownloadAzureArtifact(buildHttpClient, "refs/heads/master", build => $"{fixedPrefix}{build.Id}", oldReportdir, buildReason: null);
 
               var oldBuildId = oldArtifact.Name.Substring(fixedPrefix.Length);
               var newBuildId = newArtifact.Name.Substring(fixedPrefix.Length);
@@ -473,10 +481,68 @@ partial class Build
 
              using var buildHttpClient = connection.GetClient<BuildHttpClient>();
 
-             var (oldBuild, _) = await DownloadAzureArtifact(buildHttpClient, "refs/heads/master", AzureDevopsBenchmarksPipelineId, build => "benchmarks_results", masterDir, buildReason: null);
+             var (oldBuild, _) = await DownloadAzureArtifact(buildHttpClient, "refs/heads/master", build => "benchmarks_results", masterDir, buildReason: null);
 
              var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, oldBuild.SourceVersion);
              await PostCommentToPullRequest(prNumber, markdown);
+         });
+
+    Target SendStatusUpdateToGitHub => _ => _
+         .Unlisted()
+         .Requires(() => GitHubToken)
+         .Requires(() => CommitSha)
+         .Requires(() => CheckName)
+         .Requires(() => CheckStatus)
+         .Executes(async () =>
+         {
+             string buildUrl = null;
+             var buildId = Environment.GetEnvironmentVariable("Build.BuildId");
+             if(string.IsNullOrEmpty(buildId))
+             {
+                 Logger.Warn("No 'Build.BuildId' variable found. Check status will not have link to build");
+             }
+             else
+             {
+                 buildUrl = $"{AzureDevopsOrganisation}/dd-trace-dotnet/_build/results?buildId={buildId}";
+             }
+
+             var status = CheckStatus.Value;
+
+             var httpClient = new HttpClient();
+             httpClient.DefaultRequestHeaders.Add("Accept", "application/vnd.github.v3+json");
+             httpClient.DefaultRequestHeaders.Add("Authorization", $"token {GitHubToken}");
+             httpClient.DefaultRequestHeaders.UserAgent.Add(new(new System.Net.Http.Headers.ProductHeaderValue("nuke-ci-client")));
+
+             var url = $"https://api.github.com/repos/{GitHubRepositoryOwner}/{GitHubRepositoryName}/statuses/{CommitSha}";
+             Console.WriteLine($"Sending request to '{url}'");
+
+             var result = await httpClient.PostAsJsonAsync(url, new
+             {
+                 state = status.ToString().ToLowerInvariant(),
+                 target_url = buildUrl,
+                 description = GetDescription(status),
+                 context = CheckName,
+             });
+
+             if (result.IsSuccessStatusCode)
+             {
+                 Console.WriteLine("Check status updated successfully");
+             }
+             else
+             {
+                 var response = await result.Content.ReadAsStringAsync();
+                 Console.WriteLine("Error: " + response);
+                 result.EnsureSuccessStatusCode();
+             }
+
+             static string GetDescription(GitHubCheckStatus s) =>
+                 s switch
+                 {
+                     GitHubCheckStatus.Pending => $"Run in progress",
+                     GitHubCheckStatus.Success => $"Run succeeded",
+                     GitHubCheckStatus.Failure => $"Run failed",
+                     _ => $"There was a problem with the run",
+                 };
          });
 
     async Task PostCommentToPullRequest(int prNumber, string markdown)
@@ -509,7 +575,6 @@ partial class Build
     async Task<(Microsoft.TeamFoundation.Build.WebApi.Build, BuildArtifact)> DownloadAzureArtifact(
         BuildHttpClient buildHttpClient,
         string branch,
-        int pipelineId,
         Func<Microsoft.TeamFoundation.Build.WebApi.Build, string> getArtifactName,
         AbsolutePath outputDirectory,
         BuildReason? buildReason = BuildReason.IndividualCI,
@@ -517,7 +582,7 @@ partial class Build
     {
         var builds = await buildHttpClient.GetBuildsAsync(
                          project: AzureDevopsProjectId,
-                         definitions: new[] { pipelineId },
+                         definitions: new[] { AzureDevopsConsolidatePipelineId },
                          reasonFilter: buildReason,
                          branchName: branch);
 

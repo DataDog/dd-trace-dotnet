@@ -307,6 +307,12 @@ namespace Datadog.Trace
         public const string Language = "language";
 
         /// <summary>
+        /// The runtime family tag, it will be placed on the service entry span, the first span opened for a
+        /// service. For this library it will always have the value "dotnet".
+        /// </summary>
+        public const string RuntimeFamily = "_dd.runtime_family";
+
+        /// <summary>
         /// The resource ID of the site instance in Azure App Services where the traced application is running.
         /// </summary>
         public const string AzureAppServicesResourceId = "aas.resource.id";
@@ -417,6 +423,16 @@ namespace Datadog.Trace
         /// A CosmosDb container name.
         /// </summary>
         public const string CosmosDbContainer = "cosmosdb.container";
+
+        /// <summary>
+        /// Whether the libraries application security features are enabled.
+        /// </summary>
+        public const string AppSecEnabled = "_dd.appsec.enabled";
+
+        /// <summary>
+        /// If a span was involved with an application security event
+        /// </summary>
+        public const string AppSecEvent = "appsec.event";
 
         internal const string ElasticsearchAction = "elasticsearch.action";
 
