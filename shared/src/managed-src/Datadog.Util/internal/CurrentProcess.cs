@@ -6,6 +6,13 @@ namespace Datadog.Util
 {
     internal static class CurrentProcess
     {
+        // For all methods in this class, take note that 'Process.GetCurrentProcess()' always returns
+        // a new instacen of the 'Process' class and never null.
+        // Net Fx reference source:
+        // https://referencesource.microsoft.com/#System/services/monitoring/system/diagnosticts/Process.cs,1624
+        // Net Core GitHub source on GitHub:
+        // https://github.com/dotnet/runtime/blob/57bfe474518ab5b7cfe6bf7424a79ce3af9d6657/src/libraries/System.Diagnostics.Process/src/System/Diagnostics/Process.cs#L1084-L1087
+
         /// <summary>
         /// Convenience method for calling <see cref="System.Diagnostics.Process.ProcessName" /> on the
         /// instance obtained via the <see cref="System.Diagnostics.Process.GetCurrentProcess" />-method.
@@ -22,16 +29,10 @@ namespace Datadog.Util
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static string GetName()
         {
-            Process currentProcess = Process.GetCurrentProcess();
-            if (currentProcess != null)
+            using (Process currentProcess = Process.GetCurrentProcess())
             {
-                using (currentProcess)
-                {
-                    return currentProcess.ProcessName;
-                }
+                return currentProcess.ProcessName;
             }
-
-            return null;
         }
 
         /// <summary>
@@ -53,20 +54,12 @@ namespace Datadog.Util
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void GetIdentityInfo(out string processName, out string machineName, out int processId)
         {
-            Process currentProcess = Process.GetCurrentProcess();
-            if (currentProcess != null)
+            using (Process currentProcess = Process.GetCurrentProcess())
             {
-                using (currentProcess)
-                {
-                    processName = currentProcess.ProcessName;
-                    machineName = currentProcess.MachineName;
-                    processId = currentProcess.Id;
-                    return;
-                }
+                processName = currentProcess.ProcessName;
+                machineName = currentProcess.MachineName;
+                processId = currentProcess.Id;
             }
-
-            processName = machineName = null;
-            processId = 0;
         }
 
         /// <summary>
@@ -89,19 +82,12 @@ namespace Datadog.Util
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void GetCpuTimeUsage(out TimeSpan userProcessorTime, out TimeSpan privilegedProcessorTime, out TimeSpan totalProcessorTime)
         {
-            Process currentProcess = Process.GetCurrentProcess();
-            if (currentProcess != null)
+            using (Process currentProcess = Process.GetCurrentProcess())
             {
-                using (currentProcess)
-                {
-                    userProcessorTime = currentProcess.UserProcessorTime;
-                    privilegedProcessorTime = currentProcess.PrivilegedProcessorTime;
-                    totalProcessorTime = currentProcess.TotalProcessorTime;
-                    return;
-                }
+                userProcessorTime = currentProcess.UserProcessorTime;
+                privilegedProcessorTime = currentProcess.PrivilegedProcessorTime;
+                totalProcessorTime = currentProcess.TotalProcessorTime;
             }
-
-            userProcessorTime = privilegedProcessorTime = totalProcessorTime = TimeSpan.Zero;
         }
 
         /// <summary>
@@ -122,19 +108,11 @@ namespace Datadog.Util
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void GetThreadingInfo(out int threadsCount, out IntPtr processorAffinity)
         {
-            Process currentProcess = Process.GetCurrentProcess();
-            if (currentProcess != null)
+            using (Process currentProcess = Process.GetCurrentProcess())
             {
-                using (currentProcess)
-                {
-                    threadsCount = currentProcess.Threads.Count;
-                    processorAffinity = currentProcess.ProcessorAffinity;
-                    return;
-                }
+                threadsCount = currentProcess.Threads.Count;
+                processorAffinity = currentProcess.ProcessorAffinity;
             }
-
-            threadsCount = 0;
-            processorAffinity = IntPtr.Zero;
         }
 
         /// <summary>
@@ -163,21 +141,14 @@ namespace Datadog.Util
                                           out long privateMemorySize,
                                           out long virtualMemorySize)
         {
-            Process currentProcess = Process.GetCurrentProcess();
-            if (currentProcess != null)
+            using (Process currentProcess = Process.GetCurrentProcess())
             {
-                using (currentProcess)
-                {
-                    nonpagedSystemMemorySize = currentProcess.NonpagedSystemMemorySize64;
-                    pagedMemorySize = currentProcess.PagedMemorySize64;
-                    pagedSystemMemorySize = currentProcess.PagedSystemMemorySize64;
-                    privateMemorySize = currentProcess.PrivateMemorySize64;
-                    virtualMemorySize = currentProcess.VirtualMemorySize64;
-                    return;
-                }
+                nonpagedSystemMemorySize = currentProcess.NonpagedSystemMemorySize64;
+                pagedMemorySize = currentProcess.PagedMemorySize64;
+                pagedSystemMemorySize = currentProcess.PagedSystemMemorySize64;
+                privateMemorySize = currentProcess.PrivateMemorySize64;
+                virtualMemorySize = currentProcess.VirtualMemorySize64;
             }
-
-            nonpagedSystemMemorySize = pagedMemorySize = pagedSystemMemorySize = privateMemorySize = virtualMemorySize = 0;
         }
     }
 }
