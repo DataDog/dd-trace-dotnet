@@ -12,6 +12,7 @@ using Datadog.Trace.AppSec.Agent;
 using Datadog.Trace.AppSec.EventModel;
 using Datadog.Trace.AppSec.Transport;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -119,16 +120,36 @@ namespace Datadog.Trace.AppSec
             }
         }
 
+        private void Report(ITransport transport, Span span, Waf.ReturnTypes.Managed.Return result)
+        {
+            if (span != null)
+            {
+                span.SetTag(Tags.AppSecEvent, "1");
+                span.SetTraceSamplingPriority(SamplingPriority.AppSecKeep);
+            }
+
+            transport.OnCompleted(() =>
+            {
+                var attack = Attack.From(result, span, transport);
+                _agentWriter.AddEvent(attack);
+            });
+        }
+
+        private void TagSpan(Span span)
+        {
+            // we should only tag service entry span, the first span opened for a
+            // service. For WAF it's safe to assume we always have service entry spans
+            // we'll need to revisit this for RASP.
+            if (span != null)
+            {
+                span.SetTag(Tags.AppSecEnabled, "1");
+                span.SetTag(Tags.RuntimeFamily, TracerConstants.Language);
+            }
+        }
+
         private void RunWafAndReact(IDictionary<string, object> args, ITransport transport, Span span)
         {
-            void Report(ITransport transport, Span span, Waf.ReturnTypes.Managed.Return result)
-            {
-                transport.OnCompleted(() =>
-                {
-                    var attack = Attack.From(result, span, transport);
-                    _agentWriter.AddEvent(attack);
-                });
-            }
+            TagSpan(span);
 
             var additiveContext = transport.GetAdditiveContext();
 
