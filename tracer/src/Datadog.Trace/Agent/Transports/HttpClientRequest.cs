@@ -49,7 +49,7 @@ namespace Datadog.Trace.Agent.Transports
                     await writer.FlushAsync().ConfigureAwait(false);
                     memoryStream.Seek(0, SeekOrigin.Begin);
                     var response = new HttpClientResponse(await _client.SendAsync(_request).ConfigureAwait(false));
-                    if (response.StatusCode != 200 || response.StatusCode != 202)
+                    if (response.StatusCode != 200 && response.StatusCode != 202)
                     {
                         memoryStream.Seek(0, SeekOrigin.Begin);
                         using var sr = new StreamReader(memoryStream);
