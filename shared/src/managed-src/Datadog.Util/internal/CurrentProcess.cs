@@ -36,6 +36,28 @@ namespace Datadog.Util
         }
 
         /// <summary>
+        /// Convenience method for calling <see cref="System.Diagnostics.Process.Id" /> on the
+        /// instance obtained via the <see cref="System.Diagnostics.Process.GetCurrentProcess" />-method.
+        /// <para>
+        /// !! This method should be called from within a try-catch block !! <br />
+        /// On the (classic) .NET Framework the <see cref="System.Diagnostics.Process" /> class is
+        /// guarded by a LinkDemand for FullTrust, so partial trust callers will throw an exception.
+        /// That exception is thrown when the caller method is being JIT compiled, NOT when methods on
+        /// the <c>Process</c> class are being invoked.
+        /// This wrapper, when called from within a try-catch block, allows catching the exception.
+        /// </para>
+        /// </summary>
+        /// <returns>Returns the name of the current process.</returns>
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static int GetId()
+        {
+            using (Process currentProcess = Process.GetCurrentProcess())
+            {
+                return currentProcess.Id;
+            }
+        }
+
+        /// <summary>
         /// Convenience method for calling <see cref="System.Diagnostics.Process.ProcessName" />,
         /// <see cref="System.Diagnostics.Process.MachineName" />, and <see cref="System.Diagnostics.Process.Id" />
         /// on the instance obtained via the <see cref="System.Diagnostics.Process.GetCurrentProcess" />-method.
@@ -104,7 +126,7 @@ namespace Datadog.Util
         /// </para>
         /// </summary>
         /// <param name="threadsCount">The current count of the threads in the process.</param>
-        /// <param name="processorAffinity">The processor affinity mask.</param>        
+        /// <param name="processorAffinity">The processor affinity mask.</param>
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void GetThreadingInfo(out int threadsCount, out IntPtr processorAffinity)
         {
@@ -133,7 +155,7 @@ namespace Datadog.Util
         /// </summary>
         /// <param name="userProcessorTime">CPU time in user mode.</param>
         /// <param name="privilegedProcessorTime">CPU time in kernel mode.</param>
-        /// <param name="totalProcessorTime">Total CPU time.</param>        
+        /// <param name="totalProcessorTime">Total CPU time.</param>
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void GetMemoryUsage(out long nonpagedSystemMemorySize,
                                           out long pagedMemorySize,
@@ -148,6 +170,127 @@ namespace Datadog.Util
                 pagedSystemMemorySize = currentProcess.PagedSystemMemorySize64;
                 privateMemorySize = currentProcess.PrivateMemorySize64;
                 virtualMemorySize = currentProcess.VirtualMemorySize64;
+            }
+        }
+
+        /// <summary>
+        /// Convenience method for getting the <c>Count</c> of <see cref="System.Diagnostics.Process.Modules" />       
+        /// on the instance obtained via the <see cref="System.Diagnostics.Process.GetCurrentProcess" />-method.
+        /// <para>
+        /// !! This method should be called from within a try-catch block !! <br />
+        /// On the (classic) .NET Framework the <see cref="System.Diagnostics.Process" /> class is
+        /// guarded by a LinkDemand for FullTrust, so partial trust callers will throw an exception.
+        /// That exception is thrown when the caller method is being JIT compiled, NOT when methods on
+        /// the <c>Process</c> class are being invoked.
+        /// This wrapper, when called from within a try-catch block, allows catching the exception.
+        /// </para>
+        /// </summary>
+        /// <returns>The number of the modules currently loaded into the current process.</returns>
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static int GetModulesCount()
+        {
+            using (Process currentProcess = Process.GetCurrentProcess())
+            {
+                return currentProcess.Modules.Count;
+            }
+        }
+
+
+        /// <summary>
+        /// Convenience method for calling <see cref="System.Diagnostics.Process.Modules" />
+        /// on the instance obtained via the <see cref="System.Diagnostics.Process.GetCurrentProcess" />-method.
+        /// <para>
+        /// !! This method should be called from within a try-catch block !! <br />
+        /// On the (classic) .NET Framework the <see cref="System.Diagnostics.Process" /> class is
+        /// guarded by a LinkDemand for FullTrust, so partial trust callers will throw an exception.
+        /// That exception is thrown when the caller method is being JIT compiled, NOT when methods on
+        /// the <c>Process</c> class are being invoked.
+        /// This wrapper, when called from within a try-catch block, allows catching the exception.
+        /// </para><para>
+        /// Note that the <see cref="System.Diagnostics.ProcessModule" /> class, whose instances are contained in the
+        /// collection returned by the <see cref="System.Diagnostics.Process.Modules" /> API is also guarded by the same
+        /// link demand. So working with <c>ProcessModule</c> instandes suffers from the same inconvenience.
+        /// To address that, this method does NOT return <c>ProcessModule</c> instances directly.
+        /// Instead, it copies the data obtained from the process to an array of <see cref="CurrentProcess.ModuleInfo"/> structures.
+        /// Those can be accesses without worrying about the partial trust issue.<br />
+        /// If you only require the number of process modules, not the individual module info, then
+        /// it is more performant to call <see cref="GetModulesCount"/> instead of this method.
+        /// </para>
+        /// </summary>
+        /// <returns>An array of <see cref="CurrentProcess.ModuleInfo"/> structures representing the modules currently loaded
+        /// into this process.</returns>
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static ModuleInfo[] GetModules()
+        {
+            using (Process currentProcess = Process.GetCurrentProcess())
+            {
+                ProcessModuleCollection processModules = currentProcess.Modules;
+                ModuleInfo[] moduleInfos = new ModuleInfo[processModules.Count];
+
+                for (int i = 0; i < moduleInfos.Length; i++)
+                {
+                    try
+                    {
+                        moduleInfos[i].SetTo(processModules, i);
+                    }
+                    catch
+                    {
+                        moduleInfos[i].Reset();
+                    }
+                }
+
+                return moduleInfos;
+            }
+        }
+
+        /// <summary>
+        /// Represents information from a <see cref="System.Diagnostics.ProcessModule" /> without raising
+        /// a LinkDemand for FullTrust when used.
+        /// <para>
+        /// On the (classic) .NET Framework the <see cref="System.Diagnostics.ProcessModule" /> class is
+        /// guarded by a LinkDemand for FullTrust, so partial trust callers will throw an exception.
+        /// That exception is thrown when a method using the <c>ProcessModule</c> class is being JIT compiled,
+        /// NOT when methods on that class class are being invoked.<br />
+        /// This is the same situation as with the <see cref="System.Diagnostics.Process" /> class.
+        /// The entire purpose of the <see cref="CurrentProcess" /> utility is to help dealing with this conveniently.
+        /// The <see cref="CurrentProcess.GetModules"/> method returns information about the process modules.
+        /// To allow working with that information without dealing with the partual trust issue, that method copies 
+        /// information from the internally obtained <c>ProcessModule</c> items into instances of this type.
+        /// </para>
+        /// </summary>
+        public struct ModuleInfo
+        {
+            public IntPtr BaseAddress { get; private set; }
+            public IntPtr EntryPointAddress { get; private set; }
+            public string FileName { get; private set; }
+            public int ModuleMemorySize { get; private set; }
+            public string ModuleName { get; private set; }
+
+            /// <summary>
+            /// This method should be only called by <see cref="CurrentProcess.GetModules" />.
+            /// Note that like <see cref="System.Diagnostics.Process" />, <see cref="System.Diagnostics.ProcessModule" /> also
+            /// triggers the LinkDemand for FullTrust, i.e. an exception in partial trust, so this method must be called in a try
+            /// catch block (see the doc comment to the public <see cref="CurrentProcess" /> methods for details.
+            /// </summary>
+            internal void SetTo(ProcessModuleCollection processModules, int index)
+            {
+                using (ProcessModule module = processModules[index])
+                {
+                    this.BaseAddress = module.BaseAddress;
+                    this.EntryPointAddress = module.EntryPointAddress;
+                    this.FileName = module.FileName;
+                    this.ModuleMemorySize = module.ModuleMemorySize;
+                    this.ModuleName = module.ModuleName;
+                }
+            }
+
+            internal void Reset()
+            {
+                this.BaseAddress = IntPtr.Zero;
+                this.EntryPointAddress = IntPtr.Zero;
+                this.FileName = null;
+                this.ModuleMemorySize = 0;
+                this.ModuleName = null;
             }
         }
     }
