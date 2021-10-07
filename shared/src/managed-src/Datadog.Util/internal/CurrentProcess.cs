@@ -272,6 +272,7 @@ namespace Datadog.Util
             /// triggers the LinkDemand for FullTrust, i.e. an exception in partial trust, so this method must be called in a try
             /// catch block (see the doc comment to the public <see cref="CurrentProcess" /> methods for details.
             /// </summary>
+            [MethodImpl(MethodImplOptions.NoInlining)]
             internal void SetTo(ProcessModuleCollection processModules, int index)
             {
                 using (ProcessModule module = processModules[index])
