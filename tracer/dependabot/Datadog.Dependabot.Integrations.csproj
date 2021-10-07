@@ -74,7 +74,7 @@
     <!-- Integration: AWSSDK.SQS -->
     <!-- Assembly: AWSSDK.SQS -->
     <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.1.18 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.1.18" />
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.1.20" />
 
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!-- Assembly: Microsoft.Azure.Cosmos.Client -->
