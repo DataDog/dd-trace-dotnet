@@ -848,12 +848,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
         rejit_handler = nullptr;
     }
     Logger::Info("Exiting...");
-    Logger::Debug("   ModuleMetadata: ", module_id_to_info_map_.size());
-    Logger::Debug("   ModuleIds: ", modules_ids_.size());
-    Logger::Debug("   IntegrationMethods: ", integration_methods_.size());
-    Logger::Debug("   DefinitionsIds: ", definitions_ids_.size());
-    Logger::Debug("   ManagedProfilerLoadedAppDomains: ", managed_profiler_loaded_app_domains.size());
-    Logger::Debug("   FirstJitCompilationAppDomains: ", first_jit_compilation_app_domains.size());
+    Logger::Info("   ModuleMetadata: ", module_id_to_info_map_.size());
+    Logger::Info("   ModuleIds: ", modules_ids_.size());
+    Logger::Info("   IntegrationMethods: ", integration_methods_.size());
+    Logger::Info("   DefinitionsIds: ", definitions_ids_.size());
+    Logger::Info("   ManagedProfilerLoadedAppDomains: ", managed_profiler_loaded_app_domains.size());
+    Logger::Info("   FirstJitCompilationAppDomains: ", first_jit_compilation_app_domains.size());
     Logger::Info("Stats: ", Stats::Instance()->ToString());
     Logger::Shutdown();
     return S_OK;
@@ -3212,6 +3212,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetReJITParameters(ModuleID moduleId, mdM
         }
         else
         {
+            Logger::Warn("CorProfiler::GetReJITParameters:: Module Id not found: ", moduleId);
             return S_FALSE;
         }
     }
@@ -3280,16 +3281,29 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         module_metadata = findRes->second;
     }
 
+    AppDomainID appDomainId = 0;
+
     if (module_metadata == nullptr)
     {
         // we haven't stored a ModuleMetadata for this module,
         // so there's nothing to do here, we accept the NGEN image.
-        *pbUseCachedFunction = true;
-        return S_OK;
+
+        if (!IsCallTargetEnabled(is_net46_or_greater) || !Contains(modules_ids_, module_id))
+        {
+            *pbUseCachedFunction = true;
+            return S_OK;
+        }
+
+        const auto module_info = GetModuleInfo(this->info_, module_id);
+        appDomainId = module_info.assembly.app_domain_id;
+    }
+    else
+    {
+        appDomainId = module_metadata->app_domain_id;
     }
 
     const bool has_loader_injected_in_appdomain =
-        first_jit_compilation_app_domains.find(module_metadata->app_domain_id) !=
+        first_jit_compilation_app_domains.find(appDomainId) !=
         first_jit_compilation_app_domains.end();
 
     if (!has_loader_injected_in_appdomain)
@@ -3347,7 +3361,7 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(const ModuleInfo& module_in
             continue;
         }
 
-        if (metadataInterfaces.IsNull())
+        if (assemblyMetadata == nullptr)
         {
             auto hr = this->info_->GetModuleMetaData(module_info.id, ofRead | ofWrite, IID_IMetaDataImport2,
                                                      metadataInterfaces.GetAddressOf());
@@ -3356,7 +3370,7 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(const ModuleInfo& module_in
             {
                 Logger::Warn("ModuleLoadFinished failed to get metadata interface for ", module_info.id, " ",
                              module_info.assembly.name);
-                return 0;
+                break;
             }
 
             metadataImport = metadataInterfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
@@ -3499,30 +3513,31 @@ size_t CorProfiler::CallTarget_RequestRejitForModule(const ModuleInfo& module_in
     // Fix PInvokeMap
     if (module_info.assembly.name == managed_profiler_name)
     {
-        if (metadataInterfaces.IsNull())
-        {
-
-            auto hr = this->info_->GetModuleMetaData(module_info.id, ofRead | ofWrite, IID_IMetaDataImport2,
-                                                     metadataInterfaces.GetAddressOf());
-
-            if (FAILED(hr))
-            {
-                Logger::Warn("ModuleLoadFinished failed to get metadata interface for ", module_info.id, " ",
-                             module_info.assembly.name);
-                return 0;
-            }
-
-            metadataImport = metadataInterfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
-            metadataEmit = metadataInterfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
-            assemblyImport = metadataInterfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
-            assemblyEmit = metadataInterfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
-        }
-
         if (moduleMetadata == nullptr)
         {
+            if (metadataInterfaces.IsNull())
+            {
+
+                auto hr = this->info_->GetModuleMetaData(module_info.id, ofRead | ofWrite, IID_IMetaDataImport2,
+                                                         metadataInterfaces.GetAddressOf());
+
+                if (FAILED(hr))
+                {
+                    Logger::Warn("ModuleLoadFinished failed to get metadata interface for ", module_info.id, " ",
+                                 module_info.assembly.name);
+                    return 0;
+                }
+
+                metadataImport = metadataInterfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+                metadataEmit = metadataInterfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
+                assemblyImport = metadataInterfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
+                assemblyEmit = metadataInterfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
+            }
+
             moduleMetadata =
                 new ModuleMetadata(metadataImport, metadataEmit, assemblyImport, assemblyEmit,
                                    module_info.assembly.name, module_info.assembly.app_domain_id, &corAssemblyProperty);
+
             // store module info for later lookup
             module_id_to_info_map_[module_info.id] = moduleMetadata;
 
