@@ -22,3 +22,9 @@ steps:
   inputs:
     packageType: sdk
     version: $(dotnetCoreSdk5Version)
+    
+- task: UseDotNet@2
+  displayName: install dotnet core sdk 6.0
+  inputs:
+    packageType: sdk
+    version: $(dotnetCoreSdk6Version)
