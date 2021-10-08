@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion(ServiceVersion);
         }
 
-        [Theory]
+        [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [InlineData(false)]
@@ -50,10 +50,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             int wcfPort = 8585;
 
             using (var agent = new MockTracerAgent(agentPort))
-            using (var processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"WSHttpBinding Port={wcfPort}"))
+            using (RunSampleAndWaitForExit(agent.Port, arguments: $"WSHttpBinding Port={wcfPort}"))
             {
-                Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode} and exception: {processResult.StandardError}");
-
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
                 Assert.True(spans.Count >= expectedSpanCount, $"Expecting at least {expectedSpanCount} spans, only received {spans.Count}");
 

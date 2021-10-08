@@ -118,7 +118,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         {
         }
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(PackageVersions.AwsSqs), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces(string packageVersion)
@@ -127,10 +127,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 
             int agentPort = TcpPortProvider.GetOpenPort();
             using (var agent = new MockTracerAgent(agentPort))
-            using (var processResult = RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
+            using (RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
             {
-                Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode} and exception: {processResult.StandardError}");
-
                 var spans = agent.WaitForSpans(_expectedSpans.Count, operationName: "sqs.request");
                 spans.Should().HaveCountGreaterOrEqualTo(_expectedSpans.Count);
 

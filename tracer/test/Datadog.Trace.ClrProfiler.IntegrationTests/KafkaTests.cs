@@ -1,4 +1,4 @@
-﻿// <copyright file="KafkaTests.cs" company="Datadog">
+// <copyright file="KafkaTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetCallTargetSettings(enableCallTarget: true);
         }
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(PackageVersions.Kafka), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
@@ -51,8 +51,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             using var agent = new MockTracerAgent(agentPort);
             using var processResult = RunSampleAndWaitForExit(agent.Port, arguments: topic, packageVersion: packageVersion);
-
-            processResult.ExitCode.Should().BeGreaterOrEqualTo(0);
 
             var allSpans = agent.WaitForSpans(TotalExpectedSpanCount, timeoutInMilliseconds: 10_000);
             using var assertionScope = new AssertionScope();

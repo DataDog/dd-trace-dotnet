@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetCallTargetSettings(enableCallTarget: true);
         }
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(PackageVersions.Aerospike), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
@@ -30,10 +30,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             int agentPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = new MockTracerAgent(agentPort))
-            using (var processResult = RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
+            using (RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
             {
-                Assert.True(processResult.ExitCode == 0, $"Process exited with code {processResult.ExitCode}");
-
                 var expectedSpans = new List<string>
                 {
                     // Synchronous
@@ -43,6 +41,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     "Write",
                     "Read",
                     "Exists",
+                    "BatchGetArray",
+                    "BatchExistsArray",
                     "Delete",
 
                     // Asynchronous
@@ -52,6 +52,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     "Write",
                     "Read",
                     "Exists",
+                    "BatchGetArray",
+                    "BatchExistsArray",
                     "Delete",
                 };
 
@@ -64,9 +66,24 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                      .OnlyContain(span => span.Name == "aerospike.command")
                      .And.OnlyContain(span => span.Service == "Samples.Aerospike-aerospike")
                      .And.OnlyContain(span => span.Tags[Tags.SpanKind] == SpanKinds.Client)
-                     .And.OnlyContain(span => span.Tags[Tags.AerospikeKey] == "test:myset:mykey:56cfdb28a0a21ba119f76e0ea4e528a1f406dd94");
+                     .And.OnlyContain(span => ValidateSpanKey(span));
 
                 spans.Select(span => span.Resource).Should().ContainInOrder(expectedSpans);
+            }
+        }
+
+        private static bool ValidateSpanKey(MockTracerAgent.Span span)
+        {
+            if (span.Resource.Contains("Batch"))
+            {
+                return span.Tags[Tags.AerospikeKey] == "test:myset1:mykey1;test:myset2:mykey2;test:myset3:mykey3";
+            }
+            else
+            {
+                return span.Tags[Tags.AerospikeKey] == "test:myset1:mykey1"
+                    && span.Tags[Tags.AerospikeNamespace] == "test"
+                    && span.Tags[Tags.AerospikeSetName] == "myset1"
+                    && span.Tags[Tags.AerospikeUserKey] == "mykey1";
             }
         }
     }

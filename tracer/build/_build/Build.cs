@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Nuke.Common;
+using Nuke.Common.CI;
 using Nuke.Common.IO;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
@@ -17,6 +18,7 @@ using static Nuke.Common.Tools.DotNet.DotNetTasks;
 // #pragma warning disable SA1400
 // #pragma warning disable SA1401
 
+[ShutdownDotNetAfterServerBuild]
 partial class Build : NukeBuild
 {
     /// Support plugins are available for:

@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(GetServiceStackRedisData))]
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces(string packageVersion, bool enableCallTarget)
@@ -40,10 +40,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             int agentPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = new MockTracerAgent(agentPort))
-            using (var processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"{TestPrefix}", packageVersion: packageVersion))
+            using (RunSampleAndWaitForExit(agent.Port, arguments: $"{TestPrefix}", packageVersion: packageVersion))
             {
-                Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode}");
-
                 // note: ignore the INFO command because it's timing is unpredictable (on Linux?)
                 var spans = agent.WaitForSpans(11)
                                  .Where(s => s.Type == "redis" && s.Resource != "INFO" && s.Resource != "ROLE" && s.Resource != "QUIT")

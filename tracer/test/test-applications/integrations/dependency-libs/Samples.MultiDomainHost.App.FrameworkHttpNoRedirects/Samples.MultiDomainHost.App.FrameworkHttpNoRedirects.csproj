@@ -10,4 +10,5 @@
     <Reference Include="System.Net.Http" />
   </ItemGroup>
 
+  <Import Project="..\..\..\Samples.Shared\Samples.Shared.projitems" Label="Shared" />
 </Project>

@@ -28,6 +28,11 @@ namespace Datadog.Trace
         /// <summary>
         /// Explicitly ask the backend to keep a trace.
         /// </summary>
-        UserKeep = 2
+        UserKeep = 2,
+
+        /// <summary>
+        /// Explicitly ask the backend to keep a trace because it was part of an application security event.
+        /// </summary>
+        AppSecKeep = 4,
     }
 }

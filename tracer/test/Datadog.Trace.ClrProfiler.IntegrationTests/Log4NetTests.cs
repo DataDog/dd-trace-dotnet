@@ -4,6 +4,8 @@
 // </copyright>
 
 using System;
+using System.Linq;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -47,21 +49,29 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        [Theory]
-        [MemberData(nameof(PackageVersions.log4net), MemberType = typeof(PackageVersions))]
+        public static System.Collections.Generic.IEnumerable<object[]> GetTestData()
+        {
+            foreach (var item in PackageVersions.log4net)
+            {
+                yield return item.Concat(false);
+                yield return item.Concat(true);
+            }
+        }
+
+        [SkippableTheory]
+        [MemberData(nameof(GetTestData))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("Category", "LinuxUnsupported")]
-        public void InjectsLogsWhenEnabled(string packageVersion)
+        public void InjectsLogsWhenEnabled(string packageVersion, bool enableCallTarget)
         {
+            SetCallTargetSettings(enableCallTarget);
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
 
             int agentPort = TcpPortProvider.GetOpenPort();
             using (var agent = new MockTracerAgent(agentPort))
-            using (var processResult = RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
+            using (RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
             {
-                Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode} and exception: {processResult.StandardError}");
-
                 var spans = agent.WaitForSpans(1, 2500);
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
 
@@ -81,21 +91,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        [Theory]
-        [MemberData(nameof(PackageVersions.log4net), MemberType = typeof(PackageVersions))]
+        [SkippableTheory]
+        [MemberData(nameof(GetTestData))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("Category", "LinuxUnsupported")]
-        public void DoesNotInjectLogsWhenDisabled(string packageVersion)
+        public void DoesNotInjectLogsWhenDisabled(string packageVersion, bool enableCallTarget)
         {
+            SetCallTargetSettings(enableCallTarget);
             SetEnvironmentVariable("DD_LOGS_INJECTION", "false");
 
             int agentPort = TcpPortProvider.GetOpenPort();
             using (var agent = new MockTracerAgent(agentPort))
-            using (var processResult = RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
+            using (RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
             {
-                Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode} and exception: {processResult.StandardError}");
-
                 var spans = agent.WaitForSpans(1, 2500);
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
 

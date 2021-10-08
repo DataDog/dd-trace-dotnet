@@ -1,11 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Compile Include="..\..\..\Datadog.Trace.TestHelpers\TcpPortProvider.cs" Link="TcpPortProvider.cs" />
-  </ItemGroup>
-
 </Project>

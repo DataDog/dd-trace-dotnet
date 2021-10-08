@@ -49,13 +49,13 @@ namespace Datadog.Trace.Agent.Transports
                     await writer.FlushAsync().ConfigureAwait(false);
                     memoryStream.Seek(0, SeekOrigin.Begin);
                     var response = new HttpClientResponse(await _client.SendAsync(_request).ConfigureAwait(false));
-                    if (response.StatusCode != 200 || response.StatusCode != 202)
+                    if (response.StatusCode != 200 && response.StatusCode != 202)
                     {
                         memoryStream.Seek(0, SeekOrigin.Begin);
                         using var sr = new StreamReader(memoryStream);
                         var headers = string.Join(", ", _request.Headers.Select(h => $"{h.Key}: {string.Join(", ", h.Value)}"));
 
-                        var payload = await sr.ReadToEndAsync();
+                        var payload = await sr.ReadToEndAsync().ConfigureAwait(false);
                         Log.Warning("AppSec event not correctly sent to backend {statusCode} by class {className} with response {responseText}, request headers: were {headers}, payload was: {payload}", new object[] { response.StatusCode, nameof(HttpClientRequest), await response.ReadAsStringAsync().ConfigureAwait(false), headers, payload });
                     }
 

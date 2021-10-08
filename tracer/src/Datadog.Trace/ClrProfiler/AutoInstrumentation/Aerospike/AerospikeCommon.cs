@@ -4,10 +4,12 @@
 // </copyright>
 
 using System;
+using System.Text;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
 {
@@ -39,11 +41,34 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
 
                 if (target.TryDuckCast<HasKey>(out var hasKey))
                 {
-                    tags.Key = hasKey.Key?.ToString();
-                }
+                    var key = hasKey.Key;
 
-                if (target.TryDuckCast<HasStatement>(out var hasStatement))
+                    tags.Key = FormatKey(key);
+                    tags.Namespace = key.Ns;
+                    tags.SetName = key.SetName;
+                    tags.UserKey = key.UserKey.ToString();
+                }
+                else if (target.TryDuckCast<HasKeys>(out var hasKeys))
                 {
+                    var sb = StringBuilderCache.Acquire(0);
+
+                    foreach (var obj in hasKeys.Keys)
+                    {
+                        var key = obj.DuckCast<Key>();
+
+                        if (sb.Length != 0)
+                        {
+                            sb.Append(';');
+                        }
+
+                        sb.Append(FormatKey(key));
+                    }
+
+                    tags.Key = StringBuilderCache.GetStringAndRelease(sb);
+                }
+                else if (target.TryDuckCast<HasStatement>(out var hasStatement))
+                {
+                    tags.Key = hasStatement.Statement.Ns + ":" + hasStatement.Statement.SetName;
                     tags.Namespace = hasStatement.Statement.Ns;
                     tags.SetName = hasStatement.Statement.SetName;
                 }
@@ -60,6 +85,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
 
             return scope;
         }
+
+        private static string FormatKey(Key key) => key.Ns + ":" + key.SetName + ":" + key.UserKey;
 
         private static string ExtractResourceName(Type type)
         {

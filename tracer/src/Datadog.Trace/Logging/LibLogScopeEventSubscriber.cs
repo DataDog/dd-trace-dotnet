@@ -290,12 +290,14 @@ namespace Datadog.Trace.Logging
                     FallbackNLogLogProvider.IsLoggerAvailable,
                     () => new FallbackNLogLogProvider()));
 
-            // Register the custom log4net provider
+            // Register the no-op log4net provider
+            // Automatic logs injection will be handled by automatic instrumentation so make
+            // sure that calls to the LibLog Log Provider result in no-ops
             LogProvider.LogProviderResolvers.Insert(
                 4,
                 Tuple.Create<LogProvider.IsLoggerAvailable, LogProvider.CreateLogProvider>(
-                    CustomLog4NetLogProvider.IsLoggerAvailable,
-                    () => new CustomLog4NetLogProvider()));
+                    NoOpLog4NetLogProvider.IsLoggerAvailable,
+                    () => new NoOpLog4NetLogProvider()));
         }
 
         private void SetDefaultValues()

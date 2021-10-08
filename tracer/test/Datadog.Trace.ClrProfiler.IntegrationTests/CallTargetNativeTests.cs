@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(MethodArgumentsData))]
         public void MethodArgumentsInstrumentation(int numberOfArguments, bool fastPath)
         {
@@ -38,11 +38,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("DD_INTEGRATIONS", Path.Combine(EnvironmentHelper.GetSampleProjectDirectory(), "integrations.json"));
             int agentPort = TcpPortProvider.GetOpenPort();
 
-            using (var agent = new MockTracerAgent(agentPort))
+            using (new MockTracerAgent(agentPort))
             using (var processResult = RunSampleAndWaitForExit(agentPort, arguments: numberOfArguments.ToString()))
             {
-                Assert.True(processResult.ExitCode == 0, $"Process exited with code {processResult.ExitCode}");
-
                 string beginMethodString = $"ProfilerOK: BeginMethod\\({numberOfArguments}\\)";
                 if (!fastPath)
                 {

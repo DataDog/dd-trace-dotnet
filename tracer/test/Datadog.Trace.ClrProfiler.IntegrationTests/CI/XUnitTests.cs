@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -35,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             }
         }
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(GetData))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "TestIntegrations")]
@@ -45,6 +46,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             try
             {
                 SetCallTargetSettings(enableCallTarget);
+                SetEnvironmentVariable("DD_CIVISIBILITY_ENABLED", "1");
                 SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
                 SetEnvironmentVariable("DD_DUMP_ILREWRITE_ENABLED", "1");
 
