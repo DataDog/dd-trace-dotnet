@@ -15,20 +15,20 @@ namespace Datadog.Collections
     /// <ul>
     ///   <li><see cref="GrowingCollection{T}" />
     ///         A "normal" collection where items are accessed by value.
-    ///         If <c>T</c> is a class type or a primitive type, you propably (but not certainly) want this favor.
+    ///         If <c>T</c> is a class type or a primitive type, you probably (but not certainly) want this flavor.
     ///   </li>
     ///   <li><see cref="GrowingRefCollectionInternal{T}" />
     ///         A by-ref collection where items are accessed by reference directly inside the underlying memory.
-    ///         If <c>T</c> is a custom value type, you propably (but not certainly) want this favor.
-    ///         Values will be acced directly within the underlying storage, modified in-place and never boxed.
+    ///         If <c>T</c> is a custom value type, you probably (but not certainly) want this flavor.
+    ///         Values will be accessed directly within the underlying storage, modified in-place and never boxed.
     ///         Pattern based for-each-iteration is supported using an internal interface (<see cref="IRefEnumerableInternal{T}" />),
     ///         so using this class does not expose any public types form the assembly.
     ///         Other than the implemented by-ref iteration iface, this class is equivalent to <see cref="GrowingRefCollection{T}" />.
     ///   </li>
     ///   <li><see cref="GrowingRefCollection{T}" />
     ///         A by-ref collection where items are accessed by reference directly inside the underlying memory.
-    ///         If <c>T</c> is a custom value type, you propably (but not certainly) want this favor.
-    ///         Values will be acced directly within the underlying storage, modified in-place and never boxed.
+    ///         If <c>T</c> is a custom value type, you probably (but not certainly) want this flavor.
+    ///         Values will be accessed directly within the underlying storage, modified in-place and never boxed.
     ///         Pattern based for-each-iteration is supported using a public interface (<see cref="IRefEnumerable{T}" />),
     ///         collections backd by this class can be exposed through public APIs via that iface.
     ///         Other than the implemented by-ref iteration iface, this class is equivalent to <see cref="GrowingRefCollectionInternal{T}" />.
@@ -49,11 +49,11 @@ namespace Datadog.Collections
         {
             /// <summary>
             /// When working with a ralatively small number of elements, a small defualt size allows wasting little memory.
-            /// If you know to process hundreds or thousands of objects, use larger segment sizes.
+            /// If you know you need to process hundreds or thousands of objects, use larger segment sizes.
             /// </summary>
             public const int Default = 32;
 
-            private const int MaxMax = 50000;
+            private const int MaxMax = 50_000;
 
             /// <summary>
             /// We restrict the max segment size to make it less likely that huge segments get allocated and end up on the

@@ -5,9 +5,9 @@ namespace Datadog.Util
 {
     internal static class TimeScale
     {
-        public const int NanosecsInMillisec_Int32 = 1000000;
-        public const int NanosecsInSec_Int32 = 1000000000;
-        public const int MillisecsInSec_Int32 = 1000;
+        public const int NanosecsInMillisec_Int32 = 1_000_000;
+        public const int NanosecsInSec_Int32 = 1_000_000_000;
+        public const int MillisecsInSec_Int32 = 1_000;
 
         public const ulong NanosecsInMillisec_UInt64 = NanosecsInMillisec_Int32;
         public const ulong NanosecsInSec_UInt64 = NanosecsInSec_Int32;
