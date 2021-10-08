@@ -809,7 +809,7 @@ partial class Build
         .Executes(() =>
         {
             // This does some "unnecessary" rebuilding and restoring
-            var includeIntegration = TracerDirectory.GlobFiles("test/test-applications/integrations/**/*.csproj");
+            var includeIntegration = TracerDirectory.GlobFiles("test/test-applications/integrations/**/*.?sproj");
             // Don't build aspnet full framework sample in this step
             var includeSecurity = TracerDirectory.GlobFiles("test/test-applications/security/*/*.csproj");
 
