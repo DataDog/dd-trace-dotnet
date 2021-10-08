@@ -447,5 +447,7 @@ namespace Datadog.Trace
         internal const string AerospikeNamespace = "aerospike.namespace";
 
         internal const string AerospikeSetName = "aerospike.setname";
+
+        internal const string AerospikeUserKey = "aerospike.userkey";
     }
 }
