@@ -62,7 +62,7 @@ private:
     //
     std::mutex module_id_to_info_map_lock_;
     std::unordered_map<ModuleID, ModuleMetadata*> module_id_to_info_map_;
-    std::vector<ModuleID> modules_ids_;
+    std::unordered_map<ModuleID, std::unique_ptr<ModuleInfo>> module_info_map_;
 
     //
     // Helper methods
