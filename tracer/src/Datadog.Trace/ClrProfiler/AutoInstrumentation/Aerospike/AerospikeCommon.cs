@@ -9,6 +9,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
 {
@@ -49,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
                 }
                 else if (target.TryDuckCast<HasKeys>(out var hasKeys))
                 {
-                    var sb = new StringBuilder();
+                    var sb = StringBuilderCache.Acquire(0);
 
                     foreach (var obj in hasKeys.Keys)
                     {
@@ -63,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
                         sb.Append(FormatKey(key));
                     }
 
-                    tags.Key = sb.ToString();
+                    tags.Key = StringBuilderCache.GetStringAndRelease(sb);
                 }
                 else if (target.TryDuckCast<HasStatement>(out var hasStatement))
                 {
