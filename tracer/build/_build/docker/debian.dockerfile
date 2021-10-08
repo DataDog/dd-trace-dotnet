@@ -1,6 +1,6 @@
 ARG DOTNETSDK_VERSION
 # debian 10 image
-FROM mcr.microsoft.com/dotnet/sdk:$DOTNETSDK_VERSION-buster-slim as base
+FROM mcr.microsoft.com/dotnet/sdk:$DOTNETSDK_VERSION-bullseye-slim as base
 # ubuntu image
 # FROM mcr.microsoft.com/dotnet/sdk:$DOTNETSDK_VERSION-focal
 
