@@ -22,12 +22,20 @@ namespace Datadog.Trace.AppSec.Transports.Http
 
             foreach (var headerToSend in OtherHeaders)
             {
-                headersDic.Add(headerToSend, getHeader(headerToSend));
+                var headerValue = getHeader(headerToSend);
+                if (!string.IsNullOrEmpty(headerValue))
+                {
+                    headersDic.Add(headerToSend, headerValue);
+                }
             }
 
             foreach (var headerToSend in extraHeaders)
             {
-                headersDic.Add(headerToSend, getHeader(headerToSend));
+                var headerValue = getHeader(headerToSend);
+                if (!string.IsNullOrEmpty(headerValue))
+                {
+                    headersDic.Add(headerToSend, getHeader(headerToSend));
+                }
             }
 
             if (!string.IsNullOrEmpty(customIpHeader))

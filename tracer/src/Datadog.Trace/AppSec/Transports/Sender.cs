@@ -28,7 +28,7 @@ namespace Datadog.Trace.AppSec.Transports
             var settings = Tracer.Instance.Settings;
             // todo: read from configuration key?
             _uri = new Uri(settings.AgentUri, "appsec/proxy/api/v2/appsecevts");
-            _serializer = JsonSerializer.CreateDefault();
+            _serializer = JsonSerializer.CreateDefault(new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
         }
 
         internal async Task Send(IEnumerable<IEvent> events)

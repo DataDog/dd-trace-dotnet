@@ -18,7 +18,7 @@ namespace Datadog.Trace.AppSec.EventModel
         public string Method { get; set; }
 
         [JsonProperty("url")]
-        public Uri Url { get; set; }
+        public string Url { get; set; }
 
         [JsonProperty("host")]
         public string Host { get; set; }

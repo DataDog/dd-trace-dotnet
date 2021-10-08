@@ -40,7 +40,7 @@ namespace Datadog.Trace.AppSec.Transport.Http
         {
             var request = new Request()
             {
-                Url = context.Request.Url,
+                Url = context.Request.Url.ToString(),
                 Method = context.Request.HttpMethod,
                 Scheme = context.Request.Url.Scheme,
                 Host = context.Request.UserHostName,
