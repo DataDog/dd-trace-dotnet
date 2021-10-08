@@ -277,7 +277,7 @@ namespace Datadog.Logging.Composition
             {
                 try
                 {
-                    procName = Process.GetCurrentProcess().ProcessName;
+                    procName = GetCurrentProcessName();
                 }
                 catch
                 {
@@ -299,6 +299,24 @@ namespace Datadog.Logging.Composition
             catch
             {
                 return null;
+            }
+        }
+
+        /// <summary>        
+        /// !! This method should be called from within a try-catch block !! <br />
+        /// On the (classic) .NET Framework the <see cref="System.Diagnostics.Process" /> class is
+        /// guarded by a LinkDemand for FullTrust, so partial trust callers will throw an exception.
+        /// That exception is thrown when the caller method is being JIT compiled, NOT when methods on
+        /// the <c>Process</c> class are being invoked.
+        /// This wrapper, when called from within a try-catch block, allows catching the exception.
+        /// </summary>
+        /// <returns>Returns the name of the current process.</returns>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        private static string GetCurrentProcessName()
+        {
+            using (Process currentProcess = Process.GetCurrentProcess())
+            {
+                return currentProcess.ProcessName;
             }
         }
     }
