@@ -5,6 +5,7 @@
 
 using System;
 using System.Net;
+using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec.EventModel
@@ -26,14 +27,17 @@ namespace Datadog.Trace.AppSec.EventModel
         public static Attack From(Waf.ReturnTypes.Managed.Return result, Trace.Span span, Transport.ITransport transport, string customIpHeader, string[] extraHeaders)
         {
             var ruleMatch = result.ResultData.Filter[0];
-            var request = transport.Request(customIpHeader, extraHeaders);
+            var request = transport.Request();
+            var headersIpAndPort = RequestHeadersHelper.ExtractHeadersIpAndPort(transport.GetHeader, customIpHeader, extraHeaders,  transport.IsSecureConnection, new IpInfo(request.RemoteIp, request.RemotePort, transport.IsSecureConnection));
+            request.Headers = headersIpAndPort.HeadersToSend;
+
             var frameworkDescription = FrameworkDescription.Instance;
             var attack = new Attack
             {
                 EventId = Guid.NewGuid().ToString(),
                 Context = new Context()
                 {
-                    Actor = new Actor { Ip = new Ip { Address = request.RemoteIp } },
+                    Actor = new Actor { Ip = new Ip { Address = headersIpAndPort.IpInfo.ToString() } },
                     Host = new Host
                     {
                         OsType = frameworkDescription.OSPlatform,

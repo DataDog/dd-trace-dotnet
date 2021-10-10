@@ -32,16 +32,19 @@ namespace Datadog.Trace.AppSec.Transports.Http
             _ipv6Regex = new Regex(@"\[(\S*)\]:(\d*)");
         }
 
+        internal static int DefaultPort(bool https) => https ? 443 : 80;
+
         /// <summary>
         /// Can be a list of single or comma separated values ips like [ "192.68.12.1", "172.53.22.11, 181.92.91.1, 193.92.91.1".. ]
         /// </summary>
         /// <param name="headerValues">all the extracted values from ip related headers</param>
-        /// <param name="defaultPort">default port if not in the values</param>
+        /// <param name="https">is a secure connection</param>
         /// <returns>return ip and port</returns>
-        internal static IpInfo GetRealIpFromValues(IEnumerable<string> headerValues, int defaultPort)
+        internal static IpInfo GetRealIpFromValues(IEnumerable<string> headerValues, bool https)
         {
             var privateIp = string.Empty;
-            var remotePort = defaultPort;
+            var remotePort = DefaultPort(https);
+            var ipv6 = false;
             foreach (var header in headerValues)
             {
                 var values = header.Split(',');
@@ -53,7 +56,7 @@ namespace Datadog.Trace.AppSec.Transports.Http
                         continue;
                     }
 
-                    var addressAndPort = ExtractAddressAndPort(consideredPotentialIp, remotePort);
+                    var addressAndPort = ExtractAddressAndPort(consideredPotentialIp, defaultPort: remotePort);
                     consideredPotentialIp = addressAndPort.IpAddress;
                     remotePort = addressAndPort.Port;
 
@@ -71,23 +74,27 @@ namespace Datadog.Trace.AppSec.Transports.Http
                         }
                         else
                         {
-                            return new IpInfo(ipAddress.ToString(), remotePort);
+                            return new IpInfo(ipAddress.ToString(), remotePort, ipv6);
                         }
                     }
                 }
             }
 
-            return new IpInfo(privateIp, remotePort);
+            return new IpInfo(privateIp, remotePort, ipv6);
         }
 
-        internal static IpInfo ExtractAddressAndPort(string ip, int defaultPort)
+        internal static IpInfo ExtractAddressAndPort(string ip, bool https = false, int? defaultPort = null)
         {
-            var port = defaultPort;
-            var parts = ip.Split(':');
-            if (parts.Length == 2)
+            var port = defaultPort ?? DefaultPort(https);
+            var ipv6 = false;
+            if (ip.Contains("."))
             {
-                int.TryParse(parts.Last(), out port);
-                return new IpInfo(parts[0], port);
+                var parts = ip.Split(':');
+                if (parts.Length == 2)
+                {
+                    int.TryParse(parts[1], out port);
+                    return new IpInfo(parts[0], port, ipv6);
+                }
             }
 
             var result = _ipv6Regex.Match(ip);
@@ -95,9 +102,10 @@ namespace Datadog.Trace.AppSec.Transports.Http
             {
                 ip = result.Groups[1].Captures[0].Value;
                 int.TryParse(result.Groups[2].Captures[0].Value, out port);
+                ipv6 = true;
             }
 
-            return new IpInfo(ip, port);
+            return new IpInfo(ip, port, ipv6);
         }
 
         internal static bool IsIpInRange(IPAddress ipAdd, IEnumerable<Tuple<int, int>> cidrs)

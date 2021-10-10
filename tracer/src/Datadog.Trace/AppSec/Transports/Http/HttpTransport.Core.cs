@@ -7,11 +7,9 @@
 using System;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.EventModel;
-using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Util.Http;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Extensions;
 
 namespace Datadog.Trace.AppSec.Transport.Http
 {
@@ -21,7 +19,11 @@ namespace Datadog.Trace.AppSec.Transport.Http
 
         public HttpTransport(HttpContext context) => this.context = context;
 
-        public Request Request(string customIpHeader, string[] extraHeaders)
+        public bool IsSecureConnection => context.Request.IsHttps;
+
+        public Func<string, string> GetHeader => key => context.Request.Headers[key];
+
+        public Request Request()
         {
             var request = new Request
             {
@@ -30,11 +32,12 @@ namespace Datadog.Trace.AppSec.Transport.Http
                 Scheme = context.Request.Scheme,
                 Url = context.Request.GetUrl()
             };
-            RequestHeadersHelper.FillHeadersAndExtractIpAndPort(key => context.Request.Headers[key], customIpHeader, extraHeaders, context.Connection.RemoteIpAddress.ToString(), context.Request.IsHttps, request);
+
             if (context.Request.Host.HasValue)
             {
                 request.Host = context.Request.Host.ToString();
-                request.Port = context.Request.Host.Port.GetValueOrDefault();
+                request.RemoteIp = context.Connection.RemoteIpAddress.ToString();
+                request.Port = context.Connection.RemotePort;
             }
 
             return request;

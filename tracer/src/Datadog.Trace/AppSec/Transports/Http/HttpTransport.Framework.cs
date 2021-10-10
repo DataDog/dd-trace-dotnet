@@ -20,6 +20,10 @@ namespace Datadog.Trace.AppSec.Transport.Http
 
         public HttpTransport(HttpContext context) => this.context = context;
 
+        public bool IsSecureConnection => context.Request.IsSecureConnection;
+
+        public Func<string, string> GetHeader => key => context.Request.Headers[key];
+
         public void AddRequestScope(Guid guid)
         {
             throw new NotImplementedException();
@@ -36,16 +40,18 @@ namespace Datadog.Trace.AppSec.Transport.Http
 
         public IContext GetAdditiveContext() => context.Items[WafKey] as IContext;
 
-        public Request Request(string customIpHeader, string[] extraHeaders)
+        public Request Request()
         {
+            var extracted = IpExtractor.ExtractAddressAndPort(context.Request.UserHostAddress, context.Request.IsSecureConnection);
             var request = new Request()
             {
                 Url = context.Request.Url.ToString(),
                 Method = context.Request.HttpMethod,
                 Scheme = context.Request.Url.Scheme,
                 Host = context.Request.UserHostName,
+                RemoteIp = extracted.IpAddress,
+                RemotePort = extracted.Port
             };
-            RequestHeadersHelper.FillHeadersAndExtractIpAndPort(key => context.Request.Headers[key], customIpHeader, extraHeaders, context.Request.UserHostAddress, context.Request.IsSecureConnection, request);
             return request;
         }
 

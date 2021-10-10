@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Threading.Tasks;
 using Datadog.Trace.AppSec.EventModel;
 using Datadog.Trace.AppSec.Waf;
 
@@ -12,6 +11,10 @@ namespace Datadog.Trace.AppSec.Transport
 {
     internal interface ITransport
     {
+        bool IsSecureConnection { get; }
+
+        Func<string, string> GetHeader { get; }
+
         Response Response(bool blocked);
 
         void Block();
@@ -24,6 +27,6 @@ namespace Datadog.Trace.AppSec.Transport
 
         void OnCompleted(Action completedCallback);
 
-        Request Request(string customIpHeader, string[] extraHeaders);
+        Request Request();
     }
 }

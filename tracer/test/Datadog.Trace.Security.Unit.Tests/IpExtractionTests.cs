@@ -17,7 +17,7 @@ namespace Datadog.Trace.Security.UnitTests
         [InlineData("172.16.32.43", 80, new[] { "192.168.1.1", "172.16.32.41", "172.16.32.43" })]
         public void Ipv4PublicDetectedLocalIgnoredIfPublic(string expectedIp, int expectedPort, string[] ips)
         {
-            var ip = IpExtractor.GetRealIpFromValues(ips, 80);
+            var ip = IpExtractor.GetRealIpFromValues(ips, false);
             Assert.Equal(expectedIp, ip.IpAddress);
             Assert.Equal(expectedPort, ip.Port);
         }
@@ -28,7 +28,7 @@ namespace Datadog.Trace.Security.UnitTests
         [InlineData("FE80::240:D0FF:FE48:4672", 53, new[] { "fe80::20e:cff:fe3b:883c", "fe80::5525:2a3f:6fa6:cd4e%14", "FE80::240:D0FF:FE48:4672" })]
         public void Ipv6PublicDetectedPrivateIgnored(string expectedIp, int expectedPort, string[] ips)
         {
-            var ip = IpExtractor.GetRealIpFromValues(ips, 80);
+            var ip = IpExtractor.GetRealIpFromValues(ips, false);
             Assert.Equal(expectedIp, ip.IpAddress);
             Assert.Equal(expectedPort, ip.Port);
         }
@@ -39,7 +39,7 @@ namespace Datadog.Trace.Security.UnitTests
         [InlineData("129.144.52.37", 553, new[] { "::FFFF:192.168.1.26", "[::FFFF:129.144.52.37]:553", "::ffff:191.239.213.197" })]
         public void Ipv4OverIpv6(string expectedIp, int expectedPort, string[] ips)
         {
-            var ip = IpExtractor.GetRealIpFromValues(ips, 80);
+            var ip = IpExtractor.GetRealIpFromValues(ips, false);
             Assert.Equal(expectedIp, ip.IpAddress);
             Assert.Equal(expectedPort, ip.Port);
         }
@@ -51,7 +51,7 @@ namespace Datadog.Trace.Security.UnitTests
         [InlineData("::FFFF:101.45.75.219", 80, "::FFFF:101.45.75.219", 80)]
         public void ExtractAddressAndPort(string expectedIp, int expectedPort, string ip, int defaultport)
         {
-            var result = IpExtractor.ExtractAddressAndPort(ip, defaultport);
+            var result = IpExtractor.ExtractAddressAndPort(ip, defaultPort: defaultport);
             Assert.Equal(expectedIp, result.IpAddress);
             Assert.Equal(expectedPort, result.Port);
         }
