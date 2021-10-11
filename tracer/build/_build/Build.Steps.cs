@@ -1004,7 +1004,7 @@ partial class Build
         {
             // There's nothing specifically linux-y here, it's just that we only build a subset of projects
             // for testing on linux.
-            var sampleProjects = TracerDirectory.GlobFiles("test/test-applications/integrations/*/*.csproj");
+            var sampleProjects = TracerDirectory.GlobFiles("test/test-applications/integrations/*/*.?sproj");
             var securitySampleProjects = TracerDirectory.GlobFiles("test/test-applications/security/*/*.csproj");
             var regressionProjects = TracerDirectory.GlobFiles("test/test-applications/regression/*/*.csproj");
             var instrumentationProjects = TracerDirectory.GlobFiles("test/test-applications/instrumentation/*/*.csproj");
