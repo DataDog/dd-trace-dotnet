@@ -33,7 +33,21 @@ namespace Samples.Aerospike
             _ = client.Exists(null, key1);
             _ = client.Get(null, new[] { key1, key2, key3 });
             _ = client.Exists(null, new[] { key1, key2, key3 });
-            
+
+            client.CreateIndex(null, "test", "myset1", indexName: "age", binName: "age", IndexType.NUMERIC).Wait();
+
+            var statement = new Statement
+            {
+                Namespace = "test",
+                SetName = "myset1",
+                BinNames = new[] { "name", "age" },
+                Filter = Filter.Range("age", 20, 30)
+            };
+
+            var result = client.Query(new QueryPolicy(), statement);
+
+            while (result.Next()) ; // Force the query to execute
+
             client.Delete(null, key1);
 
             // Asynchronous methods
@@ -48,6 +62,8 @@ namespace Samples.Aerospike
             _ = await client.Exists(null, CancellationToken.None, new[] { key1, key2, key3 });
 
             await client.Delete(null, CancellationToken.None, key1);
+
+            client.DropIndex(null, "test", "myset1", indexName: "age").Wait();
 
             client.Close();
         }
