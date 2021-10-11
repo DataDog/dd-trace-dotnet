@@ -400,13 +400,13 @@ void RejitHandler::EnqueueThreadLoop(RejitHandler* handler)
 
                         // Now we enumerate all methods with the same target method name. (All overloads of the method)
                         auto enumMethods = Enumerator<mdMethodDef>(
-                            [metadataImport, integration, typeDef](HCORENUM* ptr, mdMethodDef arr[], ULONG max,
+                            [&metadataImport, &integration, typeDef](HCORENUM* ptr, mdMethodDef arr[], ULONG max,
                                                                    ULONG* cnt) -> HRESULT {
                                 return metadataImport->EnumMethodsWithName(
                                     ptr, typeDef, integration.replacement.target_method.method_name.c_str(), arr, max,
                                     cnt);
                             },
-                            [metadataImport](HCORENUM ptr) -> void { metadataImport->CloseEnum(ptr); });
+                            [&metadataImport](HCORENUM ptr) -> void { metadataImport->CloseEnum(ptr); });
 
                         auto enumIterator = enumMethods.begin();
                         while (enumIterator != enumMethods.end())
