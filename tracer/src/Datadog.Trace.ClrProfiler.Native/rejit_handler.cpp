@@ -308,7 +308,7 @@ void RejitHandler::EnqueueThreadLoop(RejitHandler* handler)
         else if (item->m_type == 1)
         {
             // *************************************
-            // Check module in integration for ReJIT request
+            // Checks if there are integrations for the modules and enqueue a ReJIT request
             // *************************************
 
             if (item->m_length > 0 && item->m_integrationMethods->size() > 0)
