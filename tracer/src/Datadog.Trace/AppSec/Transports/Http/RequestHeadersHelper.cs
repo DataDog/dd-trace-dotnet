@@ -10,7 +10,7 @@ namespace Datadog.Trace.AppSec.Transports.Http
 {
     internal static class RequestHeadersHelper
     {
-        internal static readonly string[] IpHeaders = new string[] { "x-forwarded-for", "x-real-ip", "client-ip", "x-forwarded", "x-cluster-client-ip", "forwarded-for", "forwarded", "via", "true-client-ip" };
+        internal static readonly string[] IpHeaders = new string[] { "x-forwarded-for", "x-real-ip", "x-client-ip", "x-forwarded", "x-cluster-client-ip", "forwarded-for", "forwarded", "via", "true-client-ip" };
         internal static readonly IEnumerable<string> MainHeaders = new string[] { "user-agent", "referer" };
 
         internal static ExtractedHeadersAndIpInfos ExtractHeadersIpAndPort(Func<string, string> getHeader, string customIpHeader, string[] customExtraHeaders, bool isSecureConnection, IpInfo peerIpFallback)
