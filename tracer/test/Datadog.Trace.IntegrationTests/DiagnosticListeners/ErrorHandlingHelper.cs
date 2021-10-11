@@ -1,4 +1,4 @@
-﻿// <copyright file="ErrorHandlingHelper.cs" company="Datadog">
+// <copyright file="ErrorHandlingHelper.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -33,7 +33,11 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 #else
             try
             {
+#if NET6_0
+                var badRequest = typeof(Microsoft.AspNetCore.Http.BadHttpRequestException);
+#else
                 var badRequest = typeof(Microsoft.AspNetCore.Server.Kestrel.Core.BadHttpRequestException);
+#endif
                 var rejectReasonType = badRequest.Assembly.GetType("Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.RequestRejectionReason");
 
                 var enumValueField = rejectReasonType.GetField("InvalidRequestHeader", BindingFlags.Static | BindingFlags.Public);
@@ -48,7 +52,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
                 throw ex.InnerException;
             }
 #endif
-        }
+            }
 
         public static IApplicationBuilder UseMultipleErrorHandlerPipelines(
             this IApplicationBuilder app,
