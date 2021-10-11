@@ -74,7 +74,7 @@ bool IsNGENEnabled()
 
 bool IsDebugEnabled()
 {
-    ToBooleanWithDefault(GetEnvironmentValue(environment::debug_enabled), true);
+    CheckIfTrue(GetEnvironmentValue(environment::debug_enabled));
 }
 
 bool IsDumpILRewriteEnabled()
