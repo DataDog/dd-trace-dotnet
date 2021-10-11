@@ -331,7 +331,6 @@ void RejitHandler::EnqueueThreadLoop(RejitHandler* handler)
                     ComPtr<IMetaDataAssemblyImport> assemblyImport;
                     ComPtr<IMetaDataAssemblyEmit> assemblyEmit;
                     std::unique_ptr<AssemblyMetadata> assemblyMetadata = nullptr;
-                    ModuleMetadata* moduleMetadata = nullptr;
 
                     for (const IntegrationMethod& integration : *pIntegrations)
                     {
@@ -468,25 +467,22 @@ void RejitHandler::EnqueueThreadLoop(RejitHandler* handler)
                                 continue;
                             }
 
-                            if (moduleMetadata == nullptr)
-                            {
-                                Logger::Debug("Creating ModuleMetadata...");
-
-                                moduleMetadata =
-                                    new ModuleMetadata(metadataImport, metadataEmit, assemblyImport, assemblyEmit,
-                                                       moduleInfo.assembly.name, moduleInfo.assembly.app_domain_id,
-                                                       handler->m_pCorAssemblyProperty);
-
-                                Logger::Info("ReJIT handler stored metadata for ", moduleInfo.id, " ", moduleInfo.assembly.name,
-                                             " AppDomain ", moduleInfo.assembly.app_domain_id,
-                                             " ", moduleInfo.assembly.app_domain_name);
-                            }
-
                             // As we are in the right method, we gather all information we need and stored it in to the
                             // ReJIT handler.
                             auto moduleHandler = handler->GetOrAddModule(moduleInfo.id);
                             if (moduleHandler->GetModuleMetadata() == nullptr)
                             {
+                                Logger::Debug("Creating ModuleMetadata...");
+
+                                const auto moduleMetadata =
+                                    new ModuleMetadata(metadataImport, metadataEmit, assemblyImport, assemblyEmit,
+                                                       moduleInfo.assembly.name, moduleInfo.assembly.app_domain_id,
+                                                       handler->m_pCorAssemblyProperty);
+
+                                Logger::Info("ReJIT handler stored metadata for ", moduleInfo.id, " ",
+                                             moduleInfo.assembly.name, " AppDomain ", moduleInfo.assembly.app_domain_id,
+                                             " ", moduleInfo.assembly.app_domain_name);
+
                                 moduleHandler->SetModuleMetadata(moduleMetadata);
                             }
 
@@ -506,8 +502,9 @@ void RejitHandler::EnqueueThreadLoop(RejitHandler* handler)
 
                             Logger::Debug("    * Enqueue for ReJIT [ModuleId=", moduleInfo.id,
                                           ", MethodDef=", TokenStr(&methodDef),
-                                          ", AppDomainId=", moduleMetadata->app_domain_id,
-                                          ", Assembly=", moduleMetadata->assemblyName, ", Type=", caller.type.name,
+                                          ", AppDomainId=", moduleHandler->GetModuleMetadata()->app_domain_id,
+                                          ", Assembly=", moduleHandler->GetModuleMetadata()->assemblyName,
+                                          ", Type=", caller.type.name,
                                           ", Method=", caller.name, "(", numOfArgs,
                                           " params), Signature=", caller.signature.str(), "]");
                             enumIterator = ++enumIterator;
