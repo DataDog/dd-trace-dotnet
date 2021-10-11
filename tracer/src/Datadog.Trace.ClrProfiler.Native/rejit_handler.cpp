@@ -321,6 +321,11 @@ void RejitHandler::EnqueueThreadLoop(RejitHandler* handler)
                 std::vector<ModuleID> vtModules;
                 std::vector<mdMethodDef> vtMethodDefs;
 
+                // Preallocate with size => 15 due this is the current max of method interceptions in a single module
+                // (see InstrumentationDefinitions.Generated.cs)
+                vtModules.reserve(15);
+                vtMethodDefs.reserve(15);
+
                 for (int i = 0; i < item->m_length; i++)
                 {
                     auto _ = trace::Stats::Instance()->CallTargetRequestRejitMeasure();
