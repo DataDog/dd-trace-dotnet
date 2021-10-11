@@ -79,14 +79,10 @@ namespace Datadog.Trace.ClrProfiler
                     def.Dispose();
                 }
 
-                Log.Information("IsProfilerAttached: true");
+                Log.Information<int>("The profiler has been initialized with {count} definitions.", payload.Definitions.Length);
 
                 var asm = typeof(Instrumentation).Assembly;
-                Log.Information($"[Assembly metadata] Location: {asm.Location}");
-                Log.Information($"[Assembly metadata] CodeBase: {asm.CodeBase}");
-                Log.Information($"[Assembly metadata] GAC: {asm.GlobalAssemblyCache}");
-                Log.Information($"[Assembly metadata] HostContext: {asm.HostContext}");
-                Log.Information($"[Assembly metadata] SecurityRuleSet: {asm.SecurityRuleSet}");
+                Log.Information($"[Assembly metadata] Location: {asm.Location}, CodeBase: {asm.CodeBase}, GAC: {asm.GlobalAssemblyCache}, HostContext: {asm.HostContext}, SecurityRuleSet: {asm.SecurityRuleSet}");
             }
             catch (Exception ex)
             {
