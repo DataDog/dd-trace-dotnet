@@ -15,8 +15,10 @@ RejitItem::RejitItem() : m_type(-1), m_length(0), m_modulesId(nullptr), m_method
 {
 }
 
-RejitItem::RejitItem(int length, std::unique_ptr<ModuleID>&& modulesId, std::unique_ptr<mdMethodDef>&& methodDefs,
-                     std::unique_ptr<std::vector<IntegrationMethod>>&& integrationMethods)
+RejitItem::RejitItem(int length,
+    std::unique_ptr<ModuleID[]>&& modulesId,
+    std::unique_ptr<mdMethodDef[]>&& methodDefs,
+    std::unique_ptr<std::vector<IntegrationMethod>>&& integrationMethods)
 {
     m_length = length;
     m_modulesId = std::move(modulesId);
@@ -617,11 +619,11 @@ void RejitHandler::EnqueueForRejit(const std::vector<ModuleID>& modulesVector, c
     Logger::Debug("RejitHandler::EnqueueForReJIT");
     const size_t length = modulesMethodDef.size();
 
-    auto moduleIds = new ModuleID[length];
-    std::copy(modulesVector.begin(), modulesVector.end(), moduleIds);
+    auto moduleIds = std::make_unique<ModuleID[]>(length);
+    std::copy(modulesVector.begin(), modulesVector.end(), moduleIds.get());
 
-    auto mDefs = new mdMethodDef[length];
-    std::copy(modulesMethodDef.begin(), modulesMethodDef.end(), mDefs);
+    auto mDefs = std::make_unique<mdMethodDef[]>(length);
+    std::copy(modulesMethodDef.begin(), modulesMethodDef.end(), mDefs.get());
 
     // Create module and methods metadata.
     for (size_t i = 0; i < length; i++)
@@ -630,8 +632,7 @@ void RejitHandler::EnqueueForRejit(const std::vector<ModuleID>& modulesVector, c
     }
 
     // Enqueue rejit
-    m_rejit_queue->push(std::make_unique<RejitItem>((int) length, std::unique_ptr<ModuleID>(moduleIds),
-                                                    std::unique_ptr<mdMethodDef>(mDefs), nullptr));
+    m_rejit_queue->push(std::make_unique<RejitItem>((int) length, std::move(moduleIds), std::move(mDefs), nullptr));
 }
 
 void RejitHandler::EnqueueProcessModule(const std::vector<ModuleID>& modulesVector,
@@ -639,11 +640,12 @@ void RejitHandler::EnqueueProcessModule(const std::vector<ModuleID>& modulesVect
 {
     Logger::Debug("RejitHandler::EnqueueProcessModule");
     const size_t length = modulesVector.size();
-    auto moduleIds = new ModuleID[length];
-    std::copy(modulesVector.begin(), modulesVector.end(), moduleIds);
+
+    auto moduleIds = std::make_unique<ModuleID[]>(length);
+    std::copy(modulesVector.begin(), modulesVector.end(), moduleIds.get());
 
     // Enqueue process module
-    m_rejit_queue->push(std::make_unique<RejitItem>((int) length, std::unique_ptr<ModuleID>(moduleIds), nullptr,
+    m_rejit_queue->push(std::make_unique<RejitItem>((int) length, std::move(moduleIds), nullptr,
                                                     std::make_unique<std::vector<IntegrationMethod>>(integrations)));
 }
 

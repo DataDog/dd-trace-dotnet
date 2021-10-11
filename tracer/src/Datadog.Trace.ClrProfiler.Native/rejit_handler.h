@@ -19,14 +19,16 @@ struct RejitItem
     int m_type = 0;
     //
     int m_length = 0;
-    std::unique_ptr<ModuleID> m_modulesId = nullptr;
-    std::unique_ptr<mdMethodDef> m_methodDefs = nullptr;
+    std::unique_ptr<ModuleID[]> m_modulesId = nullptr;
+    std::unique_ptr<mdMethodDef[]> m_methodDefs = nullptr;
     //
     std::unique_ptr<std::vector<IntegrationMethod>> m_integrationMethods = nullptr;
 
     RejitItem();
-    RejitItem(int length, std::unique_ptr<ModuleID>&& modulesId, std::unique_ptr<mdMethodDef>&& methodDefs,
-              std::unique_ptr<std::vector<IntegrationMethod>>&& integrationMethods);
+    RejitItem(int length,
+        std::unique_ptr<ModuleID[]>&& modulesId,
+        std::unique_ptr<mdMethodDef[]>&& methodDefs,
+        std::unique_ptr<std::vector<IntegrationMethod>>&& integrationMethods);
     static std::unique_ptr<RejitItem> CreateEndRejitThread();
 };
 

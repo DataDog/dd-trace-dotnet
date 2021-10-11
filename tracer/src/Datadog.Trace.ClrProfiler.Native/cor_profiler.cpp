@@ -442,8 +442,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
 void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata, const WSTRING& nativemethods_type_name)
 {
     HRESULT hr;
-    const auto metadata_import = module_metadata.metadata_import;
-    const auto metadata_emit = module_metadata.metadata_emit;
+    const auto& metadata_import = module_metadata.metadata_import;
+    const auto& metadata_emit = module_metadata.metadata_emit;
 
     // We are in the right module, so we try to load the mdTypeDef from the target type name.
     mdTypeDef nativeMethodsTypeDef = mdTypeDefNil;
@@ -996,10 +996,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
             const auto assemblyEmit = metadataInterfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
             Logger::Debug("Temporaly allocating the ModuleMetadata for injection. ModuleId=", module_id, " ModuleName=", module_info.assembly.name);
-            module_metadata = new ModuleMetadata(metadataImport, metadataEmit, assemblyImport, assemblyEmit,
-                                                 module_info.assembly.name, module_info.assembly.app_domain_id,
-                                                 &corAssemblyProperty);
-            local_module_metadata = std::unique_ptr<ModuleMetadata>(module_metadata);
+            local_module_metadata = std::make_unique<ModuleMetadata>(
+                metadataImport, metadataEmit, assemblyImport, assemblyEmit, module_info.assembly.name,
+                module_info.assembly.app_domain_id, &corAssemblyProperty);
+
+            module_metadata = local_module_metadata.get();
         }
         else
         {
