@@ -1,4 +1,4 @@
-﻿// <copyright file="AspNetCoreEndpointRoutingTestData.cs" company="Datadog">
+// <copyright file="AspNetCoreEndpointRoutingTestData.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -37,13 +37,19 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             { "/I/dont/123/exist/", 404, false, "GET /i/dont/?/exist/", EmptyTags() },
             { "/Home/Error", 500, true, "GET Home/Error", EmptyTags() },
             { "/Home/UncaughtError", 500, true, "GET Home/UncaughtError", EmptyTags() },
+#if !NET6_0
             { "/Home/BadHttpRequest", 400, true, "GET Home/BadHttpRequest", EmptyTags() },
+#endif
             { $"{CustomHandlerPrefix}/Home/Error", 500, true, "GET Home/Error", EmptyTags() },
             { $"{CustomHandlerPrefix}/Home/UncaughtError", 500, true, "GET Home/UncaughtError", EmptyTags() },
+#if !NET6_0
             { $"{CustomHandlerPrefix}/Home/BadHttpRequest", 500, true, "GET Home/BadHttpRequest", EmptyTags() },
+#endif
             { $"{CustomHandlerPrefix}/throws", 500, true, $"GET {CustomHandlerPrefix}/throws", EmptyTags() },
             { $"{ExceptionPagePrefix}/Home/Error", 500, true, "GET Home/Error", EmptyTags() },
+#if !NET6_0
             { $"{ExceptionPagePrefix}/Home/BadHttpRequest", 400, true, "GET Home/BadHttpRequest", EmptyTags() },
+#endif
             { $"{ExceptionPagePrefix}/throws", 500, true, $"GET {ExceptionPagePrefix}/throws", EmptyTags() },
             // { $"{ReExecuteHandlerPrefix}/Home/Error", 500, true, "GET Home/Error", EmptyTags() },
             // { $"{ReExecuteHandlerPrefix}/Home/BadHttpRequest", 500, true, "GET Home/BadHttpRequest", EmptyTags() },
@@ -76,16 +82,24 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             { "/I/dont/123/exist/", 404, false, "GET /i/dont/?/exist/", EmptyTags(), 1, null, null, null, null },
             { "/Home/Error", 500, true, "GET /home/error", ErrorRouteParentTags(), 2, null, ErrorRouteChildTags(), null, null },
             { "/Home/UncaughtError", 500, true, "GET /home/uncaughterror", UncaughtErrorParentTags(), 2, null, UncaughtErrorChildTags(), null, null },
+#if !NET6_0
             { "/Home/BadHttpRequest", 400, true, "GET /home/badhttprequest", BadHttpRequestParentTags(), 2, null, BadHttpRequestChildTags(), null, null },
+#endif
             { $"{CustomHandlerPrefix}/Home/Error", 500, true, $"GET {CustomHandlerPrefix}/home/error", ErrorRouteParentTags(), 2, null, ErrorRouteChildTags(), null, null },
             { $"{CustomHandlerPrefix}/Home/UncaughtError", 500, true, $"GET {CustomHandlerPrefix}/home/uncaughterror", UncaughtErrorParentTags(), 2, null, UncaughtErrorChildTags(), null, null },
+#if !NET6_0
             { $"{CustomHandlerPrefix}/Home/BadHttpRequest", 500, true, $"GET {CustomHandlerPrefix}/home/badhttprequest", BadHttpRequestParentTags(), 2, null, BadHttpRequestChildTags(), null, null },
+#endif
             { $"{CustomHandlerPrefix}/throws", 500, true, $"GET {CustomHandlerPrefix}/throws", ThrowsTags(), 1, null, null, null, null },
             { $"{ExceptionPagePrefix}/Home/Error", 500, true, $"GET {ExceptionPagePrefix}/home/error", ErrorRouteParentTags(), 2, null, ErrorRouteChildTags(), null, null },
+#if !NET6_0
             { $"{ExceptionPagePrefix}/Home/BadHttpRequest", 400, true, $"GET {ExceptionPagePrefix}/home/badhttprequest", BadHttpRequestParentTags(), 2, null, BadHttpRequestChildTags(), null, null },
+#endif
             { $"{ExceptionPagePrefix}/throws", 500, true, $"GET {ExceptionPagePrefix}/throws", ThrowsTags(), 1, null, null, null, null },
             { $"{ReExecuteHandlerPrefix}/Home/Error", 500, true, $"GET {ReExecuteHandlerPrefix}/home/error", ErrorRouteParentTags(), 3, null, ErrorRouteChildTags(), $"GET {ReExecuteHandlerPrefix}/home/index", ConventionalChildTags() },
+#if !NET6_0
             { $"{ReExecuteHandlerPrefix}/Home/BadHttpRequest", 500, true, $"GET {ReExecuteHandlerPrefix}/home/badhttprequest", BadHttpRequestParentTags(), 3, null, BadHttpRequestChildTags(), $"GET {ReExecuteHandlerPrefix}/home/index", ConventionalChildTags() },
+#endif
             { $"{ReExecuteHandlerPrefix}/throws", 500, true, $"GET {ReExecuteHandlerPrefix}/throws", ThrowsTags(), 2, $"GET {ReExecuteHandlerPrefix}/home/index", ConventionalChildTags(), null, null },
             { $"{StatusCodeReExecutePrefix}/I/dont/123/exist/", 404, false, $"GET {StatusCodeReExecutePrefix}/i/dont/?/exist/", EmptyTags(), 2, $"GET {StatusCodeReExecutePrefix}/home/index", ConventionalChildTags(), null, null },
         };

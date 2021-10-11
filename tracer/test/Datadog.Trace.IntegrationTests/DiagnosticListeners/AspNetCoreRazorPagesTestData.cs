@@ -1,4 +1,4 @@
-﻿// <copyright file="AspNetCoreRazorPagesTestData.cs" company="Datadog">
+// <copyright file="AspNetCoreRazorPagesTestData.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -29,12 +29,18 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             { "/I/dont/123/exist/", 404, false, "GET /i/dont/?/exist/", EmptyTags() },
             { "/Error", 500, true, "GET Error", EmptyTags() },
             { "/UncaughtError", 500, true, "GET UncaughtError", EmptyTags() },
+#if !NET6_0
             { "/BadHttpRequest", 400, true, "GET BadHttpRequest", EmptyTags() },
+#endif
             { $"{CustomHandlerPrefix}/Error", 500, true, "GET Error", EmptyTags() },
             { $"{CustomHandlerPrefix}/UncaughtError", 500, true, "GET UncaughtError", EmptyTags() },
+#if !NET6_0
             { $"{CustomHandlerPrefix}/BadHttpRequest", 500, true, "GET BadHttpRequest", EmptyTags() },
+#endif
             { $"{ExceptionPagePrefix}/Error", 500, true, "GET Error", EmptyTags() },
+#if !NET6_0
             { $"{ExceptionPagePrefix}/BadHttpRequest", 400, true, "GET BadHttpRequest", EmptyTags() },
+#endif
             // The below is the ideal behaviour, but we can't achieve that currently
             // { $"{ReExecuteHandlerPrefix}/Error", 500, true, "GET Error", EmptyTags() },
             // { $"{ReExecuteHandlerPrefix}/BadHttpRequest", 500, true, "GET BadHttpRequest", EmptyTags() },
@@ -58,14 +64,22 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             { "/I/dont/123/exist/", 404, false, "GET /i/dont/?/exist/", EmptyTags(), 1, null, null, null, null },
             { "/Error", 500, true, "GET /error", ConventionalParentTags(page: "Error"), 2, null, ConventionalChildTags(page: "Error"), null, null },
             { "/UncaughtError", 500, true, "GET /uncaughterror", ConventionalParentTags(page: "UncaughtError"), 2, null, ConventionalChildTags(page: "UncaughtError"), null, null },
+#if !NET6_0
             { "/BadHttpRequest", 400, true, "GET /badhttprequest", ConventionalParentTags(page: "BadHttpRequest"), 2, null, ConventionalChildTags(page: "BadHttpRequest"), null, null },
+#endif
             { $"{CustomHandlerPrefix}/Error", 500, true, $"GET {CustomHandlerPrefix}/error", ConventionalParentTags(page: "Error"), 2, null, ConventionalChildTags(page: "Error"), null, null },
             { $"{CustomHandlerPrefix}/UncaughtError", 500, true, $"GET {CustomHandlerPrefix}/uncaughterror", ConventionalParentTags(page: "UncaughtError"), 2, null, ConventionalChildTags(page: "UncaughtError"), null, null },
+#if !NET6_0
             { $"{CustomHandlerPrefix}/BadHttpRequest", 500, true, $"GET {CustomHandlerPrefix}/badhttprequest", ConventionalParentTags(page: "BadHttpRequest"), 2, null, ConventionalChildTags(page: "BadHttpRequest"), null, null },
+#endif
             { $"{ExceptionPagePrefix}/Error", 500, true, $"GET {ExceptionPagePrefix}/error", ConventionalParentTags(page: "Error"), 2, null, ConventionalChildTags(page: "Error"), null, null },
+#if !NET6_0
             { $"{ExceptionPagePrefix}/BadHttpRequest", 400, true, $"GET {ExceptionPagePrefix}/badhttprequest", ConventionalParentTags(page: "BadHttpRequest"), 2, null, ConventionalChildTags(page: "BadHttpRequest"), null, null },
+#endif
             { $"{ReExecuteHandlerPrefix}/Error", 500, true, $"GET {ReExecuteHandlerPrefix}/error", ConventionalParentTags(page: "Error"), 3, null, ConventionalChildTags(page: "Error"), $"GET {ReExecuteHandlerPrefix}/", ConventionalChildTags("Index", route: string.Empty) },
+#if !NET6_0
             { $"{ReExecuteHandlerPrefix}/BadHttpRequest", 500, true, $"GET {ReExecuteHandlerPrefix}/badhttprequest", ConventionalParentTags(page: "BadHttpRequest"), 3, null, ConventionalChildTags(page: "BadHttpRequest"), $"GET {ReExecuteHandlerPrefix}/", ConventionalChildTags("Index", route: string.Empty) },
+#endif
             { $"{StatusCodeReExecutePrefix}/I/dont/123/exist/", 404, false, $"GET {StatusCodeReExecutePrefix}/i/dont/?/exist/", EmptyTags(), 2, $"GET {StatusCodeReExecutePrefix}/", ConventionalChildTags("Index", route: string.Empty), null, null },
         };
 
