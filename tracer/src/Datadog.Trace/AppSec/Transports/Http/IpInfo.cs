@@ -7,19 +7,14 @@ namespace Datadog.Trace.AppSec.Transports.Http
 {
     internal class IpInfo
     {
-        public IpInfo(string ipAddress, int port, bool ipv6)
+        public IpInfo(string ipAddress, int port)
         {
             IpAddress = ipAddress;
             Port = port;
-            Ipv6 = ipv6;
         }
 
         public string IpAddress { get; }
 
         public int Port { get; }
-
-        public bool Ipv6 { get; }
-
-        public override string ToString() => Ipv6 ? $"{IpAddress}:{Port}" : $"[{IpAddress}]:{Port}";
     }
 }

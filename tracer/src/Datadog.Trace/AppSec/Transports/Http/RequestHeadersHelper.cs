@@ -11,14 +11,14 @@ namespace Datadog.Trace.AppSec.Transports.Http
     internal static class RequestHeadersHelper
     {
         internal static readonly string[] IpHeaders = new string[] { "x-forwarded-for", "x-real-ip", "client-ip", "x-forwarded", "x-cluster-client-ip", "forwarded-for", "forwarded", "via", "true-client-ip" };
-        internal static readonly IEnumerable<string> OtherHeaders = new string[] { "user-agent", "referer" };
+        internal static readonly IEnumerable<string> MainHeaders = new string[] { "user-agent", "referer" };
 
-        internal static ExtractedHeadersAndIpInfos ExtractHeadersIpAndPort(Func<string, string> getHeader, string customIpHeader, string[] extraHeaders, bool isSecureConnection, IpInfo peerIpFallback)
+        internal static ExtractedHeadersAndIpInfos ExtractHeadersIpAndPort(Func<string, string> getHeader, string customIpHeader, string[] customExtraHeaders, bool isSecureConnection, IpInfo peerIpFallback)
         {
             var headersDic = new Dictionary<string, string>();
             var ipPotentialValues = new List<string>();
 
-            foreach (var headerToSend in OtherHeaders)
+            foreach (var headerToSend in MainHeaders)
             {
                 var headerValue = getHeader(headerToSend);
                 if (!string.IsNullOrEmpty(headerValue))
@@ -27,7 +27,7 @@ namespace Datadog.Trace.AppSec.Transports.Http
                 }
             }
 
-            foreach (var headerToSend in extraHeaders)
+            foreach (var headerToSend in customExtraHeaders)
             {
                 var headerValue = getHeader(headerToSend);
                 if (!string.IsNullOrEmpty(headerValue))
@@ -41,6 +41,7 @@ namespace Datadog.Trace.AppSec.Transports.Http
                 var value = getHeader(customIpHeader);
                 if (!string.IsNullOrEmpty(value))
                 {
+                    headersDic.Add(customIpHeader, value);
                     ipPotentialValues.Add(getHeader(customIpHeader));
                 }
             }
@@ -48,9 +49,9 @@ namespace Datadog.Trace.AppSec.Transports.Http
             foreach (var headerIp in IpHeaders)
             {
                 var potentialIp = getHeader(headerIp);
-                headersDic.Add(headerIp, potentialIp);
                 if (!string.IsNullOrEmpty(potentialIp))
                 {
+                    headersDic.Add(headerIp, potentialIp);
                     ipPotentialValues.Add(potentialIp);
                 }
             }

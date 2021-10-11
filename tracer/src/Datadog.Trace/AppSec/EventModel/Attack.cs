@@ -28,7 +28,7 @@ namespace Datadog.Trace.AppSec.EventModel
         {
             var ruleMatch = result.ResultData.Filter[0];
             var request = transport.Request();
-            var headersIpAndPort = RequestHeadersHelper.ExtractHeadersIpAndPort(transport.GetHeader, customIpHeader, extraHeaders,  transport.IsSecureConnection, new IpInfo(request.RemoteIp, request.RemotePort, transport.IsSecureConnection));
+            var headersIpAndPort = RequestHeadersHelper.ExtractHeadersIpAndPort(transport.GetHeader, customIpHeader, extraHeaders,  transport.IsSecureConnection, new IpInfo(request.RemoteIp, request.RemotePort));
             request.Headers = headersIpAndPort.HeadersToSend;
 
             var frameworkDescription = FrameworkDescription.Instance;
@@ -37,7 +37,7 @@ namespace Datadog.Trace.AppSec.EventModel
                 EventId = Guid.NewGuid().ToString(),
                 Context = new Context()
                 {
-                    Actor = new Actor { Ip = new Ip { Address = headersIpAndPort.IpInfo.ToString() } },
+                    Actor = new Actor { Ip = new Ip { Address = headersIpAndPort.IpInfo.IpAddress } },
                     Host = new Host
                     {
                         OsType = frameworkDescription.OSPlatform,

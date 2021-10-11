@@ -9,10 +9,10 @@ namespace Datadog.Trace.AppSec.Transports.Http
 {
     internal class ExtractedHeadersAndIpInfos
     {
-        public ExtractedHeadersAndIpInfos(IDictionary<string, string> headersToSend, string address, int port, bool ipv6)
+        public ExtractedHeadersAndIpInfos(IDictionary<string, string> headersToSend, string address, int port)
         {
             HeadersToSend = headersToSend;
-            IpInfo = new IpInfo(address, port, ipv6);
+            IpInfo = new IpInfo(address, port);
         }
 
         public ExtractedHeadersAndIpInfos(IDictionary<string, string> headersToSend, IpInfo ipInfo)

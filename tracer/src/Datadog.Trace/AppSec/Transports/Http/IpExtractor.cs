@@ -44,7 +44,6 @@ namespace Datadog.Trace.AppSec.Transports.Http
         {
             var privateIp = string.Empty;
             var remotePort = DefaultPort(https);
-            var ipv6 = false;
             foreach (var header in headerValues)
             {
                 var values = header.Split(',');
@@ -74,26 +73,25 @@ namespace Datadog.Trace.AppSec.Transports.Http
                         }
                         else
                         {
-                            return new IpInfo(ipAddress.ToString(), remotePort, ipv6);
+                            return new IpInfo(ipAddress.ToString(), remotePort);
                         }
                     }
                 }
             }
 
-            return new IpInfo(privateIp, remotePort, ipv6);
+            return new IpInfo(privateIp, remotePort);
         }
 
         internal static IpInfo ExtractAddressAndPort(string ip, bool https = false, int? defaultPort = null)
         {
             var port = defaultPort ?? DefaultPort(https);
-            var ipv6 = false;
             if (ip.Contains("."))
             {
                 var parts = ip.Split(':');
                 if (parts.Length == 2)
                 {
                     int.TryParse(parts[1], out port);
-                    return new IpInfo(parts[0], port, ipv6);
+                    return new IpInfo(parts[0], port);
                 }
             }
 
@@ -102,10 +100,9 @@ namespace Datadog.Trace.AppSec.Transports.Http
             {
                 ip = result.Groups[1].Captures[0].Value;
                 int.TryParse(result.Groups[2].Captures[0].Value, out port);
-                ipv6 = true;
             }
 
-            return new IpInfo(ip, port, ipv6);
+            return new IpInfo(ip, port);
         }
 
         internal static bool IsIpInRange(IPAddress ipAdd, IEnumerable<Tuple<int, int>> cidrs)
