@@ -889,12 +889,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
         rejit_handler = nullptr;
     }
     Logger::Info("Exiting...");
-    Logger::Info("   ModuleMetadata: ", module_id_to_info_map_.size());
-    Logger::Info("   ModuleIds: ", module_ids_.size());
-    Logger::Info("   IntegrationMethods: ", integration_methods_.size());
-    Logger::Info("   DefinitionsIds: ", definitions_ids_.size());
-    Logger::Info("   ManagedProfilerLoadedAppDomains: ", managed_profiler_loaded_app_domains.size());
-    Logger::Info("   FirstJitCompilationAppDomains: ", first_jit_compilation_app_domains.size());
+    Logger::Debug("   ModuleMetadata: ", module_id_to_info_map_.size());
+    Logger::Debug("   ModuleIds: ", module_ids_.size());
+    Logger::Debug("   IntegrationMethods: ", integration_methods_.size());
+    Logger::Debug("   DefinitionsIds: ", definitions_ids_.size());
+    Logger::Debug("   ManagedProfilerLoadedAppDomains: ", managed_profiler_loaded_app_domains.size());
+    Logger::Debug("   FirstJitCompilationAppDomains: ", first_jit_compilation_app_domains.size());
     Logger::Info("Stats: ", Stats::Instance()->ToString());
     Logger::Shutdown();
     return S_OK;
