@@ -9,6 +9,7 @@
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)..\Datadog.Trace.snk</AssemblyOriginatorKeyFile>
     <DelaySign>false</DelaySign>
+    <NoWarn>SYSLIB0014</NoWarn>
   </PropertyGroup>
 
   <!-- StyleCop -->
