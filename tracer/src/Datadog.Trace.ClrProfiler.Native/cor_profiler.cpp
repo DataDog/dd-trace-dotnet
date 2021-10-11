@@ -619,6 +619,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         Logger::Info("COR library: ", corAssemblyProperty.szName, " ", corAssemblyProperty.pMetaData.usMajorVersion, ".",
                      corAssemblyProperty.pMetaData.usMinorVersion, ".", corAssemblyProperty.pMetaData.usRevisionNumber);
 
+        if (rejit_handler != nullptr)
+        {
+            rejit_handler->SetCorAssemblyProfiler(&corAssemblyProperty);
+        }
+
         return S_OK;
     }
 
@@ -676,13 +681,48 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
             return S_OK;
         }
 
-        if (module_info.assembly.name != managed_profiler_name)
+        if (module_info.assembly.name == managed_profiler_name)
         {
-            module_info_map_[module_id] = std::make_unique<ModuleInfo>(module_info);
-        }
+            // Fix PInvoke Rewriting
+            ComPtr<IUnknown> metadata_interfaces;
+            auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2,
+                                                     metadata_interfaces.GetAddressOf());
 
-        // We call the function to analyze the module and request the ReJIT of integrations defined in this module.
-        CallTarget_RequestRejitForModule(module_info, integration_methods_);
+            if (FAILED(hr))
+            {
+                Logger::Warn("ModuleLoadFinished failed to get metadata interface for ", module_id, " ",
+                             module_info.assembly.name);
+                return S_OK;
+            }
+
+            const auto metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+            const auto metadata_emit = metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
+            const auto assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
+            const auto assembly_emit = metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
+
+            const auto module_metadata = ModuleMetadata(metadata_import, metadata_emit, assembly_import, assembly_emit,
+                                                        module_info.assembly.name, module_info.assembly.app_domain_id,
+                                                        &corAssemblyProperty);
+
+            Logger::Info("ModuleLoadFinished: ", managed_profiler_name, " - Fix PInvoke maps");
+#ifdef _WIN32
+            RewritingPInvokeMaps(module_metadata, windows_nativemethods_type);
+            RewritingPInvokeMaps(module_metadata, appsec_windows_nativemethods_type);
+#else
+            RewritingPInvokeMaps(module_metadata, nonwindows_nativemethods_type);
+            RewritingPInvokeMaps(module_metadata, appsec_nonwindows_nativemethods_type);
+#endif // _WIN32
+        }
+        else
+        {
+            module_ids_.push_back(module_id);
+
+            // We call the function to analyze the module and request the ReJIT of integrations defined in this module.
+            if (rejit_handler != nullptr && !integration_methods_.empty())
+            {
+                rejit_handler->EnqueueProcessModule(std::vector<ModuleID>{module_id}, integration_methods_);
+            }
+        }
     }
     else
     {
@@ -821,13 +861,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
         }
 
         module_id_to_info_map_.erase(module_id);
-        module_info_map_.erase(module_id);
-
-        if (rejit_handler != nullptr)
-        {
-            rejit_handler->RemoveModule(module_id);
-        }
         delete metadata;
+    }
+
+    if (rejit_handler != nullptr)
+    {
+        rejit_handler->RemoveModule(module_id);
     }
 
     return S_OK;
@@ -851,7 +890,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
     }
     Logger::Info("Exiting...");
     Logger::Info("   ModuleMetadata: ", module_id_to_info_map_.size());
-    Logger::Info("   ModuleInfo: ", module_info_map_.size());
+    Logger::Info("   ModuleIds: ", module_ids_.size());
     Logger::Info("   IntegrationMethods: ", integration_methods_.size());
     Logger::Info("   DefinitionsIds: ", definitions_ids_.size());
     Logger::Info("   ManagedProfilerLoadedAppDomains: ", managed_profiler_loaded_app_domains.size());
@@ -934,12 +973,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
         // we haven't stored a ModuleMetadata for this module,
         // so we can't modify its IL
 
-        auto infoRes = module_info_map_.find(module_id);
-        if (is_calltarget_enabled && infoRes != module_info_map_.end())
+        if (is_calltarget_enabled && Contains(module_ids_, module_id))
         {
-            const ModuleInfo* module_info = infoRes->second.get();
+            const auto module_info = GetModuleInfo(this->info_, module_id);
 
-            has_loader_injected_in_appdomain = first_jit_compilation_app_domains.find(module_info->assembly.app_domain_id) !=
+            has_loader_injected_in_appdomain = first_jit_compilation_app_domains.find(module_info.assembly.app_domain_id) !=
                                                first_jit_compilation_app_domains.end();
 
             if (has_loader_injected_in_appdomain)
@@ -957,9 +995,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
             const auto assemblyImport = metadataInterfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
             const auto assemblyEmit = metadataInterfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
-            Logger::Debug("Temporal allocating the ModuleMetadata for injection.");
+            Logger::Debug("Temporaly allocating the ModuleMetadata for injection. ModuleId=", module_id, " ModuleName=", module_info.assembly.name);
             module_metadata = new ModuleMetadata(metadataImport, metadataEmit, assemblyImport, assemblyEmit,
-                                                 module_info->assembly.name, module_info->assembly.app_domain_id,
+                                                 module_info.assembly.name, module_info.assembly.app_domain_id,
                                                  &corAssemblyProperty);
             local_module_metadata = std::unique_ptr<ModuleMetadata>(module_metadata);
         }
@@ -1047,6 +1085,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
                 return S_OK;
             }
         }
+
+        Logger::Debug("JITCompilationStarted: Startup hook registered.");
     }
 
     if (!is_calltarget_enabled)
@@ -1244,10 +1284,10 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
 
         definitions_ids_.emplace(definitionsId);
 
-        Logger::Info("Total number of modules to analyze: ", module_info_map_.size());
-        for (const auto& modulePair : module_info_map_)
+        Logger::Info("Total number of modules to analyze: ", module_ids_.size());
+        if (rejit_handler != nullptr)
         {
-            CallTarget_RequestRejitForModule(*modulePair.second.get(), integrationMethods);
+            rejit_handler->EnqueueProcessModule(module_ids_, integrationMethods);
         }
 
         integration_methods_.reserve(integration_methods_.size() + integrationMethods.size());
@@ -3207,24 +3247,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetReJITParameters(ModuleID moduleId, mdM
 
     Logger::Debug("GetReJITParameters: [moduleId: ", moduleId, ", methodId: ", methodId, "]");
 
-    // we get the module_metadata from the moduleId.
-    ModuleMetadata* module_metadata = nullptr;
-    {
-        std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
-        auto findRes = module_id_to_info_map_.find(moduleId);
-        if (findRes != module_id_to_info_map_.end())
-        {
-            module_metadata = findRes->second;
-        }
-        else
-        {
-            Logger::Warn("CorProfiler::GetReJITParameters:: Module Id not found: ", moduleId);
-            return S_FALSE;
-        }
-    }
-
     // we notify the reJIT handler of this event and pass the module_metadata.
-    return rejit_handler->NotifyReJITParameters(moduleId, methodId, pFunctionControl, module_metadata);
+    return rejit_handler->NotifyReJITParameters(moduleId, methodId, pFunctionControl);
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ReJITCompilationFinished(FunctionID functionId, ReJITID rejitId,
@@ -3294,7 +3318,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         // we haven't stored a ModuleMetadata for this module,
         // so there's nothing to do here, we accept the NGEN image.
 
-        if (!IsCallTargetEnabled(is_net46_or_greater) || module_info_map_.count(module_id) == 0)
+        if (!IsCallTargetEnabled(is_net46_or_greater) || !Contains(module_ids_, module_id))
         {
             *pbUseCachedFunction = true;
             return S_OK;
@@ -3327,255 +3351,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
 // ***
 // * CallTarget Methods
 // ***
-
-/// <summary>
-/// Search for methods to instrument in a module and request a ReJIT to them for a CallTarget instrumentation
-/// </summary>
-/// <param name="module_id">Module id</param>
-/// <param name="module_metadata">Module metadata for the module</param>
-/// <param name="filtered_integrations">Filtered vector of integrations to be applied</param>
-/// <returns>Number of ReJIT requests made</returns>
-size_t CorProfiler::CallTarget_RequestRejitForModule(const ModuleInfo& module_info,
-                                                     const std::vector<IntegrationMethod>& integrations)
-{
-    auto _ = trace::Stats::Instance()->CallTargetRequestRejitMeasure();
-    Logger::Debug("Requesting Rejit for Module: ", module_info.assembly.name);
-
-    ComPtr<IUnknown> metadataInterfaces;
-    ComPtr<IMetaDataImport2> metadataImport;
-    ComPtr<IMetaDataEmit2> metadataEmit;
-    ComPtr<IMetaDataAssemblyImport> assemblyImport;
-    ComPtr<IMetaDataAssemblyEmit> assemblyEmit;
-    std::unique_ptr<AssemblyMetadata> assemblyMetadata = nullptr;
-    ModuleMetadata* moduleMetadata = nullptr;
-
-    std::vector<ModuleID> vtModules;
-    std::vector<mdMethodDef> vtMethodDefs;
-
-    for (const IntegrationMethod& integration : integrations)
-    {
-
-        // If the integration mode is not CallTarget we skip.
-        if (integration.replacement.wrapper_method.action != calltarget_modification_action)
-        {
-            continue;
-        }
-
-        // If the integration is not for the current assembly we skip.
-        if (integration.replacement.target_method.assembly.name != module_info.assembly.name)
-        {
-            continue;
-        }
-
-        if (assemblyMetadata == nullptr)
-        {
-            Logger::Debug("  Loading Assembly Metadata...");
-            auto hr = this->info_->GetModuleMetaData(module_info.id, ofRead | ofWrite, IID_IMetaDataImport2,
-                                                     metadataInterfaces.GetAddressOf());
-
-            if (FAILED(hr))
-            {
-                Logger::Warn("CallTarget_RequestRejitForModule failed to get metadata interface for ", module_info.id, " ",
-                             module_info.assembly.name);
-                break;
-            }
-
-            metadataImport = metadataInterfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
-            metadataEmit = metadataInterfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
-            assemblyImport = metadataInterfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
-            assemblyEmit = metadataInterfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
-            assemblyMetadata = std::make_unique<AssemblyMetadata>(GetAssemblyImportMetadata(assemblyImport));
-            Logger::Debug("  Assembly Metadata loaded for: ", assemblyMetadata->name, "(",
-                          assemblyMetadata->version.str(), ").");
-        }
-
-        // Check min version
-        if (integration.replacement.target_method.min_version > assemblyMetadata->version)
-        {
-            continue;
-        }
-
-        // Check max version
-        if (integration.replacement.target_method.max_version < assemblyMetadata->version)
-        {
-            continue;
-        }
-
-        // We are in the right module, so we try to load the mdTypeDef from the integration target type name.
-        mdTypeDef typeDef = mdTypeDefNil;
-        auto foundType = FindTypeDefByName(integration.replacement.target_method.type_name, module_info.assembly.name,
-                                           metadataImport, typeDef);
-
-        if (!foundType)
-        {
-            continue;
-        }
-
-        Logger::Debug("  Looking for '", integration.replacement.target_method.type_name, ".",
-                      integration.replacement.target_method.method_name, "(",
-                      (integration.replacement.target_method.signature_types.size() - 1), " params)' method.");
-
-        // Now we enumerate all methods with the same target method name. (All overloads of the method)
-        auto enumMethods = Enumerator<mdMethodDef>(
-            [metadataImport, integration, typeDef](HCORENUM* ptr, mdMethodDef arr[], ULONG max,
-                                                    ULONG* cnt) -> HRESULT {
-                return metadataImport->EnumMethodsWithName(
-                    ptr, typeDef, integration.replacement.target_method.method_name.c_str(), arr, max, cnt);
-            },
-            [metadataImport](HCORENUM ptr) -> void { metadataImport->CloseEnum(ptr); });
-
-        auto enumIterator = enumMethods.begin();
-        while (enumIterator != enumMethods.end())
-        {
-            auto methodDef = *enumIterator;
-
-            // Extract the function info from the mdMethodDef
-            const auto caller = GetFunctionInfo(metadataImport, methodDef);
-            if (!caller.IsValid())
-            {
-                Logger::Warn("    * The caller for the methoddef: ", TokenStr(&methodDef), " is not valid!");
-                enumIterator = ++enumIterator;
-                continue;
-            }
-
-            // We create a new function info into the heap from the caller functionInfo in the stack, to be used later
-            // in the ReJIT process
-            auto functionInfo = FunctionInfo(caller);
-            auto hr = functionInfo.method_signature.TryParse();
-            if (FAILED(hr))
-            {
-                Logger::Warn("    * The method signature: ", functionInfo.method_signature.str(), " cannot be parsed.");
-                enumIterator = ++enumIterator;
-                continue;
-            }
-
-            // Compare if the current mdMethodDef contains the same number of arguments as the instrumentation target
-            const auto numOfArgs = functionInfo.method_signature.NumberOfArguments();
-            if (numOfArgs != integration.replacement.target_method.signature_types.size() - 1)
-            {
-                Logger::Debug("    * The caller for the methoddef: ", integration.replacement.target_method.method_name,
-                              " doesn't have the right number of arguments (", numOfArgs, " arguments).");
-                enumIterator = ++enumIterator;
-                continue;
-            }
-
-            // Compare each mdMethodDef argument type to the instrumentation target
-            bool argumentsMismatch = false;
-            const auto methodArguments = functionInfo.method_signature.GetMethodArguments();
-            Logger::Debug("    * Comparing signature for method: ", integration.replacement.target_method.type_name, ".",
-                          integration.replacement.target_method.method_name);
-            for (unsigned int i = 0; i < numOfArgs; i++)
-            {
-                const auto argumentTypeName = methodArguments[i].GetTypeTokName(metadataImport);
-                const auto integrationArgumentTypeName = integration.replacement.target_method.signature_types[i + 1];
-                Logger::Debug("        -> ", argumentTypeName, " = ", integrationArgumentTypeName);
-                if (argumentTypeName != integrationArgumentTypeName && integrationArgumentTypeName != WStr("_"))
-                {
-                    argumentsMismatch = true;
-                    break;
-                }
-            }
-            if (argumentsMismatch)
-            {
-                Logger::Debug("    * The caller for the methoddef: ", integration.replacement.target_method.method_name,
-                              " doesn't have the right type of arguments.");
-                enumIterator = ++enumIterator;
-                continue;
-            }
-
-            if (moduleMetadata == nullptr)
-            {
-                Logger::Debug("Creating ModuleMetadata...");
-
-                moduleMetadata = new ModuleMetadata(metadataImport, metadataEmit, assemblyImport, assemblyEmit,
-                                                    module_info.assembly.name, module_info.assembly.app_domain_id,
-                                                    &corAssemblyProperty);
-                // store module info for later lookup
-                module_id_to_info_map_[module_info.id] = moduleMetadata;
-
-                Logger::Info("CallTarget_RequestRejitForModule stored metadata for ", module_info.id, " ", module_info.assembly.name,
-                              " AppDomain ", module_info.assembly.app_domain_id, " ",
-                              module_info.assembly.app_domain_name);
-            }
-
-            // As we are in the right method, we gather all information we need and stored it in to the ReJIT handler.
-            auto moduleHandler = rejit_handler->GetOrAddModule(module_info.id);
-            moduleHandler->SetModuleMetadata(moduleMetadata);
-            auto methodHandler = moduleHandler->GetOrAddMethod(methodDef);
-            methodHandler->SetFunctionInfo(functionInfo);
-            methodHandler->SetMethodReplacement(integration.replacement);
-
-            // Store module_id and methodDef to request the ReJIT after analyzing all integrations.
-            vtModules.push_back(module_info.id);
-            vtMethodDefs.push_back(methodDef);
-
-            bool caller_assembly_is_domain_neutral = runtime_information_.is_desktop() && corlib_module_loaded &&
-                                                     moduleMetadata->app_domain_id == corlib_app_domain_id;
-
-            Logger::Debug("    * Enqueue for ReJIT [ModuleId=", module_info.id, ", MethodDef=", TokenStr(&methodDef),
-                          ", AppDomainId=", moduleMetadata->app_domain_id,
-                          ", IsDomainNeutral=", caller_assembly_is_domain_neutral,
-                          ", Assembly=", moduleMetadata->assemblyName, ", Type=", caller.type.name,
-                          ", Method=", caller.name, "(", numOfArgs , " params), Signature=", caller.signature.str(), "]");
-            enumIterator = ++enumIterator;
-        }
-    }
-
-    // Fix PInvokeMap
-    if (module_info.assembly.name == managed_profiler_name)
-    {
-        if (moduleMetadata == nullptr)
-        {
-            Logger::Debug("Creating ModuleMetadata for PInvoke replacements...");
-            if (metadataInterfaces.IsNull())
-            {
-
-                auto hr = this->info_->GetModuleMetaData(module_info.id, ofRead | ofWrite, IID_IMetaDataImport2,
-                                                         metadataInterfaces.GetAddressOf());
-
-                if (FAILED(hr))
-                {
-                    Logger::Warn("CallTarget_RequestRejitForModule failed to get metadata interface for ", module_info.id, " ",
-                                 module_info.assembly.name);
-                    return 0;
-                }
-
-                metadataImport = metadataInterfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
-                metadataEmit = metadataInterfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
-                assemblyImport = metadataInterfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
-                assemblyEmit = metadataInterfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
-            }
-
-            moduleMetadata =
-                new ModuleMetadata(metadataImport, metadataEmit, assemblyImport, assemblyEmit,
-                                   module_info.assembly.name, module_info.assembly.app_domain_id, &corAssemblyProperty);
-
-            // store module info for later lookup
-            module_id_to_info_map_[module_info.id] = moduleMetadata;
-
-            Logger::Info("CallTarget_RequestRejitForModule stored metadata for ", module_info.id, " ", module_info.assembly.name,
-                          " AppDomain ", module_info.assembly.app_domain_id, " ", module_info.assembly.app_domain_name);
-        }
-
-        Logger::Info("CallTarget_RequestRejitForModule: ", managed_profiler_name, " - Fix PInvoke maps");
-#ifdef _WIN32
-        RewritingPInvokeMaps(*moduleMetadata, windows_nativemethods_type);
-        RewritingPInvokeMaps(*moduleMetadata, appsec_windows_nativemethods_type);
-#else
-        RewritingPInvokeMaps(*moduleMetadata, nonwindows_nativemethods_type);
-        RewritingPInvokeMaps(*moduleMetadata, appsec_nonwindows_nativemethods_type);
-#endif // _WIN32
-    }
-
-    // Request the ReJIT for all integrations found in the module.
-    if (!vtMethodDefs.empty())
-    {
-        this->rejit_handler->EnqueueForRejit(vtModules, vtMethodDefs);
-    }
-
-    // We return the number of ReJIT requests
-    return vtMethodDefs.size();
-}
 
 /// <summary>
 /// Rewrite the target method body with the calltarget implementation. (This is function is triggered by the ReJIT
