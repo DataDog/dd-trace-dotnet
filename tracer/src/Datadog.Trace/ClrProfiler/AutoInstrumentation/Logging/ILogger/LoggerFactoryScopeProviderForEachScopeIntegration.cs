@@ -1,4 +1,4 @@
-﻿// <copyright file="LoggerFactoryScopeProviderForEachScopeIntegration.cs" company="Datadog">
+// <copyright file="LoggerFactoryScopeProviderForEachScopeIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
         ReturnTypeName = ClrNames.Void,
         ParameterTypeNames = new[] { "System.Action`2[System.Object,!!0]", "!!0" },
         MinimumVersion = "2.0.0",
-        MaximumVersion = "5.*.*",
+        MaximumVersion = "6.*.*",
         IntegrationName = LoggerIntegrationCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
