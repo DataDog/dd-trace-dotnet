@@ -45,7 +45,7 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="instance">Instance object</param>
         /// <returns>Duck Type proxy</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static IDuckType Create(Type proxyType, object instance)
+        public static object Create(Type proxyType, object instance)
         {
             // Validate arguments
             EnsureArguments(proxyType, instance);
@@ -663,9 +663,9 @@ namespace Datadog.Trace.DuckTyping
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal IDuckType CreateInstance(object instance)
+            internal object CreateInstance(object instance)
             {
-                return (IDuckType)_activator.DynamicInvoke(instance);
+                return _activator.DynamicInvoke(instance);
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]

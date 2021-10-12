@@ -14,8 +14,6 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     public static class DuckTypeExtensions
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DuckType));
-
         /// <summary>
         /// Gets the duck type instance for the object implementing a base class or interface T
         /// </summary>
