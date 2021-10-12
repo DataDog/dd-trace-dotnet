@@ -173,7 +173,7 @@ namespace Samples.HttpMessageHandler
             SynchronizationContext.SetSynchronizationContext(null);
         }
 
-#if NET5_0
+#if NET5_0 || NET6_0
         public static void SendHttpClientRequests(HttpClient client, bool tracingDisabled, string url, string requestContent)
         {
             // Insert a call to the Tracer.Instance to include an AssemblyRef to Datadog.Trace assembly in the final executable
