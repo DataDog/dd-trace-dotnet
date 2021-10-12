@@ -124,7 +124,7 @@ namespace Datadog.Trace.AppSec
         {
             if (span != null)
             {
-                span.SetTag(Tags.AppSecEvent, "1");
+                span.SetTag(Tags.AppSecEvent, "true");
                 span.SetTraceSamplingPriority(SamplingPriority.AppSecKeep);
             }
 
