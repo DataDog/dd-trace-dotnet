@@ -15,22 +15,6 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
-    public class GiraffeTestsCallsite : GiraffeTests
-    {
-        public GiraffeTestsCallsite(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, enableCallTarget: false, enableRouteTemplateResourceNames: false)
-        {
-        }
-    }
-
-    public class GiraffeTestsCallsiteWithFeatureFlag : GiraffeTests
-    {
-        public GiraffeTestsCallsiteWithFeatureFlag(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, enableCallTarget: false, enableRouteTemplateResourceNames: true)
-        {
-        }
-    }
-
     public class GiraffeTestsCallTarget : GiraffeTests
     {
         public GiraffeTestsCallTarget(AspNetCoreTestFixture fixture, ITestOutputHelper output)

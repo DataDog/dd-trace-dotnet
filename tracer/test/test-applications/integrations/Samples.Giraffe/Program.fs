@@ -213,15 +213,6 @@ let errorHandler (ex : Exception) (logger : ILogger) =
 // Config and Main
 // ---------------------------------
 
-let configureCors (builder : CorsPolicyBuilder) =
-    builder
-        .WithOrigins(
-            "http://localhost:5000",
-            "https://localhost:5001")
-       .AllowAnyMethod()
-       .AllowAnyHeader()
-       |> ignore
-
 let configureApp (app : IApplicationBuilder) =
     let env = app.ApplicationServices.GetService<IWebHostEnvironment>()
     (match env.IsDevelopment() with
@@ -230,12 +221,10 @@ let configureApp (app : IApplicationBuilder) =
     | false ->
         app .UseGiraffeErrorHandler(errorHandler)
             .UseHttpsRedirection())
-        .UseCors(configureCors)
         .UseStaticFiles()
         .UseGiraffe(webApp)
 
 let configureServices (services : IServiceCollection) =
-    services.AddCors()    |> ignore
     services.AddGiraffe() |> ignore
 
 let configureLogging (builder : ILoggingBuilder) =
