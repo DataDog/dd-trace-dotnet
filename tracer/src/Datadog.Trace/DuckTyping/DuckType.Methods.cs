@@ -224,6 +224,14 @@ namespace Datadog.Trace.DuckTyping
                             DuckTypeProxyAndTargetMethodParameterSignatureMismatchException.Throw(proxyMethodDefinition, targetMethod);
                         }
 
+                        if (proxyParamType.IsGenericParameter != targetParamType.IsGenericParameter
+                         && proxyMethodDefinitionGenericArguments.Length > 0)
+                        {
+                            // We're in a generic proxy method (i.e. we haven't created a specialized version
+                            // of a generic target, but we _don't_ have a generic parameter where the original does
+                            DuckTypeProxyAndTargetMethodParameterSignatureMismatchException.Throw(proxyMethodDefinition, targetMethod);
+                        }
+
                         // We check if we have to handle an output parameter, by ref parameter or a normal parameter
                         if (proxyParamInfo.IsOut)
                         {
@@ -489,7 +497,13 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 // Check if the target method returns something
-                if (targetMethod.ReturnType != typeof(void))
+                if ((targetMethod.ReturnType == typeof(void) && proxyMethodDefinition.ReturnType != typeof(void))
+                    || (targetMethod.ReturnType != typeof(void) && proxyMethodDefinition.ReturnType == typeof(void)))
+                {
+                    // The original method had no return, but our proxy _does_.
+                    DuckTypeProxyAndTargetMethodReturnTypeMismatchException.Throw(proxyMethod, targetMethod);
+                }
+                else if (targetMethod.ReturnType != typeof(void))
                 {
                     // Handle the return value
                     // Check if the type can be converted or if we need to enable duck chaining

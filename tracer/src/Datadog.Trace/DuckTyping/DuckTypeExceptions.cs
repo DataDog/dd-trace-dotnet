@@ -244,6 +244,23 @@ namespace Datadog.Trace.DuckTyping
     }
 
     /// <summary>
+    /// DuckType parameter signature mismatch between proxy and target method
+    /// </summary>
+    public class DuckTypeProxyAndTargetMethodReturnTypeMismatchException : DuckTypeException
+    {
+        private DuckTypeProxyAndTargetMethodReturnTypeMismatchException(MethodInfo proxyMethod, MethodInfo targetMethod)
+            : base($"Return type mismatch between proxy '{proxyMethod}' and target method '{targetMethod}'.")
+        {
+        }
+
+        [DebuggerHidden]
+        internal static void Throw(MethodInfo proxyMethod, MethodInfo targetMethod)
+        {
+            throw new DuckTypeProxyAndTargetMethodReturnTypeMismatchException(proxyMethod, targetMethod);
+        }
+    }
+
+    /// <summary>
     /// DuckType proxy methods with generic parameters are not supported in non public instances exception
     /// </summary>
     public class DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException : DuckTypeException
