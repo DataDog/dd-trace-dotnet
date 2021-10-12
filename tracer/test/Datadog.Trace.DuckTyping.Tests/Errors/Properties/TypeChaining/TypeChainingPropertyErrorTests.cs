@@ -80,7 +80,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.Properties.TypeChaining
             cast.Should().Throw<TargetInvocationException>();
         }
 
-        [Theory]
+        [Theory(Skip = "We can't currently detect incorrect return types for properties")]
         [MemberData(nameof(WrongReturnTypes))]
         public void WrongReturnTypesThrow(Type duckType, object obscureObject)
         {
@@ -90,7 +90,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.Properties.TypeChaining
             cast.Should().Throw<TargetInvocationException>();
         }
 
-        [Theory]
+        [Theory(Skip = "We can't currently detect incorrect return types for properties")]
         [MemberData(nameof(WrongChainedReturnTypes))]
         public void WrongChainedReturnTypesThrow(Type duckType, object obscureObject)
         {
