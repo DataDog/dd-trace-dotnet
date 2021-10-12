@@ -83,6 +83,8 @@ namespace Datadog.Trace.DuckTyping
                     il.Emit(OpCodes.Box, targetField.FieldType);
                 }
 
+                // WARNING: If targetField.FieldType cannot be duck cast to proxyMemberReturnType
+                // this will throw an exception at runtime when accessing the member
                 // We call DuckType.CreateCache<>.Create()
                 MethodInfo getProxyMethodInfo = typeof(CreateCache<>)
                     .MakeGenericType(proxyMemberReturnType).GetMethod("Create");

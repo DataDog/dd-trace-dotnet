@@ -292,6 +292,13 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
+        /// <summary>
+        /// Create properties in <paramref name="proxyTypeBuilder"/>
+        /// </summary>
+        /// <param name="proxyTypeBuilder">The type builder for the new proxy</param>
+        /// <param name="proxyDefinitionType">The custom type we defined</param>
+        /// <param name="targetType">The original type we are proxying</param>
+        /// <param name="instanceField">The field for accessing the instance of the <paramref name="targetType"/></param>
         private static void CreateProperties(TypeBuilder proxyTypeBuilder, Type proxyDefinitionType, Type targetType, FieldInfo instanceField)
         {
             // Gets all properties to be implemented
@@ -306,12 +313,6 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 PropertyBuilder propertyBuilder = null;
-
-                // If the property is abstract or interface we make sure that we have the property defined in the new class
-                if ((proxyProperty.CanRead && proxyProperty.GetMethod.IsAbstract) || (proxyProperty.CanWrite && proxyProperty.SetMethod.IsAbstract))
-                {
-                    propertyBuilder = proxyTypeBuilder.DefineProperty(proxyProperty.Name, PropertyAttributes.None, proxyProperty.PropertyType, null);
-                }
 
                 DuckAttribute duckAttribute = proxyProperty.GetCustomAttribute<DuckAttribute>(true) ?? new DuckAttribute();
                 duckAttribute.Name ??= proxyProperty.Name;
@@ -333,10 +334,11 @@ namespace Datadog.Trace.DuckTyping
 
                         if (targetProperty is null)
                         {
-                            break;
+                            DuckTypePropertyOrFieldNotFoundException.Throw(proxyProperty.Name, duckAttribute.Name);
+                            continue;
                         }
 
-                        propertyBuilder ??= proxyTypeBuilder.DefineProperty(proxyProperty.Name, PropertyAttributes.None, proxyProperty.PropertyType, null);
+                        propertyBuilder = proxyTypeBuilder.DefineProperty(proxyProperty.Name, PropertyAttributes.None, proxyProperty.PropertyType, null);
 
                         if (proxyProperty.CanRead)
                         {
@@ -372,10 +374,11 @@ namespace Datadog.Trace.DuckTyping
                         FieldInfo targetField = targetType.GetField(duckAttribute.Name, duckAttribute.BindingFlags);
                         if (targetField is null)
                         {
-                            break;
+                            DuckTypePropertyOrFieldNotFoundException.Throw(proxyProperty.Name, duckAttribute.Name);
+                            continue;
                         }
 
-                        propertyBuilder ??= proxyTypeBuilder.DefineProperty(proxyProperty.Name, PropertyAttributes.None, proxyProperty.PropertyType, null);
+                        propertyBuilder = proxyTypeBuilder.DefineProperty(proxyProperty.Name, PropertyAttributes.None, proxyProperty.PropertyType, null);
 
                         if (proxyProperty.CanRead)
                         {
@@ -401,24 +404,16 @@ namespace Datadog.Trace.DuckTyping
 
                         break;
                 }
-
-                if (propertyBuilder is null)
-                {
-                    continue;
-                }
-
-                if (proxyProperty.CanRead && propertyBuilder.GetMethod is null)
-                {
-                    DuckTypePropertyOrFieldNotFoundException.Throw(proxyProperty.Name, duckAttribute.Name);
-                }
-
-                if (proxyProperty.CanWrite && propertyBuilder.SetMethod is null)
-                {
-                    DuckTypePropertyOrFieldNotFoundException.Throw(proxyProperty.Name, duckAttribute.Name);
-                }
             }
         }
 
+        /// <summary>
+        /// Create properties in <paramref name="proxyTypeBuilder"/>
+        /// </summary>
+        /// <param name="proxyTypeBuilder">The type builder for the new proxy</param>
+        /// <param name="proxyDefinitionType">The custom type we defined</param>
+        /// <param name="targetType">The original type we are proxying</param>
+        /// <param name="instanceField">The field for accessing the instance of the <paramref name="targetType"/></param>
         private static void CreatePropertiesFromStruct(TypeBuilder proxyTypeBuilder, Type proxyDefinitionType, Type targetType, FieldInfo instanceField)
         {
             // Gets all fields to be copied
@@ -447,7 +442,8 @@ namespace Datadog.Trace.DuckTyping
                         PropertyInfo targetProperty = targetType.GetProperty(duckAttribute.Name, duckAttribute.BindingFlags);
                         if (targetProperty is null)
                         {
-                            break;
+                            DuckTypePropertyOrFieldNotFoundException.Throw(proxyFieldInfo.Name, duckAttribute.Name);
+                            continue;
                         }
 
                         // Check if the target property can be read
@@ -464,17 +460,13 @@ namespace Datadog.Trace.DuckTyping
                         FieldInfo targetField = targetType.GetField(duckAttribute.Name, duckAttribute.BindingFlags);
                         if (targetField is null)
                         {
-                            break;
+                            DuckTypePropertyOrFieldNotFoundException.Throw(proxyFieldInfo.Name, duckAttribute.Name);
+                            continue;
                         }
 
                         propertyBuilder = proxyTypeBuilder.DefineProperty(proxyFieldInfo.Name, PropertyAttributes.None, proxyFieldInfo.FieldType, null);
                         propertyBuilder.SetGetMethod(GetFieldGetMethod(proxyTypeBuilder, targetType, proxyFieldInfo, targetField, instanceField));
                         break;
-                }
-
-                if (propertyBuilder is null)
-                {
-                    DuckTypePropertyOrFieldNotFoundException.Throw(proxyFieldInfo.Name, duckAttribute.Name);
                 }
             }
         }
