@@ -5,11 +5,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
@@ -102,7 +100,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             }
         }
 
-        private delegate DdwafVersionStruct GetVersionDelegate();
+        private delegate void GetVersionDelegate(ref DdwafVersionStruct version);
 
         private delegate IntPtr InitDelegate(IntPtr wafRule, ref DdwafConfigStruct config);
 
@@ -166,7 +164,9 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal static DdwafVersionStruct GetVersion()
         {
-            return GetVersionField();
+            DdwafVersionStruct version = default;
+            GetVersionField(ref version);
+            return version;
         }
 
         internal static IntPtr Init(IntPtr wafRule, ref DdwafConfigStruct config)
