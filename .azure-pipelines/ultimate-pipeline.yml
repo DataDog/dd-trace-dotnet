@@ -11,6 +11,7 @@ trigger:
     exclude:
       - docs/*
       - .github/*
+      - tracer/dependabot/*
 # The following is a list of shared asset locations.
 # This is the config for the Tracer CI pipeline,
 # so we are excluding shared assets that are not currently used by the Tracer.
@@ -38,8 +39,6 @@ trigger:
       - shared/src/native-lib/spdlog/*
 #     - Mics common native sources:
       - shared/src/native-src/*
-#     - Mock Dependabot files:
-      - tracer/dependabot/*
      
 
 schedules:
