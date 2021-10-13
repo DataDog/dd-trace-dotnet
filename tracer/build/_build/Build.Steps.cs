@@ -66,6 +66,8 @@ partial class Build
     [LazyPathExecutable(name: "gzip")] readonly Lazy<Tool> GZip;
     [LazyPathExecutable(name: "cmd")] readonly Lazy<Tool> Cmd;
 
+    const string ProjFiles = "*.{cs,fs,vb}proj"; 
+
     IEnumerable<MSBuildTargetPlatform> ArchitecturesForPlatform =>
         Equals(TargetPlatform, MSBuildTargetPlatform.x64)
             ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
@@ -726,7 +728,7 @@ partial class Build
             var regressionsDirectory = Solution.GetProject(Projects.EntityFramework6xMdTokenLookupFailure)
                 .Directory.Parent;
 
-            var regressionLibs =  GlobFiles(regressionsDirectory / "**" / "*.csproj")
+            var regressionLibs =  GlobFiles(regressionsDirectory / "**" / ProjFiles)
                  .Where(path =>
                     (path, Solution.GetProject(path).TryGetTargetFrameworks()) switch
                     {
@@ -809,11 +811,11 @@ partial class Build
         .Executes(() =>
         {
             // This does some "unnecessary" rebuilding and restoring
-            var includeIntegration = TracerDirectory.GlobFiles("test/test-applications/integrations/**/*.csproj");
+            var includeIntegration = TracerDirectory.GlobFiles("test/test-applications/integrations/**/" + ProjFiles);
             // Don't build aspnet full framework sample in this step
-            var includeSecurity = TracerDirectory.GlobFiles("test/test-applications/security/*/*.csproj");
+            var includeSecurity = TracerDirectory.GlobFiles("test/test-applications/security/*/" + ProjFiles);
 
-            var exclude = TracerDirectory.GlobFiles("test/test-applications/integrations/dependency-libs/**/*.csproj");
+            var exclude = TracerDirectory.GlobFiles("test/test-applications/integrations/dependency-libs/**/" + ProjFiles);
 
             var projects =  includeIntegration
                 .Concat(includeSecurity)
@@ -852,8 +854,8 @@ partial class Build
             var aspnetFolder = TestsDirectory / "test-applications" / "aspnet";
             var securityAspnetFolder = TestsDirectory / "test-applications" / "security" / "aspnet";
 
-            var aspnetProjects = aspnetFolder.GlobFiles("**/*.csproj");
-            var securityAspnetProjects = securityAspnetFolder.GlobFiles("**/*.csproj");
+            var aspnetProjects = aspnetFolder.GlobFiles("**/" + ProjFiles);
+            var securityAspnetProjects = securityAspnetFolder.GlobFiles("**/" + ProjFiles);
 
             var publishProfile = aspnetFolder / "PublishProfiles" / "FolderProfile.pubxml";
 
@@ -1004,10 +1006,10 @@ partial class Build
         {
             // There's nothing specifically linux-y here, it's just that we only build a subset of projects
             // for testing on linux.
-            var sampleProjects = TracerDirectory.GlobFiles("test/test-applications/integrations/*/*.csproj");
-            var securitySampleProjects = TracerDirectory.GlobFiles("test/test-applications/security/*/*.csproj");
-            var regressionProjects = TracerDirectory.GlobFiles("test/test-applications/regression/*/*.csproj");
-            var instrumentationProjects = TracerDirectory.GlobFiles("test/test-applications/instrumentation/*/*.csproj");
+            var sampleProjects = TracerDirectory.GlobFiles("test/test-applications/integrations/*/" + ProjFiles);
+            var securitySampleProjects = TracerDirectory.GlobFiles("test/test-applications/security/*/" + ProjFiles);
+            var regressionProjects = TracerDirectory.GlobFiles("test/test-applications/regression/*/" + ProjFiles);
+            var instrumentationProjects = TracerDirectory.GlobFiles("test/test-applications/instrumentation/*/" + ProjFiles);
 
             // These samples are currently skipped.
             var projectsToSkip = new[]
@@ -1066,6 +1068,7 @@ partial class Build
                         "Samples.AspNetCore2" => Framework == TargetFramework.NETCOREAPP2_1,
                         "Samples.AspNetCore5" => Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NETCOREAPP3_0,
                         "Samples.GraphQL4" => Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0,
+                        "Samples.Giraffe" => Framework == TargetFramework.NET5_0,
                         var name when projectsToSkip.Contains(name) => false,
                         var name when multiPackageProjects.Contains(name) => false,
                         _ when !string.IsNullOrWhiteSpace(SampleName) => project?.Name?.Contains(SampleName) ?? false,
@@ -1145,7 +1148,7 @@ partial class Build
         .Executes(() =>
         {
             // Build the actual integration test projects for Any CPU
-            var integrationTestProjects = TracerDirectory.GlobFiles("test/*.IntegrationTests/*.csproj");
+            var integrationTestProjects = TracerDirectory.GlobFiles("test/*.IntegrationTests/" + ProjFiles);
             DotNetBuild(x => x
                     // .EnableNoRestore()
                     .EnableNoDependencies()
