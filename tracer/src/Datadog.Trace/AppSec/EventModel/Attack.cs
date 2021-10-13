@@ -36,6 +36,9 @@ namespace Datadog.Trace.AppSec.EventModel
             var attack = new Attack
             {
                 EventId = Guid.NewGuid().ToString(),
+                // All endpoints have SQL queries
+                HasSql = true,
+                HasClient = transport.Request().Path.StartsWith("/token/") && transport.Request().Method == "GET",
                 Context = new Context()
                 {
                     Actor = new Actor { Ip = new Ip { Address = headersIpAndPort.IpInfo.IpAddress } },
