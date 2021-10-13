@@ -79,30 +79,30 @@
           <!-- ".\Datadog" -->
           <Directory Id="INSTALLFOLDER" Name="$(var.BaseProductName)">
             <!-- ".\.NET Monitoring" -->
-            <Directory Id="tracer" Name="tracer">
-              <!-- tracer -->
-              <Directory Id="tracer.net45" Name="net45">
+            <Directory Id="Tracer" Name="Tracer">
+              <!-- Tracer -->
+              <Directory Id="Tracer.net45" Name="net45">
                 <!-- ".\net45" -->
               </Directory>
-              <Directory Id="tracer.net461" Name="net461">
+              <Directory Id="Tracer.net461" Name="net461">
                 <!-- ".\net461" -->
               </Directory>
-              <Directory Id="tracer.netstandard2.0" Name="netstandard2.0">
+              <Directory Id="Tracer.netstandard2.0" Name="netstandard2.0">
                 <!-- ".\netstandard2.0" -->
               </Directory>
-              <Directory Id="tracer.netcoreapp3.1" Name="netcoreapp3.1">
+              <Directory Id="Tracer.netcoreapp3.1" Name="netcoreapp3.1">
                   <!-- ".\netcoreapp3.1" -->
               </Directory>
-              <Directory Id="tracer.net45.GAC" Name="net45.GAC">
+              <Directory Id="Tracer.net45.GAC" Name="net45.GAC">
                 <!-- Ignored as all of its components will be installed in the GAC -->
               </Directory>
-              <Directory Id="tracer.net461.GAC" Name="net461.GAC">
+              <Directory Id="Tracer.net461.GAC" Name="net461.GAC">
                 <!-- Ignored as all of its components will be installed in the GAC -->
               </Directory>
-              <Directory Id="tracer.win_x86" Name="win-x86">
+              <Directory Id="Tracer.win_x86" Name="win-x86">
                 <!-- ".\win-x86" -->
               </Directory>
-              <Directory Id="tracer.win_x64" Name="win-x64">
+              <Directory Id="Tracer.win_x64" Name="win-x64">
                 <!-- ".\win-x64" -->
               </Directory>
             </Directory>
@@ -139,8 +139,8 @@
           <!-- ".\Datadog" -->
           <Directory Id="INSTALLFOLDER.32" Name="$(var.BaseProductName)">
             <!-- ".\.NET Monitoring" -->
-            <Directory Id="tracer.32" Name="tracer">
-            <!-- tracer -->
+            <Directory Id="Tracer.32" Name="Tracer">
+            <!-- Tracer -->
             </Directory>
             <Directory Id="ContinuousProfiler.32" Name="ContinuousProfiler">
               <!-- ContinuousProfiler -->

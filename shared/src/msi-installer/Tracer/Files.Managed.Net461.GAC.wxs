@@ -4,7 +4,7 @@
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
   <?include $(sys.CURRENTDIR)\Config.wxi?>
   <Fragment>
-    <ComponentGroup Id="Tracer.Files.Managed.Net461.GAC" Directory="tracer.net461.GAC">
+    <ComponentGroup Id="Tracer.Files.Managed.Net461.GAC" Directory="Tracer.net461.GAC">
       <Component Win64="$(var.Win64)">
         <Condition>WIX_IS_NETFRAMEWORK_461_OR_LATER_INSTALLED</Condition>
         <File Id="net461_GAC_Datadog.Trace.AspNet.dll"
