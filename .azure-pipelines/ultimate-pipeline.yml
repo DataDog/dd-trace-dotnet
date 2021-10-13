@@ -616,12 +616,6 @@ stages:
         baseImage: $(baseImage)
         command: "CleanObjFiles"
 
-    - script: |
-        echo $(isMainBranch)
-        echo $(perform_comprehensive_testing)
-        echo $(TestAllPackageVersions)
-      displayName: echo vars
-
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-linux-$(baseImage)-working-directory
@@ -703,12 +697,6 @@ stages:
             build: true
             baseImage: $(baseImage)
             command: "CleanObjFiles"
-
-        - script: |
-            echo $(isMainBranch)
-            echo $(perform_comprehensive_testing)
-            echo $(TestAllPackageVersions)
-          displayName: echo vars
       
         - template: steps/restore-working-directory.yml
           parameters:
