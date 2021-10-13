@@ -63,7 +63,7 @@ schedules:
 variables:
   buildConfiguration: Release
   dotnetCoreSdk5Version: 5.0.401
-  dotnetCoreSdk6Version: 6.0.100-rc.1.21463.6
+  dotnetCoreSdk6Version: 6.0.100-rc.2.21505.57
   relativeTracerHome: /tracer/src/bin/windows-tracer-home
   relativeArtifacts: /tracer/src/bin/artifacts
   ddTracerHome: $(System.DefaultWorkingDirectory)/tracer/src/bin/dd-tracer-home
