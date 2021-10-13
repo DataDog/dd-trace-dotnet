@@ -513,7 +513,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
         {
             try
             {
-                // One method per know side-effect:
+                // One method per known side-effect:
                 // (each method should catch/log/swallow its exceptions so that other side-effects can be undone)
 
                 ClearAppDomainTargetFrameworkNameCache(canUseLog);
