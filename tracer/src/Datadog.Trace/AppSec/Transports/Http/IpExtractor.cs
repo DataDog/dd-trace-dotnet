@@ -39,11 +39,10 @@ namespace Datadog.Trace.AppSec.Transports.Http
         /// </summary>
         /// <param name="headerValues">all the extracted values from ip related headers</param>
         /// <param name="https">is a secure connection</param>
-        /// <returns>return ip and port</returns>
+        /// <returns>return ip and port, may be null</returns>
         internal static IpInfo GetRealIpFromValues(IEnumerable<string> headerValues, bool https)
         {
-            var privateIp = string.Empty;
-            var remotePort = DefaultPort(https);
+            IpInfo privateIpInfo = null;
             foreach (var header in headerValues)
             {
                 var values = header.Split(',');
@@ -55,9 +54,8 @@ namespace Datadog.Trace.AppSec.Transports.Http
                         continue;
                     }
 
-                    var addressAndPort = ExtractAddressAndPort(consideredPotentialIp, defaultPort: remotePort);
+                    var addressAndPort = ExtractAddressAndPort(consideredPotentialIp, defaultPort: DefaultPort(https));
                     consideredPotentialIp = addressAndPort.IpAddress;
-                    remotePort = addressAndPort.Port;
 
                     var success = IPAddress.TryParse(consideredPotentialIp, out var ipAddress);
                     if (success)
@@ -67,19 +65,19 @@ namespace Datadog.Trace.AppSec.Transports.Http
                             ipAddress = ipAddress.MapToIPv4();
                         }
 
-                        if (ipAddress.IsIPv6SiteLocal || ipAddress.IsIPv6LinkLocal || IsIpInRange(ipAddress, _ipv4Cidrs))
+                        if (IsIpInRange(ipAddress, _ipv4Cidrs) || ipAddress.IsIPv6SiteLocal || ipAddress.IsIPv6LinkLocal)
                         {
-                            privateIp = ipAddress.ToString();
+                            privateIpInfo = addressAndPort;
                         }
                         else
                         {
-                            return new IpInfo(ipAddress.ToString(), remotePort);
+                            return new IpInfo(ipAddress.ToString(), addressAndPort.Port);
                         }
                     }
                 }
             }
 
-            return new IpInfo(privateIp, remotePort);
+            return privateIpInfo;
         }
 
         internal static IpInfo ExtractAddressAndPort(string ip, bool https = false, int? defaultPort = null)

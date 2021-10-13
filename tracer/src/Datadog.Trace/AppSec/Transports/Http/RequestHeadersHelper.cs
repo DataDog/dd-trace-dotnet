@@ -4,16 +4,17 @@
 // </copyright>
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace Datadog.Trace.AppSec.Transports.Http
 {
     internal static class RequestHeadersHelper
     {
-        internal static readonly string[] IpHeaders = new string[] { "x-forwarded-for", "x-real-ip", "x-client-ip", "x-forwarded", "x-cluster-client-ip", "forwarded-for", "forwarded", "via", "true-client-ip" };
-        internal static readonly IEnumerable<string> MainHeaders = new string[] { "user-agent", "referer" };
+        internal static readonly IReadOnlyList<string> IpHeaders = new[] { "x-forwarded-for", "x-real-ip", "x-client-ip", "x-forwarded", "x-cluster-client-ip", "forwarded-for", "forwarded", "via", "true-client-ip" };
+        internal static readonly IReadOnlyList<string> MainHeaders = new[] { "user-agent", "referer" };
 
-        internal static ExtractedHeadersAndIpInfos ExtractHeadersIpAndPort(Func<string, string> getHeader, string customIpHeader, string[] customExtraHeaders, bool isSecureConnection, IpInfo peerIpFallback)
+        internal static ExtractedHeadersAndIpInfos ExtractHeadersIpAndPort(Func<string, string> getHeader, string customIpHeader, IEnumerable<string> customExtraHeaders, bool isSecureConnection, IpInfo peerIpFallback)
         {
             var headersDic = new Dictionary<string, string>();
             var ipPotentialValues = new List<string>();
@@ -57,13 +58,7 @@ namespace Datadog.Trace.AppSec.Transports.Http
             }
 
             var result = IpExtractor.GetRealIpFromValues(ipPotentialValues, isSecureConnection);
-
-            if (string.IsNullOrEmpty(result.IpAddress))
-            {
-                result = peerIpFallback;
-            }
-
-            return new ExtractedHeadersAndIpInfos(headersDic, result);
+            return new ExtractedHeadersAndIpInfos(headersDic, result ?? peerIpFallback);
         }
     }
 }

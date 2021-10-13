@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Net;
 using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -24,7 +25,7 @@ namespace Datadog.Trace.AppSec.EventModel
         [JsonProperty("context")]
         public Context Context { get; set; }
 
-        public static Attack From(Waf.ReturnTypes.Managed.Return result, Trace.Span span, Transport.ITransport transport, string customIpHeader, string[] extraHeaders)
+        public static Attack From(Waf.ReturnTypes.Managed.Return result, Trace.Span span, Transport.ITransport transport, string customIpHeader, IEnumerable<string> extraHeaders)
         {
             var ruleMatch = result.ResultData.Filter[0];
             var request = transport.Request();

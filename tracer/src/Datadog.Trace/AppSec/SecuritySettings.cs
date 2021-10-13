@@ -32,7 +32,7 @@ namespace Datadog.Trace.AppSec
         /// <summary>
         /// Gets keys indicating the optional custom appsec headers the user wants to send.
         /// </summary>
-        public string[] ExtraHeaders { get; }
+        public IReadOnlyList<string> ExtraHeaders { get; }
 
         public bool BlockingEnabled { get; }
 
