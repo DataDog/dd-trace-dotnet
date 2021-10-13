@@ -40,8 +40,6 @@ std::vector<WSTRING> GetEnvironmentValues(const WSTRING& name);
 // Convert Hex to string
 WSTRING HexStr(const void* data, int len);
 
-WSTRING HResultStr(const HRESULT value);
-
 // Convert Token to string
 WSTRING TokenStr(const mdToken* token);
 
