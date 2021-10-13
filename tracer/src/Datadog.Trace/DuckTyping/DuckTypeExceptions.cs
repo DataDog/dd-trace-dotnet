@@ -4,7 +4,9 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 #pragma warning disable SA1649 // File name must match first type name
 #pragma warning disable SA1402 // File may only contain a single class
@@ -291,6 +293,108 @@ namespace Datadog.Trace.DuckTyping
         internal static void Throw(MethodInfo proxyMethod, MethodInfo targetMethod, MethodInfo targetMethod2)
         {
             throw new DuckTypeTargetMethodAmbiguousMatchException(proxyMethod, targetMethod, targetMethod2);
+        }
+    }
+
+    /// <summary>
+    /// DuckType reverse proxy type to derive from is a struct exception
+    /// </summary>
+    public class DuckTypeReverseProxyBaseIsStructException : DuckTypeException
+    {
+        private DuckTypeReverseProxyBaseIsStructException(Type type)
+            : base($"Cannot derive from struct type '{type.FullName}' for reverse proxy")
+        {
+        }
+
+        [DebuggerHidden]
+        internal static void Throw(Type type)
+        {
+            throw new DuckTypeReverseProxyBaseIsStructException(type);
+        }
+    }
+
+    /// <summary>
+    /// DuckType proxy method is abstract
+    /// </summary>
+    public class DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException : DuckTypeException
+    {
+        private DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException(Type type)
+            : base($"The implementation type '{type.FullName}' must not be an interface or abstract type for reverse proxy")
+        {
+        }
+
+        [DebuggerHidden]
+        internal static void Throw(Type type)
+        {
+            throw new DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException(type);
+        }
+    }
+
+    /// <summary>
+    /// DuckType property can't be read
+    /// </summary>
+    public class DuckTypeReverseProxyPropertyCannotBeAbstractException : DuckTypeException
+    {
+        private DuckTypeReverseProxyPropertyCannotBeAbstractException(PropertyInfo property)
+            : base($"The property '{property.Name}' cannot be abstract for reverse proxy")
+        {
+        }
+
+        [DebuggerHidden]
+        internal static void Throw(PropertyInfo property)
+        {
+            throw new DuckTypeReverseProxyPropertyCannotBeAbstractException(property);
+        }
+    }
+
+    /// <summary>
+    /// DuckType method was [DuckReverseMethod] in non-reverse proxy
+    /// </summary>
+    public class DuckTypeIncorrectReverseMethodUsageException : DuckTypeException
+    {
+        private DuckTypeIncorrectReverseMethodUsageException(MethodInfo method)
+            : base($"The method '{method.Name}' was marked as a [DuckReverseMethod] but not doing reverse duck typing.")
+        {
+        }
+
+        [DebuggerHidden]
+        internal static void Throw(MethodInfo method)
+        {
+            throw new DuckTypeIncorrectReverseMethodUsageException(method);
+        }
+    }
+
+    /// <summary>
+    /// DuckType proxy was missing an implementation
+    /// </summary>
+    public class DuckTypeReverseProxyMissingPropertyImplementationException : DuckTypeException
+    {
+        private DuckTypeReverseProxyMissingPropertyImplementationException(IEnumerable<PropertyInfo> properties)
+            : base($"The duck reverse proxy was missing implementations for properties: {string.Join(", ", properties.Select(x => x.Name))}")
+        {
+        }
+
+        [DebuggerHidden]
+        internal static void Throw(ICollection<PropertyInfo> properties)
+        {
+            throw new DuckTypeReverseProxyMissingPropertyImplementationException(properties);
+        }
+    }
+
+    /// <summary>
+    /// DuckType proxy was missing an implementation
+    /// </summary>
+    public class DuckTypeReverseProxyMissingMethodImplementationException : DuckTypeException
+    {
+        private DuckTypeReverseProxyMissingMethodImplementationException(IEnumerable<MethodInfo> methods)
+            : base($"The duck reverse proxy was missing implementations for methods: {string.Join(", ", methods.Select(x => x.Name))}")
+        {
+        }
+
+        [DebuggerHidden]
+        internal static void Throw(ICollection<MethodInfo> methods)
+        {
+            throw new DuckTypeReverseProxyMissingMethodImplementationException(methods);
         }
     }
 }

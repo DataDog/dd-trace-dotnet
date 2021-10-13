@@ -66,10 +66,10 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy
             using var scope = new AssertionScope();
 
 #if NET452
-            Action cast = () =>  instance.DuckCast(typeToImplement);
+            Action cast = () =>  instance.DuckImplement(typeToImplement);
             cast.Should().Throw<DuckTypeTypeIsNotPublicException>();
 #else
-            var proxy = instance.DuckCast(typeToImplement);
+            var proxy = instance.DuckImplement(typeToImplement);
             Assert.NotNull(proxy);
             proxy.GetType().Should().BeAssignableTo(typeToImplement);
 #endif
@@ -84,7 +84,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy
             var instance = Activator.CreateInstance(reversedType);
             using var scope = new AssertionScope();
 
-            var canCast = instance.TryDuckCast(typeToImplement, out var proxy);
+            var canCast = instance.TryDuckImplement(typeToImplement, out var proxy);
             Assert.True(canCast);
             Assert.NotNull(proxy);
             proxy.GetType().Should().BeAssignableTo(typeToImplement);
@@ -99,7 +99,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy
             var instance = Activator.CreateInstance(reversedType);
             using var scope = new AssertionScope();
 
-            Action cast = () =>  instance.DuckCast(typeToImplement);
+            Action cast = () =>  instance.DuckImplement(typeToImplement);
 #if NET452
             cast.Should().Throw<DuckTypeTypeIsNotPublicException>();
 #else

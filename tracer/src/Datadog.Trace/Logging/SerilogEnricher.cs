@@ -56,6 +56,7 @@ namespace Datadog.Trace.Logging
             _propertyFactory = BuildPropertyFactory(logEventPropertyType, logEventPropertyValueType);
         }
 
+        [DuckIgnore]
         public void Initialize(Tracer tracer)
         {
             _tracer = tracer;
@@ -65,7 +66,7 @@ namespace Datadog.Trace.Logging
             _environmentProperty = _propertyFactory(CorrelationIdentifier.SerilogEnvKey, _valueFactory(tracer.Settings.Environment));
 
             var logEnricherType = CustomSerilogLogProvider.GetLogEnricherType();
-            _serilogEventEnricher = this.DuckCast(logEnricherType);
+            _serilogEventEnricher = this.DuckImplement(logEnricherType);
 
             if (_wrapEnricher)
             {
@@ -75,6 +76,7 @@ namespace Datadog.Trace.Logging
             }
         }
 
+        [DuckIgnore]
         public IDisposable Register()
         {
             return _logProvider.OpenContext(_serilogEventEnricher);

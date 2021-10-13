@@ -28,10 +28,10 @@ namespace Datadog.Trace.DuckTyping.Tests
 #if NET452
             Assert.Throws<DuckTypeTypeIsNotPublicException>(() =>
             {
-                instance.DuckCast(iLogEventEnricherType);
+                instance.DuckImplement(iLogEventEnricherType);
             });
 #else
-            var proxy = instance.DuckCast(iLogEventEnricherType);
+            var proxy = instance.DuckImplement(iLogEventEnricherType);
 
             var log = new Vendors.Serilog.LoggerConfiguration()
                 .Enrich.With((Vendors.Serilog.Core.ILogEventEnricher)proxy)
@@ -56,10 +56,10 @@ namespace Datadog.Trace.DuckTyping.Tests
 #if NET452
             Assert.Throws<DuckTypeTypeIsNotPublicException>(() =>
             {
-                eventInstance.DuckCast(type);
+                eventInstance.DuckImplement(type);
             });
 #else
-            var proxy2 = eventInstance.DuckCast(type);
+            var proxy2 = eventInstance.DuckImplement(type);
             eventInstance.SetBaseInstance(proxy2);
 
             ((Datadog.Trace.Vendors.Serilog.Events.LogEventPropertyValue)proxy2).ToString("Hello world", null);
@@ -77,7 +77,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             var instance = new PublicLogEventEnricherImpl(resetEvent);
 
-            var proxy = instance.DuckCast(iLogEventEnricherType);
+            var proxy = instance.DuckImplement(iLogEventEnricherType);
             var log = new Serilog.LoggerConfiguration()
                 .Enrich.With((Serilog.Core.ILogEventEnricher)proxy)
                 .MinimumLevel.Debug()
@@ -98,7 +98,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             var type = typeof(Serilog.Events.LogEventPropertyValue);
 
-            var proxy2 = eventInstance.DuckCast(type);
+            var proxy2 = eventInstance.DuckImplement(type);
             eventInstance.SetBaseInstance(proxy2);
 
             ((Serilog.Events.LogEventPropertyValue)proxy2).ToString("Hello world", null);
@@ -118,10 +118,10 @@ namespace Datadog.Trace.DuckTyping.Tests
 #if NET452
             Assert.Throws<DuckTypeTypeIsNotPublicException>(() =>
             {
-                formatterInstance.DuckCast(type);
+                formatterInstance.DuckImplement(type);
             });
 #else
-            var proxy2 = formatterInstance.DuckCast(type);
+            var proxy2 = formatterInstance.DuckImplement(type);
 
             var value = new Vendors.Serilog.Events.ScalarValue("original");
 
@@ -143,7 +143,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             var type = typeof(PublicAbstractClassWithProperties);
 
-            var proxy2 = instance.DuckCast(type);
+            var proxy2 = instance.DuckImplement(type);
 
             var actual = ((PublicAbstractClassWithProperties)proxy2).GetClassName();
             var syncRoot = ((PublicAbstractClassWithProperties)proxy2).GetSyncRoot();
@@ -310,6 +310,7 @@ namespace Datadog.Trace.DuckTyping.Tests
                 _manualResetEventSlim = manualResetEventSlim;
             }
 
+            [DuckIgnore]
             public void SetBaseInstance(object baseObject)
             {
                 _base = baseObject.DuckCast<IBaseClass>();
