@@ -567,7 +567,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (shouldSecure)
                 {
-                    security.InstrumentationGateway.RaiseEvent(httpContext, request, span);
+                    security.InstrumentationGateway.RaiseEvent(httpContext, request, span, null);
                 }
             }
         }

@@ -141,7 +141,7 @@ namespace Datadog.Trace.AspNet
                 var security = Security.Instance;
                 if (security.Settings.Enabled)
                 {
-                    security.InstrumentationGateway.RaiseEvent(httpContext, httpRequest, scope.Span);
+                    security.InstrumentationGateway.RaiseEvent(httpContext, httpRequest, scope.Span, null);
                 }
             }
             catch (Exception ex)

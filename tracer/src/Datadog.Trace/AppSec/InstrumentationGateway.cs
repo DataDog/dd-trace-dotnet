@@ -25,7 +25,7 @@ namespace Datadog.Trace.AppSec
 
         public event EventHandler<InstrumentationGatewayEventArgs> InstrumentationGatewayEvent;
 
-        public void RaiseEvent(HttpContext context, HttpRequest request, Span relatedSpan, RouteData routeData = null)
+        public void RaiseEvent(HttpContext context, HttpRequest request, Span relatedSpan, RouteData routeData)
         {
             try
             {
