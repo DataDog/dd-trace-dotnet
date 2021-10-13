@@ -3,6 +3,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace;
+using Samples;
 
 namespace HttpMessageHandler.StackOverflowException
 {
@@ -14,7 +15,9 @@ namespace HttpMessageHandler.StackOverflowException
             {
                 Console.WriteLine($"Profiler attached: {Samples.SampleHelpers.IsProfilerAttached()}");
 
-                var baseAddress = new Uri("https://www.example.com/");
+                using var server = WebServer.Start(out var url);
+
+                var baseAddress = new Uri(url);
                 var regularHttpClient = new HttpClient { BaseAddress = baseAddress };
                 var customHandlerHttpClient = new HttpClient(new DerivedHandler()) { BaseAddress = baseAddress };
 

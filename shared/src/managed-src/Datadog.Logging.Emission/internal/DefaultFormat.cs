@@ -594,7 +594,7 @@ namespace Datadog.Logging.Emission
                 {
                     var pidStr = new StringBuilder(capacity: maxInfoStringLen + 1);
 
-                    pidStr.Append(Process.GetCurrentProcess().Id);
+                    pidStr.Append(GetCurrentProcessIdSafe());
                     while (pidStr.Length < MinPidWidth)
                     {
                         pidStr.Insert(0, ' ');
@@ -607,6 +607,37 @@ namespace Datadog.Logging.Emission
                 catch
                 {
                     return null;
+                }
+            }
+
+            [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+            private static int GetCurrentProcessIdSafe()
+            {
+                try
+                {
+                    return GetCurrentProcessId();
+                }
+                catch
+                {
+                    return 0;
+                }
+            }
+
+            /// <summary>        
+            /// !! This method should be called from within a try-catch block !! <br />
+            /// On the (classic) .NET Framework the <see cref="System.Diagnostics.Process" /> class is
+            /// guarded by a LinkDemand for FullTrust, so partial trust callers will throw an exception.
+            /// That exception is thrown when the caller method is being JIT compiled, NOT when methods on
+            /// the <c>Process</c> class are being invoked.
+            /// This wrapper, when called from within a try-catch block, allows catching the exception.
+            /// </summary>
+            /// <returns>Returns the name of the current process.</returns>
+            [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+            private static int GetCurrentProcessId()
+            {
+                using (Process currentProcess = Process.GetCurrentProcess())
+                {
+                    return currentProcess.Id;
                 }
             }
         }  // class DefaultFormat.LogLine

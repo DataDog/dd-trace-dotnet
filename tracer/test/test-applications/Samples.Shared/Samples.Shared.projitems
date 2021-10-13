@@ -10,5 +10,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)SampleHelpers.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)WebServer.cs" />
   </ItemGroup>
 </Project>

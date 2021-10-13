@@ -13,8 +13,4 @@
     <PackageReference Include="System.Net.Http.WinHttpHandler" Version="5.0.0" />
   </ItemGroup>
   
-  <ItemGroup>
-    <Compile Include="..\..\..\Datadog.Trace.TestHelpers\TcpPortProvider.cs" Link="TcpPortProvider.cs" />
-  </ItemGroup>
-
 </Project>
