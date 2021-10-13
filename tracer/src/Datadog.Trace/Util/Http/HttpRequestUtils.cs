@@ -1,12 +1,9 @@
-// <copyright file="HttpRequestExtensions.cs" company="Datadog">
+// <copyright file="HttpRequestUtils.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 #if NETFRAMEWORK
 using System.Web.Routing;
 #endif
@@ -16,9 +13,9 @@ using Microsoft.AspNetCore.Routing;
 
 namespace Datadog.Trace.Util.Http
 {
-    internal static partial class HttpRequestExtensions
+    internal static class HttpRequestUtils
     {
-        private static object ConvertRouteValueDictionary(RouteValueDictionary routeDataDict)
+        internal static object ConvertRouteValueDictionary(RouteValueDictionary routeDataDict)
         {
             return routeDataDict.ToDictionary(
                 c => c.Key,

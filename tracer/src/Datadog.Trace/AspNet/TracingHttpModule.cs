@@ -141,7 +141,7 @@ namespace Datadog.Trace.AspNet
                 var security = Security.Instance;
                 if (security.Settings.Enabled)
                 {
-                    RaiseInstrumentationEvent(security, httpContext, httpRequest, scope.Span);
+                    security.InstrumentationGateway.RaiseEvent(httpContext, httpRequest, scope.Span);
                 }
             }
             catch (Exception ex)
@@ -254,19 +254,6 @@ namespace Datadog.Trace.AspNet
                 {
                     Log.Error(ex, "Error extracting HTTP headers to create header tags.");
                 }
-            }
-        }
-
-        private void RaiseInstrumentationEvent(IDatadogSecurity security, HttpContext context, HttpRequest request, Span relatedSpan)
-        {
-            try
-            {
-                var dict = request.PrepareArgsForWaf();
-                security.InstrumentationGateway.RaiseEvent(dict, new HttpTransport(context), relatedSpan);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error occurred raising instrumentation event");
             }
         }
     }
