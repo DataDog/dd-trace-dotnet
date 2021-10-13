@@ -34,7 +34,7 @@ namespace Datadog.Trace.AppSec
                 {
                     eventData = request.PrepareArgsForWaf(routeData);
                 }
-                else if (routeData != null && routeData.Values != null && routeData.Values.Count > 0)
+                else if (routeData?.Values?.Count > 0)
                 {
                     var routeDataDict = HttpRequestUtils.ConvertRouteValueDictionary(routeData.Values);
                     eventData = new Dictionary<string, object>() { { AddressesConstants.RequestPathParams, routeDataDict } };
