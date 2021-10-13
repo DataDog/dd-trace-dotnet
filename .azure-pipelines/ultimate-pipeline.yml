@@ -38,6 +38,8 @@ trigger:
       - shared/src/native-lib/spdlog/*
 #     - Mics common native sources:
       - shared/src/native-src/*
+#     - Mock Dependabot files:
+      - tracer/dependabot/*
      
 
 schedules:
