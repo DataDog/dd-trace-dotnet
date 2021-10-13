@@ -27,6 +27,8 @@ function ExecSafe([scriptblock] $cmd) {
 # If dotnet CLI is installed globally and it matches requested version, use for execution
 $env:DOTNET_EXE = (Get-Command "dotnet").Path
 
+Write-Output $env:DOTNET_EXE
+
 Write-Output "Microsoft (R) .NET Core SDK version $(& $env:DOTNET_EXE --version)"
 
 ExecSafe { & $env:DOTNET_EXE build $BuildProjectFile /nodeReuse:false /p:UseSharedCompilation=false -nologo -clp:NoSummary --verbosity quiet }
