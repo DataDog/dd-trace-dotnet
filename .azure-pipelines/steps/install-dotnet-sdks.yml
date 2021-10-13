@@ -29,6 +29,13 @@ steps:
     version: $(dotnetCoreSdk5Version)
     includePreviewVersions: true
 
+- task: UseDotNet@2
+  displayName: install dotnet core sdk 6
+  inputs:
+    packageType: sdk
+    version: $(dotnetCoreSdk6Version)
+    includePreviewVersions: true
+
 - ${{ if eq(parameters.includeX86, true) }}:
     - template: install-dotnet-sdk-32bit.yml
       parameters:
