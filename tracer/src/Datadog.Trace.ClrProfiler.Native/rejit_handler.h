@@ -6,6 +6,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <future>
 
 #include "cor.h"
 #include "corprof.h"
@@ -23,12 +24,15 @@ struct RejitItem
     std::unique_ptr<mdMethodDef[]> m_methodDefs = nullptr;
     //
     std::unique_ptr<std::vector<IntegrationMethod>> m_integrationMethods = nullptr;
+    //
+    std::promise<int>* m_promise;
 
     RejitItem();
     RejitItem(int length,
         std::unique_ptr<ModuleID[]>&& modulesId,
         std::unique_ptr<mdMethodDef[]>&& methodDefs,
-        std::unique_ptr<std::vector<IntegrationMethod>>&& integrationMethods);
+        std::unique_ptr<std::vector<IntegrationMethod>>&& integrationMethods,
+        std::promise<int>* promise);
     static std::unique_ptr<RejitItem> CreateEndRejitThread();
 };
 
@@ -138,7 +142,8 @@ public:
 
     void EnqueueForRejit(const std::vector<ModuleID>& modulesVector, const std::vector<mdMethodDef>& modulesMethodDef);
     void EnqueueProcessModule(const std::vector<ModuleID>& modulesVector,
-                              const std::vector<IntegrationMethod>& integrations);
+                              const std::vector<IntegrationMethod>& integrations,
+                              std::promise<int>* promise);
     void Shutdown();
 
     HRESULT NotifyReJITParameters(ModuleID moduleId, mdMethodDef methodId,

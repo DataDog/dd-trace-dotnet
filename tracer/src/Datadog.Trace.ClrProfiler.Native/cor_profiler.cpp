@@ -720,7 +720,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
             // We call the function to analyze the module and request the ReJIT of integrations defined in this module.
             if (rejit_handler != nullptr && !integration_methods_.empty())
             {
-                rejit_handler->EnqueueProcessModule(std::vector<ModuleID>{module_id}, integration_methods_);
+                std::promise<int> promise;
+                std::future<int> future = promise.get_future();
+                rejit_handler->EnqueueProcessModule(std::vector<ModuleID>{module_id}, integration_methods_, &promise);
+                Logger::Debug("ReJIT Requested: ", future.get());
             }
         }
     }
@@ -1290,7 +1293,10 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
         Logger::Info("Total number of modules to analyze: ", module_ids_.size());
         if (rejit_handler != nullptr)
         {
-            rejit_handler->EnqueueProcessModule(module_ids_, integrationMethods);
+            std::promise<int> promise;
+            std::future<int> future = promise.get_future();
+            rejit_handler->EnqueueProcessModule(module_ids_, integrationMethods, &promise);
+            Logger::Debug("ReJIT Requested: ", future.get());
         }
 
         integration_methods_.reserve(integration_methods_.size() + integrationMethods.size());

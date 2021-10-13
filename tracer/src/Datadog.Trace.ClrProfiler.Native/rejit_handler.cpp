@@ -11,14 +11,15 @@ namespace trace
 // RejitItem
 //
 
-RejitItem::RejitItem() : m_type(-1), m_length(0), m_modulesId(nullptr), m_methodDefs(nullptr)
+RejitItem::RejitItem() : m_type(-1), m_length(0), m_modulesId(nullptr), m_methodDefs(nullptr), m_promise(nullptr)
 {
 }
 
 RejitItem::RejitItem(int length,
     std::unique_ptr<ModuleID[]>&& modulesId,
     std::unique_ptr<mdMethodDef[]>&& methodDefs,
-    std::unique_ptr<std::vector<IntegrationMethod>>&& integrationMethods)
+    std::unique_ptr<std::vector<IntegrationMethod>>&& integrationMethods,
+    std::promise<int>* promise)
 {
     m_length = length;
     m_modulesId = std::move(modulesId);
@@ -32,6 +33,7 @@ RejitItem::RejitItem(int length,
         m_type = 1;
         m_integrationMethods = std::move(integrationMethods);
     }
+    m_promise = promise;
 }
 
 std::unique_ptr<RejitItem> RejitItem::CreateEndRejitThread()
@@ -526,6 +528,11 @@ void RejitHandler::EnqueueThreadLoop(RejitHandler* handler)
                 {
                     handler->EnqueueForRejit(vtModules, vtMethodDefs);
                 }
+
+                if (item->m_promise != nullptr)
+                {
+                    item->m_promise->set_value(vtMethodDefs.size());
+                }
             }
         }
     }
@@ -637,11 +644,12 @@ void RejitHandler::EnqueueForRejit(const std::vector<ModuleID>& modulesVector, c
     }
 
     // Enqueue rejit
-    m_rejit_queue->push(std::make_unique<RejitItem>((int) length, std::move(moduleIds), std::move(mDefs), nullptr));
+    m_rejit_queue->push(std::make_unique<RejitItem>((int) length, std::move(moduleIds), std::move(mDefs), nullptr, nullptr));
 }
 
 void RejitHandler::EnqueueProcessModule(const std::vector<ModuleID>& modulesVector,
-                                        const std::vector<IntegrationMethod>& integrations)
+                                        const std::vector<IntegrationMethod>& integrations,
+                                        std::promise<int>* promise)
 {
     Logger::Debug("RejitHandler::EnqueueProcessModule");
     const size_t length = modulesVector.size();
@@ -651,7 +659,8 @@ void RejitHandler::EnqueueProcessModule(const std::vector<ModuleID>& modulesVect
 
     // Enqueue process module
     m_rejit_queue->push(std::make_unique<RejitItem>((int) length, std::move(moduleIds), nullptr,
-                                                    std::make_unique<std::vector<IntegrationMethod>>(integrations)));
+                                                    std::make_unique<std::vector<IntegrationMethod>>(integrations),
+                                                    promise));
 }
 
 void RejitHandler::Shutdown()
