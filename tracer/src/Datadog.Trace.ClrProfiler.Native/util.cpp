@@ -111,11 +111,6 @@ WSTRING HexStr(const void* dataPtr, int len)
     return s;
 }
 
-WSTRING HResultStr(const HRESULT value)
-{
-    return HexStr((unsigned char*) &value, sizeof(HRESULT));
-}
-
 WSTRING TokenStr(const mdToken* token)
 {
     const unsigned char* data = (unsigned char*) token;

@@ -62,12 +62,11 @@ private:
     //
     std::mutex module_id_to_info_map_lock_;
     std::unordered_map<ModuleID, ModuleMetadata*> module_id_to_info_map_;
-    std::vector<ModuleID> module_ids_;
 
     //
     // Helper methods
     //
-    void RewritingPInvokeMaps(const ModuleMetadata& module_metadata, const WSTRING& nativemethods_type_name);
+    void RewritingPInvokeMaps(ComPtr<IUnknown> metadata_interfaces, ModuleMetadata* module_metadata, WSTRING nativemethods_type_name);
     WSTRING GetCLRProfilerPath();
     void CheckFilenameDefinitions();
     bool GetWrapperMethodRef(ModuleMetadata* module_metadata, ModuleID module_id,
@@ -92,6 +91,8 @@ private:
     //
     // CallTarget Methods
     //
+    size_t CallTarget_RequestRejitForModule(ModuleID module_id, ModuleMetadata* module_metadata,
+                                            const std::vector<IntegrationMethod>& integrations);
     HRESULT CallTarget_RewriterCallback(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler);
 
 public:

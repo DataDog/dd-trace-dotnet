@@ -16,19 +16,11 @@ namespace trace
 
 struct RejitItem
 {
-    int m_type = 0;
-    //
     int m_length = 0;
-    std::unique_ptr<ModuleID[]> m_modulesId = nullptr;
-    std::unique_ptr<mdMethodDef[]> m_methodDefs = nullptr;
-    //
-    std::unique_ptr<std::vector<IntegrationMethod>> m_integrationMethods = nullptr;
+    std::unique_ptr<ModuleID> m_modulesId = nullptr;
+    std::unique_ptr<mdMethodDef> m_methodDefs = nullptr;
 
-    RejitItem();
-    RejitItem(int length,
-        std::unique_ptr<ModuleID[]>&& modulesId,
-        std::unique_ptr<mdMethodDef[]>&& methodDefs,
-        std::unique_ptr<std::vector<IntegrationMethod>>&& integrationMethods);
+    RejitItem(int length, std::unique_ptr<ModuleID>&& modulesId, std::unique_ptr<mdMethodDef>&& methodDefs);
     static std::unique_ptr<RejitItem> CreateEndRejitThread();
 };
 
@@ -76,7 +68,7 @@ class RejitHandlerModule
 {
 private:
     ModuleID m_moduleId;
-    std::unique_ptr<ModuleMetadata> m_metadata;
+    ModuleMetadata* m_metadata;
     std::mutex m_methods_lock;
     std::unordered_map<mdMethodDef, std::unique_ptr<RejitHandlerModuleMethod>> m_methods;
     RejitHandler* m_handler;
@@ -104,7 +96,6 @@ class RejitHandler
 private:
     std::mutex m_modules_lock;
     std::unordered_map<ModuleID, std::unique_ptr<RejitHandlerModule>> m_modules;
-    AssemblyProperty* m_pCorAssemblyProperty = nullptr;
 
     ICorProfilerInfo4* m_profilerInfo;
     ICorProfilerInfo6* m_profilerInfo6;
@@ -136,19 +127,16 @@ public:
 
     void AddNGenModule(ModuleID moduleId);
 
-    void EnqueueForRejit(const std::vector<ModuleID>& modulesVector, const std::vector<mdMethodDef>& modulesMethodDef);
-    void EnqueueProcessModule(const std::vector<ModuleID>& modulesVector,
-                              const std::vector<IntegrationMethod>& integrations);
+    void EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef);
     void Shutdown();
 
     HRESULT NotifyReJITParameters(ModuleID moduleId, mdMethodDef methodId,
-                                  ICorProfilerFunctionControl* pFunctionControl);
+                                  ICorProfilerFunctionControl* pFunctionControl, ModuleMetadata* metadata);
     HRESULT NotifyReJITCompilationStarted(FunctionID functionId, ReJITID rejitId);
 
     ICorProfilerInfo4* GetCorProfilerInfo();
     ICorProfilerInfo6* GetCorProfilerInfo6();
 
-    void SetCorAssemblyProfiler(AssemblyProperty* pCorAssemblyProfiler);
     void RequestRejitForNGenInliners();
 };
 
