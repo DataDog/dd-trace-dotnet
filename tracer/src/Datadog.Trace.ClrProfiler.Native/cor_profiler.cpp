@@ -971,7 +971,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     if (module_metadata == nullptr)
     {
         // we haven't stored a ModuleMetadata for this module,
-        // so we can't modify its IL
+        // so we have to check if we are in calltarget mode and
+        // if the Id is in the module_ids_ vector.
+        // In case is True we create a local ModuleMetadata to inject the loader.
 
         if (is_calltarget_enabled && Contains(module_ids_, module_id))
         {
@@ -3316,11 +3318,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
 
     if (module_metadata == nullptr)
     {
-        // we haven't stored a ModuleMetadata for this module,
-        // so there's nothing to do here, we accept the NGEN image.
-
         if (!IsCallTargetEnabled(is_net46_or_greater) || !Contains(module_ids_, module_id))
         {
+            // we haven't stored a ModuleMetadata for this module,
+            // so there's nothing to do here, we accept the NGEN image.
             *pbUseCachedFunction = true;
             return S_OK;
         }
