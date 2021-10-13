@@ -268,22 +268,18 @@ namespace Datadog.Util
         {
             using (Process currentProcess = Process.GetCurrentProcess())
             {
-                ModuleInfo mainModuleInfo = new ModuleInfo();
-
                 ProcessModule mainModule = currentProcess.MainModule;
-                using (mainModule)
+                if (mainModule == null)
                 {
-                    if (mainModule != null)
-                    {
-                        mainModuleInfo.SetTo(mainModule);
-                    }
-                    else
-                    {
-                        mainModuleInfo.Reset();
-                    }
+                    return new ModuleInfo();
                 }
 
-                return mainModuleInfo;
+                using (mainModule)
+                {
+                    ModuleInfo mainModuleInfo = new ModuleInfo();
+                    mainModuleInfo.SetTo(mainModule);
+                    return mainModuleInfo;
+                }
             }
         }
 
