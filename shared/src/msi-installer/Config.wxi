@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <Include>
-  <?define BaseProductName = ".NET Tracer" ?>
+  <?define BaseProductName = ".NET Monitoring" ?>
   <?define ArpManufacturer = "Datadog, Inc." ?>
   <?define Company = "Datadog" ?>
   <?define ProductNamePlatformAgnostic = "Datadog $(var.BaseProductName)" ?>

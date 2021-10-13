@@ -78,7 +78,7 @@
         <Directory Id="ProgramFilesFolder.Datadog" Name="$(var.Company)">
           <!-- ".\Datadog" -->
           <Directory Id="INSTALLFOLDER" Name="$(var.BaseProductName)">
-            <!-- ".\.NET Tracer" -->
+            <!-- ".\.NET Monitoring" -->
             <Directory Id="tracer" Name="tracer">
               <!-- tracer -->
               <Directory Id="tracer.net45" Name="net45">
@@ -138,7 +138,7 @@
         <Directory Id="ProgramFilesFolder.Datadog.32" Name="$(var.Company)">
           <!-- ".\Datadog" -->
           <Directory Id="INSTALLFOLDER.32" Name="$(var.BaseProductName)">
-            <!-- ".\.NET Tracer" -->
+            <!-- ".\.NET Monitoring" -->
             <Directory Id="tracer.32" Name="tracer">
             <!-- tracer -->
             </Directory>
