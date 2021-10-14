@@ -1,11 +1,13 @@
 ﻿ARG DOTNETSDK_VERSION
 FROM mcr.microsoft.com/dotnet/sdk:$DOTNETSDK_VERSION-alpine3.14 as base
 
-RUN apk update \
-    && apk upgrade \
+RUN apk update
+
+RUN apk add 'cmake<3.20'
+
+RUN apk upgrade \
     && apk add --no-cache --update \
         clang \
-        cmake \
         git \
         bash \
         make \
