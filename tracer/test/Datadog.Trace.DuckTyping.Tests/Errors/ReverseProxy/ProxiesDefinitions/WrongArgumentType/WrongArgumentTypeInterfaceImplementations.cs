@@ -22,7 +22,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.ProxiesDefinitions.
         public class DuckChainReturnMethod
         {
             // Wrong first argument
-            [DuckReverseMethod(ParameterTypeNames = new[] { "System.String", "Datadog.Trace.Vendors.Serilog.Core.ILogEventPropertyFactory, Datadog.Trace" })]
+            [DuckReverseMethod]
             public ILogEventProperty CreateProperty(string name, object value, bool destructureObjects = false)
             {
                 return null;

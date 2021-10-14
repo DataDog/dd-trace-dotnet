@@ -1002,6 +1002,60 @@ namespace Datadog.Trace.DuckTyping
 #endif
                 return GetOrCreateProxyType(Type, targetType);
             }
+
+            /// <summary>
+            /// Create a reverse proxy type for a target instance using the T proxy definition
+            /// </summary>
+            /// <param name="instance">Object instance</param>
+            /// <returns>Proxy instance</returns>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public static T CreateReverse(object instance)
+            {
+                if (instance is null)
+                {
+                    return default;
+                }
+
+                return GetReverseProxy(instance.GetType()).CreateInstance<T>(instance);
+            }
+
+            /// <summary>
+            /// Gets the proxy type for a target type using the T proxy definition
+            /// </summary>
+            /// <param name="targetType">Target type</param>
+            /// <returns>CreateTypeResult instance</returns>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public static CreateTypeResult GetReverseProxy(Type targetType)
+            {
+                // We set a fast path for the first proxy type for a proxy definition. (It's likely to have a proxy definition just for one target type)
+                CreateTypeResult fastPath = _fastPath;
+                if (fastPath.TargetType == targetType)
+                {
+                    return fastPath;
+                }
+
+                CreateTypeResult result = GetReverseProxySlow(targetType);
+
+                fastPath = _fastPath;
+                if (fastPath.TargetType is null)
+                {
+                    _fastPath = result;
+                }
+
+                return result;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static CreateTypeResult GetReverseProxySlow(Type targetType)
+            {
+#if NET45
+                if (!Type.IsValueType && !IsVisible)
+                {
+                    DuckTypeTypeIsNotPublicException.Throw(Type, nameof(Type));
+                }
+#endif
+                return GetOrCreateReverseProxyType(Type, targetType);
+            }
         }
     }
 }

@@ -31,19 +31,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.ProxiesDefinitions.
         [ReverseTypeToTest("Datadog.Trace.Vendors.Serilog.Core.ILogEventPropertyFactory", "Datadog.Trace")]
         public class DuckChainReturnMethod
         {
-            // extra argument, not in attribute
-            [DuckReverseMethod(ParameterTypeNames = new[] { "Datadog.Trace.Vendors.Serilog.Events.LogEvent, Datadog.Trace", "Datadog.Trace.Vendors.Serilog.Core.ILogEventPropertyFactory, Datadog.Trace" })]
-            public ILogEventProperty CreateProperty(string name, object value, string wrong, bool destructureObjects = false)
-            {
-                return null;
-            }
-        }
-
-        [ReverseTypeToTest("Datadog.Trace.Vendors.Serilog.Core.ILogEventPropertyFactory", "Datadog.Trace")]
-        public class DuckChainReturnMethod2
-        {
-            // extra argument, in attribute too
-            [DuckReverseMethod(ParameterTypeNames = new[] { "Datadog.Trace.Vendors.Serilog.Events.LogEvent, Datadog.Trace", "Datadog.Trace.Vendors.Serilog.Core.ILogEventPropertyFactory, Datadog.Trace", "System.String" })]
+            [DuckReverseMethod]
             public ILogEventProperty CreateProperty(string name, object value, string wrong, bool destructureObjects = false)
             {
                 return null;

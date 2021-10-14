@@ -98,6 +98,9 @@ namespace Datadog.Trace.DuckTyping
 
             var targetMethodsDefinitions = GetMethods(targetType);
 
+            // These are the methods that we can attempt to duck type
+            var allTargetMethods = targetType.GetMethods(DuckAttribute.DefaultFlags);
+
             foreach (var method in targetMethodsDefinitions)
             {
                 if (method.GetCustomAttribute<DuckIncludeAttribute>(true) is not null)
@@ -119,7 +122,7 @@ namespace Datadog.Trace.DuckTyping
                 Type[] proxyMethodDefinitionParametersTypes = proxyMethodDefinitionParameters.Select(p => p.ParameterType).ToArray();
 
                 // We select the target method to call
-                MethodInfo targetMethod = SelectTargetMethod<DuckAttribute>(targetType, proxyMethodDefinition, proxyMethodDefinitionParameters, proxyMethodDefinitionParametersTypes);
+                MethodInfo targetMethod = SelectTargetMethod<DuckAttribute>(targetType, proxyMethodDefinition, proxyMethodDefinitionParameters, proxyMethodDefinitionParametersTypes, allTargetMethods);
 
                 // If the target method couldn't be found we throw.
                 if (targetMethod is null)
@@ -511,8 +514,8 @@ namespace Datadog.Trace.DuckTyping
 
         private static void CreateReverseProxyMethods(TypeBuilder proxyTypeBuilder, Type typeToDeriveFrom, Type typeToDelegateTo, FieldInfo instanceField)
         {
-            // Gets all properties that _have_ to or _can_ overriden/implemented
-            List<MethodInfo> overriddenMethods = GetMethods(typeToDeriveFrom).Where(x => x.IsAbstract).ToList();
+            // Gets all properties that _can_ be overriden/implemented
+            List<MethodInfo> overriddenMethods = GetMethods(typeToDeriveFrom);
 
             // Get all the methods on our delegation type that we're going to delegate to
             // Note that these don't need to be abstract/virtual, unlike in a normal (forward) proxy
@@ -532,7 +535,7 @@ namespace Datadog.Trace.DuckTyping
                 Type[] implementationMethodParametersTypes = implementationMethodParameters.Select(p => p.ParameterType).ToArray();
 
                 // We select the target method to call
-                MethodInfo overriddenMethod = SelectTargetMethod<DuckReverseMethodAttribute>(typeToDeriveFrom, implementationMethod, implementationMethodParameters, implementationMethodParametersTypes);
+                MethodInfo overriddenMethod = SelectTargetMethod<DuckReverseMethodAttribute>(typeToDeriveFrom, implementationMethod, implementationMethodParameters, implementationMethodParametersTypes, overriddenMethods);
 
                 // If the target method couldn't be found we throw.
                 if (overriddenMethod is null)
@@ -558,6 +561,11 @@ namespace Datadog.Trace.DuckTyping
 
                 // Gets target method parameters
                 ParameterInfo[] overriddenMethodParameters = overriddenMethod.GetParameters();
+                if (implementationMethodParameters.Length > overriddenMethodParameters.Length)
+                {
+                    DuckTypeProxyAndTargetMethodParameterSignatureMismatchException.Throw(implementationMethod, overriddenMethod);
+                }
+
                 Type[] overriddenMethodParametersTypes = overriddenMethodParameters.Select(p => p.ParameterType).ToArray();
 
                 // Make sure we have the right methods attributes.
@@ -598,8 +606,6 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 // Load all the arguments / parameters
-                System.Diagnostics.Debug.Assert(implementationMethodParameters.Length <= overriddenMethodParameters.Length, "Implementation cannot have more parameters than overriden method");
-
                 int maxParamLength = Math.Max(implementationMethodParameters.Length, overriddenMethodParameters.Length);
                 for (int idx = 0; idx < maxParamLength; idx++)
                 {
@@ -886,15 +892,17 @@ namespace Datadog.Trace.DuckTyping
                     // Check if the type can be converted or if we need to enable duck chaining
                     if (NeedsDuckChaining(overriddenMethod.ReturnType, implementationMethod.ReturnType))
                     {
-                        if (UseDirectAccessTo(proxyTypeBuilder, overriddenMethod.ReturnType) && overriddenMethod.ReturnType.IsValueType)
+                        if (UseDirectAccessTo(proxyTypeBuilder, implementationMethod.ReturnType) && implementationMethod.ReturnType.IsValueType)
                         {
-                            il.Emit(OpCodes.Box, overriddenMethod.ReturnType);
+                            il.Emit(OpCodes.Box, implementationMethod.ReturnType);
                         }
 
-                        il.Emit(OpCodes.Castclass, typeof(IDuckType));
+                        // We call DuckType.CreateCache<>.CreateReverse(object instance)
+                        MethodInfo getProxyMethodInfo = typeof(CreateCache<>)
+                                                       .MakeGenericType(overriddenMethod.ReturnType)
+                                                       .GetMethod("CreateReverse");
 
-                        // Call IDuckType.Instance property to get the actual value
-                        il.EmitCall(OpCodes.Callvirt, DuckTypeInstancePropertyInfo.GetMethod, null);
+                        il.Emit(OpCodes.Call, getProxyMethodInfo);
                     }
                     else if (returnType != implementationMethod.ReturnType)
                     {
@@ -908,13 +916,18 @@ namespace Datadog.Trace.DuckTyping
                 _methodBuilderGetToken.Invoke(proxyMethod, null);
             }
 
-            if (overriddenMethods.Count > 0)
+            if (overriddenMethods.Any(x => x.IsAbstract))
             {
-                DuckTypeReverseProxyMissingMethodImplementationException.Throw(overriddenMethods);
+                DuckTypeReverseProxyMissingMethodImplementationException.Throw(overriddenMethods.Where(x => x.IsAbstract));
             }
         }
 
-        private static MethodInfo SelectTargetMethod<T>(Type targetType, MethodInfo proxyMethod, ParameterInfo[] proxyMethodParameters, Type[] proxyMethodParametersTypes)
+        private static MethodInfo SelectTargetMethod<T>(
+            Type targetType,
+            MethodInfo proxyMethod,
+            ParameterInfo[] proxyMethodParameters,
+            Type[] proxyMethodParametersTypes,
+            IEnumerable<MethodInfo> allTargetMethods)
             where T : DuckAttributeBase, new()
         {
             T proxyMethodDuckAttribute = proxyMethod.GetCustomAttribute<T>(true) ?? new T();
@@ -955,7 +968,6 @@ namespace Datadog.Trace.DuckTyping
             // Also this can happen if the proxy parameters type uses a base object (ex: System.Object) instead the type.
             // In this case we try to find a method that we can match, in case of ambiguity (> 1 method found) we throw an exception.
 
-            MethodInfo[] allTargetMethods = targetType.GetMethods(DuckAttribute.DefaultFlags);
             foreach (MethodInfo candidateMethod in allTargetMethods)
             {
                 string name = proxyMethodDuckAttribute.Name;

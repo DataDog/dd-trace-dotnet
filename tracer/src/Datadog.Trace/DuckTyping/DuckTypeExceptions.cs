@@ -392,7 +392,7 @@ namespace Datadog.Trace.DuckTyping
         }
 
         [DebuggerHidden]
-        internal static void Throw(ICollection<MethodInfo> methods)
+        internal static void Throw(IEnumerable<MethodInfo> methods)
         {
             throw new DuckTypeReverseProxyMissingMethodImplementationException(methods);
         }
