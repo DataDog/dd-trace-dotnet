@@ -668,7 +668,6 @@ stages:
       condition: always()
 
     - template: steps/run-in-docker.yml
-      condition: always()
       parameters:
         baseImage: $(baseImage)
         command: "CheckBuildLogsForErrors"
@@ -755,7 +754,6 @@ stages:
           condition: always()
 
         - template: steps/run-in-docker.yml
-          condition: always()
           parameters:
             baseImage: $(baseImage)
             command: "CheckBuildLogsForErrors"
