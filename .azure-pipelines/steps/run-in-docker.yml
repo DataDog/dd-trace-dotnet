@@ -33,6 +33,7 @@ steps:
         --env DD_CLR_ENABLE_NGEN=$(DD_CLR_ENABLE_NGEN) \
         --env Verify_DisableClipboard=true \
         --env DiffEngine_Disabled=true \
+        --env TestAllPackageVersions=$(TestAllPackageVersions)
         dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }} \
         dotnet /build/bin/Debug/_build.dll ${{ parameters.command }}
   displayName: Run '${{ parameters.command }}' in Docker
