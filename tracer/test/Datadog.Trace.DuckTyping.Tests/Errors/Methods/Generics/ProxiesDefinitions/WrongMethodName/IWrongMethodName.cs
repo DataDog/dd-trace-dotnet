@@ -14,6 +14,12 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.Methods.Generics.ProxiesDefiniti
             T NotGetDefault<T>();
         }
 
+        public interface IWrapWithDuckAttribute
+        {
+            [Duck(ParameterTypeNames = new[] { "T1", "T2" })]
+            Tuple<T1, T2> NotWrap<T1, T2>(T1 a, T2 b);
+        }
+
         public interface IWrap
         {
             Tuple<T1, T2> NotWrap<T1, T2>(T1 a, T2 b);

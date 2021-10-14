@@ -14,6 +14,12 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.Methods.Generics.ProxiesDefiniti
             public abstract T GetDefault<T>(int wrong);
         }
 
+        public abstract class WrapWithDuckAttributeAbstractClass
+        {
+            [Duck(ParameterTypeNames = new[] { "T1", "T2", "System.Int32" })]
+            public abstract Tuple<T1, T2> Wrap<T1, T2>(T1 a, T2 b, int wrong);
+        }
+
         public abstract class WrapAbstractClass
         {
             public abstract Tuple<T1, T2> Wrap<T1, T2>(T1 a, T2 b, int wrong);

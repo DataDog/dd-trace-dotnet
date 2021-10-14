@@ -14,6 +14,12 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.Methods.Generics.ProxiesDefiniti
             public virtual T NotGetDefault<T>() => default;
         }
 
+        public class WrapWithDuckAttributeVirtualClass
+        {
+            [Duck(ParameterTypeNames = new[] { "T1", "T2" })]
+            public virtual Tuple<T1, T2> NotWrap<T1, T2>(T1 a, T2 b) => default;
+        }
+
         public class WrapVirtualClass
         {
             public virtual Tuple<T1, T2> NotWrap<T1, T2>(T1 a, T2 b) => default;
