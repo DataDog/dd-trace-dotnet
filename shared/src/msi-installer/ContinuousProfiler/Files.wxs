@@ -6,6 +6,9 @@
   <Fragment>
     <ComponentGroup Id="ContinuousProfiler.Files" Directory="ContinuousProfiler">
       <Component Win64="$(var.Win64)">
+        <File Id="Activate_Installed_DotNet_Monitoring.bat" Source="$(var.ProfilerHomeDirectory)\Activate-Installed-DotNet-Monitoring.bat" />
+      </Component>
+      <Component Win64="$(var.Win64)">
         <File Id="DDProf_SetEnv.bat" Source="$(var.ProfilerHomeDirectory)\DDProf-SetEnv.bat" />
       </Component>
       <Component Win64="$(var.Win64)">
