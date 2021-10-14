@@ -601,9 +601,14 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                     return;
                 }
 
+                // DEBUG DEBUG @ToDo REMOVE! -----------
+                //LogDebugOrWriteLine(canUseLog, $"Skipping the clean-up of the {ThisCleanupMoniker}.");
+                //return;
+                // ----------- ----------- -----------
+
                 checkedForTargetFrameworkNameProperty.SetValue(appDomainFusionStoreObject, false);
 
-                LogDebugOrWriteLine(canUseLog, $"Completed clening up {ThisCleanupMoniker}.");
+                LogDebugOrWriteLine(canUseLog, $"Completed cleaning up {ThisCleanupMoniker}.");
             }
             catch (Exception ex)
             {
@@ -620,10 +625,10 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             else if (UseConsoleLoggingIfFileLoggingFails)
             {
 #pragma warning disable IDE0079  // Remove unnecessary suppression: Supresion is necessary for some, but not all compile time settings
-#pragma warning disable CS0162  // Unreachable code detected (deliberately using const bool for compile settings)
+#pragma warning disable CS0162   // Unreachable code detected (deliberately using const bool for compile settings)
                 Console.WriteLine($"{Environment.NewLine}{LoggingComponentMoniker}: {message}"
                                 + (ex == null ? "" : $"{Environment.NewLine}{ex}"));
-#pragma warning restore CS0162  // Unreachable code detected
+#pragma warning restore CS0162   // Unreachable code detected
 #pragma warning restore IDE0079  // Remove unnecessary suppression
             }
         }
@@ -637,9 +642,9 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             else if (UseConsoleLoggingIfFileLoggingFails)
             {
 #pragma warning disable IDE0079  // Remove unnecessary suppression: Supresion is necessary for some, but not all compile time settings
-#pragma warning disable CS0162  // Unreachable code detected (deliberately using const bool for compile settings)
+#pragma warning disable CS0162   // Unreachable code detected (deliberately using const bool for compile settings)
                 Console.WriteLine($"{Environment.NewLine}{LoggingComponentMoniker}: {message}");
-#pragma warning restore CS0162  // Unreachable code detected
+#pragma warning restore CS0162   // Unreachable code detected
 #pragma warning restore IDE0079  // Remove unnecessary suppression
             }
         }
