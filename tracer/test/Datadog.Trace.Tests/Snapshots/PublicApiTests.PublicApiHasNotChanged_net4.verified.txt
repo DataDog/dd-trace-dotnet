@@ -387,11 +387,15 @@ namespace Datadog.Trace.DiagnosticListeners
 namespace Datadog.Trace.DuckTyping
 {
     public delegate T CreateProxyInstance<T>(object instance);
-    [System.AttributeUsage(System.AttributeTargets.Method | System.AttributeTargets.Property | System.AttributeTargets.Field | System.AttributeTargets.All, AllowMultiple=false)]
-    public class DuckAttribute : System.Attribute
+    public class DuckAttribute : Datadog.Trace.DuckTyping.DuckAttributeBase
     {
         public const System.Reflection.BindingFlags DefaultFlags = 124;
         public DuckAttribute() { }
+    }
+    [System.AttributeUsage(System.AttributeTargets.Method | System.AttributeTargets.Property | System.AttributeTargets.Field | System.AttributeTargets.All, AllowMultiple=false)]
+    public abstract class DuckAttributeBase : System.Attribute
+    {
+        protected DuckAttributeBase() { }
         public System.Reflection.BindingFlags BindingFlags { get; set; }
         public string ExplicitInterfaceTypeName { get; set; }
         public string[] GenericParameterTypeNames { get; set; }
@@ -423,12 +427,9 @@ namespace Datadog.Trace.DuckTyping
         Property = 0,
         Field = 1,
     }
-    [System.AttributeUsage(System.AttributeTargets.Method | System.AttributeTargets.All)]
-    public class DuckReverseMethodAttribute : System.Attribute
+    public class DuckReverseMethodAttribute : Datadog.Trace.DuckTyping.DuckAttributeBase
     {
         public DuckReverseMethodAttribute() { }
-        public DuckReverseMethodAttribute(params string[] arguments) { }
-        public string[] Arguments { get; }
     }
     public static class DuckType
     {
@@ -436,9 +437,11 @@ namespace Datadog.Trace.DuckTyping
         public static readonly System.Reflection.MethodInfo GetTypeFromHandleMethodInfo;
         public static bool CanCreate(System.Type proxyType, object instance) { }
         public static bool CanCreate<T>(object instance) { }
-        public static Datadog.Trace.DuckTyping.IDuckType Create(System.Type proxyType, object instance) { }
+        public static object Create(System.Type proxyType, object instance) { }
         public static T Create<T>(object instance) { }
+        public static object CreateReverse(System.Type typeToDeriveFrom, object delegationInstance) { }
         public static Datadog.Trace.DuckTyping.DuckType.CreateTypeResult GetOrCreateProxyType(System.Type proxyType, System.Type targetType) { }
+        public static Datadog.Trace.DuckTyping.DuckType.CreateTypeResult GetOrCreateReverseProxyType(System.Type typeToDeriveFrom, System.Type delegationType) { }
         public readonly struct CreateTypeResult
         {
             public readonly bool Success;
@@ -453,7 +456,9 @@ namespace Datadog.Trace.DuckTyping
             public static readonly System.Type Type;
             public static bool CanCreate(object instance) { }
             public static T Create(object instance) { }
+            public static T CreateReverse(object instance) { }
             public static Datadog.Trace.DuckTyping.DuckType.CreateTypeResult GetProxy(System.Type targetType) { }
+            public static Datadog.Trace.DuckTyping.DuckType.CreateTypeResult GetReverseProxy(System.Type targetType) { }
         }
         public static class DelegateCache<TProxyDelegate>
             where TProxyDelegate : System.Delegate
@@ -469,21 +474,31 @@ namespace Datadog.Trace.DuckTyping
             where T :  class { }
         public static object DuckCast(this object instance, System.Type targetType) { }
         public static T DuckCast<T>(this object instance) { }
+        public static object DuckImplement(this object instance, System.Type typeToDeriveFrom) { }
         public static bool DuckIs(this object instance, System.Type targetType) { }
         public static bool DuckIs<T>(this object instance) { }
         public static bool TryDuckCast(this object instance, System.Type targetType, out object value) { }
         public static bool TryDuckCast<T>(this object instance, out T value) { }
+        public static bool TryDuckImplement(this object instance, System.Type typeToDeriveFrom, out object value) { }
     }
     public class DuckTypeFieldIsReadonlyException : Datadog.Trace.DuckTyping.DuckTypeException { }
+    public class DuckTypeIncorrectReverseMethodUsageException : Datadog.Trace.DuckTyping.DuckTypeException { }
+    public class DuckTypeIncorrectReversePropertyUsageException : Datadog.Trace.DuckTyping.DuckTypeException { }
     public class DuckTypeInvalidTypeConversionException : Datadog.Trace.DuckTyping.DuckTypeException { }
     public class DuckTypePropertyArgumentsLengthException : Datadog.Trace.DuckTyping.DuckTypeException { }
     public class DuckTypePropertyCantBeReadException : Datadog.Trace.DuckTyping.DuckTypeException { }
     public class DuckTypePropertyCantBeWrittenException : Datadog.Trace.DuckTyping.DuckTypeException { }
     public class DuckTypePropertyOrFieldNotFoundException : Datadog.Trace.DuckTyping.DuckTypeException { }
     public class DuckTypeProxyAndTargetMethodParameterSignatureMismatchException : Datadog.Trace.DuckTyping.DuckTypeException { }
+    public class DuckTypeProxyAndTargetMethodReturnTypeMismatchException : Datadog.Trace.DuckTyping.DuckTypeException { }
     public class DuckTypeProxyMethodParameterIsMissingException : Datadog.Trace.DuckTyping.DuckTypeException { }
     public class DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException : Datadog.Trace.DuckTyping.DuckTypeException { }
     public class DuckTypeProxyTypeDefinitionIsNull : Datadog.Trace.DuckTyping.DuckTypeException { }
+    public class DuckTypeReverseProxyBaseIsStructException : Datadog.Trace.DuckTyping.DuckTypeException { }
+    public class DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException : Datadog.Trace.DuckTyping.DuckTypeException { }
+    public class DuckTypeReverseProxyMissingMethodImplementationException : Datadog.Trace.DuckTyping.DuckTypeException { }
+    public class DuckTypeReverseProxyMissingPropertyImplementationException : Datadog.Trace.DuckTyping.DuckTypeException { }
+    public class DuckTypeReverseProxyPropertyCannotBeAbstractException : Datadog.Trace.DuckTyping.DuckTypeException { }
     public class DuckTypeStructMembersCannotBeChangedException : Datadog.Trace.DuckTyping.DuckTypeException { }
     public class DuckTypeTargetMethodAmbiguousMatchException : Datadog.Trace.DuckTyping.DuckTypeException { }
     public class DuckTypeTargetMethodNotFoundException : Datadog.Trace.DuckTyping.DuckTypeException { }
