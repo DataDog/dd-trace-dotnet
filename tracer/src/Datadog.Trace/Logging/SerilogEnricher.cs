@@ -56,7 +56,6 @@ namespace Datadog.Trace.Logging
             _propertyFactory = BuildPropertyFactory(logEventPropertyType, logEventPropertyValueType);
         }
 
-        [DuckIgnore]
         public void Initialize(Tracer tracer)
         {
             _tracer = tracer;
@@ -76,13 +75,12 @@ namespace Datadog.Trace.Logging
             }
         }
 
-        [DuckIgnore]
         public IDisposable Register()
         {
             return _logProvider.OpenContext(_serilogEventEnricher);
         }
 
-        [DuckReverseMethod("Serilog.Events.LogEvent", "Serilog.Core.ILogEventPropertyFactory")]
+        [DuckReverseMethod(ParameterTypeNames = new[] { "Serilog.Events.LogEvent, Serilog", "Serilog.Core.ILogEventPropertyFactory, Serilog" })]
         public void Enrich(ILogEvent logEvent, object propertyFactory)
         {
             var activeScope = _tracer.ActiveScope;

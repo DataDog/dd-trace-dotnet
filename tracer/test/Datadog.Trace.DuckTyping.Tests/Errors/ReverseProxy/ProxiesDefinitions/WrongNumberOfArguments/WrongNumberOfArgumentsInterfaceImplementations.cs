@@ -12,7 +12,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.ProxiesDefinitions.
         public class DuckChainArgumentsMethod
         {
             // extra argument, not in attribute
-            [DuckReverseMethod("Datadog.Trace.Vendors.Serilog.Events.LogEvent", "Datadog.Trace.Vendors.Serilog.Core.ILogEventPropertyFactory")]
+            [DuckReverseMethod(ParameterTypeNames = new[] { "Datadog.Trace.Vendors.Serilog.Events.LogEvent, Datadog.Trace", "Datadog.Trace.Vendors.Serilog.Core.ILogEventPropertyFactory, Datadog.Trace" })]
             public void Enrich(ILogEvent logEvent, ILogEventPropertyFactory propertyFactory, string wrong)
             {
             }
@@ -22,7 +22,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.ProxiesDefinitions.
         public class DuckChainArgumentsMethod2
         {
             // extra argument, in attribute too
-            [DuckReverseMethod("Datadog.Trace.Vendors.Serilog.Events.LogEvent", "Datadog.Trace.Vendors.Serilog.Core.ILogEventPropertyFactory", "System.String")]
+            [DuckReverseMethod(ParameterTypeNames = new[] { "Datadog.Trace.Vendors.Serilog.Events.LogEvent, Datadog.Trace", "Datadog.Trace.Vendors.Serilog.Core.ILogEventPropertyFactory, Datadog.Trace", "System.String" })]
             public void Enrich(ILogEvent logEvent, ILogEventPropertyFactory propertyFactory, string wrong)
             {
             }
@@ -32,7 +32,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.ProxiesDefinitions.
         public class DuckChainReturnMethod
         {
             // extra argument, not in attribute
-            [DuckReverseMethod("Datadog.Trace.Vendors.Serilog.Events.LogEvent", "Datadog.Trace.Vendors.Serilog.Core.ILogEventPropertyFactory")]
+            [DuckReverseMethod(ParameterTypeNames = new[] { "Datadog.Trace.Vendors.Serilog.Events.LogEvent, Datadog.Trace", "Datadog.Trace.Vendors.Serilog.Core.ILogEventPropertyFactory, Datadog.Trace" })]
             public ILogEventProperty CreateProperty(string name, object value, string wrong, bool destructureObjects = false)
             {
                 return null;
@@ -43,7 +43,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.ProxiesDefinitions.
         public class DuckChainReturnMethod2
         {
             // extra argument, in attribute too
-            [DuckReverseMethod("Datadog.Trace.Vendors.Serilog.Events.LogEvent", "Datadog.Trace.Vendors.Serilog.Core.ILogEventPropertyFactory", "System.String")]
+            [DuckReverseMethod(ParameterTypeNames = new[] { "Datadog.Trace.Vendors.Serilog.Events.LogEvent, Datadog.Trace", "Datadog.Trace.Vendors.Serilog.Core.ILogEventPropertyFactory, Datadog.Trace", "System.String" })]
             public ILogEventProperty CreateProperty(string name, object value, string wrong, bool destructureObjects = false)
             {
                 return null;
@@ -53,6 +53,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.ProxiesDefinitions.
         [ReverseTypeToTest("Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.OriginalTypeDefinitions.IInterfaces+IMethod")]
         public class Method
         {
+            [DuckReverseMethod]
             public bool TryGetValue(string value, int wrong)
             {
                 return true;
@@ -62,6 +63,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.ProxiesDefinitions.
         [ReverseTypeToTest("Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.OriginalTypeDefinitions.IInterfaces+IMethodWithOutParam")]
         public class MethodWithOutParam
         {
+            [DuckReverseMethod]
             public bool TryGetValue(out string value, int wrong)
             {
                 value = string.Empty;
@@ -72,6 +74,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.ProxiesDefinitions.
         [ReverseTypeToTest("Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.OriginalTypeDefinitions.IInterfaces+IMethodWithRefParam")]
         public class MethodWithRefParam
         {
+            [DuckReverseMethod]
             public bool TryGetValue(ref string value, int wrong)
             {
                 value = string.Empty;
@@ -82,6 +85,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.ProxiesDefinitions.
         [ReverseTypeToTest("Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.OriginalTypeDefinitions.IInterfaces+IGenericMethod")]
         public class GenericMethod
         {
+            [DuckReverseMethod]
             public T Echo<T>(T value, int wrong) => value;
         }
     }

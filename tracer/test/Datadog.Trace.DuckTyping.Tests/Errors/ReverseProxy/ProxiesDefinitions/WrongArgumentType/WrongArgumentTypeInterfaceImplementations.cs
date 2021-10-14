@@ -12,7 +12,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.ProxiesDefinitions.
         public class DuckChainArgumentsMethod
         {
             // reversed order of arguments
-            [DuckReverseMethod("Datadog.Trace.Vendors.Serilog.Events.ILogEventPropertyFactory", "Datadog.Trace.Vendors.Serilog.Core.LogEvent")]
+            [DuckReverseMethod(ParameterTypeNames = new[] { "Datadog.Trace.Vendors.Serilog.Events.ILogEventPropertyFactory, Datadog.Trace", "Datadog.Trace.Vendors.Serilog.Core.LogEvent, Datadog.Trace" })]
             public void Enrich(ILogEvent logEvent, ILogEventPropertyFactory propertyFactory)
             {
             }
@@ -22,7 +22,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.ProxiesDefinitions.
         public class DuckChainReturnMethod
         {
             // Wrong first argument
-            [DuckReverseMethod("System.String", "Datadog.Trace.Vendors.Serilog.Core.ILogEventPropertyFactory")]
+            [DuckReverseMethod(ParameterTypeNames = new[] { "System.String", "Datadog.Trace.Vendors.Serilog.Core.ILogEventPropertyFactory, Datadog.Trace" })]
             public ILogEventProperty CreateProperty(string name, object value, bool destructureObjects = false)
             {
                 return null;
@@ -32,6 +32,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.ProxiesDefinitions.
         [ReverseTypeToTest("Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.OriginalTypeDefinitions.IInterfaces+IMethod")]
         public class Method
         {
+            [DuckReverseMethod]
             public bool TryGetValue(int value)
             {
                 return true;
@@ -41,6 +42,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.ProxiesDefinitions.
         [ReverseTypeToTest("Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.OriginalTypeDefinitions.IInterfaces+IMethodWithOutParam")]
         public class MethodWithOutParam
         {
+            [DuckReverseMethod]
             public bool TryGetValue(out int value)
             {
                 value = 100;
@@ -51,6 +53,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.ProxiesDefinitions.
         [ReverseTypeToTest("Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.OriginalTypeDefinitions.IInterfaces+IMethodWithRefParam")]
         public class MethodWithRefParam
         {
+            [DuckReverseMethod]
             public bool TryGetValue(ref int value)
             {
                 value = 100;
@@ -61,6 +64,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.ProxiesDefinitions.
         [ReverseTypeToTest("Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.OriginalTypeDefinitions.IInterfaces+IGenericMethod")]
         public class GenericMethod
         {
+            [DuckReverseMethod]
             public T Echo<T>(int value) => default;
         }
     }

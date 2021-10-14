@@ -165,7 +165,7 @@ namespace Datadog.Trace.DuckTyping.Tests
                 _manualResetEventSlim = manualResetEventSlim;
             }
 
-            [DuckReverseMethod("Datadog.Trace.Vendors.Serilog.Events.LogEvent", "Datadog.Trace.Vendors.Serilog.Core.ILogEventPropertyFactory")]
+            [DuckReverseMethod(ParameterTypeNames = new[] { "Datadog.Trace.Vendors.Serilog.Events.LogEvent, Datadog.Trace", "Datadog.Trace.Vendors.Serilog.Core.ILogEventPropertyFactory, Datadog.Trace" })]
             public void Enrich(ILogEvent logEvent, ILogEventPropertyFactory propertyFactory)
             {
                 Assert.NotNull(logEvent);
@@ -193,7 +193,7 @@ namespace Datadog.Trace.DuckTyping.Tests
                 _manualResetEventSlim = manualResetEventSlim;
             }
 
-            [DuckReverseMethod("Serilog.Events.LogEvent", "Serilog.Core.ILogEventPropertyFactory")]
+            [DuckReverseMethod(ParameterTypeNames = new[] { "Serilog.Events.LogEvent, Serilog", "Serilog.Core.ILogEventPropertyFactory, Serilog" })]
             public void Enrich(ILogEvent logEvent, ILogEventPropertyFactory propertyFactory)
             {
                 Assert.NotNull(logEvent);
@@ -221,7 +221,7 @@ namespace Datadog.Trace.DuckTyping.Tests
                 _valueToWrite = valueToWrite;
             }
 
-            [DuckReverseMethod("System.IO.TextWriter", "Datadog.Trace.Vendors.Serilog.Events.ScalarValue")]
+            [DuckReverseMethod(ParameterTypeNames = new[] { "System.IO.TextWriter", "Datadog.Trace.Vendors.Serilog.Events.ScalarValue, Datadog.Trace" })]
             protected bool VisitScalarValue(TextWriter state, object scalar)
             {
                 state.Write(_valueToWrite);
@@ -249,7 +249,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         public class PublicClassWithVirtualMembers
         {
-            [DuckReverseMethod("System.IO.TextWriter", "Datadog.Trace.Vendors.Serilog.Events.ScalarValue")]
+            [DuckReverseMethod(ParameterTypeNames = new[] { "System.IO.TextWriter", "Datadog.Trace.Vendors.Serilog.Events.ScalarValue, Datadog.Trace" })]
             protected virtual string GetName()
             {
                 return nameof(PublicClassWithVirtualMembers);
