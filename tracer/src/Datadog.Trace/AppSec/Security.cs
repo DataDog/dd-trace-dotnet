@@ -100,6 +100,8 @@ namespace Datadog.Trace.AppSec
         /// </summary>
         InstrumentationGateway IDatadogSecurity.InstrumentationGateway => _instrumentationGateway;
 
+        internal InstrumentationGateway InstrumentationGateway => _instrumentationGateway;
+
         /// <summary>
         /// Gets <see cref="SecuritySettings"/> instance
         /// </summary>
