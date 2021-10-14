@@ -546,15 +546,15 @@ namespace Datadog.Trace.DuckTyping
 
             foreach (PropertyInfo delegationTypeProperty in delegationTypeProperties)
             {
-                // Ignore the properties marked with `DuckIgnore` attribute
-                if (delegationTypeProperty.GetCustomAttribute<DuckIgnoreAttribute>(true) is not null)
+                // Ignore methods without a `DuckReverse` attribute
+                if (delegationTypeProperty.GetCustomAttribute<DuckReverseMethodAttribute>(true) is null)
                 {
                     continue;
                 }
 
                 PropertyBuilder propertyBuilder = null;
 
-                DuckAttribute duckAttribute = delegationTypeProperty.GetCustomAttribute<DuckAttribute>(true) ?? new DuckAttribute();
+                DuckReverseMethodAttribute duckAttribute = delegationTypeProperty.GetCustomAttribute<DuckReverseMethodAttribute>(true) ?? new DuckReverseMethodAttribute();
                 duckAttribute.Name ??= delegationTypeProperty.Name;
 
                 // The "implementor" property cannot be abstract or interface if we're doing a reverse proxy

@@ -119,7 +119,7 @@ namespace Datadog.Trace.DuckTyping
                 Type[] proxyMethodDefinitionParametersTypes = proxyMethodDefinitionParameters.Select(p => p.ParameterType).ToArray();
 
                 // We select the target method to call
-                MethodInfo targetMethod = SelectTargetMethod(targetType, proxyMethodDefinition, proxyMethodDefinitionParameters, proxyMethodDefinitionParametersTypes);
+                MethodInfo targetMethod = SelectTargetMethod<DuckAttribute>(targetType, proxyMethodDefinition, proxyMethodDefinitionParameters, proxyMethodDefinitionParametersTypes);
 
                 // If the target method couldn't be found we throw.
                 if (targetMethod is null)
@@ -521,8 +521,8 @@ namespace Datadog.Trace.DuckTyping
             foreach (MethodInfo immutableImplementationMethod in implementationMethods)
             {
                 MethodInfo implementationMethod = immutableImplementationMethod;
-                // Ignore the method marked with `DuckIgnore` attribute
-                if (implementationMethod.GetCustomAttribute<DuckIgnoreAttribute>(true) is not null)
+                // Ignore methods without a `DuckReverse` attribute
+                if (implementationMethod.GetCustomAttribute<DuckReverseMethodAttribute>(true) is null)
                 {
                     continue;
                 }
@@ -532,7 +532,7 @@ namespace Datadog.Trace.DuckTyping
                 Type[] implementationMethodParametersTypes = implementationMethodParameters.Select(p => p.ParameterType).ToArray();
 
                 // We select the target method to call
-                MethodInfo overriddenMethod = SelectTargetMethod(typeToDeriveFrom, implementationMethod, implementationMethodParameters, implementationMethodParametersTypes);
+                MethodInfo overriddenMethod = SelectTargetMethod<DuckReverseMethodAttribute>(typeToDeriveFrom, implementationMethod, implementationMethodParameters, implementationMethodParametersTypes);
 
                 // If the target method couldn't be found we throw.
                 if (overriddenMethod is null)
@@ -914,24 +914,32 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
-        private static MethodInfo SelectTargetMethod(Type targetType, MethodInfo proxyMethod, ParameterInfo[] proxyMethodParameters, Type[] proxyMethodParametersTypes)
+        private static MethodInfo SelectTargetMethod<T>(Type targetType, MethodInfo proxyMethod, ParameterInfo[] proxyMethodParameters, Type[] proxyMethodParametersTypes)
+            where T : DuckAttributeBase, new()
         {
-            DuckAttribute proxyMethodDuckAttribute = proxyMethod.GetCustomAttribute<DuckAttribute>(true) ?? new DuckAttribute();
+            T proxyMethodDuckAttribute = proxyMethod.GetCustomAttribute<T>(true) ?? new T();
             proxyMethodDuckAttribute.Name ??= proxyMethod.Name;
 
             MethodInfo targetMethod = null;
 
-            // Check if the duck attribute has the parameter type names to use for selecting the target method, in case of not found an exception is thrown.
+            // Check if the duck attribute has the parameter type names to use for selecting the target method
+            // If any of the parameter types can't be loaded (happens if it's a generic parameter for example)
+            // then carry on searching.
             if (proxyMethodDuckAttribute.ParameterTypeNames != null)
             {
-                Type[] parameterTypes = proxyMethodDuckAttribute.ParameterTypeNames.Select(pName => Type.GetType(pName, true)).ToArray();
-                targetMethod = targetType.GetMethod(proxyMethodDuckAttribute.Name, proxyMethodDuckAttribute.BindingFlags, null, parameterTypes, null);
-                if (targetMethod is null)
+                Type[] parameterTypes = proxyMethodDuckAttribute.ParameterTypeNames
+                                                                .Select(pName => Type.GetType(pName, throwOnError: false))
+                                                                .Where(type => type is not null)
+                                                                .ToArray();
+                if (parameterTypes.Length == proxyMethodDuckAttribute.ParameterTypeNames.Length)
                 {
-                    DuckTypeTargetMethodNotFoundException.Throw(proxyMethod);
+                    // all types were loaded
+                    targetMethod = targetType.GetMethod(proxyMethodDuckAttribute.Name, proxyMethodDuckAttribute.BindingFlags, null, parameterTypes, null);
+                    if (targetMethod is not null)
+                    {
+                        return targetMethod;
+                    }
                 }
-
-                return targetMethod;
             }
 
             // If the duck attribute doesn't specify the parameters to use, we do the best effor to find a target method without any ambiguity.
@@ -982,11 +990,11 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 // Check if the candidate method is a reverse mapped method
-                DuckReverseMethodAttribute reverseMethodAttribute = candidateMethod.GetCustomAttribute<DuckReverseMethodAttribute>(true);
-                if (reverseMethodAttribute?.Arguments is not null)
+                ParameterInfo[] candidateParameters = candidateMethod.GetParameters();
+                if (proxyMethodDuckAttribute.ParameterTypeNames is not null)
                 {
-                    string[] arguments = reverseMethodAttribute.Arguments;
-                    if (arguments.Length != proxyMethodParametersTypes.Length)
+                    string[] arguments = proxyMethodDuckAttribute.ParameterTypeNames;
+                    if (arguments.Length != candidateParameters.Length)
                     {
                         continue;
                     }
@@ -994,7 +1002,10 @@ namespace Datadog.Trace.DuckTyping
                     bool match = true;
                     for (var i = 0; i < arguments.Length; i++)
                     {
-                        if (arguments[i] != proxyMethodParametersTypes[i].FullName && arguments[i] != proxyMethodParametersTypes[i].Name)
+                        var candidateParameter = candidateParameters[i].ParameterType;
+                        if (arguments[i] != candidateParameter.FullName &&
+                            arguments[i] != candidateParameter.Name &&
+                            arguments[i] != $"{candidateParameter.FullName}, {candidateParameter.Assembly.GetName()?.Name}")
                         {
                             match = false;
                             break;
@@ -1006,8 +1017,6 @@ namespace Datadog.Trace.DuckTyping
                         return candidateMethod;
                     }
                 }
-
-                ParameterInfo[] candidateParameters = candidateMethod.GetParameters();
 
                 // The proxy must have the same or less parameters than the candidate ( less is due to possible optional parameters in the candidate ).
                 if (proxyMethodParameters.Length > candidateParameters.Length)
