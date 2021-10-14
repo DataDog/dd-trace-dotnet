@@ -261,8 +261,7 @@ namespace Datadog.Util
         /// That can be accessed without worrying about the partial trust issue.
         /// </para>
         /// </summary>
-        /// <returns>An array of <see cref="CurrentProcess.ModuleInfo"/> structures representing the modules currently loaded
-        /// into this process.</returns>
+        /// <returns>A <see cref="CurrentProcess.ModuleInfo"/> structure representing the main module of this process.</returns>
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static ModuleInfo GetMainModule()
         {
@@ -316,15 +315,12 @@ namespace Datadog.Util
             {
                 using (ProcessModule module = processModules[index])
                 {
-                    this.BaseAddress = module.BaseAddress;
-                    this.EntryPointAddress = module.EntryPointAddress;
-                    this.FileName = module.FileName;
-                    this.ModuleMemorySize = module.ModuleMemorySize;
-                    this.ModuleName = module.ModuleName;
+                    SetTo(module);
                 }
             }
 
-            /// <summary>This method should be only called by <see cref="CurrentProcess.GetMainModule" />.</summary>
+            /// <summary>This method should be only called by methods of the <c>ModuleInfo</c> class or
+            /// by <see cref="CurrentProcess.GetMainModule" />.</summary>
             [MethodImpl(MethodImplOptions.NoInlining)]
             internal void SetTo(ProcessModule module)
             {
