@@ -268,18 +268,12 @@ endif()
 # ******************************************************
 # Define shared target
 # ******************************************************
-if (ISMACOS)
-    add_library("Datadog.Trace.ClrProfiler.Native" SHARED
-        dllmain.cpp
-        interop.cpp
-        ${GENERATED_OBJ_FILES}
-    )
-else()
-    add_library("Datadog.Trace.ClrProfiler.Native" SHARED
-        dllmain.cpp
-        interop.cpp
-    )
-endif()
+
+add_library("Datadog.Trace.ClrProfiler.Native" SHARED
+    dllmain.cpp
+    interop.cpp
+    ${GENERATED_OBJ_FILES}
+)
 
 set_target_properties("Datadog.Trace.ClrProfiler.Native" PROPERTIES PREFIX "")
 
