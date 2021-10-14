@@ -27,7 +27,7 @@ trigger:
 #     - Managed utility APIs (may be used transitively):
       - shared/src/managed-src/Datadog.Collections/*
       - shared/src/managed-src/Datadog.Util/*
-#     - Managed Logging APIs (may be used transitively):      
+#     - Managed Logging APIs (may be used transitively):
       - shared/src/managed-src/Datadog.Logging.Emission/*
       - shared/src/managed-src/Datadog.Logging.Composition/*
       - shared/src/managed-src/Datadog.Logging/*
@@ -38,7 +38,7 @@ trigger:
       - shared/src/native-lib/spdlog/*
 #     - Mics common native sources:
       - shared/src/native-src/*
-     
+
 
 schedules:
   - cron: "0 3 * * *"
@@ -442,7 +442,7 @@ stages:
         Start-CosmosDbEmulator -Timeout 300
       displayName: 'Start CosmosDB Emulator'
       workingDirectory: $(Pipeline.Workspace)
-      
+
     - powershell: |
         Write-Host "Initializing LocalDB"
         sqllocaldb.exe start
@@ -458,12 +458,12 @@ stages:
       inputs:
         testResultsFormat: VSTest
         testResultsFiles: tracer/build_data/results/**/*.trx
-      condition: succeededOrFailed()
+      condition: always()
 
     - publish: tracer/build_data
       displayName: Uploading integration_tests_windows tracer logs
       artifact: integration_tests_windows_tracer_logs_$(targetPlatform)_$(framework)_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - script: tracer\build.cmd CheckBuildLogsForErrors
@@ -545,7 +545,7 @@ stages:
       inputs:
         testResultsFormat: VSTest
         testResultsFiles: tracer/build_data/results/**/*.trx
-      condition: succeededOrFailed()
+      condition: always()
 
     - task: DockerCompose@0
       displayName: docker-compose stop services
@@ -557,7 +557,7 @@ stages:
     - publish: tracer/build_data
       displayName: Uploading integration_tests_windows_iis tracer logs
       artifact: integration_tests_windows_iis_tracer_logs_$(targetPlatform)_$(framework)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - script: tracer\build.cmd CheckBuildLogsForErrors
@@ -656,7 +656,7 @@ stages:
 
     - publish: tracer/build_data
       artifact: profiler-logs_integration_tests_linux_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
-      condition: succeededOrFailed()
+      condition: always()
       continueOnError: true
 
     - task: PublishTestResults@2
@@ -664,7 +664,7 @@ stages:
       inputs:
         testResultsFormat: VSTest
         testResultsFiles: tracer/build_data/results/**/*.trx
-      condition: succeededOrFailed()
+      condition: always()
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -742,7 +742,7 @@ stages:
 
         - publish: tracer/build_data
           artifact: profiler-logs_integration_tests_linux_arm64_$(publishTargetFramework)_$(System.JobAttempt)
-          condition: succeededOrFailed()
+          condition: always()
           continueOnError: true
 
         - task: PublishTestResults@2
@@ -750,7 +750,7 @@ stages:
           inputs:
             testResultsFormat: VSTest
             testResultsFiles: tracer/build_data/results/**/*.trx
-          condition: succeededOrFailed()
+          condition: always()
 
         - template: steps/run-in-docker.yml
           parameters:
