@@ -28,7 +28,7 @@ namespace Datadog.Trace.AppSec.EventModel
         [JsonProperty("enrichment.has_sql")]
         public bool HasSql { get; set; }
 
-        [JsonProperty("enrichment.has_client")]
+        [JsonProperty("enrichment.has_http_client")]
         public bool HasClient { get; set; }
     }
 }
