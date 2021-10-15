@@ -26,9 +26,8 @@
 
 ## Fixes
 * Skip WriteTrace call when no there's no spans and improve filtering (#1843)
-* Kill the old Samples.Shared project (#1867)
 * Fix bug logging response even if successful (#1874)
-* appsec: fix appsec event tag value (#1898)
+* [AppSec] Fix appsec event tag value (#1898)
 
 ## Build / Test
 * Generate Dependabot File for Integrations (#1754)
@@ -51,6 +50,7 @@
 * Use Xunit.SkippableFact for inconclusive tests (#1858)
 * Update test package versions (#1862)
 * Add more information to aerospike tags (#1865)
+* Kill the old Samples.Shared project (#1867)
 * Delete performance pipeline, and manually update GitHub statuses (#1868)
 * Initialize LocalDB ahead of time in the CI (#1873)
 * Handle the expected segfault in smoke tests (#1878)
