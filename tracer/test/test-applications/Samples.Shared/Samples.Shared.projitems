@@ -8,7 +8,7 @@
   <PropertyGroup Label="Configuration">
     <Import_RootNamespace>Samples.Shared</Import_RootNamespace>
   </PropertyGroup>
-  <ItemGroup Condition="$(MSBuildProjectExtension) == '.csproj'">
+  <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)SampleHelpers.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)WebServer.cs" />
   </ItemGroup>
