@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Transports;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec.Agent
 {
@@ -36,7 +37,10 @@ namespace Datadog.Trace.AppSec.Agent
 
         public void AddEvent(IEvent @event)
         {
-            Log.Debug("Pushing new attack to AppSec events");
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug("Pushing new attack to AppSec events");
+            }
 
             _events.Enqueue(@event);
             if (!_senderMutex.IsSet)
