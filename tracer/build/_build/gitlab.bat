@@ -5,7 +5,7 @@ call "%VSTUDIO_ROOT%\vc\auxiliary\build\vcvars64.bat"
 SET VSToolsPath=%VSTUDIO_ROOT%\MSBuild\Microsoft\Visual Studio\v16.0
 
 cd c:\mnt\
-dotnet run --project tracer/build/_build/_build.csproj -- Info Clean BuildTracerHome PackageTracerHome ZipSymbols SignDlls SignMsiAndNupkg --Artifacts "build-out\%CI_JOB_ID%"
+dotnet run --project tracer/build/_build/_build.csproj -- Info Clean BuildTracerHome BuildProfilerHome BuildMonitoringHome PackageTracerHome PackageMonitoringHomeBeta ZipSymbols SignMsiAndNupkg --Artifacts "build-out\%CI_JOB_ID%"
 
 IF %ERRORLEVEL% NEQ 0 EXIT /B %ERRORLEVEL%
 
