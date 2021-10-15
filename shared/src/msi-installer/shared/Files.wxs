@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+  <?include $(sys.CURRENTDIR)\Config.wxi?>
+  <Fragment>
+    <ComponentGroup Id="Shared.Files" Directory="INSTALLFOLDER">
+      <Component Win64="$(var.Win64)">
+        <File Id="loader.conf" Source="$(var.MonitoringHomeDirectory)\loader.conf" />
+      </Component>
+    </ComponentGroup>
+
+    <?if $(var.Win64) = yes ?>
+    <ComponentGroup Id="Shared.Files.NativeLoader.64" Directory="INSTALLFOLDER">
+      <Component Win64="yes">
+        <File Id="Datadog.AutoInstrumentation.NativeLoader.x64.dll"
+              Source="$(var.MonitoringHomeDirectory)\Datadog.AutoInstrumentation.NativeLoader.x64.dll"
+              Checksum="yes">
+          <Class Id="$(var.ProfilerCLSIDBeta)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
+        </File>
+
+      </Component>
+      <Component Win64="yes">
+        <File Id="Datadog.AutoInstrumentation.NativeLoader.x64.pdb"
+              Source="$(var.MonitoringHomeDirectory)\Datadog.AutoInstrumentation.NativeLoader.x64.pdb"
+              Checksum="yes">
+        </File>
+      </Component>
+    </ComponentGroup>
+
+    <!-- For the 64-bit installer, also install the 32-bit binaries -->
+    <ComponentGroup Id="Shared.Files.NativeLoader.32" Directory="INSTALLFOLDER.32">
+      <Component Win64="no" Id="Datadog.AutoInstrumentation.NativeLoader.x86.dll">
+        <File Id="Datadog.AutoInstrumentation.NativeLoader.x86.dll"
+              Source="$(var.MonitoringHomeDirectory)\Datadog.AutoInstrumentation.NativeLoader.x86.dll"
+              Checksum="yes">
+          <Class Id="$(var.ProfilerCLSIDBeta)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
+        </File>
+      </Component>
+      <Component Win64="no">
+        <File Id="Datadog.AutoInstrumentation.NativeLoader.x86.pdb"
+              Source="$(var.MonitoringHomeDirectory)\Datadog.AutoInstrumentation.NativeLoader.x86.pdb"
+              Checksum="yes">
+        </File>
+      </Component>
+    </ComponentGroup>
+
+    <?else ?>
+
+    <!-- note that for the 32-bit build, we need to install into INSTALLFOLDER instead of INSTALLFOLDER.32 -->
+    <ComponentGroup Id="Shared.Files.NativeLoader.32" Directory="INSTALLFOLDER">
+      <Component Win64="no">
+        <File Id="Datadog.AutoInstrumentation.NativeLoader.x86.dll"
+              Source="$(var.MonitoringHomeDirectory)\Datadog.AutoInstrumentation.NativeLoader.x86.dll"
+              Checksum="yes">
+          <Class Id="$(var.ProfilerCLSIDBeta)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
+        </File>
+      </Component>
+      <Component Win64="no">
+        <File Id="Datadog.AutoInstrumentation.NativeLoader.x86.pdb"
+              Source="$(var.MonitoringHomeDirectory)\Datadog.AutoInstrumentation.NativeLoader.x86.pdb"
+              Checksum="yes">
+        </File>
+      </Component>
+    </ComponentGroup>
+
+    <?endif ?>
+  </Fragment>
+</Wix>

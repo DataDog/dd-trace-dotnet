@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+  <?include $(sys.CURRENTDIR)\Config.wxi?>
+  <Product Id="*"
+           Name="$(var.ProductName)"
+           Language="1033"
+           Version="$(var.InstallerVersion)"
+           Manufacturer="$(var.ArpManufacturer)"
+           UpgradeCode="fc228e86-eae2-4c2a-ae82-135b718c269e">
+    <Package InstallerVersion="200"
+             Compressed="yes"
+             InstallScope="perMachine"
+             Description="$(var.ProductName)" />
+
+    <Icon Id="datadog.ico" SourceFile="datadog-icon.ico"/>
+    <PropertyRef Id="WIX_IS_NETFRAMEWORK_461_OR_LATER_INSTALLED" />
+    <Property Id="ARPPRODUCTICON">datadog.ico</Property>
+    <Property Id="ARPURLINFOABOUT">https://datadoghq.com/</Property>
+    <Property Id="ARPHELPLINK">https://datadoghq.com/support/</Property>
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER"/>
+
+    <Property Id="INSTALLFOLDER">
+      <RegistrySearch Id="RegistrySearch" Type="raw" Root="HKLM" Win64="$(var.Win64)" Key="Software\$(var.Company)\$(var.ProductName)" Name="InstallPath"/>
+    </Property>
+
+    <UIRef Id="WixUI_InstallDir_Custom"/>
+    <WixVariable Id="WixUIBannerBmp" Value="banner.bmp"/>
+    <WixVariable Id="WixUIDialogBmp" Value="dialog.bmp"/>
+    <WixVariable Id="WixUILicenseRtf" Value="license.rtf"/>
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed."/>
+    <MediaTemplate EmbedCab="yes"/>
+
+    <Feature Id="ProductFeature" Title="Datadog.Trace.ClrProfiler" Level="1">
+      <ComponentGroupRef Id="Product.EmptyFolders"/>
+      <ComponentGroupRef Id="Product.Registry"/>
+
+      <ComponentGroupRef Id="Shared.EnvironmentVariables.Machine"/>
+      <ComponentGroupRef Id="Shared.EnvironmentVariables.IIS"/>
+      <ComponentGroupRef Id="Shared.Files" />
+      <ComponentGroupRef Id="Shared.Files.NativeLoader.32"/> <!-- 32-bit native files are always included, even in 64-bit builds -->
+
+      <ComponentGroupRef Id="ContinuousProfiler.EnvironmentVariables.Machine"/>
+      <ComponentGroupRef Id="ContinuousProfiler.Files"/>
+      <ComponentGroupRef Id="ContinuousProfiler.Files.Managed.Net45.GAC"/>
+      <ComponentGroupRef Id="ContinuousProfiler.Files.Managed.Net461.GAC"/>
+      <ComponentGroupRef Id="ContinuousProfiler.Files.Managed.Net45"/>
+      <ComponentGroupRef Id="ContinuousProfiler.Files.Managed.Net461"/>
+      <ComponentGroupRef Id="ContinuousProfiler.Files.Managed.NetStandard20"/>
+      <ComponentGroupRef Id="ContinuousProfiler.Files.Managed.Netcoreapp31"/>
+      <ComponentGroupRef Id="ContinuousProfiler.Files.Native.32"/> <!-- 32-bit native files are always included, even in 64-bit builds -->
+
+      <ComponentGroupRef Id="Tracer.EnvironmentVariables.Machine"/>
+      <ComponentGroupRef Id="Tracer.Files"/>
+      <ComponentGroupRef Id="Tracer.Files.Managed.Net45.GAC"/>
+      <ComponentGroupRef Id="Tracer.Files.Managed.Net461.GAC"/>
+      <ComponentGroupRef Id="Tracer.Files.Managed.Net45"/>
+      <ComponentGroupRef Id="Tracer.Files.Managed.Net461"/>
+      <ComponentGroupRef Id="Tracer.Files.Managed.NetStandard20"/>
+      <ComponentGroupRef Id="Tracer.Files.Managed.Netcoreapp31"/>
+      <ComponentGroupRef Id="Tracer.Files.Native.32"/> <!-- 32-bit native files are always included, even in 64-bit builds -->
+
+      <!-- Only include 64-bit native files in the 64-bit build -->
+      <?if $(var.Win64) = yes ?>
+      <ComponentGroupRef Id="Shared.Files.NativeLoader.64"/>
+      <ComponentGroupRef Id="ContinuousProfiler.Files.Native.64"/>
+      <ComponentGroupRef Id="Tracer.Files.Native.64"/>
+      <?endif ?>
+    </Feature>
+  </Product>
+
+  <Fragment>
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="$(var.PlatformProgramFilesFolder)">
+        <!-- "C:\Program Files" or "C:\Program Files (x86)"-->
+        <Directory Id="ProgramFilesFolder.Datadog" Name="$(var.Company)">
+          <!-- ".\Datadog" -->
+          <Directory Id="INSTALLFOLDER" Name="$(var.BaseProductName)">
+            <!-- ".\.NET Tracer" -->
+            <Directory Id="tracer" Name="tracer">
+              <!-- tracer -->
+              <Directory Id="tracer.net45" Name="net45">
+                <!-- ".\net45" -->
+              </Directory>
+              <Directory Id="tracer.net461" Name="net461">
+                <!-- ".\net461" -->
+              </Directory>
+              <Directory Id="tracer.netstandard2.0" Name="netstandard2.0">
+                <!-- ".\netstandard2.0" -->
+              </Directory>
+              <Directory Id="tracer.netcoreapp3.1" Name="netcoreapp3.1">
+                  <!-- ".\netcoreapp3.1" -->
+              </Directory>
+              <Directory Id="tracer.net45.GAC" Name="net45.GAC">
+                <!-- Ignored as all of its components will be installed in the GAC -->
+              </Directory>
+              <Directory Id="tracer.net461.GAC" Name="net461.GAC">
+                <!-- Ignored as all of its components will be installed in the GAC -->
+              </Directory>
+              <Directory Id="tracer.win_x86" Name="win-x86">
+                <!-- ".\win-x86" -->
+              </Directory>
+              <Directory Id="tracer.win_x64" Name="win-x64">
+                <!-- ".\win-x64" -->
+              </Directory>
+            </Directory>
+            <Directory Id="ContinuousProfiler" Name="ContinuousProfiler">
+              <!-- ContinuousProfiler -->
+              <Directory Id="ContinuousProfiler.net45" Name="net45">
+                <!-- ".\net45" -->
+              </Directory>
+              <Directory Id="ContinuousProfiler.net461" Name="net461">
+                <!-- ".\net461" -->
+              </Directory>
+              <Directory Id="ContinuousProfiler.netstandard2.0" Name="netstandard2.0">
+                <!-- ".\netstandard2.0" -->
+              </Directory>
+              <Directory Id="ContinuousProfiler.netcoreapp3.1" Name="netcoreapp3.1">
+                  <!-- ".\netcoreapp3.1" -->
+              </Directory>
+              <Directory Id="ContinuousProfiler.net45.GAC" Name="net45.GAC">
+                <!-- Ignored as all of its components will be installed in the GAC -->
+              </Directory>
+              <Directory Id="ContinuousProfiler.net461.GAC" Name="net461.GAC">
+                <!-- Ignored as all of its components will be installed in the GAC -->
+              </Directory>
+            </Directory>
+          </Directory>
+        </Directory>
+      </Directory>
+
+      <!-- For the 64-bit installer, also install the 32-bit profiler -->
+      <?if $(var.Win64) = yes ?>
+      <Directory Id="ProgramFilesFolder">
+        <!-- "C:\Program Files (x86)" -->
+        <Directory Id="ProgramFilesFolder.Datadog.32" Name="$(var.Company)">
+          <!-- ".\Datadog" -->
+          <Directory Id="INSTALLFOLDER.32" Name="$(var.BaseProductName)">
+            <!-- ".\.NET Tracer" -->
+            <Directory Id="tracer.32" Name="tracer">
+            <!-- tracer -->
+            </Directory>
+            <Directory Id="ContinuousProfiler.32" Name="ContinuousProfiler">
+              <!-- ContinuousProfiler -->
+            </Directory>
+          </Directory>
+        </Directory>
+      </Directory>
+      <?endif ?>
+
+      <Directory Id="CommonAppDataFolder">
+        <!-- "C:\ProgramData" -->
+        <Directory Id="CommonAppDataFolder.DatadogDotNetTracer" Name="Datadog .NET Tracer">
+          <!-- ".\Datadog .NET Tracer" -->
+          <Directory Id="CommonAppDataFolder.DatadogDotNetTracer.logs" Name="logs">
+            <!-- ".\logs" -->
+          </Directory>
+        </Directory>
+      </Directory>
+    </Directory>
+  </Fragment>
+
+  <Fragment>
+    <ComponentGroup Id="Product.EmptyFolders" Directory="CommonAppDataFolder.DatadogDotNetTracer.logs">
+      <Component Id="Product.EmptyFolders.Logs" Guid="0A9B510D-44F6-41A9-9EFE-E2CEB7314CF3">
+        <CreateFolder Directory="CommonAppDataFolder.DatadogDotNetTracer"/>
+        <CreateFolder Directory="CommonAppDataFolder.DatadogDotNetTracer.logs">
+          <util:PermissionEx User="Everyone" GenericWrite="yes" />
+        </CreateFolder>
+      </Component>
+    </ComponentGroup>
+
+    <ComponentGroup Id="Product.Registry" Directory="INSTALLFOLDER">
+      <Component Win64="$(var.Win64)">
+        <CreateFolder/>
+        <RegistryKey Root="HKLM" Key="Software\$(var.Company)\$(var.ProductName)">
+          <RegistryValue Type="string" Name="InstallPath" Value="[INSTALLFOLDER]" Action="write"/>
+        </RegistryKey>
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>

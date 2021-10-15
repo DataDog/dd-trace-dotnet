@@ -17,9 +17,12 @@
     <IntermediateOutputPath>obj\$(Configuration)\$(Platform)\</IntermediateOutputPath>
     <SuppressPdbOutput>True</SuppressPdbOutput>
     <DefineSolutionProperties>false</DefineSolutionProperties>
-    <OutputName>datadog-dotnet-apm-1.29.0-$(Platform)</OutputName>
+    <OutputName>datadog-dotnet-apm-1.28.6-$(Platform)-profiler-beta</OutputName>
+    <OutputName Condition=" '$(BetaMsiSuffix)' != '' ">$(OutputName)-$(BetaMsiSuffix)</OutputName>
+    <MonitoringHomeDirectory Condition="'$(MonitoringHomeDirectory)' == ''">$(MSBuildThisFileDirectory)..\..\bin\monitoring-home</MonitoringHomeDirectory>
     <TracerHomeDirectory Condition="'$(TracerHomeDirectory)' == ''">$(MSBuildThisFileDirectory)..\bin\windows-tracer-home</TracerHomeDirectory>
-    <DefineConstants>InstallerVersion=1.29.0;TracerHomeDirectory=$(TracerHomeDirectory);LibDdwafDirectory=$(LibDdwafDirectory)</DefineConstants>
+    <ProfilerHomeDirectory Condition="'$(ProfilerHomeDirectory)' == ''">$(MSBuildThisFileDirectory)..\bin\DDProf-Deploy</ProfilerHomeDirectory>
+    <DefineConstants>InstallerVersion=1.28.6;MonitoringHomeDirectory=$(MonitoringHomeDirectory);TracerHomeDirectory=$(TracerHomeDirectory);LibDdwafDirectory=$(LibDdwafDirectory);ProfilerHomeDirectory=$(ProfilerHomeDirectory)</DefineConstants>
     <LibDdwafDirectory Condition="'$(LibDdwafDirectory)' == ''">$(LibDdwafDirectory)..\..\packages\libddwaf.1.0.7</LibDdwafDirectory>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
@@ -35,12 +38,24 @@
     <DefineConstants>$(DefineConstants)</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Files.Managed.Net45.GAC.wxs" />
-    <Compile Include="Files.Managed.Net45.wxs" />
-    <Compile Include="Files.Managed.Net461.GAC.wxs" />
-    <Compile Include="Files.Managed.Net461.wxs" />
-    <Compile Include="Files.Managed.NetStandard20.wxs" />
-    <Compile Include="Files.Managed.Netcoreapp31.wxs" />
+    <Compile Include="shared\Files.wxs" />
+    <Compile Include="shared\EnvironmentVariables.wxs" />
+    <Compile Include="ContinuousProfiler\EnvironmentVariables.wxs" />
+    <Compile Include="ContinuousProfiler\Files.wxs" />
+    <Compile Include="ContinuousProfiler\Files.Managed.Net45.GAC.wxs" />
+    <Compile Include="ContinuousProfiler\Files.Managed.Net45.wxs" />
+    <Compile Include="ContinuousProfiler\Files.Managed.Net461.GAC.wxs" />
+    <Compile Include="ContinuousProfiler\Files.Managed.Net461.wxs" />
+    <Compile Include="ContinuousProfiler\Files.Managed.NetStandard20.wxs" />
+    <Compile Include="ContinuousProfiler\Files.Managed.Netcoreapp31.wxs" />
+    <Compile Include="tracer\EnvironmentVariables.wxs" />
+    <Compile Include="tracer\Files.wxs" />
+    <Compile Include="tracer\Files.Managed.Net45.GAC.wxs" />
+    <Compile Include="tracer\Files.Managed.Net45.wxs" />
+    <Compile Include="tracer\Files.Managed.Net461.GAC.wxs" />
+    <Compile Include="tracer\Files.Managed.Net461.wxs" />
+    <Compile Include="tracer\Files.Managed.NetStandard20.wxs" />
+    <Compile Include="tracer\Files.Managed.Netcoreapp31.wxs" />
     <Compile Include="Product.wxs" />
     <Compile Include="WixUI_InstallDir_Custom.wxs" />
   </ItemGroup>

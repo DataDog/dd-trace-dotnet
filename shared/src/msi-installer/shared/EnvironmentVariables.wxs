@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+  <?include $(sys.CURRENTDIR)\Config.wxi?>
+  <Fragment>
+    <ComponentGroup Id="Shared.EnvironmentVariables.Machine" Directory="INSTALLFOLDER">
+      <Component Id="EnvironmentVariablesShared" Guid="{C314A305-9C24-4E46-9ECF-E5EEA703BDEA}" Win64="$(var.Win64)">
+        <CreateFolder/>
+        <Environment Id="DD_NATIVELOADER_CONFIGFILE" Name="DD_NATIVELOADER_CONFIGFILE" Action="set" Permanent="no" System="yes" Value="[INSTALLFOLDER]loader.conf" Part="all" />
+        <!-- For now, turn on Continuous Profiling automatically and watch it work its magic -->
+        <Environment Id="DD_PROFILING_ENABLED" Name="DD_PROFILING_ENABLED" Action="set" Permanent="no" System="yes" Value="1" Part="all" />
+      </Component>
+    </ComponentGroup>
+  
+    <ComponentGroup Id="Shared.EnvironmentVariables.IIS" Directory="INSTALLFOLDER">
+      <Component Id="Shared.Registry.EnvironmentVariables.W3SVC" Guid="{702DB265-F33E-47F4-A6B0-E21FA0FC21C1}" Win64="$(var.Win64)">
+        <CreateFolder/>
+        <RegistryKey Root="HKLM"
+                     Key="System\CurrentControlSet\Services\W3SVC">
+          <RegistryValue Type="multiString" Name="Environment" Value="COR_ENABLE_PROFILING=1[~]COR_PROFILER=$(var.ProfilerCLSIDBeta)[~]CORECLR_ENABLE_PROFILING=1[~]CORECLR_PROFILER=$(var.ProfilerCLSIDBeta)" Action="append"/>
+        </RegistryKey>
+      </Component>
+
+      <Component Id="Shared.Registry.EnvironmentVariables.WAS" Guid="{6CF8AB88-240E-4A0A-B630-43119C064AD4}" Win64="$(var.Win64)">
+        <RegistryKey Root="HKLM"
+                     Key="System\CurrentControlSet\Services\WAS">
+          <RegistryValue Type="multiString" Name="Environment" Value="COR_ENABLE_PROFILING=1[~]COR_PROFILER=$(var.ProfilerCLSIDBeta)[~]CORECLR_ENABLE_PROFILING=1[~]CORECLR_PROFILER=$(var.ProfilerCLSIDBeta)" Action="append"/>
+        </RegistryKey>
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>
