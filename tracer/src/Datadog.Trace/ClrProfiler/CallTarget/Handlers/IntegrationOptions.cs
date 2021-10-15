@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
@@ -26,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
         {
             // ReSharper disable twice ExplicitCallerInfoArgument
             Log.Error(exception, message ?? exception?.Message);
-            if (exception is DuckTypeException)
+            if (exception is DuckTypeException or TargetInvocationException { InnerException: DuckTypeException })
             {
                 Log.Warning($"DuckTypeException has been detected, the integration <{typeof(TIntegration)}, {typeof(TTarget)}> will be disabled.");
                 _disableIntegration = true;
