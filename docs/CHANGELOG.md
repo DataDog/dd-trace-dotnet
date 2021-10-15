@@ -1,5 +1,66 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
+## [Release 1.29.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.29.0)
+
+## Changes
+* Re-implement log4net logs injection (#1710)
+* [AppSec] Send ip addresses headers to the backend (#1764)
+* CI Visibility Mode v1 (#1795)
+* Add PInvoke Map rewriting in all platforms to support native library renaming (#1809)
+* CallSite instrumentation - Add exceptions to active span during ASP.NET Web API 2 message handler exception (#1817)
+* Managed loader cannot resolve profiler managed libraries when installed by the MSI installer (#1820)
+* [CIVisibility] Add Test Framework version to test spans (#1828)
+* Add lookup for `LocalRootSpanId` property and tests for `SpanId` and `LocalRootSpanId`.  (#1839)
+* Add LifetimeManager for handling shutdown events (#1841)
+* Report attack when response has ended (#1847)
+* [CIVisibility] Update CI namespace types (#1864)
+* Add tags for App Sec (#1869)
+* Fix buffer overflow reported by Clang Address Sanitizer (#1872)
+* Create a shared `CurrentProcess` helper class in based on the Tracer's internal helper. (#1876)
+* Make uses of `Process` in shared-managed-files safe and add required capabilities to `CurrentProcess`. (#1884)
+* Cleanup startup logs (#1890)
+* Refactor ModuleMetadata handling to reduce memory allocations. (#1891)
+* Mode additions to `CurrentProcess` wrapper (`GetMainModule()`). (#1896)
+* Reduce the number of times we call the WAF (#1901)
+* Revert "Refactor ModuleMetadata handling to reduce memory allocations." (#1904)
+
+## Fixes
+* Skip WriteTrace call when no there's no spans and improve filtering (#1843)
+* Kill the old Samples.Shared project (#1867)
+* Fix bug logging response even if successful (#1874)
+* appsec: fix appsec event tag value (#1898)
+
+## Build / Test
+* Generate Dependabot File for Integrations (#1754)
+* Scan integration test logs for errors (#1776)
+* Post benchmark result comparison as a comment to the PR (#1811)
+* Small build improvements (#1813)
+* Dont test all integration package versions on every PR (#1818)
+* Parallelise Windows integration tests by framework (#1819)
+* Change more timeouts in MassTransit (#1829)
+* Add a sleep to CallTargetNativeTests to minimize risks of segfaults on 2.1 (#1830)
+* Fix path in gitlab.bat after repository move (#1832)
+* Enable static analysis for ConfigureAwait (#1833)
+* Update Gitlab build image to use 5.0.401 SDK (#1834)
+* Skip segmentation faults in .NET Core 2.1 tests (#1835)
+* Fix transient error in aspnetcore tests (#1836)
+* Use temporary folder for NServiceBus storage (#1840)
+* Add a separate performance pipeline for running Performance tests (#1842)
+* Additional updates to launchSettings.json for test applications (#1848)
+* Fix performance pipeline (#1851)
+* Use Xunit.SkippableFact for inconclusive tests (#1858)
+* Update test package versions (#1862)
+* Add more information to aerospike tags (#1865)
+* Delete performance pipeline, and manually update GitHub statuses (#1868)
+* Initialize LocalDB ahead of time in the CI (#1873)
+* Handle the expected segfault in smoke tests (#1878)
+* Fix errors in the CI when the startup log thread gets aborted (#1879)
+* Test the tracer works with F# web framework 'Giraffe' (#1888)
+* Add sanity check for _OR_GREATER compiler directives (#1895)
+* Skip Pipeline for Dependabot Lures (#1905)
+
+[Changes since 1.28.8](https://github.com/DataDog/dd-trace-dotnet/compare/v1.28.8...v1.29.0)
+
 ## [Release 1.28.8](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.28.8)
 
 ## Changes

@@ -13,8 +13,8 @@
 
     <!-- Integration: Microsoft.Data.Sqlite -->
     <!-- Assembly: Microsoft.Data.Sqlite -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.Sqlite/5.0.10 -->
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="5.0.10" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.Sqlite/5.0.11 -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="5.0.11" />
 
     <!-- Integration: MySql.Data -->
     <!-- Assembly: MySql.Data -->
@@ -23,8 +23,8 @@
 
     <!-- Integration: MySqlConnector -->
     <!-- Assembly: MySqlConnector -->
-    <!-- Latest package https://www.nuget.org/packages/MySqlConnector/1.3.12 -->
-    <PackageReference Include="MySqlConnector" Version="1.3.12" />
+    <!-- Latest package https://www.nuget.org/packages/MySqlConnector/1.3.13 -->
+    <PackageReference Include="MySqlConnector" Version="1.3.13" />
 
     <!-- Integration: Npgsql -->
     <!-- Assembly: Npgsql -->
@@ -68,13 +68,13 @@
 
     <!-- Integration: AWSSDK.Core -->
     <!-- Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.3.15 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.3.15" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.3.22 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.3.22" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!-- Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.1.18 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.1.18" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.1.25 -->
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.1.25" />
 
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!-- Assembly: Microsoft.Azure.Cosmos.Client -->
@@ -121,15 +121,20 @@
     <!-- Latest package https://www.nuget.org/packages/Confluent.Kafka/1.8.1 -->
     <PackageReference Include="Confluent.Kafka" Version="1.8.1" />
 
-    <!-- Integration: MongoDB.Driver.Core -->
-    <!-- Assembly: MongoDB.Driver.Core -->
-    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver.Core/2.13.1 -->
-    <PackageReference Include="MongoDB.Driver.Core" Version="2.13.1" />
+    <!-- Integration: log4net -->
+    <!-- Assembly: log4net -->
+    <!-- Latest package https://www.nuget.org/packages/log4net/2.0.12 -->
+    <PackageReference Include="log4net" Version="2.0.12" />
 
     <!-- Integration: MongoDB.Driver.Core -->
     <!-- Assembly: MongoDB.Driver.Core -->
-    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver/2.13.1 -->
-    <PackageReference Include="MongoDB.Driver" Version="2.13.1" />
+    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver.Core/2.13.2 -->
+    <PackageReference Include="MongoDB.Driver.Core" Version="2.13.2" />
+
+    <!-- Integration: MongoDB.Driver.Core -->
+    <!-- Assembly: MongoDB.Driver.Core -->
+    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver/2.13.2 -->
+    <PackageReference Include="MongoDB.Driver" Version="2.13.2" />
 
     <!-- Integration: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
     <!-- Assembly: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
@@ -163,8 +168,8 @@
 
     <!-- Integration: StackExchange.Redis -->
     <!-- Assembly: StackExchange.Redis -->
-    <!-- Latest package https://www.nuget.org/packages/StackExchange.Redis/2.2.62 -->
-    <PackageReference Include="StackExchange.Redis" Version="2.2.62" />
+    <!-- Latest package https://www.nuget.org/packages/StackExchange.Redis/2.2.79 -->
+    <PackageReference Include="StackExchange.Redis" Version="2.2.79" />
 
     <!-- Integration: StackExchange.Redis.StrongName -->
     <!-- Assembly: StackExchange.Redis.StrongName -->
