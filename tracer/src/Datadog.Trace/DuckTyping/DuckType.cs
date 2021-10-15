@@ -419,6 +419,12 @@ namespace Datadog.Trace.DuckTyping
                     continue;
                 }
 
+                // Check if proxy is a reverse method (shouldn't be called from here)
+                if (proxyProperty.GetCustomAttribute<DuckReverseMethodAttribute>(true) is not null)
+                {
+                    DuckTypeIncorrectReversePropertyUsageException.Throw(proxyProperty);
+                }
+
                 PropertyBuilder propertyBuilder = null;
 
                 DuckAttribute duckAttribute = proxyProperty.GetCustomAttribute<DuckAttribute>(true) ?? new DuckAttribute();

@@ -117,6 +117,12 @@ namespace Datadog.Trace.DuckTyping
                     continue;
                 }
 
+                // Check if proxy method is a reverse method (shouldn't be called from here)
+                if (proxyMethodDefinition.GetCustomAttribute<DuckReverseMethodAttribute>(true) is not null)
+                {
+                    DuckTypeIncorrectReverseMethodUsageException.Throw(proxyMethodDefinition);
+                }
+
                 // Extract the method parameters types
                 ParameterInfo[] proxyMethodDefinitionParameters = proxyMethodDefinition.GetParameters();
                 Type[] proxyMethodDefinitionParametersTypes = proxyMethodDefinitionParameters.Select(p => p.ParameterType).ToArray();

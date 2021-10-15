@@ -365,6 +365,23 @@ namespace Datadog.Trace.DuckTyping
     }
 
     /// <summary>
+    /// DuckType property was [DuckReverseMethod] in non-reverse proxy
+    /// </summary>
+    public class DuckTypeIncorrectReversePropertyUsageException : DuckTypeException
+    {
+        private DuckTypeIncorrectReversePropertyUsageException(PropertyInfo property)
+            : base($"The property '{property.Name}' was marked as a [DuckReverseMethod] but not doing reverse duck typing.")
+        {
+        }
+
+        [DebuggerHidden]
+        internal static void Throw(PropertyInfo property)
+        {
+            throw new DuckTypeIncorrectReversePropertyUsageException(property);
+        }
+    }
+
+    /// <summary>
     /// DuckType proxy was missing an implementation
     /// </summary>
     public class DuckTypeReverseProxyMissingPropertyImplementationException : DuckTypeException
