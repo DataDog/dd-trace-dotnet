@@ -131,6 +131,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
 
             var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, (int)statusCode);
+            settings.DisableRequireUniquePrefix(); // Disable default Verifier behavior so CallTarget & CallSite tests can use the same snapshot file
 
             // Overriding the type name here as we have multiple test classes in the file
             // Overriding the method name to _
