@@ -16,7 +16,7 @@
         <File Id="Datadog.AutoInstrumentation.NativeLoader.x64.dll"
               Source="$(var.MonitoringHomeDirectory)\Datadog.AutoInstrumentation.NativeLoader.x64.dll"
               Checksum="yes">
-          <Class Id="$(var.ProfilerCLSIDBeta)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
+          <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
         </File>
 
       </Component>
@@ -34,7 +34,7 @@
         <File Id="Datadog.AutoInstrumentation.NativeLoader.x86.dll"
               Source="$(var.MonitoringHomeDirectory)\Datadog.AutoInstrumentation.NativeLoader.x86.dll"
               Checksum="yes">
-          <Class Id="$(var.ProfilerCLSIDBeta)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
+          <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
         </File>
       </Component>
       <Component Win64="no">
@@ -53,7 +53,7 @@
         <File Id="Datadog.AutoInstrumentation.NativeLoader.x86.dll"
               Source="$(var.MonitoringHomeDirectory)\Datadog.AutoInstrumentation.NativeLoader.x86.dll"
               Checksum="yes">
-          <Class Id="$(var.ProfilerCLSIDBeta)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
+          <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
         </File>
       </Component>
       <Component Win64="no">

@@ -6,7 +6,6 @@
   <?define Company = "Datadog" ?>
   <?define ProductNamePlatformAgnostic = "Datadog $(var.BaseProductName)" ?>
   <?define ProfilerCLSID = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}" ?>
-  <?define ProfilerCLSIDBeta = "{50DA5EED-F1ED-B00B-1055-5AFE55A1ADE5}" ?>
   <?define ProductName = "Datadog $(var.BaseProductName)" ?>
 
   <?if $(var.Platform) = x64 ?>
