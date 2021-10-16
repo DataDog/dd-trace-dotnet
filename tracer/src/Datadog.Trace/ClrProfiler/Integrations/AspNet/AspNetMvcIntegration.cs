@@ -194,12 +194,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                         httpContext.Items[SharedConstants.HttpContextPropagatedResourceNameKey] = resourceName;
                     }
                 }
-
-                var security = Security.Instance;
-                if (security.Settings.Enabled)
-                {
-                    RaiseInstrumentationEvent(security, HttpContext.Current, span, controllerContext.RouteData);
-                }
             }
             catch (Exception ex)
             {
@@ -207,26 +201,6 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             }
 
             return scope;
-        }
-
-        /// <summary>
-        /// Raising instrumentation event
-        /// </summary>
-        /// <param name="security">security></param>
-        /// <param name="context">context</param>
-        /// <param name="relatedSpan">related span</param>
-        /// <param name="routeDatas">routeDatas</param>
-        internal static void RaiseInstrumentationEvent(IDatadogSecurity security, HttpContext context, Span relatedSpan, RouteData routeDatas)
-        {
-            try
-            {
-                var dic = context.Request.PrepareArgsForWaf(routeDatas);
-                security.InstrumentationGateway.RaiseEvent(dic, new HttpTransport(context), relatedSpan);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error occurred raising instrumentation event");
-            }
         }
 
         /// <summary>

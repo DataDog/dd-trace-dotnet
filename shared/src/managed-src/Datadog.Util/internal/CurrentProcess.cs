@@ -209,10 +209,10 @@ namespace Datadog.Util
         /// </para><para>
         /// Note that the <see cref="System.Diagnostics.ProcessModule" /> class, whose instances are contained in the
         /// collection returned by the <see cref="System.Diagnostics.Process.Modules" /> API is also guarded by the same
-        /// link demand. So working with <c>ProcessModule</c> instandes suffers from the same inconvenience.
+        /// link demand. So working with <c>ProcessModule</c> instances suffers from the same inconvenience.
         /// To address that, this method does NOT return <c>ProcessModule</c> instances directly.
         /// Instead, it copies the data obtained from the process to an array of <see cref="CurrentProcess.ModuleInfo"/> structures.
-        /// Those can be accesses without worrying about the partial trust issue.<br />
+        /// Those can be accessed without worrying about the partial trust issue.<br />
         /// If you only require the number of process modules, not the individual module info, then
         /// it is more performant to call <see cref="GetModulesCount"/> instead of this method.
         /// </para>
@@ -240,6 +240,44 @@ namespace Datadog.Util
                 }
 
                 return moduleInfos;
+            }
+        }
+
+        /// <summary>
+        /// Convenience method for calling <see cref="System.Diagnostics.Process.MainModule" />
+        /// on the instance obtained via the <see cref="System.Diagnostics.Process.GetCurrentProcess" />-method.
+        /// <para>
+        /// !! This method should be called from within a try-catch block !! <br />
+        /// On the (classic) .NET Framework the <see cref="System.Diagnostics.Process" /> class is
+        /// guarded by a LinkDemand for FullTrust, so partial trust callers will throw an exception.
+        /// That exception is thrown when the caller method is being JIT compiled, NOT when methods on
+        /// the <c>Process</c> class are being invoked.
+        /// This wrapper, when called from within a try-catch block, allows catching the exception.
+        /// </para><para>
+        /// Note that the <see cref="System.Diagnostics.ProcessModule" /> class is also guarded by the same
+        /// link demand. So working with <c>ProcessModule</c> instances suffers from the same inconvenience.
+        /// To address that, this method does NOT return a <c>ProcessModule</c> instance directly.
+        /// Instead, it copies the data obtained from the process to a <see cref="CurrentProcess.ModuleInfo"/> structure.
+        /// That can be accessed without worrying about the partial trust issue.
+        /// </para>
+        /// </summary>
+        /// <returns>A <see cref="CurrentProcess.ModuleInfo"/> structure representing the main module of this process.</returns>
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static ModuleInfo GetMainModule()
+        {
+            using (Process currentProcess = Process.GetCurrentProcess())
+            {
+                using (ProcessModule mainModule = currentProcess.MainModule)
+                {
+                    ModuleInfo mainModuleInfo = new ModuleInfo();
+
+                    if (mainModule != null)
+                    {
+                        mainModuleInfo.SetTo(mainModule);
+                    }
+
+                    return mainModuleInfo;
+                }
             }
         }
 
@@ -277,12 +315,20 @@ namespace Datadog.Util
             {
                 using (ProcessModule module = processModules[index])
                 {
-                    this.BaseAddress = module.BaseAddress;
-                    this.EntryPointAddress = module.EntryPointAddress;
-                    this.FileName = module.FileName;
-                    this.ModuleMemorySize = module.ModuleMemorySize;
-                    this.ModuleName = module.ModuleName;
+                    SetTo(module);
                 }
+            }
+
+            /// <summary>This method should be only called by methods of the <c>ModuleInfo</c> class or
+            /// by <see cref="CurrentProcess.GetMainModule" />.</summary>
+            [MethodImpl(MethodImplOptions.NoInlining)]
+            internal void SetTo(ProcessModule module)
+            {
+                this.BaseAddress = module.BaseAddress;
+                this.EntryPointAddress = module.EntryPointAddress;
+                this.FileName = module.FileName;
+                this.ModuleMemorySize = module.ModuleMemorySize;
+                this.ModuleName = module.ModuleName;
             }
 
             internal void Reset()

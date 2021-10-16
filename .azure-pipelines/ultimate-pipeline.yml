@@ -60,6 +60,9 @@ variables:
   relativeArtifacts: /tracer/src/bin/artifacts
   ddTracerHome: $(System.DefaultWorkingDirectory)/tracer/src/bin/dd-tracer-home
   tracerHome: $(System.DefaultWorkingDirectory)/tracer/src/bin/windows-tracer-home
+  profilerSrcDirectory: $(System.DefaultWorkingDirectory)/../dd-continuous-profiler-dotnet
+  profilerHome: $(System.DefaultWorkingDirectory)/profiler/bin/profiler-home # Important, put the profiler assets into the working directory so it can be saved across build stages more easily
+  monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
   artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
   ddApiKey: $(DD_API_KEY)
   isMainBranch: $[eq(variables['Build.SourceBranch'], 'refs/heads/master')]
@@ -84,6 +87,11 @@ resources:
     env:
       DD_API_KEY: $(ddApiKey)
       DD_INSIDE_CI: true
+  repositories:
+  - repository: dd-continuous-profiler-dotnet
+    type: github
+    endpoint: DataDog
+    name: DataDog/dd-continuous-profiler-dotnet
 
 # Stages
 stages:
@@ -98,14 +106,43 @@ stages:
     pool:
       vmImage: windows-2019
     steps:
+    - checkout: self
+      path: s
+
     - template: steps/install-dotnet-5-sdk.yml
+
+    - checkout: dd-continuous-profiler-dotnet
+      path: dd-continuous-profiler-dotnet
+
+    - powershell: |
+        New-Item -Path $(System.DefaultWorkingDirectory)\..\dd-trace-dotnet -ItemType SymbolicLink -Value $(System.DefaultWorkingDirectory)
+      displayName: Create symlink from $(System.DefaultWorkingDirectory)\..\dd-trace-dotnet to $(System.DefaultWorkingDirectory)
+
+    - powershell: |
+        $sha = git rev-parse --short HEAD
+        Write-Host "SHA is $sha"
+        echo "##vso[task.setvariable variable=BetaMsiSuffix;isOutput=true]v$(Build.BuildId)-$sha"
+        Write-Host "BetaMsiSuffix set to v$(Build.BuildId)-$sha"
+      workingDirectory: $(System.DefaultWorkingDirectory)\..\dd-continuous-profiler-dotnet
+      displayName: Persist the commit sha for the dd-continuous-profiler repo (temporary)
+      name: SetMsiSuffix # because we're going to depend on the variable output, we need to name the step
 
     - script: tracer\build.cmd BuildTracerHome
       displayName: Build tracer home
 
+    - script: tracer\build.cmd BuildProfilerHome
+      displayName: Build profiler home
+
+    - script: tracer\build.cmd BuildMonitoringHome
+      displayName: Build monitoring home
+
     - publish: $(tracerHome)
       displayName: Upload Windows tracer home directory
       artifact: windows-tracer-home
+
+    - publish: $(System.DefaultWorkingDirectory)/../_build/DDProf-Deploy
+      displayName: Upload Windows profiler home directory
+      artifact: windows-profiler-home
 
     - publish: $(System.DefaultWorkingDirectory)
       displayName: Upload working directory after the managed build
@@ -220,12 +257,25 @@ stages:
       jobs: [msi_and_pack]
 
   - job: msi_and_pack
+    variables:
+      # Temporarily use the profiling repo's commit hash for the beta MSI's filename
+      BetaMsiSuffix: $[ stageDependencies.build_windows.build.outputs['SetMsiSuffix.BetaMsiSuffix']]
     steps:
       - template: steps/install-dotnet-5-sdk.yml
       - template: steps/restore-working-directory.yml
+      - script: echo $(BetaMsiSuffix) # TODO Remove
+
+      - task: DownloadPipelineArtifact@2
+        displayName: Download windows profiler home
+        inputs:
+          artifact: windows-profiler-home
+          path: $(profilerHome)
 
       - script: tracer\build.cmd PackageTracerHome
         displayName: Build MSI and Tracer home
+
+      - script: tracer\build.cmd PackageMonitoringHomeBeta
+        displayName: Build beta MSI
 
       - publish: $(artifacts)/windows-tracer-home.zip
         displayName: Publish tracer-home.zip

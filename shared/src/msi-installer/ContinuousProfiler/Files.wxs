@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+  <?include $(sys.CURRENTDIR)\Config.wxi?>
+  <Fragment>
+    <ComponentGroup Id="ContinuousProfiler.Files" Directory="ContinuousProfiler">
+      <Component Win64="$(var.Win64)">
+        <File Id="DDProf_SetEnv.bat" Source="$(var.ProfilerHomeDirectory)\DDProf-SetEnv.bat" />
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="DDProf_SetEnv.sh" Source="$(var.ProfilerHomeDirectory)\DDProf-SetEnv.sh" />
+      </Component>
+    </ComponentGroup>
+
+    <?if $(var.Win64) = yes ?>
+    <ComponentGroup Id="ContinuousProfiler.Files.Native.64" Directory="ContinuousProfiler">
+      <Component Win64="yes">
+        <File Id="Datadog.AutoInstrumentation.Profiler.Native.x64.dll"
+              Source="$(var.ProfilerHomeDirectory)\Datadog.AutoInstrumentation.Profiler.Native.x64.dll"
+              Checksum="yes">
+        </File>
+      </Component>
+      <Component Win64="yes">
+        <File Id="Datadog.AutoInstrumentation.Profiler.Native.x64.pdb"
+              Source="$(var.ProfilerHomeDirectory)\Datadog.AutoInstrumentation.Profiler.Native.x64.pdb"
+              Checksum="yes">
+        </File>
+      </Component>
+    </ComponentGroup>
+    <?endif ?>
+
+    <!-- Always install the 32-bit binaries, even for the 64-bit installer -->
+    <ComponentGroup Id="ContinuousProfiler.Files.Native.32" Directory="ContinuousProfiler">
+      <Component Win64="$(var.Win64)">
+        <File Id="Datadog.AutoInstrumentation.Profiler.Native.x86.dll"
+              Source="$(var.ProfilerHomeDirectory)\Datadog.AutoInstrumentation.Profiler.Native.x86.dll"
+              Checksum="yes">
+        </File>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="Datadog.AutoInstrumentation.Profiler.Native.86.pdb"
+              Source="$(var.ProfilerHomeDirectory)\Datadog.AutoInstrumentation.Profiler.Native.x86.pdb"
+              Checksum="yes">
+        </File>
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>
