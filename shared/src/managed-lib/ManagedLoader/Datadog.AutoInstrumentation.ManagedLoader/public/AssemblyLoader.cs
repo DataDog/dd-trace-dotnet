@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Datadog.AutoInstrumentation.ManagedLoader
 {
@@ -608,6 +607,41 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                      "Listing Entry Assembly info",
                      "FullName", entryAssembly?.FullName,
                      "Location", entryAssembly?.Location);
+
+            TryGetCurrentThread(out int osThreadId, out Thread currentThread);
+            Log.Info(LoggingComponentMoniker,
+                     "Listing current Thread info",
+                     nameof(osThreadId), osThreadId,
+                     "IsBackground", currentThread?.IsBackground,
+                     "IsThreadPoolThread", currentThread?.IsThreadPoolThread,
+                     "ManagedThreadId", currentThread?.ManagedThreadId,
+                     "Name", currentThread?.Name);
+
+            if (Log.IsDebugLoggingEnabled)
+            {
+                string stackTrace = Environment.StackTrace;
+                Log.Debug(LoggingComponentMoniker,
+                          "Listing invocation Stack Trace",
+                          nameof(stackTrace), stackTrace);
+            }
+        }
+
+        private static bool TryGetCurrentThread(out int osThreadId, out Thread currentThread)
+        {
+            try
+            {
+#pragma warning disable CS0618  // GetCurrentThreadId is obsolete but we can still use it for logging purposes (see respective docs)
+                osThreadId = AppDomain.GetCurrentThreadId();
+#pragma warning restore CS0618  // Type or member is obsolete
+                currentThread = Thread.CurrentThread;
+                return true;
+            }
+            catch
+            {
+                osThreadId = 0;
+                currentThread = null;
+                return false;
+            }
         }
 
         private AssemblyResolveEventHandler CreateAssemblyResolveEventHandler()
