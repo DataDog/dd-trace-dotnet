@@ -526,7 +526,40 @@ void RejitHandler::EnqueueThreadLoop(RejitHandler* handler)
                 // Request the ReJIT for all integrations found in the module.
                 if (!vtMethodDefs.empty())
                 {
-                    handler->EnqueueForRejit(vtModules, vtMethodDefs);
+                    // *************************************
+                    // Request ReJIT
+                    // *************************************
+
+                    if (profilerInfo10 != nullptr)
+                    {
+                        // RequestReJITWithInliners is currently always failing with `Fatal error. Internal CLR error.
+                        // (0x80131506)` more research is required, meanwhile we fallback to the normal RequestReJIT and
+                        // manual track of inliners.
+
+                        /*hr = profilerInfo10->RequestReJITWithInliners(COR_PRF_REJIT_BLOCK_INLINING, (ULONG) vtModules.size(), &vtModules[0], &vtMethodDefs[0]); if (FAILED(hr))
+                        {
+                            Warn("Error requesting ReJITWithInliners for ", vtModules.size(),
+                                 " methods, falling back to a normal RequestReJIT");
+                            hr = profilerInfo10->RequestReJIT((ULONG) vtModules.size(), &vtModules[0], &vtMethodDefs[0]);
+                        }*/
+
+                        hr = profilerInfo10->RequestReJIT((ULONG) vtModules.size(), &vtModules[0], &vtMethodDefs[0]);
+                    }
+                    else
+                    {
+                        hr = profilerInfo->RequestReJIT((ULONG) vtModules.size(), &vtModules[0], &vtMethodDefs[0]);
+                    }
+                    if (SUCCEEDED(hr))
+                    {
+                        Logger::Info("Request ReJIT done for ", vtModules.size(), " methods");
+                    }
+                    else
+                    {
+                        Logger::Warn("Error requesting ReJIT for ", vtModules.size(), " methods");
+                    }
+
+                    // Request for NGen Inliners
+                    handler->RequestRejitForNGenInliners();
                 }
 
                 if (item->m_promise != nullptr)
