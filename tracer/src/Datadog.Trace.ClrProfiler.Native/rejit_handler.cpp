@@ -11,28 +11,18 @@ namespace trace
 // RejitItem
 //
 
-RejitItem::RejitItem() : m_type(-1), m_length(0), m_modulesId(nullptr), m_methodDefs(nullptr), m_promise(nullptr)
+RejitItem::RejitItem() : m_length(-1), m_modulesId(nullptr), m_integrationMethods(nullptr), m_promise(nullptr)
 {
 }
 
 RejitItem::RejitItem(int length,
     std::unique_ptr<ModuleID[]>&& modulesId,
-    std::unique_ptr<mdMethodDef[]>&& methodDefs,
     std::unique_ptr<std::vector<IntegrationMethod>>&& integrationMethods,
     std::promise<int>* promise)
 {
     m_length = length;
     m_modulesId = std::move(modulesId);
-    if (methodDefs != nullptr)
-    {
-        m_type = 0;
-        m_methodDefs = std::move(methodDefs);
-    }
-    else
-    {
-        m_type = 1;
-        m_integrationMethods = std::move(integrationMethods);
-    }
+    m_integrationMethods = std::move(integrationMethods);
     m_promise = promise;
 }
 
@@ -140,9 +130,17 @@ void RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
             methodEnum = nullptr;
             if (total > 0)
             {
-                handler->EnqueueForRejit(modules, methods);
-                Logger::Info("NGEN:: Processed with ", total, " inliners [ModuleId=", currentModuleId,
-                             ",MethodDef=", currentMethodDef, "]");
+                auto rqReJitHR = handler->GetCorProfilerInfo()->RequestReJIT((ULONG) modules.size(), &modules[0], &methods[0]);
+                if (SUCCEEDED(rqReJitHR))
+                {
+                    Logger::Info("NGEN:: Processed with ", total, " inliners [ModuleId=", currentModuleId,
+                                 ",MethodDef=", currentMethodDef, "]");
+                }
+                else
+                {
+                    Logger::Warn("NGEN:: Error processing ", total, " inliners [ModuleId=", currentModuleId,
+                                 ",MethodDef=", currentMethodDef, "]");
+                }
             }
 
             if (!incompleteData)
@@ -259,7 +257,7 @@ void RejitHandler::EnqueueThreadLoop(RejitHandler* handler)
     {
         const auto item = queue->pop();
 
-        if (item->m_type == -1)
+        if (item->m_length == -1)
         {
             // *************************************
             // Exit ReJIT thread
@@ -267,49 +265,7 @@ void RejitHandler::EnqueueThreadLoop(RejitHandler* handler)
 
             break;
         }
-        else if (item->m_type == 0)
-        {
-            // *************************************
-            // Request ReJIT
-            // *************************************
-
-            if (profilerInfo10 != nullptr)
-            {
-                // RequestReJITWithInliners is currently always failing with `Fatal error. Internal CLR error.
-                // (0x80131506)` more research is required, meanwhile we fallback to the normal RequestReJIT and manual
-                // track of inliners.
-
-                /*hr = profilerInfo10->RequestReJITWithInliners(COR_PRF_REJIT_BLOCK_INLINING, (ULONG) item->m_length,
-                                                              item->m_modulesId.get(), item->m_methodDefs.get());
-                if (FAILED(hr))
-                {
-                    Warn("Error requesting ReJITWithInliners for ", item->m_length,
-                         " methods, falling back to a normal RequestReJIT");
-                    hr = profilerInfo10->RequestReJIT((ULONG) item->m_length, item->m_modulesId.get(),
-                                                      item->m_methodDefs.get());
-                }*/
-
-                hr = profilerInfo10->RequestReJIT((ULONG) item->m_length, item->m_modulesId.get(),
-                                                  item->m_methodDefs.get());
-            }
-            else
-            {
-                hr = profilerInfo->RequestReJIT((ULONG) item->m_length, item->m_modulesId.get(),
-                                                item->m_methodDefs.get());
-            }
-            if (SUCCEEDED(hr))
-            {
-                Logger::Info("Request ReJIT done for ", item->m_length, " methods");
-            }
-            else
-            {
-                Logger::Warn("Error requesting ReJIT for ", item->m_length, " methods");
-            }
-
-            // Request for NGen Inliners
-            handler->RequestRejitForNGenInliners();
-        }
-        else if (item->m_type == 1)
+        else
         {
             // *************************************
             // Checks if there are integrations for the modules and enqueue a ReJIT request
@@ -659,27 +615,6 @@ void RejitHandler::AddNGenModule(ModuleID moduleId)
     RequestRejitForInlinersInModule(moduleId);
 }
 
-void RejitHandler::EnqueueForRejit(const std::vector<ModuleID>& modulesVector, const std::vector<mdMethodDef>& modulesMethodDef)
-{
-    Logger::Debug("RejitHandler::EnqueueForReJIT");
-    const size_t length = modulesMethodDef.size();
-
-    auto moduleIds = std::make_unique<ModuleID[]>(length);
-    std::copy(modulesVector.begin(), modulesVector.end(), moduleIds.get());
-
-    auto mDefs = std::make_unique<mdMethodDef[]>(length);
-    std::copy(modulesMethodDef.begin(), modulesMethodDef.end(), mDefs.get());
-
-    // Create module and methods metadata.
-    for (size_t i = 0; i < length; i++)
-    {
-        GetOrAddModule(moduleIds[i])->GetOrAddMethod(mDefs[i]);
-    }
-
-    // Enqueue rejit
-    m_rejit_queue->push(std::make_unique<RejitItem>((int) length, std::move(moduleIds), std::move(mDefs), nullptr, nullptr));
-}
-
 void RejitHandler::EnqueueProcessModule(const std::vector<ModuleID>& modulesVector,
                                         const std::vector<IntegrationMethod>& integrations,
                                         std::promise<int>* promise)
@@ -691,7 +626,7 @@ void RejitHandler::EnqueueProcessModule(const std::vector<ModuleID>& modulesVect
     std::copy(modulesVector.begin(), modulesVector.end(), moduleIds.get());
 
     // Enqueue process module
-    m_rejit_queue->push(std::make_unique<RejitItem>((int) length, std::move(moduleIds), nullptr,
+    m_rejit_queue->push(std::make_unique<RejitItem>((int) length, std::move(moduleIds),
                                                     std::make_unique<std::vector<IntegrationMethod>>(integrations),
                                                     promise));
 }
