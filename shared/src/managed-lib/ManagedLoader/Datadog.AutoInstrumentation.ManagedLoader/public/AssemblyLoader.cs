@@ -513,7 +513,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
         {
             try
             {
-                // One method per know side-effect:
+                // One method per known side-effect:
                 // (each method should catch/log/swallow its exceptions so that other side-effects can be undone)
 
                 ClearAppDomainTargetFrameworkNameCache(canUseLog);
@@ -620,10 +620,10 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             else if (UseConsoleLoggingIfFileLoggingFails)
             {
 #pragma warning disable IDE0079  // Remove unnecessary suppression: Supresion is necessary for some, but not all compile time settings
-#pragma warning disable CS0162  // Unreachable code detected (deliberately using const bool for compile settings)
+#pragma warning disable CS0162   // Unreachable code detected (deliberately using const bool for compile settings)
                 Console.WriteLine($"{Environment.NewLine}{LoggingComponentMoniker}: {message}"
                                 + (ex == null ? "" : $"{Environment.NewLine}{ex}"));
-#pragma warning restore CS0162  // Unreachable code detected
+#pragma warning restore CS0162   // Unreachable code detected
 #pragma warning restore IDE0079  // Remove unnecessary suppression
             }
         }
@@ -637,9 +637,9 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             else if (UseConsoleLoggingIfFileLoggingFails)
             {
 #pragma warning disable IDE0079  // Remove unnecessary suppression: Supresion is necessary for some, but not all compile time settings
-#pragma warning disable CS0162  // Unreachable code detected (deliberately using const bool for compile settings)
+#pragma warning disable CS0162   // Unreachable code detected (deliberately using const bool for compile settings)
                 Console.WriteLine($"{Environment.NewLine}{LoggingComponentMoniker}: {message}");
-#pragma warning restore CS0162  // Unreachable code detected
+#pragma warning restore CS0162   // Unreachable code detected
 #pragma warning restore IDE0079  // Remove unnecessary suppression
             }
         }

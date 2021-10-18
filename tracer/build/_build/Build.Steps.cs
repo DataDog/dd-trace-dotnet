@@ -33,6 +33,8 @@ partial class Build
 {
     [Solution("Datadog.Trace.sln")] readonly Solution Solution;
     AbsolutePath TracerDirectory => RootDirectory / "tracer";
+    AbsolutePath SharedDirectory => RootDirectory / "shared";
+    AbsolutePath ProfilerDirectory => ProfilerSrcDirectory ?? RootDirectory / ".." / "dd-continuous-profiler-dotnet";
     AbsolutePath MsBuildProject => TracerDirectory / "Datadog.Trace.proj";
 
     AbsolutePath OutputDirectory => TracerDirectory / "bin";
@@ -43,6 +45,10 @@ partial class Build
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath WindowsSymbolsZip => ArtifactsDirectory / "windows-native-symbols.zip";
     AbsolutePath BuildDataDirectory => TracerDirectory / "build_data";
+
+    AbsolutePath MonitoringHomeDirectory => MonitoringHome ?? (SharedDirectory / "bin" / "monitoring-home");
+
+    AbsolutePath ProfilerHomeDirectory => ProfilerHome ?? RootDirectory / ".." / "_build" / "DDProf-Deploy";
 
     const string LibDdwafVersion = "1.0.10";
     AbsolutePath LibDdwafDirectory => (NugetPackageDirectory ?? (RootDirectory / "packages")) / $"libddwaf.{LibDdwafVersion}";
@@ -59,14 +65,13 @@ partial class Build
         : "/var/log/datadog/dotnet/";
 
     Project NativeProfilerProject => Solution.GetProject(Projects.ClrProfilerNative);
+    Project NativeLoaderProject => Solution.GetProject(Projects.NativeLoader);
 
     [LazyPathExecutable(name: "cmake")] readonly Lazy<Tool> CMake;
     [LazyPathExecutable(name: "make")] readonly Lazy<Tool> Make;
     [LazyPathExecutable(name: "fpm")] readonly Lazy<Tool> Fpm;
     [LazyPathExecutable(name: "gzip")] readonly Lazy<Tool> GZip;
     [LazyPathExecutable(name: "cmd")] readonly Lazy<Tool> Cmd;
-
-    const string ProjFiles = "*.{cs,fs,vb}proj"; 
 
     IEnumerable<MSBuildTargetPlatform> ArchitecturesForPlatform =>
         Equals(TargetPlatform, MSBuildTargetPlatform.x64)
@@ -152,6 +157,7 @@ partial class Build
                     : new[] { MSBuildTargetPlatform.x86 };
 
             // Can't use dotnet msbuild, as needs to use the VS version of MSBuild
+            // Build native tracer assets
             MSBuild(s => s
                 .SetTargetPath(MsBuildProject)
                 .SetConfiguration(BuildConfiguration)
@@ -358,6 +364,7 @@ partial class Build
         {
             foreach (var architecture in ArchitecturesForPlatform)
             {
+                // Copy native tracer assets
                 var source = NativeProfilerProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
                              $"{NativeProfilerProject.Name}.dll";
                 var dest = TracerHomeDirectory / $"win-{architecture}";
@@ -461,6 +468,29 @@ partial class Build
                     .AddProperty("RunWixToolsOutOfProc", true)
                     .SetProperty("TracerHomeDirectory", TracerHomeDirectory)
                     .SetProperty("LibDdwafDirectory", LibDdwafDirectory)
+                    .SetMaxCpuCount(null)
+                    .CombineWith(ArchitecturesForPlatform, (o, arch) => o
+                        .SetProperty("MsiOutputPath", ArtifactsDirectory / arch.ToString())
+                        .SetTargetPlatform(arch)),
+                degreeOfParallelism: 2);
+        });
+
+    Target BuildMsiBeta => _ => _
+        .Unlisted()
+        .Description("Builds the .msi files from the repo")
+        .After(BuildTracerHome, BuildProfilerHome, BuildMonitoringHome)
+        .OnlyWhenStatic(() => IsWin)
+        .Executes(() =>
+        {
+            MSBuild(s => s
+                    .SetTargetPath(SharedDirectory / "src" / "msi-installer" / "WindowsInstaller.wixproj")
+                    .SetConfiguration(BuildConfiguration)
+                    .SetMSBuildPath()
+                    .AddProperty("RunWixToolsOutOfProc", true)
+                    .SetProperty("TracerHomeDirectory", TracerHomeDirectory)
+                    .SetProperty("LibDdwafDirectory", LibDdwafDirectory)
+                    .SetProperty("ProfilerHomeDirectory", ProfilerHomeDirectory)
+                    .SetProperty("BetaMsiSuffix", BetaMsiSuffix)
                     .SetMaxCpuCount(null)
                     .CombineWith(ArchitecturesForPlatform, (o, arch) => o
                         .SetProperty("MsiOutputPath", ArtifactsDirectory / arch.ToString())
@@ -728,7 +758,7 @@ partial class Build
             var regressionsDirectory = Solution.GetProject(Projects.EntityFramework6xMdTokenLookupFailure)
                 .Directory.Parent;
 
-            var regressionLibs =  GlobFiles(regressionsDirectory / "**" / ProjFiles)
+            var regressionLibs =  GlobFiles(regressionsDirectory / "**" / "*.csproj")
                  .Where(path =>
                     (path, Solution.GetProject(path).TryGetTargetFrameworks()) switch
                     {
@@ -811,11 +841,11 @@ partial class Build
         .Executes(() =>
         {
             // This does some "unnecessary" rebuilding and restoring
-            var includeIntegration = TracerDirectory.GlobFiles("test/test-applications/integrations/**/" + ProjFiles);
+            var includeIntegration = TracerDirectory.GlobFiles("test/test-applications/integrations/**/*.csproj");
             // Don't build aspnet full framework sample in this step
-            var includeSecurity = TracerDirectory.GlobFiles("test/test-applications/security/*/" + ProjFiles);
+            var includeSecurity = TracerDirectory.GlobFiles("test/test-applications/security/*/*.csproj");
 
-            var exclude = TracerDirectory.GlobFiles("test/test-applications/integrations/dependency-libs/**/" + ProjFiles);
+            var exclude = TracerDirectory.GlobFiles("test/test-applications/integrations/dependency-libs/**/*.csproj");
 
             var projects =  includeIntegration
                 .Concat(includeSecurity)
@@ -854,8 +884,8 @@ partial class Build
             var aspnetFolder = TestsDirectory / "test-applications" / "aspnet";
             var securityAspnetFolder = TestsDirectory / "test-applications" / "security" / "aspnet";
 
-            var aspnetProjects = aspnetFolder.GlobFiles("**/" + ProjFiles);
-            var securityAspnetProjects = securityAspnetFolder.GlobFiles("**/" + ProjFiles);
+            var aspnetProjects = aspnetFolder.GlobFiles("**/*.csproj");
+            var securityAspnetProjects = securityAspnetFolder.GlobFiles("**/*.csproj");
 
             var publishProfile = aspnetFolder / "PublishProfiles" / "FolderProfile.pubxml";
 
@@ -1006,10 +1036,10 @@ partial class Build
         {
             // There's nothing specifically linux-y here, it's just that we only build a subset of projects
             // for testing on linux.
-            var sampleProjects = TracerDirectory.GlobFiles("test/test-applications/integrations/*/" + ProjFiles);
-            var securitySampleProjects = TracerDirectory.GlobFiles("test/test-applications/security/*/" + ProjFiles);
-            var regressionProjects = TracerDirectory.GlobFiles("test/test-applications/regression/*/" + ProjFiles);
-            var instrumentationProjects = TracerDirectory.GlobFiles("test/test-applications/instrumentation/*/" + ProjFiles);
+            var sampleProjects = TracerDirectory.GlobFiles("test/test-applications/integrations/*/*.csproj");
+            var securitySampleProjects = TracerDirectory.GlobFiles("test/test-applications/security/*/*.csproj");
+            var regressionProjects = TracerDirectory.GlobFiles("test/test-applications/regression/*/*.csproj");
+            var instrumentationProjects = TracerDirectory.GlobFiles("test/test-applications/instrumentation/*/*.csproj");
 
             // These samples are currently skipped.
             var projectsToSkip = new[]
@@ -1068,7 +1098,6 @@ partial class Build
                         "Samples.AspNetCore2" => Framework == TargetFramework.NETCOREAPP2_1,
                         "Samples.AspNetCore5" => Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NETCOREAPP3_0,
                         "Samples.GraphQL4" => Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0,
-                        "Samples.Giraffe" => Framework == TargetFramework.NET5_0,
                         var name when projectsToSkip.Contains(name) => false,
                         var name when multiPackageProjects.Contains(name) => false,
                         _ when !string.IsNullOrWhiteSpace(SampleName) => project?.Name?.Contains(SampleName) ?? false,
@@ -1148,7 +1177,7 @@ partial class Build
         .Executes(() =>
         {
             // Build the actual integration test projects for Any CPU
-            var integrationTestProjects = TracerDirectory.GlobFiles("test/*.IntegrationTests/" + ProjFiles);
+            var integrationTestProjects = TracerDirectory.GlobFiles("test/*.IntegrationTests/*.csproj");
             DotNetBuild(x => x
                     // .EnableNoRestore()
                     .EnableNoDependencies()

@@ -567,21 +567,8 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (shouldSecure)
                 {
-                    RaiseInstrumentationEvent(security, httpContext, request, span);
+                    security.InstrumentationGateway.RaiseEvent(httpContext, request, span, null);
                 }
-            }
-        }
-
-        private void RaiseInstrumentationEvent(IDatadogSecurity security, HttpContext context, HttpRequest request, Span span, RouteData routeData = null)
-        {
-            try
-            {
-                var dic = request.PrepareArgsForWaf(routeData);
-                security.InstrumentationGateway.RaiseEvent(dic, new HttpTransport(context), span);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error occurred raising instrumentation event");
             }
         }
 
@@ -742,7 +729,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (shouldSecure)
                 {
-                    RaiseInstrumentationEvent(security, httpContext, request, span ?? parentSpan, typedArg.RouteData);
+                    security.InstrumentationGateway.RaiseEvent(httpContext, null, span ?? parentSpan, typedArg.RouteData);
                 }
             }
         }

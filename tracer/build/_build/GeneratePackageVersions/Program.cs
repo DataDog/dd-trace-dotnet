@@ -17,7 +17,6 @@ namespace GeneratePackageVersions
     {
         private readonly AbsolutePath _definitionsFilePath;
         private readonly PackageGroup _latestMinors;
-        private readonly PackageGroup _comprehensive;
         private readonly XunitStrategyFileGenerator _strategyGenerator;
 
         public PackageVersionGenerator(
@@ -27,7 +26,6 @@ namespace GeneratePackageVersions
             var propsDirectory = tracerDirectory / "build";
             _definitionsFilePath = tracerDirectory / "build" / "PackageVersionsGeneratorDefinitions.json";
             _latestMinors = new PackageGroup(propsDirectory, testProjectDirectory, "LatestMinors");
-            _comprehensive = new PackageGroup(propsDirectory, testProjectDirectory, "Comprehensive");
             _strategyGenerator = new XunitStrategyFileGenerator(testProjectDirectory / "PackageVersions.g.cs");
 
             if (!File.Exists(_definitionsFilePath))
@@ -46,7 +44,6 @@ namespace GeneratePackageVersions
         private async Task RunFileGeneratorWithPackageEntries(IEnumerable<PackageVersionEntry> entries)
         {
             _latestMinors.Start();
-            _comprehensive.Start();
             _strategyGenerator.Start();
 
             foreach (var entry in entries)
@@ -73,14 +70,6 @@ namespace GeneratePackageVersions
                     .GroupBy(v => $"{v.Major}.{v.Minor}")
                     .Select(group => group.Max());
 
-                var allNetFrameworkVersions = orderedPackageVersions
-                    .Where(v => v.CompareTo(entryNetCoreMinVersion) < 0)
-                    .Select(v => v.ToString());
-
-                var allNetCoreVersions = orderedPackageVersions
-                    .Where(v => v.CompareTo(entryNetCoreMinVersion) >= 0)
-                    .Select(v => v.ToString());
-
                 var lastMinorNetFrameworkVersions = orderedLastMinorPackageVersions
                     .Where(v => v.CompareTo(entryNetCoreMinVersion) < 0)
                     .Select(v => v.ToString());
@@ -90,12 +79,10 @@ namespace GeneratePackageVersions
                     .Select(v => v.ToString());
 
                 _latestMinors.Write(entry, lastMinorNetFrameworkVersions, lastMinorNetCoreVersions);
-                _comprehensive.Write(entry, allNetFrameworkVersions, allNetCoreVersions);
                 _strategyGenerator.Write(entry, null, null);
             }
 
             _latestMinors.Finish();
-            _comprehensive.Finish();
             _strategyGenerator.Finish();
         }
 

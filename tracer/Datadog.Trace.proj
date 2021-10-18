@@ -125,7 +125,6 @@
     </MSBuild>
   </Target>
 
-  <Import Condition="'$(PerformComprehensiveTesting)'=='true'" Project="build\PackageVersionsComprehensive.g.props" />
-  <Import Condition="'$(PerformComprehensiveTesting)'!='true'" Project="build\PackageVersionsLatestMinors.g.props" />
+  <Import Project="build\PackageVersionsLatestMinors.g.props" />
 
 </Project>
