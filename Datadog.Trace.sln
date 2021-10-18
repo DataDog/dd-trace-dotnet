@@ -432,6 +432,8 @@ Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Samples.Shared", "tracer\te
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.Native.Checks", "tracer\test\test-applications\instrumentation\Datadog.Trace.ClrProfiler.Native.Checks\Datadog.Trace.ClrProfiler.Native.Checks.csproj", "{7DFDD339-30C5-4C1D-AB07-F9106256AF77}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MySqlConnector", "tracer\test\test-applications\integrations\Samples.MySqlConnector\Samples.MySqlConnector.csproj", "{73252693-2563-4B20-A2F5-F8DB37B91DBE}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{24d3e547-8897-4111-baa2-b92f50cc13d4}*SharedItemsImports = 5
@@ -1835,6 +1837,16 @@ Global
 		{7DFDD339-30C5-4C1D-AB07-F9106256AF77}.Release|x64.Build.0 = Release|x64
 		{7DFDD339-30C5-4C1D-AB07-F9106256AF77}.Release|x86.ActiveCfg = Release|x86
 		{7DFDD339-30C5-4C1D-AB07-F9106256AF77}.Release|x86.Build.0 = Release|x86
+		{73252693-2563-4B20-A2F5-F8DB37B91DBE}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{73252693-2563-4B20-A2F5-F8DB37B91DBE}.Debug|x64.ActiveCfg = Debug|x64
+		{73252693-2563-4B20-A2F5-F8DB37B91DBE}.Debug|x64.Build.0 = Debug|x64
+		{73252693-2563-4B20-A2F5-F8DB37B91DBE}.Debug|x86.ActiveCfg = Debug|x86
+		{73252693-2563-4B20-A2F5-F8DB37B91DBE}.Debug|x86.Build.0 = Debug|x86
+		{73252693-2563-4B20-A2F5-F8DB37B91DBE}.Release|Any CPU.ActiveCfg = Release|x86
+		{73252693-2563-4B20-A2F5-F8DB37B91DBE}.Release|x64.ActiveCfg = Release|x64
+		{73252693-2563-4B20-A2F5-F8DB37B91DBE}.Release|x64.Build.0 = Release|x64
+		{73252693-2563-4B20-A2F5-F8DB37B91DBE}.Release|x86.ActiveCfg = Release|x86
+		{73252693-2563-4B20-A2F5-F8DB37B91DBE}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1984,6 +1996,7 @@ Global
 		{536F1D82-D40C-4E33-B7FA-76A0F17BF672} = {C4C1E313-C7C1-4490-AECE-0DD0062380A4}
 		{5A806F4B-39E7-4F38-B36F-F5CFC4F8760A} = {9518425A-36A5-4B8F-B0B8-6137DB88441D}
 		{7DFDD339-30C5-4C1D-AB07-F9106256AF77} = {933F1D4B-1216-4BC1-956E-8C30818BAA0F}
+		{73252693-2563-4B20-A2F5-F8DB37B91DBE} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
