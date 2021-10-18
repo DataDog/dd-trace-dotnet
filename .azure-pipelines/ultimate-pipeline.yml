@@ -198,7 +198,8 @@ stages:
     dependsOn: []
     pool:
       name: Arm64
-
+    workspace:
+      clean: all
     steps:
     - template: steps/run-in-docker.yml
       parameters:
@@ -421,7 +422,8 @@ stages:
     - job: test
       pool:
         name: Arm64
-
+      workspace:
+        clean: all
       steps:
         - template: steps/restore-working-directory.yml
           parameters:
@@ -735,7 +737,8 @@ stages:
         TestAllPackageVersions:  $[or(eq(variables.isMainBranch, 'true'), eq(variables.perform_comprehensive_testing, 'true'))]
         publishTargetFramework: net5.0
         baseImage: debian
-
+      workspace:
+        clean: all
       pool:
         name: Arm64
 
