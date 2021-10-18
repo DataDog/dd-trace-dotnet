@@ -158,7 +158,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
 
         private static bool IsAppDomainReadyForExecution()
         {
-            return AppDomain.CurrentDomain.IsDefaultAppDomain()
+            return !AppDomain.CurrentDomain.IsDefaultAppDomain()
                         || (Assembly.GetEntryAssembly() != null);
         }
 
