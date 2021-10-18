@@ -7,12 +7,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using Datadog.Trace.AppSec.Agent;
 using Datadog.Trace.AppSec.EventModel;
 using Datadog.Trace.AppSec.Transport;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec
@@ -29,7 +30,6 @@ namespace Datadog.Trace.AppSec
         private static object _globalInstanceLock = new();
 
         private readonly IWaf _waf;
-        private readonly IAppSecAgentWriter _agentWriter;
         private readonly InstrumentationGateway _instrumentationGateway;
         private readonly SecuritySettings _settings;
 
@@ -41,7 +41,7 @@ namespace Datadog.Trace.AppSec
         {
         }
 
-        private Security(SecuritySettings settings = null, InstrumentationGateway instrumentationGateway = null, IWaf waf = null, IAppSecAgentWriter agentWriter = null)
+        private Security(SecuritySettings settings = null, InstrumentationGateway instrumentationGateway = null, IWaf waf = null)
         {
             try
             {
@@ -55,7 +55,6 @@ namespace Datadog.Trace.AppSec
                     _waf = waf ?? Waf.Waf.Create(_settings.Rules);
                     if (_waf != null)
                     {
-                        _agentWriter = agentWriter ?? new AppSecAgentWriter();
                         _instrumentationGateway.InstrumentationGatewayEvent += InstrumentationGatewayInstrumentationGatewayEvent;
                     }
                     else
@@ -126,7 +125,7 @@ namespace Datadog.Trace.AppSec
         /// </summary>
         public void Dispose() => _waf?.Dispose();
 
-        private void Report(ITransport transport, Span span, Waf.ReturnTypes.Managed.Return result)
+        private void Report(ITransport transport, Span span, ResultData[] results, bool blocked)
         {
             if (span != null)
             {
@@ -136,9 +135,35 @@ namespace Datadog.Trace.AppSec
 
             transport.OnCompleted(() =>
             {
-                var attack = Attack.From(result, span, transport, _settings.CustomIpHeader, _settings.ExtraHeaders);
-                _agentWriter.AddEvent(attack);
+                var attacks = CreateAttachArray(transport, span, results, blocked);
+
+                var json = JsonConvert.SerializeObject(attacks);
+                span.SetTag(Tags.AppSecJson, json);
             });
+        }
+
+        private Attack[] CreateAttachArray(ITransport transport, Span span, ResultData[] results, bool blocked)
+        {
+            var attacks = new Attack[results.Length];
+            for (var i = 0; i < results.Length; i++)
+            {
+                var result = results[i];
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    if (blocked)
+                    {
+                        Log.Debug("Detecting an attack from rule {rule_id}", result.Rule);
+                    }
+                    else
+                    {
+                        Log.Debug("Blocking current transaction (rule: {rule_id})", result.Rule);
+                    }
+                }
+
+                attacks[i] = Attack.From(result, blocked, span, transport, _settings.CustomIpHeader, _settings.ExtraHeaders);
+            }
+
+            return attacks;
         }
 
         private void RunWafAndReact(IDictionary<string, object> args, ITransport transport, Span span)
@@ -157,14 +182,14 @@ namespace Datadog.Trace.AppSec
             using var wafResult = additiveContext.Run(args);
             if (wafResult.ReturnCode == ReturnCode.Monitor || wafResult.ReturnCode == ReturnCode.Block)
             {
-                Log.Information("AppSec: Attack detected! Action: {ReturnCode}, Blocking enabled : {BlockingEnabled}", wafResult.ReturnCode, _settings.BlockingEnabled);
-                if (Log.IsEnabled(LogEventLevel.Debug))
+                var block = _settings.BlockingEnabled && wafResult.ReturnCode == ReturnCode.Block;
+                if (block)
                 {
-                    Log.Debug("AppSec: Attack arguments {Args}", Encoder.FormatArgs(args));
+                    // blocking has been removed, waiting a better implementation
                 }
 
-                var managedWafResult = Waf.ReturnTypes.Managed.Return.From(wafResult);
-                Report(transport, span, managedWafResult);
+                var resultData = JsonConvert.DeserializeObject<ResultData[]>(wafResult.Data);
+                Report(transport, span, resultData, block);
             }
         }
 
@@ -211,7 +236,6 @@ namespace Datadog.Trace.AppSec
 
         private void RunShutdown()
         {
-            _agentWriter?.Shutdown();
             if (_instrumentationGateway != null)
             {
                 _instrumentationGateway.InstrumentationGatewayEvent -= InstrumentationGatewayInstrumentationGatewayEvent;

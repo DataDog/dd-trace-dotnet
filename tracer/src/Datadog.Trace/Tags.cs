@@ -417,6 +417,11 @@ namespace Datadog.Trace
         /// </summary>
         internal const string AppSecEvent = "appsec.event";
 
+        /// <summary>
+        /// The details of the security event
+        /// </summary>
+        public const string AppSecJson = "_dd.appsec.json";
+
         internal const string ElasticsearchAction = "elasticsearch.action";
 
         internal const string ElasticsearchMethod = "elasticsearch.method";
