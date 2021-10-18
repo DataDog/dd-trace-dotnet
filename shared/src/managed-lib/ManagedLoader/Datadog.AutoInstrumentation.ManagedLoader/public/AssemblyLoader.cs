@@ -158,8 +158,8 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
 
         private static bool IsAppDomainReadyForExecution()
         {
-            Assembly entryAssembly = Assembly.GetEntryAssembly();
-            return (entryAssembly != null);
+            return AppDomain.CurrentDomain.IsDefaultAppDomain()
+                        || (Assembly.GetEntryAssembly() != null);
         }
 
         private static void InitLogAndExecute(AssemblyLoader assemblyLoader,
@@ -197,6 +197,8 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
         /// </summary>
         private void Execute(bool isDelayed, int waitForAppDomainReadinessElapsedMs, int waitForAppDomainReadinessLoopIterations)
         {
+            Console.WriteLine($">>>>>>>>>>> Execute Entered. isDelayed={isDelayed}.");
+
 #if DEBUG
             const string BuildConfiguration = "Debug";
 #else
