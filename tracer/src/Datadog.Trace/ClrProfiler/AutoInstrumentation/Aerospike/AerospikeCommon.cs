@@ -90,18 +90,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
 
         private static string ExtractResourceName(Type type)
         {
-            const string syncPrefix = "Sync";
             const string asyncPrefix = "Async";
             const string commandSuffix = "Command";
 
             var typeName = type.Name;
             var startIndex = 0;
 
-            if (typeName.StartsWith(syncPrefix))
-            {
-                startIndex = syncPrefix.Length;
-            }
-            else if (typeName.StartsWith(asyncPrefix))
+            if (typeName.StartsWith(asyncPrefix))
             {
                 startIndex = asyncPrefix.Length;
             }

@@ -43,6 +43,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     "Exists",
                     "BatchGetArray",
                     "BatchExistsArray",
+                    "QueryRecord",
                     "Delete",
 
                     // Asynchronous
@@ -77,6 +78,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             if (span.Resource.Contains("Batch"))
             {
                 return span.Tags[Tags.AerospikeKey] == "test:myset1:mykey1;test:myset2:mykey2;test:myset3:mykey3";
+            }
+            else if (span.Resource.Contains("Record"))
+            {
+                return span.Tags[Tags.AerospikeKey] == "test:myset1"
+                    && span.Tags[Tags.AerospikeNamespace] == "test"
+                    && span.Tags[Tags.AerospikeSetName] == "myset1";
             }
             else
             {
