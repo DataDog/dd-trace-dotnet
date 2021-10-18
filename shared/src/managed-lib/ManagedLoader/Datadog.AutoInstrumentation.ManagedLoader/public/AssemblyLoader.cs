@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Threading;
+using Datadog.Util;
 
 namespace Datadog.AutoInstrumentation.ManagedLoader
 {
@@ -56,7 +57,16 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
 
         private const string LoggingComponentMoniker = nameof(AssemblyLoader);  // The prefix to this is specified in LogComposer.tt
 
-        private const string ExecuteDelayedThreadName = "DD.Profiler." + nameof(AssemblyLoader) + "." + nameof(ExecuteDelayed);
+        private static class ExecuteDelayedConstants
+        {
+            public const string ThreadName = "DD.Profiler." + nameof(AssemblyLoader) + "." + nameof(AssemblyLoader.ExecuteDelayed);
+            public static readonly int[] SleepDurationsMs = new int[] { 1, 5, 15, 15, 100, 200, 500 };
+
+            public const string IsEnabled_EnvVarName = "DD_INTERNAL_LOADER_DELAY_UNTIL_APPDOMAIN_READY_ENABLED";
+            public const bool IsEnabled_DefaultVal = true;
+        }
+
+        private static bool? s_isExecuteDelayedEnabled = null;
 
         private bool _isDefaultAppDomain;
         private string[] _assemblyNamesToLoadIntoDefaultAppDomain;
@@ -103,7 +113,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                 else
                 {
                     Thread executeDelayedThread = new Thread(ExecuteDelayed);
-                    executeDelayedThread.Name = ExecuteDelayedThreadName;
+                    executeDelayedThread.Name = ExecuteDelayedConstants.ThreadName;
                     executeDelayedThread.IsBackground = false;  // This will keep the app running till loading is complete.
                     executeDelayedThread.Start(this);
                 }
@@ -118,8 +128,6 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
         {
             try
             {
-                int[] sleepDurationsMs = null;  // Will lazily initialize when needed.
-
                 AssemblyLoader assemblyLoader = (AssemblyLoader) assemblyLoaderObj;
 
                 int sleepIteration = 0;
@@ -127,11 +135,9 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
 
                 while (!IsAppDomainReadyForExecution())
                 {
-                    sleepDurationsMs = sleepDurationsMs ?? new int[] { 1, 5, 15, 15, 100, 200, 500 };
-
                     try
                     {
-                        int sleepDurationMs = sleepDurationsMs[sleepIteration % sleepDurationsMs.Length];
+                        int sleepDurationMs = ExecuteDelayedConstants.SleepDurationsMs[sleepIteration % ExecuteDelayedConstants.SleepDurationsMs.Length];
                         Thread.Sleep(sleepDurationMs);
                         sleepIteration++;
                     }
@@ -158,8 +164,9 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
 
         private static bool IsAppDomainReadyForExecution()
         {
-            return !AppDomain.CurrentDomain.IsDefaultAppDomain()
-                        || (Assembly.GetEntryAssembly() != null);
+            return !IsExecuteDelayedEnabled()                               // If ExecuteDelayed was disabled, we must assume that we are always ready;
+                        || !AppDomain.CurrentDomain.IsDefaultAppDomain()    // In non-default AppDomains we never delay, i.e. we are alweays ready;
+                        || (Assembly.GetEntryAssembly() != null);           // If the entry assembly is known, then we are ready.
         }
 
         private static void InitLogAndExecute(AssemblyLoader assemblyLoader,
@@ -197,8 +204,6 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
         /// </summary>
         private void Execute(bool isDelayed, int waitForAppDomainReadinessElapsedMs, int waitForAppDomainReadinessLoopIterations)
         {
-            Console.WriteLine($">>>>>>>>>>> Execute Entered. isDelayed={isDelayed}.");
-
 #if DEBUG
             const string BuildConfiguration = "Debug";
 #else
@@ -626,6 +631,40 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                           "Listing invocation Stack Trace",
                           nameof(stackTrace), stackTrace);
             }
+        }
+
+        private static bool IsExecuteDelayedEnabled()
+        {
+            if (s_isExecuteDelayedEnabled.HasValue)
+            {
+                return s_isExecuteDelayedEnabled.Value;
+            }
+
+            try
+            {
+                string isDelayEnabledEnvVarString = Environment.GetEnvironmentVariable(ExecuteDelayedConstants.IsEnabled_EnvVarName);
+
+                // If not set - use default:
+                if (isDelayEnabledEnvVarString == null)
+                {
+                    s_isExecuteDelayedEnabled = ExecuteDelayedConstants.IsEnabled_DefaultVal;
+                    return s_isExecuteDelayedEnabled.Value;
+                }
+
+                // If set and parsable - use the set value:
+                if (Parse.TryBooleanStr(isDelayEnabledEnvVarString, out bool isDelayEnabledValue))
+                {
+                    s_isExecuteDelayedEnabled = isDelayEnabledValue;
+                    return s_isExecuteDelayedEnabled.Value;
+                }
+            }
+            catch
+            {
+                // We cannot log here.
+            }
+
+            // If we error or bad value, use default and do not cache the result.
+            return ExecuteDelayedConstants.IsEnabled_DefaultVal;
         }
 
         private static bool TryGetCurrentThread(out int osThreadId, out Thread currentThread)
