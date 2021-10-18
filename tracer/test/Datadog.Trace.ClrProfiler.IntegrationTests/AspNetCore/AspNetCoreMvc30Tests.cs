@@ -62,9 +62,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         [MemberData(nameof(Data))]
         public async Task MeetsAllAspNetCoreMvcExpectations(string path, HttpStatusCode statusCode)
         {
-            await Fixture.TryStartApp(this, Output);
+            await Fixture.TryStartApp(this);
 
-            var spans = await Fixture.WaitForSpans(Output, path);
+            var spans = await Fixture.WaitForSpans(path);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
 
