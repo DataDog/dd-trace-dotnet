@@ -114,7 +114,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                 {
                     Thread executeDelayedThread = new Thread(ExecuteDelayed);
                     executeDelayedThread.Name = ExecuteDelayedConstants.ThreadName;
-                    executeDelayedThread.IsBackground = false;  // This will keep the app running till loading is complete.
+                    executeDelayedThread.IsBackground = false;  // This will ensure the AD does not end while we are waiting (unless force-terminated).
                     executeDelayedThread.Start(this);
                 }
             }
