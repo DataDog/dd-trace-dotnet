@@ -7,9 +7,9 @@ namespace Datadog.Util
 {
     internal static class Parse
     {
-        public static bool TryBooleanStr(string stringToParse, bool defaultValue, out bool parsedValue)
+        public static bool TryBoolean(string stringToParse, bool defaultValue, out bool parsedValue)
         {
-            bool canParse = TryBooleanStr(stringToParse, out parsedValue);
+            bool canParse = TryBoolean(stringToParse, out parsedValue);
             if (!canParse)
             {
                 parsedValue = defaultValue;
@@ -18,7 +18,7 @@ namespace Datadog.Util
             return canParse;
         }
 
-        public static bool TryBooleanStr(string stringToParse, out bool parsedValue)
+        public static bool TryBoolean(string stringToParse, out bool parsedValue)
         {
             if (stringToParse != null)
             {
@@ -47,6 +47,31 @@ namespace Datadog.Util
 
             parsedValue = default(bool);
             return false;
+        }
+
+
+        public static bool TryInt32(string stringToParse, int defaultValue, out int parsedValue)
+        {
+            bool canParse = TryInt32(stringToParse, out parsedValue);
+            if (!canParse)
+            {
+                parsedValue = defaultValue;
+            }
+
+            return canParse;
+        }
+
+        public static bool TryInt32(string stringToParse, out int parsedValue)
+        {
+            if (stringToParse != null)
+            {
+                return Int32.TryParse(stringToParse, out parsedValue);
+            }
+            else
+            {
+                parsedValue = default(int);
+                return false;
+            }
         }
     }
 }

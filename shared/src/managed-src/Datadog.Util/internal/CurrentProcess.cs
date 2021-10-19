@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.CompilerServices;
 
 namespace Datadog.Util
@@ -278,6 +279,24 @@ namespace Datadog.Util
 
                     return mainModuleInfo;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Returns the file name (without the path) of the main module of the current process.
+        /// </summary>
+        /// <returns><c>FileName.extension</c> of the current process' main module.</returns>
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static string GetMainFileName()
+        {
+            try
+            {
+                string mainFilePath = GetMainModule().FileName;
+                return (mainFilePath != null) ? Path.GetFileName(mainFilePath) : String.Empty;
+            }
+            catch
+            {
+                return String.Empty;
             }
         }
 

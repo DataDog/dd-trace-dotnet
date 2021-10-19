@@ -31,6 +31,7 @@
     <!--              Include="$(SharedSrcBaseDir)\Datadog.Package.Name\internal\SourceFileName.cs" />                              -->
     <!-- The current approach is used to avoid redundantly specifying the relative path.                                            -->
 
+    <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Datadog.Util\internal\CurrentProcess.cs" />
     <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Datadog.Util\internal\Parse.cs" />
 
     <ExcludedSharedCompileItems Link="ExcludedSharedCompileItems\%(RecursiveDir)\%(Filename)%(Extension)" Include="$(SharedSrcBaseDir)\**\*.cs" Exclude="@(IncludedSharedCompileItem)" />

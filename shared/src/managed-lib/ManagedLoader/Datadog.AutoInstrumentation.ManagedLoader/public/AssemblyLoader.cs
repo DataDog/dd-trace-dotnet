@@ -62,11 +62,16 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             public const string ThreadName = "DD.Profiler." + nameof(AssemblyLoader) + "." + nameof(AssemblyLoader.ExecuteDelayed);
             public static readonly int[] SleepDurationsMs = new int[] { 1, 5, 15, 15, 100, 200, 500 };
 
-            public const string IsEnabled_EnvVarName = "DD_INTERNAL_LOADER_DELAY_UNTIL_APPDOMAIN_READY_ENABLED";
+            public const string IsEnabled_EnvVarName = "DD_INTERNAL_LOADER_DELAY_ENABLED";
             public const bool IsEnabled_DefaultVal = true;
+
+            public const string IisDelayMs_EnvVarName = "DD_INTERNAL_LOADER_DELAY_IIS_MILLISEC";
+            public const int IisDelayMs_DefaultVal = 2500;
         }
 
         private static bool? s_isExecuteDelayedEnabled = null;
+        private static bool? s_isAppHostedInIis = null;
+        private static int? s_iisExecutionDelayMs = null;
 
         private bool _isDefaultAppDomain;
         private string[] _assemblyNamesToLoadIntoDefaultAppDomain;
@@ -108,7 +113,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             {
                 if (IsAppDomainReadyForExecution())
                 {
-                    InitLogAndExecute(this, isDelayed: false, waitForAppDomainReadinessElapsedMs: 0, waitForAppDomainReadinessLoopIterations: 0);
+                    InitLogAndExecute(this, isAppHostedInIis: null, isDelayed: false, waitForAppDomainReadinessElapsedMs: 0, waitForAppDomainReadinessLoopIterations: 0);
                 }
                 else
                 {
@@ -120,7 +125,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             }
             catch (Exception ex)
             {
-                LogErrorToConsoleIfEnabled("An error occurred. Assemblies may be not loaded or started.", ex);
+                LogToConsoleIfEnabled("An error occurred. Assemblies may be not loaded or started.", ex);
             }
         }
 
@@ -133,27 +138,37 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                 int sleepIteration = 0;
                 int startDelayMs = Environment.TickCount;
 
-                while (!IsAppDomainReadyForExecution())
+                bool isAppHostedInIis = IsAppHostedInIis();
+                if (isAppHostedInIis)
                 {
-                    try
+                    int sleepDurationMs = GetIisExecutionDelayMs();
+                    Thread.Sleep(sleepDurationMs);
+                    sleepIteration++;
+                }
+                else
+                {
+                    while (!IsAppDomainReadyForExecution())
                     {
-                        int sleepDurationMs = ExecuteDelayedConstants.SleepDurationsMs[sleepIteration % ExecuteDelayedConstants.SleepDurationsMs.Length];
-                        Thread.Sleep(sleepDurationMs);
-                        sleepIteration++;
-                    }
-                    catch (Exception ex)
-                    {
-                        // Something unexpected and very bad happened, and we know that the logger in not yet initialized.
-                        // We must bail.
-                        LogErrorToConsoleIfEnabled("Unexpected error while waiting for AppDomain to become ready for execution."
-                                                 + " Will not proceed loading assemblies to avoid unwanted side-effects.",
-                                                   ex);
-                        return;
+                        try
+                        {
+                            int sleepDurationMs = ExecuteDelayedConstants.SleepDurationsMs[sleepIteration % ExecuteDelayedConstants.SleepDurationsMs.Length];
+                            Thread.Sleep(sleepDurationMs);
+                            sleepIteration++;
+                        }
+                        catch (Exception ex)
+                        {
+                            // Something unexpected and very bad happened, and we know that the logger in not yet initialized.
+                            // We must bail.
+                            LogToConsoleIfEnabled("Unexpected error while waiting for AppDomain to become ready for execution."
+                                                + " Will not proceed loading assemblies to avoid unwanted side-effects.",
+                                                  ex);
+                            return;
+                        }
                     }
                 }
 
                 int totalElapsedDelayMs = Environment.TickCount - startDelayMs;
-                InitLogAndExecute(assemblyLoader, isDelayed: true, totalElapsedDelayMs, sleepIteration);
+                InitLogAndExecute(assemblyLoader, isAppHostedInIis, isDelayed: true, totalElapsedDelayMs, sleepIteration);
             }
             catch
             {
@@ -164,12 +179,22 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
 
         private static bool IsAppDomainReadyForExecution()
         {
-            return !IsExecuteDelayedEnabled()                               // If ExecuteDelayed was disabled, we must assume that we are always ready;
-                        || !AppDomain.CurrentDomain.IsDefaultAppDomain()    // In non-default AppDomains we never delay, i.e. we are alweays ready;
-                        || (Assembly.GetEntryAssembly() != null);           // If the entry assembly is known, then we are ready.
+            if (!IsExecuteDelayedEnabled())
+            {
+                return true;                                                            // If ExecuteDelayed was disabled, we must assume that we are always ready
+            }
+
+            AppDomain currentDomain = AppDomain.CurrentDomain;
+            return !currentDomain.IsDefaultAppDomain()                                  // In non-default AppDomains we never delay, i.e. we are always ready
+                        || (Assembly.GetEntryAssembly() != null)                        // If the entry assembly is known, then we are ready
+#if NETFRAMEWORK
+                        || (currentDomain.SetupInformation.TargetFrameworkName != null) // If Target Fx is specified explicitly, the runtime will not need to determine it
+#endif
+                        ;
         }
 
         private static void InitLogAndExecute(AssemblyLoader assemblyLoader,
+                                              bool? isAppHostedInIis,
                                               bool isDelayed,
                                               int waitForAppDomainReadinessElapsedMs,
                                               int waitForAppDomainReadinessLoopIterations)
@@ -180,15 +205,15 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             }
             catch (Exception ex)
             {
-                LogErrorToConsoleIfEnabled("An error occurred while initializeing the logging subsystem. This is not an expected state."
-                                         + " Will not proceed loading assemblies to avoid unwanted side-effects.",
-                                           ex);
+                LogToConsoleIfEnabled("An error occurred while initializeing the logging subsystem. This is not an expected state."
+                                    + " Will not proceed loading assemblies to avoid unwanted side-effects.",
+                                      ex);
                 return;
             }
 
             try
             {
-                assemblyLoader.Execute(isDelayed, waitForAppDomainReadinessElapsedMs, waitForAppDomainReadinessLoopIterations);
+                assemblyLoader.Execute(isAppHostedInIis, isDelayed, waitForAppDomainReadinessElapsedMs, waitForAppDomainReadinessLoopIterations);
             }
             catch (Exception ex)
             {
@@ -202,7 +227,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
         /// <summary>
         /// Loads the assemblies specified for this <c>AssemblyLoader</c> instance and executes their entry point.
         /// </summary>
-        private void Execute(bool isDelayed, int waitForAppDomainReadinessElapsedMs, int waitForAppDomainReadinessLoopIterations)
+        private void Execute(bool? isAppHostedInIis, bool isDelayed, int waitForAppDomainReadinessElapsedMs, int waitForAppDomainReadinessLoopIterations)
         {
 #if DEBUG
             const string BuildConfiguration = "Debug";
@@ -212,9 +237,12 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             Log.Info(LoggingComponentMoniker,
                      "Initializing...",
                      "Managed Loader build configuration", BuildConfiguration,
+                     nameof(isAppHostedInIis), isAppHostedInIis,
                      nameof(isDelayed), isDelayed,
                      nameof(waitForAppDomainReadinessElapsedMs), waitForAppDomainReadinessElapsedMs,
-                     nameof(waitForAppDomainReadinessLoopIterations), waitForAppDomainReadinessLoopIterations);
+                     nameof(waitForAppDomainReadinessLoopIterations), waitForAppDomainReadinessLoopIterations,
+                     nameof(s_isExecuteDelayedEnabled), s_isExecuteDelayedEnabled,
+                     nameof(s_iisExecutionDelayMs), s_iisExecutionDelayMs);
 
             AnalyzeAppDomain();
 
@@ -576,7 +604,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
         }
 
 
-        private static void LogErrorToConsoleIfEnabled(string message, Exception ex = null)
+        private static void LogToConsoleIfEnabled(string message, Exception ex = null)
         {
             if (UseConsoleLoggingIfFileLoggingFails)
             {
@@ -602,6 +630,11 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                      "IsDefaultAppDomain", _isDefaultAppDomain,
                      "Id", currAD.Id,
                      "FriendlyName", currAD.FriendlyName,
+#if NETFRAMEWORK
+                     "SetupInformation.TargetFrameworkName", currAD.SetupInformation.TargetFrameworkName,
+#else
+                     "SetupInformation.TargetFrameworkName", "Not available on this .NET version",
+#endif
                      "IsFullyTrusted", currAD.IsFullyTrusted,
                      "IsHomogenous", currAD.IsHomogenous,
                      "BaseDirectory", currAD.BaseDirectory,
@@ -640,31 +673,54 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                 return s_isExecuteDelayedEnabled.Value;
             }
 
+            string isDelayEnabledEnvVarString = GetEnvironmentVariable(ExecuteDelayedConstants.IsEnabled_EnvVarName);
+            Parse.TryBoolean(isDelayEnabledEnvVarString, ExecuteDelayedConstants.IsEnabled_DefaultVal, out bool isDelayEnabledValue);
+
+            s_isExecuteDelayedEnabled = isDelayEnabledValue;
+            return s_isExecuteDelayedEnabled.Value;
+        }
+
+        private static int GetIisExecutionDelayMs()
+        {
+            if (s_iisExecutionDelayMs.HasValue)
+            {
+                return s_iisExecutionDelayMs.Value;
+            }
+
+            string iisDelayMsEnvVarString = GetEnvironmentVariable(ExecuteDelayedConstants.IisDelayMs_EnvVarName);
+            Parse.TryInt32(iisDelayMsEnvVarString, ExecuteDelayedConstants.IisDelayMs_DefaultVal, out int iisDelayMsValue);
+
+            s_iisExecutionDelayMs = iisDelayMsValue;
+            return s_iisExecutionDelayMs.Value;
+        }
+
+        private static bool IsAppHostedInIis()
+        {
+            if (s_isAppHostedInIis.HasValue)
+            {
+                return s_isAppHostedInIis.Value;
+            }
+
+            // Corresponds to the equivalent check in native:
+            // https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/src/Datadog.Trace.ClrProfiler.Native/cor_profiler.cpp#L286-L289
+
+            string processFileName = CurrentProcess.GetMainFileName();
+            s_isAppHostedInIis = processFileName.Equals("w3wp.exe", StringComparison.OrdinalIgnoreCase)
+                                    || processFileName.Equals("iisexpress.exe", StringComparison.OrdinalIgnoreCase);
+
+            return s_isAppHostedInIis.Value;
+        }
+
+        private static string GetEnvironmentVariable(string endVarName)
+        {
             try
             {
-                string isDelayEnabledEnvVarString = Environment.GetEnvironmentVariable(ExecuteDelayedConstants.IsEnabled_EnvVarName);
-
-                // If not set - use default:
-                if (isDelayEnabledEnvVarString == null)
-                {
-                    s_isExecuteDelayedEnabled = ExecuteDelayedConstants.IsEnabled_DefaultVal;
-                    return s_isExecuteDelayedEnabled.Value;
-                }
-
-                // If set and parsable - use the set value:
-                if (Parse.TryBooleanStr(isDelayEnabledEnvVarString, out bool isDelayEnabledValue))
-                {
-                    s_isExecuteDelayedEnabled = isDelayEnabledValue;
-                    return s_isExecuteDelayedEnabled.Value;
-                }
+                return Environment.GetEnvironmentVariable(endVarName);
             }
             catch
             {
-                // We cannot log here.
+                return null;
             }
-
-            // If we error or bad value, use default and do not cache the result.
-            return ExecuteDelayedConstants.IsEnabled_DefaultVal;
         }
 
         private static bool TryGetCurrentThread(out int osThreadId, out Thread currentThread)
