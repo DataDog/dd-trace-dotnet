@@ -1171,9 +1171,13 @@ stages:
         - bash: echo "$(Build.SourceVersion)" > sha.txt
           displayName: Write commit hash to sha.txt
 
+        - bash: echo "$(tracer_version)" > version.txt
+          displayName: Write tracer version number to version.txt
+
         - bash: |
             az storage blob upload --container-name "$(AZURE_STORAGE_CONTAINER_NAME)" --file "index.txt" --name "index.txt"
             az storage blob upload --container-name "$(AZURE_STORAGE_CONTAINER_NAME)" --file "sha.txt" --name "sha.txt"
+            az storage blob upload --container-name "$(AZURE_STORAGE_CONTAINER_NAME)" --file "version.txt" --name "version.txt"
           displayName: Upload indexes to Azure
           condition: and(succeeded(), eq(variables.isMainBranch, true), ne(variables['isNgenTestBuild'], 'True'))
           env:
