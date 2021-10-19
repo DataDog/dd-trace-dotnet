@@ -24,6 +24,7 @@ partial class Build
 
             // Build the shared managed loader
             DotNetBuild(s => s
+                .SetTargetPlatformAnyCPU()
                 .SetConfiguration(BuildConfiguration)
                 .CombineWith(projects, (x, project) => x
                     .SetProjectFile(project)));
