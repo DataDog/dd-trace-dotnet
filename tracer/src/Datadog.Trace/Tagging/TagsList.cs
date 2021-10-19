@@ -28,159 +28,13 @@ namespace Datadog.Trace.Tagging
 
         protected List<KeyValuePair<string, string>> Tags => Volatile.Read(ref _tags);
 
-        public string GetTag(string key)
-        {
-            foreach (var property in GetAdditionalTags())
-            {
-                if (property.Key == key)
-                {
-                    return property.Getter(this);
-                }
-            }
+        public virtual string GetTag(string key) => GetTagFromDictionary(key);
 
-            var tags = Tags;
+        public virtual double? GetMetric(string key) => GetMetricFromDictionary(key);
 
-            if (tags == null)
-            {
-                return null;
-            }
+        public virtual void SetTag(string key, string value) => SetTagInDictionary(key, value);
 
-            lock (tags)
-            {
-                for (int i = 0; i < tags.Count; i++)
-                {
-                    if (tags[i].Key == key)
-                    {
-                        return tags[i].Value;
-                    }
-                }
-            }
-
-            return null;
-        }
-
-        public double? GetMetric(string key)
-        {
-            foreach (var property in GetAdditionalMetrics())
-            {
-                if (property.Key == key)
-                {
-                    return property.Getter(this);
-                }
-            }
-
-            var metrics = Metrics;
-
-            if (metrics == null)
-            {
-                return null;
-            }
-
-            lock (metrics)
-            {
-                for (int i = 0; i < metrics.Count; i++)
-                {
-                    if (metrics[i].Key == key)
-                    {
-                        return metrics[i].Value;
-                    }
-                }
-            }
-
-            return null;
-        }
-
-        public void SetTag(string key, string value)
-        {
-            foreach (var property in GetAdditionalTags())
-            {
-                if (property.Key == key)
-                {
-                    property.Setter(this, value);
-                    return;
-                }
-            }
-
-            var tags = Tags;
-
-            if (tags == null)
-            {
-                var newTags = new List<KeyValuePair<string, string>>();
-                tags = Interlocked.CompareExchange(ref _tags, newTags, null) ?? newTags;
-            }
-
-            lock (tags)
-            {
-                for (int i = 0; i < tags.Count; i++)
-                {
-                    if (tags[i].Key == key)
-                    {
-                        if (value == null)
-                        {
-                            tags.RemoveAt(i);
-                        }
-                        else
-                        {
-                            tags[i] = new KeyValuePair<string, string>(key, value);
-                        }
-
-                        return;
-                    }
-                }
-
-                // If we get there, the tag wasn't in the collection
-                if (value != null)
-                {
-                    tags.Add(new KeyValuePair<string, string>(key, value));
-                }
-            }
-        }
-
-        public void SetMetric(string key, double? value)
-        {
-            foreach (var property in GetAdditionalMetrics())
-            {
-                if (property.Key == key)
-                {
-                    property.Setter(this, value);
-                    return;
-                }
-            }
-
-            var metrics = Metrics;
-
-            if (metrics == null)
-            {
-                var newMetrics = new List<KeyValuePair<string, double>>();
-                metrics = Interlocked.CompareExchange(ref _metrics, newMetrics, null) ?? newMetrics;
-            }
-
-            lock (metrics)
-            {
-                for (int i = 0; i < metrics.Count; i++)
-                {
-                    if (metrics[i].Key == key)
-                    {
-                        if (value == null)
-                        {
-                            metrics.RemoveAt(i);
-                        }
-                        else
-                        {
-                            metrics[i] = new KeyValuePair<string, double>(key, value.Value);
-                        }
-
-                        return;
-                    }
-                }
-
-                // If we get there, the tag wasn't in the collection
-                if (value != null)
-                {
-                    metrics.Add(new KeyValuePair<string, double>(key, value.Value));
-                }
-            }
-        }
+        public virtual void SetMetric(string key, double? value) => SetMetricInDictionary(key, value);
 
         public int SerializeTo(ref byte[] bytes, int offset, Span span)
         {
@@ -383,6 +237,126 @@ namespace Datadog.Trace.Tagging
             }
 
             return offset - originalOffset;
+        }
+
+        private string GetTagFromDictionary(string key)
+        {
+            var tags = Tags;
+
+            if (tags == null)
+            {
+                return null;
+            }
+
+            lock (tags)
+            {
+                for (int i = 0; i < tags.Count; i++)
+                {
+                    if (tags[i].Key == key)
+                    {
+                        return tags[i].Value;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private void SetTagInDictionary(string key, string value)
+        {
+            var tags = Tags;
+
+            if (tags == null)
+            {
+                var newTags = new List<KeyValuePair<string, string>>();
+                tags = Interlocked.CompareExchange(ref _tags, newTags, null) ?? newTags;
+            }
+
+            lock (tags)
+            {
+                for (int i = 0; i < tags.Count; i++)
+                {
+                    if (tags[i].Key == key)
+                    {
+                        if (value == null)
+                        {
+                            tags.RemoveAt(i);
+                        }
+                        else
+                        {
+                            tags[i] = new KeyValuePair<string, string>(key, value);
+                        }
+
+                        return;
+                    }
+                }
+
+                // If we get there, the tag wasn't in the collection
+                if (value != null)
+                {
+                    tags.Add(new KeyValuePair<string, string>(key, value));
+                }
+            }
+        }
+
+        private double? GetMetricFromDictionary(string key)
+        {
+            var metrics = Metrics;
+
+            if (metrics == null)
+            {
+                return null;
+            }
+
+            lock (metrics)
+            {
+                for (int i = 0; i < metrics.Count; i++)
+                {
+                    if (metrics[i].Key == key)
+                    {
+                        return metrics[i].Value;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private void SetMetricInDictionary(string key, double? value)
+        {
+            var metrics = Metrics;
+
+            if (metrics == null)
+            {
+                var newMetrics = new List<KeyValuePair<string, double>>();
+                metrics = Interlocked.CompareExchange(ref _metrics, newMetrics, null) ?? newMetrics;
+            }
+
+            lock (metrics)
+            {
+                for (int i = 0; i < metrics.Count; i++)
+                {
+                    if (metrics[i].Key == key)
+                    {
+                        if (value == null)
+                        {
+                            metrics.RemoveAt(i);
+                        }
+                        else
+                        {
+                            metrics[i] = new KeyValuePair<string, double>(key, value.Value);
+                        }
+
+                        return;
+                    }
+                }
+
+                // If we get there, the tag wasn't in the collection
+                if (value != null)
+                {
+                    metrics.Add(new KeyValuePair<string, double>(key, value.Value));
+                }
+            }
         }
     }
 }

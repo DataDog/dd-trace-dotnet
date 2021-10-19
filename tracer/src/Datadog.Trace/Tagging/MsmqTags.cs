@@ -6,20 +6,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging
 {
-    internal class MsmqTags : InstrumentationTags
+    internal partial class MsmqTags : InstrumentationTags
     {
-        protected static readonly IProperty<string>[] MsmqTagsProperties =
-           InstrumentationTagsProperties.Concat(
-               new ReadOnlyProperty<MsmqTags, string>(Trace.Tags.InstrumentationName, t => t.InstrumentationName),
-               new Property<MsmqTags, string>(Trace.Tags.MsmqCommand, t => t.Command, (t, v) => t.Command = v),
-               new Property<MsmqTags, string>(Trace.Tags.MsmqQueuePath, t => t.Path, (t, v) => t.Path = v),
-               new Property<MsmqTags, string>(Trace.Tags.MsmqIsTransactionalQueue, t => t.IsTransactionalQueue, (t, v) => t.IsTransactionalQueue = v),
-               new Property<MsmqTags, string>(Trace.Tags.MsmqMessageWithTransaction, t => t.MessageWithTransaction, (t, v) => t.MessageWithTransaction = v));
-
         public MsmqTags() => SpanKind = SpanKinds.Consumer;
 
         /// <summary>
@@ -28,19 +20,23 @@ namespace Datadog.Trace.Tagging
         /// <param name="spanKind">kind of span</param>
         public MsmqTags(string spanKind) => SpanKind = spanKind;
 
+        [TagName(Trace.Tags.MsmqCommand)]
         public string Command { get; set; }
 
         /// <inheritdoc/>
+        [TagName(Trace.Tags.SpanKind)]
         public override string SpanKind { get; }
 
+        [TagName(Trace.Tags.InstrumentationName)]
         public string InstrumentationName => "msmq";
 
+        [TagName(Trace.Tags.MsmqQueuePath)]
         public string Path { get; set; }
 
+        [TagName(Trace.Tags.MsmqMessageWithTransaction)]
         public string MessageWithTransaction { get; set; }
 
+        [TagName(Trace.Tags.MsmqIsTransactionalQueue)]
         public string IsTransactionalQueue { get; set; }
-
-        protected override IProperty<string>[] GetAdditionalTags() => MsmqTagsProperties;
     }
 }

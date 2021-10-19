@@ -4,32 +4,28 @@
 // </copyright>
 
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging
 {
-    internal class SqlTags : InstrumentationTags
+    internal partial class SqlTags : InstrumentationTags
     {
-        protected static readonly IProperty<string>[] SqlTagsProperties =
-            InstrumentationTagsProperties.Concat(
-                new Property<SqlTags, string>(Trace.Tags.DbType, t => t.DbType, (t, v) => t.DbType = v),
-                new Property<SqlTags, string>(Trace.Tags.InstrumentationName, t => t.InstrumentationName, (t, v) => t.InstrumentationName = v),
-                new Property<SqlTags, string>(Trace.Tags.DbName, t => t.DbName, (t, v) => t.DbName = v),
-                new Property<SqlTags, string>(Trace.Tags.DbUser, t => t.DbUser, (t, v) => t.DbUser = v),
-                new Property<SqlTags, string>(Trace.Tags.OutHost, t => t.OutHost, (t, v) => t.OutHost = v));
-
+        [TagName(Trace.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Client;
 
+        [TagName(Trace.Tags.DbType)]
         public string DbType { get; set; }
 
+        [TagName(Trace.Tags.InstrumentationName)]
         public string InstrumentationName { get; set; }
 
+        [TagName(Trace.Tags.DbName)]
         public string DbName { get; set; }
 
+        [TagName(Trace.Tags.DbUser)]
         public string DbUser { get; set; }
 
+        [TagName(Trace.Tags.OutHost)]
         public string OutHost { get; set; }
-
-        protected override IProperty<string>[] GetAdditionalTags() => SqlTagsProperties;
     }
 }

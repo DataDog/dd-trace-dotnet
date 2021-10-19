@@ -5,27 +5,13 @@
 
 #nullable enable
 
-using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ServiceFabric
 {
-    internal class ServiceRemotingTags : InstrumentationTags
+    internal partial class ServiceRemotingTags : InstrumentationTags
     {
-        protected static readonly IProperty<string>[] ServiceRemotingTagProperties =
-            InstrumentationTagsProperties.Concat(
-                new Property<ServiceRemotingTags, string?>(TagNames.ApplicationId, t => t.ApplicationId, (t, v) => t.ApplicationId = v),
-                new Property<ServiceRemotingTags, string?>(TagNames.ApplicationName, t => t.ApplicationName, (t, v) => t.ApplicationName = v),
-                new Property<ServiceRemotingTags, string?>(TagNames.PartitionId, t => t.PartitionId, (t, v) => t.PartitionId = v),
-                new Property<ServiceRemotingTags, string?>(TagNames.NodeId, t => t.NodeId, (t, v) => t.NodeId = v),
-                new Property<ServiceRemotingTags, string?>(TagNames.NodeName, t => t.NodeName, (t, v) => t.NodeName = v),
-                new Property<ServiceRemotingTags, string?>(TagNames.ServiceName, t => t.ServiceName, (t, v) => t.ServiceName = v),
-                new Property<ServiceRemotingTags, string?>(TagNames.RemotingUri, t => t.RemotingUri, (t, v) => t.RemotingUri = v),
-                new Property<ServiceRemotingTags, string?>(TagNames.RemotingMethodName, t => t.RemotingMethodName, (t, v) => t.RemotingMethodName = v),
-                new Property<ServiceRemotingTags, string?>(TagNames.RemotingMethodId, t => t.RemotingMethodId, (t, v) => t.RemotingMethodId = v),
-                new Property<ServiceRemotingTags, string?>(TagNames.RemotingInterfaceId, t => t.RemotingInterfaceId, (t, v) => t.RemotingInterfaceId = v),
-                new Property<ServiceRemotingTags, string?>(TagNames.RemotingInvocationId, t => t.RemotingInvocationId, (t, v) => t.RemotingInvocationId = v));
-
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceRemotingTags"/> class.
         /// For testing purposes only. Do not use directly.
@@ -39,33 +25,43 @@ namespace Datadog.Trace.ServiceFabric
             SpanKind = spanKind;
         }
 
+        [TagName(Trace.Tags.SpanKind)]
         public override string? SpanKind { get; }
 
         // general Service Fabric
+        [TagName(TagNames.ApplicationId)]
         public string? ApplicationId { get; set; }
 
+        [TagName(TagNames.ApplicationName)]
         public string? ApplicationName { get; set; }
 
+        [TagName(TagNames.PartitionId)]
         public string? PartitionId { get; set; }
 
+        [TagName(TagNames.NodeId)]
         public string? NodeId { get; set; }
 
+        [TagName(TagNames.NodeName)]
         public string? NodeName { get; set; }
 
+        [TagName(TagNames.ServiceName)]
         public string? ServiceName { get; set; }
 
         // Service Remoting
+        [TagName(TagNames.RemotingUri)]
         public string? RemotingUri { get; set; }
 
+        [TagName(TagNames.RemotingMethodName)]
         public string? RemotingMethodName { get; set; }
 
+        [TagName(TagNames.RemotingMethodId)]
         public string? RemotingMethodId { get; set; }
 
+        [TagName(TagNames.RemotingInterfaceId)]
         public string? RemotingInterfaceId { get; set; }
 
+        [TagName(TagNames.RemotingInvocationId)]
         public string? RemotingInvocationId { get; set; }
-
-        protected override IProperty<string>[] GetAdditionalTags() => ServiceRemotingTagProperties;
 
         internal static class TagNames
         {

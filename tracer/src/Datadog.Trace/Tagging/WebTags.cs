@@ -3,32 +3,28 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging
 {
-    internal class WebTags : InstrumentationTags, IHasStatusCode
+    internal partial class WebTags : InstrumentationTags, IHasStatusCode
     {
-        protected static readonly IProperty<string>[] WebTagsProperties =
-            InstrumentationTagsProperties.Concat(
-                new Property<WebTags, string>(Trace.Tags.HttpStatusCode, t => t.HttpStatusCode, (t, v) => t.HttpStatusCode = v),
-                new Property<WebTags, string>(Trace.Tags.HttpMethod, t => t.HttpMethod, (t, v) => t.HttpMethod = v),
-                new Property<WebTags, string>(Trace.Tags.HttpRequestHeadersHost, t => t.HttpRequestHeadersHost, (t, v) => t.HttpRequestHeadersHost = v),
-                new Property<WebTags, string>(Trace.Tags.HttpUrl, t => t.HttpUrl, (t, v) => t.HttpUrl = v),
-                new ReadOnlyProperty<WebTags, string>(Trace.Tags.Language, t => t.Language));
-
+        [TagName(Trace.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Server;
 
+        [TagName(Trace.Tags.HttpMethod)]
         public string HttpMethod { get; set; }
 
+        [TagName(Trace.Tags.HttpRequestHeadersHost)]
         public string HttpRequestHeadersHost { get; set; }
 
+        [TagName(Trace.Tags.HttpUrl)]
         public string HttpUrl { get; set; }
 
+        [TagName(Trace.Tags.Language)]
         public string Language => TracerConstants.Language;
 
+        [TagName(Trace.Tags.HttpStatusCode)]
         public string HttpStatusCode { get; set; }
-
-        protected override IProperty<string>[] GetAdditionalTags() => WebTagsProperties;
     }
 }

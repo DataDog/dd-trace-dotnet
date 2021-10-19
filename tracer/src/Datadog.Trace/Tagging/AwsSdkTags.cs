@@ -3,42 +3,37 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging
 {
-    internal abstract class AwsSdkTags : InstrumentationTags, IHasStatusCode
+    internal abstract partial class AwsSdkTags : InstrumentationTags, IHasStatusCode
     {
-        protected static readonly IProperty<string>[] AwsSdkTagsProperties =
-            InstrumentationTagsProperties.Concat(
-                new ReadOnlyProperty<AwsSdkTags, string>(Trace.Tags.InstrumentationName, t => t.InstrumentationName),
-                new ReadOnlyProperty<AwsSdkTags, string>(Trace.Tags.AwsAgentName, t => t.AgentName),
-                new Property<AwsSdkTags, string>(Trace.Tags.AwsOperationName, t => t.Operation, (t, v) => t.Operation = v),
-                new Property<AwsSdkTags, string>(Trace.Tags.AwsRegion, t => t.Region, (t, v) => t.Region = v),
-                new Property<AwsSdkTags, string>(Trace.Tags.AwsRequestId, t => t.RequestId, (t, v) => t.RequestId = v),
-                new Property<AwsSdkTags, string>(Trace.Tags.AwsServiceName, t => t.Service, (t, v) => t.Service = v),
-                new Property<AwsSdkTags, string>(Trace.Tags.HttpMethod, t => t.HttpMethod, (t, v) => t.HttpMethod = v),
-                new Property<AwsSdkTags, string>(Trace.Tags.HttpStatusCode, t => t.HttpStatusCode, (t, v) => t.HttpStatusCode = v),
-                new Property<AwsSdkTags, string>(Trace.Tags.HttpUrl, t => t.HttpUrl, (t, v) => t.HttpUrl = v));
-
+        [TagName(Trace.Tags.InstrumentationName)]
         public string InstrumentationName => "aws-sdk";
 
+        [TagName(Trace.Tags.AwsAgentName)]
         public string AgentName => "dotnet-aws-sdk";
 
+        [TagName(Trace.Tags.AwsOperationName)]
         public string Operation { get; set; }
 
+        [TagName(Trace.Tags.AwsRegion)]
         public string Region { get; set; }
 
+        [TagName(Trace.Tags.AwsRequestId)]
         public string RequestId { get; set; }
 
+        [TagName(Trace.Tags.AwsServiceName)]
         public string Service { get; set; }
 
+        [TagName(Trace.Tags.HttpMethod)]
         public string HttpMethod { get; set; }
 
+        [TagName(Trace.Tags.HttpUrl)]
         public string HttpUrl { get; set; }
 
+        [TagName(Trace.Tags.HttpStatusCode)]
         public string HttpStatusCode { get; set; }
-
-        protected override IProperty<string>[] GetAdditionalTags() => AwsSdkTagsProperties;
     }
 }

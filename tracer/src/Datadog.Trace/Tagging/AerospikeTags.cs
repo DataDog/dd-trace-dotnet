@@ -3,32 +3,28 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging
 {
-    internal class AerospikeTags : InstrumentationTags
+    internal partial class AerospikeTags : InstrumentationTags
     {
-        protected static readonly IProperty<string>[] AerospikeTagsProperties =
-            InstrumentationTagsProperties.Concat(
-                new ReadOnlyProperty<AerospikeTags, string>(Trace.Tags.InstrumentationName, t => t.InstrumentationName),
-                new Property<AerospikeTags, string>(Trace.Tags.AerospikeKey, t => t.Key, (t, v) => t.Key = v),
-                new Property<AerospikeTags, string>(Trace.Tags.AerospikeNamespace, t => t.Namespace, (t, v) => t.Namespace = v),
-                new Property<AerospikeTags, string>(Trace.Tags.AerospikeSetName, t => t.SetName, (t, v) => t.SetName = v),
-                new Property<AerospikeTags, string>(Trace.Tags.AerospikeUserKey, t => t.UserKey, (t, v) => t.UserKey = v));
-
+        [TagName(Trace.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Client;
 
+        [TagName(Trace.Tags.InstrumentationName)]
         public string InstrumentationName => "aerospike";
 
+        [TagName(Trace.Tags.AerospikeKey)]
         public string Key { get; set; }
 
+        [TagName(Trace.Tags.AerospikeNamespace)]
         public string Namespace { get; set; }
 
+        [TagName(Trace.Tags.AerospikeSetName)]
         public string SetName { get; set; }
 
+        [TagName(Trace.Tags.AerospikeUserKey)]
         public string UserKey { get; set; }
-
-        protected override IProperty<string>[] GetAdditionalTags() => AerospikeTagsProperties;
     }
 }
