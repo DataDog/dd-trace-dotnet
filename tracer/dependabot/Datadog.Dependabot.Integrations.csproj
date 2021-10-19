@@ -164,7 +164,7 @@
     <!-- Integration: StackExchange.Redis -->
     <!-- Assembly: StackExchange.Redis -->
     <!-- Latest package https://www.nuget.org/packages/StackExchange.Redis/2.2.62 -->
-    <PackageReference Include="StackExchange.Redis" Version="2.2.62" />
+    <PackageReference Include="StackExchange.Redis" Version="2.2.79" />
 
     <!-- Integration: StackExchange.Redis.StrongName -->
     <!-- Assembly: StackExchange.Redis.StrongName -->
