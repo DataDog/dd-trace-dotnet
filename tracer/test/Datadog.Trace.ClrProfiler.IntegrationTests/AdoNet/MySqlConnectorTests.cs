@@ -95,10 +95,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         }
 
         [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
+        [MemberData(nameof(GetMySqlConnector))]
         [Trait("Category", "EndToEnd")]
-        public void SpansDisabledByAdoNetExcludedTypes(bool enableCallTarget)
+        public void SpansDisabledByAdoNetExcludedTypes(string packageVersion, bool enableCallTarget)
         {
             SetCallTargetSettings(enableCallTarget);
 
@@ -112,7 +111,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             int agentPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = new MockTracerAgent(agentPort))
-            using (RunSampleAndWaitForExit(agent.Port))
+            using (RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
             {
                 var spans = agent.WaitForSpans(totalSpanCount, returnAllOperations: true);
                 Assert.NotEmpty(spans);
