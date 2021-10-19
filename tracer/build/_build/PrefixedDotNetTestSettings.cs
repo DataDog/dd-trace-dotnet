@@ -15,10 +15,14 @@ public class DotNetTestWithDumpSettings : DotNetTestSettings
     {
         arguments.Add("dumponexception");
         arguments.Add("-p {value}", 50);
-        arguments.Add("-f none");
-        arguments.Add("--");
+        arguments.Add("-f none --");
         arguments.Add("{value}", ProcessToolPath);
-        return base.ConfigureProcessArguments(arguments);
+        arguments = base.ConfigureProcessArguments(arguments);
+
+        Nuke.Common.Logger.Info($"RenderForExecution: {arguments.RenderForExecution()}");
+        Nuke.Common.Logger.Info($"RenderForOutput: {arguments.RenderForOutput()}");
+
+        return arguments;
     }
 }
 
