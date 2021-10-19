@@ -113,16 +113,16 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
         {
             try
             {
-                if (IsAppDomainReadyForExecution())
-                {
-                    InitLogAndExecute(this, isDelayed: false, waitForAppDomainReadinessElapsedMs: 0, waitForAppDomainReadinessLoopIterations: 0);
-                }
-                else
+                if (IsExecutionDelayRequired())
                 {
                     Thread executeDelayedThread = new Thread(ExecuteDelayed);
                     executeDelayedThread.Name = ExecuteDelayedConstants.ThreadName;
                     executeDelayedThread.IsBackground = true;
                     executeDelayedThread.Start(this);
+                }
+                else
+                {
+                    InitLogAndExecute(this, isDelayed: false, waitForAppDomainReadinessElapsedMs: 0, waitForAppDomainReadinessLoopIterations: 0);
                 }
             }
             catch (Exception ex)
@@ -178,30 +178,17 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             }
         }
 
+        private static bool IsExecutionDelayRequired()
+        {
+            //                                                                         We delay IFF:
+            return IsExecuteDelayedEnabled()                                        // The user did NOT disable the delay feature;
+                        && AppDomain.CurrentDomain.IsDefaultAppDomain()             // AND we are in the default AppDomain;
+                        && (!IsAppHostedInIis() || GetIisExecutionDelayMs() >= 1)   // AND we are either NOT in IIS, OR we are in IIS and the user enabled IIS-delay;
+                        && !IsAppDomainReadyForExecution();                         // AND the over-time-changing delay-stop contitions are not already met.
+        }
+
         private static bool IsAppDomainReadyForExecution()
         {
-            // PERMANENT CONDITIONS:
-
-            // If ExecuteDelayed was disabled (via DD_INTERNAL_LOADER_DELAY_ENABLED), we must assume that we are always ready.
-            if (!IsExecuteDelayedEnabled())
-            {
-                return true;
-            }
-
-            // In non-default AppDomains we never delay, i.e. we are always ready.
-            if (!AppDomain.CurrentDomain.IsDefaultAppDomain())
-            {
-                return true;
-            }
-
-            // If app is running in IIS, then DD_INTERNAL_LOADER_DELAY_IIS_MILLISEC >= 1 indicates that we need to wait, otherwise, we are ready.
-            if (IsAppHostedInIis())
-            {
-                return (GetIisExecutionDelayMs() < 1);
-            }
-
-            // CONDITIONS THAT CAN CHANGE OVER TIME:
-
             // If the entry assembly IS known, then we are ready.
             return (Assembly.GetEntryAssembly() != null);
         }
