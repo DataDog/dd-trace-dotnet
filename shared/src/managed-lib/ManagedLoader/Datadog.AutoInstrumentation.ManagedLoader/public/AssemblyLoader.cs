@@ -62,11 +62,13 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             public const string ThreadName = "DD.Profiler." + nameof(AssemblyLoader) + "." + nameof(AssemblyLoader.ExecuteDelayed);
             public static readonly int[] SleepDurationsMs = new int[] { 1, 5, 15, 15, 100, 200, 500 };
 
+            // Set this env var to FALSE to disable delayed execution:
             public const string IsEnabled_EnvVarName = "DD_INTERNAL_LOADER_DELAY_ENABLED";
             public const bool IsEnabled_DefaultVal = true;
 
+            // Set this env var to a POSITIVE NUMBER to force delayed execution in default IIS app domain:
             public const string IisDelayMs_EnvVarName = "DD_INTERNAL_LOADER_DELAY_IIS_MILLISEC";
-            public const int IisDelayMs_DefaultVal = 2500;
+            public const int IisDelayMs_DefaultVal = 0;
         }
 
         private static bool? s_isExecuteDelayedEnabled = null;
@@ -113,7 +115,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             {
                 if (IsAppDomainReadyForExecution())
                 {
-                    InitLogAndExecute(this, isAppHostedInIis: null, isDelayed: false, waitForAppDomainReadinessElapsedMs: 0, waitForAppDomainReadinessLoopIterations: 0);
+                    InitLogAndExecute(this, isDelayed: false, waitForAppDomainReadinessElapsedMs: 0, waitForAppDomainReadinessLoopIterations: 0);
                 }
                 else
                 {
@@ -138,8 +140,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                 int sleepIteration = 0;
                 int startDelayMs = Environment.TickCount;
 
-                bool isAppHostedInIis = IsAppHostedInIis();
-                if (isAppHostedInIis)
+                if (IsAppHostedInIis())
                 {
                     int sleepDurationMs = GetIisExecutionDelayMs();
                     Thread.Sleep(sleepDurationMs);
@@ -168,7 +169,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                 }
 
                 int totalElapsedDelayMs = Environment.TickCount - startDelayMs;
-                InitLogAndExecute(assemblyLoader, isAppHostedInIis, isDelayed: true, totalElapsedDelayMs, sleepIteration);
+                InitLogAndExecute(assemblyLoader, isDelayed: true, totalElapsedDelayMs, sleepIteration);
             }
             catch
             {
@@ -179,22 +180,33 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
 
         private static bool IsAppDomainReadyForExecution()
         {
+            // PERMANENT CONDITIONS:
+
+            // If ExecuteDelayed was disabled (via DD_INTERNAL_LOADER_DELAY_ENABLED), we must assume that we are always ready.
             if (!IsExecuteDelayedEnabled())
             {
-                return true;                                                            // If ExecuteDelayed was disabled, we must assume that we are always ready
+                return true;
             }
 
-            AppDomain currentDomain = AppDomain.CurrentDomain;
-            return !currentDomain.IsDefaultAppDomain()                                  // In non-default AppDomains we never delay, i.e. we are always ready
-                        || (Assembly.GetEntryAssembly() != null)                        // If the entry assembly is known, then we are ready
-#if NETFRAMEWORK
-                        || (currentDomain.SetupInformation.TargetFrameworkName != null) // If Target Fx is specified explicitly, the runtime will not need to determine it
-#endif
-                        ;
+            // In non-default AppDomains we never delay, i.e. we are always ready.
+            if (!AppDomain.CurrentDomain.IsDefaultAppDomain())
+            {
+                return true;
+            }
+
+            // If app is running in IIS, then DD_INTERNAL_LOADER_DELAY_IIS_MILLISEC >= 1 indicates that we need to wait, otherwise, we are ready.
+            if (IsAppHostedInIis())
+            {
+                return (GetIisExecutionDelayMs() < 1);
+            }
+
+            // CONDITIONS THAT CAN CHANGE OVER TIME:
+
+            // If the entry assembly IS known, then we are ready.
+            return (Assembly.GetEntryAssembly() != null);
         }
 
         private static void InitLogAndExecute(AssemblyLoader assemblyLoader,
-                                              bool? isAppHostedInIis,
                                               bool isDelayed,
                                               int waitForAppDomainReadinessElapsedMs,
                                               int waitForAppDomainReadinessLoopIterations)
@@ -213,7 +225,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
 
             try
             {
-                assemblyLoader.Execute(isAppHostedInIis, isDelayed, waitForAppDomainReadinessElapsedMs, waitForAppDomainReadinessLoopIterations);
+                assemblyLoader.Execute(isDelayed, waitForAppDomainReadinessElapsedMs, waitForAppDomainReadinessLoopIterations);
             }
             catch (Exception ex)
             {
@@ -227,7 +239,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
         /// <summary>
         /// Loads the assemblies specified for this <c>AssemblyLoader</c> instance and executes their entry point.
         /// </summary>
-        private void Execute(bool? isAppHostedInIis, bool isDelayed, int waitForAppDomainReadinessElapsedMs, int waitForAppDomainReadinessLoopIterations)
+        private void Execute(bool isDelayed, int waitForAppDomainReadinessElapsedMs, int waitForAppDomainReadinessLoopIterations)
         {
 #if DEBUG
             const string BuildConfiguration = "Debug";
@@ -237,11 +249,11 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             Log.Info(LoggingComponentMoniker,
                      "Initializing...",
                      "Managed Loader build configuration", BuildConfiguration,
-                     nameof(isAppHostedInIis), isAppHostedInIis,
                      nameof(isDelayed), isDelayed,
                      nameof(waitForAppDomainReadinessElapsedMs), waitForAppDomainReadinessElapsedMs,
                      nameof(waitForAppDomainReadinessLoopIterations), waitForAppDomainReadinessLoopIterations,
                      nameof(s_isExecuteDelayedEnabled), s_isExecuteDelayedEnabled,
+                     nameof(s_isAppHostedInIis), s_isAppHostedInIis,
                      nameof(s_iisExecutionDelayMs), s_iisExecutionDelayMs);
 
             AnalyzeAppDomain();
