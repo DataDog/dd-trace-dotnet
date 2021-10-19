@@ -161,7 +161,7 @@ SET(GENERATED_OBJ_FILES
 SET_SOURCE_FILES_PROPERTIES(
         ${GENERATED_OBJ_FILES}
         PROPERTIES
-        EXTERNAL_OBJECT false
+        EXTERNAL_OBJECT true
         GENERATED true
 )
 
@@ -268,12 +268,18 @@ endif()
 # ******************************************************
 # Define shared target
 # ******************************************************
-
-add_library("Datadog.Trace.ClrProfiler.Native" SHARED
-    dllmain.cpp
-    interop.cpp
-    ${GENERATED_OBJ_FILES}
-)
+if (ISMACOS)
+    add_library("Datadog.Trace.ClrProfiler.Native" SHARED
+        dllmain.cpp
+        interop.cpp
+        ${GENERATED_OBJ_FILES}
+    )
+else()
+    add_library("Datadog.Trace.ClrProfiler.Native" SHARED
+        dllmain.cpp
+        interop.cpp
+    )
+endif()
 
 set_target_properties("Datadog.Trace.ClrProfiler.Native" PROPERTIES PREFIX "")
 
