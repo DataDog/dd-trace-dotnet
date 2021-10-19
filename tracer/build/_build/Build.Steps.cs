@@ -22,6 +22,7 @@ using static Nuke.Common.IO.CompressionTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
 using static CustomDotNetTasks;
+using static global::PrefixedDotNetTestTask;
 
 // #pragma warning disable SA1306
 // #pragma warning disable SA1134
@@ -905,6 +906,7 @@ partial class Build
 
     Target RunWindowsIntegrationTests => _ => _
         .Unlisted()
+        .After(InstallDumpTool)
         .After(BuildTracerHome)
         .After(CompileIntegrationTests)
         .After(CompileSamples)
@@ -919,7 +921,8 @@ partial class Build
 
             try
             {
-                DotNetTest(config => config
+                PrefixedDotNetTest(config => config
+                    .SetPrefixTool("dotnet dumponexception -p 50 -f none --")
                     .SetDotnetPath(TargetPlatform)
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatform(TargetPlatform)
@@ -928,15 +931,16 @@ partial class Build
                     .EnableNoBuild()
                     .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
                     .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
-                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .When(CodeCoverage, ToPrefixed(ConfigureCodeCoverage))
                     .CombineWith(ParallelIntegrationTests, (s, project) => s
-                        .EnableTrxLogOutput(GetResultsDirectory(project))
+                        .EnableTrxLogOutput(GetResultsDirectory(project)).ToPrefixed()
                         .SetProjectFile(project)), degreeOfParallelism: 4);
 
 
                 // TODO: I think we should change this filter to run on Windows by default
                 // (RunOnWindows!=False|Category=Smoke)&LoadFromGAC!=True&IIS!=True
-                DotNetTest(config => config
+                PrefixedDotNetTest(config => config
+                    .SetPrefixTool("dotnet dumponexception -p 50 -f none --")
                     .SetDotnetPath(TargetPlatform)
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatform(TargetPlatform)
@@ -945,14 +949,15 @@ partial class Build
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "RunOnWindows=True&LoadFromGAC!=True&IIS!=True")
                     .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
-                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .When(CodeCoverage, ToPrefixed(ConfigureCodeCoverage))
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
-                        .EnableTrxLogOutput(GetResultsDirectory(project))
+                        .EnableTrxLogOutput(GetResultsDirectory(project)).ToPrefixed()
                         .SetProjectFile(project)));
             }
             finally
             {
                 MoveLogsToBuildData();
+                CopyMemoryDumps();
             }
         });
 
@@ -1022,6 +1027,15 @@ partial class Build
             {
                 MoveLogsToBuildData();
             }
+        });
+
+    Target InstallDumpTool => _ => _
+        .Executes(() =>
+        {
+            DotNetToolUpdate(config => config
+                    .EnableGlobal()
+                    .SetVersion("0.1.0-prerelease")
+                    .SetPackageName("dotnet-dumponexception"));
         });
 
     Target CompileSamplesLinux => _ => _
@@ -1480,6 +1494,14 @@ partial class Build
             {
                 MoveFileToDirectory(dump, BuildDataDirectory / "dumps", FileExistsPolicy.Overwrite);
             }
+        }
+    }
+
+    private void CopyMemoryDumps()
+    {
+        foreach (var file in Directory.EnumerateFiles(TracerDirectory, "*.dmp", SearchOption.AllDirectories))
+        {
+            CopyFileToDirectory(file, BuildDataDirectory, FileExistsPolicy.OverwriteIfNewer);
         }
     }
 
