@@ -22,7 +22,7 @@ using static Nuke.Common.IO.CompressionTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
 using static CustomDotNetTasks;
-using static global::PrefixedDotNetTestTask;
+using static global::DotNetTestWithDumpTask;
 
 // #pragma warning disable SA1306
 // #pragma warning disable SA1134
@@ -921,8 +921,7 @@ partial class Build
 
             try
             {
-                DotNetTest(config => config
-                    .SetPrefixTool("{dotnetTool} dumponexception -p 50 -f none --")
+                DotNetRunWithDump(config => config
                     .SetDotnetPath(TargetPlatform)
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatform(TargetPlatform)
@@ -931,16 +930,15 @@ partial class Build
                     .EnableNoBuild()
                     .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
                     .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
-                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .When(CodeCoverage, WithDump(ConfigureCodeCoverage))
                     .CombineWith(ParallelIntegrationTests, (s, project) => s
-                        .EnableTrxLogOutput(GetResultsDirectory(project))
+                        .EnableTrxLogOutput(GetResultsDirectory(project)).WithDump()
                         .SetProjectFile(project)), degreeOfParallelism: 4);
 
 
                 // TODO: I think we should change this filter to run on Windows by default
                 // (RunOnWindows!=False|Category=Smoke)&LoadFromGAC!=True&IIS!=True
-                DotNetTest(config => config
-                    .SetPrefixTool("{dotnetTool} dumponexception -p 50 -f none --")
+                DotNetRunWithDump(config => config
                     .SetDotnetPath(TargetPlatform)
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatform(TargetPlatform)
@@ -949,9 +947,9 @@ partial class Build
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "RunOnWindows=True&LoadFromGAC!=True&IIS!=True")
                     .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
-                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .When(CodeCoverage, WithDump(ConfigureCodeCoverage))
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
-                        .EnableTrxLogOutput(GetResultsDirectory(project))
+                        .EnableTrxLogOutput(GetResultsDirectory(project)).WithDump()
                         .SetProjectFile(project)));
             }
             finally
