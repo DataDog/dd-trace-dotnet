@@ -10,10 +10,17 @@ public static class PrefixedDotNetTestTask
             System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic |
             System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.FlattenHierarchy);
 
-        string currentPath = toolPathProperty.GetValue(config)?.ToString();
+        if (toolPathProperty is null)
+        {
+            return config;
+        }
+
+        string currentTool = toolPathProperty.GetValue(config)?.ToString();
+
         if (!string.IsNullOrWhiteSpace(prefixTool))
         {
-            string tool = $"{prefixTool} {currentPath}";
+            prefixTool = prefixTool.Replace("{dotnetTool}", currentTool);
+            string tool = $"{prefixTool} {currentTool}";
             toolPathProperty.SetValue(config, tool);
             Logger.Info($"Final DotNetTool = {tool}");
 

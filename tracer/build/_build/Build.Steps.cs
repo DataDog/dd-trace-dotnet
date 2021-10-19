@@ -922,7 +922,7 @@ partial class Build
             try
             {
                 DotNetTest(config => config
-                    .SetPrefixTool("dotnet dumponexception -p 50 -f none --")
+                    .SetPrefixTool("{dotnetTool} dumponexception -p 50 -f none --")
                     .SetDotnetPath(TargetPlatform)
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatform(TargetPlatform)
@@ -940,7 +940,7 @@ partial class Build
                 // TODO: I think we should change this filter to run on Windows by default
                 // (RunOnWindows!=False|Category=Smoke)&LoadFromGAC!=True&IIS!=True
                 DotNetTest(config => config
-                    .SetPrefixTool("dotnet dumponexception -p 50 -f none --")
+                    .SetPrefixTool("{dotnetTool} dumponexception -p 50 -f none --")
                     .SetDotnetPath(TargetPlatform)
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatform(TargetPlatform)
