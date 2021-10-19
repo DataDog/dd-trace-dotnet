@@ -55,6 +55,7 @@ partial class Build
             MSBuild(s => s
                 .SetTargetPath(project)
                 .SetConfiguration(BuildConfiguration)
+                .SetProperty("SpectreMitigation", "false") // Enforce the same build in all CI environments
                 .SetMSBuildPath()
                 .DisableRestore()
                 .SetMaxCpuCount(null)
