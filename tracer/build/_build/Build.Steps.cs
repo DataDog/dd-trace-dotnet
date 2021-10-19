@@ -921,7 +921,7 @@ partial class Build
 
             try
             {
-                PrefixedDotNetTest(config => config
+                DotNetTest(config => config
                     .SetPrefixTool("dotnet dumponexception -p 50 -f none --")
                     .SetDotnetPath(TargetPlatform)
                     .SetConfiguration(BuildConfiguration)
@@ -931,15 +931,15 @@ partial class Build
                     .EnableNoBuild()
                     .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
                     .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
-                    .When(CodeCoverage, ToPrefixed(ConfigureCodeCoverage))
+                    .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ParallelIntegrationTests, (s, project) => s
-                        .EnableTrxLogOutput(GetResultsDirectory(project)).ToPrefixed()
+                        .EnableTrxLogOutput(GetResultsDirectory(project))
                         .SetProjectFile(project)), degreeOfParallelism: 4);
 
 
                 // TODO: I think we should change this filter to run on Windows by default
                 // (RunOnWindows!=False|Category=Smoke)&LoadFromGAC!=True&IIS!=True
-                PrefixedDotNetTest(config => config
+                DotNetTest(config => config
                     .SetPrefixTool("dotnet dumponexception -p 50 -f none --")
                     .SetDotnetPath(TargetPlatform)
                     .SetConfiguration(BuildConfiguration)
@@ -949,9 +949,9 @@ partial class Build
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "RunOnWindows=True&LoadFromGAC!=True&IIS!=True")
                     .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
-                    .When(CodeCoverage, ToPrefixed(ConfigureCodeCoverage))
+                    .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
-                        .EnableTrxLogOutput(GetResultsDirectory(project)).ToPrefixed()
+                        .EnableTrxLogOutput(GetResultsDirectory(project))
                         .SetProjectFile(project)));
             }
             finally
