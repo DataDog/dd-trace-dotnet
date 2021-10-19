@@ -681,6 +681,8 @@ stages:
 
     - task: DockerCompose@0
       displayName: docker-compose build IntegrationTests
+      env:
+        baseImage: $(baseImage)
       inputs:
         containerregistrytype: Container Registry
         dockerComposeCommand: build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests
