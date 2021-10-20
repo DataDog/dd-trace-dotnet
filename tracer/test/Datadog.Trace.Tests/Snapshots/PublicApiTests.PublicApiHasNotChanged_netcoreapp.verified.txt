@@ -534,7 +534,7 @@ namespace Datadog.Trace.DuckTyping
     public class DuckTypeReverseProxyBaseIsStructException : Datadog.Trace.DuckTyping.DuckTypeException { }
     public class DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException : Datadog.Trace.DuckTyping.DuckTypeException { }
     public class DuckTypeReverseProxyMissingMethodImplementationException : Datadog.Trace.DuckTyping.DuckTypeException { }
-    public class DuckTypeReverseProxyMissingPropertyImplementationException : Datadog.Trace.DuckTyping.DuckTypeException { }
+    public class DuckTypeReverseProxyMustImplementGenericMethodAsGenericException : Datadog.Trace.DuckTyping.DuckTypeException { }
     public class DuckTypeReverseProxyPropertyCannotBeAbstractException : Datadog.Trace.DuckTyping.DuckTypeException { }
     public class DuckTypeStructMembersCannotBeChangedException : Datadog.Trace.DuckTyping.DuckTypeException { }
     public class DuckTypeTargetMethodAmbiguousMatchException : Datadog.Trace.DuckTyping.DuckTypeException { }
