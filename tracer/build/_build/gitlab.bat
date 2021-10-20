@@ -11,7 +11,7 @@ mklink /d dd-trace-dotnet C:\mnt
 mklink /d _build C:\_build
 SET ProfilerSrcDirectory=C:\mnt\dd-continuous-profiler-dotnet
 
-dotnet run --project tracer/build/_build/_build.csproj -- Info Clean BuildTracerHome BuildProfilerHome BuildMonitoringHome PackageTracerHome PackageMonitoringHomeBeta ZipSymbols SignMsiAndNupkg --Artifacts "build-out\%CI_JOB_ID%"
+dotnet run --project tracer/build/_build/_build.csproj -- Info Clean BuildTracerHome BuildProfilerHome BuildMonitoringHome PackageTracerHome PackageMonitoringHomeBeta ZipSymbols SignDlls SignMsiAndNupkg --Artifacts "build-out\%CI_JOB_ID%"
 
 IF %ERRORLEVEL% NEQ 0 EXIT /B %ERRORLEVEL%
 
