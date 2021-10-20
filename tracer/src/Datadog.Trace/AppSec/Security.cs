@@ -224,7 +224,7 @@ namespace Datadog.Trace.AppSec
             if (!osSupported || !archSupported)
             {
                 Log.Error(
-                    "AppSec could not start because the current environment is not supported. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help. Host information: {{ operating_system:{OSPlatform} }}, arch:{{ {ProcessArchitecture} }}, runtime_infos: {{ {ProductVersion} }}",
+                    "AppSec could not start because the current environment is not supported. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help. Host information: operating_system: {{ {OSPlatform} }}, arch: {{ {ProcessArchitecture} }}, runtime_infos: {{ {ProductVersion} }}",
                     frameworkDescription.OSPlatform,
                     frameworkDescription.ProcessArchitecture,
                     frameworkDescription.ProductVersion);

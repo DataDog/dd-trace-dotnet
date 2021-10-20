@@ -86,7 +86,7 @@ namespace Datadog.Trace.AppSec.Agent
                         appsecEvents.Add(result);
                     }
 
-                    Log.Information<int>("Sending {NoEvents} AppSec events to the agent", appsecEvents.Count);
+                    Log.Information<int>("Sending {NumberOfEvents} AppSec events to the agent", appsecEvents.Count);
 
                     await _sender.Send(appsecEvents).ConfigureAwait(false);
                 }
