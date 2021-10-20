@@ -137,7 +137,7 @@ namespace Datadog.Trace.AppSec
             {
                 var attacks = CreateAttachArray(transport, span, results, blocked);
 
-                var json = JsonConvert.SerializeObject(attacks);
+                var json = JsonConvert.SerializeObject(new AppSecJson { Triggers = attacks });
                 span.SetTag(Tags.AppSecJson, json);
             });
         }
