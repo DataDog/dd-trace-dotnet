@@ -595,8 +595,6 @@ partial class Build
 
             var query = new Octokit.GraphQL.Query()
                        .Repository(GitHubRepositoryName, GitHubRepositoryOwner)
-                        // .RepositoryOwner(Var("owner"))
-                        // .Repository(Var("name"))
                        .PullRequest(prNumber)
                        .Comments()
                        .AllPages()
