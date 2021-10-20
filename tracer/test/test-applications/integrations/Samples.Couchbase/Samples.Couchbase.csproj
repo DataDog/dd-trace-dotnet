@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">2.7.4</ApiVersion>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net461</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CouchbaseNetClient" Version="$(ApiVersion)" />
+
+    <!-- There's a misconfiguration of dependencies in 2.2.8 -->
+    <PackageReference Condition="'$(ApiVersion)' == '2.2.8'" Include="Common.Logging" Version="3.3.1" />
+  </ItemGroup>
+
+</Project>
