@@ -163,7 +163,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
         /// As a result, the target framework moniker and the binary compatibility flags are initialized correctly.
         /// </summary>
         /// <remarks>
-        /// The above logic is further specialised, depending on the kind of the currnent AppDomain and where the app is hosted:
+        /// The above logic is further specialized, depending on the kind of the current AppDomain and where the app is hosted:
         /// <br />
         /// * On non-default AD:
         ///   we do not wait.
