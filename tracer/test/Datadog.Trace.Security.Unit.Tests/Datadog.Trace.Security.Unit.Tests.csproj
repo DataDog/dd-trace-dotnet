@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
-
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
@@ -16,6 +15,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="rule-set.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

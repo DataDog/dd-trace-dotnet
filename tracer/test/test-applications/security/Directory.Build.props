@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="libddwaf" Version="1.0.10" GeneratePathProperty="true" />
+    <PackageReference Include="libddwaf" Version="1.0.13" GeneratePathProperty="true" />
     <SecurityLibraryFiles Include="$(Pkglibddwaf)\runtimes\**\*.*" />
   </ItemGroup>
 

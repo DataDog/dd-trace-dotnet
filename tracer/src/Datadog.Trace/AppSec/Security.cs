@@ -124,7 +124,7 @@ namespace Datadog.Trace.AppSec
         }
 
         /// <summary>
-        /// Frees resouces
+        /// Frees resources
         /// </summary>
         public void Dispose() => _waf?.Dispose();
 

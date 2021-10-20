@@ -50,8 +50,8 @@ partial class Build
 
     AbsolutePath ProfilerHomeDirectory => ProfilerHome ?? RootDirectory / ".." / "_build" / "DDProf-Deploy";
 
-    const string LibDdwafVersion = "1.0.10";
-    AbsolutePath LibDdwafDirectory => (NugetPackageDirectory ?? (RootDirectory / "packages")) / $"libddwaf.{LibDdwafVersion}";
+    const string LibDdwafVersion = "1.0.13";
+    AbsolutePath LibDdwafDirectory => (NugetPackageDirectory ?? RootDirectory / "packages") / $"libddwaf.{LibDdwafVersion}";
 
     AbsolutePath SourceDirectory => TracerDirectory / "src";
     AbsolutePath BuildDirectory => TracerDirectory / "build";
@@ -64,6 +64,7 @@ partial class Build
             "Datadog .NET Tracer", "logs")
         : "/var/log/datadog/dotnet/";
 
+    readonly string[] WafWindowsArchitectureFolders = {"win-x86", "win-x64"};
     Project NativeProfilerProject => Solution.GetProject(Projects.ClrProfilerNative);
     Project NativeLoaderProject => Solution.GetProject(Projects.NativeLoader);
 
@@ -298,7 +299,7 @@ partial class Build
         {
             if (IsWin)
             {
-                foreach (var architecture in new[] {"win-x86", "win-x64"})
+                foreach (var architecture in WafWindowsArchitectureFolders)
                 {
                     var source = LibDdwafDirectory / "runtimes" / architecture / "native" / "ddwaf.dll";
                     var dest = TracerHomeDirectory / architecture;
@@ -319,6 +320,41 @@ partial class Build
             }
         });
 
+     Target CopyLibDdwafForAppSecUnitTests => _ => _
+                .Unlisted()
+                .After(Clean)
+                .After(DownloadLibDdwaf)
+                .OnlyWhenStatic(() => !IsArm64) // not supported yet
+                .Executes(() => { 
+                      var project = Solution.GetProject(Projects.AppSecUnitTests);
+                      var directory = project.Directory;
+                      Console.WriteLine("project dir" + directory);
+                      var targetFrameworks = project.GetTargetFrameworks();
+                      if (IsWin)
+                      {
+                          foreach (var architecture in WafWindowsArchitectureFolders)
+                          {
+                              var source = LibDdwafDirectory / "runtimes" / architecture / "native" / "ddwaf.dll";
+                              foreach (var fmk in targetFrameworks)
+                              {
+                                  var dest = directory / "bin" / BuildConfiguration / fmk / architecture;
+                                  Console.WriteLine("project dest" + dest);
+                                  Logger.Info($"Copying '{source}' to '{dest}'");
+                                  CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+                              }
+                          }
+                      }
+                      else
+                      {
+                          var (architecture, ext) = GetUnixArchitectureAndExtension(includeMuslSuffixOnAlpine: true);
+                          var ddwafFileName = $"libddwaf.{ext}";
+
+                          var source = LibDdwafDirectory / "runtimes" / architecture / "native" / ddwafFileName;
+                          var dest = TracerHomeDirectory;
+                          Logger.Info($"Copying '{source}' to '{dest}'");
+                          CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+                      }
+                });
     Target PublishManagedProfiler => _ => _
         .Unlisted()
         .After(CompileManagedSrc)
@@ -641,6 +677,7 @@ partial class Build
         .Unlisted()
         .After(Restore)
         .After(CompileManagedSrc)
+        .After(CopyLibDdwafForAppSecUnitTests)
         .Executes(() =>
         {
             // Always AnyCPU

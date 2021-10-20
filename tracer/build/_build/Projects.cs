@@ -14,6 +14,7 @@
 
     public const string TraceIntegrationTests = "Datadog.Trace.IntegrationTests";
     public const string AppSecIntegrationTests = "Datadog.Trace.Security.IntegrationTests";
+    public const string AppSecUnitTests = "Datadog.Trace.Security.Unit.Tests";
     public const string OpenTracingIntegrationTests = "Datadog.Trace.OpenTracing.IntegrationTests";
     public const string ClrProfilerIntegrationTests = "Datadog.Trace.ClrProfiler.IntegrationTests";
 
