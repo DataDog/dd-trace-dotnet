@@ -16,7 +16,7 @@ public class DotNetTestWithDumpSettings : DotNetTestSettings
         arguments.Add("dumponexception");
         arguments.Add("-p {value}", 50);
         arguments.Add("-f none --");
-        arguments.Add(ProcessToolPath);
+        arguments.Add($"\"{ProcessToolPath}\"");
         arguments = base.ConfigureProcessArguments(arguments);
 
         Nuke.Common.Logger.Info($"ProcessToolPath: {ProcessToolPath}");
