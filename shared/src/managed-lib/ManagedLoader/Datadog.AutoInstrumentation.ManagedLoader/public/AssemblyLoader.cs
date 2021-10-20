@@ -60,7 +60,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
         private static class ExecuteDelayedConstants
         {
             public const string ThreadName = "DD.Profiler." + nameof(AssemblyLoader) + "." + nameof(AssemblyLoader.ExecuteDelayed);
-            public static readonly int[] SleepDurationsMs = new int[] { 1, 5, 15, 15, 100, 200, 500 };
+            public const int SleepDurationMs = 100;
 
             // Set this env var to FALSE to disable delayed execution:
             public const string IsEnabled_EnvVarName = "DD_INTERNAL_LOADER_DELAY_ENABLED";
@@ -152,8 +152,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                     {
                         try
                         {
-                            int sleepDurationMs = ExecuteDelayedConstants.SleepDurationsMs[sleepIteration % ExecuteDelayedConstants.SleepDurationsMs.Length];
-                            Thread.Sleep(sleepDurationMs);
+                            Thread.Sleep(ExecuteDelayedConstants.SleepDurationMs);
                             sleepIteration++;
                         }
                         catch (Exception ex)
