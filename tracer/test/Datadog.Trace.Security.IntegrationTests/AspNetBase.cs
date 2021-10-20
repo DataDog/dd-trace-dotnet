@@ -47,9 +47,22 @@ namespace Datadog.Trace.Security.IntegrationTests
             var request = WebRequest.CreateHttp($"http://localhost:{httpPort}{shutdownPath}");
             request.GetResponse().Close();
 
-            if (process != null && !process.HasExited)
+            if (process is not null)
             {
-                process.Kill();
+                try
+                {
+                    if (!process.HasExited)
+                    {
+                        if (!process.WaitForExit(5000))
+                        {
+                            process.Kill();
+                        }
+                    }
+                }
+                catch
+                {
+                }
+
                 process.Dispose();
             }
 
