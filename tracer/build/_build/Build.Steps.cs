@@ -906,7 +906,6 @@ partial class Build
 
     Target RunWindowsIntegrationTests => _ => _
         .Unlisted()
-        .DependsOn(InstallDumpTool)
         .After(BuildTracerHome)
         .After(CompileIntegrationTests)
         .After(CompileSamples)
