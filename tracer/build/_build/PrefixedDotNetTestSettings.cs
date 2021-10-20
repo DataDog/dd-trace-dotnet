@@ -6,6 +6,7 @@ using JetBrains.Annotations;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.MSBuild;
+using Nuke.Common.Utilities;
 
 [PublicAPI]
 [ExcludeFromCodeCoverage]
@@ -18,6 +19,12 @@ public class DotNetTestWithDumpSettings : DotNetTestSettings
         if (!Path.IsPathRooted(toolPath) && !toolPath.Contains(Path.DirectorySeparatorChar))
             toolPath = ToolPathResolver.GetPathExecutable(toolPath);
 
+        var toolPathOverride = GetToolPathOverride(toolPath);
+        if (!string.IsNullOrEmpty(toolPathOverride))
+        {
+            toolPath = toolPathOverride;
+        }
+
         arguments.Add("dumponexception");
         arguments.Add("-p {value}", 50);
         arguments.Add("-f none --");
@@ -29,6 +36,25 @@ public class DotNetTestWithDumpSettings : DotNetTestSettings
         Nuke.Common.Logger.Info($"RenderForOutput: {arguments.RenderForOutput()}");
 
         return arguments;
+    }
+
+    [CanBeNull]
+    private static string GetToolPathOverride(string toolPath)
+    {
+        if (toolPath.EndsWithOrdinalIgnoreCase(".dll"))
+        {
+            return ToolPathResolver.TryGetEnvironmentExecutable("DOTNET_EXE") ??
+                   ToolPathResolver.GetPathExecutable("dotnet");
+        }
+
+#if NETCORE
+            if (EnvironmentInfo.IsUnix &&
+                toolPath.EndsWithOrdinalIgnoreCase(".exe") &&
+                !EnvironmentInfo.IsWsl)
+                return ToolPathResolver.GetPathExecutable("mono");
+#endif
+
+        return null;
     }
 }
 
