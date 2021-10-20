@@ -352,7 +352,7 @@ namespace Datadog.Logging.Composition
 
         private static int FindLatestRotationIndex(DirectoryInfo logFileDirInfo, string logFileNameBase, DateTimeOffset timestamp)
         {
-            // The largest existing inde can be obtained by sorting the files that fit the pattern.
+            // The largest existing index can be obtained by sorting the files that fit the pattern.
             // However, we need to validate that the file not only matches the pattern, but is an exact filename structure match.
             // E.g. "xyz-123.log" and "xyz-aa123.log" both fit the pattern, but only the former is an exact match.
 
@@ -370,7 +370,7 @@ namespace Datadog.Logging.Composition
             Array.Sort(logFileInfos, (fi1, fi2) => fi1.Name.CompareTo(fi2.Name));
             for (int f = logFileInfos.Length - 1; f >= 0; f--)
             {
-                // COnsider the next file:
+                // Consider the next file:
                 string existingFileName = logFileInfos[f].Name;
                 string existingFileNameNoExt = Path.GetFileNameWithoutExtension(existingFileName);
 
@@ -392,7 +392,7 @@ namespace Datadog.Logging.Composition
                         {
                             // If we can parse the index, compare the actual file name with the correct file name for that index.
                             // If the match in not exact, then we ignore this file and keep searching.
-                            // Otherwise we fiund the index.
+                            // Otherwise we found the index.
 
                             string filenameForIndex = ConstructFilename(logFileNameBase, timestamp, rotationIndex);
                             if (IsSameFilename(existingFileName, filenameForIndex))
