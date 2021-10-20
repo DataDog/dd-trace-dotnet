@@ -15,23 +15,26 @@ public class DotNetTestWithDumpSettings : DotNetTestSettings
 {
     protected override Arguments ConfigureProcessArguments(Arguments arguments)
     {
-        var toolPath = ProcessToolPath;
-        if (!Path.IsPathRooted(toolPath) && !toolPath.Contains(Path.DirectorySeparatorChar))
-            toolPath = ToolPathResolver.GetPathExecutable(toolPath);
+        //var toolPath = ProcessToolPath;
+        //if (!Path.IsPathRooted(toolPath) && !toolPath.Contains(Path.DirectorySeparatorChar))
+        //    toolPath = ToolPathResolver.GetPathExecutable(toolPath);
 
-        var toolPathOverride = GetToolPathOverride(toolPath);
-        if (!string.IsNullOrEmpty(toolPathOverride))
-        {
-            toolPath = toolPathOverride;
-        }
+        //var toolPathOverride = GetToolPathOverride(toolPath);
+        //if (!string.IsNullOrEmpty(toolPathOverride))
+        //{
+        //    toolPath = toolPathOverride;
+        //}
 
-        arguments.Add("dumponexception");
-        arguments.Add("-p {value}", 50);
-        arguments.Add("-f none --");
-        arguments.Add($"\"{toolPath}\"");
+        //arguments.Add("dumponexception");
+        //arguments.Add("-p {value}", 50);
+        //arguments.Add("-f none --");
+        //arguments.Add($"\"{toolPath}\"");
         arguments = base.ConfigureProcessArguments(arguments);
+        arguments.Add("--blame-hang");
+        arguments.Add("--blame-hang-dump-type full");
+        arguments.Add("--blame-hang-timeout 40m");
 
-        Nuke.Common.Logger.Info($"ProcessToolPath: {toolPath}");
+        //Nuke.Common.Logger.Info($"ProcessToolPath: {toolPath}");
         Nuke.Common.Logger.Info($"RenderForExecution: {arguments.RenderForExecution()}");
         Nuke.Common.Logger.Info($"RenderForOutput: {arguments.RenderForOutput()}");
 
@@ -64,7 +67,7 @@ public static class DotNetTestWithDumpTask
     {
         var arguments = toolSettings.GetProcessArguments();
         var argumentsRenderForExecution = arguments.RenderForExecution();
-        argumentsRenderForExecution = argumentsRenderForExecution.Replace("\"", "\\\"");
+        //argumentsRenderForExecution = argumentsRenderForExecution.Replace("\"", "\\\"");
 
         return ProcessTasks.StartProcess(
             toolSettings.ProcessToolPath,
