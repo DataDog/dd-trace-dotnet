@@ -35,7 +35,10 @@ namespace Datadog.Trace.AppSec.Waf
 
             var pwArgs = Encoder.Encode(args, argCache);
 
-            Log.Debug("Executing AppSec In-App WAF");
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug("Executing AppSec In-App WAF");
+            }
 
             var rawAgs = pwArgs.RawPtr;
             DdwafResultStruct retNative = default;
