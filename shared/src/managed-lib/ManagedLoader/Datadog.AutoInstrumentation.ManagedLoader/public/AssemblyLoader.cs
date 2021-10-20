@@ -127,6 +127,61 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             }
         }
 
+        /// <summary>
+        /// <c>ExecuteDelayed</c> is about preventing side effects from running the loader very early in the AppDomain life cycle
+        /// by delaying it towards a later point in the AppDomain Life cycle.<br />
+        /// <br />
+        /// Example for a crash caused by this kind of side effect:
+        /// <br />
+        /// WCF applications using `BasicHttpsBinding` (note the "s" in https) were crashing with the continuous profiler attached.
+        /// Error:<br />
+        /// _System.Configuration.ConfigurationErrorsException: Configuration binding extension 'system.serviceModel/bindings/basicHttpsBinding'
+        /// could not be found.Verify that this binding extension is properly registered in system.serviceModel/extensions/bindingExtensions and
+        /// that it is spelled correctly._
+        /// <br />
+        /// This was because the respective parts WCF configuration subsystem used `WebSocket.IsApplicationTargeting45()` to tweak their behavior
+        /// on different framework versions. In turn, `WebSocket.IsApplicationTargeting45()` calls the static method
+        /// `BinaryCompatibility.TargetsAtLeast_Desktop_V4_5()`. That method uses the static variable `s_map`. That, in turn, is initialized
+        /// by the static cctor, i.e. first time `BinaryCompatibility` the class is used.
+        /// <br />
+        /// This Assembly Loader calls `Array.Sort` while initializing its logger.
+        /// That, it turn, also uses the `BinaryCompatibility` class internally, to choose a backward-compatible sorting algorithm.
+        /// As a result those flags are initialized and cached when the loader is invoked. However, at that time, the AppDomain may not
+        /// be completely initialized. To initialize, the `BinaryCompatibility` cctor invokes `AppDomain.GetTargetFrameworkName()`, which,
+        /// in turn, calls `Assembly.GetEntryAssembly()`.
+        /// <br />
+        /// That API returns `null` when invoked too early in the AppDomain lifecycle.
+        /// As a result, a bogus target framework moniker is obtained (and cashed), and - in turn - the binary compatibility flags
+        /// are initialized incorrectly (and also cached). As a result, everything that relies on the binary compatibility flags
+        /// (or the target Framework moniker) may work in an unpredictable matter. This also leads to the WCF crash.
+        /// <br />
+        /// To mitigate that, inside of <c>Execute()</c> we inspect whether `Assembly.GetEntryAssembly()` returns `null` before we
+        /// start executing. If it does, we off-load the execution to a helper thread and returns immediately.
+        /// The helper thread runs the <c>ExecuteDelayed(..)</c> method: It sleeps and periodically checks
+        /// `Assembly.GetEntryAssembly()` until it no longer returns returns `null`. Then the Loader proceeds with its normal logic.
+        /// <br />
+        /// As a result, the target framework moniker and the binary compatibility flags are initialized correctly.
+        /// </summary>
+        /// <remarks>
+        /// The above logic is further specialised, depending on the kind of the currnent AppDomain and where the app is hosted:
+        /// <br />
+        /// * On non-default AD:
+        ///   we do not wait.
+        /// <br />
+        /// * On default AD, app NOT hosted in IIS::
+        ///   `GetEntryAssembly` initially returns null, but once the AD is fully initialized, it returns the correct value.
+        ///   So, we apply the above strategy: wait on a separate thread until `GetEntryAssembly` is not null and then execute the loader.
+        ///   As mentioned, it is required because some APIs need `GetEntryAssembly` to populate bin compat flags in the Fx.
+        ///    * The user does not need to specify a parameter for this, since we wait _until `GetEntryAssembly` is not null_.
+        ///    * This behavior is on by default, but all delaying may be disabled using `DD_INTERNAL_LOADER_DELAY_ENABLED=false`.
+        /// <br />
+        /// * On default AD, app IS hosted in IIS:
+        ///   `GetEntryAssembly` always returns null. It will always stay null, and there is no point delaying anything in that case.
+        ///   Even if we did delay, we would not have an end-condition for the wait as `GetEntryAssembly` always remains null forever.
+        ///    * So by default we do not wait on IIS.
+        ///    * As a precaution we support an _optional_ wait that use user can opt into by setting DD_INTERNAL_LOADER_DELAY_IIS_MILLISEC to
+        ///      a potitive number of milliseconds. (Since on IIS there is no exit condition to that delay, the option cannot be Boolean.)        
+        /// </remarks>       
         private static void ExecuteDelayed(object assemblyLoaderObj)
         {
             try
