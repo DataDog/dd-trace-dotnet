@@ -101,6 +101,8 @@ public:
 class RejitHandler
 {
 private:
+    std::atomic_bool m_shutdown = {false};
+
     std::mutex m_modules_lock;
     std::unordered_map<ModuleID, std::unique_ptr<RejitHandlerModule>> m_modules;
     AssemblyProperty* m_pCorAssemblyProperty = nullptr;

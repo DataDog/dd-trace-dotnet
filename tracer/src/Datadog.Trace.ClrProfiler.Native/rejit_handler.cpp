@@ -435,6 +435,12 @@ void RejitHandler::EnqueueThreadLoop(RejitHandler* handler)
                             // As we are in the right method, we gather all information we need and stored it in to the
                             // ReJIT handler.
                             auto moduleHandler = handler->GetOrAddModule(moduleInfo.id);
+                            if (moduleHandler == nullptr)
+                            {
+                                Logger::Warn(
+                                    "Module handler is null, this only happens if the RejitHandler has been shutdown.");
+                                break;
+                            }
                             if (moduleHandler->GetModuleMetadata() == nullptr)
                             {
                                 Logger::Debug("Creating ModuleMetadata...");
@@ -530,9 +536,14 @@ void RejitHandler::EnqueueThreadLoop(RejitHandler* handler)
 
 void RejitHandler::RequestRejitForInlinersInModule(ModuleID moduleId)
 {
+    std::lock_guard<std::mutex> guard(m_modules_lock);
+    if (m_shutdown)
+    {
+        return;
+    }
+
     if (m_profilerInfo6 != nullptr)
     {
-        std::lock_guard<std::mutex> guard(m_modules_lock);
         for (const auto& mod : m_modules)
         {
             mod.second->RequestRejitForInlinersInModule(moduleId);
@@ -576,6 +587,10 @@ RejitHandler::RejitHandler(ICorProfilerInfo10* pInfo,
 RejitHandlerModule* RejitHandler::GetOrAddModule(ModuleID moduleId)
 {
     std::lock_guard<std::mutex> guard(m_modules_lock);
+    if (m_shutdown)
+    {
+        return nullptr;
+    }
 
     auto find_res = m_modules.find(moduleId);
     if (find_res != m_modules.end())
@@ -591,6 +606,10 @@ RejitHandlerModule* RejitHandler::GetOrAddModule(ModuleID moduleId)
 bool RejitHandler::HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef)
 {
     std::lock_guard<std::mutex> guard(m_modules_lock);
+    if (m_shutdown)
+    {
+        return false;
+    }
 
     auto find_res = m_modules.find(moduleId);
     if (find_res != m_modules.end())
@@ -605,12 +624,20 @@ bool RejitHandler::HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef)
 void RejitHandler::RemoveModule(ModuleID moduleId)
 {
     std::lock_guard<std::mutex> guard(m_modules_lock);
+    if (m_shutdown)
+    {
+        return;
+    }
     m_modules.erase(moduleId);
 }
 
 void RejitHandler::AddNGenModule(ModuleID moduleId)
 {
     std::lock_guard<std::mutex> guard(m_ngenModules_lock);
+    if (m_shutdown)
+    {
+        return;
+    }
     m_ngenModules.push_back(moduleId);
     RequestRejitForInlinersInModule(moduleId);
 }
@@ -619,6 +646,11 @@ void RejitHandler::EnqueueProcessModule(const std::vector<ModuleID>& modulesVect
                                         const std::vector<IntegrationMethod>& integrations,
                                         std::promise<int>* promise)
 {
+    if (m_shutdown)
+    {
+        return;
+    }
+
     Logger::Debug("RejitHandler::EnqueueProcessModule");
     const size_t length = modulesVector.size();
 
@@ -634,24 +666,39 @@ void RejitHandler::EnqueueProcessModule(const std::vector<ModuleID>& modulesVect
 void RejitHandler::Shutdown()
 {
     Logger::Debug("RejitHandler::Shutdown");
-    std::lock_guard<std::mutex> moduleGuard(m_modules_lock);
-    std::lock_guard<std::mutex> ngenModuleGuard(m_ngenModules_lock);
 
+    // Wait for exiting the thread
     m_rejit_queue->push(RejitItem::CreateEndRejitThread());
     if (m_rejit_queue_thread->joinable())
     {
         m_rejit_queue_thread->join();
     }
 
+    std::lock_guard<std::mutex> moduleGuard(m_modules_lock);
+    std::lock_guard<std::mutex> ngenModuleGuard(m_ngenModules_lock);
+    m_shutdown.store(true);
+
     m_modules.clear();
     m_profilerInfo = nullptr;
+    m_profilerInfo10 = nullptr;
+    m_profilerInfo6 = nullptr;
     m_rewriteCallback = nullptr;
 }
 
 HRESULT RejitHandler::NotifyReJITParameters(ModuleID moduleId, mdMethodDef methodId,
                                             ICorProfilerFunctionControl* pFunctionControl)
 {
+    if (m_shutdown)
+    {
+        return S_FALSE;
+    }
+
     auto moduleHandler = GetOrAddModule(moduleId);
+    if (moduleHandler == nullptr)
+    {
+        return S_FALSE;
+    }
+
     auto methodHandler = moduleHandler->GetOrAddMethod(methodId);
     methodHandler->SetFunctionControl(pFunctionControl);
 
@@ -729,9 +776,14 @@ void RejitHandler::SetCorAssemblyProfiler(AssemblyProperty* pCorAssemblyProfiler
 
 void RejitHandler::RequestRejitForNGenInliners()
 {
+    std::lock_guard<std::mutex> guard(m_ngenModules_lock);
+    if (m_shutdown)
+    {
+        return;
+    }
+
     if (m_profilerInfo6 != nullptr)
     {
-        std::lock_guard<std::mutex> guard(m_ngenModules_lock);
         for (const auto& mod : m_ngenModules)
         {
             RequestRejitForInlinersInModule(mod);
