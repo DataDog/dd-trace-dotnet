@@ -109,6 +109,18 @@ namespace Datadog.Trace.AppSec
 
         internal SecuritySettings Settings => _settings;
 
+        private static void AnnotateSpan(Span span)
+        {
+            // we should only tag service entry span, the first span opened for a
+            // service. For WAF it's safe to assume we always have service entry spans
+            // we'll need to revisit this for RASP.
+            if (span != null)
+            {
+                span.SetMetric(Metrics.AppSecEnabled, 1.0);
+                span.SetTag(Tags.RuntimeFamily, TracerConstants.Language);
+            }
+        }
+
         /// <summary>
         /// Frees resouces
         /// </summary>
@@ -137,21 +149,9 @@ namespace Datadog.Trace.AppSec
             });
         }
 
-        private void TagSpan(Span span)
-        {
-            // we should only tag service entry span, the first span opened for a
-            // service. For WAF it's safe to assume we always have service entry spans
-            // we'll need to revisit this for RASP.
-            if (span != null)
-            {
-                span.SetTag(Tags.AppSecEnabled, "1");
-                span.SetTag(Tags.RuntimeFamily, TracerConstants.Language);
-            }
-        }
-
         private void RunWafAndReact(IDictionary<string, object> args, ITransport transport, Span span)
         {
-            TagSpan(span);
+            AnnotateSpan(span);
 
             var additiveContext = transport.GetAdditiveContext();
 
