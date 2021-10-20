@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Text;
 using System.Threading.Tasks;
 using BenchmarkComparison;
@@ -14,10 +16,16 @@ using Nuke.Common.IO;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.Git;
 using Octokit;
+using Octokit.GraphQL;
+using Octokit.GraphQL.Model;
 using static Nuke.Common.IO.CompressionTasks;
 using Issue = Octokit.Issue;
 using ProductHeaderValue = Octokit.ProductHeaderValue;
 using Target = Nuke.Common.Target;
+using static Octokit.GraphQL.Variable;
+using Environment = System.Environment;
+using Milestone = Octokit.Milestone;
+using Release = Octokit.Release;
 
 partial class Build
 {
@@ -453,6 +461,7 @@ partial class Build
                   oldBuild.SourceVersion,
                   newBuild.SourceVersion);
 
+              await HideCommentsInPullRequest(prNumber, "## Code Coverage Report");
               await PostCommentToPullRequest(prNumber, markdown);
           });
 
@@ -484,6 +493,8 @@ partial class Build
              var (oldBuild, _) = await DownloadAzureArtifact(buildHttpClient, "refs/heads/master", build => "benchmarks_results", masterDir, buildReason: null);
 
              var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, oldBuild.SourceVersion);
+
+             await HideCommentsInPullRequest(prNumber, "## Benchmarks Report");
              await PostCommentToPullRequest(prNumber, markdown);
          });
 
@@ -569,6 +580,68 @@ partial class Build
             var response = await result.Content.ReadAsStringAsync();
             Console.WriteLine("Error: " + response);
             result.EnsureSuccessStatusCode();
+        }
+    }
+
+    async Task HideCommentsInPullRequest(int prNumber, string prefix)
+    {
+        try
+        {
+            Console.WriteLine("Looking for comments to hide in GitHub");
+
+            var clientId = "nuke-ci-client";
+            var productInformation = Octokit.GraphQL.ProductHeaderValue.Parse(clientId);
+            var connection = new Octokit.GraphQL.Connection(productInformation, GitHubToken);
+
+            var query = new Octokit.GraphQL.Query()
+                       .Repository(GitHubRepositoryName, GitHubRepositoryOwner)
+                        // .RepositoryOwner(Var("owner"))
+                        // .Repository(Var("name"))
+                       .PullRequest(prNumber)
+                       .Comments()
+                       .AllPages()
+                       .Select(issue => new { issue.Id, issue.Body, issue.IsMinimized, });
+
+            var issueComments =  (await connection.Run(query)).ToList();
+
+            Console.WriteLine($"Found {issueComments} comments for PR {prNumber}");
+
+            var count = 0;
+            foreach (var issueComment in issueComments)
+            {
+                if (issueComment.IsMinimized || ! issueComment.Body.StartsWith(prefix))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    var arg = new MinimizeCommentInput
+                    {
+                        Classifier = ReportedContentClassifiers.Outdated,
+                        SubjectId = issueComment.Id,
+                        ClientMutationId = clientId
+                    };
+
+                    var mutation = new Mutation()
+                                  .MinimizeComment(arg)
+                                  .Select(x => new { x.MinimizedComment.IsMinimized });
+
+                    await connection.Run(mutation);
+                    count++;
+
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn($"Error minimising comment with ID {issueComment.Id}: {ex}");
+                }
+            }
+
+            Console.WriteLine($"Minimised {count} comments for PR {prNumber}");
+        }
+        catch (Exception ex)
+        {
+            Logger.Warn($"There was an error trying to minimise old comments with prefix '{prefix}': {ex}");
         }
     }
 
