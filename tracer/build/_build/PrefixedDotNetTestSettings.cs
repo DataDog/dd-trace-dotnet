@@ -60,17 +60,39 @@ public class DotNetTestWithDumpSettings : DotNetTestSettings
 
 public static class DotNetTestWithDumpTask
 {
+    public static IProcess StartProcess(ToolSettings toolSettings)
+    {
+        var arguments = toolSettings.GetProcessArguments();
+        var argumentsRenderForExecution = arguments.RenderForExecution();
+        argumentsRenderForExecution = argumentsRenderForExecution.Replace("\"", "\\\"");
+
+        return ProcessTasks.StartProcess(
+            toolSettings.ProcessToolPath,
+            argumentsRenderForExecution,
+            toolSettings.ProcessWorkingDirectory,
+            toolSettings.ProcessEnvironmentVariables,
+            toolSettings.ProcessExecutionTimeout,
+            toolSettings.ProcessLogOutput,
+            toolSettings.ProcessLogInvocation,
+            toolSettings.ProcessLogTimestamp,
+            toolSettings.ProcessLogFile,
+            toolSettings.ProcessCustomLogger,
+            arguments.FilterSecrets);
+    }
+
     public static IEnumerable<(DotNetTestWithDumpSettings Settings, IReadOnlyCollection<Output> Output)> DotNetRunWithDump(CombinatorialConfigure<DotNetTestWithDumpSettings> configurator, int degreeOfParallelism = 1, bool completeOnFailure = false)
     {
         return configurator.Invoke(DotNetRunWithDump, DotNetTasks.DotNetLogger, degreeOfParallelism, completeOnFailure);
     }
+
     public static IReadOnlyCollection<Output> DotNetRunWithDump(DotNetTestWithDumpSettings toolSettings = null)
     {
         toolSettings = toolSettings ?? new DotNetTestWithDumpSettings();
-        using var process = ProcessTasks.StartProcess(toolSettings);
+        using var process = StartProcess(toolSettings);
         process.AssertZeroExitCode();
         return process.Output;
     }
+
     public static DotNetTestWithDumpSettings WithDump(this DotNetTestSettings from) => (DotNetTestWithDumpSettings)from;
 
     public static Configure<DotNetTestWithDumpSettings> WithDump(Configure<DotNetTestSettings> from)
