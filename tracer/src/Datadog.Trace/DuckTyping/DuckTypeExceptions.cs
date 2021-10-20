@@ -384,23 +384,6 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// DuckType proxy was missing an implementation
     /// </summary>
-    public class DuckTypeReverseProxyMissingPropertyImplementationException : DuckTypeException
-    {
-        private DuckTypeReverseProxyMissingPropertyImplementationException(IEnumerable<PropertyInfo> properties)
-            : base($"The duck reverse proxy was missing implementations for properties: {string.Join(", ", properties.Select(x => x.Name))}")
-        {
-        }
-
-        [DebuggerHidden]
-        internal static void Throw(ICollection<PropertyInfo> properties)
-        {
-            throw new DuckTypeReverseProxyMissingPropertyImplementationException(properties);
-        }
-    }
-
-    /// <summary>
-    /// DuckType proxy was missing an implementation
-    /// </summary>
     public class DuckTypeReverseProxyMissingMethodImplementationException : DuckTypeException
     {
         private DuckTypeReverseProxyMissingMethodImplementationException(IEnumerable<MethodInfo> methods)
@@ -412,6 +395,24 @@ namespace Datadog.Trace.DuckTyping
         internal static void Throw(IEnumerable<MethodInfo> methods)
         {
             throw new DuckTypeReverseProxyMissingMethodImplementationException(methods);
+        }
+    }
+
+    /// <summary>
+    /// DuckType proxy tried to implement a generic method in a non-generic way
+    /// </summary>
+    public class DuckTypeReverseProxyMustImplementGenericMethodAsGenericException : DuckTypeException
+    {
+        private DuckTypeReverseProxyMustImplementGenericMethodAsGenericException(MethodInfo implementationMethod, MethodInfo targetMethod)
+            : base($"The duck reverse proxy implementation '{implementationMethod.Name}' for generic target method '{targetMethod.Name}' " +
+                   $"must have same number of generic parameters - had {implementationMethod.GetGenericArguments().Length}, expected {targetMethod.GetGenericArguments().Length}")
+        {
+        }
+
+        [DebuggerHidden]
+        internal static void Throw(MethodInfo implementationMethod, MethodInfo targetMethod)
+        {
+            throw new DuckTypeReverseProxyMustImplementGenericMethodAsGenericException(implementationMethod, targetMethod);
         }
     }
 }

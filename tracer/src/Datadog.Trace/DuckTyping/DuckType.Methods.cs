@@ -256,7 +256,7 @@ namespace Datadog.Trace.DuckTyping
                 if (overriddenMethodGenericArguments.Length > 0
                  && implementationDefinitionGenericArguments.Length != overriddenMethodGenericArguments.Length)
                 {
-                    DuckTypeTargetMethodNotFoundException.Throw(implementationMethod);
+                    DuckTypeReverseProxyMustImplementGenericMethodAsGenericException.Throw(implementationMethod, overriddenMethod);
                     continue;
                 }
 
