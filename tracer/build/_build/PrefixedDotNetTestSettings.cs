@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using JetBrains.Annotations;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
@@ -13,13 +14,17 @@ public class DotNetTestWithDumpSettings : DotNetTestSettings
 {
     protected override Arguments ConfigureProcessArguments(Arguments arguments)
     {
+        var toolPath = ProcessToolPath;
+        if (!Path.IsPathRooted(toolPath) && !toolPath.Contains(Path.DirectorySeparatorChar))
+            toolPath = ToolPathResolver.GetPathExecutable(toolPath);
+
         arguments.Add("dumponexception");
         arguments.Add("-p {value}", 50);
         arguments.Add("-f none --");
-        arguments.Add($"\"{ProcessToolPath}\"");
+        arguments.Add($"\"{toolPath}\"");
         arguments = base.ConfigureProcessArguments(arguments);
 
-        Nuke.Common.Logger.Info($"ProcessToolPath: {ProcessToolPath}");
+        Nuke.Common.Logger.Info($"ProcessToolPath: {toolPath}");
         Nuke.Common.Logger.Info($"RenderForExecution: {arguments.RenderForExecution()}");
         Nuke.Common.Logger.Info($"RenderForOutput: {arguments.RenderForOutput()}");
 
