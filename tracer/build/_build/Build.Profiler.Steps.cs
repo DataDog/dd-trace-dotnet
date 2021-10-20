@@ -24,6 +24,7 @@ partial class Build
 
             // Build the shared managed loader
             DotNetBuild(s => s
+                .SetTargetPlatformAnyCPU()
                 .SetConfiguration(BuildConfiguration)
                 .CombineWith(projects, (x, project) => x
                     .SetProjectFile(project)));
@@ -54,6 +55,7 @@ partial class Build
             MSBuild(s => s
                 .SetTargetPath(project)
                 .SetConfiguration(BuildConfiguration)
+                .SetProperty("SpectreMitigation", "false") // Enforce the same build in all CI environments
                 .SetMSBuildPath()
                 .DisableRestore()
                 .SetMaxCpuCount(null)

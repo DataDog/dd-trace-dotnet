@@ -490,6 +490,7 @@ partial class Build
                     .SetProperty("TracerHomeDirectory", TracerHomeDirectory)
                     .SetProperty("LibDdwafDirectory", LibDdwafDirectory)
                     .SetProperty("ProfilerHomeDirectory", ProfilerHomeDirectory)
+                    .SetProperty("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetProperty("BetaMsiSuffix", BetaMsiSuffix)
                     .SetMaxCpuCount(null)
                     .CombineWith(ArchitecturesForPlatform, (o, arch) => o

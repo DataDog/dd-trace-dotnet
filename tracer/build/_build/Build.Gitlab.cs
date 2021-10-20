@@ -20,19 +20,22 @@ partial class Build
     bool UseTestPfxCertificate = false;
 
     Target SignDlls => _ => _
-       .Description("Sign the dlls produced by building the Tracer home directory")
+       .Description("Sign the dlls produced by building the Tracer, Profiler, and Monitoring home directory")
        .Unlisted()
        .Requires(() => IsWin)
-       .After(BuildTracerHome)
-       .Before(PackNuGet, BuildMsi, ZipTracerHome)
+       .After(BuildTracerHome, BuildProfilerHome, BuildMonitoringHome)
+       .Before(PackNuGet, BuildMsi, BuildMsiBeta, ZipTracerHome)
        .Executes(async () =>
         {
             // also sign the NuGet package "bin" folder, as they are what gets packed in the NuGet
             var dllsInBin = ProjectsToPack
                            .Select(project => project.Directory)
                            .SelectMany(projectDir => projectDir.GlobFiles("**/bin/**/Datadog*.dll"));
-            var dlls = TracerHomeDirectory.GlobFiles("**/Datadog*.dll")
-                                          .Concat(dllsInBin);
+            var tracerdlls = TracerHomeDirectory.GlobFiles("**/Datadog*.dll");
+            var profilerDlls = ProfilerHomeDirectory.GlobFiles("**/Datadog*.dll");
+            var sharedDlls = MonitoringHomeDirectory.GlobFiles("**/Datadog*.dll");
+
+            var dlls = tracerdlls.Concat(profilerDlls).Concat(sharedDlls).Concat(dllsInBin);
             await SignFiles(dlls);
         });
 
