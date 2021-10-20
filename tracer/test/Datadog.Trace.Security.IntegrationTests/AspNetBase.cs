@@ -12,7 +12,9 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.AppSec.EventModel;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -77,46 +79,53 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         public async Task TestBlockedRequestAsync(MockTracerAgent agent, bool enableSecurity, HttpStatusCode expectedStatusCode, int expectedSpans, IEnumerable<Action<MockTracerAgent.Span>> assertOnSpans)
         {
-            var mockTracerAgentAppSecWrapper = new MockTracerAgentAppSecWrapper(agent);
-            mockTracerAgentAppSecWrapper.SubscribeAppSecEvents();
             Func<Task<(HttpStatusCode StatusCode, string ResponseText)>> attack = () => SubmitRequest("/Health/?arg=[$slice]");
             var resultRequests = await Task.WhenAll(attack(), attack(), attack(), attack(), attack());
             agent.SpanFilters.Add(s => s.Tags.ContainsKey("http.url") && s.Tags["http.url"].IndexOf("Health", StringComparison.InvariantCultureIgnoreCase) > 0);
             var spans = agent.WaitForSpans(expectedSpans);
             Assert.Equal(expectedSpans, spans.Count());
+
+            var expectedAppSecEvents = enableSecurity ? 5 : 0;
+            var actualAppSecEvents = 0;
+
+            var spanIds = spans.Select(s => s.SpanId);
+            var usedIds = new List<ulong>();
+
             foreach (var span in spans)
             {
                 foreach (var assert in assertOnSpans)
                 {
                     assert(span);
+
+                    if (enableSecurity)
+                    {
+                        var gotTag = span.Tags.TryGetValue(Tags.AppSecJson, out var json);
+                        Assert.True(gotTag, "span does not contain security tag");
+                        actualAppSecEvents++;
+
+                        var jsonObj = JsonConvert.DeserializeObject<AppSecJson>(json);
+
+                        var item = jsonObj.Triggers.FirstOrDefault();
+                        Assert.NotNull(item);
+
+                        Assert.IsType<Attack>(item);
+                        var attackEvent = item;
+                        var shouldBlock = expectedStatusCode == HttpStatusCode.Forbidden;
+                        Assert.Equal(shouldBlock, attackEvent.Blocked);
+                        var spanId = spanIds.FirstOrDefault(s => s == attackEvent.Context.Span.Id);
+                        Assert.NotEqual(0m, spanId);
+                        Assert.DoesNotContain(spanId, usedIds);
+                        Assert.Equal("nosqli", attackEvent.Rule.Name);
+                        usedIds.Add(spanId);
+                    }
                 }
             }
-
-            var expectedAppSecEvents = enableSecurity ? 5 : 0;
 
             // asserts on request status code
             Assert.All(resultRequests, r => Assert.Equal(r.StatusCode, expectedStatusCode));
 
-            var appSecEvents = mockTracerAgentAppSecWrapper.WaitForAppSecEvents(expectedAppSecEvents);
-
             // asserts on the security events
-            Assert.Equal(expectedAppSecEvents, appSecEvents.Count);
-            var spanIds = spans.Select(s => s.SpanId);
-            var usedIds = new List<ulong>();
-            foreach (var item in appSecEvents)
-            {
-                Assert.IsType<AppSec.EventModel.Attack>(item);
-                var attackEvent = (AppSec.EventModel.Attack)item;
-                var shouldBlock = expectedStatusCode == HttpStatusCode.Forbidden;
-                Assert.Equal(shouldBlock, attackEvent.Blocked);
-                var spanId = spanIds.FirstOrDefault(s => s == attackEvent.Context.Span.Id);
-                Assert.NotEqual(0m, spanId);
-                Assert.DoesNotContain(spanId, usedIds);
-                Assert.Equal("Finds basic MongoDB SQL injection attempts", attackEvent.Rule.Name);
-                usedIds.Add(spanId);
-            }
-
-            mockTracerAgentAppSecWrapper.UnsubscribeAppSecEvents();
+            Assert.Equal(expectedAppSecEvents, actualAppSecEvents);
         }
 
         protected void SetHttpPort(int httpPort)
