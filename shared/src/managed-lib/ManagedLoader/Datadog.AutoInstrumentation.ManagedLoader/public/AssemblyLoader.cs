@@ -122,7 +122,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                 }
                 else
                 {
-                    InitLogAndExecute(this, isDelayed: false, waitForAppDomainReadinessElapsedMs: 0, waitForAppDomainReadinessLoopIterations: 0);
+                    InitLogAndExecute(this, isDelayed: false, waitForAppDomainReadinessElapsedMs: 0);
                 }
             }
             catch (Exception ex)
@@ -137,14 +137,12 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             {
                 AssemblyLoader assemblyLoader = (AssemblyLoader) assemblyLoaderObj;
 
-                int sleepIteration = 0;
                 int startDelayMs = Environment.TickCount;
 
                 if (IsAppHostedInIis())
                 {
                     int sleepDurationMs = GetIisExecutionDelayMs();
                     Thread.Sleep(sleepDurationMs);
-                    sleepIteration++;
                 }
                 else
                 {
@@ -153,7 +151,6 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                         try
                         {
                             Thread.Sleep(ExecuteDelayedConstants.SleepDurationMs);
-                            sleepIteration++;
                         }
                         catch (Exception ex)
                         {
@@ -168,7 +165,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                 }
 
                 int totalElapsedDelayMs = Environment.TickCount - startDelayMs;
-                InitLogAndExecute(assemblyLoader, isDelayed: true, totalElapsedDelayMs, sleepIteration);
+                InitLogAndExecute(assemblyLoader, isDelayed: true, totalElapsedDelayMs);
             }
             catch
             {
@@ -192,10 +189,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             return (Assembly.GetEntryAssembly() != null);
         }
 
-        private static void InitLogAndExecute(AssemblyLoader assemblyLoader,
-                                              bool isDelayed,
-                                              int waitForAppDomainReadinessElapsedMs,
-                                              int waitForAppDomainReadinessLoopIterations)
+        private static void InitLogAndExecute(AssemblyLoader assemblyLoader, bool isDelayed, int waitForAppDomainReadinessElapsedMs)
         {
             try
             {
@@ -211,7 +205,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
 
             try
             {
-                assemblyLoader.Execute(isDelayed, waitForAppDomainReadinessElapsedMs, waitForAppDomainReadinessLoopIterations);
+                assemblyLoader.Execute(isDelayed, waitForAppDomainReadinessElapsedMs);
             }
             catch (Exception ex)
             {
@@ -225,7 +219,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
         /// <summary>
         /// Loads the assemblies specified for this <c>AssemblyLoader</c> instance and executes their entry point.
         /// </summary>
-        private void Execute(bool isDelayed, int waitForAppDomainReadinessElapsedMs, int waitForAppDomainReadinessLoopIterations)
+        private void Execute(bool isDelayed, int waitForAppDomainReadinessElapsedMs)
         {
 #if DEBUG
             const string BuildConfiguration = "Debug";
@@ -237,7 +231,6 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                      "Managed Loader build configuration", BuildConfiguration,
                      nameof(isDelayed), isDelayed,
                      nameof(waitForAppDomainReadinessElapsedMs), waitForAppDomainReadinessElapsedMs,
-                     nameof(waitForAppDomainReadinessLoopIterations), waitForAppDomainReadinessLoopIterations,
                      nameof(s_isExecuteDelayedEnabled), s_isExecuteDelayedEnabled,
                      nameof(s_isAppHostedInIis), s_isAppHostedInIis,
                      nameof(s_iisExecutionDelayMs), s_iisExecutionDelayMs);
