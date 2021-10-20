@@ -8,7 +8,6 @@
       <Component Id="EnvironmentVariablesShared" Guid="{C314A305-9C24-4E46-9ECF-E5EEA703BDEA}" Win64="$(var.Win64)">
         <CreateFolder/>
         <Environment Id="DD_NATIVELOADER_CONFIGFILE" Name="DD_NATIVELOADER_CONFIGFILE" Action="set" Permanent="no" System="yes" Value="[INSTALLFOLDER]loader.conf" Part="all" />
-        <Environment Id="DD_TRACE_LOG_DIRECTORY" Name="DD_TRACE_LOG_DIRECTORY" Action="set" Permanent="no" System="yes" Value="[CommonAppDataFolder.DatadogDotNetMonitoring.logs]" Part="all" />
         <!-- For now, turn on Continuous Profiling automatically and watch it work its magic -->
         <Environment Id="DD_PROFILING_ENABLED" Name="DD_PROFILING_ENABLED" Action="set" Permanent="no" System="yes" Value="1" Part="all" />
       </Component>
