@@ -71,10 +71,6 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             public const int IisDelayMs_DefaultVal = 0;
         }
 
-        private static bool? s_isExecuteDelayedEnabled = null;
-        private static bool? s_isAppHostedInIis = null;
-        private static int? s_iisExecutionDelayMs = null;
-
         private bool _isDefaultAppDomain;
         private string[] _assemblyNamesToLoadIntoDefaultAppDomain;
         private string[] _assemblyNamesToLoadIntoNonDefaultAppDomains;
@@ -231,9 +227,9 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
                      "Managed Loader build configuration", BuildConfiguration,
                      nameof(isDelayed), isDelayed,
                      nameof(waitForAppDomainReadinessElapsedMs), waitForAppDomainReadinessElapsedMs,
-                     nameof(s_isExecuteDelayedEnabled), s_isExecuteDelayedEnabled,
-                     nameof(s_isAppHostedInIis), s_isAppHostedInIis,
-                     nameof(s_iisExecutionDelayMs), s_iisExecutionDelayMs);
+                     $"{nameof(IsExecuteDelayedEnabled)}()", IsExecuteDelayedEnabled(),
+                     $"{nameof(IsAppHostedInIis)}()", IsAppHostedInIis(),
+                     $"{nameof(GetIisExecutionDelayMs)}()", GetIisExecutionDelayMs());
 
             AnalyzeAppDomain();
 
@@ -659,47 +655,30 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
 
         private static bool IsExecuteDelayedEnabled()
         {
-            if (s_isExecuteDelayedEnabled.HasValue)
-            {
-                return s_isExecuteDelayedEnabled.Value;
-            }
-
             string isDelayEnabledEnvVarString = GetEnvironmentVariable(ExecuteDelayedConstants.IsEnabled_EnvVarName);
             Parse.TryBoolean(isDelayEnabledEnvVarString, ExecuteDelayedConstants.IsEnabled_DefaultVal, out bool isDelayEnabledValue);
 
-            s_isExecuteDelayedEnabled = isDelayEnabledValue;
-            return s_isExecuteDelayedEnabled.Value;
+            return isDelayEnabledValue;
         }
 
         private static int GetIisExecutionDelayMs()
         {
-            if (s_iisExecutionDelayMs.HasValue)
-            {
-                return s_iisExecutionDelayMs.Value;
-            }
-
             string iisDelayMsEnvVarString = GetEnvironmentVariable(ExecuteDelayedConstants.IisDelayMs_EnvVarName);
-            Parse.TryInt32(iisDelayMsEnvVarString, ExecuteDelayedConstants.IisDelayMs_DefaultVal, out int iisDelayMsValue);
+            Parse.TryInt32(iisDelayMsEnvVarString, ExecuteDelayedConstants.IisDelayMs_DefaultVal, out int iisExecutionDelayMs);
 
-            s_iisExecutionDelayMs = iisDelayMsValue;
-            return s_iisExecutionDelayMs.Value;
+            return iisExecutionDelayMs;
         }
 
         private static bool IsAppHostedInIis()
         {
-            if (s_isAppHostedInIis.HasValue)
-            {
-                return s_isAppHostedInIis.Value;
-            }
-
             // Corresponds to the equivalent check in native:
             // https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/src/Datadog.Trace.ClrProfiler.Native/cor_profiler.cpp#L286-L289
 
             string processFileName = CurrentProcess.GetMainFileName();
-            s_isAppHostedInIis = processFileName.Equals("w3wp.exe", StringComparison.OrdinalIgnoreCase)
-                                    || processFileName.Equals("iisexpress.exe", StringComparison.OrdinalIgnoreCase);
+            bool isAppHostedInIis = processFileName.Equals("w3wp.exe", StringComparison.OrdinalIgnoreCase)
+                                        || processFileName.Equals("iisexpress.exe", StringComparison.OrdinalIgnoreCase);
 
-            return s_isAppHostedInIis.Value;
+            return isAppHostedInIis;
         }
 
         private static string GetEnvironmentVariable(string endVarName)
