@@ -1027,15 +1027,6 @@ partial class Build
             }
         });
 
-    Target InstallDumpTool => _ => _
-        .Executes(() =>
-        {
-            DotNetToolUpdate(config => config
-                    .EnableGlobal()
-                    .SetVersion("0.1.0-prerelease")
-                    .SetPackageName("dotnet-dumponexception"));
-        });
-
     Target CompileSamplesLinux => _ => _
         .Unlisted()
         .After(CompileManagedSrc)
