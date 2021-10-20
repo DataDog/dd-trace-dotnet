@@ -137,7 +137,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
 
                 if (IsAppHostedInIis())
                 {
-                    int sleepDurationMs = GetIisExecutionDelayMs();
+                    int sleepDurationMs = Math.Max(0, GetIisExecutionDelayMs());
                     Thread.Sleep(sleepDurationMs);
                 }
                 else
