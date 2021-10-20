@@ -137,13 +137,19 @@ namespace Datadog.Trace.DuckTyping
 
         private static CreateTypeResult CreateProxyType(Type proxyDefinitionType, Type targetType)
         {
-            // When doing normal duck typing, we create a type that derives from proxyDefinitionType,
-            // and overrides methods to call targetType (which is stored in an instance field) e.g.
+            // When doing normal duck typing, we create a type that derives from proxyDefinitionType (MyImplementation)
+            // and overrides methods to call targetType (Original) (which is stored in an instance field) e.g.
 
-            // public class FinalProxy: ProxyDefinitionType, IDuckType
+            // public class Proxy: MyImplementation, IDuckType
             // {
-            //     public object Instance {get;set;} // TargetType
-            //     public bool SomeDelegatedMethod() => Instance.SomeDelegatedMethod()
+            //     public object Instance {get;set;} // Original
+            //     public bool SomeDelegatedMethod() => Instance.SomeDelegatedMethod();
+            //     public IDuck SomeOtherWithParams(IDuckParam2 duck)
+            //     {
+            //         OrigParam orig = duck.Instance;
+            //         OrigResult result = Instance.SomeOtherWithParams(orig)
+            //         return DuckType.CreateCache<IDuck>.Create(result);
+            //     }
             // }
 
             lock (_locker)
@@ -183,13 +189,19 @@ namespace Datadog.Trace.DuckTyping
 
         private static CreateTypeResult CreateReverseProxyType(Type typeToDeriveFrom, Type typeToDelegateTo)
         {
-            // When doing normal duck typing, we create a type that derives from proxyDefinitionType,
-            // and overrides methods to call targetType (which is stored in an instance field) e.g.
+            // When doing reverse duck typing, we create a type that derives from typeToDeriveFrom (Original),
+            // and overrides methods to call typeToDelegateTo (MyImplementation) (which is stored in an instance field) e.g.
 
-            // public class FinalProxy: ProxyDefinitionType, IDuckType
+            // public class Proxy: Original, IDuckType
             // {
-            //     public object Instance {get;set;} // TargetType
-            //     public bool SomeDelegatedMethod() => Instance.SomeDelegatedMethod()
+            //     public object Instance {get;set;} // MyImplementation
+            //     public virtual override SomeOverridenMethod() => Instance.SomeOverridenMethod();
+            //     public virtual override OrigResult SomeOtherWithParams(OrigParam orig)
+            //     {
+            //         IDuckParam2 duck = DuckType.CreateCache<IDuckParam2>.Create(orig);
+            //         IDuckResult result = Instance.SomeOtherWithParams(duck)
+            //         return DuckType.CreateCache<OrigResult>.CreateReverse(result);
+            //     }
             // }
 
             lock (_locker)
