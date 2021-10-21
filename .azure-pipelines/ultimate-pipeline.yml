@@ -198,7 +198,8 @@ stages:
     dependsOn: []
     pool:
       name: Arm64
-
+    workspace:
+      clean: all
     steps:
     - template: steps/run-in-docker.yml
       parameters:
@@ -233,7 +234,6 @@ stages:
       vmImage: macOS-10.15
     steps:
     - template: steps/install-dotnet-5-sdk.yml
-    - template: steps/downgrade-macos-cmake.yml
 
     - script: ./tracer/build.sh BuildTracerHome
       displayName: Build tracer home
@@ -421,7 +421,8 @@ stages:
     - job: test
       pool:
         name: Arm64
-
+      workspace:
+        clean: all
       steps:
         - template: steps/restore-working-directory.yml
           parameters:
@@ -680,6 +681,8 @@ stages:
 
     - task: DockerCompose@0
       displayName: docker-compose build IntegrationTests
+      env:
+        baseImage: $(baseImage)
       inputs:
         containerregistrytype: Container Registry
         dockerComposeCommand: build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests
@@ -736,7 +739,8 @@ stages:
         TestAllPackageVersions:  $[or(eq(variables.isMainBranch, 'true'), eq(variables.perform_comprehensive_testing, 'true'))]
         publishTargetFramework: net5.0
         baseImage: debian
-
+      workspace:
+        clean: all
       pool:
         name: Arm64
 
@@ -1168,9 +1172,13 @@ stages:
         - bash: echo "$(Build.SourceVersion)" > sha.txt
           displayName: Write commit hash to sha.txt
 
+        - bash: echo "$(tracer_version)" > version.txt
+          displayName: Write tracer version number to version.txt
+
         - bash: |
             az storage blob upload --container-name "$(AZURE_STORAGE_CONTAINER_NAME)" --file "index.txt" --name "index.txt"
             az storage blob upload --container-name "$(AZURE_STORAGE_CONTAINER_NAME)" --file "sha.txt" --name "sha.txt"
+            az storage blob upload --container-name "$(AZURE_STORAGE_CONTAINER_NAME)" --file "version.txt" --name "version.txt"
           displayName: Upload indexes to Azure
           condition: and(succeeded(), eq(variables.isMainBranch, true), ne(variables['isNgenTestBuild'], 'True'))
           env:

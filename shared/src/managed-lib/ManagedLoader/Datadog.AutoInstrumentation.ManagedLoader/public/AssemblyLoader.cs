@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Threading;
+using Datadog.Util;
 
 namespace Datadog.AutoInstrumentation.ManagedLoader
 {
@@ -52,11 +54,45 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
         internal const bool UseConsoleLoggingInsteadOfFile = false;             // Should be False in production.
         internal const bool UseConsoleLogInAdditionToFileLog = false;           // Should be False in production?
         internal const bool UseConsoleLoggingIfFileLoggingFails = true;         // May be True in production. Can that affect customer app behaviour?
+
         private const string LoggingComponentMoniker = nameof(AssemblyLoader);  // The prefix to this is specified in LogComposer.tt
+
+        private static class ExecuteDelayedConstants
+        {
+            public const string ThreadName = "DD.Profiler." + nameof(AssemblyLoader) + "." + nameof(AssemblyLoader.ExecuteDelayed);
+            public const int SleepDurationMs = 100;
+
+            // Set this env var to FALSE to disable delayed execution:
+            public const string IsEnabled_EnvVarName = "DD_INTERNAL_LOADER_DELAY_ENABLED";
+            public const bool IsEnabled_DefaultVal = true;
+
+            // Set this env var to a POSITIVE NUMBER to force delayed execution in default IIS app domain:
+            public const string IisDelayMs_EnvVarName = "DD_INTERNAL_LOADER_DELAY_IIS_MILLISEC";
+            public const int IisDelayMs_DefaultVal = 0;
+        }
 
         private bool _isDefaultAppDomain;
         private string[] _assemblyNamesToLoadIntoDefaultAppDomain;
         private string[] _assemblyNamesToLoadIntoNonDefaultAppDomains;
+
+        /// <summary>
+        /// Instantiates an <c>AssemblyLoader</c> instance with the specified assemblies and executes it.
+        /// </summary>
+        /// <param name="assemblyNamesToLoadIntoDefaultAppDomain">List of assemblies to load and start if the curret App Domain is the default App Domain.</param>
+        /// <param name="assemblyNamesToLoadIntoNonDefaultAppDomains">List of assemblies to load and start if the curret App Domain is the NOT default App Domain.</param>
+        public static void Run(string[] assemblyNamesToLoadIntoDefaultAppDomain, string[] assemblyNamesToLoadIntoNonDefaultAppDomains)
+        {
+            try
+            {
+                var assemblyLoader = new AssemblyLoader(assemblyNamesToLoadIntoDefaultAppDomain, assemblyNamesToLoadIntoNonDefaultAppDomains);
+                assemblyLoader.Execute();
+            }
+            catch
+            {
+                // An exception escaped from the loader. We are about to return to the caller, which is likely the IL-injected code in the hook.
+                // All we can do is log the error and swallow it to avoid crashing things.
+            }
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AssemblyLoader"/> class.
@@ -69,79 +105,186 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             _assemblyNamesToLoadIntoNonDefaultAppDomains = assemblyNamesToLoadIntoNonDefaultAppDomains;
         }
 
-        /// <summary>
-        /// Instantiates an <c>AssemblyLoader</c> instance with the specified assemblies and executes it.
-        /// </summary>
-        /// <param name="assemblyNamesToLoadIntoDefaultAppDomain">List of assemblies to load and start if the curret App Domain is the default App Domain.</param>
-        /// <param name="assemblyNamesToLoadIntoNonDefaultAppDomains">List of assemblies to load and start if the curret App Domain is the NOT default App Domain.</param>
-        public static void Run(string[] assemblyNamesToLoadIntoDefaultAppDomain, string[] assemblyNamesToLoadIntoNonDefaultAppDomains)
+        public void Execute()
         {
             try
             {
-                try
+                if (IsExecutionDelayRequired())
                 {
-                    bool isLoggerSetupDone = false;
-
-                    try
-                    {
-                        LogConfigurator.SetupLogger();
-                        isLoggerSetupDone = true;
-
-                        try
-                        {
-                            var assemblyLoader = new AssemblyLoader(assemblyNamesToLoadIntoDefaultAppDomain, assemblyNamesToLoadIntoNonDefaultAppDomains);
-                            assemblyLoader.Execute();
-                        }
-                        catch (Exception ex)
-                        {
-                            // An exception escaped from the loader. We are about to return to the caller, which is likely the IL-generated code in the module cctor.
-                            // So all we can do is log the error and swallow it to avoid crashing things.
-                            Log.Error(LoggingComponentMoniker, ex);
-                        }
-                    }
-                    finally
-                    {
-                        CleanSideEffects(isLoggerSetupDone);  // must NOT throw!
-                    }
+                    Thread executeDelayedThread = new Thread(ExecuteDelayed);
+                    executeDelayedThread.Name = ExecuteDelayedConstants.ThreadName;
+                    executeDelayedThread.IsBackground = true;
+                    executeDelayedThread.Start(this);
                 }
-                catch (Exception ex)
+                else
                 {
-                    // We still have an exception, despite the above catch-all. Likely the exception came out of the logger.
-                    // We can log it to console it as a backup (if enabled).
-#pragma warning disable IDE0079  // Remove unnecessary suppression: Supresion is necessary for some, but not all compile time settings
-#pragma warning disable CS0162  // Unreachable code detected (deliberately using const bool for compile settings)
-                    if (UseConsoleLoggingIfFileLoggingFails)
-
-                    {
-                        Console.WriteLine($"{Environment.NewLine}{LoggingComponentMoniker}: An exception occurred. Assemblies may not be loaded or started."
-                                        + $"{Environment.NewLine}{ex}");
-                    }
-#pragma warning restore CS0162  // Unreachable code detected
-#pragma warning restore IDE0079  // Remove unnecessary suppression
+                    InitLogAndExecute(this, isDelayed: false, waitForAppDomainReadinessElapsedMs: 0);
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // We still have an exception passing through the above double-catch-all. Could not even write to console.
-                // Our last choice is to let it escape and potentially crash the process or swallow it. We prefer the latter.
-
+                LogToConsoleIfEnabled("An error occurred. Assemblies may be not loaded or started.", ex);
             }
         }
 
         /// <summary>
-        /// Loads the assemblied specified for this <c>AssemblyLoader</c> instance and executes their entry point.
+        /// <c>ExecuteDelayed</c> is about preventing side effects from running the loader very early in the AppDomain life cycle
+        /// by delaying it towards a later point in the AppDomain Life cycle.<br />
+        /// <br />
+        /// Example for a crash caused by this kind of side effect:
+        /// <br />
+        /// WCF applications using `BasicHttpsBinding` (note the "s" in https) were crashing with the continuous profiler attached.
+        /// Error:<br />
+        /// _System.Configuration.ConfigurationErrorsException: Configuration binding extension 'system.serviceModel/bindings/basicHttpsBinding'
+        /// could not be found.Verify that this binding extension is properly registered in system.serviceModel/extensions/bindingExtensions and
+        /// that it is spelled correctly._
+        /// <br />
+        /// This was because the respective parts WCF configuration subsystem used `WebSocket.IsApplicationTargeting45()` to tweak their behavior
+        /// on different framework versions. In turn, `WebSocket.IsApplicationTargeting45()` calls the static method
+        /// `BinaryCompatibility.TargetsAtLeast_Desktop_V4_5()`. That method uses the static variable `s_map`. That, in turn, is initialized
+        /// by the static cctor, i.e. first time `BinaryCompatibility` the class is used.
+        /// <br />
+        /// This Assembly Loader calls `Array.Sort` while initializing its logger.
+        /// That, it turn, also uses the `BinaryCompatibility` class internally, to choose a backward-compatible sorting algorithm.
+        /// As a result those flags are initialized and cached when the loader is invoked. However, at that time, the AppDomain may not
+        /// be completely initialized. To initialize, the `BinaryCompatibility` cctor invokes `AppDomain.GetTargetFrameworkName()`, which,
+        /// in turn, calls `Assembly.GetEntryAssembly()`.
+        /// <br />
+        /// That API returns `null` when invoked too early in the AppDomain lifecycle.
+        /// As a result, a bogus target framework moniker is obtained (and cashed), and - in turn - the binary compatibility flags
+        /// are initialized incorrectly (and also cached). As a result, everything that relies on the binary compatibility flags
+        /// (or the target Framework moniker) may work in an unpredictable matter. This also leads to the WCF crash.
+        /// <br />
+        /// To mitigate that, inside of <c>Execute()</c> we inspect whether `Assembly.GetEntryAssembly()` returns `null` before we
+        /// start executing. If it does, we off-load the execution to a helper thread and returns immediately.
+        /// The helper thread runs the <c>ExecuteDelayed(..)</c> method: It sleeps and periodically checks
+        /// `Assembly.GetEntryAssembly()` until it no longer returns returns `null`. Then the Loader proceeds with its normal logic.
+        /// <br />
+        /// As a result, the target framework moniker and the binary compatibility flags are initialized correctly.
         /// </summary>
-        public void Execute()
+        /// <remarks>
+        /// The above logic is further specialised, depending on the kind of the currnent AppDomain and where the app is hosted:
+        /// <br />
+        /// * On non-default AD:
+        ///   we do not wait.
+        /// <br />
+        /// * On default AD, app NOT hosted in IIS::
+        ///   `GetEntryAssembly` initially returns null, but once the AD is fully initialized, it returns the correct value.
+        ///   So, we apply the above strategy: wait on a separate thread until `GetEntryAssembly` is not null and then execute the loader.
+        ///   As mentioned, it is required because some APIs need `GetEntryAssembly` to populate bin compat flags in the Fx.
+        ///    * The user does not need to specify a parameter for this, since we wait _until `GetEntryAssembly` is not null_.
+        ///    * This behavior is on by default, but all delaying may be disabled using `DD_INTERNAL_LOADER_DELAY_ENABLED=false`.
+        /// <br />
+        /// * On default AD, app IS hosted in IIS:
+        ///   `GetEntryAssembly` always returns null. It will always stay null, and there is no point delaying anything in that case.
+        ///   Even if we did delay, we would not have an end-condition for the wait as `GetEntryAssembly` always remains null forever.
+        ///    * So by default we do not wait on IIS.
+        ///    * As a precaution we support an _optional_ wait that use user can opt into by setting DD_INTERNAL_LOADER_DELAY_IIS_MILLISEC to
+        ///      a potitive number of milliseconds. (Since on IIS there is no exit condition to that delay, the option cannot be Boolean.)        
+        /// </remarks>       
+        private static void ExecuteDelayed(object assemblyLoaderObj)
         {
+            try
+            {
+                AssemblyLoader assemblyLoader = (AssemblyLoader) assemblyLoaderObj;
+
+                int startDelayMs = Environment.TickCount;
+
+                if (IsAppHostedInIis())
+                {
+                    int sleepDurationMs = Math.Max(0, GetIisExecutionDelayMs());
+                    Thread.Sleep(sleepDurationMs);
+                }
+                else
+                {
+                    while (!IsAppDomainReadyForExecution())
+                    {
+                        try
+                        {
+                            Thread.Sleep(ExecuteDelayedConstants.SleepDurationMs);
+                        }
+                        catch (Exception ex)
+                        {
+                            // Something unexpected and very bad happened, and we know that the logger in not yet initialized.
+                            // We must bail.
+                            LogToConsoleIfEnabled("Unexpected error while waiting for AppDomain to become ready for execution."
+                                                + " Will not proceed loading assemblies to avoid unwanted side-effects.",
+                                                  ex);
+                            return;
+                        }
+                    }
+                }
+
+                int totalElapsedDelayMs = Environment.TickCount - startDelayMs;
+                InitLogAndExecute(assemblyLoader, isDelayed: true, totalElapsedDelayMs);
+            }
+            catch
+            {
+                // Inside of 'InitLogAndExecute(..)' we do everything we can to prevent exceptions from escaping.                
+                // Our last choice is to let it escape and potentially crash the process or swallow it. We prefer the latter.
+            }
+        }
+
+        private static bool IsExecutionDelayRequired()
+        {
+            //                                                                         We delay IFF:
+            return IsExecuteDelayedEnabled()                                        // The user did NOT disable the delay feature;
+                        && AppDomain.CurrentDomain.IsDefaultAppDomain()             // AND we are in the default AppDomain;
+                        && (!IsAppHostedInIis() || GetIisExecutionDelayMs() >= 1)   // AND we are either NOT in IIS, OR we are in IIS and the user enabled IIS-delay;
+                        && !IsAppDomainReadyForExecution();                         // AND the over-time-changing delay-stop contitions are not already met.
+        }
+
+        private static bool IsAppDomainReadyForExecution()
+        {
+            // If the entry assembly IS known, then we are ready.
+            return (Assembly.GetEntryAssembly() != null);
+        }
+
+        private static void InitLogAndExecute(AssemblyLoader assemblyLoader, bool isDelayed, int waitForAppDomainReadinessElapsedMs)
+        {
+            try
+            {
+                LogConfigurator.SetupLogger();
+            }
+            catch (Exception ex)
+            {
+                LogToConsoleIfEnabled("An error occurred while initializeing the logging subsystem. This is not an expected state."
+                                    + " Will not proceed loading assemblies to avoid unwanted side-effects.",
+                                      ex);
+                return;
+            }
+
+            try
+            {
+                assemblyLoader.Execute(isDelayed, waitForAppDomainReadinessElapsedMs);
+            }
+            catch (Exception ex)
+            {
+                // An exception escaped from the loader.
+                // We are about to return to the caller, which is either the IL-injected in the hook or the bottom of the delay-thread.
+                // So all we can do is log the error and swallow it to avoid crashing things.
+                Log.Error(LoggingComponentMoniker, ex);
+            }
+        }
+
+        /// <summary>
+        /// Loads the assemblies specified for this <c>AssemblyLoader</c> instance and executes their entry point.
+        /// </summary>
+        private void Execute(bool isDelayed, int waitForAppDomainReadinessElapsedMs)
+        {
+#if DEBUG
+            const string BuildConfiguration = "Debug";
+#else
+            const string BuildConfiguration = "Release";
+#endif
             Log.Info(LoggingComponentMoniker,
                      "Initializing...",
-                     "Managed Loader build configuration",
-#if DEBUG
-                     "Debug"
-#else
-                     "Release"
-#endif
-                );
+                     "Managed Loader build configuration", BuildConfiguration,
+                     nameof(isDelayed), isDelayed,
+                     nameof(waitForAppDomainReadinessElapsedMs), waitForAppDomainReadinessElapsedMs,
+                     $"{nameof(IsExecuteDelayedEnabled)}()", IsExecuteDelayedEnabled(),
+                     $"{nameof(IsAppHostedInIis)}()", IsAppHostedInIis(),
+                     $"{nameof(GetIisExecutionDelayMs)}()", GetIisExecutionDelayMs());
 
             AnalyzeAppDomain();
 
@@ -420,7 +563,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             string profilerHomeDirectory = ReadEnvironmentVariable("DD_DOTNET_PROFILER_HOME");
 
             // Be defensive against env var not being set.
-            if (string.IsNullOrWhiteSpace(profilerHomeDirectory))
+            if (String.IsNullOrWhiteSpace(profilerHomeDirectory))
             {
                 return;
             }
@@ -428,7 +571,7 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             string managedBinariesSubdir = GetRuntimeBasedProductBinariesSubdir();
             string managedBinariesDirectory = Path.Combine(profilerHomeDirectory, managedBinariesSubdir);
 
-            if (binaryDirs != null && !string.IsNullOrWhiteSpace(managedBinariesDirectory))
+            if (binaryDirs != null && !String.IsNullOrWhiteSpace(managedBinariesDirectory))
             {
                 binaryDirs.Add(managedBinariesDirectory);
             }
@@ -503,142 +646,14 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
         }
 
 
-        /// <summary>
-        /// The assembly loader is executed very early in the applicaiton life cycle, earlier that user code normally runs.
-        /// This may cause side effects. This method is intended to undo all side effects,
-        /// so that the user app is not affected by the presence of the loader.
-        /// </summary>
-        /// <param name="canUseLog">Whether the Log initialization has been completed and the Log can be used safely.</param>
-        private static void CleanSideEffects(bool canUseLog)
+        private static void LogToConsoleIfEnabled(string message, Exception ex = null)
         {
-            try
-            {
-                // One method per known side-effect:
-                // (each method should catch/log/swallow its exceptions so that other side-effects can be undone)
-
-                ClearAppDomainTargetFrameworkNameCache(canUseLog);
-            }
-            catch (Exception ex)
-            {
-                LogErrorOrWriteLine(canUseLog, "An exception occurred while cleaning up side effects.", ex);
-            }
-        }
-
-        /// <summary>
-        /// Clears the AppDomainSetup.TargetFrameworkName cache.
-        /// The logger used by this loader uses the Array.Sort(..) API when choosing the log file index.
-
-        /// The behavior of the sort API is Framework version dependent.
-        ///
-        /// To get the Framework version, it transitively uses the internal AppDomain.GetTargetFrameworkName() API.
-        /// The respective value is determined by examining the TargetFrameworkAttribute on Assembly.GetEntryAssembly()
-        /// and then caching the result in AppDomainSetup.TargetFrameworkName.
-        ///
-        /// However, because the Loader runs so early in the app lifecycle, the entry assembly may not yet be initialized (i.e. null).
-        /// In such cases, the value cached in AppDomainSetup.TargetFrameworkName is also null, and it does not get updated when the
-        /// entry assembly becomes known later.This can break applications that use the target framework name to guide their behavior
-        /// (e.g., this is known to break some WCF applications).
-        ///
-        /// This method attempts to clear the respective internal cache in AppDomainSetup.
-        /// It must be resilient to the internal API being accessed not being present
-        /// (in fact, it is known not to be present on some Net Core versions).
-        /// </summary>
-        private static void ClearAppDomainTargetFrameworkNameCache(bool canUseLog)
-        {
-            const string ThisCleanupMoniker = "side effects to the AppDomain.GetTargetFrameworkName() cache";
-
-            try
-            {
-                AppDomain appDomain = AppDomain.CurrentDomain;
-
-                // Failing to clean up may or may NOT be an error:
-                // On .NET versions where the AppDomain TargetFrameworkName cache is not present,
-                // we expect for some of the reflection in this method to fail.
-                // WeakReference will log such cases as Debug lines, not as errors, and bail out gracefully.
-                // Actual exceptions, however, are certain to be errors.
-
-                if (appDomain == null)
-                {
-                    LogDebugOrWriteLine(canUseLog, $"Cannot clean up {ThisCleanupMoniker}: CurrentDomain is null.");
-                    return;
-                }
-
-                const string FusionStorePropertyName = "FusionStore";
-                Type appDomainType = appDomain.GetType();
-                PropertyInfo fusionStoreProperty = appDomainType.GetProperty(FusionStorePropertyName, BindingFlags.NonPublic | BindingFlags.Instance);
-
-                if (fusionStoreProperty == null)
-                {
-                    LogDebugOrWriteLine(canUseLog,
-                                        $"Cannot clean up {ThisCleanupMoniker}:"
-                                      + $" Did not find non-public property \"{FusionStorePropertyName}\" on type \"{appDomainType.FullName}\""
-                                      + $" in assembly \"{appDomainType.Assembly?.FullName}\".");
-                    return;
-                }
-
-                object appDomainFusionStoreObject = fusionStoreProperty.GetValue(appDomain);
-
-                if (appDomainFusionStoreObject == null)
-                {
-                    LogDebugOrWriteLine(canUseLog,
-                                        $"Cannot clean up {ThisCleanupMoniker}:"
-                                      + $" The value of the non-public property \"{FusionStorePropertyName}\" on type \"{appDomainType.FullName}\""
-                                      + $" in assembly \"{appDomainType.Assembly?.FullName}\" was retrieved, but found to be null.");
-                    return;
-                }
-
-                const string CheckedForTargetFrameworkNamePropertyName = "CheckedForTargetFrameworkName";
-                Type appDomainSetupType = appDomainFusionStoreObject.GetType();
-                PropertyInfo checkedForTargetFrameworkNameProperty = appDomainSetupType.GetProperty(CheckedForTargetFrameworkNamePropertyName,
-                                                                                                    BindingFlags.NonPublic | BindingFlags.Instance);
-
-                if (checkedForTargetFrameworkNameProperty == null)
-                {
-                    LogDebugOrWriteLine(canUseLog,
-                                        $"Cannot clean up {ThisCleanupMoniker}:"
-                                      + $" Did not find non-public property \"{CheckedForTargetFrameworkNamePropertyName}\" on type \"{appDomainSetupType.FullName}\""
-                                      + $" in assembly \"{appDomainType.Assembly?.FullName}\".");
-                    return;
-                }
-
-                checkedForTargetFrameworkNameProperty.SetValue(appDomainFusionStoreObject, false);
-
-                LogDebugOrWriteLine(canUseLog, $"Completed clening up {ThisCleanupMoniker}.");
-            }
-            catch (Exception ex)
-            {
-                LogErrorOrWriteLine(canUseLog, $"An exception occurred while cleaning up {ThisCleanupMoniker}.", ex);
-            }
-        }
-
-        private static void LogErrorOrWriteLine(bool canUseLog, string message, Exception ex = null)
-        {
-            if (canUseLog)
-            {
-                Log.Error(LoggingComponentMoniker, message, ex);
-            }
-            else if (UseConsoleLoggingIfFileLoggingFails)
+            if (UseConsoleLoggingIfFileLoggingFails)
             {
 #pragma warning disable IDE0079  // Remove unnecessary suppression: Supresion is necessary for some, but not all compile time settings
 #pragma warning disable CS0162   // Unreachable code detected (deliberately using const bool for compile settings)
                 Console.WriteLine($"{Environment.NewLine}{LoggingComponentMoniker}: {message}"
-                                + (ex == null ? "" : $"{Environment.NewLine}{ex}"));
-#pragma warning restore CS0162   // Unreachable code detected
-#pragma warning restore IDE0079  // Remove unnecessary suppression
-            }
-        }
-
-        private static void LogDebugOrWriteLine(bool canUseLog, string message)
-        {
-            if (canUseLog)
-            {
-                Log.Debug(LoggingComponentMoniker, message);
-            }
-            else if (UseConsoleLoggingIfFileLoggingFails)
-            {
-#pragma warning disable IDE0079  // Remove unnecessary suppression: Supresion is necessary for some, but not all compile time settings
-#pragma warning disable CS0162   // Unreachable code detected (deliberately using const bool for compile settings)
-                Console.WriteLine($"{Environment.NewLine}{LoggingComponentMoniker}: {message}");
+                                + (ex == null ? String.Empty : $"{Environment.NewLine}{ex}"));
 #pragma warning restore CS0162   // Unreachable code detected
 #pragma warning restore IDE0079  // Remove unnecessary suppression
             }
@@ -650,38 +665,105 @@ namespace Datadog.AutoInstrumentation.ManagedLoader
             _isDefaultAppDomain = currAD.IsDefaultAppDomain();
 
             Log.Info(LoggingComponentMoniker,
-                    "Will load and start assemblies listed for " + (_isDefaultAppDomain ? "the Default AppDomain" : "Non-default AppDomains") + ".");
+                     "Will load and start assemblies listed for " + (_isDefaultAppDomain ? "the Default AppDomain" : "Non-default AppDomains") + ".");
 
-            Log.Info(
-                    LoggingComponentMoniker,
-                    "Listing current AppDomain info",
-                    "IsDefaultAppDomain",
-                    _isDefaultAppDomain,
-                    "Id",
-                    currAD.Id,
-                    "FriendlyName",
-                    currAD.FriendlyName,
-                    "IsFullyTrusted",
-                    currAD.IsFullyTrusted,
-                    "IsHomogenous",
-                    currAD.IsHomogenous,
-                    "BaseDirectory",
-                    currAD.BaseDirectory,
-                    "DynamicDirectory",
-                    currAD.DynamicDirectory,
-                    "RelativeSearchPath",
-                    currAD.RelativeSearchPath,
-                    "ShadowCopyFiles",
-                    currAD.ShadowCopyFiles);
+            Log.Info(LoggingComponentMoniker,
+                     "Listing current AppDomain info",
+                     "IsDefaultAppDomain", _isDefaultAppDomain,
+                     "Id", currAD.Id,
+                     "FriendlyName", currAD.FriendlyName,
+#if NETFRAMEWORK
+                     "SetupInformation.TargetFrameworkName", currAD.SetupInformation.TargetFrameworkName,
+#else
+                     "SetupInformation.TargetFrameworkName", "Not available on this .NET version",
+#endif
+                     "IsFullyTrusted", currAD.IsFullyTrusted,
+                     "IsHomogenous", currAD.IsHomogenous,
+                     "BaseDirectory", currAD.BaseDirectory,
+                     "DynamicDirectory", currAD.DynamicDirectory,
+                     "RelativeSearchPath", currAD.RelativeSearchPath,
+                     "ShadowCopyFiles", currAD.ShadowCopyFiles);
 
             Assembly entryAssembly = Assembly.GetEntryAssembly();
-            Log.Info(
-                    LoggingComponentMoniker,
-                    "Listing Entry Assembly info",
-                    "FullName",
-                    entryAssembly?.FullName,
-                    "Location",
-                    entryAssembly?.Location);
+            Log.Info(LoggingComponentMoniker,
+                     "Listing Entry Assembly info",
+                     "FullName", entryAssembly?.FullName,
+                     "Location", entryAssembly?.Location);
+
+            TryGetCurrentThread(out int osThreadId, out Thread currentThread);
+            Log.Info(LoggingComponentMoniker,
+                     "Listing current Thread info",
+                     nameof(osThreadId), osThreadId,
+                     "IsBackground", currentThread?.IsBackground,
+                     "IsThreadPoolThread", currentThread?.IsThreadPoolThread,
+                     "ManagedThreadId", currentThread?.ManagedThreadId,
+                     "Name", currentThread?.Name);
+
+            if (Log.IsDebugLoggingEnabled)
+            {
+                string stackTrace = Environment.StackTrace;
+                Log.Debug(LoggingComponentMoniker,
+                          "Listing invocation Stack Trace",
+                          nameof(stackTrace), stackTrace);
+            }
+        }
+
+        private static bool IsExecuteDelayedEnabled()
+        {
+            string isDelayEnabledEnvVarString = GetEnvironmentVariable(ExecuteDelayedConstants.IsEnabled_EnvVarName);
+            Parse.TryBoolean(isDelayEnabledEnvVarString, ExecuteDelayedConstants.IsEnabled_DefaultVal, out bool isDelayEnabledValue);
+
+            return isDelayEnabledValue;
+        }
+
+        private static int GetIisExecutionDelayMs()
+        {
+            string iisDelayMsEnvVarString = GetEnvironmentVariable(ExecuteDelayedConstants.IisDelayMs_EnvVarName);
+            Parse.TryInt32(iisDelayMsEnvVarString, ExecuteDelayedConstants.IisDelayMs_DefaultVal, out int iisExecutionDelayMs);
+
+            return iisExecutionDelayMs;
+        }
+
+        private static bool IsAppHostedInIis()
+        {
+            // Corresponds to the equivalent check in native:
+            // https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/src/Datadog.Trace.ClrProfiler.Native/cor_profiler.cpp#L286-L289
+
+            string processFileName = CurrentProcess.GetMainFileName();
+            bool isAppHostedInIis = processFileName.Equals("w3wp.exe", StringComparison.OrdinalIgnoreCase)
+                                        || processFileName.Equals("iisexpress.exe", StringComparison.OrdinalIgnoreCase);
+
+            return isAppHostedInIis;
+        }
+
+        private static string GetEnvironmentVariable(string endVarName)
+        {
+            try
+            {
+                return Environment.GetEnvironmentVariable(endVarName);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static bool TryGetCurrentThread(out int osThreadId, out Thread currentThread)
+        {
+            try
+            {
+#pragma warning disable CS0618  // GetCurrentThreadId is obsolete but we can still use it for logging purposes (see respective docs)
+                osThreadId = AppDomain.GetCurrentThreadId();
+#pragma warning restore CS0618  // Type or member is obsolete
+                currentThread = Thread.CurrentThread;
+                return true;
+            }
+            catch
+            {
+                osThreadId = 0;
+                currentThread = null;
+                return false;
+            }
         }
 
         private AssemblyResolveEventHandler CreateAssemblyResolveEventHandler()

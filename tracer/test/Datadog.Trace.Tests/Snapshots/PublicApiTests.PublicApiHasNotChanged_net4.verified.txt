@@ -271,7 +271,6 @@ namespace Datadog.Trace
         public const string AmqpQueue = "amqp.queue";
         public const string AmqpRoutingKey = "amqp.routing_key";
         public const string Analytics = "_dd1.sr.eausr";
-        public const string AppSecEnabled = "_dd.appsec.enabled";
         public const string AppSecEvent = "appsec.event";
         public const string AspNetAction = "aspnet.action";
         public const string AspNetArea = "aspnet.area";
