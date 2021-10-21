@@ -39,7 +39,14 @@ trigger:
       - shared/src/native-lib/spdlog/*
 #     - Mics common native sources:
       - shared/src/native-src/*
-     
+
+pr:
+  branches:
+    include:
+      - '*' # default
+  paths:
+    exclude:
+      - tracer/dependabot/*
 
 schedules:
   - cron: "0 3 * * *"
