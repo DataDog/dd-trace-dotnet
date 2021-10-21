@@ -1,8 +1,10 @@
 
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using NLog;
 using NLog.Config;
+using NLog.Targets;
 using PluginApplication;
 
 namespace LogsInjection.NLog
@@ -26,6 +28,24 @@ namespace LogsInjection.NLog
             LogManager.Configuration = new XmlLoggingConfiguration(Path.Combine(appDirectory, "NLog.40.config"));
 #else
             LogManager.Configuration = new XmlLoggingConfiguration(Path.Combine(appDirectory, "NLog.Pre40.config"));
+#endif
+#if NETCOREAPP
+            // Hacks for the fact the NLog on Linux just can't do anything right
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                var target = (FileTarget)LogManager.Configuration.FindTargetByName("textFile");
+                if (target is not null)
+                {
+                    target.FileName = Path.Combine(appDirectory, "log-textFile.log");
+                }
+
+                target = (FileTarget)LogManager.Configuration.FindTargetByName("jsonFile");
+                if (target is not null)
+                {
+                    target.FileName = Path.Combine(appDirectory, "log-jsonFile.log");
+                }
+                LogManager.ReconfigExistingLoggers();
+            }
 #endif
 
             Logger Logger = LogManager.GetCurrentClassLogger();
