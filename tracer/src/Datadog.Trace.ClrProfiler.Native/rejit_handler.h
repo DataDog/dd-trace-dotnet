@@ -157,6 +157,8 @@ public:
 
     void SetCorAssemblyProfiler(AssemblyProperty* pCorAssemblyProfiler);
     void RequestRejitForNGenInliners();
+    ULONG ProcessModuleForRejit(int length, const ModuleID* modules,
+                                const std::vector<IntegrationMethod>& integrations);
 };
 
 } // namespace trace

@@ -721,12 +721,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
             // We call the function to analyze the module and request the ReJIT of integrations defined in this module.
             if (rejit_handler != nullptr && !integration_methods_.empty())
             {
-                std::promise<ULONG> promise;
-                std::future<ULONG> future = promise.get_future();
-                rejit_handler->EnqueueProcessModule(std::vector<ModuleID>{module_id}, integration_methods_, &promise);
-
-                // wait and get the value from the future<int>
-                const auto numReJITs = future.get();
+                const auto numReJITs = rejit_handler->ProcessModuleForRejit(1, &module_id, integration_methods_);
                 Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
             }
         }
