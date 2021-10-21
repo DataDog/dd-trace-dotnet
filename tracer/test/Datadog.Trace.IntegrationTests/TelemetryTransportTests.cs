@@ -14,16 +14,13 @@ namespace Datadog.Trace.IntegrationTests
 {
     public class TelemetryTransportTests
     {
-        private const string Env = "telemetrytest";
-        private const string ServiceVersion = "2.0.0";
-
         [Fact]
         public async Task CanSendTelemetry()
         {
             using var agent = new MockTelemetryAgent<TelemetryData>(TcpPortProvider.GetOpenPort());
             var telemetryUri = new Uri($"http://localhost:{agent.Port}");
 
-            var transport = new TelemetryTransportFactory(telemetryUri).Create();
+            var transport = new TelemetryTransportFactory(telemetryUri, apiKey: null).Create();
             // Not a valid request, but transport shouldn't care
             var sentData = new TelemetryData()
             {
