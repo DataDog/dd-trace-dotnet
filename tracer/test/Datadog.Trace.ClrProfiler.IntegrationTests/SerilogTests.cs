@@ -54,7 +54,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(PackageVersions.Serilog), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        [Trait("Category", "LinuxUnsupported")]
         public void InjectsLogsWhenEnabled(string packageVersion)
         {
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
@@ -82,7 +81,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(PackageVersions.Serilog), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        [Trait("Category", "LinuxUnsupported")]
         public void DoesNotInjectLogsWhenDisabled(string packageVersion)
         {
             SetEnvironmentVariable("DD_LOGS_INJECTION", "false");

@@ -62,7 +62,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(GetTestData))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        [Trait("Category", "LinuxUnsupported")]
         public void InjectsLogsWhenEnabled(string packageVersion, bool enableCallTarget)
         {
             SetCallTargetSettings(enableCallTarget);
@@ -95,7 +94,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(GetTestData))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        [Trait("Category", "LinuxUnsupported")]
         public void DoesNotInjectLogsWhenDisabled(string packageVersion, bool enableCallTarget)
         {
             SetCallTargetSettings(enableCallTarget);
