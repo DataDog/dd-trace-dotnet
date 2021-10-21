@@ -22,6 +22,7 @@ using static Nuke.Common.IO.CompressionTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
 using static CustomDotNetTasks;
+using static global::DotNetTestWithDumpTask;
 
 // #pragma warning disable SA1306
 // #pragma warning disable SA1134
@@ -920,7 +921,7 @@ partial class Build
 
             try
             {
-                DotNetTest(config => config
+                DotNetRunWithDump(config => config
                     .SetDotnetPath(TargetPlatform)
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatform(TargetPlatform)
@@ -929,15 +930,15 @@ partial class Build
                     .EnableNoBuild()
                     .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
                     .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
-                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .When(CodeCoverage, WithDump(ConfigureCodeCoverage))
                     .CombineWith(ParallelIntegrationTests, (s, project) => s
-                        .EnableTrxLogOutput(GetResultsDirectory(project))
+                        .EnableTrxLogOutput(GetResultsDirectory(project)).WithDump()
                         .SetProjectFile(project)), degreeOfParallelism: 4);
 
 
                 // TODO: I think we should change this filter to run on Windows by default
                 // (RunOnWindows!=False|Category=Smoke)&LoadFromGAC!=True&IIS!=True
-                DotNetTest(config => config
+                DotNetRunWithDump(config => config
                     .SetDotnetPath(TargetPlatform)
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatform(TargetPlatform)
@@ -946,14 +947,15 @@ partial class Build
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "RunOnWindows=True&LoadFromGAC!=True&IIS!=True")
                     .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
-                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .When(CodeCoverage, WithDump(ConfigureCodeCoverage))
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
-                        .EnableTrxLogOutput(GetResultsDirectory(project))
+                        .EnableTrxLogOutput(GetResultsDirectory(project)).WithDump()
                         .SetProjectFile(project)));
             }
             finally
             {
                 MoveLogsToBuildData();
+                CopyMemoryDumps();
             }
         });
 
@@ -1218,7 +1220,7 @@ partial class Build
             {
                 // Run these ones in parallel
                 // Always AnyCPU
-                DotNetTest(config => config
+                DotNetRunWithDump(config => config
                         .SetConfiguration(BuildConfiguration)
                         // .SetTargetPlatform(Platform)
                         .EnableNoRestore()
@@ -1227,14 +1229,14 @@ partial class Build
                         .SetFilter(filter)
                         .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
                         .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
-                        .When(CodeCoverage, ConfigureCodeCoverage)
+                        .When(CodeCoverage, WithDump(ConfigureCodeCoverage))
                         .CombineWith(ParallelIntegrationTests, (s, project) => s
-                            .EnableTrxLogOutput(GetResultsDirectory(project))
+                            .EnableTrxLogOutput(GetResultsDirectory(project)).WithDump()
                             .SetProjectFile(project)),
                     degreeOfParallelism: 2);
 
                 // Run this one separately so we can tail output
-                DotNetTest(config => config
+                DotNetRunWithDump(config => config
                     .SetConfiguration(BuildConfiguration)
                     // .SetTargetPlatform(Platform)
                     .EnableNoRestore()
@@ -1243,15 +1245,16 @@ partial class Build
                     .SetFilter(filter)
                     .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
-                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .When(CodeCoverage, WithDump(ConfigureCodeCoverage))
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
-                        .EnableTrxLogOutput(GetResultsDirectory(project))
+                        .EnableTrxLogOutput(GetResultsDirectory(project)).WithDump()
                         .SetProjectFile(project))
                 );
             }
             finally
             {
                 MoveLogsToBuildData();
+                CopyMemoryDumps();
             }
         });
 
@@ -1481,6 +1484,14 @@ partial class Build
             {
                 MoveFileToDirectory(dump, BuildDataDirectory / "dumps", FileExistsPolicy.Overwrite);
             }
+        }
+    }
+
+    private void CopyMemoryDumps()
+    {
+        foreach (var file in Directory.EnumerateFiles(TracerDirectory, "*.dmp", SearchOption.AllDirectories))
+        {
+            CopyFileToDirectory(file, BuildDataDirectory, FileExistsPolicy.OverwriteIfNewer);
         }
     }
 
