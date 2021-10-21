@@ -77,15 +77,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NETFRAMEWORK
                 if (string.IsNullOrWhiteSpace(packageVersion) || new Version(packageVersion) >= new Version("2.0.5"))
                 {
-                    ValidateLogCorrelation(spans, _nlog205LogFileTests);
+                    ValidateLogCorrelation(spans, _nlog205LogFileTests, packageVersion);
                 }
                 else
                 {
-                    ValidateLogCorrelation(spans, _nlogPre205LogFileTests);
+                    ValidateLogCorrelation(spans, _nlogPre205LogFileTests, packageVersion);
                 }
 #else
                 // Regardless of package version, for .NET Core just assert against raw log lines
-                ValidateLogCorrelation(spans, _nlogPre205LogFileTests);
+                ValidateLogCorrelation(spans, _nlogPre205LogFileTests, packageVersion);
 #endif
             }
         }
@@ -109,15 +109,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NETFRAMEWORK
                 if (string.IsNullOrWhiteSpace(packageVersion) || new Version(packageVersion) >= new Version("2.0.5"))
                 {
-                    ValidateLogCorrelation(spans, _nlog205LogFileTests, disableLogCorrelation: true);
+                    ValidateLogCorrelation(spans, _nlog205LogFileTests, packageVersion, disableLogCorrelation: true);
                 }
                 else
                 {
-                    ValidateLogCorrelation(spans, _nlogPre205LogFileTests, disableLogCorrelation: true);
+                    ValidateLogCorrelation(spans, _nlogPre205LogFileTests, packageVersion, disableLogCorrelation: true);
                 }
 #else
                 // Regardless of package version, for .NET Core just assert against raw log lines
-                ValidateLogCorrelation(spans, _nlogPre205LogFileTests, disableLogCorrelation: true);
+                ValidateLogCorrelation(spans, _nlogPre205LogFileTests, packageVersion, disableLogCorrelation: true);
 #endif
             }
         }

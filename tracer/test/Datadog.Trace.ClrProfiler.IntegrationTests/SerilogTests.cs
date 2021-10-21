@@ -65,14 +65,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var spans = agent.WaitForSpans(1, 2500);
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
 
-                if (string.IsNullOrWhiteSpace(packageVersion) || new Version(packageVersion) >= new Version("2.0.0"))
+                if (PackageSupportsLogsInjection(packageVersion))
                 {
-                    ValidateLogCorrelation(spans, _log200FileTests);
+                    ValidateLogCorrelation(spans, _log200FileTests, packageVersion);
                 }
                 else
                 {
                     // We do not expect logs injection for Serilog versions < 2.0.0 so filter out all logs
-                    ValidateLogCorrelation(spans, _logPre200FileTests);
+                    ValidateLogCorrelation(spans, _logPre200FileTests, packageVersion);
                 }
             }
         }
@@ -92,16 +92,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var spans = agent.WaitForSpans(1, 2500);
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
 
-                if (string.IsNullOrWhiteSpace(packageVersion) || new Version(packageVersion) >= new Version("2.0.0"))
+                if (PackageSupportsLogsInjection(packageVersion))
                 {
-                    ValidateLogCorrelation(spans, _log200FileTests, disableLogCorrelation: true);
+                    ValidateLogCorrelation(spans, _log200FileTests, packageVersion, disableLogCorrelation: true);
                 }
                 else
                 {
                     // We do not expect logs injection for Serilog versions < 2.0.0 so filter out all logs
-                    ValidateLogCorrelation(spans, _logPre200FileTests, disableLogCorrelation: true);
+                    ValidateLogCorrelation(spans, _logPre200FileTests, packageVersion, disableLogCorrelation: true);
                 }
             }
         }
+
+        private static bool PackageSupportsLogsInjection(string packageVersion)
+            => string.IsNullOrWhiteSpace(packageVersion) || new Version(packageVersion) >= new Version("2.0.0");
     }
 }

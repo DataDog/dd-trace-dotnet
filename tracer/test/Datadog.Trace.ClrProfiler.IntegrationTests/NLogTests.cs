@@ -64,11 +64,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 if (string.IsNullOrWhiteSpace(packageVersion) || new Version(packageVersion) >= new Version("4.0.0"))
                 {
-                    ValidateLogCorrelation(spans, _nlog40LogFileTests);
+                    ValidateLogCorrelation(spans, _nlog40LogFileTests, packageVersion);
                 }
                 else
                 {
-                    ValidateLogCorrelation(spans, _nlogPre40LogFileTests);
+                    ValidateLogCorrelation(spans, _nlogPre40LogFileTests, packageVersion);
                 }
             }
         }
@@ -90,11 +90,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 if (string.IsNullOrWhiteSpace(packageVersion) || new Version(packageVersion) >= new Version("4.0.0"))
                 {
-                    ValidateLogCorrelation(spans, _nlog40LogFileTests, disableLogCorrelation: true);
+                    ValidateLogCorrelation(spans, _nlog40LogFileTests, packageVersion, disableLogCorrelation: true);
                 }
                 else
                 {
-                    ValidateLogCorrelation(spans, _nlogPre40LogFileTests, disableLogCorrelation: true);
+                    ValidateLogCorrelation(spans, _nlogPre40LogFileTests, packageVersion, disableLogCorrelation: true);
                 }
             }
         }
