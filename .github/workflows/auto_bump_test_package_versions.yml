@@ -1,0 +1,40 @@
+name: Auto bump test package versions
+
+on:
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  bump_package_versions:
+    if: startsWith(github.head_ref, 'refs/heads/dependabot/nuget/tracer/dependabot/') == true
+    runs-on: windows-latest
+    env:
+      GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+    steps:
+      - name: Support longpaths
+        run: git config --system core.longpaths true
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '5.0.x'
+
+      - name: "Regenerating package versions"
+        run: .\tracer\build.ps1 GeneratePackageVersions
+
+      - name: Create Pull Request
+        id: pr
+        uses: peter-evans/create-pull-request@v3.10.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: "bot/test-package-versions-bump"
+          commit-message: "[Test Package Versions Bump]"
+          delete-branch: true
+          title: "[Test Package Versions Bump] Updating package versions "
+          milestone: "${{steps.rename.outputs.milestone}}"
+          reviewers: "DataDog/apm-dotnet"
+          body: |
+            Updates the package versions for integration tests.
