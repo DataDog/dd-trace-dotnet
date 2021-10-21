@@ -597,6 +597,12 @@ namespace Datadog.Trace
                     writer.WritePropertyName("appsec_blocking_enabled");
                     writer.WriteValue(Security.Instance.Settings.BlockingEnabled);
 
+                    writer.WritePropertyName("appsec_rules_file_path");
+                    writer.WriteValue(Security.Instance.Settings.Rules ?? "(default)");
+
+                    writer.WritePropertyName("appsec_libddwaf_version");
+                    writer.WriteValue(Security.Instance.DdlibWafVersion?.ToString() ?? "(none)");
+
                     writer.WriteEndObject();
                 }
 
