@@ -24,7 +24,9 @@ namespace LogsInjection.NLog
 
             // Initialize NLog
             var appDirectory = Directory.GetParent(typeof(Program).Assembly.Location).FullName;
-#if NLOG_4_0
+#if NLOG_4_6
+            LogManager.Configuration = new XmlLoggingConfiguration(Path.Combine(appDirectory, "NLog.46.config"));
+#elif NLOG_4_0
             LogManager.Configuration = new XmlLoggingConfiguration(Path.Combine(appDirectory, "NLog.40.config"));
 #else
             LogManager.Configuration = new XmlLoggingConfiguration(Path.Combine(appDirectory, "NLog.Pre40.config"));
