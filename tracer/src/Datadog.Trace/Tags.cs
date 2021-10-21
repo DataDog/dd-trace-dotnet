@@ -422,6 +422,11 @@ namespace Datadog.Trace
         /// </summary>
         public const string AppSecJson = "_dd.appsec.json";
 
+        /// <summary>
+        /// Should contain the public IP of the host initiating the request.
+        /// </summary>
+        public const string ActorIp = "actor.ip";
+
         internal const string ElasticsearchAction = "elasticsearch.action";
 
         internal const string ElasticsearchMethod = "elasticsearch.method";

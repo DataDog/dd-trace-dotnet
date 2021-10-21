@@ -139,6 +139,10 @@ namespace Datadog.Trace.AppSec
 
                 var json = JsonConvert.SerializeObject(new AppSecJson { Triggers = attacks });
                 span.SetTag(Tags.AppSecJson, json);
+                if (attacks.Length > 0 && attacks[0]?.Context?.Actor?.Ip?.Address != null)
+                {
+                    span.SetTag(Tags.ActorIp, attacks[0].Context.Actor.Ip.Address);
+                }
             });
         }
 
@@ -166,8 +170,16 @@ namespace Datadog.Trace.AppSec
             return attacks;
         }
 
+        private Span GetLocalRootSpan(Span span)
+        {
+            var localRootSpan = span.Context.TraceContext?.RootSpan;
+            return (localRootSpan == null) ? span : localRootSpan;
+        }
+
         private void RunWafAndReact(IDictionary<string, object> args, ITransport transport, Span span)
         {
+            span = GetLocalRootSpan(span);
+
             AnnotateSpan(span);
 
             var additiveContext = transport.GetAdditiveContext();
