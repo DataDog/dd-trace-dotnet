@@ -292,12 +292,13 @@ void RejitHandler::EnqueueThreadLoop(RejitHandler* handler)
 
 void RejitHandler::RequestRejitForInlinersInModule(ModuleID moduleId)
 {
-    std::lock_guard<std::mutex> guard(m_modules_lock);
+    ReadLock r_lock(m_shutdown_lock);
     if (m_shutdown)
     {
         return;
     }
 
+    std::lock_guard<std::mutex> guard(m_modules_lock);
     if (m_profilerInfo6 != nullptr)
     {
         for (const auto& mod : m_modules)
@@ -342,12 +343,13 @@ RejitHandler::RejitHandler(ICorProfilerInfo10* pInfo,
 
 RejitHandlerModule* RejitHandler::GetOrAddModule(ModuleID moduleId)
 {
-    std::lock_guard<std::mutex> guard(m_modules_lock);
+    ReadLock r_lock(m_shutdown_lock);
     if (m_shutdown)
     {
         return nullptr;
     }
 
+    std::lock_guard<std::mutex> guard(m_modules_lock);
     auto find_res = m_modules.find(moduleId);
     if (find_res != m_modules.end())
     {
@@ -361,12 +363,13 @@ RejitHandlerModule* RejitHandler::GetOrAddModule(ModuleID moduleId)
 
 bool RejitHandler::HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef)
 {
-    std::lock_guard<std::mutex> guard(m_modules_lock);
+    ReadLock r_lock(m_shutdown_lock);
     if (m_shutdown)
     {
         return false;
     }
 
+    std::lock_guard<std::mutex> guard(m_modules_lock);
     auto find_res = m_modules.find(moduleId);
     if (find_res != m_modules.end())
     {
@@ -379,21 +382,25 @@ bool RejitHandler::HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef)
 
 void RejitHandler::RemoveModule(ModuleID moduleId)
 {
-    std::lock_guard<std::mutex> guard(m_modules_lock);
+    ReadLock r_lock(m_shutdown_lock);
     if (m_shutdown)
     {
         return;
     }
+
+    std::lock_guard<std::mutex> guard(m_modules_lock);
     m_modules.erase(moduleId);
 }
 
 void RejitHandler::AddNGenModule(ModuleID moduleId)
 {
-    std::lock_guard<std::mutex> guard(m_ngenModules_lock);
+    ReadLock r_lock(m_shutdown_lock);
     if (m_shutdown)
     {
         return;
     }
+
+    std::lock_guard<std::mutex> guard(m_ngenModules_lock);
     m_ngenModules.push_back(moduleId);
     RequestRejitForInlinersInModule(moduleId);
 }
@@ -536,12 +543,13 @@ void RejitHandler::SetCorAssemblyProfiler(AssemblyProperty* pCorAssemblyProfiler
 
 void RejitHandler::RequestRejitForNGenInliners()
 {
-    std::lock_guard<std::mutex> guard(m_ngenModules_lock);
+    ReadLock r_lock(m_shutdown_lock);
     if (m_shutdown)
     {
         return;
     }
 
+    std::lock_guard<std::mutex> guard(m_ngenModules_lock);
     if (m_profilerInfo6 != nullptr)
     {
         for (const auto& mod : m_ngenModules)
@@ -554,6 +562,12 @@ void RejitHandler::RequestRejitForNGenInliners()
 ULONG RejitHandler::ProcessModuleForRejit(int length, const ModuleID* modules,
                                           const std::vector<IntegrationMethod>& integrations)
 {
+    ReadLock r_lock(m_shutdown_lock);
+    if (m_shutdown)
+    {
+        return 0;
+    }
+
     HRESULT hr;
     std::vector<ModuleID> vtModules;
     std::vector<mdMethodDef> vtMethodDefs;
