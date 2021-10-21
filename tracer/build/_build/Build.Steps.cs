@@ -715,6 +715,7 @@ partial class Build
                     .SetTargetPlatformAnyCPU()
                     .SetDDEnvironmentVariables("dd-tracer-dotnet")
                     .When(CodeCoverage, ConfigureCodeCoverage)
+                    .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
                     .CombineWith(testProjects, (x, project) => x
                         .EnableTrxLogOutput(GetResultsDirectory(project))
                         .SetProjectFile(project)));
