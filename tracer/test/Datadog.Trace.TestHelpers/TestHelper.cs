@@ -289,6 +289,11 @@ namespace Datadog.Trace.TestHelpers
             return (process, newConfig);
         }
 
+        public void SetEnvironmentVariable(string key, string value)
+        {
+            EnvironmentHelper.CustomEnvironmentVariables.Add(key, value);
+        }
+
         protected void ValidateSpans<T>(IEnumerable<MockSpan> spans, Func<MockSpan, T> mapper, IEnumerable<T> expected)
         {
             var spanLookup = new Dictionary<T, int>();
@@ -331,11 +336,6 @@ namespace Datadog.Trace.TestHelpers
         protected void EnableDebugMode()
         {
             EnvironmentHelper.DebugModeEnabled = true;
-        }
-
-        protected void SetEnvironmentVariable(string key, string value)
-        {
-            EnvironmentHelper.CustomEnvironmentVariables.Add(key, value);
         }
 
         protected void SetServiceVersion(string serviceVersion)
