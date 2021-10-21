@@ -33,16 +33,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             };
 
         private readonly LogFileTest[] _logPre200FileTests =
+        {
+            new LogFileTest()
             {
-                new LogFileTest()
-                {
-                    FileName = "log-textFile.log",
-                    RegexFormat = @"{0}: {1}",
-                    TracedLogTypes = TracedLogTypes.NotCorrelated,
-                    UnTracedLogTypes = UnTracedLogTypes.EmptyProperties,
-                    PropertiesUseSerilogNaming = true
-                }
-            };
+                FileName = "log-textFile.log",
+                RegexFormat = @"{0}: {1}",
+                TracedLogTypes = TracedLogTypes.NotCorrelated,
+                UnTracedLogTypes = UnTracedLogTypes.EmptyProperties,
+                PropertiesUseSerilogNaming = true
+            }
+        };
 
         public SerilogTests(ITestOutputHelper output)
             : base(output, "LogsInjection.Serilog")
@@ -105,6 +105,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         private static bool PackageSupportsLogsInjection(string packageVersion)
+#if NETCOREAPP
+            // enabled in default version for .NET Core
             => string.IsNullOrWhiteSpace(packageVersion) || new Version(packageVersion) >= new Version("2.0.0");
+#else
+            // disabled dor default version in .NET Framework
+            => !string.IsNullOrWhiteSpace(packageVersion) && new Version(packageVersion) >= new Version("2.0.0");
+#endif
     }
 }

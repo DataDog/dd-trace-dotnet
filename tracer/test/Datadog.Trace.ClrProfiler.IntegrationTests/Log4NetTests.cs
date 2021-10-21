@@ -75,7 +75,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
 
 #if NETFRAMEWORK
-                if (string.IsNullOrWhiteSpace(packageVersion) || new Version(packageVersion) >= new Version("2.0.5"))
+                if (!string.IsNullOrWhiteSpace(packageVersion) && new Version(packageVersion) >= new Version("2.0.5"))
                 {
                     ValidateLogCorrelation(spans, _nlog205LogFileTests, packageVersion);
                 }
@@ -107,7 +107,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
 
 #if NETFRAMEWORK
-                if (string.IsNullOrWhiteSpace(packageVersion) || new Version(packageVersion) >= new Version("2.0.5"))
+                if (!string.IsNullOrWhiteSpace(packageVersion) && new Version(packageVersion) >= new Version("2.0.5"))
                 {
                     ValidateLogCorrelation(spans, _nlog205LogFileTests, packageVersion, disableLogCorrelation: true);
                 }
