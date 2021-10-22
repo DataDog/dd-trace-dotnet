@@ -33,23 +33,38 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         MinimumVersion = CouchbaseCommon.MinVersion,
         MaximumVersion = CouchbaseCommon.MaxVersion,
         IntegrationName = CouchbaseCommon.IntegrationName)]
+    [InstrumentMethod(
+        AssemblyName = CouchbaseCommon.CouchbaseClientAssemblyName,
+        TypeName = "Couchbase.IO.Services.PooledIOService",
+        MethodName = "Execute",
+        ReturnTypeName = CouchbaseCommon.CouchbaseOperationResultTypeName,
+        ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseGenericOperationTypeName },
+        MinimumVersion = CouchbaseCommon.MinVersion,
+        MaximumVersion = CouchbaseCommon.MaxVersion,
+        IntegrationName = CouchbaseCommon.IntegrationName)]
+    [InstrumentMethod(
+        AssemblyName = CouchbaseCommon.CouchbaseClientAssemblyName,
+        TypeName = "Couchbase.IO.Services.MultiplexingIOService",
+        MethodName = "Execute",
+        ReturnTypeName = CouchbaseCommon.CouchbaseOperationResultTypeName,
+        ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseGenericOperationTypeName },
+        MinimumVersion = CouchbaseCommon.MinVersion,
+        MaximumVersion = CouchbaseCommon.MaxVersion,
+        IntegrationName = CouchbaseCommon.IntegrationName)]
     // ReSharper disable once InconsistentNaming
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class IIOServiceExecuteIntegration
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IIOServiceExecuteIntegration));
-
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="operation">The requested couchebase operation</param>
+        /// <param name="operation">The requested couchbase operation</param>
         /// <typeparam name="TTarget">Type of the target</typeparam>
         /// <typeparam name="TOperation">Type of the operation</typeparam>
         /// <returns>Calltarget state value</returns>
         public static CallTargetState OnMethodBegin<TTarget, TOperation>(TTarget instance, TOperation operation)
-            where TOperation : IOperation
         {
             return CouchbaseCommon.CommonOnMethodBegin(operation);
         }

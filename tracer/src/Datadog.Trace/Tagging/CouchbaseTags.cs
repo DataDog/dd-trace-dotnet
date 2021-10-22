@@ -15,6 +15,7 @@ namespace Datadog.Trace.Tagging
             InstrumentationTagsProperties.Concat(
                 new ReadOnlyProperty<CouchbaseTags, string>(Trace.Tags.InstrumentationName, t => t.InstrumentationName),
                 new Property<CouchbaseTags, string>(Trace.Tags.CouchbaseOperationCode, t => t.OperationCode, (t, v) => t.OperationCode = v),
+                new Property<CouchbaseTags, string>(Trace.Tags.CouchbaseOperationBucket, t => t.Bucket, (t, v) => t.Bucket = v),
                 new Property<CouchbaseTags, string>(Trace.Tags.CouchbaseOperationKey, t => t.Key, (t, v) => t.Key = v),
                 new Property<CouchbaseTags, string>(Trace.Tags.CouchbaseOperationHost, t => t.Host, (t, v) => t.Host = v),
                 new Property<CouchbaseTags, string>(Trace.Tags.CouchbaseOperationPort, t => t.Port, (t, v) => t.Port = v));
@@ -24,6 +25,8 @@ namespace Datadog.Trace.Tagging
         public string InstrumentationName => nameof(IntegrationIds.Couchbase);
 
         public string OperationCode { get; set; }
+
+        public string Bucket { get; set; }
 
         public string Key { get; set; }
 

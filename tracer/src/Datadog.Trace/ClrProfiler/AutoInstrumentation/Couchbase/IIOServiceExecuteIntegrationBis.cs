@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         TypeName = "Couchbase.IO.Services.PooledIOService",
         MethodName = "Execute",
         ReturnTypeName = CouchbaseCommon.CouchbaseOperationResultTypeName,
-        ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseGenericOperationTypeName },
+        ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseGenericOperationTypeName, CouchbaseCommon.CouchbaseConnectionTypeName },
         MinimumVersion = CouchbaseCommon.MinVersion,
         MaximumVersion = CouchbaseCommon.MaxVersion,
         IntegrationName = CouchbaseCommon.IntegrationName)]
@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         TypeName = "Couchbase.IO.Services.MultiplexingIOService",
         MethodName = "Execute",
         ReturnTypeName = CouchbaseCommon.CouchbaseOperationResultTypeName,
-        ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseGenericOperationTypeName },
+        ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseGenericOperationTypeName, CouchbaseCommon.CouchbaseConnectionTypeName },
         MinimumVersion = CouchbaseCommon.MinVersion,
         MaximumVersion = CouchbaseCommon.MaxVersion,
         IntegrationName = CouchbaseCommon.IntegrationName)]
@@ -36,18 +36,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class IIOServiceExecuteIntegrationBis
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IIOServiceExecuteIntegrationBis));
-
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="operation">The requested couchebase operation</param>
+        /// <param name="operation">The requested couchbase operation</param>
+        /// <param name="connection">A provided connection</param>
         /// <typeparam name="TTarget">Type of the target</typeparam>
         /// <typeparam name="TOperation">Type of the operation</typeparam>
+        /// <typeparam name="TConnection">Type of the connection</typeparam>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget, TOperation>(TTarget instance, TOperation operation)
-            // where TOperation : IOperation // ducktyping doesn't work. The param is a IOperation<T> (which implements IOperation) that I can's seem to cas in IOperation
+        public static CallTargetState OnMethodBegin<TTarget, TOperation, TConnection>(TTarget instance, TOperation operation, TConnection connection)
         {
             return CouchbaseCommon.CommonOnMethodBegin(operation);
         }

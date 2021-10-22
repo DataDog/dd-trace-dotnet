@@ -21,53 +21,46 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         internal const string CouchbaseOperationResultTypeName = "Couchbase.IOperationResult<T>";
         internal const string MinVersion = "2.2.8";
         internal const string MaxVersion = "2.7.25";
-
-        internal const string OperationName = "couchbase.query";
-        internal const string ServiceName = "couchbase";
-
         internal const string IntegrationName = nameof(IntegrationIds.Couchbase);
-        internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
+
+        private const string OperationName = "couchbase.query";
+        private const string ServiceName = "couchbase";
+        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CouchbaseCommon));
 
         internal static CallTargetState CommonOnMethodBegin<TOperation>(TOperation tOperation)
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId) || tOperation == null)
             {
                 // integration disabled, don't create a scope, skip this trace
                 return CallTargetState.GetDefault();
             }
 
             Scope scope = null;
+            var operation = tOperation.DuckCast<OperationStruct>();
 
             try
             {
-                if (tOperation != null && tOperation.TryDuckCast(out IOperation operation))
+                var host = operation.CurrentHost?.Address.ToString();
+                var port = operation.CurrentHost?.Port.ToString();
+                var code = operation.OperationCode.ToString();
+
+                var tags = new CouchbaseTags()
                 {
-                    var host = operation.CurrentHost?.Address.ToString();
-                    var port = operation.CurrentHost?.Port.ToString();
-                    var code = operation.OperationCode.ToString();
+                    OperationCode = code,
+                    Bucket = operation.BucketName,
+                    Key = operation.Key,
+                    Host = host,
+                    Port = port
+                };
 
-                    var tags = new CouchbaseTags()
-                    {
-                        OperationCode = code,
-                        Key = operation.Key,
-                        Host = host,
-                        Port = port
-                    };
-
-                    scope = Tracer.Instance.StartActiveWithTags(OperationName, serviceName: ServiceName, tags: tags);
-                    scope.Span.Type = SpanTypes.Couchbase;
-                    scope.Span.ResourceName = $"{code} {operation.Key}";
-                }
+                scope = Tracer.Instance.StartActiveWithTags(OperationName, serviceName: ServiceName, tags: tags);
+                scope.Span.Type = SpanTypes.Couchbase;
+                scope.Span.ResourceName = $"{code} {operation.Key}";
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error creating or populating scope.");
-                return CallTargetState.GetDefault();
-            }
-
-            if (scope == null)
-            {
                 return CallTargetState.GetDefault();
             }
 
@@ -81,35 +74,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
 
         internal static TOperationResult CommonOnMethodEnd<TOperationResult>(TOperationResult tResult, Exception exception, CallTargetState state)
         {
-            if (state.Scope == null)
+            if (state.Scope == null || tResult == null)
             {
+                state.Scope.DisposeWithException(exception);
                 return tResult;
             }
 
-            if (tResult != null && tResult.TryDuckCast(out IResult result))
-            {
-                var span = state.Scope.Span;
-                if (!result.Success)
-                {
-                    span.Error = true;
-                    if (!string.IsNullOrEmpty(result.Message))
-                    {
-                        span.SetTag(Tags.ErrorMsg, result.Message);
-                    }
+            var result = tResult.DuckCast<ResultStruct>();
+            var span = state.Scope.Span;
 
-                    // TBC if this a pattern we usually follow
-                    if (result.Exception != null && exception == null)
-                    {
-                        state.Scope?.DisposeWithException(result.Exception);
-                    }
+            if (!result.Success)
+            {
+                span.Error = true;
+                if (!string.IsNullOrEmpty(result.Message))
+                {
+                    span.SetTag(Tags.ErrorMsg, result.Message);
                 }
             }
-            else
-            {
-                Log.Information("Duck Cast or interface resp");
-                }
 
-            state.Scope?.DisposeWithException(exception);
+            state.Scope.DisposeWithException(exception ?? result.Exception);
             return tResult;
         }
     }

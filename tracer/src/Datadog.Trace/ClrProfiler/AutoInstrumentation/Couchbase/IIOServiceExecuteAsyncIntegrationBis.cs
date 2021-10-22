@@ -6,22 +6,18 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
 {
     /// <summary>
     /// Couchbase.IO.IIOService.Execute calltarget instrumentation
-    /// This class could maybe be merged with the original one as we have the same number of paramaters here
     /// </summary>
     [InstrumentMethod(
        AssemblyName = CouchbaseCommon.CouchbaseClientAssemblyName,
        TypeName = "Couchbase.IO.Services.PooledIOService",
        MethodName = "ExecuteAsync",
        ReturnTypeName = ClrNames.Task,
-       ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseGenericOperationTypeName },
+       ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseGenericOperationTypeName, CouchbaseCommon.CouchbaseConnectionTypeName },
        MinimumVersion = CouchbaseCommon.MinVersion,
        MaximumVersion = CouchbaseCommon.MaxVersion,
        IntegrationName = CouchbaseCommon.IntegrationName)]
@@ -30,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
        TypeName = "Couchbase.IO.Services.MultiplexingIOService",
        MethodName = "ExecuteAsync",
        ReturnTypeName = ClrNames.Task,
-       ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseGenericOperationTypeName },
+       ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseGenericOperationTypeName, CouchbaseCommon.CouchbaseConnectionTypeName },
        MinimumVersion = CouchbaseCommon.MinVersion,
        MaximumVersion = CouchbaseCommon.MaxVersion,
        IntegrationName = CouchbaseCommon.IntegrationName)]
@@ -43,11 +39,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         /// OnMethodBegin callback
         /// </summary>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="operation">The requested couchebase operation</param>
+        /// <param name="operation">The requested couchbase operation</param>
+        /// <param name="connection">A provided connection</param>
         /// <typeparam name="TTarget">Type of the target</typeparam>
         /// <typeparam name="TOperation">Type of the operation</typeparam>
+        /// <typeparam name="TConnection">Type of the connection</typeparam>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget, TOperation>(TTarget instance, TOperation operation)
+        public static CallTargetState OnMethodBegin<TTarget, TOperation, TConnection>(TTarget instance, TOperation operation, TConnection connection)
         {
             return CouchbaseCommon.CommonOnMethodBegin(operation);
         }

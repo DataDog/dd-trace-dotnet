@@ -1,33 +1,40 @@
-// <copyright file="IOperation.cs" company="Datadog">
+// <copyright file="OperationStruct.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System.ComponentModel;
 using System.Net;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
 {
     /// <summary>
-    /// Couchbase.IO.Operations.IOperation interface for ducktyping
+    /// Ducktyping of Couchbase.IO.Operations.IOperation and generic implementations
     /// </summary>
+    [DuckCopy]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface IOperation
+    public struct OperationStruct
     {
         /// <summary>
         /// Gets the Operation Code
         /// </summary>
-        OperationCode OperationCode { get; }
+        public OperationCode OperationCode;
 
         /// <summary>
         /// Gets the Operation Key
         /// </summary>
-        string Key { get; }
+        public string Key;
 
         /// <summary>
         /// Gets the Operation Code
         /// </summary>
-        IPEndPoint CurrentHost { get; }
+        public IPEndPoint CurrentHost;
+
+        /// <summary>
+        /// Bucket name, if applicable.
+        /// </summary>
+        public string BucketName;
     }
 }
