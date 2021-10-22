@@ -99,6 +99,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                     tagsFromHeaders);
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
+                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)
             {

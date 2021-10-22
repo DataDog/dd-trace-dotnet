@@ -82,6 +82,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
                 span.SetTag(TestTags.Traits, Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(traits));
             }
 
+            Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+
             // Skip tests
             if (runnerInstance.SkipReason != null)
             {
