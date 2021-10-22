@@ -96,28 +96,28 @@ namespace Datadog.Trace.Security.IntegrationTests
                 foreach (var assert in assertOnSpans)
                 {
                     assert(span);
+                }
 
-                    if (enableSecurity)
-                    {
-                        var gotTag = span.Tags.TryGetValue(Tags.AppSecJson, out var json);
-                        Assert.True(gotTag, "span does not contain security tag");
-                        actualAppSecEvents++;
+                if (enableSecurity)
+                {
+                    var gotTag = span.Tags.TryGetValue(Tags.AppSecJson, out var json);
+                    Assert.True(gotTag, "span does not contain security tag");
+                    actualAppSecEvents++;
 
-                        var jsonObj = JsonConvert.DeserializeObject<AppSecJson>(json);
+                    var jsonObj = JsonConvert.DeserializeObject<AppSecJson>(json);
 
-                        var item = jsonObj.Triggers.FirstOrDefault();
-                        Assert.NotNull(item);
+                    var item = jsonObj.Triggers.FirstOrDefault();
+                    Assert.NotNull(item);
 
-                        Assert.IsType<Attack>(item);
-                        var attackEvent = item;
-                        var shouldBlock = expectedStatusCode == HttpStatusCode.Forbidden;
-                        Assert.Equal(shouldBlock, attackEvent.Blocked);
-                        var spanId = spanIds.FirstOrDefault(s => s == attackEvent.Context.Span.Id);
-                        Assert.NotEqual(0m, spanId);
-                        Assert.DoesNotContain(spanId, usedIds);
-                        Assert.Equal("nosqli", attackEvent.Rule.Name);
-                        usedIds.Add(spanId);
-                    }
+                    Assert.IsType<Attack>(item);
+                    var attackEvent = item;
+                    var shouldBlock = expectedStatusCode == HttpStatusCode.Forbidden;
+                    Assert.Equal(shouldBlock, attackEvent.Blocked);
+                    var spanId = spanIds.FirstOrDefault(s => s == attackEvent.Context.Span.Id);
+                    Assert.NotEqual(0m, spanId);
+                    Assert.DoesNotContain(spanId, usedIds);
+                    Assert.Equal("nosqli", attackEvent.Rule.Name);
+                    usedIds.Add(spanId);
                 }
             }
 
