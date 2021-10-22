@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using System.Text;
 using System.Threading;
+using FluentAssertions;
 using Serilog;
 using Xunit;
 
@@ -152,6 +153,19 @@ namespace Datadog.Trace.DuckTyping.Tests
             Assert.NotNull(syncRoot);
         }
 
+        [Fact]
+        public void ReverseProxyInvokesBaseConstructorTest()
+        {
+            var instance = new AbstractBaseWithConstructorClassDuck();
+            var proxy = (AbstractBaseWithConstructorClass)instance.DuckImplement(typeof(AbstractBaseWithConstructorClass));
+
+            proxy.PrivateStaticReadonly.Should().NotBeNull();
+            proxy.PrivateReadonly.Should().NotBeNull();
+            proxy.Private.Should().NotBeNull();
+            proxy.ConstructorValue.Should().NotBeNull();
+            proxy.PropertyWithBackingField.Should().NotBeNull();
+        }
+
         // ************************************************************************************
         // Types for InterfaceReverseProxyTest
         // ***
@@ -254,6 +268,35 @@ namespace Datadog.Trace.DuckTyping.Tests
             {
                 return nameof(PublicClassWithVirtualMembers);
             }
+        }
+
+        /* Types for ReverseProxyInvokesBaseConstructorTest */
+
+        public abstract class AbstractBaseWithConstructorClass
+        {
+            private static readonly int? _privateStaticReadonly = 1;
+            private readonly int? _privateReadonly = 2;
+            private int? _private = 3;
+            private int? _constructorValue;
+
+            protected AbstractBaseWithConstructorClass()
+            {
+                _constructorValue = 4;
+            }
+
+            public int? PrivateStaticReadonly => _privateStaticReadonly;
+
+            public int? PrivateReadonly => _privateReadonly;
+
+            public int? Private => _private;
+
+            public int? ConstructorValue => _constructorValue;
+
+            public int? PropertyWithBackingField => 5;
+        }
+
+        public class AbstractBaseWithConstructorClassDuck
+        {
         }
 
         // ************************************************************************************

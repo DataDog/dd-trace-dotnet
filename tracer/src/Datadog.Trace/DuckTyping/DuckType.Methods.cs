@@ -177,7 +177,17 @@ namespace Datadog.Trace.DuckTyping
                 LazyILGenerator il = MethodIlHelper.InitialiseProxyMethod(proxyMethod, proxyMethodDefinitionParameters, proxyMethodDefinitionGenericArgumentsNames, targetMethod, instanceField);
 
                 // Load all the arguments / parameters
-                List<OutputAndRefParameterData> outputAndRefParameters = MethodIlHelper.AddIlToLoadArguments(proxyTypeBuilder, il, targetMethod, targetMethodParameters, targetMethodParametersTypes, proxyMethodDefinition, proxyMethodDefinitionParameters, proxyMethodDefinitionGenericArguments, MethodIlHelper.AddIlToExtractDuckType, NeedsDuckChaining);
+                List<OutputAndRefParameterData> outputAndRefParameters = MethodIlHelper.AddIlToLoadArguments(
+                    proxyTypeBuilder,
+                    il,
+                    innerMethod: targetMethod,
+                    innerMethodParameters: targetMethodParameters,
+                    innerMethodParametersTypes: targetMethodParametersTypes,
+                    outerMethod: proxyMethodDefinition,
+                    outerMethodParameters: proxyMethodDefinitionParameters,
+                    outerMethodGenericArguments: proxyMethodDefinitionGenericArguments,
+                    duckCastParameterFunc: MethodIlHelper.AddIlToExtractDuckType,
+                    needsDuckChaining: NeedsDuckChaining);
 
                 // Call the target method
                 Type returnType = targetMethod.ReturnType;
@@ -204,7 +214,14 @@ namespace Datadog.Trace.DuckTyping
                     MethodIlHelper.AddIlToSetOutputAndRefParameters(il, outputAndRefParameters, MethodIlHelper.AddIlToDuckChain, NeedsDuckChaining);
                 }
 
-                if (!MethodIlHelper.TryAddReturnIl(proxyTypeBuilder, il, returnType, targetMethod.ReturnType, proxyMethodDefinition.ReturnType, NeedsDuckChaining, MethodIlHelper.AddIlToDuckChain))
+                if (!MethodIlHelper.TryAddReturnIl(
+                        proxyTypeBuilder,
+                        il,
+                        currentReturnType: returnType,
+                        innerMethodReturnType: targetMethod.ReturnType,
+                        outerMethodReturnType: proxyMethodDefinition.ReturnType,
+                        needsDuckChainingFunc: NeedsDuckChaining,
+                        addDuckChainIlFunc: MethodIlHelper.AddIlToDuckChain))
                 {
                     DuckTypeProxyAndTargetMethodReturnTypeMismatchException.Throw(proxyMethodDefinition, targetMethod);
                 }
@@ -276,10 +293,20 @@ namespace Datadog.Trace.DuckTyping
 
                 // Create the proxy method implementation
                 MethodBuilder proxyMethod = proxyTypeBuilder.DefineMethod(overriddenMethod.Name, proxyMethodAttributes, overriddenMethod.ReturnType, overriddenMethodParametersTypes);
-                LazyILGenerator il = MethodIlHelper.InitialiseProxyMethod(proxyMethod, overriddenMethodParameters, implementationDefinitionGenericArgumentsNames, overriddenMethod, instanceField);
+                LazyILGenerator il = MethodIlHelper.InitialiseProxyMethod(proxyMethod, overriddenMethodParameters, implementationDefinitionGenericArgumentsNames, implementationMethod, instanceField);
 
                 // Load all the arguments / parameters
-                var outputAndRefParameters = MethodIlHelper.AddIlToLoadArguments(proxyTypeBuilder, il, implementationMethod, implementationMethodParameters, implementationMethodParametersTypes, overriddenMethod, overriddenMethodParameters, implementationDefinitionGenericArguments, MethodIlHelper.AddIlToDuckChain, MethodIlHelper.NeedsDuckChainingReverse);
+                var outputAndRefParameters = MethodIlHelper.AddIlToLoadArguments(
+                    proxyTypeBuilder,
+                    il,
+                    innerMethod: implementationMethod,
+                    innerMethodParameters: implementationMethodParameters,
+                    innerMethodParametersTypes: implementationMethodParametersTypes,
+                    outerMethod: overriddenMethod,
+                    outerMethodParameters: overriddenMethodParameters,
+                    outerMethodGenericArguments: implementationDefinitionGenericArguments,
+                    duckCastParameterFunc: MethodIlHelper.AddIlToDuckChain,
+                    needsDuckChaining: MethodIlHelper.NeedsDuckChainingReverse);
 
                 // Call the target method
                 // We know we have direct access to the target method because we defined it in our proxy
@@ -295,7 +322,14 @@ namespace Datadog.Trace.DuckTyping
 
                 // We always do a direct method call, so return type is always the implementation method's return type
                 Type returnType = implementationMethod.ReturnType;
-                if (!MethodIlHelper.TryAddReturnIl(proxyTypeBuilder, il, returnType, implementationMethod.ReturnType, overriddenMethod.ReturnType, MethodIlHelper.NeedsDuckChainingReverse, MethodIlHelper.AddIlToDuckChainReverse))
+                if (!MethodIlHelper.TryAddReturnIl(
+                        proxyTypeBuilder,
+                        il,
+                        currentReturnType: returnType,
+                        innerMethodReturnType: implementationMethod.ReturnType,
+                        outerMethodReturnType: overriddenMethod.ReturnType,
+                        needsDuckChainingFunc: MethodIlHelper.NeedsDuckChainingReverse,
+                        addDuckChainIlFunc: MethodIlHelper.AddIlToDuckChainReverse))
                 {
                     DuckTypeProxyAndTargetMethodReturnTypeMismatchException.Throw(implementationMethod, overriddenMethod);
                 }
@@ -757,8 +791,8 @@ namespace Datadog.Trace.DuckTyping
 
                                     il.MarkLabel(lblCallGetInstance);
 
-                                    // Depending if this is a forward duck type or a reverse duck type, we either need to
-                                    // create a duck type, or cast to IDuckType and extract the instance
+                                    // If this is a forward duck type, we need to cast to IDuckType and extract the original instance
+                                    // If this is a reverse duck type, we need to create a duck type from the original instance
                                     duckCastParameterFunc(il, innerParamTypeElementType);
 
                                     il.MarkLabel(lblAfterGetInstance);
@@ -783,11 +817,11 @@ namespace Datadog.Trace.DuckTyping
                             // Check if the type can be converted of if we need to enable duck chaining
                             if (needsDuckChaining(innerParamType, outerParamType))
                             {
-                                // Load the argument and cast it as Duck type
+                                // Load the argument
                                 il.WriteLoadArgument(idx, false);
 
-                                // Depending if this is a forward duck type or a reverse duck type, we either need to
-                                // create a duck type, or cast to IDuckType and extract the instance
+                                // If this is a forward duck type, we need to cast to IDuckType and extract the original instance
+                                // If this is a reverse duck type, we need to create a duck type from the original instance
                                 duckCastParameterFunc(il, innerParamType);
                             }
                             else
