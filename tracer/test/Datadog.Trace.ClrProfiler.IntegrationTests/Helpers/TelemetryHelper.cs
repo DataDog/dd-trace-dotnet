@@ -26,15 +26,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static TelemetryData AssertIntegrationEnabled(this MockTelemetryAgent<TelemetryData> telemetry, IntegrationId integrationId)
         {
-            return AssertIntegration(telemetry, integrationId, enabled: true);
+            return telemetry.AssertIntegration(integrationId, enabled: true, autoEnabled: true);
         }
 
         public static TelemetryData AssertIntegrationDisabled(this MockTelemetryAgent<TelemetryData> telemetry, IntegrationId integrationId)
         {
-            return AssertIntegration(telemetry, integrationId, enabled: false);
+            return telemetry.AssertIntegration(integrationId, enabled: false, autoEnabled: true);
         }
 
-        private static TelemetryData AssertIntegration(MockTelemetryAgent<TelemetryData> telemetry, IntegrationId integrationId, bool enabled)
+        public static TelemetryData AssertIntegration(this MockTelemetryAgent<TelemetryData> telemetry, IntegrationId integrationId, bool enabled, bool? autoEnabled)
         {
             telemetry.WaitForLatestTelemetry(x => x.RequestType == TelemetryRequestTypes.AppClosing);
 
@@ -59,8 +59,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                .FirstOrDefault(x => x.Name == integrationId.ToString());
 
             integration.Should().NotBeNull();
-            integration.Enabled.Should().Be(enabled); // this requires that we've generated a span
-            integration.AutoEnabled.Should().BeTrue(); // we always instrument, so this will always be true
+            integration.Enabled.Should().Be(enabled, $"{integration.Name} should only be enabled if we generate a span");
+            if (autoEnabled.HasValue)
+            {
+                integration.AutoEnabled.Should().Be(autoEnabled.Value, $"{integration.Name} should only be auto-enabled if available");
+            }
+
             integration.Error.Should().BeNullOrEmpty();
 
             return latestIntegrationsData;
