@@ -52,11 +52,6 @@ namespace Datadog.Trace.AppSec.Transport.Http
             context.DisposeOnPipelineCompleted(additiveContext);
             context.Items[WafKey] = additiveContext;
         }
-
-        public void OnCompleted(Action completedCallback)
-        {
-            context.AddOnRequestCompleted(_ => completedCallback());
-        }
     }
 }
 #endif

@@ -59,15 +59,6 @@ namespace Datadog.Trace.AppSec.Transport.Http
             context.Features.Set(additiveContext);
             context.Response.RegisterForDispose(additiveContext);
         }
-
-        public void OnCompleted(Action completedCallback)
-        {
-            context.Response.OnCompleted(() =>
-            {
-                completedCallback();
-                return Task.CompletedTask;
-            });
-        }
     }
 }
 #endif

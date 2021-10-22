@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading;
 using Datadog.Trace.AppSec.EventModel;
 using Datadog.Trace.AppSec.Transport;
+using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.ExtensionMethods;
@@ -120,33 +121,7 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        /// <summary>
-        /// Frees resources
-        /// </summary>
-        public void Dispose() => _waf?.Dispose();
-
-        private void Report(ITransport transport, Span span, ResultData[] results, bool blocked)
-        {
-            if (span != null)
-            {
-                span.SetTag(Tags.AppSecEvent, "true");
-                span.SetTraceSamplingPriority(SamplingPriority.AppSecKeep);
-            }
-
-            transport.OnCompleted(() =>
-            {
-                var attacks = CreateAttachArray(transport, span, results, blocked);
-
-                var json = JsonConvert.SerializeObject(new AppSecJson { Triggers = attacks });
-                span.SetTag(Tags.AppSecJson, json);
-                if (attacks.Length > 0 && attacks[0]?.Context?.Actor?.Ip?.Address != null)
-                {
-                    span.SetTag(Tags.ActorIp, attacks[0].Context.Actor.Ip.Address);
-                }
-            });
-        }
-
-        private Attack[] CreateAttachArray(ITransport transport, Span span, ResultData[] results, bool blocked)
+        private static Attack[] CreateAttachArray(ITransport transport, Span span, ResultData[] results, bool blocked)
         {
             var attacks = new Attack[results.Length];
             for (var i = 0; i < results.Length; i++)
@@ -164,10 +139,33 @@ namespace Datadog.Trace.AppSec
                     }
                 }
 
-                attacks[i] = Attack.From(result, blocked, span, transport, _settings.CustomIpHeader, _settings.ExtraHeaders);
+                attacks[i] = Attack.From(result, blocked, span, transport);
             }
 
             return attacks;
+        }
+
+        /// <summary>
+        /// Frees resouces
+        /// </summary>
+        public void Dispose() => _waf?.Dispose();
+
+        private void Report(ITransport transport, Span span, ResultData[] results, bool blocked)
+        {
+            if (span != null)
+            {
+                span.SetTag(Tags.AppSecEvent, "true");
+                span.SetTraceSamplingPriority(SamplingPriority.AppSecKeep);
+            }
+
+            var attacks = CreateAttachArray(transport, span, results, blocked);
+
+            var json = JsonConvert.SerializeObject(new AppSecJson { Triggers = attacks });
+            span.SetTag(Tags.AppSecJson, json);
+
+            var request = transport.Request();
+            var ipInfo = RequestHeadersHelper.ExtractIpAndPort(transport.GetHeader, _settings.CustomIpHeader, _settings.ExtraHeaders, transport.IsSecureConnection, new IpInfo(request.RemoteIp, request.RemotePort));
+            span.SetTag(Tags.ActorIp, ipInfo.IpAddress);
         }
 
         private Span GetLocalRootSpan(Span span)

@@ -3,11 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using Datadog.Trace.AppSec.Transports.Http;
+using Datadog.Trace.AppSec.Transport;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -27,12 +24,8 @@ namespace Datadog.Trace.AppSec.EventModel
         [JsonProperty("context")]
         public Context Context { get; set; }
 
-        public static Attack From(ResultData resultData, bool blocked, Trace.Span span, Transport.ITransport transport, string customIpHeader, IEnumerable<string> extraHeaders)
+        public static Attack From(ResultData resultData, bool blocked, Trace.Span span, ITransport transport)
         {
-            var request = transport.Request();
-            var headersIpAndPort = RequestHeadersHelper.ExtractHeadersIpAndPort(transport.GetHeader, customIpHeader, extraHeaders, transport.IsSecureConnection, new IpInfo(request.RemoteIp, request.RemotePort));
-            request.Headers = headersIpAndPort.HeadersToSend;
-
             var ruleMatches = resultData.Filter.Select(ruleMatch => new RuleMatch
             {
                 Operator = ruleMatch.Operator,
@@ -44,40 +37,10 @@ namespace Datadog.Trace.AppSec.EventModel
             var frameworkDescription = FrameworkDescription.Instance;
             var attack = new Attack
             {
-                EventId = Guid.NewGuid().ToString(),
-                Context = new Context
-                {
-                    Actor = new Actor { Ip = new Ip { Address = headersIpAndPort.IpInfo.IpAddress } },
-                    Host = new Host
-                    {
-                        OsType = frameworkDescription.OSPlatform,
-                        Hostname = Dns.GetHostName()
-                    },
-                    Http = new Http
-                    {
-                        Request = request,
-                        Response = transport.Response(blocked)
-                    },
-                    Service = new Service { Environment = CorrelationIdentifier.Env },
-                    Tracer = new Tracer
-                    {
-                        RuntimeType = frameworkDescription.Name,
-                        RuntimeVersion = frameworkDescription.ProductVersion,
-                    }
-                },
-                Blocked = blocked,
                 Rule = new Rule { Name = resultData.Flow, Id = resultData.Rule },
-                DetectedAt = DateTime.UtcNow,
                 RuleMatches = ruleMatches,
-                Type = resultData.Flow
+                Blocked = blocked,
             };
-
-            if (span != null)
-            {
-                attack.Context.Span = new Span { Id = span.SpanId };
-                attack.Context.Trace = new Span { Id = span.TraceId };
-                attack.Context.Service.Name = span.ServiceName;
-            }
 
             return attack;
         }
