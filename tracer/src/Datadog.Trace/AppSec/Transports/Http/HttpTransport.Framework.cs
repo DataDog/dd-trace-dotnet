@@ -24,11 +24,6 @@ namespace Datadog.Trace.AppSec.Transport.Http
 
         public Func<string, string> GetHeader => key => context.Request.Headers[key];
 
-        public void AddRequestScope(Guid guid)
-        {
-            throw new NotImplementedException();
-        }
-
         public IContext GetAdditiveContext() => context.Items[WafKey] as IContext;
 
         public Request Request()

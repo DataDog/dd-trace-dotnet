@@ -156,11 +156,11 @@ namespace Datadog.Trace.AppSec
                 {
                     if (blocked)
                     {
-                        Log.Debug("Detecting an attack from rule {rule_id}", result.Rule);
+                        Log.Debug("Blocking current transaction (rule: {RuleId})", result.Rule);
                     }
                     else
                     {
-                        Log.Debug("Blocking current transaction (rule: {rule_id})", result.Rule);
+                        Log.Debug("Detecting an attack from rule {RuleId}", result.Rule);
                     }
                 }
 

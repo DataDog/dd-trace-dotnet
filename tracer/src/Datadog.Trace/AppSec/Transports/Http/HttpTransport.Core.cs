@@ -60,8 +60,6 @@ namespace Datadog.Trace.AppSec.Transport.Http
             context.Response.RegisterForDispose(additiveContext);
         }
 
-        public void AddRequestScope(Guid guid) => context.Items.Add("Security", guid);
-
         public void OnCompleted(Action completedCallback)
         {
             context.Response.OnCompleted(() =>
