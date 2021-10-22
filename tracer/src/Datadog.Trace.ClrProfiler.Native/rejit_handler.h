@@ -22,17 +22,21 @@ typedef std::shared_lock<Lock> ReadLock;
 
 struct RejitItem
 {
-    int m_length = 0;
-    std::unique_ptr<ModuleID[]> m_modulesId = nullptr;
+    int m_type = 0;
+    std::unique_ptr<std::vector<ModuleID>> m_modulesId = nullptr;
+    std::unique_ptr<std::vector<mdMethodDef>> m_methodDefs = nullptr;
     std::unique_ptr<std::vector<IntegrationMethod>> m_integrationMethods = nullptr;
     //
-    std::promise<ULONG>* m_promise;
+    std::promise<ULONG>* m_promise = nullptr;
 
     RejitItem();
-    RejitItem(int length,
-        std::unique_ptr<ModuleID[]>&& modulesId,
-        std::unique_ptr<std::vector<IntegrationMethod>>&& integrationMethods,
-        std::promise<ULONG>* promise);
+
+    RejitItem(std::unique_ptr<std::vector<ModuleID>>&& modulesId,
+              std::unique_ptr<std::vector<mdMethodDef>>&& methodDefs);
+
+    RejitItem(std::unique_ptr<std::vector<ModuleID>>&& modulesId,
+              std::unique_ptr<std::vector<IntegrationMethod>>&& integrationMethods, std::promise<ULONG>* promise);
+
     static std::unique_ptr<RejitItem> CreateEndRejitThread();
 };
 
@@ -127,6 +131,7 @@ private:
     static void EnqueueThreadLoop(RejitHandler* handler);
 
     void RequestRejitForInlinersInModule(ModuleID moduleId);
+    void RequestRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef);
 
 public:
     RejitHandler(ICorProfilerInfo4* pInfo,
@@ -146,6 +151,8 @@ public:
     void EnqueueProcessModule(const std::vector<ModuleID>& modulesVector,
                               const std::vector<IntegrationMethod>& integrations,
                               std::promise<ULONG>* promise);
+    void EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef);
+
     void Shutdown();
 
     HRESULT NotifyReJITParameters(ModuleID moduleId, mdMethodDef methodId,
@@ -157,8 +164,9 @@ public:
 
     void SetCorAssemblyProfiler(AssemblyProperty* pCorAssemblyProfiler);
     void RequestRejitForNGenInliners();
-    ULONG ProcessModuleForRejit(int length, const ModuleID* modules,
-                                const std::vector<IntegrationMethod>& integrations);
+    ULONG ProcessModuleForRejit(const std::vector<ModuleID>& modules,
+                                const std::vector<IntegrationMethod>& integrations,
+                                bool enqueueInSameThread = false);
 };
 
 } // namespace trace
