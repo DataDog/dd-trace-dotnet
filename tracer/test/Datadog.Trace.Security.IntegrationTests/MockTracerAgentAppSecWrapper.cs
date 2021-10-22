@@ -62,7 +62,10 @@ namespace Datadog.Trace.Security.IntegrationTests
             if (appSecUrl)
             {
                 using var sr = new StreamReader(ctx.Value.Request.InputStream);
-                string content = sr.ReadToEnd();
+                string filename = $@"c:\code\appsecevent_{Guid.NewGuid()}.bin";
+                using var outStream = File.OpenWrite(filename);
+                ctx.Value.Request.InputStream.CopyTo(outStream);
+                string content = File.ReadAllText(filename);
                 var intake = JsonConvert.DeserializeObject<Intake>(content, new IntakeConverter());
                 events.AddRange(intake.Events);
             }

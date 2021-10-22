@@ -6,6 +6,7 @@
 using System;
 using System.IO;
 using System.Net;
+using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Logging;
@@ -65,7 +66,7 @@ namespace Datadog.Trace.Agent.Transports
             {
                 static Task WriteStream(Stream stream, JsonSerializer serializer, object events)
                 {
-                    var streamWriter = new StreamWriter(stream, System.Text.Encoding.UTF8, 1024, true);
+                    var streamWriter = new StreamWriter(stream, new UTF8Encoding(false, true), 1024, true);
                     using (var writer = new JsonTextWriter(streamWriter))
                     {
                         serializer.Serialize(writer, events);
