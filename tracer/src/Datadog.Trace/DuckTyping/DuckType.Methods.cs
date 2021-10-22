@@ -678,7 +678,7 @@ namespace Datadog.Trace.DuckTyping
                 MethodInfo outerMethod,
                 ParameterInfo[] outerMethodParameters,
                 Type[] outerMethodGenericArguments,
-                Action<LazyILGenerator, Type> duckCastParameterFunc,
+                Func<LazyILGenerator, Type, Type> duckCastParameterFunc,
                 Func<Type, Type, bool> needsDuckChaining)
             {
                 List<OutputAndRefParameterData> outputAndRefParameters = null;
@@ -921,7 +921,7 @@ namespace Datadog.Trace.DuckTyping
             internal static void AddIlToSetOutputAndRefParameters(
                 LazyILGenerator il,
                 List<OutputAndRefParameterData> outputAndRefParameters,
-                Action<LazyILGenerator, Type> duckChainFunc,
+                Func<LazyILGenerator, Type, Type> duckChainFunc,
                 Func<Type, Type, bool> needsDuckChaining)
             {
                 foreach (OutputAndRefParameterData outOrRefParameter in outputAndRefParameters)
@@ -962,7 +962,7 @@ namespace Datadog.Trace.DuckTyping
                 Type innerMethodReturnType,
                 Type outerMethodReturnType,
                 Func<Type, Type, bool> needsDuckChainingFunc,
-                Action<LazyILGenerator, Type> addDuckChainIlFunc)
+                Func<LazyILGenerator, Type, Type> addDuckChainIlFunc)
             {
                 // Check if the target method returns something
 
@@ -1001,30 +1001,33 @@ namespace Datadog.Trace.DuckTyping
             internal static bool NeedsDuckChainingReverse(Type targetType, Type proxyType)
                 => NeedsDuckChaining(targetType: proxyType, proxyType: targetType);
 
-            internal static void AddIlToDuckChain(LazyILGenerator il, Type genericType)
+            internal static Type AddIlToDuckChain(LazyILGenerator il, Type genericType)
             {
                 var getProxyMethodInfo = typeof(CreateCache<>)
                                         .MakeGenericType(genericType)
                                         .GetMethod("Create");
 
                 il.Emit(OpCodes.Call, getProxyMethodInfo);
+                return genericType;
             }
 
-            internal static void AddIlToDuckChainReverse(LazyILGenerator il, Type genericType)
+            internal static Type AddIlToDuckChainReverse(LazyILGenerator il, Type genericType)
             {
                 var getProxyMethodInfo = typeof(CreateCache<>)
                                         .MakeGenericType(genericType)
                                         .GetMethod("CreateReverse");
 
                 il.Emit(OpCodes.Call, getProxyMethodInfo);
+                return genericType;
             }
 
-            internal static void AddIlToExtractDuckType(LazyILGenerator il, Type toType)
+            internal static Type AddIlToExtractDuckType(LazyILGenerator il, Type toType)
             {
                 // outer is a duck type, so extract it
                 // Call IDuckType.Instance property to get the actual value
                 il.Emit(OpCodes.Castclass, typeof(IDuckType));
                 il.EmitCall(OpCodes.Callvirt, DuckTypeInstancePropertyInfo.GetMethod, null);
+                return typeof(object);
             }
         }
     }

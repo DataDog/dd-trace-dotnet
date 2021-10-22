@@ -33,5 +33,10 @@ namespace Datadog.Trace.DuckTyping
         /// Default BindingFlags
         /// </summary>
         public const BindingFlags DefaultFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.FlattenHierarchy;
+
+        /// <summary>
+        /// Gets or sets duck kind
+        /// </summary>
+        public DuckKind Kind { get; set; } = DuckKind.Property;
     }
 }

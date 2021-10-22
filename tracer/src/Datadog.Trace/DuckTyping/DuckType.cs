@@ -490,7 +490,15 @@ namespace Datadog.Trace.DuckTyping
                                 DuckTypePropertyCantBeReadException.Throw(targetProperty);
                             }
 
-                            propertyBuilder.SetGetMethod(GetPropertyGetMethod(proxyTypeBuilder, targetType, proxyProperty, targetProperty, instanceField));
+                            propertyBuilder.SetGetMethod(
+                                GetPropertyGetMethod(
+                                    proxyTypeBuilder,
+                                    targetType: targetType,
+                                    proxyMember: proxyProperty,
+                                    targetProperty: targetProperty,
+                                    instanceField: instanceField,
+                                    duckCastInnerToOuterFunc: MethodIlHelper.AddIlToDuckChain,
+                                    needsDuckChaining: NeedsDuckChaining));
                         }
 
                         if (proxyProperty.CanWrite)
@@ -507,7 +515,15 @@ namespace Datadog.Trace.DuckTyping
                                 DuckTypeStructMembersCannotBeChangedException.Throw(targetProperty.DeclaringType);
                             }
 
-                            propertyBuilder.SetSetMethod(GetPropertySetMethod(proxyTypeBuilder, targetType, proxyProperty, targetProperty, instanceField));
+                            propertyBuilder.SetSetMethod(
+                                GetPropertySetMethod(
+                                    proxyTypeBuilder,
+                                    targetType: targetType,
+                                    proxyMember: proxyProperty,
+                                    targetProperty: targetProperty,
+                                    instanceField: instanceField,
+                                    duckCastOuterToInner: MethodIlHelper.AddIlToExtractDuckType,
+                                    needsDuckChaining: NeedsDuckChaining));
                         }
 
                         break;
@@ -562,112 +578,88 @@ namespace Datadog.Trace.DuckTyping
             // Note that these don't need to be abstract/virtual, unlike in a normal (forward) proxy
             List<PropertyInfo> delegationTypeProperties = new List<PropertyInfo>(typeToDelegateTo.GetProperties());
 
-            foreach (PropertyInfo delegationTypeProperty in delegationTypeProperties)
+            foreach (PropertyInfo implementationProperty in delegationTypeProperties)
             {
                 // Ignore methods without a `DuckReverse` attribute
-                if (delegationTypeProperty.GetCustomAttribute<DuckReverseMethodAttribute>(true) is null)
+                if (implementationProperty.GetCustomAttribute<DuckReverseMethodAttribute>(true) is null)
                 {
                     continue;
                 }
 
                 PropertyBuilder propertyBuilder = null;
 
-                DuckReverseMethodAttribute duckAttribute = delegationTypeProperty.GetCustomAttribute<DuckReverseMethodAttribute>(true) ?? new DuckReverseMethodAttribute();
-                duckAttribute.Name ??= delegationTypeProperty.Name;
+                DuckReverseMethodAttribute duckAttribute = implementationProperty.GetCustomAttribute<DuckReverseMethodAttribute>(true) ?? new DuckReverseMethodAttribute();
+                duckAttribute.Name ??= implementationProperty.Name;
 
                 // The "implementor" property cannot be abstract or interface if we're doing a reverse proxy
-                if ((delegationTypeProperty.CanRead && delegationTypeProperty.GetMethod.IsAbstract)
-                 || (delegationTypeProperty.CanWrite && delegationTypeProperty.SetMethod.IsAbstract))
+                if ((implementationProperty.CanRead && implementationProperty.GetMethod.IsAbstract)
+                 || (implementationProperty.CanWrite && implementationProperty.SetMethod.IsAbstract))
                 {
-                    DuckTypeReverseProxyPropertyCannotBeAbstractException.Throw(delegationTypeProperty);
+                    DuckTypeReverseProxyPropertyCannotBeAbstractException.Throw(implementationProperty);
                 }
 
-                switch (duckAttribute.Kind)
+                PropertyInfo overriddenProperty = null;
+                try
                 {
-                    case DuckKind.Property:
-                        PropertyInfo targetProperty = null;
-                        try
-                        {
-                            targetProperty = typeToDeriveFrom.GetProperty(duckAttribute.Name, duckAttribute.BindingFlags);
-                        }
-                        catch
-                        {
-                            // This will run only when multiple indexers are defined in a class, that way we can end up with multiple properties with the same name.
-                            // In this case we make sure we select the indexer we want
-                            targetProperty = typeToDeriveFrom.GetProperty(duckAttribute.Name, delegationTypeProperty.PropertyType, delegationTypeProperty.GetIndexParameters().Select(i => i.ParameterType).ToArray());
-                        }
+                    overriddenProperty = typeToDeriveFrom.GetProperty(duckAttribute.Name, duckAttribute.BindingFlags);
+                }
+                catch
+                {
+                    // This will run only when multiple indexers are defined in a class, that way we can end up with multiple properties with the same name.
+                    // In this case we make sure we select the indexer we want
+                    overriddenProperty = typeToDeriveFrom.GetProperty(duckAttribute.Name, implementationProperty.PropertyType, implementationProperty.GetIndexParameters().Select(i => i.ParameterType).ToArray());
+                }
 
-                        if (targetProperty is null)
-                        {
-                            DuckTypePropertyOrFieldNotFoundException.Throw(delegationTypeProperty.Name, duckAttribute.Name);
-                            continue;
-                        }
+                if (overriddenProperty is null)
+                {
+                    DuckTypePropertyOrFieldNotFoundException.Throw(implementationProperty.Name, duckAttribute.Name);
+                    continue;
+                }
 
-                        propertyBuilder = proxyTypeBuilder.DefineProperty(delegationTypeProperty.Name, PropertyAttributes.None, delegationTypeProperty.PropertyType, null);
+                propertyBuilder = proxyTypeBuilder.DefineProperty(implementationProperty.Name, PropertyAttributes.None, implementationProperty.PropertyType, null);
 
-                        if (delegationTypeProperty.CanRead)
-                        {
-                            // Check if the target property can be read
-                            if (!targetProperty.CanRead)
-                            {
-                                DuckTypePropertyCantBeReadException.Throw(targetProperty);
-                            }
+                if (implementationProperty.CanRead)
+                {
+                    // Check if the target property can be read
+                    if (!overriddenProperty.CanRead)
+                    {
+                        DuckTypePropertyCantBeReadException.Throw(overriddenProperty);
+                    }
 
-                            propertyBuilder.SetGetMethod(GetPropertyGetMethod(proxyTypeBuilder, typeToDeriveFrom, delegationTypeProperty, targetProperty, instanceField));
-                        }
+                    propertyBuilder.SetGetMethod(
+                        GetPropertyGetMethod(
+                            proxyTypeBuilder,
+                            targetType: typeToDeriveFrom,
+                            proxyMember: overriddenProperty,
+                            targetProperty: implementationProperty,
+                            instanceField: instanceField,
+                            duckCastInnerToOuterFunc: MethodIlHelper.AddIlToExtractDuckType,
+                            needsDuckChaining: MethodIlHelper.NeedsDuckChainingReverse));
+                }
 
-                        if (delegationTypeProperty.CanWrite)
-                        {
-                            // Check if the target property can be written
-                            if (!targetProperty.CanWrite)
-                            {
-                                DuckTypePropertyCantBeWrittenException.Throw(targetProperty);
-                            }
+                if (implementationProperty.CanWrite)
+                {
+                    // Check if the target property can be written
+                    if (!overriddenProperty.CanWrite)
+                    {
+                        DuckTypePropertyCantBeWrittenException.Throw(overriddenProperty);
+                    }
 
-                            // Check if the target property declaring type is an struct (structs modification is not supported)
-                            if (targetProperty.DeclaringType.IsValueType)
-                            {
-                                DuckTypeStructMembersCannotBeChangedException.Throw(targetProperty.DeclaringType);
-                            }
+                    // Check if the target property declaring type is an struct (structs modification is not supported)
+                    if (overriddenProperty.DeclaringType.IsValueType)
+                    {
+                        DuckTypeStructMembersCannotBeChangedException.Throw(overriddenProperty.DeclaringType);
+                    }
 
-                            propertyBuilder.SetSetMethod(GetPropertySetMethod(proxyTypeBuilder, typeToDeriveFrom, delegationTypeProperty, targetProperty, instanceField));
-                        }
-
-                        break;
-
-                    case DuckKind.Field:
-                        FieldInfo targetField = typeToDeriveFrom.GetField(duckAttribute.Name, duckAttribute.BindingFlags);
-                        if (targetField is null)
-                        {
-                            DuckTypePropertyOrFieldNotFoundException.Throw(delegationTypeProperty.Name, duckAttribute.Name);
-                            continue;
-                        }
-
-                        propertyBuilder = proxyTypeBuilder.DefineProperty(delegationTypeProperty.Name, PropertyAttributes.None, delegationTypeProperty.PropertyType, null);
-
-                        if (delegationTypeProperty.CanRead)
-                        {
-                            propertyBuilder.SetGetMethod(GetFieldGetMethod(proxyTypeBuilder, typeToDeriveFrom, delegationTypeProperty, targetField, instanceField));
-                        }
-
-                        if (delegationTypeProperty.CanWrite)
-                        {
-                            // Check if the target field is marked as InitOnly (readonly) and throw an exception in that case
-                            if ((targetField.Attributes & FieldAttributes.InitOnly) != 0)
-                            {
-                                DuckTypeFieldIsReadonlyException.Throw(targetField);
-                            }
-
-                            // Check if the target field declaring type is an struct (structs modification is not supported)
-                            if (targetField.DeclaringType.IsValueType)
-                            {
-                                DuckTypeStructMembersCannotBeChangedException.Throw(targetField.DeclaringType);
-                            }
-
-                            propertyBuilder.SetSetMethod(GetFieldSetMethod(proxyTypeBuilder, typeToDeriveFrom, delegationTypeProperty, targetField, instanceField));
-                        }
-
-                        break;
+                    propertyBuilder.SetSetMethod(
+                        GetPropertySetMethod(
+                            proxyTypeBuilder,
+                            targetType: typeToDeriveFrom,
+                            proxyMember: overriddenProperty,
+                            targetProperty: implementationProperty,
+                            instanceField: instanceField,
+                            duckCastOuterToInner: MethodIlHelper.AddIlToDuckChain,
+                            needsDuckChaining: MethodIlHelper.NeedsDuckChainingReverse));
                 }
             }
         }
@@ -718,7 +710,15 @@ namespace Datadog.Trace.DuckTyping
                         }
 
                         propertyBuilder = proxyTypeBuilder.DefineProperty(proxyFieldInfo.Name, PropertyAttributes.None, proxyFieldInfo.FieldType, null);
-                        propertyBuilder.SetGetMethod(GetPropertyGetMethod(proxyTypeBuilder, targetType, proxyFieldInfo, targetProperty, instanceField));
+                        propertyBuilder.SetGetMethod(
+                            GetPropertyGetMethod(
+                                proxyTypeBuilder,
+                                targetType: targetType,
+                                proxyMember: proxyFieldInfo,
+                                targetProperty: targetProperty,
+                                instanceField: instanceField,
+                                duckCastInnerToOuterFunc: MethodIlHelper.AddIlToDuckChain,
+                                needsDuckChaining: NeedsDuckChaining));
                         break;
 
                     case DuckKind.Field:

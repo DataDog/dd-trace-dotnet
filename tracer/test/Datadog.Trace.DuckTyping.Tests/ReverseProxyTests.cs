@@ -166,6 +166,31 @@ namespace Datadog.Trace.DuckTyping.Tests
             proxy.PropertyWithBackingField.Should().NotBeNull();
         }
 
+        [Fact]
+        public void ReverseProxyWithPropertiesTest()
+        {
+            var instance = new ReverseProxyWithPropertiesTestClass();
+            var proxy = (IReverseProxyWithPropertiesTest)instance.DuckImplement(typeof(IReverseProxyWithPropertiesTest));
+
+            proxy.Value.Should().Be(instance.Value);
+        }
+
+        [Fact]
+        public void ReverseProxyWithDuckChainingPropertiesTest()
+        {
+            var instance = new ReverseProxyWithDuckChainingPropertiesTestClass();
+            var proxy = (IReverseProxyWithDuckChainingPropertiesTest)instance.DuckImplement(typeof(IReverseProxyWithDuckChainingPropertiesTest));
+
+            var testValue = new TestValue();
+
+            proxy.Value = testValue;
+
+            instance.Value.Should()
+                    .BeAssignableTo<IDuckType>()
+                    .Which.Instance.Should()
+                    .Be(testValue);
+        }
+
         // ************************************************************************************
         // Types for InterfaceReverseProxyTest
         // ***
@@ -297,6 +322,42 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         public class AbstractBaseWithConstructorClassDuck
         {
+        }
+
+        /* Types for ReverseProxyWithPropertiesTestClass */
+
+        public interface IReverseProxyWithPropertiesTest
+        {
+            string Value { get; set; }
+        }
+
+        public class ReverseProxyWithPropertiesTestClass
+        {
+            [DuckReverseMethod]
+            public string Value { get; set; } = "Datadog";
+        }
+
+        /* Types for ReverseProxyWithDuckChainingPropertiesTestClass */
+
+        public interface IReverseProxyWithDuckChainingPropertiesTest
+        {
+            TestValue Value { get; set; }
+        }
+
+        public class ReverseProxyWithDuckChainingPropertiesTestClass
+        {
+            [DuckReverseMethod]
+            public ITestValue Value { get; set; }
+        }
+
+        public class TestValue
+        {
+            public string InnerValue { get; set; }
+        }
+
+        public interface ITestValue
+        {
+            public string InnerValue { get; set; }
         }
 
         // ************************************************************************************

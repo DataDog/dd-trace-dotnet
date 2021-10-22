@@ -21,11 +21,6 @@ namespace Datadog.Trace.DuckTyping
         public string Name { get; set; }
 
         /// <summary>
-        /// Gets or sets duck kind
-        /// </summary>
-        public DuckKind Kind { get; set; } = DuckKind.Property;
-
-        /// <summary>
         /// Gets or sets the binding flags
         /// </summary>
         public BindingFlags BindingFlags { get; set; } = DuckAttribute.DefaultFlags;
