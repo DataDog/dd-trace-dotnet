@@ -1,6 +1,6 @@
 using System;
 
-namespace Samples.Couchbase.V2
+namespace Samples.Couchbase
 {
     public class Data
     {

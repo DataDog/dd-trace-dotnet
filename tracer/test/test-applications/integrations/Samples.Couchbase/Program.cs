@@ -1,13 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using System.Net.Http;
 using Couchbase;
 using Couchbase.Configuration.Client;
 using Couchbase.Core;
 using Couchbase.IO;
 
-namespace Samples.Couchbase.V2
+namespace Samples.Couchbase
 {
     internal class Program
     {
@@ -161,6 +160,10 @@ namespace Samples.Couchbase.V2
             // Check that the data was updated
             var newDocument = await _bucket.GetAsync<Data>(key);
             Console.WriteLine("Got: " + data.Text);
+
+            // Check that the data was updated
+            var res = await _bucket.RemoveAsync(key);
+            Console.WriteLine("Got: " + res.Status);
         }
     }
 }
