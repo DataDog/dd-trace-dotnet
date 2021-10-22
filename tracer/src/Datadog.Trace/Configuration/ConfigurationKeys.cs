@@ -369,5 +369,20 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             public const string HeaderTagsNormalizationFixEnabled = "DD_TRACE_HEADER_TAG_NORMALIZATION_FIX_ENABLED";
         }
+
+        internal static class Telemetry
+        {
+            /// <summary>
+            /// Configuration key for enabling or disabling internal telemetry.
+            /// Default value is <c>true</c> (enabled).
+            /// </summary>
+            public const string Enabled = "DD_INSTRUMENTATION_TELEMETRY_ENABLED";
+
+            /// <summary>
+            /// Configuration key for the telemetry URL where the Tracer sends telemetry.
+            /// Default is <see cref="ExporterSettings.AgentUri"/>
+            /// </summary>
+            public const string Uri = "DD_TRACE_TELEMETRY_URL";
+        }
     }
 }
