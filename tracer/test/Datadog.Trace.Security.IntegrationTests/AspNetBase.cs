@@ -98,10 +98,10 @@ namespace Datadog.Trace.Security.IntegrationTests
                     assert(span);
                 }
 
+                var gotTag = span.Tags.TryGetValue(Tags.AppSecJson, out var json);
+                Assert.Equal(enableSecurity, gotTag);
                 if (enableSecurity)
                 {
-                    var gotTag = span.Tags.TryGetValue(Tags.AppSecJson, out var json);
-                    Assert.True(gotTag, "span does not contain security tag");
                     actualAppSecEvents++;
 
                     var jsonObj = JsonConvert.DeserializeObject<AppSecJson>(json);
