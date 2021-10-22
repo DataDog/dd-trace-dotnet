@@ -17,6 +17,7 @@ namespace Datadog.Trace.Agent.Transports
     internal class ApiWebRequest : IApiRequest
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ApiWebRequest>();
+        private static readonly Encoding Utf8WithoutBOM = new UTF8Encoding(false, true);
         private readonly HttpWebRequest _request;
 
         public ApiWebRequest(HttpWebRequest request)
@@ -66,7 +67,7 @@ namespace Datadog.Trace.Agent.Transports
             {
                 static Task WriteStream(Stream stream, JsonSerializer serializer, object events)
                 {
-                    var streamWriter = new StreamWriter(stream,  new UTF8Encoding(false, true), 1024, true);
+                    var streamWriter = new StreamWriter(stream, Utf8WithoutBOM, 1024, true);
                     using (var writer = new JsonTextWriter(streamWriter))
                     {
                         serializer.Serialize(writer, events);
