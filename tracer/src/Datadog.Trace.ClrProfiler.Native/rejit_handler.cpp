@@ -642,7 +642,6 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
         return 0;
     }
 
-    HRESULT hr;
     std::vector<ModuleID> vtModules;
     std::vector<mdMethodDef> vtMethodDefs;
 
