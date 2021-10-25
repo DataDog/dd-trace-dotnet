@@ -321,40 +321,40 @@ partial class Build
         });
 
      Target CopyLibDdwafForAppSecUnitTests => _ => _
-                .Unlisted()
-                .After(Clean)
-                .After(DownloadLibDdwaf)
-                .OnlyWhenStatic(() => !IsArm64) // not supported yet
-                .Executes(() => { 
-                      var project = Solution.GetProject(Projects.AppSecUnitTests);
-                      var directory = project.Directory;
-                      Console.WriteLine("project dir" + directory);
-                      var targetFrameworks = project.GetTargetFrameworks();
-                      if (IsWin)
+        .Unlisted()
+        .After(Clean)
+        .After(DownloadLibDdwaf)
+        .OnlyWhenStatic(() => !IsArm64) // not supported yet
+        .Executes(() => { 
+              var project = Solution.GetProject(Projects.AppSecUnitTests);
+              var directory = project.Directory;
+              Console.WriteLine("project dir" + directory);
+              var targetFrameworks = project.GetTargetFrameworks();
+              if (IsWin)
+              {
+                  foreach (var architecture in WafWindowsArchitectureFolders)
+                  {
+                      var source = LibDdwafDirectory / "runtimes" / architecture / "native" / "ddwaf.dll";
+                      foreach (var fmk in targetFrameworks)
                       {
-                          foreach (var architecture in WafWindowsArchitectureFolders)
-                          {
-                              var source = LibDdwafDirectory / "runtimes" / architecture / "native" / "ddwaf.dll";
-                              foreach (var fmk in targetFrameworks)
-                              {
-                                  var dest = directory / "bin" / BuildConfiguration / fmk / architecture;
-                                  Console.WriteLine("project dest" + dest);
-                                  Logger.Info($"Copying '{source}' to '{dest}'");
-                                  CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
-                              }
-                          }
-                      }
-                      else
-                      {
-                          var (architecture, ext) = GetUnixArchitectureAndExtension(includeMuslSuffixOnAlpine: true);
-                          var ddwafFileName = $"libddwaf.{ext}";
-
-                          var source = LibDdwafDirectory / "runtimes" / architecture / "native" / ddwafFileName;
-                          var dest = TracerHomeDirectory;
+                          var dest = directory / "bin" / BuildConfiguration / fmk / architecture;
+                          Console.WriteLine("project dest" + dest);
                           Logger.Info($"Copying '{source}' to '{dest}'");
                           CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
                       }
-                });
+                  }
+              }
+              else
+              {
+                  var (architecture, ext) = GetUnixArchitectureAndExtension(includeMuslSuffixOnAlpine: true);
+                  var ddwafFileName = $"libddwaf.{ext}";
+
+                  var source = LibDdwafDirectory / "runtimes" / architecture / "native" / ddwafFileName;
+                  var dest = TracerHomeDirectory;
+                  Logger.Info($"Copying '{source}' to '{dest}'");
+                  CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+              }
+        });
     Target PublishManagedProfiler => _ => _
         .Unlisted()
         .After(CompileManagedSrc)
