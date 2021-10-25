@@ -22,7 +22,6 @@ using static Nuke.Common.IO.CompressionTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
 using static CustomDotNetTasks;
-using static global::DotNetTestWithDumpTask;
 
 // #pragma warning disable SA1306
 // #pragma warning disable SA1134
@@ -921,35 +920,37 @@ partial class Build
 
             try
             {
-                DotNetRunWithDump(config => config
+                DotNetTest(config => config
                     .SetDotnetPath(TargetPlatform)
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatform(TargetPlatform)
                     .SetFramework(Framework)
+                    //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
                     .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
-                    .When(CodeCoverage, WithDump(ConfigureCodeCoverage))
+                    .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ParallelIntegrationTests, (s, project) => s
-                        .EnableTrxLogOutput(GetResultsDirectory(project)).WithDump()
+                        .EnableTrxLogOutput(GetResultsDirectory(project))
                         .SetProjectFile(project)), degreeOfParallelism: 4);
 
 
                 // TODO: I think we should change this filter to run on Windows by default
                 // (RunOnWindows!=False|Category=Smoke)&LoadFromGAC!=True&IIS!=True
-                DotNetRunWithDump(config => config
+                DotNetTest(config => config
                     .SetDotnetPath(TargetPlatform)
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatform(TargetPlatform)
                     .SetFramework(Framework)
+                    //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "RunOnWindows=True&LoadFromGAC!=True&IIS!=True")
                     .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
-                    .When(CodeCoverage, WithDump(ConfigureCodeCoverage))
+                    .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
-                        .EnableTrxLogOutput(GetResultsDirectory(project)).WithDump()
+                        .EnableTrxLogOutput(GetResultsDirectory(project))
                         .SetProjectFile(project)));
             }
             finally
@@ -1220,34 +1221,36 @@ partial class Build
             {
                 // Run these ones in parallel
                 // Always AnyCPU
-                DotNetRunWithDump(config => config
+                DotNetTest(config => config
                         .SetConfiguration(BuildConfiguration)
                         // .SetTargetPlatform(Platform)
                         .EnableNoRestore()
                         .EnableNoBuild()
                         .SetFramework(Framework)
+                        //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                         .SetFilter(filter)
                         .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
                         .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
-                        .When(CodeCoverage, WithDump(ConfigureCodeCoverage))
+                        .When(CodeCoverage, ConfigureCodeCoverage)
                         .CombineWith(ParallelIntegrationTests, (s, project) => s
-                            .EnableTrxLogOutput(GetResultsDirectory(project)).WithDump()
+                            .EnableTrxLogOutput(GetResultsDirectory(project))
                             .SetProjectFile(project)),
                     degreeOfParallelism: 2);
 
                 // Run this one separately so we can tail output
-                DotNetRunWithDump(config => config
+                DotNetTest(config => config
                     .SetConfiguration(BuildConfiguration)
                     // .SetTargetPlatform(Platform)
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetFramework(Framework)
+                    //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                     .SetFilter(filter)
                     .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
-                    .When(CodeCoverage, WithDump(ConfigureCodeCoverage))
+                    .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
-                        .EnableTrxLogOutput(GetResultsDirectory(project)).WithDump()
+                        .EnableTrxLogOutput(GetResultsDirectory(project))
                         .SetProjectFile(project))
                 );
             }
