@@ -359,13 +359,22 @@ namespace Datadog.Trace.DuckTyping
             // Check if the duck attribute has the parameter type names to use for selecting the target method
             // If any of the parameter types can't be loaded (happens if it's a generic parameter for example)
             // then carry on searching.
-            if (proxyMethodDuckAttribute.ParameterTypeNames != null)
+            var proxyMethodDuckAttributeParameterTypeNames = proxyMethodDuckAttribute.ParameterTypeNames;
+            if (proxyMethodDuckAttributeParameterTypeNames != null)
             {
-                Type[] parameterTypes = proxyMethodDuckAttribute.ParameterTypeNames
+                // Duck reverse attributes must never have a mismatch between the number of proxy method parameters
+                // and the number of parameters specified in the [DuckReverseMethod] attribute
+                if (typeof(T) == typeof(DuckReverseMethodAttribute)
+                        && (proxyMethodParameters.Length != proxyMethodDuckAttributeParameterTypeNames.Length))
+                {
+                    DuckTypeReverseAttributeParameterNamesMismatchException.Throw(proxyMethod);
+                }
+
+                Type[] parameterTypes = proxyMethodDuckAttributeParameterTypeNames
                                                                 .Select(pName => Type.GetType(pName, throwOnError: false))
                                                                 .Where(type => type is not null)
                                                                 .ToArray();
-                if (parameterTypes.Length == proxyMethodDuckAttribute.ParameterTypeNames.Length)
+                if (parameterTypes.Length == proxyMethodDuckAttributeParameterTypeNames.Length)
                 {
                     // all types were loaded
                     targetMethod = targetType.GetMethod(proxyMethodDuckAttribute.Name, proxyMethodDuckAttribute.BindingFlags, null, parameterTypes, null);
@@ -424,9 +433,9 @@ namespace Datadog.Trace.DuckTyping
 
                 // Check if the candidate method is a reverse mapped method
                 ParameterInfo[] candidateParameters = candidateMethod.GetParameters();
-                if (proxyMethodDuckAttribute.ParameterTypeNames is not null)
+                if (proxyMethodDuckAttributeParameterTypeNames is not null)
                 {
-                    string[] arguments = proxyMethodDuckAttribute.ParameterTypeNames;
+                    string[] arguments = proxyMethodDuckAttributeParameterTypeNames;
                     if (arguments.Length != candidateParameters.Length)
                     {
                         continue;

@@ -288,7 +288,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         public class PublicClassWithVirtualMembers
         {
-            [DuckReverseMethod(ParameterTypeNames = new[] { "System.IO.TextWriter", "Datadog.Trace.Vendors.Serilog.Events.ScalarValue, Datadog.Trace" })]
+            [DuckReverseMethod]
             protected virtual string GetName()
             {
                 return nameof(PublicClassWithVirtualMembers);

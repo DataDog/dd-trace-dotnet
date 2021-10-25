@@ -723,6 +723,43 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         // *
 
+        [Theory]
+        [InlineData(typeof(ReverseAttributeParameterNamesMismatchExceptionClass1))]
+        [InlineData(typeof(ReverseAttributeParameterNamesMismatchExceptionClass2))]
+        public void ReverseAttributeParameterNamesMismatchException(Type duckType)
+        {
+            object target = Activator.CreateInstance(duckType);
+
+            Action cast = () => target.DuckImplement(typeof(IReverseAttributeParameterNamesMismatchException));
+
+            cast.Should()
+                .Throw<TargetInvocationException>()
+                .WithInnerExceptionExactly<DuckTypeReverseAttributeParameterNamesMismatchException>();
+        }
+
+        public interface IReverseAttributeParameterNamesMismatchException
+        {
+            public void Add(string key, string value);
+        }
+
+        public class ReverseAttributeParameterNamesMismatchExceptionClass1
+        {
+            [DuckReverseMethod(ParameterTypeNames = new[] { "System.String", "System.String", "System.String" })]
+            public virtual void Add(string key, string value)
+            {
+            }
+        }
+
+        public class ReverseAttributeParameterNamesMismatchExceptionClass2
+        {
+            [DuckReverseMethod(ParameterTypeNames = new[] { "System.String", })]
+            public virtual void Add(string key, string value)
+            {
+            }
+        }
+
+        // *
+
         [Fact]
         public void ProxyTypeDefinitionIsNull()
         {

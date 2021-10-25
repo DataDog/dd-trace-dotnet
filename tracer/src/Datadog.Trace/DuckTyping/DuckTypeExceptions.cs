@@ -401,6 +401,23 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// DuckType proxy tried to implement a generic method in a non-generic way
     /// </summary>
+    public class DuckTypeReverseAttributeParameterNamesMismatchException : DuckTypeException
+    {
+        private DuckTypeReverseAttributeParameterNamesMismatchException(MethodInfo method)
+            : base($"The reverse duck attribute parameter names for method '{method.Name}' did not match the method's parameters ")
+        {
+        }
+
+        [DebuggerHidden]
+        internal static void Throw(MethodInfo method)
+        {
+            throw new DuckTypeReverseAttributeParameterNamesMismatchException(method);
+        }
+    }
+
+    /// <summary>
+    /// DuckType proxy tried to implement a generic method in a non-generic way
+    /// </summary>
     public class DuckTypeReverseProxyMustImplementGenericMethodAsGenericException : DuckTypeException
     {
         private DuckTypeReverseProxyMustImplementGenericMethodAsGenericException(MethodInfo implementationMethod, MethodInfo targetMethod)
