@@ -428,6 +428,7 @@ namespace Datadog.Trace.DuckTyping
     {
         public const System.Reflection.BindingFlags DefaultFlags = 124;
         public DuckAttribute() { }
+        public Datadog.Trace.DuckTyping.DuckKind Kind { get; set; }
     }
     [System.AttributeUsage(System.AttributeTargets.Method | System.AttributeTargets.Property | System.AttributeTargets.Field | System.AttributeTargets.All, AllowMultiple=false)]
     public abstract class DuckAttributeBase : System.Attribute
@@ -436,7 +437,6 @@ namespace Datadog.Trace.DuckTyping
         public System.Reflection.BindingFlags BindingFlags { get; set; }
         public string ExplicitInterfaceTypeName { get; set; }
         public string[] GenericParameterTypeNames { get; set; }
-        public Datadog.Trace.DuckTyping.DuckKind Kind { get; set; }
         public string Name { get; set; }
         public string[] ParameterTypeNames { get; set; }
     }
@@ -531,6 +531,7 @@ namespace Datadog.Trace.DuckTyping
     public class DuckTypeProxyMethodParameterIsMissingException : Datadog.Trace.DuckTyping.DuckTypeException { }
     public class DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException : Datadog.Trace.DuckTyping.DuckTypeException { }
     public class DuckTypeProxyTypeDefinitionIsNull : Datadog.Trace.DuckTyping.DuckTypeException { }
+    public class DuckTypeReverseAttributeParameterNamesMismatchException : Datadog.Trace.DuckTyping.DuckTypeException { }
     public class DuckTypeReverseProxyBaseIsStructException : Datadog.Trace.DuckTyping.DuckTypeException { }
     public class DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException : Datadog.Trace.DuckTyping.DuckTypeException { }
     public class DuckTypeReverseProxyMissingMethodImplementationException : Datadog.Trace.DuckTyping.DuckTypeException { }
