@@ -20,42 +20,47 @@ namespace Datadog.Trace.Security.IntegrationTests
 {
     public class AspNetBase : TestHelper
     {
-        private readonly HttpClient httpClient;
-        private readonly string shutdownPath;
-        private int httpPort;
-        private Process process;
+        private readonly HttpClient _httpClient;
+        private readonly string _shutdownPath;
+        private int _httpPort;
+        private Process _process;
+        private MockTracerAgent _agent;
 
         public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath, string samplesDir = null)
             : base(sampleName, samplesDir ?? "test/test-applications/security", outputHelper)
         {
-            httpClient = new HttpClient();
-            this.shutdownPath = shutdownPath;
+            _httpClient = new HttpClient();
+            _shutdownPath = shutdownPath;
         }
 
         public async Task<MockTracerAgent> RunOnSelfHosted(bool enableSecurity, bool enableBlocking)
         {
-            var agentPort = TcpPortProvider.GetOpenPort();
-            httpPort = TcpPortProvider.GetOpenPort();
+            if (_agent == null)
+            {
+                var agentPort = TcpPortProvider.GetOpenPort();
+                _httpPort = TcpPortProvider.GetOpenPort();
 
-            var agent = new MockTracerAgent(agentPort);
-            await StartSample(agent.Port, arguments: null, aspNetCorePort: httpPort, enableSecurity: enableSecurity, enableBlocking: enableBlocking);
-            return agent;
+                _agent = new MockTracerAgent(agentPort);
+            }
+
+            await StartSample(_agent.Port, arguments: null, aspNetCorePort: _httpPort, enableSecurity: enableSecurity, enableBlocking: enableBlocking);
+            return _agent;
         }
 
         public void Dispose()
         {
-            var request = WebRequest.CreateHttp($"http://localhost:{httpPort}{shutdownPath}");
+            var request = WebRequest.CreateHttp($"http://localhost:{_httpPort}{_shutdownPath}");
             request.GetResponse().Close();
 
-            if (process is not null)
+            if (_process is not null)
             {
                 try
                 {
-                    if (!process.HasExited)
+                    if (!_process.HasExited)
                     {
-                        if (!process.WaitForExit(5000))
+                        if (!_process.WaitForExit(5000))
                         {
-                            process.Kill();
+                            _process.Kill();
                         }
                     }
                 }
@@ -63,13 +68,11 @@ namespace Datadog.Trace.Security.IntegrationTests
                 {
                 }
 
-                process.Dispose();
+                _process.Dispose();
             }
 
-            if (httpClient != null)
-            {
-                httpClient.Dispose();
-            }
+            _httpClient?.Dispose();
+            _agent?.Dispose();
         }
 
         public async Task TestBlockedRequestAsync(MockTracerAgent agent, bool enableSecurity, HttpStatusCode expectedStatusCode, int expectedSpans, IEnumerable<Action<MockTracerAgent.Span>> assertOnSpans)
@@ -118,13 +121,13 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         protected void SetHttpPort(int httpPort)
         {
-            this.httpPort = httpPort;
+            _httpPort = httpPort;
         }
 
         protected async Task<(HttpStatusCode StatusCode, string ResponseText)> SubmitRequest(string path)
         {
-            var url = $"http://localhost:{httpPort}{path}";
-            var response = await httpClient.GetAsync(url);
+            var url = $"http://localhost:{_httpPort}{path}";
+            var response = await _httpClient.GetAsync(url);
             var responseText = await response.Content.ReadAsStringAsync();
             return (response.StatusCode, responseText);
         }
@@ -147,7 +150,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             var executable = EnvironmentHelper.IsCoreClr() ? EnvironmentHelper.GetSampleExecutionSource() : sampleAppPath;
             var args = EnvironmentHelper.IsCoreClr() ? $"{sampleAppPath} {arguments ?? string.Empty}" : arguments;
 
-            process = ProfilerHelper.StartProcessWithProfiler(
+            _process = ProfilerHelper.StartProcessWithProfiler(
                 executable,
                 EnvironmentHelper,
                 args,
@@ -160,7 +163,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             // then wait server ready
             var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
-            process.OutputDataReceived += (sender, args) =>
+            _process.OutputDataReceived += (sender, args) =>
             {
                 if (args.Data != null)
                 {
@@ -172,9 +175,9 @@ namespace Datadog.Trace.Security.IntegrationTests
                     Output.WriteLine($"[webserver][stdout] {args.Data}");
                 }
             };
-            process.BeginOutputReadLine();
+            _process.BeginOutputReadLine();
 
-            process.ErrorDataReceived += (sender, args) =>
+            _process.ErrorDataReceived += (sender, args) =>
             {
                 if (args.Data != null)
                 {
@@ -182,7 +185,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 }
             };
 
-            process.BeginErrorReadLine();
+            _process.BeginErrorReadLine();
 
             wh.WaitOne(mstimeout);
 
@@ -222,7 +225,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             if (!serverReady)
             {
-                process.Kill();
+                _process.Kill();
                 throw new Exception($"Couldn't verify the application is ready to receive requests: {responseText}");
             }
         }
