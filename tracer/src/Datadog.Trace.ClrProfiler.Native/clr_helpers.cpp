@@ -44,6 +44,8 @@ AssemblyInfo GetAssemblyInfo(ICorProfilerInfo4* info, const AssemblyID& assembly
 
     if (FAILED(hr) || assembly_name_len == 0)
     {
+        Logger::Warn("Error loading the assembly info: ", assembly_id, " [", "AssemblyLength=", assembly_name_len,
+                     ", HRESULT=0x", std::setfill('0'), std::setw(8), std::hex, hr, "]");
         return {};
     }
 
@@ -54,6 +56,9 @@ AssemblyInfo GetAssemblyInfo(ICorProfilerInfo4* info, const AssemblyID& assembly
 
     if (FAILED(hr) || app_domain_name_len == 0)
     {
+        Logger::Warn("Error loading the appdomain for assembly: ", assembly_id,
+                     " [AssemblyName=", WSTRING(assembly_name), ", AssemblyLength=", assembly_name_len, ", HRESULT=0x",
+                     std::setfill('0'), std::setw(8), std::hex, hr, ", AppDomainId=", app_domain_id, "]");
         return {};
     }
 
