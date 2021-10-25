@@ -23,7 +23,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.ProxiesDefinitions.
         {
             // Wrong first argument
             [DuckReverseMethod]
-            public ILogEventProperty CreateProperty(string name, object value, bool destructureObjects = false)
+            public ILogEventProperty CreateProperty(int name, object value, bool destructureObjects = false)
             {
                 return null;
             }

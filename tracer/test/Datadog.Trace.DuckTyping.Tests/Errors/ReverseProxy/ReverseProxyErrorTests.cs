@@ -53,7 +53,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy
                .GetNestedTypes()
                .Concat(typeof(WrongArgumentTypeAbstractClassImplementations).GetNestedTypes())
                .Concat(typeof(WrongArgumentTypeVirtualClassImplementations).GetNestedTypes())
-               .Where(type => !type.Name.Contains("DuckChain")) // We can't detect wrong argument types in explicit DuckReverse methods
+               .Where(type => !type.Name.Contains("DuckChainArguments")) // We can't detect wrong argument types when the argument uses ParameterNames
                .Select(type => new object[] { type });
 
         [Theory]
