@@ -22,6 +22,11 @@ namespace Datadog.Trace.DuckTyping
             : base(message)
         {
         }
+
+        internal DuckTypeException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
     }
 
     /// <summary>

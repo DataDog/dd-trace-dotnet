@@ -758,6 +758,28 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [Fact]
+        public void NonSpecificExceptionDuringBuildingThrowsDuckTypeException()
+        {
+            object target = new ReverseProxyMissingPropertyImplementationExceptionClass();
+            Action cast = () => target.DuckImplement(typeof(IReverseProxyMissingPropertyImplementationException));
+
+            cast.Should()
+                .Throw<TargetInvocationException>()
+                .WithInnerExceptionExactly<DuckTypeException>();
+        }
+
+        public interface IReverseProxyMissingPropertyImplementationException
+        {
+            string Value { get; set; }
+        }
+
+        public class ReverseProxyMissingPropertyImplementationExceptionClass
+        {
+        }
+
+        // *
+
         // *
 
         [Fact]

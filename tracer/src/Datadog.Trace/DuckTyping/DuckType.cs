@@ -180,9 +180,20 @@ namespace Datadog.Trace.DuckTyping
                         return new CreateTypeResult(proxyDefinitionType, proxyType, targetType, GetCreateProxyInstanceDelegate(moduleBuilder, proxyDefinitionType, proxyType, targetType), null);
                     }
                 }
-                catch (Exception ex)
+                catch (DuckTypeException ex)
                 {
                     return new CreateTypeResult(proxyDefinitionType, null, targetType, null, ExceptionDispatchInfo.Capture(ex));
+                }
+                catch (Exception ex)
+                {
+                    try
+                    {
+                        throw new DuckTypeException("Error creating duck type", ex);
+                    }
+                    catch (Exception ex2)
+                    {
+                        return new CreateTypeResult(proxyDefinitionType, null, targetType, null, ExceptionDispatchInfo.Capture(ex2));
+                    }
                 }
             }
         }
@@ -233,9 +244,20 @@ namespace Datadog.Trace.DuckTyping
                     Type proxyType = proxyTypeBuilder.CreateTypeInfo().AsType();
                     return new CreateTypeResult(typeToDeriveFrom, proxyType, typeToDelegateTo, GetCreateProxyInstanceDelegate(moduleBuilder, typeToDeriveFrom, proxyType, typeToDelegateTo), null);
                 }
-                catch (Exception ex)
+                catch (DuckTypeException ex)
                 {
                     return new CreateTypeResult(typeToDeriveFrom, null, typeToDelegateTo, null, ExceptionDispatchInfo.Capture(ex));
+                }
+                catch (Exception ex)
+                {
+                    try
+                    {
+                        throw new DuckTypeException("Error creating reverse duck type", ex);
+                    }
+                    catch (Exception ex2)
+                    {
+                        return new CreateTypeResult(typeToDeriveFrom, null, typeToDelegateTo, null, ExceptionDispatchInfo.Capture(ex2));
+                    }
                 }
             }
         }
