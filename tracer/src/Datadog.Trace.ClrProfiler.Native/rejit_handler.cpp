@@ -474,6 +474,11 @@ void RejitHandler::EnqueueProcessModule(const std::vector<ModuleID>& modulesVect
     ReadLock r_lock(m_shutdown_lock);
     if (m_shutdown)
     {
+        if (promise != nullptr)
+        {
+            promise->set_value(0);
+        }
+
         return;
     }
 
