@@ -5,34 +5,34 @@
 
 namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.OriginalTypeDefinitions
 {
-    internal interface IInterfaces
+    public interface IInterfaces
     {
-        internal interface IMethod
+        public interface IMethod
         {
             bool TryGetValue(string value);
         }
 
-        internal interface IMethodWithOutParam
+        public interface IMethodWithOutParam
         {
             bool TryGetValue(out string value);
         }
 
-        internal interface IMethodWithRefParam
+        public interface IMethodWithRefParam
         {
             bool TryGetValue(ref string value);
         }
 
-        internal interface IGenericMethod
+        public interface IGenericMethod
         {
             T Echo<T>(T value);
         }
 
-        internal interface IGetOnlyProperty
+        public interface IGetOnlyProperty
         {
             string Value { get; }
         }
 
-        internal interface IProperty
+        public interface IProperty
         {
             string Value { get; set; }
         }

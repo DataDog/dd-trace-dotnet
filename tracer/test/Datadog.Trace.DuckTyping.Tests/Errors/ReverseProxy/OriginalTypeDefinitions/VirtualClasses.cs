@@ -5,14 +5,14 @@
 
 namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.OriginalTypeDefinitions
 {
-    internal class VirtualClasses
+    public class VirtualClasses
     {
-        internal class VirtualMethod
+        public class VirtualMethod
         {
             public virtual bool TryGetValue(string value) => true;
         }
 
-        internal class VirtualMethodWithOutParam
+        public class VirtualMethodWithOutParam
         {
             public virtual bool TryGetValue(out string value)
             {
@@ -21,7 +21,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.OriginalTypeDefinit
             }
         }
 
-        internal class VirtualMethodWithRefParam
+        public class VirtualMethodWithRefParam
         {
             public virtual bool TryGetValue(ref string value)
             {
@@ -30,29 +30,29 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.OriginalTypeDefinit
             }
         }
 
-        internal class VirtualGenericMethod
+        public class VirtualGenericMethod
         {
             public virtual T Echo<T>(T value) => value;
         }
 
-        internal class VirtualGetOnlyProperty
+        public class VirtualGetOnlyProperty
         {
             public virtual string Value { get; }
         }
 
-        internal class VirtualProperty
+        public class VirtualProperty
         {
             public virtual string Value { get; set; }
         }
 
-        internal class VirtualMethodWithVirtualMethod
+        public class VirtualMethodWithVirtualMethod
         {
             public virtual bool TryGetValue(string value) => true;
 
             public virtual bool NotOverriden() => true;
         }
 
-        internal class VirtualMethodWithOutParamWithVirtualMethod
+        public class VirtualMethodWithOutParamWithVirtualMethod
         {
             public virtual bool TryGetValue(out string value)
             {
@@ -63,7 +63,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.OriginalTypeDefinit
             public virtual bool NotOverriden() => true;
         }
 
-        internal class VirtualMethodWithRefParamWithVirtualMethod
+        public class VirtualMethodWithRefParamWithVirtualMethod
         {
             public virtual bool TryGetValue(ref string value)
             {
@@ -74,35 +74,35 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.OriginalTypeDefinit
             public virtual bool NotOverriden() => true;
         }
 
-        internal class VirtualGenericMethodWithVirtualMethod
+        public class VirtualGenericMethodWithVirtualMethod
         {
             public virtual T Echo<T>(T value) => value;
 
             public virtual bool NotOverriden() => true;
         }
 
-        internal class VirtualGetOnlyPropertyWithVirtualMethod
+        public class VirtualGetOnlyPropertyWithVirtualMethod
         {
             public virtual string Value { get; }
 
             public virtual bool NotOverriden() => true;
         }
 
-        internal class VirtualPropertyWithVirtualMethod
+        public class VirtualPropertyWithVirtualMethod
         {
             public virtual string Value { get; set; }
 
             public virtual bool NotOverriden() => true;
         }
 
-        internal class VirtualMethodWithVirtualProperty
+        public class VirtualMethodWithVirtualProperty
         {
             public virtual bool NotOverriden { get; set; }
 
             public virtual bool TryGetValue(string value) => true;
         }
 
-        internal class VirtualMethodWithOutParamWithVirtualProperty
+        public class VirtualMethodWithOutParamWithVirtualProperty
         {
             public virtual bool NotOverriden { get; set; }
 
@@ -113,7 +113,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.OriginalTypeDefinit
             }
         }
 
-        internal class VirtualMethodWithRefParamWithVirtualProperty
+        public class VirtualMethodWithRefParamWithVirtualProperty
         {
             public virtual bool NotOverriden { get; set; }
 
@@ -124,21 +124,21 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.OriginalTypeDefinit
             }
         }
 
-        internal class VirtualGenericMethodWithVirtualProperty
+        public class VirtualGenericMethodWithVirtualProperty
         {
             public virtual bool NotOverriden { get; set; }
 
             public virtual T Echo<T>(T value) => value;
         }
 
-        internal class VirtualGetOnlyPropertyWithVirtualProperty
+        public class VirtualGetOnlyPropertyWithVirtualProperty
         {
             public virtual bool NotOverriden { get; set; }
 
             public virtual string Value { get; }
         }
 
-        internal class VirtualPropertyWithVirtualProperty
+        public class VirtualPropertyWithVirtualProperty
         {
             public virtual bool NotOverriden { get; set; }
 

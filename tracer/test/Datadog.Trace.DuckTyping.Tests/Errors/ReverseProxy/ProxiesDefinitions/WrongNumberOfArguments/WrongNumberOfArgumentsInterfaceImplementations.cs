@@ -8,27 +8,27 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.ProxiesDefinitions.
     // These types implicitly implement various interfaces
     public class WrongNumberOfArgumentsInterfaceImplementations
     {
-        [ReverseTypeToTest("Datadog.Trace.Vendors.Serilog.Core.ILogEventEnricher", "Datadog.Trace")]
+        [ReverseTypeToTest("Serilog.Core.ILogEventEnricher", "Serilog")]
         public class DuckChainArgumentsMethod
         {
             // extra argument, not in attribute
-            [DuckReverseMethod(ParameterTypeNames = new[] { "Datadog.Trace.Vendors.Serilog.Events.LogEvent, Datadog.Trace", "Datadog.Trace.Vendors.Serilog.Core.ILogEventPropertyFactory, Datadog.Trace" })]
+            [DuckReverseMethod(ParameterTypeNames = new[] { "Serilog.Events.LogEvent, Serilog", "Serilog.Core.ILogEventPropertyFactory, Serilog" })]
             public void Enrich(ILogEvent logEvent, ILogEventPropertyFactory propertyFactory, string wrong)
             {
             }
         }
 
-        [ReverseTypeToTest("Datadog.Trace.Vendors.Serilog.Core.ILogEventEnricher", "Datadog.Trace")]
+        [ReverseTypeToTest("Serilog.Core.ILogEventEnricher", "Serilog")]
         public class DuckChainArgumentsMethod2
         {
             // extra argument, in attribute too
-            [DuckReverseMethod(ParameterTypeNames = new[] { "Datadog.Trace.Vendors.Serilog.Events.LogEvent, Datadog.Trace", "Datadog.Trace.Vendors.Serilog.Core.ILogEventPropertyFactory, Datadog.Trace", "System.String" })]
+            [DuckReverseMethod(ParameterTypeNames = new[] { "Serilog.Events.LogEvent, Serilog", "Serilog.Core.ILogEventPropertyFactory, Serilog", "System.String" })]
             public void Enrich(ILogEvent logEvent, ILogEventPropertyFactory propertyFactory, string wrong)
             {
             }
         }
 
-        [ReverseTypeToTest("Datadog.Trace.Vendors.Serilog.Core.ILogEventPropertyFactory", "Datadog.Trace")]
+        [ReverseTypeToTest("Serilog.Core.ILogEventPropertyFactory", "Serilog")]
         public class DuckChainReturnMethod
         {
             [DuckReverseMethod]

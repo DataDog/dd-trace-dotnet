@@ -8,7 +8,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.ProxiesDefinitions.
     // These types implicitly implement various interfaces
     public class WrongArgumentTypeInterfaceImplementations
     {
-        [ReverseTypeToTest("Datadog.Trace.Vendors.Serilog.Core.ILogEventEnricher", "Datadog.Trace")]
+        [ReverseTypeToTest("Serilog.Core.ILogEventEnricher", "Serilog")]
         public class DuckChainArgumentsMethod
         {
             // reversed order of arguments
@@ -18,7 +18,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy.ProxiesDefinitions.
             }
         }
 
-        [ReverseTypeToTest("Datadog.Trace.Vendors.Serilog.Core.ILogEventPropertyFactory", "Datadog.Trace")]
+        [ReverseTypeToTest("Serilog.Core.ILogEventPropertyFactory", "Serilog")]
         public class DuckChainReturnMethod
         {
             // Wrong first argument

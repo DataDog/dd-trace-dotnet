@@ -65,14 +65,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy
             var instance = Activator.CreateInstance(reversedType);
             using var scope = new AssertionScope();
 
-#if NET452
-            Action cast = () =>  instance.DuckImplement(typeToImplement);
-            cast.Should().Throw<DuckTypeTypeIsNotPublicException>();
-#else
             var proxy = instance.DuckImplement(typeToImplement);
             Assert.NotNull(proxy);
             proxy.GetType().Should().BeAssignableTo(typeToImplement);
-#endif
         }
 
         [Theory(Skip = "These fail, because they fail on net45, and we want consistency between frameworks")]
@@ -100,11 +95,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy
             using var scope = new AssertionScope();
 
             Action cast = () =>  instance.DuckImplement(typeToImplement);
-#if NET452
-            cast.Should().Throw<DuckTypeTypeIsNotPublicException>();
-#else
             cast.Should().Throw<TargetInvocationException>();
-#endif
         }
 
         [Theory]
@@ -117,11 +108,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy
             using var scope = new AssertionScope();
 
             Action cast = () =>  instance.DuckImplement(typeToImplement);
-#if NET452
-            cast.Should().Throw<DuckTypeTypeIsNotPublicException>();
-#else
             cast.Should().Throw<TargetInvocationException>();
-#endif
         }
 
         [Theory]
@@ -134,11 +121,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy
             using var scope = new AssertionScope();
 
             Action cast = () =>  instance.DuckImplement(typeToImplement);
-#if NET452
-            cast.Should().Throw<DuckTypeTypeIsNotPublicException>();
-#else
             cast.Should().Throw<TargetInvocationException>();
-#endif
         }
 
         [Theory]
@@ -151,11 +134,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy
             using var scope = new AssertionScope();
 
             Action cast = () =>  instance.DuckImplement(typeToImplement);
-#if NET452
-            cast.Should().Throw<DuckTypeTypeIsNotPublicException>();
-#else
             cast.Should().Throw<TargetInvocationException>();
-#endif
         }
 
         private static Type GetTypeToImplement(Type reversedType)
