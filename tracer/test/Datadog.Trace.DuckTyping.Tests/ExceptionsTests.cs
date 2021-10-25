@@ -192,11 +192,11 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         [Theory]
         [InlineData(
-            typeof(IProxyAndTargetMethodReturnTypeMismatchExceptionVoid),
-            typeof(ProxyAndTargetMethodReturnTypeMismatchExceptionNonVoidClass))]
+            typeof(IReverseProxyAndTargetMethodReturnTypeMismatchExceptionVoid),
+            typeof(ReverseProxyAndTargetMethodReturnTypeMismatchExceptionNonVoidClass))]
         [InlineData(
-            typeof(IProxyAndTargetMethodReturnTypeMismatchExceptionNonVoid),
-            typeof(ProxyAndTargetMethodReturnTypeMismatchExceptionVoidClass))]
+            typeof(IReverseProxyAndTargetMethodReturnTypeMismatchExceptionNonVoid),
+            typeof(ReverseProxyAndTargetMethodReturnTypeMismatchExceptionVoidClass))]
         public void ReverseProxyAndTargetMethodReturnTypeMismatchException(Type typeToImplement, Type instanceType)
         {
             object target = Activator.CreateInstance(instanceType);
