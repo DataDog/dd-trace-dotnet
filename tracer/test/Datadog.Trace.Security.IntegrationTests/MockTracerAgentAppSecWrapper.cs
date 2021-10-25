@@ -58,7 +58,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 using var ms = new MemoryStream();
                 ctx.Value.Request.InputStream.CopyTo(ms);
                 var firstByte = ms.ReadByte();
-                Xunit.Assert.NotEqual(239, firstByte); // assert doesn't contain bom
+                Xunit.Assert.NotEqual(239, firstByte); // assert doesn't contain BOM
                 ms.Seek(0, SeekOrigin.Begin);
                 using var sr = new StreamReader(ms);
                 var content = sr.ReadToEnd();
