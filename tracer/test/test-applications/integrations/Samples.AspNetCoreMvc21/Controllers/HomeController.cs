@@ -59,6 +59,21 @@ namespace Samples.AspNetCoreMvc.Controllers
             return $"Status code has been set to {statusCode}";
         }
 
+        [Route("status-code-string/{statusCode}")]
+        public string StatusCodeTestString(string input)
+        {
+            AddCorrelationIdentifierToResponse();
+            if (int.TryParse(input, out int statusCode))
+            {
+                HttpContext.Response.StatusCode = statusCode;
+                return $"Status code has been set to {statusCode}";
+            }
+            else
+            {
+                throw new Exception("Input was not a status code");
+            }
+        }
+
         [Route("alive-check")]
         public string IsAlive()
         {
