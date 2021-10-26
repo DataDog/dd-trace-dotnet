@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             { "/not-found", 404 },
             { "/status-code/203", 203 },
             { "/status-code/500", 500 },
-            { "/status-code-string/[2 0 0]", 500 },
+            { "/status-code-string/[200]", 500 },
             { "/bad-request", 500 },
             { "/status-code/402", 402 },
             { "/ping", 200 },
