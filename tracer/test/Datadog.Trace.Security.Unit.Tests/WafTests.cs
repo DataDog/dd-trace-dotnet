@@ -79,8 +79,8 @@ namespace Datadog.Trace.Security.Unit.Tests
         [Theory]
         // [InlineData("user-agent", "Arachni/v1", "security_scanner", "ua0-600-12x")]
         [InlineData("x-file-name", "routing.yml", "command_injection", "crs-932-180")]
-        [InlineData("X-Filename", "routing.yml", "command_injection", "crs-932-180")]
-        [InlineData("X_Filename", "routing.yml", "command_injection", "crs-932-180")]
+        [InlineData("x-filename", "routing.yml", "command_injection", "crs-932-180")]
+        [InlineData("x_filename", "routing.yml", "command_injection", "crs-932-180")]
         public void HeadersAttack(string header, string content, string flow, string rule)
         {
             var args = new Dictionary<string, object>
