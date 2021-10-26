@@ -24,90 +24,96 @@ namespace Datadog.Trace.Security.Unit.Tests
         [InlineData("value", "0000012345", "sqli", "crs-942-220")]
         public void QueryStringAttack(string key, string attack, string flow, string rule)
         {
-            var args = new Dictionary<string, object>
-            {
+            Execute(
+                AddressesConstants.RequestQuery,
+                new Dictionary<string, List<string>>
                 {
-                    AddressesConstants.RequestMethod, "GET"
-                },
-                {
-                    AddressesConstants.RequestQuery, new Dictionary<string, List<string>>
                     {
+                        key, new List<string>
                         {
-                            key, new List<string>
-                            {
-                                attack
-                            }
+                            attack
                         }
                     }
                 },
-                {
-                    AddressesConstants.RequestUriRaw, "http://localhost:54587/"
-                }
-            };
-            var waf = Waf.Initialize(FileName);
-            using var context = waf.CreateContext();
-            var result = context.Run(args);
-            Assert.Equal(ReturnCode.Monitor, result.ReturnCode);
-            var resultData = JsonConvert.DeserializeObject<ResultData[]>(result.Data).FirstOrDefault();
-            Assert.Equal(flow, resultData.Flow);
-            Assert.Equal(rule, resultData.Rule);
-            Assert.Equal("server.request.query", resultData.Filter[0].BindingAccessor);
+                flow,
+                rule);
         }
 
         [Fact]
         public void UrlRawAttack()
         {
-            var args = new Dictionary<string, object>
-            {
-                {
-                    AddressesConstants.RequestMethod, "GET"
-                },
-                {
-                    AddressesConstants.RequestUriRaw, "http://localhost:54587/waf/0x5c0x2e0x2e0x2f"
-                }
-            };
-            var waf = Waf.Initialize(FileName);
-            using var context = waf.CreateContext();
-            var result = context.Run(args);
-            Assert.Equal(ReturnCode.Monitor, result.ReturnCode);
-            var resultData = JsonConvert.DeserializeObject<ResultData[]>(result.Data).FirstOrDefault();
-            Assert.Equal("lfi", resultData.Flow);
-            Assert.Equal("crs-930-100", resultData.Rule);
-            Assert.Equal(AddressesConstants.RequestUriRaw, resultData.Filter[0].BindingAccessor);
+            Execute(
+                AddressesConstants.RequestUriRaw,
+                "http://localhost:54587/waf/0x5c0x2e0x2e0x2f",
+                "lfi",
+                "crs-930-100");
         }
 
         [Theory]
-        // [InlineData("user-agent", "Arachni/v1", "security_scanner", "ua0-600-12x")]
+        [InlineData("user-agent", "Arachni/v1", "security_scanner", "ua0-600-12x")]
+        [InlineData("referer", "<script >", "xss", "crs-941-100")]
         [InlineData("x-file-name", "routing.yml", "command_injection", "crs-932-180")]
         [InlineData("x-filename", "routing.yml", "command_injection", "crs-932-180")]
         [InlineData("x_filename", "routing.yml", "command_injection", "crs-932-180")]
         public void HeadersAttack(string header, string content, string flow, string rule)
         {
+            Execute(
+                AddressesConstants.RequestHeadersNoCookies,
+                new Dictionary<string, string>
+                {
+                    {
+                        header, content
+                    }
+                },
+                flow,
+                rule);
+        }
+
+        [Theory]
+        [InlineData("attack", ".htaccess", "lfi", "crs-930-120")]
+        [InlineData("value", ";shutdown--", "sqli", "crs-942-280")]
+        [InlineData("key", ".cookie-;domain=", "http_protocol_violation", "crs-943-100")]
+        [InlineData("x-attack", " var_dump ()", "php_code_injection", "crs-933-160")]
+        [InlineData("x-attack", "o:4:\"x\":5:{d}", "php_code_injection", "crs-933-170")]
+        public void CookiesAttack(string key, string content, string flow, string rule)
+        {
+            Execute(
+                AddressesConstants.RequestCookies,
+                new Dictionary<string, string>
+                {
+                    {
+                        key, content
+                    }
+                },
+                flow,
+                rule);
+        }
+
+        [Theory]
+        [InlineData("/.adsensepostnottherenonobook", "security_scanner", "crs-913-120")]
+        public void BodyAttack(string body, string flow, string rule)
+        {
+            Execute(AddressesConstants.RequestBody, body, flow, rule);
+        }
+
+        private static void Execute(string address, object value, string flow, string rule)
+        {
             var args = new Dictionary<string, object>
             {
                 {
-                    AddressesConstants.RequestMethod, "GET"
-                },
-                {
-                    AddressesConstants.RequestUriRaw, "http://localhost:54587/"
-                },
-                {
-                    "server.request.headers.no_cookies", new Dictionary<string, string>
-                    {
-                        {
-                            header, content
-                        }
-                    }
+                    address, value
                 }
             };
-            var waf = Waf.Initialize("rule-set.json");
+            args.TryAdd(AddressesConstants.RequestUriRaw, "http://localhost:54587/");
+            args.TryAdd(AddressesConstants.RequestMethod, "GET");
+            var waf = Waf.Initialize(FileName);
             using var context = waf.CreateContext();
             var result = context.Run(args);
             Assert.Equal(ReturnCode.Monitor, result.ReturnCode);
             var resultData = JsonConvert.DeserializeObject<ResultData[]>(result.Data).FirstOrDefault();
             Assert.Equal(flow, resultData.Flow);
             Assert.Equal(rule, resultData.Rule);
-            Assert.Equal(AddressesConstants.RequestHeadersNoCookies, resultData.Filter[0].BindingAccessor);
+            Assert.Equal(address, resultData.Filter[0].BindingAccessor);
         }
     }
 }
