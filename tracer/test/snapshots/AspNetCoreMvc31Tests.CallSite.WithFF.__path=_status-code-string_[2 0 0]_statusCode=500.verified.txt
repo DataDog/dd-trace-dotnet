@@ -2,12 +2,33 @@
   {
     TraceId: Id_1,
     SpanId: Id_2,
+    Name: aspnet_core_mvc.request,
+    Resource: GET /status-code-string/{statuscode},
+    Service: Samples.AspNetCoreMvc31,
+    Type: web,
+    ParentId: Id_3,
+    Tags: {
+      aspnet_core.action: statuscodeteststring,
+      aspnet_core.controller: home,
+      aspnet_core.route: status-code-string/{statuscode},
+      component: aspnet_core,
+      env: integration_tests,
+      language: dotnet,
+      span.kind: server,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
     Name: aspnet_core.request,
-    Resource: GET status-code-string/{statusCode},
+    Resource: GET /status-code-string/{statuscode},
     Service: Samples.AspNetCoreMvc31,
     Type: web,
     Error: 1,
     Tags: {
+      aspnet_core.endpoint: Samples.AspNetCoreMvc.Controllers.HomeController.StatusCodeTestString (Samples.AspNetCoreMvc31),
+      aspnet_core.route: status-code-string/{statuscode},
       component: aspnet_core,
       datadog-header-tag: asp-net-core,
       env: integration_tests,
@@ -20,7 +41,7 @@ at Samples.AspNetCoreMvc.Controllers.HomeController.StatusCodeTestString(String 
       http.request.headers.host: localhost:00000,
       http.request.headers.sample_correlation_identifier: 0000-0000-0000,
       http.status_code: 500,
-      http.url: http://localhost:00000/status-code-string/$200$,
+      http.url: http://localhost:00000/status-code-string/%5B2%200%200%5D,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,

@@ -18,7 +18,7 @@ at Samples.AspNetCoreMvc.Controllers.HomeController.StatusCodeTestString(String 
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 500,
-      http.url: http://localhost:00000/status-code-string/$200$,
+      http.url: http://localhost:00000/status-code-string/%5B2%200%200%5D,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
