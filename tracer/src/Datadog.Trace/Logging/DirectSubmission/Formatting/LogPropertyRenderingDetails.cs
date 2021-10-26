@@ -11,14 +11,25 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
         public readonly bool HasRenderedService;
         public readonly bool HasRenderedHost;
         public readonly bool HasRenderedTags;
+        public readonly bool HasRenderedEnv;
+        public readonly bool HasRenderedVersion;
         public readonly string MessageTemplate;
 
-        public LogPropertyRenderingDetails(bool hasRenderedSource, bool hasRenderedService, bool hasRenderedHost, bool hasRenderedTags, string messageTemplate)
+        public LogPropertyRenderingDetails(
+            bool hasRenderedSource,
+            bool hasRenderedService,
+            bool hasRenderedHost,
+            bool hasRenderedTags,
+            bool hasRenderedEnv,
+            bool hasRenderedVersion,
+            string messageTemplate)
         {
             HasRenderedSource = hasRenderedSource;
             HasRenderedService = hasRenderedService;
             HasRenderedHost = hasRenderedHost;
             HasRenderedTags = hasRenderedTags;
+            HasRenderedEnv = hasRenderedEnv;
+            HasRenderedVersion = hasRenderedVersion;
             MessageTemplate = messageTemplate;
         }
     }

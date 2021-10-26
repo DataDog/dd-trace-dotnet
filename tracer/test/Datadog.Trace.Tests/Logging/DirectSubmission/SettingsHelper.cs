@@ -13,7 +13,11 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
 {
     internal class SettingsHelper
     {
-        public static LogFormatter GetFormatter() => new(GetValidSettings(), "MyTestService");
+        public static LogFormatter GetFormatter() => new(
+            GetValidSettings(),
+            serviceName: "MyTestService",
+            env: "integration_tests",
+            version: "1.0.0");
 
         public static DirectLogSubmissionSettings GetValidSettings()
         {

@@ -198,6 +198,12 @@ namespace Datadog.Trace.TestHelpers
             [JsonProperty("dd_service")]
             public string Service { get; set; }
 
+            [JsonProperty("dd_trace_id")]
+            public string TraceId { get; set; }
+
+            [JsonProperty("dd_span_id")]
+            public string SpanId { get; set; }
+
             [JsonExtensionData]
             internal Dictionary<string, JToken> OtherProperties { get; } = new();
 
@@ -211,6 +217,18 @@ namespace Datadog.Trace.TestHelpers
             private string Service2
             {
                 set => Service = value;
+            }
+
+            [JsonProperty("dd.trace_id")]
+            private string TraceId1
+            {
+                set => TraceId = value;
+            }
+
+            [JsonProperty("dd.span_id")]
+            private string SpanId1
+            {
+                set => SpanId = value;
             }
 
             [JsonProperty("dd.env")]

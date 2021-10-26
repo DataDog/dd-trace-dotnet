@@ -62,21 +62,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.Formatti
             var haveService = false;
             var haveHost = false;
             var haveTags = false;
+            var haveEnv = false;
+            var haveVersion = false;
             foreach (var property in logEvent.Properties)
             {
                 var duckProperty = property.DuckCast<KeyValuePairStringStruct>();
                 var name = duckProperty.Key;
 
-                haveSource = haveSource || LogFormatter.IsSourceProperty(name);
-                haveService = haveService || LogFormatter.IsServiceProperty(name);
-                haveHost = haveHost || LogFormatter.IsHostProperty(name);
-                haveTags = haveTags || LogFormatter.IsTagsProperty(name);
+                haveSource |= LogFormatter.IsSourceProperty(name);
+                haveService |= LogFormatter.IsServiceProperty(name);
+                haveHost |= LogFormatter.IsHostProperty(name);
+                haveTags |= LogFormatter.IsTagsProperty(name);
+                haveEnv |= LogFormatter.IsEnvProperty(name);
+                haveVersion |= LogFormatter.IsVersionProperty(name);
 
                 LogFormatter.WritePropertyName(writer, name);
                 FormatLogEventPropertyValue(writer, duckProperty.Value);
             }
 
-            var renderingDetails = new LogPropertyRenderingDetails(haveSource, haveService, haveHost, haveTags, messageTemplate: logEvent.MessageTemplate.Text);
+            var renderingDetails = new LogPropertyRenderingDetails(haveSource, haveService, haveHost, haveTags, haveEnv, haveVersion, messageTemplate: logEvent.MessageTemplate.Text);
             return renderingDetails;
         }
 

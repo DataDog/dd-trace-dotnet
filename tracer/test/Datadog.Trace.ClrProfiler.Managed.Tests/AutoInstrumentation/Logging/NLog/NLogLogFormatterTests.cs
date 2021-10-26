@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.NL
             NLogLogFormatter.FormatLogEvent(formatter, sb, wrapper);
             var actual = sb.ToString();
 
-            var expected = @"{""@t"":""2021-09-13T10:40:57.0000000Z"",""@m"":""This is a test with a 123"",""@l"":""Debug"",""@x"":""System.InvalidOperationException: Oops, just a test!"",""Value"":123,""OtherProperty"":62,""@i"":""e5450052"",""ddsource"":""csharp"",""ddservice"":""MyTestService"",""host"":""some_host""}";
+            var expected = @"{""@t"":""2021-09-13T10:40:57.0000000Z"",""@m"":""This is a test with a 123"",""@l"":""Debug"",""@x"":""System.InvalidOperationException: Oops, just a test!"",""Value"":123,""OtherProperty"":62,""@i"":""e5450052"",""ddsource"":""csharp"",""ddservice"":""MyTestService"",""dd_env"":""integration_tests"",""dd_version"":""1.0.0"",""host"":""some_host""}";
             actual.Should().Be(expected);
         }
 
@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.NL
             NLogLogFormatter.FormatLogEvent(formatter, sb, wrapper);
             var actual = sb.ToString();
 
-            var expected = @"{""@t"":""2021-09-13T10:40:57.0000000Z"",""@m"":""This is a test with a 123"",""@l"":""Debug"",""@x"":""System.InvalidOperationException: Oops, just a test!"",""Value"":123,""OtherProperty"":62,""@i"":""e5450052"",""ddsource"":""csharp"",""ddservice"":""MyTestService"",""host"":""some_host""}";
+            var expected = @"{""@t"":""2021-09-13T10:40:57.0000000Z"",""@m"":""This is a test with a 123"",""@l"":""Debug"",""@x"":""System.InvalidOperationException: Oops, just a test!"",""Value"":123,""OtherProperty"":62,""@i"":""e5450052"",""ddsource"":""csharp"",""ddservice"":""MyTestService"",""dd_env"":""integration_tests"",""dd_version"":""1.0.0"",""host"":""some_host""}";
             actual.Should().Be(expected);
         }
 

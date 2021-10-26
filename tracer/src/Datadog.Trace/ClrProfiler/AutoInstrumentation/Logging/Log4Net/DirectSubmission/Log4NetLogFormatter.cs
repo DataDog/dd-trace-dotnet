@@ -34,6 +34,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
             var haveService = false;
             var haveHost = false;
             var haveTags = false;
+            var haveEnv = false;
+            var haveVersion = false;
 
             var properties = logEntry.GetProperties();
             foreach (var keyObj in properties.Keys)
@@ -57,6 +59,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
                         haveService |= LogFormatter.IsServiceProperty(name);
                         haveHost |= LogFormatter.IsHostProperty(name);
                         haveTags |= LogFormatter.IsTagsProperty(name);
+                        haveEnv |= LogFormatter.IsEnvProperty(name);
+                        haveVersion |= LogFormatter.IsVersionProperty(name);
 
                         LogFormatter.WritePropertyName(writer, name);
                         LogFormatter.WriteValue(writer, value);
@@ -67,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
             // The message object could be anything, so only generate an eventID if we have a string message
             var messageTemplate = logEntry.MessageObject as string;
 
-            return new LogPropertyRenderingDetails(haveSource, haveService, haveHost, haveTags, messageTemplate: messageTemplate);
+            return new LogPropertyRenderingDetails(haveSource, haveService, haveHost, haveTags, haveEnv, haveVersion, messageTemplate);
         }
     }
 }

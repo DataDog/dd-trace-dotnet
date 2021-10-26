@@ -27,9 +27,13 @@ namespace Datadog.Trace.Logging.DirectSubmission
 
         public LogFormatter Formatter { get; }
 
-        public static DirectLogSubmissionManager Create(DirectLogSubmissionSettings settings, string serviceName)
+        public static DirectLogSubmissionManager Create(
+            DirectLogSubmissionSettings settings,
+            string serviceName,
+            string env,
+            string serviceVersion)
         {
-            var formatter = new LogFormatter(settings, serviceName);
+            var formatter = new LogFormatter(settings, serviceName, env, serviceVersion);
             if (!settings.IsEnabled)
             {
                 return new DirectLogSubmissionManager(settings, new NullDatadogSink(), formatter);

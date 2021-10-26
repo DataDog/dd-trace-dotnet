@@ -46,6 +46,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
             var haveService = false;
             var haveHost = false;
             var haveTags = false;
+            var haveVersion = false;
+            var haveEnv = false;
             string messageTemplate = null;
 
             if (logEntry.State is { } state)
@@ -63,6 +65,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
                             haveService |= LogFormatter.IsServiceProperty(key);
                             haveHost |= LogFormatter.IsHostProperty(key);
                             haveTags |= LogFormatter.IsTagsProperty(key);
+                            haveEnv |= LogFormatter.IsEnvProperty(key);
+                            haveVersion |= LogFormatter.IsVersionProperty(key);
 
                             LogFormatter.WritePropertyName(writer, key);
                             LogFormatter.WriteValue(writer, item.Value);
@@ -98,6 +102,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
                                 haveService |= LogFormatter.IsServiceProperty(key);
                                 haveHost |= LogFormatter.IsHostProperty(key);
                                 haveTags |= LogFormatter.IsTagsProperty(key);
+                                haveEnv |= LogFormatter.IsEnvProperty(key);
+                                haveVersion |= LogFormatter.IsVersionProperty(key);
 
                                 LogFormatter.WritePropertyName(writer, key);
                                 LogFormatter.WriteValue(wrapper.Writer, item.Value);
@@ -124,7 +130,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
                 }
             }
 
-            return new LogPropertyRenderingDetails(haveSource, haveService, haveHost, haveTags, messageTemplate);
+            return new LogPropertyRenderingDetails(haveSource, haveService, haveHost, haveTags, haveEnv, haveVersion, messageTemplate);
         }
 
         private static string GetLogLevelString(int logLevel) =>

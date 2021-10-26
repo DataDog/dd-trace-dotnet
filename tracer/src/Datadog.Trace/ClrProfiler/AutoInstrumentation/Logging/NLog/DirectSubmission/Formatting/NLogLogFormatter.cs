@@ -42,6 +42,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             var haveService = false;
             var haveHost = false;
             var haveTags = false;
+            var haveEnv = false;
+            var haveVersion = false;
 
             if (logEntryWrapper.Properties is not null)
             {
@@ -52,6 +54,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
                     haveService |= LogFormatter.IsServiceProperty(name);
                     haveHost |= LogFormatter.IsHostProperty(name);
                     haveTags |= LogFormatter.IsTagsProperty(name);
+                    haveEnv |= LogFormatter.IsEnvProperty(name);
+                    haveVersion |= LogFormatter.IsVersionProperty(name);
 
                     LogFormatter.WritePropertyName(writer, name);
                     LogFormatter.WriteValue(writer, kvp.Value);
@@ -66,13 +70,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
                     haveService |= LogFormatter.IsServiceProperty(name);
                     haveHost |= LogFormatter.IsHostProperty(name);
                     haveTags |= LogFormatter.IsTagsProperty(name);
+                    haveEnv |= LogFormatter.IsEnvProperty(name);
+                    haveVersion |= LogFormatter.IsVersionProperty(name);
 
                     LogFormatter.WritePropertyName(writer, name);
                     LogFormatter.WriteValue(writer, kvp.Value);
                 }
             }
 
-            return new LogPropertyRenderingDetails(haveSource, haveService, haveHost, haveTags, messageTemplate: logEntryWrapper.LogEventInfo.Message);
+            return new LogPropertyRenderingDetails(haveSource, haveService, haveHost, haveTags, haveEnv, haveVersion, messageTemplate: logEntryWrapper.LogEventInfo.Message);
         }
 
         private static string GetLogLevelString(LogLevelProxy logLevel) =>

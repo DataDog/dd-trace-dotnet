@@ -75,7 +75,11 @@ namespace Datadog.Trace
                 runtimeMetrics ??= new RuntimeMetricsWriter(statsd ?? CreateDogStatsdClient(settings, defaultServiceName, settings.Exporter.DogStatsdPort), TimeSpan.FromSeconds(10));
             }
 
-            logSubmissionManager ??= DirectLogSubmissionManager.Create(settings.LogSubmissionSettings, defaultServiceName);
+            logSubmissionManager ??= DirectLogSubmissionManager.Create(
+                settings.LogSubmissionSettings,
+                defaultServiceName,
+                settings.Environment,
+                settings.ServiceVersion);
 
             var tracerManager = CreateTracerManagerFrom(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, defaultServiceName);
             return tracerManager;

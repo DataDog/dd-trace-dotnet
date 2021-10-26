@@ -22,7 +22,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void CanDeserializeJson()
         {
-            var serialized = "[{\"@t\":\"2021-09-28T14:47:02.6486114Z\",\"@m\":\"[ExcludeMessage]Building pipeline\",\"@i\":\"c5676978\",\"ddsource\":\"csharp\",\"ddservice\":\"LogsInjection.ILogger\",\"host\":\"integration_ilogger_tests\"}]";
+            var serialized = "[{\"@t\":\"2021-09-28T14:47:02.6486114Z\",\"@m\":\"[ExcludeMessage]Building pipeline\",\"@i\":\"c5676978\",\"ddsource\":\"csharp\",\"ddservice\":\"LogsInjection.ILogger\",\"host\":\"integration_ilogger_tests\",\"dd.env\":\"integration_tests\",\"dd.version\":\"1.0.0\",\"dd.trace_id\":\"8172771144023044714\",\"dd.span_id\":\"870590545642546651\"}]";
             using var ms = new MemoryStream(Encoding.UTF8.GetBytes(serialized));
 
             var logs = MockLogsIntake.Log.DeserializeFromStream(ms);
@@ -34,6 +34,10 @@ namespace Datadog.Trace.Tests
             log.Source.Should().Be("csharp");
             log.Service.Should().Be("LogsInjection.ILogger");
             log.Host.Should().Be("integration_ilogger_tests");
+            log.Env.Should().Be("integration_tests");
+            log.Version.Should().Be("1.0.0");
+            log.TraceId.Should().Be("8172771144023044714");
+            log.SpanId.Should().Be("870590545642546651");
         }
 
         [Fact]
@@ -76,7 +80,7 @@ namespace Datadog.Trace.Tests
                         writer.WriteValue(pair.Value);
                     }
 
-                    return new LogPropertyRenderingDetails(false, false, false, false, message);
+                    return new LogPropertyRenderingDetails(false, false, false, false, false, false, message);
                 });
             return sb.ToString();
         }
