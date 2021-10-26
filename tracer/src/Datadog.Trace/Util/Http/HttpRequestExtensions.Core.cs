@@ -46,7 +46,7 @@ namespace Datadog.Trace.Util.Http
                 { AddressesConstants.RequestMethod, request.Method },
                 { AddressesConstants.RequestUriRaw, url },
                 { AddressesConstants.RequestQuery, queryStringDic },
-                { AddressesConstants.RequestHeaderNoCookies, headersDic },
+                { AddressesConstants.RequestHeadersNoCookies, headersDic },
                 { AddressesConstants.RequestCookies, cookiesDic },
             };
 

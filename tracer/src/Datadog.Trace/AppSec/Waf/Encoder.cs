@@ -164,7 +164,7 @@ namespace Datadog.Trace.AppSec.Waf
             return new Obj(mapNat);
         }
 
-        private static string TrunacteLongString(string s)
+        private static string TruncateLongString(string s)
         {
             if (s.Length > MaxStringLength)
             {
@@ -176,7 +176,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         private static Obj CreateNativeString(string s)
         {
-            s = TrunacteLongString(s);
+            s = TruncateLongString(s);
             return new Obj(WafNative.ObjectStringLength(s, Convert.ToUInt64(s.Length)));
         }
 

@@ -14,7 +14,7 @@ namespace Datadog.Trace.AppSec
         public const string RequestMethod = "server.request.method";
         public const string RequestQuery = "server.request.query";
         public const string RequestCookies = "server.request.cookies";
-        public const string RequestHeaderNoCookies = "server.request.headers.no_cookies";
+        public const string RequestHeadersNoCookies = "server.request.headers.no_cookies";
         public const string RequestBody = "server.request.body";
         public const string RequestBodyFileFieldNames = "server.request.body.files_field_names";
         public const string RequestBodyFileNames = "server.request.body.filenames";
