@@ -79,8 +79,8 @@ namespace Datadog.Trace.Security.Unit.Tests
         [Theory]
         // [InlineData("user-agent", "Arachni/v1", "security_scanner", "ua0-600-12x")]
         [InlineData("x-file-name", "routing.yml", "command_injection", "crs-932-180")]
-        [InlineData("X-Filename", "routing.yml", "command_injection", "crs-932-180", Skip = "Not working yet")]
-        [InlineData("X_Filename", "routing.yml", "command_injection", "crs-932-180", Skip = "Not working yet")]
+        [InlineData("X-Filename", "routing.yml", "command_injection", "crs-932-180")]
+        [InlineData("X_Filename", "routing.yml", "command_injection", "crs-932-180")]
         public void HeadersAttack(string header, string content, string flow, string rule)
         {
             var args = new Dictionary<string, object>
@@ -100,7 +100,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                     }
                 }
             };
-            var waf = Waf.Initialize(FileName);
+            var waf = Waf.Initialize("rule-set.json");
             using var context = waf.CreateContext();
             var result = context.Run(args);
             Assert.Equal(ReturnCode.Monitor, result.ReturnCode);
