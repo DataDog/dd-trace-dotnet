@@ -88,11 +88,11 @@ namespace Datadog.Trace.PlatformHelpers
             string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
             string url = request.GetUrl();
 
-            string absolutePath = request.Path.Value;
+            string absolutePath = request.Path.ToUriComponent();
 
             if (request.PathBase.HasValue)
             {
-                absolutePath = request.PathBase.Value + absolutePath;
+                absolutePath = request.PathBase.ToUriComponent() + absolutePath;
             }
 
             string resourceUrl = UriHelpers.GetCleanUriPath(absolutePath)
