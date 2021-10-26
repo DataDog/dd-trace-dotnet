@@ -1,10 +1,10 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
     Name: aspnet_core_mvc.request,
     Resource: GET /status-code-string/{statuscode},
-    Service: Samples.AspNetCoreMvc30,
+    Service: Samples.AspNetCoreMvc21,
     Type: web,
     ParentId: Id_3,
     Tags: {
@@ -23,14 +23,12 @@
     SpanId: Id_3,
     Name: aspnet_core.request,
     Resource: GET /status-code-string/{statuscode},
-    Service: Samples.AspNetCoreMvc30,
+    Service: Samples.AspNetCoreMvc21,
     Type: web,
     Error: 1,
     Tags: {
-      aspnet_core.endpoint: Samples.AspNetCoreMvc.Controllers.HomeController.StatusCodeTestString (Samples.AspNetCoreMvc30),
       aspnet_core.route: status-code-string/{statuscode},
       component: aspnet_core,
-      datadog-header-tag: asp-net-core,
       env: integration_tests,
       error.msg: Input was not a status code,
       error.stack: 
@@ -39,9 +37,8 @@ at Samples.AspNetCoreMvc.Controllers.HomeController.StatusCodeTestString(String 
       error.type: System.Exception,
       http.method: GET,
       http.request.headers.host: localhost:00000,
-      http.request.headers.sample_correlation_identifier: 0000-0000-0000,
       http.status_code: 500,
-      http.url: http://localhost:00000/status-code-string/%5B2%200%200%5D,
+      http.url: http://localhost:00000/status-code-string/$200$,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
