@@ -27,9 +27,10 @@ namespace Datadog.Trace.Tests.Sampling
             var sampler = new RuleBasedSampler(new DenyAll());
             RunSamplerTest(
                 sampler,
-                500,
-                1,
-                0);
+                iterations: 500,
+                expectedAutoKeepRate: 1,
+                expectedUserKeepRate: 0,
+                acceptableVariancePercent: 0);
         }
 
         [Fact]
@@ -39,9 +40,10 @@ namespace Datadog.Trace.Tests.Sampling
             sampler.RegisterRule(new CustomSamplingRule(1, "Allow_all", ".*", ".*"));
             RunSamplerTest(
                 sampler,
-                500,
-                0,
-                0);
+                iterations: 500,
+                expectedAutoKeepRate: 0,
+                expectedUserKeepRate: 0,
+                acceptableVariancePercent: 0);
         }
 
         [Fact]
@@ -51,9 +53,10 @@ namespace Datadog.Trace.Tests.Sampling
             sampler.RegisterRule(new CustomSamplingRule(1, "Allow_all", ".*", ".*"));
             RunSamplerTest(
                 sampler,
-                500,
-                1,
-                0);
+                iterations: 500,
+                expectedAutoKeepRate: 0,
+                expectedUserKeepRate: 1,
+                acceptableVariancePercent: 0);
         }
 
         [Fact]
@@ -63,9 +66,10 @@ namespace Datadog.Trace.Tests.Sampling
             sampler.RegisterRule(new CustomSamplingRule(0, "Allow_nothing", ".*", ".*"));
             RunSamplerTest(
                 sampler,
-                500,
-                0,
-                0);
+                iterations: 500,
+                expectedAutoKeepRate: 0,
+                expectedUserKeepRate: 0,
+                acceptableVariancePercent: 0);
         }
 
         [Fact]
@@ -75,9 +79,10 @@ namespace Datadog.Trace.Tests.Sampling
             sampler.RegisterRule(new CustomSamplingRule(0.5f, "Allow_nothing", ".*", ".*"));
             RunSamplerTest(
                 sampler,
-                50_000, // Higher number for lower variance
-                0.5f,
-                0.05f);
+                iterations: 50_000, // Higher number for lower variance
+                expectedAutoKeepRate: 0,
+                expectedUserKeepRate: 0.5f,
+                acceptableVariancePercent: 0.05f);
         }
 
         [Fact]
@@ -88,9 +93,10 @@ namespace Datadog.Trace.Tests.Sampling
 
             RunSamplerTest(
                 sampler,
-                50_000, // Higher number for lower variance
-                FallbackRate,
-                0.05f);
+                iterations: 50_000, // Higher number for lower variance
+                expectedAutoKeepRate: FallbackRate,
+                expectedUserKeepRate: 0,
+                acceptableVariancePercent: 0.05f);
         }
 
         private static Span GetMyServiceSpan(ulong traceId)
@@ -104,10 +110,12 @@ namespace Datadog.Trace.Tests.Sampling
             ISampler sampler,
             int iterations,
             float expectedAutoKeepRate,
+            float expectedUserKeepRate,
             float acceptableVariancePercent)
         {
             var sampleSize = iterations;
             var autoKeeps = 0;
+            var userKeeps = 0;
             int seed = new Random().Next();
             var idGenerator = new SpanIdGenerator(seed);
 
@@ -116,20 +124,34 @@ namespace Datadog.Trace.Tests.Sampling
                 var traceId = idGenerator.CreateNew();
                 var span = GetMyServiceSpan(traceId);
                 var priority = sampler.GetSamplingPriority(span);
+
                 if (priority == SamplingPriority.AutoKeep)
                 {
                     autoKeeps++;
                 }
+                else if (priority == SamplingPriority.UserKeep)
+                {
+                    userKeeps++;
+                }
             }
 
+            // AUTO_KEEP
             var autoKeepRate = autoKeeps / (float)iterations;
-
-            var lowerLimit = expectedAutoKeepRate * (1 - acceptableVariancePercent);
-            var upperLimit = expectedAutoKeepRate * (1 + acceptableVariancePercent);
+            var autoKeepRateLowerLimit = expectedAutoKeepRate * (1 - acceptableVariancePercent);
+            var autoKeepRateUpperLimit = expectedAutoKeepRate * (1 + acceptableVariancePercent);
 
             Assert.True(
-                autoKeepRate >= lowerLimit && autoKeepRate <= upperLimit,
-                $"Expected between {lowerLimit} and {upperLimit}, actual rate is {autoKeepRate}. Random generator seeded with {seed}.");
+                autoKeepRate >= autoKeepRateLowerLimit && autoKeepRate <= autoKeepRateUpperLimit,
+                $"Sampling AUTO_KEEP rate expected between {autoKeepRateLowerLimit} and {autoKeepRateUpperLimit}, actual rate is {autoKeepRate}. Random generator seeded with {seed}.");
+
+            // USER_KEEP (aka MANUAL_KEEP)
+            var userKeepRate = userKeeps / (float)iterations;
+            var userKeepRateLowerLimit = expectedUserKeepRate * (1 - acceptableVariancePercent);
+            var userKeepRateUpperLimit = expectedUserKeepRate * (1 + acceptableVariancePercent);
+
+            Assert.True(
+                userKeepRate >= userKeepRateLowerLimit && userKeepRate <= userKeepRateUpperLimit,
+                $"Sampling USER_KEEP rate expected between {userKeepRateLowerLimit} and {userKeepRateUpperLimit}, actual rate is {userKeepRate}. Random generator seeded with {seed}.");
         }
 
         private class NoLimits : IRateLimiter
