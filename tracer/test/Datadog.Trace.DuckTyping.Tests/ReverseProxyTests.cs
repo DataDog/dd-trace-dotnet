@@ -5,7 +5,9 @@
 
 using System;
 using System.IO;
+using System.Text;
 using System.Threading;
+using FluentAssertions;
 using Serilog;
 using Xunit;
 
@@ -27,10 +29,10 @@ namespace Datadog.Trace.DuckTyping.Tests
 #if NET452
             Assert.Throws<DuckTypeTypeIsNotPublicException>(() =>
             {
-                instance.DuckCast(iLogEventEnricherType);
+                instance.DuckImplement(iLogEventEnricherType);
             });
 #else
-            var proxy = instance.DuckCast(iLogEventEnricherType);
+            var proxy = instance.DuckImplement(iLogEventEnricherType);
 
             var log = new Vendors.Serilog.LoggerConfiguration()
                 .Enrich.With((Vendors.Serilog.Core.ILogEventEnricher)proxy)
@@ -55,10 +57,10 @@ namespace Datadog.Trace.DuckTyping.Tests
 #if NET452
             Assert.Throws<DuckTypeTypeIsNotPublicException>(() =>
             {
-                eventInstance.DuckCast(type);
+                eventInstance.DuckImplement(type);
             });
 #else
-            var proxy2 = eventInstance.DuckCast(type);
+            var proxy2 = eventInstance.DuckImplement(type);
             eventInstance.SetBaseInstance(proxy2);
 
             ((Datadog.Trace.Vendors.Serilog.Events.LogEventPropertyValue)proxy2).ToString("Hello world", null);
@@ -76,7 +78,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             var instance = new PublicLogEventEnricherImpl(resetEvent);
 
-            var proxy = instance.DuckCast(iLogEventEnricherType);
+            var proxy = instance.DuckImplement(iLogEventEnricherType);
             var log = new Serilog.LoggerConfiguration()
                 .Enrich.With((Serilog.Core.ILogEventEnricher)proxy)
                 .MinimumLevel.Debug()
@@ -97,12 +99,96 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             var type = typeof(Serilog.Events.LogEventPropertyValue);
 
-            var proxy2 = eventInstance.DuckCast(type);
+            var proxy2 = eventInstance.DuckImplement(type);
             eventInstance.SetBaseInstance(proxy2);
 
             ((Serilog.Events.LogEventPropertyValue)proxy2).ToString("Hello world", null);
 
             Assert.True(resetEvent.Wait(5_000));
+        }
+
+        [Fact]
+        public void InternalClassWithVirtualMembersReverseProxyTest()
+        {
+            var expected = "Some random string";
+
+            var formatterInstance = new JsonValueFormatterImpl(expected);
+
+            var type = typeof(Datadog.Trace.Vendors.Serilog.Formatting.Json.JsonValueFormatter);
+
+#if NET452
+            Assert.Throws<DuckTypeTypeIsNotPublicException>(() =>
+            {
+                formatterInstance.DuckImplement(type);
+            });
+#else
+            var proxy2 = formatterInstance.DuckImplement(type);
+
+            var value = new Vendors.Serilog.Events.ScalarValue("original");
+
+            var sb = new StringBuilder();
+            var sw = new StringWriter(sb);
+            ((Datadog.Trace.Vendors.Serilog.Formatting.Json.JsonValueFormatter)proxy2).Format(value, sw);
+
+            var actual = sb.ToString();
+            Assert.Equal(expected, actual);
+#endif
+        }
+
+        [Fact]
+        public void PublicClassWithVirtualMembersReverseProxyTest()
+        {
+            var expected = nameof(PublicClassWithVirtualMembers);
+
+            var instance = new PublicClassWithVirtualMembers();
+
+            var type = typeof(PublicAbstractClassWithProperties);
+
+            var proxy2 = instance.DuckImplement(type);
+
+            var actual = ((PublicAbstractClassWithProperties)proxy2).GetClassName();
+            var syncRoot = ((PublicAbstractClassWithProperties)proxy2).GetSyncRoot();
+
+            Assert.Equal(expected, actual);
+            Assert.NotNull(syncRoot);
+        }
+
+        [Fact]
+        public void ReverseProxyInvokesBaseConstructorTest()
+        {
+            var instance = new AbstractBaseWithConstructorClassDuck();
+            var proxy = (AbstractBaseWithConstructorClass)instance.DuckImplement(typeof(AbstractBaseWithConstructorClass));
+
+            proxy.PrivateStaticReadonly.Should().NotBeNull();
+            proxy.PrivateReadonly.Should().NotBeNull();
+            proxy.Private.Should().NotBeNull();
+            proxy.ConstructorValue.Should().NotBeNull();
+            proxy.PropertyWithBackingField.Should().NotBeNull();
+        }
+
+        [Fact]
+        public void ReverseProxyWithPropertiesTest()
+        {
+            var instance = new ReverseProxyWithPropertiesTestClass();
+            var proxy = (IReverseProxyWithPropertiesTest)instance.DuckImplement(typeof(IReverseProxyWithPropertiesTest));
+
+            proxy.Value.Should().Be(instance.Value);
+        }
+
+        [Fact]
+        public void ReverseProxyWithDuckChainingPropertiesTest()
+        {
+            var instance = new ReverseProxyWithDuckChainingPropertiesTestClass();
+            var proxy = (IReverseProxyWithDuckChainingPropertiesTest)instance.DuckImplement(typeof(IReverseProxyWithDuckChainingPropertiesTest));
+
+            var testValue = new TestValue();
+
+            proxy.Value = testValue;
+
+            instance.Value.Should()
+                    .BeAssignableTo<IDuckType>()
+                    .Which.Instance.Should()
+                    .Be(testValue);
         }
 
         // ************************************************************************************
@@ -118,7 +204,7 @@ namespace Datadog.Trace.DuckTyping.Tests
                 _manualResetEventSlim = manualResetEventSlim;
             }
 
-            [DuckReverseMethod("Datadog.Trace.Vendors.Serilog.Events.LogEvent", "Datadog.Trace.Vendors.Serilog.Core.ILogEventPropertyFactory")]
+            [DuckReverseMethod(ParameterTypeNames = new[] { "Datadog.Trace.Vendors.Serilog.Events.LogEvent, Datadog.Trace", "Datadog.Trace.Vendors.Serilog.Core.ILogEventPropertyFactory, Datadog.Trace" })]
             public void Enrich(ILogEvent logEvent, ILogEventPropertyFactory propertyFactory)
             {
                 Assert.NotNull(logEvent);
@@ -146,7 +232,7 @@ namespace Datadog.Trace.DuckTyping.Tests
                 _manualResetEventSlim = manualResetEventSlim;
             }
 
-            [DuckReverseMethod("Serilog.Events.LogEvent", "Serilog.Core.ILogEventPropertyFactory")]
+            [DuckReverseMethod(ParameterTypeNames = new[] { "Serilog.Events.LogEvent, Serilog", "Serilog.Core.ILogEventPropertyFactory, Serilog" })]
             public void Enrich(ILogEvent logEvent, ILogEventPropertyFactory propertyFactory)
             {
                 Assert.NotNull(logEvent);
@@ -159,6 +245,119 @@ namespace Datadog.Trace.DuckTyping.Tests
 
                 _manualResetEventSlim.Set();
             }
+        }
+
+        // ************************************************************************************
+        // Types for InternalClassWithVirtualMembersReverseProxyTest
+        // ***
+
+        public class JsonValueFormatterImpl
+        {
+            private readonly string _valueToWrite;
+
+            public JsonValueFormatterImpl(string valueToWrite)
+            {
+                _valueToWrite = valueToWrite;
+            }
+
+            [DuckReverseMethod(ParameterTypeNames = new[] { "System.IO.TextWriter", "Datadog.Trace.Vendors.Serilog.Events.ScalarValue, Datadog.Trace" })]
+            protected bool VisitScalarValue(TextWriter state, object scalar)
+            {
+                state.Write(_valueToWrite);
+                return true;
+            }
+        }
+
+        // ************************************************************************************
+        // Types for PublicClassWithVirtualMembersReverseProxyTest
+        // ***
+
+        public abstract class PublicAbstractClassWithProperties
+        {
+            protected object SyncRoot { get; } = new object();
+
+            public string GetClassName() => GetName();
+
+            public object GetSyncRoot() => SyncRoot;
+
+            protected virtual string GetName()
+            {
+                return nameof(PublicAbstractClassWithProperties);
+            }
+        }
+
+        public class PublicClassWithVirtualMembers
+        {
+            [DuckReverseMethod]
+            protected virtual string GetName()
+            {
+                return nameof(PublicClassWithVirtualMembers);
+            }
+        }
+
+        /* Types for ReverseProxyInvokesBaseConstructorTest */
+
+        public abstract class AbstractBaseWithConstructorClass
+        {
+            private static readonly int? _privateStaticReadonly = 1;
+            private readonly int? _privateReadonly = 2;
+            private int? _private = 3;
+            private int? _constructorValue;
+
+            protected AbstractBaseWithConstructorClass()
+            {
+                _constructorValue = 4;
+            }
+
+            public int? PrivateStaticReadonly => _privateStaticReadonly;
+
+            public int? PrivateReadonly => _privateReadonly;
+
+            public int? Private => _private;
+
+            public int? ConstructorValue => _constructorValue;
+
+            public int? PropertyWithBackingField => 5;
+        }
+
+        public class AbstractBaseWithConstructorClassDuck
+        {
+        }
+
+        /* Types for ReverseProxyWithPropertiesTestClass */
+
+        public interface IReverseProxyWithPropertiesTest
+        {
+            string Value { get; set; }
+        }
+
+        public class ReverseProxyWithPropertiesTestClass
+        {
+            [DuckReverseMethod]
+            public string Value { get; set; } = "Datadog";
+        }
+
+        /* Types for ReverseProxyWithDuckChainingPropertiesTestClass */
+
+        public interface IReverseProxyWithDuckChainingPropertiesTest
+        {
+            TestValue Value { get; set; }
+        }
+
+        public class ReverseProxyWithDuckChainingPropertiesTestClass
+        {
+            [DuckReverseMethod]
+            public ITestValue Value { get; set; }
+        }
+
+        public class TestValue
+        {
+            public string InnerValue { get; set; }
+        }
+
+        public interface ITestValue
+        {
+            public string InnerValue { get; set; }
         }
 
         // ************************************************************************************
@@ -215,6 +414,7 @@ namespace Datadog.Trace.DuckTyping.Tests
                 _manualResetEventSlim = manualResetEventSlim;
             }
 
+            [DuckIgnore]
             public void SetBaseInstance(object baseObject)
             {
                 _base = baseObject.DuckCast<IBaseClass>();
