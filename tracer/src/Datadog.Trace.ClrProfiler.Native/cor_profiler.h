@@ -57,9 +57,8 @@ private:
     //
     // Module helper variables
     //
-    std::mutex module_id_to_info_map_lock_;
+    std::mutex module_ids_lock_;
     std::vector<ModuleID> module_ids_;
-    std::unordered_map<ModuleID, std::unique_ptr<ModuleMetadata>> module_id_to_info_map_;
 
     //
     // Helper methods
