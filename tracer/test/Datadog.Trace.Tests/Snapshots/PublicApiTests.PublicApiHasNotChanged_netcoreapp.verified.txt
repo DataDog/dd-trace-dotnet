@@ -181,8 +181,6 @@ namespace Datadog.Trace.Configuration
         public System.Uri AgentUri { get; set; }
         public bool AnalyticsEnabled { get; set; }
         public string CustomSamplingRules { get; set; }
-        [System.Obsolete]
-        public bool DebugEnabled { get; set; }
         public bool DiagnosticSourceEnabled { get; set; }
         public System.Collections.Generic.HashSet<string> DisabledIntegrationNames { get; set; }
         public int DogStatsdPort { get; set; }
@@ -345,12 +343,6 @@ namespace Datadog.Trace
         public const string ErrorMsg = "error.msg";
         public const string ErrorStack = "error.stack";
         public const string ErrorType = "error.type";
-        [System.Obsolete("This field will be removed in futures versions of this library. Use ManualDrop in" +
-            "stead.")]
-        public const string ForceDrop = "force.drop";
-        [System.Obsolete("This field will be removed in futures versions of this library. Use ManualKeep in" +
-            "stead.")]
-        public const string ForceKeep = "force.keep";
         public const string GraphQLOperationName = "graphql.operation.name";
         public const string GraphQLOperationType = "graphql.operation.type";
         public const string GraphQLSource = "graphql.source";
