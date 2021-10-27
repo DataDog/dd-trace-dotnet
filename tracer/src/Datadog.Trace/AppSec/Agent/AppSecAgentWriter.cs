@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Transports;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec.Agent
 {
@@ -17,7 +18,9 @@ namespace Datadog.Trace.AppSec.Agent
     {
         private const int BatchInterval = 1000;
         private const int MaxItemsPerBatch = 1000;
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AppSecAgentWriter>();
+
         private readonly ConcurrentQueue<IEvent> _events;
         private readonly ManualResetEventSlim _senderMutex = new(initialState: false, spinCount: 0);
         private readonly TaskCompletionSource<bool> _processExit = new();
@@ -34,6 +37,11 @@ namespace Datadog.Trace.AppSec.Agent
 
         public void AddEvent(IEvent @event)
         {
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug("Pushing new attack to AppSec events");
+            }
+
             _events.Enqueue(@event);
             if (!_senderMutex.IsSet)
             {
@@ -78,6 +86,8 @@ namespace Datadog.Trace.AppSec.Agent
                         appsecEvents.Add(result);
                     }
 
+                    Log.Information<int>("Sending {NumberOfEvents} AppSec events to the agent", appsecEvents.Count);
+
                     await _sender.Send(appsecEvents).ConfigureAwait(false);
                 }
 
@@ -88,8 +98,8 @@ namespace Datadog.Trace.AppSec.Agent
                 }
                 catch (Exception ex)
                 {
-                    // todo don't drop traces
-                    Log.Error(ex, "An error occured in sending appsec events");
+                    // as this transport is only temporary we'll make no attempt at error recovery
+                    Log.Error(ex, "AppSec failed to report AppSec events to the agent.");
                 }
                 finally
                 {

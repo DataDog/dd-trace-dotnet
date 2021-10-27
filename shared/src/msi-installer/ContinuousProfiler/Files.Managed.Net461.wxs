@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+  <?include $(sys.CURRENTDIR)\Config.wxi?>
+  <Fragment>
+    <ComponentGroup Id="ContinuousProfiler.Files.Managed.Net461" Directory="ContinuousProfiler.net461">
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_Datadog.AutoInstrumentation.Profiler.Managed.dll"
+              Source="$(var.ProfilerHomeDirectory)\net461\Datadog.AutoInstrumentation.Profiler.Managed.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_Datadog.AutoInstrumentation.Profiler.Managed.pdb"
+              Source="$(var.ProfilerHomeDirectory)\net461\Datadog.AutoInstrumentation.Profiler.Managed.pdb"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="net461_Google.Protobuf.dll"
+              Source="$(var.ProfilerHomeDirectory)\net461\Google.Protobuf.dll"
+              KeyPath="yes" Checksum="yes"/>
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>

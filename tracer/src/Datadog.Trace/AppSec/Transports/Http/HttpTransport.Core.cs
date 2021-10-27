@@ -8,6 +8,7 @@ using System;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.EventModel;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.Util.Http;
 using Microsoft.AspNetCore.Http;
 
 namespace Datadog.Trace.AppSec.Transport.Http
@@ -18,6 +19,10 @@ namespace Datadog.Trace.AppSec.Transport.Http
 
         public HttpTransport(HttpContext context) => this.context = context;
 
+        public bool IsSecureConnection => context.Request.IsHttps;
+
+        public Func<string, string> GetHeader => key => context.Request.Headers[key];
+
         public Request Request()
         {
             var request = new Request
@@ -25,13 +30,14 @@ namespace Datadog.Trace.AppSec.Transport.Http
                 Method = context.Request.Method,
                 Path = context.Request.Path,
                 Scheme = context.Request.Scheme,
-                RemoteIp = context.Connection.RemoteIpAddress.ToString()
+                Url = context.Request.GetUrl()
             };
 
             if (context.Request.Host.HasValue)
             {
                 request.Host = context.Request.Host.ToString();
-                request.Port = context.Request.Host.Port.GetValueOrDefault();
+                request.RemoteIp = context.Connection.RemoteIpAddress.ToString();
+                request.Port = context.Connection.RemotePort;
             }
 
             return request;

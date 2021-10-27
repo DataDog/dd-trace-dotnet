@@ -62,7 +62,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(GetTestData))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        [Trait("Category", "LinuxUnsupported")]
         public void InjectsLogsWhenEnabled(string packageVersion, bool enableCallTarget)
         {
             SetCallTargetSettings(enableCallTarget);
@@ -76,17 +75,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
 
 #if NETFRAMEWORK
-                if (string.IsNullOrWhiteSpace(packageVersion) || new Version(packageVersion) >= new Version("2.0.5"))
+                if (!string.IsNullOrWhiteSpace(packageVersion) && new Version(packageVersion) >= new Version("2.0.5"))
                 {
-                    ValidateLogCorrelation(spans, _nlog205LogFileTests);
+                    ValidateLogCorrelation(spans, _nlog205LogFileTests, packageVersion);
                 }
                 else
                 {
-                    ValidateLogCorrelation(spans, _nlogPre205LogFileTests);
+                    ValidateLogCorrelation(spans, _nlogPre205LogFileTests, packageVersion);
                 }
 #else
                 // Regardless of package version, for .NET Core just assert against raw log lines
-                ValidateLogCorrelation(spans, _nlogPre205LogFileTests);
+                ValidateLogCorrelation(spans, _nlogPre205LogFileTests, packageVersion);
 #endif
             }
         }
@@ -95,7 +94,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(GetTestData))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        [Trait("Category", "LinuxUnsupported")]
         public void DoesNotInjectLogsWhenDisabled(string packageVersion, bool enableCallTarget)
         {
             SetCallTargetSettings(enableCallTarget);
@@ -109,17 +107,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
 
 #if NETFRAMEWORK
-                if (string.IsNullOrWhiteSpace(packageVersion) || new Version(packageVersion) >= new Version("2.0.5"))
+                if (!string.IsNullOrWhiteSpace(packageVersion) && new Version(packageVersion) >= new Version("2.0.5"))
                 {
-                    ValidateLogCorrelation(spans, _nlog205LogFileTests, disableLogCorrelation: true);
+                    ValidateLogCorrelation(spans, _nlog205LogFileTests, packageVersion, disableLogCorrelation: true);
                 }
                 else
                 {
-                    ValidateLogCorrelation(spans, _nlogPre205LogFileTests, disableLogCorrelation: true);
+                    ValidateLogCorrelation(spans, _nlogPre205LogFileTests, packageVersion, disableLogCorrelation: true);
                 }
 #else
                 // Regardless of package version, for .NET Core just assert against raw log lines
-                ValidateLogCorrelation(spans, _nlogPre205LogFileTests, disableLogCorrelation: true);
+                ValidateLogCorrelation(spans, _nlogPre205LogFileTests, packageVersion, disableLogCorrelation: true);
 #endif
             }
         }

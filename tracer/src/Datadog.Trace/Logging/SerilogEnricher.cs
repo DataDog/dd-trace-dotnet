@@ -65,7 +65,7 @@ namespace Datadog.Trace.Logging
             _environmentProperty = _propertyFactory(CorrelationIdentifier.SerilogEnvKey, _valueFactory(tracer.Settings.Environment));
 
             var logEnricherType = CustomSerilogLogProvider.GetLogEnricherType();
-            _serilogEventEnricher = this.DuckCast(logEnricherType);
+            _serilogEventEnricher = this.DuckImplement(logEnricherType);
 
             if (_wrapEnricher)
             {
@@ -80,7 +80,7 @@ namespace Datadog.Trace.Logging
             return _logProvider.OpenContext(_serilogEventEnricher);
         }
 
-        [DuckReverseMethod("Serilog.Events.LogEvent", "Serilog.Core.ILogEventPropertyFactory")]
+        [DuckReverseMethod(ParameterTypeNames = new[] { "Serilog.Events.LogEvent, Serilog", "Serilog.Core.ILogEventPropertyFactory, Serilog" })]
         public void Enrich(ILogEvent logEvent, object propertyFactory)
         {
             var activeScope = _tracer.ActiveScope;

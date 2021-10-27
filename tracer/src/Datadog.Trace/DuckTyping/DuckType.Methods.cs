@@ -98,6 +98,9 @@ namespace Datadog.Trace.DuckTyping
 
             var targetMethodsDefinitions = GetMethods(targetType);
 
+            // These are the methods that we can attempt to duck type
+            var allTargetMethods = targetType.GetMethods(DuckAttribute.DefaultFlags);
+
             foreach (var method in targetMethodsDefinitions)
             {
                 if (method.GetCustomAttribute<DuckIncludeAttribute>(true) is not null)
@@ -114,21 +117,31 @@ namespace Datadog.Trace.DuckTyping
                     continue;
                 }
 
+                // Check if proxy method is a reverse method (shouldn't be called from here)
+                if (proxyMethodDefinition.GetCustomAttribute<DuckReverseMethodAttribute>(true) is not null)
+                {
+                    DuckTypeIncorrectReverseMethodUsageException.Throw(proxyMethodDefinition);
+                }
+
                 // Extract the method parameters types
                 ParameterInfo[] proxyMethodDefinitionParameters = proxyMethodDefinition.GetParameters();
                 Type[] proxyMethodDefinitionParametersTypes = proxyMethodDefinitionParameters.Select(p => p.ParameterType).ToArray();
 
                 // We select the target method to call
-                MethodInfo targetMethod = SelectTargetMethod(targetType, proxyMethodDefinition, proxyMethodDefinitionParameters, proxyMethodDefinitionParametersTypes);
+                MethodInfo targetMethod = SelectTargetMethod<DuckAttribute>(targetType, proxyMethodDefinition, proxyMethodDefinitionParameters, proxyMethodDefinitionParametersTypes, allTargetMethods);
 
-                // If the target method couldn't be found and the proxy method doesn't have an implementation already (ex: abstract and virtual classes) we throw.
-                if (targetMethod is null && proxyMethodDefinition.IsVirtual)
+                // If the target method couldn't be found we throw.
+                if (targetMethod is null)
                 {
                     DuckTypeTargetMethodNotFoundException.Throw(proxyMethodDefinition);
+                    continue;
                 }
 
-                // Check if target method is a reverse method
-                bool isReverse = targetMethod.GetCustomAttribute<DuckReverseMethodAttribute>(true) is not null;
+                // Check if target method is a reverse method (shouldn't be called from here)
+                if (targetMethod.GetCustomAttribute<DuckReverseMethodAttribute>(true) is not null)
+                {
+                    DuckTypeIncorrectReverseMethodUsageException.Throw(targetMethod);
+                }
 
                 // Gets the proxy method definition generic arguments
                 Type[] proxyMethodDefinitionGenericArguments = proxyMethodDefinition.GetGenericArguments();
@@ -160,383 +173,216 @@ namespace Datadog.Trace.DuckTyping
                 MethodAttributes proxyMethodAttributes = MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig;
 
                 // Create the proxy method implementation
-                ParameterBuilder[] proxyMethodParametersBuilders = new ParameterBuilder[proxyMethodDefinitionParameters.Length];
                 MethodBuilder proxyMethod = proxyTypeBuilder.DefineMethod(proxyMethodDefinition.Name, proxyMethodAttributes, proxyMethodDefinition.ReturnType, proxyMethodDefinitionParametersTypes);
-                if (proxyMethodDefinitionGenericArgumentsNames.Length > 0)
-                {
-                    _ = proxyMethod.DefineGenericParameters(proxyMethodDefinitionGenericArgumentsNames);
-                }
-
-                // Define the proxy method implementation parameters for optional parameters with default values
-                for (int j = 0; j < proxyMethodDefinitionParameters.Length; j++)
-                {
-                    ParameterInfo pmDefParameter = proxyMethodDefinitionParameters[j];
-                    ParameterBuilder pmImpParameter = proxyMethod.DefineParameter(j, pmDefParameter.Attributes, pmDefParameter.Name);
-                    if (pmDefParameter.HasDefaultValue)
-                    {
-                        pmImpParameter.SetConstant(pmDefParameter.RawDefaultValue);
-                    }
-
-                    proxyMethodParametersBuilders[j] = pmImpParameter;
-                }
-
-                LazyILGenerator il = new LazyILGenerator(proxyMethod.GetILGenerator());
-                Type returnType = targetMethod.ReturnType;
-                List<OutputAndRefParameterData> outputAndRefParameters = null;
-
-                // Load the instance if needed
-                if (!targetMethod.IsStatic)
-                {
-                    il.Emit(OpCodes.Ldarg_0);
-                    il.Emit(instanceField.FieldType.IsValueType ? OpCodes.Ldflda : OpCodes.Ldfld, instanceField);
-                }
+                LazyILGenerator il = MethodIlHelper.InitialiseProxyMethod(proxyMethod, proxyMethodDefinitionParameters, proxyMethodDefinitionGenericArgumentsNames, targetMethod, instanceField);
 
                 // Load all the arguments / parameters
-                int maxParamLength = Math.Max(proxyMethodDefinitionParameters.Length, targetMethodParameters.Length);
-                for (int idx = 0; idx < maxParamLength; idx++)
-                {
-                    ParameterInfo proxyParamInfo = idx < proxyMethodDefinitionParameters.Length ? proxyMethodDefinitionParameters[idx] : null;
-                    ParameterInfo targetParamInfo = targetMethodParameters[idx];
-
-                    if (proxyParamInfo is null)
-                    {
-                        // The proxy method is missing parameters, we check if the target parameter is optional
-                        if (!targetParamInfo.IsOptional)
-                        {
-                            // The target method parameter is not optional.
-                            DuckTypeProxyMethodParameterIsMissingException.Throw(proxyMethodDefinition, targetParamInfo);
-                        }
-                    }
-                    else
-                    {
-                        if (proxyParamInfo.IsOut != targetParamInfo.IsOut || proxyParamInfo.IsIn != targetParamInfo.IsIn)
-                        {
-                            // the proxy and target parameters doesn't have the same signature
-                            DuckTypeProxyAndTargetMethodParameterSignatureMismatchException.Throw(proxyMethodDefinition, targetMethod);
-                        }
-
-                        Type proxyParamType = proxyParamInfo.ParameterType;
-                        Type targetParamType = targetParamInfo.ParameterType;
-
-                        if (proxyParamType.IsByRef != targetParamType.IsByRef)
-                        {
-                            // the proxy and target parameters doesn't have the same signature
-                            DuckTypeProxyAndTargetMethodParameterSignatureMismatchException.Throw(proxyMethodDefinition, targetMethod);
-                        }
-
-                        // We check if we have to handle an output parameter, by ref parameter or a normal parameter
-                        if (proxyParamInfo.IsOut)
-                        {
-                            // If is an output parameter with diferent types we need to handle differently
-                            // by creating a local var first to store the target parameter out value
-                            // and then try to set the output parameter of the proxy method by converting the value (a base class or a duck typing)
-                            if (proxyParamType != targetParamType)
-                            {
-                                LocalBuilder localTargetArg = il.DeclareLocal(targetParamType.GetElementType());
-
-                                // We need to store the output parameter data to set the proxy parameter value after we call the target method
-                                if (outputAndRefParameters is null)
-                                {
-                                    outputAndRefParameters = new List<OutputAndRefParameterData>();
-                                }
-
-                                outputAndRefParameters.Add(new OutputAndRefParameterData(localTargetArg.LocalIndex, targetParamType, idx, proxyParamType));
-
-                                // Load the local var ref (to be used in the target method param as output)
-                                il.Emit(OpCodes.Ldloca_S, localTargetArg.LocalIndex);
-                            }
-                            else
-                            {
-                                il.WriteLoadArgument(idx, false);
-                            }
-                        }
-                        else if (proxyParamType.IsByRef)
-                        {
-                            // If is a ref parameter with diferent types we need to handle differently
-                            // by creating a local var first to store the initial proxy parameter ref value casted to the target parameter type ( this cast may fail at runtime )
-                            // later pass this local var ref to the target method, and then, modify the proxy parameter ref with the new reference from the target method
-                            // by converting the value (a base class or a duck typing)
-                            if (proxyParamType != targetParamType)
-                            {
-                                Type proxyParamTypeElementType = proxyParamType.GetElementType();
-                                Type targetParamTypeElementType = targetParamType.GetElementType();
-
-                                if (!UseDirectAccessTo(proxyTypeBuilder, targetParamTypeElementType))
-                                {
-                                    targetParamType = typeof(object).MakeByRefType();
-                                    targetParamTypeElementType = typeof(object);
-                                }
-
-                                LocalBuilder localTargetArg = il.DeclareLocal(targetParamTypeElementType);
-
-                                // We need to store the ref parameter data to set the proxy parameter value after we call the target method
-                                if (outputAndRefParameters is null)
-                                {
-                                    outputAndRefParameters = new List<OutputAndRefParameterData>();
-                                }
-
-                                outputAndRefParameters.Add(new OutputAndRefParameterData(localTargetArg.LocalIndex, targetParamType, idx, proxyParamType));
-
-                                // Load the argument (ref)
-                                il.WriteLoadArgument(idx, false);
-
-                                // Load the value inside the ref
-                                il.Emit(OpCodes.Ldind_Ref);
-
-                                // Check if the type can be converted of if we need to enable duck chaining
-                                if (NeedsDuckChaining(targetParamTypeElementType, proxyParamTypeElementType))
-                                {
-                                    // First we check if the value is null before trying to get the instance value
-                                    Label lblCallGetInstance = il.DefineLabel();
-                                    Label lblAfterGetInstance = il.DefineLabel();
-
-                                    il.Emit(OpCodes.Dup);
-                                    il.Emit(OpCodes.Brtrue_S, lblCallGetInstance);
-
-                                    il.Emit(OpCodes.Pop);
-                                    il.Emit(OpCodes.Ldnull);
-                                    il.Emit(OpCodes.Br_S, lblAfterGetInstance);
-
-                                    // Call IDuckType.Instance property to get the actual value
-                                    il.MarkLabel(lblCallGetInstance);
-                                    il.Emit(OpCodes.Castclass, typeof(IDuckType));
-                                    il.EmitCall(OpCodes.Callvirt, DuckTypeInstancePropertyInfo.GetMethod, null);
-                                    il.MarkLabel(lblAfterGetInstance);
-                                }
-
-                                // Cast the value to the target type
-                                il.WriteSafeTypeConversion(proxyParamTypeElementType, targetParamTypeElementType);
-
-                                // Store the casted value to the local var
-                                il.WriteStoreLocal(localTargetArg.LocalIndex);
-
-                                // Load the local var ref (to be used in the target method param)
-                                il.Emit(OpCodes.Ldloca_S, localTargetArg.LocalIndex);
-                            }
-                            else
-                            {
-                                il.WriteLoadArgument(idx, false);
-                            }
-                        }
-                        else if (!isReverse)
-                        {
-                            // Check if the type can be converted of if we need to enable duck chaining
-                            if (NeedsDuckChaining(targetParamType, proxyParamType))
-                            {
-                                // Load the argument and cast it as Duck type
-                                il.WriteLoadArgument(idx, false);
-                                il.Emit(OpCodes.Castclass, typeof(IDuckType));
-
-                                // Call IDuckType.Instance property to get the actual value
-                                il.EmitCall(OpCodes.Callvirt, DuckTypeInstancePropertyInfo.GetMethod, null);
-                            }
-                            else
-                            {
-                                il.WriteLoadArgument(idx, false);
-                            }
-
-                            // If the target parameter type is public or if it's by ref we have to actually use the original target type.
-                            targetParamType = UseDirectAccessTo(proxyTypeBuilder, targetParamType) ? targetParamType : typeof(object);
-                            il.WriteSafeTypeConversion(proxyParamType, targetParamType);
-
-                            targetMethodParametersTypes[idx] = targetParamType;
-                        }
-                        else
-                        {
-                            if (NeedsDuckChaining(proxyParamType, targetParamType))
-                            {
-                                // Load the argument (our proxy type) and cast it as Duck type (the original type)
-                                il.WriteLoadArgument(idx, false);
-                                if (UseDirectAccessTo(proxyTypeBuilder, proxyParamType) && proxyParamType.IsValueType)
-                                {
-                                    il.Emit(OpCodes.Box, proxyParamType);
-                                }
-
-                                // We call DuckType.CreateCache<>.Create(object instance)
-                                MethodInfo getProxyMethodInfo = typeof(CreateCache<>)
-                                    .MakeGenericType(targetParamType).GetMethod("Create");
-
-                                il.Emit(OpCodes.Call, getProxyMethodInfo);
-                            }
-                            else
-                            {
-                                il.WriteLoadArgument(idx, false);
-                            }
-
-                            // If the target parameter type is public or if it's by ref we have to actually use the original target type.
-                            targetParamType = UseDirectAccessTo(proxyTypeBuilder, targetParamType) ? targetParamType : typeof(object);
-                            il.WriteSafeTypeConversion(proxyParamType, targetParamType);
-
-                            targetMethodParametersTypes[idx] = targetParamType;
-                        }
-                    }
-                }
+                List<OutputAndRefParameterData> outputAndRefParameters = MethodIlHelper.AddIlToLoadArguments(
+                    proxyTypeBuilder,
+                    il,
+                    innerMethod: targetMethod,
+                    innerMethodParameters: targetMethodParameters,
+                    innerMethodParametersTypes: targetMethodParametersTypes,
+                    outerMethod: proxyMethodDefinition,
+                    outerMethodParameters: proxyMethodDefinitionParameters,
+                    outerMethodGenericArguments: proxyMethodDefinitionGenericArguments,
+                    duckCastParameterFunc: MethodIlHelper.AddIlToExtractDuckType,
+                    needsDuckChaining: NeedsDuckChaining);
 
                 // Call the target method
+                Type returnType = targetMethod.ReturnType;
                 if (UseDirectAccessTo(proxyTypeBuilder, targetType))
                 {
                     // If the instance is public we can emit directly without any dynamic method
 
-                    // Create generic method call
-                    if (proxyMethodDefinitionGenericArguments.Length > 0)
-                    {
-                        targetMethod = targetMethod.MakeGenericMethod(proxyMethodDefinitionGenericArguments);
-                    }
-
-                    // Method call
-                    // A generic method cannot be called using calli (throws System.InvalidOperationException)
-                    if (targetMethod.IsPublic || targetMethod.IsGenericMethod)
-                    {
-                        // We can emit a normal call if we have a public instance with a public target method.
-                        il.EmitCall(targetMethod.IsStatic || targetMethod.DeclaringType.IsValueType ? OpCodes.Call : OpCodes.Callvirt, targetMethod, null);
-                    }
-                    else
-                    {
-                        // In case we have a public instance and a non public target method we can use [Calli] with the function pointer
-                        il.WriteMethodCalli(targetMethod);
-                    }
+                    targetMethod = MethodIlHelper.AddIlForDirectMethodCall(il, targetMethod, proxyMethodDefinitionGenericArguments);
                 }
                 else
                 {
                     // A generic method call can't be made from a DynamicMethod
                     if (proxyMethodDefinitionGenericArguments.Length > 0)
                     {
-                        DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException.Throw(proxyMethod);
+                        DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException.Throw(proxyMethodDefinition);
                     }
 
-                    // If the instance is not public we need to create a Dynamic method to overpass the visibility checks
-                    // we can't access non public types so we have to cast to object type (in the instance object and the return type).
-
-                    string dynMethodName = $"_callMethod_{targetMethod.DeclaringType.Name}_{targetMethod.Name}";
-                    returnType = UseDirectAccessTo(proxyTypeBuilder, targetMethod.ReturnType) && !targetMethod.ReturnType.IsGenericParameter ? targetMethod.ReturnType : typeof(object);
-
-                    // We create the dynamic method
-                    Type[] originalTargetParameters = targetMethod.GetParameters().Select(p => p.ParameterType).ToArray();
-                    Type[] targetParameters = targetMethod.IsStatic ? originalTargetParameters : (new[] { typeof(object) }).Concat(originalTargetParameters).ToArray();
-                    Type[] dynParameters = targetMethod.IsStatic ? targetMethodParametersTypes : (new[] { typeof(object) }).Concat(targetMethodParametersTypes).ToArray();
-                    DynamicMethod dynMethod = new DynamicMethod(dynMethodName, returnType, dynParameters, proxyTypeBuilder.Module, true);
-
-                    // Emit the dynamic method body
-                    LazyILGenerator dynIL = new LazyILGenerator(dynMethod.GetILGenerator());
-
-                    if (!targetMethod.IsStatic)
-                    {
-                        dynIL.LoadInstanceArgument(typeof(object), targetMethod.DeclaringType);
-                    }
-
-                    for (int idx = targetMethod.IsStatic ? 0 : 1; idx < dynParameters.Length; idx++)
-                    {
-                        dynIL.WriteLoadArgument(idx, true);
-                        dynIL.WriteSafeTypeConversion(dynParameters[idx], targetParameters[idx]);
-                    }
-
-                    // Check if we can emit a normal Call/CallVirt to the target method
-                    if (!targetMethod.ContainsGenericParameters)
-                    {
-                        dynIL.EmitCall(targetMethod.IsStatic || targetMethod.DeclaringType.IsValueType ? OpCodes.Call : OpCodes.Callvirt, targetMethod, null);
-                    }
-                    else
-                    {
-                        // We can't emit a call to a method with generics from a DynamicMethod
-                        // Instead we emit a Calli with the function pointer.
-                        dynIL.WriteMethodCalli(targetMethod);
-                    }
-
-                    dynIL.WriteSafeTypeConversion(targetMethod.ReturnType, returnType);
-                    dynIL.Emit(OpCodes.Ret);
-                    dynIL.Flush();
-
-                    // Emit the call to the dynamic method
-                    il.WriteDynamicMethodCall(dynMethod, proxyTypeBuilder);
+                    returnType = MethodIlHelper.AddIlForDynamicMethodCall(proxyTypeBuilder, il, targetMethod, targetMethodParametersTypes);
                 }
 
                 // We check if we have output or ref parameters to set in the proxy method
                 if (outputAndRefParameters != null)
                 {
-                    foreach (OutputAndRefParameterData outOrRefParameter in outputAndRefParameters)
-                    {
-                        Type proxyArgumentType = outOrRefParameter.ProxyArgumentType.GetElementType();
-                        Type localType = outOrRefParameter.LocalType.GetElementType();
-
-                        // We load the argument to be set
-                        il.WriteLoadArgument(outOrRefParameter.ProxyArgumentIndex, false);
-
-                        // We load the value from the local
-                        il.WriteLoadLocal(outOrRefParameter.LocalIndex);
-
-                        // If we detect duck chaining we create a new proxy instance with the output of the original target method
-                        if (NeedsDuckChaining(localType, proxyArgumentType))
-                        {
-                            if (localType.IsValueType)
-                            {
-                                il.Emit(OpCodes.Box, localType);
-                            }
-
-                            // We call DuckType.CreateCache<>.Create()
-                            MethodInfo getProxyMethodInfo = typeof(CreateCache<>)
-                                .MakeGenericType(proxyArgumentType).GetMethod("Create");
-
-                            il.Emit(OpCodes.Call, getProxyMethodInfo);
-                        }
-                        else
-                        {
-                            il.WriteSafeTypeConversion(localType, proxyArgumentType);
-                        }
-
-                        // We store the value
-                        il.Emit(OpCodes.Stind_Ref);
-                    }
+                    MethodIlHelper.AddIlToSetOutputAndRefParameters(il, outputAndRefParameters, MethodIlHelper.AddIlToDuckChain, NeedsDuckChaining);
                 }
 
-                // Check if the target method returns something
-                if (targetMethod.ReturnType != typeof(void))
+                if (!MethodIlHelper.TryAddReturnIl(
+                        proxyTypeBuilder,
+                        il,
+                        currentReturnType: returnType,
+                        innerMethodReturnType: targetMethod.ReturnType,
+                        outerMethodReturnType: proxyMethodDefinition.ReturnType,
+                        needsDuckChainingFunc: NeedsDuckChaining,
+                        addDuckChainIlFunc: MethodIlHelper.AddIlToDuckChain))
                 {
-                    // Handle the return value
-                    // Check if the type can be converted or if we need to enable duck chaining
-                    if (NeedsDuckChaining(targetMethod.ReturnType, proxyMethodDefinition.ReturnType))
-                    {
-                        if (UseDirectAccessTo(proxyTypeBuilder, targetMethod.ReturnType) && targetMethod.ReturnType.IsValueType)
-                        {
-                            il.Emit(OpCodes.Box, targetMethod.ReturnType);
-                        }
-
-                        // We call DuckType.CreateCache<>.Create()
-                        MethodInfo getProxyMethodInfo = typeof(CreateCache<>)
-                            .MakeGenericType(proxyMethodDefinition.ReturnType).GetMethod("Create");
-
-                        il.Emit(OpCodes.Call, getProxyMethodInfo);
-                    }
-                    else if (returnType != proxyMethodDefinition.ReturnType)
-                    {
-                        // If the type is not the expected type we try a conversion.
-                        il.WriteSafeTypeConversion(returnType, proxyMethodDefinition.ReturnType);
-                    }
+                    DuckTypeProxyAndTargetMethodReturnTypeMismatchException.Throw(proxyMethodDefinition, targetMethod);
                 }
 
-                il.Emit(OpCodes.Ret);
-                il.Flush();
                 _methodBuilderGetToken.Invoke(proxyMethod, null);
             }
         }
 
-        private static MethodInfo SelectTargetMethod(Type targetType, MethodInfo proxyMethod, ParameterInfo[] proxyMethodParameters, Type[] proxyMethodParametersTypes)
+        private static void CreateReverseProxyMethods(TypeBuilder proxyTypeBuilder, Type typeToDeriveFrom, Type typeToDelegateTo, FieldInfo instanceField)
         {
-            DuckAttribute proxyMethodDuckAttribute = proxyMethod.GetCustomAttribute<DuckAttribute>(true) ?? new DuckAttribute();
+            // Gets all methods that _can_ be overriden/implemented
+            List<MethodInfo> overriddenMethods = GetMethods(typeToDeriveFrom);
+
+            // Get all the methods on our delegation type that we're going to delegate to
+            // Note that these don't need to be abstract/virtual, unlike in a normal (forward) proxy
+            List<MethodInfo> implementationMethods = new List<MethodInfo>(typeToDelegateTo.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly));
+
+            foreach (MethodInfo immutableImplementationMethod in implementationMethods)
+            {
+                MethodInfo implementationMethod = immutableImplementationMethod;
+                // Ignore methods without a `DuckReverse` attribute
+                if (implementationMethod.GetCustomAttribute<DuckReverseMethodAttribute>(true) is null)
+                {
+                    continue;
+                }
+
+                // Extract the method parameters types
+                ParameterInfo[] implementationMethodParameters = implementationMethod.GetParameters();
+                Type[] implementationMethodParametersTypes = implementationMethodParameters.Select(p => p.ParameterType).ToArray();
+
+                // We select the target method to call
+                MethodInfo overriddenMethod = SelectTargetMethod<DuckReverseMethodAttribute>(typeToDeriveFrom, implementationMethod, implementationMethodParameters, implementationMethodParametersTypes, overriddenMethods);
+
+                // If the target method couldn't be found we throw.
+                if (overriddenMethod is null)
+                {
+                    DuckTypeTargetMethodNotFoundException.Throw(implementationMethod);
+                    continue;
+                }
+
+                overriddenMethods.Remove(overriddenMethod);
+
+                // Gets the proxy method definition generic arguments
+                Type[] overriddenMethodGenericArguments = overriddenMethod.GetGenericArguments();
+                Type[] implementationDefinitionGenericArguments = implementationMethod.GetGenericArguments();
+                string[] implementationDefinitionGenericArgumentsNames = implementationDefinitionGenericArguments.Select(a => a.Name).ToArray();
+
+                // Reverse duck typing doesn't support providing a non-generic implementation for a generic method
+                if (overriddenMethodGenericArguments.Length > 0
+                 && implementationDefinitionGenericArguments.Length != overriddenMethodGenericArguments.Length)
+                {
+                    DuckTypeReverseProxyMustImplementGenericMethodAsGenericException.Throw(implementationMethod, overriddenMethod);
+                    continue;
+                }
+
+                // Gets target method parameters
+                ParameterInfo[] overriddenMethodParameters = overriddenMethod.GetParameters();
+                if (implementationMethodParameters.Length > overriddenMethodParameters.Length)
+                {
+                    DuckTypeProxyAndTargetMethodParameterSignatureMismatchException.Throw(implementationMethod, overriddenMethod);
+                }
+
+                Type[] overriddenMethodParametersTypes = overriddenMethodParameters.Select(p => p.ParameterType).ToArray();
+
+                // Make sure we have the right methods attributes.
+                MethodAttributes proxyMethodAttributes = overriddenMethod.IsFamily
+                                                             ? MethodAttributes.Family | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig
+                                                             : MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig;
+
+                // Create the proxy method implementation
+                MethodBuilder proxyMethod = proxyTypeBuilder.DefineMethod(overriddenMethod.Name, proxyMethodAttributes, overriddenMethod.ReturnType, overriddenMethodParametersTypes);
+                LazyILGenerator il = MethodIlHelper.InitialiseProxyMethod(proxyMethod, overriddenMethodParameters, implementationDefinitionGenericArgumentsNames, implementationMethod, instanceField);
+
+                // Load all the arguments / parameters
+                var outputAndRefParameters = MethodIlHelper.AddIlToLoadArguments(
+                    proxyTypeBuilder,
+                    il,
+                    innerMethod: implementationMethod,
+                    innerMethodParameters: implementationMethodParameters,
+                    innerMethodParametersTypes: implementationMethodParametersTypes,
+                    outerMethod: overriddenMethod,
+                    outerMethodParameters: overriddenMethodParameters,
+                    outerMethodGenericArguments: implementationDefinitionGenericArguments,
+                    duckCastParameterFunc: MethodIlHelper.AddIlToDuckChain,
+                    needsDuckChaining: MethodIlHelper.NeedsDuckChainingReverse);
+
+                // Call the target method
+                // We know we have direct access to the target method because we defined it in our proxy
+
+                // If the instance is public we can emit directly without any dynamic method
+                implementationMethod = MethodIlHelper.AddIlForDirectMethodCall(il, implementationMethod, overriddenMethodGenericArguments);
+
+                // We check if we have output or ref parameters to set in the proxy method
+                if (outputAndRefParameters != null)
+                {
+                    MethodIlHelper.AddIlToSetOutputAndRefParameters(il, outputAndRefParameters, MethodIlHelper.AddIlToExtractDuckType, MethodIlHelper.NeedsDuckChainingReverse);
+                }
+
+                // We always do a direct method call, so return type is always the implementation method's return type
+                Type returnType = implementationMethod.ReturnType;
+                if (!MethodIlHelper.TryAddReturnIl(
+                        proxyTypeBuilder,
+                        il,
+                        currentReturnType: returnType,
+                        innerMethodReturnType: implementationMethod.ReturnType,
+                        outerMethodReturnType: overriddenMethod.ReturnType,
+                        needsDuckChainingFunc: MethodIlHelper.NeedsDuckChainingReverse,
+                        addDuckChainIlFunc: MethodIlHelper.AddIlToDuckChainReverse))
+                {
+                    DuckTypeProxyAndTargetMethodReturnTypeMismatchException.Throw(implementationMethod, overriddenMethod);
+                }
+
+                _methodBuilderGetToken.Invoke(proxyMethod, null);
+            }
+
+            if (overriddenMethods.Any(x => x.IsAbstract))
+            {
+                DuckTypeReverseProxyMissingMethodImplementationException.Throw(overriddenMethods.Where(x => x.IsAbstract));
+            }
+        }
+
+        private static MethodInfo SelectTargetMethod<T>(
+            Type targetType,
+            MethodInfo proxyMethod,
+            ParameterInfo[] proxyMethodParameters,
+            Type[] proxyMethodParametersTypes,
+            IEnumerable<MethodInfo> allTargetMethods)
+            where T : DuckAttributeBase, new()
+        {
+            T proxyMethodDuckAttribute = proxyMethod.GetCustomAttribute<T>(true) ?? new T();
             proxyMethodDuckAttribute.Name ??= proxyMethod.Name;
 
             MethodInfo targetMethod = null;
 
-            // Check if the duck attribute has the parameter type names to use for selecting the target method, in case of not found an exception is thrown.
-            if (proxyMethodDuckAttribute.ParameterTypeNames != null)
+            // Check if the duck attribute has the parameter type names to use for selecting the target method
+            // If any of the parameter types can't be loaded (happens if it's a generic parameter for example)
+            // then carry on searching.
+            var proxyMethodDuckAttributeParameterTypeNames = proxyMethodDuckAttribute.ParameterTypeNames;
+            if (proxyMethodDuckAttributeParameterTypeNames != null)
             {
-                Type[] parameterTypes = proxyMethodDuckAttribute.ParameterTypeNames.Select(pName => Type.GetType(pName, true)).ToArray();
-                targetMethod = targetType.GetMethod(proxyMethodDuckAttribute.Name, proxyMethodDuckAttribute.BindingFlags, null, parameterTypes, null);
-                if (targetMethod is null)
+                // Duck reverse attributes must never have a mismatch between the number of proxy method parameters
+                // and the number of parameters specified in the [DuckReverseMethod] attribute
+                if (typeof(T) == typeof(DuckReverseMethodAttribute)
+                        && (proxyMethodParameters.Length != proxyMethodDuckAttributeParameterTypeNames.Length))
                 {
-                    DuckTypeTargetMethodNotFoundException.Throw(proxyMethod);
+                    DuckTypeReverseAttributeParameterNamesMismatchException.Throw(proxyMethod);
                 }
 
-                return targetMethod;
+                Type[] parameterTypes = proxyMethodDuckAttributeParameterTypeNames
+                                                                .Select(pName => Type.GetType(pName, throwOnError: false))
+                                                                .Where(type => type is not null)
+                                                                .ToArray();
+                if (parameterTypes.Length == proxyMethodDuckAttributeParameterTypeNames.Length)
+                {
+                    // all types were loaded
+                    targetMethod = targetType.GetMethod(proxyMethodDuckAttribute.Name, proxyMethodDuckAttribute.BindingFlags, null, parameterTypes, null);
+                    if (targetMethod is not null)
+                    {
+                        return targetMethod;
+                    }
+                }
             }
 
             // If the duck attribute doesn't specify the parameters to use, we do the best effor to find a target method without any ambiguity.
@@ -552,7 +398,6 @@ namespace Datadog.Trace.DuckTyping
             // Also this can happen if the proxy parameters type uses a base object (ex: System.Object) instead the type.
             // In this case we try to find a method that we can match, in case of ambiguity (> 1 method found) we throw an exception.
 
-            MethodInfo[] allTargetMethods = targetType.GetMethods(DuckAttribute.DefaultFlags);
             foreach (MethodInfo candidateMethod in allTargetMethods)
             {
                 string name = proxyMethodDuckAttribute.Name;
@@ -587,11 +432,11 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 // Check if the candidate method is a reverse mapped method
-                DuckReverseMethodAttribute reverseMethodAttribute = candidateMethod.GetCustomAttribute<DuckReverseMethodAttribute>(true);
-                if (reverseMethodAttribute?.Arguments is not null)
+                ParameterInfo[] candidateParameters = candidateMethod.GetParameters();
+                if (proxyMethodDuckAttributeParameterTypeNames is not null)
                 {
-                    string[] arguments = reverseMethodAttribute.Arguments;
-                    if (arguments.Length != proxyMethodParametersTypes.Length)
+                    string[] arguments = proxyMethodDuckAttributeParameterTypeNames;
+                    if (arguments.Length != candidateParameters.Length)
                     {
                         continue;
                     }
@@ -599,7 +444,10 @@ namespace Datadog.Trace.DuckTyping
                     bool match = true;
                     for (var i = 0; i < arguments.Length; i++)
                     {
-                        if (arguments[i] != proxyMethodParametersTypes[i].FullName && arguments[i] != proxyMethodParametersTypes[i].Name)
+                        var candidateParameter = candidateParameters[i].ParameterType;
+                        if (arguments[i] != candidateParameter.FullName &&
+                            arguments[i] != candidateParameter.Name &&
+                            arguments[i] != $"{candidateParameter.FullName}, {candidateParameter.Assembly.GetName()?.Name}")
                         {
                             match = false;
                             break;
@@ -611,8 +459,6 @@ namespace Datadog.Trace.DuckTyping
                         return candidateMethod;
                     }
                 }
-
-                ParameterInfo[] candidateParameters = candidateMethod.GetParameters();
 
                 // The proxy must have the same or less parameters than the candidate ( less is due to possible optional parameters in the candidate ).
                 if (proxyMethodParameters.Length > candidateParameters.Length)
@@ -789,6 +635,408 @@ namespace Datadog.Trace.DuckTyping
                 LocalType = localType;
                 ProxyArgumentIndex = proxyArgumentIndex;
                 ProxyArgumentType = proxyArgumentType;
+            }
+        }
+
+        private static class MethodIlHelper
+        {
+            internal static LazyILGenerator InitialiseProxyMethod(
+                MethodBuilder proxyMethod,
+                ParameterInfo[] proxyMethodDefinitionParameters,
+                string[] proxyMethodDefinitionGenericArgumentsNames,
+                MethodInfo targetMethod,
+                FieldInfo instanceField)
+            {
+                ParameterBuilder[] proxyMethodParametersBuilders = new ParameterBuilder[proxyMethodDefinitionParameters.Length];
+                if (proxyMethodDefinitionGenericArgumentsNames.Length > 0)
+                {
+                    _ = proxyMethod.DefineGenericParameters(proxyMethodDefinitionGenericArgumentsNames);
+                }
+
+                // Define the proxy method implementation parameters for optional parameters with default values
+                for (int j = 0; j < proxyMethodDefinitionParameters.Length; j++)
+                {
+                    ParameterInfo pmDefParameter = proxyMethodDefinitionParameters[j];
+                    ParameterBuilder pmImpParameter = proxyMethod.DefineParameter(j, pmDefParameter.Attributes, pmDefParameter.Name);
+                    if (pmDefParameter.HasDefaultValue)
+                    {
+                        pmImpParameter.SetConstant(pmDefParameter.RawDefaultValue);
+                    }
+
+                    proxyMethodParametersBuilders[j] = pmImpParameter;
+                }
+
+                LazyILGenerator il = new LazyILGenerator(proxyMethod.GetILGenerator());
+
+                // Load the instance if needed
+                if (!targetMethod.IsStatic)
+                {
+                    il.Emit(OpCodes.Ldarg_0);
+                    il.Emit(instanceField.FieldType.IsValueType ? OpCodes.Ldflda : OpCodes.Ldfld, instanceField);
+                }
+
+                return il;
+            }
+
+            internal static List<OutputAndRefParameterData> AddIlToLoadArguments(
+                TypeBuilder proxyTypeBuilder,
+                LazyILGenerator il,
+                MethodInfo innerMethod,
+                ParameterInfo[] innerMethodParameters,
+                Type[] innerMethodParametersTypes,
+                MethodInfo outerMethod,
+                ParameterInfo[] outerMethodParameters,
+                Type[] outerMethodGenericArguments,
+                Func<LazyILGenerator, Type, Type> duckCastParameterFunc,
+                Func<Type, Type, bool> needsDuckChaining)
+            {
+                List<OutputAndRefParameterData> outputAndRefParameters = null;
+                int maxParamLength = Math.Max(outerMethodParameters.Length, innerMethodParameters.Length);
+
+                for (int idx = 0; idx < maxParamLength; idx++)
+                {
+                    ParameterInfo outerParamInfo = idx < outerMethodParameters.Length ? outerMethodParameters[idx] : null;
+                    ParameterInfo innerParamInfo = innerMethodParameters[idx];
+
+                    if (outerParamInfo is null)
+                    {
+                        // The outer (proxy) method is missing parameters, we check if the target parameter is optional
+                        // This will not occur for reverse proxies, where the parameter count must match
+                        if (!innerParamInfo.IsOptional)
+                        {
+                            // The target method parameter is not optional.
+                            DuckTypeProxyMethodParameterIsMissingException.Throw(outerMethod, innerParamInfo);
+                        }
+                    }
+                    else
+                    {
+                        if (outerParamInfo.IsOut != innerParamInfo.IsOut || outerParamInfo.IsIn != innerParamInfo.IsIn)
+                        {
+                            // the proxy and target parameters doesn't have the same signature
+                            DuckTypeProxyAndTargetMethodParameterSignatureMismatchException.Throw(outerMethod, innerMethod);
+                        }
+
+                        Type outerParamType = outerParamInfo.ParameterType;
+                        Type innerParamType = innerParamInfo.ParameterType;
+
+                        if (outerParamType.IsByRef != innerParamType.IsByRef)
+                        {
+                            // the proxy and target parameters doesn't have the same signature
+                            DuckTypeProxyAndTargetMethodParameterSignatureMismatchException.Throw(outerMethod, innerMethod);
+                        }
+
+                        if (outerParamType.IsGenericParameter != innerParamType.IsGenericParameter
+                         && outerMethodGenericArguments.Length > 0)
+                        {
+                            // We're in a generic proxy method (i.e. we haven't created a specialized version)
+                            // of a generic target, but we _don't_ have a generic parameter where the original does
+                            DuckTypeProxyAndTargetMethodParameterSignatureMismatchException.Throw(outerMethod, innerMethod);
+                        }
+
+                        // We check if we have to handle an output parameter, by ref parameter or a normal parameter
+                        if (outerParamInfo.IsOut)
+                        {
+                            // If is an output parameter with different types we need to handle differently
+                            // by creating a local var first to store the target parameter out value
+                            // and then try to set the output parameter of the proxy method by converting the value (a base class or a duck typing)
+                            if (outerParamType != innerParamType)
+                            {
+                                LocalBuilder localTargetArg = il.DeclareLocal(innerParamType.GetElementType());
+
+                                // We need to store the output parameter data to set the proxy parameter value after we call the target method
+                                outputAndRefParameters ??= new List<OutputAndRefParameterData>();
+                                outputAndRefParameters.Add(new OutputAndRefParameterData(localTargetArg.LocalIndex, innerParamType, idx, outerParamType));
+
+                                // Load the local var ref (to be used in the target method param as output)
+                                il.Emit(OpCodes.Ldloca_S, localTargetArg.LocalIndex);
+                            }
+                            else
+                            {
+                                il.WriteLoadArgument(idx, false);
+                            }
+                        }
+                        else if (outerParamType.IsByRef)
+                        {
+                            // If is a ref parameter with different types we need to handle differently
+                            // by creating a local var first to store the initial proxy parameter ref value casted to the target parameter type ( this cast may fail at runtime )
+                            // later pass this local var ref to the target method, and then, modify the proxy parameter ref with the new reference from the target method
+                            // by converting the value (a base class or a duck typing)
+                            if (outerParamType != innerParamType)
+                            {
+                                Type outerParamTypeElementType = outerParamType.GetElementType();
+                                Type innerParamTypeElementType = innerParamType.GetElementType();
+
+                                if (!UseDirectAccessTo(proxyTypeBuilder, innerParamTypeElementType))
+                                {
+                                    innerParamType = typeof(object).MakeByRefType();
+                                    innerParamTypeElementType = typeof(object);
+                                }
+
+                                LocalBuilder localTargetArg = il.DeclareLocal(innerParamTypeElementType);
+
+                                // We need to store the ref parameter data to set the proxy parameter value after we call the target method
+                                outputAndRefParameters ??= new List<OutputAndRefParameterData>();
+                                outputAndRefParameters.Add(new OutputAndRefParameterData(localTargetArg.LocalIndex, innerParamType, idx, outerParamType));
+
+                                // Load the argument (ref)
+                                il.WriteLoadArgument(idx, false);
+
+                                // Load the value inside the ref
+                                il.Emit(OpCodes.Ldind_Ref);
+
+                                // Check if the type can be converted of if we need to enable duck chaining
+                                if (needsDuckChaining(innerParamTypeElementType, outerParamTypeElementType))
+                                {
+                                    // First we check if the value is null before trying to get the instance value
+                                    Label lblCallGetInstance = il.DefineLabel();
+                                    Label lblAfterGetInstance = il.DefineLabel();
+
+                                    il.Emit(OpCodes.Dup);
+                                    il.Emit(OpCodes.Brtrue_S, lblCallGetInstance);
+
+                                    il.Emit(OpCodes.Pop);
+                                    il.Emit(OpCodes.Ldnull);
+                                    il.Emit(OpCodes.Br_S, lblAfterGetInstance);
+
+                                    il.MarkLabel(lblCallGetInstance);
+
+                                    // If this is a forward duck type, we need to cast to IDuckType and extract the original instance
+                                    // If this is a reverse duck type, we need to create a duck type from the original instance
+                                    duckCastParameterFunc(il, innerParamTypeElementType);
+
+                                    il.MarkLabel(lblAfterGetInstance);
+                                }
+
+                                // Cast the value to the target type
+                                il.WriteSafeTypeConversion(outerParamTypeElementType, innerParamTypeElementType);
+
+                                // Store the casted value to the local var
+                                il.WriteStoreLocal(localTargetArg.LocalIndex);
+
+                                // Load the local var ref (to be used in the target method param)
+                                il.Emit(OpCodes.Ldloca_S, localTargetArg.LocalIndex);
+                            }
+                            else
+                            {
+                                il.WriteLoadArgument(idx, false);
+                            }
+                        }
+                        else
+                        {
+                            // Check if the type can be converted of if we need to enable duck chaining
+                            if (needsDuckChaining(innerParamType, outerParamType))
+                            {
+                                // Load the argument
+                                il.WriteLoadArgument(idx, false);
+
+                                // If this is a forward duck type, we need to cast to IDuckType and extract the original instance
+                                // If this is a reverse duck type, we need to create a duck type from the original instance
+                                duckCastParameterFunc(il, innerParamType);
+                            }
+                            else
+                            {
+                                il.WriteLoadArgument(idx, false);
+                            }
+
+                            // If the target parameter type is public or if it's by ref we have to actually use the original target type.
+                            innerParamType = UseDirectAccessTo(proxyTypeBuilder, innerParamType) ? innerParamType : typeof(object);
+                            il.WriteSafeTypeConversion(outerParamType, innerParamType);
+
+                            innerMethodParametersTypes[idx] = innerParamType;
+                        }
+                    }
+                }
+
+                return outputAndRefParameters;
+            }
+
+            internal static MethodInfo AddIlForDirectMethodCall(
+                LazyILGenerator il,
+                MethodInfo targetMethod,
+                Type[] proxyMethodDefinitionGenericArguments)
+            {
+                // Create generic method call
+                if (proxyMethodDefinitionGenericArguments.Length > 0)
+                {
+                    targetMethod = targetMethod.MakeGenericMethod(proxyMethodDefinitionGenericArguments);
+                }
+
+                // Method call
+                // A generic method cannot be called using calli (throws System.InvalidOperationException)
+                if (targetMethod.IsPublic || targetMethod.IsGenericMethod)
+                {
+                    // We can emit a normal call if we have a public instance with a public target method.
+                    il.EmitCall(targetMethod.IsStatic || targetMethod.DeclaringType.IsValueType ? OpCodes.Call : OpCodes.Callvirt, targetMethod, null);
+                }
+                else
+                {
+                    // In case we have a public instance and a non public target method we can use [Calli] with the function pointer
+                    il.WriteMethodCalli(targetMethod);
+                }
+
+                return targetMethod;
+            }
+
+            internal static Type AddIlForDynamicMethodCall(TypeBuilder proxyTypeBuilder, LazyILGenerator il, MethodInfo targetMethod, Type[] targetMethodParametersTypes)
+            {
+                // If the instance is not public we need to create a Dynamic method to overpass the visibility checks
+                // we can't access non public types so we have to cast to object type (in the instance object and the return type).
+
+                string dynMethodName = $"_callMethod_{targetMethod.DeclaringType.Name}_{targetMethod.Name}";
+                Type returnType = UseDirectAccessTo(proxyTypeBuilder, targetMethod.ReturnType) && !targetMethod.ReturnType.IsGenericParameter ? targetMethod.ReturnType : typeof(object);
+
+                // We create the dynamic method
+                Type[] originalTargetParameters = targetMethod.GetParameters().Select(p => p.ParameterType).ToArray();
+                Type[] targetParameters = targetMethod.IsStatic ? originalTargetParameters : (new[] { typeof(object) }).Concat(originalTargetParameters).ToArray();
+                Type[] dynParameters = targetMethod.IsStatic ? targetMethodParametersTypes : (new[] { typeof(object) }).Concat(targetMethodParametersTypes).ToArray();
+                DynamicMethod dynMethod = new DynamicMethod(dynMethodName, returnType, dynParameters, proxyTypeBuilder.Module, true);
+
+                // Emit the dynamic method body
+                LazyILGenerator dynIL = new LazyILGenerator(dynMethod.GetILGenerator());
+
+                if (!targetMethod.IsStatic)
+                {
+                    dynIL.LoadInstanceArgument(typeof(object), targetMethod.DeclaringType);
+                }
+
+                for (int idx = targetMethod.IsStatic ? 0 : 1; idx < dynParameters.Length; idx++)
+                {
+                    dynIL.WriteLoadArgument(idx, true);
+                    dynIL.WriteSafeTypeConversion(dynParameters[idx], targetParameters[idx]);
+                }
+
+                // Check if we can emit a normal Call/CallVirt to the target method
+                if (!targetMethod.ContainsGenericParameters)
+                {
+                    dynIL.EmitCall(targetMethod.IsStatic || targetMethod.DeclaringType.IsValueType ? OpCodes.Call : OpCodes.Callvirt, targetMethod, null);
+                }
+                else
+                {
+                    // We can't emit a call to a method with generics from a DynamicMethod
+                    // Instead we emit a Calli with the function pointer.
+                    dynIL.WriteMethodCalli(targetMethod);
+                }
+
+                dynIL.WriteSafeTypeConversion(targetMethod.ReturnType, returnType);
+                dynIL.Emit(OpCodes.Ret);
+                dynIL.Flush();
+
+                // Emit the call to the dynamic method
+                il.WriteDynamicMethodCall(dynMethod, proxyTypeBuilder);
+
+                return returnType;
+            }
+
+            internal static void AddIlToSetOutputAndRefParameters(
+                LazyILGenerator il,
+                List<OutputAndRefParameterData> outputAndRefParameters,
+                Func<LazyILGenerator, Type, Type> duckChainFunc,
+                Func<Type, Type, bool> needsDuckChaining)
+            {
+                foreach (OutputAndRefParameterData outOrRefParameter in outputAndRefParameters)
+                {
+                    Type proxyArgumentType = outOrRefParameter.ProxyArgumentType.GetElementType();
+                    Type localType = outOrRefParameter.LocalType.GetElementType();
+
+                    // We load the argument to be set
+                    il.WriteLoadArgument(outOrRefParameter.ProxyArgumentIndex, false);
+
+                    // We load the value from the local
+                    il.WriteLoadLocal(outOrRefParameter.LocalIndex);
+
+                    // If we detect duck chaining we create a new proxy instance with the output of the original target method
+                    if (needsDuckChaining(localType, proxyArgumentType))
+                    {
+                        if (localType.IsValueType)
+                        {
+                            il.Emit(OpCodes.Box, localType);
+                        }
+
+                        duckChainFunc(il, proxyArgumentType);
+                    }
+                    else
+                    {
+                        il.WriteSafeTypeConversion(localType, proxyArgumentType);
+                    }
+
+                    // We store the value
+                    il.Emit(OpCodes.Stind_Ref);
+                }
+            }
+
+            internal static bool TryAddReturnIl(
+                TypeBuilder proxyTypeBuilder,
+                LazyILGenerator il,
+                Type currentReturnType,
+                Type innerMethodReturnType,
+                Type outerMethodReturnType,
+                Func<Type, Type, bool> needsDuckChainingFunc,
+                Func<LazyILGenerator, Type, Type> addDuckChainIlFunc)
+            {
+                // Check if the target method returns something
+
+                if ((innerMethodReturnType == typeof(void) && outerMethodReturnType != typeof(void))
+                 || (innerMethodReturnType != typeof(void) && outerMethodReturnType == typeof(void)))
+                {
+                    // ERROR
+                    return false;
+                }
+                else if (innerMethodReturnType != typeof(void))
+                {
+                    // Handle the return value
+                    // Check if the type can be converted or if we need to enable duck chaining
+                    if (needsDuckChainingFunc(innerMethodReturnType, outerMethodReturnType))
+                    {
+                        if (UseDirectAccessTo(proxyTypeBuilder, innerMethodReturnType) && innerMethodReturnType.IsValueType)
+                        {
+                            il.Emit(OpCodes.Box, innerMethodReturnType);
+                        }
+
+                        // We call DuckType.CreateCache<>.Create() or DuckType.CreateCache<>.CreateReverse()
+                        addDuckChainIlFunc(il, outerMethodReturnType);
+                    }
+                    else if (currentReturnType != outerMethodReturnType)
+                    {
+                        // If the type is not the expected type we try a conversion.
+                        il.WriteSafeTypeConversion(currentReturnType, outerMethodReturnType);
+                    }
+                }
+
+                il.Emit(OpCodes.Ret);
+                il.Flush();
+                return true;
+            }
+
+            internal static bool NeedsDuckChainingReverse(Type targetType, Type proxyType)
+                => NeedsDuckChaining(targetType: proxyType, proxyType: targetType);
+
+            internal static Type AddIlToDuckChain(LazyILGenerator il, Type genericType)
+            {
+                var getProxyMethodInfo = typeof(CreateCache<>)
+                                        .MakeGenericType(genericType)
+                                        .GetMethod("Create");
+
+                il.Emit(OpCodes.Call, getProxyMethodInfo);
+                return genericType;
+            }
+
+            internal static Type AddIlToDuckChainReverse(LazyILGenerator il, Type genericType)
+            {
+                var getProxyMethodInfo = typeof(CreateCache<>)
+                                        .MakeGenericType(genericType)
+                                        .GetMethod("CreateReverse");
+
+                il.Emit(OpCodes.Call, getProxyMethodInfo);
+                return genericType;
+            }
+
+            internal static Type AddIlToExtractDuckType(LazyILGenerator il, Type toType)
+            {
+                // outer is a duck type, so extract it
+                // Call IDuckType.Instance property to get the actual value
+                il.Emit(OpCodes.Castclass, typeof(IDuckType));
+                il.EmitCall(OpCodes.Callvirt, DuckTypeInstancePropertyInfo.GetMethod, null);
+                return typeof(object);
             }
         }
     }

@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public abstract class LogsInjectionTestBase : TestHelper
     {
-        private readonly string _excludeMessagePrefix = "[ExcludeMessage]";
+        protected static readonly string ExcludeMessagePrefix = "[ExcludeMessage]";
 
         public LogsInjectionTestBase(ITestOutputHelper output, string sampleName)
             : base(
@@ -91,7 +91,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             throw new Exception("Unable to Fetch Log File Contents", ex);
         }
 
-        public void ValidateLogCorrelation(IReadOnlyCollection<MockTracerAgent.Span> spans, IEnumerable<LogFileTest> logFileTestCases, bool disableLogCorrelation = false, Func<string, bool> additionalInjectedLogFilter = null)
+        public void ValidateLogCorrelation(
+            IReadOnlyCollection<MockTracerAgent.Span> spans,
+            IEnumerable<LogFileTest> logFileTestCases,
+            string packageVersion = "",
+            bool disableLogCorrelation = false,
+            Func<string, bool> additionalInjectedLogFilter = null)
         {
             foreach (var test in logFileTestCases)
             {
@@ -101,7 +106,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     test.TracedLogTypes = TracedLogTypes.NotCorrelated;
                 }
 
-                var logFilePath = Path.Combine(EnvironmentHelper.GetSampleApplicationOutputDirectory(), test.FileName);
+                var logFilePath = Path.Combine(EnvironmentHelper.GetSampleApplicationOutputDirectory(packageVersion), test.FileName);
+                Output.WriteLine($"Loading logs from {logFilePath}");
                 var logs = GetLogFileContents(logFilePath);
                 logs.Should().NotBeNullOrEmpty();
 
@@ -109,7 +115,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 // Assumes we _only_ have logs for logs within traces + our startup log
                 additionalInjectedLogFilter ??= (_) => true;
-                var tracedLogs = logs.Where(log => !log.Contains(_excludeMessagePrefix)).Where(additionalInjectedLogFilter).ToList();
+                var tracedLogs = logs.Where(log => !log.Contains(ExcludeMessagePrefix)).Where(additionalInjectedLogFilter).ToList();
 
                 // Ensure that all spans are represented (when correlated) or no spans are represented (when not correlated) in the traced logs
                 if (tracedLogs.Any())
@@ -179,7 +185,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     }
                 }
 
-                var unTracedLogs = logs.Where(log => log.Contains(_excludeMessagePrefix)).ToList();
+                var unTracedLogs = logs.Where(log => log.Contains(ExcludeMessagePrefix)).ToList();
 
                 foreach (var log in unTracedLogs)
                 {

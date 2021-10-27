@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
                 new object[] { "3.3.103.26" },
                 new object[] { "3.5.1.28" },
-                new object[] { "3.7.1.18" },
+                new object[] { "3.7.1.23" },
 #endif
             };
 
@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.10.4" },
                 new object[] { "2.11.6" },
                 new object[] { "2.12.4" },
-                new object[] { "2.13.1" },
+                new object[] { "2.13.2" },
 #endif
             };
 
@@ -255,6 +255,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
+        public static IEnumerable<object[]> MySqlConnector =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETFRAMEWORK
+#endif
+                new object[] { "1.0.1" },
+                new object[] { "1.1.0" },
+                new object[] { "1.2.1" },
+                new object[] { "1.3.13" },
+#endif
+            };
+
         public static IEnumerable<object[]> MicrosoftDataSqlite =>
 
             new List<object[]>
@@ -268,8 +284,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.1.14" },
                 new object[] { "2.2.6" },
                 new object[] { "3.0.3" },
-                new object[] { "3.1.19" },
-                new object[] { "5.0.10" },
+                new object[] { "3.1.20" },
+                new object[] { "5.0.11" },
 #endif
             };
 

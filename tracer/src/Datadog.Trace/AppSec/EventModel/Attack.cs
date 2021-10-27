@@ -4,7 +4,9 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Net;
+using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec.EventModel
@@ -23,16 +25,20 @@ namespace Datadog.Trace.AppSec.EventModel
         [JsonProperty("context")]
         public Context Context { get; set; }
 
-        public static Attack From(Waf.ReturnTypes.Managed.Return result, Trace.Span span, Transport.ITransport transport)
+        public static Attack From(Waf.ReturnTypes.Managed.Return result, Trace.Span span, Transport.ITransport transport, string customIpHeader, IEnumerable<string> extraHeaders)
         {
             var ruleMatch = result.ResultData.Filter[0];
             var request = transport.Request();
+            var headersIpAndPort = RequestHeadersHelper.ExtractHeadersIpAndPort(transport.GetHeader, customIpHeader, extraHeaders,  transport.IsSecureConnection, new IpInfo(request.RemoteIp, request.RemotePort));
+            request.Headers = headersIpAndPort.HeadersToSend;
+
             var frameworkDescription = FrameworkDescription.Instance;
             var attack = new Attack
             {
                 EventId = Guid.NewGuid().ToString(),
                 Context = new Context()
                 {
+                    Actor = new Actor { Ip = new Ip { Address = headersIpAndPort.IpInfo.IpAddress } },
                     Host = new Host
                     {
                         OsType = frameworkDescription.OSPlatform,
@@ -43,7 +49,7 @@ namespace Datadog.Trace.AppSec.EventModel
                         Request = request,
                         Response = transport.Response(result.Blocked)
                     },
-                    Actor = new Actor { Ip = new Ip { Address = request.RemoteIp } },
+                    Service = new Service { Environment = CorrelationIdentifier.Env },
                     Tracer = new Tracer
                     {
                         RuntimeType = frameworkDescription.Name,
@@ -66,7 +72,7 @@ namespace Datadog.Trace.AppSec.EventModel
             {
                 attack.Context.Span = new Span { Id = span.SpanId };
                 attack.Context.Trace = new Span { Id = span.TraceId };
-                attack.Context.Service = new Service { Name = span.ServiceName };
+                attack.Context.Service.Name = span.ServiceName;
             }
 
             return attack;

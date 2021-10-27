@@ -395,6 +395,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNetMvc5", "trace
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Security.IntegrationTests", "tracer\test\Datadog.Trace.Security.IntegrationTests\Datadog.Trace.Security.IntegrationTests.csproj", "{7C66569C-1174-49AF-8DA7-8B216685C1D4}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Security.Unit.Tests", "tracer\test\Datadog.Trace.Security.Unit.Tests\Datadog.Trace.Security.Unit.Tests.csproj", "{EE45C020-5EC5-4722-9E35-BC5CC62D2722}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCore2", "tracer\test\test-applications\security\Samples.AspNetCore2\Samples.AspNetCore2.csproj", "{8A73100E-F2C3-44D3-A5B8-49B5BFDF1B52}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Monitoring.Distribution", "tracer\src\Datadog.Monitoring.Distribution\Datadog.Monitoring.Distribution.csproj", "{CF364E70-F5B5-4D44-B29E-2165525D3A69}"
@@ -430,6 +432,8 @@ Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Samples.Shared", "tracer\te
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.Native.Checks", "tracer\test\test-applications\instrumentation\Datadog.Trace.ClrProfiler.Native.Checks\Datadog.Trace.ClrProfiler.Native.Checks.csproj", "{7DFDD339-30C5-4C1D-AB07-F9106256AF77}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MySqlConnector", "tracer\test\test-applications\integrations\Samples.MySqlConnector\Samples.MySqlConnector.csproj", "{73252693-2563-4B20-A2F5-F8DB37B91DBE}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{24d3e547-8897-4111-baa2-b92f50cc13d4}*SharedItemsImports = 5
@@ -442,6 +446,7 @@ Global
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{b6a98887-4a47-4c19-9c6f-d833e24f4b1c}*SharedItemsImports = 4
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{bbb60b0f-bf01-4499-936a-4a299a9acfd4}*SharedItemsImports = 4
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{c41b289a-a344-49df-a1bd-081753f9a286}*SharedItemsImports = 5
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{f5582f54-e911-4258-b419-5e894d338c5b}*SharedItemsImports = 4
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1675,6 +1680,18 @@ Global
 		{7C66569C-1174-49AF-8DA7-8B216685C1D4}.Release|x64.Build.0 = Release|x64
 		{7C66569C-1174-49AF-8DA7-8B216685C1D4}.Release|x86.ActiveCfg = Release|x86
 		{7C66569C-1174-49AF-8DA7-8B216685C1D4}.Release|x86.Build.0 = Release|x86
+		{EE45C020-5EC5-4722-9E35-BC5CC62D2722}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE45C020-5EC5-4722-9E35-BC5CC62D2722}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE45C020-5EC5-4722-9E35-BC5CC62D2722}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{EE45C020-5EC5-4722-9E35-BC5CC62D2722}.Debug|x64.Build.0 = Debug|Any CPU
+		{EE45C020-5EC5-4722-9E35-BC5CC62D2722}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EE45C020-5EC5-4722-9E35-BC5CC62D2722}.Debug|x86.Build.0 = Debug|Any CPU
+		{EE45C020-5EC5-4722-9E35-BC5CC62D2722}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE45C020-5EC5-4722-9E35-BC5CC62D2722}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EE45C020-5EC5-4722-9E35-BC5CC62D2722}.Release|x64.ActiveCfg = Release|Any CPU
+		{EE45C020-5EC5-4722-9E35-BC5CC62D2722}.Release|x64.Build.0 = Release|Any CPU
+		{EE45C020-5EC5-4722-9E35-BC5CC62D2722}.Release|x86.ActiveCfg = Release|Any CPU
+		{EE45C020-5EC5-4722-9E35-BC5CC62D2722}.Release|x86.Build.0 = Release|Any CPU
 		{8A73100E-F2C3-44D3-A5B8-49B5BFDF1B52}.Debug|Any CPU.ActiveCfg = Debug|x64
 		{8A73100E-F2C3-44D3-A5B8-49B5BFDF1B52}.Debug|Any CPU.Build.0 = Debug|x64
 		{8A73100E-F2C3-44D3-A5B8-49B5BFDF1B52}.Debug|x64.ActiveCfg = Debug|x64
@@ -1820,6 +1837,16 @@ Global
 		{7DFDD339-30C5-4C1D-AB07-F9106256AF77}.Release|x64.Build.0 = Release|x64
 		{7DFDD339-30C5-4C1D-AB07-F9106256AF77}.Release|x86.ActiveCfg = Release|x86
 		{7DFDD339-30C5-4C1D-AB07-F9106256AF77}.Release|x86.Build.0 = Release|x86
+		{73252693-2563-4B20-A2F5-F8DB37B91DBE}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{73252693-2563-4B20-A2F5-F8DB37B91DBE}.Debug|x64.ActiveCfg = Debug|x64
+		{73252693-2563-4B20-A2F5-F8DB37B91DBE}.Debug|x64.Build.0 = Debug|x64
+		{73252693-2563-4B20-A2F5-F8DB37B91DBE}.Debug|x86.ActiveCfg = Debug|x86
+		{73252693-2563-4B20-A2F5-F8DB37B91DBE}.Debug|x86.Build.0 = Debug|x86
+		{73252693-2563-4B20-A2F5-F8DB37B91DBE}.Release|Any CPU.ActiveCfg = Release|x86
+		{73252693-2563-4B20-A2F5-F8DB37B91DBE}.Release|x64.ActiveCfg = Release|x64
+		{73252693-2563-4B20-A2F5-F8DB37B91DBE}.Release|x64.Build.0 = Release|x64
+		{73252693-2563-4B20-A2F5-F8DB37B91DBE}.Release|x86.ActiveCfg = Release|x86
+		{73252693-2563-4B20-A2F5-F8DB37B91DBE}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1952,6 +1979,7 @@ Global
 		{AAFFA51D-1357-4560-97DC-43AD039442E6} = {0972AD57-B16B-494F-AE0A-091DD6F3B42B}
 		{F5582F54-E911-4258-B419-5E894D338C5B} = {AAFFA51D-1357-4560-97DC-43AD039442E6}
 		{7C66569C-1174-49AF-8DA7-8B216685C1D4} = {8CEC2042-F11C-49F5-A674-2355793B600A}
+		{EE45C020-5EC5-4722-9E35-BC5CC62D2722} = {8CEC2042-F11C-49F5-A674-2355793B600A}
 		{8A73100E-F2C3-44D3-A5B8-49B5BFDF1B52} = {0972AD57-B16B-494F-AE0A-091DD6F3B42B}
 		{CF364E70-F5B5-4D44-B29E-2165525D3A69} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{463A6FB2-1ABE-4B92-A470-97134D0BBC7E} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
@@ -1968,6 +1996,7 @@ Global
 		{536F1D82-D40C-4E33-B7FA-76A0F17BF672} = {C4C1E313-C7C1-4490-AECE-0DD0062380A4}
 		{5A806F4B-39E7-4F38-B36F-F5CFC4F8760A} = {9518425A-36A5-4B8F-B0B8-6137DB88441D}
 		{7DFDD339-30C5-4C1D-AB07-F9106256AF77} = {933F1D4B-1216-4BC1-956E-8C30818BAA0F}
+		{73252693-2563-4B20-A2F5-F8DB37B91DBE} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}

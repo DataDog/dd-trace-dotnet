@@ -46,23 +46,22 @@ namespace Datadog.Trace.Security.IntegrationTests
             return events;
         }
 
-        internal void SubscribeAppSecEvents()
-        {
-            agent.RequestReceived += Agent_RequestReceived;
-        }
+        internal void SubscribeAppSecEvents() => agent.RequestReceived += Agent_RequestReceived;
 
-        internal void UnsubscribeAppSecEvents()
-        {
-            agent.RequestReceived -= Agent_RequestReceived;
-        }
+        internal void UnsubscribeAppSecEvents() => agent.RequestReceived -= Agent_RequestReceived;
 
-        internal void Agent_RequestReceived(object sender, EventArgs<System.Net.HttpListenerContext> ctx)
+        private void Agent_RequestReceived(object sender, EventArgs<System.Net.HttpListenerContext> ctx)
         {
             var appSecUrl = ctx.Value.Request.Url.AbsoluteUri.Contains("appsec");
             if (appSecUrl)
             {
-                using var sr = new StreamReader(ctx.Value.Request.InputStream);
-                string content = sr.ReadToEnd();
+                using var ms = new MemoryStream();
+                ctx.Value.Request.InputStream.CopyTo(ms);
+                var firstByte = ms.ReadByte();
+                Xunit.Assert.NotEqual(239, firstByte); // assert doesn't contain BOM
+                ms.Seek(0, SeekOrigin.Begin);
+                using var sr = new StreamReader(ms);
+                var content = sr.ReadToEnd();
                 var intake = JsonConvert.DeserializeObject<Intake>(content, new IntakeConverter());
                 events.AddRange(intake.Events);
             }

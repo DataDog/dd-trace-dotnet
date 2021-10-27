@@ -3,9 +3,11 @@
 
 #include <atomic>
 #include <mutex>
+#include <shared_mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <future>
 
 #include "cor.h"
 #include "corprof.h"
@@ -14,13 +16,27 @@
 namespace trace
 {
 
+typedef std::shared_mutex Lock;
+typedef std::unique_lock<Lock> WriteLock;
+typedef std::shared_lock<Lock> ReadLock;
+
 struct RejitItem
 {
-    int m_length = 0;
-    std::unique_ptr<ModuleID> m_modulesId = nullptr;
-    std::unique_ptr<mdMethodDef> m_methodDefs = nullptr;
+    int m_type = 0;
+    std::unique_ptr<std::vector<ModuleID>> m_modulesId = nullptr;
+    std::unique_ptr<std::vector<mdMethodDef>> m_methodDefs = nullptr;
+    std::unique_ptr<std::vector<IntegrationMethod>> m_integrationMethods = nullptr;
+    //
+    std::promise<ULONG>* m_promise = nullptr;
 
-    RejitItem(int length, std::unique_ptr<ModuleID>&& modulesId, std::unique_ptr<mdMethodDef>&& methodDefs);
+    RejitItem();
+
+    RejitItem(std::unique_ptr<std::vector<ModuleID>>&& modulesId,
+              std::unique_ptr<std::vector<mdMethodDef>>&& methodDefs);
+
+    RejitItem(std::unique_ptr<std::vector<ModuleID>>&& modulesId,
+              std::unique_ptr<std::vector<IntegrationMethod>>&& integrationMethods, std::promise<ULONG>* promise);
+
     static std::unique_ptr<RejitItem> CreateEndRejitThread();
 };
 
@@ -68,7 +84,7 @@ class RejitHandlerModule
 {
 private:
     ModuleID m_moduleId;
-    ModuleMetadata* m_metadata;
+    std::unique_ptr<ModuleMetadata> m_metadata;
     std::mutex m_methods_lock;
     std::unordered_map<mdMethodDef, std::unique_ptr<RejitHandlerModuleMethod>> m_methods;
     RejitHandler* m_handler;
@@ -94,8 +110,12 @@ public:
 class RejitHandler
 {
 private:
+    std::atomic_bool m_shutdown = {false};
+    Lock m_shutdown_lock;
+
     std::mutex m_modules_lock;
     std::unordered_map<ModuleID, std::unique_ptr<RejitHandlerModule>> m_modules;
+    AssemblyProperty* m_pCorAssemblyProperty = nullptr;
 
     ICorProfilerInfo4* m_profilerInfo;
     ICorProfilerInfo6* m_profilerInfo6;
@@ -111,6 +131,7 @@ private:
     static void EnqueueThreadLoop(RejitHandler* handler);
 
     void RequestRejitForInlinersInModule(ModuleID moduleId);
+    void RequestRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef);
 
 public:
     RejitHandler(ICorProfilerInfo4* pInfo,
@@ -127,17 +148,25 @@ public:
 
     void AddNGenModule(ModuleID moduleId);
 
+    void EnqueueProcessModule(const std::vector<ModuleID>& modulesVector,
+                              const std::vector<IntegrationMethod>& integrations,
+                              std::promise<ULONG>* promise);
     void EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef);
+
     void Shutdown();
 
     HRESULT NotifyReJITParameters(ModuleID moduleId, mdMethodDef methodId,
-                                  ICorProfilerFunctionControl* pFunctionControl, ModuleMetadata* metadata);
+                                  ICorProfilerFunctionControl* pFunctionControl);
     HRESULT NotifyReJITCompilationStarted(FunctionID functionId, ReJITID rejitId);
 
     ICorProfilerInfo4* GetCorProfilerInfo();
     ICorProfilerInfo6* GetCorProfilerInfo6();
 
+    void SetCorAssemblyProfiler(AssemblyProperty* pCorAssemblyProfiler);
     void RequestRejitForNGenInliners();
+    ULONG ProcessModuleForRejit(const std::vector<ModuleID>& modules,
+                                const std::vector<IntegrationMethod>& integrations,
+                                bool enqueueInSameThread = false);
 };
 
 } // namespace trace

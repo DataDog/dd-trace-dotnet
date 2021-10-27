@@ -34,7 +34,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("Category", "ArmUnsupported")]
         public async Task TestSecurity(bool enableSecurity, bool enableBlocking, HttpStatusCode expectedStatusCode)
         {
-            using var agent = await RunOnSelfHosted(enableSecurity, enableBlocking);
+            var agent = await RunOnSelfHosted(enableSecurity, enableBlocking);
             await TestBlockedRequestAsync(agent, enableSecurity, expectedStatusCode, 5, new Action<TestHelpers.MockTracerAgent.Span>[]
             {
              s => Assert.Equal("aspnet_core.request", s.Name),

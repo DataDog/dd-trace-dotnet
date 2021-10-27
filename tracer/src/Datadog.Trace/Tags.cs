@@ -425,11 +425,6 @@ namespace Datadog.Trace
         public const string CosmosDbContainer = "cosmosdb.container";
 
         /// <summary>
-        /// Whether the libraries application security features are enabled.
-        /// </summary>
-        public const string AppSecEnabled = "_dd.appsec.enabled";
-
-        /// <summary>
         /// If a span was involved with an application security event
         /// </summary>
         public const string AppSecEvent = "appsec.event";
