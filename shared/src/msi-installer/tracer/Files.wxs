@@ -6,7 +6,6 @@
   <Fragment>
     <ComponentGroup Id="Tracer.Files" Directory="tracer">
       <Component Win64="$(var.Win64)">
-        <File Id="integrations.json" Source="$(var.TracerHomeDirectory)\integrations.json" />
       </Component>
     </ComponentGroup>
 

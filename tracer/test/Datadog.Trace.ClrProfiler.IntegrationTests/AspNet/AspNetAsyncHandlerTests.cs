@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNet
     public class AspNetAsyncHandlerTestsCallTarget : AspNetAsyncHandlerTests
     {
         public AspNetAsyncHandlerTestsCallTarget(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, enableCallTarget: true)
+            : base(iisFixture, output)
         {
         }
     }
@@ -31,11 +31,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNet
     {
         private readonly IisFixture _iisFixture;
 
-        public AspNetAsyncHandlerTests(IisFixture iisFixture, ITestOutputHelper output, bool enableCallTarget)
+        public AspNetAsyncHandlerTests(IisFixture iisFixture, ITestOutputHelper output)
             : base("AspNetAsyncHandler", @"test\test-applications\aspnet", output)
         {
             SetServiceVersion("1.0.0");
-            SetCallTargetSettings(enableCallTarget);
 
             _iisFixture = iisFixture;
             _iisFixture.ShutdownPath = "/shutdown";

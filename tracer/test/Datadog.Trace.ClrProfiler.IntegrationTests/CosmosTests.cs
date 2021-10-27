@@ -51,8 +51,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "ArmUnsupported")]
         public void SubmitsTraces(string packageVersion)
         {
-            SetCallTargetSettings(true);
-
             var expectedSpanCount = 14;
 
             int agentPort = TcpPortProvider.GetOpenPort();

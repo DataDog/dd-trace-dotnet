@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class OwinWebApi2TestsCallTarget : OwinWebApi2Tests
     {
         public OwinWebApi2TestsCallTarget(OwinFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, enableCallTarget: true, enableRouteTemplateResourceNames: false)
+            : base(fixture, output, enableRouteTemplateResourceNames: false)
         {
         }
     }
@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class OwinWebApi2TestsCallTargetWithFeatureFlag : OwinWebApi2Tests
     {
         public OwinWebApi2TestsCallTargetWithFeatureFlag(OwinFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, enableCallTarget: true, enableRouteTemplateResourceNames: true)
+            : base(fixture, output, enableRouteTemplateResourceNames: true)
         {
         }
     }
@@ -48,11 +48,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private readonly string _testName;
         private readonly ITestOutputHelper _output;
 
-        public OwinWebApi2Tests(OwinFixture fixture, ITestOutputHelper output, bool enableCallTarget, bool enableRouteTemplateResourceNames)
+        public OwinWebApi2Tests(OwinFixture fixture, ITestOutputHelper output, bool enableRouteTemplateResourceNames)
             : base("Owin.WebApi2", output)
         {
             SetServiceVersion("1.0.0");
-            SetCallTargetSettings(enableCallTarget);
             if (enableRouteTemplateResourceNames)
             {
                 SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, "true");
@@ -61,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             _fixture = fixture;
             _output = output;
             _testName = nameof(OwinWebApi2Tests)
-                      + (enableCallTarget ? ".CallSite" : ".CallTarget")
+                      + ".CallTarget"
                       + (enableRouteTemplateResourceNames ? ".NoFF" : ".WithFF");
         }
 
