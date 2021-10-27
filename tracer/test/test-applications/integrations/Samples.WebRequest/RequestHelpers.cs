@@ -348,6 +348,8 @@ namespace Samples.WebRequest
                     // Create separate request objects since .NET Core asserts only one response per request
                     HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest("GetRequestStream", url));
                     request.Method = "POST";
+                    request.ContentLength = 1;
+                    request.AllowWriteStreamBuffering = false;
 
                     if (tracingDisabled)
                     {
