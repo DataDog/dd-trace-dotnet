@@ -17,6 +17,7 @@ namespace GeneratePackageVersions
     {
         private readonly AbsolutePath _definitionsFilePath;
         private readonly PackageGroup _latestMinors;
+        private readonly PackageGroup _latestMajors;
         private readonly XunitStrategyFileGenerator _strategyGenerator;
 
         public PackageVersionGenerator(
@@ -26,6 +27,7 @@ namespace GeneratePackageVersions
             var propsDirectory = tracerDirectory / "build";
             _definitionsFilePath = tracerDirectory / "build" / "PackageVersionsGeneratorDefinitions.json";
             _latestMinors = new PackageGroup(propsDirectory, testProjectDirectory, "LatestMinors");
+            _latestMajors = new PackageGroup(propsDirectory, testProjectDirectory, "LatestMajors");
             _strategyGenerator = new XunitStrategyFileGenerator(testProjectDirectory / "PackageVersions.g.cs");
 
             if (!File.Exists(_definitionsFilePath))
@@ -44,6 +46,7 @@ namespace GeneratePackageVersions
         private async Task RunFileGeneratorWithPackageEntries(IEnumerable<PackageVersionEntry> entries)
         {
             _latestMinors.Start();
+            _latestMajors.Start();
             _strategyGenerator.Start();
 
             foreach (var entry in entries)
@@ -78,11 +81,25 @@ namespace GeneratePackageVersions
                     .Where(v => v.CompareTo(entryNetCoreMinVersion) >= 0)
                     .Select(v => v.ToString());
 
+                var orderedLastMajorPackageVersions = orderedPackageVersions
+                    .GroupBy(v => v.Major)
+                    .Select(group => group.Max());
+
+                var lastMajorNetFrameworkVersions = orderedLastMajorPackageVersions
+                    .Where(v => v.CompareTo(entryNetCoreMinVersion) < 0)
+                    .Select(v => v.ToString());
+
+                var lastMajorNetCoreVersions = orderedLastMajorPackageVersions
+                    .Where(v => v.CompareTo(entryNetCoreMinVersion) >= 0)
+                    .Select(v => v.ToString());
+
                 _latestMinors.Write(entry, lastMinorNetFrameworkVersions, lastMinorNetCoreVersions);
+                _latestMajors.Write(entry, lastMajorNetFrameworkVersions, lastMajorNetCoreVersions);
                 _strategyGenerator.Write(entry, null, null);
             }
 
             _latestMinors.Finish();
+            _latestMajors.Finish();
             _strategyGenerator.Finish();
         }
 
