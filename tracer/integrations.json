@@ -2829,6 +2829,58 @@
         "target": {
           "assembly": "System",
           "type": "System.Net.WebRequest",
+          "method": "BeginGetRequestStream",
+          "signature_types": [
+            "System.IAsyncResult",
+            "System.AsyncCallback",
+            "System.Object"
+          ],
+          "minimum_major": 2,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 4,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.WebRequestIntegration",
+          "method": "BeginGetRequestStream",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "ReplaceTargetMethod"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System.Net.Requests",
+          "type": "System.Net.WebRequest",
+          "method": "BeginGetRequestStream",
+          "signature_types": [
+            "System.IAsyncResult",
+            "System.AsyncCallback",
+            "System.Object"
+          ],
+          "minimum_major": 4,
+          "minimum_minor": 0,
+          "minimum_patch": 0,
+          "maximum_major": 5,
+          "maximum_minor": 65535,
+          "maximum_patch": 65535
+        },
+        "wrapper": {
+          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "type": "Datadog.Trace.ClrProfiler.Integrations.WebRequestIntegration",
+          "method": "BeginGetRequestStream",
+          "signature": "00 06 1C 1C 1C 1C 08 08 0A",
+          "action": "ReplaceTargetMethod"
+        }
+      },
+      {
+        "caller": {},
+        "target": {
+          "assembly": "System",
+          "type": "System.Net.WebRequest",
           "method": "GetResponse",
           "signature_types": [
             "System.Net.WebResponse"

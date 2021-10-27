@@ -1,4 +1,4 @@
-﻿// <copyright file="HttpWebRequest_EndGetResponse_Integration.cs" company="Datadog">
+// <copyright file="HttpWebRequest_EndGetResponse_Integration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -62,16 +62,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                 }
 
                 // Check if any headers were injected by a previous call
-                var existingSpanId = SpanContextPropagator.Instance.Extract(request.Headers.Wrap())?.SpanId;
+                var existingSpanContext = SpanContextPropagator.Instance.Extract(request.Headers.Wrap());
+
+                // If this operation creates the trace, then we need to re-apply the sampling priority
+                bool setSamplingPriority = existingSpanContext?.SamplingPriority != null && Tracer.Instance.ActiveScope == null;
 
                 Scope scope = null;
 
                 try
                 {
-                    scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, request.Method, request.RequestUri, WebRequestCommon.IntegrationId, out var tags, existingSpanId, startTime);
+                    scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, request.Method, request.RequestUri, WebRequestCommon.IntegrationId, out var tags, existingSpanContext?.SpanId, startTime);
 
                     if (scope is not null)
                     {
+                        if (setSamplingPriority)
+                        {
+                            scope.Span.SetTraceSamplingPriority(existingSpanContext.SamplingPriority.Value);
+                            scope.Span.Context.TraceContext.LockSamplingPriority();
+                        }
+
                         if (returnValue is HttpWebResponse response)
                         {
                             scope.Span.SetHttpStatusCode((int)response.StatusCode, isServer: false);

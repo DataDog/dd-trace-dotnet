@@ -86,23 +86,73 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 return callGetRequestStream(webRequest);
             }
 
-            var tracer = Tracer.Instance;
-
-            if (tracer.Settings.IsIntegrationEnabled(IntegrationId))
-            {
-                var spanContext = ScopeFactory.CreateHttpSpanContext(tracer, IntegrationId);
-
-                if (spanContext != null)
-                {
-                    // Add distributed tracing headers to the HTTP request.
-                    // The expected sequence of calls is GetRequestStream -> GetResponse. Headers can't be modified after calling GetRequestStream.
-                    // At the same time, we don't want to set an active scope now, because it's possible that GetResponse will never be called.
-                    // Instead, we generate a spancontext and inject it in the headers. GetResponse will fetch them and create an active scope with the right id.
-                    SpanContextPropagator.Instance.Inject(spanContext, request.Headers.Wrap());
-                }
-            }
+            InjectHeadersForGetRequestStream(request);
 
             return callGetRequestStream(webRequest);
+        }
+
+        /// <summary>
+        /// Instrumentation wrapper for <see cref="WebRequest.BeginGetRequestStream"/>.
+        /// </summary>
+        /// <param name="webRequest">The <see cref="WebRequest"/> instance to instrument.</param>
+        /// <param name="callback">The callback parameter</param>
+        /// <param name="state">The state parameter</param>
+        /// <param name="opCode">The OpCode used in the original method call.</param>
+        /// <param name="mdToken">The mdToken of the original method call.</param>
+        /// <param name="moduleVersionPtr">A pointer to the module version GUID.</param>
+        /// <returns>Returns the value returned by the inner method call.</returns>
+        [InterceptMethod(
+            TargetAssembly = "System", // .NET Framework
+            TargetType = WebRequestTypeName,
+            TargetSignatureTypes = new[] { ClrNames.IAsyncResult, ClrNames.AsyncCallback, ClrNames.Object },
+            TargetMinimumVersion = Major2,
+            TargetMaximumVersion = Major4)]
+        [InterceptMethod(
+            TargetAssembly = "System.Net.Requests", // .NET Core
+            TargetType = WebRequestTypeName,
+            TargetSignatureTypes = new[] { ClrNames.IAsyncResult, ClrNames.AsyncCallback, ClrNames.Object },
+            TargetMinimumVersion = Major4,
+            TargetMaximumVersion = Major5)]
+        public static object BeginGetRequestStream(object webRequest, object callback, object state, int opCode, int mdToken, long moduleVersionPtr)
+        {
+            const string methodName = nameof(BeginGetRequestStream);
+
+            Func<object, object, object, object> callBeginGetRequestStream;
+
+            try
+            {
+                var instrumentedType = webRequest.GetInstrumentedType(WebRequestTypeName);
+                callBeginGetRequestStream =
+                    MethodBuilder<Func<object, object, object, object>>
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
+                       .WithConcreteType(instrumentedType)
+                       .WithParameters(typeof(AsyncCallback), typeof(object))
+                       .WithNamespaceAndNameFilters(ClrNames.IAsyncResult, ClrNames.AsyncCallback, ClrNames.Object)
+                       .Build();
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorRetrievingMethod(
+                    exception: ex,
+                    moduleVersionPointer: moduleVersionPtr,
+                    mdToken: mdToken,
+                    opCode: opCode,
+                    instrumentedType: WebRequestTypeName,
+                    methodName: methodName,
+                    instanceType: webRequest.GetType().AssemblyQualifiedName);
+                throw;
+            }
+
+            var request = (WebRequest)webRequest;
+
+            if (!(request is HttpWebRequest) || !IsTracingEnabled(request))
+            {
+                return callBeginGetRequestStream(webRequest, callback, state);
+            }
+
+            InjectHeadersForGetRequestStream(request);
+
+            return callBeginGetRequestStream(webRequest, callback, state);
         }
 
         /// <summary>
@@ -141,10 +191,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                 var instrumentedType = webRequest.GetInstrumentedType(WebRequestTypeName);
                 callGetResponse =
                     MethodBuilder<Func<object, WebResponse>>
-                        .Start(moduleVersionPtr, mdToken, opCode, methodName)
-                        .WithConcreteType(instrumentedType)
-                        .WithNamespaceAndNameFilters("System.Net.WebResponse")
-                        .Build();
+                       .Start(moduleVersionPtr, mdToken, opCode, methodName)
+                       .WithConcreteType(instrumentedType)
+                       .WithNamespaceAndNameFilters("System.Net.WebResponse")
+                       .Build();
             }
             catch (Exception ex)
             {
@@ -169,12 +219,21 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             // Check if any headers were injected by a previous call to GetRequestStream
             var spanContext = SpanContextPropagator.Instance.Extract(request.Headers.Wrap());
 
+            // If this operation creates the trace, then we need to re-apply the sampling priority
+            bool setSamplingPriority = spanContext?.SamplingPriority != null && Tracer.Instance.ActiveScope == null;
+
             using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, request.Method, request.RequestUri, IntegrationId, out var tags, spanContext?.SpanId))
             {
                 try
                 {
                     if (scope != null)
                     {
+                        if (setSamplingPriority)
+                        {
+                            scope.Span.SetTraceSamplingPriority(spanContext.SamplingPriority.Value);
+                            scope.Span.Context.TraceContext.LockSamplingPriority();
+                        }
+
                         // add distributed tracing headers to the HTTP request
                         SpanContextPropagator.Instance.Inject(scope.Span.Context, request.Headers.Wrap());
                     }
@@ -286,6 +345,25 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             // check if tracing is disabled for this request via http header
             string value = request.Headers[HttpHeaderNames.TracingEnabled];
             return !string.Equals(value, "false", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static void InjectHeadersForGetRequestStream(WebRequest request)
+        {
+            var tracer = Tracer.Instance;
+
+            if (tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            {
+                var span = ScopeFactory.CreateInactiveOutboundHttpSpan(tracer, request.Method, request.RequestUri, IntegrationId, out _, spanId: null, startTime: null, dummySpan: true);
+
+                if (span?.Context != null)
+                {
+                    // Add distributed tracing headers to the HTTP request.
+                    // The expected sequence of calls is GetRequestStream -> GetResponse. Headers can't be modified after calling GetRequestStream.
+                    // At the same time, we don't want to set an active scope now, because it's possible that GetResponse will never be called.
+                    // Instead, we generate a spancontext and inject it in the headers. GetResponse will fetch them and create an active scope with the right id.
+                    SpanContextPropagator.Instance.Inject(span.Context, request.Headers.Wrap());
+                }
+            }
         }
     }
 }

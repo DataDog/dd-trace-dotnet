@@ -355,26 +355,7 @@ namespace Samples.WebRequest
 
                 using (Tracer.Instance.StartActive("BeginGetResponse"))
                 {
-                    // Create separate request objects since .NET Core asserts only one response per request
-                    HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest("BeginGetResponseAsync", url));
-                    if (tracingDisabled)
-                    {
-                        request.Headers.Add(HttpHeaderNames.TracingEnabled, "false");
-                    }
-
-                    request.BeginGetResponse(
-                        iar =>
-                        {
-                            var req = (HttpWebRequest)iar.AsyncState;
-                            var response = req.EndGetResponse(iar);
-
-                            response.Close();
-
-                            Console.WriteLine("Received response for request.Begin/EndGetResponse()");
-                            _allDone.Set();
-                        }, request);
-
-                    _allDone.WaitOne();
+                    BeginGetResponse(tracingDisabled, url);
                 }
 
                 using (Tracer.Instance.StartActive("BeginGetResponse TaskFactoryFromAsync"))
@@ -397,6 +378,38 @@ namespace Samples.WebRequest
             GetRequestStream(tracingDisabled, url);
             BeginGetRequestStream(tracingDisabled, url);
 
+        }
+
+        private static void BeginGetResponse(bool tracingDisabled, string url)
+        {
+            // Create separate request objects since .NET Core asserts only one response per request
+            HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest("BeginGetResponseAsync", url));
+            request.Method = "POST";
+            request.ContentLength = 1;
+            request.AllowWriteStreamBuffering = false;
+
+            if (tracingDisabled)
+            {
+                request.Headers.Add(HttpHeaderNames.TracingEnabled, "false");
+            }
+
+            var stream = request.GetRequestStream();
+            stream.Write(new byte[1], 0, 1);
+
+            request.BeginGetResponse(
+                iar =>
+                {
+                    var req = (HttpWebRequest)iar.AsyncState;
+                    var response = req.EndGetResponse(iar);
+
+                    response.Close();
+
+                    Console.WriteLine("Received response for request.Begin/EndGetResponse()");
+                    _allDone.Set();
+                },
+                request);
+
+            _allDone.WaitOne();
         }
 
         private static void BeginGetRequestStream(bool tracingDisabled, string url)

@@ -423,7 +423,7 @@ namespace Datadog.Trace
             return _scopeManager.Activate(span, finishOnClose);
         }
 
-        internal Span StartSpan(string operationName, ITags tags, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false, ulong? spanId = null)
+        internal Span StartSpan(string operationName, ITags tags, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false, ulong? spanId = null, bool addToTraceContext = true)
         {
             var spanContext = CreateSpanContext(parent, serviceName, ignoreActiveScope, spanId);
 
@@ -455,7 +455,11 @@ namespace Datadog.Trace
                 span.SetTag(Tags.Version, version);
             }
 
-            spanContext.TraceContext.AddSpan(span);
+            if (addToTraceContext)
+            {
+                spanContext.TraceContext.AddSpan(span);
+            }
+
             return span;
         }
 
