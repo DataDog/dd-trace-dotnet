@@ -81,14 +81,25 @@ const WSTRING system_private_corelib_assemblyName = WStr("System.Private.CoreLib
 const WSTRING datadog_trace_clrprofiler_managed_loader_assemblyName = WStr("Datadog.Trace.ClrProfiler.Managed.Loader");
 
 const WSTRING managed_profiler_full_assembly_version =
-    WStr("Datadog.Trace, Version=1.28.8.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
+    WStr("Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
 
 const WSTRING managed_profiler_name = WStr("Datadog.Trace");
 
 const WSTRING nonwindows_nativemethods_type = WStr("Datadog.Trace.ClrProfiler.NativeMethods+NonWindows");
+const WSTRING windows_nativemethods_type = WStr("Datadog.Trace.ClrProfiler.NativeMethods+Windows");
+
 const WSTRING appsec_nonwindows_nativemethods_type = WStr("Datadog.Trace.AppSec.Waf.NativeBindings.NativeLibrary+NonWindows");
+const WSTRING appsec_windows_nativemethods_type = WStr("Datadog.Trace.AppSec.Waf.NativeBindings.NativeLibrary+Windows");
 
 const WSTRING calltarget_modification_action = WStr("CallTargetModification");
+
+#ifdef _WIN32
+const WSTRING native_dll_filename = WStr("DATADOG.TRACE.CLRPROFILER.NATIVE.DLL");
+#elif MACOS
+const WSTRING native_dll_filename = WStr("Datadog.Trace.ClrProfiler.Native.dylib");
+#else
+const WSTRING native_dll_filename = WStr("Datadog.Trace.ClrProfiler.Native.so");
+#endif
 
 } // namespace trace
 

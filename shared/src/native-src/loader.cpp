@@ -37,8 +37,8 @@ namespace shared
         WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
     };
 
-    constexpr const WCHAR* SpecificTypeToInjectName = WStr("System.AppDomain");
-    constexpr const WCHAR* SpecificMethodToInjectName = WStr("IsCompatibilitySwitchSet");
+    const WSTRING SpecificTypeToInjectName = WStr("System.AppDomain");
+    const WSTRING SpecificMethodToInjectName = WStr("IsCompatibilitySwitchSet");
 
 
     static Enumerator<mdMethodDef> EnumMethodsWithName(
@@ -324,14 +324,14 @@ namespace shared
             if (_loaderOptions.RewriteMSCorLibMethods && _loaderOptions.IsNet46OrGreater)
             {
                 mdTypeDef appDomainTypeDef;
-                hr = metadataImport->FindTypeDefByName(SpecificTypeToInjectName, mdTokenNil, &appDomainTypeDef);
+                hr = metadataImport->FindTypeDefByName(SpecificTypeToInjectName.c_str(), mdTokenNil, &appDomainTypeDef);
                 if (FAILED(hr))
                 {
                     Debug("Loader::InjectLoaderToModuleInitializer: " + ToString(SpecificTypeToInjectName) + " not found.");
                     return S_FALSE;
                 }
 
-                auto enumMethods = EnumMethodsWithName(metadataImport, appDomainTypeDef, SpecificMethodToInjectName);
+                auto enumMethods = EnumMethodsWithName(metadataImport, appDomainTypeDef, SpecificMethodToInjectName.c_str());
                 auto enumIterator = enumMethods.begin();
                 if (enumIterator != enumMethods.end()) {
                     auto methodDef = *enumIterator;
@@ -644,12 +644,12 @@ namespace shared
         const ComPtr<IMetaDataImport2> metadataImport = metadataInterfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
         const ComPtr<IMetaDataAssemblyImport> assemblyImport = metadataInterfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
 
-        constexpr DWORD NameBuffSize = 1024;
+        const size_t NameBuffSize = 1024;
 
         mdToken functionParentToken;
         WCHAR functionName[NameBuffSize]{};
-        DWORD functionNameLength = 0;
-        hr = metadataImport->GetMemberProps(functionToken, &functionParentToken, functionName, NameBuffSize, &functionNameLength,
+        DWORD functionNameSize = 0;
+        hr = metadataImport->GetMemberProps(functionToken, &functionParentToken, functionName, NameBuffSize, &functionNameSize,
                 nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
         if (FAILED(hr))
         {
@@ -657,33 +657,56 @@ namespace shared
             return S_FALSE;
         }
 
+        if (SpecificMethodToInjectName != functionName)
+        {
+            if (ExtraVerboseLogging && _loaderOptions.LogDebugIsEnabled)
+            {
+                Debug("Loader::HandleJitCachedFunctionSearchStarted:"
+                      " (functionId=" +
+                      ToString(functionId) +
+                      ") "
+                      " resulted in disableNGenForFunction=False.");
+            }
+            return S_OK;
+        }
+
         WCHAR typeName[NameBuffSize]{};
-        DWORD typeNameLength = 0;
+        DWORD typeNameSize = 0;
         DWORD typeFlags;
-        hr = metadataImport->GetTypeDefProps(functionParentToken, typeName, NameBuffSize, &typeNameLength, &typeFlags, NULL);
+        hr = metadataImport->GetTypeDefProps(functionParentToken, typeName, NameBuffSize, &typeNameSize, &typeFlags, NULL);
         if (FAILED(hr))
         {
             Error("Loader::HandleJitCachedFunctionSearchStarted: Call to GetTypeDefProps(..) returned a FAILED HResult: " + ToString(hr) + ".");
             return S_FALSE;
         }
 
-        bool disableNGenForFunction = (0 == memcmp(functionName, SpecificMethodToInjectName, sizeof(WCHAR) * (std::min)(NameBuffSize, functionNameLength)))
-                                        && (0 == memcmp(typeName, SpecificTypeToInjectName, sizeof(WCHAR) * (std::min)(NameBuffSize, typeNameLength)));
-
-        if (disableNGenForFunction)
+        if (SpecificTypeToInjectName != typeName)
         {
-            _specificMethodToInjectFunctionId = functionId;
+            if (ExtraVerboseLogging && _loaderOptions.LogDebugIsEnabled)
+            {
+                Debug("Loader::HandleJitCachedFunctionSearchStarted:"
+                      " (functionId=" +
+                      ToString(functionId) +
+                      ","
+                      " functionMoniker=\"" +
+                      ToString(typeName) + "." + ToString(functionName) +
+                      "\")"
+                      " resulted in disableNGenForFunction=False.");
+            }
+            return S_OK;
         }
 
-        if ((ExtraVerboseLogging || disableNGenForFunction) && _loaderOptions.LogDebugIsEnabled)
+        _specificMethodToInjectFunctionId = functionId;
+
+        if (_loaderOptions.LogDebugIsEnabled)
         {
             Debug("Loader::HandleJitCachedFunctionSearchStarted:"
                   " (functionId=" + ToString(functionId) + ","
                   " functionMoniker=\"" + ToString(typeName) + "." + ToString(functionName) + "\")"
-                  " resulted in disableNGenForFunction=" + (disableNGenForFunction ? "True" : "False") + ".");
+                  " resulted in disableNGenForFunction=True.");
         }
 
-        *pbUseCachedFunction = *pbUseCachedFunction && !disableNGenForFunction;
+        *pbUseCachedFunction = false;
         return S_OK;
     }
 

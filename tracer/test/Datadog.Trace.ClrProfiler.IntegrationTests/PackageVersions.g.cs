@@ -19,54 +19,51 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [SuppressMessage("StyleCop.CSharp.LayoutRules", "SA1516:Elements must be separated by blank line", Justification = "This is an auto-generated file.")]
     public class PackageVersions
     {
-#if COMPREHENSIVE_TESTS
-        public static readonly bool IsComprehensive = true;
-#else
-        public static readonly bool IsComprehensive = false;
-#endif
 
-        public static IEnumerable<object[]> AwsSqs => IsComprehensive ? PackageVersionsComprehensive.AwsSqs : PackageVersionsLatestMinors.AwsSqs;
+        public static IEnumerable<object[]> AwsSqs => PackageVersionsLatestMinors.AwsSqs;
 
-        public static IEnumerable<object[]> MongoDB => IsComprehensive ? PackageVersionsComprehensive.MongoDB : PackageVersionsLatestMinors.MongoDB;
+        public static IEnumerable<object[]> MongoDB => PackageVersionsLatestMinors.MongoDB;
 
-        public static IEnumerable<object[]> ElasticSearch7 => IsComprehensive ? PackageVersionsComprehensive.ElasticSearch7 : PackageVersionsLatestMinors.ElasticSearch7;
+        public static IEnumerable<object[]> ElasticSearch7 => PackageVersionsLatestMinors.ElasticSearch7;
 
-        public static IEnumerable<object[]> ElasticSearch6 => IsComprehensive ? PackageVersionsComprehensive.ElasticSearch6 : PackageVersionsLatestMinors.ElasticSearch6;
+        public static IEnumerable<object[]> ElasticSearch6 => PackageVersionsLatestMinors.ElasticSearch6;
 
-        public static IEnumerable<object[]> ElasticSearch5 => IsComprehensive ? PackageVersionsComprehensive.ElasticSearch5 : PackageVersionsLatestMinors.ElasticSearch5;
+        public static IEnumerable<object[]> ElasticSearch5 => PackageVersionsLatestMinors.ElasticSearch5;
 
-        public static IEnumerable<object[]> Npgsql => IsComprehensive ? PackageVersionsComprehensive.Npgsql : PackageVersionsLatestMinors.Npgsql;
+        public static IEnumerable<object[]> Npgsql => PackageVersionsLatestMinors.Npgsql;
 
-        public static IEnumerable<object[]> RabbitMQ => IsComprehensive ? PackageVersionsComprehensive.RabbitMQ : PackageVersionsLatestMinors.RabbitMQ;
+        public static IEnumerable<object[]> RabbitMQ => PackageVersionsLatestMinors.RabbitMQ;
 
-        public static IEnumerable<object[]> SystemDataSqlClient => IsComprehensive ? PackageVersionsComprehensive.SystemDataSqlClient : PackageVersionsLatestMinors.SystemDataSqlClient;
+        public static IEnumerable<object[]> SystemDataSqlClient => PackageVersionsLatestMinors.SystemDataSqlClient;
 
-        public static IEnumerable<object[]> MicrosoftDataSqlClient => IsComprehensive ? PackageVersionsComprehensive.MicrosoftDataSqlClient : PackageVersionsLatestMinors.MicrosoftDataSqlClient;
+        public static IEnumerable<object[]> MicrosoftDataSqlClient => PackageVersionsLatestMinors.MicrosoftDataSqlClient;
 
-        public static IEnumerable<object[]> StackExchangeRedis => IsComprehensive ? PackageVersionsComprehensive.StackExchangeRedis : PackageVersionsLatestMinors.StackExchangeRedis;
+        public static IEnumerable<object[]> StackExchangeRedis => PackageVersionsLatestMinors.StackExchangeRedis;
 
-        public static IEnumerable<object[]> ServiceStackRedis => IsComprehensive ? PackageVersionsComprehensive.ServiceStackRedis : PackageVersionsLatestMinors.ServiceStackRedis;
+        public static IEnumerable<object[]> ServiceStackRedis => PackageVersionsLatestMinors.ServiceStackRedis;
 
-        public static IEnumerable<object[]> MySqlData => IsComprehensive ? PackageVersionsComprehensive.MySqlData : PackageVersionsLatestMinors.MySqlData;
+        public static IEnumerable<object[]> MySqlData => PackageVersionsLatestMinors.MySqlData;
 
-        public static IEnumerable<object[]> MicrosoftDataSqlite => IsComprehensive ? PackageVersionsComprehensive.MicrosoftDataSqlite : PackageVersionsLatestMinors.MicrosoftDataSqlite;
+        public static IEnumerable<object[]> MySqlConnector => PackageVersionsLatestMinors.MySqlConnector;
 
-        public static IEnumerable<object[]> XUnit => IsComprehensive ? PackageVersionsComprehensive.XUnit : PackageVersionsLatestMinors.XUnit;
+        public static IEnumerable<object[]> MicrosoftDataSqlite => PackageVersionsLatestMinors.MicrosoftDataSqlite;
 
-        public static IEnumerable<object[]> NUnit => IsComprehensive ? PackageVersionsComprehensive.NUnit : PackageVersionsLatestMinors.NUnit;
+        public static IEnumerable<object[]> XUnit => PackageVersionsLatestMinors.XUnit;
 
-        public static IEnumerable<object[]> MSTest => IsComprehensive ? PackageVersionsComprehensive.MSTest : PackageVersionsLatestMinors.MSTest;
+        public static IEnumerable<object[]> NUnit => PackageVersionsLatestMinors.NUnit;
 
-        public static IEnumerable<object[]> Kafka => IsComprehensive ? PackageVersionsComprehensive.Kafka : PackageVersionsLatestMinors.Kafka;
+        public static IEnumerable<object[]> MSTest => PackageVersionsLatestMinors.MSTest;
 
-        public static IEnumerable<object[]> CosmosDb => IsComprehensive ? PackageVersionsComprehensive.CosmosDb : PackageVersionsLatestMinors.CosmosDb;
+        public static IEnumerable<object[]> Kafka => PackageVersionsLatestMinors.Kafka;
 
-        public static IEnumerable<object[]> Serilog => IsComprehensive ? PackageVersionsComprehensive.Serilog : PackageVersionsLatestMinors.Serilog;
+        public static IEnumerable<object[]> CosmosDb => PackageVersionsLatestMinors.CosmosDb;
 
-        public static IEnumerable<object[]> NLog => IsComprehensive ? PackageVersionsComprehensive.NLog : PackageVersionsLatestMinors.NLog;
+        public static IEnumerable<object[]> Serilog => PackageVersionsLatestMinors.Serilog;
 
-        public static IEnumerable<object[]> log4net => IsComprehensive ? PackageVersionsComprehensive.log4net : PackageVersionsLatestMinors.log4net;
+        public static IEnumerable<object[]> NLog => PackageVersionsLatestMinors.NLog;
 
-        public static IEnumerable<object[]> Aerospike => IsComprehensive ? PackageVersionsComprehensive.Aerospike : PackageVersionsLatestMinors.Aerospike;
+        public static IEnumerable<object[]> log4net => PackageVersionsLatestMinors.log4net;
+
+        public static IEnumerable<object[]> Aerospike => PackageVersionsLatestMinors.Aerospike;
     }
 }

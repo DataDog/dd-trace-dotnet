@@ -10,8 +10,4 @@
     <ProjectReference Include="..\dependency-libs\Samples.WebRequestHelper.NetFramework20\Samples.WebRequestHelper.NetFramework20.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Compile Include="..\..\..\Datadog.Trace.TestHelpers\TcpPortProvider.cs" Link="TcpPortProvider.cs" />
-  </ItemGroup>
-
 </Project>

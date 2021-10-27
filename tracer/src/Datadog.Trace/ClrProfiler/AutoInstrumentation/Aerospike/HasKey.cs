@@ -17,6 +17,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
     public struct HasKey
     {
         [DuckField(Name = "key")]
-        public object Key;
+        public Key Key;
     }
 }

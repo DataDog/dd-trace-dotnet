@@ -88,6 +88,13 @@
     "MaxVersionExclusive": "9.0.0"
   },
   {
+    "IntegrationName": "MySqlConnector",
+    "SampleProjectName": "Samples.MySqlConnector",
+    "NugetPackageSearchName": "MySqlConnector",
+    "MinVersion": "1.0.0",
+    "MaxVersionExclusive": "2.0.0"
+  },
+  {
     "IntegrationName": "MicrosoftDataSqlite",
     "SampleProjectName": "Samples.Microsoft.Data.Sqlite",
     "NugetPackageSearchName": "Microsoft.Data.Sqlite",

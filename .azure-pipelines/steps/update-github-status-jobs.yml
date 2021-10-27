@@ -1,0 +1,63 @@
+parameters:
+  - name: 'jobs'
+    type: object
+    default: {}
+
+jobs:
+  - job: set_pending
+    pool:
+      vmImage: windows-2019
+    steps:
+    - template: install-dotnet.yml
+    - script: tracer\build.cmd SendStatusUpdateToGitHub
+      displayName: Set GitHub Status Pending
+      condition: succeededOrFailed()
+      continueOnError: true
+      env:
+        GITHUB_TOKEN: $(GITHUB_TOKEN)
+        CheckStatus: Pending
+        CheckName: $(System.StageName)
+        CommitSha: $(OriginalCommitId)
+        Build.BuildId: $(Build.BuildId)
+
+  - job: set_succeeded
+    pool:
+      vmImage: windows-2019
+    dependsOn:
+    - set_pending
+    - ${{ each job in parameters.jobs }}:
+      - ${{ job }}
+    condition: succeeded()
+    steps:
+    - template: install-dotnet.yml
+    - script: tracer\build.cmd SendStatusUpdateToGitHub
+      displayName: Set GitHub Status Failure
+      condition: succeededOrFailed()
+      continueOnError: true
+      env:
+        GITHUB_TOKEN: $(GITHUB_TOKEN)
+        CheckStatus: Success
+        CheckName: $(System.StageName)
+        CommitSha: $(OriginalCommitId)
+        Build.BuildId: $(Build.BuildId)
+
+  - job: set_failed
+    pool:
+      vmImage: windows-2019
+    dependsOn:
+      - set_pending
+      - ${{ each job in parameters.jobs }}:
+          - ${{ job }}
+    condition: not(succeeded())
+    steps:
+      - template: install-dotnet.yml
+      - script: tracer\build.cmd SendStatusUpdateToGitHub
+        displayName: Set GitHub Status Failure
+        condition: succeededOrFailed()
+        continueOnError: true
+        env:
+          GITHUB_TOKEN: $(GITHUB_TOKEN)
+          CheckStatus: Failure
+          CheckName: $(System.StageName)
+          CommitSha: $(OriginalCommitId)
+          Build.BuildId: $(Build.BuildId)

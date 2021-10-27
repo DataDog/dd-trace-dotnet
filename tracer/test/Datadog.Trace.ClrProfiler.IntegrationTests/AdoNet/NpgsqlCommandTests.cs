@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             }
         }
 
-        [Theory]
+        [SkippableTheory]
         [MemberData(nameof(GetNpgsql))]
         [Trait("Category", "EndToEnd")]
         public void SubmitsTracesWithNetStandard(string packageVersion)
@@ -80,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             }
         }
 
-        [Fact]
+        [SkippableFact]
         [Trait("Category", "EndToEnd")]
         public void SpansDisabledByAdoNetExcludedTypes()
         {

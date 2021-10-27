@@ -51,7 +51,7 @@ namespace Datadog.Trace.Util.Http
 
             if (routeDatas != null && routeDatas.Values.Any())
             {
-                var routeDataDict = ConvertRouteValueDictionary(routeDatas.Values);
+                var routeDataDict = HttpRequestUtils.ConvertRouteValueDictionary(routeDatas.Values);
                 dict.Add(AddressesConstants.RequestPathParams, routeDataDict);
             }
 

@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        [Fact]
+        [SkippableFact]
         public void SubmitTraces()
         {
             const int expectedTransactionalTraces = 13;

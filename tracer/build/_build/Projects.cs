@@ -8,6 +8,8 @@
     public const string ClrProfilerNative = "Datadog.Trace.ClrProfiler.Native";
     public const string WindowsInstaller = "WindowsInstaller";
 
+    public const string NativeLoader = "Datadog.AutoInstrumentation.NativeLoader";
+
     public const string BenchmarksTrace = "Benchmarks.Trace";
 
     public const string TraceIntegrationTests = "Datadog.Trace.IntegrationTests";

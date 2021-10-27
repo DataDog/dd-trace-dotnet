@@ -79,6 +79,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     }
 
     const auto process_name = GetCurrentProcessName();
+    Logger::Info("ProcessName: ", process_name);
+
     const auto include_process_names = GetEnvironmentValues(environment::include_process_names);
 
     // if there is a process inclusion list, attach profiler only if this
@@ -227,6 +229,22 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     this->info_->AddRef();
     is_attached_.store(true);
     profiler = this;
+
+#ifndef _WIN32
+    if (IsDebugEnabled())
+    {
+        try
+        {
+            // This enable a path to assert over checks inside the profiler code.
+            CheckFilenameDefinitions();
+        }
+        catch (...)
+        {
+            Logger::Error("Failed to do the Native Checks.");
+        }
+    }
+#endif
+
     return S_OK;
 }
 
@@ -263,28 +281,20 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
             Logger::Debug("AssemblyLoadFinished: ", assembly_id, " ", hr_status);
         }
 
-        // keep this lock until we are done using the module,
-        // to prevent it from unloading while in use
-        std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
+        ComPtr<IUnknown> metadata_interfaces;
+        auto hr = this->info_->GetModuleMetaData(assembly_info.manifest_module_id, ofRead | ofWrite,
+                                                 IID_IMetaDataImport2, metadata_interfaces.GetAddressOf());
 
-        // double check if is_attached_ has changed to avoid possible race condition with shutdown function
-        if (!is_attached_)
+        if (FAILED(hr))
         {
+            Logger::Warn("AssemblyLoadFinished failed to get metadata interface for module id ",
+                         assembly_info.manifest_module_id, " from assembly ", assembly_info.name, " HRESULT=0x",
+                         std::setfill('0'), std::setw(8), std::hex, hr);
             return S_OK;
         }
 
-        auto findRes = module_id_to_info_map_.find(assembly_info.manifest_module_id);
-        if (findRes == module_id_to_info_map_.end())
-        {
-            Logger::Debug("Module data wasn't loaded.");
-            return S_OK;
-        }
-
-        // get the assembly import
-        ModuleMetadata* module_metadata = findRes->second.get();
-        const auto assembly_import = module_metadata->assembly_import;
-
-        // extract assembly metadata from assembly import
+        // Get the IMetaDataAssemblyImport interface to get metadata from the managed assembly
+        const auto assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
         const auto assembly_metadata = GetAssemblyImportMetadata(assembly_import);
 
         // used multiple times for logging
@@ -348,24 +358,32 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
     return S_OK;
 }
 
-void CorProfiler::RewritingPInvokeMaps(ModuleMetadata* module_metadata, WSTRING nativemethods_type_name)
+void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata, const WSTRING& nativemethods_type_name)
 {
     HRESULT hr;
-    const auto metadata_import = module_metadata->metadata_import;
-    const auto metadata_emit = module_metadata->metadata_emit;
+    const auto& metadata_import = module_metadata.metadata_import;
+    const auto& metadata_emit = module_metadata.metadata_emit;
 
     // We are in the right module, so we try to load the mdTypeDef from the target type name.
     mdTypeDef nativeMethodsTypeDef = mdTypeDefNil;
     auto foundType = FindTypeDefByName(nativemethods_type_name,
-                                        module_metadata->assemblyName, metadata_import, nativeMethodsTypeDef);
+                                        module_metadata.assemblyName, metadata_import, nativeMethodsTypeDef);
     if (foundType)
     {
         // Define the actual profiler file path as a ModuleRef
         WSTRING native_profiler_file = GetEnvironmentValue(environment::internal_trace_profiler_path);
         if (native_profiler_file.empty())
         {
-            native_profiler_file = GetCoreCLRProfilerPath();
+            native_profiler_file = GetCLRProfilerPath();
         }
+
+        if (native_profiler_file.empty())
+        {
+            native_profiler_file = native_dll_filename;
+        }
+
+        Logger::Info("Rewriting PInvokes to native: ", native_profiler_file);
+
         mdModuleRef profiler_ref;
         hr = metadata_emit->DefineModuleRef(native_profiler_file.c_str(), &profiler_ref);
         if (SUCCEEDED(hr))
@@ -382,8 +400,8 @@ void CorProfiler::RewritingPInvokeMaps(ModuleMetadata* module_metadata, WSTRING 
             {
                 auto methodDef = *enumIterator;
 
-                const auto caller = GetFunctionInfo(module_metadata->metadata_import, methodDef);
-                Logger::Info("Rewriting pinvoke for: ", caller.name);
+                const auto caller = GetFunctionInfo(module_metadata.metadata_import, methodDef);
+                Logger::Info("Rewriting PInvoke method: ", caller.name);
 
                 // Get the current PInvoke map to extract the flags and the entrypoint name
                 DWORD pdwMappingFlags;
@@ -520,6 +538,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         Logger::Info("COR library: ", corAssemblyProperty.szName, " ", corAssemblyProperty.pMetaData.usMajorVersion, ".",
                      corAssemblyProperty.pMetaData.usMinorVersion, ".", corAssemblyProperty.pMetaData.usRevisionNumber);
 
+        if (rejit_handler != nullptr)
+        {
+            rejit_handler->SetCorAssemblyProfiler(&corAssemblyProperty);
+        }
+
         return S_OK;
     }
 
@@ -575,44 +598,144 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         }
     }
 
-    ComPtr<IUnknown> metadata_interfaces;
-    auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2,
-                                             metadata_interfaces.GetAddressOf());
-
-    if (FAILED(hr))
+    if (IsCallTargetEnabled(is_net46_or_greater))
     {
-        Logger::Warn("ModuleLoadFinished failed to get metadata interface for ", module_id, " ",
-                     module_info.assembly.name);
-        return S_OK;
+        if (module_info.IsDynamic())
+        {
+            // For CallTarget we don't need to load metadata on dynamic modules.
+            Logger::Debug("ModuleLoadFinished skipping Dynamic module: ", module_id, " ", module_info.assembly.name);
+            return S_OK;
+        }
+
+        if (module_info.assembly.name == managed_profiler_name)
+        {
+            // Fix PInvoke Rewriting
+            ComPtr<IUnknown> metadata_interfaces;
+            auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2,
+                                                     metadata_interfaces.GetAddressOf());
+
+            if (FAILED(hr))
+            {
+                Logger::Warn("ModuleLoadFinished failed to get metadata interface for ", module_id, " ",
+                             module_info.assembly.name);
+                return S_OK;
+            }
+
+            const auto metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+            const auto metadata_emit = metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
+            const auto assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
+            const auto assembly_emit = metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
+
+            const auto module_metadata = ModuleMetadata(metadata_import, metadata_emit, assembly_import, assembly_emit,
+                                                        module_info.assembly.name, module_info.assembly.app_domain_id,
+                                                        &corAssemblyProperty);
+
+            Logger::Info("ModuleLoadFinished: ", managed_profiler_name, " - Fix PInvoke maps");
+#ifdef _WIN32
+            RewritingPInvokeMaps(module_metadata, windows_nativemethods_type);
+            RewritingPInvokeMaps(module_metadata, appsec_windows_nativemethods_type);
+#else
+            RewritingPInvokeMaps(module_metadata, nonwindows_nativemethods_type);
+            RewritingPInvokeMaps(module_metadata, appsec_nonwindows_nativemethods_type);
+#endif // _WIN32
+        }
+        else
+        {
+            module_ids_.push_back(module_id);
+
+            // We call the function to analyze the module and request the ReJIT of integrations defined in this module.
+            if (rejit_handler != nullptr && !integration_methods_.empty())
+            {
+                const auto numReJITs = rejit_handler->ProcessModuleForRejit(std::vector<ModuleID> { module_id }, integration_methods_);
+                Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
+            }
+        }
     }
-
-    const auto metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
-    const auto metadata_emit = metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
-    const auto assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
-    const auto assembly_emit = metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
-
-    ModuleMetadata* module_metadata =
-        new ModuleMetadata(metadata_import, metadata_emit, assembly_import, assembly_emit,
-                                         module_info.assembly.name, app_domain_id, &corAssemblyProperty);
-
-#ifndef _WIN32
-    // Fix PInvokeMap (Non windows only)
-    if (module_info.assembly.name == managed_profiler_name)
+    else
     {
-        Logger::Info("ModuleLoadFinished: ", managed_profiler_name, " - Fix PInvoke maps");
-        RewritingPInvokeMaps(module_metadata, nonwindows_nativemethods_type);
-        RewritingPInvokeMaps(module_metadata, appsec_nonwindows_nativemethods_type);
+        std::vector<IntegrationMethod> filtered_integrations =
+            FilterIntegrationsByCaller(integration_methods_, module_info.assembly);
+
+        if (filtered_integrations.empty())
+        {
+            // we don't need to instrument anything in this module, skip it
+            Logger::Debug("ModuleLoadFinished skipping module (filtered by caller): ", module_id, " ", module_info.assembly.name);
+            return S_OK;
+        }
+
+        ComPtr<IUnknown> metadata_interfaces;
+        auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2, metadata_interfaces.GetAddressOf());
+
+        if (FAILED(hr))
+        {
+            Logger::Warn("ModuleLoadFinished failed to get metadata interface for ", module_id, " ", module_info.assembly.name);
+            return S_OK;
+        }
+
+        const auto metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+        const auto metadata_emit = metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
+        const auto assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
+        const auto assembly_emit = metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
+
+        // don't skip Microsoft.AspNetCore.Hosting so we can run the startup hook and
+        // subscribe to DiagnosticSource events.
+        // don't skip Dapper: it makes ADO.NET calls even though it doesn't reference
+        // System.Data or System.Data.Common
+        // don't skip Datadog.Trace: we need to ensure we do the PInvokesMap rewrites.
+        if (module_info.assembly.name != microsoft_aspnetcore_hosting_assemblyName &&
+            module_info.assembly.name != dapper_assemblyName &&
+            module_info.assembly.name != managed_profiler_name)
+        {
+            filtered_integrations = FilterIntegrationsByTarget(filtered_integrations, assembly_import);
+
+            if (filtered_integrations.empty())
+            {
+                // we don't need to instrument anything in this module, skip it
+                Logger::Debug("ModuleLoadFinished skipping module (filtered by target): ", module_id, " ", module_info.assembly.name);
+                return S_OK;
+            }
+        }
+
+        mdModule module;
+        hr = metadata_import->GetModuleFromScope(&module);
+        if (FAILED(hr))
+        {
+            Logger::Warn("ModuleLoadFinished failed to get module metadata token for ", module_id, " ", module_info.assembly.name);
+            return S_OK;
+        }
+
+        GUID module_version_id;
+        hr = metadata_import->GetScopeProps(nullptr, 0, nullptr, &module_version_id);
+        if (FAILED(hr))
+        {
+            Logger::Warn("ModuleLoadFinished failed to get module_version_id for ", module_id, " ", module_info.assembly.name);
+            return S_OK;
+        }
+
+        const auto module_metadata = new ModuleMetadata(metadata_import, metadata_emit, assembly_import, assembly_emit,
+                                             module_info.assembly.name, app_domain_id, module_version_id,
+                                             std::make_unique<std::vector<IntegrationMethod>>(filtered_integrations),
+                                             &corAssemblyProperty);
+
+        // store module info for later lookup
+        module_id_to_info_map_[module_id] = module_metadata;
+
+        Logger::Debug("ModuleLoadFinished stored metadata for ", module_id, " ", module_info.assembly.name,
+                      " AppDomain ", module_info.assembly.app_domain_id, " ", module_info.assembly.app_domain_name);
+
+        // Fix PInvokeMap
+        if (module_info.assembly.name == managed_profiler_name)
+        {
+            Logger::Info("ModuleLoadFinished: ", managed_profiler_name, " - Fix PInvoke maps");
+#ifdef _WIN32
+            RewritingPInvokeMaps(*module_metadata, windows_nativemethods_type);
+            RewritingPInvokeMaps(*module_metadata, appsec_windows_nativemethods_type);
+#else
+            RewritingPInvokeMaps(*module_metadata, nonwindows_nativemethods_type);
+            RewritingPInvokeMaps(*module_metadata, appsec_nonwindows_nativemethods_type);
+#endif // _WIN32
+        }
     }
-#endif
-
-    // store module info for later lookup
-    module_id_to_info_map_[module_id] = std::unique_ptr<ModuleMetadata>(module_metadata);
-    
-    // We call the function to analyze the module and request the ReJIT of integrations defined in this module.
-    CallTarget_RequestRejitForModule(module_id, module_metadata, integration_methods_);
-
-    Logger::Debug("ModuleLoadFinished stored metadata for ", module_id, " ", module_info.assembly.name, " AppDomain ",
-                  module_info.assembly.app_domain_id, " ", module_info.assembly.app_domain_name);
 
     return S_OK;
 }
@@ -667,10 +790,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
         module_id_to_info_map_[module_id] = nullptr;
         module_id_to_info_map_.erase(module_id);
 
-        if (rejit_handler != nullptr)
-        {
-            rejit_handler->RemoveModule(module_id);
-        }
+    }
+    if (rejit_handler != nullptr)
+    {
+        rejit_handler->RemoveModule(module_id);
     }
 
     return S_OK;
@@ -691,7 +814,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
         rejit_handler->Shutdown();
         rejit_handler = nullptr;
     }
-    Logger::Info("Exiting. Stats: ", Stats::Instance()->ToString());
+    Logger::Info("Exiting...");
+    Logger::Debug("   ModuleMetadata: ", module_id_to_info_map_.size());
+    Logger::Debug("   ModuleIds: ", module_ids_.size());
+    Logger::Debug("   IntegrationMethods: ", integration_methods_.size());
+    Logger::Debug("   DefinitionsIds: ", definitions_ids_.size());
+    Logger::Debug("   ManagedProfilerLoadedAppDomains: ", managed_profiler_loaded_app_domains.size());
+    Logger::Debug("   FirstJitCompilationAppDomains: ", first_jit_compilation_app_domains.size());
+    Logger::Info("Stats: ", Stats::Instance()->ToString());
     Logger::Shutdown();
     return S_OK;
 }
@@ -752,6 +882,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
 
     // Verify that we have the metadata for this module
     ModuleMetadata* module_metadata = nullptr;
+    std::unique_ptr<ModuleMetadata> local_module_metadata = nullptr;
 
     auto findRes = module_id_to_info_map_.find(module_id);
     if (findRes != module_id_to_info_map_.end())
@@ -759,23 +890,63 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
         module_metadata = findRes->second.get();
     }
 
+    // We check if we are in CallTarget mode and the loader was already injected.
+    const bool is_calltarget_enabled = IsCallTargetEnabled(is_net46_or_greater);
+    bool has_loader_injected_in_appdomain = false;
+
     if (module_metadata == nullptr)
     {
         // we haven't stored a ModuleMetadata for this module,
-        // so we can't modify its IL
-        return S_OK;
+        // so we have to check if we are in calltarget mode and
+        // if the Id is in the module_ids_ vector.
+        // In case is True we create a local ModuleMetadata to inject the loader.
+
+        if (is_calltarget_enabled && Contains(module_ids_, module_id))
+        {
+            const auto module_info = GetModuleInfo(this->info_, module_id);
+
+            has_loader_injected_in_appdomain = first_jit_compilation_app_domains.find(module_info.assembly.app_domain_id) !=
+                                               first_jit_compilation_app_domains.end();
+
+            if (has_loader_injected_in_appdomain)
+            {
+                // Loader was already injected in a calltarget scenario, we don't need to do anything else here
+                return S_OK;
+            }
+
+            ComPtr<IUnknown> metadataInterfaces;
+            auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2,
+                                                     metadataInterfaces.GetAddressOf());
+
+            const auto metadataImport = metadataInterfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+            const auto metadataEmit = metadataInterfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
+            const auto assemblyImport = metadataInterfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
+            const auto assemblyEmit = metadataInterfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
+
+            Logger::Debug("Temporaly allocating the ModuleMetadata for injection. ModuleId=", module_id, " ModuleName=", module_info.assembly.name);
+            local_module_metadata = std::make_unique<ModuleMetadata>(
+                metadataImport, metadataEmit, assemblyImport, assemblyEmit, module_info.assembly.name,
+                module_info.assembly.app_domain_id, &corAssemblyProperty);
+
+            module_metadata = local_module_metadata.get();
+        }
+        else
+        {
+            return S_OK;
+        }
     }
-
-    // We check if we are in CallTarget mode and the loader was already injected.
-    const bool has_loader_injected_in_appdomain =
-      first_jit_compilation_app_domains.find(module_metadata->app_domain_id) !=
-      first_jit_compilation_app_domains.end();
-
-    if (has_loader_injected_in_appdomain)
+    else
     {
-        // Loader was already injected in a calltarget scenario, we don't need to do anything else here
-        return S_OK;
+        has_loader_injected_in_appdomain = first_jit_compilation_app_domains.find(module_metadata->app_domain_id) !=
+                                           first_jit_compilation_app_domains.end();
+
+        if (is_calltarget_enabled && has_loader_injected_in_appdomain)
+        {
+            // Loader was already injected in a calltarget scenario, we don't need to do anything else here
+            return S_OK;
+        }
     }
+
 
     // get function info
     const auto caller = GetFunctionInfo(module_metadata->metadata_import, function_token);
@@ -841,6 +1012,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
                 return S_OK;
             }
         }
+
+        Logger::Debug("JITCompilationStarted: Startup hook registered.");
     }
 
     return S_OK;
@@ -974,9 +1147,16 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
 
         definitions_ids_.emplace(definitionsId);
 
-        for (const auto& moduleItem : module_id_to_info_map_)
+        Logger::Info("Total number of modules to analyze: ", module_ids_.size());
+        if (rejit_handler != nullptr)
         {
-            CallTarget_RequestRejitForModule(moduleItem.first, moduleItem.second.get(), integrationMethods);
+            std::promise<ULONG> promise;
+            std::future<ULONG> future = promise.get_future();
+            rejit_handler->EnqueueProcessModule(module_ids_, integrationMethods, &promise);
+
+            // wait and get the value from the future<int>
+            const auto numReJITs = future.get();
+            Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
         }
 
         integration_methods_.reserve(integration_methods_.size() + integrationMethods.size());
@@ -1098,27 +1278,593 @@ bool CorProfiler::IsAttached() const
 //
 // Helper methods
 //
-WSTRING CorProfiler::GetCoreCLRProfilerPath()
+WSTRING CorProfiler::GetCLRProfilerPath()
 {
     WSTRING native_profiler_file;
+
+    if (runtime_information_.is_core())
+    {
 #ifdef BIT64
-    native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_64"));
-    Logger::Debug("GetProfilerFilePath: CORECLR_PROFILER_PATH_64 defined as: ", native_profiler_file);
-    if (native_profiler_file == EmptyWStr)
-    {
-        native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH"));
-        Logger::Debug("GetProfilerFilePath: CORECLR_PROFILER_PATH defined as: ", native_profiler_file);
-    }
-#else // BIT64
-    native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_32"));
-    Logger::Debug("GetProfilerFilePath: CORECLR_PROFILER_PATH_32 defined as: ", native_profiler_file);
-    if (native_profiler_file == EmptyWStr)
-    {
-        native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH"));
-        Logger::Debug("GetProfilerFilePath: CORECLR_PROFILER_PATH defined as: ", native_profiler_file);
-    }
+        native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_64"));
+        Logger::Debug("GetProfilerFilePath: CORECLR_PROFILER_PATH_64 defined as: ", native_profiler_file);
+#else  // BIT64
+        native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH_32"));
+        Logger::Debug("GetProfilerFilePath: CORECLR_PROFILER_PATH_32 defined as: ", native_profiler_file);
 #endif // BIT64
+
+        if (native_profiler_file == EmptyWStr)
+        {
+            native_profiler_file = GetEnvironmentValue(WStr("CORECLR_PROFILER_PATH"));
+            Logger::Debug("GetProfilerFilePath: CORECLR_PROFILER_PATH defined as: ", native_profiler_file);
+        }
+    }
+    else
+    {
+#ifdef BIT64
+        native_profiler_file = GetEnvironmentValue(WStr("COR_PROFILER_PATH_64"));
+        Logger::Debug("GetProfilerFilePath: COR_PROFILER_PATH_64 defined as: ", native_profiler_file);
+#else  // BIT64
+        native_profiler_file = GetEnvironmentValue(WStr("COR_PROFILER_PATH_32"));
+        Logger::Debug("GetProfilerFilePath: COR_PROFILER_PATH_32 defined as: ", native_profiler_file);
+#endif // BIT64
+
+        if (native_profiler_file == EmptyWStr)
+        {
+            native_profiler_file = GetEnvironmentValue(WStr("COR_PROFILER_PATH"));
+            Logger::Debug("GetProfilerFilePath: COR_PROFILER_PATH defined as: ", native_profiler_file);
+        }
+    }
+
     return native_profiler_file;
+}
+
+void CorProfiler::CheckFilenameDefinitions()
+{
+#ifndef _WIN32
+    auto runtimeFileName = GetCLRProfilerPath();
+    auto definedFileName = native_dll_filename;
+
+    auto transformedRuntimeFileName = ToString(runtimeFileName);
+    transform(transformedRuntimeFileName.begin(), transformedRuntimeFileName.end(), transformedRuntimeFileName.begin(),
+              ::tolower);
+
+    auto transformedDefinedFileName = ToString(definedFileName);
+    transform(transformedDefinedFileName.begin(), transformedDefinedFileName.end(), transformedDefinedFileName.begin(),
+              ::tolower);
+
+    if (transformedRuntimeFileName.rfind(transformedDefinedFileName) != std::string::npos)
+    {
+        Logger::Info("CHECK: FILENAME OK. [Runtime: ", runtimeFileName, " | Defined: ", definedFileName, "]");
+    }
+    else
+    {
+        Logger::Error("CHECK: FILENAME ERROR. [Runtime: ", runtimeFileName, " | Defined: ", definedFileName, "]");
+    }
+#endif
+}
+
+HRESULT CorProfiler::ProcessReplacementCalls(ModuleMetadata* module_metadata, const FunctionID function_id,
+                                             const ModuleID module_id, const mdToken function_token,
+                                             const FunctionInfo& caller,
+                                             const std::vector<MethodReplacement> method_replacements)
+{
+    ILRewriter rewriter(this->info_, nullptr, module_id, function_token);
+    bool modified = false;
+    auto hr = rewriter.Import();
+
+    if (FAILED(hr))
+    {
+        Logger::Warn("ProcessReplacementCalls: Call to ILRewriter.Import() failed for ", module_id, " ", function_token);
+        return hr;
+    }
+
+    std::string original_code;
+    if (dump_il_rewrite_enabled)
+    {
+        original_code = GetILCodes("***   IL original code for caller: ", &rewriter, caller, module_metadata);
+    }
+
+    // Perform method call replacements
+    for (auto& method_replacement : method_replacements)
+    {
+        // Exit early if the method replacement isn't actually doing a replacement
+        if (method_replacement.wrapper_method.action != WStr("ReplaceTargetMethod"))
+        {
+            continue;
+        }
+
+        const auto& wrapper_method_key = method_replacement.wrapper_method.get_method_cache_key();
+        // Exit early if we previously failed to store the method ref for this wrapper_method
+        if (module_metadata->IsFailedWrapperMemberKey(wrapper_method_key))
+        {
+            continue;
+        }
+
+        // for each IL instruction
+        for (ILInstr* pInstr = rewriter.GetILList()->m_pNext; pInstr != rewriter.GetILList(); pInstr = pInstr->m_pNext)
+        {
+            // only CALL or CALLVIRT
+            if (pInstr->m_opcode != CEE_CALL && pInstr->m_opcode != CEE_CALLVIRT)
+            {
+                continue;
+            }
+
+            // get the target function info, continue if its invalid
+            auto target = GetFunctionInfo(module_metadata->metadata_import, pInstr->m_Arg32);
+            if (!target.IsValid())
+            {
+                continue;
+            }
+
+            // make sure the type and method names match
+            if (method_replacement.target_method.type_name != target.type.name ||
+                method_replacement.target_method.method_name != target.name)
+            {
+                continue;
+            }
+
+            // we add 3 parameters to every wrapper method: opcode, mdToken, and
+            // module_version_id
+            const short added_parameters_count = 3;
+
+            auto wrapper_method_signature_size = method_replacement.wrapper_method.method_signature.data.size();
+
+            if (wrapper_method_signature_size < (added_parameters_count + 3))
+            {
+                // wrapper signature must have at least 6 bytes
+                // 0:{CallingConvention}|1:{ParamCount}|2:{ReturnType}|3:{OpCode}|4:{mdToken}|5:{ModuleVersionId}
+                if (Logger::IsDebugEnabled())
+                {
+                    Logger::Debug("JITCompilationStarted skipping function call: wrapper signature "
+                                  "too short. function_id=",
+                                  function_id, " token=", function_token,
+                                  " wrapper_method=", method_replacement.wrapper_method.type_name, ".",
+                                  method_replacement.wrapper_method.method_name,
+                                  "() wrapper_method_signature_size=", wrapper_method_signature_size);
+                }
+
+                continue;
+            }
+
+            auto expected_number_args = method_replacement.wrapper_method.method_signature.NumberOfArguments();
+
+            // subtract the last arguments we add to every wrapper
+            expected_number_args = expected_number_args - added_parameters_count;
+
+            if (target.signature.IsInstanceMethod())
+            {
+                // We always pass the instance as the first argument
+                expected_number_args--;
+            }
+
+            auto target_arg_count = target.signature.NumberOfArguments();
+
+            if (expected_number_args != target_arg_count)
+            {
+                // Number of arguments does not match our wrapper method
+                if (Logger::IsDebugEnabled())
+                {
+                    Logger::Debug("JITCompilationStarted skipping function call: argument counts "
+                                  "don't match. function_id=",
+                                  function_id, " token=", function_token, " target_name=", target.type.name, ".", target.name,
+                                  "() expected_number_args=", expected_number_args, " target_arg_count=", target_arg_count);
+                }
+
+                continue;
+            }
+
+            // Resolve the MethodRef now. If the method is generic, we'll need to use it
+            // to define a MethodSpec
+            // Generate a method ref token for the wrapper method
+            mdMemberRef wrapper_method_ref = mdMemberRefNil;
+            mdTypeRef wrapper_type_ref = mdTypeRefNil;
+            auto generated_wrapper_method_ref = GetWrapperMethodRef(module_metadata, module_id, method_replacement,
+                                                                    wrapper_method_ref, wrapper_type_ref);
+            if (!generated_wrapper_method_ref)
+            {
+                Logger::Warn("JITCompilationStarted failed to obtain wrapper method ref for ",
+                             method_replacement.wrapper_method.type_name, ".", method_replacement.wrapper_method.method_name,
+                             "().", " function_id=", function_id, " function_token=", function_token,
+                             " name=", caller.type.name, ".", caller.name, "()");
+                continue;
+            }
+
+            auto method_def_md_token = target.id;
+
+            if (target.is_generic)
+            {
+                if (target.signature.NumberOfTypeArguments() !=
+                    method_replacement.wrapper_method.method_signature.NumberOfTypeArguments())
+                {
+                    // Number of generic arguments does not match our wrapper method
+                    continue;
+                }
+
+                // we need to emit a method spec to populate the generic arguments
+                wrapper_method_ref = DefineMethodSpec(module_metadata->metadata_emit, wrapper_method_ref,
+                                                      target.function_spec_signature);
+                method_def_md_token = target.method_def_id;
+            }
+
+            std::vector<WSTRING> actual_sig;
+            const auto successfully_parsed_signature =
+                TryParseSignatureTypes(module_metadata->metadata_import, target, actual_sig);
+            auto expected_sig = method_replacement.target_method.signature_types;
+
+            if (!successfully_parsed_signature)
+            {
+                if (Logger::IsDebugEnabled())
+                {
+                    Logger::Debug("JITCompilationStarted skipping function call: failed to parse "
+                                  "signature. function_id=",
+                                  function_id, " token=", function_token, " target_name=", target.type.name, ".", target.name,
+                                  "()", " successfully_parsed_signature=", successfully_parsed_signature,
+                                  " sig_types.size()=", actual_sig.size(), " expected_sig_types.size()=", expected_sig.size());
+                }
+
+                continue;
+            }
+
+            if (actual_sig.size() != expected_sig.size())
+            {
+                // we can't safely assume our wrapper methods handle the types
+                if (Logger::IsDebugEnabled())
+                {
+                    Logger::Debug("JITCompilationStarted skipping function call: unexpected type "
+                                  "count. function_id=",
+                                  function_id, " token=", function_token, " target_name=", target.type.name, ".", target.name,
+                                  "() successfully_parsed_signature=", successfully_parsed_signature,
+                                  " sig_types.size()=", actual_sig.size(), " expected_sig_types.size()=", expected_sig.size());
+                }
+
+                continue;
+            }
+
+            auto is_match = true;
+            for (size_t i = 0; i < expected_sig.size(); i++)
+            {
+                if (expected_sig[i] == WStr("_"))
+                {
+                    // We are supposed to ignore this index
+                    continue;
+                }
+                if (expected_sig[i] != actual_sig[i])
+                {
+                    // we have a type mismatch, drop out
+                    if (Logger::IsDebugEnabled())
+                    {
+                        Logger::Debug("JITCompilationStarted skipping function call: types don't "
+                                      "match. function_id=",
+                                      function_id, " token=", function_token, " target_name=", target.type.name, ".",
+                                      target.name, "() actual[", i, "]=", actual_sig[i], ", expected[", i,
+                                      "]=", expected_sig[i]);
+                    }
+
+                    is_match = false;
+                    break;
+                }
+            }
+
+            if (!is_match)
+            {
+                // signatures don't match
+                continue;
+            }
+
+            // At this point we know we've hit a match. Error out if
+            //   1) The managed profiler has not been loaded yet
+            //   2) The caller is domain-neutral AND we do not want to instrument domain-neutral assemblies
+            //   3) The target instruction is a constrained virtual method call (a constrained IL instruction followed
+            //   by a callvirt IL instruction)
+
+            //   1) The managed profiler has not been loaded yet
+            if (!ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata->app_domain_id))
+            {
+                Logger::Warn("JITCompilationStarted skipping method: Method replacement "
+                             "found but the managed profiler has not yet been loaded "
+                             "into AppDomain with id=",
+                             module_metadata->app_domain_id, " function_id=", function_id, " token=", function_token,
+                             " caller_name=", caller.type.name, ".", caller.name, "()", " target_name=", target.type.name, ".",
+                             target.name, "()");
+                continue;
+            }
+
+            //   2) The caller is domain-neutral AND we do not want to instrument domain-neutral assemblies
+            bool caller_assembly_is_domain_neutral = runtime_information_.is_desktop() && corlib_module_loaded &&
+                                                     module_metadata->app_domain_id == corlib_app_domain_id;
+
+            if (caller_assembly_is_domain_neutral && !instrument_domain_neutral_assemblies)
+            {
+                Logger::Warn("JITCompilationStarted skipping method: Method replacement", " found but the calling assembly ",
+                             module_metadata->assemblyName,
+                             " has been loaded domain-neutral so its code is being shared across AppDomains,"
+                             " making it unsafe for automatic instrumentation.",
+                             " function_id=", function_id, " token=", function_token, " caller_name=", caller.type.name, ".",
+                             caller.name, "()", " target_name=", target.type.name, ".", target.name, "()");
+                continue;
+            }
+
+            //   3) The target instruction is a constrained virtual method call (a constrained IL instruction followed
+            //   by a callvirt IL instruction)
+            if (pInstr->m_opcode == CEE_CALLVIRT && pInstr->m_pPrev->m_opcode == CEE_CONSTRAINED)
+            {
+                Logger::Warn("JITCompilationStarted skipping method: Method replacement",
+                             " found but the target method call is a constrained virtual method call ",
+                             " (a 'constrained' IL instruction followed by a 'callvirt' IL instruction).",
+                             " This type of method call is not currently supported for automatic"
+                             " instrumentation.",
+                             " function_id=", function_id, " token=", function_token, " caller_name=", caller.type.name, ".",
+                             caller.name, "()", " target_name=", target.type.name, ".", target.name, "()");
+                continue;
+            }
+
+            const auto original_argument = pInstr->m_Arg32;
+            const void* module_version_id_ptr = &module_metadata->module_version_id;
+
+            // Begin IL Modification
+            ILRewriterWrapper rewriter_wrapper(&rewriter);
+            rewriter_wrapper.SetILPosition(pInstr);
+
+            // IL Modification #1: Replace original method call with a NOP, so that all original
+            //                     jump targets resolve correctly and we correctly populate the
+            //                     stack with additional arguments
+            //
+            // IMPORTANT: Conditional branches may jump to the original call instruction which
+            // resulted in the InvalidProgramException seen in
+            // https://github.com/DataDog/dd-trace-dotnet/pull/542. To avoid this, we'll do
+            // the rest of our IL modifications AFTER this instruction.
+            auto original_methodcall_opcode = pInstr->m_opcode;
+            pInstr->m_opcode = CEE_NOP;
+            pInstr = pInstr->m_pNext;
+            rewriter_wrapper.SetILPosition(pInstr);
+
+            // IL Modification #2: Conditionally box System.Threading.CancellationToken or System.ReadOnlyMemory<T>
+            //                     if it is the last argument in the target method.
+            //
+            // System.Threading.CancellationToken:
+            // If the last argument in the method signature is of the type
+            // System.Threading.CancellationToken (a struct) then box it before calling our
+            // integration method. This resolves https://github.com/DataDog/dd-trace-dotnet/issues/662,
+            // in which we did not box the System.Threading.CancellationToken object, even though the
+            // wrapper method expects an object. In that issue we observed some strange CLR behavior
+            // when the target method was in System.Data and the environment was 32-bit .NET Framework:
+            // the CLR swapped the values of the CancellationToken argument and the opCode argument.
+            // For example, the VIRTCALL opCode is '0x6F' and this value would be placed at the memory
+            // location assigned to the CancellationToken variable. Since we treat the CancellationToken
+            // variable as an object, this '0x6F' would be dereference to access the underlying object,
+            // and an invalid memory read would occur and crash the application.
+            //
+            // System.ReadOnlyMemory<T>:
+            // If the last argument in the method signature is of the type
+            // System.ReadOnlyMemory<T> (a generic valuetype) then box it before calling our
+            // integration method. We need this modification for RabbitMQ.Client 6.x.x instrumentation
+            // that uses System.ReadOnlyMemory<byte> instead of byte[] for the message body parameter.
+            //
+            // Currently, all integrations that use either of the two types
+            // have the argument as the last argument in the signature (lucky us!).
+            // For now, we'll do the following:
+            //   1) Get the method signature of the original target method
+            //   2) Read the signature until the final argument type
+            //   3) Check for System.Threading.CancellationToken
+            //      3a) If the type begins with `ELEMENT_TYPE_VALUETYPE`, uncompress the compressed type token that
+            //      follows 3b) If the type token represents System.Threading.CancellationToken, emit a 'box
+            //      <type_token>' IL instruction before calling our wrapper method
+            //   4) Check for System.ReadOnlyMemory<T>
+            //      4a) If the type begins with `ELEMENT_TYPE_GENERICINST` and if the next byte is
+            //      `ELEMENT_TYPE_VALUETYPE`, uncompress the compressed type token that follows 4b) If the type token
+            //      represents System.ReadOnlyMemory<T>, emit a 'box <type_token>' IL instruction before calling our
+            //      wrapper method. The type token
+            //          will be a TypeSpec representing the specific generic instantiation of System.ReadOnlyMemory<T>
+            auto original_method_def = target.id;
+            size_t argument_count = target.signature.NumberOfArguments();
+            size_t return_type_index = target.signature.IndexOfReturnType();
+            PCCOR_SIGNATURE pSigCurrent =
+                PCCOR_SIGNATURE(&target.signature.data[return_type_index]); // index to the location of the return type
+            bool signature_read_success = true;
+
+            // iterate until the pointer is pointing at the last argument
+            for (size_t signature_types_index = 0; signature_types_index < argument_count; signature_types_index++)
+            {
+                if (!ParseType(&pSigCurrent))
+                {
+                    signature_read_success = false;
+                    break;
+                }
+            }
+
+            // read the last argument type
+            if (signature_read_success && *pSigCurrent == ELEMENT_TYPE_VALUETYPE)
+            {
+                pSigCurrent++;
+                mdToken valuetype_type_token = CorSigUncompressToken(pSigCurrent);
+
+                // Currently, we only expect to see `System.Threading.CancellationToken` as a valuetype in this position
+                // If we expand this to a general case, we would always perform the boxing regardless of type
+                if (GetTypeInfo(module_metadata->metadata_import, valuetype_type_token).name ==
+                    WStr("System.Threading.CancellationToken"))
+                {
+                    rewriter_wrapper.Box(valuetype_type_token);
+                }
+            }
+
+            if (signature_read_success && *pSigCurrent == ELEMENT_TYPE_GENERICINST)
+            {
+                PCCOR_SIGNATURE p_start_byte = pSigCurrent;
+                PCCOR_SIGNATURE p_end_byte = p_start_byte;
+
+                pSigCurrent++;
+
+                if (*pSigCurrent == ELEMENT_TYPE_VALUETYPE)
+                {
+                    pSigCurrent++;
+                    mdToken valuetype_type_token = CorSigUncompressToken(pSigCurrent);
+
+                    // Currently, we only expect to see
+                    // `System.ReadOnlyMemory<T>` as a valuetype in this
+                    // position If we expand this to a general case, we would always
+                    // perform the boxing regardless of type
+                    if (GetTypeInfo(module_metadata->metadata_import, valuetype_type_token).name ==
+                            WStr("System.ReadOnlyMemory`1") &&
+                        ParseType(&p_end_byte))
+                    {
+                        size_t length = p_end_byte - p_start_byte;
+                        mdTypeSpec type_token;
+                        module_metadata->metadata_emit->GetTokenFromTypeSpec(p_start_byte, (ULONG) length, &type_token);
+                        rewriter_wrapper.Box(type_token);
+                    }
+                }
+            }
+
+            // IL Modification #3: Insert a non-virtual call (CALL) to the instrumentation wrapper.
+            //                     Always use CALL because the wrapper methods are all static.
+            rewriter_wrapper.CallMember(wrapper_method_ref, false);
+            rewriter_wrapper.SetILPosition(pInstr->m_pPrev); // Set ILPosition to method call
+
+            // IL Modification #4: Push the following additional arguments on the evaluation stack in the
+            //                     following order, which all integration wrapper methods expect:
+            //                       1) [int32] original CALL/CALLVIRT opCode
+            //                       2) [int32] mdToken for original method call target
+            //                       3) [int64] pointer to MVID
+            rewriter_wrapper.LoadInt32(original_methodcall_opcode);
+            rewriter_wrapper.LoadInt32(method_def_md_token);
+            rewriter_wrapper.LoadInt64(reinterpret_cast<INT64>(module_version_id_ptr));
+
+            // IL Modification #5: Conditionally emit an unbox.any instruction on the return value
+            //                     of the wrapper method if we return an object but the original
+            //                     method call returned a valuetype or a generic type.
+            //
+            // This resolves https://github.com/DataDog/dd-trace-dotnet/pull/566, which raised a
+            // System.EntryPointNotFoundException. This occurred because the return type of the
+            // generic method was a generic type that evaluated to a value type at runtime. As a
+            // result, this caller method expected an unboxed representation of the return value,
+            // even though we can only return values of type object. So if we detect that the
+            // expected return type is a valuetype or a generic type, issue an unbox.any
+            // instruction that will unbox it.
+            mdToken typeToken;
+            if (method_replacement.wrapper_method.method_signature.ReturnTypeIsObject() &&
+                ReturnTypeIsValueTypeOrGeneric(module_metadata->metadata_import, module_metadata->metadata_emit,
+                                               module_metadata->assembly_emit, corAssemblyProperty, target.id,
+                                               target.signature, &typeToken))
+            {
+                if (Logger::IsDebugEnabled())
+                {
+                    Logger::Debug("JITCompilationStarted inserting 'unbox.any ", typeToken,
+                                  "' instruction after calling target function."
+                                  " function_id=",
+                                  function_id, " token=", function_token, " target_name=", target.type.name, ".", target.name,
+                                  "()");
+                }
+                rewriter_wrapper.UnboxAnyAfter(typeToken);
+            }
+
+            // End IL Modification
+            modified = true;
+            Logger::Info("*** JITCompilationStarted() replaced calls from ", caller.type.name, ".", caller.name, "() to ",
+                         method_replacement.target_method.type_name, ".", method_replacement.target_method.method_name, "() ",
+                         original_argument, " with calls to ", method_replacement.wrapper_method.type_name, ".",
+                         method_replacement.wrapper_method.method_name, "() ", wrapper_method_ref);
+        }
+    }
+
+    if (modified)
+    {
+        hr = rewriter.Export();
+
+        if (FAILED(hr))
+        {
+            Logger::Warn("ProcessReplacementCalls: Call to ILRewriter.Export() failed for ModuleID=", module_id, " ",
+                         function_token);
+            return hr;
+        }
+
+        if (dump_il_rewrite_enabled)
+        {
+            Logger::Info(original_code);
+            Logger::Info(GetILCodes("***   IL modification  for caller: ", &rewriter, caller, module_metadata));
+        }
+    }
+
+    return S_OK;
+}
+
+HRESULT CorProfiler::ProcessInsertionCalls(ModuleMetadata* module_metadata, const FunctionID function_id,
+                                           const ModuleID module_id, const mdToken function_token,
+                                           const FunctionInfo& caller,
+                                           const std::vector<MethodReplacement> method_replacements)
+{
+
+    ILRewriter rewriter(this->info_, nullptr, module_id, function_token);
+    bool modified = false;
+
+    auto hr = rewriter.Import();
+
+    if (FAILED(hr))
+    {
+        Logger::Warn("ProcessInsertionCalls: Call to ILRewriter.Import() failed for ", module_id, " ", function_token);
+        return hr;
+    }
+
+    ILRewriterWrapper rewriter_wrapper(&rewriter);
+    ILInstr* firstInstr = rewriter.GetILList()->m_pNext;
+    ILInstr* lastInstr = rewriter.GetILList()->m_pPrev; // Should be a 'ret' instruction
+
+    for (auto& method_replacement : method_replacements)
+    {
+        if (method_replacement.wrapper_method.action == WStr("ReplaceTargetMethod"))
+        {
+            continue;
+        }
+
+        const auto& wrapper_method_key = method_replacement.wrapper_method.get_method_cache_key();
+
+        // Exit early if we previously failed to store the method ref for this wrapper_method
+        if (module_metadata->IsFailedWrapperMemberKey(wrapper_method_key))
+        {
+            continue;
+        }
+
+        // Generate a method ref token for the wrapper method
+        mdMemberRef wrapper_method_ref = mdMemberRefNil;
+        mdTypeRef wrapper_type_ref = mdTypeRefNil;
+        auto generated_wrapper_method_ref =
+            GetWrapperMethodRef(module_metadata, module_id, method_replacement, wrapper_method_ref, wrapper_type_ref);
+        if (!generated_wrapper_method_ref)
+        {
+            Logger::Warn("JITCompilationStarted failed to obtain wrapper method ref for ",
+                         method_replacement.wrapper_method.type_name, ".", method_replacement.wrapper_method.method_name, "().",
+                         " function_id=", function_id, " function_token=", function_token, " name=", caller.type.name, ".",
+                         caller.name, "()");
+            continue;
+        }
+
+        // After successfully getting the method reference, insert a call to it
+        if (method_replacement.wrapper_method.action == WStr("InsertFirst"))
+        {
+            // Get first instruction and set the rewriter to that location
+            rewriter_wrapper.SetILPosition(firstInstr);
+            rewriter_wrapper.CallMember(wrapper_method_ref, false);
+            firstInstr = firstInstr->m_pPrev;
+            modified = true;
+
+            Logger::Info("*** JITCompilationStarted() : InsertFirst inserted call to ",
+                         method_replacement.wrapper_method.type_name, ".", method_replacement.wrapper_method.method_name, "() ",
+                         wrapper_method_ref, " to the beginning of method", caller.type.name, ".", caller.name, "()");
+        }
+    }
+
+    if (modified)
+    {
+        hr = rewriter.Export();
+
+        if (FAILED(hr))
+        {
+            Logger::Warn("ProcessInsertionCalls: Call to ILRewriter.Export() failed for ModuleID=", module_id, " ",
+                         function_token);
+            return hr;
+        }
+    }
+
+    return S_OK;
 }
 
 bool CorProfiler::GetWrapperMethodRef(ModuleMetadata* module_metadata, ModuleID module_id,
@@ -1654,20 +2400,22 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         return hr;
     }
 
-#ifdef _WIN32
-    WSTRING native_profiler_file = WStr("DATADOG.TRACE.CLRPROFILER.NATIVE.DLL");
-#else // _WIN32
     WSTRING native_profiler_file = GetEnvironmentValue(environment::internal_trace_profiler_path);
     Logger::Debug("GenerateVoidILStartupMethod: ", environment::internal_trace_profiler_path,
                   " defined as: ", native_profiler_file);
 
     if (native_profiler_file.empty())
     {
-        native_profiler_file = GetCoreCLRProfilerPath();
+        native_profiler_file = GetCLRProfilerPath();
     }
+
+    if (native_profiler_file.empty())
+    {
+        native_profiler_file = native_dll_filename;
+    }
+
     Logger::Debug("GenerateVoidILStartupMethod: Setting the PInvoke native profiler library path to ",
                   native_profiler_file);
-#endif // _WIN32
 
     mdModuleRef profiler_ref;
     hr = metadata_emit->DefineModuleRef(native_profiler_file.c_str(), &profiler_ref);
@@ -2326,29 +3074,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetReJITParameters(ModuleID moduleId, mdM
         return S_OK;
     }
 
-    std::lock_guard<std::mutex> guard(module_id_to_info_map_lock_);
-
-    if (!is_attached_)
-    {
-        return S_OK;
-    }
-
     Logger::Debug("GetReJITParameters: [moduleId: ", moduleId, ", methodId: ", methodId, "]");
 
-    // we get the module_metadata from the moduleId.
-    ModuleMetadata* module_metadata = nullptr;
-    auto findRes = module_id_to_info_map_.find(moduleId);
-    if (findRes != module_id_to_info_map_.end())
-    {
-        module_metadata = findRes->second.get();
-    }
-    else
-    {
-        return S_FALSE;
-    }
-
     // we notify the reJIT handler of this event and pass the module_metadata.
-    return rejit_handler->NotifyReJITParameters(moduleId, methodId, pFunctionControl, module_metadata);
+    return rejit_handler->NotifyReJITParameters(moduleId, methodId, pFunctionControl);
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ReJITCompilationFinished(FunctionID functionId, ReJITID rejitId,
@@ -2410,16 +3139,28 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         module_metadata = findRes->second.get();
     }
 
+    AppDomainID appDomainId = 0;
+
     if (module_metadata == nullptr)
     {
-        // we haven't stored a ModuleMetadata for this module,
-        // so there's nothing to do here, we accept the NGEN image.
-        *pbUseCachedFunction = true;
-        return S_OK;
+        if (!IsCallTargetEnabled(is_net46_or_greater) || !Contains(module_ids_, module_id))
+        {
+            // we haven't stored a ModuleMetadata for this module,
+            // so there's nothing to do here, we accept the NGEN image.
+            *pbUseCachedFunction = true;
+            return S_OK;
+        }
+
+        const auto module_info = GetModuleInfo(this->info_, module_id);
+        appDomainId = module_info.assembly.app_domain_id;
+    }
+    else
+    {
+        appDomainId = module_metadata->app_domain_id;
     }
 
     const bool has_loader_injected_in_appdomain =
-        first_jit_compilation_app_domains.find(module_metadata->app_domain_id) !=
+        first_jit_compilation_app_domains.find(appDomainId) !=
         first_jit_compilation_app_domains.end();
 
     if (!has_loader_injected_in_appdomain)
@@ -2437,180 +3178,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
 // ***
 // * CallTarget Methods
 // ***
-
-/// <summary>
-/// Search for methods to instrument in a module and request a ReJIT to them for a CallTarget instrumentation
-/// </summary>
-/// <param name="module_id">Module id</param>
-/// <param name="module_metadata">Module metadata for the module</param>
-/// <param name="filtered_integrations">Filtered vector of integrations to be applied</param>
-/// <returns>Number of ReJIT requests made</returns>
-size_t CorProfiler::CallTarget_RequestRejitForModule(ModuleID module_id, ModuleMetadata* module_metadata,
-                                                     const std::vector<IntegrationMethod>& integrations)
-{
-    auto _ = trace::Stats::Instance()->CallTargetRequestRejitMeasure();
-    Logger::Debug("Requesting Rejit for Module: ", module_metadata->assemblyName);
-
-    auto metadata_import = module_metadata->metadata_import;
-    const auto assembly_metadata = GetAssemblyImportMetadata(module_metadata->assembly_import);
-
-    std::vector<ModuleID> vtModules;
-    std::vector<mdMethodDef> vtMethodDefs;
-
-    for (const IntegrationMethod& integration : integrations)
-    {
-
-        // If the integration is not for the current assembly we skip.
-        if (integration.replacement.target_method.assembly.name != module_metadata->assemblyName)
-        {
-            continue;
-        }
-
-        // Check min version
-        if (integration.replacement.target_method.min_version > assembly_metadata.version)
-        {
-            continue;
-        }
-
-        // Check max version
-        if (integration.replacement.target_method.max_version < assembly_metadata.version)
-        {
-            continue;
-        }
-
-        // We are in the right module, so we try to load the mdTypeDef from the integration target type name.
-        mdTypeDef typeDef = mdTypeDefNil;
-        auto foundType = FindTypeDefByName(integration.replacement.target_method.type_name,
-                                           module_metadata->assemblyName, metadata_import, typeDef);
-
-        if (!foundType)
-        {
-            continue;
-        }
-
-        if (IsDebugEnabled())
-        {
-            Logger::Debug("  Looking for '", integration.replacement.target_method.type_name, ".",
-                      integration.replacement.target_method.method_name, "(",
-                      (integration.replacement.target_method.signature_types.size() - 1), " params)' method.");
-        }
-
-        // Now we enumerate all methods with the same target method name. (All overloads of the method)
-        auto enumMethods = Enumerator<mdMethodDef>(
-            [metadata_import, integration, typeDef](HCORENUM* ptr, mdMethodDef arr[], ULONG max,
-                                                    ULONG* cnt) -> HRESULT {
-                return metadata_import->EnumMethodsWithName(
-                    ptr, typeDef, integration.replacement.target_method.method_name.c_str(), arr, max, cnt);
-            },
-            [metadata_import](HCORENUM ptr) -> void { metadata_import->CloseEnum(ptr); });
-
-        auto enumIterator = enumMethods.begin();
-        while (enumIterator != enumMethods.end())
-        {
-            auto methodDef = *enumIterator;
-
-            // Extract the function info from the mdMethodDef
-            const auto caller = GetFunctionInfo(module_metadata->metadata_import, methodDef);
-            if (!caller.IsValid())
-            {
-                Logger::Warn("    * The caller for the methoddef: ", TokenStr(&methodDef), " is not valid!");
-                enumIterator = ++enumIterator;
-                continue;
-            }
-
-            // We create a new function info into the heap from the caller functionInfo in the stack, to be used later
-            // in the ReJIT process
-            auto functionInfo = FunctionInfo(caller);
-            auto hr = functionInfo.method_signature.TryParse();
-            if (FAILED(hr))
-            {
-                Logger::Warn("    * The method signature: ", functionInfo.method_signature.str(), " cannot be parsed.");
-                enumIterator = ++enumIterator;
-                continue;
-            }
-
-            // Compare if the current mdMethodDef contains the same number of arguments as the instrumentation target
-            const auto numOfArgs = functionInfo.method_signature.NumberOfArguments();
-            if (numOfArgs != integration.replacement.target_method.signature_types.size() - 1)
-            {
-                if (IsDebugEnabled())
-                {
-                    Logger::Debug("    * The caller for the methoddef: ",
-                                  integration.replacement.target_method.method_name,
-                                  " doesn't have the right number of arguments (", numOfArgs, " arguments).");
-                }
-                enumIterator = ++enumIterator;
-                continue;
-            }
-
-            // Compare each mdMethodDef argument type to the instrumentation target
-            bool argumentsMismatch = false;
-            const auto methodArguments = functionInfo.method_signature.GetMethodArguments();
-            if (IsDebugEnabled())
-            {
-                Logger::Debug("    * Comparing signature for method: ", integration.replacement.target_method.type_name,
-                              ".",
-                              integration.replacement.target_method.method_name);
-            }
-            for (unsigned int i = 0; i < numOfArgs; i++)
-            {
-                const auto argumentTypeName = methodArguments[i].GetTypeTokName(metadata_import);
-                const auto integrationArgumentTypeName = integration.replacement.target_method.signature_types[i + 1];
-                Logger::Debug("        -> ", argumentTypeName, " = ", integrationArgumentTypeName);
-                if (argumentTypeName != integrationArgumentTypeName && integrationArgumentTypeName != WStr("_"))
-                {
-                    argumentsMismatch = true;
-                    break;
-                }
-            }
-            if (argumentsMismatch)
-            {
-                if (IsDebugEnabled())
-                {
-                    Logger::Debug("    * The caller for the methoddef: ",
-                                  integration.replacement.target_method.method_name,
-                                  " doesn't have the right type of arguments.");
-                }
-                enumIterator = ++enumIterator;
-                continue;
-            }
-
-            // As we are in the right method, we gather all information we need and stored it in to the ReJIT handler.
-            auto moduleHandler = rejit_handler->GetOrAddModule(module_id);
-            moduleHandler->SetModuleMetadata(module_metadata);
-            auto methodHandler = moduleHandler->GetOrAddMethod(methodDef);
-            methodHandler->SetFunctionInfo(functionInfo);
-            methodHandler->SetMethodReplacement(integration.replacement);
-
-            // Store module_id and methodDef to request the ReJIT after analyzing all integrations.
-            vtModules.push_back(module_id);
-            vtMethodDefs.push_back(methodDef);
-
-            bool caller_assembly_is_domain_neutral = runtime_information_.is_desktop() && corlib_module_loaded &&
-                                                     module_metadata->app_domain_id == corlib_app_domain_id;
-
-            if (IsDebugEnabled())
-            {
-                Logger::Debug("    * Enqueue for ReJIT [ModuleId=", module_id, ", MethodDef=", TokenStr(&methodDef),
-                              ", AppDomainId=", module_metadata->app_domain_id,
-                              ", IsDomainNeutral=", caller_assembly_is_domain_neutral, ", Assembly=",
-                              module_metadata->assemblyName, ", Type=", caller.type.name,
-                              ", Method=", caller.name, "(", numOfArgs, " params), Signature=", caller.signature.str(),
-                              "]");
-            }
-            enumIterator = ++enumIterator;
-        }
-    }
-
-    // Request the ReJIT for all integrations found in the module.
-    if (!vtMethodDefs.empty())
-    {
-        this->rejit_handler->EnqueueForRejit(vtModules, vtMethodDefs);
-    }
-
-    // We return the number of ReJIT requests
-    return vtMethodDefs.size();
-}
 
 /// <summary>
 /// Rewrite the target method body with the calltarget implementation. (This is function is triggered by the ReJIT

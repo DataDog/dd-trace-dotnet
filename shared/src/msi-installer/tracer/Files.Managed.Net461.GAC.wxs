@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
+  <?include $(sys.CURRENTDIR)\Config.wxi?>
+  <Fragment>
+    <ComponentGroup Id="Tracer.Files.Managed.Net461.GAC" Directory="tracer.net461.GAC">
+      <Component Win64="$(var.Win64)">
+        <Condition>WIX_IS_NETFRAMEWORK_461_OR_LATER_INSTALLED</Condition>
+        <File Id="net461_GAC_Datadog.Trace.AspNet.dll"
+              Source="$(var.TracerHomeDirectory)\net461\Datadog.Trace.AspNet.dll"
+              KeyPath="yes" Checksum="yes" Assembly=".net"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <Condition>WIX_IS_NETFRAMEWORK_461_OR_LATER_INSTALLED</Condition>
+        <File Id="net461_GAC_Datadog.Trace.dll"
+              Source="$(var.TracerHomeDirectory)\net461\Datadog.Trace.dll"
+              KeyPath="yes" Checksum="yes" Assembly=".net"/>
+      </Component>
+      <Component Win64="$(var.Win64)">
+        <Condition>WIX_IS_NETFRAMEWORK_461_OR_LATER_INSTALLED</Condition>
+        <File Id="net461_GAC_Datadog.Trace.MSBuild.dll"
+              Source="$(var.TracerHomeDirectory)\net461\Datadog.Trace.MSBuild.dll"
+              KeyPath="yes" Checksum="yes" Assembly=".net"/>
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>

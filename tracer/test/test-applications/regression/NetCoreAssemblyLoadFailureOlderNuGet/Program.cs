@@ -2,6 +2,7 @@ using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Datadog.Trace;
+using Samples;
 
 namespace NetCoreAssemblyLoadFailureOlderNuGet
 {
@@ -11,7 +12,8 @@ namespace NetCoreAssemblyLoadFailureOlderNuGet
         {
             try
             {
-                var url = GetUrl();
+                using var server = WebServer.Start(out var url);
+
                 await RunProgramAsync(url);
             }
             catch (Exception ex)
@@ -27,11 +29,6 @@ namespace NetCoreAssemblyLoadFailureOlderNuGet
 #endif
 
             return (int)ExitCode.Success;
-        }
-
-        private static string GetUrl()
-        {
-            return "http://www.example.com";
         }
 
         private static async Task RunProgramAsync(string url)

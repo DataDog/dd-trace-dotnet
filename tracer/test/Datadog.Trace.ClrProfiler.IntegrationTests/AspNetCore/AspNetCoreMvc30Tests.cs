@@ -40,15 +40,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             _testName = GetTestName(nameof(AspNetCoreMvc30Tests));
         }
 
-        [Theory]
+        [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [MemberData(nameof(Data))]
         public async Task MeetsAllAspNetCoreMvcExpectations(string path, HttpStatusCode statusCode)
         {
-            await Fixture.TryStartApp(this, Output);
+            await Fixture.TryStartApp(this);
 
-            var spans = await Fixture.WaitForSpans(Output, path);
+            var spans = await Fixture.WaitForSpans(path);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
 

@@ -19,7 +19,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
     [UsesVerify]
-    public abstract class AspNetCoreMvcTestBase : TestHelper, IClassFixture<AspNetCoreMvcTestBase.AspNetCoreTestFixture>
+    public abstract class AspNetCoreMvcTestBase : TestHelper, IClassFixture<AspNetCoreMvcTestBase.AspNetCoreTestFixture>, IDisposable
     {
         protected const string HeaderName1WithMapping = "datadog-header-name";
         protected const string HeaderName1UpperWithMapping = "DATADOG-HEADER-NAME";
@@ -50,6 +50,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             }
 
             Fixture = fixture;
+            Fixture.SetOutput(output);
         }
 
         protected AspNetCoreTestFixture Fixture { get; }
@@ -69,6 +70,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             { "/branch/not-found", 404 },
         };
 
+        public void Dispose()
+        {
+            Fixture.SetOutput(null);
+        }
+
         protected string GetTestName(string testName)
         {
             return testName
@@ -80,7 +86,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         {
             private readonly HttpClient _httpClient;
             private Process _process;
-            private bool _enableLogging = true;
+            private ITestOutputHelper _currentOutput;
 
             public AspNetCoreTestFixture()
             {
@@ -94,7 +100,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             public int HttpPort { get; private set; }
 
-            public async Task TryStartApp(TestHelper helper, ITestOutputHelper output)
+            public void SetOutput(ITestOutputHelper output)
+            {
+                lock (this)
+                {
+                    _currentOutput = output;
+                }
+            }
+
+            public async Task TryStartApp(TestHelper helper)
             {
                 if (_process is not null)
                 {
@@ -110,17 +124,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
                         Agent = new MockTracerAgent(initialAgentPort);
                         Agent.SpanFilters.Add(IsNotServerLifeCheck);
-                        output.WriteLine($"Starting aspnetcore sample, agentPort: {Agent.Port}, samplePort: {HttpPort}");
+                        WriteToOutput($"Starting aspnetcore sample, agentPort: {Agent.Port}, samplePort: {HttpPort}");
                         _process = helper.StartSample(Agent.Port, arguments: null, packageVersion: string.Empty, aspNetCorePort: HttpPort);
                     }
                 }
 
-                await EnsureServerStarted(output);
+                await EnsureServerStarted();
             }
 
             public void Dispose()
             {
-                _enableLogging = false;
                 var request = WebRequest.CreateHttp($"http://localhost:{HttpPort}/shutdown");
                 request.GetResponse().Close();
 
@@ -147,15 +160,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 Agent?.Dispose();
             }
 
-            public async Task<IImmutableList<MockTracerAgent.Span>> WaitForSpans(ITestOutputHelper output, string path)
+            public async Task<IImmutableList<MockTracerAgent.Span>> WaitForSpans(string path)
             {
                 var testStart = DateTime.UtcNow;
 
-                await SubmitRequest(output, path);
+                await SubmitRequest(path);
                 return Agent.WaitForSpans(count: 1, minDateTime: testStart, returnAllOperations: true);
             }
 
-            private async Task EnsureServerStarted(ITestOutputHelper output)
+            private async Task EnsureServerStarted()
             {
                 var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
 
@@ -168,10 +181,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                             wh.Set();
                         }
 
-                        if (_enableLogging)
-                        {
-                            output.WriteLine($"[webserver][stdout] {args.Data}");
-                        }
+                        WriteToOutput($"[webserver][stdout] {args.Data}");
                     }
                 };
                 _process.BeginOutputReadLine();
@@ -180,10 +190,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 {
                     if (args.Data != null)
                     {
-                        if (_enableLogging)
-                        {
-                            output.WriteLine($"[webserver][stderr] {args.Data}");
-                        }
+                        WriteToOutput($"[webserver][stderr] {args.Data}");
                     }
                 };
 
@@ -201,7 +208,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 {
                     try
                     {
-                        serverReady = await SubmitRequest(output, "/alive-check") == HttpStatusCode.OK;
+                        serverReady = await SubmitRequest("/alive-check") == HttpStatusCode.OK;
                     }
                     catch
                     {
@@ -233,12 +240,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 return !url.Contains("alive-check") && !url.Contains("shutdown");
             }
 
-            private async Task<HttpStatusCode> SubmitRequest(ITestOutputHelper output, string path)
+            private async Task<HttpStatusCode> SubmitRequest(string path)
             {
                 HttpResponseMessage response = await _httpClient.GetAsync($"http://localhost:{HttpPort}{path}");
                 string responseText = await response.Content.ReadAsStringAsync();
-                output?.WriteLine($"[http] {response.StatusCode} {responseText}");
+                WriteToOutput($"[http] {response.StatusCode} {responseText}");
                 return response.StatusCode;
+            }
+
+            private void WriteToOutput(string line)
+            {
+                lock (this)
+                {
+                    _currentOutput?.WriteLine(line);
+                }
             }
         }
     }

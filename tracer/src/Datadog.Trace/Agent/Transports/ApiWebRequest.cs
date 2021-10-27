@@ -6,6 +6,7 @@
 using System;
 using System.IO;
 using System.Net;
+using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Logging;
@@ -16,6 +17,7 @@ namespace Datadog.Trace.Agent.Transports
     internal class ApiWebRequest : IApiRequest
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ApiWebRequest>();
+        private static readonly Encoding Utf8WithoutBOM = new UTF8Encoding(false, true);
         private readonly HttpWebRequest _request;
 
         public ApiWebRequest(HttpWebRequest request)
@@ -65,7 +67,7 @@ namespace Datadog.Trace.Agent.Transports
             {
                 static Task WriteStream(Stream stream, JsonSerializer serializer, object events)
                 {
-                    var streamWriter = new StreamWriter(stream, System.Text.Encoding.UTF8, 1024, true);
+                    var streamWriter = new StreamWriter(stream, Utf8WithoutBOM, 1024, true);
                     using (var writer = new JsonTextWriter(streamWriter))
                     {
                         serializer.Serialize(writer, events);
@@ -78,7 +80,7 @@ namespace Datadog.Trace.Agent.Transports
                 {
                     var httpWebResponse = (HttpWebResponse)await _request.GetResponseAsync().ConfigureAwait(false);
                     var apiWebResponse = new ApiWebResponse(httpWebResponse);
-                    if (httpWebResponse.StatusCode != HttpStatusCode.OK || httpWebResponse.StatusCode != HttpStatusCode.Accepted)
+                    if (httpWebResponse.StatusCode != HttpStatusCode.OK && httpWebResponse.StatusCode != HttpStatusCode.Accepted)
                     {
                         var sb = Util.StringBuilderCache.Acquire(0);
                         foreach (var item in _request.Headers)

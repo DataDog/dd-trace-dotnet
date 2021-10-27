@@ -99,7 +99,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             { "/statuscode/503", 503 },
         };
 
-        [Theory]
+        [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("LoadFromGAC", "True")]

@@ -59,7 +59,9 @@ namespace Datadog.Trace.Configuration
         public const string AgentUri = "DD_TRACE_AGENT_URL";
         public const string ApiKey = "DD_API_KEY";
         public const string AppSecBlockingEnabled = "DD_APPSEC_BLOCKING_ENABLED";
+        public const string AppSecCustomIpHeader = "DD_APPSEC_IPHEADER";
         public const string AppSecEnabled = "DD_APPSEC_ENABLED";
+        public const string AppSecExtraHeaders = "DD_APPSEC_EXTRA_HEADERS";
         public const string AppSecRules = "DD_APPSEC_RULES";
         public const string BufferSize = "DD_TRACE_BUFFER_SIZE";
         public const string CIVisibilityEnabled = "DD_CIVISIBILITY_ENABLED";
@@ -241,6 +243,7 @@ namespace Datadog.Trace
         AutoReject = 0,
         AutoKeep = 1,
         UserKeep = 2,
+        AppSecKeep = 4,
     }
     public class Scope : System.IDisposable
     {
@@ -305,6 +308,7 @@ namespace Datadog.Trace
         public const string AmqpQueue = "amqp.queue";
         public const string AmqpRoutingKey = "amqp.routing_key";
         public const string Analytics = "_dd1.sr.eausr";
+        public const string AppSecEvent = "appsec.event";
         public const string AspNetAction = "aspnet.action";
         public const string AspNetArea = "aspnet.area";
         public const string AspNetController = "aspnet.controller";
@@ -374,6 +378,7 @@ namespace Datadog.Trace
         public const string OutHost = "out.host";
         public const string OutPort = "out.port";
         public const string RedisRawCommand = "redis.raw_command";
+        public const string RuntimeFamily = "_dd.runtime_family";
         public const string SamplingPriority = "sampling.priority";
         public const string SpanKind = "span.kind";
         public const string SqlQuery = "sql.query";

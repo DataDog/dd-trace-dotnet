@@ -265,6 +265,11 @@ struct AssemblyMetadata
     {
     }
 
+    AssemblyMetadata(const AssemblyMetadata& value) :
+        module_id(value.module_id), name(value.name), assembly_token(value.assembly_token), version(value.version)
+    {
+    }
+
     bool IsValid() const
     {
         return module_id != 0;

@@ -1,6 +1,7 @@
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Samples;
 
 namespace AssemblyLoad.FileNotFoundException
 {
@@ -10,8 +11,9 @@ namespace AssemblyLoad.FileNotFoundException
         {
             try
             {
-                var baseAddress = new Uri("https://www.example.com/");
-                var regularHttpClient = new HttpClient { BaseAddress = baseAddress };
+                using var server = WebServer.Start(out var url);
+
+                var regularHttpClient = new HttpClient { BaseAddress = new Uri(url) };
 
                 await regularHttpClient.GetAsync("default-handler");
 

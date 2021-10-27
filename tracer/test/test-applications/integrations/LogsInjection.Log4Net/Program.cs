@@ -1,4 +1,5 @@
 
+using System;
 using System.IO;
 using log4net;
 using log4net.Config;
@@ -12,6 +13,13 @@ namespace LogsInjection.Log4Net
 
         public static int Main(string[] args)
         {
+            // This test creates and unloads an appdomain
+            // It seems that in some (unknown) conditions the tracer gets loader into the child appdomain
+            // When that happens, there is a risk that the startup log thread gets aborted during appdomain unload,
+            // adding error logs which in turn cause a failure in CI.
+            // Disabling the startup log at the process level should prevent this.
+            Environment.SetEnvironmentVariable("DD_TRACE_STARTUP_LOGS", "0");
+
             LoggingMethods.DeleteExistingLogs();
 
             // Initialize log4net
@@ -24,7 +32,7 @@ namespace LogsInjection.Log4Net
             XmlConfigurator.Configure(logRepository, new FileInfo(Path.Combine(appDirectory, "log4net.Pre205.config")));
 #endif
 
-            return LoggingMethods.RunLoggingProcedure(log.Info, makeCrossAppDomainCall: false);
+            return LoggingMethods.RunLoggingProcedure(log.Info);
         }
     }
 }

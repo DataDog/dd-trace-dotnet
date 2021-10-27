@@ -1,8 +1,5 @@
 ﻿ARG DOTNETSDK_VERSION
-# debian 10 image
-FROM mcr.microsoft.com/dotnet/sdk:$DOTNETSDK_VERSION-alpine3.13 as base
-# ubuntu image
-# FROM mcr.microsoft.com/dotnet/sdk:$DOTNETSDK_VERSION-focal
+FROM mcr.microsoft.com/dotnet/sdk:$DOTNETSDK_VERSION-alpine3.14 as base
 
 RUN apk update \
     && apk upgrade \

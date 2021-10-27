@@ -104,8 +104,6 @@
     <Compile Include="Controllers\ContactsController.cs" />
     <Compile Include="Controllers\ApiController.cs" />
     <Compile Include="Controllers\ConventionsController.cs" />
-    <Compile Include="Controllers\DistributedTracingApiController.cs" />
-    <Compile Include="Controllers\DistributedTracingMvcController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Data\Contact.cs" />
     <Compile Include="Data\SampleDbContext.cs" />
@@ -147,10 +145,6 @@
     <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj">
       <Project>{8e1baa6a-47cc-47f0-a7d6-74741118eb7c}</Project>
       <Name>Datadog.Trace</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\integrations\dependency-libs\Samples.Shared\Samples.Shared.csproj">
-      <Project>{b4ae8b0f-c2b2-41df-88bb-d97e267d8964}</Project>
-      <Name>Samples.Shared</Name>
     </ProjectReference>
   </ItemGroup>
   <PropertyGroup>

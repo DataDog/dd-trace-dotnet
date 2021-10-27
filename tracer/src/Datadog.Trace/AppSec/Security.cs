@@ -12,6 +12,7 @@ using Datadog.Trace.AppSec.Agent;
 using Datadog.Trace.AppSec.EventModel;
 using Datadog.Trace.AppSec.Transport;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -28,7 +29,7 @@ namespace Datadog.Trace.AppSec
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
 
-        private readonly IWaf _powerWaf;
+        private readonly IWaf _waf;
         private readonly IAppSecAgentWriter _agentWriter;
         private readonly InstrumentationGateway _instrumentationGateway;
         private readonly SecuritySettings _settings;
@@ -42,7 +43,7 @@ namespace Datadog.Trace.AppSec
         {
         }
 
-        private Security(SecuritySettings settings = null, InstrumentationGateway instrumentationGateway = null, IWaf powerWaf = null, IAppSecAgentWriter agentWriter = null)
+        private Security(SecuritySettings settings = null, InstrumentationGateway instrumentationGateway = null, IWaf waf = null, IAppSecAgentWriter agentWriter = null)
         {
             try
             {
@@ -53,8 +54,8 @@ namespace Datadog.Trace.AppSec
                 _settings.Enabled = _settings.Enabled && AreArchitectureAndOsSupported();
                 if (_settings.Enabled)
                 {
-                    _powerWaf = powerWaf ?? Waf.Waf.Initialize(_settings.Rules);
-                    if (_powerWaf != null)
+                    _waf = waf ?? Waf.Waf.Initialize(_settings.Rules);
+                    if (_waf != null)
                     {
                         _agentWriter = agentWriter ?? new AppSecAgentWriter();
                         _instrumentationGateway.InstrumentationGatewayEvent += InstrumentationGatewayInstrumentationGatewayEvent;
@@ -64,13 +65,13 @@ namespace Datadog.Trace.AppSec
                         _settings.Enabled = false;
                     }
 
-                    RegisterShutdownTasks();
+                    LifetimeManager.Instance.AddShutdownTask(RunShutdown);
                 }
             }
             catch (Exception ex)
             {
                 _settings.Enabled = false;
-                Log.Error(ex, "Datadog AppSec failed to initialize, your application is NOT protected");
+                Log.Error(ex, "AppSec could not start because of an unexpected error. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help.");
             }
         }
 
@@ -99,6 +100,8 @@ namespace Datadog.Trace.AppSec
         /// </summary>
         InstrumentationGateway IDatadogSecurity.InstrumentationGateway => _instrumentationGateway;
 
+        internal InstrumentationGateway InstrumentationGateway => _instrumentationGateway;
+
         /// <summary>
         /// Gets <see cref="SecuritySettings"/> instance
         /// </summary>
@@ -106,10 +109,24 @@ namespace Datadog.Trace.AppSec
 
         internal SecuritySettings Settings => _settings;
 
+        internal Version DdlibWafVersion => _waf?.Version;
+
+        private static void AnnotateSpan(Span span)
+        {
+            // we should only tag service entry span, the first span opened for a
+            // service. For WAF it's safe to assume we always have service entry spans
+            // we'll need to revisit this for RASP.
+            if (span != null)
+            {
+                span.SetMetric(Metrics.AppSecEnabled, 1.0);
+                span.SetTag(Tags.RuntimeFamily, TracerConstants.Language);
+            }
+        }
+
         /// <summary>
         /// Frees resouces
         /// </summary>
-        public void Dispose() => _powerWaf?.Dispose();
+        public void Dispose() => _waf?.Dispose();
 
         internal void Execute(Guid guid)
         {
@@ -119,22 +136,30 @@ namespace Datadog.Trace.AppSec
             }
         }
 
+        private void Report(ITransport transport, Span span, Waf.ReturnTypes.Managed.Return result)
+        {
+            if (span != null)
+            {
+                span.SetTag(Tags.AppSecEvent, "true");
+                span.SetTraceSamplingPriority(SamplingPriority.AppSecKeep);
+            }
+
+            transport.OnCompleted(() =>
+            {
+                var attack = Attack.From(result, span, transport, _settings.CustomIpHeader, _settings.ExtraHeaders);
+                _agentWriter.AddEvent(attack);
+            });
+        }
+
         private void RunWafAndReact(IDictionary<string, object> args, ITransport transport, Span span)
         {
-            void Report(ITransport transport, Span span, Waf.ReturnTypes.Managed.Return result)
-            {
-                transport.OnCompleted(() =>
-                {
-                    var attack = Attack.From(result, span, transport);
-                    _agentWriter.AddEvent(attack);
-                });
-            }
+            AnnotateSpan(span);
 
             var additiveContext = transport.GetAdditiveContext();
 
             if (additiveContext == null)
             {
-                additiveContext = _powerWaf.CreateContext();
+                additiveContext = _waf.CreateContext();
                 transport.SetAdditiveContext(additiveContext);
             }
 
@@ -145,7 +170,7 @@ namespace Datadog.Trace.AppSec
                 Log.Information("AppSec: Attack detected! Action: {ReturnCode}, Blocking enabled : {BlockingEnabled}", wafResult.ReturnCode, _settings.BlockingEnabled);
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
-                    Log.Information("AppSec: Attack arguments {Args}", Encoder.FormatArgs(args));
+                    Log.Debug("AppSec: Attack arguments {Args}", Encoder.FormatArgs(args));
                 }
 
                 var managedWafResult = Waf.ReturnTypes.Managed.Return.From(wafResult);
@@ -198,8 +223,8 @@ namespace Datadog.Trace.AppSec
 
             if (!osSupported || !archSupported)
             {
-                Log.Warning(
-                    "AppSec could not start because the current environment is not supported. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help. Host information: {{ operating_system:{frameworkDescription.OSPlatform} }}, arch:{{ {frameworkDescription.ProcessArchitecture} }}, runtime_infos: {{ {frameworkDescription.ProductVersion} }}",
+                Log.Error(
+                    "AppSec could not start because the current environment is not supported. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help. Host information: operating_system: {{ {OSPlatform} }}, arch: {{ {ProcessArchitecture} }}, runtime_infos: {{ {ProductVersion} }}",
                     frameworkDescription.OSPlatform,
                     frameworkDescription.ProcessArchitecture,
                     frameworkDescription.ProductVersion);
@@ -217,58 +242,6 @@ namespace Datadog.Trace.AppSec
             }
 
             Dispose();
-        }
-
-        private void RegisterShutdownTasks()
-        {
-            // Register callbacks to make sure we flush the traces before exiting
-            AppDomain.CurrentDomain.ProcessExit += ProcessExit;
-            AppDomain.CurrentDomain.DomainUnload += DomainUnload;
-
-            try
-            {
-                // Registering for the AppDomain.UnhandledException event cannot be called by a security transparent method
-                // This will only happen if the Tracer is not run full-trust
-                AppDomain.CurrentDomain.UnhandledException += UnhandledException;
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "Unable to register a callback to the AppDomain.UnhandledException event.");
-            }
-
-            try
-            {
-                // Registering for the cancel key press event requires the System.Security.Permissions.UIPermission
-                Console.CancelKeyPress += CancelKeyPress;
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "Unable to register a callback to the Console.CancelKeyPress event.");
-            }
-        }
-
-        private void ProcessExit(object sender, EventArgs e)
-        {
-            AppDomain.CurrentDomain.ProcessExit -= ProcessExit;
-            RunShutdown();
-        }
-
-        private void DomainUnload(object sender, EventArgs e)
-        {
-            AppDomain.CurrentDomain.DomainUnload -= DomainUnload;
-            RunShutdown();
-        }
-
-        private void CancelKeyPress(object sender, EventArgs e)
-        {
-            Console.CancelKeyPress -= CancelKeyPress;
-            RunShutdown();
-        }
-
-        private void UnhandledException(object sender, EventArgs e)
-        {
-            AppDomain.CurrentDomain.UnhandledException -= UnhandledException;
-            RunShutdown();
         }
     }
 }

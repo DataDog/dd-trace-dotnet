@@ -13,7 +13,9 @@ namespace Samples.Aerospike
 
             var client = new AsyncClient(host.Item1, host.Item2);
 
-            var key = new Key("test", "myset", "mykey");
+            var key1 = new Key("test", "myset1", "mykey1");
+            var key2 = new Key("test", "myset2", "mykey2");
+            var key3 = new Key("test", "myset3", "mykey3");
 
             var bin1 = new Bin("name", "John");
             var bin2 = new Bin("age", 25);
@@ -22,26 +24,46 @@ namespace Samples.Aerospike
             var bin5 = new Bin("first", "last");
 
             // Synchronous methods
-            client.Put(null, key, bin1, bin2);
-            client.Add(null, key, bin3);
-            client.Prepend(null, key, bin4);
-            client.Append(null, key, bin5);
+            client.Put(null, key1, bin1, bin2);
+            client.Add(null, key1, bin3);
+            client.Prepend(null, key1, bin4);
+            client.Append(null, key1, bin5);
 
-            _ = client.Get(null, key);
-            _ = client.Exists(null, key);
+            _ = client.Get(null, key1);
+            _ = client.Exists(null, key1);
+            _ = client.Get(null, new[] { key1, key2, key3 });
+            _ = client.Exists(null, new[] { key1, key2, key3 });
 
-            client.Delete(null, key);
+            client.CreateIndex(null, "test", "myset1", indexName: "age", binName: "age", IndexType.NUMERIC).Wait();
+
+            var statement = new Statement
+            {
+                Namespace = "test",
+                SetName = "myset1",
+                BinNames = new[] { "name", "age" },
+                Filter = Filter.Range("age", 20, 30)
+            };
+
+            var result = client.Query(new QueryPolicy(), statement);
+
+            while (result.Next()) ; // Force the query to execute
+
+            client.Delete(null, key1);
 
             // Asynchronous methods
-            await client.Put(null, CancellationToken.None, key, bin1, bin2);
-            await client.Add(null, CancellationToken.None, key, bin3);
-            await client.Prepend(null, CancellationToken.None, key, bin4);
-            await client.Append(null, CancellationToken.None, key, bin5);
+            await client.Put(null, CancellationToken.None, key1, bin1, bin2);
+            await client.Add(null, CancellationToken.None, key1, bin3);
+            await client.Prepend(null, CancellationToken.None, key1, bin4);
+            await client.Append(null, CancellationToken.None, key1, bin5);
 
-            _ = await client.Get(null, CancellationToken.None, key);
-            _ = await client.Exists(null, CancellationToken.None, key);
+            _ = await client.Get(null, CancellationToken.None, key1);
+            _ = await client.Exists(null, CancellationToken.None, key1);
+            _ = await client.Get(null, CancellationToken.None, new[] { key1, key2, key3 });
+            _ = await client.Exists(null, CancellationToken.None, new[] { key1, key2, key3 });
 
-            await client.Delete(null, CancellationToken.None, key);
+            await client.Delete(null, CancellationToken.None, key1);
+
+            client.DropIndex(null, "test", "myset1", indexName: "age").Wait();
 
             client.Close();
         }

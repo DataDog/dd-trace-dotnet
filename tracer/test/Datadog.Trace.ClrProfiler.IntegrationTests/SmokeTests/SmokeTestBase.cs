@@ -143,6 +143,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
                 }
             }
 
+#if NETCOREAPP2_1
+            if (result.ExitCode == 139)
+            {
+                // Segmentation faults are expected on .NET Core because of a bug in the runtime: https://github.com/dotnet/runtime/issues/11885
+                throw new SkipException("Segmentation fault on .NET Core 2.1");
+            }
+#endif
+
             var successCode = 0;
             Assert.True(successCode == result.ExitCode, $"Non-success exit code {result.ExitCode}");
             Assert.True(string.IsNullOrEmpty(result.StandardError), $"Expected no errors in smoke test: {result.StandardError}");

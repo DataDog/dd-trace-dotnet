@@ -258,7 +258,7 @@ partial class Build
 
             var assembly = Assembly.LoadFrom(assemblyPath);
             var featureTrackingAttribute = assembly.GetType("Datadog.Trace.Ci.FeatureTrackingAttribute");
-            var types = new[] { "Datadog.Trace.Ci.CommonTags", "Datadog.Trace.Ci.TestTags" }
+            var types = new[] { "Datadog.Trace.Ci.Tags.CommonTags", "Datadog.Trace.Ci.Tags.TestTags" }
                        .Select(type => assembly.GetType(type))
                        .ToArray();
 

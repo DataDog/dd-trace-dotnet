@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Threading.Tasks;
 using Datadog.Trace.AppSec.EventModel;
 using Datadog.Trace.AppSec.Waf;
 
@@ -12,7 +11,9 @@ namespace Datadog.Trace.AppSec.Transport
 {
     internal interface ITransport
     {
-        Request Request();
+        bool IsSecureConnection { get; }
+
+        Func<string, string> GetHeader { get; }
 
         Response Response(bool blocked);
 
@@ -25,5 +26,7 @@ namespace Datadog.Trace.AppSec.Transport
         void AddRequestScope(Guid guid);
 
         void OnCompleted(Action completedCallback);
+
+        Request Request();
     }
 }

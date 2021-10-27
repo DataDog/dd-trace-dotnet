@@ -5,24 +5,24 @@
 
 #if NETFRAMEWORK
 using System;
-using System.Threading.Tasks;
+using System.Collections.Generic;
 using System.Web;
 using Datadog.Trace.AppSec.EventModel;
+using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.AppSec.Transport.Http
 {
     internal class HttpTransport : ITransport
     {
         private const string WafKey = "waf";
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<HttpTransport>();
-        private readonly System.Web.HttpContext context;
+        private readonly HttpContext context;
 
-        public HttpTransport(HttpContext context)
-        {
-            this.context = context;
-        }
+        public HttpTransport(HttpContext context) => this.context = context;
+
+        public bool IsSecureConnection => context.Request.IsSecureConnection;
+
+        public Func<string, string> GetHeader => key => context.Request.Headers[key];
 
         public void AddRequestScope(Guid guid)
         {
@@ -38,19 +38,22 @@ namespace Datadog.Trace.AppSec.Transport.Http
             context.ApplicationInstance.CompleteRequest();
         }
 
-        public IContext GetAdditiveContext()
-        {
-            return context.Items[WafKey] as IContext;
-        }
+        public IContext GetAdditiveContext() => context.Items[WafKey] as IContext;
 
-        public Request Request() => new()
+        public Request Request()
         {
-            Url = context.Request.Url,
-            Method = context.Request.HttpMethod,
-            Scheme = context.Request.Url.Scheme,
-            RemoteIp = context.Request.ServerVariables["HTTP_X_FORWARDED_FOR"] ?? context.Request.ServerVariables["REMOTE_ADDR"],
-            Host = context.Request.UserHostAddress,
-        };
+            var extracted = IpExtractor.ExtractAddressAndPort(context.Request.UserHostAddress, context.Request.IsSecureConnection);
+            var request = new Request()
+            {
+                Url = context.Request.Url.ToString(),
+                Method = context.Request.HttpMethod,
+                Scheme = context.Request.Url.Scheme,
+                Host = context.Request.UserHostName,
+                RemoteIp = extracted.IpAddress,
+                RemotePort = extracted.Port
+            };
+            return request;
+        }
 
         public Response Response(bool blocked) => new()
         {

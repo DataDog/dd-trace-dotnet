@@ -39,12 +39,21 @@ partial class Build : NukeBuild
     [Parameter("Should all versions of integration NuGet packages be tested, or just the defaults")]
     readonly bool TestAllPackageVersions;
 
+    [Parameter("The location to create the monitoring home directory. Default is ./shared/bin/monitoring-home ")]
+    readonly AbsolutePath MonitoringHome;
     [Parameter("The location to create the tracer home directory. Default is ./bin/tracer-home ")]
     readonly AbsolutePath TracerHome;
     [Parameter("The location to create the dd-trace home directory. Default is ./bin/dd-tracer-home ")]
     readonly AbsolutePath DDTracerHome;
     [Parameter("The location to place NuGet packages and other packages. Default is ./bin/artifacts ")]
     readonly AbsolutePath Artifacts;
+    [Parameter("An optional suffix for the beta profiler-tracer MSI. Default is '' ")]
+    readonly string BetaMsiSuffix = string.Empty;
+
+    [Parameter("The location to the find the profiler repository. Default is ./../dd-continuous-profiler-dotnet")]
+    readonly AbsolutePath ProfilerSrcDirectory;
+    [Parameter("The location to the find the profiler build artifacts. Default is ./../_build/DDProf-Deploy")]
+    readonly AbsolutePath ProfilerHome;
 
     [Parameter("The location to restore Nuget packages (optional) ")]
     readonly AbsolutePath NugetPackageDirectory;
@@ -53,7 +62,7 @@ partial class Build : NukeBuild
     readonly bool IsAlpine = false;
 
     [Parameter("The build version. Default is latest")]
-    readonly string Version = "1.28.8";
+    readonly string Version = "1.29.0";
 
     [Parameter("Whether the build version is a prerelease(for packaging purposes). Default is latest")]
     readonly bool IsPrerelease = false;
@@ -136,6 +145,17 @@ partial class Build : NukeBuild
         .DependsOn(CopyLibDdwaf)
         .DependsOn(CreateDdTracerHome);
 
+    Target BuildProfilerHome => _ => _
+        .Description("Builds the Profiler native and managed src, and publishes the profiler home directory")
+        .After(Clean)
+        .DependsOn(CompileProfilerManagedSrc)
+        .DependsOn(CompileProfilerNativeSrc);
+
+    Target BuildMonitoringHome => _ => _
+        .Description("Builds the native and managed src for the entire .NET APM product. Publishes to the monitoring home directory")
+        .After(Clean)
+        .DependsOn(CompileNativeLoader)
+        .DependsOn(PublishNativeLoader);
 
     Target PackageTracerHome => _ => _
         .Description("Packages the already built src")
@@ -144,6 +164,11 @@ partial class Build : NukeBuild
         .DependsOn(ZipTracerHome)
         .DependsOn(BuildMsi)
         .DependsOn(PackNuGet);
+
+    Target PackageMonitoringHomeBeta => _ => _
+        .Description("Packages the already built src")
+        .After(Clean, BuildTracerHome, BuildProfilerHome, BuildMonitoringHome)
+        .DependsOn(BuildMsiBeta);
 
     Target BuildAndRunManagedUnitTests => _ => _
         .Description("Builds the managed unit tests and runs them")

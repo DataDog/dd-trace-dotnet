@@ -18,7 +18,7 @@ namespace Benchmarks.Trace
 
         static Log4netBenchmark()
         {
-            LogProvider.SetCurrentLogProvider(new CustomLog4NetLogProvider());
+            LogProvider.SetCurrentLogProvider(new NoOpLog4NetLogProvider());
 
             var logInjectionSettings = new TracerSettings
             {
@@ -40,8 +40,9 @@ namespace Benchmarks.Trace
 #else
             var writer = TextWriter.Null;
 #endif
-
-            var appender = new TextWriterAppender { Layout = patternLayout, Writer = writer };
+            var textWriterAppender = new TextWriterAppender { Layout = patternLayout, Writer = writer };
+            var appender = new LogCorrelationAppender();
+            appender.AddAppender(textWriterAppender);
 
             repository.Root.AddAppender(appender);
 
@@ -60,6 +61,31 @@ namespace Benchmarks.Trace
                 {
                     Logger.Info("Hello");
                 }
+            }
+        }
+
+        class LogCorrelationAppender : ForwardingAppender
+        {
+            protected override void Append(LoggingEvent loggingEvent)
+            {
+                var tracer = Tracer.Instance;
+
+                if (tracer.Settings.LogsInjectionEnabled &&
+                    !loggingEvent.Properties.Contains(CorrelationIdentifier.ServiceKey))
+                {
+                    loggingEvent.Properties[CorrelationIdentifier.ServiceKey] = tracer.DefaultServiceName ?? string.Empty;
+                    loggingEvent.Properties[CorrelationIdentifier.VersionKey] = tracer.Settings.ServiceVersion ?? string.Empty;
+                    loggingEvent.Properties[CorrelationIdentifier.EnvKey] = tracer.Settings.Environment ?? string.Empty;
+
+                    var span = tracer.ActiveScope?.Span;
+                    if (span is not null)
+                    {
+                        loggingEvent.Properties[CorrelationIdentifier.TraceIdKey] = span.TraceId.ToString();
+                        loggingEvent.Properties[CorrelationIdentifier.SpanIdKey] = span.SpanId.ToString();
+                    }
+                }
+
+                base.Append(loggingEvent);
             }
         }
     }

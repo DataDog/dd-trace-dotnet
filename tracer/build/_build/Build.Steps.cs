@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
@@ -32,6 +33,8 @@ partial class Build
 {
     [Solution("Datadog.Trace.sln")] readonly Solution Solution;
     AbsolutePath TracerDirectory => RootDirectory / "tracer";
+    AbsolutePath SharedDirectory => RootDirectory / "shared";
+    AbsolutePath ProfilerDirectory => ProfilerSrcDirectory ?? RootDirectory / ".." / "dd-continuous-profiler-dotnet";
     AbsolutePath MsBuildProject => TracerDirectory / "Datadog.Trace.proj";
 
     AbsolutePath OutputDirectory => TracerDirectory / "bin";
@@ -42,6 +45,10 @@ partial class Build
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath WindowsSymbolsZip => ArtifactsDirectory / "windows-native-symbols.zip";
     AbsolutePath BuildDataDirectory => TracerDirectory / "build_data";
+
+    AbsolutePath MonitoringHomeDirectory => MonitoringHome ?? (SharedDirectory / "bin" / "monitoring-home");
+
+    AbsolutePath ProfilerHomeDirectory => ProfilerHome ?? RootDirectory / ".." / "_build" / "DDProf-Deploy";
 
     const string LibDdwafVersion = "1.0.10";
     AbsolutePath LibDdwafDirectory => (NugetPackageDirectory ?? (RootDirectory / "packages")) / $"libddwaf.{LibDdwafVersion}";
@@ -58,6 +65,7 @@ partial class Build
         : "/var/log/datadog/dotnet/";
 
     Project NativeProfilerProject => Solution.GetProject(Projects.ClrProfilerNative);
+    Project NativeLoaderProject => Solution.GetProject(Projects.NativeLoader);
 
     [LazyPathExecutable(name: "cmake")] readonly Lazy<Tool> CMake;
     [LazyPathExecutable(name: "make")] readonly Lazy<Tool> Make;
@@ -149,6 +157,7 @@ partial class Build
                     : new[] { MSBuildTargetPlatform.x86 };
 
             // Can't use dotnet msbuild, as needs to use the VS version of MSBuild
+            // Build native tracer assets
             MSBuild(s => s
                 .SetTargetPath(MsBuildProject)
                 .SetConfiguration(BuildConfiguration)
@@ -341,6 +350,7 @@ partial class Build
         {
             foreach (var architecture in ArchitecturesForPlatform)
             {
+                // Copy native tracer assets
                 var source = NativeProfilerProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
                              $"{NativeProfilerProject.Name}.dll";
                 var dest = TracerHomeDirectory / $"win-{architecture}";
@@ -444,6 +454,30 @@ partial class Build
                     .AddProperty("RunWixToolsOutOfProc", true)
                     .SetProperty("TracerHomeDirectory", TracerHomeDirectory)
                     .SetProperty("LibDdwafDirectory", LibDdwafDirectory)
+                    .SetMaxCpuCount(null)
+                    .CombineWith(ArchitecturesForPlatform, (o, arch) => o
+                        .SetProperty("MsiOutputPath", ArtifactsDirectory / arch.ToString())
+                        .SetTargetPlatform(arch)),
+                degreeOfParallelism: 2);
+        });
+
+    Target BuildMsiBeta => _ => _
+        .Unlisted()
+        .Description("Builds the .msi files from the repo")
+        .After(BuildTracerHome, BuildProfilerHome, BuildMonitoringHome)
+        .OnlyWhenStatic(() => IsWin)
+        .Executes(() =>
+        {
+            MSBuild(s => s
+                    .SetTargetPath(SharedDirectory / "src" / "msi-installer" / "WindowsInstaller.wixproj")
+                    .SetConfiguration(BuildConfiguration)
+                    .SetMSBuildPath()
+                    .AddProperty("RunWixToolsOutOfProc", true)
+                    .SetProperty("TracerHomeDirectory", TracerHomeDirectory)
+                    .SetProperty("LibDdwafDirectory", LibDdwafDirectory)
+                    .SetProperty("ProfilerHomeDirectory", ProfilerHomeDirectory)
+                    .SetProperty("MonitoringHomeDirectory", MonitoringHomeDirectory)
+                    .SetProperty("BetaMsiSuffix", BetaMsiSuffix)
                     .SetMaxCpuCount(null)
                     .CombineWith(ArchitecturesForPlatform, (o, arch) => o
                         .SetProperty("MsiOutputPath", ArtifactsDirectory / arch.ToString())
@@ -876,6 +910,7 @@ partial class Build
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatform(TargetPlatform)
                     .SetFramework(Framework)
+                    //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
@@ -893,6 +928,7 @@ partial class Build
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatform(TargetPlatform)
                     .SetFramework(Framework)
+                    //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "RunOnWindows=True&LoadFromGAC!=True&IIS!=True")
@@ -905,6 +941,7 @@ partial class Build
             finally
             {
                 MoveLogsToBuildData();
+                CopyMemoryDumps();
             }
         });
 
@@ -1052,6 +1089,7 @@ partial class Build
                         "Samples.GraphQL4" => Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0,
                         var name when projectsToSkip.Contains(name) => false,
                         var name when multiPackageProjects.Contains(name) => false,
+                        "Samples.AspNetCoreRazorPages" => true,
                         _ when !string.IsNullOrWhiteSpace(SampleName) => project?.Name?.Contains(SampleName) ?? false,
                         _ => true,
                     };
@@ -1175,6 +1213,7 @@ partial class Build
                         .EnableNoRestore()
                         .EnableNoBuild()
                         .SetFramework(Framework)
+                        //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                         .SetFilter(filter)
                         .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
                         .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
@@ -1191,6 +1230,7 @@ partial class Build
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetFramework(Framework)
+                    //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                     .SetFilter(filter)
                     .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
@@ -1203,8 +1243,191 @@ partial class Build
             finally
             {
                 MoveLogsToBuildData();
+                CopyMemoryDumps();
             }
         });
+
+    Target CheckBuildLogsForErrors => _ => _
+       .Unlisted()
+       .Description("Reads the logs from build_data and checks for error lines")
+       .Executes(() =>
+       {
+           // we expect to see _some_ errors, so explcitly ignore them
+           var knownPatterns = new List<Regex>
+           {
+               new(@".*Unable to resolve method MongoDB\..*", RegexOptions.Compiled),
+               new(@".*at CallTargetNativeTest\.NoOp\.Noop\dArgumentsIntegration\.OnAsyncMethodEnd.*", RegexOptions.Compiled),
+               new(@".*at CallTargetNativeTest\.NoOp\.Noop\dArgumentsIntegration\.OnMethodBegin.*", RegexOptions.Compiled),
+               new(@".*at CallTargetNativeTest\.NoOp\.Noop\dArgumentsIntegration\.OnMethodEnd.*", RegexOptions.Compiled),
+               new(@".*at CallTargetNativeTest\.NoOp\.Noop\dArgumentsVoidIntegration\.OnMethodBegin.*", RegexOptions.Compiled),
+               new(@".*at CallTargetNativeTest\.NoOp\.Noop\dArgumentsVoidIntegration\.OnMethodEnd.*", RegexOptions.Compiled),
+           };
+
+           var logDirectory = BuildDataDirectory / "logs";
+           if (DirectoryExists(logDirectory))
+           {
+               // Should we care about warnings too?
+               var managedErrors = logDirectory.GlobFiles("**/dotnet-tracer-managed-*")
+                                               .SelectMany(ParseManagedLogFiles)
+                                               .Where(x => x.Level >= LogLevel.Error)
+                                               .Where(IsNewError)
+                                               .ToList();
+
+               var nativeErrors = logDirectory.GlobFiles("**/dotnet-tracer-native-*")
+                                               .SelectMany(ParseNativeLogFiles)
+                                               .Where(x => x.Level >= LogLevel.Error)
+                                               .Where(IsNewError)
+                                               .ToList();
+
+               if (managedErrors.Count == 0 && nativeErrors.Count == 0)
+               {
+                   Logger.Info("No errors found in managed or native logs");
+                   return;
+               }
+
+               Logger.Warn("Found the following errors in log files:");
+               var allErrors = managedErrors
+                              .Concat(nativeErrors)
+                              .GroupBy(x => x.FileName);
+
+               foreach (var erroredFile in allErrors)
+               {
+                   Logger.Error($"Found errors in log file '{erroredFile.Key}':");
+                   foreach (var error in erroredFile)
+                   {
+                       Logger.Error($"{error.Timestamp:hh:mm:ss} [{error.Level}] {error.Message}");
+                   }
+               }
+
+               ExitCode = 1;
+           }
+
+           bool IsNewError(ParsedLogLine logLine)
+           {
+               foreach (var pattern in knownPatterns)
+               {
+                   if (pattern.IsMatch(logLine.Message))
+                   {
+                       return false;
+                   }
+               }
+
+               return true;
+           }
+
+           static List<ParsedLogLine> ParseManagedLogFiles(AbsolutePath logFile)
+           {
+               var regex = new Regex(@"^(\d\d\d\d\-\d\d\-\d\d\W\d\d\:\d\d\:\d\d\.\d\d\d\W\+\d\d\:\d\d)\W\[(.*?)\]\W(.*)", RegexOptions.Compiled);
+               var allLines = File.ReadAllLines(logFile);
+               var allLogs = new List<ParsedLogLine>(allLines.Length);
+               ParsedLogLine currentLine = null;
+
+               foreach (var line in allLines)
+               {
+                   if (string.IsNullOrWhiteSpace(line))
+                   {
+                       continue;
+                   }
+                   var match = regex.Match(line);
+
+                   if (match.Success)
+                   {
+                       if (currentLine is not null)
+                       {
+                           allLogs.Add(currentLine);
+                       }
+
+                       try
+                       {
+                           // start of a new log line
+                           var timestamp = DateTimeOffset.Parse(match.Groups[1].Value);
+                           var level = ParseManagedLogLevel(match.Groups[2].Value);
+                           var message = match.Groups[3].Value;
+                           currentLine = new ParsedLogLine(timestamp, level, message, logFile);
+                       }
+                       catch (Exception ex)
+                       {
+                           Logger.Info($"Error parsing line: '{line}. {ex}");
+                       }
+                   }
+                   else
+                   {
+                       if (currentLine is null)
+                       {
+                           Logger.Warn("Incomplete log line: " + line);
+                       }
+                       else
+                       {
+                           currentLine = currentLine with { Message = $"{currentLine.Message}{Environment.NewLine}{line}" };
+                       }
+                   }
+               }
+
+               return allLogs;
+           }
+
+           static List<ParsedLogLine> ParseNativeLogFiles(AbsolutePath logFile)
+           {
+               var regex = new Regex(@"^(\d\d\/\d\d\/\d\d\W\d\d\:\d\d\:\d\d\.\d\d\d\W\w\w)\W\[.*?\]\W\[(.*?)\](.*)", RegexOptions.Compiled);
+               var allLines = File.ReadAllLines(logFile);
+               var allLogs = new List<ParsedLogLine>(allLines.Length);
+
+               foreach (var line in allLines)
+               {
+                   if (string.IsNullOrWhiteSpace(line))
+                   {
+                       continue;
+                   }
+                   var match = regex.Match(line);
+                   if (match.Success)
+                   {
+                       try
+                       {
+                           // native logs are on one line
+                           var timestamp = DateTimeOffset.ParseExact(match.Groups[1].Value, "MM/dd/yy hh:mm:ss.fff tt", null);
+                           var level = ParseNativeLogLevel(match.Groups[2].Value);
+                           var message = match.Groups[3].Value;
+                           var currentLine = new ParsedLogLine(timestamp, level, message, logFile);
+                           allLogs.Add(currentLine);
+                       }
+                       catch (Exception ex)
+                       {
+                           Logger.Info($"Error parsing line: '{line}. {ex}");
+                       }
+                   }
+                   else
+                   {
+                       Logger.Warn("Incomplete log line: " + line);
+                   }
+               }
+
+               return allLogs;
+           }
+
+           static LogLevel ParseManagedLogLevel(string value)
+               => value switch
+               {
+                   "VRB" => LogLevel.Trace,
+                   "DBG" => LogLevel.Trace,
+                   "INF" => LogLevel.Normal,
+                   "WRN" => LogLevel.Warning,
+                   "ERR" => LogLevel.Error,
+                   _ => LogLevel.Normal, // Concurrency issues can sometimes garble this so ignore it
+               };
+
+           static LogLevel ParseNativeLogLevel(string value)
+               => value switch
+               {
+                   "trace" => LogLevel.Trace,
+                   "debug" => LogLevel.Trace,
+                   "info" => LogLevel.Normal,
+                   "warning" => LogLevel.Warning,
+                   "error" => LogLevel.Error,
+                   _ => LogLevel.Normal, // Concurrency issues can sometimes garble this so ignore it
+               };
+
+           Logger.Info($"Skipping log parsing, directory '{logDirectory}' not found");
+       });
 
     private AbsolutePath GetResultsDirectory(Project proj) => BuildDataDirectory / "results" / proj.Name;
 
@@ -1253,6 +1476,14 @@ partial class Build
         }
     }
 
+    private void CopyMemoryDumps()
+    {
+        foreach (var file in Directory.EnumerateFiles(TracerDirectory, "*.dmp", SearchOption.AllDirectories))
+        {
+            CopyFileToDirectory(file, BuildDataDirectory, FileExistsPolicy.OverwriteIfNewer);
+        }
+    }
+
     private DotNetTestSettings ConfigureCodeCoverage(DotNetTestSettings settings)
     {
         var strongNameKeyPath = Solution.Directory / "Datadog.Trace.snk";
@@ -1295,4 +1526,6 @@ partial class Build
             };
         }
     }
+
+    private record ParsedLogLine(DateTimeOffset Timestamp, LogLevel Level, string Message, AbsolutePath FileName);
 }
