@@ -54,8 +54,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private static readonly string _graphQLValidateOperationName = "graphql.validate";
         private static readonly string _graphQLExecuteOperationName = "graphql.execute";
 
-        private readonly bool _callTargetOnly;
-
         private List<RequestInfo> _requests;
         private List<WebServerSpanExpectation> _expectations;
         private int _expectedGraphQLValidateSpanCount;
