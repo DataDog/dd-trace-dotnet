@@ -5,8 +5,6 @@
   <?include $(sys.CURRENTDIR)\Config.wxi?>
   <Fragment>
     <ComponentGroup Id="Tracer.Files" Directory="tracer">
-      <Component Win64="$(var.Win64)">
-      </Component>
     </ComponentGroup>
 
     <?if $(var.Win64) = yes ?>
