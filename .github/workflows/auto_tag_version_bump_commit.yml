@@ -2,7 +2,7 @@ name: Auto tag version bump commit
 
 on:
   push:
-    branches: [ master, main, release/* ]
+    branches: [ master, main, release/*, hotfix/* ]
     tags-ignore:
       - '**'
 
