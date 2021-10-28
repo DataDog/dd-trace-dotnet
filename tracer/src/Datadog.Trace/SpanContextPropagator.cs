@@ -6,9 +6,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.Linq;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
@@ -17,23 +15,14 @@ namespace Datadog.Trace
 {
     internal class SpanContextPropagator
     {
-        internal static readonly string HttpRequestHeadersTagPrefix = "http.request.headers";
-        internal static readonly string HttpResponseHeadersTagPrefix = "http.response.headers";
+        internal const string HttpRequestHeadersTagPrefix = "http.request.headers";
+        internal const string HttpResponseHeadersTagPrefix = "http.response.headers";
 
         private const NumberStyles NumberStyles = System.Globalization.NumberStyles.Integer;
-        private const int MinimumSamplingPriority = (int)SamplingPriority.UserReject;
-        private const int MaximumSamplingPriority = (int)SamplingPriority.UserKeep;
 
         private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SpanContextPropagator>();
         private static readonly ConcurrentDictionary<Key, string> DefaultTagMappingCache = new ConcurrentDictionary<Key, string>();
-
-        private static readonly int[] SamplingPriorities;
-
-        static SpanContextPropagator()
-        {
-            SamplingPriorities = Enum.GetValues(typeof(SamplingPriority)).Cast<int>().ToArray();
-        }
 
         private SpanContextPropagator()
         {
