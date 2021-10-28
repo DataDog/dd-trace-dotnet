@@ -21,16 +21,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
-        public static IEnumerable<object[]> GetNpgsql()
-        {
-            foreach (object[] item in PackageVersions.Npgsql)
-            {
-                yield return item;
-            }
-        }
-
         [SkippableTheory]
-        [MemberData(nameof(GetNpgsql))]
+        [MemberData(nameof(PackageVersions.Npgsql), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
         public void SubmitsTracesWithNetStandard(string packageVersion)
         {
