@@ -48,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
 
                 try
                 {
-                    scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, request.Method, request.RequestUri, IntegrationId, out var tags, spanContext?.SpanId);
+                    scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, request.Method, request.RequestUri, IntegrationId, out var tags, spanContext?.TraceId, spanContext?.SpanId);
 
                     if (scope != null)
                     {

@@ -222,7 +222,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
             // If this operation creates the trace, then we need to re-apply the sampling priority
             bool setSamplingPriority = spanContext?.SamplingPriority != null && Tracer.Instance.ActiveScope == null;
 
-            using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, request.Method, request.RequestUri, IntegrationId, out var tags, spanContext?.SpanId))
+            using (var scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, request.Method, request.RequestUri, IntegrationId, out var tags, spanContext?.TraceId, spanContext?.SpanId))
             {
                 try
                 {
@@ -353,7 +353,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
             if (tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
-                var span = ScopeFactory.CreateInactiveOutboundHttpSpan(tracer, request.Method, request.RequestUri, IntegrationId, out _, spanId: null, startTime: null, dummySpan: true);
+                var span = ScopeFactory.CreateInactiveOutboundHttpSpan(tracer, request.Method, request.RequestUri, IntegrationId, out _, traceId: null, spanId: null, startTime: null, addToTraceContext: false);
 
                 if (span?.Context != null)
                 {
