@@ -78,13 +78,13 @@ namespace Datadog.Trace.Agent
             _backBuffer = new SpanBuffer(maxBufferSize, formatterResolver);
             _activeBuffer = _frontBuffer;
 
-            _serializationTask = automaticFlush ? Task.Factory.StartNew(SerializeTracesLoop, TaskCreationOptions.LongRunning) : Task.FromResult(true);
+            _serializationTask = automaticFlush ? Task.Factory.StartNew(SerializeTracesLoop, TaskCreationOptions.LongRunning) : Task.CompletedTask;
             _serializationTask.ContinueWith(t => Log.Error(t.Exception, "Error in serialization task"), TaskContinuationOptions.OnlyOnFaulted);
 
-            _flushTask = automaticFlush ? Task.Run(FlushBuffersTaskLoopAsync) : Task.FromResult(true);
+            _flushTask = automaticFlush ? Task.Run(FlushBuffersTaskLoopAsync) : Task.CompletedTask;
             _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in flush task"), TaskContinuationOptions.OnlyOnFaulted);
 
-            _backBufferFlushTask = _frontBufferFlushTask = Task.FromResult(true);
+            _backBufferFlushTask = _frontBufferFlushTask = Task.CompletedTask;
         }
 
         internal event Action Flushed;
