@@ -13,18 +13,18 @@
 
     <!-- Integration: Microsoft.Data.Sqlite -->
     <!-- Assembly: Microsoft.Data.Sqlite -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.Sqlite/5.0.10 -->
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="5.0.10" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.Sqlite/5.0.11 -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="5.0.11" />
 
     <!-- Integration: MySql.Data -->
     <!-- Assembly: MySql.Data -->
-    <!-- Latest package https://www.nuget.org/packages/MySql.Data/8.0.26 -->
-    <PackageReference Include="MySql.Data" Version="8.0.26" />
+    <!-- Latest package https://www.nuget.org/packages/MySql.Data/8.0.27 -->
+    <PackageReference Include="MySql.Data" Version="8.0.27" />
 
     <!-- Integration: MySqlConnector -->
     <!-- Assembly: MySqlConnector -->
-    <!-- Latest package https://www.nuget.org/packages/MySqlConnector/1.3.12 -->
-    <PackageReference Include="MySqlConnector" Version="1.3.12" />
+    <!-- Latest package https://www.nuget.org/packages/MySqlConnector/1.3.14 -->
+    <PackageReference Include="MySqlConnector" Version="1.3.14" />
 
     <!-- Integration: Npgsql -->
     <!-- Assembly: Npgsql -->
@@ -33,8 +33,8 @@
 
     <!-- Integration: Oracle.ManagedDataAccess -->
     <!-- Assembly: Oracle.ManagedDataAccess -->
-    <!-- Latest package https://www.nuget.org/packages/Oracle.ManagedDataAccess/21.3.0 -->
-    <PackageReference Include="Oracle.ManagedDataAccess" Version="21.3.0" />
+    <!-- Latest package https://www.nuget.org/packages/Oracle.ManagedDataAccess/21.4.0 -->
+    <PackageReference Include="Oracle.ManagedDataAccess" Version="21.4.0" />
 
     <!-- Integration: System.Data -->
     <!-- Assembly: System.Data -->
@@ -58,8 +58,8 @@
 
     <!-- Integration: AerospikeClient -->
     <!-- Assembly: AerospikeClient -->
-    <!-- Latest package https://www.nuget.org/packages/Aerospike.Client/4.2.3 -->
-    <PackageReference Include="Aerospike.Client" Version="4.2.3" />
+    <!-- Latest package https://www.nuget.org/packages/Aerospike.Client/4.2.4 -->
+    <PackageReference Include="Aerospike.Client" Version="4.2.4" />
 
     <!-- Integration: System.Web.Mvc -->
     <!-- Assembly: System.Web.Mvc -->
@@ -68,23 +68,23 @@
 
     <!-- Integration: AWSSDK.Core -->
     <!-- Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.3.15 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.3.15" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.3.27 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.3.27" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!-- Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.1.18 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.1.18" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.1.30 -->
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.1.30" />
 
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!-- Assembly: Microsoft.Azure.Cosmos.Client -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.21.0 -->
-    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.21.0" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.22.0 -->
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.22.0" />
 
     <!-- Integration: Elasticsearch.Net -->
     <!-- Assembly: Elasticsearch.Net -->
-    <!-- Latest package https://www.nuget.org/packages/Elasticsearch.Net/7.15.0 -->
-    <PackageReference Include="Elasticsearch.Net" Version="7.15.0" />
+    <!-- Latest package https://www.nuget.org/packages/Elasticsearch.Net/7.15.1 -->
+    <PackageReference Include="Elasticsearch.Net" Version="7.15.1" />
 
     <!-- Integration: GraphQL -->
     <!-- Assembly: GraphQL -->
@@ -118,18 +118,23 @@
 
     <!-- Integration: Confluent.Kafka -->
     <!-- Assembly: Confluent.Kafka -->
-    <!-- Latest package https://www.nuget.org/packages/Confluent.Kafka/1.8.1 -->
-    <PackageReference Include="Confluent.Kafka" Version="1.8.1" />
+    <!-- Latest package https://www.nuget.org/packages/Confluent.Kafka/1.8.2 -->
+    <PackageReference Include="Confluent.Kafka" Version="1.8.2" />
+
+    <!-- Integration: log4net -->
+    <!-- Assembly: log4net -->
+    <!-- Latest package https://www.nuget.org/packages/log4net/2.0.12 -->
+    <PackageReference Include="log4net" Version="2.0.12" />
 
     <!-- Integration: MongoDB.Driver.Core -->
     <!-- Assembly: MongoDB.Driver.Core -->
-    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver.Core/2.13.1 -->
-    <PackageReference Include="MongoDB.Driver.Core" Version="2.13.1" />
+    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver.Core/2.13.2 -->
+    <PackageReference Include="MongoDB.Driver.Core" Version="2.13.2" />
 
     <!-- Integration: MongoDB.Driver.Core -->
     <!-- Assembly: MongoDB.Driver.Core -->
-    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver/2.13.1 -->
-    <PackageReference Include="MongoDB.Driver" Version="2.13.1" />
+    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver/2.13.2 -->
+    <PackageReference Include="MongoDB.Driver" Version="2.13.2" />
 
     <!-- Integration: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
     <!-- Assembly: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
@@ -163,8 +168,8 @@
 
     <!-- Integration: StackExchange.Redis -->
     <!-- Assembly: StackExchange.Redis -->
-    <!-- Latest package https://www.nuget.org/packages/StackExchange.Redis/2.2.62 -->
-    <PackageReference Include="StackExchange.Redis" Version="2.2.62" />
+    <!-- Latest package https://www.nuget.org/packages/StackExchange.Redis/2.2.79 -->
+    <PackageReference Include="StackExchange.Redis" Version="2.2.79" />
 
     <!-- Integration: StackExchange.Redis.StrongName -->
     <!-- Assembly: StackExchange.Redis.StrongName -->
