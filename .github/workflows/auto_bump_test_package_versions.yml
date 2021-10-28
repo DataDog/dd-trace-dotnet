@@ -3,10 +3,11 @@ name: Auto bump test package versions
 on:
   pull_request:
     branches: [master, main]
+  workflow_dispatch:
 
 jobs:
   bump_package_versions:
-    if: startsWith(github.head_ref, 'refs/heads/dependabot/nuget/tracer/dependabot/') == true
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.event.pull_request.head.ref, 'dependabot/nuget/tracer/dependabot/') == true
     runs-on: windows-latest
     env:
       GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
