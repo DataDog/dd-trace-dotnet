@@ -20,7 +20,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNet.AspNetIntegration",
           "method": "TryLoadHttpModule",
           "signature": "00 00 01",
@@ -47,7 +47,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNet.AspNetThreadContextIntegration",
           "method": "AssociateWithCurrentThread",
           "signature": "00 05 01 1C 02 08 08 0A",
@@ -73,7 +73,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNet.AspNetThreadContextIntegration",
           "method": "DisassociateFromCurrentThread",
           "signature": "00 04 01 1C 08 08 0A",
@@ -108,7 +108,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetMvcIntegration",
           "method": "BeginInvokeAction",
           "signature": "00 08 1C 1C 1C 1C 1C 1C 08 08 0A",
@@ -135,7 +135,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetMvcIntegration",
           "method": "EndInvokeAction",
           "signature": "00 05 02 1C 1C 08 08 0A",
@@ -166,7 +166,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetWebApi2Integration",
           "method": "ExecuteAsync",
           "signature": "00 06 1C 1C 1C 1C 08 08 0A",
@@ -193,7 +193,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AspNetWebApi2Integration",
           "method": "HandleAsync",
           "signature": "00 06 1C 1C 1C 1C 08 08 0A",
@@ -222,7 +222,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.DbCommandIntegration",
           "method": "ExecuteReader",
           "signature": "00 04 1C 1C 08 08 0A",
@@ -246,7 +246,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.DbCommandIntegration",
           "method": "ExecuteReader",
           "signature": "00 04 1C 1C 08 08 0A",
@@ -270,7 +270,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.DbCommandIntegration",
           "method": "ExecuteReader",
           "signature": "00 04 1C 1C 08 08 0A",
@@ -295,7 +295,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.DbCommandIntegration",
           "method": "ExecuteReaderWithBehavior",
           "signature": "00 05 1C 1C 08 08 08 0A",
@@ -320,7 +320,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.DbCommandIntegration",
           "method": "ExecuteReaderWithBehavior",
           "signature": "00 05 1C 1C 08 08 08 0A",
@@ -345,7 +345,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.DbCommandIntegration",
           "method": "ExecuteReaderWithBehavior",
           "signature": "00 05 1C 1C 08 08 08 0A",
@@ -371,7 +371,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.DbCommandIntegration",
           "method": "ExecuteReaderAsync",
           "signature": "00 06 1C 1C 08 1C 08 08 0A",
@@ -397,7 +397,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.DbCommandIntegration",
           "method": "ExecuteReaderAsync",
           "signature": "00 06 1C 1C 08 1C 08 08 0A",
@@ -423,7 +423,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.DbCommandIntegration",
           "method": "ExecuteReaderAsync",
           "signature": "00 06 1C 1C 08 1C 08 08 0A",
@@ -447,7 +447,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.DbCommandIntegration",
           "method": "ExecuteNonQuery",
           "signature": "00 04 08 1C 08 08 0A",
@@ -471,7 +471,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.DbCommandIntegration",
           "method": "ExecuteNonQuery",
           "signature": "00 04 08 1C 08 08 0A",
@@ -495,7 +495,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.DbCommandIntegration",
           "method": "ExecuteNonQuery",
           "signature": "00 04 08 1C 08 08 0A",
@@ -520,7 +520,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.DbCommandIntegration",
           "method": "ExecuteNonQueryAsync",
           "signature": "00 05 1C 1C 1C 08 08 0A",
@@ -545,7 +545,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.DbCommandIntegration",
           "method": "ExecuteNonQueryAsync",
           "signature": "00 05 1C 1C 1C 08 08 0A",
@@ -570,7 +570,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.DbCommandIntegration",
           "method": "ExecuteNonQueryAsync",
           "signature": "00 05 1C 1C 1C 08 08 0A",
@@ -594,7 +594,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.DbCommandIntegration",
           "method": "ExecuteScalar",
           "signature": "00 04 1C 1C 08 08 0A",
@@ -618,7 +618,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.DbCommandIntegration",
           "method": "ExecuteScalar",
           "signature": "00 04 1C 1C 08 08 0A",
@@ -642,7 +642,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.DbCommandIntegration",
           "method": "ExecuteScalar",
           "signature": "00 04 1C 1C 08 08 0A",
@@ -667,7 +667,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.DbCommandIntegration",
           "method": "ExecuteScalarAsync",
           "signature": "00 05 1C 1C 1C 08 08 0A",
@@ -692,7 +692,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.DbCommandIntegration",
           "method": "ExecuteScalarAsync",
           "signature": "00 05 1C 1C 1C 08 08 0A",
@@ -717,7 +717,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.DbCommandIntegration",
           "method": "ExecuteScalarAsync",
           "signature": "00 05 1C 1C 1C 08 08 0A",
@@ -749,7 +749,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.ElasticsearchNet5Integration",
           "method": "CallElasticsearch",
           "signature": "10 01 05 1C 1C 1C 08 08 0A",
@@ -777,7 +777,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.ElasticsearchNet5Integration",
           "method": "CallElasticsearchAsync",
           "signature": "10 01 06 1C 1C 1C 1C 08 08 0A",
@@ -809,7 +809,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.ElasticsearchNet6Integration",
           "method": "CallElasticsearch",
           "signature": "10 01 05 1C 1C 1C 08 08 0A",
@@ -837,7 +837,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.ElasticsearchNet6Integration",
           "method": "CallElasticsearchAsync",
           "signature": "10 01 06 1C 1C 1C 1C 08 08 0A",
@@ -872,7 +872,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.GraphQLIntegration",
           "method": "Validate",
           "signature": "00 0A 1C 1C 1C 1C 1C 1C 1C 1C 08 08 0A",
@@ -897,7 +897,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.GraphQLIntegration",
           "method": "ExecuteAsync",
           "signature": "00 05 1C 1C 1C 08 08 0A",
@@ -928,7 +928,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
           "method": "HttpMessageHandler_SendAsync",
           "signature": "00 06 1C 1C 1C 1C 08 08 0A",
@@ -954,7 +954,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
           "method": "HttpMessageHandler_Send",
           "signature": "00 06 1C 1C 1C 1C 08 08 0A",
@@ -980,7 +980,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
           "method": "HttpClientHandler_SendAsync",
           "signature": "00 06 1C 1C 1C 1C 08 08 0A",
@@ -1006,7 +1006,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.HttpMessageHandlerIntegration",
           "method": "HttpClientHandler_Send",
           "signature": "00 06 1C 1C 1C 1C 08 08 0A",
@@ -1035,7 +1035,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.IDbCommandIntegration",
           "method": "ExecuteReader",
           "signature": "00 04 1C 1C 08 08 0A",
@@ -1059,7 +1059,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.IDbCommandIntegration",
           "method": "ExecuteReader",
           "signature": "00 04 1C 1C 08 08 0A",
@@ -1083,7 +1083,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.IDbCommandIntegration",
           "method": "ExecuteReader",
           "signature": "00 04 1C 1C 08 08 0A",
@@ -1108,7 +1108,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.IDbCommandIntegration",
           "method": "ExecuteReaderWithBehavior",
           "signature": "00 05 1C 1C 08 08 08 0A",
@@ -1133,7 +1133,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.IDbCommandIntegration",
           "method": "ExecuteReaderWithBehavior",
           "signature": "00 05 1C 1C 08 08 08 0A",
@@ -1158,7 +1158,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.IDbCommandIntegration",
           "method": "ExecuteReaderWithBehavior",
           "signature": "00 05 1C 1C 08 08 08 0A",
@@ -1182,7 +1182,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.IDbCommandIntegration",
           "method": "ExecuteNonQuery",
           "signature": "00 04 08 1C 08 08 0A",
@@ -1206,7 +1206,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.IDbCommandIntegration",
           "method": "ExecuteNonQuery",
           "signature": "00 04 08 1C 08 08 0A",
@@ -1230,7 +1230,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.IDbCommandIntegration",
           "method": "ExecuteNonQuery",
           "signature": "00 04 08 1C 08 08 0A",
@@ -1254,7 +1254,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.IDbCommandIntegration",
           "method": "ExecuteScalar",
           "signature": "00 04 1C 1C 08 08 0A",
@@ -1278,7 +1278,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.IDbCommandIntegration",
           "method": "ExecuteScalar",
           "signature": "00 04 1C 1C 08 08 0A",
@@ -1302,7 +1302,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.IDbCommandIntegration",
           "method": "ExecuteScalar",
           "signature": "00 04 1C 1C 08 08 0A",
@@ -1332,7 +1332,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.Log4NetIntegration",
           "method": "AppendLoopOnAppenders",
           "signature": "00 05 08 1C 1C 08 08 0A",
@@ -1363,7 +1363,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.MongoDbIntegration",
           "method": "Execute",
           "signature": "00 06 01 1C 1C 1C 08 08 0A",
@@ -1389,7 +1389,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.MongoDbIntegration",
           "method": "ExecuteGeneric",
           "signature": "00 06 1C 1C 1C 1C 08 08 0A",
@@ -1415,7 +1415,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.MongoDbIntegration",
           "method": "ExecuteAsync",
           "signature": "00 06 1C 1C 1C 1C 08 08 0A",
@@ -1441,7 +1441,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.MongoDbIntegration",
           "method": "ExecuteAsyncGeneric",
           "signature": "00 06 1C 1C 1C 1C 08 08 0A",
@@ -1470,7 +1470,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.NpgsqlCommandIntegration",
           "method": "ExecuteReader",
           "signature": "00 04 1C 1C 08 08 0A",
@@ -1495,7 +1495,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.NpgsqlCommandIntegration",
           "method": "ExecuteReaderWithBehavior",
           "signature": "00 05 1C 1C 08 08 08 0A",
@@ -1520,7 +1520,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.NpgsqlCommandIntegration",
           "method": "ExecuteReaderAsync",
           "signature": "00 05 1C 1C 1C 08 08 0A",
@@ -1546,7 +1546,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.NpgsqlCommandIntegration",
           "method": "ExecuteReaderAsyncWithBehaviorAndCancellation",
           "signature": "00 06 1C 1C 08 1C 08 08 0A",
@@ -1570,7 +1570,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.NpgsqlCommandIntegration",
           "method": "ExecuteNonQuery",
           "signature": "00 04 08 1C 08 08 0A",
@@ -1595,7 +1595,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.NpgsqlCommandIntegration",
           "method": "ExecuteNonQueryAsync",
           "signature": "00 05 1C 1C 1C 08 08 0A",
@@ -1619,7 +1619,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.NpgsqlCommandIntegration",
           "method": "ExecuteScalar",
           "signature": "00 04 1C 1C 08 08 0A",
@@ -1644,7 +1644,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.NpgsqlCommandIntegration",
           "method": "ExecuteScalarAsync",
           "signature": "00 05 1C 1C 1C 08 08 0A",
@@ -1674,7 +1674,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.Testing.NUnitIntegration",
           "method": "TestCommand_Execute",
           "signature": "00 05 1C 1C 1C 08 08 0A",
@@ -1698,7 +1698,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.Testing.NUnitIntegration",
           "method": "WorkShift_ShutDown",
           "signature": "00 04 01 1C 08 08 0A",
@@ -1723,7 +1723,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.Testing.NUnitIntegration",
           "method": "NUnitTestAssemblyRunner_WaitForCompletion",
           "signature": "00 05 1C 1C 08 08 08 0A",
@@ -1750,7 +1750,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.Testing.NUnitIntegration",
           "method": "CompositeWorkItem_SkipChildren",
           "signature": "00 07 01 1C 1C 1C 1C 08 08 0A",
@@ -1786,7 +1786,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.RabbitMQIntegration",
           "method": "BasicDeliver",
           "signature": "00 0B 01 1C 0E 0B 02 0E 0E 1C 1D 05 08 08 0A",
@@ -1817,7 +1817,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.RabbitMQIntegration",
           "method": "BasicDeliverV6",
           "signature": "00 0B 01 1C 0E 0B 02 0E 0E 1C 1C 08 08 0A",
@@ -1843,7 +1843,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.RabbitMQIntegration",
           "method": "BasicGet",
           "signature": "00 06 1C 1C 0E 02 08 08 0A",
@@ -1872,7 +1872,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.RabbitMQIntegration",
           "method": "BasicPublish",
           "signature": "00 09 01 1C 0E 0E 02 1C 1D 05 08 08 0A",
@@ -1901,7 +1901,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.RabbitMQIntegration",
           "method": "BasicPublishV6",
           "signature": "00 09 01 1C 0E 0E 02 1C 1C 08 08 0A",
@@ -1933,7 +1933,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.RabbitMQIntegration",
           "method": "ExchangeDeclare",
           "signature": "00 0C 01 1C 0E 0E 02 02 02 02 02 1C 08 08 0A",
@@ -1962,7 +1962,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.RabbitMQIntegration",
           "method": "QueueBind",
           "signature": "00 09 01 1C 0E 0E 0E 02 1C 08 08 0A",
@@ -1993,7 +1993,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.RabbitMQIntegration",
           "method": "QueueDeclare",
           "signature": "00 0B 01 1C 0E 02 02 02 02 02 1C 08 08 0A",
@@ -2028,7 +2028,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.ServiceStackRedisIntegration",
           "method": "SendReceive",
           "signature": "10 01 08 1E 00 1C 1D 1D 05 1C 1C 02 08 08 0A",
@@ -2057,7 +2057,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.SqlCommandIntegration",
           "method": "SystemSqlClientExecuteReader",
           "signature": "00 04 1C 1C 08 08 0A",
@@ -2081,7 +2081,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.SqlCommandIntegration",
           "method": "SystemSqlClientExecuteReader",
           "signature": "00 04 1C 1C 08 08 0A",
@@ -2105,7 +2105,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.SqlCommandIntegration",
           "method": "MicrosoftSqlClientExecuteReader",
           "signature": "00 04 1C 1C 08 08 0A",
@@ -2130,7 +2130,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.SqlCommandIntegration",
           "method": "SystemSqlClientExecuteReaderWithBehavior",
           "signature": "00 05 1C 1C 08 08 08 0A",
@@ -2155,7 +2155,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.SqlCommandIntegration",
           "method": "SystemSqlClientExecuteReaderWithBehavior",
           "signature": "00 05 1C 1C 08 08 08 0A",
@@ -2180,7 +2180,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.SqlCommandIntegration",
           "method": "MicrosoftSqlClientExecuteReaderWithBehavior",
           "signature": "00 05 1C 1C 08 08 08 0A",
@@ -2206,7 +2206,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.SqlCommandIntegration",
           "method": "SystemSqlClientExecuteReaderAsync",
           "signature": "00 06 1C 1C 08 1C 08 08 0A",
@@ -2232,7 +2232,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.SqlCommandIntegration",
           "method": "SystemSqlClientExecuteReaderAsync",
           "signature": "00 06 1C 1C 08 1C 08 08 0A",
@@ -2258,7 +2258,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.SqlCommandIntegration",
           "method": "MicrosoftSqlClientExecuteReaderAsync",
           "signature": "00 06 1C 1C 08 1C 08 08 0A",
@@ -2282,7 +2282,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.SqlCommandIntegration",
           "method": "SystemSqlClientExecuteNonQuery",
           "signature": "00 04 08 1C 08 08 0A",
@@ -2306,7 +2306,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.SqlCommandIntegration",
           "method": "SystemSqlClientExecuteNonQuery",
           "signature": "00 04 08 1C 08 08 0A",
@@ -2330,7 +2330,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.SqlCommandIntegration",
           "method": "MicrosoftSqlClientExecuteNonQuery",
           "signature": "00 04 08 1C 08 08 0A",
@@ -2355,7 +2355,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.SqlCommandIntegration",
           "method": "SystemSqlClientExecuteNonQueryAsync",
           "signature": "00 05 1C 1C 1C 08 08 0A",
@@ -2380,7 +2380,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.SqlCommandIntegration",
           "method": "SystemSqlClientExecuteNonQueryAsync",
           "signature": "00 05 1C 1C 1C 08 08 0A",
@@ -2405,7 +2405,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.SqlCommandIntegration",
           "method": "MicrosoftSqlClientExecuteNonQueryAsync",
           "signature": "00 05 1C 1C 1C 08 08 0A",
@@ -2429,7 +2429,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.SqlCommandIntegration",
           "method": "SystemSqlClientExecuteScalar",
           "signature": "00 04 1C 1C 08 08 0A",
@@ -2453,7 +2453,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.SqlCommandIntegration",
           "method": "SystemSqlClientExecuteScalar",
           "signature": "00 04 1C 1C 08 08 0A",
@@ -2477,7 +2477,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.SqlCommandIntegration",
           "method": "MicrosoftSqlClientExecuteScalar",
           "signature": "00 04 1C 1C 08 08 0A",
@@ -2502,7 +2502,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.SqlCommandIntegration",
           "method": "SystemSqlClientExecuteScalarAsync",
           "signature": "00 05 1C 1C 1C 08 08 0A",
@@ -2527,7 +2527,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.SqlCommandIntegration",
           "method": "SystemSqlClientExecuteScalarAsync",
           "signature": "00 05 1C 1C 1C 08 08 0A",
@@ -2552,7 +2552,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.AdoNet.SqlCommandIntegration",
           "method": "MicrosoftSqlClientExecuteScalarAsync",
           "signature": "00 05 1C 1C 1C 08 08 0A",
@@ -2586,7 +2586,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis.ConnectionMultiplexer",
           "method": "ExecuteSyncImpl",
           "signature": "10 01 07 1E 00 1C 1C 1C 1C 08 08 0A",
@@ -2615,7 +2615,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis.ConnectionMultiplexer",
           "method": "ExecuteSyncImpl",
           "signature": "10 01 07 1E 00 1C 1C 1C 1C 08 08 0A",
@@ -2645,7 +2645,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis.ConnectionMultiplexer",
           "method": "ExecuteAsyncImpl",
           "signature": "10 01 08 1C 1C 1C 1C 1C 1C 08 08 0A",
@@ -2675,7 +2675,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis.ConnectionMultiplexer",
           "method": "ExecuteAsyncImpl",
           "signature": "10 01 08 1C 1C 1C 1C 1C 1C 08 08 0A",
@@ -2704,7 +2704,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis.RedisBatch",
           "method": "ExecuteAsync",
           "signature": "10 01 07 1C 1C 1C 1C 1C 08 08 0A",
@@ -2733,7 +2733,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.StackExchange.Redis.RedisBatch",
           "method": "ExecuteAsync",
           "signature": "10 01 07 1C 1C 1C 1C 1C 08 08 0A",
@@ -2764,7 +2764,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.WcfIntegration",
           "method": "HandleRequest",
           "signature": "00 06 02 1C 1C 1C 08 08 0A",
@@ -2793,7 +2793,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.WebRequestIntegration",
           "method": "GetRequestStream",
           "signature": "00 04 1C 1C 08 08 0A",
@@ -2817,7 +2817,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.WebRequestIntegration",
           "method": "GetRequestStream",
           "signature": "00 04 1C 1C 08 08 0A",
@@ -2841,7 +2841,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.WebRequestIntegration",
           "method": "GetResponse",
           "signature": "00 04 1C 1C 08 08 0A",
@@ -2865,7 +2865,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.WebRequestIntegration",
           "method": "GetResponse",
           "signature": "00 04 1C 1C 08 08 0A",
@@ -2889,7 +2889,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.WebRequestIntegration",
           "method": "GetResponseAsync",
           "signature": "00 04 1C 1C 08 08 0A",
@@ -2913,7 +2913,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.WebRequestIntegration",
           "method": "GetResponseAsync",
           "signature": "00 04 1C 1C 08 08 0A",
@@ -2942,7 +2942,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.Testing.XUnitIntegration",
           "method": "TestInvoker_RunAsync",
           "signature": "00 04 1C 1C 08 08 0A",
@@ -2966,7 +2966,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.Testing.XUnitIntegration",
           "method": "TestInvoker_RunAsync",
           "signature": "00 04 1C 1C 08 08 0A",
@@ -2990,7 +2990,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.Testing.XUnitIntegration",
           "method": "TestRunner_RunAsync",
           "signature": "00 04 1C 1C 08 08 0A",
@@ -3014,7 +3014,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.Testing.XUnitIntegration",
           "method": "TestRunner_RunAsync",
           "signature": "00 04 1C 1C 08 08 0A",
@@ -3042,7 +3042,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.Testing.XUnitIntegration",
           "method": "AssemblyRunner_RunAsync",
           "signature": "00 08 1C 1C 1C 1C 1C 1C 08 08 0A",
@@ -3070,7 +3070,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.Testing.XUnitIntegration",
           "method": "AssemblyRunner_RunAsync",
           "signature": "00 08 1C 1C 1C 1C 1C 1C 08 08 0A",
@@ -3095,7 +3095,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.Testing.XUnitIntegration",
           "method": "TestOutputHelper_QueueTestOutput",
           "signature": "00 05 01 1C 1C 08 08 0A",
@@ -3120,7 +3120,7 @@
           "maximum_patch": 65535
         },
         "wrapper": {
-          "assembly": "Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+          "assembly": "Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
           "type": "Datadog.Trace.ClrProfiler.Integrations.Testing.XUnitIntegration",
           "method": "TestOutputHelper_QueueTestOutput",
           "signature": "00 05 01 1C 1C 08 08 0A",
