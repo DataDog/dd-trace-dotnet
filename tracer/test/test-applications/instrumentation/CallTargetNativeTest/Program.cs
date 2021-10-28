@@ -1,9 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler;
 
 namespace CallTargetNativeTest
 {
@@ -14,6 +17,43 @@ namespace CallTargetNativeTest
         private static Task CompletedTask = Task.FromResult(0);
 
         static void Main(string[] args)
+        {
+            InjectCallTargetDefinitions();
+            RunTests(args);
+        }
+
+        static void InjectCallTargetDefinitions()
+        {
+            var definitionsList = new List<NativeCallTargetDefinition>();
+            definitionsList.Add(new("CallTargetNativeTest", "CallTargetNativeTest.With0ArgumentsThrowOnAsyncEnd", "Wait2Seconds", new[] { "_" }, 0, 0, 0, 1, 1, 1, "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb", "CallTargetNativeTest.NoOp.Noop0ArgumentsIntegration"));
+
+            for (var i = 0; i < 10; i++)
+            {
+                var signaturesArray = Enumerable.Range(0, i + 1).Select(i => "_").ToArray();
+                var withTypes = new string[]
+                {
+                    $"CallTargetNativeTest.With{i}Arguments",
+                    $"CallTargetNativeTest.With{i}ArgumentsGeneric`1",
+                    $"CallTargetNativeTest.With{i}ArgumentsStruct",
+                    $"CallTargetNativeTest.With{i}ArgumentsStatic",
+                };
+
+                var wrapperTypeVoid = $"CallTargetNativeTest.NoOp.Noop{i}ArgumentsVoidIntegration";
+                var wrapperType = $"CallTargetNativeTest.NoOp.Noop{i}ArgumentsIntegration";
+
+                foreach (var tType in withTypes)
+                {
+                    definitionsList.Add(new("CallTargetNativeTest", tType, "VoidMethod", signaturesArray, 0, 0, 0, 1, 1, 1, "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb", wrapperTypeVoid));
+                    definitionsList.Add(new("CallTargetNativeTest", tType, "ReturnValueMethod", signaturesArray, 0, 0, 0, 1, 1, 1, "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb", wrapperType));
+                    definitionsList.Add(new("CallTargetNativeTest", tType, "ReturnReferenceMethod", signaturesArray, 0, 0, 0, 1, 1, 1, "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb", wrapperType));
+                    definitionsList.Add(new("CallTargetNativeTest", tType, "ReturnGenericMethod", signaturesArray, 0, 0, 0, 1, 1, 1, "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb", wrapperType));
+                }
+            }
+
+            NativeMethods.InitializeProfiler(Guid.NewGuid().ToString("N"), definitionsList.ToArray());
+        }
+
+        static void RunTests(string[] args)
         {
             switch (args[0])
             {
@@ -91,7 +131,6 @@ namespace CallTargetNativeTest
             Thread.Sleep(5000);
 #endif
         }
-
 
         private static void Argument0()
         {
