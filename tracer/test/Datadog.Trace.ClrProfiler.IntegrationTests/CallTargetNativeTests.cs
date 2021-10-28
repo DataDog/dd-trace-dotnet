@@ -12,7 +12,6 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    /*
     public class CallTargetNativeTests : TestHelper
     {
         public CallTargetNativeTests(ITestOutputHelper output)
@@ -26,7 +25,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             for (int i = 0; i < 10; i++)
             {
                 bool fastPath = i < 9;
-                yield return new object[] { i, fastPath };
                 yield return new object[] { i, fastPath };
             }
         }
@@ -82,5 +80,4 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
     }
-    */
 }

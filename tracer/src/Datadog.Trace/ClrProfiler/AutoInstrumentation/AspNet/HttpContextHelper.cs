@@ -10,7 +10,7 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.ClrProfiler.Integrations.AspNet
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 {
     internal static class HttpContextHelper
     {

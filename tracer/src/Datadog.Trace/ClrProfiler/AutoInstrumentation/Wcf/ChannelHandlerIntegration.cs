@@ -11,7 +11,6 @@ using System.Linq;
 using System.Net;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.ClrProfiler.Emit;
-using Datadog.Trace.ClrProfiler.Integrations;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;

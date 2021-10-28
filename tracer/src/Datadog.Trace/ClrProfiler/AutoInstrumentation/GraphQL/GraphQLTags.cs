@@ -7,10 +7,12 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Tagging;
 
-namespace Datadog.Trace.ClrProfiler.Integrations
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
 {
     internal class GraphQLTags : InstrumentationTags
     {
+        private const string IntegrationName = nameof(IntegrationIds.GraphQL);
+
         protected static readonly IProperty<string>[] GraphQLTagsProperties =
             InstrumentationTagsProperties.Concat(
                 new ReadOnlyProperty<GraphQLTags, string>(Trace.Tags.InstrumentationName, t => t.InstrumentationName),
@@ -21,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         public override string SpanKind => SpanKinds.Server;
 
-        public string InstrumentationName => GraphQLIntegration.IntegrationName;
+        public string InstrumentationName => IntegrationName;
 
         public string Language => TracerConstants.Language;
 

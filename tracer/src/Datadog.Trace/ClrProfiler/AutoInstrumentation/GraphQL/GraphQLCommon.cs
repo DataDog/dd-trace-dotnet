@@ -5,7 +5,6 @@
 
 using System;
 using System.Text;
-using Datadog.Trace.ClrProfiler.Integrations;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;

@@ -7,7 +7,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Tagging;
 
-namespace Datadog.Trace.ClrProfiler.Integrations
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 {
     internal class MongoDbTags : InstrumentationTags
     {

@@ -5,11 +5,10 @@
 
 using System;
 using System.Threading;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.ClrProfiler.Integrations
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
 {
     internal static class ElasticsearchNetCommon
     {

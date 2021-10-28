@@ -6,7 +6,7 @@
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Tagging;
 
-namespace Datadog.Trace.ClrProfiler.Integrations
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
 {
     internal class ElasticsearchTags : InstrumentationTags
     {

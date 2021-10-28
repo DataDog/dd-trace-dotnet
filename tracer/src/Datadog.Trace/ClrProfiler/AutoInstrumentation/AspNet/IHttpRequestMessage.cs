@@ -1,33 +1,35 @@
-// <copyright file="ControllerContextStruct.cs" company="Datadog">
+// <copyright file="IHttpRequestMessage.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 #if NETFRAMEWORK
+using System;
 using System.ComponentModel;
-using System.Web;
-using System.Web.Routing;
-using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.Integrations.AspNet
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 {
     /// <summary>
-    /// ControllerContext struct copy target for ducktyping
+    /// HttpRequestMessage interface for ducktyping
     /// </summary>
-    [DuckCopy]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public struct ControllerContextStruct
+    public interface IHttpRequestMessage
     {
         /// <summary>
-        /// Gets the HttpContext
+        /// Gets the Http Method
         /// </summary>
-        public HttpContextBase HttpContext;
+        HttpMethodStruct Method { get; }
 
         /// <summary>
-        /// Gets the RouteData
+        /// Gets the request uri
         /// </summary>
-        public RouteData RouteData;
+        Uri RequestUri { get; }
+
+        /// <summary>
+        /// Gets the request headers
+        /// </summary>
+        IRequestHeaders Headers { get; }
     }
 }
 #endif

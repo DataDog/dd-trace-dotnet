@@ -1,0 +1,122 @@
+// <copyright file="RabbitMQIntegration.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
+
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
+{
+    /// <summary>
+    /// Tracing integration for RabbitMQ.Client
+    /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static class RabbitMQIntegration
+    {
+        internal const string IntegrationName = nameof(IntegrationIds.RabbitMQ);
+
+        private const string OperationName = "amqp.command";
+        private const string ServiceName = "rabbitmq";
+
+        internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RabbitMQIntegration));
+
+        internal static Scope CreateScope(Tracer tracer, out RabbitMQTags tags, string command, string spanKind, ISpanContext parentContext = null, DateTimeOffset? startTime = null, string queue = null, string exchange = null, string routingKey = null)
+        {
+            tags = null;
+
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            {
+                // integration disabled, don't create a scope, skip this trace
+                return null;
+            }
+
+            Scope scope = null;
+
+            try
+            {
+                Span parent = tracer.ActiveScope?.Span;
+
+                tags = new RabbitMQTags(spanKind);
+                string serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
+                scope = tracer.StartActiveWithTags(OperationName, parent: parentContext, tags: tags, serviceName: serviceName, startTime: startTime);
+                var span = scope.Span;
+
+                span.Type = SpanTypes.Queue;
+                span.ResourceName = command;
+                tags.Command = command;
+
+                tags.Queue = queue;
+                tags.Exchange = exchange;
+                tags.RoutingKey = routingKey;
+
+                tags.InstrumentationName = IntegrationName;
+                tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error creating or populating scope.");
+            }
+
+            // always returns the scope, even if it's null because we couldn't create it,
+            // or we couldn't populate it completely (some tags is better than no tags)
+            return scope;
+        }
+
+        /********************
+         * Duck Typing Types
+         */
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable SA1201 // Elements must appear in the correct order
+#pragma warning disable SA1600 // Elements must be documented
+        [DuckCopy]
+        public struct BasicGetResultStruct
+        {
+            /// <summary>
+            /// Gets the message body of the result
+            /// </summary>
+            public BodyStruct Body;
+
+            /// <summary>
+            /// Gets the message properties
+            /// </summary>
+            public IBasicProperties BasicProperties;
+        }
+
+        public interface IBasicProperties
+        {
+            /// <summary>
+            /// Gets or sets the headers of the message
+            /// </summary>
+            /// <returns>Message headers</returns>
+            IDictionary<string, object> Headers { get; set; }
+
+            /// <summary>
+            /// Gets the delivery mode of the message
+            /// </summary>
+            byte DeliveryMode { get; }
+
+            /// <summary>
+            /// Returns true if the DeliveryMode property is present
+            /// </summary>
+            /// <returns>true if the DeliveryMode property is present</returns>
+            bool IsDeliveryModePresent();
+        }
+
+        [DuckCopy]
+        public struct BodyStruct
+        {
+            /// <summary>
+            /// Gets the length of the message body
+            /// </summary>
+            public int Length;
+        }
+    }
+}

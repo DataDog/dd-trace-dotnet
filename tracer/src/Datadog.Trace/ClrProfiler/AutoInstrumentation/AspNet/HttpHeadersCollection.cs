@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Headers;
 
-namespace Datadog.Trace.ClrProfiler.Integrations.AspNet
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 {
     internal readonly struct HttpHeadersCollection : IHeadersCollection
     {

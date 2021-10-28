@@ -7,7 +7,7 @@
 
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.Integrations.AspNet
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 {
     /// <summary>
     /// Http response struct copy target for ducktyping

@@ -7,7 +7,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 
-namespace Datadog.Trace.ClrProfiler.Integrations.AspNet
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 {
     /// <summary>
     /// RequestHeaders interface for ducktyping

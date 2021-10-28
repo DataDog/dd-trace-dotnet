@@ -8,7 +8,7 @@ using System.ComponentModel;
 #if NETFRAMEWORK
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
-namespace Datadog.Trace.ClrProfiler.Integrations.AspNet
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 {
     /// <summary>
     /// IHttpRoute proxy for ducktyping
