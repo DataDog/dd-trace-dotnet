@@ -274,7 +274,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
 
     const auto is_instrumentation_assembly = assembly_info.name == managed_profiler_name;
 
-    if (is_instrumentation_assembly || Logger::IsDebugEnabled())
+    if (is_instrumentation_assembly)
     {
         if (Logger::IsDebugEnabled())
         {
@@ -306,52 +306,49 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
                           " AssemblyVersion=", assembly_version);
         }
 
-        if (is_instrumentation_assembly)
+        const auto expected_assembly_reference = trace::AssemblyReference(managed_profiler_full_assembly_version);
+
+        // used multiple times for logging
+        const auto expected_version = expected_assembly_reference.version.str();
+
+        bool is_viable_version;
+
+        if (runtime_information_.is_core())
         {
-            const auto expected_assembly_reference = trace::AssemblyReference(managed_profiler_full_assembly_version);
+            is_viable_version = (assembly_metadata.version >= expected_assembly_reference.version);
+        }
+        else
+        {
+            is_viable_version = (assembly_metadata.version == expected_assembly_reference.version);
+        }
 
-            // used multiple times for logging
-            const auto expected_version = expected_assembly_reference.version.str();
+        // Check that Major.Minor.Build matches the profiler version.
+        // On .NET Core, allow managed library to be a higher version than the native library.
+        if (is_viable_version)
+        {
+            Logger::Info("AssemblyLoadFinished: Datadog.Trace.dll v", assembly_version, " matched profiler version v",
+                         expected_version);
+            managed_profiler_loaded_app_domains.insert(assembly_info.app_domain_id);
 
-            bool is_viable_version;
-
-            if (runtime_information_.is_core())
+            if (runtime_information_.is_desktop() && corlib_module_loaded)
             {
-                is_viable_version = (assembly_metadata.version >= expected_assembly_reference.version);
-            }
-            else
-            {
-                is_viable_version = (assembly_metadata.version == expected_assembly_reference.version);
-            }
-
-            // Check that Major.Minor.Build matches the profiler version.
-            // On .NET Core, allow managed library to be a higher version than the native library.
-            if (is_viable_version)
-            {
-                Logger::Info("AssemblyLoadFinished: Datadog.Trace.dll v", assembly_version,
-                             " matched profiler version v", expected_version);
-                managed_profiler_loaded_app_domains.insert(assembly_info.app_domain_id);
-
-                if (runtime_information_.is_desktop() && corlib_module_loaded)
+                // Set the managed_profiler_loaded_domain_neutral flag whenever the
+                // managed profiler is loaded shared
+                if (assembly_info.app_domain_id == corlib_app_domain_id)
                 {
-                    // Set the managed_profiler_loaded_domain_neutral flag whenever the
-                    // managed profiler is loaded shared
-                    if (assembly_info.app_domain_id == corlib_app_domain_id)
-                    {
-                        Logger::Info("AssemblyLoadFinished: Datadog.Trace.dll was loaded domain-neutral");
-                        managed_profiler_loaded_domain_neutral = true;
-                    }
-                    else
-                    {
-                        Logger::Info("AssemblyLoadFinished: Datadog.Trace.dll was not loaded domain-neutral");
-                    }
+                    Logger::Info("AssemblyLoadFinished: Datadog.Trace.dll was loaded domain-neutral");
+                    managed_profiler_loaded_domain_neutral = true;
+                }
+                else
+                {
+                    Logger::Info("AssemblyLoadFinished: Datadog.Trace.dll was not loaded domain-neutral");
                 }
             }
-            else
-            {
-                Logger::Warn("AssemblyLoadFinished: Datadog.Trace.dll v", assembly_version,
-                             " did not match profiler version v", expected_version);
-            }
+        }
+        else
+        {
+            Logger::Warn("AssemblyLoadFinished: Datadog.Trace.dll v", assembly_version,
+                         " did not match profiler version v", expected_version);
         }
     }
 
@@ -480,7 +477,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         return S_OK;
     }
 
-    const auto module_info = GetModuleInfo(this->info_, module_id);
+    const auto& module_info = GetModuleInfo(this->info_, module_id);
     if (!module_info.IsValid())
     {
         return S_OK;
@@ -655,21 +652,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
         return S_OK;
     }
 
-    if (Logger::IsDebugEnabled())
-    {
-        const auto module_info = GetModuleInfo(this->info_, module_id);
-
-        if (module_info.IsValid())
-        {
-            Logger::Debug("ModuleUnloadStarted: ", module_id, " ", module_info.assembly.name, " AppDomain ",
-                          module_info.assembly.app_domain_id, " ", module_info.assembly.app_domain_name);
-        }
-        else
-        {
-            Logger::Debug("ModuleUnloadStarted: ", module_id);
-        }
-    }
-
     // take this lock so we block until the
     // module metadata is not longer being used
     std::lock_guard<std::mutex> guard(module_ids_lock_);
@@ -680,14 +662,33 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
         return S_OK;
     }
 
-    // remove module metadata from map
-    const auto& moduleInfo = GetModuleInfo(info_, module_id);
-    const auto appDomainId = moduleInfo.assembly.app_domain_id;
-
-    // remove appdomain id from managed_profiler_loaded_app_domains set
-    if (managed_profiler_loaded_app_domains.find(appDomainId) != managed_profiler_loaded_app_domains.end())
+    const auto& moduleInfo = GetModuleInfo(this->info_, module_id);
+    
+    if (moduleInfo.IsValid())
     {
-        managed_profiler_loaded_app_domains.erase(appDomainId);
+        if (Logger::IsDebugEnabled())
+        {
+            Logger::Debug("ModuleUnloadStarted: ", module_id, " ", moduleInfo.assembly.name, " AppDomain ",
+                          moduleInfo.assembly.app_domain_id, " ", moduleInfo.assembly.app_domain_name);
+        }
+    }
+    else
+    {
+        Logger::Debug("ModuleUnloadStarted: ", module_id);
+        return S_OK;
+    }
+
+    const auto is_instrumentation_assembly = moduleInfo.assembly.name == managed_profiler_name;
+
+    if (is_instrumentation_assembly)
+    {
+        const auto appDomainId = moduleInfo.assembly.app_domain_id;
+
+        // remove appdomain id from managed_profiler_loaded_app_domains set
+        if (managed_profiler_loaded_app_domains.find(appDomainId) != managed_profiler_loaded_app_domains.end())
+        {
+            managed_profiler_loaded_app_domains.erase(appDomainId);
+        }
     }
 
     if (rejit_handler != nullptr)
@@ -785,7 +786,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
         return S_OK;
     }
 
-    const auto module_info = GetModuleInfo(this->info_, module_id);
+    const auto& module_info = GetModuleInfo(this->info_, module_id);
 
     bool has_loader_injected_in_appdomain = first_jit_compilation_app_domains.find(module_info.assembly.app_domain_id) !=
                                             first_jit_compilation_app_domains.end();
@@ -813,7 +814,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
         module_info.assembly.app_domain_id, &corAssemblyProperty);
 
     // get function info
-    const auto caller = GetFunctionInfo(module_metadata->metadata_import, function_token);
+    const auto& caller = GetFunctionInfo(module_metadata->metadata_import, function_token);
     if (!caller.IsValid())
     {
         return S_OK;
@@ -2425,13 +2426,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetReJITParameters(ModuleID moduleId, mdM
 HRESULT STDMETHODCALLTYPE CorProfiler::ReJITCompilationFinished(FunctionID functionId, ReJITID rejitId,
                                                                 HRESULT hrStatus, BOOL fIsSafeToBlock)
 {
-    if (!is_attached_)
+    if (is_attached_)
     {
-        return S_OK;
+        Logger::Debug("ReJITCompilationFinished: [functionId: ", functionId, ", rejitId: ", rejitId,
+                      ", hrStatus: ", hrStatus, ", safeToBlock: ", fIsSafeToBlock, "]");
     }
 
-    Logger::Debug("ReJITCompilationFinished: [functionId: ", functionId, ", rejitId: ", rejitId, ", hrStatus: ", hrStatus,
-                  ", safeToBlock: ", fIsSafeToBlock, "]");
     return S_OK;
 }
 
@@ -2440,11 +2440,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ReJITError(ModuleID moduleId, mdMethodDef
 {
     if (!is_attached_)
     {
-        return S_OK;
+        Logger::Warn("ReJITError: [functionId: ", functionId, ", moduleId: ", moduleId, ", methodId: ", methodId,
+                     ", hrStatus: ", hrStatus, "]");
     }
 
-    Logger::Warn("ReJITError: [functionId: ", functionId, ", moduleId: ", moduleId, ", methodId: ", methodId,
-                 ", hrStatus: ", hrStatus, "]");
     return S_OK;
 }
 
@@ -2481,8 +2480,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         return S_OK;
     }
 
-    const auto module_info = GetModuleInfo(this->info_, module_id);
-    const auto appDomainId = module_info.assembly.app_domain_id;
+    const auto& module_info = GetModuleInfo(this->info_, module_id);
+    const auto& appDomainId = module_info.assembly.app_domain_id;
 
     const bool has_loader_injected_in_appdomain =
         first_jit_compilation_app_domains.find(appDomainId) !=
