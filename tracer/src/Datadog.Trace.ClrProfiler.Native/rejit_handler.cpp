@@ -106,7 +106,7 @@ void RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
     ModuleID currentModuleId = m_module->GetModuleId();
     mdMethodDef currentMethodDef = m_methodDef;
     RejitHandler* handler = m_module->GetHandler();
-    ICorProfilerInfo6* pInfo = handler->GetCorProfilerInfo();
+    ICorProfilerInfo7* pInfo = handler->GetCorProfilerInfo();
 
     if (pInfo != nullptr)
     {
@@ -370,7 +370,7 @@ void RejitHandler::RequestRejit(std::vector<ModuleID>& modulesVector,
     }
 }
 
-RejitHandler::RejitHandler(ICorProfilerInfo6* pInfo,
+RejitHandler::RejitHandler(ICorProfilerInfo7* pInfo,
                            std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> rewriteCallback)
 {
     m_profilerInfo = pInfo;
@@ -590,7 +590,7 @@ HRESULT RejitHandler::NotifyReJITCompilationStarted(FunctionID functionId, ReJIT
     return S_OK;
 }
 
-ICorProfilerInfo6* RejitHandler::GetCorProfilerInfo()
+ICorProfilerInfo7* RejitHandler::GetCorProfilerInfo()
 {
     return m_profilerInfo;
 }
