@@ -125,6 +125,7 @@
     </MSBuild>
   </Target>
 
-  <Import Project="build\PackageVersionsLatestMinors.g.props" />
+  <Import Condition="'$(TestAllPackageVersions)'=='true' AND '$(IncludeMinorPackageVersions)'!='true'" Project="build\PackageVersionsLatestMinors.g.props" />
+  <Import Condition="'$(TestAllPackageVersions)'=='true' AND '$(IncludeMinorPackageVersions)'=='true'" Project="build\PackageVersionsLatestMajors.g.props" />
 
 </Project>

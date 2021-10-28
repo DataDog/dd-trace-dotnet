@@ -297,7 +297,8 @@ services:
       - framework=${framework:-netcoreapp3.1}
       - baseImage=${baseImage:-default}
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-0}
-      - TestAllPackageVersions=${TestAllPackageVersions:-false}
+      - TestAllPackageVersions=${TestAllPackageVersions:-true}
+      - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
       - MONGO_HOST=mongo
       - SERVICESTACK_REDIS_HOST=servicestackredis:6379
       - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
@@ -369,7 +370,8 @@ services:
       - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
       - framework=${framework:-netcoreapp3.1}
       - baseImage=${baseImage:-debian}
-      - TestAllPackageVersions=${TestAllPackageVersions:-false}
+      - TestAllPackageVersions=${TestAllPackageVersions:-true}
+      - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-0}
       - MONGO_HOST=mongo_arm64
       - SERVICESTACK_REDIS_HOST=servicestackredis_arm64:6379
