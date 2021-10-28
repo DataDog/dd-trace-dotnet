@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Tagging;
 
@@ -11,8 +10,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
 {
     internal class GraphQLTags : InstrumentationTags
     {
-        private const string IntegrationName = nameof(IntegrationIds.GraphQL);
-
         protected static readonly IProperty<string>[] GraphQLTagsProperties =
             InstrumentationTagsProperties.Concat(
                 new ReadOnlyProperty<GraphQLTags, string>(Trace.Tags.InstrumentationName, t => t.InstrumentationName),
@@ -23,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
 
         public override string SpanKind => SpanKinds.Server;
 
-        public string InstrumentationName => IntegrationName;
+        public string InstrumentationName => GraphQLCommon.IntegrationName;
 
         public string Language => TracerConstants.Language;
 
