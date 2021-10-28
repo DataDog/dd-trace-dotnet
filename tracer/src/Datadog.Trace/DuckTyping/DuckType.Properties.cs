@@ -16,7 +16,14 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     public static partial class DuckType
     {
-        private static MethodBuilder GetPropertyGetMethod(TypeBuilder proxyTypeBuilder, Type targetType, MemberInfo proxyMember, PropertyInfo targetProperty, FieldInfo instanceField)
+        private static MethodBuilder GetPropertyGetMethod(
+            TypeBuilder proxyTypeBuilder,
+            Type targetType,
+            MemberInfo proxyMember,
+            PropertyInfo targetProperty,
+            FieldInfo instanceField,
+            Func<LazyILGenerator, Type, Type> duckCastInnerToOuterFunc,
+            Func<Type, Type, bool> needsDuckChaining)
         {
             string proxyMemberName = proxyMember.Name;
             Type proxyMemberReturnType = typeof(object);
@@ -143,18 +150,16 @@ namespace Datadog.Trace.DuckTyping
 
             // Handle the return value
             // Check if the type can be converted or if we need to enable duck chaining
-            if (NeedsDuckChaining(targetProperty.PropertyType, proxyMemberReturnType))
+            if (needsDuckChaining(targetProperty.PropertyType, proxyMemberReturnType))
             {
                 if (UseDirectAccessTo(proxyTypeBuilder, targetProperty.PropertyType) && targetProperty.PropertyType.IsValueType)
                 {
                     il.Emit(OpCodes.Box, targetProperty.PropertyType);
                 }
 
-                // We call DuckType.CreateCache<>.Create()
-                MethodInfo getProxyMethodInfo = typeof(CreateCache<>)
-                    .MakeGenericType(proxyMemberReturnType).GetMethod("Create");
-
-                il.Emit(OpCodes.Call, getProxyMethodInfo);
+                // If this is a forward duck type, we need to create a duck type from the original instance
+                // If this is a reverse duck type, we need to cast to IDuckType and extract the original instance
+                duckCastInnerToOuterFunc(il, proxyMemberReturnType);
             }
             else if (returnType != proxyMemberReturnType)
             {
@@ -168,7 +173,14 @@ namespace Datadog.Trace.DuckTyping
             return proxyMethod;
         }
 
-        private static MethodBuilder GetPropertySetMethod(TypeBuilder proxyTypeBuilder, Type targetType, MemberInfo proxyMember, PropertyInfo targetProperty, FieldInfo instanceField)
+        private static MethodBuilder GetPropertySetMethod(
+            TypeBuilder proxyTypeBuilder,
+            Type targetType,
+            MemberInfo proxyMember,
+            PropertyInfo targetProperty,
+            FieldInfo instanceField,
+            Func<LazyILGenerator, Type, Type> duckCastOuterToInner,
+            Func<Type, Type, bool> needsDuckChaining)
         {
             string proxyMemberName = null;
             Type[] proxyParameterTypes = Type.EmptyTypes;
@@ -216,16 +228,15 @@ namespace Datadog.Trace.DuckTyping
                 Type targetParamType = targetParametersTypes[pIndex];
 
                 // Check if the type can be converted of if we need to enable duck chaining
-                if (NeedsDuckChaining(targetParamType, proxyParamType))
+                if (needsDuckChaining(targetParamType, proxyParamType))
                 {
                     // Load the argument and cast it as Duck type
                     il.WriteLoadArgument(pIndex, false);
-                    il.Emit(OpCodes.Castclass, typeof(IDuckType));
 
-                    // Call IDuckType.Instance property to get the actual value
-                    il.EmitCall(OpCodes.Callvirt, DuckTypeInstancePropertyInfo.GetMethod, null);
-
-                    targetParamType = typeof(object);
+                    // If this is a forward duck type, we need to cast to IDuckType and extract the original instance
+                    // and set the targetParamType to object
+                    // If this is a reverse duck type, we need to create a duck type from the original instance
+                    targetParamType = duckCastOuterToInner(il, targetParamType);
                 }
                 else
                 {

@@ -334,6 +334,8 @@ namespace Datadog.Trace.DuckTyping
                 }
                 else if (expectedUnderlyingType != typeof(object))
                 {
+                    // WARNING: If the actual type cannot be cast to expectedUnderlyingType,
+                    // this will throw an exception at runtime when accessing the member
                     il.Emit(OpCodes.Castclass, expectedUnderlyingType);
                 }
             }

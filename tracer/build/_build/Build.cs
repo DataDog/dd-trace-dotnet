@@ -36,8 +36,11 @@ partial class Build : NukeBuild
     [Parameter("The TargetFramework to execute when running or building a sample app, or linux integration tests")]
     readonly TargetFramework Framework;
 
-    [Parameter("Should all versions of integration NuGet packages be tested, or just the defaults")]
+    [Parameter("Should all versions of integration NuGet packages be tested")]
     readonly bool TestAllPackageVersions;
+
+    [Parameter("Should minor versions of integration NuGet packages be included")]
+    readonly bool IncludeMinorPackageVersions;
 
     [Parameter("The location to create the monitoring home directory. Default is ./shared/bin/monitoring-home ")]
     readonly AbsolutePath MonitoringHome;

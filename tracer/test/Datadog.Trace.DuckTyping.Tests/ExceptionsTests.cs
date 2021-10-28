@@ -3,7 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+using System.Reflection;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Xunit;
 
 #pragma warning disable SA1201 // Elements must appear in the correct order
@@ -142,6 +145,189 @@ namespace Datadog.Trace.DuckTyping.Tests
             private readonly string _name = string.Empty;
 
             public string AvoidCompileError => _name;
+        }
+
+        // *
+
+        [Theory]
+        [InlineData(
+            typeof(IProxyAndTargetMethodReturnTypeMismatchExceptionVoid),
+            typeof(ProxyAndTargetMethodReturnTypeMismatchExceptionNonVoidClass))]
+        [InlineData(
+            typeof(IProxyAndTargetMethodReturnTypeMismatchExceptionNonVoid),
+            typeof(ProxyAndTargetMethodReturnTypeMismatchExceptionVoidClass))]
+        public void ProxyAndTargetMethodReturnTypeMismatchException(Type castTo, Type instanceType)
+        {
+            object target = Activator.CreateInstance(instanceType);
+            Action cast = () => target.DuckCast(castTo);
+
+            cast.Should()
+                .Throw<TargetInvocationException>()
+                .WithInnerExceptionExactly<DuckTypeProxyAndTargetMethodReturnTypeMismatchException>();
+        }
+
+        public interface IProxyAndTargetMethodReturnTypeMismatchExceptionVoid
+        {
+            void GetName();
+        }
+
+        public interface IProxyAndTargetMethodReturnTypeMismatchExceptionNonVoid
+        {
+            string GetName();
+        }
+
+        internal class ProxyAndTargetMethodReturnTypeMismatchExceptionNonVoidClass
+        {
+            public string GetName() => default;
+        }
+
+        internal class ProxyAndTargetMethodReturnTypeMismatchExceptionVoidClass
+        {
+            public void GetName()
+            {
+            }
+        }
+
+        // *
+
+        [Theory]
+        [InlineData(
+            typeof(IReverseProxyAndTargetMethodReturnTypeMismatchExceptionVoid),
+            typeof(ReverseProxyAndTargetMethodReturnTypeMismatchExceptionNonVoidClass))]
+        [InlineData(
+            typeof(IReverseProxyAndTargetMethodReturnTypeMismatchExceptionNonVoid),
+            typeof(ReverseProxyAndTargetMethodReturnTypeMismatchExceptionVoidClass))]
+        public void ReverseProxyAndTargetMethodReturnTypeMismatchException(Type typeToImplement, Type instanceType)
+        {
+            object target = Activator.CreateInstance(instanceType);
+            Action cast = () => target.DuckImplement(typeToImplement);
+
+            cast.Should()
+                .Throw<TargetInvocationException>()
+                .WithInnerExceptionExactly<DuckTypeProxyAndTargetMethodReturnTypeMismatchException>();
+        }
+
+        public interface IReverseProxyAndTargetMethodReturnTypeMismatchExceptionVoid
+        {
+            void GetName();
+        }
+
+        public interface IReverseProxyAndTargetMethodReturnTypeMismatchExceptionNonVoid
+        {
+            string GetName();
+        }
+
+        internal class ReverseProxyAndTargetMethodReturnTypeMismatchExceptionNonVoidClass
+        {
+            [DuckReverseMethod]
+            public string GetName() => default;
+        }
+
+        internal class ReverseProxyAndTargetMethodReturnTypeMismatchExceptionVoidClass
+        {
+            [DuckReverseMethod]
+            public void GetName()
+            {
+            }
+        }
+
+        // *
+
+        [Fact]
+        public void IncorrectReversePropertyUsageException()
+        {
+            object target = new IncorrectReversePropertyUsageExceptionClass();
+
+            Assert.Throws<DuckTypeIncorrectReversePropertyUsageException>(() =>
+            {
+                target.DuckCast<IIncorrectReversePropertyUsageException>();
+            });
+        }
+
+        public interface IIncorrectReversePropertyUsageException
+        {
+            [DuckReverseMethod]
+            string Name { get; set; }
+        }
+
+        internal class IncorrectReversePropertyUsageExceptionClass
+        {
+            public string Name { get; set; }
+        }
+
+        // *
+
+        [Fact]
+        public void IncorrectReverseMethodUsageException()
+        {
+            object target = new IncorrectReverseMethodUsageExceptionClass();
+
+            Assert.Throws<DuckTypeIncorrectReverseMethodUsageException>(() =>
+            {
+                target.DuckCast<IIncorrectReverseMethodUsageException>();
+            });
+        }
+
+        public interface IIncorrectReverseMethodUsageException
+        {
+            [DuckReverseMethod]
+            string GetName();
+        }
+
+        internal class IncorrectReverseMethodUsageExceptionClass
+        {
+            public string GetName() => default;
+        }
+
+        // *
+
+        [Fact]
+        public void ReverseProxyBaseIsStructException()
+        {
+            object target = new ReverseProxyBaseIsStructExceptionClass { Name = "Test" };
+
+            Action cast = () => target.DuckImplement(typeof(ReverseProxyBaseIsStructExceptionBase));
+            cast.Should()
+                .Throw<TargetInvocationException>()
+                .WithInnerExceptionExactly<DuckTypeReverseProxyBaseIsStructException>();
+        }
+
+        public struct ReverseProxyBaseIsStructExceptionBase
+        {
+            public string Name { get; set; }
+        }
+
+        internal class ReverseProxyBaseIsStructExceptionClass
+        {
+            [DuckReverseMethod]
+            public string Name { get; set; }
+        }
+
+        // *
+
+        [Fact]
+        public void ReverseProxyImplementorIsAbstractOrInterfaceException()
+        {
+            Action cast = () => DuckType
+                               .GetOrCreateReverseProxyType(
+                                    typeToDeriveFrom: typeof(IReverseProxyImplementorIsAbstractOrInterfaceExceptionBase),
+                                    delegationType: typeof(ReverseProxyImplementorIsAbstractOrInterfaceExceptionClass))
+                               .CreateInstance(new object());
+
+            cast.Should()
+                .Throw<TargetInvocationException>()
+                .WithInnerExceptionExactly<DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException>();
+        }
+
+        public interface IReverseProxyImplementorIsAbstractOrInterfaceExceptionBase
+        {
+            public string Name { get; set; }
+        }
+
+        internal abstract class ReverseProxyImplementorIsAbstractOrInterfaceExceptionClass
+        {
+            [DuckReverseMethod]
+            public abstract string Name { get; set; }
         }
 
         // *
@@ -436,6 +622,74 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 #endif
+
+        // *
+
+        [Theory]
+        [InlineData(typeof(ReverseProxyMustImplementGenericMethodAsGenericExceptionClass1))]
+        [InlineData(typeof(ReverseProxyMustImplementGenericMethodAsGenericExceptionClass2))]
+        [InlineData(typeof(ReverseProxyMustImplementGenericMethodAsGenericExceptionClass3))]
+        public void ReverseProxyMustImplementGenericMethodAsGenericException(Type implementationType)
+        {
+            object target = Activator.CreateInstance(implementationType);
+            Action cast = () => target.DuckImplement(typeof(IReverseProxyMustImplementGenericMethodAsGenericException));
+
+            cast.Should()
+                .Throw<TargetInvocationException>()
+                .WithInnerExceptionExactly<DuckTypeReverseProxyMustImplementGenericMethodAsGenericException>();
+        }
+
+        public interface IReverseProxyMustImplementGenericMethodAsGenericException
+        {
+            public void Add<TKey, TValue>(TKey key, TValue value);
+        }
+
+        public class ReverseProxyMustImplementGenericMethodAsGenericExceptionClass1
+        {
+            [DuckReverseMethod]
+            public void Add<TKey>(TKey key, object value)
+            {
+            }
+        }
+
+        public class ReverseProxyMustImplementGenericMethodAsGenericExceptionClass2
+        {
+            [DuckReverseMethod]
+            public void Add(string key, object value)
+            {
+            }
+        }
+
+        public class ReverseProxyMustImplementGenericMethodAsGenericExceptionClass3
+        {
+            [DuckReverseMethod(GenericParameterTypeNames = new[] { "System.Int32", "System.String" })]
+            public void Add(int key, string value)
+            {
+            }
+        }
+
+        // *
+
+        [Fact]
+        public void ReverseProxyMissingMethodImplementationException()
+        {
+            object target = new ReverseProxyMissingMethodImplementationExceptionClass();
+            Action cast = () => target.DuckImplement(typeof(IReverseProxyMissingMethodImplementationException));
+
+            cast.Should()
+                .Throw<TargetInvocationException>()
+                .WithInnerExceptionExactly<DuckTypeReverseProxyMissingMethodImplementationException>();
+        }
+
+        public interface IReverseProxyMissingMethodImplementationException
+        {
+            public void Add(int value1, int value2);
+        }
+
+        public class ReverseProxyMissingMethodImplementationExceptionClass
+        {
+        }
+
         // *
 
         [Fact]
@@ -469,6 +723,65 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         // *
 
+        [Theory]
+        [InlineData(typeof(ReverseAttributeParameterNamesMismatchExceptionClass1))]
+        [InlineData(typeof(ReverseAttributeParameterNamesMismatchExceptionClass2))]
+        public void ReverseAttributeParameterNamesMismatchException(Type duckType)
+        {
+            object target = Activator.CreateInstance(duckType);
+
+            Action cast = () => target.DuckImplement(typeof(IReverseAttributeParameterNamesMismatchException));
+
+            cast.Should()
+                .Throw<TargetInvocationException>()
+                .WithInnerExceptionExactly<DuckTypeReverseAttributeParameterNamesMismatchException>();
+        }
+
+        public interface IReverseAttributeParameterNamesMismatchException
+        {
+            public void Add(string key, string value);
+        }
+
+        public class ReverseAttributeParameterNamesMismatchExceptionClass1
+        {
+            [DuckReverseMethod(ParameterTypeNames = new[] { "System.String", "System.String", "System.String" })]
+            public virtual void Add(string key, string value)
+            {
+            }
+        }
+
+        public class ReverseAttributeParameterNamesMismatchExceptionClass2
+        {
+            [DuckReverseMethod(ParameterTypeNames = new[] { "System.String", })]
+            public virtual void Add(string key, string value)
+            {
+            }
+        }
+
+        [Fact]
+        public void NonSpecificExceptionDuringBuildingThrowsDuckTypeException()
+        {
+            object target = new ReverseProxyMissingPropertyImplementationExceptionClass();
+            Action cast = () => target.DuckImplement(typeof(IReverseProxyMissingPropertyImplementationException));
+
+            cast.Should()
+                .Throw<TargetInvocationException>()
+                .WithInnerExceptionExactly<DuckTypeException>();
+        }
+
+        public interface IReverseProxyMissingPropertyImplementationException
+        {
+            string Value { get; set; }
+        }
+
+        public class ReverseProxyMissingPropertyImplementationExceptionClass
+        {
+        }
+
+        // *
+
+        // *
+
         [Fact]
         public void ProxyTypeDefinitionIsNull()
         {
@@ -486,6 +799,69 @@ namespace Datadog.Trace.DuckTyping.Tests
             Assert.Throws<DuckTypeTargetObjectInstanceIsNull>(() =>
             {
                 DuckType.Create(typeof(ITargetObjectInstanceIsNull), null);
+            });
+        }
+
+        [Fact]
+        public void TargetObjectInstanceIsNullWithTryDuckCast()
+        {
+            Assert.Throws<DuckTypeTargetObjectInstanceIsNull>(() =>
+            {
+                DuckTypeExtensions.TryDuckCast(null, out ITargetObjectInstanceIsNull value);
+            });
+        }
+
+        [Fact]
+        public void TargetObjectInstanceIsNullWithTryDuckCast2()
+        {
+            Assert.Throws<DuckTypeTargetObjectInstanceIsNull>(() =>
+            {
+                DuckTypeExtensions.TryDuckCast(null, typeof(ITargetObjectInstanceIsNull), out var value);
+            });
+        }
+
+        [Fact]
+        public void TargetObjectInstanceIsNullWithDuckAs()
+        {
+            Assert.Throws<DuckTypeTargetObjectInstanceIsNull>(() =>
+            {
+                DuckTypeExtensions.DuckAs<ITargetObjectInstanceIsNull>(null);
+            });
+        }
+
+        [Fact]
+        public void TargetObjectInstanceIsNullWithDuckAs2()
+        {
+            Assert.Throws<DuckTypeTargetObjectInstanceIsNull>(() =>
+            {
+                DuckTypeExtensions.DuckAs(null, typeof(ITargetObjectInstanceIsNull));
+            });
+        }
+
+        [Fact]
+        public void TargetObjectInstanceIsNullWithDuckIs()
+        {
+            Assert.Throws<DuckTypeTargetObjectInstanceIsNull>(() =>
+            {
+                DuckTypeExtensions.DuckIs<ITargetObjectInstanceIsNull>(null);
+            });
+        }
+
+        [Fact]
+        public void TargetObjectInstanceIsNullWithDuckIs2()
+        {
+            Assert.Throws<DuckTypeTargetObjectInstanceIsNull>(() =>
+            {
+                DuckTypeExtensions.DuckIs(null, typeof(ITargetObjectInstanceIsNull));
+            });
+        }
+
+        [Fact]
+        public void TargetObjectInstanceIsNullWithTryDuckImplement()
+        {
+            Assert.Throws<DuckTypeTargetObjectInstanceIsNull>(() =>
+            {
+                DuckTypeExtensions.TryDuckImplement(null, typeof(ITargetObjectInstanceIsNull), out var value);
             });
         }
 

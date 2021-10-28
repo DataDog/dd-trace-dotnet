@@ -659,7 +659,8 @@ stages:
           baseImage: alpine
 
     variables:
-      TestAllPackageVersions:  $[or(eq(variables.isMainBranch, 'true'), eq(variables.perform_comprehensive_testing, 'true'))]
+      TestAllPackageVersions: true
+      IncludeMinorPackageVersions:  $[or(eq(variables.isMainBranch, 'true'), eq(variables.perform_comprehensive_testing, 'true'))]
 
     pool:
       vmImage: ubuntu-18.04
@@ -742,7 +743,8 @@ stages:
 
     - job: Test
       variables:
-        TestAllPackageVersions:  $[or(eq(variables.isMainBranch, 'true'), eq(variables.perform_comprehensive_testing, 'true'))]
+        TestAllPackageVersions: true
+        IncludeMinorPackageVersions:  $[or(eq(variables.isMainBranch, 'true'), eq(variables.perform_comprehensive_testing, 'true'))]
         publishTargetFramework: net5.0
         baseImage: debian
       workspace:

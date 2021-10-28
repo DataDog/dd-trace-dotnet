@@ -14,8 +14,6 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     public static class DuckTypeExtensions
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DuckType));
-
         /// <summary>
         /// Gets the duck type instance for the object implementing a base class or interface T
         /// </summary>
@@ -188,6 +186,48 @@ namespace Datadog.Trace.DuckTyping
                 return DuckType.CanCreate(targetType, instance);
             }
 
+            return false;
+        }
+
+        /// <summary>
+        /// Gets or creates a proxy that implements/derives from <paramref name="typeToDeriveFrom"/>,
+        /// and delegates implementations/overrides to <paramref name="instance"/>
+        /// </summary>
+        /// <param name="instance">The instance containing additional overrides/implementations</param>
+        /// <param name="typeToDeriveFrom">The type to derive from</param>
+        /// <returns>DuckType instance</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static object DuckImplement(this object instance, Type typeToDeriveFrom)
+            => DuckType.CreateReverse(typeToDeriveFrom, instance);
+
+        /// <summary>
+        /// Tries to create a proxy that implements/derives from <paramref name="typeToDeriveFrom"/>,
+        /// and delegates implementations/overrides to <paramref name="instance"/>
+        /// ducktype the object implementing a base class or interface T
+        /// </summary>
+        /// <param name="instance">The instance containing additional overrides/implementations</param>
+        /// <param name="typeToDeriveFrom">The type to derive from</param>
+        /// <param name="value">The Ducktype instance</param>
+        /// <returns>true if the object instance was ducktyped; otherwise, false.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryDuckImplement(this object instance, Type typeToDeriveFrom, out object value)
+        {
+            if (instance is null)
+            {
+                DuckTypeTargetObjectInstanceIsNull.Throw();
+            }
+
+            if (typeToDeriveFrom != null && (typeToDeriveFrom.IsPublic || typeToDeriveFrom.IsNestedPublic))
+            {
+                DuckType.CreateTypeResult proxyResult = DuckType.GetOrCreateReverseProxyType(typeToDeriveFrom, instance.GetType());
+                if (proxyResult.Success)
+                {
+                    value = proxyResult.CreateInstance(instance);
+                    return true;
+                }
+            }
+
+            value = default;
             return false;
         }
     }

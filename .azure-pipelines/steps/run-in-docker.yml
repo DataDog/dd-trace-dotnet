@@ -34,6 +34,7 @@ steps:
         --env Verify_DisableClipboard=true \
         --env DiffEngine_Disabled=true \
         --env TestAllPackageVersions=$(TestAllPackageVersions) \
+        --env IncludeMinorPackageVersions=$(IncludeMinorPackageVersions) \
         dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }} \
         dotnet /build/bin/Debug/_build.dll ${{ parameters.command }}
   displayName: Run '${{ parameters.command }}' in Docker
