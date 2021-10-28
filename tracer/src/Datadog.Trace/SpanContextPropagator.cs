@@ -284,10 +284,7 @@ namespace Datadog.Trace
             {
                 if (int.TryParse(headerValue, out var result))
                 {
-                    if (MinimumSamplingPriority <= result && result <= MaximumSamplingPriority)
-                    {
-                        return (SamplingPriority)result;
-                    }
+                    return (SamplingPriority)result;
                 }
 
                 hasValue = true;
@@ -314,10 +311,7 @@ namespace Datadog.Trace
             {
                 if (int.TryParse(headerValue, out var result))
                 {
-                    if (MinimumSamplingPriority <= result && result <= MaximumSamplingPriority)
-                    {
-                        return (SamplingPriority)result;
-                    }
+                    return (SamplingPriority)result;
                 }
 
                 hasValue = true;
