@@ -24,7 +24,7 @@ jobs:
           dotnet-version: '5.0.x'
 
       - name: "Regenerating package versions"
-        run: .\tracer\build.ps1 GeneratePackageVersions
+        run: .\tracer\build.ps1 UpdateIntegrationsJson GeneratePackageVersions
 
       - name: Create Pull Request
         id: pr
