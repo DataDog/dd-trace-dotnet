@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if !NET45 && !NET451 && !NET452
 using System;
 using Datadog.Trace.ExtensionMethods;
 using Xunit;
@@ -27,4 +26,3 @@ namespace Datadog.Trace.Tests
         }
     }
 }
-#endif

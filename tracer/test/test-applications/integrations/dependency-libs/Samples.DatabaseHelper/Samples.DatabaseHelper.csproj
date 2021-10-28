@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net45;net461;netstandard2.0;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks>net461;netstandard2.0;netcoreapp3.1</TargetFrameworks>
 
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
@@ -10,15 +10,10 @@
     <ProjectReference Include="..\..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' != 'net45'">
+  <ItemGroup>
     <PackageReference Include="Dapper" Version="2.0.30" />
 
     <!-- this referenced project only targets netstandard2.0 -->
     <ProjectReference Include="..\..\dependency-libs\Samples.DatabaseHelper.netstandard\Samples.DatabaseHelper.netstandard.csproj" />
-
-    <!-- include this files when targetting net45,
-         otherwise remove them and use the types defined in the referenced project Samples.DatabaseHelper.netstandard -->
-    <Compile Remove="DbCommandExecutor.cs" />
-    <Compile Remove="IDbCommandExecutor.cs" />
   </ItemGroup>
 </Project>

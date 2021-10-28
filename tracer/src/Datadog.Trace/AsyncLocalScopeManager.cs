@@ -3,25 +3,24 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using Datadog.Trace.Logging;
+using System.Threading;
 
 namespace Datadog.Trace
 {
     internal class AsyncLocalScopeManager : ScopeManagerBase
     {
-        private readonly AsyncLocalCompat<Scope> _activeScope = new AsyncLocalCompat<Scope>();
+        private readonly AsyncLocal<Scope> _activeScope = new();
 
         public override Scope Active
         {
             get
             {
-                return _activeScope.Get();
+                return _activeScope.Value;
             }
 
             protected set
             {
-                _activeScope.Set(value);
+                _activeScope.Value = value;
             }
         }
     }

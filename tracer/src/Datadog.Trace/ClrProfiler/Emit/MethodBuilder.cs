@@ -50,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
         private MethodBase _methodBase;
         private Type _concreteType;
         private string _concreteTypeName;
-        private Type[] _parameters = ArrayHelper.Empty<Type>();
+        private Type[] _parameters = Array.Empty<Type>();
         private Type[] _explicitParameterTypes = null;
         private string[] _namespaceAndNameFilter = null;
         private Type[] _declaringTypeGenerics;

@@ -11,18 +11,13 @@ using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
-using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.Agent
 {
     internal class AgentWriter : IAgentWriter
     {
-#if NET45
-        private const TaskCreationOptions TaskOptions = TaskCreationOptions.None;
-#else
         private const TaskCreationOptions TaskOptions = TaskCreationOptions.RunContinuationsAsynchronously;
-#endif
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AgentWriter>();
 
@@ -59,7 +54,7 @@ namespace Datadog.Trace.Agent
 
         static AgentWriter()
         {
-            var data = Vendors.MessagePack.MessagePackSerializer.Serialize(ArrayHelper.Empty<Span[]>());
+            var data = Vendors.MessagePack.MessagePackSerializer.Serialize(Array.Empty<Span[]>());
             EmptyPayload = new ArraySegment<byte>(data);
         }
 
@@ -183,7 +178,7 @@ namespace Datadog.Trace.Agent
                 // Enqueue a watermark to know when it's done serializing all currently enqueued traces
                 var tcs = new TaskCompletionSource<bool>(TaskOptions);
 
-                WriteWatermark(() => CompleteTaskCompletionSource(tcs));
+                WriteWatermark(() => tcs.TrySetResult(default));
 
                 await tcs.Task.ConfigureAwait(false);
             }
@@ -201,20 +196,9 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        private static void CompleteTaskCompletionSource<T>(TaskCompletionSource<T> tcs)
-        {
-#if NET45
-            // TaskCreationOptions.RunContinuationsAsynchronously does not exist in .NET 4.5
-            // Complete the TCS in a separate thread to prevent the continuation from being inlined
-            Task.Run(() => tcs.TrySetResult(default));
-#else
-            tcs.TrySetResult(default);
-#endif
-        }
-
         private void RequestFlush()
         {
-            CompleteTaskCompletionSource(_forceFlush);
+            _forceFlush.TrySetResult(default);
         }
 
         private async Task FlushBuffersTaskLoopAsync()

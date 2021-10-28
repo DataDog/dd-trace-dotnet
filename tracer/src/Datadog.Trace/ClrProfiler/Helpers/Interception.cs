@@ -5,7 +5,6 @@
 
 using System;
 using System.Diagnostics;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.Helpers
 {
@@ -15,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.Helpers
     internal static class Interception
     {
         internal const Type[] NullTypeArray = null;
-        internal static readonly object[] NoArgObjects = ArrayHelper.Empty<object>();
+        internal static readonly object[] NoArgObjects = Array.Empty<object>();
         internal static readonly Type[] NoArgTypes = Type.EmptyTypes;
         internal static readonly Type VoidType = typeof(void);
 

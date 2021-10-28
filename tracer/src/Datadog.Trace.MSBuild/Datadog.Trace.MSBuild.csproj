@@ -22,7 +22,7 @@
     <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net45' OR '$(TargetFramework)' == 'net461' ">
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
     <!-- Include Datadog.Trace.AspNet as a project reference for publishing purposes,
          like we used to do with Datadog.Trace.ClrProfiler.Managed => Datadog.Trace.MSBuild -->
     <ProjectReference Include="..\Datadog.Trace.AspNet\Datadog.Trace.AspNet.csproj" />

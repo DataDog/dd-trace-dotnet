@@ -349,7 +349,6 @@ namespace Datadog.Trace.TestHelpers
             SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSecBlockingEnabled, appSecBlockingEnabled ? "true" : "false");
         }
 
-#if !NET452
         protected async Task<IImmutableList<MockTracerAgent.Span>> GetWebServerSpans(
             string path,
             MockTracerAgent agent,
@@ -378,7 +377,6 @@ namespace Datadog.Trace.TestHelpers
                 minDateTime: testStart,
                 returnAllOperations: true);
         }
-#endif
 
         protected async Task AssertWebServerSpan(
             string path,

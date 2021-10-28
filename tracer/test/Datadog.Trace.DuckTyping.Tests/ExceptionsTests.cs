@@ -405,36 +405,6 @@ namespace Datadog.Trace.DuckTyping.Tests
         {
         }
 
-#if NET452
-        // *
-        [Fact]
-        public void TypeIsNotPublicException()
-        {
-            object target = new TypeIsNotPublicExceptionClass();
-
-            Assert.Throws<DuckTypeTypeIsNotPublicException>(() =>
-            {
-                target.DuckCast<ITypeIsNotPublicException>();
-            });
-
-            Assert.Throws<DuckTypeTypeIsNotPublicException>(() =>
-            {
-                target.DuckCast(typeof(ITypeIsNotPublicException));
-            });
-        }
-
-        internal interface ITypeIsNotPublicException
-        {
-            string Name { get; set; }
-        }
-
-        internal class TypeIsNotPublicExceptionClass
-        {
-            public string Name { get; set; }
-        }
-#endif
-        // *
-
         [Fact]
         public void StructMembersCannotBeChangedException()
         {
@@ -596,34 +566,6 @@ namespace Datadog.Trace.DuckTyping.Tests
             {
             }
         }
-
-#if NET452
-        // *
-        [Fact]
-        public void ProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException()
-        {
-            object target = new ProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesExceptionClass();
-
-            Assert.Throws<DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException>(() =>
-            {
-                target.DuckCast<IProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException>();
-            });
-        }
-
-        public interface IProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException
-        {
-            public void Add<TKey, TValue>(TKey key, TValue value);
-        }
-
-        internal class ProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesExceptionClass
-        {
-            public void Add<TKey, TValue>(TKey key, TValue value)
-            {
-            }
-        }
-#endif
-
-        // *
 
         [Theory]
         [InlineData(typeof(ReverseProxyMustImplementGenericMethodAsGenericExceptionClass1))]

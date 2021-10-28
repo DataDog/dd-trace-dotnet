@@ -12,10 +12,6 @@ namespace Datadog.Trace.Logging
 {
     internal class LogRateLimiter : ILogRateLimiter
     {
-#if NET45
-        private static readonly DateTime _unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-#endif
-
         private readonly int _secondsBetweenLogs;
         private readonly ConcurrentDictionary<LogRateBucketKey, LogRateBucketInfo> _buckets
             = new ConcurrentDictionary<LogRateBucketKey, LogRateBucketInfo>();
@@ -45,12 +41,7 @@ namespace Datadog.Trace.Logging
             // lineNumber should generally sufficient to uniquely identify the log given our API anyway
             var key = new LogRateBucketKey(filePath, lineNumber);
 
-#if NET45
-            TimeSpan diff = Clock.UtcNow - _unixEpoch;
-            var timestamp = diff.TotalSeconds;
-#else
             var timestamp = ((DateTimeOffset)Clock.UtcNow).ToUnixTimeSeconds();
-#endif
 
             var currentTimeBucket = (int)(timestamp / _secondsBetweenLogs);
             System.Diagnostics.Debug.Assert(currentTimeBucket > 0, $"Time bucket should be greater than 0");

@@ -3,11 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
-using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Tagging
@@ -244,9 +244,9 @@ namespace Datadog.Trace.Tagging
             return sb.ToString();
         }
 
-        protected virtual IProperty<string>[] GetAdditionalTags() => ArrayHelper.Empty<IProperty<string>>();
+        protected virtual IProperty<string>[] GetAdditionalTags() => Array.Empty<IProperty<string>>();
 
-        protected virtual IProperty<double?>[] GetAdditionalMetrics() => ArrayHelper.Empty<IProperty<double?>>();
+        protected virtual IProperty<double?>[] GetAdditionalMetrics() => Array.Empty<IProperty<double?>>();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void WriteTag(ref byte[] bytes, ref int offset, string key, string value)

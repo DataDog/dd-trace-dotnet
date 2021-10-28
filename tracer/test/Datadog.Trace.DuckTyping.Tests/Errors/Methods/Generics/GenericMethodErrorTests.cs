@@ -78,15 +78,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.Methods.Generics
 #pragma warning restore xUnit1026
         {
             using var scope = new AssertionScope();
-#if NET452
-            if (!isPublic && duckType.Methods().Any(x => x.IsGenericMethod))
-            {
-                obscureObject.DuckIs(duckType).Should().BeFalse();
-                Action cast = () => obscureObject.DuckCast(duckType);
-                cast.Should().Throw<TargetInvocationException>();
-                return;
-            }
-#endif
+
             obscureObject.DuckIs(duckType).Should().BeTrue();
             var valid = obscureObject.DuckCast(duckType);
         }

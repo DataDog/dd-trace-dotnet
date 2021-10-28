@@ -44,7 +44,6 @@ namespace PrepareRelease
         private enum GacStatus
         {
             NotInGac = 0,
-            Net45 = 1,
             Net461 = 2
         }
 
@@ -53,24 +52,11 @@ namespace PrepareRelease
             CreateWixFile(
                 tracerDirectory,
                 outputDirectory,
-                groupId: "Files.Managed.Net45.GAC",
-                frameworkMoniker: "net45",
-                groupDirectory: "net45.GAC",
-                filePrefix: "net45_GAC_",
-                GacStatus.Net45);
-            CreateWixFile(
-                tracerDirectory,
-                outputDirectory,
                 groupId: "Files.Managed.Net461.GAC",
                 frameworkMoniker: "net461",
                 groupDirectory: "net461.GAC",
                 filePrefix: "net461_GAC_",
                 GacStatus.Net461);
-            CreateWixFile(
-                tracerDirectory,
-                outputDirectory,
-                groupId: "Files.Managed.Net45",
-                frameworkMoniker: "net45");
             CreateWixFile(
                 tracerDirectory,
                 outputDirectory,
@@ -127,10 +113,6 @@ namespace PrepareRelease
                 {
                     component = component.Replace(@" Assembly="".net""", string.Empty);
                     component = component.Replace(Net461Condition, string.Empty);
-                }
-                else if (gac == GacStatus.Net45)
-                {
-                    component = component.Replace(Net461Property, $"NOT {Net461Property}");
                 }
 
                 components += component;

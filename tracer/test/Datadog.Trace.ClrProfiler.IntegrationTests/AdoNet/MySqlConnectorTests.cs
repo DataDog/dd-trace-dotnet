@@ -41,11 +41,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             //
             // NETSTANDARD + CALLTARGET: +7 spans
             // - IDbCommandGenericConstrant<MySqlCommand>-netstandard: 7 spans (1 group * 7 spans)
-#if NET452
-            var expectedSpanCount = 84;
-#else
             var expectedSpanCount = 147;
-#endif
 
             const string dbType = "mysql";
             const string expectedOperationName = dbType + ".query";

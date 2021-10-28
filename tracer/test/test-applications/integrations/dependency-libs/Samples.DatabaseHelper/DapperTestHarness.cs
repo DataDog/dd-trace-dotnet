@@ -1,4 +1,3 @@
-#if !NET45
 using System;
 using System.Data;
 using System.Data.Common;
@@ -189,4 +188,3 @@ namespace Samples.DatabaseHelper
         }
     }
 }
-#endif

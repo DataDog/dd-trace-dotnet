@@ -6,12 +6,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
-
-#if !NET452
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
@@ -152,5 +149,3 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
     }
 }
-
-#endif
