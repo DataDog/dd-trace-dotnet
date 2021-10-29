@@ -4,12 +4,15 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 
 namespace Datadog.Trace.DuckTyping
 {
     /// <summary>
     /// Duck type interface
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public interface IDuckType
     {
         /// <summary>

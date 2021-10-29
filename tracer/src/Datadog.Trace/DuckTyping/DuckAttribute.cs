@@ -11,7 +11,7 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// Duck kind
     /// </summary>
-    public enum DuckKind
+    internal enum DuckKind
     {
         /// <summary>
         /// Property
@@ -27,7 +27,7 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// Duck attribute
     /// </summary>
-    public class DuckAttribute : DuckAttributeBase
+    internal class DuckAttribute : DuckAttributeBase
     {
         /// <summary>
         /// Default BindingFlags

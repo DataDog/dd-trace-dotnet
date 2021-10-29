@@ -11,7 +11,7 @@ namespace Datadog.Trace.DuckTyping
     /// Use to include a member that would normally be ignored
     /// </summary>
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
-    public class DuckIncludeAttribute : Attribute
+    internal class DuckIncludeAttribute : Attribute
     {
     }
 }
