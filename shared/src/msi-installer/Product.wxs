@@ -54,9 +54,7 @@
 
       <ComponentGroupRef Id="Tracer.EnvironmentVariables.Machine"/>
       <ComponentGroupRef Id="Tracer.Files"/>
-      <ComponentGroupRef Id="Tracer.Files.Managed.Net45.GAC"/>
       <ComponentGroupRef Id="Tracer.Files.Managed.Net461.GAC"/>
-      <ComponentGroupRef Id="Tracer.Files.Managed.Net45"/>
       <ComponentGroupRef Id="Tracer.Files.Managed.Net461"/>
       <ComponentGroupRef Id="Tracer.Files.Managed.NetStandard20"/>
       <ComponentGroupRef Id="Tracer.Files.Managed.Netcoreapp31"/>
@@ -81,9 +79,6 @@
             <!-- ".\.NET Tracer" -->
             <Directory Id="tracer" Name="tracer">
               <!-- tracer -->
-              <Directory Id="tracer.net45" Name="net45">
-                <!-- ".\net45" -->
-              </Directory>
               <Directory Id="tracer.net461" Name="net461">
                 <!-- ".\net461" -->
               </Directory>
@@ -92,9 +87,6 @@
               </Directory>
               <Directory Id="tracer.netcoreapp3.1" Name="netcoreapp3.1">
                   <!-- ".\netcoreapp3.1" -->
-              </Directory>
-              <Directory Id="tracer.net45.GAC" Name="net45.GAC">
-                <!-- Ignored as all of its components will be installed in the GAC -->
               </Directory>
               <Directory Id="tracer.net461.GAC" Name="net461.GAC">
                 <!-- Ignored as all of its components will be installed in the GAC -->
