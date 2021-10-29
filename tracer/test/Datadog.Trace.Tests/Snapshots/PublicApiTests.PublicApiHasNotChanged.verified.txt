@@ -1,42 +1,5 @@
 [assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/DataDog/dd-trace-dotnet.git")]
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
-{
-    public enum AzureFunctionsExecutionReason
-    {
-        AutomaticTrigger = 0,
-        HostCall = 1,
-        Dashboard = 2,
-    }
-    public class AzureFunctionsExecutorTryExecuteAsyncIntegration
-    {
-        public AzureFunctionsExecutorTryExecuteAsyncIntegration() { }
-        public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
-        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget, TFunction>(TTarget instance, TFunction functionInstance, System.Threading.CancellationToken cancellationToken)
-            where TFunction : Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions.IFunctionInstance { }
-    }
-    public class FunctionInvocationMiddlewareInvokeIntegration
-    {
-        public FunctionInvocationMiddlewareInvokeIntegration() { }
-        public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, System.Exception exception, Datadog.Trace.ClrProfiler.CallTarget.CallTargetState state) { }
-        public static Datadog.Trace.ClrProfiler.CallTarget.CallTargetState OnMethodBegin<TTarget>(TTarget instance, Microsoft.AspNetCore.Http.HttpContext httpContext) { }
-    }
-    public interface IFunctionDescriptor
-    {
-        string FullName { get; }
-        string Id { get; }
-        string LogName { get; }
-        string ShortName { get; }
-    }
-    public interface IFunctionInstance
-    {
-        object BindingSource { get; }
-        Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions.IFunctionDescriptor FunctionDescriptor { get; }
-        System.Guid Id { get; }
-        Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions.AzureFunctionsExecutionReason Reason { get; }
-        System.Collections.Generic.IDictionary<string, string> TriggerDetails { get; }
-    }
-}
 namespace Datadog.Trace.Configuration
 {
     public class CompositeConfigurationSource : Datadog.Trace.Configuration.IConfigurationSource, System.Collections.Generic.IEnumerable<Datadog.Trace.Configuration.IConfigurationSource>, System.Collections.IEnumerable
@@ -293,15 +256,11 @@ namespace Datadog.Trace
     }
     public static class SpanTypes
     {
-        public const string Aerospike = "aerospike";
         public const string Benchmark = "benchmark";
         public const string Build = "build";
         public const string Custom = "custom";
-        public const string GraphQL = "graphql";
         public const string Http = "http";
-        public const string MongoDb = "mongodb";
         public const string Queue = "queue";
-        public const string Redis = "redis";
         public const string Serverless = "serverless";
         public const string Sql = "sql";
         public const string Test = "test";
@@ -309,42 +268,7 @@ namespace Datadog.Trace
     }
     public static class Tags
     {
-        public const string AmqpCommand = "amqp.command";
-        public const string AmqpDeliveryMode = "amqp.delivery_mode";
-        public const string AmqpExchange = "amqp.exchange";
-        public const string AmqpQueue = "amqp.queue";
-        public const string AmqpRoutingKey = "amqp.routing_key";
         public const string Analytics = "_dd1.sr.eausr";
-        public const string AppSecEvent = "appsec.event";
-        public const string AspNetAction = "aspnet.action";
-        public const string AspNetArea = "aspnet.area";
-        public const string AspNetController = "aspnet.controller";
-        public const string AspNetCoreAction = "aspnet_core.action";
-        public const string AspNetCoreArea = "aspnet_core.area";
-        public const string AspNetCoreController = "aspnet_core.controller";
-        public const string AspNetCoreEndpoint = "aspnet_core.endpoint";
-        public const string AspNetCorePage = "aspnet_core.page";
-        public const string AspNetCoreRoute = "aspnet_core.route";
-        public const string AspNetRoute = "aspnet.route";
-        public const string AwsAgentName = "aws.agent";
-        public const string AwsOperationName = "aws.operation";
-        public const string AwsQueueName = "aws.queue.name";
-        public const string AwsQueueUrl = "aws.queue.url";
-        public const string AwsRegion = "aws.region";
-        public const string AwsRequestId = "aws.requestId";
-        public const string AwsServiceName = "aws.service";
-        public const string AzureAppServicesExtensionVersion = "aas.environment.extension_version";
-        public const string AzureAppServicesInstanceId = "aas.environment.instance_id";
-        public const string AzureAppServicesInstanceName = "aas.environment.instance_name";
-        public const string AzureAppServicesOperatingSystem = "aas.environment.os";
-        public const string AzureAppServicesResourceGroup = "aas.resource.group";
-        public const string AzureAppServicesResourceId = "aas.resource.id";
-        public const string AzureAppServicesRuntime = "aas.environment.runtime";
-        public const string AzureAppServicesSiteKind = "aas.site.kind";
-        public const string AzureAppServicesSiteName = "aas.site.name";
-        public const string AzureAppServicesSiteType = "aas.site.type";
-        public const string AzureAppServicesSubscriptionId = "aas.subscription.id";
-        public const string CosmosDbContainer = "cosmosdb.container";
         public const string DbName = "db.name";
         public const string DbType = "db.type";
         public const string DbUser = "db.user";
@@ -352,33 +276,20 @@ namespace Datadog.Trace
         public const string ErrorMsg = "error.msg";
         public const string ErrorStack = "error.stack";
         public const string ErrorType = "error.type";
-        public const string GraphQLOperationName = "graphql.operation.name";
-        public const string GraphQLOperationType = "graphql.operation.type";
-        public const string GraphQLSource = "graphql.source";
         public const string HttpMethod = "http.method";
         public const string HttpRequestHeadersHost = "http.request.headers.host";
         public const string HttpStatusCode = "http.status_code";
         public const string HttpUrl = "http.url";
         public const string InstrumentationName = "component";
         public const string InstrumentedMethod = "instrumented.method";
-        public const string KafkaOffset = "kafka.offset";
-        public const string KafkaPartition = "kafka.partition";
-        public const string KafkaTombstone = "kafka.tombstone";
         public const string Language = "language";
         public const string ManualDrop = "manual.drop";
         public const string ManualKeep = "manual.keep";
         public const string Measured = "_dd.measured";
         public const string MessageSize = "message.size";
-        public const string MongoDbCollection = "mongodb.collection";
-        public const string MongoDbQuery = "mongodb.query";
-        public const string MsmqCommand = "msmq.command";
-        public const string MsmqIsTransactionalQueue = "msmq.queue.transactional";
-        public const string MsmqMessageWithTransaction = "msmq.message.transactional";
-        public const string MsmqQueuePath = "msmq.queue.path";
         public const string Origin = "_dd.origin";
         public const string OutHost = "out.host";
         public const string OutPort = "out.port";
-        public const string RedisRawCommand = "redis.raw_command";
         public const string RuntimeFamily = "_dd.runtime_family";
         public const string SamplingPriority = "sampling.priority";
         public const string SpanKind = "span.kind";
@@ -399,153 +310,6 @@ namespace Datadog.Trace
         public System.Threading.Tasks.Task ForceFlushAsync() { }
         public Datadog.Trace.Scope StartActive(string operationName, Datadog.Trace.ISpanContext parent = null, string serviceName = null, System.DateTimeOffset? startTime = default, bool ignoreActiveScope = false, bool finishOnClose = true) { }
         public Datadog.Trace.Span StartSpan(string operationName, Datadog.Trace.ISpanContext parent = null, string serviceName = null, System.DateTimeOffset? startTime = default, bool ignoreActiveScope = false) { }
-    }
-}
-namespace Datadog.Trace.DiagnosticListeners
-{
-    public interface IEndpointFeature
-    {
-        [Datadog.Trace.DuckTyping.Duck(Name="Microsoft.AspNetCore.Http.Features.IEndpointFeature.get_Endpoint")]
-        Datadog.Trace.DiagnosticListeners.RouteEndpoint GetEndpoint();
-    }
-    [Datadog.Trace.DuckTyping.DuckCopy]
-    public struct RouteEndpoint
-    {
-        public string DisplayName;
-        public Datadog.Trace.DiagnosticListeners.RoutePattern RoutePattern;
-    }
-    [Datadog.Trace.DuckTyping.DuckCopy]
-    public struct RoutePattern
-    {
-        public System.Collections.IEnumerable PathSegments;
-        public string RawText;
-    }
-}
-namespace Datadog.Trace.DuckTyping
-{
-    public delegate T CreateProxyInstance<T>(object instance);
-    public class DuckAttribute : Datadog.Trace.DuckTyping.DuckAttributeBase
-    {
-        public const System.Reflection.BindingFlags DefaultFlags = 124;
-        public DuckAttribute() { }
-        public Datadog.Trace.DuckTyping.DuckKind Kind { get; set; }
-    }
-    [System.AttributeUsage(System.AttributeTargets.Method | System.AttributeTargets.Property | System.AttributeTargets.Field | System.AttributeTargets.All, AllowMultiple=false)]
-    public abstract class DuckAttributeBase : System.Attribute
-    {
-        protected DuckAttributeBase() { }
-        public System.Reflection.BindingFlags BindingFlags { get; set; }
-        public string ExplicitInterfaceTypeName { get; set; }
-        public string[] GenericParameterTypeNames { get; set; }
-        public string Name { get; set; }
-        public string[] ParameterTypeNames { get; set; }
-    }
-    [System.AttributeUsage(System.AttributeTargets.Struct | System.AttributeTargets.All, AllowMultiple=false)]
-    public class DuckCopyAttribute : System.Attribute
-    {
-        public DuckCopyAttribute() { }
-    }
-    public class DuckFieldAttribute : Datadog.Trace.DuckTyping.DuckAttribute
-    {
-        public DuckFieldAttribute() { }
-    }
-    [System.AttributeUsage(System.AttributeTargets.Method | System.AttributeTargets.Property | System.AttributeTargets.Field | System.AttributeTargets.All, AllowMultiple=false)]
-    public class DuckIgnoreAttribute : System.Attribute
-    {
-        public DuckIgnoreAttribute() { }
-    }
-    [System.AttributeUsage(System.AttributeTargets.Method | System.AttributeTargets.All, AllowMultiple=false)]
-    public class DuckIncludeAttribute : System.Attribute
-    {
-        public DuckIncludeAttribute() { }
-    }
-    public enum DuckKind
-    {
-        Property = 0,
-        Field = 1,
-    }
-    public class DuckReverseMethodAttribute : Datadog.Trace.DuckTyping.DuckAttributeBase
-    {
-        public DuckReverseMethodAttribute() { }
-    }
-    public static class DuckType
-    {
-        public static readonly System.Reflection.MethodInfo EnumToObjectMethodInfo;
-        public static readonly System.Reflection.MethodInfo GetTypeFromHandleMethodInfo;
-        public static bool CanCreate(System.Type proxyType, object instance) { }
-        public static bool CanCreate<T>(object instance) { }
-        public static object Create(System.Type proxyType, object instance) { }
-        public static T Create<T>(object instance) { }
-        public static object CreateReverse(System.Type typeToDeriveFrom, object delegationInstance) { }
-        public static Datadog.Trace.DuckTyping.DuckType.CreateTypeResult GetOrCreateProxyType(System.Type proxyType, System.Type targetType) { }
-        public static Datadog.Trace.DuckTyping.DuckType.CreateTypeResult GetOrCreateReverseProxyType(System.Type typeToDeriveFrom, System.Type delegationType) { }
-        public readonly struct CreateTypeResult
-        {
-            public readonly bool Success;
-            public readonly System.Type TargetType;
-            public System.Type ProxyType { get; }
-            public bool CanCreate() { }
-            public T CreateInstance<T>(object instance) { }
-        }
-        public static class CreateCache<T>
-        {
-            public static readonly bool IsVisible;
-            public static readonly System.Type Type;
-            public static bool CanCreate(object instance) { }
-            public static T Create(object instance) { }
-            public static T CreateReverse(object instance) { }
-            public static Datadog.Trace.DuckTyping.DuckType.CreateTypeResult GetProxy(System.Type targetType) { }
-            public static Datadog.Trace.DuckTyping.DuckType.CreateTypeResult GetReverseProxy(System.Type targetType) { }
-        }
-        public static class DelegateCache<TProxyDelegate>
-            where TProxyDelegate : System.Delegate
-        {
-            public static TProxyDelegate GetDelegate() { }
-        }
-    }
-    public class DuckTypeException : System.Exception { }
-    public static class DuckTypeExtensions
-    {
-        public static object DuckAs(this object instance, System.Type targetType) { }
-        public static T DuckAs<T>(this object instance)
-            where T :  class { }
-        public static object DuckCast(this object instance, System.Type targetType) { }
-        public static T DuckCast<T>(this object instance) { }
-        public static object DuckImplement(this object instance, System.Type typeToDeriveFrom) { }
-        public static bool DuckIs(this object instance, System.Type targetType) { }
-        public static bool DuckIs<T>(this object instance) { }
-        public static bool TryDuckCast(this object instance, System.Type targetType, out object value) { }
-        public static bool TryDuckCast<T>(this object instance, out T value) { }
-        public static bool TryDuckImplement(this object instance, System.Type typeToDeriveFrom, out object value) { }
-    }
-    public class DuckTypeFieldIsReadonlyException : Datadog.Trace.DuckTyping.DuckTypeException { }
-    public class DuckTypeIncorrectReverseMethodUsageException : Datadog.Trace.DuckTyping.DuckTypeException { }
-    public class DuckTypeIncorrectReversePropertyUsageException : Datadog.Trace.DuckTyping.DuckTypeException { }
-    public class DuckTypeInvalidTypeConversionException : Datadog.Trace.DuckTyping.DuckTypeException { }
-    public class DuckTypePropertyArgumentsLengthException : Datadog.Trace.DuckTyping.DuckTypeException { }
-    public class DuckTypePropertyCantBeReadException : Datadog.Trace.DuckTyping.DuckTypeException { }
-    public class DuckTypePropertyCantBeWrittenException : Datadog.Trace.DuckTyping.DuckTypeException { }
-    public class DuckTypePropertyOrFieldNotFoundException : Datadog.Trace.DuckTyping.DuckTypeException { }
-    public class DuckTypeProxyAndTargetMethodParameterSignatureMismatchException : Datadog.Trace.DuckTyping.DuckTypeException { }
-    public class DuckTypeProxyAndTargetMethodReturnTypeMismatchException : Datadog.Trace.DuckTyping.DuckTypeException { }
-    public class DuckTypeProxyMethodParameterIsMissingException : Datadog.Trace.DuckTyping.DuckTypeException { }
-    public class DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException : Datadog.Trace.DuckTyping.DuckTypeException { }
-    public class DuckTypeProxyTypeDefinitionIsNull : Datadog.Trace.DuckTyping.DuckTypeException { }
-    public class DuckTypeReverseAttributeParameterNamesMismatchException : Datadog.Trace.DuckTyping.DuckTypeException { }
-    public class DuckTypeReverseProxyBaseIsStructException : Datadog.Trace.DuckTyping.DuckTypeException { }
-    public class DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException : Datadog.Trace.DuckTyping.DuckTypeException { }
-    public class DuckTypeReverseProxyMissingMethodImplementationException : Datadog.Trace.DuckTyping.DuckTypeException { }
-    public class DuckTypeReverseProxyMustImplementGenericMethodAsGenericException : Datadog.Trace.DuckTyping.DuckTypeException { }
-    public class DuckTypeReverseProxyPropertyCannotBeAbstractException : Datadog.Trace.DuckTyping.DuckTypeException { }
-    public class DuckTypeStructMembersCannotBeChangedException : Datadog.Trace.DuckTyping.DuckTypeException { }
-    public class DuckTypeTargetMethodAmbiguousMatchException : Datadog.Trace.DuckTyping.DuckTypeException { }
-    public class DuckTypeTargetMethodNotFoundException : Datadog.Trace.DuckTyping.DuckTypeException { }
-    public class DuckTypeTargetObjectInstanceIsNull : Datadog.Trace.DuckTyping.DuckTypeException { }
-    public class DuckTypeTypeIsNotPublicException : Datadog.Trace.DuckTyping.DuckTypeException { }
-    public interface IDuckType
-    {
-        object Instance { get; }
-        System.Type Type { get; }
     }
 }
 namespace Datadog.Trace.ExtensionMethods
@@ -587,35 +351,4 @@ namespace Datadog.Trace.Logging.LogProviders
         public LibLogException(string message) { }
         public LibLogException(string message, System.Exception inner) { }
     }
-}
-namespace Datadog.Trace.ServiceFabric
-{
-    public interface IServiceRemotingFailedResponseEventArgs
-    {
-        System.Exception? Error { get; }
-    }
-    public interface IServiceRemotingRequestEventArgs
-    {
-        string? MethodName { get; }
-        Datadog.Trace.ServiceFabric.IServiceRemotingRequestMessage? Request { get; }
-        System.Uri? ServiceUri { get; }
-    }
-    public interface IServiceRemotingRequestMessage
-    {
-        Datadog.Trace.ServiceFabric.IServiceRemotingRequestMessageHeader GetHeader();
-    }
-    public interface IServiceRemotingRequestMessageHeader
-    {
-        int InterfaceId { get; }
-        string? InvocationId { get; }
-        int MethodId { get; }
-        string? MethodName { get; }
-        void AddHeader(string headerName, byte[] headerValue);
-        bool TryGetHeaderValue(string headerName, out byte[]? headerValue);
-    }
-}
-namespace System.Runtime.CompilerServices
-{
-    [System.AttributeUsage(System.AttributeTargets.Assembly | System.AttributeTargets.All, AllowMultiple=true)]
-    public class IgnoresAccessChecksToAttribute : System.Attribute { }
 }
