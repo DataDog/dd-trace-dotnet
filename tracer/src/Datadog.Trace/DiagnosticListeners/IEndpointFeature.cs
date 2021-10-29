@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.ComponentModel;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.DiagnosticListeners
@@ -10,8 +11,10 @@ namespace Datadog.Trace.DiagnosticListeners
     /// <summary>
     /// Proxy for ducktyping IEndpointFeature when the interface is implemented
     /// explicitly, e.g. by https://github.com/dotnet/aspnetcore/blob/v3.0.3/src/Servers/Kestrel/Core/src/Internal/Http/HttpProtocol.FeatureCollection.cs
-    /// Also see AspNetCoreDiagnosticObserver.EndpointFeaturesTruct
+    /// Also see AspNetCoreDiagnosticObserver.EndpointFeatureStruct
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public interface IEndpointFeature
     {
         /// <summary>

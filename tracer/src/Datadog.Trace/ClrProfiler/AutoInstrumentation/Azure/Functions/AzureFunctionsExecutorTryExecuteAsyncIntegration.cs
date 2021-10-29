@@ -5,6 +5,7 @@
 
 #if !NETFRAMEWORK
 using System;
+using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
@@ -23,6 +24,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         MinimumVersion = "3.0.0",
         MaximumVersion = "3.*.*",
         IntegrationName = AzureFunctionsCommon.IntegrationName)]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class AzureFunctionsExecutorTryExecuteAsyncIntegration
     {
         /// <summary>
