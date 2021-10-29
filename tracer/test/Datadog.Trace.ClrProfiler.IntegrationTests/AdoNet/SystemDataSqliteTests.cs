@@ -1,4 +1,4 @@
-// <copyright file="SystemDataSqliteTests.cs" company="Datadog">
+﻿// <copyright file="SystemDataSqliteTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -32,9 +32,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             const string dbType = "sqlite";
             const string expectedOperationName = dbType + ".query";
             const string expectedServiceName = "Samples.SQLite.Core-" + dbType;
-
-            // NOTE: opt into the additional instrumentation of calls into netstandard.dll
-            SetEnvironmentVariable("DD_TRACE_NETSTANDARD_ENABLED", "true");
 
             int agentPort = TcpPortProvider.GetOpenPort();
 

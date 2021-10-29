@@ -172,7 +172,6 @@ namespace Datadog.Trace.TestHelpers
                 "DD_VERSION",
                 "DD_TAGS",
                 "DD_APPSEC_ENABLED",
-                "DD_TRACE_CALLTARGET_ENABLED"
             };
 
             foreach (string variable in environmentVariables)
