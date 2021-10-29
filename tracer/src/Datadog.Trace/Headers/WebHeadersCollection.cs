@@ -12,7 +12,7 @@ using System.Net;
 
 namespace Datadog.Trace.Headers
 {
-    internal class WebHeadersCollection : IHeadersCollection
+    internal readonly struct WebHeadersCollection : IHeadersCollection
     {
         private readonly WebHeaderCollection _headers;
 

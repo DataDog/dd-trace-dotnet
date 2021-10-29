@@ -17,11 +17,11 @@ namespace Datadog.Trace.ExtensionMethods
     internal static class WebHeadersExtensions
     {
         /// <summary>
-        /// Provides an <see cref="IHeadersCollection"/> implementation that wraps the specified <see cref="WebHeaderCollection"/>.
+        /// Provides an <see cref="WebHeadersCollection"/> implementation that wraps the specified <see cref="WebHeaderCollection"/>.
         /// </summary>
         /// <param name="headers">The Web headers to wrap.</param>
         /// <returns>An object that implements <see cref="IHeadersCollection"/>.</returns>
-        public static IHeadersCollection Wrap(this WebHeaderCollection headers)
+        public static WebHeadersCollection Wrap(this WebHeaderCollection headers)
         {
             if (headers == null)
             {
