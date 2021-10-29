@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #else
 #if NETFRAMEWORK
 #endif
-                new object[] { "3.7.1.29" },
+                new object[] { "3.7.1.30" },
 #endif
             };
 
@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #else
 #if NETFRAMEWORK
 #endif
-                new object[] { "7.15.1" },
+                new object[] { "7.15.2" },
 #endif
             };
 
@@ -271,7 +271,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #else
 #if NETFRAMEWORK
 #endif
-                new object[] { "3.22.0" },
+                new object[] { "3.22.1" },
 #endif
             };
 
