@@ -40,10 +40,17 @@ namespace Datadog.Trace.Tests
                    select new[] { header, invalidId };
         }
 
-        public static IEnumerable<object[]> GetHeadersInvalidSamplingPrioritiesCartesianProduct()
+        public static IEnumerable<object[]> GetHeadersInvalidIntegerSamplingPrioritiesCartesianProduct()
         {
             return from header in GetHeaderCollectionImplementations().SelectMany(i => i)
-                   from invalidSamplingPriority in HeadersCollectionTestHelpers.GetInvalidSamplingPriorities().SelectMany(i => i)
+                   from invalidSamplingPriority in HeadersCollectionTestHelpers.GetInvalidIntegerSamplingPriorities().SelectMany(i => i)
+                   select new[] { header, invalidSamplingPriority };
+        }
+
+        public static IEnumerable<object[]> GetHeadersInvalidNonIntegerSamplingPrioritiesCartesianProduct()
+        {
+            return from header in GetHeaderCollectionImplementations().SelectMany(i => i)
+                   from invalidSamplingPriority in HeadersCollectionTestHelpers.GetInvalidNonIntegerSamplingPriorities().SelectMany(i => i)
                    select new[] { header, invalidSamplingPriority };
         }
 
@@ -221,9 +228,37 @@ namespace Datadog.Trace.Tests
         }
 
         [Theory]
-        [MemberData(nameof(GetHeadersInvalidSamplingPrioritiesCartesianProduct))]
-        internal void Extract_InvalidSamplingPriority(IHeadersCollection headers, string samplingPriority)
+        [MemberData(nameof(GetHeadersInvalidIntegerSamplingPrioritiesCartesianProduct))]
+        internal void Extract_InvalidIntegerSamplingPriority(IHeadersCollection headers, string samplingPriority)
         {
+            // is the extracted sampling priority is a valid integer, pass it along as is,
+            // even if we don't recognize its value to allow forward compatibility with newly added values.
+            const ulong traceId = 9;
+            const ulong spanId = 7;
+            const string origin = "synthetics";
+
+            InjectContext(
+                headers,
+                traceId.ToString(CultureInfo.InvariantCulture),
+                spanId.ToString(CultureInfo.InvariantCulture),
+                samplingPriority,
+                origin);
+
+            var resultContext = SpanContextPropagator.Instance.Extract(headers);
+
+            Assert.NotNull(resultContext);
+            Assert.Equal(traceId, resultContext.TraceId);
+            Assert.Equal(spanId, resultContext.SpanId);
+            Assert.NotNull(resultContext.SamplingPriority);
+            Assert.Equal(samplingPriority, ((int)resultContext.SamplingPriority).ToString());
+            Assert.Equal(origin, resultContext.Origin);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetHeadersInvalidNonIntegerSamplingPrioritiesCartesianProduct))]
+        internal void Extract_InvalidNonIntegerSamplingPriority(IHeadersCollection headers, string samplingPriority)
+        {
+            // ignore the extracted sampling priority if it is not a valid integer
             const ulong traceId = 9;
             const ulong spanId = 7;
             const string origin = "synthetics";

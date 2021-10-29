@@ -20,10 +20,17 @@ namespace Datadog.Trace.TestHelpers
             yield return new object[] { "id" };
         }
 
-        public static IEnumerable<object[]> GetInvalidSamplingPriorities()
+        public static IEnumerable<object[]> GetInvalidIntegerSamplingPriorities()
         {
-            yield return new object[] { "-2" };
-            yield return new object[] { "3" };
+            // keep these values large since we may add new values like -2 or +3 in the future
+            yield return new object[] { "-100" };
+            yield return new object[] { "100" };
+        }
+
+        public static IEnumerable<object[]> GetInvalidNonIntegerSamplingPriorities()
+        {
+            yield return new object[] { "1.0" };
+            yield return new object[] { "1,0" };
             yield return new object[] { "sampling.priority" };
         }
     }
