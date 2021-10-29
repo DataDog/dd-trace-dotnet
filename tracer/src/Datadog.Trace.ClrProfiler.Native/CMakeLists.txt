@@ -221,11 +221,9 @@ add_library("Datadog.Trace.ClrProfiler.Native.static" STATIC
         cor_profiler.cpp
         il_rewriter_wrapper.cpp
         il_rewriter.cpp
-        integration_loader.cpp
         integration.cpp
         metadata_builder.cpp
         miniutf.cpp
-        sig_helpers.cpp
         string.cpp
         util.cpp
         calltarget_tokens.cpp

@@ -7,7 +7,6 @@ using System;
 using System.Data;
 using System.Linq;
 using Datadog.Trace.ClrProfiler.Helpers;
-using Datadog.Trace.ClrProfiler.Integrations.AdoNet;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
@@ -23,8 +22,10 @@ namespace Datadog.Trace.ClrProfiler
     {
         public const string OperationName = "http.request";
         public const string ServiceName = "http-client";
+        public const string DbIntegrationName = nameof(IntegrationIds.AdoNet);
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ScopeFactory));
+        public static readonly IntegrationInfo DbIntegrationId = IntegrationRegistry.GetIntegrationInfo(DbIntegrationName);
 
         public static Scope GetActiveHttpScope(Tracer tracer)
         {
@@ -153,7 +154,7 @@ namespace Datadog.Trace.ClrProfiler
 
         public static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command)
         {
-            if (!tracer.Settings.IsIntegrationEnabled(AdoNetConstants.IntegrationId))
+            if (!tracer.Settings.IsIntegrationEnabled(DbIntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;
@@ -202,7 +203,7 @@ namespace Datadog.Trace.ClrProfiler
 
                 span.AddTagsFromDbCommand(command);
 
-                tags.SetAnalyticsSampleRate(AdoNetConstants.IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                tags.SetAnalyticsSampleRate(DbIntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
             }
             catch (Exception ex)
             {

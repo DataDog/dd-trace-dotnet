@@ -30,7 +30,6 @@ if ($env:os -eq "Windows_NT")
     }
 
     $dd_tracer_msbuild = "$dd_tracer_home\netstandard2.0\Datadog.Trace.MSBuild.dll"
-    $dd_tracer_integrations = "$dd_tracer_home\integrations.json"
     $dd_tracer_profiler_32 = "$dd_tracer_home\win-x86\Datadog.Trace.ClrProfiler.Native.dll"
     $dd_tracer_profiler_64 = "$dd_tracer_home\win-x64\Datadog.Trace.ClrProfiler.Native.dll"
 } 
@@ -57,7 +56,6 @@ else
     }
 
     $dd_tracer_msbuild = "$dd_tracer_home/netstandard2.0/Datadog.Trace.MSBuild.dll"
-    $dd_tracer_integrations = "$dd_tracer_home/integrations.json"
     $dd_tracer_profiler_64 = "$dd_tracer_home/Datadog.Trace.ClrProfiler.Native.so"
 }
 
@@ -67,7 +65,6 @@ echo "Setting environment variables..."
 echo "##vso[task.setvariable variable=DD_ENV]CI"
 echo "##vso[task.setvariable variable=DD_DOTNET_TRACER_HOME]$dd_tracer_home"
 echo "##vso[task.setvariable variable=DD_DOTNET_TRACER_MSBUILD]$dd_tracer_msbuild"
-echo "##vso[task.setvariable variable=DD_INTEGRATIONS]$dd_tracer_integrations"
 
 echo "##vso[task.setvariable variable=CORECLR_ENABLE_PROFILING]1"
 echo "##vso[task.setvariable variable=CORECLR_PROFILER]{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"

@@ -11,7 +11,6 @@ namespace trace
 
 const WSTRING env_vars_to_display[]{environment::tracing_enabled,
                                     environment::debug_enabled,
-                                    environment::calltarget_enabled,
                                     environment::profiler_home_path,
                                     environment::integrations_path,
                                     environment::include_process_names,
@@ -27,9 +26,7 @@ const WSTRING env_vars_to_display[]{environment::tracing_enabled,
                                     environment::clr_disable_optimizations,
                                     environment::clr_enable_inlining,
                                     environment::clr_enable_ngen,
-                                    environment::domain_neutral_instrumentation,
                                     environment::dump_il_rewrite_enabled,
-                                    environment::netstandard_enabled,
                                     environment::azure_app_services,
                                     environment::azure_app_services_app_pool_id,
                                     environment::azure_app_services_cli_telemetry_profile_value,
@@ -55,7 +52,7 @@ const WSTRING skip_assembly_prefixes[]{
     WStr("Microsoft.Extensions.Options"),
     WStr("Microsoft.Extensions.PlatformAbstractions"),
     WStr("Microsoft.Extensions.Primitives"),
-    WStr("Microsoft.Extensions.WebEncoders "),
+    WStr("Microsoft.Extensions.WebEncoders"),
     WStr("Microsoft.Web.Compilation.Snapshots"),
     WStr("System.Core"),
     WStr("System.Console"),
@@ -82,9 +79,6 @@ const WSTRING skip_assemblies[]{WStr("mscorlib"),
 const WSTRING mscorlib_assemblyName = WStr("mscorlib");
 const WSTRING system_private_corelib_assemblyName = WStr("System.Private.CoreLib");
 const WSTRING datadog_trace_clrprofiler_managed_loader_assemblyName = WStr("Datadog.Trace.ClrProfiler.Managed.Loader");
-
-const WSTRING microsoft_aspnetcore_hosting_assemblyName = WStr("Microsoft.AspNetCore.Hosting");
-const WSTRING dapper_assemblyName = WStr("Dapper");
 
 const WSTRING managed_profiler_full_assembly_version =
     WStr("Datadog.Trace, Version=1.29.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");

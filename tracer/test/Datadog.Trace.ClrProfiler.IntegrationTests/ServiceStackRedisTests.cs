@@ -21,22 +21,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        public static IEnumerable<object[]> GetServiceStackRedisData()
-        {
-            foreach (object[] item in PackageVersions.ServiceStackRedis)
-            {
-                yield return item.Concat(false);
-                yield return item.Concat(true);
-            }
-        }
-
         [SkippableTheory]
-        [MemberData(nameof(GetServiceStackRedisData))]
+        [MemberData(nameof(PackageVersions.ServiceStackRedis), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTraces(string packageVersion, bool enableCallTarget)
+        public void SubmitsTraces(string packageVersion)
         {
-            SetCallTargetSettings(enableCallTarget);
-
             int agentPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = new MockTracerAgent(agentPort))

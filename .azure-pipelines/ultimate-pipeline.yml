@@ -468,7 +468,7 @@ stages:
     steps:
     - bash: |
         matrix="{"
-        for framework in "net452" "net461" "netcoreapp2.1" "netcoreapp3.0" "netcoreapp3.1" "net5.0"; do
+        for framework in "net461" "netcoreapp2.1" "netcoreapp3.0" "netcoreapp3.1" "net5.0"; do
           for platform in "x64" "x86"; do
             name="${platform}_${framework//./_}"
             if [ $target == "BuildAndRunWindowsIntegrationTests" ]; then cosmos=true; else cosmos=false; fi
@@ -543,7 +543,7 @@ stages:
     steps:
       - bash: |
           matrix="{"
-          for framework in "net452" "net461" "netcoreapp2.1" "netcoreapp3.0" "netcoreapp3.1" "net5.0"; do
+          for framework in "net461" "netcoreapp2.1" "netcoreapp3.0" "netcoreapp3.1" "net5.0"; do
             for platform in "x64" "x86"; do
               name="${framework//./_}_${platform}"
               if [ $platform == "x86" ]; then enable32bit=true; else enable32bit=false; fi
@@ -1214,7 +1214,6 @@ stages:
         path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux
 
     - script: |
-        test ! -s "tracer/tracer-home-linux/integrations.json" && echo "tracer/tracer-home-linux/integrations.json does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux/libddwaf.so" && echo "tracer/tracer-home-linux/libddwaf.so does not exist" && exit 1
         cd $(System.DefaultWorkingDirectory)/tracer/build/crank
@@ -1235,7 +1234,6 @@ stages:
         path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-win
 
     - script: |
-        test ! -s "tracer/tracer-home-win/integrations.json" && echo "tracer/tracer-home-win/integrations.json does not exist" && exit 1
         test ! -s "tracer/tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll" && echo "tracer/tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll does not exist" && exit 1
         test ! -s "tracer/tracer-home-win/win-x64/ddwaf.dll" && echo "tracer/tracer-home-win/win-x64/ddwaf.dll does not exist" && exit 1
         cd $(System.DefaultWorkingDirectory)/tracer/build/crank
@@ -1256,7 +1254,6 @@ stages:
         path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux-arm64
 
     - script: |
-        test ! -s "tracer/tracer-home-linux-arm64/integrations.json" && echo "tracer/tracer-home-linux-arm64/integrations.json does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
         cd $(System.DefaultWorkingDirectory)/tracer/build/crank
         chmod +x ./run.sh

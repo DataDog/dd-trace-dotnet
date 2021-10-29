@@ -21,16 +21,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        [SkippableTheory]
+        [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        [InlineData(false)]
-        [InlineData(true)]
-        public void SubmitsTraces(bool enableCallTarget)
+        public void SubmitsTraces()
         {
-            SetCallTargetSettings(enableCallTarget);
-
-            int expectedSpanCount = enableCallTarget ? 45 : 25; // CallSite insturmentation doesn't instrument async requests
+            int expectedSpanCount = 45;
             const string expectedOperationName = "http.request";
             const string expectedServiceName = "Samples.WebRequest.NetFramework20-http-client";
 
@@ -64,15 +60,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        [SkippableTheory]
+        [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        [InlineData(false)]
-        [InlineData(true)]
-        public void TracingDisabled_DoesNotSubmitsTraces(bool enableCallTarget)
+        public void TracingDisabled_DoesNotSubmitsTraces()
         {
-            SetCallTargetSettings(enableCallTarget);
-
             const string expectedOperationName = "http.request";
 
             int agentPort = TcpPortProvider.GetOpenPort();

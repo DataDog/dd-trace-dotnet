@@ -30,20 +30,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         protected const string HeaderName3 = "Server";
         protected const string HeaderValue3 = "Kestrel";
 
-        private readonly bool _enableCallTarget;
         private readonly bool _enableRouteTemplateResourceNames;
 
-        protected AspNetCoreMvcTestBase(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper output, bool enableCallTarget, bool enableRouteTemplateResourceNames)
+        protected AspNetCoreMvcTestBase(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper output, bool enableRouteTemplateResourceNames)
             : base(sampleName, output)
         {
-            _enableCallTarget = enableCallTarget;
             _enableRouteTemplateResourceNames = enableRouteTemplateResourceNames;
             SetEnvironmentVariable(ConfigurationKeys.HeaderTags, $"{HeaderName1UpperWithMapping}:{HeaderTagName1WithMapping},{HeaderName2},{HeaderName3}");
             SetEnvironmentVariable(ConfigurationKeys.HttpServerErrorStatusCodes, "400-403, 500-503");
 
             SetServiceVersion("1.0.0");
 
-            SetCallTargetSettings(enableCallTarget);
             if (enableRouteTemplateResourceNames)
             {
                 SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, "true");
@@ -78,7 +75,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         protected string GetTestName(string testName)
         {
             return testName
-                 + (_enableCallTarget ? ".CallTarget" : ".CallSite")
+                 + ".CallTarget"
                  + (_enableRouteTemplateResourceNames ? ".WithFF" : ".NoFF");
         }
 

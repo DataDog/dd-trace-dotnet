@@ -41,6 +41,7 @@ scenarios:
         CORECLR_ENABLE_PROFILING: 1
         DD_TRACE_CALLTARGET_ENABLED: 1
         DD_CLR_ENABLE_INLINING: 1
+        DD_CLR_ENABLE_NGEN: 0
     load:
       job: bombardier
       variables:

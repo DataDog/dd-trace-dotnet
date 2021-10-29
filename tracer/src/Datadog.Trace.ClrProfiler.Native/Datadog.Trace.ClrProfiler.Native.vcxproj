@@ -62,7 +62,6 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\..\packages\nlohmann.json.3.5.0\build\native\nlohmann.json.targets" Condition="Exists('..\..\..\packages\nlohmann.json.3.5.0\build\native\nlohmann.json.targets')" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -191,7 +190,6 @@
     <ClInclude Include="il_rewriter.h" />
     <ClInclude Include="il_rewriter_wrapper.h" />
     <ClInclude Include="integration.h" />
-    <ClInclude Include="integration_loader.h" />
     <ClInclude Include="clr_helpers.h" />
     <ClInclude Include="logger.h" />
     <ClInclude Include="logger_impl.h" />
@@ -202,7 +200,6 @@
     <ClInclude Include="module_metadata.h" />
     <ClInclude Include="pal.h" />
     <ClInclude Include="rejit_handler.h" />
-    <ClInclude Include="sig_helpers.h" />
     <ClInclude Include="stats.h" />
     <ClInclude Include="string.h" />
     <ClInclude Include="util.h" />
@@ -217,12 +214,10 @@
     <ClCompile Include="il_rewriter.cpp" />
     <ClCompile Include="il_rewriter_wrapper.cpp" />
     <ClCompile Include="integration.cpp" />
-    <ClCompile Include="integration_loader.cpp" />
     <ClCompile Include="lib\spdlog\src\spdlog.cpp" />
     <ClCompile Include="metadata_builder.cpp" />
     <ClCompile Include="miniutf.cpp" />
     <ClCompile Include="rejit_handler.cpp" />
-    <ClCompile Include="sig_helpers.cpp" />
     <ClCompile Include="string.cpp" />
     <ClCompile Include="util.cpp" />
   </ItemGroup>
@@ -230,10 +225,4 @@
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\packages\nlohmann.json.3.5.0\build\native\nlohmann.json.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\nlohmann.json.3.5.0\build\native\nlohmann.json.targets'))" />
-  </Target>
 </Project>

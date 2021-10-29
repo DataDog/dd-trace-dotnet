@@ -7,7 +7,6 @@ using System;
 using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.ClrProfiler.Integrations;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 {

@@ -144,7 +144,6 @@ partial class Build : NukeBuild
         .DependsOn(PublishManagedProfiler)
         .DependsOn(CompileNativeSrc)
         .DependsOn(PublishNativeProfiler)
-        .DependsOn(CopyIntegrationsJson)
         .DependsOn(DownloadLibDdwaf)
         .DependsOn(CopyLibDdwaf)
         .DependsOn(CreateDdTracerHome);

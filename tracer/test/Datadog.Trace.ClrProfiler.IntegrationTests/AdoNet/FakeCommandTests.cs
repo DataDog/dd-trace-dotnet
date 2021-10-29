@@ -19,18 +19,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
-        [SkippableTheory]
-        [InlineData(true)]
+        [SkippableFact]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTracesWithNetStandard(bool enableCallTarget)
+        public void SubmitsTracesWithNetStandard()
         {
-            SetCallTargetSettings(enableCallTarget);
-
-#if NET452
-            var expectedSpanCount = 28;
-#else
             var expectedSpanCount = 42;
-#endif
 
             const string dbType = "fake";
             const string expectedOperationName = dbType + ".query";
@@ -58,14 +51,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             }
         }
 
-        [SkippableTheory]
-        [InlineData(true)]
-        [InlineData(false)]
+        [SkippableFact]
         [Trait("Category", "EndToEnd")]
-        public void SpansDisabledByAdoNetExcludedTypes(bool enableCallTarget)
+        public void SpansDisabledByAdoNetExcludedTypes()
         {
-            SetCallTargetSettings(enableCallTarget);
-
             var totalSpanCount = 21;
 
             const string dbType = "fake";

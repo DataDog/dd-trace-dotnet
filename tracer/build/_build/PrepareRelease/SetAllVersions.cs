@@ -159,10 +159,6 @@ namespace PrepareRelease
 
             // Deployment updates
             SynchronizeVersion(
-                "integrations.json",
-                FullAssemblyNameReplace);
-
-            SynchronizeVersion(
                 "src/WindowsInstaller/WindowsInstaller.wixproj",
                 WixProjReplace);
 

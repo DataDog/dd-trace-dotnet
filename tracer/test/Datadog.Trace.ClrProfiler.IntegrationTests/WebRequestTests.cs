@@ -23,20 +23,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        [SkippableTheory]
+        [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        [InlineData(false)]
-        [InlineData(true)]
-        public void SubmitsTraces(bool enableCallTarget)
+        public void SubmitsTraces()
         {
-            SetCallTargetSettings(enableCallTarget);
-
-            var (ignoreAsync, expectedSpanCount) = (EnvironmentHelper.IsCoreClr(), enableCallTarget) switch
-            {
-                (false, false) => (true, 28), // .NET Framework CallSite instrumentation doesn't cover Async / TaskAsync operations
-                _ => (false, 74)
-            };
+            var ignoreAsync = false;
+            var expectedSpanCount = 74;
 
             const string expectedOperationName = "http.request";
             const string expectedServiceName = "Samples.WebRequest-http-client";
@@ -72,15 +65,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        [SkippableTheory]
+        [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        [InlineData(false)]
-        [InlineData(true)]
-        public void TracingDisabled_DoesNotSubmitsTraces(bool enableCallTarget)
+        public void TracingDisabled_DoesNotSubmitsTraces()
         {
-            SetCallTargetSettings(enableCallTarget);
-
             const string expectedOperationName = "http.request";
 
             int agentPort = TcpPortProvider.GetOpenPort();

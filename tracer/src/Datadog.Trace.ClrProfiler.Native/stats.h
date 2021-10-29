@@ -31,6 +31,9 @@ class Stats : public Singleton<Stats>
     friend class Singleton<Stats>;
 
 private:
+    std::atomic_ullong totalTime = {0};
+    SWStat* totalTimeCounter = nullptr;
+
     std::atomic_ullong initializeProfiler = {0};
     std::atomic_ullong jitCachedFunctionSearchStarted = {0};
     std::atomic_ullong callTargetRequestRejit = {0};
@@ -56,6 +59,9 @@ private:
 public:
     Stats()
     {
+        totalTime = 0;
+        totalTimeCounter = new SWStat(&totalTime);
+
         initializeProfiler = 0;
         jitCachedFunctionSearchStarted = 0;
         callTargetRequestRejit = 0;
@@ -152,8 +158,13 @@ public:
                               ns_jitCompilationStarted + ns_jitInlining + ns_jitCachedFunctionSearchStarted +
                               ns_initializeProfiler;
 
+        delete totalTimeCounter;
+        const auto ns_fromBeginToEndTotal = totalTime.load();
+
         std::stringstream ss;
-        ss << "Total ";
+        ss << "Total time: ";
+        ss << ns_fromBeginToEndTotal / 1000000 << "ms ";
+        ss << " | Total time in Callbacks: ";
         ss << ns_total / 1000000 << "ms ";
         ss << "[Initialize=";
         ss << ns_initialize / 1000000 << "ms";
