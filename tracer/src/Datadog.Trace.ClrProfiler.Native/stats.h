@@ -21,7 +21,13 @@ public:
     }
     ~SWStat()
     {
-        auto increment = (std::chrono::steady_clock::now() - _startTime).count();
+        Refresh();
+    }
+    void Refresh()
+    {
+        auto now = std::chrono::steady_clock::now();
+        auto increment = (now - _startTime).count();
+        _startTime = now;
         _value->fetch_add(increment);
     }
 };
@@ -32,7 +38,7 @@ class Stats : public Singleton<Stats>
 
 private:
     std::atomic_ullong totalTime = {0};
-    SWStat* totalTimeCounter = nullptr;
+    std::unique_ptr<SWStat> totalTimeCounter = nullptr;
 
     std::atomic_ullong initializeProfiler = {0};
     std::atomic_ullong jitCachedFunctionSearchStarted = {0};
@@ -60,7 +66,7 @@ public:
     Stats()
     {
         totalTime = 0;
-        totalTimeCounter = new SWStat(&totalTime);
+        totalTimeCounter = std::make_unique<SWStat>(&totalTime);
 
         initializeProfiler = 0;
         jitCachedFunctionSearchStarted = 0;
@@ -158,7 +164,7 @@ public:
                               ns_jitCompilationStarted + ns_jitInlining + ns_jitCachedFunctionSearchStarted +
                               ns_initializeProfiler;
 
-        delete totalTimeCounter;
+        totalTimeCounter->Refresh();
         const auto ns_fromBeginToEndTotal = totalTime.load();
 
         std::stringstream ss;
