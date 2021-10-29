@@ -15,26 +15,10 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
-    public class AspNetCoreMvc21TestsCallsite : AspNetCoreMvc21Tests
-    {
-        public AspNetCoreMvc21TestsCallsite(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, enableCallTarget: false, enableRouteTemplateResourceNames: false)
-        {
-        }
-    }
-
-    public class AspNetCoreMvc21TestsCallsiteWithFeatureFlag : AspNetCoreMvc21Tests
-    {
-        public AspNetCoreMvc21TestsCallsiteWithFeatureFlag(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, enableCallTarget: false, enableRouteTemplateResourceNames: true)
-        {
-        }
-    }
-
     public class AspNetCoreMvc21TestsCallTarget : AspNetCoreMvc21Tests
     {
         public AspNetCoreMvc21TestsCallTarget(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, enableCallTarget: true, enableRouteTemplateResourceNames: false)
+            : base(fixture, output, enableRouteTemplateResourceNames: false)
         {
         }
     }
@@ -42,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     public class AspNetCoreMvc21TestsCallTargetWithFeatureFlag : AspNetCoreMvc21Tests
     {
         public AspNetCoreMvc21TestsCallTargetWithFeatureFlag(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, enableCallTarget: true, enableRouteTemplateResourceNames: true)
+            : base(fixture, output, enableRouteTemplateResourceNames: true)
         {
         }
     }
@@ -51,8 +35,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     {
         private readonly string _testName;
 
-        protected AspNetCoreMvc21Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output, bool enableCallTarget, bool enableRouteTemplateResourceNames)
-            : base("AspNetCoreMvc21", fixture, output, enableCallTarget, enableRouteTemplateResourceNames)
+        protected AspNetCoreMvc21Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output, bool enableRouteTemplateResourceNames)
+            : base("AspNetCoreMvc21", fixture, output, enableRouteTemplateResourceNames)
         {
             _testName = GetTestName(nameof(AspNetCoreMvc21Tests));
         }

@@ -6,7 +6,6 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.ClrProfiler.Integrations;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7
 {

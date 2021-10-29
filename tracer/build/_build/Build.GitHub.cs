@@ -121,7 +121,6 @@ partial class Build
             {
                 "docs/CHANGELOG.md",
                 "tracer/build/_build/Build.cs",
-                "tracer/integrations.json",
                 "tracer/samples/AutomaticTraceIdInjection/MicrosoftExtensionsExample/MicrosoftExtensionsExample.csproj",
                 "tracer/samples/AutomaticTraceIdInjection/Log4NetExample/Log4NetExample.csproj",
                 "tracer/samples/AutomaticTraceIdInjection/NLog40Example/NLog40Example.csproj",

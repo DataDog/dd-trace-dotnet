@@ -21,22 +21,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
-        public static IEnumerable<object[]> GetMySqlConnector()
-        {
-            foreach (object[] item in PackageVersions.MySqlConnector)
-            {
-                yield return item.Concat(false);
-                yield return item.Concat(true);
-            }
-        }
-
         [Theory]
-        [MemberData(nameof(GetMySqlConnector))]
+        [MemberData(nameof(PackageVersions.MySqlConnector), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTraces(string packageVersion, bool enableCallTarget)
+        public void SubmitsTraces(string packageVersion)
         {
-            SetCallTargetSettings(enableCallTarget);
-
             // ALWAYS: 75 spans
             // - MySqlCommand: 21 spans (3 groups * 7 spans - 6 missing spans)
             // - DbCommand:  42 spans (6 groups * 7 spans)
@@ -53,19 +42,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             // NETSTANDARD + CALLTARGET: +7 spans
             // - IDbCommandGenericConstrant<MySqlCommand>-netstandard: 7 spans (1 group * 7 spans)
 #if NET452
-            var expectedSpanCount = 71;
+            var expectedSpanCount = 84;
 #else
-            var expectedSpanCount = 127;
+            var expectedSpanCount = 147;
 #endif
-
-            if (enableCallTarget)
-            {
-#if NET452
-                expectedSpanCount = 84;
-#else
-                expectedSpanCount = 147;
-#endif
-            }
 
             const string dbType = "mysql";
             const string expectedOperationName = dbType + ".query";
@@ -95,12 +75,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         }
 
         [Theory]
-        [MemberData(nameof(GetMySqlConnector))]
+        [MemberData(nameof(PackageVersions.MySqlConnector), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
-        public void SpansDisabledByAdoNetExcludedTypes(string packageVersion, bool enableCallTarget)
+        public void SpansDisabledByAdoNetExcludedTypes(string packageVersion)
         {
-            SetCallTargetSettings(enableCallTarget);
-
             var totalSpanCount = 21;
 
             const string dbType = "mysql";

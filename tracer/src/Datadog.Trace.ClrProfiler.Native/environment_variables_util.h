@@ -51,25 +51,14 @@ bool DisableOptimizations()
     CheckIfTrue(GetEnvironmentValue(environment::clr_disable_optimizations));
 }
 
-bool EnableInlining(bool defaultValue)
+bool EnableInlining()
 {
-    ToBooleanWithDefault(GetEnvironmentValue(environment::clr_enable_inlining), defaultValue);
-}
-
-bool IsCallTargetEnabled(bool defaultValue) {
-#if defined(ARM64) || defined(ARM)
-    //
-    // If the architecture is ARM64 or ARM, we enable CallTarget instrumentation by default
-    //
-    ToBooleanWithDefault(GetEnvironmentValue(environment::calltarget_enabled), true);
-#else
-    ToBooleanWithDefault(GetEnvironmentValue(environment::calltarget_enabled), defaultValue);
-#endif
+    ToBooleanWithDefault(GetEnvironmentValue(environment::clr_enable_inlining), true);
 }
 
 bool IsNGENEnabled()
 {
-    ToBooleanWithDefault(GetEnvironmentValue(environment::clr_enable_ngen), false);
+    ToBooleanWithDefault(GetEnvironmentValue(environment::clr_enable_ngen), true);
 }
 
 bool IsDebugEnabled()
@@ -95,16 +84,6 @@ bool IsAzureAppServices()
 bool IsAzureFunctionsEnabled()
 {
     CheckIfTrue(GetEnvironmentValue(environment::azure_functions_enabled));
-}
-
-bool IsNetstandardEnabled()
-{
-    CheckIfTrue(GetEnvironmentValue(environment::netstandard_enabled));
-}
-
-bool IsDomainNeutralInstrumentation()
-{
-    CheckIfTrue(GetEnvironmentValue(environment::domain_neutral_instrumentation));
 }
 
 } // namespace trace

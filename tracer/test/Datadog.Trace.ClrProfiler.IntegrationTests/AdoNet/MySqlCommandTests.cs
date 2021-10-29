@@ -30,8 +30,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                     continue;
                 }
 
-                yield return item.Concat(false);
-                yield return item.Concat(true);
+                yield return item;
             }
         }
 
@@ -44,36 +43,31 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                     continue;
                 }
 
-                yield return item.Concat(false);
-                yield return item.Concat(true);
+                yield return item;
             }
         }
 
         [SkippableTheory]
         [MemberData(nameof(GetMySql8Data))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTracesWithNetStandardInMySql8(string packageVersion, bool enableCallTarget)
+        public void SubmitsTracesWithNetStandardInMySql8(string packageVersion)
         {
-            SubmitsTracesWithNetStandard(packageVersion, enableCallTarget);
+            SubmitsTracesWithNetStandard(packageVersion);
         }
 
         [SkippableTheory]
         [MemberData(nameof(GetOldMySqlData))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
-        public void SubmitsTracesWithNetStandardInOldMySql(string packageVersion, bool enableCallTarget)
+        public void SubmitsTracesWithNetStandardInOldMySql(string packageVersion)
         {
-            SubmitsTracesWithNetStandard(packageVersion, enableCallTarget);
+            SubmitsTracesWithNetStandard(packageVersion);
         }
 
-        [SkippableTheory]
-        [InlineData(false)]
-        [InlineData(true)]
+        [SkippableFact]
         [Trait("Category", "EndToEnd")]
-        public void SpansDisabledByAdoNetExcludedTypes(bool enableCallTarget)
+        public void SpansDisabledByAdoNetExcludedTypes()
         {
-            SetCallTargetSettings(enableCallTarget);
-
             var totalSpanCount = 21;
 
             const string dbType = "mysql";
@@ -92,10 +86,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             }
         }
 
-        private void SubmitsTracesWithNetStandard(string packageVersion, bool enableCallTarget)
+        private void SubmitsTracesWithNetStandard(string packageVersion)
         {
-            SetCallTargetSettings(enableCallTarget);
-
             // ALWAYS: 75 spans
             // - MySqlCommand: 19 spans (3 groups * 7 spans - 2 missing spans)
             // - DbCommand:  42 spans (6 groups * 7 spans)
@@ -111,25 +103,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             //
             // NETSTANDARD + CALLTARGET: +7 spans
             // - IDbCommandGenericConstrant<MySqlCommand>-netstandard: 7 spans (1 group * 7 spans)
-#if NET452
-            var expectedSpanCount = 75;
-#else
-            var expectedSpanCount = 131;
-#endif
-
-            if (packageVersion == "6.8.8")
-            {
-                expectedSpanCount -= 2; // For this version the callsite instrumentation returns 2 spans less.
-            }
-
-            if (enableCallTarget)
-            {
-#if NET452
-                expectedSpanCount = 84;
-#else
-                expectedSpanCount = 147;
-#endif
-            }
+            var expectedSpanCount = 147;
 
             const string dbType = "mysql";
             const string expectedOperationName = dbType + ".query";

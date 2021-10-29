@@ -37,7 +37,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base("Kafka", output)
         {
             SetServiceVersion("1.0.0");
-            SetCallTargetSettings(enableCallTarget: true);
         }
 
         [SkippableTheory]

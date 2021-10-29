@@ -15,26 +15,10 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
-    public class AspNetCoreMvc31TestsCallsite : AspNetCoreMvc31Tests
-    {
-        public AspNetCoreMvc31TestsCallsite(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, enableCallTarget: false, enableRouteTemplateResourceNames: false)
-        {
-        }
-    }
-
-    public class AspNetCoreMvc31TestsCallsiteWithFeatureFlag : AspNetCoreMvc31Tests
-    {
-        public AspNetCoreMvc31TestsCallsiteWithFeatureFlag(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, enableCallTarget: false, enableRouteTemplateResourceNames: true)
-        {
-        }
-    }
-
     public class AspNetCoreMvc31TestsCallTarget : AspNetCoreMvc31Tests
     {
         public AspNetCoreMvc31TestsCallTarget(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, enableCallTarget: true, enableRouteTemplateResourceNames: false)
+            : base(fixture, output, enableRouteTemplateResourceNames: false)
         {
         }
     }
@@ -42,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     public class AspNetCoreMvc31TestsCallTargetWithFeatureFlag : AspNetCoreMvc31Tests
     {
         public AspNetCoreMvc31TestsCallTargetWithFeatureFlag(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, enableCallTarget: true, enableRouteTemplateResourceNames: true)
+            : base(fixture, output, enableRouteTemplateResourceNames: true)
         {
         }
     }
@@ -51,8 +35,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     {
         private readonly string _testName;
 
-        protected AspNetCoreMvc31Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output, bool enableCallTarget, bool enableRouteTemplateResourceNames)
-            : base("AspNetCoreMvc31", fixture, output, enableCallTarget, enableRouteTemplateResourceNames)
+        protected AspNetCoreMvc31Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output, bool enableRouteTemplateResourceNames)
+            : base("AspNetCoreMvc31", fixture, output, enableRouteTemplateResourceNames)
         {
             _testName = GetTestName(nameof(AspNetCoreMvc31Tests));
         }

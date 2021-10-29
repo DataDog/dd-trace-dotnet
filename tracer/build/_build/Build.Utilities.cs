@@ -97,7 +97,6 @@ partial class Build
             envVars["COR_PROFILER"] = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
             envVars["COR_PROFILER_PATH_64"] = TracerHomeDirectory / "win-x64" / "Datadog.Trace.ClrProfiler.Native.dll";
             envVars["COR_PROFILER_PATH_32"] = TracerHomeDirectory / "win-x86" / "Datadog.Trace.ClrProfiler.Native.dll";
-            envVars["DD_INTEGRATIONS"] = TracerHomeDirectory / "integrations.json";
             envVars["DD_DOTNET_TRACER_HOME"] = TracerHomeDirectory;
 
             if (ExtraEnvVars?.Length > 0)
@@ -129,7 +128,6 @@ partial class Build
                 {"COR_PROFILER_PATH_64", TracerHomeDirectory / "win-x64" / "Datadog.Trace.ClrProfiler.Native.dll"},
                 {"CORECLR_ENABLE_PROFILING", "1"},
                 {"CORECLR_PROFILER", "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"},
-                {"DD_INTEGRATIONS", TracerHomeDirectory / "integrations.json" },
                 {"DD_DOTNET_TRACER_HOME", TracerHomeDirectory },
                 {"ASPNETCORE_URLS", "http://*:5003" },
             };
@@ -215,7 +213,6 @@ partial class Build
     Target UpdateIntegrationsJson => _ => _
        .Description("Update the integrations.json file")
        .DependsOn(Clean, Restore, CreateRequiredDirectories, CompileManagedSrc, PublishManagedProfiler) // We load the dlls from the output, so need to do a clean build
-       .Before(CopyIntegrationsJson)
        .Executes(async () =>
         {
             var assemblies = TracerHomeDirectory

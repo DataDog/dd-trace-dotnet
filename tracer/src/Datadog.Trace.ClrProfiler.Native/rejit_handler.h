@@ -117,8 +117,7 @@ private:
     std::unordered_map<ModuleID, std::unique_ptr<RejitHandlerModule>> m_modules;
     AssemblyProperty* m_pCorAssemblyProperty = nullptr;
 
-    ICorProfilerInfo4* m_profilerInfo;
-    ICorProfilerInfo6* m_profilerInfo6;
+    ICorProfilerInfo7* m_profilerInfo;
     ICorProfilerInfo10* m_profilerInfo10;
     std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> m_rewriteCallback;
 
@@ -134,9 +133,7 @@ private:
     void RequestRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef);
 
 public:
-    RejitHandler(ICorProfilerInfo4* pInfo,
-                 std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> rewriteCallback);
-    RejitHandler(ICorProfilerInfo6* pInfo,
+    RejitHandler(ICorProfilerInfo7* pInfo,
                  std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> rewriteCallback);
     RejitHandler(ICorProfilerInfo10* pInfo,
                  std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> rewriteCallback);
@@ -159,8 +156,7 @@ public:
                                   ICorProfilerFunctionControl* pFunctionControl);
     HRESULT NotifyReJITCompilationStarted(FunctionID functionId, ReJITID rejitId);
 
-    ICorProfilerInfo4* GetCorProfilerInfo();
-    ICorProfilerInfo6* GetCorProfilerInfo6();
+    ICorProfilerInfo7* GetCorProfilerInfo();
 
     void SetCorAssemblyProfiler(AssemblyProperty* pCorAssemblyProfiler);
     void RequestRejitForNGenInliners();

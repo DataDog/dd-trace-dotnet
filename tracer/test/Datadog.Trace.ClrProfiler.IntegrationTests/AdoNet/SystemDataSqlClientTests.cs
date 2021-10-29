@@ -22,23 +22,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
-        public static IEnumerable<object[]> GetSystemDataSqlClient()
-        {
-            foreach (object[] item in PackageVersions.SystemDataSqlClient)
-            {
-                yield return item.Concat(false);
-                yield return item.Concat(true);
-            }
-        }
-
         [SkippableTheory]
-        [MemberData(nameof(GetSystemDataSqlClient))]
+        [MemberData(nameof(PackageVersions.SystemDataSqlClient), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void SubmitsTracesWithNetStandard(string packageVersion, bool enableCallTarget)
+        public void SubmitsTracesWithNetStandard(string packageVersion)
         {
-            SetCallTargetSettings(enableCallTarget);
-
             // ALWAYS: 98 spans
             // - SqlCommand: 21 spans (3 groups * 7 spans)
             // - DbCommand:  42 spans (6 groups * 7 spans)
@@ -57,22 +46,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             //
             // NETSTANDARD + CALLTARGET: +7 spans
             // - IDbCommandGenericConstrant<SqlCommand>-netstandard: 7 spans (1 group * 7 spans)
-#if NET452
-            var expectedSpanCount = 98;
-#elif NET461
-            var expectedSpanCount = 154;
-#else
-            var expectedSpanCount = 158;
-#endif
 
-            if (enableCallTarget)
-            {
-#if NET452
-                expectedSpanCount = 105;
-#else
-                expectedSpanCount = 168;
-#endif
-            }
+            var expectedSpanCount = 168;
 
             const string dbType = "sql-server";
             const string expectedOperationName = dbType + ".query";
@@ -100,15 +75,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             }
         }
 
-        [SkippableTheory]
-        [InlineData(false)]
-        [InlineData(true)]
+        [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void SpansDisabledByAdoNetExcludedTypes(bool enableCallTarget)
+        public void SpansDisabledByAdoNetExcludedTypes()
         {
-            SetCallTargetSettings(enableCallTarget);
-
             var totalSpanCount = 21;
 
             const string dbType = "sql-server";

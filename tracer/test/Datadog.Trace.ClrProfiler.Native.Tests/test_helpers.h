@@ -57,6 +57,17 @@ class CLRHelperTestBase : public ::testing::Test {
 
   void SetUp() override { LoadMetadataDependencies(); }
 
+  static Enumerator<mdMethodDef> EnumMethods(const ComPtr<IMetaDataImport2>& metadata_import,
+                                             const mdToken& parent_token)
+  {
+      return Enumerator<mdMethodDef>(
+          [metadata_import, parent_token](HCORENUM* ptr, mdMethodDef arr[], ULONG max, ULONG* cnt) -> HRESULT {
+              return metadata_import->EnumMethods(ptr, parent_token, arr, max, cnt);
+          },
+          [metadata_import](HCORENUM ptr) -> void { metadata_import->CloseEnum(ptr); });
+  }
+
+
   FunctionInfo FunctionToTest(const WSTRING& type_name, const WSTRING& method_name) const {
     for (auto& type_def : EnumTypeDefs(metadata_import_)) {
       for (auto& method_def : EnumMethods(metadata_import_, type_def)) {

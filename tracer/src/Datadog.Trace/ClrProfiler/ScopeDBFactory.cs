@@ -5,7 +5,6 @@
 
 using System;
 using System.Data;
-using Datadog.Trace.ClrProfiler.Integrations.AdoNet;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 
@@ -44,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler
                 return null;
             }
 
-            if (!tracer.Settings.IsIntegrationEnabled(AdoNetConstants.IntegrationId))
+            if (!tracer.Settings.IsIntegrationEnabled(ScopeFactory.DbIntegrationId))
             {
                 // integration disabled, don't create a scope, skip this span
                 return null;
@@ -81,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler
 
                 tags.DbType = _dbTypeName;
 
-                tags.SetAnalyticsSampleRate(AdoNetConstants.IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                tags.SetAnalyticsSampleRate(ScopeFactory.DbIntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
             }
             catch (Exception ex)
             {

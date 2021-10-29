@@ -5,9 +5,6 @@
   <?include $(sys.CURRENTDIR)\Config.wxi?>
   <Fragment>
     <ComponentGroup Id="Tracer.Files" Directory="Tracer">
-      <Component Win64="$(var.Win64)">
-        <File Id="integrations.json" Source="$(var.TracerHomeDirectory)\integrations.json" />
-      </Component>
     </ComponentGroup>
 
     <?if $(var.Win64) = yes ?>

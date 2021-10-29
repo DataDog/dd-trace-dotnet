@@ -339,11 +339,6 @@ namespace Datadog.Trace.TestHelpers
             SetEnvironmentVariable("DD_VERSION", serviceVersion);
         }
 
-        protected void SetCallTargetSettings(bool enableCallTarget)
-        {
-            SetEnvironmentVariable("DD_TRACE_CALLTARGET_ENABLED", enableCallTarget ? "true" : "false");
-        }
-
         protected void SetSecurity(bool security)
         {
             SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSecEnabled, security ? "true" : "false");

@@ -33,20 +33,17 @@ private:
     // Startup helper variables
     bool first_jit_compilation_completed = false;
 
-    bool instrument_domain_neutral_assemblies = false;
     bool corlib_module_loaded = false;
     AppDomainID corlib_app_domain_id = 0;
     bool managed_profiler_loaded_domain_neutral = false;
     std::unordered_set<AppDomainID> managed_profiler_loaded_app_domains;
     std::unordered_set<AppDomainID> first_jit_compilation_app_domains;
-    bool in_azure_app_services = false;
     bool is_desktop_iis = false;
-    bool is_net46_or_greater = false;
 
     //
     // CallTarget Members
     //
-    RejitHandler* rejit_handler = nullptr;
+    std::unique_ptr<RejitHandler> rejit_handler = nullptr;
 
     // Cor assembly properties
     AssemblyProperty corAssemblyProperty{};
@@ -60,8 +57,7 @@ private:
     //
     // Module helper variables
     //
-    std::mutex module_id_to_info_map_lock_;
-    std::unordered_map<ModuleID, ModuleMetadata*> module_id_to_info_map_;
+    std::mutex module_ids_lock_;
     std::vector<ModuleID> module_ids_;
 
     //
@@ -73,12 +69,6 @@ private:
     bool GetWrapperMethodRef(ModuleMetadata* module_metadata, ModuleID module_id,
                              const MethodReplacement& method_replacement, mdMemberRef& wrapper_method_ref,
                              mdTypeRef& wrapper_type_ref);
-    HRESULT ProcessReplacementCalls(ModuleMetadata* module_metadata, const FunctionID function_id,
-                                    const ModuleID module_id, const mdToken function_token, const FunctionInfo& caller,
-                                    const std::vector<MethodReplacement> method_replacements);
-    HRESULT ProcessInsertionCalls(ModuleMetadata* module_metadata, const FunctionID function_id,
-                                  const ModuleID module_id, const mdToken function_token, const FunctionInfo& caller,
-                                  const std::vector<MethodReplacement> method_replacements);
     bool ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id);
     std::string GetILCodes(const std::string& title, ILRewriter* rewriter, const FunctionInfo& caller,
                            ModuleMetadata* module_metadata);

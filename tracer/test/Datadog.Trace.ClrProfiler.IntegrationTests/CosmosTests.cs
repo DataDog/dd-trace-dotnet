@@ -35,24 +35,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        public static IEnumerable<object[]> GetCosmosVersions()
-        {
-            foreach (object[] item in PackageVersions.CosmosDb)
-            {
-                yield return item.ToArray();
-            }
-        }
-
         [SkippableTheory]
-        [MemberData(nameof(GetCosmosVersions))]
+        [MemberData(nameof(PackageVersions.CosmosDb), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("Category", "LinuxUnsupported")]
         [Trait("Category", "ArmUnsupported")]
         public void SubmitsTraces(string packageVersion)
         {
-            SetCallTargetSettings(true);
-
             var expectedSpanCount = 14;
 
             int agentPort = TcpPortProvider.GetOpenPort();

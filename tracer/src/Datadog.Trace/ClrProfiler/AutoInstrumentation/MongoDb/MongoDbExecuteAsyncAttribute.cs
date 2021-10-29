@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.ClrProfiler.Integrations;
-
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 {
     internal class MongoDbExecuteAsyncAttribute : MongoDbInstrumentMethodAttribute

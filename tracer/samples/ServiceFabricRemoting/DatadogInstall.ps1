@@ -36,7 +36,6 @@ function Set-MachineEnvironmentVariable {
 }
 
 Set-MachineEnvironmentVariable 'DD_DOTNET_TRACER_HOME' $DD_DOTNET_TRACER_HOME
-Set-MachineEnvironmentVariable 'DD_INTEGRATIONS' "$DD_DOTNET_TRACER_HOME\integrations.json"
 Set-MachineEnvironmentVariable 'DD_TRACE_LOG_DIRECTORY' "$LOGS_PATH"
 
 # Set-MachineEnvironmentVariable'COR_ENABLE_PROFILING' '0' # Enable per app
