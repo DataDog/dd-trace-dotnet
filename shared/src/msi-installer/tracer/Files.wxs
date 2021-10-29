@@ -4,6 +4,9 @@
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
   <?include $(sys.CURRENTDIR)\Config.wxi?>
   <Fragment>
+    <ComponentGroup Id="Tracer.Files" Directory="tracer">
+    </ComponentGroup>
+
     <?if $(var.Win64) = yes ?>
     <ComponentGroup Id="Tracer.Files.Native.64" Directory="tracer.win_x64">
       <Component Win64="yes">
