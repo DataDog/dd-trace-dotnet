@@ -3,11 +3,15 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.ComponentModel;
+
 namespace System.Runtime.CompilerServices
 {
     /// <summary>
     /// This attribute is recognized by the CLR and allow us to disable visibility checks for certain assemblies (only from 4.6+)
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
     public class IgnoresAccessChecksToAttribute : Attribute
     {
