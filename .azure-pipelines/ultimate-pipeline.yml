@@ -72,7 +72,7 @@ variables:
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
   artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
   ddApiKey: $(DD_API_KEY)
-  isMainBranch: $[eq(variables['Build.SourceBranch'], 'refs/heads/master')]
+  isMainBranch: $[or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'))]
   isPullRequest: $[eq(variables['Build.Reason'], 'PullRequest')]
   DD_DOTNET_TRACER_MSBUILD:
   NugetPackageDirectory: $(System.DefaultWorkingDirectory)/packages
