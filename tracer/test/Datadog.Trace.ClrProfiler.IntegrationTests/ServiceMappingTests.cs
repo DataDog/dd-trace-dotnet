@@ -30,8 +30,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var (ignoreAsync, expectedSpanCount) = (EnvironmentHelper.IsCoreClr(), enableCallTarget) switch
             {
-                (false, false) => (true, 28), // .NET Framework CallSite instrumentation doesn't cover Async / TaskAsync operations
-                _ => (false, 74)
+                (false, false) => (true, 30), // .NET Framework CallSite instrumentation doesn't cover Async / TaskAsync operations
+                _ => (false, 76)
             };
 
             const string expectedOperationName = "http.request";

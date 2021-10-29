@@ -389,7 +389,7 @@ namespace Datadog.Trace
             }
         }
 
-        internal SpanContext CreateSpanContext(ISpanContext parent = null, string serviceName = null, bool ignoreActiveScope = false, ulong? spanId = null)
+        internal SpanContext CreateSpanContext(ISpanContext parent = null, string serviceName = null, bool ignoreActiveScope = false, ulong? traceId = null, ulong? spanId = null)
         {
             if (parent == null && !ignoreActiveScope)
             {
@@ -412,7 +412,7 @@ namespace Datadog.Trace
             }
 
             var finalServiceName = serviceName ?? parent?.ServiceName ?? DefaultServiceName;
-            var spanContext = new SpanContext(parent, traceContext, finalServiceName, spanId);
+            var spanContext = new SpanContext(parent, traceContext, finalServiceName, traceId: traceId, spanId: spanId);
 
             return spanContext;
         }
@@ -423,9 +423,9 @@ namespace Datadog.Trace
             return _scopeManager.Activate(span, finishOnClose);
         }
 
-        internal Span StartSpan(string operationName, ITags tags, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false, ulong? spanId = null)
+        internal Span StartSpan(string operationName, ITags tags, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false, ulong? traceId = null, ulong? spanId = null, bool addToTraceContext = true)
         {
-            var spanContext = CreateSpanContext(parent, serviceName, ignoreActiveScope, spanId);
+            var spanContext = CreateSpanContext(parent, serviceName, ignoreActiveScope, traceId, spanId);
 
             var span = new Span(spanContext, startTime, tags)
             {
@@ -455,7 +455,11 @@ namespace Datadog.Trace
                 span.SetTag(Tags.Version, version);
             }
 
-            spanContext.TraceContext.AddSpan(span);
+            if (addToTraceContext)
+            {
+                spanContext.TraceContext.AddSpan(span);
+            }
+
             return span;
         }
 

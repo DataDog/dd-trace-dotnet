@@ -41,14 +41,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                 // Check if any headers were injected by a previous call to GetRequestStream
                 var spanContext = SpanContextPropagator.Instance.Extract(request.Headers.Wrap());
 
+                // If this operation creates the trace, then we need to re-apply the sampling priority
+                bool setSamplingPriority = spanContext?.SamplingPriority != null && Tracer.Instance.ActiveScope == null;
+
                 Scope scope = null;
 
                 try
                 {
-                    scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, request.Method, request.RequestUri, IntegrationId, out var tags, spanContext?.SpanId);
+                    scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, request.Method, request.RequestUri, IntegrationId, out var tags, spanContext?.TraceId, spanContext?.SpanId);
 
                     if (scope != null)
                     {
+                        if (setSamplingPriority)
+                        {
+                            scope.Span.SetTraceSamplingPriority(spanContext.SamplingPriority.Value);
+                            scope.Span.Context.TraceContext.LockSamplingPriority();
+                        }
+
                         // add distributed tracing headers to the HTTP request
                         SpanContextPropagator.Instance.Inject(scope.Span.Context, request.Headers.Wrap());
 

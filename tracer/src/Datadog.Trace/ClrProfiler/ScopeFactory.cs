@@ -43,34 +43,24 @@ namespace Datadog.Trace.ClrProfiler
         }
 
         /// <summary>
-        /// Creates a span context for outbound http requests, or get the active one.
-        /// Used to propagate headers without changing the active span.
+        /// Creates a scope for outbound http requests and populates some common details.
         /// </summary>
-        /// <param name="tracer">The tracer instance to use to create the span.</param>
+        /// <param name="tracer">The tracer instance to use to create the new scope.</param>
+        /// <param name="httpMethod">The HTTP method used by the request.</param>
+        /// <param name="requestUri">The URI requested by the request.</param>
         /// <param name="integrationId">The id of the integration creating this scope.</param>
-        /// <returns>A span context to use to populate headers</returns>
-        public static SpanContext CreateHttpSpanContext(Tracer tracer, IntegrationInfo integrationId)
+        /// <param name="tags">The tags associated to the scope</param>
+        /// <param name="traceId">The trace id - this id will be ignored if there's already an active trace</param>
+        /// <param name="spanId">The span id</param>
+        /// <param name="startTime">The start time that should be applied to the span</param>
+        /// <returns>A new pre-populated scope.</returns>
+        internal static Scope CreateOutboundHttpScope(Tracer tracer, string httpMethod, Uri requestUri, IntegrationInfo integrationId, out HttpTags tags, ulong? traceId = null, ulong? spanId = null, DateTimeOffset? startTime = null)
         {
-            if (!tracer.Settings.IsIntegrationEnabled(integrationId))
-            {
-                // integration disabled, skip this trace
-                return null;
-            }
+            var span = CreateInactiveOutboundHttpSpan(tracer, httpMethod, requestUri, integrationId, out tags, traceId, spanId, startTime, addToTraceContext: true);
 
-            try
+            if (span != null)
             {
-                var activeScope = GetActiveHttpScope(tracer);
-
-                if (activeScope != null)
-                {
-                    return activeScope.Span.Context;
-                }
-
-                return tracer.CreateSpanContext(serviceName: $"{tracer.DefaultServiceName}-{ServiceName}");
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating or populating span context.");
+                return tracer.ActivateSpan(span);
             }
 
             return null;
@@ -84,23 +74,12 @@ namespace Datadog.Trace.ClrProfiler
         /// <param name="requestUri">The URI requested by the request.</param>
         /// <param name="integrationId">The id of the integration creating this scope.</param>
         /// <param name="tags">The tags associated to the scope</param>
-        /// <param name="spanId">The span ID</param>
-        /// <returns>A new pre-populated scope.</returns>
-        public static Scope CreateOutboundHttpScope(Tracer tracer, string httpMethod, Uri requestUri, IntegrationInfo integrationId, out HttpTags tags, ulong? spanId = null)
-            => CreateOutboundHttpScope(tracer, httpMethod, requestUri, integrationId, out tags, spanId, startTime: null);
-
-        /// <summary>
-        /// Creates a scope for outbound http requests and populates some common details.
-        /// </summary>
-        /// <param name="tracer">The tracer instance to use to create the new scope.</param>
-        /// <param name="httpMethod">The HTTP method used by the request.</param>
-        /// <param name="requestUri">The URI requested by the request.</param>
-        /// <param name="integrationId">The id of the integration creating this scope.</param>
-        /// <param name="tags">The tags associated to the scope</param>
-        /// <param name="spanId">The span ID</param>
+        /// <param name="traceId">The trace id - this id will be ignored if there's already an active trace</param>
+        /// <param name="spanId">The span id</param>
         /// <param name="startTime">The start time that should be applied to the span</param>
+        /// <param name="addToTraceContext">Set to false if the span is meant to be discarded. In that case, the span won't be added to the TraceContext.</param>
         /// <returns>A new pre-populated scope.</returns>
-        internal static Scope CreateOutboundHttpScope(Tracer tracer, string httpMethod, Uri requestUri, IntegrationInfo integrationId, out HttpTags tags, ulong? spanId, DateTimeOffset? startTime)
+        internal static Span CreateInactiveOutboundHttpSpan(Tracer tracer, string httpMethod, Uri requestUri, IntegrationInfo integrationId, out HttpTags tags, ulong? traceId, ulong? spanId, DateTimeOffset? startTime, bool addToTraceContext)
         {
             tags = null;
 
@@ -110,7 +89,7 @@ namespace Datadog.Trace.ClrProfiler
                 return null;
             }
 
-            Scope scope = null;
+            Span span = null;
 
             try
             {
@@ -128,9 +107,7 @@ namespace Datadog.Trace.ClrProfiler
                 tags = new HttpTags();
 
                 string serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
-                scope = tracer.StartActiveWithTags(OperationName, tags: tags, serviceName: serviceName, spanId: spanId, startTime: startTime);
-
-                var span = scope.Span;
+                span = tracer.StartSpan(OperationName, tags, serviceName: serviceName, traceId: traceId, spanId: spanId, startTime: startTime, addToTraceContext: addToTraceContext);
 
                 span.Type = SpanTypes.Http;
                 span.ResourceName = $"{httpMethod} {resourceUrl}";
@@ -140,15 +117,21 @@ namespace Datadog.Trace.ClrProfiler
                 tags.InstrumentationName = IntegrationRegistry.GetName(integrationId);
 
                 tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
+
+                if (!addToTraceContext && span.Context.TraceContext.SamplingPriority == null)
+                {
+                    // If we don't add the span to the trace context, then we need to manually call the sampler
+                    span.Context.TraceContext.SamplingPriority = tracer.Sampler?.GetSamplingPriority(span);
+                }
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error creating or populating scope.");
+                Log.Error(ex, "Error creating or populating span.");
             }
 
-            // always returns the scope, even if it's null because we couldn't create it,
+            // always returns the span, even if it's null because we couldn't create it,
             // or we couldn't populate it completely (some tags is better than no tags)
-            return scope;
+            return span;
         }
 
         public static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command)

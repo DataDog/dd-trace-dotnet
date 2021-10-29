@@ -345,72 +345,17 @@ namespace Samples.WebRequest
 
                 using (Tracer.Instance.StartActive("GetRequestStream"))
                 {
-                    // Create separate request objects since .NET Core asserts only one response per request
-                    HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest("GetRequestStream", url));
-                    request.Method = "POST";
-
-                    if (tracingDisabled)
-                    {
-                        request.Headers.Add(HttpHeaderNames.TracingEnabled, "false");
-                    }
-
-                    var stream = request.GetRequestStream();
-                    stream.Write(new byte[1], 0, 1);
-
-                    request.GetResponse().Close();
-                    Console.WriteLine("Received response for request.GetRequestStream()/GetResponse()");
+                    GetRequestStream(tracingDisabled, url);
                 }
 
                 using (Tracer.Instance.StartActive("BeginGetRequestStream"))
                 {
-                    // Create separate request objects since .NET Core asserts only one response per request
-                    HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest("BeginGetRequestStream", url));
-                    request.Method = "POST";
-
-                    if (tracingDisabled)
-                    {
-                        request.Headers.Add(HttpHeaderNames.TracingEnabled, "false");
-                    }
-
-                    request.BeginGetRequestStream(
-                        iar =>
-                        {
-                            var req = (HttpWebRequest)iar.AsyncState;
-                            var stream = req.EndGetRequestStream(iar);
-                            stream.Write(new byte[1], 0, 1);
-
-                            request.GetResponse()
-                                   .Close();
-
-                            Console.WriteLine("Received response for request.Begin/EndGetRequestStream()/GetResponse()");
-                            _allDone.Set();
-                        }, request);
-
-                    _allDone.WaitOne();
+                    BeginGetRequestStream(tracingDisabled, url);
                 }
 
                 using (Tracer.Instance.StartActive("BeginGetResponse"))
                 {
-                    // Create separate request objects since .NET Core asserts only one response per request
-                    HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest("BeginGetResponseAsync", url));
-                    if (tracingDisabled)
-                    {
-                        request.Headers.Add(HttpHeaderNames.TracingEnabled, "false");
-                    }
-
-                    request.BeginGetResponse(
-                        iar =>
-                        {
-                            var req = (HttpWebRequest)iar.AsyncState;
-                            var response = req.EndGetResponse(iar);
-
-                            response.Close();
-
-                            Console.WriteLine("Received response for request.Begin/EndGetResponse()");
-                            _allDone.Set();
-                        }, request);
-
-                    _allDone.WaitOne();
+                    BeginGetResponse(tracingDisabled, url);
                 }
 
                 using (Tracer.Instance.StartActive("BeginGetResponse TaskFactoryFromAsync"))
@@ -428,6 +373,94 @@ namespace Samples.WebRequest
                         state: request);
                 }
             }
+
+            // Try invoking those methods without a parent trace, to detect some sampling priority issues
+            GetRequestStream(tracingDisabled, url);
+            BeginGetRequestStream(tracingDisabled, url);
+
+        }
+
+        private static void BeginGetResponse(bool tracingDisabled, string url)
+        {
+            // Create separate request objects since .NET Core asserts only one response per request
+            HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest("BeginGetResponseAsync", url));
+            request.Method = "POST";
+            request.ContentLength = 1;
+            request.AllowWriteStreamBuffering = false;
+
+            if (tracingDisabled)
+            {
+                request.Headers.Add(HttpHeaderNames.TracingEnabled, "false");
+            }
+
+            var stream = request.GetRequestStream();
+            stream.Write(new byte[1], 0, 1);
+
+            request.BeginGetResponse(
+                iar =>
+                {
+                    var req = (HttpWebRequest)iar.AsyncState;
+                    var response = req.EndGetResponse(iar);
+
+                    response.Close();
+
+                    Console.WriteLine("Received response for request.Begin/EndGetResponse()");
+                    _allDone.Set();
+                },
+                request);
+
+            _allDone.WaitOne();
+        }
+
+        private static void BeginGetRequestStream(bool tracingDisabled, string url)
+        {
+            // Create separate request objects since .NET Core asserts only one response per request
+            HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest("BeginGetRequestStream", url));
+            request.Method = "POST";
+            request.ContentLength = 1;
+            request.AllowWriteStreamBuffering = false;
+
+            if (tracingDisabled)
+            {
+                request.Headers.Add(HttpHeaderNames.TracingEnabled, "false");
+            }
+
+            request.BeginGetRequestStream(
+                iar =>
+                {
+                    var req = (HttpWebRequest)iar.AsyncState;
+                    var stream = req.EndGetRequestStream(iar);
+                    stream.Write(new byte[1], 0, 1);
+
+                    request.GetResponse()
+                           .Close();
+
+                    Console.WriteLine("Received response for request.Begin/EndGetRequestStream()/GetResponse()");
+                    _allDone.Set();
+                },
+                request);
+
+            _allDone.WaitOne();
+        }
+
+        private static void GetRequestStream(bool tracingDisabled, string url)
+        {
+            // Create separate request objects since .NET Core asserts only one response per request
+            HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest("GetRequestStream", url));
+            request.Method = "POST";
+            request.ContentLength = 1;
+            request.AllowWriteStreamBuffering = false;
+
+            if (tracingDisabled)
+            {
+                request.Headers.Add(HttpHeaderNames.TracingEnabled, "false");
+            }
+
+            var stream = request.GetRequestStream();
+            stream.Write(new byte[1], 0, 1);
+
+            request.GetResponse().Close();
+            Console.WriteLine("Received response for request.GetRequestStream()/GetResponse()");
         }
 
         private static string GetUrlForTest(string testName, string baseUrl)
