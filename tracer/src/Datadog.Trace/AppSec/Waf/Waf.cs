@@ -19,6 +19,8 @@ namespace Datadog.Trace.AppSec.Waf
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Waf));
 
+        private static WafNative _wafNative;
+        private static Encoder _encoder;
         private readonly WafHandle wafHandle;
         private bool disposed = false;
 
@@ -36,7 +38,7 @@ namespace Datadog.Trace.AppSec.Waf
         {
             get
             {
-                var ver = WafNative.GetVersion();
+                var ver = _wafNative.GetVersion();
                 return new Version(ver.Major, ver.Minor, ver.Patch);
             }
         }
@@ -46,6 +48,15 @@ namespace Datadog.Trace.AppSec.Waf
         {
             var argCache = new List<Obj>();
             Obj configObj;
+            _wafNative = WafNative.Instance;
+            if (_wafNative == null)
+            {
+                Log.Error("Waf couldn't load");
+                return null;
+            }
+
+            _encoder = new Encoder(_wafNative);
+
             try
             {
                 using var stream = GetRulesStream(rulesFile);
@@ -65,7 +76,7 @@ namespace Datadog.Trace.AppSec.Waf
                 }
                 else
                 {
-                    Log.Error(ex, "AppSec could not read the rule file emmbeded in the manifest as it was invalid. AppSec will not run any protections in this application.");
+                    Log.Error(ex, "AppSec could not read the rule file embedded in the manifest as it was invalid. AppSec will not run any protections in this application.");
                 }
 
                 return null;
@@ -74,8 +85,8 @@ namespace Datadog.Trace.AppSec.Waf
             try
             {
                 DdwafConfigStruct args = default;
-                var ruleHandle = WafNative.Init(configObj.RawPtr, ref args);
-                return new Waf(new WafHandle(ruleHandle));
+                var ruleHandle = _wafNative.Init(configObj.RawPtr, ref args);
+                return new Waf(new WafHandle(_wafNative, ruleHandle));
             }
             finally
             {
@@ -89,7 +100,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         public IContext CreateContext()
         {
-            var handle = WafNative.InitContext(wafHandle.Handle, WafNative.ObjectFreeFuncPtr);
+            var handle = _wafNative.InitContext(wafHandle.Handle, _wafNative.ObjectFreeFuncPtr);
 
             if (handle == IntPtr.Zero)
             {
@@ -97,7 +108,7 @@ namespace Datadog.Trace.AppSec.Waf
                 throw new Exception("WAF initialization failed.");
             }
 
-            return new Context(handle);
+            return new Context(_wafNative, _encoder, handle);
         }
 
         public void Dispose()
@@ -126,7 +137,7 @@ namespace Datadog.Trace.AppSec.Waf
 
             LogRuleDetailsIfDebugEnabled(root);
 
-            return Encoder.Encode(root, argCache);
+            return _encoder.Encode(root, argCache);
         }
 
         private static Stream GetRulesManifestStream()

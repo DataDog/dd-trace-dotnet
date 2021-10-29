@@ -33,7 +33,7 @@ namespace Datadog.Trace.AppSec.Waf
         {
             get
             {
-                Initailize();
+                Initialize();
                 return Encoder.DecodeArgsType(innerObj.Type);
             }
         }
@@ -61,7 +61,7 @@ namespace Datadog.Trace.AppSec.Waf
             Marshal.FreeHGlobal(ptr);
         }
 
-        private void Initailize()
+        private void Initialize()
         {
             if (innerObjInitialized)
             {

@@ -35,6 +35,9 @@ partial class Build : NukeBuild
 
     [Parameter("The TargetFramework to execute when running or building a sample app, or linux integration tests")]
     readonly TargetFramework Framework;
+    
+    [Parameter("The Unit test name to execute, can contain wildcards")]
+    readonly string UnitTestsProjectName;
 
     [Parameter("Should all versions of integration NuGet packages be tested")]
     readonly bool TestAllPackageVersions;

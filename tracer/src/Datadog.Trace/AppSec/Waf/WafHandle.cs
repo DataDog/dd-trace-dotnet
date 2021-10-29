@@ -5,17 +5,18 @@
 
 using System;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
-using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.AppSec.Waf
 {
     internal class WafHandle : IDisposable
     {
+        private readonly WafNative _wafNative;
         private IntPtr ruleHandle;
         private bool disposed;
 
-        public WafHandle(IntPtr ruleHandle)
+        public WafHandle(WafNative wafNative, IntPtr ruleHandle)
         {
+            _wafNative = wafNative;
             this.ruleHandle = ruleHandle;
         }
 
@@ -37,7 +38,7 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             disposed = true;
-            WafNative.Destroy(ruleHandle);
+            _wafNative.Destroy(ruleHandle);
         }
 
         public void Dispose()

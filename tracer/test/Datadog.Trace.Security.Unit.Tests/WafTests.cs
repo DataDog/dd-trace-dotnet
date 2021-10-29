@@ -3,12 +3,16 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Serilog;
 using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests
@@ -98,15 +102,25 @@ namespace Datadog.Trace.Security.Unit.Tests
 
         private static void Execute(string address, object value, string flow, string rule)
         {
+            GlobalSettings.SetDebugEnabled(true);
             var args = new Dictionary<string, object>
             {
                 {
                     address, value
                 }
             };
-            args.TryAdd(AddressesConstants.RequestUriRaw, "http://localhost:54587/");
-            args.TryAdd(AddressesConstants.RequestMethod, "GET");
-            var waf = Waf.Initialize(FileName);
+            if (!args.ContainsKey(AddressesConstants.RequestUriRaw))
+            {
+                args.Add(AddressesConstants.RequestUriRaw, "http://localhost:54587/");
+            }
+
+            if (!args.ContainsKey(AddressesConstants.RequestMethod))
+            {
+                args.Add(AddressesConstants.RequestMethod, "GET");
+            }
+
+            using var waf = Waf.Initialize(FileName);
+            Assert.NotNull(waf);
             using var context = waf.CreateContext();
             var result = context.Run(args);
             Assert.Equal(ReturnCode.Monitor, result.ReturnCode);

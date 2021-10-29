@@ -17,11 +17,15 @@ namespace Datadog.Trace.AppSec.Waf
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Context>();
         private readonly IntPtr contextHandle;
         private readonly List<Obj> argCache = new List<Obj>();
+        private readonly WafNative _wafNative;
+        private readonly Encoder _encoder;
         private bool disposed = false;
 
-        public Context(IntPtr contextHandle)
+        public Context(WafNative wafNative, Encoder encoder, IntPtr contextHandle)
         {
             this.contextHandle = contextHandle;
+            _wafNative = wafNative;
+            _encoder = encoder;
         }
 
         ~Context()
@@ -33,7 +37,7 @@ namespace Datadog.Trace.AppSec.Waf
         {
             LogParametersIfDebugEnabled(args);
 
-            var pwArgs = Encoder.Encode(args, argCache);
+            var pwArgs = _encoder.Encode(args, argCache);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
@@ -43,9 +47,9 @@ namespace Datadog.Trace.AppSec.Waf
             var rawAgs = pwArgs.RawPtr;
             DdwafResultStruct retNative = default;
 
-            var code = WafNative.Run(contextHandle, rawAgs, ref retNative, 1000000);
+            var code = _wafNative.Run(contextHandle, rawAgs, ref retNative, 1000000);
 
-            var ret = new Result(retNative, code);
+            var ret = new Result(_wafNative, retNative, code);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
@@ -91,7 +95,7 @@ Took {PerfTotalRuntime} ms",
                 arg.Dispose();
             }
 
-            WafNative.ContextDestroy(contextHandle);
+            _wafNative.ContextDestroy(contextHandle);
         }
 
         public void Dispose()

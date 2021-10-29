@@ -4,22 +4,22 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 
 namespace Datadog.Trace.AppSec.Waf
 {
     internal class Result : IResult
     {
+        private readonly WafNative _wafNative;
         private DdwafResultStruct returnStruct;
         private DDWAF_RET_CODE returnCode;
 
         private bool disposed;
 
-        public Result(DdwafResultStruct returnStruct, DDWAF_RET_CODE returnCode)
+        public Result(WafNative wafNative, DdwafResultStruct returnStruct, DDWAF_RET_CODE returnCode)
         {
+            _wafNative = wafNative;
             this.returnStruct = returnStruct;
             this.returnCode = returnCode;
         }
@@ -48,7 +48,7 @@ namespace Datadog.Trace.AppSec.Waf
 
             disposed = true;
 
-            WafNative.ResultFree(ref returnStruct);
+            _wafNative.ResultFree(ref returnStruct);
         }
 
         public void Dispose()
