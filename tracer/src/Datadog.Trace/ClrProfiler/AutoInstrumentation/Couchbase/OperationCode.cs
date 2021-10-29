@@ -69,6 +69,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         // "Dirty" reads
         ReplicaRead = 0x83,
 
+        // used with RBAC to verify credentials with username / password
+        SelectBucket = 0x89,
+
+        // request a server error map
+        GetErrorMap = 0xfe,
+
         // Enhanced durability
         ObserveSeqNo = 0x91,
 
@@ -86,6 +92,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         SubArrayAddUnique = 0xce,
         SubCounter = 0xcf,
         MultiLookup = 0xd0,
-        SubMultiMutation = 0xd1
+        SubMultiMutation = 0xd1,
+        SubGetCount = 0xd2,
+        GetCollectionsManifest = 0xBA,
+        GetCidByName = 0xbb,
+        GetSidByName = 0xBC,
+        GetMeta = 0xa0
     }
 }

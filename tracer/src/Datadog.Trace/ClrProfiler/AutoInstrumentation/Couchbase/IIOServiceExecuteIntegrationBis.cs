@@ -19,8 +19,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         MethodName = "Execute",
         ReturnTypeName = CouchbaseCommon.CouchbaseOperationResultTypeName,
         ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseGenericOperationTypeName, CouchbaseCommon.CouchbaseConnectionTypeName },
-        MinimumVersion = CouchbaseCommon.MinVersion,
-        MaximumVersion = CouchbaseCommon.MaxVersion,
+        MinimumVersion = CouchbaseCommon.MinVersion2,
+        MaximumVersion = CouchbaseCommon.MaxVersion2,
         IntegrationName = CouchbaseCommon.IntegrationName)]
     [InstrumentMethod(
         AssemblyName = CouchbaseCommon.CouchbaseClientAssemblyName,
@@ -28,8 +28,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         MethodName = "Execute",
         ReturnTypeName = CouchbaseCommon.CouchbaseOperationResultTypeName,
         ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseGenericOperationTypeName, CouchbaseCommon.CouchbaseConnectionTypeName },
-        MinimumVersion = CouchbaseCommon.MinVersion,
-        MaximumVersion = CouchbaseCommon.MaxVersion,
+        MinimumVersion = CouchbaseCommon.MinVersion2,
+        MaximumVersion = CouchbaseCommon.MaxVersion2,
         IntegrationName = CouchbaseCommon.IntegrationName)]
     // ReSharper disable once InconsistentNaming
     [Browsable(false)]

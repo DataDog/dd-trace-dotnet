@@ -17,16 +17,41 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         internal const string CouchbaseClientAssemblyName = "Couchbase.NetClient";
         internal const string CouchbaseOperationTypeName = "Couchbase.IO.Operations.IOperation";
         internal const string CouchbaseConnectionTypeName = "Couchbase.IO.IConnection";
+        internal const string CouchbaseOperationV3TypeName = "Couchbase.Core.IO.Operations.IOperation";
+        internal const string CouchbaseConnectionV3TypeName = "Couchbase.Core.IO.Connections.IConnection";
         internal const string CouchbaseGenericOperationTypeName = "Couchbase.IO.Operations.IOperation`1[!!0]";
         internal const string CouchbaseOperationResultTypeName = "Couchbase.IOperationResult<T>";
-        internal const string MinVersion = "2.2.8";
-        internal const string MaxVersion = "2.7.25";
+        internal const string MinVersion2 = "2.2.8";
+        internal const string MaxVersion2 = "2.7.25";
+        internal const string MinVersion3 = "3";
+        internal const string MaxVersion3 = "3";
         internal const string IntegrationName = nameof(IntegrationIds.Couchbase);
+        internal const string IntegrationName3 = nameof(IntegrationIds.Couchbase3);
 
         private const string OperationName = "couchbase.query";
         private const string ServiceName = "couchbase";
         private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CouchbaseCommon));
+
+        internal static CallTargetState CommonOnMethodBeginV3<TOperation>(TOperation tOperation)
+        {
+            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId) || tOperation == null)
+            {
+                // integration disabled, don't create a scope, skip this trace
+                return CallTargetState.GetDefault();
+            }
+
+            var operation = tOperation.DuckCast<OperationStructV3>();
+
+            var tags = new CouchbaseTags()
+            {
+                OperationCode = operation.OpCode.ToString(),
+                Bucket = operation.BucketName,
+                Key = operation.Key,
+            };
+
+            return CommonOnMethodBegin(tags);
+        }
 
         internal static CallTargetState CommonOnMethodBegin<TOperation>(TOperation tOperation)
         {
@@ -36,35 +61,38 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
                 return CallTargetState.GetDefault();
             }
 
-            Scope scope = null;
             var operation = tOperation.DuckCast<OperationStruct>();
 
+            var host = operation.CurrentHost?.Address?.ToString();
+            var port = operation.CurrentHost?.Port.ToString();
+            var code = operation.OperationCode.ToString();
+
+            var tags = new CouchbaseTags()
+            {
+                OperationCode = code,
+                Bucket = operation.BucketName,
+                Key = operation.Key,
+                Host = host,
+                Port = port
+            };
+
+            return CommonOnMethodBegin(tags);
+        }
+
+        private static CallTargetState CommonOnMethodBegin(CouchbaseTags tags)
+        {
             try
             {
-                var host = operation.CurrentHost?.Address.ToString();
-                var port = operation.CurrentHost?.Port.ToString();
-                var code = operation.OperationCode.ToString();
-
-                var tags = new CouchbaseTags()
-                {
-                    OperationCode = code,
-                    Bucket = operation.BucketName,
-                    Key = operation.Key,
-                    Host = host,
-                    Port = port
-                };
-
-                scope = Tracer.Instance.StartActiveWithTags(OperationName, serviceName: ServiceName, tags: tags);
+                var scope = Tracer.Instance.StartActiveWithTags(OperationName, serviceName: ServiceName, tags: tags);
                 scope.Span.Type = SpanTypes.Couchbase;
-                scope.Span.ResourceName = $"{code} {operation.Key}";
+                scope.Span.ResourceName = $"{tags.OperationCode} {tags.Key}";
+                return new CallTargetState(scope);
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error creating or populating scope.");
                 return CallTargetState.GetDefault();
             }
-
-            return new CallTargetState(scope);
         }
 
         internal static CallTargetReturn<TOperationResult> CommonOnMethodEndSync<TOperationResult>(TOperationResult tResult, Exception exception, CallTargetState state)

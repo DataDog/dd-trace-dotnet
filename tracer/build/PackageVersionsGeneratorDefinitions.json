@@ -173,5 +173,12 @@
     "NugetPackageSearchName": "CouchbaseNetClient",
     "MinVersion": "2.2.8",
     "MaxVersionExclusive": "3.0.0"
+  },
+  {
+    "IntegrationName": "Couchbase3",
+    "SampleProjectName": "Samples.Couchbase3",
+    "NugetPackageSearchName": "CouchbaseNetClient",
+    "MinVersion": "3.0.0",
+    "MaxVersionExclusive": "4.0.0"
   }
 ]

@@ -1,4 +1,4 @@
-// <copyright file="IIOServiceExecuteAsyncIntegration.cs" company="Datadog">
+// <copyright file="IClusterNodeIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,67 +6,66 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
 {
     /// <summary>
-    /// Couchbase.IO.IIOService.Execute calltarget instrumentation
+    /// Couchbase IclusterNode 3.2 calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
        AssemblyName = CouchbaseCommon.CouchbaseClientAssemblyName,
-       TypeName = "Couchbase.IO.Services.PooledIOService",
-       MethodName = "ExecuteAsync",
+       TypeName = "Couchbase.Core.ClusterNode",
+       MethodName = "ExecuteOp",
        ReturnTypeName = ClrNames.Task,
-       ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseOperationTypeName },
-       MinimumVersion = CouchbaseCommon.MinVersion2,
-       MaximumVersion = CouchbaseCommon.MaxVersion2,
-       IntegrationName = CouchbaseCommon.IntegrationName)]
+       ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseOperationV3TypeName, "Couchbase.Core.IO.Operations.CancellationTokenPair" },
+       MinimumVersion = "3.1.3",
+       MaximumVersion = CouchbaseCommon.MaxVersion3,
+       IntegrationName = CouchbaseCommon.IntegrationName3)]
     [InstrumentMethod(
        AssemblyName = CouchbaseCommon.CouchbaseClientAssemblyName,
-       TypeName = "Couchbase.IO.Services.MultiplexingIOService",
-       MethodName = "ExecuteAsync",
+       TypeName = "Couchbase.Core.ClusterNode",
+       MethodName = "SendAsync",
        ReturnTypeName = ClrNames.Task,
-       ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseOperationTypeName },
-       MinimumVersion = CouchbaseCommon.MinVersion2,
-       MaximumVersion = CouchbaseCommon.MaxVersion2,
-       IntegrationName = CouchbaseCommon.IntegrationName)]
+       ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseOperationV3TypeName, "Couchbase.Core.IO.Operations.CancellationTokenPair" },
+       MinimumVersion = "3.1.3",
+       MaximumVersion = CouchbaseCommon.MaxVersion3,
+       IntegrationName = CouchbaseCommon.IntegrationName3)]
     [InstrumentMethod(
-        AssemblyName = CouchbaseCommon.CouchbaseClientAssemblyName,
-        TypeName = "Couchbase.IO.Services.PooledIOService",
-        MethodName = "ExecuteAsync",
-        ReturnTypeName = ClrNames.Task,
-        ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseGenericOperationTypeName },
-        MinimumVersion = CouchbaseCommon.MinVersion2,
-        MaximumVersion = CouchbaseCommon.MaxVersion2,
-        IntegrationName = CouchbaseCommon.IntegrationName)]
+       AssemblyName = CouchbaseCommon.CouchbaseClientAssemblyName,
+       TypeName = "Couchbase.Core.ClusterNode",
+       MethodName = "ExecuteOp",
+       ReturnTypeName = ClrNames.Task,
+       ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseOperationV3TypeName, ClrNames.CancellationToken },
+       MinimumVersion = "3.0.7",
+       MaximumVersion = "3.1.2",
+       IntegrationName = CouchbaseCommon.IntegrationName3)]
     [InstrumentMethod(
-        AssemblyName = CouchbaseCommon.CouchbaseClientAssemblyName,
-        TypeName = "Couchbase.IO.Services.MultiplexingIOService",
-        MethodName = "ExecuteAsync",
-        ReturnTypeName = ClrNames.Task,
-        ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseGenericOperationTypeName },
-        MinimumVersion = CouchbaseCommon.MinVersion2,
-        MaximumVersion = CouchbaseCommon.MaxVersion2,
-        IntegrationName = CouchbaseCommon.IntegrationName)]
+       AssemblyName = CouchbaseCommon.CouchbaseClientAssemblyName,
+       TypeName = "Couchbase.Core.ClusterNode",
+       MethodName = "SendAsync",
+       ReturnTypeName = ClrNames.Task,
+       ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseOperationV3TypeName, ClrNames.CancellationToken },
+       MinimumVersion = "3.0.7",
+       MaximumVersion = "3.1.2",
+       IntegrationName = CouchbaseCommon.IntegrationName3)]
     // ReSharper disable once InconsistentNaming
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class IIOServiceExecuteAsyncIntegration
+    public class IClusterNodeIntegration
     {
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
         /// <param name="operation">The requested couchbase operation</param>
+        /// <param name="cancellationToken">A cancellation token</param>
         /// <typeparam name="TTarget">Type of the target</typeparam>
         /// <typeparam name="TOperation">Type of the operation</typeparam>
+        /// <typeparam name="TCancellationToken">Type of the cancellationToken</typeparam>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget, TOperation>(TTarget instance, TOperation operation)
+        public static CallTargetState OnMethodBegin<TTarget, TOperation, TCancellationToken>(TTarget instance, TOperation operation, TCancellationToken cancellationToken)
         {
-            return CouchbaseCommon.CommonOnMethodBegin(operation);
+            return CouchbaseCommon.CommonOnMethodBeginV3(operation);
         }
 
         /// <summary>

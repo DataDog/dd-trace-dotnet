@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <ApiVersion Condition="'$(ApiVersion)' == ''">2.7.4</ApiVersion>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">3.2.3</ApiVersion>
     <OutputType>Exe</OutputType>
     <!-- override to remove net452 -->
     <TargetFrameworks>net461;netcoreapp2.1;netcoreapp3.0;netcoreapp3.1;net5.0</TargetFrameworks>
@@ -9,9 +9,6 @@
 
   <ItemGroup>
     <PackageReference Include="CouchbaseNetClient" Version="$(ApiVersion)" />
-
-    <!-- There's a misconfiguration of dependencies in 2.2.8 -->
-    <PackageReference Condition="'$(ApiVersion)' == '2.2.8'" Include="Common.Logging" Version="3.3.1" />
   </ItemGroup>
 
 </Project>

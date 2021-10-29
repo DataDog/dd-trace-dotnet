@@ -36,7 +36,7 @@ namespace Samples.Couchbase
             return new ClientConfiguration
             {
                 Servers = new List<Uri> {
-                    new Uri("http://10.0.2.2:8091/pools")
+                    new Uri("http://127.0.0.1:8091/pools")
                 },
                 BucketConfigs = new Dictionary<string, BucketConfiguration>
                   {
