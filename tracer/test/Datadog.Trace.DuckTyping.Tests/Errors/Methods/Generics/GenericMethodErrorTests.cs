@@ -20,27 +20,19 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.Methods.Generics
 {
     public class GenericMethodErrorTests
     {
-        public static IEnumerable<object> PublicObjects() => new[]
+        public static IEnumerable<object> SourceObjects() => new[]
         {
             ObscureObject.GetPropertyPublicObject(),
-        };
-
-        public static IEnumerable<object> PrivateObjects() => new[]
-        {
             ObscureObject.GetPropertyInternalObject(),
             ObscureObject.GetPropertyPrivateObject(),
         };
 
-        public static IEnumerable<object> SourceObjects() => PublicObjects().Concat(PrivateObjects());
-
         public static IEnumerable<object[]> Valid() =>
-            from source in PublicObjects()
-                          .Select(obj => new { obj, isPublic = true })
-                          .Concat(PrivateObjects().Select(obj => new { obj, isPublic = false }))
+            from source in SourceObjects()
             from type in typeof(IValid).GetNestedTypes()
                                        .Concat(typeof(ValidAbstractClass).GetNestedTypes())
                                        .Concat(typeof(ValidVirtualClass).GetNestedTypes())
-            select new[] { type, source.obj, source.isPublic };
+            select new[] { type, source };
 
         public static IEnumerable<object[]> WrongMethodNames() =>
             from source in SourceObjects()
@@ -73,9 +65,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.Methods.Generics
 
         [Theory]
         [MemberData(nameof(Valid))]
-#pragma warning disable xUnit1026 // isPublic is used, just not in all frameworks
-        public void ValidCanCastUnlessNet45AndPrivate(Type duckType, object obscureObject, bool isPublic)
-#pragma warning restore xUnit1026
+        public void ValidCanCastUnlessNet45AndPrivate(Type duckType, object obscureObject)
         {
             using var scope = new AssertionScope();
 
