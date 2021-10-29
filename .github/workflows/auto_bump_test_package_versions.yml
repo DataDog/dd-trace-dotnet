@@ -18,13 +18,15 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          ref: master
 
       - uses: actions/setup-dotnet@v1
         with:
           dotnet-version: '5.0.x'
 
       - name: "Regenerating package versions"
-        run: .\tracer\build.ps1 GeneratePackageVersions
+        run: .\tracer\build.ps1 UpdateIntegrationsJson GeneratePackageVersions
 
       - name: Create Pull Request
         id: pr
@@ -34,6 +36,7 @@ jobs:
           branch: "bot/test-package-versions-bump"
           commit-message: "[Test Package Versions Bump]"
           delete-branch: true
+          base: master
           title: "[Test Package Versions Bump] Updating package versions "
           milestone: "${{steps.rename.outputs.milestone}}"
           reviewers: "DataDog/apm-dotnet"
