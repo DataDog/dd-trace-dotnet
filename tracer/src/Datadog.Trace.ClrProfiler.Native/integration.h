@@ -237,95 +237,92 @@ public:
     }
 };
 
-struct MethodReference
+struct TypeReference
 {
     const AssemblyReference assembly;
-    const WSTRING type_name;
-    const WSTRING method_name;
-    const WSTRING action;
-    const MethodSignature method_signature;
+    const WSTRING name;
     const Version min_version;
     const Version max_version;
-    const std::vector<WSTRING> signature_types;
 
-    MethodReference() :
+    TypeReference() :
         min_version(Version(0, 0, 0, 0)), max_version(Version(USHRT_MAX, USHRT_MAX, USHRT_MAX, USHRT_MAX))
     {
     }
 
-    MethodReference(const WSTRING& assembly_name, WSTRING type_name, WSTRING method_name, WSTRING action,
-                    Version min_version, Version max_version, const std::vector<BYTE>& method_signature,
-                    const std::vector<WSTRING>& signature_types) :
+    TypeReference(const WSTRING& assembly_name, WSTRING type_name, Version min_version, Version max_version) :
         assembly(*AssemblyReference::GetFromCache(assembly_name)),
-        type_name(type_name),
-        method_name(method_name),
-        action(action),
-        method_signature(method_signature),
+        name(type_name),
         min_version(min_version),
-        max_version(max_version),
+        max_version(max_version)
+    {
+    }
+
+    inline WSTRING get_cache_key() const
+    {
+        return WStr("[") + assembly.name + WStr("]") + name + WStr("_vMin_") + min_version.str() + WStr("_vMax_") +
+               max_version.str();
+    }
+
+    inline bool operator==(const TypeReference& other) const
+    {
+        return assembly == other.assembly && name == other.name && min_version == other.min_version &&
+               max_version == other.max_version;
+    }
+};
+
+struct MethodReference
+{
+    const TypeReference type;
+    const WSTRING method_name;
+    const std::vector<WSTRING> signature_types;
+
+    MethodReference()
+    {
+    }
+
+    MethodReference(const WSTRING& assembly_name, WSTRING type_name, WSTRING method_name, 
+                    Version min_version, Version max_version,
+                    const std::vector<WSTRING>& signature_types) :
+        type(assembly_name, type_name, min_version, max_version),
+        method_name(method_name),
         signature_types(signature_types)
     {
     }
 
     inline WSTRING get_type_cache_key() const
     {
-        return WStr("[") + assembly.name + WStr("]") + type_name + WStr("_vMin_") + min_version.str() + WStr("_vMax_") +
-               max_version.str();
+        return type.get_cache_key();
     }
 
     inline WSTRING get_method_cache_key() const
     {
-        return WStr("[") + assembly.name + WStr("]") + type_name + WStr(".") + method_name + WStr("_vMin_") +
-               min_version.str() + WStr("_vMax_") + max_version.str();
+        return WStr("[") + type.assembly.name + WStr("]") + type.name + WStr(".") + method_name + WStr("_vMin_") +
+               type.min_version.str() + WStr("_vMax_") + type.max_version.str();
     }
 
     inline bool operator==(const MethodReference& other) const
     {
-        return assembly == other.assembly && type_name == other.type_name && min_version == other.min_version &&
-               max_version == other.max_version && method_name == other.method_name &&
-               method_signature == other.method_signature;
-    }
-};
-
-struct MethodReplacement
-{
-    const MethodReference caller_method;
-    const MethodReference target_method;
-    const MethodReference wrapper_method;
-
-    MethodReplacement()
-    {
-    }
-
-    MethodReplacement(MethodReference caller_method, MethodReference target_method, MethodReference wrapper_method) :
-        caller_method(caller_method), target_method(target_method), wrapper_method(wrapper_method)
-    {
-    }
-
-    inline bool operator==(const MethodReplacement& other) const
-    {
-        return caller_method == other.caller_method && target_method == other.target_method &&
-               wrapper_method == other.wrapper_method;
+        return type == other.type && method_name == other.method_name;
     }
 };
 
 struct IntegrationMethod
 {
-    const WSTRING integration_name;
-    MethodReplacement replacement;
+    const MethodReference target_method;
+    const TypeReference wrapper_type;
 
-    IntegrationMethod() : integration_name(EmptyWStr), replacement({})
+    IntegrationMethod()
     {
     }
 
-    IntegrationMethod(WSTRING integration_name, MethodReplacement replacement) :
-        integration_name(integration_name), replacement(replacement)
+    IntegrationMethod(MethodReference target_method, TypeReference wrapper_type) :
+        target_method(target_method), wrapper_type(wrapper_type)
     {
     }
 
     inline bool operator==(const IntegrationMethod& other) const
     {
-        return integration_name == other.integration_name && replacement == other.replacement;
+        return target_method == other.target_method && wrapper_type == other.wrapper_type;
     }
 };
 

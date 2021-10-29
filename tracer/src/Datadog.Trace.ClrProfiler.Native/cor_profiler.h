@@ -67,7 +67,7 @@ private:
     WSTRING GetCLRProfilerPath();
     void CheckFilenameDefinitions();
     bool GetWrapperMethodRef(ModuleMetadata* module_metadata, ModuleID module_id,
-                             const MethodReplacement& method_replacement, mdMemberRef& wrapper_method_ref,
+                             const IntegrationMethod& method_replacement, mdMemberRef& wrapper_method_ref,
                              mdTypeRef& wrapper_type_ref);
     bool ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id);
     std::string GetILCodes(const std::string& title, ILRewriter* rewriter, const FunctionInfo& caller,

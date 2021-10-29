@@ -53,7 +53,7 @@ private:
     mdMethodDef m_methodDef;
     ICorProfilerFunctionControl* m_pFunctionControl;
     std::unique_ptr<FunctionInfo> m_functionInfo;
-    std::unique_ptr<MethodReplacement> m_methodReplacement;
+    std::unique_ptr<IntegrationMethod> m_integrationMethod;
 
     std::mutex m_ngenModulesLock;
     std::unordered_map<ModuleID, bool> m_ngenModules;
@@ -71,8 +71,8 @@ public:
     FunctionInfo* GetFunctionInfo();
     void SetFunctionInfo(const FunctionInfo& functionInfo);
 
-    MethodReplacement* GetMethodReplacement();
-    void SetMethodReplacement(const MethodReplacement& methodReplacement);
+    IntegrationMethod* GetIntegrationMethod();
+    void SetIntegrationMethod(const IntegrationMethod& methodReplacement);
 
     void RequestRejitForInlinersInModule(ModuleID moduleId);
 };
