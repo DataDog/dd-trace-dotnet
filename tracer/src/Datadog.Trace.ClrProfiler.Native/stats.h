@@ -25,7 +25,9 @@ public:
     }
     void Refresh()
     {
-        auto increment = (std::chrono::steady_clock::now() - _startTime).count();
+        auto now = std::chrono::steady_clock::now();
+        auto increment = (now - _startTime).count();
+        _startTime = now;
         _value->fetch_add(increment);
     }
 };
