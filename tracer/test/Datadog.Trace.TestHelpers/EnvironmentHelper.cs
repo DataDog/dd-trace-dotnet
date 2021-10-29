@@ -187,8 +187,7 @@ namespace Datadog.Trace.TestHelpers
             StringDictionary environmentVariables,
             string processToProfile = null,
             bool enableSecurity = false,
-            bool enableBlocking = false,
-            bool callTargetEnabled = false)
+            bool enableBlocking = false)
         {
             string profilerEnabled = _requiresProfiling ? "1" : "0";
             environmentVariables["DD_DOTNET_TRACER_HOME"] = TracerHome;
@@ -209,11 +208,6 @@ namespace Datadog.Trace.TestHelpers
             if (DebugModeEnabled)
             {
                 environmentVariables["DD_TRACE_DEBUG"] = "1";
-            }
-
-            if (callTargetEnabled)
-            {
-                environmentVariables["DD_TRACE_CALLTARGET_ENABLED"] = "1";
             }
 
             if (!string.IsNullOrEmpty(processToProfile))
