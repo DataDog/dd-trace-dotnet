@@ -280,5 +280,53 @@ namespace Datadog.Trace.Tools.Runner
 
             return defaultValue;
         }
+
+        public static bool CheckAgentConnection(string agentUrl)
+        {
+            var env = new Dictionary<string, string>();
+            if (!string.IsNullOrWhiteSpace(agentUrl))
+            {
+                env["DD_TRACE_AGENT_URL"] = agentUrl;
+            }
+
+            var tracerSettings = new Configuration.TracerSettings(new DictionaryConfigurationSource(env));
+
+            using (var tcpClient = new System.Net.Sockets.TcpClient())
+            {
+                try
+                {
+                    tcpClient.Connect(tracerSettings.AgentUri.Host, tracerSettings.AgentUri.Port);
+                    Console.WriteLine($"Connection with the Datadog Agent on {tracerSettings.AgentUri} was successful.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error connecting to the Datadog Agent on {tracerSettings.AgentUri}.");
+                    Console.WriteLine(ex);
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private class DictionaryConfigurationSource : Configuration.StringConfigurationSource
+        {
+            private readonly Dictionary<string, string> _dictionary;
+
+            public DictionaryConfigurationSource(Dictionary<string, string> dictionary)
+            {
+                _dictionary = dictionary;
+            }
+
+            public override string GetString(string key)
+            {
+                if (_dictionary.TryGetValue(key, out var value))
+                {
+                    return value;
+                }
+
+                return null;
+            }
+        }
     }
 }
