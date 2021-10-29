@@ -1375,3 +1375,47 @@ stages:
       inputs:
         targetType: 'inline'
         script: 'Start-Sleep -s 20'
+
+- stage: system_tests
+  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  dependsOn: [build_linux]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [test]
+
+  - job: test
+    pool:
+      vmImage: ubuntu-18.04
+
+    steps:
+      - script: git clone --depth 1 https://github.com/DataDog/system-tests.git
+        displayName: Get system tests repo
+
+      - task: DownloadPipelineArtifact@2
+        displayName: Download linux-packages
+        inputs:
+          artifact: linux-packages-debian
+          patterns: '**/*tar.gz'
+          path: $(Build.ArtifactStagingDirectory)
+
+      - script: |
+          PACKAGE_NAME=$(basename $(Build.ArtifactStagingDirectory)/datadog-dotnet-apm-*.tar.gz)
+          echo Moving $PACKAGE_NAME to system-tests/binaries
+          mv $(Build.ArtifactStagingDirectory)/$PACKAGE_NAME system-tests/binaries/
+        displayName: Move dotnet binary to system test folder
+
+      - script: ./build.sh dotnet
+        workingDirectory: system-tests
+        displayName: Build images
+
+      - script: ./run.sh
+        workingDirectory: system-tests
+        displayName: Run tests
+        env:
+          DD_API_KEY: $(SYSTEM_TESTS_DD_API_KEY)
+
+      - publish: system-tests/logs
+        condition: always()
+        displayName: System tests logs
+        artifact: system-tests
