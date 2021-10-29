@@ -19,7 +19,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
         with:
-          ref: ${{ github.base_ref }}
+          ref: master
 
       - uses: actions/setup-dotnet@v1
         with:
@@ -36,6 +36,7 @@ jobs:
           branch: "bot/test-package-versions-bump"
           commit-message: "[Test Package Versions Bump]"
           delete-branch: true
+          base: master
           title: "[Test Package Versions Bump] Updating package versions "
           milestone: "${{steps.rename.outputs.milestone}}"
           reviewers: "DataDog/apm-dotnet"
