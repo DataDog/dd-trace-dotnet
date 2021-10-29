@@ -102,28 +102,4 @@ HRESULT MetadataBuilder::FindWrapperTypeRef(const IntegrationMethod& method_repl
     return S_OK;
 }
 
-HRESULT MetadataBuilder::StoreWrapperMethodRef(const IntegrationMethod& method_replacement) const
-{
-    const auto& cache_key = method_replacement.wrapper_type.get_cache_key();
-    mdMemberRef member_ref = mdMemberRefNil;
-
-    if (metadata_.TryGetWrapperMemberRef(cache_key, member_ref))
-    {
-        // this member was already resolved
-        return S_OK;
-    }
-
-    mdTypeRef type_ref = mdTypeRefNil;
-    HRESULT hr = FindWrapperTypeRef(method_replacement, type_ref);
-    if (FAILED(hr))
-    {
-        // Record that this cache_key failed
-        metadata_.SetFailedWrapperMemberKey(cache_key);
-        return hr;
-    }
-
-    metadata_.SetWrapperMemberRef(cache_key, mdMemberRefNil);
-    return S_OK;
-}
-
 } // namespace trace

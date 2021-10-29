@@ -19,9 +19,7 @@ class ModuleMetadata
 {
 private:
     std::mutex wrapper_mutex;
-    std::unique_ptr<std::unordered_map<WSTRING, mdMemberRef>> wrapper_refs = nullptr;
     std::unique_ptr<std::unordered_map<WSTRING, mdTypeRef>> wrapper_parent_type = nullptr;
-    std::unique_ptr<std::unordered_set<WSTRING>> failed_wrapper_keys = nullptr;
     std::unique_ptr<CallTargetTokens> calltargetTokens = nullptr;
     std::unique_ptr<std::vector<IntegrationMethod>> integrations = nullptr;
 
@@ -66,24 +64,6 @@ public:
     {
     }
 
-    bool TryGetWrapperMemberRef(const WSTRING& keyIn, mdMemberRef& valueOut) const
-    {
-        if (wrapper_refs == nullptr)
-        {
-            return false;
-        }
-
-        const auto search = wrapper_refs->find(keyIn);
-
-        if (search != wrapper_refs->end())
-        {
-            valueOut = search->second;
-            return true;
-        }
-
-        return false;
-    }
-
     bool TryGetWrapperParentTypeRef(const WSTRING& keyIn, mdTypeRef& valueOut) const
     {
         if (wrapper_parent_type == nullptr)
@@ -102,17 +82,6 @@ public:
         return false;
     }
 
-    void SetWrapperMemberRef(const WSTRING& keyIn, const mdMemberRef valueIn)
-    {
-        std::scoped_lock<std::mutex> lock(wrapper_mutex);
-        if (wrapper_refs == nullptr)
-        {
-            wrapper_refs = std::make_unique<std::unordered_map<WSTRING, mdMemberRef>>();
-        }
-
-        (*wrapper_refs)[keyIn] = valueIn;
-    }
-
     void SetWrapperParentTypeRef(const WSTRING& keyIn, const mdTypeRef valueIn)
     {
         std::scoped_lock<std::mutex> lock(wrapper_mutex);
@@ -122,34 +91,6 @@ public:
         }
 
         (*wrapper_parent_type)[keyIn] = valueIn;
-    }
-
-    bool IsFailedWrapperMemberKey(const WSTRING& key) const
-    {
-        if (failed_wrapper_keys == nullptr)
-        {
-            return false;
-        }
-
-        const auto search = failed_wrapper_keys->find(key);
-
-        if (search != failed_wrapper_keys->end())
-        {
-            return true;
-        }
-
-        return false;
-    }
-
-    void SetFailedWrapperMemberKey(const WSTRING& key)
-    {
-        std::scoped_lock<std::mutex> lock(wrapper_mutex);
-        if (failed_wrapper_keys == nullptr)
-        {
-            failed_wrapper_keys = std::make_unique<std::unordered_set<WSTRING>>();
-        }
-
-        failed_wrapper_keys->insert(key);
     }
 
     CallTargetTokens* GetCallTargetTokens()

@@ -1203,15 +1203,12 @@ void CorProfiler::CheckFilenameDefinitions()
 #endif
 }
 
-bool CorProfiler::GetWrapperMethodRef(ModuleMetadata* module_metadata, ModuleID module_id,
-                                      const IntegrationMethod& integration_method, mdMemberRef& wrapper_method_ref,
-                                      mdTypeRef& wrapper_type_ref)
+bool CorProfiler::GetWrapperTypeRef(ModuleMetadata* module_metadata, ModuleID module_id,
+                                    const IntegrationMethod& integration_method, mdTypeRef& wrapper_type_ref)
 {
     const auto& wrapper_key = integration_method.wrapper_type.get_cache_key();
 
-    // Resolve the MethodRef now. If the method is generic, we'll need to use it
-    // later to define a MethodSpec
-    if (!module_metadata->TryGetWrapperMemberRef(wrapper_key, wrapper_method_ref))
+    if (!module_metadata->TryGetWrapperParentTypeRef(wrapper_key, wrapper_type_ref))
     {
         const auto module_info = GetModuleInfo(this->info_, module_id);
         if (!module_info.IsValid())
@@ -1223,7 +1220,7 @@ bool CorProfiler::GetWrapperMethodRef(ModuleMetadata* module_metadata, ModuleID 
         auto hr = module_metadata->metadata_import->GetModuleFromScope(&module);
         if (FAILED(hr))
         {
-            Logger::Warn("JITCompilationStarted failed to get module metadata token for "
+            Logger::Warn("GetWrapperMethodRef failed to get module metadata token for "
                          "module_id=",
                          module_id, " module_name=", module_info.assembly.name);
             return false;
@@ -1237,7 +1234,7 @@ bool CorProfiler::GetWrapperMethodRef(ModuleMetadata* module_metadata, ModuleID 
         hr = metadata_builder.EmitAssemblyRef(integration_method.wrapper_type.assembly);
         if (FAILED(hr))
         {
-            Logger::Warn("JITCompilationStarted failed to emit wrapper assembly ref for assembly=",
+            Logger::Warn("GetWrapperMethodRef failed to emit wrapper assembly ref for assembly=",
                          integration_method.wrapper_type.assembly.name,
                          ", Version=", integration_method.wrapper_type.assembly.version.str(),
                          ", Culture=", integration_method.wrapper_type.assembly.locale,
@@ -1246,21 +1243,16 @@ bool CorProfiler::GetWrapperMethodRef(ModuleMetadata* module_metadata, ModuleID 
         }
 
         // for each method replacement in each enabled integration,
-        // emit a reference to the instrumentation wrapper methods
-        hr = metadata_builder.StoreWrapperMethodRef(integration_method);
+        // emit a reference to the instrumentation wrapper type
+        hr = metadata_builder.FindWrapperTypeRef(integration_method, wrapper_type_ref);
         if (FAILED(hr))
         {
-            Logger::Warn("JITCompilationStarted failed to obtain wrapper method ref for ",
+            Logger::Warn("GetWrapperMethodRef failed to obtain wrapper method ref for ",
                          integration_method.wrapper_type.name, ".");
             return false;
         }
-        else
-        {
-            module_metadata->TryGetWrapperMemberRef(wrapper_key, wrapper_method_ref);
-        }
     }
-    
-    module_metadata->TryGetWrapperParentTypeRef(wrapper_key, wrapper_type_ref);
+
     return true;
 }
 
@@ -2571,10 +2563,16 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
     auto metaEmit = module_metadata->metadata_emit;
     auto metaImport = module_metadata->metadata_import;
 
-    // *** Get all references to the wrapper type
-    mdMemberRef wrapper_method_ref = mdMemberRefNil;
+    // *** Get reference to the wrapper type
     mdTypeRef wrapper_type_ref = mdTypeRefNil;
-    GetWrapperMethodRef(module_metadata, module_id, *integration_method, wrapper_method_ref, wrapper_type_ref);
+    if (!GetWrapperTypeRef(module_metadata, module_id, *integration_method, wrapper_type_ref))
+    {
+        Logger::Warn(
+            "*** CallTarget_RewriterCallback() skipping method: Wrapper Type Ref cannot be found for ",
+            " token=", function_token, " caller_name=", caller->type.name, ".",
+            caller->name, "()");
+        return S_FALSE;
+    }
 
     if (IsDebugEnabled())
     {

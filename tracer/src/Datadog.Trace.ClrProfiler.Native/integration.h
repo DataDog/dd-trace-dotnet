@@ -289,17 +289,6 @@ struct MethodReference
     {
     }
 
-    inline WSTRING get_type_cache_key() const
-    {
-        return type.get_cache_key();
-    }
-
-    inline WSTRING get_method_cache_key() const
-    {
-        return WStr("[") + type.assembly.name + WStr("]") + type.name + WStr(".") + method_name + WStr("_vMin_") +
-               type.min_version.str() + WStr("_vMax_") + type.max_version.str();
-    }
-
     inline bool operator==(const MethodReference& other) const
     {
         return type == other.type && method_name == other.method_name;
