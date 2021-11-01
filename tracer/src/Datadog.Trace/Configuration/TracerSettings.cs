@@ -118,9 +118,11 @@ namespace Datadog.Trace.Configuration
                 AgentUri = builder.Uri;
             }
 
+#pragma warning disable 618 // App analytics is deprecated, but still used
             AnalyticsEnabled = source?.GetBool(ConfigurationKeys.GlobalAnalyticsEnabled) ??
                                // default value
                                false;
+#pragma warning restore 618
 
             LogsInjectionEnabled = source?.GetBool(ConfigurationKeys.LogsInjectionEnabled) ??
                                    // default value
@@ -305,6 +307,7 @@ namespace Datadog.Trace.Configuration
         /// See the documentation for more details.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.GlobalAnalyticsEnabled"/>
+        [Obsolete(DeprecationMessages.AppAnalytics)]
         public bool AnalyticsEnabled { get; set; }
 
         /// <summary>
@@ -554,6 +557,7 @@ namespace Datadog.Trace.Configuration
             return false;
         }
 
+        [Obsolete(DeprecationMessages.AppAnalytics)]
         internal double? GetIntegrationAnalyticsSampleRate(IntegrationInfo integration, bool enabledWithGlobalSetting)
         {
             var integrationSettings = Integrations[integration];

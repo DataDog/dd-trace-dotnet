@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+
 namespace Datadog.Trace.Configuration
 {
     /// <summary>
@@ -153,6 +155,7 @@ namespace Datadog.Trace.Configuration
         /// Configuration key for enabling or disabling default Analytics.
         /// </summary>
         /// <seealso cref="TracerSettings.AnalyticsEnabled"/>
+        [Obsolete(DeprecationMessages.AppAnalytics)]
         public const string GlobalAnalyticsEnabled = "DD_TRACE_ANALYTICS_ENABLED";
 
         /// <summary>
@@ -382,11 +385,13 @@ namespace Datadog.Trace.Configuration
             /// <summary>
             /// Configuration key pattern for enabling or disabling Analytics in an integration.
             /// </summary>
+            [Obsolete(DeprecationMessages.AppAnalytics)]
             public const string AnalyticsEnabled = "DD_TRACE_{0}_ANALYTICS_ENABLED";
 
             /// <summary>
             /// Configuration key pattern for setting Analytics sampling rate in an integration.
             /// </summary>
+            [Obsolete(DeprecationMessages.AppAnalytics)]
             public const string AnalyticsSampleRate = "DD_TRACE_{0}_ANALYTICS_SAMPLE_RATE";
         }
 

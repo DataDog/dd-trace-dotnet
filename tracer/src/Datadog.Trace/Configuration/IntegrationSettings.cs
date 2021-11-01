@@ -29,6 +29,7 @@ namespace Datadog.Trace.Configuration
             Enabled = source.GetBool(string.Format(ConfigurationKeys.Integrations.Enabled, integrationName)) ??
                       source.GetBool(string.Format("DD_{0}_ENABLED", integrationName));
 
+#pragma warning disable 618 // App analytics is deprecated, but still used
             AnalyticsEnabled = source.GetBool(string.Format(ConfigurationKeys.Integrations.AnalyticsEnabled, integrationName)) ??
                                source.GetBool(string.Format("DD_{0}_ANALYTICS_ENABLED", integrationName));
 
@@ -36,6 +37,7 @@ namespace Datadog.Trace.Configuration
                                   source.GetDouble(string.Format("DD_{0}_ANALYTICS_SAMPLE_RATE", integrationName)) ??
                                   // default value
                                   1.0;
+#pragma warning restore 618
         }
 
         /// <summary>
