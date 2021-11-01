@@ -284,6 +284,9 @@ namespace Datadog.Trace
             {
                 if (int.TryParse(headerValue, out var result))
                 {
+                    // note this int value may not be defined in the enum,
+                    // but we should pass it along without validation
+                    // for forward compatibility
                     return (SamplingPriority)result;
                 }
 
@@ -311,6 +314,9 @@ namespace Datadog.Trace
             {
                 if (int.TryParse(headerValue, out var result))
                 {
+                    // note this int value may not be defined in the enum,
+                    // but we should pass it along without validation
+                    // for forward compatibility
                     return (SamplingPriority)result;
                 }
 

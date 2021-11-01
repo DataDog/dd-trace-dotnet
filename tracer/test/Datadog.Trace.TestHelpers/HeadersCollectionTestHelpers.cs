@@ -25,9 +25,9 @@ namespace Datadog.Trace.TestHelpers
             // these are valid integers, but not values defined in the sampling priority enum.
             // when we see this values in distributed tracing, we pass them along unchanged
             // to allow for forward compatibility (in case new valid enum values are added in the future).
-            // keep these test values to avoid conflicts if we may add new valid values like -2 or +3.
-            yield return new object[] { "-100" };
-            yield return new object[] { "100" };
+            // keep these test values large to avoid conflicts when we may add new valid values like -2 or +3.
+            yield return new object[] { "-1000" };
+            yield return new object[] { "1000" };
         }
 
         public static IEnumerable<object[]> GetInvalidNonIntegerSamplingPriorities()
