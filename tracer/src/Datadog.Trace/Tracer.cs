@@ -574,9 +574,6 @@ namespace Datadog.Trace
 
                     writer.WriteEndArray();
 
-                    writer.WritePropertyName("netstandard_enabled");
-                    writer.WriteValue(Settings.IsNetStandardFeatureFlagEnabled());
-
                     writer.WritePropertyName("routetemplate_resourcenames_enabled");
                     writer.WriteValue(Settings.RouteTemplateResourceNamesEnabled);
 

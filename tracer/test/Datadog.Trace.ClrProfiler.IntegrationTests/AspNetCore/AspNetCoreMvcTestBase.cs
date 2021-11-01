@@ -76,7 +76,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         protected string GetTestName(string testName)
         {
             return testName
-                 + ".CallTarget"
                  + (_enableRouteTemplateResourceNames ? ".WithFF" : ".NoFF");
         }
 

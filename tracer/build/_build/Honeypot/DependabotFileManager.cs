@@ -32,11 +32,9 @@ namespace Honeypot
             File.WriteAllText(honeypotProject, honeypotProjTemplate);
         }
 
-        public static async Task UpdateIntegrations(AbsolutePath honeypotProject, IntegrationGroups integrations)
+        public static async Task UpdateIntegrations(AbsolutePath honeypotProject, List<CallTargetDefinitionSource> targets)
         {
             var fakeRefs = string.Empty;
-
-            var targets = integrations.CallTarget;
 
             var distinctIntegrations = new List<IntegrationMap>();
 

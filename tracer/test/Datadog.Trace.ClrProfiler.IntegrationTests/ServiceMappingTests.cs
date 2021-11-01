@@ -24,7 +24,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public void RenamesService()
         {
-            var ignoreAsync = false;
             var expectedSpanCount = 76;
 
             const string expectedOperationName = "http.request";
@@ -32,13 +31,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             int agentPort = TcpPortProvider.GetOpenPort();
             int httpPort = TcpPortProvider.GetOpenPort();
-            var extraArgs = ignoreAsync ? "IgnoreAsync " : string.Empty;
+            var extraArgs = string.Empty;
 
             Output.WriteLine($"Assigning port {agentPort} for the agentPort.");
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
 
             using (var agent = new MockTracerAgent(agentPort))
-            using (RunSampleAndWaitForExit(agent.Port, arguments: $"{extraArgs}Port={httpPort}"))
+            using (RunSampleAndWaitForExit(agent.Port, arguments: $"Port={httpPort}"))
             {
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
                 Assert.Equal(expectedSpanCount, spans.Count);
