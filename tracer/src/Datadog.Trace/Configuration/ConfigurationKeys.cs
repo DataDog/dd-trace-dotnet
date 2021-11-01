@@ -279,6 +279,7 @@ namespace Datadog.Trace.Configuration
         /// This also determines the output folder of the .NET Tracer managed log files.
         /// Overridden by <see cref="LogDirectory"/> if present.
         /// </summary>
+        [Obsolete(DeprecationMessages.LogPath)]
         public const string ProfilerLogPath = "DD_TRACE_LOG_PATH";
 
         /// <summary>
