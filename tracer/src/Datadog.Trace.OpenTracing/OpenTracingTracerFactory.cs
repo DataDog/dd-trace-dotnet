@@ -5,6 +5,7 @@
 
 using System;
 using System.Net.Http;
+using Datadog.Trace.Configuration;
 using OpenTracing;
 
 namespace Datadog.Trace.OpenTracing
@@ -23,7 +24,22 @@ namespace Datadog.Trace.OpenTracing
         /// <returns>A Datadog compatible ITracer implementation</returns>
         public static ITracer CreateTracer(Uri agentEndpoint = null, string defaultServiceName = null, bool isDebugEnabled = false)
         {
-            return CreateTracer(agentEndpoint, defaultServiceName, null, isDebugEnabled);
+            // Keep supporting this older public method by creating a TracerConfiguration
+            // from default sources, overwriting the specified settings, and passing that to the constructor.
+            var configuration = TracerSettings.FromDefaultSources();
+            GlobalSettings.SetDebugEnabled(isDebugEnabled);
+
+            if (agentEndpoint != null)
+            {
+                configuration.AgentUri = agentEndpoint;
+            }
+
+            if (defaultServiceName != null)
+            {
+                configuration.ServiceName = defaultServiceName;
+            }
+
+            return new OpenTracingTracer(new Tracer(configuration));
         }
 
         /// <summary>
@@ -33,12 +49,6 @@ namespace Datadog.Trace.OpenTracing
         /// <returns>A Datadog compatible ITracer implementation</returns>
         public static ITracer WrapTracer(Tracer tracer)
         {
-            return new OpenTracingTracer(tracer);
-        }
-
-        internal static OpenTracingTracer CreateTracer(Uri agentEndpoint, string defaultServiceName, DelegatingHandler delegatingHandler, bool isDebugEnabled)
-        {
-            var tracer = Tracer.Create(agentEndpoint, defaultServiceName, isDebugEnabled);
             return new OpenTracingTracer(tracer);
         }
     }

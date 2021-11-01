@@ -104,15 +104,6 @@ namespace Datadog.Trace.IntegrationTests
         }
 
         [Fact(Skip = "Run manually")]
-        public void WithDefaultFactory()
-        {
-            // This test does not check anything it validates that this codepath runs without exceptions
-            var tracer = Tracer.Create();
-            tracer.StartActive("Operation")
-                  .Dispose();
-        }
-
-        [Fact(Skip = "Run manually")]
         public void WithGlobalTracer()
         {
             // This test does not check anything it validates that this codepath runs without exceptions
