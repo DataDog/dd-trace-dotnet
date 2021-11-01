@@ -231,7 +231,7 @@ namespace Datadog.Trace.Tests
         [MemberData(nameof(GetHeadersInvalidIntegerSamplingPrioritiesCartesianProduct))]
         internal void Extract_InvalidIntegerSamplingPriority(IHeadersCollection headers, string samplingPriority)
         {
-            // is the extracted sampling priority is a valid integer, pass it along as is,
+            // if the extracted sampling priority is a valid integer, pass it along as is,
             // even if we don't recognize its value to allow forward compatibility with newly added values.
             const ulong traceId = 9;
             const ulong spanId = 7;

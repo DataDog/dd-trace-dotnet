@@ -23,27 +23,34 @@ namespace Datadog.Trace
     public enum SamplingPriority
     {
         /// <summary>
-        /// Trace should be dropped (not sampled) due to a user request through code or configuration (e.g. the rules sampler).
+        /// Trace should be dropped (not sampled).
+        /// Sampling decision made explicitly by user through
+        /// code or configuration (e.g. the rules sampler).
         /// </summary>
         UserReject = -1,
 
         /// <summary>
-        /// Trace should be dropped (not sampled) due according to the built-in sampler.
+        /// Trace should be dropped (not sampled).
+        /// Sampling decision made by the built-in sampler.
         /// </summary>
         AutoReject = 0,
 
         /// <summary>
-        /// Trace should be kept (sampled) due according to the built-in sampler.
+        /// Trace should be kept (sampled).
+        /// Sampling decision made by the built-in sampler.
         /// </summary>
         AutoKeep = 1,
 
         /// <summary>
-        /// Trace should be kept (sampled) due to a user request through code or configuration (e.g. the rules sampler).
+        /// Trace should be kept (sampled).
+        /// Sampling decision made explicitly by user through
+        /// code or configuration (e.g. the rules sampler).
         /// </summary>
         UserKeep = 2,
 
         /// <summary>
-        /// Trace should be kept (sampled) due to an application security event.
+        /// Trace should be kept (sampled).
+        /// Sampling decision made due to an application security event.
         /// </summary>
         AppSecKeep = 4,
     }
