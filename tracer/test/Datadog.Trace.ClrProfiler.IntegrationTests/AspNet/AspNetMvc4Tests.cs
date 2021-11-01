@@ -72,7 +72,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             _iisFixture.ShutdownPath = "/home/shutdown";
             _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
             _testName = nameof(AspNetMvc4Tests)
-                      + ".CallTarget"
                       + (classicMode ? ".Classic" : ".Integrated")
                       + (enableRouteTemplateResourceNames ? ".NoFF" : ".WithFF");
         }

@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Reflection.Emit;
 using System.Runtime.Loader;
 using System.Text;
 using Newtonsoft.Json;
@@ -19,24 +18,10 @@ namespace PrepareRelease
     public static class GenerateIntegrationDefinitions
     {
         const string InstrumentMethodAttributeName = "Datadog.Trace.ClrProfiler.InstrumentMethodAttribute";
-        const string InterceptMethodAttributeName = "Datadog.Trace.ClrProfiler.InterceptMethodAttribute";
 
-        public static void Run(IntegrationGroups integrations, params string[] outputDirectories)
+        public static void Run(ICollection<CallTargetDefinitionSource> integrations, params string[] outputDirectories)
         {
             Console.WriteLine("Updating the integrations definitions");
-
-            // Create json serializer
-            var serializerSettings = new JsonSerializerSettings
-            {
-                NullValueHandling = NullValueHandling.Ignore,
-                Formatting = Formatting.Indented,
-                ContractResolver = new DefaultContractResolver
-                {
-                    NamingStrategy = new SnakeCaseNamingStrategy()
-                }
-            };
-
-            var json = JsonConvert.SerializeObject(integrations.CallSite, serializerSettings);
 
             foreach (var outputDirectory in outputDirectories)
             {
@@ -47,14 +32,13 @@ namespace PrepareRelease
                 Console.WriteLine($"Writing {calltargetPath}...");
                 using var fs = new FileStream(calltargetPath, FileMode.Create, FileAccess.Write, FileShare.None);
                 using var sw = new StreamWriter(fs, utf8NoBom);
-                WriteCallTargetDefinitionFile(sw, integrations.CallTarget);
+                WriteCallTargetDefinitionFile(sw, integrations);
             }
         }
 
-        public static IntegrationGroups GetAllIntegrations(ICollection<string> assemblyPaths)
+        public static List<CallTargetDefinitionSource> GetAllIntegrations(ICollection<string> assemblyPaths)
         {
             var callTargetIntegrations = Enumerable.Empty<CallTargetDefinitionSource>();
-            var callSiteIntegrations = Enumerable.Empty<Integration>();
 
             foreach (var path in assemblyPaths)
             {
@@ -63,30 +47,11 @@ namespace PrepareRelease
                 var assembly = assemblyLoadContext.LoadFromAssemblyPath(path);
 
                 callTargetIntegrations = callTargetIntegrations.Concat(GetCallTargetIntegrations(new[] { assembly }));
-                callSiteIntegrations = callSiteIntegrations.Concat(GetCallSiteIntegrations(new[] { assembly }));
 
                 assemblyLoadContext.Unload();
             }
 
-            // remove duplicates
-            callSiteIntegrations = callSiteIntegrations
-                                  .GroupBy(x => x.Name)
-                                  .Select(x => new Integration()
-                                  {
-                                      Name = x.Key,
-                                      MethodReplacements = x
-                                                           .SelectMany(y => y.MethodReplacements)
-                                                           .Distinct()
-                                                           .ToArray(),
-                                  });
-
-            var integrations = new IntegrationGroups()
-            {
-                CallSite = callSiteIntegrations.ToList(),
-                CallTarget = callTargetIntegrations.ToList(),
-            };
-
-            return integrations;
+            return callTargetIntegrations.ToList();
         }
 
         static IEnumerable<CallTargetDefinitionSource> GetCallTargetIntegrations(ICollection<Assembly> assemblies)
@@ -139,7 +104,6 @@ namespace PrepareRelease
                                              WrapperAssembly = assembly.FullName,
                                              WrapperType = wrapperType.FullName
                                          };
-            var cTargetInt = callTargetIntegrations.ToList();
             return callTargetIntegrations.ToList();
         }
 
@@ -202,71 +166,6 @@ namespace PrepareRelease
             swriter.WriteLine("}");
         }
 
-        static IEnumerable<Integration> GetCallSiteIntegrations(ICollection<Assembly> assemblies)
-        {
-            // find all methods in Datadog.Trace.dll with [InterceptMethod]
-            // and create objects that will generate correct JSON schema
-            var integrations = from assembly in assemblies
-                               from wrapperType in GetLoadableTypes(assembly)
-                               from wrapperMethod in wrapperType.GetRuntimeMethods()
-                               let attributes = wrapperMethod.GetCustomAttributes(inherit: false)
-                                                             .Where(a => InheritsFrom(a.GetType(), InterceptMethodAttributeName))
-                                                             .ToList()
-                               where attributes.Any()
-                               from attribute in attributes
-                               let integrationName = GetPropertyValue<string>(attribute, "Integration") ?? GetIntegrationName(wrapperType)
-                               orderby integrationName
-                               group new
-                               {
-                                   assembly,
-                                   wrapperType,
-                                   wrapperMethod,
-                                   attribute
-                               }
-                                   by integrationName into g
-                               select new Integration
-                               {
-                                   Name = g.Key,
-                                   MethodReplacements = (from item in g
-                                                         let version = GetPropertyValue<object>(item.attribute, "TargetVersionRange")
-                                                         let methodReplacementAction = GetPropertyValue<object>(item.attribute, "MethodReplacementAction").ToString()
-                                                         from targetAssembly in GetPropertyValue<string[]>(item.attribute, "TargetAssemblies")
-                                                         select new Integration.MethodReplacement
-                                                         {
-                                                             Caller = new Integration.CallerDetail
-                                                             {
-                                                                 Assembly = GetPropertyValue<string>(item.attribute, "CallerAssembly"),
-                                                                 Type = GetPropertyValue<string>(item.attribute, "CallerType"),
-                                                                 Method = GetPropertyValue<string>(item.attribute, "CallerMethod"),
-                                                             },
-                                                             Target = new Integration.TargetDetail
-                                                             {
-                                                                 Assembly = targetAssembly,
-                                                                 Type = GetPropertyValue<string>(item.attribute, "TargetType"),
-                                                                 Method = GetPropertyValue<string>(item.attribute, "TargetMethod") ?? item.wrapperMethod.Name,
-                                                                 Signature = GetPropertyValue<string>(item.attribute, "TargetSignature"),
-                                                                 SignatureTypes = GetPropertyValue<string[]>(item.attribute, "TargetSignatureTypes"),
-                                                                 MinimumMajor = GetPropertyValue<ushort>(version, "MinimumMajor"),
-                                                                 MinimumMinor = GetPropertyValue<ushort>(version, "MinimumMinor"),
-                                                                 MinimumPatch = GetPropertyValue<ushort>(version, "MinimumPatch"),
-                                                                 MaximumMajor = GetPropertyValue<ushort>(version, "MaximumMajor"),
-                                                                 MaximumMinor = GetPropertyValue<ushort>(version, "MaximumMinor"),
-                                                                 MaximumPatch = GetPropertyValue<ushort>(version, "MaximumPatch"),
-                                                             },
-                                                             Wrapper = new Integration.WrapperDetail
-                                                             {
-                                                                 Assembly = item.assembly.FullName,
-                                                                 Type = item.wrapperType.FullName,
-                                                                 Method = item.wrapperMethod.Name,
-                                                                 Signature = GetMethodSignature(item.wrapperMethod, item.attribute, methodReplacementAction),
-                                                                 Action = methodReplacementAction
-                                                             }
-                                                         }).ToArray()
-                               };
-
-            return integrations.ToList();
-        }
-
         private static bool InheritsFrom(Type type, string baseType)
         {
             if (type.FullName == baseType)
@@ -292,84 +191,6 @@ namespace PrepareRelease
             }
 
             return (T)getValue.Invoke(attribute, Array.Empty<object>());
-        }
-
-        private static string GetIntegrationName(Type wrapperType)
-        {
-            const string integrations = "Integration";
-            var typeName = wrapperType.Name;
-
-            if (typeName.EndsWith(integrations, StringComparison.OrdinalIgnoreCase))
-            {
-                return typeName.Substring(startIndex: 0, length: typeName.Length - integrations.Length);
-            }
-
-            return typeName;
-        }
-
-        private static string GetMethodSignature(MethodInfo method, object attribute, string methodReplacementAction)
-        {
-            var returnType = method.ReturnType;
-            var parameters = method.GetParameters().Select(p => p.ParameterType).ToArray();
-
-            var requiredParameterTypes = new[] { typeof(int), typeof(int), typeof(long) };
-            var lastParameterTypes = parameters.Skip(parameters.Length - requiredParameterTypes.Length);
-
-            if (methodReplacementAction == "ReplaceTargetMethod")
-            {
-                if (!lastParameterTypes.SequenceEqual(requiredParameterTypes))
-                {
-                    throw new Exception(
-                        $"Method {method.DeclaringType.FullName}.{method.Name}() does not meet parameter requirements. " +
-                        "Wrapper methods must have at least 3 parameters and the last 3 must be of types Int32 (opCode), Int32 (mdToken), and Int64 (moduleVersionPtr).");
-                }
-            }
-            else if (methodReplacementAction == "InsertFirst")
-            {
-                var callerAssembly = GetPropertyValue<string>(attribute, "CallerAssembly");
-                var callerType = GetPropertyValue<string>(attribute, "CallerType");
-                var callerMethod = GetPropertyValue<string>(attribute, "CallerMethod");
-                if (callerAssembly == null || callerType == null || callerMethod == null)
-                {
-                    throw new Exception(
-                        $"Method {method.DeclaringType.FullName}.{method.Name}() does not meet InterceptMethodAttribute requirements. " +
-                        "Currently, InsertFirst methods must have CallerAssembly, CallerType, and CallerMethod defined. " +
-                        $"Current values: CallerAssembly=\"{callerAssembly}\", CallerType=\"{callerType}\", CallerMethod=\"{callerMethod}\"");
-                }
-                else if (parameters.Any())
-                {
-                    throw new Exception(
-                        $"Method {method.DeclaringType.FullName}.{method.Name}() does not meet parameter requirements. " +
-                        "Currently, InsertFirst methods must have zero parameters.");
-                }
-                else if (returnType != typeof(void))
-                {
-                    throw new Exception(
-                        $"Method {method.DeclaringType.FullName}.{method.Name}() does not meet return type requirements. " +
-                        "Currently, InsertFirst methods must have a void return type.");
-                }
-            }
-
-            var signatureHelper = SignatureHelper.GetMethodSigHelper(method.CallingConvention, returnType);
-            signatureHelper.AddArguments(parameters, requiredCustomModifiers: null, optionalCustomModifiers: null);
-            var signatureBytes = signatureHelper.GetSignature();
-
-            if (method.IsGenericMethod)
-            {
-                // if method is generic, fix first byte (calling convention)
-                // and insert a second byte with generic parameter count
-                const byte IMAGE_CEE_CS_CALLCONV_GENERIC = 0x10;
-                var genericArguments = method.GetGenericArguments();
-
-                var newSignatureBytes = new byte[signatureBytes.Length + 1];
-                newSignatureBytes[0] = (byte)(signatureBytes[0] | IMAGE_CEE_CS_CALLCONV_GENERIC);
-                newSignatureBytes[1] = (byte)genericArguments.Length;
-                Array.Copy(signatureBytes, 1, newSignatureBytes, 2, signatureBytes.Length - 1);
-
-                signatureBytes = newSignatureBytes;
-            }
-
-            return string.Join(" ", signatureBytes.Select(b => b.ToString("X2")));
         }
 
         public static IEnumerable<Type> GetLoadableTypes(this Assembly assembly)

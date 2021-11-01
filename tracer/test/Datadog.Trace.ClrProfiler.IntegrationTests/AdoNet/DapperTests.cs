@@ -55,9 +55,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             const string expectedOperationName = dbType + ".query";
             const string expectedServiceName = "Samples.Dapper-" + dbType;
 
-            // NOTE: opt into the additional instrumentation of calls into netstandard.dll
-            SetEnvironmentVariable("DD_TRACE_NETSTANDARD_ENABLED", "true");
-
             int agentPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = new MockTracerAgent(agentPort))

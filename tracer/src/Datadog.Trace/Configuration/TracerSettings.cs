@@ -561,13 +561,6 @@ namespace Datadog.Trace.Configuration
             return analyticsEnabled ? integrationSettings.AnalyticsSampleRate : (double?)null;
         }
 
-        internal bool IsNetStandardFeatureFlagEnabled()
-        {
-            var value = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.FeatureFlags.NetStandardEnabled, string.Empty);
-
-            return value == "1" || value == "true";
-        }
-
         internal IDictionary<string, string> InitializeHeaderTags(IDictionary<string, string> configurationDictionary)
         {
             var headerTags = new Dictionary<string, string>();
