@@ -3,12 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Globalization;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.TestHelpers;
@@ -222,7 +222,7 @@ namespace Datadog.Trace.Tests
 
             Assert.NotNull(resultContext);
             Assert.Equal(traceId, resultContext.TraceId);
-            Assert.Equal(default(ulong), resultContext.SpanId);
+            Assert.Equal(default, resultContext.SpanId);
             Assert.Equal(samplingPriority, resultContext.SamplingPriority);
             Assert.Equal(origin, resultContext.Origin);
         }
