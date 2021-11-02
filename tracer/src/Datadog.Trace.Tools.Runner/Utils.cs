@@ -6,6 +6,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -13,6 +14,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.Agent;
+using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.Tools.Runner
 {
@@ -283,21 +285,22 @@ namespace Datadog.Trace.Tools.Runner
             return defaultValue;
         }
 
-        public static bool CheckAgentConnection(string agentUrl)
+        public static async Task<bool> CheckAgentConnectionAsync(string agentUrl)
         {
-            var env = new Dictionary<string, string>();
+            var env = new NameValueCollection();
             if (!string.IsNullOrWhiteSpace(agentUrl))
             {
                 env["DD_TRACE_AGENT_URL"] = agentUrl;
             }
 
-            var tracerSettings = new Configuration.TracerSettings(new DictionaryConfigurationSource(env));
+            var globalSettings = GlobalSettings.CreateDefaultConfigurationSource();
+            globalSettings.Add(new NameValueConfigurationSource(env));
+            var tracerSettings = new TracerSettings(globalSettings);
+            var agentWriter = new CIAgentWriter(tracerSettings);
 
             try
             {
-                var agentWriter = new CIAgentWriter(tracerSettings);
-
-                if (agentWriter.Ping().GetAwaiter().GetResult())
+                if (await agentWriter.Ping().ConfigureAwait(false))
                 {
                     Console.WriteLine($"Connection with the Datadog Agent at {tracerSettings.AgentUri} was successful.");
                 }
@@ -313,28 +316,12 @@ namespace Datadog.Trace.Tools.Runner
                 Console.WriteLine(ex);
                 return false;
             }
+            finally
+            {
+                await agentWriter.FlushAndCloseAsync().ConfigureAwait(false);
+            }
 
             return true;
-        }
-
-        private class DictionaryConfigurationSource : Configuration.StringConfigurationSource
-        {
-            private readonly Dictionary<string, string> _dictionary;
-
-            public DictionaryConfigurationSource(Dictionary<string, string> dictionary)
-            {
-                _dictionary = dictionary;
-            }
-
-            public override string GetString(string key)
-            {
-                if (_dictionary.TryGetValue(key, out var value))
-                {
-                    return value;
-                }
-
-                return null;
-            }
         }
     }
 }
