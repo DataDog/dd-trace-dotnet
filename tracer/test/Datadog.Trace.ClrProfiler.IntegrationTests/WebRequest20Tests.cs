@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NET452
+#if NETFRAMEWORK
 using System.Globalization;
 using System.Linq;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;

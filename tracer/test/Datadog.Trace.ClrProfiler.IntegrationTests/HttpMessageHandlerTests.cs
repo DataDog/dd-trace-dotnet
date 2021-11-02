@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -128,13 +127,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var expectedSpanCount = spansPerHttpClient * 2; // default HttpClient and CustomHttpClientHandler
 
-#if !NET452
             // WinHttpHandler instrumentation is off by default, and only available on Windows
             if (isWindows && (instrumentation.InstrumentWinHttpOrCurlHandler ?? false))
             {
                 expectedSpanCount += spansPerHttpClient;
             }
-#endif
 
             // SocketsHttpHandler instrumentation is on by default
             if (EnvironmentHelper.IsCoreClr() && (instrumentation.InstrumentSocketHandler ?? true))

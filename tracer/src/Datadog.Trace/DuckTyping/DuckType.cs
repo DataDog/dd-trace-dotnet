@@ -988,7 +988,7 @@ namespace Datadog.Trace.DuckTyping
                     return fastPath;
                 }
 
-                CreateTypeResult result = GetProxySlow(targetType);
+                CreateTypeResult result = GetOrCreateProxyType(Type, targetType);
 
                 fastPath = _fastPath;
                 if (fastPath.TargetType is null)
@@ -1031,18 +1031,6 @@ namespace Datadog.Trace.DuckTyping
                 return GetProxy(instance.GetType()).CanCreate();
             }
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private static CreateTypeResult GetProxySlow(Type targetType)
-            {
-#if NET45
-                if (!Type.IsValueType && !IsVisible)
-                {
-                    DuckTypeTypeIsNotPublicException.Throw(Type, nameof(Type));
-                }
-#endif
-                return GetOrCreateProxyType(Type, targetType);
-            }
-
             /// <summary>
             /// Create a reverse proxy type for a target instance using the T proxy definition
             /// </summary>
@@ -1074,7 +1062,7 @@ namespace Datadog.Trace.DuckTyping
                     return fastPath;
                 }
 
-                CreateTypeResult result = GetReverseProxySlow(targetType);
+                CreateTypeResult result = GetOrCreateReverseProxyType(Type, targetType);
 
                 fastPath = _fastPath;
                 if (fastPath.TargetType is null)
@@ -1083,18 +1071,6 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 return result;
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private static CreateTypeResult GetReverseProxySlow(Type targetType)
-            {
-#if NET45
-                if (!Type.IsValueType && !IsVisible)
-                {
-                    DuckTypeTypeIsNotPublicException.Throw(Type, nameof(Type));
-                }
-#endif
-                return GetOrCreateReverseProxyType(Type, targetType);
             }
         }
     }

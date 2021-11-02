@@ -3,9 +3,6 @@
   <PropertyGroup>
     <ApiVersion Condition="'$(ApiVersion)' == ''">5.0.2</ApiVersion>
 
-    <!-- override to remove net452 -->
-    <TargetFrameworks>net461;netcoreapp2.1;netcoreapp3.0;netcoreapp3.1;net5.0</TargetFrameworks>
-
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
@@ -21,7 +18,7 @@
     <ProjectReference Include="..\dependency-libs\Samples.DatabaseHelper\Samples.DatabaseHelper.csproj" />
 
     <!-- this referenced project only targets netstandard2.0 -->
-    <ProjectReference Condition="'$(TargetFramework)' != 'net452'" Include="..\dependency-libs\Samples.DatabaseHelper.netstandard\Samples.DatabaseHelper.netstandard.csproj" />
+    <ProjectReference Include="..\dependency-libs\Samples.DatabaseHelper.netstandard\Samples.DatabaseHelper.netstandard.csproj" />
   </ItemGroup>
 
 </Project>

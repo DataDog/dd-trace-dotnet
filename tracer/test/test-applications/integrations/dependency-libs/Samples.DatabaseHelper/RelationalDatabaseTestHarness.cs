@@ -42,7 +42,7 @@ namespace Samples.DatabaseHelper
 
                                 // call methods through IDbCommand reference, but using a generic constraint
                                 new DbCommandInterfaceGenericExecutor<TCommand>(),
-#if !NET45
+
                                 // call methods through DbCommand reference (referencing netstandard.dll)
                                 new DbCommandNetStandardClassExecutor(),
 
@@ -51,7 +51,6 @@ namespace Samples.DatabaseHelper
 
                                 // call methods through IDbCommand reference (referencing netstandard.dll), but using a generic constraint
                                 new DbCommandNetStandardInterfaceGenericExecutor<TCommand>(),
-#endif
                             };
 
             using (var root = Tracer.Instance.StartActive("RunAllAsync<TCommand>"))
@@ -83,13 +82,11 @@ namespace Samples.DatabaseHelper
                                 // call methods through IDbCommand reference
                                 new DbCommandInterfaceExecutor(),
 
-#if !NET45
                                 // call methods through DbCommand reference (referencing netstandard.dll)
                                 new DbCommandNetStandardClassExecutor(),
 
                                 // call methods through IDbCommand reference (referencing netstandard.dll)
                                 new DbCommandNetStandardInterfaceExecutor(),
-#endif
                             };
 
             using (var root = Tracer.Instance.StartActive("RunBaseClassesAsync"))

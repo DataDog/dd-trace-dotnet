@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if !NET452
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -75,4 +74,3 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         }
     }
 }
-#endif

@@ -1,8 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- override to remove net452 -->
-    <TargetFrameworks>net461;netcoreapp2.1;netcoreapp3.0;netcoreapp3.1;net5.0</TargetFrameworks>
     <ApiVersion Condition="'$(ApiVersion)' == ''">5.3.0</ApiVersion>
 
     <!-- Required to build multiple projects with the same Configuration|Platform, which is needed for the CI library/version matrix -->

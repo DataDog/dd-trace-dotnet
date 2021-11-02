@@ -9,7 +9,7 @@
     <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
   </ItemGroup>
   
-  <ItemGroup Condition=" !$(TargetFramework.StartsWith('net45')) ">
+  <ItemGroup>
     <PackageReference Include="System.Net.Http.WinHttpHandler" Version="5.0.0" />
   </ItemGroup>
   

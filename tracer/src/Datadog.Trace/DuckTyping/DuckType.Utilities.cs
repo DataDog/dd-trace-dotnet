@@ -32,13 +32,6 @@ namespace Datadog.Trace.DuckTyping
             {
                 DuckTypeTargetObjectInstanceIsNull.Throw();
             }
-
-#if NET45
-            if (!proxyType.IsPublic && !proxyType.IsNestedPublic)
-            {
-                DuckTypeTypeIsNotPublicException.Throw(proxyType, nameof(proxyType));
-            }
-#endif
         }
 
         /// <summary>
@@ -115,9 +108,6 @@ namespace Datadog.Trace.DuckTyping
         /// <returns>true for direct method; otherwise, false.</returns>
         private static bool UseDirectAccessTo(ModuleBuilder builder, Type targetType)
         {
-#if NET45
-            return targetType.IsPublic || targetType.IsNestedPublic;
-#else
             if (builder == null)
             {
                 return targetType.IsPublic || targetType.IsNestedPublic;
@@ -125,7 +115,6 @@ namespace Datadog.Trace.DuckTyping
 
             EnsureTypeVisibility(builder, targetType);
             return true;
-#endif
         }
 
         /// <summary>

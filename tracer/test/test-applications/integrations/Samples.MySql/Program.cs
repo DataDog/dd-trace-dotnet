@@ -43,15 +43,11 @@ namespace Samples.MySql
             if (connectionString == null)
             {
                 var oldMySqlServer = typeof(MySqlConnection).Assembly.GetName().Version.Major != 8;
-#if !NET452
-                if (oldMySqlServer)
-                {
-                    Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-                }
-#endif
 
                 if (oldMySqlServer)
                 {
+                    Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
                     var host = Environment.GetEnvironmentVariable("MYSQL57_HOST") ?? "localhost";
                     var port = Environment.GetEnvironmentVariable("MYSQL57_PORT") ?? "3407";
                     connectionString = $"server={host};user=mysqldb;password=mysqldb;port={port};database=world;SslMode=None";

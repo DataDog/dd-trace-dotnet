@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if !NET452
 using Datadog.Trace.ClrProfiler.IntegrationTests.TestCollections;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -33,4 +32,3 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         }
     }
 }
-#endif

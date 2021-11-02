@@ -6,21 +6,11 @@
 using System;
 using System.Linq;
 using System.Net;
-#if NET452
-using System.Runtime.Remoting;
-using System.Runtime.Remoting.Lifetime;
-using System.Runtime.Remoting.Services;
-using System.Security;
-using System.Security.Permissions;
-using System.Security.Policy;
-#endif
-using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
-using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -33,14 +23,6 @@ namespace Datadog.Trace.Tests
     public class TracerTests
     {
         private readonly Tracer _tracer;
-
-        static TracerTests()
-        {
-#if NET452
-            LifetimeServices.LeaseTime = TimeSpan.FromMilliseconds(100);
-            LifetimeServices.LeaseManagerPollTime = TimeSpan.FromMilliseconds(10);
-#endif
-        }
 
         public TracerTests()
         {
@@ -429,134 +411,5 @@ namespace Datadog.Trace.Tests
 
             agent.Verify(a => a.FlushTracesAsync(), Times.Once);
         }
-
-#if NET452
-
-        // Test that storage in the Logical Call Context does not expire
-        // See GitHub issue https://github.com/serilog/serilog/issues/987
-        // and the associated PR https://github.com/serilog/serilog/pull/992
-        [Fact]
-        public void DoesNotThrowOnCrossDomainCallsWhenLeaseExpired()
-        {
-            // Arrange
-            // Set the minimum permissions needed to run code in the new AppDomain
-            PermissionSet permSet = new PermissionSet(PermissionState.None);
-            permSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.Execution));
-            var remote = AppDomain.CreateDomain("Remote", null, AppDomain.CurrentDomain.SetupInformation, permSet);
-            string operationName = "test-span";
-
-            // Act
-            try
-            {
-                using (_tracer.StartActive(operationName))
-                {
-                    remote.DoCallBack(AppDomainHelpers.SleepForLeaseManagerPollCallback);
-
-                    // After the lease expires, access the active scope
-                    Scope scope = _tracer.ActiveScope;
-                    Assert.Equal(operationName, scope.Span.OperationName);
-                }
-            }
-            finally
-            {
-                AppDomain.Unload(remote);
-            }
-
-            // Assert
-            // Nothing. We should just throw no exceptions here
-        }
-
-        [Fact]
-        public void DisconnectRemoteObjectsAfterCrossDomainCallsOnDispose()
-        {
-            // Arrange
-            var prefix = Guid.NewGuid().ToString();
-            var cde = new CountdownEvent(2);
-            var tracker = new InMemoryRemoteObjectTracker(cde, prefix);
-            TrackingServices.RegisterTrackingHandler(tracker);
-
-            // Set the minimum permissions needed to run code in the new AppDomain
-            PermissionSet permSet = new PermissionSet(PermissionState.None);
-            permSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.Execution));
-            var remote = AppDomain.CreateDomain("Remote", null, AppDomain.CurrentDomain.SetupInformation, permSet);
-
-            // Act
-            try
-            {
-                using (_tracer.StartActive($"{prefix}test-span"))
-                {
-                    remote.DoCallBack(AppDomainHelpers.EmptyCallback);
-
-                    using (_tracer.StartActive($"{prefix}test-span-inner"))
-                    {
-                        remote.DoCallBack(AppDomainHelpers.EmptyCallback);
-                    }
-                }
-            }
-            finally
-            {
-                AppDomain.Unload(remote);
-            }
-
-            // Ensure that we wait long enough for the lease manager poll to occur.
-            // Even though we reset LifetimeServices.LeaseManagerPollTime to a shorter duration,
-            // the default value is 10 seconds so the first poll may not be affected by our modification
-            bool eventSet = cde.Wait(TimeSpan.FromSeconds(30));
-
-            // Assert
-            Assert.True(eventSet);
-            Assert.Equal(2, tracker.DisconnectCount);
-        }
-
-        // Static class with static methods that are publicly accessible so new sandbox AppDomain does not need special
-        // Reflection permissions to run callback code.
-        public static class AppDomainHelpers
-        {
-            // Ensure the remote call takes long enough for the lease manager poll to occur.
-            // Even though we reset LifetimeServices.LeaseManagerPollTime to a shorter duration,
-            // the default value is 10 seconds so the first poll may not be affected by our modification
-            public static void SleepForLeaseManagerPollCallback() => Thread.Sleep(TimeSpan.FromSeconds(12));
-
-            public static void EmptyCallback()
-            {
-            }
-        }
-
-        private class InMemoryRemoteObjectTracker : ITrackingHandler
-        {
-            private readonly string _prefix;
-            private readonly CountdownEvent _cde;
-
-            public InMemoryRemoteObjectTracker(CountdownEvent cde, string prefix)
-            {
-                _cde = cde;
-                _prefix = prefix;
-            }
-
-            public int DisconnectCount { get; set; }
-
-            public void DisconnectedObject(object obj)
-            {
-                if (obj is DisposableObjectHandle handle)
-                {
-                    var scope = (Scope)handle.Unwrap();
-
-                    if (scope.Span.OperationName.StartsWith(_prefix))
-                    {
-                        DisconnectCount++;
-                        _cde.Signal();
-                    }
-                }
-            }
-
-            public void MarshaledObject(object obj, ObjRef or)
-            {
-            }
-
-            public void UnmarshaledObject(object obj, ObjRef or)
-            {
-            }
-        }
-#endif
     }
 }

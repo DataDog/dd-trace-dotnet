@@ -70,7 +70,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.ReverseProxy
             proxy.GetType().Should().BeAssignableTo(typeToImplement);
         }
 
-        [Theory(Skip = "These fail, because they fail on net45, and we want consistency between frameworks")]
+        [Theory]
         [MemberData(nameof(Valid))]
         public void ValidCanTryReverseDuckType(Type reversedType)
         {

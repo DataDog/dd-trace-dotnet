@@ -35,9 +35,7 @@
 
     <Feature Id="ProductFeature" Title="Datadog.Trace.ClrProfiler" Level="1">
       <ComponentGroupRef Id="Files"/>
-      <ComponentGroupRef Id="Files.Managed.Net45.GAC"/>
       <ComponentGroupRef Id="Files.Managed.Net461.GAC"/>
-      <ComponentGroupRef Id="Files.Managed.Net45"/>
       <ComponentGroupRef Id="Files.Managed.Net461"/>
       <ComponentGroupRef Id="Files.Managed.NetStandard20"/>
       <ComponentGroupRef Id="Files.Managed.Netcoreapp31"/>
@@ -63,9 +61,6 @@
           <!-- ".\Datadog" -->
           <Directory Id="INSTALLFOLDER" Name="$(var.BaseProductName)">
             <!-- ".\.NET Tracer" -->
-              <Directory Id="net45" Name="net45">
-                <!-- ".\net45" -->
-              </Directory>
               <Directory Id="net461" Name="net461">
                 <!-- ".\net461" -->
               </Directory>
@@ -75,9 +70,6 @@
             <Directory Id="netcoreapp3.1" Name="netcoreapp3.1">
                 <!-- ".\netcoreapp3.1" -->
             </Directory>
-              <Directory Id="net45.GAC" Name="net45.GAC">
-                <!-- Ignored as all of its components will be installed in the GAC -->
-              </Directory>
               <Directory Id="net461.GAC" Name="net461.GAC">
                 <!-- Ignored as all of its components will be installed in the GAC -->
               </Directory>
