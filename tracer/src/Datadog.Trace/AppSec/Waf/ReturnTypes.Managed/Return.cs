@@ -12,15 +12,12 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
     {
         internal bool Blocked { get; private set; }
 
-        internal ResultData ResultData { get; set; }
+        internal ResultData[] ResultData { get; set; }
 
-        internal static Return From(IResult wafReturn)
+        internal static Return From(IResult wafReturn) => new()
         {
-            return new Return
-            {
-                ResultData = JsonConvert.DeserializeObject<ResultData[]>(wafReturn.Data).FirstOrDefault(),
-                Blocked = wafReturn.ReturnCode == ReturnCode.Block
-            };
-        }
+            ResultData = JsonConvert.DeserializeObject<ResultData[]>(wafReturn.Data),
+            Blocked = wafReturn.ReturnCode == ReturnCode.Block
+        };
     }
 }

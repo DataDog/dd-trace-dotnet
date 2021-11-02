@@ -125,9 +125,9 @@ namespace Datadog.Trace.Security.Unit.Tests
             var result = context.Run(args);
             Assert.Equal(ReturnCode.Monitor, result.ReturnCode);
             var resultData = JsonConvert.DeserializeObject<ResultData[]>(result.Data).FirstOrDefault();
-            Assert.Equal(flow, resultData.Flow);
-            Assert.Equal(rule, resultData.Rule);
-            Assert.Equal(address, resultData.Filter[0].BindingAccessor);
+            Assert.Equal(flow, resultData.Rule.Tags.Type);
+            Assert.Equal(rule, resultData.Rule.Id);
+            Assert.Equal(address, resultData.RuleMatches[0].Parameters[0].Address);
         }
     }
 }
