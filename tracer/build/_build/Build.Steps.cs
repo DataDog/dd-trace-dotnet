@@ -127,7 +127,7 @@ partial class Build
             {
                 NuGetTasks.NuGetRestore(s => s
                     .SetTargetPath(Solution)
-                    .SetVerbosity(NuGetVerbosity.Normal)
+                    .SetVerbosity(NuGetVerbosity.Detailed)
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
                         o.SetPackagesDirectory(NugetPackageDirectory)));
             }
