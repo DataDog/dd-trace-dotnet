@@ -49,7 +49,7 @@ partial class Build
 
     AbsolutePath ProfilerHomeDirectory => ProfilerHome ?? RootDirectory / ".." / "_build" / "DDProf-Deploy";
 
-    const string LibDdwafVersion = "1.0.13";
+    const string LibDdwafVersion = "1.0.14";
     AbsolutePath LibDdwafDirectory => (NugetPackageDirectory ?? RootDirectory / "packages") / $"libddwaf.{LibDdwafVersion}";
 
     AbsolutePath SourceDirectory => TracerDirectory / "src";
@@ -333,7 +333,7 @@ partial class Build
                                     }
                                     else
                                     {
-                                        var (architecture, ext) = GetUnixArchitectureAndExtension(includeMuslSuffixOnAlpine: true);
+                                        var (architecture, ext) = GetUnixArchitectureAndExtension();
                                         var ddwafFileName = $"libddwaf.{ext}";
 
                                         var source = LibDdwafDirectory / "runtimes" / architecture / "native" / ddwafFileName;
@@ -380,7 +380,7 @@ partial class Build
                      }
                      else
                      {
-                         var (architecture, ext) = GetUnixArchitectureAndExtension(includeMuslSuffixOnAlpine: true);
+                         var (architecture, ext) = GetUnixArchitectureAndExtension();
                          CopyWaf(architecture, targetFrameworks, directory, "libddwaf", ext);
                      }
                  });
@@ -499,7 +499,7 @@ partial class Build
                                           }
 
                                           // Move the native file to the architecture-specific folder
-                                          var (architecture, ext) = GetUnixArchitectureAndExtension(includeMuslSuffixOnAlpine: false);
+                                          var (architecture, ext) = GetUnixArchitectureAndExtension();
 
                                           var profilerFileName = $"{NativeProfilerProject.Name}.{ext}";
                                           var ddwafFileName = $"libddwaf.{ext}";
@@ -1526,17 +1526,16 @@ partial class Build
 
     private void EnsureResultsDirectory(Project proj) => EnsureCleanDirectory(GetResultsDirectory(proj));
 
-    private (string, string) GetUnixArchitectureAndExtension(bool includeMuslSuffixOnAlpine)
+    private (string, string) GetUnixArchitectureAndExtension()
     {
-        return (IsOsx, IsAlpine, includeMuslSuffixOnAlpine) switch
+        return (IsOsx, IsAlpine) switch
         {
-            (true, _, _) => ("osx-x64", "dylib"),
-            (_, true, true) => ($"linux-musl-{LinuxArchitectureIdentifier}", "so"),
+            (true, _) => ("osx-x64", "dylib"),
             _ => ($"linux-{LinuxArchitectureIdentifier}", "so"),
         };
     }
 
-    // the integration tests need their own copy of the profiler, this achived through build.props on Windows, but doesn't seem to work under Linux
+    // the integration tests need their own copy of the profiler, this archived through build.props on Windows, but doesn't seem to work under Linux
     private void IntegrationTestLinuxProfilerDirFudge(string project)
     {
         // Not sure if/why this is necessary, and we can't just point to the correct output location
