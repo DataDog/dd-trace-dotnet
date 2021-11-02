@@ -11,6 +11,8 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
+using Datadog.Trace.Ci.Agent;
 
 namespace Datadog.Trace.Tools.Runner
 {
@@ -291,19 +293,25 @@ namespace Datadog.Trace.Tools.Runner
 
             var tracerSettings = new Configuration.TracerSettings(new DictionaryConfigurationSource(env));
 
-            using (var tcpClient = new System.Net.Sockets.TcpClient())
+            try
             {
-                try
+                var agentWriter = new CIAgentWriter(tracerSettings);
+
+                if (agentWriter.Ping().GetAwaiter().GetResult())
                 {
-                    tcpClient.Connect(tracerSettings.AgentUri.Host, tracerSettings.AgentUri.Port);
-                    Console.WriteLine($"Connection with the Datadog Agent on {tracerSettings.AgentUri} was successful.");
+                    Console.WriteLine($"Connection with the Datadog Agent at {tracerSettings.AgentUri} was successful.");
                 }
-                catch (Exception ex)
+                else
                 {
-                    Console.WriteLine($"Error connecting to the Datadog Agent on {tracerSettings.AgentUri}.");
-                    Console.WriteLine(ex);
+                    Console.WriteLine($"Error connecting to the Datadog Agent at {tracerSettings.AgentUri}.");
                     return false;
                 }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error connecting to the Datadog Agent at {tracerSettings.AgentUri}.");
+                Console.WriteLine(ex);
+                return false;
             }
 
             return true;
