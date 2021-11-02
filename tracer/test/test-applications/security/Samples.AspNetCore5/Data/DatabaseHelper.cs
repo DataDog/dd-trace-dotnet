@@ -25,7 +25,7 @@ namespace Samples.AspNetCore5.Data
             sqlConnection.Close();
             if (!dbExists)
             {
-                string script = File.ReadAllText(@"Data\\createdb.sql");
+                string script = File.ReadAllText(Path.Combine(@"Data", "createdb.sql"));
                 {
                     using var connection = new SqlConnection(connectionString);
                     var myCommand = new SqlCommand(script, connection);
@@ -33,7 +33,7 @@ namespace Samples.AspNetCore5.Data
                     myCommand.ExecuteNonQuery();
                     connection.Close();
                 }
-                script = File.ReadAllText(@"Data\\database.sql");
+                script = File.ReadAllText(Path.Combine(@"Data", "database.sql"));
                 {
                     using var connection = new SqlConnection(connectionString);
                     var myCommand = new SqlCommand(script, connection);
