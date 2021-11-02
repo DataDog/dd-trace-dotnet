@@ -8,7 +8,6 @@ using System.Collections.Specialized;
 using System.Globalization;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.TestHelpers;
@@ -30,7 +29,6 @@ namespace Datadog.Trace.Tests
         {
             yield return new object[] { WebRequest.CreateHttp("http://localhost").Headers.Wrap() };
             yield return new object[] { new NameValueCollection().Wrap() };
-            yield return new object[] { new DictionaryHeadersCollection() };
         }
 
         public static IEnumerable<object[]> GetHeadersInvalidIdsCartesianProduct()
