@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- override to only build/run net452 -->
-    <TargetFrameworks>net452</TargetFrameworks>
+    <!-- override to only build/run net461 -->
+    <TargetFrameworks>net461</TargetFrameworks>
 
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>

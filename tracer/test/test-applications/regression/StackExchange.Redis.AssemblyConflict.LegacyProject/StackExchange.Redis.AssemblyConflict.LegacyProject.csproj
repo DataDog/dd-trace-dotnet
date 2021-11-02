@@ -8,7 +8,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>StackExchange.Redis.AssemblyConflict</RootNamespace>
     <AssemblyName>StackExchange.Redis.AssemblyConflict</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>

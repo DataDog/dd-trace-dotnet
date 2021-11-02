@@ -8,7 +8,6 @@ namespace ServiceBus.Minimal.NServiceBus.Client
     public class OrderCompletedHandler : IHandleMessages<OrderCompleted>
     {
         static readonly ILog log = LogManager.GetLogger<OrderCompletedHandler>();
-        static Task CompletedTask = Task.FromResult(0);
         static bool ContinueSignal = true;
 
         public Task Handle(OrderCompleted message, IMessageHandlerContext context)
@@ -22,7 +21,7 @@ namespace ServiceBus.Minimal.NServiceBus.Client
                 ContinueSignal = !Program.Countdown.Signal();
             }
 
-            return CompletedTask;
+            return Task.CompletedTask;
         }
     }
 }

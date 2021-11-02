@@ -26,12 +26,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             var resetEvent = new ManualResetEventSlim();
 
             var instance = new InternalLogEventEnricherImpl(resetEvent);
-#if NET452
-            Assert.Throws<DuckTypeTypeIsNotPublicException>(() =>
-            {
-                instance.DuckImplement(iLogEventEnricherType);
-            });
-#else
+
             var proxy = instance.DuckImplement(iLogEventEnricherType);
 
             var log = new Vendors.Serilog.LoggerConfiguration()
@@ -43,7 +38,6 @@ namespace Datadog.Trace.DuckTyping.Tests
             log.Information("Hello world");
 
             Assert.True(resetEvent.Wait(5_000));
-#endif
         }
 
         [Fact]
@@ -54,19 +48,12 @@ namespace Datadog.Trace.DuckTyping.Tests
             var eventInstance = new LogEventPropertyValueImpl(resetEvent);
 
             var type = typeof(Datadog.Trace.Vendors.Serilog.Events.LogEventPropertyValue);
-#if NET452
-            Assert.Throws<DuckTypeTypeIsNotPublicException>(() =>
-            {
-                eventInstance.DuckImplement(type);
-            });
-#else
             var proxy2 = eventInstance.DuckImplement(type);
             eventInstance.SetBaseInstance(proxy2);
 
             ((Datadog.Trace.Vendors.Serilog.Events.LogEventPropertyValue)proxy2).ToString("Hello world", null);
 
             Assert.True(resetEvent.Wait(5_000));
-#endif
         }
 
         [Fact]
@@ -116,12 +103,6 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             var type = typeof(Datadog.Trace.Vendors.Serilog.Formatting.Json.JsonValueFormatter);
 
-#if NET452
-            Assert.Throws<DuckTypeTypeIsNotPublicException>(() =>
-            {
-                formatterInstance.DuckImplement(type);
-            });
-#else
             var proxy2 = formatterInstance.DuckImplement(type);
 
             var value = new Vendors.Serilog.Events.ScalarValue("original");
@@ -132,7 +113,6 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             var actual = sb.ToString();
             Assert.Equal(expected, actual);
-#endif
         }
 
         [Fact]

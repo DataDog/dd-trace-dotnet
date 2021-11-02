@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -13,7 +12,7 @@ namespace Datadog.Trace.Logging
 {
     internal class DatadogSerilogLogger : IDatadogLogger
     {
-        private static readonly object[] NoPropertyValues = Datadog.Trace.Util.ArrayHelper.Empty<object>();
+        private static readonly object[] NoPropertyValues = Array.Empty<object>();
         private readonly ILogger _logger;
         private readonly ILogRateLimiter _rateLimiter;
 

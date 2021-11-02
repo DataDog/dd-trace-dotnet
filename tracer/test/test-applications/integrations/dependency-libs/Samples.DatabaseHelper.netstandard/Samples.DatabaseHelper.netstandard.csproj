@@ -7,9 +7,4 @@
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Compile Include="..\Samples.DatabaseHelper\DbCommandExecutor.cs" Link="DbCommandExecutor.cs" />
-    <Compile Include="..\Samples.DatabaseHelper\IDbCommandExecutor.cs" Link="IDbCommandExecutor.cs" />
-  </ItemGroup>
-
 </Project>

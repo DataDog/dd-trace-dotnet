@@ -22,9 +22,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             yield return new object[] { new System.Data.SqlClient.SqlCommand() };
             yield return new object[] { new MySqlCommand() };
             yield return new object[] { new NpgsqlCommand() };
-#if !NET452
             yield return new object[] { new Microsoft.Data.SqlClient.SqlCommand() };
-#endif
         }
 
         [Theory]

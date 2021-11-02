@@ -40,11 +40,7 @@ namespace Datadog.Trace.HttpOverStreams.HttpContent
                 dst: buffer,
                 dstOffset: 0,
                 count: _buffer.Count);
-#if NET45
-            return Task.FromResult(false);
-#else
             return Task.CompletedTask;
-#endif
         }
     }
 }

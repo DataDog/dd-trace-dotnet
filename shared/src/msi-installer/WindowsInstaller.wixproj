@@ -50,8 +50,6 @@
     <Compile Include="ContinuousProfiler\Files.Managed.Netcoreapp31.wxs" />
     <Compile Include="Tracer\EnvironmentVariables.wxs" />
     <Compile Include="Tracer\Files.wxs" />
-    <Compile Include="Tracer\Files.Managed.Net45.GAC.wxs" />
-    <Compile Include="Tracer\Files.Managed.Net45.wxs" />
     <Compile Include="Tracer\Files.Managed.Net461.GAC.wxs" />
     <Compile Include="Tracer\Files.Managed.Net461.wxs" />
     <Compile Include="Tracer\Files.Managed.NetStandard20.wxs" />

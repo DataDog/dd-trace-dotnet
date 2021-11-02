@@ -29,7 +29,7 @@ namespace Datadog.Trace.Util
             _count++;
         }
 
-        public ArraySegment<T> GetArray() => new(_array ?? ArrayHelper.Empty<T>(), 0, _count);
+        public ArraySegment<T> GetArray() => new(_array ?? Array.Empty<T>(), 0, _count);
 
         private void GrowIfNeeded()
         {

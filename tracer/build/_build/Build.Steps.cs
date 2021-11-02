@@ -106,7 +106,6 @@ partial class Build
 
     readonly IEnumerable<TargetFramework> TargetFrameworks = new[]
     {
-        TargetFramework.NET45,
         TargetFramework.NET461,
         TargetFramework.NETSTANDARD2_0,
         TargetFramework.NETCOREAPP3_1,
