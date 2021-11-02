@@ -49,3 +49,6 @@ steps:
     - template: install-dotnet-sdk-32bit.yml
       parameters:
         sdkVersion: $(dotnetCoreSdk5Version)
+    - template: install-dotnet-sdk-32bit.yml
+      parameters:
+        sdkVersion: $(dotnetCoreSdk6Version)
