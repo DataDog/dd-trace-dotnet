@@ -56,7 +56,6 @@ namespace Datadog.Trace.Tests
         {
             yield return () => WebRequest.CreateHttp("http://localhost").Headers.Wrap();
             yield return () => new NameValueCollection().Wrap();
-            yield return () => new DictionaryHeadersCollection();
         }
 
         [Theory]

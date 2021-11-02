@@ -10,7 +10,7 @@ using System.Linq;
 
 namespace Datadog.Trace.Headers
 {
-    internal class NameValueHeadersCollection : IHeadersCollection
+    internal readonly struct NameValueHeadersCollection : IHeadersCollection
     {
         private readonly NameValueCollection _headers;
 
