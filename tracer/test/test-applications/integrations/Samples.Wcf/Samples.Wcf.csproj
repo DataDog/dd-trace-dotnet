@@ -2,7 +2,7 @@
   <PropertyGroup>
     <ApplicationManifest>app1.manifest</ApplicationManifest>
     <!-- override to remove core -->
-    <TargetFrameworks >net461</TargetFrameworks>
+    <TargetFrameworks>net461</TargetFrameworks>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System.Security" />
