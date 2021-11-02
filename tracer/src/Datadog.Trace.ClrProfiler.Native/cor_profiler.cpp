@@ -971,8 +971,8 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
             WSTRING targetType = WSTRING(current.targetType);
             WSTRING targetMethod = WSTRING(current.targetMethod);
 
-            WSTRING wrapperAssembly = WSTRING(current.wrapperAssembly);
-            WSTRING wrapperType = WSTRING(current.wrapperType);
+            WSTRING integrationAssembly = WSTRING(current.integrationAssembly);
+            WSTRING integrationType = WSTRING(current.integrationType);
 
             std::vector<WSTRING> signatureTypes;
             for (int sIdx = 0; sIdx < current.signatureTypesLength; sIdx++)
@@ -991,13 +991,12 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
 
             const auto integration = IntegrationMethod(
                     MethodReference(targetAssembly, targetType, targetMethod, minVersion, maxVersion, signatureTypes),
-                    TypeReference(wrapperAssembly, wrapperType, {}, {}));
+                    TypeReference(integrationAssembly, integrationType, {}, {}));
 
             if (Logger::IsDebugEnabled())
             {
-                Logger::Debug("  * Target: ", targetAssembly, " | ", targetType, ".", targetMethod, "(", signatureTypes.size(), ") { ",
-                              minVersion.str(), " - ", maxVersion.str(), " } [", wrapperAssembly,
-                              " | ", wrapperType, "]");
+                Logger::Debug("  * Target: ", targetAssembly, " | ", targetType, ".", targetMethod, "(", signatureTypes.size(), ") { ", minVersion.str(), " - ", maxVersion.str(), " } [",
+                              integrationAssembly, " | ", integrationType, "]");
             }
 
             integrationMethods.push_back(integration);
@@ -1203,12 +1202,12 @@ void CorProfiler::CheckFilenameDefinitions()
 #endif
 }
 
-bool CorProfiler::GetWrapperTypeRef(ModuleMetadata* module_metadata, ModuleID module_id,
-                                    const IntegrationMethod& integration_method, mdTypeRef& wrapper_type_ref)
+bool CorProfiler::GetIntegrationTypeRef(ModuleMetadata* module_metadata, ModuleID module_id,
+                                        const IntegrationMethod& integration_method, mdTypeRef& wrapper_type_ref)
 {
-    const auto& wrapper_key = integration_method.wrapper_type.get_cache_key();
+    const auto& wrapper_key = integration_method.integration_type.get_cache_key();
 
-    if (!module_metadata->TryGetWrapperParentTypeRef(wrapper_key, wrapper_type_ref))
+    if (!module_metadata->TryGetIntegrationTypeRef(wrapper_key, wrapper_type_ref))
     {
         const auto module_info = GetModuleInfo(this->info_, module_id);
         if (!module_info.IsValid())
@@ -1231,24 +1230,24 @@ bool CorProfiler::GetWrapperTypeRef(ModuleMetadata* module_metadata, ModuleID mo
                                                module_metadata->assembly_emit);
 
         // for each wrapper assembly, emit an assembly reference
-        hr = metadata_builder.EmitAssemblyRef(integration_method.wrapper_type.assembly);
+        hr = metadata_builder.EmitAssemblyRef(integration_method.integration_type.assembly);
         if (FAILED(hr))
         {
             Logger::Warn("GetWrapperMethodRef failed to emit wrapper assembly ref for assembly=",
-                         integration_method.wrapper_type.assembly.name,
-                         ", Version=", integration_method.wrapper_type.assembly.version.str(),
-                         ", Culture=", integration_method.wrapper_type.assembly.locale,
-                         " PublicKeyToken=", integration_method.wrapper_type.assembly.public_key.str());
+                         integration_method.integration_type.assembly.name,
+                         ", Version=", integration_method.integration_type.assembly.version.str(),
+                         ", Culture=", integration_method.integration_type.assembly.locale,
+                         " PublicKeyToken=", integration_method.integration_type.assembly.public_key.str());
             return false;
         }
 
         // for each method replacement in each enabled integration,
         // emit a reference to the instrumentation wrapper type
-        hr = metadata_builder.FindWrapperTypeRef(integration_method, wrapper_type_ref);
+        hr = metadata_builder.FindIntegrationTypeRef(integration_method, wrapper_type_ref);
         if (FAILED(hr))
         {
             Logger::Warn("GetWrapperMethodRef failed to obtain wrapper method ref for ",
-                         integration_method.wrapper_type.name, ".");
+                         integration_method.integration_type.name, ".");
             return false;
         }
     }
@@ -2563,12 +2562,12 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
     auto metaEmit = module_metadata->metadata_emit;
     auto metaImport = module_metadata->metadata_import;
 
-    // *** Get reference to the wrapper type
-    mdTypeRef wrapper_type_ref = mdTypeRefNil;
-    if (!GetWrapperTypeRef(module_metadata, module_id, *integration_method, wrapper_type_ref))
+    // *** Get reference to the integration type
+    mdTypeRef integration_type_ref = mdTypeRefNil;
+    if (!GetIntegrationTypeRef(module_metadata, module_id, *integration_method, integration_type_ref))
     {
         Logger::Warn(
-            "*** CallTarget_RewriterCallback() skipping method: Wrapper Type Ref cannot be found for ",
+            "*** CallTarget_RewriterCallback() skipping method: Integration Type Ref cannot be found for ",
             " token=", function_token, " caller_name=", caller->type.name, ".",
             caller->name, "()");
         return S_FALSE;
@@ -2578,7 +2577,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
     {
         Logger::Debug("*** CallTarget_RewriterCallback() Start: ", caller->type.name, ".", caller->name, "() [IsVoid=",
                       isVoid, ", IsStatic=", isStatic,
-                      ", IntegrationType=", integration_method->wrapper_type.name,
+                      ", IntegrationType=", integration_method->integration_type.name,
                       ", Arguments=", numArgs, "]");
     }
 
@@ -2757,7 +2756,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
     }
 
     ILInstr* beginCallInstruction;
-    hr = callTargetTokens->WriteBeginMethod(&reWriterWrapper, wrapper_type_ref, &caller->type, methodArguments,
+    hr = callTargetTokens->WriteBeginMethod(&reWriterWrapper, integration_type_ref, &caller->type, methodArguments,
                                             &beginCallInstruction);
     if (FAILED(hr))
     {
@@ -2769,7 +2768,8 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
 
     // *** BeginMethod call catch
     ILInstr* beginMethodCatchFirstInstr = nullptr;
-    callTargetTokens->WriteLogException(&reWriterWrapper, wrapper_type_ref, &caller->type, &beginMethodCatchFirstInstr);
+    callTargetTokens->WriteLogException(&reWriterWrapper, integration_type_ref, &caller->type,
+                                        &beginMethodCatchFirstInstr);
     ILInstr* beginMethodCatchLeaveInstr = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
 
     // *** BeginMethod exception handling clause
@@ -2869,12 +2869,12 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
     ILInstr* endMethodCallInstr;
     if (isVoid)
     {
-        callTargetTokens->WriteEndVoidReturnMemberRef(&reWriterWrapper, wrapper_type_ref, &caller->type,
+        callTargetTokens->WriteEndVoidReturnMemberRef(&reWriterWrapper, integration_type_ref, &caller->type,
                                                       &endMethodCallInstr);
     }
     else
     {
-        callTargetTokens->WriteEndReturnMemberRef(&reWriterWrapper, wrapper_type_ref, &caller->type, &retFuncArg,
+        callTargetTokens->WriteEndReturnMemberRef(&reWriterWrapper, integration_type_ref, &caller->type, &retFuncArg,
                                                   &endMethodCallInstr);
     }
     reWriterWrapper.StLocal(callTargetReturnIndex);
@@ -2892,7 +2892,8 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
 
     // *** EndMethod call catch
     ILInstr* endMethodCatchFirstInstr = nullptr;
-    callTargetTokens->WriteLogException(&reWriterWrapper, wrapper_type_ref, &caller->type, &endMethodCatchFirstInstr);
+    callTargetTokens->WriteLogException(&reWriterWrapper, integration_type_ref, &caller->type,
+                                        &endMethodCatchFirstInstr);
     ILInstr* endMethodCatchLeaveInstr = reWriterWrapper.CreateInstr(CEE_LEAVE_S);
 
     // *** EndMethod exception handling clause
@@ -2995,7 +2996,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
     }
 
     Logger::Info("*** CallTarget_RewriterCallback() Finished: ", caller->type.name, ".", caller->name, "() [IsVoid=", isVoid, ", IsStatic=", isStatic,
-                 ", IntegrationType=", integration_method->wrapper_type.name,
+                 ", IntegrationType=", integration_method->integration_type.name,
                  ", Arguments=", numArgs, "]");
     return S_OK;
 }

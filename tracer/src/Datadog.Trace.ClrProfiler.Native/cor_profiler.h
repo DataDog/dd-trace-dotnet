@@ -66,8 +66,8 @@ private:
     void RewritingPInvokeMaps(const ModuleMetadata& module_metadata, const WSTRING& nativemethods_type_name);
     WSTRING GetCLRProfilerPath();
     void CheckFilenameDefinitions();
-    bool GetWrapperTypeRef(ModuleMetadata* module_metadata, ModuleID module_id,
-                           const IntegrationMethod& integration_method, mdTypeRef& wrapper_type_ref);
+    bool GetIntegrationTypeRef(ModuleMetadata* module_metadata, ModuleID module_id,
+                               const IntegrationMethod& integration_method, mdTypeRef& wrapper_type_ref);
     bool ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id);
     std::string GetILCodes(const std::string& title, ILRewriter* rewriter, const FunctionInfo& caller,
                            ModuleMetadata* module_metadata);

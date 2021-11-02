@@ -37,10 +37,10 @@ namespace Datadog.Trace.ClrProfiler
         public ushort TargetMaximumPatch;
 
         [MarshalAs(UnmanagedType.LPWStr)]
-        public string WrapperAssembly;
+        public string IntegrationAssembly;
 
         [MarshalAs(UnmanagedType.LPWStr)]
-        public string WrapperType;
+        public string IntegrationType;
 
         public NativeCallTargetDefinition(
                 string targetAssembly,
@@ -53,8 +53,8 @@ namespace Datadog.Trace.ClrProfiler
                 ushort targetMaximumMajor,
                 ushort targetMaximumMinor,
                 ushort targetMaximumPatch,
-                string wrapperAssembly,
-                string wrapperType)
+                string integrationAssembly,
+                string integrationType)
         {
             TargetAssembly = targetAssembly;
             TargetType = targetType;
@@ -78,8 +78,8 @@ namespace Datadog.Trace.ClrProfiler
             TargetMaximumMajor = targetMaximumMajor;
             TargetMaximumMinor = targetMaximumMinor;
             TargetMaximumPatch = targetMaximumPatch;
-            WrapperAssembly = wrapperAssembly;
-            WrapperType = wrapperType;
+            IntegrationAssembly = integrationAssembly;
+            IntegrationType = integrationType;
         }
 
         public void Dispose()

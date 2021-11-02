@@ -50,12 +50,12 @@ HRESULT MetadataBuilder::EmitAssemblyRef(const trace::AssemblyReference& assembl
     return S_OK;
 }
 
-HRESULT MetadataBuilder::FindWrapperTypeRef(const IntegrationMethod& method_replacement, mdTypeRef& type_ref_out) const
+HRESULT MetadataBuilder::FindIntegrationTypeRef(const IntegrationMethod& method_replacement, mdTypeRef& type_ref_out) const
 {
-    const auto& cache_key = method_replacement.wrapper_type.get_cache_key();
+    const auto& cache_key = method_replacement.integration_type.get_cache_key();
     mdTypeRef type_ref = mdTypeRefNil;
 
-    if (metadata_.TryGetWrapperParentTypeRef(cache_key, type_ref))
+    if (metadata_.TryGetIntegrationTypeRef(cache_key, type_ref))
     {
         // this type was already resolved
         type_ref_out = type_ref;
@@ -65,31 +65,31 @@ HRESULT MetadataBuilder::FindWrapperTypeRef(const IntegrationMethod& method_repl
     HRESULT hr;
     type_ref = mdTypeRefNil;
 
-    if (metadata_.assemblyName == method_replacement.wrapper_type.assembly.name)
+    if (metadata_.assemblyName == method_replacement.integration_type.assembly.name)
     {
         // type is defined in this assembly
-        hr = metadata_emit_->DefineTypeRefByName(module_, method_replacement.wrapper_type.name.c_str(),
+        hr = metadata_emit_->DefineTypeRefByName(module_, method_replacement.integration_type.name.c_str(),
                                                  &type_ref);
     }
     else
     {
         // type is defined in another assembly,
         // find a reference to the assembly where type lives
-        const auto assembly_ref = FindAssemblyRef(assembly_import_, method_replacement.wrapper_type.assembly.name);
+        const auto assembly_ref = FindAssemblyRef(assembly_import_, method_replacement.integration_type.assembly.name);
         if (assembly_ref == mdAssemblyRefNil)
         {
             // TODO: emit assembly reference if not found?
-            Logger::Warn("Assembly reference for", method_replacement.wrapper_type.assembly.name, " not found");
+            Logger::Warn("Assembly reference for", method_replacement.integration_type.assembly.name, " not found");
             return E_FAIL;
         }
 
         // search for an existing reference to the type
-        hr = metadata_import_->FindTypeRef(assembly_ref, method_replacement.wrapper_type.name.c_str(), &type_ref);
+        hr = metadata_import_->FindTypeRef(assembly_ref, method_replacement.integration_type.name.c_str(), &type_ref);
 
         if (hr == HRESULT(0x80131130) /* record not found on lookup */)
         {
             // if typeRef not found, create a new one by emitting a metadata token
-            hr = metadata_emit_->DefineTypeRefByName(assembly_ref, method_replacement.wrapper_type.name.c_str(),
+            hr = metadata_emit_->DefineTypeRefByName(assembly_ref, method_replacement.integration_type.name.c_str(),
                                                      &type_ref);
         }
     }
@@ -97,7 +97,7 @@ HRESULT MetadataBuilder::FindWrapperTypeRef(const IntegrationMethod& method_repl
     RETURN_IF_FAILED(hr);
 
     // cache the typeRef in case we need it again
-    metadata_.SetWrapperParentTypeRef(cache_key, type_ref);
+    metadata_.SetIntegrationTypeRef(cache_key, type_ref);
     type_ref_out = type_ref;
     return S_OK;
 }

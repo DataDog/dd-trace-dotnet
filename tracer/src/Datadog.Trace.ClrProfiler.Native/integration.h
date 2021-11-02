@@ -298,20 +298,20 @@ struct MethodReference
 struct IntegrationMethod
 {
     const MethodReference target_method;
-    const TypeReference wrapper_type;
+    const TypeReference integration_type;
 
     IntegrationMethod()
     {
     }
 
-    IntegrationMethod(MethodReference target_method, TypeReference wrapper_type) :
-        target_method(target_method), wrapper_type(wrapper_type)
+    IntegrationMethod(MethodReference target_method, TypeReference integration_type) :
+        target_method(target_method), integration_type(integration_type)
     {
     }
 
     inline bool operator==(const IntegrationMethod& other) const
     {
-        return target_method == other.target_method && wrapper_type == other.wrapper_type;
+        return target_method == other.target_method && integration_type == other.integration_type;
     }
 };
 
@@ -328,8 +328,8 @@ typedef struct _CallTargetDefinition
     USHORT targetMaximumMajor;
     USHORT targetMaximumMinor;
     USHORT targetMaximumPatch;
-    WCHAR* wrapperAssembly;
-    WCHAR* wrapperType;
+    WCHAR* integrationAssembly;
+    WCHAR* integrationType;
 } CallTargetDefinition;
 
 namespace

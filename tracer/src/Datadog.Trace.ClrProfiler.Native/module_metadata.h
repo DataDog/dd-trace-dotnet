@@ -19,7 +19,7 @@ class ModuleMetadata
 {
 private:
     std::mutex wrapper_mutex;
-    std::unique_ptr<std::unordered_map<WSTRING, mdTypeRef>> wrapper_parent_type = nullptr;
+    std::unique_ptr<std::unordered_map<WSTRING, mdTypeRef>> integration_types = nullptr;
     std::unique_ptr<CallTargetTokens> calltargetTokens = nullptr;
     std::unique_ptr<std::vector<IntegrationMethod>> integrations = nullptr;
 
@@ -64,16 +64,16 @@ public:
     {
     }
 
-    bool TryGetWrapperParentTypeRef(const WSTRING& keyIn, mdTypeRef& valueOut) const
+    bool TryGetIntegrationTypeRef(const WSTRING& keyIn, mdTypeRef& valueOut) const
     {
-        if (wrapper_parent_type == nullptr)
+        if (integration_types == nullptr)
         {
             return false;
         }
 
-        const auto search = wrapper_parent_type->find(keyIn);
+        const auto search = integration_types->find(keyIn);
 
-        if (search != wrapper_parent_type->end())
+        if (search != integration_types->end())
         {
             valueOut = search->second;
             return true;
@@ -82,15 +82,15 @@ public:
         return false;
     }
 
-    void SetWrapperParentTypeRef(const WSTRING& keyIn, const mdTypeRef valueIn)
+    void SetIntegrationTypeRef(const WSTRING& keyIn, const mdTypeRef valueIn)
     {
         std::scoped_lock<std::mutex> lock(wrapper_mutex);
-        if (wrapper_parent_type == nullptr)
+        if (integration_types == nullptr)
         {
-            wrapper_parent_type = std::make_unique<std::unordered_map<WSTRING, mdTypeRef>>();
+            integration_types = std::make_unique<std::unordered_map<WSTRING, mdTypeRef>>();
         }
 
-        (*wrapper_parent_type)[keyIn] = valueIn;
+        (*integration_types)[keyIn] = valueIn;
     }
 
     CallTargetTokens* GetCallTargetTokens()
