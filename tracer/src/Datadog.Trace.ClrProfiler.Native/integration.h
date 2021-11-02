@@ -295,21 +295,21 @@ struct MethodReference
     }
 };
 
-struct IntegrationMethod
+struct IntegrationDefinition
 {
     const MethodReference target_method;
     const TypeReference integration_type;
 
-    IntegrationMethod()
+    IntegrationDefinition()
     {
     }
 
-    IntegrationMethod(MethodReference target_method, TypeReference integration_type) :
+    IntegrationDefinition(MethodReference target_method, TypeReference integration_type) :
         target_method(target_method), integration_type(integration_type)
     {
     }
 
-    inline bool operator==(const IntegrationMethod& other) const
+    inline bool operator==(const IntegrationDefinition& other) const
     {
         return target_method == other.target_method && integration_type == other.integration_type;
     }

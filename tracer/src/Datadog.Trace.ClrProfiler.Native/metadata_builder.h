@@ -32,7 +32,7 @@ namespace trace
         {
         }
 
-        HRESULT FindIntegrationTypeRef(const IntegrationMethod& method_replacement, mdTypeRef& type_ref_out) const;
+        HRESULT FindIntegrationTypeRef(const IntegrationDefinition& integration_definition, mdTypeRef& type_ref_out) const;
         HRESULT EmitAssemblyRef(const trace::AssemblyReference& assembly_ref) const;
     };
 

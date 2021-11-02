@@ -25,7 +25,7 @@ struct RejitItem
     int m_type = 0;
     std::unique_ptr<std::vector<ModuleID>> m_modulesId = nullptr;
     std::unique_ptr<std::vector<mdMethodDef>> m_methodDefs = nullptr;
-    std::unique_ptr<std::vector<IntegrationMethod>> m_integrationMethods = nullptr;
+    std::unique_ptr<std::vector<IntegrationDefinition>> m_integrationDefinitions = nullptr;
     //
     std::promise<ULONG>* m_promise = nullptr;
 
@@ -35,7 +35,7 @@ struct RejitItem
               std::unique_ptr<std::vector<mdMethodDef>>&& methodDefs);
 
     RejitItem(std::unique_ptr<std::vector<ModuleID>>&& modulesId,
-              std::unique_ptr<std::vector<IntegrationMethod>>&& integrationMethods, std::promise<ULONG>* promise);
+              std::unique_ptr<std::vector<IntegrationDefinition>>&& integrationDefinitions, std::promise<ULONG>* promise);
 
     static std::unique_ptr<RejitItem> CreateEndRejitThread();
 };
@@ -53,7 +53,7 @@ private:
     mdMethodDef m_methodDef;
     ICorProfilerFunctionControl* m_pFunctionControl;
     std::unique_ptr<FunctionInfo> m_functionInfo;
-    std::unique_ptr<IntegrationMethod> m_integrationMethod;
+    std::unique_ptr<IntegrationDefinition> m_integrationDefinition;
 
     std::mutex m_ngenModulesLock;
     std::unordered_map<ModuleID, bool> m_ngenModules;
@@ -71,8 +71,8 @@ public:
     FunctionInfo* GetFunctionInfo();
     void SetFunctionInfo(const FunctionInfo& functionInfo);
 
-    IntegrationMethod* GetIntegrationMethod();
-    void SetIntegrationMethod(const IntegrationMethod& methodReplacement);
+    IntegrationDefinition* GetIntegrationDefinition();
+    void SetIntegrationDefinition(const IntegrationDefinition& integrationDefinition);
 
     void RequestRejitForInlinersInModule(ModuleID moduleId);
 };
@@ -146,7 +146,7 @@ public:
     void AddNGenModule(ModuleID moduleId);
 
     void EnqueueProcessModule(const std::vector<ModuleID>& modulesVector,
-                              const std::vector<IntegrationMethod>& integrations,
+                              const std::vector<IntegrationDefinition>& integrationDefinitions,
                               std::promise<ULONG>* promise);
     void EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef);
 
@@ -161,7 +161,7 @@ public:
     void SetCorAssemblyProfiler(AssemblyProperty* pCorAssemblyProfiler);
     void RequestRejitForNGenInliners();
     ULONG ProcessModuleForRejit(const std::vector<ModuleID>& modules,
-                                const std::vector<IntegrationMethod>& integrations,
+                                const std::vector<IntegrationDefinition>& integrationDefinitions,
                                 bool enqueueInSameThread = false);
 };
 

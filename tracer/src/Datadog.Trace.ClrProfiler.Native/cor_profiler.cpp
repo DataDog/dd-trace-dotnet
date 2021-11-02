@@ -632,10 +632,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         module_ids_.push_back(module_id);
 
         // We call the function to analyze the module and request the ReJIT of integrations defined in this module.
-        if (rejit_handler != nullptr && !integration_methods_.empty())
+        if (rejit_handler != nullptr && !integration_definitions_.empty())
         {
             const auto numReJITs =
-                rejit_handler->ProcessModuleForRejit(std::vector<ModuleID>{module_id}, integration_methods_);
+                rejit_handler->ProcessModuleForRejit(std::vector<ModuleID>{module_id}, integration_definitions_);
             Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
         }
     }
@@ -716,7 +716,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
     }
     Logger::Info("Exiting...");
     Logger::Debug("   ModuleIds: ", module_ids_.size());
-    Logger::Debug("   IntegrationMethods: ", integration_methods_.size());
+    Logger::Debug("   IntegrationDefinitions: ", integration_definitions_.size());
     Logger::Debug("   DefinitionsIds: ", definitions_ids_.size());
     Logger::Debug("   ManagedProfilerLoadedAppDomains: ", managed_profiler_loaded_app_domains.size());
     Logger::Debug("   FirstJitCompilationAppDomains: ", first_jit_compilation_app_domains.size());
@@ -961,7 +961,7 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
 
     if (items != nullptr && rejit_handler != nullptr)
     {
-        std::vector<IntegrationMethod> integrationMethods;
+        std::vector<IntegrationDefinition> integrationDefinitions;
 
         for (int i = 0; i < size; i++)
         {
@@ -989,7 +989,7 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
             const Version maxVersion =
                 Version(current.targetMaximumMajor, current.targetMaximumMinor, current.targetMaximumPatch, 0);
 
-            const auto integration = IntegrationMethod(
+            const auto integration = IntegrationDefinition(
                     MethodReference(targetAssembly, targetType, targetMethod, minVersion, maxVersion, signatureTypes),
                     TypeReference(integrationAssembly, integrationType, {}, {}));
 
@@ -999,7 +999,7 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
                               integrationAssembly, " | ", integrationType, "]");
             }
 
-            integrationMethods.push_back(integration);
+            integrationDefinitions.push_back(integration);
         }
 
         std::scoped_lock<std::mutex> moduleLock(module_ids_lock_);
@@ -1011,20 +1011,20 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
         {
             std::promise<ULONG> promise;
             std::future<ULONG> future = promise.get_future();
-            rejit_handler->EnqueueProcessModule(module_ids_, integrationMethods, &promise);
+            rejit_handler->EnqueueProcessModule(module_ids_, integrationDefinitions, &promise);
 
             // wait and get the value from the future<int>
             const auto numReJITs = future.get();
             Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
         }
 
-        integration_methods_.reserve(integration_methods_.size() + integrationMethods.size());
-        for (const auto& integration : integrationMethods)
+        integration_definitions_.reserve(integration_definitions_.size() + integrationDefinitions.size());
+        for (const auto& integration : integrationDefinitions)
         {
-            integration_methods_.push_back(integration);
+            integration_definitions_.push_back(integration);
         }
 
-        Logger::Info("InitializeProfiler: Total integrations in profiler: ", integration_methods_.size());
+        Logger::Info("InitializeProfiler: Total integrations in profiler: ", integration_definitions_.size());
     }
 }
 
@@ -1203,11 +1203,11 @@ void CorProfiler::CheckFilenameDefinitions()
 }
 
 bool CorProfiler::GetIntegrationTypeRef(ModuleMetadata* module_metadata, ModuleID module_id,
-                                        const IntegrationMethod& integration_method, mdTypeRef& wrapper_type_ref)
+                                        const IntegrationDefinition& integration_definition, mdTypeRef& integration_type_ref)
 {
-    const auto& wrapper_key = integration_method.integration_type.get_cache_key();
+    const auto& integration_key = integration_definition.integration_type.get_cache_key();
 
-    if (!module_metadata->TryGetIntegrationTypeRef(wrapper_key, wrapper_type_ref))
+    if (!module_metadata->TryGetIntegrationTypeRef(integration_key, integration_type_ref))
     {
         const auto module_info = GetModuleInfo(this->info_, module_id);
         if (!module_info.IsValid())
@@ -1219,7 +1219,7 @@ bool CorProfiler::GetIntegrationTypeRef(ModuleMetadata* module_metadata, ModuleI
         auto hr = module_metadata->metadata_import->GetModuleFromScope(&module);
         if (FAILED(hr))
         {
-            Logger::Warn("GetWrapperMethodRef failed to get module metadata token for "
+            Logger::Warn("GetIntegrationTypeRef failed to get module metadata token for "
                          "module_id=",
                          module_id, " module_name=", module_info.assembly.name);
             return false;
@@ -1230,24 +1230,24 @@ bool CorProfiler::GetIntegrationTypeRef(ModuleMetadata* module_metadata, ModuleI
                                                module_metadata->assembly_emit);
 
         // for each wrapper assembly, emit an assembly reference
-        hr = metadata_builder.EmitAssemblyRef(integration_method.integration_type.assembly);
+        hr = metadata_builder.EmitAssemblyRef(integration_definition.integration_type.assembly);
         if (FAILED(hr))
         {
-            Logger::Warn("GetWrapperMethodRef failed to emit wrapper assembly ref for assembly=",
-                         integration_method.integration_type.assembly.name,
-                         ", Version=", integration_method.integration_type.assembly.version.str(),
-                         ", Culture=", integration_method.integration_type.assembly.locale,
-                         " PublicKeyToken=", integration_method.integration_type.assembly.public_key.str());
+            Logger::Warn("GetIntegrationTypeRef failed to emit wrapper assembly ref for assembly=",
+                         integration_definition.integration_type.assembly.name,
+                         ", Version=", integration_definition.integration_type.assembly.version.str(),
+                         ", Culture=", integration_definition.integration_type.assembly.locale,
+                         " PublicKeyToken=", integration_definition.integration_type.assembly.public_key.str());
             return false;
         }
 
         // for each method replacement in each enabled integration,
         // emit a reference to the instrumentation wrapper type
-        hr = metadata_builder.FindIntegrationTypeRef(integration_method, wrapper_type_ref);
+        hr = metadata_builder.FindIntegrationTypeRef(integration_definition, integration_type_ref);
         if (FAILED(hr))
         {
-            Logger::Warn("GetWrapperMethodRef failed to obtain wrapper method ref for ",
-                         integration_method.integration_type.name, ".");
+            Logger::Warn("GetIntegrationTypeRef failed to obtain wrapper method ref for ",
+                         integration_definition.integration_type.name, ".");
             return false;
         }
     }
@@ -2552,7 +2552,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
     CallTargetTokens* callTargetTokens = module_metadata->GetCallTargetTokens();
     mdToken function_token = caller->id;
     FunctionMethodArgument retFuncArg = caller->method_signature.GetRet();
-    IntegrationMethod* integration_method = methodHandler->GetIntegrationMethod();
+    IntegrationDefinition* integration_definition = methodHandler->GetIntegrationDefinition();
     unsigned int retFuncElementType;
     int retTypeFlags = retFuncArg.GetTypeFlags(retFuncElementType);
     bool isVoid = (retTypeFlags & TypeFlagVoid) > 0;
@@ -2564,7 +2564,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
 
     // *** Get reference to the integration type
     mdTypeRef integration_type_ref = mdTypeRefNil;
-    if (!GetIntegrationTypeRef(module_metadata, module_id, *integration_method, integration_type_ref))
+    if (!GetIntegrationTypeRef(module_metadata, module_id, *integration_definition, integration_type_ref))
     {
         Logger::Warn(
             "*** CallTarget_RewriterCallback() skipping method: Integration Type Ref cannot be found for ",
@@ -2577,7 +2577,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
     {
         Logger::Debug("*** CallTarget_RewriterCallback() Start: ", caller->type.name, ".", caller->name, "() [IsVoid=",
                       isVoid, ", IsStatic=", isStatic,
-                      ", IntegrationType=", integration_method->integration_type.name,
+                      ", IntegrationType=", integration_definition->integration_type.name,
                       ", Arguments=", numArgs, "]");
     }
 
@@ -2996,7 +2996,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
     }
 
     Logger::Info("*** CallTarget_RewriterCallback() Finished: ", caller->type.name, ".", caller->name, "() [IsVoid=", isVoid, ", IsStatic=", isStatic,
-                 ", IntegrationType=", integration_method->integration_type.name,
+                 ", IntegrationType=", integration_definition->integration_type.name,
                  ", Arguments=", numArgs, "]");
     return S_OK;
 }

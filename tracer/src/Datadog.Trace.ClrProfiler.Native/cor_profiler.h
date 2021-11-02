@@ -25,7 +25,7 @@ class CorProfiler : public CorProfilerBase
 private:
     std::atomic_bool is_attached_ = {false};
     RuntimeInformation runtime_information_;
-    std::vector<IntegrationMethod> integration_methods_;
+    std::vector<IntegrationDefinition> integration_definitions_;
 
     std::unordered_set<WSTRING> definitions_ids_;
     std::mutex definitions_ids_lock_;
@@ -67,7 +67,7 @@ private:
     WSTRING GetCLRProfilerPath();
     void CheckFilenameDefinitions();
     bool GetIntegrationTypeRef(ModuleMetadata* module_metadata, ModuleID module_id,
-                               const IntegrationMethod& integration_method, mdTypeRef& wrapper_type_ref);
+                               const IntegrationDefinition& integration_definition, mdTypeRef& integration_type_ref);
     bool ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id);
     std::string GetILCodes(const std::string& title, ILRewriter* rewriter, const FunctionInfo& caller,
                            ModuleMetadata* module_metadata);

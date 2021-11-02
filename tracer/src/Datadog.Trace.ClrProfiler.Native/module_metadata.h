@@ -21,7 +21,7 @@ private:
     std::mutex wrapper_mutex;
     std::unique_ptr<std::unordered_map<WSTRING, mdTypeRef>> integration_types = nullptr;
     std::unique_ptr<CallTargetTokens> calltargetTokens = nullptr;
-    std::unique_ptr<std::vector<IntegrationMethod>> integrations = nullptr;
+    std::unique_ptr<std::vector<IntegrationDefinition>> integrations = nullptr;
 
 public:
     const ComPtr<IMetaDataImport2> metadata_import{};
@@ -36,7 +36,7 @@ public:
     ModuleMetadata(ComPtr<IMetaDataImport2> metadata_import, ComPtr<IMetaDataEmit2> metadata_emit,
                    ComPtr<IMetaDataAssemblyImport> assembly_import, ComPtr<IMetaDataAssemblyEmit> assembly_emit,
                    const WSTRING& assembly_name, const AppDomainID app_domain_id, const GUID module_version_id,
-                   std::unique_ptr<std::vector<IntegrationMethod>>&& integrations,
+                   std::unique_ptr<std::vector<IntegrationDefinition>>&& integrations,
                    const AssemblyProperty* corAssemblyProperty) :
         metadata_import(metadata_import),
         metadata_emit(metadata_emit),

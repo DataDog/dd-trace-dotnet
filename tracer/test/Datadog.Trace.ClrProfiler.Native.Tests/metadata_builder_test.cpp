@@ -57,10 +57,10 @@ class MetadataBuilderTest : public ::testing::Test {
     GUID module_version_id;
     metadataImport->GetScopeProps(NULL, 1024, nullptr, &module_version_id);
 
-    const std::vector<IntegrationMethod> integrations;
+    const std::vector<IntegrationDefinition> integrations;
     module_metadata_ =
         new ModuleMetadata(metadataImport, metadataEmit, assemblyImport, assemblyEmit, assemblyName, app_domain_id,
-                           module_version_id, std::make_unique<std::vector<IntegrationMethod>>(integrations), NULL);
+                           module_version_id, std::make_unique<std::vector<IntegrationDefinition>>(integrations), NULL);
 
     mdModule module;
     hr = metadataImport->GetModuleFromScope(&module);

@@ -50,9 +50,9 @@ HRESULT MetadataBuilder::EmitAssemblyRef(const trace::AssemblyReference& assembl
     return S_OK;
 }
 
-HRESULT MetadataBuilder::FindIntegrationTypeRef(const IntegrationMethod& method_replacement, mdTypeRef& type_ref_out) const
+HRESULT MetadataBuilder::FindIntegrationTypeRef(const IntegrationDefinition& integration_definition, mdTypeRef& type_ref_out) const
 {
-    const auto& cache_key = method_replacement.integration_type.get_cache_key();
+    const auto& cache_key = integration_definition.integration_type.get_cache_key();
     mdTypeRef type_ref = mdTypeRefNil;
 
     if (metadata_.TryGetIntegrationTypeRef(cache_key, type_ref))
@@ -65,31 +65,33 @@ HRESULT MetadataBuilder::FindIntegrationTypeRef(const IntegrationMethod& method_
     HRESULT hr;
     type_ref = mdTypeRefNil;
 
-    if (metadata_.assemblyName == method_replacement.integration_type.assembly.name)
+    if (metadata_.assemblyName == integration_definition.integration_type.assembly.name)
     {
         // type is defined in this assembly
-        hr = metadata_emit_->DefineTypeRefByName(module_, method_replacement.integration_type.name.c_str(),
+        hr = metadata_emit_->DefineTypeRefByName(module_, integration_definition.integration_type.name.c_str(),
                                                  &type_ref);
     }
     else
     {
         // type is defined in another assembly,
         // find a reference to the assembly where type lives
-        const auto assembly_ref = FindAssemblyRef(assembly_import_, method_replacement.integration_type.assembly.name);
+        const auto assembly_ref =
+            FindAssemblyRef(assembly_import_, integration_definition.integration_type.assembly.name);
         if (assembly_ref == mdAssemblyRefNil)
         {
             // TODO: emit assembly reference if not found?
-            Logger::Warn("Assembly reference for", method_replacement.integration_type.assembly.name, " not found");
+            Logger::Warn("Assembly reference for", integration_definition.integration_type.assembly.name, " not found");
             return E_FAIL;
         }
 
         // search for an existing reference to the type
-        hr = metadata_import_->FindTypeRef(assembly_ref, method_replacement.integration_type.name.c_str(), &type_ref);
+        hr = metadata_import_->FindTypeRef(assembly_ref, integration_definition.integration_type.name.c_str(),
+                                           &type_ref);
 
         if (hr == HRESULT(0x80131130) /* record not found on lookup */)
         {
             // if typeRef not found, create a new one by emitting a metadata token
-            hr = metadata_emit_->DefineTypeRefByName(assembly_ref, method_replacement.integration_type.name.c_str(),
+            hr = metadata_emit_->DefineTypeRefByName(assembly_ref, integration_definition.integration_type.name.c_str(),
                                                      &type_ref);
         }
     }

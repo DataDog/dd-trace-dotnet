@@ -11,24 +11,24 @@ namespace trace
 // RejitItem
 //
 
-RejitItem::RejitItem() : m_type(-1), m_modulesId(nullptr), m_methodDefs(nullptr), m_integrationMethods(nullptr), m_promise(nullptr)
+RejitItem::RejitItem() : m_type(-1), m_modulesId(nullptr), m_methodDefs(nullptr), m_integrationDefinitions(nullptr), m_promise(nullptr)
 {
 }
 
 RejitItem::RejitItem(std::unique_ptr<std::vector<ModuleID>>&& modulesId,
                      std::unique_ptr<std::vector<mdMethodDef>>&& methodDefs) :
-    m_type(1), m_integrationMethods(nullptr), m_promise(nullptr)
+    m_type(1), m_integrationDefinitions(nullptr), m_promise(nullptr)
 {
     m_modulesId = std::move(modulesId);
     m_methodDefs = std::move(methodDefs);
 }
 
 RejitItem::RejitItem(std::unique_ptr<std::vector<ModuleID>>&& modulesId,
-                     std::unique_ptr<std::vector<IntegrationMethod>>&& integrationMethods, std::promise<ULONG>* promise) :
+                     std::unique_ptr<std::vector<IntegrationDefinition>>&& integrationDefinitions, std::promise<ULONG>* promise) :
     m_type(2), m_methodDefs(nullptr)
 {
     m_modulesId = std::move(modulesId);
-    m_integrationMethods = std::move(integrationMethods);
+    m_integrationDefinitions = std::move(integrationDefinitions);
     m_promise = promise;
 }
 
@@ -47,7 +47,7 @@ RejitHandlerModuleMethod::RejitHandlerModuleMethod(mdMethodDef methodDef, RejitH
     m_pFunctionControl = nullptr;
     m_module = module;
     m_functionInfo = nullptr;
-    m_integrationMethod = nullptr;
+    m_integrationDefinition = nullptr;
 }
 
 mdMethodDef RejitHandlerModuleMethod::GetMethodDef()
@@ -80,14 +80,14 @@ void RejitHandlerModuleMethod::SetFunctionInfo(const FunctionInfo& functionInfo)
     m_functionInfo = std::make_unique<FunctionInfo>(functionInfo);
 }
 
-IntegrationMethod* RejitHandlerModuleMethod::GetIntegrationMethod()
+IntegrationDefinition* RejitHandlerModuleMethod::GetIntegrationDefinition()
 {
-    return m_integrationMethod.get();
+    return m_integrationDefinition.get();
 }
 
-void RejitHandlerModuleMethod::SetIntegrationMethod(const IntegrationMethod& methodReplacement)
+void RejitHandlerModuleMethod::SetIntegrationDefinition(const IntegrationDefinition& integrationDefinition)
 {
-    m_integrationMethod = std::make_unique<IntegrationMethod>(methodReplacement);
+    m_integrationDefinition = std::make_unique<IntegrationDefinition>(integrationDefinition);
 }
 
 void RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId)
@@ -281,10 +281,10 @@ void RejitHandler::EnqueueThreadLoop(RejitHandler* handler)
             // Checks if there are integrations for the modules and enqueue a ReJIT request
             // *************************************
 
-            if (item->m_modulesId->size() > 0 && item->m_integrationMethods->size() > 0)
+            if (item->m_modulesId->size() > 0 && item->m_integrationDefinitions->size() > 0)
             {
                 auto pModuleId = item->m_modulesId.get();
-                auto pIntegrations = item->m_integrationMethods.get();
+                auto pIntegrations = item->m_integrationDefinitions.get();
 
                 // Process modules for rejit
                 const auto rejitCount = handler->ProcessModuleForRejit(*pModuleId, *pIntegrations, true);
@@ -455,7 +455,7 @@ void RejitHandler::AddNGenModule(ModuleID moduleId)
 }
 
 void RejitHandler::EnqueueProcessModule(const std::vector<ModuleID>& modulesVector,
-                                        const std::vector<IntegrationMethod>& integrations,
+                                        const std::vector<IntegrationDefinition>& integrationDefinitions,
                                         std::promise<ULONG>* promise)
 {
     ReadLock r_lock(m_shutdown_lock);
@@ -473,7 +473,7 @@ void RejitHandler::EnqueueProcessModule(const std::vector<ModuleID>& modulesVect
 
     // Enqueue
     m_rejit_queue->push(std::make_unique<RejitItem>(std::make_unique<std::vector<ModuleID>>(modulesVector),
-                                                    std::make_unique<std::vector<IntegrationMethod>>(integrations),
+                                                    std::make_unique<std::vector<IntegrationDefinition>>(integrationDefinitions),
                                                     promise));
 }
 
@@ -558,9 +558,9 @@ HRESULT RejitHandler::NotifyReJITParameters(ModuleID moduleId, mdMethodDef metho
         return S_FALSE;
     }
 
-    if (methodHandler->GetIntegrationMethod() == nullptr)
+    if (methodHandler->GetIntegrationDefinition() == nullptr)
     {
-        Logger::Warn("NotifyReJITCompilationStarted: IntegrationMethod is missing for "
+        Logger::Warn("NotifyReJITCompilationStarted: IntegrationDefinition is missing for "
                      "MethodDef: ",
                      methodId);
         return S_FALSE;
@@ -619,7 +619,7 @@ void RejitHandler::RequestRejitForNGenInliners()
 }
 
 ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
-                                          const std::vector<IntegrationMethod>& integrations,
+                                          const std::vector<IntegrationDefinition>& integrationDefinitions,
                                           bool enqueueInSameThread)
 {
     ReadLock r_lock(m_shutdown_lock);
@@ -649,7 +649,7 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
         ComPtr<IMetaDataAssemblyEmit> assemblyEmit;
         std::unique_ptr<AssemblyMetadata> assemblyMetadata = nullptr;
 
-        for (const IntegrationMethod& integration : integrations)
+        for (const IntegrationDefinition& integration : integrationDefinitions)
         {
             // If the integration is not for the current assembly we skip.
             if (integration.target_method.type.assembly.name != moduleInfo.assembly.name)
@@ -804,9 +804,9 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
                 {
                     methodHandler->SetFunctionInfo(functionInfo);
                 }
-                if (methodHandler->GetIntegrationMethod() == nullptr)
+                if (methodHandler->GetIntegrationDefinition() == nullptr)
                 {
-                    methodHandler->SetIntegrationMethod(integration);
+                    methodHandler->SetIntegrationDefinition(integration);
                 }
 
                 // Store module_id and methodDef to request the ReJIT after analyzing all integrations.
