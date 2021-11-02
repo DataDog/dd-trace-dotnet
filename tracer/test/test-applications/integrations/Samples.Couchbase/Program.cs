@@ -22,9 +22,7 @@ namespace Samples.Couchbase
         private async Task RunAllExamples()
         {
             var config = GetConnectionConfig();
-
             _cluster = new Cluster(config);
-
             _cluster.Authenticate("Bob", "password"); // doesn't work without authentication on "recent" couchbase server versions. Method available starting v2.7.4
             _bucket = _cluster.OpenBucket("default");
             RetrieveAndUpdate();
@@ -74,13 +72,6 @@ namespace Samples.Couchbase
                 notFound.Status == ResponseStatus.KeyNotFound)
                 Console.WriteLine("Document doesn't exist!");
 
-            // Prepare a string value
-            _bucket.Upsert(key, "Hello Couchbase!");
-
-            // Get a string value
-            var nonDocResult = _bucket.Get<string>(key);
-            Console.WriteLine("Found: " + nonDocResult.Value);
-
             // Prepare a JSON document value
             _bucket.Upsert(key, data);
 
@@ -101,10 +92,6 @@ namespace Samples.Couchbase
             // Replace existing document
             // Note this only works if the key already exists
             var replaceResult = _bucket.Replace(key, data);
-
-            // Check that the data was updated
-            var newDocument = _bucket.Get<Data>(key);
-            Console.WriteLine("Got: " + data.Text);
 
             // Check that the data was updated
             var res = _bucket.Remove(key);
@@ -129,13 +116,6 @@ namespace Samples.Couchbase
                 notFound.Status == ResponseStatus.KeyNotFound)
                 Console.WriteLine("Document doesn't exist!");
 
-            // Prepare a string value
-            await _bucket.UpsertAsync(key, "Hello Couchbase!");
-
-            // Get a string value
-            var nonDocResult = await _bucket.GetAsync<string>(key);
-            Console.WriteLine("Found: " + nonDocResult.Value);
-
             // Prepare a JSON document value
             await _bucket.UpsertAsync(key, data);
 
@@ -157,11 +137,6 @@ namespace Samples.Couchbase
             // Note this only works if the key already exists
             var replaceResult = await _bucket.ReplaceAsync(key, data);
 
-            // Check that the data was updated
-            var newDocument = await _bucket.GetAsync<Data>(key);
-            Console.WriteLine("Got: " + data.Text);
-
-            // Check that the data was updated
             var res = await _bucket.RemoveAsync(key);
             Console.WriteLine("Got: " + res.Status);
         }

@@ -430,6 +430,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.N
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MySqlConnector", "tracer\test\test-applications\integrations\Samples.MySqlConnector\Samples.MySqlConnector.csproj", "{73252693-2563-4B20-A2F5-F8DB37B91DBE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Couchbase", "tracer\test\test-applications\integrations\Samples.Couchbase\Samples.Couchbase.csproj", "{6F38B456-1D16-4842-AEE5-E74564FB506A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Couchbase3", "tracer\test\test-applications\integrations\Samples.Couchbase3\Samples.Couchbase3.csproj", "{65A66859-2735-4DD6-A927-B416B7A62D0F}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{24d3e547-8897-4111-baa2-b92f50cc13d4}*SharedItemsImports = 5
@@ -1832,6 +1836,30 @@ Global
 		{73252693-2563-4B20-A2F5-F8DB37B91DBE}.Release|x64.Build.0 = Release|x64
 		{73252693-2563-4B20-A2F5-F8DB37B91DBE}.Release|x86.ActiveCfg = Release|x86
 		{73252693-2563-4B20-A2F5-F8DB37B91DBE}.Release|x86.Build.0 = Release|x86
+		{6F38B456-1D16-4842-AEE5-E74564FB506A}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{6F38B456-1D16-4842-AEE5-E74564FB506A}.Debug|Any CPU.Build.0 = Debug|x64
+		{6F38B456-1D16-4842-AEE5-E74564FB506A}.Debug|x64.ActiveCfg = Debug|x64
+		{6F38B456-1D16-4842-AEE5-E74564FB506A}.Debug|x64.Build.0 = Debug|x64
+		{6F38B456-1D16-4842-AEE5-E74564FB506A}.Debug|x86.ActiveCfg = Debug|x86
+		{6F38B456-1D16-4842-AEE5-E74564FB506A}.Debug|x86.Build.0 = Debug|x86
+		{6F38B456-1D16-4842-AEE5-E74564FB506A}.Release|Any CPU.ActiveCfg = Release|x64
+		{6F38B456-1D16-4842-AEE5-E74564FB506A}.Release|Any CPU.Build.0 = Release|x64
+		{6F38B456-1D16-4842-AEE5-E74564FB506A}.Release|x64.ActiveCfg = Release|x64
+		{6F38B456-1D16-4842-AEE5-E74564FB506A}.Release|x64.Build.0 = Release|x64
+		{6F38B456-1D16-4842-AEE5-E74564FB506A}.Release|x86.ActiveCfg = Release|x86
+		{6F38B456-1D16-4842-AEE5-E74564FB506A}.Release|x86.Build.0 = Release|x86
+		{65A66859-2735-4DD6-A927-B416B7A62D0F}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{65A66859-2735-4DD6-A927-B416B7A62D0F}.Debug|Any CPU.Build.0 = Debug|x64
+		{65A66859-2735-4DD6-A927-B416B7A62D0F}.Debug|x64.ActiveCfg = Debug|x64
+		{65A66859-2735-4DD6-A927-B416B7A62D0F}.Debug|x64.Build.0 = Debug|x64
+		{65A66859-2735-4DD6-A927-B416B7A62D0F}.Debug|x86.ActiveCfg = Debug|x86
+		{65A66859-2735-4DD6-A927-B416B7A62D0F}.Debug|x86.Build.0 = Debug|x86
+		{65A66859-2735-4DD6-A927-B416B7A62D0F}.Release|Any CPU.ActiveCfg = Release|x64
+		{65A66859-2735-4DD6-A927-B416B7A62D0F}.Release|Any CPU.Build.0 = Release|x64
+		{65A66859-2735-4DD6-A927-B416B7A62D0F}.Release|x64.ActiveCfg = Release|x64
+		{65A66859-2735-4DD6-A927-B416B7A62D0F}.Release|x64.Build.0 = Release|x64
+		{65A66859-2735-4DD6-A927-B416B7A62D0F}.Release|x86.ActiveCfg = Release|x86
+		{65A66859-2735-4DD6-A927-B416B7A62D0F}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1981,6 +2009,8 @@ Global
 		{5A806F4B-39E7-4F38-B36F-F5CFC4F8760A} = {9518425A-36A5-4B8F-B0B8-6137DB88441D}
 		{7DFDD339-30C5-4C1D-AB07-F9106256AF77} = {933F1D4B-1216-4BC1-956E-8C30818BAA0F}
 		{73252693-2563-4B20-A2F5-F8DB37B91DBE} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{6F38B456-1D16-4842-AEE5-E74564FB506A} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{65A66859-2735-4DD6-A927-B416B7A62D0F} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
