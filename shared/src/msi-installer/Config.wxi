@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <Include>
-  <?define BaseProductName = ".NET Tracer" ?>
+  <?define BaseProductName = ".NET Monitoring" ?>
   <?define ArpManufacturer = "Datadog, Inc." ?>
   <?define Company = "Datadog" ?>
   <?define ProductNamePlatformAgnostic = "Datadog $(var.BaseProductName)" ?>
   <?define ProfilerCLSID = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}" ?>
-  <?define ProfilerCLSIDBeta = "{50DA5EED-F1ED-B00B-1055-5AFE55A1ADE5}" ?>
 
   <?if $(var.Platform) = x64 ?>
   <?define ProductName = "Datadog $(var.BaseProductName) 64-bit" ?>
