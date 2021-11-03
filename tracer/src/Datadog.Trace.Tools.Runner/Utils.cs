@@ -300,11 +300,7 @@ namespace Datadog.Trace.Tools.Runner
 
             try
             {
-                if (await agentWriter.Ping().ConfigureAwait(false))
-                {
-                    Console.WriteLine($"Connection with the Datadog Agent at {tracerSettings.AgentUri} was successful.");
-                }
-                else
+                if (!await agentWriter.Ping().ConfigureAwait(false))
                 {
                     Console.WriteLine($"Error connecting to the Datadog Agent at {tracerSettings.AgentUri}.");
                     return false;
