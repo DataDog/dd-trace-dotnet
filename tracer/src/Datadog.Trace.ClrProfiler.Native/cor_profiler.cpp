@@ -600,7 +600,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
             ModuleMetadata(metadata_import, metadata_emit, assembly_import, assembly_emit, module_info.assembly.name,
                            module_info.assembly.app_domain_id, &corAssemblyProperty);
 
-        Logger::Info("ModuleLoadFinished: ", managed_profiler_name, " - Fix PInvoke maps");
+        const auto& assemblyImport = GetAssemblyImportMetadata(assembly_import);
+        const auto& assemblyVersion = assemblyImport.version.str();
+
+        Logger::Info("ModuleLoadFinished: ", managed_profiler_name, " v", assemblyVersion,
+                     " - Fix PInvoke maps");
 #ifdef _WIN32
         RewritingPInvokeMaps(module_metadata, windows_nativemethods_type);
         RewritingPInvokeMaps(module_metadata, appsec_windows_nativemethods_type);
@@ -608,6 +612,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         RewritingPInvokeMaps(module_metadata, nonwindows_nativemethods_type);
         RewritingPInvokeMaps(module_metadata, appsec_nonwindows_nativemethods_type);
 #endif // _WIN32
+
+        const auto& expected_assembly_reference = trace::AssemblyReference(managed_profiler_full_assembly_version);
+
+        RewriteForDistributedTracing(module_metadata, module_id,
+                                     assemblyVersion == expected_assembly_reference.version.str());
     }
     else
     {
@@ -1176,6 +1185,253 @@ bool CorProfiler::ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_i
 {
     return managed_profiler_loaded_domain_neutral ||
            managed_profiler_loaded_app_domains.find(app_domain_id) != managed_profiler_loaded_app_domains.end();
+}
+
+HRESULT CorProfiler::RewriteForDistributedTracing(ModuleMetadata& module_metadata, ModuleID module_id,
+                                                  bool autoInstrumentationModule)
+{
+    //
+    // *** Get SharedContext TypeDef
+    //
+    mdTypeDef sharedContextTypeDef;
+    auto hr = module_metadata.metadata_import->FindTypeDefByName(WStr("Datadog.Trace.SharedContext"), mdTokenNil,
+                                                            &sharedContextTypeDef);
+    if (FAILED(hr))
+    {
+        Logger::Warn("Error Rewriting for Distributed Tracing on getting SharedContext TypeDef");
+        return hr;
+    }
+
+    //
+    // *** GetDistributedTrace MethodDef ***
+    //
+    COR_SIGNATURE getDistributedTraceSignature[] = {IMAGE_CEE_CS_CALLCONV_DEFAULT, 0, ELEMENT_TYPE_OBJECT};
+    mdMethodDef getDistributedTraceMethodDef;
+    hr = module_metadata.metadata_import->FindMethod(sharedContextTypeDef, WStr("GetDistributedTrace"),
+                                                     getDistributedTraceSignature, 3, &getDistributedTraceMethodDef);
+    if (FAILED(hr))
+    {
+        Logger::Warn("Error Rewriting for Distributed Tracing on getting GetDistributedTrace MethodDef");
+        return hr;
+    }
+
+    //
+    // *** SetDistributedTrace MethodDef ***
+    //
+    COR_SIGNATURE setDistributedTraceSignature[] = {IMAGE_CEE_CS_CALLCONV_DEFAULT, 1, ELEMENT_TYPE_VOID,
+                                                    ELEMENT_TYPE_OBJECT};
+    mdMethodDef setDistributedTraceMethodDef;
+    hr = module_metadata.metadata_import->FindMethod(sharedContextTypeDef, WStr("SetDistributedTrace"),
+                                                     setDistributedTraceSignature, 4, &setDistributedTraceMethodDef);
+    if (FAILED(hr))
+    {
+        Logger::Warn("Error Rewriting for Distributed Tracing on getting SetDistributedTrace MethodDef");
+        return hr;
+    }
+
+    if (autoInstrumentationModule)
+    {
+        const auto assembly_metadata = GetAssemblyImportMetadata(module_metadata.assembly_import);
+        managed_profiler_assembly_property.szName = module_metadata.assemblyName;
+
+        hr = module_metadata.assembly_import->GetAssemblyProps(
+            assembly_metadata.assembly_token, &managed_profiler_assembly_property.ppbPublicKey,
+            &managed_profiler_assembly_property.pcbPublicKey, &managed_profiler_assembly_property.pulHashAlgId, NULL, 0,
+            NULL, &managed_profiler_assembly_property.pMetaData, &managed_profiler_assembly_property.assemblyFlags);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Error Rewriting for Distributed Tracing on GetAssemblyProps");
+            return hr;
+        }
+        
+        //
+        // *** GetDistributedTrace ***
+        //
+        mdMethodDef getDistributedTraceImplMethodDef;
+        hr = module_metadata.metadata_import->FindMethod(sharedContextTypeDef, WStr("GetDistributedTraceImpl"),
+                                                         getDistributedTraceSignature, 3,
+                                                         &getDistributedTraceImplMethodDef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Error Rewriting for Distributed Tracing on getting GetDistributedTraceImpl MethodDef");
+            return hr;
+        }
+
+        ILRewriter getterRewriter(this->info_, nullptr, module_id, getDistributedTraceMethodDef);
+        getterRewriter.InitializeTiny();
+
+        // Modify first instruction from ldnull to call
+        ILRewriterWrapper getterWrapper(&getterRewriter);
+        getterWrapper.SetILPosition(getterRewriter.GetILList()->m_pNext);
+        getterWrapper.CallMember(getDistributedTraceImplMethodDef, false);
+        getterWrapper.Return();
+        
+        hr = getterRewriter.Export();
+
+        if (FAILED(hr))
+        {
+            Logger::Warn("Error rewriting GetDistributedTrace->GetDistributedTraceImpl");
+            return hr;
+        }
+
+        Logger::Info("Rewriting GetDistributedTrace->GetDistributedTraceImpl");
+
+        if (IsDumpILRewriteEnabled())
+        {
+            Logger::Info(GetILCodes("After -> GetDistributedTrace: ", &getterRewriter,
+                                    GetFunctionInfo(module_metadata.metadata_import, getDistributedTraceMethodDef),
+                                    &module_metadata));
+        }
+
+        //
+        // *** SetDistributedTrace ***
+        //
+        mdMethodDef setDistributedTraceImplMethodDef;
+        hr = module_metadata.metadata_import->FindMethod(sharedContextTypeDef, WStr("SetDistributedTraceImpl"),
+                                                         setDistributedTraceSignature, 4,
+                                                         &setDistributedTraceImplMethodDef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Error Rewriting for Distributed Tracing on getting SetDistributedTraceImpl MethodDef");
+            return hr;
+        }
+
+        ILRewriter setterRewriter(this->info_, nullptr, module_id, setDistributedTraceMethodDef);
+        setterRewriter.InitializeTiny();
+
+        // Modify first instruction from ldnull to call
+        ILRewriterWrapper setterWrapper(&setterRewriter);
+        setterWrapper.SetILPosition(setterRewriter.GetILList()->m_pNext);
+        setterWrapper.LoadArgument(0);
+        setterWrapper.CallMember(setDistributedTraceImplMethodDef, false);
+        setterWrapper.Return();
+
+        hr = setterRewriter.Export();
+
+        if (FAILED(hr))
+        {
+            Logger::Warn("Error rewriting SetDistributedTrace->SetDistributedTraceImpl");
+            return hr;
+        }
+
+        Logger::Info("Rewriting SetDistributedTrace->SetDistributedTraceImpl");
+
+        if (IsDumpILRewriteEnabled())
+        {
+            Logger::Info(GetILCodes("After -> SetDistributedTrace", &setterRewriter,
+                                    GetFunctionInfo(module_metadata.metadata_import, setDistributedTraceMethodDef),
+                                    &module_metadata));
+        }
+    }
+    else
+    {
+        //
+        // *** Import Current Version of assembly
+        //
+        mdAssemblyRef managed_profiler_assemblyRef;
+        hr = module_metadata.assembly_emit->DefineAssemblyRef(
+            managed_profiler_assembly_property.ppbPublicKey, managed_profiler_assembly_property.pcbPublicKey,
+            managed_profiler_assembly_property.szName.data(), &managed_profiler_assembly_property.pMetaData,
+            &managed_profiler_assembly_property.pulHashAlgId, sizeof(managed_profiler_assembly_property.pulHashAlgId),
+            managed_profiler_assembly_property.assemblyFlags, &managed_profiler_assemblyRef);
+
+        if (managed_profiler_assemblyRef == mdAssemblyRefNil)
+        {
+            Logger::Warn("Error Rewriting for Distributed Tracing on getting ManagedProfiler AssemblyRef");
+            return hr;
+        }
+
+        mdTypeRef sharedContextTypeRef;
+        hr = module_metadata.metadata_emit->DefineTypeRefByName(
+            managed_profiler_assemblyRef, WStr("Datadog.Trace.SharedContext"), &sharedContextTypeRef);
+
+        if (FAILED(hr))
+        {
+            Logger::Warn("Error Rewriting for Distributed Tracing on getting SharedContext TypeRef");
+            return hr;
+        }
+
+        //
+        // *** GetDistributedTrace MemberRef ***
+        //
+        mdMemberRef getDistributedTraceMemberRef;
+        hr = module_metadata.metadata_emit->DefineMemberRef(sharedContextTypeRef, WStr("GetDistributedTrace"),
+                                                            getDistributedTraceSignature, 3,
+                                                            &getDistributedTraceMemberRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Error Rewriting for Distributed Tracing on getting GetDistributedTrace MemberRef");
+            return hr;
+        }
+
+        ILRewriter getterRewriter(this->info_, nullptr, module_id, getDistributedTraceMethodDef);
+        getterRewriter.InitializeTiny();
+
+        // Modify first instruction from ldnull to call
+        ILRewriterWrapper getterWrapper(&getterRewriter);
+        getterWrapper.SetILPosition(getterRewriter.GetILList()->m_pNext);
+        getterWrapper.CallMember(getDistributedTraceMemberRef, false);
+        getterWrapper.Return();
+
+        hr = getterRewriter.Export();
+
+        if (FAILED(hr))
+        {
+            Logger::Warn("Error rewriting GetDistributedTrace->[AutoInstrumentation]GetDistributedTrace");
+            return hr;
+        }
+
+        Logger::Info("Rewriting GetDistributedTrace->[AutoInstrumentation]GetDistributedTrace");
+
+        if (IsDumpILRewriteEnabled())
+        {
+            Logger::Info(GetILCodes("After -> GetDistributedTrace. ", &getterRewriter,
+                                    GetFunctionInfo(module_metadata.metadata_import, getDistributedTraceMethodDef),
+                                    &module_metadata));
+        }
+
+        //
+        // *** SetDistributedTrace ***
+        //
+        mdMemberRef setDistributedTraceMemberRef;
+        hr = module_metadata.metadata_emit->DefineMemberRef(sharedContextTypeRef, WStr("SetDistributedTrace"),
+                                                            setDistributedTraceSignature, 4,
+                                                            &setDistributedTraceMemberRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Error Rewriting for Distributed Tracing on getting SetDistributedTrace MemberRef");
+            return hr;
+        }
+
+        ILRewriter setterRewriter(this->info_, nullptr, module_id, setDistributedTraceMethodDef);
+        setterRewriter.InitializeTiny();
+
+        // Modify first instruction from ldnull to call
+        ILRewriterWrapper setterWrapper(&setterRewriter);
+        setterWrapper.SetILPosition(setterRewriter.GetILList()->m_pNext);
+        setterWrapper.LoadArgument(0);
+        setterWrapper.CallMember(setDistributedTraceMemberRef, false);
+        setterWrapper.Return();
+
+        hr = setterRewriter.Export();
+
+        if (FAILED(hr))
+        {
+            Logger::Warn("Error rewriting SetDistributedTrace->[AutoInstrumentation]SetDistributedTrace");
+            return hr;
+        }
+
+        Logger::Info("Rewriting SetDistributedTrace->[AutoInstrumentation]SetDistributedTrace");
+
+        if (IsDumpILRewriteEnabled())
+        {
+            Logger::Info(GetILCodes("After -> SetDistributedTrace. ", &setterRewriter,
+                                    GetFunctionInfo(module_metadata.metadata_import, setDistributedTraceMethodDef),
+                                    &module_metadata));
+        }
+    }
+
+    return hr;
 }
 
 const std::string indent_values[] = {

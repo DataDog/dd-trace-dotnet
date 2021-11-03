@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
@@ -53,6 +54,16 @@ namespace Datadog.Trace
             }
 
             SpanActivated?.Invoke(this, scopeOpenedArgs);
+
+            SharedContext.SetDistributedTrace(new Dictionary<string, string> { ["hello"] = "world" });
+            if (SharedContext.GetDistributedTrace() is null)
+            {
+                Log.Error("Distributed trace is null");
+            }
+            else
+            {
+                Log.Warning("Distributed trace is not null !!!!!!!!!!!!!!!!!");
+            }
 
             return scope;
         }
