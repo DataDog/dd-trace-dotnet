@@ -98,5 +98,10 @@ namespace Datadog.Trace.ClrProfiler
         /// Gets or sets the CallTarget Class used to instrument the method
         /// </summary>
         public Type CallTargetType { get; set; }
+
+        /// <summary>
+        /// Gets or sets the indices to pass from the CallTarget-instrumented method into the instrumentation method
+        /// </summary>
+        public ushort[] TargetMethodArgumentsToLoad { get; set; }
     }
 }

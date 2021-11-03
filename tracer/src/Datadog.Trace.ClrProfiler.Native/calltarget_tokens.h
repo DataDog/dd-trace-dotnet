@@ -86,7 +86,8 @@ public:
                                         mdToken* callTargetReturnToken, ILInstr** firstInstruction);
 
     HRESULT WriteBeginMethod(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef, const TypeInfo* currentType,
-                             std::vector<FunctionMethodArgument>& methodArguments, ILInstr** instruction);
+                             std::vector<FunctionMethodArgument>& methodArguments, std::vector<USHORT>& argsToLoad,
+                             ILInstr** instruction);
 
     HRESULT WriteEndVoidReturnMemberRef(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
                                         const TypeInfo* currentType, ILInstr** instruction);
