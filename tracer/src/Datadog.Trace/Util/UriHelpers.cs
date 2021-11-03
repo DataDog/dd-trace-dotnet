@@ -32,21 +32,6 @@ namespace Datadog.Trace.Util
             return $"{uri.Scheme}{Uri.SchemeDelimiter}{uri.Authority}{path}";
         }
 
-        [Obsolete("This method is deprecated and will be removed. Use GetCleanUriPath() instead. " +
-                  "Kept for backwards compatibility where there is a version mismatch between manual and automatic instrumentation")]
-        public static string GetRelativeUrl(Uri uri, bool tryRemoveIds)
-            => GetRelativeUrl(uri.AbsolutePath, tryRemoveIds);
-
-        [Obsolete("This method is deprecated and will be removed. Use GetCleanUriPath() instead. " +
-                  "Kept for backwards compatibility where there is a version mismatch between manual and automatic instrumentation")]
-        public static string GetRelativeUrl(string uri, bool tryRemoveIds)
-            => tryRemoveIds ? GetCleanUriPath(uri) : uri;
-
-        [Obsolete("This method is deprecated and will be removed. Use GetCleanUriPath() instead. " +
-                  "Kept for backwards compatibility where there is a version mismatch between manual and automatic instrumentation")]
-        public static string CleanUriSegment(string absolutePath)
-            => GetCleanUriPath(absolutePath);
-
         public static string GetCleanUriPath(Uri uri)
         {
             return GetCleanUriPath(uri.AbsolutePath);

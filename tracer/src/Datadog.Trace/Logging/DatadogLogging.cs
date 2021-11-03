@@ -122,22 +122,6 @@ namespace Datadog.Trace.Logging
             return GetLoggerFor(typeof(T));
         }
 
-        [Obsolete("This method is deprecated and will be removed. Use GetLoggerFor() instead. " +
-            "Kept for backwards compatability where there is a version mismatch between manual and automatic instrumentation")]
-        public static ILogger GetLogger(Type classType)
-        {
-            // Tells us which types are loaded, when, and how often.
-            SharedLogger.Debug($"Obsolete logger retrieved for: {classType.AssemblyQualifiedName}");
-            return InternalLogger;
-        }
-
-        [Obsolete("This method is deprecated and will be removed. Use GetLoggerFor() instead. " +
-            "Kept for backwards compatability where there is a version mismatch between manual and automatic instrumentation")]
-        public static ILogger For<T>()
-        {
-            return GetLogger(typeof(T));
-        }
-
         internal static void Reset()
         {
             LoggingLevelSwitch.MinimumLevel = DefaultLogLevel;
