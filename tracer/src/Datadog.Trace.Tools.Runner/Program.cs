@@ -124,6 +124,12 @@ namespace Datadog.Trace.Tools.Runner
                 string cmdLine = string.Join(' ', args);
                 if (!string.IsNullOrWhiteSpace(cmdLine))
                 {
+                    // CI Visibility mode is enabled we check if we have connection to the agent before running the process.
+                    if (options.EnableCIVisibilityMode && !Utils.CheckAgentConnectionAsync(options.AgentUrl).GetAwaiter().GetResult())
+                    {
+                        return 1;
+                    }
+
                     Console.WriteLine("Running: " + cmdLine);
 
                     ProcessStartInfo processInfo = Utils.GetProcessStartInfo(args[0], Environment.CurrentDirectory, profilerEnvironmentVariables);

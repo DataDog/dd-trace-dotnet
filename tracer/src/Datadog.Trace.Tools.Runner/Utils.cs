@@ -6,11 +6,15 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
+using Datadog.Trace.Ci.Agent;
+using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.Tools.Runner
 {
@@ -279,6 +283,41 @@ namespace Datadog.Trace.Tools.Runner
             }
 
             return defaultValue;
+        }
+
+        public static async Task<bool> CheckAgentConnectionAsync(string agentUrl)
+        {
+            var env = new NameValueCollection();
+            if (!string.IsNullOrWhiteSpace(agentUrl))
+            {
+                env["DD_TRACE_AGENT_URL"] = agentUrl;
+            }
+
+            var globalSettings = GlobalSettings.CreateDefaultConfigurationSource();
+            globalSettings.Add(new NameValueConfigurationSource(env));
+            var tracerSettings = new TracerSettings(globalSettings);
+            var agentWriter = new CIAgentWriter(tracerSettings);
+
+            try
+            {
+                if (!await agentWriter.Ping().ConfigureAwait(false))
+                {
+                    Console.WriteLine($"Error connecting to the Datadog Agent at {tracerSettings.AgentUri}.");
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error connecting to the Datadog Agent at {tracerSettings.AgentUri}.");
+                Console.WriteLine(ex);
+                return false;
+            }
+            finally
+            {
+                await agentWriter.FlushAndCloseAsync().ConfigureAwait(false);
+            }
+
+            return true;
         }
     }
 }
