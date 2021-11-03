@@ -88,7 +88,7 @@ namespace Datadog.Trace.Logging
                     loggerConfiguration.Enrich.WithProperty("Process", $"[{DomainMetadata.ProcessId} {DomainMetadata.ProcessName}]");
                     loggerConfiguration.Enrich.WithProperty("AppDomain", $"[{DomainMetadata.AppDomainId} {DomainMetadata.AppDomainName}]");
 #if NETCOREAPP
-                    loggerConfiguration.Enrich.WithProperty("AssemblyLoadContext", $"[{System.Runtime.Loader.AssemblyLoadContext.GetLoadContext(typeof(DatadogLogging).Assembly).Name}]");
+                    loggerConfiguration.Enrich.WithProperty("AssemblyLoadContext", System.Runtime.Loader.AssemblyLoadContext.GetLoadContext(typeof(DatadogLogging).Assembly).Name);
 #endif
                     loggerConfiguration.Enrich.WithProperty("TracerVersion", TracerConstants.AssemblyVersion);
                 }
