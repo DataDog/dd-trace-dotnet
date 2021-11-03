@@ -26,7 +26,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         internal const string MinVersion3 = "3";
         internal const string MaxVersion3 = "3";
         internal const string IntegrationName = nameof(IntegrationIds.Couchbase);
-        internal const string IntegrationName3 = nameof(IntegrationIds.Couchbase3);
 
         private const string OperationName = "couchbase.query";
         private const string ServiceName = "couchbase";

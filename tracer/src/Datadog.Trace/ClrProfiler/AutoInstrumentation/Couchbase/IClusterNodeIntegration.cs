@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
        ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseOperationV3TypeName, "Couchbase.Core.IO.Operations.CancellationTokenPair" },
        MinimumVersion = "3.1.3",
        MaximumVersion = CouchbaseCommon.MaxVersion3,
-       IntegrationName = CouchbaseCommon.IntegrationName3)]
+       IntegrationName = CouchbaseCommon.IntegrationName)]
     [InstrumentMethod(
        AssemblyName = CouchbaseCommon.CouchbaseClientAssemblyName,
        TypeName = "Couchbase.Core.ClusterNode",
@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
        ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseOperationV3TypeName, "Couchbase.Core.IO.Operations.CancellationTokenPair" },
        MinimumVersion = "3.1.3",
        MaximumVersion = CouchbaseCommon.MaxVersion3,
-       IntegrationName = CouchbaseCommon.IntegrationName3)]
+       IntegrationName = CouchbaseCommon.IntegrationName)]
     [InstrumentMethod(
        AssemblyName = CouchbaseCommon.CouchbaseClientAssemblyName,
        TypeName = "Couchbase.Core.ClusterNode",
@@ -38,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
        ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseOperationV3TypeName, ClrNames.CancellationToken },
        MinimumVersion = "3.0.7",
        MaximumVersion = "3.1.2",
-       IntegrationName = CouchbaseCommon.IntegrationName3)]
+       IntegrationName = CouchbaseCommon.IntegrationName)]
     [InstrumentMethod(
        AssemblyName = CouchbaseCommon.CouchbaseClientAssemblyName,
        TypeName = "Couchbase.Core.ClusterNode",
@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
        ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseOperationV3TypeName, ClrNames.CancellationToken },
        MinimumVersion = "3.0.7",
        MaximumVersion = "3.1.2",
-       IntegrationName = CouchbaseCommon.IntegrationName3)]
+       IntegrationName = CouchbaseCommon.IntegrationName)]
     // ReSharper disable once InconsistentNaming
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
