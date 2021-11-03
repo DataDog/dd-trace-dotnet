@@ -176,7 +176,9 @@ namespace Datadog.Trace.Logging
             string logDirectory = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.LogDirectory);
             if (logDirectory == null)
             {
+#pragma warning disable 618 // ProfilerLogPath is deprecated but still supported
                 var nativeLogFile = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.ProfilerLogPath);
+#pragma warning restore 618
 
                 if (!string.IsNullOrEmpty(nativeLogFile))
                 {

@@ -58,7 +58,9 @@ namespace Datadog.Trace.Tests.Configuration
             yield return new object[] { CreateFunc(s => s.DisabledIntegrationNames.Count), 0 };
             yield return new object[] { CreateFunc(s => s.LogsInjectionEnabled), false };
             yield return new object[] { CreateFunc(s => s.GlobalTags.Count), 0 };
+#pragma warning disable 618 // App analytics is deprecated but supported
             yield return new object[] { CreateFunc(s => s.AnalyticsEnabled), false };
+#pragma warning restore 618
             yield return new object[] { CreateFunc(s => s.CustomSamplingRules), null };
             yield return new object[] { CreateFunc(s => s.MaxTracesSubmittedPerSecond), 100 };
             yield return new object[] { CreateFunc(s => s.TracerMetricsEnabled), false };
@@ -89,8 +91,10 @@ namespace Datadog.Trace.Tests.Configuration
             yield return new object[] { "DD_TRACE_GLOBAL_TAGS", "k1:v1, k2:v2", CreateFunc(s => s.GlobalTags), TagsK1V1K2V2 };
             yield return new object[] { ConfigurationKeys.GlobalTags, "k1:v1,k1:v2", CreateFunc(s => s.GlobalTags.Count), 1 };
 
+#pragma warning disable 618 // App Analytics is deprecated but still supported
             yield return new object[] { ConfigurationKeys.GlobalAnalyticsEnabled, "true", CreateFunc(s => s.AnalyticsEnabled), true };
             yield return new object[] { ConfigurationKeys.GlobalAnalyticsEnabled, "false", CreateFunc(s => s.AnalyticsEnabled), false };
+#pragma warning restore 618
 
             yield return new object[] { ConfigurationKeys.HeaderTags, "header1:tag1,header2:Content-Type,header3: Content-Type ,header4:C!!!ont_____ent----tYp!/!e,header5:Some.Header,header6:9invalidtagname,:invalidtagonly,validheaderonly:,validheaderwithoutcolon,:", CreateFunc(s => s.HeaderTags), HeaderTagsWithOptionalMappings };
             yield return new object[] { ConfigurationKeys.HeaderTags, "header1:tag1,header2:tag1", CreateFunc(s => s.HeaderTags), HeaderTagsSameTag };

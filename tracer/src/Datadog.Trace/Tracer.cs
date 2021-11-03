@@ -538,8 +538,10 @@ namespace Datadog.Trace
                     writer.WritePropertyName("health_checks_enabled");
                     writer.WriteValue(Settings.TracerMetricsEnabled);
 
+#pragma warning disable 618 // App analytics is deprecated, but still used
                     writer.WritePropertyName("analytics_enabled");
                     writer.WriteValue(Settings.AnalyticsEnabled);
+#pragma warning restore 618
 
                     writer.WritePropertyName("sample_rate");
                     writer.WriteValue(Settings.GlobalSamplingRate);

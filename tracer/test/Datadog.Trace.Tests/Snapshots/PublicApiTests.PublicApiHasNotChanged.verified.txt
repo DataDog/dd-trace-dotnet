@@ -37,6 +37,8 @@ namespace Datadog.Trace.Configuration
         public const string DogStatsDPath = "DD_DOGSTATSD_PATH";
         public const string DogStatsdPort = "DD_DOGSTATSD_PORT";
         public const string Environment = "DD_ENV";
+        [System.Obsolete("App Analytics has been replaced by Tracing without Limits. For more information s" +
+            "ee https://docs.datadoghq.com/tracing/legacy_app_analytics/")]
         public const string GlobalAnalyticsEnabled = "DD_TRACE_ANALYTICS_ENABLED";
         public const string GlobalSamplingRate = "DD_TRACE_SAMPLE_RATE";
         public const string GlobalTags = "DD_TAGS";
@@ -53,6 +55,7 @@ namespace Datadog.Trace.Configuration
         public const string MetricsPipeName = "DD_DOGSTATSD_PIPE_NAME";
         public const string PartialFlushEnabled = "DD_TRACE_PARTIAL_FLUSH_ENABLED";
         public const string PartialFlushMinSpans = "DD_TRACE_PARTIAL_FLUSH_MIN_SPANS";
+        [System.Obsolete("DD_TRACE_LOG_PATH is deprecated. Use DD_TRACE_LOG_DIRECTORY instead")]
         public const string ProfilerLogPath = "DD_TRACE_LOG_PATH";
         public const string RuntimeMetricsEnabled = "DD_RUNTIME_METRICS_ENABLED";
         public const string SerializationBatchInterval = "DD_TRACE_BATCH_INTERVAL";
@@ -70,7 +73,11 @@ namespace Datadog.Trace.Configuration
         public const string TracesTransport = "DD_TRACE_TRANSPORT";
         public static class Integrations
         {
+            [System.Obsolete("App Analytics has been replaced by Tracing without Limits. For more information s" +
+                "ee https://docs.datadoghq.com/tracing/legacy_app_analytics/")]
             public const string AnalyticsEnabled = "DD_TRACE_{0}_ANALYTICS_ENABLED";
+            [System.Obsolete("App Analytics has been replaced by Tracing without Limits. For more information s" +
+                "ee https://docs.datadoghq.com/tracing/legacy_app_analytics/")]
             public const string AnalyticsSampleRate = "DD_TRACE_{0}_ANALYTICS_SAMPLE_RATE";
             public const string Enabled = "DD_TRACE_{0}_ENABLED";
         }
@@ -142,6 +149,8 @@ namespace Datadog.Trace.Configuration
         public TracerSettings(Datadog.Trace.Configuration.IConfigurationSource source) { }
         public System.Collections.Generic.HashSet<string> AdoNetExcludedTypes { get; set; }
         public System.Uri AgentUri { get; set; }
+        [System.Obsolete("App Analytics has been replaced by Tracing without Limits. For more information s" +
+            "ee https://docs.datadoghq.com/tracing/legacy_app_analytics/")]
         public bool AnalyticsEnabled { get; set; }
         public string CustomSamplingRules { get; set; }
         [System.Obsolete]
