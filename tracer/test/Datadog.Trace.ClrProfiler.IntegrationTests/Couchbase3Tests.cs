@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     "Set", "Get", "Delete"
                 };
 
-                ValidateSpans(spans, (span) => span.Resource.Substring(0, span.Resource.IndexOf(" ")), expected);
+                ValidateSpans(spans, (span) => span.Resource, expected);
             }
         }
     }
