@@ -79,7 +79,7 @@ namespace Datadog.Trace.Sampling
 
         private SamplingPriority GetSamplingPriority(Span span, float rate, bool agentSampling)
         {
-            // make a sampling decision
+            // make a sampling decision as a function of traceId and sampling rate
             var sample = ((span.TraceId * KnuthFactor) % TracerConstants.MaxTraceId) <= (rate * TracerConstants.MaxTraceId);
 
             // legacy sampling based on data from agent
