@@ -78,8 +78,8 @@ namespace Datadog.Trace
         public const string Serverless = "serverless";
 
         /// <summary>
-        /// The span type for couchbase integrations.
+        /// The span type for db integrations (including couchbase)
         /// </summary>
-        public const string Couchbase = "couchbase";
+        public const string Db = "db";
     }
 }

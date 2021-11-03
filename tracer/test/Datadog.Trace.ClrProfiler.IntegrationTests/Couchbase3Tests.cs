@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
             {
                 var spans = agent.WaitForSpans(9, 500)
-                                 .Where(s => s.Type == "couchbase")
+                                 .Where(s => s.Type == "db")
                                  .ToList();
 
                 Assert.True(spans.Count >= 9, $"Expecting at least 9 spans, only received {spans.Count}");
@@ -49,7 +49,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     Assert.Equal("couchbase.query", span.Name);
                     Assert.Equal("Samples.Couchbase3-couchbase", span.Service);
-                    Assert.Equal("couchbase", span.Type);
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
                 }
 

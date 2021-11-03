@@ -85,7 +85,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
                 var tracer = Tracer.Instance;
                 var serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
                 var scope = tracer.StartActiveWithTags(OperationName, serviceName: serviceName, tags: tags);
-                scope.Span.Type = SpanTypes.Couchbase;
+                scope.Span.Type = SpanTypes.Db;
                 scope.Span.ResourceName = $"{tags.OperationCode} {tags.Key}";
                 return new CallTargetState(scope);
             }

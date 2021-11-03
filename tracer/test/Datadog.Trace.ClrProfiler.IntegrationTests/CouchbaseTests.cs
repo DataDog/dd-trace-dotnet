@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     Assert.Equal("couchbase.query", span.Name);
                     Assert.Equal("Samples.Couchbase-couchbase", span.Service);
-                    Assert.Equal("couchbase", span.Type);
+                    Assert.Equal("db", span.Type);
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
                 }
 
