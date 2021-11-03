@@ -169,7 +169,7 @@ public:
 
         std::stringstream ss;
         ss << "Total time: ";
-        ss << ns_fromBeginToEndTotal / 1000000 << "ms ";
+        ss << ns_fromBeginToEndTotal / 1000000 << "ms";
         ss << " | Total time in Callbacks: ";
         ss << ns_total / 1000000 << "ms ";
         ss << "[Initialize=";
