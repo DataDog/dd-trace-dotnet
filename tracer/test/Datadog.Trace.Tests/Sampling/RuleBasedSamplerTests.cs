@@ -76,7 +76,7 @@ namespace Datadog.Trace.Tests.Sampling
         public void Keep_Half_Rule()
         {
             var sampler = new RuleBasedSampler(new NoLimits());
-            sampler.RegisterRule(new CustomSamplingRule(0.5f, "Allow_nothing", ".*", ".*"));
+            sampler.RegisterRule(new CustomSamplingRule(0.5f, "Allow_half", ".*", ".*"));
             RunSamplerTest(
                 sampler,
                 iterations: 50_000, // Higher number for lower variance

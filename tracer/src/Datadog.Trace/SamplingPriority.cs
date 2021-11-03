@@ -7,12 +7,12 @@ namespace Datadog.Trace
 {
     /// <summary>
     /// Sampling "priorities" indicate whether a trace should be kept (sampled) or dropped (not sampled).
-    /// Trace statistics are computed based on all traces, even if they are sampled out.
+    /// Trace statistics are computed based on all traces, even if they are dropped
     /// </summary>
     /// <remarks>
     /// <para>
     /// Currently, all traces are still sent to the Agent (for stats computation, etc),
-    /// but this will change in future versions of the tracer if the Agent supports it.
+    /// but this may change in future versions of the tracer.
     /// </para>
     /// <para>
     /// Despite the name, there is no relative priority between the different values.
