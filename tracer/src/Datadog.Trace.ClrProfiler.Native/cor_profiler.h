@@ -25,7 +25,7 @@ class CorProfiler : public CorProfilerBase
 private:
     std::atomic_bool is_attached_ = {false};
     RuntimeInformation runtime_information_;
-    std::vector<IntegrationMethod> integration_methods_;
+    std::vector<IntegrationDefinition> integration_definitions_;
 
     std::unordered_set<WSTRING> definitions_ids_;
     std::mutex definitions_ids_lock_;
@@ -66,9 +66,8 @@ private:
     void RewritingPInvokeMaps(const ModuleMetadata& module_metadata, const WSTRING& nativemethods_type_name);
     WSTRING GetCLRProfilerPath();
     void CheckFilenameDefinitions();
-    bool GetWrapperMethodRef(ModuleMetadata* module_metadata, ModuleID module_id,
-                             const MethodReplacement& method_replacement, mdMemberRef& wrapper_method_ref,
-                             mdTypeRef& wrapper_type_ref);
+    bool GetIntegrationTypeRef(ModuleMetadata* module_metadata, ModuleID module_id,
+                               const IntegrationDefinition& integration_definition, mdTypeRef& integration_type_ref);
     bool ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id);
     std::string GetILCodes(const std::string& title, ILRewriter* rewriter, const FunctionInfo& caller,
                            ModuleMetadata* module_metadata);

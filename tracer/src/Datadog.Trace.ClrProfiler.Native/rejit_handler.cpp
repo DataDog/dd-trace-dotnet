@@ -11,24 +11,24 @@ namespace trace
 // RejitItem
 //
 
-RejitItem::RejitItem() : m_type(-1), m_modulesId(nullptr), m_methodDefs(nullptr), m_integrationMethods(nullptr), m_promise(nullptr)
+RejitItem::RejitItem() : m_type(-1), m_modulesId(nullptr), m_methodDefs(nullptr), m_integrationDefinitions(nullptr), m_promise(nullptr)
 {
 }
 
 RejitItem::RejitItem(std::unique_ptr<std::vector<ModuleID>>&& modulesId,
                      std::unique_ptr<std::vector<mdMethodDef>>&& methodDefs) :
-    m_type(1), m_integrationMethods(nullptr), m_promise(nullptr)
+    m_type(1), m_integrationDefinitions(nullptr), m_promise(nullptr)
 {
     m_modulesId = std::move(modulesId);
     m_methodDefs = std::move(methodDefs);
 }
 
 RejitItem::RejitItem(std::unique_ptr<std::vector<ModuleID>>&& modulesId,
-                     std::unique_ptr<std::vector<IntegrationMethod>>&& integrationMethods, std::promise<ULONG>* promise) :
+                     std::unique_ptr<std::vector<IntegrationDefinition>>&& integrationDefinitions, std::promise<ULONG>* promise) :
     m_type(2), m_methodDefs(nullptr)
 {
     m_modulesId = std::move(modulesId);
-    m_integrationMethods = std::move(integrationMethods);
+    m_integrationDefinitions = std::move(integrationDefinitions);
     m_promise = promise;
 }
 
@@ -47,7 +47,7 @@ RejitHandlerModuleMethod::RejitHandlerModuleMethod(mdMethodDef methodDef, RejitH
     m_pFunctionControl = nullptr;
     m_module = module;
     m_functionInfo = nullptr;
-    m_methodReplacement = nullptr;
+    m_integrationDefinition = nullptr;
 }
 
 mdMethodDef RejitHandlerModuleMethod::GetMethodDef()
@@ -80,14 +80,14 @@ void RejitHandlerModuleMethod::SetFunctionInfo(const FunctionInfo& functionInfo)
     m_functionInfo = std::make_unique<FunctionInfo>(functionInfo);
 }
 
-MethodReplacement* RejitHandlerModuleMethod::GetMethodReplacement()
+IntegrationDefinition* RejitHandlerModuleMethod::GetIntegrationDefinition()
 {
-    return m_methodReplacement.get();
+    return m_integrationDefinition.get();
 }
 
-void RejitHandlerModuleMethod::SetMethodReplacement(const MethodReplacement& methodReplacement)
+void RejitHandlerModuleMethod::SetIntegrationDefinition(const IntegrationDefinition& integrationDefinition)
 {
-    m_methodReplacement = std::make_unique<MethodReplacement>(methodReplacement);
+    m_integrationDefinition = std::make_unique<IntegrationDefinition>(integrationDefinition);
 }
 
 void RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId)
@@ -281,10 +281,10 @@ void RejitHandler::EnqueueThreadLoop(RejitHandler* handler)
             // Checks if there are integrations for the modules and enqueue a ReJIT request
             // *************************************
 
-            if (item->m_modulesId->size() > 0 && item->m_integrationMethods->size() > 0)
+            if (item->m_modulesId->size() > 0 && item->m_integrationDefinitions->size() > 0)
             {
                 auto pModuleId = item->m_modulesId.get();
-                auto pIntegrations = item->m_integrationMethods.get();
+                auto pIntegrations = item->m_integrationDefinitions.get();
 
                 // Process modules for rejit
                 const auto rejitCount = handler->ProcessModuleForRejit(*pModuleId, *pIntegrations, true);
@@ -455,7 +455,7 @@ void RejitHandler::AddNGenModule(ModuleID moduleId)
 }
 
 void RejitHandler::EnqueueProcessModule(const std::vector<ModuleID>& modulesVector,
-                                        const std::vector<IntegrationMethod>& integrations,
+                                        const std::vector<IntegrationDefinition>& integrationDefinitions,
                                         std::promise<ULONG>* promise)
 {
     ReadLock r_lock(m_shutdown_lock);
@@ -473,7 +473,7 @@ void RejitHandler::EnqueueProcessModule(const std::vector<ModuleID>& modulesVect
 
     // Enqueue
     m_rejit_queue->push(std::make_unique<RejitItem>(std::make_unique<std::vector<ModuleID>>(modulesVector),
-                                                    std::make_unique<std::vector<IntegrationMethod>>(integrations),
+                                                    std::make_unique<std::vector<IntegrationDefinition>>(integrationDefinitions),
                                                     promise));
 }
 
@@ -558,9 +558,9 @@ HRESULT RejitHandler::NotifyReJITParameters(ModuleID moduleId, mdMethodDef metho
         return S_FALSE;
     }
 
-    if (methodHandler->GetMethodReplacement() == nullptr)
+    if (methodHandler->GetIntegrationDefinition() == nullptr)
     {
-        Logger::Warn("NotifyReJITCompilationStarted: MethodReplacement is missing for "
+        Logger::Warn("NotifyReJITCompilationStarted: IntegrationDefinition is missing for "
                      "MethodDef: ",
                      methodId);
         return S_FALSE;
@@ -619,7 +619,7 @@ void RejitHandler::RequestRejitForNGenInliners()
 }
 
 ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
-                                          const std::vector<IntegrationMethod>& integrations,
+                                          const std::vector<IntegrationDefinition>& integrationDefinitions,
                                           bool enqueueInSameThread)
 {
     ReadLock r_lock(m_shutdown_lock);
@@ -649,16 +649,10 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
         ComPtr<IMetaDataAssemblyEmit> assemblyEmit;
         std::unique_ptr<AssemblyMetadata> assemblyMetadata = nullptr;
 
-        for (const IntegrationMethod& integration : integrations)
+        for (const IntegrationDefinition& integration : integrationDefinitions)
         {
-            // If the integration mode is not CallTarget we skip.
-            if (integration.replacement.wrapper_method.action != calltarget_modification_action)
-            {
-                continue;
-            }
-
             // If the integration is not for the current assembly we skip.
-            if (integration.replacement.target_method.assembly.name != moduleInfo.assembly.name)
+            if (integration.target_method.type.assembly.name != moduleInfo.assembly.name)
             {
                 continue;
             }
@@ -685,36 +679,36 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
             }
 
             // Check min version
-            if (integration.replacement.target_method.min_version > assemblyMetadata->version)
+            if (integration.target_method.type.min_version > assemblyMetadata->version)
             {
                 continue;
             }
 
             // Check max version
-            if (integration.replacement.target_method.max_version < assemblyMetadata->version)
+            if (integration.target_method.type.max_version < assemblyMetadata->version)
             {
                 continue;
             }
 
             // We are in the right module, so we try to load the mdTypeDef from the integration target type name.
             mdTypeDef typeDef = mdTypeDefNil;
-            auto foundType = FindTypeDefByName(integration.replacement.target_method.type_name,
+            auto foundType = FindTypeDefByName(integration.target_method.type.name,
                                                moduleInfo.assembly.name, metadataImport, typeDef);
             if (!foundType)
             {
                 continue;
             }
 
-            Logger::Debug("  Looking for '", integration.replacement.target_method.type_name, ".",
-                          integration.replacement.target_method.method_name, "(",
-                          (integration.replacement.target_method.signature_types.size() - 1), " params)' method.");
+            Logger::Debug("  Looking for '", integration.target_method.type.name, ".",
+                          integration.target_method.method_name, "(",
+                          (integration.target_method.signature_types.size() - 1), " params)' method.");
 
             // Now we enumerate all methods with the same target method name. (All overloads of the method)
             auto enumMethods = Enumerator<mdMethodDef>(
                 [&metadataImport, &integration, typeDef](HCORENUM* ptr, mdMethodDef arr[], ULONG max,
                                                          ULONG* cnt) -> HRESULT {
                     return metadataImport->EnumMethodsWithName(
-                        ptr, typeDef, integration.replacement.target_method.method_name.c_str(), arr, max, cnt);
+                        ptr, typeDef, integration.target_method.method_name.c_str(), arr, max, cnt);
                 },
                 [&metadataImport](HCORENUM ptr) -> void { metadataImport->CloseEnum(ptr); });
 
@@ -747,10 +741,10 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
                 // Compare if the current mdMethodDef contains the same number of arguments as the
                 // instrumentation target
                 const auto numOfArgs = functionInfo.method_signature.NumberOfArguments();
-                if (numOfArgs != integration.replacement.target_method.signature_types.size() - 1)
+                if (numOfArgs != integration.target_method.signature_types.size() - 1)
                 {
                     Logger::Debug(
-                        "    * The caller for the methoddef: ", integration.replacement.target_method.method_name,
+                        "    * The caller for the methoddef: ", integration.target_method.method_name,
                         " doesn't have the right number of arguments (", numOfArgs, " arguments).");
                     enumIterator = ++enumIterator;
                     continue;
@@ -759,13 +753,13 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
                 // Compare each mdMethodDef argument type to the instrumentation target
                 bool argumentsMismatch = false;
                 const auto methodArguments = functionInfo.method_signature.GetMethodArguments();
-                Logger::Debug("    * Comparing signature for method: ", integration.replacement.target_method.type_name,
-                              ".", integration.replacement.target_method.method_name);
+                Logger::Debug("    * Comparing signature for method: ", integration.target_method.type.name,
+                              ".", integration.target_method.method_name);
                 for (unsigned int i = 0; i < numOfArgs; i++)
                 {
                     const auto argumentTypeName = methodArguments[i].GetTypeTokName(metadataImport);
                     const auto integrationArgumentTypeName =
-                        integration.replacement.target_method.signature_types[i + 1];
+                        integration.target_method.signature_types[i + 1];
                     Logger::Debug("        -> ", argumentTypeName, " = ", integrationArgumentTypeName);
                     if (argumentTypeName != integrationArgumentTypeName && integrationArgumentTypeName != WStr("_"))
                     {
@@ -776,7 +770,7 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
                 if (argumentsMismatch)
                 {
                     Logger::Debug(
-                        "    * The caller for the methoddef: ", integration.replacement.target_method.method_name,
+                        "    * The caller for the methoddef: ", integration.target_method.method_name,
                         " doesn't have the right type of arguments.");
                     enumIterator = ++enumIterator;
                     continue;
@@ -810,9 +804,9 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
                 {
                     methodHandler->SetFunctionInfo(functionInfo);
                 }
-                if (methodHandler->GetMethodReplacement() == nullptr)
+                if (methodHandler->GetIntegrationDefinition() == nullptr)
                 {
-                    methodHandler->SetMethodReplacement(integration.replacement);
+                    methodHandler->SetIntegrationDefinition(integration);
                 }
 
                 // Store module_id and methodDef to request the ReJIT after analyzing all integrations.
