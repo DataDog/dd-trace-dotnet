@@ -201,7 +201,7 @@ namespace Datadog.Trace.Configuration
                         ?? 100;
 
             RouteTemplateResourceNamesEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled)
-                                                   ?? false;
+                                                   ?? true;
 
             PartialFlushEnabled = source?.GetBool(ConfigurationKeys.PartialFlushEnabled)
                 // default value
