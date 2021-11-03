@@ -75,7 +75,7 @@ namespace Datadog.Trace
         public const string ErrorStack = "error.stack";
 
         /// <summary>
-        /// The type of database (e.g. mssql, mysql)
+        /// The type of database (e.g. sql-server, mysql, postgres, sqlite, oracle)
         /// </summary>
         public const string DbType = "db.type";
 
