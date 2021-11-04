@@ -10,9 +10,12 @@ namespace Samples.Wcf.Server
         public static ServiceHost CreateCalculatorService(Binding binding, Uri baseAddress)
         {
             var selfHost = new ServiceHost(typeof(CalculatorService), baseAddress);
+            selfHost.Description.Behaviors.Add(new CustomErrorHandlingBehavior());
+            selfHost.Description.Behaviors.Remove(typeof(ServiceDebugBehavior)); // Remove default behavior
+            selfHost.Description.Behaviors.Add(new ServiceDebugBehavior { IncludeExceptionDetailInFaults = true }); // Allow exceptions to show all details
             selfHost.AddServiceEndpoint(typeof(ICalculator), binding, "CalculatorService");
 
-            if (binding is WSHttpBinding || binding is BasicHttpBinding)
+            if (binding is not NetTcpBinding)
             {
                 var smb = new ServiceMetadataBehavior { HttpGetEnabled = true };
                 selfHost.Description.Behaviors.Add(smb);
