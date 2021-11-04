@@ -315,14 +315,39 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         private static List<string> GetDatadogNativeFolders(FrameworkDescription frameworkDescription, string runtimeId)
         {
-            // first get anything "home folder" like, then combine with the profiler's location
-            // taking into account that this should be the same place
+            // first get anything "home folder" like
+            // then get the program files folder, if running under Windows
+            // then combine with the profiler's location
+            // taking into account that these locations could be the same place
 
             var paths = GetHomeFolders(runtimeId);
+
+            if (frameworkDescription.OSPlatform == OSPlatform.Windows)
+            {
+                var programFilesFolder = GetProgramFilesFolder();
+                paths.Add(programFilesFolder);
+            }
+
             var profilerFolder = GetProfilerFolder(frameworkDescription);
-            paths.Add(profilerFolder);
+            if (!string.IsNullOrWhiteSpace(profilerFolder))
+            {
+                paths.Add(profilerFolder);
+            }
+            else
+            {
+                // this is expected under Windows, but problematic under other OSs
+                Log.Debug("Couldn't find profilerFolder");
+            }
 
             return paths.Distinct().ToList();
+        }
+
+        private static string GetProgramFilesFolder()
+        {
+            // should be already adapted to the type of process / OS
+            var programFilesRoot = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+
+            return Path.Combine(programFilesRoot, "Datadog", ".NET Tracer");
         }
 
         private static string GetProfilerFolder(FrameworkDescription frameworkDescription)
@@ -381,9 +406,16 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             var currentDir =
                 string.IsNullOrEmpty(AppDomain.CurrentDomain.RelativeSearchPath) ?
                     AppDomain.CurrentDomain.BaseDirectory : AppDomain.CurrentDomain.RelativeSearchPath;
-            integrationsPaths.Add(currentDir);
 
-            Log.Debug($"current dir is {currentDir}'");
+            if (!string.IsNullOrWhiteSpace(currentDir))
+            {
+                integrationsPaths.Add(currentDir);
+                Log.Debug("currentDir is {CurrentDir}", currentDir);
+            }
+            else
+            {
+                Log.Debug("currentDir is null or empty");
+            }
 
             // the home folder could contain the native dll directly, but it could also
             // be under a runtime specific folder
