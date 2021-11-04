@@ -10,7 +10,7 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
 {
     /// <summary>
-    /// Couchbase IclusterNode 3.2 calltarget instrumentation
+    /// Couchbase clusterNode 3.2 calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
        AssemblyName = CouchbaseCommon.CouchbaseClientAssemblyName,
