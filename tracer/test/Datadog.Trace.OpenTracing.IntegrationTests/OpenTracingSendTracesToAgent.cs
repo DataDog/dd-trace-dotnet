@@ -4,99 +4,114 @@
 // </copyright>
 
 using System;
-using System.Linq;
-using System.Net;
-using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.TestHelpers.HttpMessageHandlers;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.OpenTracing.IntegrationTests
 {
     public class OpenTracingSendTracesToAgent
     {
-        private readonly OpenTracingTracer _tracer;
-        private readonly RecordHttpHandler _httpRecorder;
-
-        public OpenTracingSendTracesToAgent()
+        [Fact]
+        public void MinimalSpan()
         {
-            var settings = new TracerSettings();
+            int agentPort = TcpPortProvider.GetOpenPort();
 
-            var endpoint = new Uri("http://localhost:8126");
-            _httpRecorder = new RecordHttpHandler();
-            var api = new Api(endpoint, apiRequestFactory: null, statsd: null);
-            var agentWriter = new AgentWriter(api, statsd: null);
+            using (var agent = new MockTracerAgent(agentPort))
+            {
+                var settings = new TracerSettings
+                {
+                    AgentUri = new Uri($"http://127.0.0.1:{agent.Port}"),
+                    TracerMetricsEnabled = false,
+                };
 
-            var tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
-            _tracer = new OpenTracingTracer(tracer);
+                var innerTracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
+                var tracer = new OpenTracingTracer(innerTracer);
+
+                var span = (OpenTracingSpan)tracer.BuildSpan("Operation")
+                                                   .Start();
+                span.Finish();
+
+                var spans = agent.WaitForSpans(1);
+
+                var receivedSpan = spans.Should().ContainSingle().Subject;
+                CompareSpans(receivedSpan, span);
+            }
         }
 
-        [Fact(Skip = "Run manually")]
-        public async void MinimalSpan()
+        [Fact]
+        public void CustomServiceName()
         {
-            var span = (OpenTracingSpan)_tracer.BuildSpan("Operation")
-                                               .Start();
-            span.Finish();
+            int agentPort = TcpPortProvider.GetOpenPort();
 
-            // Check that the HTTP calls went as expected
-            await _httpRecorder.WaitForCompletion(1);
-            Assert.Single(_httpRecorder.Requests);
-            Assert.Single(_httpRecorder.Responses);
-            Assert.All(_httpRecorder.Responses, (x) => Assert.Equal(HttpStatusCode.OK, x.StatusCode));
+            using (var agent = new MockTracerAgent(agentPort))
+            {
+                var settings = new TracerSettings
+                {
+                    AgentUri = new Uri($"http://127.0.0.1:{agent.Port}"),
+                    TracerMetricsEnabled = false,
+                };
 
-            var trace = _httpRecorder.Traces.Single();
-            MsgPackHelpers.AssertSpanEqual(span.DDSpan, trace.Single());
+                var innerTracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
+                var tracer = new OpenTracingTracer(innerTracer);
+
+                var span = (OpenTracingSpan)tracer.BuildSpan("Operation")
+                                                  .WithTag(DatadogTags.ResourceName, "This is a resource")
+                                                  .WithTag(DatadogTags.ServiceName, "MyService")
+                                                  .Start();
+                span.Finish();
+
+                var spans = agent.WaitForSpans(1);
+
+                var receivedSpan = spans.Should().ContainSingle().Subject;
+                CompareSpans(receivedSpan, span);
+            }
         }
 
-        [Fact(Skip = "Run manually")]
-        public async void CustomServiceName()
+        [Fact]
+        public void Utf8Everywhere()
         {
-            const string ServiceName = "MyService";
+            int agentPort = TcpPortProvider.GetOpenPort();
 
-            var span = (OpenTracingSpan)_tracer.BuildSpan("Operation")
-                                               .WithTag(DatadogTags.ResourceName, "This is a resource")
-                                               .WithTag(DatadogTags.ServiceName, ServiceName)
-                                               .Start();
-            span.Finish();
+            using (var agent = new MockTracerAgent(agentPort))
+            {
+                var settings = new TracerSettings
+                {
+                    AgentUri = new Uri($"http://127.0.0.1:{agent.Port}"),
+                    TracerMetricsEnabled = false,
+                };
 
-            // Check that the HTTP calls went as expected
-            await _httpRecorder.WaitForCompletion(1);
-            Assert.Single(_httpRecorder.Requests);
-            Assert.Single(_httpRecorder.Responses);
-            Assert.All(_httpRecorder.Responses, (x) => Assert.Equal(HttpStatusCode.OK, x.StatusCode));
+                var innerTracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
+                var tracer = new OpenTracingTracer(innerTracer);
 
-            var trace = _httpRecorder.Traces.Single();
-            MsgPackHelpers.AssertSpanEqual(span.DDSpan, trace.Single());
+                var span = (OpenTracingSpan)tracer.BuildSpan("Aᛗᚪᚾᚾᚪ")
+                                                  .WithTag(DatadogTags.ResourceName, "η γλώσσα μου έδωσαν ελληνική")
+                                                  .WithTag(DatadogTags.ServiceName, "На берегу пустынных волн")
+                                                  .WithTag("யாமறிந்த", "ნუთუ კვლა")
+                                                  .Start();
+                span.Finish();
+
+                var spans = agent.WaitForSpans(1);
+
+                var receivedSpan = spans.Should().ContainSingle().Subject;
+                CompareSpans(receivedSpan, span);
+            }
         }
 
-        [Fact(Skip = "Run manually")]
-        public async void Utf8Everywhere()
+        private static void CompareSpans(MockTracerAgent.Span receivedSpan, OpenTracingSpan openTracingSpan)
         {
-            var span = (OpenTracingSpan)_tracer.BuildSpan("Aᛗᚪᚾᚾᚪ")
-                                               .WithTag(DatadogTags.ResourceName, "η γλώσσα μου έδωσαν ελληνική")
-                                               .WithTag(DatadogTags.ServiceName, "На берегу пустынных волн")
-                                               .WithTag("யாமறிந்த", "ნუთუ კვლა")
-                                               .Start();
-            span.Finish();
-
-            // Check that the HTTP calls went as expected
-            await _httpRecorder.WaitForCompletion(1);
-            Assert.Single(_httpRecorder.Requests);
-            Assert.Single(_httpRecorder.Responses);
-            Assert.All(_httpRecorder.Responses, (x) => Assert.Equal(HttpStatusCode.OK, x.StatusCode));
-
-            var trace = _httpRecorder.Traces.Single();
-            MsgPackHelpers.AssertSpanEqual(span.DDSpan, trace.Single());
-        }
-
-        [Fact(Skip = "Run manually")]
-        public void WithDefaultFactory()
-        {
-            // This test does not check anything it validates that this codepath runs without exceptions
-            _tracer.BuildSpan("Operation")
-                   .Start()
-                   .Finish();
+            var span = openTracingSpan.DDSpan;
+            receivedSpan.Should().BeEquivalentTo(new
+            {
+                TraceId = span.TraceId,
+                SpanId = span.SpanId,
+                Name = span.OperationName,
+                Resource = span.ResourceName,
+                Service = span.ServiceName,
+                Type = span.Type,
+                Tags = span.Tags,
+            });
         }
     }
 }
