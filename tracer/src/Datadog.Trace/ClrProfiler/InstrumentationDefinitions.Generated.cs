@@ -11,7 +11,7 @@ namespace Datadog.Trace.ClrProfiler
         {
             return new NativeCallTargetDefinition[]
             {
-                // AdoNet
+                // 
                 new("Microsoft.Data.SqlClient", "Microsoft.Data.SqlClient.SqlCommand", "ExecuteDbDataReader",  new[] { "System.Data.Common.DbDataReader", "System.Data.CommandBehavior" }, 1, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorIntegration"),
                 new("Microsoft.Data.SqlClient", "Microsoft.Data.SqlClient.SqlCommand", "ExecuteDbDataReaderAsync",  new[] { "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>", "System.Data.CommandBehavior", "System.Threading.CancellationToken" }, 1, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorAndCancellationAsyncIntegration"),
                 new("Microsoft.Data.SqlClient", "Microsoft.Data.SqlClient.SqlCommand", "ExecuteNonQuery",  new[] { "System.Int32" }, 1, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration"),
@@ -190,13 +190,11 @@ namespace Datadog.Trace.ClrProfiler
 
                 // ElasticsearchNet
                 new("Elasticsearch.Net", "Elasticsearch.Net.RequestPipeline", "CallElasticsearch",  new[] { "T", "Elasticsearch.Net.RequestData" }, 6, 0, 0, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V6.RequestPipeline_CallElasticsearch_Integration"),
+                new("Elasticsearch.Net", "Elasticsearch.Net.RequestPipeline", "CallElasticsearch",  new[] { "Elasticsearch.Net.ElasticsearchResponse`1<T>", "Elasticsearch.Net.RequestData" }, 5, 0, 0, 5, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V5.RequestPipeline_CallElasticsearch_Integration"),
                 new("Elasticsearch.Net", "Elasticsearch.Net.RequestPipeline", "CallElasticsearchAsync",  new[] { "System.Threading.Tasks.Task`1<T>", "Elasticsearch.Net.RequestData", "System.Threading.CancellationToken" }, 6, 0, 0, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V6.RequestPipeline_CallElasticsearchAsync_Integration"),
+                new("Elasticsearch.Net", "Elasticsearch.Net.RequestPipeline", "CallElasticsearchAsync",  new[] { "System.Threading.Tasks.Task`1<Elasticsearch.Net.ElasticsearchResponse`1<T>>", "Elasticsearch.Net.RequestData", "System.Threading.CancellationToken" }, 5, 0, 0, 5, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V5.RequestPipeline_CallElasticsearchAsync_Integration"),
                 new("Elasticsearch.Net", "Elasticsearch.Net.Transport`1", "Request",  new[] { "T", "Elasticsearch.Net.HttpMethod", "System.String", "Elasticsearch.Net.PostData", "Elasticsearch.Net.IRequestParameters" }, 7, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.Transport_Request_Integration"),
                 new("Elasticsearch.Net", "Elasticsearch.Net.Transport`1", "RequestAsync",  new[] { "System.Threading.Tasks.Task`1<T>", "Elasticsearch.Net.HttpMethod", "System.String", "System.Threading.CancellationToken", "Elasticsearch.Net.PostData", "Elasticsearch.Net.IRequestParameters" }, 7, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7.Transport_RequestAsync_Integration"),
-
-                // ElasticsearchNet5
-                new("Elasticsearch.Net", "Elasticsearch.Net.RequestPipeline", "CallElasticsearch",  new[] { "Elasticsearch.Net.ElasticsearchResponse`1<T>", "Elasticsearch.Net.RequestData" }, 5, 0, 0, 5, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V5.RequestPipeline_CallElasticsearch_Integration"),
-                new("Elasticsearch.Net", "Elasticsearch.Net.RequestPipeline", "CallElasticsearchAsync",  new[] { "System.Threading.Tasks.Task`1<Elasticsearch.Net.ElasticsearchResponse`1<T>>", "Elasticsearch.Net.RequestData", "System.Threading.CancellationToken" }, 5, 0, 0, 5, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V5.RequestPipeline_CallElasticsearchAsync_Integration"),
 
                 // GraphQL
                 new("GraphQL", "GraphQL.Execution.ExecutionStrategy", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>", "GraphQL.Execution.ExecutionContext" }, 2, 3, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.ExecuteAsyncIntegration"),
@@ -290,7 +288,11 @@ namespace Datadog.Trace.ClrProfiler
                 new("StackExchange.Redis.StrongName", "StackExchange.Redis.RedisTransaction", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task`1<T>", "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1[!!0]", "StackExchange.Redis.ServerEndPoint" }, 1, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.RedisExecuteAsyncIntegration"),
 
                 // Wcf
+                new("System.ServiceModel", "System.ServiceModel.Dispatcher.AsyncMethodInvoker", "InvokeBegin",  new[] { "System.IAsyncResult", "System.Object", "System.Object[]", "System.AsyncCallback", "System.Object" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf.AsyncMethodInvoker_InvokeBegin_Integration"),
+                new("System.ServiceModel", "System.ServiceModel.Dispatcher.AsyncMethodInvoker", "InvokeEnd",  new[] { "System.Object", "System.Object", "System.Object[]&", "System.IAsyncResult" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf.AsyncMethodInvoker_InvokeEnd_Integration"),
                 new("System.ServiceModel", "System.ServiceModel.Dispatcher.ChannelHandler", "HandleRequest",  new[] { "System.Boolean", "System.ServiceModel.Channels.RequestContext", "System.ServiceModel.OperationContext" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf.ChannelHandlerIntegration"),
+                new("System.ServiceModel", "System.ServiceModel.Dispatcher.SyncMethodInvoker", "Invoke",  new[] { "System.Object", "System.Object", "System.Object[]", "System.Object[]&" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf.SyncMethodInvokerIntegration"),
+                new("System.ServiceModel", "System.ServiceModel.Dispatcher.TaskMethodInvoker", "InvokeAsync",  new[] { "System.Threading.Tasks.Task`1<System.Tuple`2<System.Object, System.Object[]>>", "System.Object", "System.Object[]" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf.TaskMethodInvokerIntegration"),
 
                 // WebRequest
                 new("System", "System.Net.HttpWebRequest", "BeginGetRequestStream",  new[] { "System.IAsyncResult", "System.AsyncCallback", "System.Object" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest.HttpWebRequest_BeginGetRequestStream_Integration"),

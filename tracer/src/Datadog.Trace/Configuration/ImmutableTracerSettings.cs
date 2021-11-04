@@ -67,6 +67,7 @@ namespace Datadog.Trace.Configuration
             TraceBufferSize = settings.TraceBufferSize;
             TraceBatchInterval = settings.TraceBatchInterval;
             RouteTemplateResourceNamesEnabled = settings.RouteTemplateResourceNamesEnabled;
+            DelayWcfInstrumentationEnabled = settings.DelayWcfInstrumentationEnabled;
 
             // we cached the static instance here, because is being used in the hotpath
             // by IsIntegrationEnabled method (called from all integrations)
@@ -266,6 +267,12 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled"/>
         internal bool RouteTemplateResourceNamesEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether to enable the updated WCF instrumentation that delays execution
+        /// until later in the WCF pipeline when the WCF server exception handling is established.
+        /// </summary>
+        internal bool DelayWcfInstrumentationEnabled { get; }
 
         /// <summary>
         /// Create a <see cref="ImmutableTracerSettings"/> populated from the default sources
