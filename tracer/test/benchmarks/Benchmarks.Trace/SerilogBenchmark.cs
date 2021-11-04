@@ -29,7 +29,9 @@ namespace Benchmarks.Trace
             };
 
             LogInjectionTracer = new Tracer(logInjectionSettings, new DummyAgentWriter(), null, null, null);
+#pragma warning disable CS0618 // Setter isn't actually obsolete, just should be internal
             Tracer.Instance = LogInjectionTracer;
+#pragma warning restore CS0618
 
             var formatter = new MessageTemplateTextFormatter("{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}{Properties}{NewLine}", null);
 
