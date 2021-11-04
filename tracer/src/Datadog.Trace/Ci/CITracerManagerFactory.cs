@@ -23,9 +23,10 @@ namespace Datadog.Trace.Ci
             IScopeManager scopeManager,
             IDogStatsd statsd,
             RuntimeMetricsWriter runtimeMetrics,
+            LibLogScopeEventSubscriber libLogSubscriber,
             string defaultServiceName)
         {
-            return new CITracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, defaultServiceName);
+            return new CITracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, libLogSubscriber, defaultServiceName);
         }
 
         protected override ISampler GetSampler(TracerSettings settings)

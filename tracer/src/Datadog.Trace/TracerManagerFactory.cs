@@ -38,7 +38,8 @@ namespace Datadog.Trace
                 sampler: null,
                 scopeManager: previous?.ScopeManager, // no configuration, so can always use the same one
                 statsd: null,
-                runtimeMetrics: null);
+                runtimeMetrics: null,
+                libLogSubscriber: null);
         }
 
         /// <summary>
@@ -51,7 +52,8 @@ namespace Datadog.Trace
             ISampler sampler,
             IScopeManager scopeManager,
             IDogStatsd statsd,
-            RuntimeMetricsWriter runtimeMetrics)
+            RuntimeMetricsWriter runtimeMetrics,
+            LibLogScopeEventSubscriber libLogSubscriber)
         {
             settings ??= TracerSettings.FromDefaultSources();
             // TODO: take an ImmutableTracerSettings instance instead
@@ -74,7 +76,12 @@ namespace Datadog.Trace
                 runtimeMetrics ??= new RuntimeMetricsWriter(statsd ?? CreateDogStatsdClient(settings, defaultServiceName, settings.DogStatsdPort), TimeSpan.FromSeconds(10));
             }
 
-            var tracerManager = CreateTracerManagerFrom(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, defaultServiceName);
+            if (settings.LogsInjectionEnabled)
+            {
+                libLogSubscriber ??= new LibLogScopeEventSubscriber(scopeManager, defaultServiceName, settings.ServiceVersion ?? string.Empty, settings.Environment ?? string.Empty);
+            }
+
+            var tracerManager = CreateTracerManagerFrom(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, libLogSubscriber, defaultServiceName);
             return tracerManager;
         }
 
@@ -88,8 +95,9 @@ namespace Datadog.Trace
             IScopeManager scopeManager,
             IDogStatsd statsd,
             RuntimeMetricsWriter runtimeMetrics,
+            LibLogScopeEventSubscriber libLogSubscriber,
             string defaultServiceName)
-            => new TracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, defaultServiceName);
+            => new TracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, libLogSubscriber, defaultServiceName);
 
         protected virtual ISampler GetSampler(TracerSettings settings)
         {

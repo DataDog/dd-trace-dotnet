@@ -9,7 +9,7 @@ namespace Datadog.Trace.Logging
 {
     internal interface ILogEnricher
     {
-        void Initialize(Tracer tracer);
+        void Initialize(IScopeManager scopeManager, string defaultServiceName, string version, string env);
 
         IDisposable Register();
     }

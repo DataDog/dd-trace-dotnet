@@ -77,7 +77,7 @@ namespace Datadog.Trace
         /// The <see cref="TracerManager"/> created will be scoped specifically to this instance.
         /// </summary>
         internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ISampler sampler, IScopeManager scopeManager, IDogStatsd statsd)
-            : this(TracerManagerFactory.Instance.CreateTracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics: null))
+            : this(TracerManagerFactory.Instance.CreateTracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics: null, libLogSubscriber: null))
         {
         }
 

@@ -25,13 +25,13 @@ namespace Datadog.Trace.Logging
             _logProvider = logProvider;
         }
 
-        public void Initialize(Tracer tracer)
+        public void Initialize(IScopeManager scopeManager, string defaultServiceName, string version, string env)
         {
-            _versionProperty = tracer.Settings.ServiceVersion;
-            _environmentProperty = tracer.Settings.Environment;
-            _serviceProperty = tracer.DefaultServiceName;
-            _traceIdProperty = CreateTracerProperty(tracer, t => t.ActiveScope?.Span.TraceId.ToString());
-            _spanIdProperty = CreateTracerProperty(tracer, t => t.ActiveScope?.Span.SpanId.ToString());
+            _versionProperty = version;
+            _environmentProperty = env;
+            _serviceProperty = defaultServiceName;
+            _traceIdProperty = CreateTracerProperty(scopeManager, t => t.Active?.Span.TraceId.ToString());
+            _spanIdProperty = CreateTracerProperty(scopeManager, t => t.Active?.Span.SpanId.ToString());
         }
 
         public IDisposable Register()
@@ -39,7 +39,7 @@ namespace Datadog.Trace.Logging
             return new Context(_logProvider, this);
         }
 
-        protected virtual object CreateTracerProperty(Tracer tracer, Func<Tracer, string> getter) => new TracerProperty(tracer, getter);
+        protected virtual object CreateTracerProperty(IScopeManager scopeManager, Func<IScopeManager, string> getter) => new TracerProperty(scopeManager, getter);
 
         /// <summary>
         /// Wraps all the individual context objects in a single instance, that can be stored in an AsyncLocal
@@ -82,18 +82,18 @@ namespace Datadog.Trace.Logging
 
         private class TracerProperty
         {
-            private readonly Tracer _tracer;
-            private readonly Func<Tracer, string> _getter;
+            private readonly IScopeManager _scopeManager;
+            private readonly Func<IScopeManager, string> _getter;
 
-            public TracerProperty(Tracer tracer, Func<Tracer, string> getter)
+            public TracerProperty(IScopeManager scopeManager, Func<IScopeManager, string> getter)
             {
-                _tracer = tracer;
+                _scopeManager = scopeManager;
                 _getter = getter;
             }
 
             public override string ToString()
             {
-                return _getter(_tracer);
+                return _getter(_scopeManager);
             }
         }
     }
