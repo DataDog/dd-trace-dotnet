@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.TestHelpers;
 using Xunit;
 
 namespace Datadog.Trace.Tests
@@ -12,7 +13,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void ManuallyDistributedTrace_CarriesExpectedValues()
         {
-            var tracer = new Tracer();
+            var tracer = TracerHelper.Create();
 
             ulong traceId;
             ulong parentSpanId;
@@ -32,7 +33,7 @@ namespace Datadog.Trace.Tests
             }
 
             var distributedTraceContext = new SpanContext(traceId, parentSpanId);
-            var secondTracer = new Tracer();
+            var secondTracer = TracerHelper.Create();
 
             using (var scope = secondTracer.StartActive("manual.trace", parent: distributedTraceContext))
             {

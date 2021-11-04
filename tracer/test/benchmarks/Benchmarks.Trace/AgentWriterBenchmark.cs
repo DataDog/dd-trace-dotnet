@@ -27,7 +27,7 @@ namespace Benchmarks.Trace
             settings.StartupDiagnosticLogEnabled = false;
             settings.TraceEnabled = false;
 
-            var api = new Api(settings.AgentUri, new FakeApiRequestFactory(), statsd: null);
+            var api = new Api(settings.AgentUri, new FakeApiRequestFactory(), statsd: null, sampler: null, isPartialFlushEnabled: false);
 
             AgentWriter = new AgentWriter(api, statsd: null, automaticFlush: false);
 

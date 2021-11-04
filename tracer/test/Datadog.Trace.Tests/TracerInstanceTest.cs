@@ -4,7 +4,9 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Ci;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Tests
@@ -16,43 +18,63 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void NormalTracerInstanceSwap()
         {
-            var tracerOne = new Tracer();
-            var tracerTwo = new Tracer();
+            var tracerOne = TracerHelper.Create();
+            var tracerTwo = TracerHelper.Create();
 
             TracerRestorerAttribute.SetTracer(tracerOne);
-            Assert.Equal(tracerOne, Tracer.Instance);
+            Tracer.Instance.Should().Be(tracerOne);
+            Tracer.Instance.TracerManager.Should().Be(tracerOne.TracerManager);
 
             TracerRestorerAttribute.SetTracer(tracerTwo);
-            Assert.Equal(tracerTwo, Tracer.Instance);
+            Tracer.Instance.Should().Be(tracerTwo);
+            Tracer.Instance.TracerManager.Should().Be(tracerTwo.TracerManager);
 
             TracerRestorerAttribute.SetTracer(null);
-            Assert.Null(Tracer.Instance);
+            Tracer.Instance.Should().BeNull();
         }
 
         [Fact]
         public void LockedTracerInstanceSwap()
         {
-            var tracerOne = new Tracer();
+            var tracerOne = TracerHelper.Create();
             var tracerTwo = new LockedTracer();
 
             TracerRestorerAttribute.SetTracer(tracerOne);
-            Assert.Equal(tracerOne, Tracer.Instance);
+            Tracer.Instance.Should().Be(tracerOne);
+            Tracer.Instance.TracerManager.Should().Be(tracerOne.TracerManager);
 
             TracerRestorerAttribute.SetTracer(null);
-            Assert.Null(Tracer.Instance);
+            Tracer.Instance.Should().BeNull();
 
             // Set the locked tracer
             TracerRestorerAttribute.SetTracer(tracerTwo);
-            Assert.Equal(tracerTwo, Tracer.Instance);
+            Tracer.Instance.Should().Be(tracerTwo);
+            Tracer.Instance.TracerManager.Should().Be(tracerTwo.TracerManager);
 
             // We test the locked tracer cannot be replaced.
+#pragma warning disable CS0618 // Setter isn't actually obsolete, just should be internal
             Assert.Throws<InvalidOperationException>(() => Tracer.Instance = tracerOne);
 
             Assert.Throws<InvalidOperationException>(() => Tracer.Instance = null);
+
+            Assert.Throws<InvalidOperationException>(() => TracerManager.ReplaceGlobalManager(null, TracerManagerFactory.Instance));
+            Assert.Throws<InvalidOperationException>(() => TracerManager.ReplaceGlobalManager(null, new CITracerManagerFactory()));
         }
 
-        private class LockedTracer : Tracer, ILockedTracer
+        private class LockedTracer : Tracer
         {
+            internal LockedTracer()
+                : base(new LockedTracerManager())
+            {
+            }
+        }
+
+        private class LockedTracerManager : TracerManager, ILockedTracer
+        {
+            public LockedTracerManager()
+                : base(null, null, null, null, null, null, null, null)
+            {
+            }
         }
     }
 }
