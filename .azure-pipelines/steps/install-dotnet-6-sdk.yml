@@ -3,12 +3,6 @@ parameters:
     type: boolean
     default: false
 
-#steps:
-#- template: install-dotnet-sdk.yml
-#  parameters:
-#    sdkVersion: $(dotnetCoreSdk6Version)
-#
-
 steps:
 - task: UseDotNet@2
   displayName: install dotnet core sdk 6

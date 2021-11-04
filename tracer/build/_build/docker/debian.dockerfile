@@ -1,6 +1,6 @@
 ARG DOTNETSDK_VERSION
 # debian 10 image
-FROM mcr.microsoft.com/dotnet/sdk:6.0.100-rc.1-bullseye-slim as base
+FROM mcr.microsoft.com/dotnet/sdk:6.0.100-rc.2-bullseye-slim as base
 # ubuntu image
 # FROM mcr.microsoft.com/dotnet/sdk:$DOTNETSDK_VERSION-focal
 
