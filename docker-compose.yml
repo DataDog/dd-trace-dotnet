@@ -105,7 +105,6 @@ services:
 
   couchbase:
     image: bentonam/couchbase-docker:community-5.0.1
-    container_name: couchbase
     ports:
       - "8091-8094:8091-8094"
       - "11210:11210"

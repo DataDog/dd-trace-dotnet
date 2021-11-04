@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static System.Collections.Generic.IEnumerable<object[]> GetCouchbase()
         {
-            foreach (var item in PackageVersions.Couchbase)
+            foreach (var item in PackageVersions.Couchbase3)
             {
                 yield return item.ToArray();
             }
@@ -31,6 +31,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableTheory]
         [MemberData(nameof(GetCouchbase))]
         [Trait("Category", "EndToEnd")]
+        [Trait("Category", "ArmUnsupported")]
         public void SubmitTraces(string packageVersion)
         {
             SetCallTargetSettings(true);

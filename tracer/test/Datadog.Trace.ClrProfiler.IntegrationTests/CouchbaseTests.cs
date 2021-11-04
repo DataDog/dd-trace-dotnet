@@ -31,6 +31,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableTheory]
         [MemberData(nameof(GetCouchbase))]
         [Trait("Category", "EndToEnd")]
+        [Trait("Category", "ArmUnsupported")]
         public void SubmitTraces(string packageVersion)
         {
             SetCallTargetSettings(true);
