@@ -28,16 +28,12 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             Microsoft.AspNetCore.Server.Kestrel.Core.BadHttpRequestException.Throw(
                 Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.RequestRejectionReason.InvalidRequestHeader,
                 Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpMethod.Get);
-#elif NET5_0
+#elif NET5_0_OR_GREATER
             throw new Microsoft.AspNetCore.Http.BadHttpRequestException("BAD", 400);
 #else
             try
             {
-#if NET6_0
-                var badRequest = typeof(Microsoft.AspNetCore.Http.BadHttpRequestException);
-#else
                 var badRequest = typeof(Microsoft.AspNetCore.Server.Kestrel.Core.BadHttpRequestException);
-#endif
                 var rejectReasonType = badRequest.Assembly.GetType("Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.RequestRejectionReason");
 
                 var enumValueField = rejectReasonType.GetField("InvalidRequestHeader", BindingFlags.Static | BindingFlags.Public);
