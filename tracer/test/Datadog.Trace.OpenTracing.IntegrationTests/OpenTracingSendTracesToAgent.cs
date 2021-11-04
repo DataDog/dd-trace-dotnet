@@ -66,10 +66,6 @@ namespace Datadog.Trace.OpenTracing.IntegrationTests
 
                 var receivedSpan = spans.Should().ContainSingle().Subject;
                 CompareSpans(receivedSpan, span);
-                // receivedSpan.SpanId.Should().Be(span.DDSpan.SpanId);
-                // receivedSpan.TraceId.Should().Be(span.DDSpan.TraceId);
-                // receivedSpan.Resource.Should().Be(span.DDSpan.ResourceName);
-                // receivedSpan.Name.Should().Be(span.DDSpan.OperationName);
             }
         }
 
@@ -100,10 +96,6 @@ namespace Datadog.Trace.OpenTracing.IntegrationTests
 
                 var receivedSpan = spans.Should().ContainSingle().Subject;
                 CompareSpans(receivedSpan, span);
-                // receivedSpan.SpanId.Should().Be(span.DDSpan.SpanId);
-                // receivedSpan.TraceId.Should().Be(span.DDSpan.TraceId);
-                // receivedSpan.Resource.Should().Be(span.DDSpan.ResourceName);
-                // receivedSpan.Name.Should().Be(span.DDSpan.OperationName);
             }
         }
 
