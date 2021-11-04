@@ -257,33 +257,6 @@ namespace Datadog.Trace
         internal IDogStatsd Statsd { get; private set; }
 
         /// <summary>
-        /// Create a new Tracer with the given parameters
-        /// </summary>
-        /// <param name="agentEndpoint">The agent endpoint where the traces will be sent (default is http://localhost:8126).</param>
-        /// <param name="defaultServiceName">Default name of the service (default is the name of the executing assembly).</param>
-        /// <param name="isDebugEnabled">Turns on all debug logging (this may have an impact on application performance).</param>
-        /// <returns>The newly created tracer</returns>
-        public static Tracer Create(Uri agentEndpoint = null, string defaultServiceName = null, bool isDebugEnabled = false)
-        {
-            // Keep supporting this older public method by creating a TracerConfiguration
-            // from default sources, overwriting the specified settings, and passing that to the constructor.
-            var configuration = TracerSettings.FromDefaultSources();
-            GlobalSettings.SetDebugEnabled(isDebugEnabled);
-
-            if (agentEndpoint != null)
-            {
-                configuration.AgentUri = agentEndpoint;
-            }
-
-            if (defaultServiceName != null)
-            {
-                configuration.ServiceName = defaultServiceName;
-            }
-
-            return new Tracer(configuration);
-        }
-
-        /// <summary>
         /// Sets the global tracer instace without any validation.
         /// Intended use is for unit testing
         /// </summary>

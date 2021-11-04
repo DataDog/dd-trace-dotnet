@@ -399,7 +399,6 @@ namespace Datadog.Trace
         public System.Threading.Tasks.Task ForceFlushAsync() { }
         public Datadog.Trace.Scope StartActive(string operationName, Datadog.Trace.ISpanContext parent = null, string serviceName = null, System.DateTimeOffset? startTime = default, bool ignoreActiveScope = false, bool finishOnClose = true) { }
         public Datadog.Trace.Span StartSpan(string operationName, Datadog.Trace.ISpanContext parent = null, string serviceName = null, System.DateTimeOffset? startTime = default, bool ignoreActiveScope = false) { }
-        public static Datadog.Trace.Tracer Create(System.Uri agentEndpoint = null, string defaultServiceName = null, bool isDebugEnabled = false) { }
     }
 }
 namespace Datadog.Trace.DiagnosticListeners

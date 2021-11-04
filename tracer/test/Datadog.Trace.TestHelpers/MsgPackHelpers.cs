@@ -5,9 +5,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.ExtensionMethods;
 using MsgPack;
-using Xunit;
 
 namespace Datadog.Trace.TestHelpers
 {
@@ -72,32 +70,6 @@ namespace Datadog.Trace.TestHelpers
         public static Dictionary<string, string> Tags(this MessagePackObject obj)
         {
             return obj.FirstDictionary()["meta"].AsDictionary().ToDictionary(kv => kv.Key.AsString(), kv => kv.Value.AsString());
-        }
-
-        public static void AssertSpanEqual(Span expected, MessagePackObject actual)
-        {
-            Assert.Equal(expected.Context.TraceId, actual.TraceId());
-            Assert.Equal(expected.Context.SpanId, actual.SpanId());
-            if (expected.Context.ParentId.HasValue)
-            {
-                Assert.Equal(expected.Context.ParentId, actual.ParentId());
-            }
-
-            Assert.Equal(expected.OperationName, actual.OperationName());
-            Assert.Equal(expected.ResourceName, actual.ResourceName());
-            Assert.Equal(expected.ServiceName, actual.ServiceName());
-            Assert.Equal(expected.Type, actual.Type());
-            Assert.Equal(expected.StartTime.ToUnixTimeNanoseconds(), actual.StartTime());
-            Assert.Equal(expected.Duration.ToNanoseconds(), actual.Duration());
-            if (expected.Error)
-            {
-                Assert.Equal("1", actual.Error());
-            }
-
-            if (expected.Tags != null)
-            {
-                Assert.Equal((Dictionary<string, string>)expected.Tags, actual.Tags());
-            }
         }
 
         public static MessagePackObjectDictionary FirstDictionary(this MessagePackObject obj)
