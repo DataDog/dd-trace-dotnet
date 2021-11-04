@@ -12,7 +12,7 @@ namespace Samples.Couchbase3
         {
             var options = new ClusterOptions() 
                       .WithConnectionString("couchbase://localhost")
-                      .WithCredentials(username: "Bob", password: "password")
+                      .WithCredentials(username: "default", password: "password")
                       .WithBuckets("default");
 
             var cluster = await Cluster.ConnectAsync(options);

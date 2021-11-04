@@ -23,7 +23,7 @@ namespace Samples.Couchbase
         {
             var config = GetConnectionConfig();
             _cluster = new Cluster(config);
-            _cluster.Authenticate("Bob", "password"); // doesn't work without authentication on "recent" couchbase server versions. Method available starting v2.7.4
+            _cluster.Authenticate("default", "password"); // doesn't work without authentication on "recent" couchbase server versions. Method available starting v2.7.4
             _bucket = _cluster.OpenBucket("default");
             RetrieveAndUpdate();
             await RetrieveAndUpdateAsync();
