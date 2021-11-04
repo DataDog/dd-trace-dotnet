@@ -1,4 +1,4 @@
-// <copyright file="IClusterNodeIntegration.cs" company="Datadog">
+// <copyright file="ClusterNodeIntegrationTer.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,33 +10,15 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
 {
     /// <summary>
-    /// Couchbase IclusterNode 3.2 calltarget instrumentation
+    /// Couchbase clusterNode 3.0 calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
        AssemblyName = CouchbaseCommon.CouchbaseClientAssemblyName,
        TypeName = "Couchbase.Core.ClusterNode",
        MethodName = "ExecuteOp",
        ReturnTypeName = ClrNames.Task,
-       ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseOperationV3TypeName, "Couchbase.Core.IO.Operations.CancellationTokenPair" },
-       MinimumVersion = "3.1.3",
-       MaximumVersion = CouchbaseCommon.MaxVersion3,
-       IntegrationName = CouchbaseCommon.IntegrationName)]
-    [InstrumentMethod(
-       AssemblyName = CouchbaseCommon.CouchbaseClientAssemblyName,
-       TypeName = "Couchbase.Core.ClusterNode",
-       MethodName = "SendAsync",
-       ReturnTypeName = ClrNames.Task,
-       ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseOperationV3TypeName, "Couchbase.Core.IO.Operations.CancellationTokenPair" },
-       MinimumVersion = "3.1.3",
-       MaximumVersion = CouchbaseCommon.MaxVersion3,
-       IntegrationName = CouchbaseCommon.IntegrationName)]
-    [InstrumentMethod(
-       AssemblyName = CouchbaseCommon.CouchbaseClientAssemblyName,
-       TypeName = "Couchbase.Core.ClusterNode",
-       MethodName = "ExecuteOp",
-       ReturnTypeName = ClrNames.Task,
-       ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseOperationV3TypeName, ClrNames.CancellationToken },
-       MinimumVersion = "3.0.7",
+       ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseOperationV3TypeName, ClrNames.CancellationToken, ClrNames.TimeSpan },
+       MinimumVersion = CouchbaseCommon.MinVersion3,
        MaximumVersion = "3.1.2",
        IntegrationName = CouchbaseCommon.IntegrationName)]
     [InstrumentMethod(
@@ -44,26 +26,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
        TypeName = "Couchbase.Core.ClusterNode",
        MethodName = "SendAsync",
        ReturnTypeName = ClrNames.Task,
-       ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseOperationV3TypeName, ClrNames.CancellationToken },
-       MinimumVersion = "3.0.7",
+       ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseOperationV3TypeName, ClrNames.CancellationToken, ClrNames.TimeSpan },
+       MinimumVersion = CouchbaseCommon.MinVersion3,
        MaximumVersion = "3.1.2",
        IntegrationName = CouchbaseCommon.IntegrationName)]
     // ReSharper disable once InconsistentNaming
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class IClusterNodeIntegration
+    public class ClusterNodeIntegrationTer
     {
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
         /// <param name="operation">The requested couchbase operation</param>
-        /// <param name="cancellationToken">A cancellation token</param>
         /// <typeparam name="TTarget">Type of the target</typeparam>
         /// <typeparam name="TOperation">Type of the operation</typeparam>
-        /// <typeparam name="TCancellationToken">Type of the cancellationToken</typeparam>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget, TOperation, TCancellationToken>(TTarget instance, TOperation operation, TCancellationToken cancellationToken)
+        public static CallTargetState OnMethodBegin<TTarget, TOperation>(TTarget instance, TOperation operation)
         {
             return CouchbaseCommon.CommonOnMethodBeginV3(operation);
         }
