@@ -78,10 +78,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         return E_FAIL;
     }
 
-    const auto process_name = GetCurrentProcessName();
+    const auto& process_name = GetCurrentProcessName();
     Logger::Info("ProcessName: ", process_name);
 
-    const auto include_process_names = GetEnvironmentValues(environment::include_process_names);
+    const auto& include_process_names = GetEnvironmentValues(environment::include_process_names);
 
     // if there is a process inclusion list, attach profiler only if this
     // process's name is on the list
@@ -92,7 +92,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         return E_FAIL;
     }
 
-    const auto exclude_process_names = GetEnvironmentValues(environment::exclude_process_names);
+    const auto& exclude_process_names = GetEnvironmentValues(environment::exclude_process_names);
 
     // attach profiler only if this process's name is NOT on the list
     if (!exclude_process_names.empty() && Contains(exclude_process_names, process_name))
@@ -116,7 +116,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     {
         Logger::Info("Profiler is operating within Azure App Services context.");
 
-        const auto app_pool_id_value = GetEnvironmentValue(environment::azure_app_services_app_pool_id);
+        const auto& app_pool_id_value = GetEnvironmentValue(environment::azure_app_services_app_pool_id);
 
         if (app_pool_id_value.size() > 1 && app_pool_id_value.at(0) == '~')
         {
@@ -125,7 +125,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
             return E_FAIL;
         }
 
-        const auto cli_telemetry_profile_value =
+        const auto& cli_telemetry_profile_value =
             GetEnvironmentValue(environment::azure_app_services_cli_telemetry_profile_value);
 
         if (cli_telemetry_profile_value == WStr("AzureKudu"))
@@ -135,7 +135,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
             return E_FAIL;
         }
 
-        const auto functions_worker_runtime_value =
+        const auto& functions_worker_runtime_value =
             GetEnvironmentValue(environment::azure_app_services_functions_worker_runtime);
 
         if (!functions_worker_runtime_value.empty() && !IsAzureFunctionsEnabled())
@@ -265,14 +265,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
         return S_OK;
     }
 
-    const auto assembly_info = GetAssemblyInfo(this->info_, assembly_id);
+    const auto& assembly_info = GetAssemblyInfo(this->info_, assembly_id);
     if (!assembly_info.IsValid())
     {
         Logger::Debug("AssemblyLoadFinished: ", assembly_id, " ", hr_status);
         return S_OK;
     }
 
-    const auto is_instrumentation_assembly = assembly_info.name == managed_profiler_name;
+    const auto& is_instrumentation_assembly = assembly_info.name == managed_profiler_name;
 
     if (is_instrumentation_assembly)
     {
@@ -294,11 +294,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
         }
 
         // Get the IMetaDataAssemblyImport interface to get metadata from the managed assembly
-        const auto assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
-        const auto assembly_metadata = GetAssemblyImportMetadata(assembly_import);
+        const auto& assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
+        const auto& assembly_metadata = GetAssemblyImportMetadata(assembly_import);
 
         // used multiple times for logging
-        const auto assembly_version = assembly_metadata.version.str();
+        const auto& assembly_version = assembly_metadata.version.str();
 
         if (Logger::IsDebugEnabled())
         {
@@ -306,10 +306,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
                           " AssemblyVersion=", assembly_version);
         }
 
-        const auto expected_assembly_reference = trace::AssemblyReference(managed_profiler_full_assembly_version);
+        const auto& expected_assembly_reference = trace::AssemblyReference(managed_profiler_full_assembly_version);
 
         // used multiple times for logging
-        const auto expected_version = expected_assembly_reference.version.str();
+        const auto& expected_version = expected_assembly_reference.version.str();
 
         bool is_viable_version;
 
@@ -397,7 +397,7 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata, co
             {
                 auto methodDef = *enumIterator;
 
-                const auto caller = GetFunctionInfo(module_metadata.metadata_import, methodDef);
+                const auto& caller = GetFunctionInfo(module_metadata.metadata_import, methodDef);
                 Logger::Info("Rewriting PInvoke method: ", caller.name);
 
                 // Get the current PInvoke map to extract the flags and the entrypoint name
@@ -517,8 +517,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
 
         // Get the IMetaDataAssemblyImport interface to get metadata from the
         // managed assembly
-        const auto assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
-        const auto assembly_metadata = GetAssemblyImportMetadata(assembly_import);
+        const auto& assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
+        const auto& assembly_metadata = GetAssemblyImportMetadata(assembly_import);
 
         hr = assembly_import->GetAssemblyProps(assembly_metadata.assembly_token, &corAssemblyProperty.ppbPublicKey,
                                                &corAssemblyProperty.pcbPublicKey, &corAssemblyProperty.pulHashAlgId,
@@ -609,12 +609,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
             return S_OK;
         }
 
-        const auto metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
-        const auto metadata_emit = metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
-        const auto assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
-        const auto assembly_emit = metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
+        const auto& metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+        const auto& metadata_emit = metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
+        const auto& assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
+        const auto& assembly_emit = metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
-        const auto module_metadata =
+        const auto& module_metadata =
             ModuleMetadata(metadata_import, metadata_emit, assembly_import, assembly_emit, module_info.assembly.name,
                            module_info.assembly.app_domain_id, &corAssemblyProperty);
 
@@ -801,10 +801,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2,
                                         metadataInterfaces.GetAddressOf());
 
-    const auto metadataImport = metadataInterfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
-    const auto metadataEmit = metadataInterfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
-    const auto assemblyImport = metadataInterfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
-    const auto assemblyEmit = metadataInterfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
+    const auto& metadataImport = metadataInterfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+    const auto& metadataEmit = metadataInterfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
+    const auto& assemblyImport = metadataInterfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
+    const auto& assemblyEmit = metadataInterfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
     Logger::Debug("Temporaly allocating the ModuleMetadata for injection. ModuleId=", module_id,
                   " ModuleName=", module_info.assembly.name);
@@ -902,7 +902,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainShutdownFinished(AppDomainID app
     }
 
     // remove appdomain metadata from map
-    auto count = first_jit_compilation_app_domains.erase(appDomainId);
+    const auto& count = first_jit_compilation_app_domains.erase(appDomainId);
 
     Logger::Debug("AppDomainShutdownFinished: AppDomain: ", appDomainId, ", removed ", count, " elements");
 
@@ -967,29 +967,29 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
         {
             const CallTargetDefinition& current = items[i];
 
-            WSTRING targetAssembly = WSTRING(current.targetAssembly);
-            WSTRING targetType = WSTRING(current.targetType);
-            WSTRING targetMethod = WSTRING(current.targetMethod);
+            const WSTRING& targetAssembly = WSTRING(current.targetAssembly);
+            const WSTRING& targetType = WSTRING(current.targetType);
+            const WSTRING& targetMethod = WSTRING(current.targetMethod);
 
-            WSTRING integrationAssembly = WSTRING(current.integrationAssembly);
-            WSTRING integrationType = WSTRING(current.integrationType);
+            const WSTRING& integrationAssembly = WSTRING(current.integrationAssembly);
+            const WSTRING& integrationType = WSTRING(current.integrationType);
 
             std::vector<WSTRING> signatureTypes;
             for (int sIdx = 0; sIdx < current.signatureTypesLength; sIdx++)
             {
-                const auto currentSignature = current.signatureTypes[sIdx];
+                const auto& currentSignature = current.signatureTypes[sIdx];
                 if (currentSignature != nullptr)
                 {
                     signatureTypes.push_back(WSTRING(currentSignature));
                 }
             }
 
-            const Version minVersion =
+            const Version& minVersion =
                 Version(current.targetMinimumMajor, current.targetMinimumMinor, current.targetMinimumPatch, 0);
-            const Version maxVersion =
+            const Version& maxVersion =
                 Version(current.targetMaximumMajor, current.targetMaximumMinor, current.targetMaximumPatch, 0);
 
-            const auto integration = IntegrationDefinition(
+            const auto& integration = IntegrationDefinition(
                     MethodReference(targetAssembly, targetType, targetMethod, minVersion, maxVersion, signatureTypes),
                     TypeReference(integrationAssembly, integrationType, {}, {}));
 
@@ -1014,7 +1014,7 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
             rejit_handler->EnqueueProcessModule(module_ids_, integrationDefinitions, &promise);
 
             // wait and get the value from the future<int>
-            const auto numReJITs = future.get();
+            const auto& numReJITs = future.get();
             Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
         }
 
@@ -1044,10 +1044,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(const WCHAR* wszAss
 
     // Convert the assembly path to the assembly name, assuming the assembly name
     // is either <assembly_name.ni.dll> or <assembly_name>.dll
-    auto assemblyPathString = ToString(wszAssemblyPath);
+    const auto& assemblyPathString = ToString(wszAssemblyPath);
     auto filename = assemblyPathString.substr(assemblyPathString.find_last_of("\\/") + 1);
-    auto lastNiDllPeriodIndex = filename.rfind(".ni.dll");
-    auto lastDllPeriodIndex = filename.rfind(".dll");
+    const auto& lastNiDllPeriodIndex = filename.rfind(".ni.dll");
+    const auto& lastDllPeriodIndex = filename.rfind(".dll");
     if (lastNiDllPeriodIndex != std::string::npos)
     {
         filename.erase(lastNiDllPeriodIndex, 7);
@@ -1057,7 +1057,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(const WCHAR* wszAss
         filename.erase(lastDllPeriodIndex, 4);
     }
 
-    const WSTRING assembly_name = ToWSTRING(filename);
+    const WSTRING& assembly_name = ToWSTRING(filename);
 
     // Skip known framework assemblies that we will not instrument and,
     // as a result, will not need an assembly reference to the
@@ -1202,21 +1202,21 @@ void CorProfiler::CheckFilenameDefinitions()
 #endif
 }
 
-bool CorProfiler::GetIntegrationTypeRef(ModuleMetadata* module_metadata, ModuleID module_id,
+bool CorProfiler::GetIntegrationTypeRef(ModuleMetadata& module_metadata, ModuleID module_id,
                                         const IntegrationDefinition& integration_definition, mdTypeRef& integration_type_ref)
 {
     const auto& integration_key = integration_definition.integration_type.get_cache_key();
 
-    if (!module_metadata->TryGetIntegrationTypeRef(integration_key, integration_type_ref))
+    if (!module_metadata.TryGetIntegrationTypeRef(integration_key, integration_type_ref))
     {
-        const auto module_info = GetModuleInfo(this->info_, module_id);
+        const auto& module_info = GetModuleInfo(this->info_, module_id);
         if (!module_info.IsValid())
         {
             return false;
         }
 
         mdModule module;
-        auto hr = module_metadata->metadata_import->GetModuleFromScope(&module);
+        auto hr = module_metadata.metadata_import->GetModuleFromScope(&module);
         if (FAILED(hr))
         {
             Logger::Warn("GetIntegrationTypeRef failed to get module metadata token for "
@@ -1225,9 +1225,9 @@ bool CorProfiler::GetIntegrationTypeRef(ModuleMetadata* module_metadata, ModuleI
             return false;
         }
 
-        const MetadataBuilder metadata_builder(*module_metadata, module, module_metadata->metadata_import,
-                                               module_metadata->metadata_emit, module_metadata->assembly_import,
-                                               module_metadata->assembly_emit);
+        const MetadataBuilder metadata_builder(module_metadata, module, module_metadata.metadata_import,
+                                               module_metadata.metadata_emit, module_metadata.assembly_import,
+                                               module_metadata.assembly_emit);
 
         // for each wrapper assembly, emit an assembly reference
         hr = metadata_builder.EmitAssemblyRef(integration_definition.integration_type.assembly);
@@ -1276,7 +1276,7 @@ const std::string indent_values[] = {
 };
 
 std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewriter, const FunctionInfo& caller,
-                                    ModuleMetadata* module_metadata)
+                                    const ModuleMetadata& module_metadata)
 {
     std::stringstream orig_sstream;
     orig_sstream << title;
@@ -1287,8 +1287,8 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
     orig_sstream << rewriter->GetMaxStackValue();
     orig_sstream << ")" << std::endl;
 
-    const auto ehCount = rewriter->GetEHCount();
-    const auto ehPtr = rewriter->GetEHPointer();
+    const auto& ehCount = rewriter->GetEHCount();
+    const auto& ehPtr = rewriter->GetEHPointer();
     int indent = 1;
 
     PCCOR_SIGNATURE originalSignature = nullptr;
@@ -1298,7 +1298,7 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
     if (localVarSig != mdTokenNil)
     {
         auto hr =
-            module_metadata->metadata_import->GetSigFromToken(localVarSig, &originalSignature, &originalSignatureSize);
+            module_metadata.metadata_import->GetSigFromToken(localVarSig, &originalSignature, &originalSignatureSize);
         if (SUCCEEDED(hr))
         {
             orig_sstream << std::endl
@@ -1315,7 +1315,7 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
         {
             for (unsigned int i = 0; i < ehCount; i++)
             {
-                const auto currentEH = ehPtr[i];
+                const auto& currentEH = ehPtr[i];
                 if (currentEH.m_Flags == COR_ILEXCEPTION_CLAUSE_FINALLY)
                 {
                     if (currentEH.m_pTryBegin == cInstr)
@@ -1349,7 +1349,7 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
             }
             for (unsigned int i = 0; i < ehCount; i++)
             {
-                const auto currentEH = ehPtr[i];
+                const auto& currentEH = ehPtr[i];
                 if (currentEH.m_Flags == COR_ILEXCEPTION_CLAUSE_NONE)
                 {
                     if (currentEH.m_pTryBegin == cInstr)
@@ -1406,7 +1406,7 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
             if (cInstr->m_opcode == CEE_CALL || cInstr->m_opcode == CEE_CALLVIRT || cInstr->m_opcode == CEE_NEWOBJ)
             {
                 const auto memberInfo =
-                    GetFunctionInfo(module_metadata->metadata_import, (mdMemberRef) cInstr->m_Arg32);
+                    GetFunctionInfo(module_metadata.metadata_import, (mdMemberRef) cInstr->m_Arg32);
                 orig_sstream << "  | ";
                 orig_sstream << ToString(memberInfo.type.name);
                 orig_sstream << ".";
@@ -1427,7 +1427,7 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
                      cInstr->m_opcode == CEE_UNBOX_ANY || cInstr->m_opcode == CEE_NEWARR ||
                      cInstr->m_opcode == CEE_INITOBJ)
             {
-                const auto typeInfo = GetTypeInfo(module_metadata->metadata_import, (mdTypeRef) cInstr->m_Arg32);
+                const auto typeInfo = GetTypeInfo(module_metadata.metadata_import, (mdTypeRef) cInstr->m_Arg32);
                 orig_sstream << "  | ";
                 orig_sstream << ToString(typeInfo.name);
             }
@@ -1435,8 +1435,8 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
             {
                 WCHAR szString[1024];
                 ULONG szStringLength;
-                auto hr = module_metadata->metadata_import->GetUserString((mdString) cInstr->m_Arg32, szString, 1024,
-                                                                          &szStringLength);
+                auto hr = module_metadata.metadata_import->GetUserString((mdString) cInstr->m_Arg32, szString, 1024,
+                                                                         &szStringLength);
                 if (SUCCEEDED(hr))
                 {
                     orig_sstream << "  | \"";
@@ -1456,7 +1456,7 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
         {
             for (unsigned int i = 0; i < ehCount; i++)
             {
-                const auto currentEH = ehPtr[i];
+                const auto& currentEH = ehPtr[i];
                 if (currentEH.m_pHandlerEnd == cInstr)
                 {
                     indent--;
@@ -1524,10 +1524,10 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         return hr;
     }
 
-    const auto metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
-    const auto metadata_emit = metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
-    const auto assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
-    const auto assembly_emit = metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
+    const auto& metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+    const auto& metadata_emit = metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
+    const auto& assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
+    const auto& assembly_emit = metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
     mdAssemblyRef corlib_ref;
     hr = GetCorLibAssemblyRef(assembly_emit, corAssemblyProperty, &corlib_ref);
@@ -2148,10 +2148,10 @@ HRESULT CorProfiler::AddIISPreStartInitFlags(const ModuleID module_id, const mdT
         return hr;
     }
 
-    const auto metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
-    const auto metadata_emit = metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
-    const auto assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
-    const auto assembly_emit = metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
+    const auto& metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+    const auto& metadata_emit = metadata_interfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
+    const auto& assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
+    const auto& assembly_emit = metadata_interfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
 
     ILRewriter rewriter(this->info_, nullptr, module_id, function_token);
     hr = rewriter.Import();
@@ -2411,7 +2411,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetReJITParameters(ModuleID moduleId, mdM
 HRESULT STDMETHODCALLTYPE CorProfiler::ReJITCompilationFinished(FunctionID functionId, ReJITID rejitId,
                                                                 HRESULT hrStatus, BOOL fIsSafeToBlock)
 {
-    if (is_attached_)
+    if (is_attached_ && IsDebugEnabled())
     {
         Logger::Debug("ReJITCompilationFinished: [functionId: ", functionId, ", rejitId: ", rejitId,
                       ", hrStatus: ", hrStatus, ", safeToBlock: ", fIsSafeToBlock, "]");
@@ -2547,9 +2547,9 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
     auto _ = trace::Stats::Instance()->CallTargetRewriterCallbackMeasure();
 
     ModuleID module_id = moduleHandler->GetModuleId();
-    ModuleMetadata* module_metadata = moduleHandler->GetModuleMetadata();
+    ModuleMetadata& module_metadata = *moduleHandler->GetModuleMetadata();
     FunctionInfo* caller = methodHandler->GetFunctionInfo();
-    CallTargetTokens* callTargetTokens = module_metadata->GetCallTargetTokens();
+    CallTargetTokens* callTargetTokens = module_metadata.GetCallTargetTokens();
     mdToken function_token = caller->id;
     FunctionMethodArgument retFuncArg = caller->method_signature.GetRet();
     IntegrationDefinition* integration_definition = methodHandler->GetIntegrationDefinition();
@@ -2559,8 +2559,8 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
     bool isStatic = !(caller->method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS);
     std::vector<FunctionMethodArgument> methodArguments = caller->method_signature.GetMethodArguments();
     int numArgs = caller->method_signature.NumberOfArguments();
-    auto metaEmit = module_metadata->metadata_emit;
-    auto metaImport = module_metadata->metadata_import;
+    auto metaEmit = module_metadata.metadata_emit;
+    auto metaImport = module_metadata.metadata_import;
 
     // *** Get reference to the integration type
     mdTypeRef integration_type_ref = mdTypeRefNil;
@@ -2582,11 +2582,11 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
     }
 
     // First we check if the managed profiler has not been loaded yet
-    if (!ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata->app_domain_id))
+    if (!ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata.app_domain_id))
     {
         Logger::Warn("*** CallTarget_RewriterCallback() skipping method: Method replacement found but the managed profiler has "
                      "not yet been loaded into AppDomain with id=",
-                     module_metadata->app_domain_id, " token=", function_token, " caller_name=", caller->type.name, ".",
+                     module_metadata.app_domain_id, " token=", function_token, " caller_name=", caller->type.name, ".",
                      caller->name, "()");
         return S_FALSE;
     }
@@ -2684,7 +2684,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
         for (int i = 0; i < numArgs; i++)
         {
             reWriterWrapper.LoadArgument(i + (isStatic ? 0 : 1));
-            auto argTypeFlags = methodArguments[i].GetTypeFlags(elementType);
+            const auto& argTypeFlags = methodArguments[i].GetTypeFlags(elementType);
             if (argTypeFlags & TypeFlagByRef)
             {
                 Logger::Warn("*** CallTarget_RewriterCallback(): Methods with ref parameters "
@@ -2701,7 +2701,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
         {
             reWriterWrapper.BeginLoadValueIntoArray(i);
             reWriterWrapper.LoadArgument(i + (isStatic ? 0 : 1));
-            auto argTypeFlags = methodArguments[i].GetTypeFlags(elementType);
+            const auto& argTypeFlags = methodArguments[i].GetTypeFlags(elementType);
             if (argTypeFlags & TypeFlagByRef)
             {
                 Logger::Warn("*** CallTarget_RewriterCallback(): Methods with ref parameters "
@@ -2710,7 +2710,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
             }
             if (argTypeFlags & TypeFlagBoxedType)
             {
-                auto tok = methodArguments[i].GetTypeTok(metaEmit, callTargetTokens->GetCorLibAssemblyRef());
+                const auto& tok = methodArguments[i].GetTypeTok(metaEmit, callTargetTokens->GetCorLibAssemblyRef());
                 if (tok == mdTokenNil)
                 {
                     return S_FALSE;
