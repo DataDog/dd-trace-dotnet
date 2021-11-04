@@ -11,6 +11,7 @@ using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;
 
@@ -20,29 +21,36 @@ namespace Datadog.Trace.Agent
     {
         private const string TracesPath = "/v0.4/traces";
 
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Api>();
+        private static readonly IDatadogLogger StaticLog = DatadogLogging.GetLoggerFor<Api>();
 
+        private readonly IDatadogLogger _log;
         private readonly IApiRequestFactory _apiRequestFactory;
         private readonly IDogStatsd _statsd;
         private readonly string _containerId;
         private readonly Uri _tracesEndpoint;
-        private readonly IDatadogTracer _tracer;
+        private readonly ISampler _sampler;
+        private readonly bool _isPartialFlushEnabled;
         private string _cachedResponse;
+        private string _agentVersion;
 
-        public Api(Uri baseEndpoint, IApiRequestFactory apiRequestFactory, IDogStatsd statsd)
-            : this(baseEndpoint, apiRequestFactory, statsd, tracer: null)
+        public Api(
+            Uri baseEndpoint,
+            IApiRequestFactory
+            apiRequestFactory,
+            IDogStatsd statsd,
+            ISampler sampler,
+            bool isPartialFlushEnabled,
+            IDatadogLogger log = null)
         {
-        }
-
-        // Internal constructor used for tests
-        internal Api(Uri baseEndpoint, IApiRequestFactory apiRequestFactory, IDogStatsd statsd, IDatadogTracer tracer)
-        {
-            Log.Debug("Creating new Api");
-            _tracer = tracer;
+            // optionally injecting a log instance in here for testing purposes
+            _log = log ?? StaticLog;
+            _log.Debug("Creating new Api");
+            _sampler = sampler;
             _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
             _statsd = statsd;
             _containerId = ContainerMetadata.GetContainerId();
             _apiRequestFactory = apiRequestFactory ?? CreateRequestFactory();
+            _isPartialFlushEnabled = isPartialFlushEnabled;
         }
 
         public async Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces)
@@ -52,7 +60,7 @@ namespace Datadog.Trace.Agent
             var retryCount = 1;
             var sleepDuration = 100; // in milliseconds
 
-            Log.Debug<int>("Sending {Count} traces to the DD agent", numberOfTraces);
+            _log.Debug<int>("Sending {Count} traces to the DD agent", numberOfTraces);
 
             while (true)
             {
@@ -64,7 +72,7 @@ namespace Datadog.Trace.Agent
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "An error occurred while generating http request to send traces to the agent at {AgentEndpoint}", _apiRequestFactory.Info(_tracesEndpoint));
+                    _log.Error(ex, "An error occurred while generating http request to send traces to the agent at {AgentEndpoint}", _apiRequestFactory.Info(_tracesEndpoint));
                     return false;
                 }
 
@@ -90,7 +98,7 @@ namespace Datadog.Trace.Agent
 #if DEBUG
                     if (ex.InnerException is InvalidOperationException ioe)
                     {
-                        Log.Error<int, string>(ex, "An error occurred while sending {Count} traces to the agent at {AgentEndpoint}", numberOfTraces, _apiRequestFactory.Info(_tracesEndpoint));
+                        _log.Error<int, string>(ex, "An error occurred while sending {Count} traces to the agent at {AgentEndpoint}", numberOfTraces, _apiRequestFactory.Info(_tracesEndpoint));
                         return false;
                     }
 #endif
@@ -102,7 +110,7 @@ namespace Datadog.Trace.Agent
                     if (isFinalTry)
                     {
                         // stop retrying
-                        Log.Error<int, string>(exception, "An error occurred while sending {Count} traces to the agent at {AgentEndpoint}", numberOfTraces, _apiRequestFactory.Info(_tracesEndpoint));
+                        _log.Error<int, string>(exception, "An error occurred while sending {Count} traces to the agent at {AgentEndpoint}", numberOfTraces, _apiRequestFactory.Info(_tracesEndpoint));
                         return false;
                     }
 
@@ -123,7 +131,7 @@ namespace Datadog.Trace.Agent
 
                     if (isSocketException)
                     {
-                        Log.Debug(exception, "Unable to communicate with the trace agent at {AgentEndpoint}", _apiRequestFactory.Info(_tracesEndpoint));
+                        _log.Debug(exception, "Unable to communicate with the trace agent at {AgentEndpoint}", _apiRequestFactory.Info(_tracesEndpoint));
                     }
 
                     // Execute retry delay
@@ -134,7 +142,7 @@ namespace Datadog.Trace.Agent
                     continue;
                 }
 
-                Log.Debug<int>("Successfully sent {Count} traces to the DD agent", numberOfTraces);
+                _log.Debug<int>("Successfully sent {Count} traces to the DD agent", numberOfTraces);
                 return true;
             }
         }
@@ -142,10 +150,10 @@ namespace Datadog.Trace.Agent
         internal static IApiRequestFactory CreateRequestFactory()
         {
 #if NETCOREAPP
-            Log.Information("Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
+            StaticLog.Information("Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
             return new HttpClientRequestFactory();
 #else
-            Log.Information("Using {FactoryType} for trace transport.", nameof(ApiWebRequestFactory));
+            StaticLog.Information("Using {FactoryType} for trace transport.", nameof(ApiWebRequestFactory));
             return new ApiWebRequestFactory();
 #endif
         }
@@ -186,11 +194,11 @@ namespace Datadog.Trace.Agent
                         try
                         {
                             string responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
-                            Log.Error<int, string>("Failed to submit traces with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, responseContent);
+                            _log.Error<int, string>("Failed to submit traces with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, responseContent);
                         }
                         catch (Exception ex)
                         {
-                            Log.Error<int>(ex, "Unable to read response for failed request with status code {StatusCode}", response.StatusCode);
+                            _log.Error<int>(ex, "Unable to read response for failed request with status code {StatusCode}", response.StatusCode);
                         }
                     }
 
@@ -199,16 +207,13 @@ namespace Datadog.Trace.Agent
 
                 try
                 {
-                    var tracer = _tracer ?? Tracer.Instance;
-
-                    if (tracer.AgentVersion == null)
+                    if (_agentVersion == null)
                     {
                         var version = response.GetHeader(AgentHttpHeaderNames.AgentVersion);
-
-                        tracer.AgentVersion = version ?? string.Empty;
+                        LogPartialFlushWarningIfRequired(version ?? string.Empty);
                     }
 
-                    if (response.ContentLength != 0 && Tracer.Instance.Sampler != null)
+                    if (response.ContentLength != 0 && _sampler != null)
                     {
                         var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
 
@@ -216,7 +221,7 @@ namespace Datadog.Trace.Agent
                         {
                             var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(responseContent);
 
-                            tracer.Sampler.SetDefaultSampleRates(apiResponse?.RateByService);
+                            _sampler.SetDefaultSampleRates(apiResponse?.RateByService);
 
                             _cachedResponse = responseContent;
                         }
@@ -224,7 +229,7 @@ namespace Datadog.Trace.Agent
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Traces sent successfully to the Agent at {AgentEndpoint}, but an error occurred deserializing the response.", _apiRequestFactory.Info(_tracesEndpoint));
+                    _log.Error(ex, "Traces sent successfully to the Agent at {AgentEndpoint}, but an error occurred deserializing the response.", _apiRequestFactory.Info(_tracesEndpoint));
                 }
             }
             finally
@@ -233,6 +238,28 @@ namespace Datadog.Trace.Agent
             }
 
             return true;
+        }
+
+        // internal for testing
+        internal bool LogPartialFlushWarningIfRequired(string agentVersion)
+        {
+            if (agentVersion != _agentVersion)
+            {
+                _agentVersion = agentVersion;
+
+                if (_isPartialFlushEnabled)
+                {
+                    if (!Version.TryParse(agentVersion, out var parsedVersion) || parsedVersion < new Version(7, 26, 0))
+                    {
+                        var detectedVersion = string.IsNullOrEmpty(agentVersion) ? "{detection failed}" : agentVersion;
+
+                        _log.Warning("DATADOG TRACER DIAGNOSTICS - Partial flush should only be enabled with agent 7.26.0+ (detected version: {version})", detectedVersion);
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         internal class ApiResponse

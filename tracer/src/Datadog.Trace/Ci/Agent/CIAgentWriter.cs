@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.Ci.Agent
 {
@@ -17,10 +18,11 @@ namespace Datadog.Trace.Ci.Agent
         private readonly AgentWriter _agentWriter = null;
         private readonly bool _isPartialFlushEnabled = false;
 
-        public CIAgentWriter(TracerSettings settings)
+        public CIAgentWriter(TracerSettings settings, ISampler sampler)
         {
             _isPartialFlushEnabled = settings.PartialFlushEnabled;
-            _agentWriter = new AgentWriter(new Api(settings.AgentUri, TransportStrategy.Get(settings), null), null, maxBufferSize: settings.TraceBufferSize);
+            var api = new Api(settings.AgentUri, TransportStrategy.Get(settings), null, sampler, _isPartialFlushEnabled);
+            _agentWriter = new AgentWriter(api, null, maxBufferSize: settings.TraceBufferSize);
         }
 
         public Task FlushAndCloseAsync()
