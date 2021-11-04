@@ -62,8 +62,10 @@ schedules:
 # Global variables
 variables:
   buildConfiguration: Release
-  dotnetCoreSdk5Version: 5.0.401
   dotnetCoreSdk6Version: 6.0.100-rc.2.21505.57
+  # to remove when .NET 6 is RTM
+  dotnetCoreSdk6DockerVersion: 6.0.100-rc.2
+  dotnetCoreSdkLatestVersion: 6.0.100-rc.2.21505.57
   relativeTracerHome: /tracer/src/bin/windows-tracer-home
   relativeArtifacts: /tracer/src/bin/artifacts
   ddTracerHome: $(System.DefaultWorkingDirectory)/tracer/src/bin/dd-tracer-home
@@ -117,7 +119,7 @@ stages:
     - checkout: self
       path: s
 
-    - template: steps/install-dotnet-6-sdk.yml
+    - template: steps/install-latest-dotnet-sdk.yml
 
     - checkout: dd-continuous-profiler-dotnet
       path: dd-continuous-profiler-dotnet
@@ -241,7 +243,7 @@ stages:
     pool:
       vmImage: macOS-10.15
     steps:
-    - template: steps/install-dotnet-6-sdk.yml
+    - template: steps/install-latest-dotnet-sdk.yml
 
     - script: ./tracer/build.sh BuildTracerHome
       displayName: Build tracer home
@@ -269,7 +271,7 @@ stages:
       # Temporarily use the profiling repo's commit hash for the beta MSI's filename
       BetaMsiSuffix: $[ stageDependencies.build_windows.build.outputs['SetMsiSuffix.BetaMsiSuffix']]
     steps:
-      - template: steps/install-dotnet-6-sdk.yml
+      - template: steps/install-latest-dotnet-sdk.yml
       - template: steps/restore-working-directory.yml
       - script: echo $(BetaMsiSuffix) # TODO Remove
 
@@ -848,7 +850,7 @@ stages:
 
     steps:
 
-    - template: steps/install-dotnet-6-sdk.yml
+    - template: steps/install-latest-dotnet-sdk.yml
     - template: steps/restore-working-directory.yml
 
     - script: tracer\build.cmd RunBenchmarks
@@ -890,7 +892,7 @@ stages:
       dd_agent: dd_agent
 
     steps:
-    - template: steps/install-dotnet-6-sdk.yml
+    - template: steps/install-latest-dotnet-sdk.yml
     - template: steps/restore-working-directory.yml
 
     - task: DownloadPipelineArtifact@2
@@ -1281,7 +1283,7 @@ stages:
         vmImage: windows-2019
 
       steps:
-      - template: steps/install-dotnet-6-sdk.yml
+      - template: steps/install-latest-dotnet-sdk.yml
       - template: steps/restore-working-directory.yml
 
       - task: DownloadPipelineArtifact@2

@@ -8,10 +8,10 @@ steps:
   displayName: install dotnet core sdk 6
   inputs:
     packageType: sdk
-    version: $(dotnetCoreSdk6Version)
+    version: $(dotnetCoreSdkLatestVersion)
     includePreviewVersions: true
 
 - ${{ if eq(parameters.includeX86, true) }}:
     - template: install-dotnet-sdk-32bit.yml
       parameters:
-        sdkVersion: $(dotnetCoreSdk6Version)
+        sdkVersion: $(dotnetCoreSdkLatestVersion)

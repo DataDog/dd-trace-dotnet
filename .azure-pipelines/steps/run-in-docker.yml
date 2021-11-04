@@ -18,7 +18,7 @@ steps:
 - ${{ if eq(parameters.build, true) }}:
   - script: |
       docker build \
-        --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdk5Version) \
+        --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdk6DockerVersion) \
         --tag dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }} \
         --target ${{ parameters.target }} \
         --file "$(System.DefaultWorkingDirectory)/tracer/build/_build/docker/${{ parameters.baseImage }}.dockerfile" \

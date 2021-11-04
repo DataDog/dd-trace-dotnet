@@ -69,7 +69,7 @@ namespace Samples.HttpMessageHandler
                 }
 #endif
 
-#if NET5_0 || NET6_0
+#if NET5_0_OR_GREATER
                 // send sync http requests using HttpClient
                 Console.WriteLine();
                 Console.WriteLine("Sending sync request with default HttpClient.");
