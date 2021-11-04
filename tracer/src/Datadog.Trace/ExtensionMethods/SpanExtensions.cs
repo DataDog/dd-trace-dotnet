@@ -96,7 +96,7 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
-        internal static void SetHttpStatusCode(this Span span, int statusCode, bool isServer)
+        internal static void SetHttpStatusCode(this Span span, int statusCode, bool isServer, Tracer tracer)
         {
             string statusCodeString = ConvertStatusCodeToString(statusCode);
 
@@ -110,7 +110,7 @@ namespace Datadog.Trace.ExtensionMethods
             }
 
             // Check the customers http statuses that should be marked as errors
-            if (Tracer.Instance.Settings.IsErrorStatusCode(statusCode, isServer))
+            if (tracer.Settings.IsErrorStatusCode(statusCode, isServer))
             {
                 span.Error = true;
 
