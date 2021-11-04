@@ -364,6 +364,12 @@ namespace Datadog.Trace.Configuration
         public const string KafkaCreateConsumerScopeEnabled = "DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED";
 
         /// <summary>
+        /// Configuration key to enable or disable the updated WCF instrumentation
+        /// </summary>
+        /// <seealso cref="TracerSettings.WcfEnableNewInstrumentation"/>
+        public const string WcfEnableNewInstrumentation = "DD_TRACE_WCF_ENABLE_NEW_INSTRUMENTATION";
+
+        /// <summary>
         /// Configuration key for enabling or disabling CI Visibility.
         /// Default is value is false (disabled).
         /// </summary>

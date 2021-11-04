@@ -214,6 +214,9 @@ namespace Datadog.Trace.Configuration
 
             KafkaCreateConsumerScopeEnabled = source?.GetBool(ConfigurationKeys.KafkaCreateConsumerScopeEnabled)
                                            ?? true; // default
+
+            WcfEnableNewInstrumentation = source?.GetBool(ConfigurationKeys.WcfEnableNewInstrumentation)
+                                            ?? false;
         }
 
         /// <summary>
@@ -412,6 +415,11 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.KafkaCreateConsumerScopeEnabled"/>
         public bool KafkaCreateConsumerScopeEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to use the updated WCF instrumentation
+        /// </summary>
+        public bool WcfEnableNewInstrumentation { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether the diagnostic log at startup is enabled

@@ -39,8 +39,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             foreach (var binding in Bindings)
             {
+                // When using the binding example, it is expected that CallSite or CallTarget w/ Old WCF fails,
+                // so only include CallTarget w/ New WCF
+                if (binding == "Custom")
+                {
+                    yield return new object[] { binding, true, true };
+                    continue;
+                }
+
                 yield return new object[] { binding, false, false };
                 yield return new object[] { binding, true, false };
+                yield return new object[] { binding, true, true };
             }
         }
 
