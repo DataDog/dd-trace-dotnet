@@ -3,12 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Globalization;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.TestHelpers;
@@ -28,23 +28,35 @@ namespace Datadog.Trace.Tests
 
         public static IEnumerable<object[]> GetHeaderCollectionImplementations()
         {
-            yield return new object[] { WebRequest.CreateHttp("http://localhost").Headers.Wrap() };
-            yield return new object[] { new NameValueCollection().Wrap() };
-            yield return new object[] { new DictionaryHeadersCollection() };
+            return GetHeaderCollectionFactories().Select(factory => new object[] { factory() });
         }
 
         public static IEnumerable<object[]> GetHeadersInvalidIdsCartesianProduct()
         {
-            return from header in GetHeaderCollectionImplementations().SelectMany(i => i)
+            return from headersFactory in GetHeaderCollectionFactories()
                    from invalidId in HeadersCollectionTestHelpers.GetInvalidIds().SelectMany(i => i)
-                   select new[] { header, invalidId };
+                   select new[] { headersFactory(), invalidId };
         }
 
-        public static IEnumerable<object[]> GetHeadersInvalidSamplingPrioritiesCartesianProduct()
+        public static IEnumerable<object[]> GetHeadersInvalidIntegerSamplingPrioritiesCartesianProduct()
         {
-            return from header in GetHeaderCollectionImplementations().SelectMany(i => i)
-                   from invalidSamplingPriority in HeadersCollectionTestHelpers.GetInvalidSamplingPriorities().SelectMany(i => i)
-                   select new[] { header, invalidSamplingPriority };
+            return from headersFactory in GetHeaderCollectionFactories()
+                   from invalidSamplingPriority in HeadersCollectionTestHelpers.GetInvalidIntegerSamplingPriorities().SelectMany(i => i)
+                   select new[] { headersFactory(), invalidSamplingPriority };
+        }
+
+        public static IEnumerable<object[]> GetHeadersInvalidNonIntegerSamplingPrioritiesCartesianProduct()
+        {
+            return from headersFactory in GetHeaderCollectionFactories()
+                   from invalidSamplingPriority in HeadersCollectionTestHelpers.GetInvalidNonIntegerSamplingPriorities().SelectMany(i => i)
+                   select new[] { headersFactory(), invalidSamplingPriority };
+        }
+
+        internal static IEnumerable<Func<IHeadersCollection>> GetHeaderCollectionFactories()
+        {
+            yield return () => WebRequest.CreateHttp("http://localhost").Headers.Wrap();
+            yield return () => new NameValueCollection().Wrap();
+            yield return () => new DictionaryHeadersCollection();
         }
 
         [Theory]
@@ -215,15 +227,43 @@ namespace Datadog.Trace.Tests
 
             Assert.NotNull(resultContext);
             Assert.Equal(traceId, resultContext.TraceId);
-            Assert.Equal(default(ulong), resultContext.SpanId);
+            Assert.Equal(default, resultContext.SpanId);
             Assert.Equal(samplingPriority, resultContext.SamplingPriority);
             Assert.Equal(origin, resultContext.Origin);
         }
 
         [Theory]
-        [MemberData(nameof(GetHeadersInvalidSamplingPrioritiesCartesianProduct))]
-        internal void Extract_InvalidSamplingPriority(IHeadersCollection headers, string samplingPriority)
+        [MemberData(nameof(GetHeadersInvalidIntegerSamplingPrioritiesCartesianProduct))]
+        internal void Extract_InvalidIntegerSamplingPriority(IHeadersCollection headers, string samplingPriority)
         {
+            // if the extracted sampling priority is a valid integer, pass it along as is,
+            // even if we don't recognize its value to allow forward compatibility with newly added values.
+            const ulong traceId = 9;
+            const ulong spanId = 7;
+            const string origin = "synthetics";
+
+            InjectContext(
+                headers,
+                traceId.ToString(CultureInfo.InvariantCulture),
+                spanId.ToString(CultureInfo.InvariantCulture),
+                samplingPriority,
+                origin);
+
+            var resultContext = SpanContextPropagator.Instance.Extract(headers);
+
+            Assert.NotNull(resultContext);
+            Assert.Equal(traceId, resultContext.TraceId);
+            Assert.Equal(spanId, resultContext.SpanId);
+            Assert.NotNull(resultContext.SamplingPriority);
+            Assert.Equal(samplingPriority, ((int)resultContext.SamplingPriority).ToString());
+            Assert.Equal(origin, resultContext.Origin);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetHeadersInvalidNonIntegerSamplingPrioritiesCartesianProduct))]
+        internal void Extract_InvalidNonIntegerSamplingPriority(IHeadersCollection headers, string samplingPriority)
+        {
+            // ignore the extracted sampling priority if it is not a valid integer
             const ulong traceId = 9;
             const ulong spanId = 7;
             const string origin = "synthetics";

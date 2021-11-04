@@ -79,15 +79,19 @@ namespace Datadog.Trace.Sampling
 
         private SamplingPriority GetSamplingPriority(Span span, float rate, bool agentSampling)
         {
+            // make a sampling decision as a function of traceId and sampling rate
             var sample = ((span.TraceId * KnuthFactor) % TracerConstants.MaxTraceId) <= (rate * TracerConstants.MaxTraceId);
-            var priority = SamplingPriority.AutoReject;
 
-            if (sample && (agentSampling || _limiter.Allowed(span)))
+            // legacy sampling based on data from agent
+            if (agentSampling)
             {
-                priority = SamplingPriority.AutoKeep;
+                return sample ? SamplingPriority.AutoKeep : SamplingPriority.AutoReject;
             }
 
-            return priority;
+            // rules-based sampling + rate limiter
+            // NOTE: all tracers are changing this from AutoKeep/AutoReject to UserKeep/UserReject
+            // to prevent the agent from overriding user configuration
+            return sample && _limiter.Allowed(span) ? SamplingPriority.UserKeep : SamplingPriority.UserReject;
         }
     }
 }
