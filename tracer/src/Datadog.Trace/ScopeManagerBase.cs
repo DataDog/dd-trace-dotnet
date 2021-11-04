@@ -47,6 +47,7 @@ namespace Datadog.Trace
             SpanOpened?.Invoke(this, scopeOpenedArgs);
 
             Active = scope;
+            SharedContext.SetSpanContext(scope.Span.Context);
 
             if (newParent != null)
             {
@@ -54,16 +55,6 @@ namespace Datadog.Trace
             }
 
             SpanActivated?.Invoke(this, scopeOpenedArgs);
-
-            SharedContext.SetDistributedTrace(new Dictionary<string, string> { ["hello"] = "world" });
-            if (SharedContext.GetDistributedTrace() is null)
-            {
-                Log.Error("Distributed trace is null");
-            }
-            else
-            {
-                Log.Warning("Distributed trace is not null !!!!!!!!!!!!!!!!!");
-            }
 
             return scope;
         }
@@ -83,6 +74,10 @@ namespace Datadog.Trace
             // if the scope that was just closed was the active scope,
             // set its parent as the new active scope
             Active = scope.Parent;
+
+            // scope.Parent is null for distributed traces, so use scope.Span.Context.Parent
+            SharedContext.SetSpanContext(scope.Span.Context.Parent as SpanContext);
+
             SpanDeactivated?.Invoke(this, new SpanEventArgs(scope.Span));
 
             if (!isRootSpan)
