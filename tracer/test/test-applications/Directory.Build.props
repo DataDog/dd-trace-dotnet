@@ -20,6 +20,8 @@
     <DefineConstants Condition="'$(TestAllPackageVersions)'=='true' AND '$(IncludeMinorPackageVersions)'=='true'">$(DefineConstants);TEST_ALL_MINOR_PACKAGE_VERSIONS</DefineConstants>
     <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp3.0) -->
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
+    
+    <NoWarn>SYSLIB0014</NoWarn>
   </PropertyGroup>
 
   <Import Project=".\Samples.Shared\Samples.Shared.projitems" Label="Shared" />
