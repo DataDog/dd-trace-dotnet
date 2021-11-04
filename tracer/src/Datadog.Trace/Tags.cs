@@ -287,7 +287,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Configures Trace Analytics.
         /// </summary>
-        public const string Analytics = "_dd1.sr.eausr";
+        internal const string Analytics = "_dd1.sr.eausr";
 
         /// <summary>
         /// Language tag, applied to root spans that are .NET runtime (e.g., ASP.NET)
@@ -298,7 +298,7 @@ namespace Datadog.Trace
         /// The runtime family tag, it will be placed on the service entry span, the first span opened for a
         /// service. For this library it will always have the value "dotnet".
         /// </summary>
-        public const string RuntimeFamily = "_dd.runtime_family";
+        internal const string RuntimeFamily = "_dd.runtime_family";
 
         /// <summary>
         /// The resource ID of the site instance in Azure App Services where the traced application is running.
@@ -380,12 +380,12 @@ namespace Datadog.Trace
         /// <summary>
         /// Configures the origin of the trace
         /// </summary>
-        public const string Origin = "_dd.origin";
+        internal const string Origin = "_dd.origin";
 
         /// <summary>
         /// Configures the measured metric for a span.
         /// </summary>
-        public const string Measured = "_dd.measured";
+        internal const string Measured = "_dd.measured";
 
         /// <summary>
         /// The name of the Msmq command the message was published to.
