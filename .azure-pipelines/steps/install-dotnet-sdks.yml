@@ -26,8 +26,7 @@ steps:
   displayName: install dotnet core sdk 5
   inputs:
     packageType: sdk
-    version: $(dotnetCoreSdk5Version)
-    includePreviewVersions: true
+    version: 5.0.x
 
 - task: UseDotNet@2
   displayName: install dotnet core sdk 6
@@ -48,7 +47,7 @@ steps:
         channel: 3.1
     - template: install-dotnet-sdk-32bit.yml
       parameters:
-        sdkVersion: $(dotnetCoreSdk5Version)
+        channel: 5.0
     - template: install-dotnet-sdk-32bit.yml
       parameters:
         sdkVersion: $(dotnetCoreSdk6Version)
