@@ -241,12 +241,6 @@ namespace Datadog.Trace.Ci
             WorkspacePath = ExpandPath(WorkspacePath);
 
             // **********
-            // Clean Refs
-            // **********
-
-            CleanBranchAndTag();
-
-            // **********
             // Custom environment variables.
             // **********
             Branch = GetEnvironmentVariableIfIsNotEmpty("DD_GIT_BRANCH", Branch);
@@ -260,6 +254,12 @@ namespace Datadog.Trace.Ci
             CommitterName = GetEnvironmentVariableIfIsNotEmpty("DD_GIT_COMMIT_COMMITTER_NAME", CommitterName);
             CommitterEmail = GetEnvironmentVariableIfIsNotEmpty("DD_GIT_COMMIT_COMMITTER_EMAIL", CommitterEmail);
             CommitterDate = GetDateTimeOffsetEnvironmentVariableIfIsNotEmpty("DD_GIT_COMMIT_COMMITTER_DATE", CommitterDate);
+
+            // **********
+            // Clean Refs
+            // **********
+
+            CleanBranchAndTag();
         }
 
         private static string GetEnvironmentVariableIfIsNotEmpty(string key, string defaultValue)

@@ -2,8 +2,8 @@
   [
     {
       "CI_COMMIT_AUTHOR": "John Doe <john@doe.com>",
-      "CI_COMMIT_BRANCH": "origin/master",
       "CI_COMMIT_MESSAGE": "gitlab-git-commit-message",
+      "CI_COMMIT_REF_NAME": "origin/master",
       "CI_COMMIT_SHA": "gitlab-git-commit",
       "CI_COMMIT_TIMESTAMP": "2021-07-21T11:43:07-04:00",
       "CI_JOB_NAME": "gitlab-job-name",
@@ -37,8 +37,8 @@
   [
     {
       "CI_COMMIT_AUTHOR": "John Doe <john@doe.com>",
-      "CI_COMMIT_BRANCH": "origin/master",
       "CI_COMMIT_MESSAGE": "gitlab-git-commit-message",
+      "CI_COMMIT_REF_NAME": "origin/master",
       "CI_COMMIT_SHA": "gitlab-git-commit",
       "CI_COMMIT_TIMESTAMP": "2021-07-21T11:43:07-04:00",
       "CI_JOB_NAME": "gitlab-job-name",
@@ -74,8 +74,8 @@
   [
     {
       "CI_COMMIT_AUTHOR": "John Doe <john@doe.com>",
-      "CI_COMMIT_BRANCH": "origin/master",
       "CI_COMMIT_MESSAGE": "gitlab-git-commit-message",
+      "CI_COMMIT_REF_NAME": "origin/master",
       "CI_COMMIT_SHA": "gitlab-git-commit",
       "CI_COMMIT_TIMESTAMP": "2021-07-21T11:43:07-04:00",
       "CI_JOB_NAME": "gitlab-job-name",
@@ -111,8 +111,8 @@
   [
     {
       "CI_COMMIT_AUTHOR": "John Doe <john@doe.com>",
-      "CI_COMMIT_BRANCH": "origin/master",
       "CI_COMMIT_MESSAGE": "gitlab-git-commit-message",
+      "CI_COMMIT_REF_NAME": "origin/master",
       "CI_COMMIT_SHA": "gitlab-git-commit",
       "CI_COMMIT_TIMESTAMP": "2021-07-21T11:43:07-04:00",
       "CI_JOB_NAME": "gitlab-job-name",
@@ -148,8 +148,8 @@
   [
     {
       "CI_COMMIT_AUTHOR": "John Doe <john@doe.com>",
-      "CI_COMMIT_BRANCH": "origin/master",
       "CI_COMMIT_MESSAGE": "gitlab-git-commit-message",
+      "CI_COMMIT_REF_NAME": "origin/master",
       "CI_COMMIT_SHA": "gitlab-git-commit",
       "CI_COMMIT_TIMESTAMP": "2021-07-21T11:43:07-04:00",
       "CI_JOB_NAME": "gitlab-job-name",
@@ -187,8 +187,8 @@
   [
     {
       "CI_COMMIT_AUTHOR": "John Doe <john@doe.com>",
-      "CI_COMMIT_BRANCH": "origin/master",
       "CI_COMMIT_MESSAGE": "gitlab-git-commit-message",
+      "CI_COMMIT_REF_NAME": "origin/master",
       "CI_COMMIT_SHA": "gitlab-git-commit",
       "CI_COMMIT_TIMESTAMP": "2021-07-21T11:43:07-04:00",
       "CI_JOB_NAME": "gitlab-job-name",
@@ -226,8 +226,8 @@
   [
     {
       "CI_COMMIT_AUTHOR": "John Doe <john@doe.com>",
-      "CI_COMMIT_BRANCH": "origin/master",
       "CI_COMMIT_MESSAGE": "gitlab-git-commit-message",
+      "CI_COMMIT_REF_NAME": "origin/master",
       "CI_COMMIT_SHA": "gitlab-git-commit",
       "CI_COMMIT_TIMESTAMP": "2021-07-21T11:43:07-04:00",
       "CI_JOB_NAME": "gitlab-job-name",
@@ -265,8 +265,8 @@
   [
     {
       "CI_COMMIT_AUTHOR": "John Doe <john@doe.com>",
-      "CI_COMMIT_BRANCH": "origin/master",
       "CI_COMMIT_MESSAGE": "gitlab-git-commit-message",
+      "CI_COMMIT_REF_NAME": "origin/master",
       "CI_COMMIT_SHA": "gitlab-git-commit",
       "CI_COMMIT_TIMESTAMP": "2021-07-21T11:43:07-04:00",
       "CI_JOB_NAME": "gitlab-job-name",
@@ -302,8 +302,8 @@
   [
     {
       "CI_COMMIT_AUTHOR": "John Doe <john@doe.com>",
-      "CI_COMMIT_BRANCH": "origin/master",
       "CI_COMMIT_MESSAGE": "gitlab-git-commit-message",
+      "CI_COMMIT_REF_NAME": "origin/master",
       "CI_COMMIT_SHA": "gitlab-git-commit",
       "CI_COMMIT_TIMESTAMP": "2021-07-21T11:43:07-04:00",
       "CI_JOB_NAME": "gitlab-job-name",
@@ -337,8 +337,8 @@
   [
     {
       "CI_COMMIT_AUTHOR": "John Doe <john@doe.com>",
-      "CI_COMMIT_BRANCH": "refs/heads/master",
       "CI_COMMIT_MESSAGE": "gitlab-git-commit-message",
+      "CI_COMMIT_REF_NAME": "refs/heads/master",
       "CI_COMMIT_SHA": "gitlab-git-commit",
       "CI_COMMIT_TIMESTAMP": "2021-07-21T11:43:07-04:00",
       "CI_JOB_NAME": "gitlab-job-name",
@@ -374,8 +374,8 @@
   [
     {
       "CI_COMMIT_AUTHOR": "John Doe <john@doe.com>",
-      "CI_COMMIT_BRANCH": "refs/heads/feature/one",
       "CI_COMMIT_MESSAGE": "gitlab-git-commit-message",
+      "CI_COMMIT_REF_NAME": "refs/heads/feature/one",
       "CI_COMMIT_SHA": "gitlab-git-commit",
       "CI_COMMIT_TIMESTAMP": "2021-07-21T11:43:07-04:00",
       "CI_JOB_NAME": "gitlab-job-name",
@@ -522,8 +522,8 @@
   [
     {
       "CI_COMMIT_AUTHOR": "John Doe <john@doe.com>",
-      "CI_COMMIT_BRANCH": "origin/master",
       "CI_COMMIT_MESSAGE": "gitlab-git-commit-message",
+      "CI_COMMIT_REF_NAME": "origin/master",
       "CI_COMMIT_SHA": "gitlab-git-commit",
       "CI_COMMIT_TIMESTAMP": "2021-07-21T11:43:07-04:00",
       "CI_JOB_NAME": "gitlab-job-name",
@@ -559,8 +559,8 @@
   [
     {
       "CI_COMMIT_AUTHOR": "John Doe <john@doe.com>",
-      "CI_COMMIT_BRANCH": "origin/master",
       "CI_COMMIT_MESSAGE": "gitlab-git-commit-message",
+      "CI_COMMIT_REF_NAME": "origin/master",
       "CI_COMMIT_SHA": "gitlab-git-commit",
       "CI_COMMIT_TIMESTAMP": "2021-07-21T11:43:07-04:00",
       "CI_JOB_NAME": "gitlab-job-name",
@@ -596,8 +596,8 @@
   [
     {
       "CI_COMMIT_AUTHOR": "John Doe <john@doe.com>",
-      "CI_COMMIT_BRANCH": "origin/master",
       "CI_COMMIT_MESSAGE": "gitlab-git-commit-message",
+      "CI_COMMIT_REF_NAME": "origin/master",
       "CI_COMMIT_SHA": "gitlab-git-commit",
       "CI_COMMIT_TIMESTAMP": "2021-07-21T11:43:07-04:00",
       "CI_JOB_NAME": "gitlab-job-name",
@@ -633,8 +633,8 @@
   [
     {
       "CI_COMMIT_AUTHOR": "John Doe <john@doe.com>",
-      "CI_COMMIT_BRANCH": "origin/master",
       "CI_COMMIT_MESSAGE": "gitlab-git-commit-message",
+      "CI_COMMIT_REF_NAME": "origin/master",
       "CI_COMMIT_SHA": "gitlab-git-commit",
       "CI_COMMIT_TIMESTAMP": "2021-07-21T11:43:07-04:00",
       "CI_JOB_NAME": "gitlab-job-name",
@@ -670,8 +670,8 @@
   [
     {
       "CI_COMMIT_AUTHOR": "John Doe <john@doe.com>",
-      "CI_COMMIT_BRANCH": "origin/master",
       "CI_COMMIT_MESSAGE": "gitlab-git-commit-message",
+      "CI_COMMIT_REF_NAME": "origin/master",
       "CI_COMMIT_SHA": "gitlab-git-commit",
       "CI_COMMIT_TIMESTAMP": "2021-07-21T11:43:07-04:00",
       "CI_JOB_NAME": "gitlab-job-name",
