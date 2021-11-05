@@ -105,7 +105,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         {
             if (state.Scope == null || tResult == null)
             {
-                state.Scope.DisposeWithException(exception);
+                state.Scope?.DisposeWithException(exception);
                 return tResult;
             }
 
