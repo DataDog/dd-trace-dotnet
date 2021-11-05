@@ -268,6 +268,7 @@ namespace Datadog.Trace.ClrProfiler
                 // Wcf
                 new("System.ServiceModel", "System.ServiceModel.Dispatcher.ChannelHandler", "HandleRequest",  new[] { "System.Boolean", "System.ServiceModel.Channels.RequestContext", "System.ServiceModel.OperationContext" },  new ushort[] {  }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf.ChannelHandlerIntegration"),
                 new("System.ServiceModel", "System.ServiceModel.Dispatcher.SyncMethodInvoker", "Invoke",  new[] { "System.Object", "System.Object", "System.Object[]", "System.Object[]&" },  new ushort[] { 0, 1 }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf.SyncMethodInvokerIntegration"),
+                new("System.ServiceModel", "System.ServiceModel.Dispatcher.TaskMethodInvoker", "InvokeAsync",  new[] { "System.Threading.Tasks.Task`1<System.Tuple`2<System.Object, System.Object[]>>", "System.Object", "System.Object[]" },  new ushort[] {  }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf.TaskMethodInvokerIntegration"),
 
                 // WebRequest
                 new("System", "System.Net.HttpWebRequest", "BeginGetRequestStream",  new[] { "System.IAsyncResult", "System.AsyncCallback", "System.Object" },  new ushort[] {  }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest.HttpWebRequest_BeginGetRequestStream_Integration"),
