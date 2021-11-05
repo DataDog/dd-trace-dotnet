@@ -8,6 +8,7 @@ using System.Diagnostics;
 
 namespace Datadog.Trace.Util
 {
+#if !NETCOREAPP3_1_OR_GREATER
     /// <summary>
     /// Dedicated helper class for consistently referencing Process and AppDomain information.
     /// </summary>
@@ -18,6 +19,7 @@ namespace Datadog.Trace.Util
         private static string _currentProcessName;
         private static string _currentProcessMachineName;
         private static int _currentProcessId;
+
         private static bool _processDataUnavailable;
         private static bool _domainDataPoisoned;
         private static bool? _isAppInsightsAppDomain;
@@ -25,31 +27,20 @@ namespace Datadog.Trace.Util
         static DomainMetadata()
         {
             TrySetProcess();
-        }
 
-        public static string ProcessName
-        {
-            get
+            if (_processDataUnavailable)
             {
-                return !_processDataUnavailable ? _currentProcessName : UnknownName;
+                _currentProcessName = UnknownName;
+                _currentProcessMachineName = UnknownName;
+                _currentProcessId = -1;
             }
         }
 
-        public static string MachineName
-        {
-            get
-            {
-                return !_processDataUnavailable ? _currentProcessMachineName : UnknownName;
-            }
-        }
+        public static string ProcessName => _currentProcessName;
 
-        public static int ProcessId
-        {
-            get
-            {
-                return !_processDataUnavailable ? _currentProcessId : -1;
-            }
-        }
+        public static string MachineName => _currentProcessMachineName;
+
+        public static int ProcessId => _currentProcessId;
 
         public static string AppDomainName
         {
@@ -85,12 +76,15 @@ namespace Datadog.Trace.Util
 
         public static bool ShouldAvoidAppDomain()
         {
-            if (_isAppInsightsAppDomain == null)
+            var isAppInsightsAppDomain = _isAppInsightsAppDomain;
+
+            if (isAppInsightsAppDomain == null)
             {
-                _isAppInsightsAppDomain = AppDomainName.IndexOf("ApplicationInsights", StringComparison.OrdinalIgnoreCase) >= 0;
+                isAppInsightsAppDomain = AppDomainName.IndexOf("ApplicationInsights", StringComparison.OrdinalIgnoreCase) >= 0;
+                _isAppInsightsAppDomain = isAppInsightsAppDomain;
             }
 
-            return _isAppInsightsAppDomain.Value;
+            return isAppInsightsAppDomain.Value;
         }
 
         private static void TrySetProcess()
@@ -109,4 +103,82 @@ namespace Datadog.Trace.Util
             }
         }
     }
+#else
+    /// <summary>
+    /// Dedicated helper class for consistently referencing Process and AppDomain information.
+    /// </summary>
+    internal static class DomainMetadata
+    {
+        private const string UnknownName = "unknown";
+        private static bool _initialized;
+        private static bool _processDataUnavailable;
+
+        private static string _currentProcessName;
+        private static string _currentProcessMachineName;
+        private static int _currentProcessId;
+        private static string _appDomainName;
+        private static int _appDomainId;
+        private static bool _isAppInsightsAppDomain;
+
+        static DomainMetadata()
+        {
+            TrySetProcess();
+
+            if (_processDataUnavailable)
+            {
+                _currentProcessName = UnknownName;
+                _currentProcessMachineName = UnknownName;
+                _currentProcessId = -1;
+            }
+
+            try
+            {
+                _appDomainName = AppDomain.CurrentDomain.FriendlyName;
+            }
+            catch
+            {
+                _appDomainName = UnknownName;
+            }
+
+            try
+            {
+                _appDomainId = AppDomain.CurrentDomain.Id;
+            }
+            catch
+            {
+                _appDomainId = -1;
+            }
+
+            _isAppInsightsAppDomain = _appDomainName.IndexOf("ApplicationInsights", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        public static string ProcessName => _currentProcessName;
+
+        public static string MachineName => _currentProcessMachineName;
+
+        public static int ProcessId => _currentProcessId;
+
+        public static string AppDomainName => _appDomainName;
+
+        public static int AppDomainId => _appDomainId;
+
+        public static bool ShouldAvoidAppDomain() => _isAppInsightsAppDomain;
+
+        private static void TrySetProcess()
+        {
+            try
+            {
+                if (!_processDataUnavailable && !_initialized)
+                {
+                    _initialized = true;
+                    ProcessHelpers.GetCurrentProcessInformation(out _currentProcessName, out _currentProcessMachineName, out _currentProcessId);
+                }
+            }
+            catch
+            {
+                _processDataUnavailable = true;
+            }
+        }
+    }
+#endif
 }
