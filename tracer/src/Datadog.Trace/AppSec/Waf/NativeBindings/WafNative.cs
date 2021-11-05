@@ -316,7 +316,9 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private static List<string> GetDatadogNativeFolders(FrameworkDescription frameworkDescription, string runtimeId)
         {
             // first get anything "home folder" like
-            // then get the program files folder, if running under Windows
+            // if running under Windows:
+            // - get msi install location
+            // - then get the default program files folder (because of a know issue in the installer for location of the x86 folder on a 64bit OS)
             // then combine with the profiler's location
             // taking into account that these locations could be the same place
 
@@ -326,6 +328,12 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             {
                 var programFilesFolder = GetProgramFilesFolder();
                 paths.Add(programFilesFolder);
+
+                var msiFolder = GetPathFromMsiSettings();
+                if (msiFolder != null)
+                {
+                    paths.Add(msiFolder);
+                }
             }
 
             var profilerFolder = GetProfilerFolder(frameworkDescription);
@@ -340,6 +348,15 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             }
 
             return paths.Distinct().ToList();
+        }
+
+        private static string GetPathFromMsiSettings()
+        {
+            var bitness = Environment.Is64BitOperatingSystem ? "64" : "32";
+            var path = $@"SOFTWARE\Datadog\Datadog .NET Tracer {bitness}-bit";
+            var instalDir = ReducedRegistryAccess.ReadLocalMachineString(path, "InstallPath");
+
+            return instalDir;
         }
 
         private static string GetProgramFilesFolder()

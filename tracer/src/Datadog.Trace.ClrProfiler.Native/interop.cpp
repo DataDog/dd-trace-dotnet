@@ -28,6 +28,21 @@ EXTERN_C VOID STDAPICALLTYPE InitializeProfiler(WCHAR* id, trace::CallTargetDefi
     return trace::profiler->InitializeProfiler(id, items, size);
 }
 
+#if _WIN32
+LONG GetStringRegKey(HKEY hKey, const WCHAR* strValueName, std::wstring& strValue)
+{
+    WCHAR szBuffer[512];
+    DWORD dwBufferSize = sizeof(szBuffer);
+    ULONG nError = RegQueryValueExW(hKey, strValueName, 0, NULL, (LPBYTE)szBuffer, &dwBufferSize);
+    if (ERROR_SUCCESS == nError)
+    {
+        strValue = szBuffer;
+    }
+    return nError;
+}
+#endif
+
+
 #ifndef _WIN32
 EXTERN_C void *dddlopen (const char *__file, int __mode)
 {
