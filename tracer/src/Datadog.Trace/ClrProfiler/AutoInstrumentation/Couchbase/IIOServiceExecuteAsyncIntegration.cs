@@ -25,6 +25,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
        MaximumVersion = CouchbaseCommon.MaxVersion2,
        IntegrationName = CouchbaseCommon.IntegrationName)]
     [InstrumentMethod(
+        AssemblyName = CouchbaseCommon.CouchbaseClientAssemblyName,
+        TypeName = "Couchbase.IO.Services.SharedPooledIOService",
+        MethodName = "ExecuteAsync",
+        ReturnTypeName = ClrNames.Task,
+        ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseOperationTypeName },
+        MinimumVersion = CouchbaseCommon.MinVersion2,
+        MaximumVersion = CouchbaseCommon.MaxVersion2,
+        IntegrationName = CouchbaseCommon.IntegrationName)]
+    [InstrumentMethod(
        AssemblyName = CouchbaseCommon.CouchbaseClientAssemblyName,
        TypeName = "Couchbase.IO.Services.MultiplexingIOService",
        MethodName = "ExecuteAsync",
@@ -36,6 +45,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
     [InstrumentMethod(
         AssemblyName = CouchbaseCommon.CouchbaseClientAssemblyName,
         TypeName = "Couchbase.IO.Services.PooledIOService",
+        MethodName = "ExecuteAsync",
+        ReturnTypeName = ClrNames.Task,
+        ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseGenericOperationTypeName },
+        MinimumVersion = CouchbaseCommon.MinVersion2,
+        MaximumVersion = CouchbaseCommon.MaxVersion2,
+        IntegrationName = CouchbaseCommon.IntegrationName)]
+    [InstrumentMethod(
+        AssemblyName = CouchbaseCommon.CouchbaseClientAssemblyName,
+        TypeName = "Couchbase.IO.Services.SharedPooledIOService",
         MethodName = "ExecuteAsync",
         ReturnTypeName = ClrNames.Task,
         ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseGenericOperationTypeName },

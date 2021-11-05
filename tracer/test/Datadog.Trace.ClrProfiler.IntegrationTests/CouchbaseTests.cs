@@ -40,8 +40,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = new MockTracerAgent(agentPort))
             using (RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
             {
-                var spans = agent.WaitForSpans(14, 500);
-                Assert.True(spans.Count >= 14, $"Expecting at least 14 spans, only received {spans.Count}");
+                var spans = agent.WaitForSpans(13, 500);
+                Assert.True(spans.Count >= 13, $"Expecting at least 13 spans, only received {spans.Count}");
 
                 foreach (var span in spans)
                 {
@@ -53,8 +53,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 var expected = new List<string>
                 {
-                    "GetClusterConfig", "Get", "Set", "Get", "Add", "Replace", "Get", "Delete",
-                    "Get", "Set", "Get", "Add", "Replace", "Get"
+                    "GetClusterConfig", "Get", "Set", "Get", "Add", "Replace", "Delete",
+                    "Get", "Set", "Get", "Add", "Replace", "Delete"
                 };
 
                 ValidateSpans(spans, (span) => span.Resource, expected);

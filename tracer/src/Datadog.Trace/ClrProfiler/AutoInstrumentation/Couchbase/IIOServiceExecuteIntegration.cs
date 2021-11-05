@@ -26,6 +26,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         IntegrationName = CouchbaseCommon.IntegrationName)]
     [InstrumentMethod(
         AssemblyName = CouchbaseCommon.CouchbaseClientAssemblyName,
+        TypeName = "Couchbase.IO.Services.SharedPooledIOService",
+        MethodName = "Execute",
+        ReturnTypeName = CouchbaseCommon.CouchbaseOperationResultTypeName,
+        ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseOperationTypeName },
+        MinimumVersion = CouchbaseCommon.MinVersion2,
+        MaximumVersion = CouchbaseCommon.MaxVersion2,
+        IntegrationName = CouchbaseCommon.IntegrationName)]
+    [InstrumentMethod(
+        AssemblyName = CouchbaseCommon.CouchbaseClientAssemblyName,
         TypeName = "Couchbase.IO.Services.MultiplexingIOService",
         MethodName = "Execute",
         ReturnTypeName = CouchbaseCommon.CouchbaseOperationResultTypeName,
@@ -36,6 +45,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
     [InstrumentMethod(
         AssemblyName = CouchbaseCommon.CouchbaseClientAssemblyName,
         TypeName = "Couchbase.IO.Services.PooledIOService",
+        MethodName = "Execute",
+        ReturnTypeName = CouchbaseCommon.CouchbaseOperationResultTypeName,
+        ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseGenericOperationTypeName },
+        MinimumVersion = CouchbaseCommon.MinVersion2,
+        MaximumVersion = CouchbaseCommon.MaxVersion2,
+        IntegrationName = CouchbaseCommon.IntegrationName)]
+    [InstrumentMethod(
+        AssemblyName = CouchbaseCommon.CouchbaseClientAssemblyName,
+        TypeName = "Couchbase.IO.Services.SharedPooledIOService",
         MethodName = "Execute",
         ReturnTypeName = CouchbaseCommon.CouchbaseOperationResultTypeName,
         ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseGenericOperationTypeName },
