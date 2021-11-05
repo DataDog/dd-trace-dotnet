@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -24,6 +25,8 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// Duck Type
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public static partial class DuckType
     {
         /// <summary>

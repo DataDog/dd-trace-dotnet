@@ -39,9 +39,7 @@ namespace Datadog.Trace.Tests
                 $@"[assembly: System.Runtime.Versioning.TargetFramework(""{attribute.FrameworkName}"", FrameworkDisplayName=""{attribute.FrameworkDisplayName}"")]",
                 string.Empty);
 
-            var targetFramework = attribute.FrameworkName.Contains(".NETFramework") ? "net4" : "netcoreapp";
-
-            var expected = GetExpected(targetFramework, publicApi);
+            var expected = GetExpected(publicApi);
 
             publicApi.Should().Be(expected, "Public API should match the verified API. Update verified snapshot when the public API changes as appropriate");
         }
@@ -77,12 +75,12 @@ namespace Datadog.Trace.Tests
             return true;
         }
 
-        private static string GetExpected(string targetFramework, string publicApi, [CallerMemberName] string methodName = null, [CallerFilePath] string filePath = null)
+        private static string GetExpected(string publicApi, [CallerMemberName] string methodName = null, [CallerFilePath] string filePath = null)
         {
             // poor-man's VerifyTests.Verify, because Verify has incompatible dependencies with ASP.NET Core
             var snapshotDirectory = Path.Combine(Directory.GetParent(filePath).FullName, "Snapshots");
-            var receivedPath = Path.Combine(snapshotDirectory, $"PublicApiTests.{methodName}_{targetFramework}.received.txt");
-            var verifiedPath = Path.Combine(snapshotDirectory, $"PublicApiTests.{methodName}_{targetFramework}.verified.txt");
+            var receivedPath = Path.Combine(snapshotDirectory, $"PublicApiTests.{methodName}.received.txt");
+            var verifiedPath = Path.Combine(snapshotDirectory, $"PublicApiTests.{methodName}.verified.txt");
 
             File.WriteAllText(receivedPath, publicApi);
             return File.Exists(verifiedPath) ? File.ReadAllText(verifiedPath) : string.Empty;

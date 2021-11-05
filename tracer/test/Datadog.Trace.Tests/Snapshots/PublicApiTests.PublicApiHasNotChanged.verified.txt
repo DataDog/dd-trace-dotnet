@@ -364,26 +364,6 @@ namespace Datadog.Trace
         public static Datadog.Trace.Tracer Create(System.Uri agentEndpoint = null, string defaultServiceName = null, bool isDebugEnabled = false) { }
     }
 }
-namespace Datadog.Trace.DiagnosticListeners
-{
-    public interface IEndpointFeature
-    {
-        [Datadog.Trace.DuckTyping.Duck(Name="Microsoft.AspNetCore.Http.Features.IEndpointFeature.get_Endpoint")]
-        Datadog.Trace.DiagnosticListeners.RouteEndpoint GetEndpoint();
-    }
-    [Datadog.Trace.DuckTyping.DuckCopy]
-    public struct RouteEndpoint
-    {
-        public string DisplayName;
-        public Datadog.Trace.DiagnosticListeners.RoutePattern RoutePattern;
-    }
-    [Datadog.Trace.DuckTyping.DuckCopy]
-    public struct RoutePattern
-    {
-        public System.Collections.IEnumerable PathSegments;
-        public string RawText;
-    }
-}
 namespace Datadog.Trace.DuckTyping
 {
     public delegate T CreateProxyInstance<T>(object instance);
@@ -431,41 +411,6 @@ namespace Datadog.Trace.DuckTyping
     {
         public DuckReverseMethodAttribute() { }
     }
-    public static class DuckType
-    {
-        public static readonly System.Reflection.MethodInfo EnumToObjectMethodInfo;
-        public static readonly System.Reflection.MethodInfo GetTypeFromHandleMethodInfo;
-        public static bool CanCreate(System.Type proxyType, object instance) { }
-        public static bool CanCreate<T>(object instance) { }
-        public static object Create(System.Type proxyType, object instance) { }
-        public static T Create<T>(object instance) { }
-        public static object CreateReverse(System.Type typeToDeriveFrom, object delegationInstance) { }
-        public static Datadog.Trace.DuckTyping.DuckType.CreateTypeResult GetOrCreateProxyType(System.Type proxyType, System.Type targetType) { }
-        public static Datadog.Trace.DuckTyping.DuckType.CreateTypeResult GetOrCreateReverseProxyType(System.Type typeToDeriveFrom, System.Type delegationType) { }
-        public readonly struct CreateTypeResult
-        {
-            public readonly bool Success;
-            public readonly System.Type TargetType;
-            public System.Type ProxyType { get; }
-            public bool CanCreate() { }
-            public T CreateInstance<T>(object instance) { }
-        }
-        public static class CreateCache<T>
-        {
-            public static readonly bool IsVisible;
-            public static readonly System.Type Type;
-            public static bool CanCreate(object instance) { }
-            public static T Create(object instance) { }
-            public static T CreateReverse(object instance) { }
-            public static Datadog.Trace.DuckTyping.DuckType.CreateTypeResult GetProxy(System.Type targetType) { }
-            public static Datadog.Trace.DuckTyping.DuckType.CreateTypeResult GetReverseProxy(System.Type targetType) { }
-        }
-        public static class DelegateCache<TProxyDelegate>
-            where TProxyDelegate : System.Delegate
-        {
-            public static TProxyDelegate GetDelegate() { }
-        }
-    }
     public class DuckTypeException : System.Exception { }
     public static class DuckTypeExtensions
     {
@@ -505,11 +450,6 @@ namespace Datadog.Trace.DuckTyping
     public class DuckTypeTargetMethodNotFoundException : Datadog.Trace.DuckTyping.DuckTypeException { }
     public class DuckTypeTargetObjectInstanceIsNull : Datadog.Trace.DuckTyping.DuckTypeException { }
     public class DuckTypeTypeIsNotPublicException : Datadog.Trace.DuckTyping.DuckTypeException { }
-    public interface IDuckType
-    {
-        object Instance { get; }
-        System.Type Type { get; }
-    }
 }
 namespace Datadog.Trace.ExtensionMethods
 {
@@ -550,35 +490,4 @@ namespace Datadog.Trace.Logging.LogProviders
         public LibLogException(string message) { }
         public LibLogException(string message, System.Exception inner) { }
     }
-}
-namespace Datadog.Trace.ServiceFabric
-{
-    public interface IServiceRemotingFailedResponseEventArgs
-    {
-        System.Exception? Error { get; }
-    }
-    public interface IServiceRemotingRequestEventArgs
-    {
-        string? MethodName { get; }
-        Datadog.Trace.ServiceFabric.IServiceRemotingRequestMessage? Request { get; }
-        System.Uri? ServiceUri { get; }
-    }
-    public interface IServiceRemotingRequestMessage
-    {
-        Datadog.Trace.ServiceFabric.IServiceRemotingRequestMessageHeader GetHeader();
-    }
-    public interface IServiceRemotingRequestMessageHeader
-    {
-        int InterfaceId { get; }
-        string? InvocationId { get; }
-        int MethodId { get; }
-        string? MethodName { get; }
-        void AddHeader(string headerName, byte[] headerValue);
-        bool TryGetHeaderValue(string headerName, out byte[]? headerValue);
-    }
-}
-namespace System.Runtime.CompilerServices
-{
-    [System.AttributeUsage(System.AttributeTargets.Assembly | System.AttributeTargets.All, AllowMultiple=true)]
-    public class IgnoresAccessChecksToAttribute : System.Attribute { }
 }
