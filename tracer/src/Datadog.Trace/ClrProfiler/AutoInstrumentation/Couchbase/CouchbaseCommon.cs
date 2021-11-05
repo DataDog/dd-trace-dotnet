@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         internal const string CouchbaseGenericOperationTypeName = "Couchbase.IO.Operations.IOperation`1[!!0]";
         internal const string CouchbaseOperationResultTypeName = "Couchbase.IOperationResult<T>";
         internal const string MinVersion2 = "2.2.8";
-        internal const string MaxVersion2 = "2.7.25";
+        internal const string MaxVersion2 = "2";
         internal const string MinVersion3 = "3";
         internal const string MaxVersion3 = "3";
         internal const string IntegrationName = nameof(IntegrationIds.Couchbase);
