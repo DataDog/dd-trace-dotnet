@@ -31,10 +31,5 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         /// Gets the Operation Code
         /// </summary>
         public IPEndPoint CurrentHost;
-
-        /// <summary>
-        /// Bucket name, if applicable.
-        /// </summary>
-        public string BucketName;
     }
 }

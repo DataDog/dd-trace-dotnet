@@ -69,7 +69,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
             var tags = new CouchbaseTags()
             {
                 OperationCode = code,
-                Bucket = operation.BucketName,
                 Key = operation.Key,
                 Host = host,
                 Port = port
