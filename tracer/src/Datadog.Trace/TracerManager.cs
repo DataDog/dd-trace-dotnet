@@ -119,18 +119,45 @@ namespace Datadog.Trace
                 _globalInstanceInitialized = true;
             }
 
-            if (oldManager is null)
+            if (oldManager is not null)
             {
-                return;
+                // Clean up the old TracerManager instance
+                oldManager._isClosing = true;
+                var cleanupTask = CleanUpOldTracerManager(oldManager, newManager);
+                if (cleanupTask.IsCompleted)
+                {
+                    cleanupTask.ConfigureAwait(false).GetAwaiter().GetResult();
+                }
+                else
+                {
+                    Task.Run(() => cleanupTask.ConfigureAwait(false).GetAwaiter().GetResult());
+                }
             }
+        }
 
-            // Clean up the old TracerManager instance
-            oldManager._isClosing = true;
+        /// <summary>
+        /// Sets the global tracer instance without any validation or cleanup.
+        /// Intended use is for unit testing only
+        /// </summary>
+        public static void UnsafeReplaceGlobalManager(TracerManager instance)
+        {
+            lock (_globalInstanceLock)
+            {
+                _instance = instance;
+                _globalInstanceInitialized = true;
+            }
+        }
+
+        // Internal for testing
+        public static Task CleanUpOldTracerManager(TracerManager oldManager, TracerManager newManager)
+        {
             var agentWriterReplaced = false;
-            if (oldManager.AgentWriter != newManager.AgentWriter)
+            var agentWriterCleanUpTask = Task.CompletedTask;
+            if (oldManager.AgentWriter != newManager.AgentWriter && oldManager.AgentWriter is not null)
             {
                 agentWriterReplaced = true;
-                oldManager.AgentWriter?.FlushAndCloseAsync();
+                // don't await yet, so we do all the sync cleanup first
+                agentWriterCleanUpTask = oldManager.AgentWriter.FlushAndCloseAsync();
             }
 
             var statsdReplaced = false;
@@ -158,22 +185,11 @@ namespace Datadog.Trace
                 exception: null,
                 "Replaced global instances. AgentWriter: {AgentWriterReplaced}, StatsD: {StatsDReplaced}, RuntimeMetricsWriter: {RuntimeMetricsWriterReplaced} LibLogScopeManager: {LibLogScopeManagerReplaced}",
                 new object[] { agentWriterReplaced, statsdReplaced, runtimeMetricsWriterReplaced, libLogScopeManagerReplaced });
+
+            return agentWriterCleanUpTask;
         }
 
-        /// <summary>
-        /// Sets the global tracer instance without any validation or cleanup.
-        /// Intended use is for unit testing only
-        /// </summary>
-        public static void UnsafeReplaceGlobalManager(TracerManager instance)
-        {
-            lock (_globalInstanceLock)
-            {
-                _instance = instance;
-                _globalInstanceInitialized = true;
-            }
-        }
-
-        internal static async Task WriteDiagnosticLog(TracerManager instance)
+        private static async Task WriteDiagnosticLog(TracerManager instance)
         {
             if (instance._isClosing)
             {
