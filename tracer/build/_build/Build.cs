@@ -75,6 +75,9 @@ partial class Build : NukeBuild
 
     [Parameter("Override the default test filters for integration tests. (Optional)")]
     readonly string Filter;
+    
+    [Parameter("The Unit test name to execute, can contain wildcards")]
+    readonly string UnitTestsProjectName;
 
     [Parameter("Enables code coverage")]
     readonly bool CodeCoverage;
