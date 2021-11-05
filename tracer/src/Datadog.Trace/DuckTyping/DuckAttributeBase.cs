@@ -13,7 +13,7 @@ namespace Datadog.Trace.DuckTyping
     /// Duck attribute
     /// </summary>
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Method | AttributeTargets.Field, AllowMultiple = false)]
-    public abstract class DuckAttributeBase : Attribute
+    internal abstract class DuckAttributeBase : Attribute
     {
         /// <summary>
         /// Gets or sets the underlying type member name

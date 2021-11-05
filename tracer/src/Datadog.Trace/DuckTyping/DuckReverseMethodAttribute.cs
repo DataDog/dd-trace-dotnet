@@ -10,7 +10,7 @@ namespace Datadog.Trace.DuckTyping
     /// <summary>
     /// Duck reverse method attribute
     /// </summary>
-    public class DuckReverseMethodAttribute : DuckAttributeBase
+    internal class DuckReverseMethodAttribute : DuckAttributeBase
     {
     }
 }

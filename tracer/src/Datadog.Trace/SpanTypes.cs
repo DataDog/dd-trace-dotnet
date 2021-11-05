@@ -15,7 +15,7 @@ namespace Datadog.Trace
         /// <summary>
         /// The span type for a Redis client integration.
         /// </summary>
-        public const string Redis = "redis";
+        internal const string Redis = "redis";
 
         /// <summary>
         /// The span type for a SQL client integration.
@@ -30,7 +30,7 @@ namespace Datadog.Trace
         /// <summary>
         /// The span type for a MongoDB integration.
         /// </summary>
-        public const string MongoDb = "mongodb";
+        internal const string MongoDb = "mongodb";
 
         /// <summary>
         /// The span type for an outgoing HTTP integration.
@@ -40,7 +40,7 @@ namespace Datadog.Trace
         /// <summary>
         /// The span type for a GraphQL integration.
         /// </summary>
-        public const string GraphQL = "graphql";
+        internal const string GraphQL = "graphql";
 
         /// <summary>
         /// The span type for a message queue integration.
@@ -70,7 +70,7 @@ namespace Datadog.Trace
         /// <summary>
         /// The span type for an Aerospike integration.
         /// </summary>
-        public const string Aerospike = "aerospike";
+        internal const string Aerospike = "aerospike";
 
         /// <summary>
         /// The span type for serverless integrations.

@@ -11,7 +11,7 @@ namespace Datadog.Trace.DuckTyping
     /// Ignores the member when DuckTyping
     /// </summary>
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Method | AttributeTargets.Field, AllowMultiple = false)]
-    public class DuckIgnoreAttribute : Attribute
+    internal class DuckIgnoreAttribute : Attribute
     {
     }
 }

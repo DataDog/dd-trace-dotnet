@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.ComponentModel;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.DiagnosticListeners
@@ -10,6 +11,8 @@ namespace Datadog.Trace.DiagnosticListeners
     /// <summary>
     /// Endpoint for duck typing
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     [DuckCopy]
     public struct RouteEndpoint
     {
