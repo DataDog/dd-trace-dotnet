@@ -711,12 +711,16 @@ partial class Build
                 .ToList();
 
             testProjects.ForEach(EnsureResultsDirectory);
-
+            var filter = (string.IsNullOrEmpty(Filter), IsArm64) switch
+            {
+                (true, true) => "(Category!=ArmUnsupported)",
+                _ => Filter
+            };
             try
             {
                 DotNetTest(x => x
                     .EnableNoRestore()
-                    .EnableNoBuild()
+                    .EnableNoBuild().SetFilter(filter)
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatformAnyCPU()
                     .SetDDEnvironmentVariables("dd-tracer-dotnet")
