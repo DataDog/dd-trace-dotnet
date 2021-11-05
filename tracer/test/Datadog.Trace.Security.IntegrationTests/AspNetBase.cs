@@ -112,7 +112,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 var spanId = spanIds.FirstOrDefault(s => s == attackEvent.Context.Span.Id);
                 Assert.NotEqual(0m, spanId);
                 Assert.DoesNotContain(spanId, usedIds);
-                Assert.Equal("nosqli", attackEvent.Rule.Name);
+                Assert.Equal("Finds basic MongoDB SQL injection attempts", attackEvent.Rule.Name);
                 usedIds.Add(spanId);
             }
 

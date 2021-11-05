@@ -34,7 +34,6 @@ namespace Datadog.Trace.AppSec.EventModel
             var request = transport.Request();
             var headersIpAndPort = RequestHeadersHelper.ExtractHeadersIpAndPort(transport.GetHeader, customIpHeader, extraHeaders,  transport.IsSecureConnection, new IpInfo(request.RemoteIp, request.RemotePort));
             request.Headers = headersIpAndPort.HeadersToSend;
-            var type = resultData.Rule?.Tags?.Type;
             var frameworkDescription = FrameworkDescription.Instance;
             var attack = new Attack
             {
@@ -60,16 +59,16 @@ namespace Datadog.Trace.AppSec.EventModel
                     }
                 },
                 Blocked = result.Blocked,
-                Rule = new Rule { Name = type, Id = resultData.Rule.Id },
+                Rule = new Rule { Name = resultData.Rule.Name, Id = resultData.Rule.Id },
                 DetectedAt = DateTime.UtcNow,
                 RuleMatch = new RuleMatch
                 {
                     Operator = ruleMatch?.Operator,
                     OperatorValue = ruleMatch?.OperatorValue,
                     Highlight = new[] { parameter?.Highlight.FirstOrDefault() },
-                    Parameters = new[] { new Parameter { Name = parameter?.Address, Value = ruleMatch?.OperatorValue } }
+                    Parameters = new[] { new Parameter { Name = parameter?.Address, Value = parameter?.Value } }
                 },
-                Type = type
+                Type = resultData.Rule?.Tags?.Type
             };
             if (span != null)
             {
