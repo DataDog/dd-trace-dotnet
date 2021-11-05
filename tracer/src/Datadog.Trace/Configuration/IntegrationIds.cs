@@ -37,6 +37,5 @@ namespace Datadog.Trace.Configuration
         Aerospike,
         AzureFunctions,
         Couchbase,
-        Couchbase3,
     }
 }
