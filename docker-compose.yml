@@ -321,7 +321,8 @@ services:
       - KAFKA_BROKER_HOST=kafka-broker:29092
       - AWS_SQS_HOST=aws_sqs:9324
       - AEROSPIKE_HOST=aerospike:3000
-      - COUCHBASE_HOST=couchbase:11210
+      - COUCHBASE_HOST=couchbase
+      - COUCHBASE_PORT=8091
     depends_on:
       - aerospike
       - servicestackredis

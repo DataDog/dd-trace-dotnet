@@ -38,7 +38,7 @@ namespace Samples.Couchbase
             return new ClientConfiguration
             {
                 Servers = new List<Uri> {
-                    new Uri("http://127.0.0.1:8091/pools")
+                    new Uri("http://" + Host() +"/pools")
                 },
                 BucketConfigs = new Dictionary<string, BucketConfiguration>
                   {
@@ -56,6 +56,16 @@ namespace Samples.Couchbase
                     }}
                   }
             };
+        }
+
+        private static string Host()
+        {
+            var host = Environment.GetEnvironmentVariable("COUCHBASE_HOST");
+            var port = Environment.GetEnvironmentVariable("COUCHBASE_PORT");
+            if (host == null || port == null)
+                return "127.0.0.1:8091";
+
+            return $"{host}:{port}";
         }
 
         public void RetrieveAndUpdate()

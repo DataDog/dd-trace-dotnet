@@ -11,7 +11,7 @@ namespace Samples.Couchbase3
         private static async Task Main()
         {
             var options = new ClusterOptions() 
-                      .WithConnectionString("couchbase://localhost")
+                      .WithConnectionString("couchbase://" + Host())
                       .WithCredentials(username: "default", password: "password")
                       .WithBuckets("default");
 
@@ -40,6 +40,11 @@ namespace Samples.Couchbase3
             }
 
             await collection.RemoveAsync("my-document-key");
+        }
+
+        private static string Host()
+        {
+            return Environment.GetEnvironmentVariable("COUCHBASE_HOST") ?? "localhost";
         }
     }
 }
