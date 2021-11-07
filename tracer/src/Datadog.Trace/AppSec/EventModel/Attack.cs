@@ -70,6 +70,11 @@ namespace Datadog.Trace.AppSec.EventModel
                 },
                 Type = resultData.Rule?.Tags?.Type
             };
+            if (string.IsNullOrEmpty(attack.RuleMatch.Highlight[0]))
+            {
+                attack.RuleMatch.Highlight[0] = attack.RuleMatch.OperatorValue;
+            }
+
             if (span != null)
             {
                 attack.Context.Span = new Span { Id = span.SpanId };
