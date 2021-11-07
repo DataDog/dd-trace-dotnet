@@ -64,7 +64,7 @@ namespace Datadog.Trace.AppSec.EventModel
                 RuleMatch = new RuleMatch
                 {
                     Operator = ruleMatch?.Operator,
-                    OperatorValue = ruleMatch?.OperatorValue,
+                    OperatorValue = string.IsNullOrEmpty(ruleMatch?.OperatorValue) ? parameter?.Value : ruleMatch?.OperatorValue,
                     Highlight = new[] { parameter?.Highlight.FirstOrDefault() },
                     Parameters = new[] { new Parameter { Name = parameter?.Address, Value = parameter?.Value } }
                 },

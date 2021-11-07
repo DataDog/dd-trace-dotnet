@@ -102,6 +102,7 @@ namespace Datadog.Trace.Security.Unit.Tests
 
         private static void Execute(string address, object value, string flow, string rule)
         {
+            GlobalSettings.SetDebugEnabled(true);
             var args = new Dictionary<string, object>
             {
                 {
