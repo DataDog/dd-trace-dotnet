@@ -21,9 +21,10 @@ namespace Datadog.Trace.Security.Unit.Tests
 
         [Theory]
         [Trait("Category", "ArmUnsupported")]
+        [Trait("Category", "AlpineUnsupported")]
         [InlineData("args", "[$slice]", "nosqli", "crs-942-290")]
         [InlineData("attack", "appscan_fingerprint", "security_scanner", "crs-913-120")]
-        [InlineData("key", "<script>", "xss", "crs-941-100")]
+        [InlineData("key", "<script>", "xss", "crs-941-110")]
         [InlineData("value", "0000012345", "sqli", "crs-942-220")]
         public void QueryStringAttack(string key, string attack, string flow, string rule)
         {
@@ -43,6 +44,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         }
 
         [Fact]
+        [Trait("Category", "AlpineUnsupported")]
         [Trait("Category", "ArmUnsupported")]
         public void UrlRawAttack()
         {
@@ -55,8 +57,9 @@ namespace Datadog.Trace.Security.Unit.Tests
 
         [Theory]
         [Trait("Category", "ArmUnsupported")]
+        [Trait("Category", "AlpineUnsupported")]
         [InlineData("user-agent", "Arachni/v1", "security_scanner", "ua0-600-12x")]
-        [InlineData("referer", "<script >", "xss", "crs-941-100")]
+        [InlineData("referer", "<script >", "xss", "crs-941-110")]
         [InlineData("x-file-name", "routing.yml", "command_injection", "crs-932-180")]
         [InlineData("x-filename", "routing.yml", "command_injection", "crs-932-180")]
         [InlineData("x_filename", "routing.yml", "command_injection", "crs-932-180")]
@@ -76,11 +79,14 @@ namespace Datadog.Trace.Security.Unit.Tests
 
         [Theory]
         [Trait("Category", "ArmUnsupported")]
+        [Trait("Category", "AlpineUnsupported")]
         [InlineData("attack", ".htaccess", "lfi", "crs-930-120")]
+        [InlineData("value", "/*!*/", "sqli", "crs-942-500")]
         [InlineData("value", ";shutdown--", "sqli", "crs-942-280")]
         [InlineData("key", ".cookie-;domain=", "http_protocol_violation", "crs-943-100")]
         [InlineData("x-attack", " var_dump ()", "php_code_injection", "crs-933-160")]
         [InlineData("x-attack", "o:4:\"x\":5:{d}", "php_code_injection", "crs-933-170")]
+        [InlineData("key", "<script>", "xss", "crs-941-110")]
         public void CookiesAttack(string key, string content, string flow, string rule)
         {
             Execute(
@@ -97,12 +103,12 @@ namespace Datadog.Trace.Security.Unit.Tests
 
         [Theory]
         [Trait("Category", "ArmUnsupported")]
+        [Trait("Category", "AlpineUnsupported")]
         [InlineData("/.adsensepostnottherenonobook", "security_scanner", "crs-913-120")]
         public void BodyAttack(string body, string flow, string rule) => Execute(AddressesConstants.RequestBody, body, flow, rule);
 
         private static void Execute(string address, object value, string flow, string rule)
         {
-            GlobalSettings.SetDebugEnabled(true);
             var args = new Dictionary<string, object>
             {
                 {
