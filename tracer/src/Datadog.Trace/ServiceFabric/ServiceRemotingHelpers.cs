@@ -32,6 +32,7 @@ namespace Datadog.Trace.ServiceFabric
                     {
                         Log.Warning("Could not get type {typeName}.", typeName);
                     }
+
                     return false;
                 }
 
@@ -43,6 +44,7 @@ namespace Datadog.Trace.ServiceFabric
                     {
                         Log.Warning("Could not get event {eventName}.", fullEventName);
                     }
+
                     return false;
                 }
 
