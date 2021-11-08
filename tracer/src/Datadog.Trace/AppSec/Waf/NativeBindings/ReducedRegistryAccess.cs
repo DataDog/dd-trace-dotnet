@@ -147,7 +147,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
                 if (hresult != 0)
                 {
-                    Log.Error<string, int>("registring access for key: {Key} failed with {HResult}", key, hresult);
+                    // warning as the call could fail because the key is missing, which is expected in many situations
+                    Log.Warning<string, string>("registring access for key: {Key} failed with 0x{HResult}", key, hresult.ToString("X8"));
                 }
 
                 result = Marshal.PtrToStringUni(pvData);
