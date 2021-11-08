@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler
         protected static readonly IProperty<string>[] SqlTagsProperties =
             InstrumentationTagsProperties.Concat(
                 new Property<SqlTags, string>(Trace.Tags.DbType, t => t.DbType, (t, v) => t.DbType = v),
-                new ReadOnlyProperty<SqlTags, string>(Trace.Tags.InstrumentationName, t => t.InstrumentationName),
+                new Property<SqlTags, string>(Trace.Tags.InstrumentationName, t => t.InstrumentationName, (t, v) => t.InstrumentationName = v),
                 new Property<SqlTags, string>(Trace.Tags.DbName, t => t.DbName, (t, v) => t.DbName = v),
                 new Property<SqlTags, string>(Trace.Tags.DbUser, t => t.DbUser, (t, v) => t.DbUser = v),
                 new Property<SqlTags, string>(Trace.Tags.OutHost, t => t.OutHost, (t, v) => t.OutHost = v));
@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler
 
         public string DbType { get; set; }
 
-        public string InstrumentationName => nameof(IntegrationId.AdoNet);
+        public string InstrumentationName { get; set; }
 
         public string DbName { get; set; }
 
