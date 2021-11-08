@@ -12,7 +12,6 @@ namespace Datadog.Trace.Configuration
         WinHttpHandler,
         CurlHandler,
         AspNetCore,
-        AdoNet,
         AspNet,
         AspNetMvc,
         AspNetWebApi2,
@@ -37,5 +36,10 @@ namespace Datadog.Trace.Configuration
         Aerospike,
         AzureFunctions,
         Couchbase,
+        MySql,
+        Npgsql,  // PostgreSQL
+        Oracle,
+        SqlClient, // SQL Server
+        Sqlite,
     }
 }
