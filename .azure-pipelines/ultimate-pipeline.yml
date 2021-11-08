@@ -62,10 +62,7 @@ schedules:
 # Global variables
 variables:
   buildConfiguration: Release
-  dotnetCoreSdk6Version: 6.0.100-rc.2.21505.57
-  # to remove when .NET 6 is RTM
-  dotnetCoreSdk6DockerVersion: 6.0.100-rc.2
-  dotnetCoreSdkLatestVersion: 6.0.100-rc.2.21505.57
+  dotnetCoreSdkLatestVersion: 6.0.100
   relativeTracerHome: /tracer/src/bin/windows-tracer-home
   relativeArtifacts: /tracer/src/bin/artifacts
   ddTracerHome: $(System.DefaultWorkingDirectory)/tracer/src/bin/dd-tracer-home

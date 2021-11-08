@@ -29,10 +29,10 @@ steps:
     version: 5.0.x
 
 - task: UseDotNet@2
-  displayName: install dotnet core sdk 6
+  displayName: install latest dotnet core sdk
   inputs:
     packageType: sdk
-    version: $(dotnetCoreSdk6Version)
+    version: $(dotnetCoreSdkLatestVersion)
     includePreviewVersions: true
 
 - ${{ if eq(parameters.includeX86, true) }}:
@@ -50,4 +50,4 @@ steps:
         channel: 5.0
     - template: install-dotnet-sdk-32bit.yml
       parameters:
-        sdkVersion: $(dotnetCoreSdk6Version)
+        sdkVersion: $(dotnetCoreSdkLatestVersion)
