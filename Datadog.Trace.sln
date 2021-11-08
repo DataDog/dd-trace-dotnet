@@ -426,7 +426,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "azure-functions", "azure-fu
 		tracer\test\test-applications\azure-functions\Directory.Build.props = tracer\test\test-applications\azure-functions\Directory.Build.props
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AzureFunctions.AllTriggers", "tracer\test\test-applications\azure-functions\Samples.AzureFunctions.AllTriggers\Samples.AzureFunctions.AllTriggers.csproj", "{536F1D82-D40C-4E33-B7FA-76A0F17BF672}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AzureFunctions.Version3.InProcess", "tracer\test\test-applications\azure-functions\Samples.AzureFunctions.AllTriggers\Samples.AzureFunctions.Version3.InProcess.csproj", "{536F1D82-D40C-4E33-B7FA-76A0F17BF672}"
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Samples.Shared", "tracer\test\test-applications\Samples.Shared\Samples.Shared.shproj", "{5A806F4B-39E7-4F38-B36F-F5CFC4F8760A}"
 EndProject

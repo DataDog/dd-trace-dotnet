@@ -8,7 +8,7 @@ using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
-namespace Samples.AzureFunctions.AllTriggers
+namespace Samples.AzureFunctions.Version3.InProcess
 {
     public class AllTriggers
     {
