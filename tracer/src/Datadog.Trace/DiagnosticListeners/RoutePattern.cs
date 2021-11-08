@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections;
+using System.ComponentModel;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.DiagnosticListeners
@@ -11,6 +12,8 @@ namespace Datadog.Trace.DiagnosticListeners
     /// <summary>
     /// RoutePattern for duck typing
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     [DuckCopy]
     public struct RoutePattern
     {

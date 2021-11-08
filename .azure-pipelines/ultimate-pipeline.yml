@@ -118,6 +118,12 @@ stages:
 
     - template: steps/install-dotnet-5-sdk.yml
 
+    # workaround for "Unable move and reuse existing repository to required location."
+    # https://github.com/microsoft/azure-pipelines-yaml/issues/403
+    - powershell: |
+        New-Item -Path . -Name "dd-continuous-profiler-dotnet" -ItemType "directory"
+      displayName: "Create repository folder (workaround)"
+
     - checkout: dd-continuous-profiler-dotnet
       path: dd-continuous-profiler-dotnet
 
