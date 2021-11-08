@@ -23,7 +23,6 @@ namespace DataDogThreadTest
                 var logger = LogManager.GetLogger(typeof(Program));
 
                 var ddTraceSettings = TracerSettings.FromDefaultSources();
-                ddTraceSettings.AnalyticsEnabled = true;
                 ddTraceSettings.LogsInjectionEnabled = true;
                 ddTraceSettings.TraceEnabled = true;
                 var tracer = new Tracer(ddTraceSettings);
