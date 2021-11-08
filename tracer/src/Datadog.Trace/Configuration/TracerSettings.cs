@@ -53,11 +53,6 @@ namespace Datadog.Trace.Configuration
                           // backwards compatibility for names used in the past
                           source?.GetString("DD_SERVICE_NAME");
 
-            if (AzureAppServices.Metadata.IsRelevant)
-            {
-                ServiceName = ServiceName ?? AzureAppServices.Metadata.SiteName;
-            }
-
             ServiceVersion = source?.GetString(ConfigurationKeys.ServiceVersion);
 
             TraceEnabled = source?.GetBool(ConfigurationKeys.TraceEnabled) ??
