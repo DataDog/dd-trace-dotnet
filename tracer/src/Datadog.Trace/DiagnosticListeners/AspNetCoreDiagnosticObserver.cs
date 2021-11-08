@@ -626,7 +626,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 RouteEndpoint? endpoint = null;
 
-                if (rawEndpointFeature.TryDuckCast<IEndpointFeature>(out var endpointFeatureInterface))
+                if (rawEndpointFeature.TryDuckCast<EndpointFeatureProxy>(out var endpointFeatureInterface))
                 {
                     endpoint = endpointFeatureInterface.GetEndpoint();
                 }
@@ -854,7 +854,7 @@ namespace Datadog.Trace.DiagnosticListeners
         /// <summary>
         /// Proxy for ducktyping IEndpointFeature when the interface is not implemented explicitly
         /// </summary>
-        /// <seealso cref="IEndpointFeature"/>
+        /// <seealso cref="EndpointFeatureProxy"/>
         [DuckCopy]
         public struct EndpointFeatureStruct
         {
