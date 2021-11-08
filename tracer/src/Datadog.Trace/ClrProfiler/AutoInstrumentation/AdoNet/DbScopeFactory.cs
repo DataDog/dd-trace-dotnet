@@ -1,4 +1,4 @@
-// <copyright file="ScopeDBFactory.cs" company="Datadog">
+// <copyright file="DbScopeFactory.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,20 +8,19 @@ using System.Data;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
-using DbType = Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.DbType;
 
-namespace Datadog.Trace.ClrProfiler
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 {
-    internal static class ScopeDBFactory<TCommand>
+    internal static class DbScopeFactory<TCommand>
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ScopeDBFactory<TCommand>));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DbScopeFactory<TCommand>));
 
         private static readonly Type _type;
         private static readonly string _dbTypeName;
         private static readonly string _operationName;
         private static readonly IntegrationInfo? _integrationInfo;
 
-        static ScopeDBFactory()
+        static DbScopeFactory()
         {
             _type = typeof(TCommand);
 
