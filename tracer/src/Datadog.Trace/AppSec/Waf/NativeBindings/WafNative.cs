@@ -329,11 +329,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                 var programFilesFolder = GetProgramFilesFolder();
                 paths.Add(programFilesFolder);
 
-                var msiFolder = GetPathFromMsiSettings();
-                if (msiFolder != null)
-                {
-                    paths.Add(msiFolder);
-                }
+                AddPathFromMsiSettings(paths);
             }
 
             var profilerFolder = GetProfilerFolder(frameworkDescription);
@@ -350,13 +346,24 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             return paths.Distinct().ToList();
         }
 
-        private static string GetPathFromMsiSettings()
+        private static void AddPathFromMsiSettings(List<string> paths)
         {
-            var bitness = Environment.Is64BitOperatingSystem ? "64" : "32";
-            var path = $@"SOFTWARE\Datadog\Datadog .NET Tracer {bitness}-bit";
-            var instalDir = ReducedRegistryAccess.ReadLocalMachineString(path, "InstallPath");
+            void AddInstallDirFromRegKey(string bitness)
+            {
+                var path = $@"SOFTWARE\Datadog\Datadog .NET Tracer {bitness}-bit";
+                var installDir = ReducedRegistryAccess.ReadLocalMachineString(path, "InstallPath");
+                if (installDir != null)
+                {
+                    paths.Add(installDir);
+                }
+            }
 
-            return instalDir;
+            if (Environment.Is64BitOperatingSystem)
+            {
+                AddInstallDirFromRegKey("64");
+            }
+
+            AddInstallDirFromRegKey("32");
         }
 
         private static string GetProgramFilesFolder()
