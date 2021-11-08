@@ -784,14 +784,13 @@ partial class Build
         .Requires(() => Framework)
         .Executes(() =>
         {
-            var regressionsDirectory = Solution.GetProject(Projects.EntityFramework6xMdTokenLookupFailure)
+            var regressionsDirectory = Solution.GetProject(Projects.AutomapperTest)
                 .Directory.Parent;
 
             var regressionLibs = GlobFiles(regressionsDirectory / "**" / "*.csproj")
                  .Where(path =>
                     (path, Solution.GetProject(path).TryGetTargetFrameworks()) switch
                     {
-                        _ when path.Contains("EntityFramework6x.MdTokenLookupFailure") => false,
                         _ when path.Contains("ExpenseItDemo") => false,
                         _ when path.Contains("StackExchange.Redis.AssemblyConflict.LegacyProject") => false,
                         _ when path.Contains("MismatchedTracerVersions") => false,
@@ -1086,7 +1085,6 @@ partial class Build
                 "Samples.WebRequest.NetFramework20",
                 "AutomapperTest", // I think we _should_ run this one (assuming it has tests)
                 "DogStatsD.RaceCondition",
-                "EntityFramework6x.MdTokenLookupFailure",
                 "LargePayload", // I think we _should_ run this one (assuming it has tests)
                 "Sandbox.ManualTracing",
                 "StackExchange.Redis.AssemblyConflict.LegacyProject",

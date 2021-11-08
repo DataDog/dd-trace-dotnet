@@ -19,7 +19,6 @@ namespace DogStatsD.RaceCondition
                 InMemoryLog4NetLogger.Setup();
                 var logger = LogManager.GetLogger(typeof(Program));
                 var ddTraceSettings = TracerSettings.FromDefaultSources();
-                ddTraceSettings.AnalyticsEnabled = true;
                 ddTraceSettings.LogsInjectionEnabled = true;
                 ddTraceSettings.TraceEnabled = true;
                 ddTraceSettings.TracerMetricsEnabled = true;
