@@ -751,10 +751,15 @@ stages:
         jobs: [Test]
 
     - job: Test
+      strategy:
+        matrix:
+          net5_0:
+            publishTargetFramework: net5.0
+          net6_0:
+            publishTargetFramework: net6.0
       variables:
         TestAllPackageVersions: true
         IncludeMinorPackageVersions:  $[or(eq(variables.isMainBranch, 'true'), eq(variables.perform_comprehensive_testing, 'true'))]
-        publishTargetFramework: net6.0
         baseImage: debian
       workspace:
         clean: all
