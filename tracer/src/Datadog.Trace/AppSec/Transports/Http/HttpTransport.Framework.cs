@@ -29,15 +29,6 @@ namespace Datadog.Trace.AppSec.Transport.Http
             throw new NotImplementedException();
         }
 
-        public void Block()
-        {
-            context.Response.StatusCode = 403;
-            context.Response.ContentType = "text/html";
-            context.Response.Write(SecurityConstants.AttackBlockedHtml);
-            context.Response.Flush();
-            context.ApplicationInstance.CompleteRequest();
-        }
-
         public IContext GetAdditiveContext() => context.Items[WafKey] as IContext;
 
         public Request Request()

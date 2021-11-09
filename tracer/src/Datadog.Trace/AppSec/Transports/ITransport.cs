@@ -17,8 +17,6 @@ namespace Datadog.Trace.AppSec.Transport
 
         Response Response(bool blocked);
 
-        void Block();
-
         IContext GetAdditiveContext();
 
         void SetAdditiveContext(IContext additiveContext);
