@@ -28,7 +28,11 @@ namespace Datadog.Trace.ServiceFabric
 
                 if (type == null)
                 {
-                    Log.Warning("Could not get type {typeName}.", typeName);
+                    if (PlatformHelpers.ServiceFabric.IsRunningInServiceFabric())
+                    {
+                        Log.Warning("Could not get type {typeName}.", typeName);
+                    }
+
                     return false;
                 }
 
@@ -36,7 +40,11 @@ namespace Datadog.Trace.ServiceFabric
 
                 if (eventInfo == null)
                 {
-                    Log.Warning("Could not get event {eventName}.", fullEventName);
+                    if (PlatformHelpers.ServiceFabric.IsRunningInServiceFabric())
+                    {
+                        Log.Warning("Could not get event {eventName}.", fullEventName);
+                    }
+
                     return false;
                 }
 

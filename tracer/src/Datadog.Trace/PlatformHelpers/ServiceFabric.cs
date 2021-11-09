@@ -21,5 +21,7 @@ namespace Datadog.Trace.PlatformHelpers
         public static readonly string NodeId = EnvironmentHelpers.GetEnvironmentVariable("Fabric_NodeId");
 
         public static readonly string NodeName = EnvironmentHelpers.GetEnvironmentVariable("Fabric_NodeName");
+
+        public static bool IsRunningInServiceFabric() => ApplicationName is not null;
     }
 }
