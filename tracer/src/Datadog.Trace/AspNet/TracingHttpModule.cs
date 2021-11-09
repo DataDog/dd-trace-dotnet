@@ -169,7 +169,7 @@ namespace Datadog.Trace.AspNet
                     {
                         AddHeaderTagsFromHttpResponse(app.Context, scope);
 
-                        scope.Span.SetHttpStatusCode(app.Context.Response.StatusCode, isServer: true, Tracer.Instance);
+                        scope.Span.SetHttpStatusCode(app.Context.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
 
                         if (app.Context.Items[SharedConstants.HttpContextPropagatedResourceNameKey] is string resourceName
                             && !string.IsNullOrEmpty(resourceName))

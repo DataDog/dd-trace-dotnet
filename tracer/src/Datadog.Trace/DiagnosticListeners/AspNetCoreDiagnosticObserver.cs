@@ -769,7 +769,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 if (!scope.Span.Error && arg.TryDuckCast<HttpRequestInStopStruct>(out var httpRequest))
                 {
                     HttpContext httpContext = httpRequest.HttpContext;
-                    scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, CurrentTracer);
+                    scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, tracer.Settings);
                     scope.Span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
                 }
 
@@ -799,7 +799,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 }
 
                 // Generic unhandled exceptions are converted to 500 errors by Kestrel
-                span.SetHttpStatusCode(statusCode: statusCode, isServer: true, CurrentTracer);
+                span.SetHttpStatusCode(statusCode: statusCode, isServer: true, tracer.Settings);
             }
         }
 
