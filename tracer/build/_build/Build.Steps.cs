@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -15,13 +14,13 @@ using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.MSBuild;
 using Nuke.Common.Tools.NuGet;
 using Nuke.Common.Utilities.Collections;
+using static CustomDotNetTasks;
 using static Nuke.Common.EnvironmentInfo;
+using static Nuke.Common.IO.CompressionTasks;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.IO.PathConstruction;
-using static Nuke.Common.IO.CompressionTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
-using static CustomDotNetTasks;
 
 // #pragma warning disable SA1306
 // #pragma warning disable SA1134
@@ -63,7 +62,7 @@ partial class Build
         ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
             "Datadog .NET Tracer", "logs")
         : "/var/log/datadog/dotnet/";
-    
+
     readonly string[] WafWindowsArchitectureFolders =
     {
         "win-x86", "win-x64"
@@ -302,7 +301,7 @@ partial class Build
         {
             if (IsWin)
             {
-                foreach (var architecture in new[] {"win-x86", "win-x64"})
+                foreach (var architecture in new[] { "win-x86", "win-x64" })
                 {
                     var source = LibDdwafDirectory / "runtimes" / architecture / "native" / "ddwaf.dll";
                     var dest = TracerHomeDirectory / architecture;
@@ -322,8 +321,8 @@ partial class Build
 
             }
         });
-    
-    Target CopyLibDdwafForAppSecUnitTests => _ =>
+
+    Target CopyLibDdwafForAppSecUnitTests => _ => _
         .Unlisted()
         .After(Clean)
         .After(DownloadLibDdwaf)
@@ -346,17 +345,17 @@ partial class Build
                 CopyWaf(architecture, targetFrameworks, directory, "libddwaf", ext);
             }
 
-            static void CopyWaf(string architecture, IEnumerable<string> frameworks, AbsolutePath absolutePath, string wafFileName, string extension)
+            void CopyWaf(string architecture, IEnumerable<string> frameworks, AbsolutePath absolutePath, string wafFileName, string extension)
             {
                 var source = LibDdwafDirectory / "runtimes" / architecture / "native" / $"{wafFileName}.{extension}";
-                var nativeDir = DDTracerHomeDirectory / architecture / $"Datadog.Trace.ClrProfiler.Native.{extension}"; 
+                var nativeDir = DDTracerHomeDirectory / architecture / $"Datadog.Trace.ClrProfiler.Native.{extension}";
                 foreach (var fmk in frameworks)
                 {
                     var dest = absolutePath / "bin" / BuildConfiguration / fmk / architecture;
                     CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
                     if (!IsWin)
                     {
-                        CopyFileToDirectory(nativeDir,  absolutePath / "bin" / BuildConfiguration / fmk, FileExistsPolicy.Overwrite);
+                        CopyFileToDirectory(nativeDir, absolutePath / "bin" / BuildConfiguration / fmk, FileExistsPolicy.Overwrite);
                     }
                 }
             }
@@ -702,9 +701,7 @@ partial class Build
         .After(CompileManagedUnitTests)
         .Executes(() =>
         {
-            var projectName = string.IsNullOrEmpty(UnitTestsProjectName) ? "test/**/*.Tests.csproj" : $"test/**/{UnitTestsProjectName}";
-
-            var testProjects = TracerDirectory.GlobFiles(projectName)
+            var testProjects = TracerDirectory.GlobFiles("test/**/*.Tests.csproj")
                 .Select(x => Solution.GetProject(x))
                 .ToList();
 
@@ -812,7 +809,7 @@ partial class Build
             var regressionsDirectory = Solution.GetProject(Projects.EntityFramework6xMdTokenLookupFailure)
                 .Directory.Parent;
 
-            var regressionLibs =  GlobFiles(regressionsDirectory / "**" / "*.csproj")
+            var regressionLibs = GlobFiles(regressionsDirectory / "**" / "*.csproj")
                  .Where(path =>
                     (path, Solution.GetProject(path).TryGetTargetFrameworks()) switch
                     {
@@ -822,7 +819,7 @@ partial class Build
                         _ when path.Contains("MismatchedTracerVersions") => false,
                         _ when path.Contains("dependency-libs") => false,
                         _ when !string.IsNullOrWhiteSpace(SampleName) => path.Contains(SampleName),
-                        (_ , var targets) when targets is not null => targets.Contains(Framework),
+                        (_, var targets) when targets is not null => targets.Contains(Framework),
                         _ => true,
                     }
                   );
@@ -901,7 +898,7 @@ partial class Build
 
             var exclude = TracerDirectory.GlobFiles("test/test-applications/integrations/dependency-libs/**/*.csproj");
 
-            var projects =  includeIntegration
+            var projects = includeIntegration
                 .Concat(includeSecurity)
                 .Select(x => Solution.GetProject(x))
                 .Where(project =>
@@ -910,7 +907,7 @@ partial class Build
                     _ when exclude.Contains(project.Path) => false,
                     _ when project.Path.ToString().Contains("Samples.OracleMDA") => false,
                     _ when !string.IsNullOrWhiteSpace(SampleName) => project.Path.ToString().Contains(SampleName),
-                    (_ , var targets) when targets is not null => targets.Contains(Framework),
+                    (_, var targets) when targets is not null => targets.Contains(Framework),
                     _ => true,
                 }
             );
@@ -1511,17 +1508,17 @@ partial class Build
     // the integration tests need their own copy of the profiler, this achived through build.props on Windows, but doesn't seem to work under Linux
     private void IntegrationTestLinuxProfilerDirFudge(string project)
     {
-            // Not sure if/why this is necessary, and we can't just point to the correct output location
-            var src = TracerHomeDirectory;
-            var testProject = Solution.GetProject(project).Directory;
-            var dest = testProject / "bin" / BuildConfiguration / Framework / "profiler-lib";
-            CopyDirectoryRecursively(src, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+        // Not sure if/why this is necessary, and we can't just point to the correct output location
+        var src = TracerHomeDirectory;
+        var testProject = Solution.GetProject(project).Directory;
+        var dest = testProject / "bin" / BuildConfiguration / Framework / "profiler-lib";
+        CopyDirectoryRecursively(src, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
 
-            // not sure exactly where this is supposed to go, may need to change the original build
-            foreach (var linuxDir in TracerHomeDirectory.GlobDirectories("linux-*"))
-            {
-                CopyDirectoryRecursively(linuxDir, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
-            }
+        // not sure exactly where this is supposed to go, may need to change the original build
+        foreach (var linuxDir in TracerHomeDirectory.GlobDirectories("linux-*"))
+        {
+            CopyDirectoryRecursively(linuxDir, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+        }
     }
 
     private void MoveLogsToBuildData()
