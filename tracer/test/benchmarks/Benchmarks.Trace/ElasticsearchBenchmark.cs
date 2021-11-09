@@ -27,9 +27,7 @@ namespace Benchmarks.Trace
                 StartupDiagnosticLogEnabled = false
             };
 
-#pragma warning disable CS0618 // Setter isn't actually obsolete, just should be internal
-            Tracer.Instance = new Tracer(settings, new DummyAgentWriter(), null, null, null);
-#pragma warning restore CS0618
+            Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
 
             var bench = new ElasticsearchBenchmark();
             bench.CallElasticsearch();
