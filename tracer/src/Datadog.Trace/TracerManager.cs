@@ -123,15 +123,8 @@ namespace Datadog.Trace
             {
                 // Clean up the old TracerManager instance
                 oldManager._isClosing = true;
-                var cleanupTask = CleanUpOldTracerManager(oldManager, newManager);
-                if (cleanupTask.IsCompleted)
-                {
-                    cleanupTask.ConfigureAwait(false).GetAwaiter().GetResult();
-                }
-                else
-                {
-                    Task.Run(() => cleanupTask.ConfigureAwait(false).GetAwaiter().GetResult());
-                }
+                // Fire and forget
+                _ = CleanUpOldTracerManager(oldManager, newManager);
             }
         }
 
@@ -149,44 +142,47 @@ namespace Datadog.Trace
         }
 
         // Internal for testing
-        public static Task CleanUpOldTracerManager(TracerManager oldManager, TracerManager newManager)
+        public static async Task CleanUpOldTracerManager(TracerManager oldManager, TracerManager newManager)
         {
-            var agentWriterReplaced = false;
-            var agentWriterCleanUpTask = Task.CompletedTask;
-            if (oldManager.AgentWriter != newManager.AgentWriter && oldManager.AgentWriter is not null)
+            try
             {
-                agentWriterReplaced = true;
-                // don't await yet, so we do all the sync cleanup first
-                agentWriterCleanUpTask = oldManager.AgentWriter.FlushAndCloseAsync();
-            }
+                var agentWriterReplaced = false;
+                if (oldManager.AgentWriter != newManager.AgentWriter && oldManager.AgentWriter is not null)
+                {
+                    agentWriterReplaced = true;
+                    await oldManager.AgentWriter.FlushAndCloseAsync().ConfigureAwait(false);
+                }
 
-            var statsdReplaced = false;
-            if (oldManager.Statsd != newManager.Statsd)
+                var statsdReplaced = false;
+                if (oldManager.Statsd != newManager.Statsd)
+                {
+                    statsdReplaced = true;
+                    oldManager.Statsd?.Dispose();
+                }
+
+                var runtimeMetricsWriterReplaced = false;
+                if (oldManager.RuntimeMetrics != newManager.RuntimeMetrics)
+                {
+                    runtimeMetricsWriterReplaced = true;
+                    oldManager.RuntimeMetrics?.Dispose();
+                }
+
+                var libLogScopeManagerReplaced = false;
+                if (oldManager.LibLogSubscriber != newManager.LibLogSubscriber)
+                {
+                    libLogScopeManagerReplaced = true;
+                    oldManager.LibLogSubscriber.Dispose();
+                }
+
+                Log.Information(
+                    exception: null,
+                    "Replaced global instances. AgentWriter: {AgentWriterReplaced}, StatsD: {StatsDReplaced}, RuntimeMetricsWriter: {RuntimeMetricsWriterReplaced} LibLogScopeManager: {LibLogScopeManagerReplaced}",
+                    new object[] { agentWriterReplaced, statsdReplaced, runtimeMetricsWriterReplaced, libLogScopeManagerReplaced });
+            }
+            catch (Exception ex)
             {
-                statsdReplaced = true;
-                oldManager.Statsd?.Dispose();
+                Log.Error(ex, "Error cleaning up old tracer manager");
             }
-
-            var runtimeMetricsWriterReplaced = false;
-            if (oldManager.RuntimeMetrics != newManager.RuntimeMetrics)
-            {
-                runtimeMetricsWriterReplaced = true;
-                oldManager.RuntimeMetrics?.Dispose();
-            }
-
-            var libLogScopeManagerReplaced = false;
-            if (oldManager.LibLogSubscriber != newManager.LibLogSubscriber)
-            {
-                libLogScopeManagerReplaced = true;
-                oldManager.LibLogSubscriber.Dispose();
-            }
-
-            Log.Information(
-                exception: null,
-                "Replaced global instances. AgentWriter: {AgentWriterReplaced}, StatsD: {StatsDReplaced}, RuntimeMetricsWriter: {RuntimeMetricsWriterReplaced} LibLogScopeManager: {LibLogScopeManagerReplaced}",
-                new object[] { agentWriterReplaced, statsdReplaced, runtimeMetricsWriterReplaced, libLogScopeManagerReplaced });
-
-            return agentWriterCleanUpTask;
         }
 
         private static async Task WriteDiagnosticLog(TracerManager instance)
