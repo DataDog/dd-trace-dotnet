@@ -720,7 +720,8 @@ partial class Build
             {
                 DotNetTest(x => x
                     .EnableNoRestore()
-                    .EnableNoBuild().SetFilter(filter)
+                    .EnableNoBuild()
+                    .SetFilter(filter)
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatformAnyCPU()
                     .SetDDEnvironmentVariables("dd-tracer-dotnet")
