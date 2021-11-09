@@ -96,10 +96,12 @@ namespace Datadog.Trace.Tests
         {
             var ratesByService = new Dictionary<string, float> { { "test", 0.5f } };
             var responseContent = new { rates_by_service = ratesByService };
+            var serializedResponse = JsonConvert.SerializeObject(responseContent);
 
             var responseMock = new Mock<IApiResponse>();
             responseMock.Setup(x => x.StatusCode).Returns(200);
-            responseMock.Setup(x => x.ReadAsStringAsync()).Returns(Task.FromResult(JsonConvert.SerializeObject(responseContent)));
+            responseMock.Setup(x => x.ReadAsStringAsync()).Returns(Task.FromResult(serializedResponse));
+            responseMock.Setup(x => x.ContentLength).Returns(serializedResponse.Length);
 
             var requestMock = new Mock<IApiRequest>();
             requestMock.Setup(x => x.PostAsync(It.IsAny<ArraySegment<byte>>())).ReturnsAsync(responseMock.Object);
