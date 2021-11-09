@@ -152,7 +152,7 @@ namespace Datadog.Trace.AppSec.Waf
             {
                 try
                 {
-                    var eventsProp = root.Value<JArray>("events");
+                    var eventsProp = root.Value<JArray>("rules");
                     foreach (var ev in eventsProp)
                     {
                         var idProp = ev.Value<JValue>("id");

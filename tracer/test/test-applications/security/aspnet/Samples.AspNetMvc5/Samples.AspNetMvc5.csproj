@@ -192,7 +192,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <SecurityLibraryFiles Include="..\..\..\..\..\..\packages\libddwaf.1.0.10\runtimes\**\*.*" />
+    <SecurityLibraryFiles Include="..\..\..\..\..\..\packages\libddwaf.1.0.14\runtimes\**\*.*" />
   </ItemGroup>
   <Target Name="CopyFiles" AfterTargets="Build">
     <Copy SourceFiles="@(SecurityLibraryFiles)" DestinationFolder="$(TargetDir)\%(RecursiveDir)" SkipUnchangedFiles="true" />

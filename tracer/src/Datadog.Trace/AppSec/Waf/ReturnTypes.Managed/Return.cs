@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.Linq;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
@@ -12,15 +11,12 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
     {
         internal bool Blocked { get; private set; }
 
-        internal ResultData ResultData { get; set; }
+        internal WafMatch[] ResultData { get; set; }
 
-        internal static Return From(IResult wafReturn)
+        internal static Return From(IResult wafReturn) => new()
         {
-            return new Return
-            {
-                ResultData = JsonConvert.DeserializeObject<ResultData[]>(wafReturn.Data).FirstOrDefault(),
-                Blocked = wafReturn.ReturnCode == ReturnCode.Block
-            };
-        }
+            ResultData = JsonConvert.DeserializeObject<WafMatch[]>(wafReturn.Data),
+            Blocked = wafReturn.ReturnCode == ReturnCode.Block
+        };
     }
 }

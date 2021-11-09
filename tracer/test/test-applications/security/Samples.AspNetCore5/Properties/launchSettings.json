@@ -43,8 +43,7 @@
         "DD_VERSION": "1.0.0",
         "DD_TRACE_HEADER_TAGS": "sample.correlation.identifier, Server",
         "DD_TRACE_DEBUG": "0",
-        "DD_APPSEC_IPHEADER": "globalip-address",
-        "DD_APPSEC_EXTRA_HEADERS": "header-one,header-two,header-three"
+        "DD_APPSEC_IPHEADER": "globalip-address"
       },
       "Logging": {
         "LogLevel": {

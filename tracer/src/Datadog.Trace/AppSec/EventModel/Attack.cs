@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -27,16 +28,17 @@ namespace Datadog.Trace.AppSec.EventModel
 
         public static Attack From(Waf.ReturnTypes.Managed.Return result, Trace.Span span, Transport.ITransport transport, string customIpHeader, IEnumerable<string> extraHeaders)
         {
-            var ruleMatch = result.ResultData.Filter[0];
+            var resultData = result.ResultData[0];
+            var ruleMatch = resultData.RuleMatches.FirstOrDefault();
+            var parameter = ruleMatch?.Parameters?.FirstOrDefault();
             var request = transport.Request();
             var headersIpAndPort = RequestHeadersHelper.ExtractHeadersIpAndPort(transport.GetHeader, customIpHeader, extraHeaders,  transport.IsSecureConnection, new IpInfo(request.RemoteIp, request.RemotePort));
             request.Headers = headersIpAndPort.HeadersToSend;
-
             var frameworkDescription = FrameworkDescription.Instance;
             var attack = new Attack
             {
                 EventId = Guid.NewGuid().ToString(),
-                Context = new Context()
+                Context = new Context
                 {
                     Actor = new Actor { Ip = new Ip { Address = headersIpAndPort.IpInfo.IpAddress } },
                     Host = new Host
@@ -57,17 +59,22 @@ namespace Datadog.Trace.AppSec.EventModel
                     }
                 },
                 Blocked = result.Blocked,
-                Rule = new Rule { Name = result.ResultData.Flow, Id = result.ResultData.Rule },
+                Rule = new Rule { Name = resultData.Rule.Name, Id = resultData.Rule.Id },
                 DetectedAt = DateTime.UtcNow,
                 RuleMatch = new RuleMatch
                 {
-                    Operator = ruleMatch.Operator,
-                    OperatorValue = ruleMatch.OperatorValue,
-                    Highlight = new string[] { ruleMatch.MatchStatus },
-                    Parameters = new Parameter[] { new Parameter { Name = ruleMatch.BindingAccessor, Value = ruleMatch.ResolvedValue } }
+                    Operator = ruleMatch?.Operator,
+                    OperatorValue = string.IsNullOrEmpty(ruleMatch?.OperatorValue) ? parameter?.Value : ruleMatch.OperatorValue,
+                    Highlight = new[] { parameter?.Highlight.FirstOrDefault() },
+                    Parameters = new[] { new Parameter { Name = parameter?.Address, Value = parameter?.Value } }
                 },
-                Type = result.ResultData.Flow
+                Type = resultData.Rule?.Tags?.Type
             };
+            if (string.IsNullOrEmpty(attack.RuleMatch.Highlight[0]))
+            {
+                attack.RuleMatch.Highlight[0] = attack.RuleMatch.OperatorValue;
+            }
+
             if (span != null)
             {
                 attack.Context.Span = new Span { Id = span.SpanId };

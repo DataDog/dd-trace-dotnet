@@ -25,7 +25,7 @@ namespace Datadog.Trace.Security.UnitTests
         [Theory]
         [InlineData("2001:db8:3333:4444:5555:6666:7777:8888", 80, new[] { "fe80::20e:cff:fe3b:883c", "2001:db8:3333:4444:5555:6666:7777:8888" })]
         [InlineData("2001:db8:3333:4444:5555:6666:7777:8888", 53, new[] { "fe80::20e:cff:fe3b:883c", "fe80::5525:2a3f:6fa6:cd4e%14", "[2001:db8:3333:4444:5555:6666:7777:8888]:53" })]
-        [InlineData("FE80::240:D0FF:FE48:4672", 53, new[] { "fe80::20e:cff:fe3b:883c", "fe80::5525:2a3f:6fa6:cd4e%14", "FE80::240:D0FF:FE48:4672" })]
+        [InlineData("FE80::240:D0FF:FE48:4672", 80, new[] { "fe80::20e:cff:fe3b:883c", "fe80::5525:2a3f:6fa6:cd4e%14", "FE80::240:D0FF:FE48:4672" })]
         public void Ipv6PublicDetectedPrivateIgnored(string expectedIp, int expectedPort, string[] ips)
         {
             var ip = IpExtractor.GetRealIpFromValues(ips, false);
