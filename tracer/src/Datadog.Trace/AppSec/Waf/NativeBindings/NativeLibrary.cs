@@ -5,7 +5,9 @@
 
 using System;
 using System.Runtime.InteropServices;
+using System.Text;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.AppSec.Waf.NativeBindings
 {
@@ -23,6 +25,19 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             !RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
 #endif
 
+        [Flags]
+        public enum FORMAT_MESSAGE : int
+        {
+            NONE = 0,
+            ALLOCATE_BUFFER = 0x00000100,
+            ARGUMENT_ARRAY = 0x00002000,
+            FROM_HMODULE = 0x00000800,
+            FROM_STRING = 0x00000400,
+            FROM_SYSTEM = 0x00001000,
+            IGNORE_INSERTS = 0x00000200,
+            MAX_WIDTH_MASK = 0x000000FF
+        }
+
         internal static bool TryLoad(string libraryPath, out IntPtr handle)
         {
             if (libraryPath == null)
@@ -30,16 +45,54 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                 throw new ArgumentNullException(nameof(libraryPath));
             }
 
-            if (isPosixLike)
+            handle = IntPtr.Zero;
+
+            try
             {
-                handle = LoadPosixLibrary(libraryPath);
+                if (isPosixLike)
+                {
+                    handle = LoadPosixLibrary(libraryPath);
+                }
+                else
+                {
+                    handle = LoadWindowsLibrary(libraryPath);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                handle = LoadLibrary(libraryPath);
+                // as this method is prefixed "Try" we shouldn't throw, but experience has
+                // shown that unforseen circumstance can lead to exceptions being thrown
+                Log.Error("Error occured while trying to load library from {LibraryPath}", libraryPath, ex);
             }
 
             return handle != IntPtr.Zero;
+        }
+
+        private static IntPtr LoadWindowsLibrary(string libraryPath)
+        {
+            var handle = LoadLibrary(libraryPath);
+            if (handle == IntPtr.Zero)
+            {
+                LogWindowsError("LoadLibrary");
+            }
+
+            return handle;
+        }
+
+        private static void LogWindowsError(string source)
+        {
+            var hresult = GetLastError();
+            if (hresult != 0)
+            {
+                var msgOut = StringBuilderCache.Acquire(256);
+                var size = FormatMessage(FORMAT_MESSAGE.ALLOCATE_BUFFER | FORMAT_MESSAGE.FROM_SYSTEM | FORMAT_MESSAGE.IGNORE_INSERTS, IntPtr.Zero, hresult, 0, ref msgOut, (uint)msgOut.Capacity, IntPtr.Zero);
+                var message = msgOut.ToString().Trim();
+                Log.Warning("Error ocurred when calling {Function} message was: 0x{HResult}: {Message}", source, hresult.ToString("X8"), message);
+            }
+            else
+            {
+                Log.Warning("Error ocurred when calling {Function} but no error message was set", source);
+            }
         }
 
         internal static IntPtr GetExport(IntPtr handle, string name)
@@ -52,7 +105,13 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             }
             else
             {
-                return GetProcAddress(handle, name);
+                var exportPtr = GetProcAddress(handle, name);
+                if (exportPtr == IntPtr.Zero)
+                {
+                    LogWindowsError("GetExport");
+                }
+
+                return exportPtr;
             }
         }
 
@@ -76,15 +135,28 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             }
         }
 
-#pragma warning disable SA1300 // Element should begin with upper-case letter
-        [DllImport("kernel32.dll")]
+        [DllImport("kernel32.dll", SetLastError = true)]
         private static extern IntPtr LoadLibrary(string dllToLoad);
 
-        [DllImport("Kernel32.dll")]
+        [DllImport("Kernel32.dll", SetLastError = true)]
         private static extern IntPtr GetProcAddress(IntPtr hModule, string lpProcName);
+
+        [DllImport("Kernel32.dll")]
+        private static extern uint GetLastError();
+
+        [DllImport("Kernel32.dll", SetLastError = true)]
+        private static extern uint FormatMessage(
+            FORMAT_MESSAGE dwFlags,
+            IntPtr lpSource,
+            uint dwMessageId,
+            uint dwLanguageId,
+            ref StringBuilder lpBuffer,
+            uint nSize,
+            IntPtr pArguments);
 
         private static class NonWindows
         {
+#pragma warning disable SA1300 // Element should begin with upper-case letter
             [DllImport("Datadog.Trace.ClrProfiler.Native")]
             internal static extern IntPtr dddlopen(string fileName, int flags);
 
