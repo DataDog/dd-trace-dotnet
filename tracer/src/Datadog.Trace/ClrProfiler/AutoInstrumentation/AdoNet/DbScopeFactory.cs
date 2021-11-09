@@ -52,11 +52,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             // defined in a base class like DbCommand and we can't use the cached integration details
             if (TryGetIntegrationDetails(commandType, out var integrationId, out var dbType))
             {
-                if (integrationId is not null && dbType is not null)
-                {
-                    var integration = IntegrationRegistry.GetIntegrationInfo(integrationId.ToString());
-                    return CreateDbCommandScope(tracer, command, integration, dbType);
-                }
+                var integration = IntegrationRegistry.GetIntegrationInfo(integrationId.ToString());
+                return CreateDbCommandScope(tracer, command, integration, dbType);
             }
 
             // could not determine integration details from command type
