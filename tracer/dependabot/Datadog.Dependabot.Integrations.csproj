@@ -79,7 +79,7 @@
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!-- Assembly: Microsoft.Azure.Cosmos.Client -->
     <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.22.0 -->
-    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.22.0" />
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.22.1" />
 
     <!-- Integration: Elasticsearch.Net -->
     <!-- Assembly: Elasticsearch.Net -->
