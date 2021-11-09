@@ -3,7 +3,7 @@
     TraceId: Id_1,
     SpanId: Id_2,
     Name: aspnet-webapi.request,
-    Resource: GET /api/delay-async/{seconds},
+    Resource: GET api/delay-async/{seconds},
     Service: sample,
     Type: web,
     ParentId: Id_3,
@@ -23,7 +23,7 @@
     TraceId: Id_1,
     SpanId: Id_3,
     Name: aspnet.request,
-    Resource: GET /api/delay-async/{seconds},
+    Resource: GET /api/delay-async/?,
     Service: sample,
     Type: web,
     Tags: {
