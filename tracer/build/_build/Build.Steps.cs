@@ -301,7 +301,7 @@ partial class Build
         {
             if (IsWin)
             {
-                foreach (var architecture in new[] { "win-x86", "win-x64" })
+                foreach (var architecture in WafWindowsArchitectureFolders)
                 {
                     var source = LibDdwafDirectory / "runtimes" / architecture / "native" / "ddwaf.dll";
                     var dest = TracerHomeDirectory / architecture;
@@ -1505,7 +1505,7 @@ partial class Build
     private void EnsureResultsDirectory(Project proj) => EnsureCleanDirectory(GetResultsDirectory(proj));
 
     private (string, string) GetUnixArchitectureAndExtension() => IsOsx ? ("osx-x64", "dylib") : ($"linux-{LinuxArchitectureIdentifier}", "so");
-    // the integration tests need their own copy of the profiler, this achived through build.props on Windows, but doesn't seem to work under Linux
+    // the integration tests need their own copy of the profiler, this achieved through build.props on Windows, but doesn't seem to work under Linux
     private void IntegrationTestLinuxProfilerDirFudge(string project)
     {
         // Not sure if/why this is necessary, and we can't just point to the correct output location
