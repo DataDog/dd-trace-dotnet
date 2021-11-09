@@ -3,11 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#nullable enable
-
 using System;
 using System.Data;
-using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
@@ -19,9 +16,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DbScopeFactory<TCommand>));
 
         // these values are only valid in CreateDbCommandScope() if command type is TCommand
-        private static readonly Type? _type;
-        private static readonly string? _dbTypeName;
-        private static readonly string? _operationName;
+        private static readonly Type _type;
+        private static readonly string _dbTypeName;
+        private static readonly string _operationName;
         private static readonly IntegrationInfo? _integrationInfo;
 
         static DbScopeFactory()
@@ -38,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             }
         }
 
-        public static Scope? CreateDbCommandScope(Tracer tracer, IDbCommand command)
+        public static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command)
         {
             var commandType = command.GetType();
 
@@ -60,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             return null;
         }
 
-        public static Scope? CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationInfo integration, string dbType)
+        public static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationInfo integration, string dbType)
         {
             if (!tracer.Settings.IsIntegrationEnabled(integration))
             {
@@ -70,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
             try
             {
-                Span? parent = tracer.ActiveScope?.Span;
+                Span parent = tracer.ActiveScope?.Span;
 
                 if (parent is { Type: SpanTypes.Sql } &&
                     parent.GetTag(Tags.DbType) == dbType &&
@@ -106,8 +103,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
         public static bool TryGetIntegrationDetails(
             Type commandType,
-            [NotNullWhen(true)] out IntegrationIds? integrationId,
-            [NotNullWhen(true)] out string? dbType)
+            out IntegrationIds? integrationId,
+            out string dbType)
         {
             string commandTypeFullName = commandType.FullName ?? string.Empty;
 
