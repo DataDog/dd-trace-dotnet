@@ -1,6 +1,6 @@
 ARG DOTNETSDK_VERSION
 # debian 10 image
-FROM mcr.microsoft.com/dotnet/sdk:$DOTNETSDK_VERSION-buster-slim as base
+FROM mcr.microsoft.com/dotnet/sdk:$DOTNETSDK_VERSION-bullseye-slim as base
 # ubuntu image
 # FROM mcr.microsoft.com/dotnet/sdk:$DOTNETSDK_VERSION-focal
 
@@ -47,6 +47,7 @@ RUN if [ "$(uname -m)" = "x86_64" ]; \
     && ./dotnet-install.sh --runtime $NETCORERUNTIME2_1 --channel 2.1 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 3.0 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 3.1 --install-dir /usr/share/dotnet --no-path \
+    && ./dotnet-install.sh --runtime aspnetcore --channel 5.0 --install-dir /usr/share/dotnet --no-path \
     && rm dotnet-install.sh
 
 

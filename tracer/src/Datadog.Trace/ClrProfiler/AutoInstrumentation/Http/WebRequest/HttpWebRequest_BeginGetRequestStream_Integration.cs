@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
         ReturnTypeName = ClrNames.IAsyncResult,
         ParameterTypeNames = new[] { ClrNames.AsyncCallback, ClrNames.Object },
         MinimumVersion = WebRequestCommon.Major4,
-        MaximumVersion = WebRequestCommon.Major5,
+        MaximumVersion = WebRequestCommon.Major6,
         IntegrationName = WebRequestCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]

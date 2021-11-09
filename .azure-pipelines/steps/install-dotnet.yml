@@ -18,7 +18,13 @@ steps:
     version: 3.1.x
 
 - task: UseDotNet@2
-  displayName: install dotnet core sdk 5.0
+  displayName: install dotnet core runtime 5.0
+  inputs:
+    packageType: runtime
+    version: 5.0.x
+    
+- task: UseDotNet@2
+  displayName: install latest dotnet core sdk
   inputs:
     packageType: sdk
-    version: $(dotnetCoreSdk5Version)
+    version: $(dotnetCoreSdkLatestVersion)

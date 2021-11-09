@@ -29,6 +29,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces(string packageVersion)
         {
+#if NET6_0_OR_GREATER
+            if (packageVersion?.StartsWith("3.") == true)
+            {
+                // Versions 3.* of RabbitMQ.Client aren't compatible with .NET 6
+                // https://github.com/dotnet/runtime/issues/61167
+                return;
+            }
+#endif
+
             var expectedSpanCount = 26;
 
             int basicPublishCount = 0;

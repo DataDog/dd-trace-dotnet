@@ -62,7 +62,7 @@ schedules:
 # Global variables
 variables:
   buildConfiguration: Release
-  dotnetCoreSdk5Version: 5.0.401
+  dotnetCoreSdkLatestVersion: 6.0.100
   relativeTracerHome: /tracer/src/bin/windows-tracer-home
   relativeArtifacts: /tracer/src/bin/artifacts
   ddTracerHome: $(System.DefaultWorkingDirectory)/tracer/src/bin/dd-tracer-home
@@ -117,7 +117,7 @@ stages:
     - checkout: self
       path: s
 
-    - template: steps/install-dotnet-5-sdk.yml
+    - template: steps/install-latest-dotnet-sdk.yml
 
     # workaround for "Unable move and reuse existing repository to required location."
     # https://github.com/microsoft/azure-pipelines-yaml/issues/403
@@ -247,7 +247,7 @@ stages:
     pool:
       vmImage: macOS-10.15
     steps:
-    - template: steps/install-dotnet-5-sdk.yml
+    - template: steps/install-latest-dotnet-sdk.yml
 
     - script: ./tracer/build.sh BuildTracerHome
       displayName: Build tracer home
@@ -275,7 +275,7 @@ stages:
       # Temporarily use the profiling repo's commit hash for the beta MSI's filename
       BetaMsiSuffix: $[ stageDependencies.build_windows.build.outputs['SetMsiSuffix.BetaMsiSuffix']]
     steps:
-      - template: steps/install-dotnet-5-sdk.yml
+      - template: steps/install-latest-dotnet-sdk.yml
       - template: steps/restore-working-directory.yml
       - script: echo $(BetaMsiSuffix) # TODO Remove
 
@@ -475,7 +475,7 @@ stages:
     steps:
     - bash: |
         matrix="{"
-        for framework in "net461" "netcoreapp2.1" "netcoreapp3.0" "netcoreapp3.1" "net5.0"; do
+        for framework in "net461" "netcoreapp2.1" "netcoreapp3.0" "netcoreapp3.1" "net5.0" "net6.0"; do
           for platform in "x64" "x86"; do
             name="${platform}_${framework//./_}"
             if [ $target == "BuildAndRunWindowsIntegrationTests" ]; then cosmos=true; else cosmos=false; fi
@@ -550,7 +550,7 @@ stages:
     steps:
       - bash: |
           matrix="{"
-          for framework in "net461" "netcoreapp2.1" "netcoreapp3.0" "netcoreapp3.1" "net5.0"; do
+          for framework in "net461" "netcoreapp2.1" "netcoreapp3.0" "netcoreapp3.1" "net5.0" "net6.0"; do
             for platform in "x64" "x86"; do
               name="${framework//./_}_${platform}"
               if [ $platform == "x86" ]; then enable32bit=true; else enable32bit=false; fi
@@ -652,6 +652,9 @@ stages:
         debian_net5_0:
           publishTargetFramework: net5.0
           baseImage: debian
+        debian_net6_0:
+          publishTargetFramework: net6.0
+          baseImage: debian
         alpine_netcoreapp2_1:
           publishTargetFramework: netcoreapp2.1
           baseImage: alpine
@@ -663,6 +666,9 @@ stages:
           baseImage: alpine
         alpine_net5_0:
           publishTargetFramework: net5.0
+          baseImage: alpine
+        alpine_net6_0:
+          publishTargetFramework: net6.0
           baseImage: alpine
 
     variables:
@@ -749,10 +755,15 @@ stages:
         jobs: [Test]
 
     - job: Test
+      strategy:
+        matrix:
+          net5_0:
+            publishTargetFramework: net5.0
+          net6_0:
+            publishTargetFramework: net6.0
       variables:
         TestAllPackageVersions: true
         IncludeMinorPackageVersions:  $[or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.perform_comprehensive_testing, 'true'))]
-        publishTargetFramework: net5.0
         baseImage: debian
       workspace:
         clean: all
@@ -848,7 +859,7 @@ stages:
 
     steps:
 
-    - template: steps/install-dotnet-5-sdk.yml
+    - template: steps/install-latest-dotnet-sdk.yml
     - template: steps/restore-working-directory.yml
 
     - script: tracer\build.cmd RunBenchmarks
@@ -890,7 +901,7 @@ stages:
       dd_agent: dd_agent
 
     steps:
-    - template: steps/install-dotnet-5-sdk.yml
+    - template: steps/install-latest-dotnet-sdk.yml
     - template: steps/restore-working-directory.yml
 
     - task: DownloadPipelineArtifact@2
@@ -1281,7 +1292,7 @@ stages:
         vmImage: windows-2019
 
       steps:
-      - template: steps/install-dotnet-5-sdk.yml
+      - template: steps/install-latest-dotnet-sdk.yml
       - template: steps/restore-working-directory.yml
 
       - task: DownloadPipelineArtifact@2
