@@ -8,24 +8,25 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Net;
+using System.Net.Http;
+using System.Threading.Tasks;
 using Nuke.Common.IO;
 
 namespace UpdateVendors
 {
     public static class UpdateVendorsTool
     {
-        public static void UpdateVendors(
+        public static async Task UpdateVendors(
             AbsolutePath downloadDirectory,
             AbsolutePath vendorDirectory)
         {
             foreach (var dependency in VendoredDependency.All)
             {
-                UpdateVendor(dependency, downloadDirectory, vendorDirectory);
+                await UpdateVendor(dependency, downloadDirectory, vendorDirectory);
             }
         }
 
-        private static void UpdateVendor(VendoredDependency dependency, AbsolutePath downloadDirectory, AbsolutePath vendorDirectory)
+        private static async Task UpdateVendor(VendoredDependency dependency, AbsolutePath downloadDirectory, AbsolutePath vendorDirectory)
         {
             var libraryName = dependency.LibraryName;
             var downloadUrl = dependency.DownloadUrl;
@@ -46,9 +47,11 @@ namespace UpdateVendors
                 return;
             }
 
-            using (var repoDownloadClient = new WebClient())
+            using (var repoDownloadClient = new HttpClient())
             {
-                repoDownloadClient.DownloadFile(downloadUrl, zipLocation);
+                await using var stream = await repoDownloadClient.GetStreamAsync(downloadUrl);
+                await using var file = File.Create(zipLocation);
+                await stream.CopyToAsync(file);
             }
 
             Console.WriteLine($"Downloaded {libraryName} upgrade.");

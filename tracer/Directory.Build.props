@@ -9,6 +9,8 @@
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)..\Datadog.Trace.snk</AssemblyOriginatorKeyFile>
     <DelaySign>false</DelaySign>
+    <!-- WebClient is obsolete -->
+    <NoWarn>SYSLIB0014</NoWarn>
   </PropertyGroup>
 
   <!-- StyleCop -->

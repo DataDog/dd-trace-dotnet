@@ -1,4 +1,4 @@
-﻿// <copyright file="HttpWebRequest_BeginGetRequestStream_Integration.cs" company="Datadog">
+// <copyright file="HttpWebRequest_BeginGetRequestStream_Integration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
         ReturnTypeName = ClrNames.IAsyncResult,
         ParameterTypeNames = new[] { ClrNames.AsyncCallback, ClrNames.Object },
         MinimumVersion = WebRequestCommon.Major4,
-        MaximumVersion = WebRequestCommon.Major5,
+        MaximumVersion = WebRequestCommon.Major6,
         IntegrationName = WebRequestCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
