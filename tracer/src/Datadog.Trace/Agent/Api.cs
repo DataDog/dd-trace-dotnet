@@ -11,7 +11,6 @@ using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
-using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;
 
@@ -28,24 +27,23 @@ namespace Datadog.Trace.Agent
         private readonly IDogStatsd _statsd;
         private readonly string _containerId;
         private readonly Uri _tracesEndpoint;
-        private readonly ISampler _sampler;
+        private readonly Action<Dictionary<string, float>> _updateSampleRates;
         private readonly bool _isPartialFlushEnabled;
         private string _cachedResponse;
         private string _agentVersion;
 
         public Api(
             Uri baseEndpoint,
-            IApiRequestFactory
-            apiRequestFactory,
+            IApiRequestFactory apiRequestFactory,
             IDogStatsd statsd,
-            ISampler sampler,
+            Action<Dictionary<string, float>> updateSampleRates,
             bool isPartialFlushEnabled,
             IDatadogLogger log = null)
         {
             // optionally injecting a log instance in here for testing purposes
             _log = log ?? StaticLog;
             _log.Debug("Creating new Api");
-            _sampler = sampler;
+            _updateSampleRates = updateSampleRates;
             _tracesEndpoint = new Uri(baseEndpoint, TracesPath);
             _statsd = statsd;
             _containerId = ContainerMetadata.GetContainerId();
@@ -213,7 +211,7 @@ namespace Datadog.Trace.Agent
                         LogPartialFlushWarningIfRequired(version ?? string.Empty);
                     }
 
-                    if (response.ContentLength != 0 && _sampler != null)
+                    if (response.ContentLength != 0 && _updateSampleRates is not null)
                     {
                         var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
 
@@ -221,7 +219,7 @@ namespace Datadog.Trace.Agent
                         {
                             var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(responseContent);
 
-                            _sampler.SetDefaultSampleRates(apiResponse?.RateByService);
+                            _updateSampleRates(apiResponse?.RateByService);
 
                             _cachedResponse = responseContent;
                         }

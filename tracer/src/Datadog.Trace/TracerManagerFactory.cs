@@ -131,7 +131,7 @@ namespace Datadog.Trace
         protected virtual IAgentWriter GetAgentWriter(TracerSettings settings, IDogStatsd statsd, ISampler sampler)
         {
             var apiRequestFactory = TransportStrategy.Get(settings);
-            var api = new Api(settings.AgentUri, apiRequestFactory, statsd, sampler, settings.PartialFlushEnabled);
+            var api = new Api(settings.AgentUri, apiRequestFactory, statsd, rates => sampler.SetDefaultSampleRates(rates), settings.PartialFlushEnabled);
             return new AgentWriter(api, statsd, maxBufferSize: settings.TraceBufferSize);
         }
 

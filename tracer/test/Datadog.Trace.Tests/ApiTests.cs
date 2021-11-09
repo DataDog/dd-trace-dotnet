@@ -30,7 +30,7 @@ namespace Datadog.Trace.Tests
             var factoryMock = new Mock<IApiRequestFactory>();
             factoryMock.Setup(x => x.Create(It.IsAny<Uri>())).Returns(requestMock.Object);
 
-            var api = new Api(new Uri("http://127.0.0.1:1234"), apiRequestFactory: factoryMock.Object, statsd: null, sampler: null, isPartialFlushEnabled: false);
+            var api = new Api(new Uri("http://127.0.0.1:1234"), apiRequestFactory: factoryMock.Object, statsd: null, updateSampleRates: null, isPartialFlushEnabled: false);
 
             await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1);
 
@@ -49,7 +49,7 @@ namespace Datadog.Trace.Tests
             var factoryMock = new Mock<IApiRequestFactory>();
             factoryMock.Setup(x => x.Create(It.IsAny<Uri>())).Returns(requestMock.Object);
 
-            var api = new Api(new Uri("http://127.0.0.1:1234"), apiRequestFactory: factoryMock.Object, statsd: null, sampler: null, isPartialFlushEnabled: false);
+            var api = new Api(new Uri("http://127.0.0.1:1234"), apiRequestFactory: factoryMock.Object, statsd: null, updateSampleRates: null, isPartialFlushEnabled: false);
 
             await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1);
 
@@ -73,7 +73,7 @@ namespace Datadog.Trace.Tests
 
             var logMock = new Mock<IDatadogLogger>();
 
-            var api = new Api(new Uri("http://127.0.0.1:1234"), apiRequestFactory: factoryMock.Object, statsd: null, sampler: null, isPartialFlushEnabled: true, log: logMock.Object);
+            var api = new Api(new Uri("http://127.0.0.1:1234"), apiRequestFactory: factoryMock.Object, statsd: null, updateSampleRates: null, isPartialFlushEnabled: true, log: logMock.Object);
 
             // First time should write the warning
             await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1);
@@ -107,13 +107,12 @@ namespace Datadog.Trace.Tests
             var factoryMock = new Mock<IApiRequestFactory>();
             factoryMock.Setup(x => x.Create(It.IsAny<Uri>())).Returns(requestMock.Object);
 
-            var samplerMock = new Mock<ISampler>();
-            samplerMock.Setup(x => x.SetDefaultSampleRates(It.IsAny<Dictionary<string, float>>()));
-
-            var api = new Api(new Uri("http://127.0.0.1:1234"), apiRequestFactory: factoryMock.Object, statsd: null, sampler: samplerMock.Object, isPartialFlushEnabled: false);
+            var ratesWereSet = false;
+            Action<Dictionary<string, float>> updateSampleRates = _ => ratesWereSet = true;
+            var api = new Api(new Uri("http://127.0.0.1:1234"), apiRequestFactory: factoryMock.Object, statsd: null, updateSampleRates: updateSampleRates, isPartialFlushEnabled: false);
 
             await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1);
-            samplerMock.Verify();
+            ratesWereSet.Should().BeTrue();
         }
 
         [Theory]
@@ -126,7 +125,7 @@ namespace Datadog.Trace.Tests
         [InlineData("", false, false)] // Version check fail, partial flush disabled
         public void LogPartialFlushWarning(string agentVersion, bool partialFlushEnabled, bool expectedResult)
         {
-            var api = new Api(new Uri("http://127.0.0.1:1234"), apiRequestFactory: null, statsd: null, sampler: null, isPartialFlushEnabled: partialFlushEnabled);
+            var api = new Api(new Uri("http://127.0.0.1:1234"), apiRequestFactory: null, statsd: null, updateSampleRates: null, isPartialFlushEnabled: partialFlushEnabled);
 
             // First call depends on the parameters of the test
             api.LogPartialFlushWarningIfRequired(agentVersion).Should().Be(expectedResult);
