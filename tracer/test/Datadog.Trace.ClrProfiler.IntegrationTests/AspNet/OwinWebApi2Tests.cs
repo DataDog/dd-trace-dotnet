@@ -52,10 +52,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base("Owin.WebApi2", output)
         {
             SetServiceVersion("1.0.0");
-            if (enableRouteTemplateResourceNames)
-            {
-                SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, "true");
-            }
+            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, enableRouteTemplateResourceNames.ToString());
 
             _fixture = fixture;
             _output = output;
