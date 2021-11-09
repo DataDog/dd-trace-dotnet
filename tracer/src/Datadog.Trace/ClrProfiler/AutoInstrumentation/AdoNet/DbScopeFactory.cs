@@ -3,8 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Data;
+using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
@@ -15,9 +18,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DbScopeFactory<TCommand>));
 
-        private static readonly Type _type;
-        private static readonly string _dbTypeName;
-        private static readonly string _operationName;
+        // these values are only valid in CreateDbCommandScope() if command type is TCommand
+        private static readonly Type? _type;
+        private static readonly string? _dbTypeName;
+        private static readonly string? _operationName;
         private static readonly IntegrationInfo? _integrationInfo;
 
         static DbScopeFactory()
@@ -34,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             }
         }
 
-        public static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command)
+        public static Scope? CreateDbCommandScope(Tracer tracer, IDbCommand command)
         {
             var commandType = command.GetType();
 
@@ -48,15 +52,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             // defined in a base class like DbCommand and we can't use the cached integration details
             if (TryGetIntegrationDetails(commandType, out var integrationId, out var dbType))
             {
-                var integration = IntegrationRegistry.GetIntegrationInfo(integrationId.ToString());
-                return CreateDbCommandScope(tracer, command, integration, dbType);
+                if (integrationId is not null && dbType is not null)
+                {
+                    var integration = IntegrationRegistry.GetIntegrationInfo(integrationId.ToString());
+                    return CreateDbCommandScope(tracer, command, integration, dbType);
+                }
             }
 
             // could not determine integration details from command type
             return null;
         }
 
-        public static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationInfo integration, string dbType)
+        public static Scope? CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationInfo integration, string dbType)
         {
             if (!tracer.Settings.IsIntegrationEnabled(integration))
             {
@@ -64,13 +71,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 return null;
             }
 
-            Scope scope = null;
-
             try
             {
-                Span parent = tracer.ActiveScope?.Span;
+                Span? parent = tracer.ActiveScope?.Span;
 
-                if (parent?.Type == SpanTypes.Sql &&
+                if (parent is { Type: SpanTypes.Sql } &&
                     parent.GetTag(Tags.DbType) == dbType &&
                     parent.ResourceName == command.CommandText)
                 {
@@ -90,20 +95,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
                 tags.SetAnalyticsSampleRate(integration, tracer.Settings, enabledWithGlobalSetting: false);
 
-                scope = tracer.StartActiveWithTags(_operationName, tags: tags, serviceName: serviceName);
+                Scope scope = tracer.StartActiveWithTags(_operationName, tags: tags, serviceName: serviceName);
                 scope.Span.AddTagsFromDbCommand(command);
+
+                return scope;
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error creating or populating scope.");
+                return null;
             }
-
-            return scope;
         }
 
-        public static bool TryGetIntegrationDetails(Type commandType, out IntegrationIds? integrationId, out string dbType)
+        public static bool TryGetIntegrationDetails(
+            Type commandType,
+            [NotNullWhen(true)] out IntegrationIds? integrationId,
+            [NotNullWhen(true)] out string? dbType)
         {
-            var commandTypeFullName = commandType.FullName ?? string.Empty;
+            string commandTypeFullName = commandType.FullName ?? string.Empty;
 
             if (commandTypeFullName.Length < 2)
             {
@@ -113,60 +122,37 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 return false;
             }
 
-            if (commandTypeFullName[0] is 'S')
+            switch (commandTypeFullName[0])
             {
-                if (commandTypeFullName is "System.Data.SqlClient.SqlCommand")
-                {
+                case 'S' when commandTypeFullName is "System.Data.SqlClient.SqlCommand":
                     integrationId = IntegrationIds.SqlClient;
                     dbType = DbType.SqlServer;
                     return true;
-                }
-
-                if (commandTypeFullName is "System.Data.SQLite.SQLiteCommand")
-                {
-                    // note capitalization in SQLite
+                case 'S' when commandTypeFullName is "System.Data.SQLite.SQLiteCommand": // note capitalization in SQLite
                     integrationId = IntegrationIds.Sqlite;
                     dbType = DbType.Sqlite;
                     return true;
-                }
-            }
-            else if (commandTypeFullName[0] is 'M')
-            {
-                if (commandTypeFullName is "Microsoft.Data.SqlClient.SqlCommand")
-                {
+                case 'M' when commandTypeFullName is "Microsoft.Data.SqlClient.SqlCommand":
                     integrationId = IntegrationIds.SqlClient;
                     dbType = DbType.SqlServer;
                     return true;
-                }
-
-                if (commandTypeFullName is "Microsoft.Data.Sqlite.SqliteCommand")
-                {
-                    // note capitalization in Sqlite
+                case 'M' when commandTypeFullName is "Microsoft.Data.Sqlite.SqliteCommand": // note capitalization in Sqlite
                     integrationId = IntegrationIds.Sqlite;
                     dbType = DbType.Sqlite;
                     return true;
-                }
-
-                if (commandTypeFullName[1] is 'y' &&
-                    commandTypeFullName is "MySql.Data.MySqlClient.MySqlCommand" or "MySqlConnector.MySqlCommand")
-                {
+                case 'M' when commandTypeFullName[1] is 'y' &&
+                              commandTypeFullName is "MySql.Data.MySqlClient.MySqlCommand" or "MySqlConnector.MySqlCommand":
                     integrationId = IntegrationIds.MySql;
                     dbType = DbType.MySql;
                     return true;
-                }
-            }
-            else if (commandTypeFullName[0] is 'N' && commandTypeFullName is "Npgsql.NpgsqlCommand")
-            {
-                integrationId = IntegrationIds.Npgsql;
-                dbType = DbType.PostgreSql;
-                return true;
-            }
-            else if (commandTypeFullName[0] is 'O' &&
-                     commandTypeFullName is "Oracle.ManagedDataAccess.Client.OracleCommand" or "Oracle.DataAccess.Client.OracleCommand")
-            {
-                integrationId = IntegrationIds.Oracle;
-                dbType = DbType.Oracle;
-                return true;
+                case 'N' when commandTypeFullName is "Npgsql.NpgsqlCommand":
+                    integrationId = IntegrationIds.Npgsql;
+                    dbType = DbType.PostgreSql;
+                    return true;
+                case 'O' when commandTypeFullName is "Oracle.ManagedDataAccess.Client.OracleCommand" or "Oracle.DataAccess.Client.OracleCommand":
+                    integrationId = IntegrationIds.Oracle;
+                    dbType = DbType.Oracle;
+                    return true;
             }
 
             integrationId = null;
