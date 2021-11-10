@@ -11,53 +11,23 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 {
-    internal static class DbScopeFactory<TCommand>
+    internal static class DbScopeFactory
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DbScopeFactory<TCommand>));
-
-        // these values are only valid in CreateDbCommandScope() if command type is TCommand
-        private static readonly Type _type;
-        private static readonly string _dbTypeName;
-        private static readonly string _operationName;
-        private static readonly IntegrationInfo? _integrationInfo;
-
-        static DbScopeFactory()
-        {
-            _type = typeof(TCommand);
-
-            if (TryGetIntegrationDetails(_type, out var integrationId, out var dbTypeName))
-            {
-                // try to cache details for TCommand, but sometimes we will need a fallback
-                // (e.g. if TCommand is DbCommand because we are instrumenting a method on the base type)
-                _dbTypeName = dbTypeName;
-                _operationName = $"{_dbTypeName}.query";
-                _integrationInfo = IntegrationRegistry.GetIntegrationInfo(integrationId.ToString());
-            }
-        }
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DbScopeFactory));
 
         public static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command)
         {
-            var commandType = command.GetType();
-
-            if (commandType == _type && _integrationInfo != null && _dbTypeName != null)
-            {
-                // use the integration details cached in static fields if command type is TCommand
-                return CreateDbCommandScope(tracer, command, _integrationInfo.Value, _dbTypeName);
-            }
-
-            // if command type is not TCommand, we are probably instrumenting a method
-            // defined in a base class like DbCommand and we can't use the cached integration details
-            if (TryGetIntegrationDetails(commandType, out var integrationId, out var dbType))
+            if (TryGetIntegrationDetails(command.GetType(), out var integrationId, out var dbTypeName))
             {
                 var integration = IntegrationRegistry.GetIntegrationInfo(integrationId.ToString());
-                return CreateDbCommandScope(tracer, command, integration, dbType);
+                var operationName = $"{dbTypeName}.query";
+                return CreateDbCommandScope(tracer, command, integration, dbTypeName, operationName);
             }
 
-            // could not determine integration details from command type
             return null;
         }
 
-        public static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationInfo integration, string dbType)
+        public static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationInfo integration, string dbType, string operationName)
         {
             if (!tracer.Settings.IsIntegrationEnabled(integration))
             {
@@ -89,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
                 tags.SetAnalyticsSampleRate(integration, tracer.Settings, enabledWithGlobalSetting: false);
 
-                Scope scope = tracer.StartActiveWithTags(_operationName, tags: tags, serviceName: serviceName);
+                Scope scope = tracer.StartActiveWithTags(operationName, tags: tags, serviceName: serviceName);
                 scope.Span.AddTagsFromDbCommand(command);
 
                 return scope;
