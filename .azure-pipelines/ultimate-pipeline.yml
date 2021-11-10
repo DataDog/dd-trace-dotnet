@@ -72,7 +72,8 @@ variables:
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
   artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
   ddApiKey: $(DD_API_KEY)
-  isMainBranch: $[or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'))]
+  isMainBranch: $[in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main')]
+  isMainOrReleaseBranch: $[or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'))]
   isPullRequest: $[eq(variables['Build.Reason'], 'PullRequest')]
   DD_DOTNET_TRACER_MSBUILD:
   NugetPackageDirectory: $(System.DefaultWorkingDirectory)/packages
@@ -666,7 +667,7 @@ stages:
 
     variables:
       TestAllPackageVersions: true
-      IncludeMinorPackageVersions:  $[or(eq(variables.isMainBranch, 'true'), eq(variables.perform_comprehensive_testing, 'true'))]
+      IncludeMinorPackageVersions:  $[or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.perform_comprehensive_testing, 'true'))]
 
     pool:
       vmImage: ubuntu-18.04
@@ -750,7 +751,7 @@ stages:
     - job: Test
       variables:
         TestAllPackageVersions: true
-        IncludeMinorPackageVersions:  $[or(eq(variables.isMainBranch, 'true'), eq(variables.perform_comprehensive_testing, 'true'))]
+        IncludeMinorPackageVersions:  $[or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.perform_comprehensive_testing, 'true'))]
         publishTargetFramework: net5.0
         baseImage: debian
       workspace:
