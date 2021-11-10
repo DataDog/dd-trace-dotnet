@@ -100,6 +100,9 @@ namespace environment
     // Sets whether to enable JIT inlining
     const WSTRING clr_enable_inlining = WStr("DD_CLR_ENABLE_INLINING");
 
+    // Enables the compatibility with other versions of Datadog.Trace
+    const WSTRING internal_version_compatibility = WStr("DD_INTERNAL_TRACE_VERSION_COMPATIBILITY");
+
     // Sets whether to enable NGEN images.
     const WSTRING clr_enable_ngen = WStr("DD_CLR_ENABLE_NGEN");
 

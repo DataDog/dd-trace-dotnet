@@ -615,8 +615,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
 
         const auto& expected_assembly_reference = trace::AssemblyReference(managed_profiler_full_assembly_version);
 
-        RewriteForDistributedTracing(module_metadata, module_id,
-                                     assemblyVersion == expected_assembly_reference.version.str());
+        if (IsVersionCompatibilityEnabled())
+        {
+            RewriteForDistributedTracing(module_metadata, module_id,
+                                         assemblyVersion == expected_assembly_reference.version.str());
+        }
     }
     else
     {
@@ -1187,7 +1190,7 @@ bool CorProfiler::ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_i
            managed_profiler_loaded_app_domains.find(app_domain_id) != managed_profiler_loaded_app_domains.end();
 }
 
-HRESULT CorProfiler::RewriteForDistributedTracing(ModuleMetadata& module_metadata, ModuleID module_id,
+HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_metadata, ModuleID module_id,
                                                   bool autoInstrumentationModule)
 {
     //
@@ -1280,7 +1283,7 @@ HRESULT CorProfiler::RewriteForDistributedTracing(ModuleMetadata& module_metadat
         {
             Logger::Info(GetILCodes("After -> GetDistributedTrace: ", &getterRewriter,
                                     GetFunctionInfo(module_metadata.metadata_import, getDistributedTraceMethodDef),
-                                    &module_metadata));
+                                    module_metadata));
         }
 
         //
@@ -1320,7 +1323,7 @@ HRESULT CorProfiler::RewriteForDistributedTracing(ModuleMetadata& module_metadat
         {
             Logger::Info(GetILCodes("After -> SetDistributedTrace", &setterRewriter,
                                     GetFunctionInfo(module_metadata.metadata_import, setDistributedTraceMethodDef),
-                                    &module_metadata));
+                                    module_metadata));
         }
     }
     else
@@ -1387,7 +1390,7 @@ HRESULT CorProfiler::RewriteForDistributedTracing(ModuleMetadata& module_metadat
         {
             Logger::Info(GetILCodes("After -> GetDistributedTrace. ", &getterRewriter,
                                     GetFunctionInfo(module_metadata.metadata_import, getDistributedTraceMethodDef),
-                                    &module_metadata));
+                                    module_metadata));
         }
 
         //
@@ -1427,7 +1430,7 @@ HRESULT CorProfiler::RewriteForDistributedTracing(ModuleMetadata& module_metadat
         {
             Logger::Info(GetILCodes("After -> SetDistributedTrace. ", &setterRewriter,
                                     GetFunctionInfo(module_metadata.metadata_import, setDistributedTraceMethodDef),
-                                    &module_metadata));
+                                    module_metadata));
         }
     }
 
