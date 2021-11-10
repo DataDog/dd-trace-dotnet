@@ -185,8 +185,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         public void CreateDbCommandScope_UsesReplacementServiceNameWhenProvided(IDbCommand command)
         {
             // Set up tracer
-            var commandType = command.GetType();
-            DbScopeFactory.TryGetIntegrationDetails(commandType, out _, out var dbType);
+            DbScopeFactory.TryGetIntegrationDetails(command.GetType().FullName, out _, out var dbType);
 
             var collection = new NameValueCollection
             {

@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         {
             _commandType = typeof(TCommand);
 
-            if (DbScopeFactory.TryGetIntegrationDetails(_commandType, out var integrationId, out var dbTypeName))
+            if (DbScopeFactory.TryGetIntegrationDetails(_commandType.FullName, out var integrationId, out var dbTypeName))
             {
                 // cache values for this TCommand type
                 _dbTypeName = dbTypeName;

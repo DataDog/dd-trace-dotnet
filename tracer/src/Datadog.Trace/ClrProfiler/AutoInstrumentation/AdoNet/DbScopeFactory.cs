@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
         public static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command)
         {
-            if (TryGetIntegrationDetails(command.GetType(), out var integrationId, out var dbTypeName))
+            if (TryGetIntegrationDetails(command.GetType().FullName, out var integrationId, out var dbTypeName))
             {
                 var integration = IntegrationRegistry.GetIntegrationInfo(integrationId.ToString());
                 var operationName = $"{dbTypeName}.query";

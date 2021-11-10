@@ -57,8 +57,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         public void CreateDbCommandScope_UsesReplacementServiceNameWhenProvided(IDbCommand command)
         {
             // Set up tracer
-            var commandType = command.GetType();
-            DbScopeFactory.TryGetIntegrationDetails(commandType, out _, out var dbType);
+            DbScopeFactory.TryGetIntegrationDetails(command.GetType().FullName, out _, out var dbType);
 
             var collection = new NameValueCollection
             {
@@ -97,17 +96,17 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         }
 
         [Theory]
-        [InlineData("System.Data.SqlClient", "SqlCommand", "sql-server")]
-        [InlineData("MySql.Data.MySqlClient", "MySqlCommand", "mysql")]
-        [InlineData("Npgsql", "NpgsqlCommand", "postgres")]
-        [InlineData("", "ProfiledDbCommand", null)]
-        [InlineData("", "ExampleCommand", "example")]
-        [InlineData("", "Example", "example")]
-        [InlineData("", "Command", "command")]
-        [InlineData("Custom.DB", "Command", "db")]
-        public void GetDbType_CorrectNameGenerated(string namespaceName, string commandTypeName, string expected)
+        [InlineData("System.Data.SqlClient.SqlCommand", "sql-server")]
+        [InlineData("MySql.Data.MySqlClient.MySqlCommand", "mysql")]
+        [InlineData("Npgsql.NpgsqlCommand", "postgres")]
+        [InlineData("ProfiledDbCommand", null)]
+        [InlineData("ExampleCommand", "example")]
+        [InlineData("Example", "example")]
+        [InlineData("Command", "command")]
+        [InlineData("Custom.DB.Command", "db")]
+        public void GetDbType_CorrectNameGenerated(string commandTypeFullName, string expected)
         {
-            DbScopeFactory.TryGetIntegrationDetails(commandType, out _, out var dbType);
+            DbScopeFactory.TryGetIntegrationDetails(commandTypeFullName, out _, out var dbType);
             Assert.Equal(expected, dbType);
         }
 
