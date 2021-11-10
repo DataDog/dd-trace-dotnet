@@ -17,7 +17,7 @@ namespace Datadog.Trace
 
         ISampler Sampler { get; }
 
-        TracerSettings Settings { get; }
+        ImmutableTracerSettings Settings { get; }
 
         Span StartSpan(string operationName);
 

@@ -18,7 +18,7 @@ namespace Datadog.Trace.Agent
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Tracer>();
 
-        public static IApiRequestFactory Get(TracerSettings settings)
+        public static IApiRequestFactory Get(ImmutableTracerSettings settings)
         {
             var strategy = settings.TracesTransport?.ToUpperInvariant();
 

@@ -97,7 +97,7 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
-        internal static void SetHttpStatusCode(this Span span, int statusCode, bool isServer, TracerSettings tracerSettings)
+        internal static void SetHttpStatusCode(this Span span, int statusCode, bool isServer, ImmutableTracerSettings tracerSettings)
         {
             string statusCodeString = ConvertStatusCodeToString(statusCode);
 
