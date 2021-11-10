@@ -4,7 +4,9 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -59,6 +61,43 @@ namespace Datadog.Trace.Tests
 
             Assert.Throws<InvalidOperationException>(() => TracerManager.ReplaceGlobalManager(null, TracerManagerFactory.Instance));
             Assert.Throws<InvalidOperationException>(() => TracerManager.ReplaceGlobalManager(null, new CITracerManagerFactory()));
+        }
+
+        [Fact]
+        public void ReplacingGlobalTracerManagerMidTraceWritesTheTrace()
+        {
+            var agentPort = TcpPortProvider.GetOpenPort();
+
+            using (var agent = new MockTracerAgent(agentPort))
+            {
+                var oldSettings = new TracerSettings
+                {
+                    AgentUri = new Uri($"http://127.0.0.1:{agent.Port}"),
+                    TracerMetricsEnabled = false,
+                    StartupDiagnosticLogEnabled = false,
+                    GlobalTags = new Dictionary<string, string> { { "test-tag", "original-value" } },
+                };
+                Tracer.ReplaceGlobalSettings(oldSettings);
+
+                var span = Tracer.Instance.StartActive("Test span");
+
+                var newSettings = new TracerSettings
+                {
+                    AgentUri = new Uri($"http://127.0.0.1:{agent.Port}"),
+                    TracerMetricsEnabled = false,
+                    StartupDiagnosticLogEnabled = false,
+                    GlobalTags = new Dictionary<string, string> { { "test-tag", "new-value" } },
+                };
+
+                Tracer.ReplaceGlobalSettings(newSettings);
+
+                span.Dispose();
+
+                var spans = agent.WaitForSpans(count: 1);
+                var received = spans.Should().ContainSingle().Subject;
+                received.Name.Should().Be("Test span");
+                received.Tags.Should().Contain("test-tag", "original-value");
+            }
         }
 
         private class LockedTracer : Tracer

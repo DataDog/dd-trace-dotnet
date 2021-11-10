@@ -141,8 +141,7 @@ namespace Datadog.Trace
             }
         }
 
-        // Internal for testing
-        public static async Task CleanUpOldTracerManager(TracerManager oldManager, TracerManager newManager)
+        private static async Task CleanUpOldTracerManager(TracerManager oldManager, TracerManager newManager)
         {
             try
             {
