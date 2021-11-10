@@ -513,7 +513,7 @@ namespace Datadog.Trace.DiagnosticListeners
                         controllerName: controllerName,
                         actionName: actionName);
 
-                    resourceName = $"{trackingFeature.HttpMethod} {request.PathBase}{resourcePathName}";
+                    resourceName = $"{trackingFeature.HttpMethod} {request.PathBase.Value}{resourcePathName}";
                     aspNetRoute = routeTemplate?.TemplateText.ToLowerInvariant();
                 }
             }
