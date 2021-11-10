@@ -13,8 +13,6 @@ namespace Datadog.Trace
     {
         string DefaultServiceName { get; }
 
-        string AgentVersion { get; set; }
-
         IScopeManager ScopeManager { get; }
 
         ISampler Sampler { get; }

@@ -19,7 +19,7 @@ namespace Benchmarks.Trace
                 StartupDiagnosticLogEnabled = false
             };
 
-            Tracer.Instance = new Tracer(settings, new DummyAgentWriter(), null, null, null);
+            Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
 
             var bench = new DbCommandBenchmark();
             bench.ExecuteNonQuery();

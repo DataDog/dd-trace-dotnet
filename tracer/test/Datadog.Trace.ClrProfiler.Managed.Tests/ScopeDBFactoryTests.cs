@@ -9,6 +9,7 @@ using System.Collections.Specialized;
 using System.Data;
 using System.Data.Common;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.TestHelpers;
 using MySql.Data.MySqlClient;
 using Npgsql;
 using Xunit;
@@ -36,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var tracerSettings = new TracerSettings(source);
-            var tracer = new Tracer(tracerSettings);
+            var tracer = TracerHelper.Create(tracerSettings);
 
             // Create scope
             using (var outerScope = CreateDbCommandScope(tracer, new CustomDbCommand()))
@@ -63,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var tracerSettings = new TracerSettings(source);
-            var tracer = new Tracer(tracerSettings);
+            var tracer = TracerHelper.Create(tracerSettings);
 
             // Create scope
             using (var outerScope = CreateDbCommandScope(tracer, command))
@@ -83,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var tracerSettings = new TracerSettings(source);
-            var tracer = new Tracer(tracerSettings);
+            var tracer = TracerHelper.Create(tracerSettings);
 
             // Create scope
             using (var outerScope = CreateDbCommandScope(tracer, command))

@@ -295,17 +295,23 @@ namespace Datadog.Trace
     }
     public class Tracer
     {
+        [System.Obsolete("This API is deprecated. Use Tracer.Instance to obtain a Tracer instance to create" +
+            " spans.")]
         public Tracer() { }
+        [System.Obsolete(@"This API is deprecated, as it replaces the global settings for all Tracer instances in the application. If you were using this API to configure the global Tracer.Instance in code, use the static Tracer.ReplaceGlobalSettings() to replace the global Tracer settings for the application")]
         public Tracer(Datadog.Trace.Configuration.TracerSettings settings) { }
         public Datadog.Trace.Scope ActiveScope { get; }
         public string DefaultServiceName { get; }
         public Datadog.Trace.Configuration.TracerSettings Settings { get; }
+        [set: System.Obsolete("Use Tracer.ReplaceGlobalSettings to configure the global Tracer instance in code." +
+            "")]
         public static Datadog.Trace.Tracer Instance { get; set; }
         public Datadog.Trace.Scope ActivateSpan(Datadog.Trace.Span span, bool finishOnClose = true) { }
         protected override void Finalize() { }
         public System.Threading.Tasks.Task ForceFlushAsync() { }
         public Datadog.Trace.Scope StartActive(string operationName, Datadog.Trace.ISpanContext parent = null, string serviceName = null, System.DateTimeOffset? startTime = default, bool ignoreActiveScope = false, bool finishOnClose = true) { }
         public Datadog.Trace.Span StartSpan(string operationName, Datadog.Trace.ISpanContext parent = null, string serviceName = null, System.DateTimeOffset? startTime = default, bool ignoreActiveScope = false) { }
+        public static void ReplaceGlobalSettings(Datadog.Trace.Configuration.TracerSettings settings) { }
     }
 }
 namespace Datadog.Trace.ExtensionMethods

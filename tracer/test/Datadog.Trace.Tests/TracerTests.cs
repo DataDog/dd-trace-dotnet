@@ -284,7 +284,7 @@ namespace Datadog.Trace.Tests
                 Environment = env,
             };
 
-            var tracer = new Tracer(settings);
+            var tracer = TracerHelper.Create(settings);
             Span span = tracer.StartSpan("operation");
 
             Assert.Equal(env, span.GetTag(Tags.Env));
@@ -305,7 +305,7 @@ namespace Datadog.Trace.Tests
                 ServiceName = tracerServiceName,
             };
 
-            var tracer = new Tracer(settings);
+            var tracer = TracerHelper.Create(settings);
             Span span = tracer.StartSpan("operationName", serviceName: spanServiceName);
 
             if (expectedServiceName == null)
@@ -362,25 +362,6 @@ namespace Datadog.Trace.Tests
             Assert.Equal(firstSpan.Span.Context.Origin, resultContext.Origin);
             Assert.Equal(secondSpan.Span.Context.Origin, resultContext.Origin);
             Assert.Equal(origin, resultContext.Origin);
-        }
-
-        [Theory]
-        [InlineData("7.25.0", true, true)] // Old agent, partial flush enabled
-        [InlineData("7.25.0", false, false)] // Old agent, partial flush disabled
-        [InlineData("7.26.0", true, false)] // New agent, partial flush enabled
-        [InlineData("invalid version", true, true)] // Version check fail, partial flush enabled
-        [InlineData("invalid version", false, false)] // Version check fail, partial flush disabled
-        [InlineData("", true, true)] // Version check fail, partial flush enabled
-        [InlineData("", false, false)] // Version check fail, partial flush disabled
-        public void LogPartialFlushWarning(string agentVersion, bool partialFlushEnabled, bool expectedResult)
-        {
-            _tracer.Settings.PartialFlushEnabled = partialFlushEnabled;
-
-            // First call depends on the parameters of the test
-            _tracer.ShouldLogPartialFlushWarning(agentVersion).Should().Be(expectedResult);
-
-            // Second call should always be false
-            _tracer.ShouldLogPartialFlushWarning(agentVersion).Should().BeFalse();
         }
 
         [Fact]

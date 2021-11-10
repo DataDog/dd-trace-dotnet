@@ -4,23 +4,12 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
-using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.DiagnosticListeners;
-using Datadog.Trace.DogStatsd;
-using Datadog.Trace.Logging;
-using Datadog.Trace.PlatformHelpers;
-using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
-using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace
@@ -30,9 +19,6 @@ namespace Datadog.Trace
     /// </summary>
     public class Tracer : IDatadogTracer
     {
-        private const string UnknownServiceName = "UnknownService";
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Tracer>();
-
         private static string _runtimeId;
 
         /// <summary>
@@ -42,23 +28,11 @@ namespace Datadog.Trace
         /// </summary>
         private static int _liveTracerCount;
 
-        /// <summary>
-        /// Indicates whether we're initializing a tracer for the first time
-        /// </summary>
-        private static int _firstInitialization = 1;
-
         private static Tracer _instance;
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new object();
 
-        private static RuntimeMetricsWriter _runtimeMetricsWriter;
-
-        private readonly IScopeManager _scopeManager;
-        private readonly Timer _heartbeatTimer;
-
-        private readonly IAgentWriter _agentWriter;
-
-        private string _agentVersion;
+        private readonly TracerManager _tracerManager;
 
         static Tracer()
         {
@@ -66,104 +40,65 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Tracer"/> class with default settings.
+        /// Initializes a new instance of the <see cref="Tracer"/> class with default settings. Replaces the
+        /// settings for all tracers in the application with the default settings.
         /// </summary>
+        [Obsolete("This API is deprecated. Use Tracer.Instance to obtain a Tracer instance to create spans.")]
         public Tracer()
-            : this(settings: null, agentWriter: null, sampler: null, scopeManager: null, statsd: null)
+            : this(settings: null)
         {
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Tracer"/>
-        /// class using the specified <see cref="IConfigurationSource"/>.
+        /// class using the specified <see cref="IConfigurationSource"/>. This constructor updates the global settings
+        /// for all <see cref="Tracer"/> instances in the application.
         /// </summary>
         /// <param name="settings">
         /// A <see cref="TracerSettings"/> instance with the desired settings,
-        /// or null to use the default configuration sources.
+        /// or null to use the default configuration sources. This is used to configure global settings
         /// </param>
+        [Obsolete("This API is deprecated, as it replaces the global settings for all Tracer instances in the application. " +
+                  "If you were using this API to configure the global Tracer.Instance in code, use the static "
+                + nameof(Tracer) + "." + nameof(ReplaceGlobalSettings) + "() to replace the global Tracer settings for the application")]
         public Tracer(TracerSettings settings)
-            : this(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null)
+        {
+            // TODO: Switch to immutable settings
+            ReplaceGlobalSettings(settings);
+
+            // update the count of Tracer instances
+            Interlocked.Increment(ref _liveTracerCount);
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Tracer"/> class.
+        /// For testing only.
+        /// Note that this API does NOT replace the global Tracer instance.
+        /// The <see cref="TracerManager"/> created will be scoped specifically to this instance.
+        /// </summary>
+        internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ISampler sampler, IScopeManager scopeManager, IDogStatsd statsd)
+            : this(TracerManagerFactory.Instance.CreateTracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics: null, libLogSubscriber: null))
         {
         }
 
-        internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ISampler sampler, IScopeManager scopeManager, IDogStatsd statsd)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Tracer"/> class.
+        /// Should only be called DIRECTLY for testing purposes.
+        /// If non-null the provided <see cref="TracerManager"/> will be tied to this TracerInstance (for testing purposes only)
+        /// If null, the global <see cref="TracerManager"/> will be fetched or created, but will not be modified.
+        /// </summary>
+        private protected Tracer(TracerManager tracerManager)
         {
+            _tracerManager = tracerManager;
+            if (tracerManager is null)
+            {
+                // Ensure the global TracerManager instance has been created
+                // to kick start background processes etc
+                _ = TracerManager.Instance;
+            }
+
             // update the count of Tracer instances
             Interlocked.Increment(ref _liveTracerCount);
-
-            Settings = settings ?? TracerSettings.FromDefaultSources();
-            Settings.Freeze();
-
-            // if not configured, try to determine an appropriate service name
-            DefaultServiceName = Settings.ServiceName ??
-                                 GetApplicationName() ??
-                                 UnknownServiceName;
-
-            // only set DogStatsdClient if tracer metrics are enabled
-            if (Settings.TracerMetricsEnabled)
-            {
-                Statsd = statsd ?? CreateDogStatsdClient(Settings, DefaultServiceName, Settings.DogStatsdPort);
-            }
-
-            if (agentWriter == null)
-            {
-                _agentWriter = new AgentWriter(new Api(Settings.AgentUri, TransportStrategy.Get(Settings), Statsd), Statsd, maxBufferSize: Settings.TraceBufferSize);
-            }
-            else
-            {
-                _agentWriter = agentWriter;
-            }
-
-            _scopeManager = scopeManager ?? new AsyncLocalScopeManager();
-            Sampler = sampler ?? new RuleBasedSampler(new RateLimiter(Settings.MaxTracesSubmittedPerSecond));
-
-            if (!string.IsNullOrWhiteSpace(Settings.CustomSamplingRules))
-            {
-                foreach (var rule in CustomSamplingRule.BuildFromConfigurationString(Settings.CustomSamplingRules))
-                {
-                    Sampler.RegisterRule(rule);
-                }
-            }
-
-            if (Settings.GlobalSamplingRate != null)
-            {
-                var globalRate = (float)Settings.GlobalSamplingRate;
-
-                if (globalRate < 0f || globalRate > 1f)
-                {
-                    Log.Warning("{ConfigurationKey} configuration of {ConfigurationValue} is out of range", ConfigurationKeys.GlobalSamplingRate, Settings.GlobalSamplingRate);
-                }
-                else
-                {
-                    Sampler.RegisterRule(new GlobalSamplingRule(globalRate));
-                }
-            }
-
-            // Register callbacks to make sure we flush the traces before exiting
-            LifetimeManager.Instance.AddShutdownTask(RunShutdownTasks);
-
-            // start the heartbeat loop
-            _heartbeatTimer = new Timer(HeartbeatCallback, state: null, dueTime: TimeSpan.Zero, period: TimeSpan.FromMinutes(1));
-
-            // If configured, add/remove the correlation identifiers into the
-            // LibLog logging context when a scope is activated/closed
-            if (Settings.LogsInjectionEnabled)
-            {
-                InitializeLibLogScopeEventSubscriber(_scopeManager, DefaultServiceName, Settings.ServiceVersion, Settings.Environment);
-            }
-
-            if (Interlocked.Exchange(ref _firstInitialization, 0) == 1)
-            {
-                if (Settings.StartupDiagnosticLogEnabled)
-                {
-                    _ = Task.Run(WriteDiagnosticLog);
-                }
-
-                if (Settings.RuntimeMetricsEnabled)
-                {
-                    _runtimeMetricsWriter = new RuntimeMetricsWriter(Statsd ?? CreateDogStatsdClient(Settings, DefaultServiceName, Settings.DogStatsdPort), TimeSpan.FromSeconds(10));
-                }
-            }
         }
 
         /// <summary>
@@ -184,14 +119,23 @@ namespace Datadog.Trace
         {
             get
             {
-                return LazyInitializer.EnsureInitialized(ref _instance, ref _globalInstanceInitialized, ref _globalInstanceLock);
+                return LazyInitializer.EnsureInitialized(
+                    ref _instance,
+                    ref _globalInstanceInitialized,
+                    ref _globalInstanceLock,
+                    () => new Tracer(tracerManager: null)); // don't replace settings, use existing
             }
 
+            // TODO: Make this API internal
+            [Obsolete("Use " + nameof(Tracer) + "." + nameof(ReplaceGlobalSettings) + " to configure the global Tracer" +
+                      " instance in code.")]
             set
             {
                 lock (_globalInstanceLock)
                 {
-                    if (_instance is ILockedTracer)
+                    // This check is probably no longer necessary, as it's the TracerManager we really care about
+                    // Kept for safety reasons
+                    if (_instance is { TracerManager: ILockedTracer })
                     {
                         throw new InvalidOperationException("The current tracer instance cannot be replaced.");
                     }
@@ -205,59 +149,48 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the active scope
         /// </summary>
-        public Scope ActiveScope => _scopeManager.Active;
+        public Scope ActiveScope => TracerManager.ScopeManager.Active;
 
         /// <summary>
         /// Gets the default service name for traces where a service name is not specified.
         /// </summary>
-        public string DefaultServiceName { get; }
+        public string DefaultServiceName => TracerManager.DefaultServiceName;
 
         /// <summary>
         /// Gets this tracer's settings.
         /// </summary>
-        public TracerSettings Settings { get; }
-
-        /// <summary>
-        /// Gets or sets the detected version of the agent
-        /// </summary>
-        string IDatadogTracer.AgentVersion
-        {
-            get
-            {
-                return _agentVersion;
-            }
-
-            set
-            {
-                if (ShouldLogPartialFlushWarning(value))
-                {
-                    var detectedVersion = string.IsNullOrEmpty(value) ? "{detection failed}" : value;
-
-                    Log.Warning("DATADOG TRACER DIAGNOSTICS - Partial flush should only be enabled with agent 7.26.0+ (detected version: {version})", detectedVersion);
-                }
-            }
-        }
+        public TracerSettings Settings => TracerManager.Settings;
 
         /// <summary>
         /// Gets the tracer's scope manager, which determines which span is currently active, if any.
         /// </summary>
-        IScopeManager IDatadogTracer.ScopeManager => _scopeManager;
+        IScopeManager IDatadogTracer.ScopeManager => TracerManager.ScopeManager;
 
         /// <summary>
         /// Gets the <see cref="ISampler"/> instance used by this <see cref="IDatadogTracer"/> instance.
         /// </summary>
-        ISampler IDatadogTracer.Sampler => Sampler;
+        ISampler IDatadogTracer.Sampler => TracerManager.Sampler;
 
         internal static string RuntimeId => LazyInitializer.EnsureInitialized(ref _runtimeId, () => Guid.NewGuid().ToString());
 
-        internal IDiagnosticManager DiagnosticManager { get; set; }
+        internal static int LiveTracerCount => _liveTracerCount;
 
-        internal ISampler Sampler { get; }
-
-        internal IDogStatsd Statsd { get; private set; }
+        internal TracerManager TracerManager => _tracerManager ?? TracerManager.Instance;
 
         /// <summary>
-        /// Sets the global tracer instace without any validation.
+        /// Replaces the global Tracer settings used by all <see cref="Tracer"/> instances,
+        /// including automatic instrumentation
+        /// </summary>
+        /// <param name="settings"> A <see cref="TracerSettings"/> instance with the desired settings,
+        /// or null to use the default configuration sources. This is used to configure global settings</param>
+        public static void ReplaceGlobalSettings(TracerSettings settings)
+        {
+            // TODO: Switch to immutable settings
+            TracerManager.ReplaceGlobalManager(settings, TracerManagerFactory.Instance);
+        }
+
+        /// <summary>
+        /// Sets the global tracer instance without any validation.
         /// Intended use is for unit testing
         /// </summary>
         /// <param name="instance">Tracer instance</param>
@@ -288,7 +221,7 @@ namespace Datadog.Trace
         /// <returns>A Scope object wrapping this span.</returns>
         public Scope ActivateSpan(Span span, bool finishOnClose = true)
         {
-            return _scopeManager.Activate(span, finishOnClose);
+            return TracerManager.ScopeManager.Activate(span, finishOnClose);
         }
 
         /// <summary>
@@ -305,7 +238,7 @@ namespace Datadog.Trace
         public Scope StartActive(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false, bool finishOnClose = true)
         {
             var span = StartSpan(operationName, parent, serviceName, startTime, ignoreActiveScope);
-            return _scopeManager.Activate(span, finishOnClose);
+            return TracerManager.ScopeManager.Activate(span, finishOnClose);
         }
 
         /// <summary>
@@ -358,7 +291,7 @@ namespace Datadog.Trace
         {
             if (Settings.TraceEnabled)
             {
-                _agentWriter.WriteTrace(trace);
+                TracerManager.AgentWriter.WriteTrace(trace);
             }
         }
 
@@ -366,7 +299,7 @@ namespace Datadog.Trace
         {
             if (parent == null && !ignoreActiveScope)
             {
-                parent = _scopeManager.Active?.Span?.Context;
+                parent = TracerManager.ScopeManager.Active?.Span?.Context;
             }
 
             ITraceContext traceContext;
@@ -393,7 +326,7 @@ namespace Datadog.Trace
         internal Scope StartActiveWithTags(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false, bool finishOnClose = true, ITags tags = null, ulong? spanId = null)
         {
             var span = StartSpan(operationName, tags, parent, serviceName, startTime, ignoreActiveScope, spanId);
-            return _scopeManager.Activate(span, finishOnClose);
+            return TracerManager.ScopeManager.Activate(span, finishOnClose);
         }
 
         internal Span StartSpan(string operationName, ITags tags, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false, ulong? spanId = null)
@@ -434,301 +367,7 @@ namespace Datadog.Trace
 
         internal Task FlushAsync()
         {
-            return _agentWriter.FlushTracesAsync();
-        }
-
-        internal async Task WriteDiagnosticLog()
-        {
-            string agentError = null;
-
-            // In AAS, the trace agent is deployed alongside the tracer and managed by the tracer
-            // Disable this check as it may hit the trace agent before it is ready to receive requests and give false negatives
-            if (!AzureAppServices.Metadata.IsRelevant)
-            {
-                try
-                {
-                    var success = await _agentWriter.Ping().ConfigureAwait(false);
-
-                    if (!success)
-                    {
-                        agentError = "An error occurred while sending traces to the agent";
-                    }
-                }
-                catch (Exception ex)
-                {
-                    agentError = ex.Message;
-                }
-            }
-
-            try
-            {
-                var stringWriter = new StringWriter();
-
-                using (var writer = new JsonTextWriter(stringWriter))
-                {
-                    writer.WriteStartObject();
-
-                    writer.WritePropertyName("date");
-                    writer.WriteValue(DateTime.Now);
-
-                    writer.WritePropertyName("os_name");
-                    writer.WriteValue(FrameworkDescription.Instance.OSPlatform);
-
-                    writer.WritePropertyName("os_version");
-                    writer.WriteValue(Environment.OSVersion.ToString());
-
-                    writer.WritePropertyName("version");
-                    writer.WriteValue(TracerConstants.AssemblyVersion);
-
-                    writer.WritePropertyName("platform");
-                    writer.WriteValue(FrameworkDescription.Instance.ProcessArchitecture);
-
-                    writer.WritePropertyName("lang");
-                    writer.WriteValue(FrameworkDescription.Instance.Name);
-
-                    writer.WritePropertyName("lang_version");
-                    writer.WriteValue(FrameworkDescription.Instance.ProductVersion);
-
-                    writer.WritePropertyName("env");
-                    writer.WriteValue(Settings.Environment);
-
-                    writer.WritePropertyName("enabled");
-                    writer.WriteValue(Settings.TraceEnabled);
-
-                    writer.WritePropertyName("service");
-                    writer.WriteValue(DefaultServiceName);
-
-                    writer.WritePropertyName("agent_url");
-                    writer.WriteValue(Settings.AgentUri);
-
-                    writer.WritePropertyName("debug");
-                    writer.WriteValue(GlobalSettings.Source.DebugEnabled);
-
-                    writer.WritePropertyName("health_checks_enabled");
-                    writer.WriteValue(Settings.TracerMetricsEnabled);
-
-#pragma warning disable 618 // App analytics is deprecated, but still used
-                    writer.WritePropertyName("analytics_enabled");
-                    writer.WriteValue(Settings.AnalyticsEnabled);
-#pragma warning restore 618
-
-                    writer.WritePropertyName("sample_rate");
-                    writer.WriteValue(Settings.GlobalSamplingRate);
-
-                    writer.WritePropertyName("sampling_rules");
-                    writer.WriteValue(Settings.CustomSamplingRules);
-
-                    writer.WritePropertyName("tags");
-
-                    writer.WriteStartArray();
-
-                    foreach (var entry in Settings.GlobalTags)
-                    {
-                        writer.WriteValue(string.Concat(entry.Key, ":", entry.Value));
-                    }
-
-                    writer.WriteEndArray();
-
-                    writer.WritePropertyName("log_injection_enabled");
-                    writer.WriteValue(Settings.LogsInjectionEnabled);
-
-                    writer.WritePropertyName("runtime_metrics_enabled");
-                    writer.WriteValue(Settings.RuntimeMetricsEnabled);
-
-                    writer.WritePropertyName("disabled_integrations");
-                    writer.WriteStartArray();
-
-                    foreach (var integration in Settings.DisabledIntegrationNames)
-                    {
-                        writer.WriteValue(integration);
-                    }
-
-                    writer.WriteEndArray();
-
-                    writer.WritePropertyName("routetemplate_resourcenames_enabled");
-                    writer.WriteValue(Settings.RouteTemplateResourceNamesEnabled);
-
-                    writer.WritePropertyName("partialflush_enabled");
-                    writer.WriteValue(Settings.PartialFlushEnabled);
-
-                    writer.WritePropertyName("partialflush_minspans");
-                    writer.WriteValue(Settings.PartialFlushMinSpans);
-
-                    writer.WritePropertyName("runtime_id");
-                    writer.WriteValue(RuntimeId);
-
-                    writer.WritePropertyName("agent_reachable");
-                    writer.WriteValue(agentError == null);
-
-                    writer.WritePropertyName("agent_error");
-                    writer.WriteValue(agentError ?? string.Empty);
-
-                    writer.WritePropertyName("appsec_enabled");
-                    writer.WriteValue(Security.Instance.Settings.Enabled);
-
-                    writer.WritePropertyName("appsec_blocking_enabled");
-                    writer.WriteValue(Security.Instance.Settings.BlockingEnabled);
-
-                    writer.WritePropertyName("appsec_rules_file_path");
-                    writer.WriteValue(Security.Instance.Settings.Rules ?? "(default)");
-
-                    writer.WritePropertyName("appsec_libddwaf_version");
-                    writer.WriteValue(Security.Instance.DdlibWafVersion?.ToString() ?? "(none)");
-
-                    writer.WriteEndObject();
-                }
-
-                Log.Information("DATADOG TRACER CONFIGURATION - {Configuration}", stringWriter.ToString());
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "DATADOG TRACER DIAGNOSTICS - Error fetching configuration");
-            }
-        }
-
-        internal bool ShouldLogPartialFlushWarning(string agentVersion)
-        {
-            if (agentVersion != _agentVersion)
-            {
-                _agentVersion = agentVersion;
-
-                if (Settings.PartialFlushEnabled)
-                {
-                    if (!Version.TryParse(agentVersion, out var parsedVersion) || parsedVersion < new Version(7, 26, 0))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Gets an "application name" for the executing application by looking at
-        /// the hosted app name (.NET Framework on IIS only), assembly name, and process name.
-        /// </summary>
-        /// <returns>The default service name.</returns>
-        private static string GetApplicationName()
-        {
-            try
-            {
-                try
-                {
-                    if (TryLoadAspNetSiteName(out var siteName))
-                    {
-                        return siteName;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    // Unable to call into System.Web.dll
-                    Log.Error(ex, "Unable to get application name through ASP.NET settings");
-                }
-
-                return Assembly.GetEntryAssembly()?.GetName().Name ??
-                   ProcessHelpers.GetCurrentProcessName();
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating default service name.");
-                return null;
-            }
-        }
-
-        private static bool TryLoadAspNetSiteName(out string siteName)
-        {
-#if NETFRAMEWORK
-            // System.Web.dll is only available on .NET Framework
-            if (System.Web.Hosting.HostingEnvironment.IsHosted)
-            {
-                // if this app is an ASP.NET application, return "SiteName/ApplicationVirtualPath".
-                // note that ApplicationVirtualPath includes a leading slash.
-                siteName = (System.Web.Hosting.HostingEnvironment.SiteName + System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath).TrimEnd('/');
-                return true;
-            }
-
-#endif
-            siteName = default;
-            return false;
-        }
-
-        private static IDogStatsd CreateDogStatsdClient(TracerSettings settings, string serviceName, int port)
-        {
-            try
-            {
-                var constantTags = new List<string>
-                                   {
-                                       "lang:.NET",
-                                       $"lang_interpreter:{FrameworkDescription.Instance.Name}",
-                                       $"lang_version:{FrameworkDescription.Instance.ProductVersion}",
-                                       $"tracer_version:{TracerConstants.AssemblyVersion}",
-                                       $"service:{serviceName}",
-                                       $"{Tags.RuntimeId}:{RuntimeId}"
-                                   };
-
-                if (settings.Environment != null)
-                {
-                    constantTags.Add($"env:{settings.Environment}");
-                }
-
-                if (settings.ServiceVersion != null)
-                {
-                    constantTags.Add($"version:{settings.ServiceVersion}");
-                }
-
-                var statsd = new DogStatsdService();
-                if (AzureAppServices.Metadata.IsRelevant)
-                {
-                    // Environment variables set by the Azure App Service extension are used internally.
-                    // Setting the server name will force UDP, when we need named pipes.
-                    statsd.Configure(new StatsdConfig
-                    {
-                        ConstantTags = constantTags.ToArray()
-                    });
-                }
-                else
-                {
-                    statsd.Configure(new StatsdConfig
-                    {
-                        StatsdServerName = settings.AgentUri.DnsSafeHost,
-                        StatsdPort = port,
-                        ConstantTags = constantTags.ToArray()
-                    });
-                }
-
-                return statsd;
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, $"Unable to instantiate {nameof(Statsd)} client.");
-                return new NoOpStatsd();
-            }
-        }
-
-        private void InitializeLibLogScopeEventSubscriber(IScopeManager scopeManager, string defaultServiceName, string version, string env)
-        {
-            new LibLogScopeEventSubscriber(this, scopeManager, defaultServiceName, version ?? string.Empty, env ?? string.Empty);
-        }
-
-        private void RunShutdownTasks()
-        {
-            try
-            {
-                _agentWriter.FlushAndCloseAsync().Wait();
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error flushing traces on shutdown.");
-            }
-        }
-
-        private void HeartbeatCallback(object state)
-        {
-            // use the count of Tracer instances as the heartbeat value
-            // to estimate the number of "live" Tracers than can potentially
-            // send traces to the Agent
-            Statsd?.Gauge(TracerMetricNames.Health.Heartbeat, _liveTracerCount);
+            return TracerManager.AgentWriter.FlushTracesAsync();
         }
     }
 }

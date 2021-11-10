@@ -484,7 +484,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
             var logDetail = $"mdToken {_mdToken} on {_concreteTypeName}.{_methodName} in {_resolutionModule?.FullyQualifiedName ?? "NULL"}, {_resolutionModule?.ModuleVersionId ?? _moduleVersionId}";
             Log.Warning($"Using fallback method matching ({logDetail})");
 
-            var statsd = Tracer.Instance.Statsd;
+            var statsd = Tracer.Instance.TracerManager.Statsd;
 
             if (statsd != null)
             {
