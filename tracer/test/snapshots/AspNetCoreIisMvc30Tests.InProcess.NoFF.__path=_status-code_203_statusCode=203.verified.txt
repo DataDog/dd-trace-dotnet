@@ -2,32 +2,11 @@
   {
     TraceId: Id_1,
     SpanId: Id_2,
-    Name: aspnet_core_mvc.request,
-    Resource: GET /status-code/{statuscode},
-    Service: Samples.AspNetCoreMvc30,
-    Type: web,
-    ParentId: Id_3,
-    Tags: {
-      aspnet_core.action: statuscodetest,
-      aspnet_core.controller: home,
-      aspnet_core.route: status-code/{statuscode},
-      component: aspnet_core,
-      env: integration_tests,
-      language: dotnet,
-      span.kind: server,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_3,
     Name: aspnet_core.request,
-    Resource: GET /status-code/{statuscode},
+    Resource: GET status-code/{statusCode},
     Service: Samples.AspNetCoreMvc30,
     Type: web,
     Tags: {
-      aspnet_core.endpoint: Samples.AspNetCoreMvc.Controllers.HomeController.StatusCodeTest (Samples.AspNetCoreMvc30),
-      aspnet_core.route: status-code/{statuscode},
       component: aspnet_core,
       env: integration_tests,
       http.method: GET,
