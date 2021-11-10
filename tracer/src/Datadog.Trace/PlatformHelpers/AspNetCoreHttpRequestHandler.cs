@@ -110,7 +110,8 @@ namespace Datadog.Trace.PlatformHelpers
 
             if (tracer.Settings.RouteTemplateResourceNamesEnabled)
             {
-                httpContext.Features.Set(new RequestTrackingFeature());
+                var originalPath = request.PathBase.HasValue ? request.PathBase.Add(request.Path) : request.Path;
+                httpContext.Features.Set(new RequestTrackingFeature(originalPath));
                 tags = new AspNetCoreEndpointTags();
             }
             else
@@ -167,6 +168,11 @@ namespace Datadog.Trace.PlatformHelpers
         /// </summary>
         internal class RequestTrackingFeature
         {
+            public RequestTrackingFeature(PathString originalPath)
+            {
+                OriginalPath = originalPath;
+            }
+
             /// <summary>
             /// Gets or sets a value indicating whether the pipeline using endpoint routing
             /// </summary>
@@ -186,6 +192,25 @@ namespace Datadog.Trace.PlatformHelpers
             /// Gets or sets a value indicating the resource name as calculated by the endpoint routing(if available)
             /// </summary>
             public string ResourceName { get; set; }
+
+            /// <summary>
+            /// Gets a value indicating the original combined Path and PathBase
+            /// </summary>
+            public PathString OriginalPath { get; }
+
+            public bool MatchesOriginalPath(HttpRequest request)
+            {
+                if (!request.PathBase.HasValue)
+                {
+                    return OriginalPath.Equals(request.Path, StringComparison.OrdinalIgnoreCase);
+                }
+
+                return OriginalPath.StartsWithSegments(
+                           request.PathBase,
+                           StringComparison.OrdinalIgnoreCase,
+                           out var remaining)
+                    && remaining.Equals(request.Path, StringComparison.OrdinalIgnoreCase);
+            }
         }
     }
 }

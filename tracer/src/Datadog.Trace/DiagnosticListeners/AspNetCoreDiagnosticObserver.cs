@@ -455,8 +455,7 @@ namespace Datadog.Trace.DiagnosticListeners
             if (isFirstExecution)
             {
                 trackingFeature.IsFirstPipelineExecution = false;
-                var url = httpContext.Request.GetUrl();
-                if (!string.Equals(url, parentTags.HttpUrl))
+                if (!trackingFeature.MatchesOriginalPath(httpContext.Request))
                 {
                     // URL has changed from original, so treat this execution as a "subsequent" request
                     // Typically occurs for 404s for example
@@ -606,8 +605,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     trackingFeature.IsUsingEndpointRouting = true;
                     trackingFeature.IsFirstPipelineExecution = false;
 
-                    var url = httpContext.Request.GetUrl();
-                    if (!string.Equals(url, trackingFeature.OriginalPath))
+                    if (!trackingFeature.MatchesOriginalPath(httpContext.Request))
                     {
                         // URL has changed from original, so treat this execution as a "subsequent" request
                         // Typically occurs for 404s for example
