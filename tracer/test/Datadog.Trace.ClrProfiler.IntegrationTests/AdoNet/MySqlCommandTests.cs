@@ -3,10 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -50,43 +50,40 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [SkippableTheory]
         [MemberData(nameof(GetMySql8Data))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTracesWithNetStandardInMySql8(string packageVersion)
+        public void SubmitsTracesInMySql8(string packageVersion)
         {
-            SubmitsTracesWithNetStandard(packageVersion);
+            SubmitsTraces(packageVersion);
         }
 
         [SkippableTheory]
         [MemberData(nameof(GetOldMySqlData))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
-        public void SubmitsTracesWithNetStandardInOldMySql(string packageVersion)
+        public void SubmitsTracesInOldMySql(string packageVersion)
         {
-            SubmitsTracesWithNetStandard(packageVersion);
+            SubmitsTraces(packageVersion);
         }
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
-        public void SpansDisabledByAdoNetExcludedTypes()
+        public void IntegrationDisabled()
         {
-            var totalSpanCount = 21;
+            const int totalSpanCount = 21;
+            const string expectedOperationName = "mysql.query";
 
-            const string dbType = "mysql";
-            const string expectedOperationName = dbType + ".query";
+            SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationIds.MySql)}_ENABLED", "false");
 
-            SetEnvironmentVariable(ConfigurationKeys.AdoNetExcludedTypes, "System.Data.SqlClient.SqlCommand;Microsoft.Data.SqlClient.SqlCommand;MySql.Data.MySqlClient.MySqlCommand;Npgsql.NpgsqlCommand");
-
+            string packageVersion = PackageVersions.MySqlData.First()[0] as string;
             int agentPort = TcpPortProvider.GetOpenPort();
+            using var agent = new MockTracerAgent(agentPort);
+            using var process = RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion);
+            var spans = agent.WaitForSpans(totalSpanCount, returnAllOperations: true);
 
-            using (var agent = new MockTracerAgent(agentPort))
-            using (RunSampleAndWaitForExit(agent.Port))
-            {
-                var spans = agent.WaitForSpans(totalSpanCount, returnAllOperations: true);
-                Assert.NotEmpty(spans);
-                Assert.Empty(spans.Where(s => s.Name.Equals(expectedOperationName)));
-            }
+            Assert.NotEmpty(spans);
+            Assert.Empty(spans.Where(s => s.Name.Equals(expectedOperationName)));
         }
 
-        private void SubmitsTracesWithNetStandard(string packageVersion)
+        private void SubmitsTraces(string packageVersion)
         {
             // ALWAYS: 75 spans
             // - MySqlCommand: 19 spans (3 groups * 7 spans - 2 missing spans)
@@ -111,21 +108,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             int agentPort = TcpPortProvider.GetOpenPort();
 
-            using (var agent = new MockTracerAgent(agentPort))
-            using (RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
-            {
-                var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
-                int actualSpanCount = spans.Where(s => s.ParentId.HasValue && !s.Resource.Equals("SHOW WARNINGS", System.StringComparison.OrdinalIgnoreCase)).Count(); // Remove unexpected DB spans from the calculation
-                Assert.Equal(expectedSpanCount, actualSpanCount);
+            using var agent = new MockTracerAgent(agentPort);
+            using var process = RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion);
+            var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
+            int actualSpanCount = spans.Count(s => s.ParentId.HasValue && !s.Resource.Equals("SHOW WARNINGS", StringComparison.OrdinalIgnoreCase)); // Remove unexpected DB spans from the calculation
 
-                foreach (var span in spans)
-                {
-                    Assert.Equal(expectedOperationName, span.Name);
-                    Assert.Equal(expectedServiceName, span.Service);
-                    Assert.Equal(SpanTypes.Sql, span.Type);
-                    Assert.Equal(dbType, span.Tags[Tags.DbType]);
-                    Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
-                }
+            Assert.Equal(expectedSpanCount, actualSpanCount);
+
+            foreach (var span in spans)
+            {
+                Assert.Equal(expectedOperationName, span.Name);
+                Assert.Equal(expectedServiceName, span.Service);
+                Assert.Equal(SpanTypes.Sql, span.Type);
+                Assert.Equal(dbType, span.Tags[Tags.DbType]);
+                Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
             }
         }
     }
