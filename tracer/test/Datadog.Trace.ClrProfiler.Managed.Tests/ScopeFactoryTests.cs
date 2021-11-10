@@ -7,9 +7,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Data;
-using System.Data.Common;
-using System.Data.SqlClient;
 using Datadog.Trace.Agent;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
@@ -186,18 +185,20 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         public void CreateDbCommandScope_UsesReplacementServiceNameWhenProvided(IDbCommand command)
         {
             // Set up tracer
-            var t = command.GetType();
-            var dbType = ScopeFactory.GetDbType(t.Namespace, t.Name);
+            var commandType = command.GetType();
+            DbScopeFactory.TryGetIntegrationDetails(commandType, out _, out var dbType);
+
             var collection = new NameValueCollection
             {
                 { ConfigurationKeys.ServiceNameMappings, $"{dbType}:my-custom-type" }
             };
+
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var tracerSettings = new TracerSettings(source);
             var tracer = TracerHelper.Create(tracerSettings);
 
             // Create scope
-            using (var outerScope = ScopeFactory.CreateDbCommandScope(tracer, command))
+            using (var outerScope = DbScopeFactory.CreateDbCommandScope(tracer, command))
             {
                 Assert.Equal("my-custom-type", outerScope.Span.ServiceName);
             }
@@ -217,66 +218,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var tracer = TracerHelper.Create(tracerSettings);
 
             // Create scope
-            using (var outerScope = ScopeFactory.CreateDbCommandScope(tracer, command))
+            using (var outerScope = DbScopeFactory.CreateDbCommandScope(tracer, command))
             {
                 Assert.NotEqual("my-custom-type", outerScope.Span.ServiceName);
-            }
-        }
-
-        private static Scope SystemDataSqlClientSqlCommandCreateScope(Tracer tracer) => ScopeFactory.CreateDbCommandScope(tracer, new System.Data.SqlClient.SqlCommand());
-
-        private static Scope PostgresCreateScope(Tracer tracer) => ScopeFactory.CreateDbCommandScope(tracer, new NpgsqlCommand());
-
-        private static Scope CustomCreateScope(Tracer tracer) => ScopeFactory.CreateDbCommandScope(tracer, new CustomDbCommand());
-
-        private static Scope MicrosoftDataSqlClientSqlCommandCreateScope(Tracer tracer) => ScopeFactory.CreateDbCommandScope(tracer, new Microsoft.Data.SqlClient.SqlCommand());
-
-        private class CustomDbCommand : DbCommand
-        {
-            public override string CommandText { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-            public override int CommandTimeout { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-            public override CommandType CommandType { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-            public override bool DesignTimeVisible { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-            public override UpdateRowSource UpdatedRowSource { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-            protected override DbConnection DbConnection { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-            protected override DbParameterCollection DbParameterCollection => throw new NotImplementedException();
-
-            protected override DbTransaction DbTransaction { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-            public override void Cancel()
-            {
-                throw new NotImplementedException();
-            }
-
-            public override int ExecuteNonQuery()
-            {
-                throw new NotImplementedException();
-            }
-
-            public override object ExecuteScalar()
-            {
-                throw new NotImplementedException();
-            }
-
-            public override void Prepare()
-            {
-                throw new NotImplementedException();
-            }
-
-            protected override DbParameter CreateDbParameter()
-            {
-                throw new NotImplementedException();
-            }
-
-            protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior)
-            {
-                throw new NotImplementedException();
             }
         }
     }

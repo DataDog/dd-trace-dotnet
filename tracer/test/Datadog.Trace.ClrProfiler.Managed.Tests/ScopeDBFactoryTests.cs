@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Data;
 using System.Data.Common;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using MySql.Data.MySqlClient;
@@ -56,12 +57,14 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         public void CreateDbCommandScope_UsesReplacementServiceNameWhenProvided(IDbCommand command)
         {
             // Set up tracer
-            var t = command.GetType();
-            var dbType = ScopeFactory.GetDbType(t.Namespace, t.Name);
+            var commandType = command.GetType();
+            DbScopeFactory.TryGetIntegrationDetails(commandType, out _, out var dbType);
+
             var collection = new NameValueCollection
             {
                 { ConfigurationKeys.ServiceNameMappings, $"{dbType}:my-custom-type" }
             };
+
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var tracerSettings = new TracerSettings(source);
             var tracer = TracerHelper.Create(tracerSettings);
@@ -104,13 +107,13 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         [InlineData("Custom.DB", "Command", "db")]
         public void GetDbType_CorrectNameGenerated(string namespaceName, string commandTypeName, string expected)
         {
-            var dbType = ScopeFactory.GetDbType(namespaceName, commandTypeName);
+            DbScopeFactory.TryGetIntegrationDetails(commandType, out _, out var dbType);
             Assert.Equal(expected, dbType);
         }
 
         private static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command)
         {
-            return (Scope)typeof(ScopeDBFactory<>)
+            return (Scope)typeof(DbScopeFactory<>)
                 .MakeGenericType(command.GetType())
                 .GetMethod(nameof(CreateDbCommandScope))
                 .Invoke(null, new object[] { tracer, command });
