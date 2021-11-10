@@ -72,56 +72,47 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         }
 
         public static bool TryGetIntegrationDetails(
-            Type commandType,
+            string commandTypeFullName,
             out IntegrationIds? integrationId,
             out string dbType)
         {
-            string commandTypeFullName = commandType.FullName ?? string.Empty;
-
-            if (commandTypeFullName.Length < 2)
+            if (commandTypeFullName == null || commandTypeFullName.Length < 20)
             {
-                // name is too short
+                // "Npgsql.NpgsqlCommand" is the shortest string at 20 characters
                 integrationId = null;
                 dbType = null;
                 return false;
             }
 
-            switch (commandTypeFullName[0])
+            // TODO: optimize this switch
+            switch (commandTypeFullName)
             {
-                case 'S' when commandTypeFullName is "System.Data.SqlClient.SqlCommand":
+                case "System.Data.SqlClient.SqlCommand" or "Microsoft.Data.SqlClient.SqlCommand":
                     integrationId = IntegrationIds.SqlClient;
                     dbType = DbType.SqlServer;
                     return true;
-                case 'S' when commandTypeFullName is "System.Data.SQLite.SQLiteCommand": // note capitalization in SQLite
-                    integrationId = IntegrationIds.Sqlite;
-                    dbType = DbType.Sqlite;
-                    return true;
-                case 'M' when commandTypeFullName is "Microsoft.Data.SqlClient.SqlCommand":
-                    integrationId = IntegrationIds.SqlClient;
-                    dbType = DbType.SqlServer;
-                    return true;
-                case 'M' when commandTypeFullName is "Microsoft.Data.Sqlite.SqliteCommand": // note capitalization in Sqlite
-                    integrationId = IntegrationIds.Sqlite;
-                    dbType = DbType.Sqlite;
-                    return true;
-                case 'M' when commandTypeFullName[1] is 'y' &&
-                              commandTypeFullName is "MySql.Data.MySqlClient.MySqlCommand" or "MySqlConnector.MySqlCommand":
-                    integrationId = IntegrationIds.MySql;
-                    dbType = DbType.MySql;
-                    return true;
-                case 'N' when commandTypeFullName is "Npgsql.NpgsqlCommand":
+                case "Npgsql.NpgsqlCommand":
                     integrationId = IntegrationIds.Npgsql;
                     dbType = DbType.PostgreSql;
                     return true;
-                case 'O' when commandTypeFullName is "Oracle.ManagedDataAccess.Client.OracleCommand" or "Oracle.DataAccess.Client.OracleCommand":
+                case "MySql.Data.MySqlClient.MySqlCommand" or "MySqlConnector.MySqlCommand":
+                    integrationId = IntegrationIds.MySql;
+                    dbType = DbType.MySql;
+                    return true;
+                case "Oracle.ManagedDataAccess.Client.OracleCommand" or "Oracle.DataAccess.Client.OracleCommand":
                     integrationId = IntegrationIds.Oracle;
                     dbType = DbType.Oracle;
                     return true;
+                case "System.Data.SQLite.SQLiteCommand" or "Microsoft.Data.Sqlite.SqliteCommand":
+                    // note capitalization in SQLite/Sqlite
+                    integrationId = IntegrationIds.Sqlite;
+                    dbType = DbType.Sqlite;
+                    return true;
+                default:
+                    integrationId = null;
+                    dbType = null;
+                    return false;
             }
-
-            integrationId = null;
-            dbType = null;
-            return false;
         }
     }
 }
