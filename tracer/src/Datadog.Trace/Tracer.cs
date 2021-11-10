@@ -337,7 +337,7 @@ namespace Datadog.Trace
 
         internal Scope StartActiveInternal(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false, bool finishOnClose = true, ITags tags = null, ulong? spanId = null)
         {
-            var span = StartSpan(operationName, tags, parent, serviceName, startTime, ignoreActiveScope, spanId);
+            var span = StartSpan(operationName, tags, parent, serviceName, startTime, ignoreActiveScope);
             return TracerManager.ScopeManager.Activate(span, finishOnClose);
         }
 
