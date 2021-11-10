@@ -110,12 +110,7 @@ namespace Datadog.Trace.PlatformHelpers
 
             if (tracer.Settings.RouteTemplateResourceNamesEnabled)
             {
-                httpContext.Features.Set(new RequestTrackingFeature
-                {
-                    HttpMethod = httpMethod,
-                    OriginalUrl = url,
-                });
-
+                httpContext.Features.Set(new RequestTrackingFeature());
                 tags = new AspNetCoreEndpointTags();
             }
             else
@@ -191,16 +186,6 @@ namespace Datadog.Trace.PlatformHelpers
             /// Gets or sets a value indicating the resource name as calculated by the endpoint routing(if available)
             /// </summary>
             public string ResourceName { get; set; }
-
-            /// <summary>
-            /// Gets or sets the HTTP method, as it requires normalization, so avoids repeatedly calculations
-            /// </summary>
-            public string HttpMethod { get; set; }
-
-            /// <summary>
-            /// Gets or Sets the original URL received by the pipeline
-            /// </summary>
-            public string OriginalUrl { get; set; }
         }
     }
 }

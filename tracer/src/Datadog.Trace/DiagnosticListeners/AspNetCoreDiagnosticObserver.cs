@@ -445,6 +445,9 @@ namespace Datadog.Trace.DiagnosticListeners
             var span = mvcScope.Span;
             span.Type = SpanTypes.Web;
 
+            // This is only called with new route names, so parent tags are always AspNetCoreEndpointTags
+            var parentTags = (AspNetCoreEndpointTags)parentSpan.Tags;
+
             var trackingFeature = httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>();
             var isUsingEndpointRouting = trackingFeature.IsUsingEndpointRouting;
 
@@ -453,7 +456,7 @@ namespace Datadog.Trace.DiagnosticListeners
             {
                 trackingFeature.IsFirstPipelineExecution = false;
                 var url = httpContext.Request.GetUrl();
-                if (!string.Equals(url, trackingFeature.OriginalUrl))
+                if (!string.Equals(url, parentTags.HttpUrl))
                 {
                     // URL has changed from original, so treat this execution as a "subsequent" request
                     // Typically occurs for 404s for example
@@ -513,7 +516,7 @@ namespace Datadog.Trace.DiagnosticListeners
                         controllerName: controllerName,
                         actionName: actionName);
 
-                    resourceName = $"{trackingFeature.HttpMethod} {request.PathBase.Value}{resourcePathName}";
+                    resourceName = $"{parentTags.HttpMethod} {request.PathBase.Value}{resourcePathName}";
                     aspNetRoute = routeTemplate?.TemplateText.ToLowerInvariant();
                 }
             }
@@ -535,11 +538,7 @@ namespace Datadog.Trace.DiagnosticListeners
             {
                 // If we're using endpoint routing or this is a pipeline re-execution,
                 // these will already be set correctly
-                if (parentSpan.Tags is AspNetCoreEndpointTags parentTags)
-                {
-                    parentTags.AspNetCoreRoute = aspNetRoute;
-                }
-
+                parentTags.AspNetCoreRoute = aspNetRoute;
                 parentSpan.ResourceName = span.ResourceName;
             }
 
@@ -608,7 +607,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     trackingFeature.IsFirstPipelineExecution = false;
 
                     var url = httpContext.Request.GetUrl();
-                    if (!string.Equals(url, trackingFeature.OriginalUrl))
+                    if (!string.Equals(url, trackingFeature.OriginalPath))
                     {
                         // URL has changed from original, so treat this execution as a "subsequent" request
                         // Typically occurs for 404s for example
@@ -682,7 +681,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     controllerName: controllerName,
                     actionName: actionName);
 
-                var resourceName = $"{trackingFeature.HttpMethod} {request.PathBase}{resourcePathName}";
+                var resourceName = $"{tags.HttpMethod} {request.PathBase}{resourcePathName}";
 
                 // NOTE: We could set the controller/action/area tags on the parent span
                 // But instead we re-extract them in the MVC endpoint as these are MVC
