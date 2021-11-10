@@ -29,13 +29,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         public static CallTargetState OnFunctionMiddlewareBegin<TTarget>(TTarget instance, HttpContext httpContext)
         {
             var tracer = Tracer.Instance;
-            var security = Security.Instance;
 
-            var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, security, httpContext);
-
-            if (scope != null)
+            if (tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
-                return new CallTargetState(scope);
+                var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, httpContext, httpContext.Request, resourceName: null);
+
+                if (scope != null)
+                {
+                    return new CallTargetState(scope);
+                }
             }
 
             return CallTargetState.GetDefault();

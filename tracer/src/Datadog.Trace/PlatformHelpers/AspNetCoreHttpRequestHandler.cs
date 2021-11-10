@@ -25,7 +25,7 @@ namespace Datadog.Trace.PlatformHelpers
     {
         private readonly IDatadogLogger _log;
         private readonly IntegrationInfo _integrationId;
-        private readonly string _requestInOperationName = "aspnet_core.request";
+        private readonly string _requestInOperationName;
 
         public AspNetCoreHttpRequestHandler(
             IDatadogLogger log,
@@ -35,6 +35,20 @@ namespace Datadog.Trace.PlatformHelpers
             _log = log;
             _integrationId = integrationInfo;
             _requestInOperationName = requestInOperationName;
+        }
+
+        public string GetDefaultResourceName(HttpRequest request)
+        {
+            string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
+
+            string absolutePath = request.PathBase.HasValue
+                                      ? request.PathBase.Value + request.Path.Value
+                                      : request.Path.Value;
+
+            string resourceUrl = UriHelpers.GetCleanUriPath(absolutePath)
+                                           .ToLowerInvariant();
+
+            return $"{httpMethod} {resourceUrl}";
         }
 
         private SpanContext ExtractPropagatedContext(HttpRequest request)
@@ -82,23 +96,12 @@ namespace Datadog.Trace.PlatformHelpers
             return Enumerable.Empty<KeyValuePair<string, string>>();
         }
 
-        private Scope StartCoreScope(Tracer tracer, HttpContext httpContext, HttpRequest request)
+        public Scope StartAspNetCorePipelineScope(Tracer tracer, HttpContext httpContext, HttpRequest request, string resourceName)
         {
             string host = request.Host.Value;
             string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
             string url = request.GetUrl();
-
-            string absolutePath = request.Path.Value;
-
-            if (request.PathBase.HasValue)
-            {
-                absolutePath = request.PathBase.Value + absolutePath;
-            }
-
-            string resourceUrl = UriHelpers.GetCleanUriPath(absolutePath)
-                                           .ToLowerInvariant();
-
-            string resourceName = $"{httpMethod} {resourceUrl}";
+            resourceName ??= GetDefaultResourceName(request);
 
             SpanContext propagatedContext = ExtractPropagatedContext(request);
             var tagsFromHeaders = ExtractHeaderTags(request, tracer);
@@ -125,18 +128,6 @@ namespace Datadog.Trace.PlatformHelpers
             scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, tags, tagsFromHeaders);
 
             tags.SetAnalyticsSampleRate(_integrationId, tracer.Settings, enabledWithGlobalSetting: true);
-
-            return scope;
-        }
-
-        public Scope StartAspNetCorePipelineScope(Tracer tracer, IDatadogSecurity security, HttpContext httpContext)
-        {
-            Scope scope = null;
-
-            if (tracer.Settings.IsIntegrationEnabled(_integrationId))
-            {
-                scope = StartCoreScope(tracer, httpContext, httpContext.Request);
-            }
 
             return scope;
         }

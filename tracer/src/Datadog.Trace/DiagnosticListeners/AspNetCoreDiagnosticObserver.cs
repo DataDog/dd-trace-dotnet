@@ -518,8 +518,12 @@ namespace Datadog.Trace.DiagnosticListeners
                 }
             }
 
-            // mirror the parent if we couldn't extract a route
-            span.ResourceName = resourceName ?? parentSpan.ResourceName;
+            // mirror the parent if we couldn't extract a route for some reason
+            // (and the parent is not using the placeholder resource name)
+            span.ResourceName = resourceName
+                             ?? (string.IsNullOrEmpty(parentSpan.ResourceName)
+                                     ? AspNetCoreRequestHandler.GetDefaultResourceName(httpContext.Request)
+                                     : parentSpan.ResourceName);
 
             mvcSpanTags.AspNetCoreAction = actionName;
             mvcSpanTags.AspNetCoreController = controllerName;
@@ -562,7 +566,9 @@ namespace Datadog.Trace.DiagnosticListeners
                 Span span = null;
                 if (shouldTrace)
                 {
-                    span = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, security, httpContext).Span;
+                    // Use an empty resource name here, as we will likely replace it as part of the request
+                    // If we don't, update it in OnHostingHttpRequestInStop or OnHostingUnhandledException
+                    span = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, httpContext, httpContext.Request, resourceName: string.Empty).Span;
                 }
 
                 if (shouldSecure)
@@ -765,12 +771,24 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (scope != null)
             {
+                var span = scope.Span;
+
+                // we may need to update the resource name if none of the routing/mvc events updated it
                 // if we had an unhandled exception, the status code is already updated
-                if (!scope.Span.Error && arg.TryDuckCast<HttpRequestInStopStruct>(out var httpRequest))
+                if (string.IsNullOrEmpty(span.ResourceName) || !span.Error)
                 {
+                    var httpRequest = arg.DuckCast<HttpRequestInStopStruct>();
                     HttpContext httpContext = httpRequest.HttpContext;
-                    scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, tracer.Settings);
-                    scope.Span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                    if (string.IsNullOrEmpty(span.ResourceName))
+                    {
+                        span.ResourceName = AspNetCoreRequestHandler.GetDefaultResourceName(httpContext.Request);
+                    }
+
+                    if (!span.Error)
+                    {
+                        span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, tracer.Settings);
+                        span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                    }
                 }
 
                 scope.Dispose();
