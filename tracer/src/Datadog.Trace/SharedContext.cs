@@ -5,16 +5,19 @@
 
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace Datadog.Trace
 {
     /// <summary>
     /// Class to share context between Tracers from different versions
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public static class SharedContext
     {
-        private static IDictionary<string, string> _distributedTrace;
+        private static readonly AsyncLocal<IReadOnlyDictionary<string, string>> DistributedTrace = new();
 
         /// <summary>
         /// Gets the internal distributed trace object
@@ -22,6 +25,7 @@ namespace Datadog.Trace
         /// <returns>Shared distributed trace object instance</returns>
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public static object GetDistributedTrace()
         {
             return null;
@@ -33,6 +37,7 @@ namespace Datadog.Trace
         /// <param name="value">Shared distributed trace object instance</param>
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public static void SetDistributedTrace(object value)
         {
         }
@@ -41,7 +46,7 @@ namespace Datadog.Trace
         /// Get shared SpanContext instance
         /// </summary>
         /// <returns>Shared span context object instance</returns>
-        public static SpanContext GetSpanContext()
+        internal static SpanContext GetSpanContext()
         {
             var values = (IReadOnlyDictionary<string, string>)GetDistributedTrace();
 
@@ -57,62 +62,28 @@ namespace Datadog.Trace
         /// Sets the shared SpanContext instance
         /// </summary>
         /// <param name="spanContext">Shared span context object instance</param>
-        public static void SetSpanContext(SpanContext spanContext)
+        internal static void SetSpanContext(SpanContext spanContext)
         {
-            var values = (IDictionary<string, string>)GetDistributedTrace();
-
-            if (spanContext == null)
-            {
-                values?.Clear();
-                return;
-            }
-
-            if (values == null)
-            {
-                values = new Dictionary<string, string>();
-                SetDistributedTrace(values);
-            }
-
-            Inject(values, spanContext);
+            SetDistributedTrace(spanContext);
         }
 
-        // Implementations
+        private static SpanContext Extract(IReadOnlyDictionary<string, string> values)
+        {
+            return SpanContextPropagator.Instance.Extract(values);
+        }
+
+#pragma warning disable IDE0051 // ReSharper disable UnusedMember.Local - Usage injected at runtime by the profiler
 
         private static object GetDistributedTraceImpl()
         {
-            return (IReadOnlyDictionary<string, string>)_distributedTrace;
+            return DistributedTrace.Value;
         }
 
         private static void SetDistributedTraceImpl(object value)
         {
-            _distributedTrace = (IDictionary<string, string>)value;
+            DistributedTrace.Value = (IReadOnlyDictionary<string, string>)value;
         }
 
-        // Propagation
-
-        private static SpanContext Extract(IReadOnlyDictionary<string, string> values)
-        {
-            if (values == null)
-            {
-                return null;
-            }
-
-            return SpanContextPropagator.Instance.Extract(
-                values,
-                (c, key) =>
-                {
-                    return c.TryGetValue(key, out var value) ?
-                               new[] { value } :
-                               Enumerable.Empty<string>();
-                });
-        }
-
-        private static void Inject(IDictionary<string, string> values, SpanContext spanContext)
-        {
-            SpanContextPropagator.Instance.Inject(
-                spanContext,
-                values,
-                (c, headerKey, headerValue) => c[headerKey] = headerValue);
-        }
+#pragma warning restore IDE0051 // ReSharper restore UnusedMember.Local
     }
 }

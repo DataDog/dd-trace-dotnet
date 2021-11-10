@@ -3,8 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Logging;
+using System.Collections;
+using System.Collections.Generic;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace
@@ -12,9 +12,9 @@ namespace Datadog.Trace
     /// <summary>
     /// The SpanContext contains all the information needed to express relationships between spans inside or outside the process boundaries.
     /// </summary>
-    public class SpanContext : ISpanContext
+    public class SpanContext : ISpanContext, IReadOnlyDictionary<string, string>
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SpanContext>();
+        private static readonly string[] KeyNames = { HttpHeaderNames.TraceId, HttpHeaderNames.ParentId, HttpHeaderNames.SamplingPriority, HttpHeaderNames.Origin };
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SpanContext"/> class
@@ -121,5 +121,95 @@ namespace Datadog.Trace
         /// Returns null for local contexts.
         /// </summary>
         internal SamplingPriority? SamplingPriority { get; }
+
+        /// <inheritdoc/>
+        int IReadOnlyCollection<KeyValuePair<string, string>>.Count => KeyNames.Length;
+
+        /// <inheritdoc />
+        IEnumerable<string> IReadOnlyDictionary<string, string>.Keys => KeyNames;
+
+        /// <inheritdoc/>
+        IEnumerable<string> IReadOnlyDictionary<string, string>.Values
+        {
+            get
+            {
+                foreach (var key in KeyNames)
+                {
+                    yield return ((IReadOnlyDictionary<string, string>)this)[key];
+                }
+            }
+        }
+
+        /// <inheritdoc/>
+        string IReadOnlyDictionary<string, string>.this[string key]
+        {
+            get
+            {
+                if (((IReadOnlyDictionary<string, string>)this).TryGetValue(key, out var value))
+                {
+                    return value;
+                }
+
+                throw new KeyNotFoundException($"Key not found: {key}");
+            }
+        }
+
+        /// <inheritdoc/>
+        IEnumerator<KeyValuePair<string, string>> IEnumerable<KeyValuePair<string, string>>.GetEnumerator()
+        {
+            var dictionary = (IReadOnlyDictionary<string, string>)this;
+
+            foreach (var key in KeyNames)
+            {
+                yield return new KeyValuePair<string, string>(key, dictionary[key]);
+            }
+        }
+
+        /// <inheritdoc/>
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return ((IReadOnlyDictionary<string, string>)this).GetEnumerator();
+        }
+
+        /// <inheritdoc/>
+        bool IReadOnlyDictionary<string, string>.ContainsKey(string key)
+        {
+            foreach (var k in KeyNames)
+            {
+                if (k == key)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <inheritdoc/>
+        bool IReadOnlyDictionary<string, string>.TryGetValue(string key, out string value)
+        {
+            switch (key)
+            {
+                case HttpHeaderNames.TraceId:
+                    value = TraceId.ToString();
+                    return true;
+
+                case HttpHeaderNames.ParentId:
+                    value = SpanId.ToString();
+                    return true;
+
+                case HttpHeaderNames.SamplingPriority:
+                    var samplingPriority = SamplingPriority;
+                    value = samplingPriority != null ? ((int)samplingPriority.Value).ToString() : null;
+                    return true;
+
+                case HttpHeaderNames.Origin:
+                    value = Origin;
+                    return true;
+            }
+
+            value = null;
+            return false;
+        }
     }
 }
