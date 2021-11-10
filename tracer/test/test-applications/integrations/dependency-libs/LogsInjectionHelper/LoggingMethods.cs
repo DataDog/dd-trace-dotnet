@@ -40,7 +40,7 @@ namespace PluginApplication
             var settings = TracerSettings.FromDefaultSources();
             settings.Environment ??= "dev"; // Ensure that we have an env value. In CI, this will automatically be assigned. Later we can test that everything is fine when Environment=null
             settings.ServiceVersion ??= "1.0.0"; // Ensure that we have an env value. In CI, this will automatically be assigned. Later we can test that everything is fine when when ServiceVersion=null
-            Tracer.Instance = new Tracer(settings);
+            Tracer.ReplaceGlobalSettings(settings);
 
             try
             {

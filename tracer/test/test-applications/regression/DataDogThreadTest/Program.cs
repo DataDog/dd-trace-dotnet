@@ -25,7 +25,8 @@ namespace DataDogThreadTest
                 var ddTraceSettings = TracerSettings.FromDefaultSources();
                 ddTraceSettings.LogsInjectionEnabled = true;
                 ddTraceSettings.TraceEnabled = true;
-                var tracer = new Tracer(ddTraceSettings);
+                Tracer.ReplaceGlobalSettings(ddTraceSettings);
+                var tracer = Tracer.Instance;
 
                 var totalIterations = 10_000;
                 var threadRepresentation = Enumerable.Range(0, 10).ToArray();

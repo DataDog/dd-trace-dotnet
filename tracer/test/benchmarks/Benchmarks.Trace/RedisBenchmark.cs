@@ -24,7 +24,7 @@ namespace Benchmarks.Trace
                 StartupDiagnosticLogEnabled = false
             };
 
-            Tracer.Instance = new Tracer(settings, new DummyAgentWriter(), null, null, null);
+            Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
 
             RawCommands = new[] {"Command", "arg1", "arg2"}
                 .Select(Encoding.UTF8.GetBytes)

@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Sdk;
 
@@ -147,7 +148,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         {
             var vars = GetMockVariables(SubscriptionId, DeploymentId, PlanResourceGroup, SiteResourceGroup);
             AzureAppServices.Metadata = new AzureAppServices(vars);
-            var tracer = new Tracer();
+            var tracer = TracerHelper.Create();
             var rootSpans = new List<Span>();
             var nonRootSpans = new List<Span>();
             var iterations = 5;

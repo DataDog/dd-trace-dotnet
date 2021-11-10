@@ -76,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
                 }
 
                 tags.RequestId = response.ResponseMetadata.RequestId;
-                state.Scope.Span.SetHttpStatusCode((int)response.HttpStatusCode, isServer: false);
+                state.Scope.Span.SetHttpStatusCode((int)response.HttpStatusCode, false, Tracer.Instance.Settings);
             }
 
             // Do not dispose the scope (if present) when exiting.

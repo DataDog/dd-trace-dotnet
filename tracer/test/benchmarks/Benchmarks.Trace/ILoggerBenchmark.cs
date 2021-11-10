@@ -27,7 +27,7 @@ namespace Benchmarks.Trace
             };
 
             LogInjectionTracer = new Tracer(logInjectionSettings, new DummyAgentWriter(), null, null, null);
-            Tracer.Instance = LogInjectionTracer;
+            Tracer.UnsafeSetTracerInstance(LogInjectionTracer);
 
             var services = new ServiceCollection();
             services.AddLogging();

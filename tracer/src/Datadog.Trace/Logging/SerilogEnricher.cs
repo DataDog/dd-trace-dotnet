@@ -19,7 +19,7 @@ namespace Datadog.Trace.Logging
         private readonly Func<object, object> _valueFactory;
         private readonly Func<string, object, object> _propertyFactory;
 
-        private Tracer _tracer;
+        private IScopeManager _scopeManager;
         private object _serviceProperty;
         private object _versionProperty;
         private object _environmentProperty;
@@ -56,13 +56,13 @@ namespace Datadog.Trace.Logging
             _propertyFactory = BuildPropertyFactory(logEventPropertyType, logEventPropertyValueType);
         }
 
-        public void Initialize(Tracer tracer)
+        public void Initialize(IScopeManager scopeManager, string defaultServiceName, string version, string env)
         {
-            _tracer = tracer;
+            _scopeManager = scopeManager;
 
-            _serviceProperty = _propertyFactory(CorrelationIdentifier.SerilogServiceKey, _valueFactory(tracer.DefaultServiceName));
-            _versionProperty = _propertyFactory(CorrelationIdentifier.SerilogVersionKey, _valueFactory(tracer.Settings.ServiceVersion));
-            _environmentProperty = _propertyFactory(CorrelationIdentifier.SerilogEnvKey, _valueFactory(tracer.Settings.Environment));
+            _serviceProperty = _propertyFactory(CorrelationIdentifier.SerilogServiceKey, _valueFactory(defaultServiceName));
+            _versionProperty = _propertyFactory(CorrelationIdentifier.SerilogVersionKey, _valueFactory(version));
+            _environmentProperty = _propertyFactory(CorrelationIdentifier.SerilogEnvKey, _valueFactory(env));
 
             var logEnricherType = CustomSerilogLogProvider.GetLogEnricherType();
             _serilogEventEnricher = this.DuckImplement(logEnricherType);
@@ -83,7 +83,7 @@ namespace Datadog.Trace.Logging
         [DuckReverseMethod(ParameterTypeNames = new[] { "Serilog.Events.LogEvent, Serilog", "Serilog.Core.ILogEventPropertyFactory, Serilog" })]
         public void Enrich(ILogEvent logEvent, object propertyFactory)
         {
-            var activeScope = _tracer.ActiveScope;
+            var activeScope = _scopeManager.Active;
 
             if (activeScope == null)
             {

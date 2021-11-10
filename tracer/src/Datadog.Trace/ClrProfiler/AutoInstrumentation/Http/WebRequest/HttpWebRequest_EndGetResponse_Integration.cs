@@ -83,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
 
                         if (returnValue is HttpWebResponse response)
                         {
-                            scope.Span.SetHttpStatusCode((int)response.StatusCode, isServer: false);
+                            scope.Span.SetHttpStatusCode((int)response.StatusCode, false, Tracer.Instance.Settings);
                         }
 
                         scope.DisposeWithException(exception);

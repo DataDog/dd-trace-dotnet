@@ -29,7 +29,7 @@ namespace Benchmarks.Trace
             };
 
             LogInjectionTracer = new Tracer(logInjectionSettings, new DummyAgentWriter(), null, null, null);
-            Tracer.Instance = LogInjectionTracer;
+            Tracer.UnsafeSetTracerInstance(LogInjectionTracer);
 
             var formatter = new MessageTemplateTextFormatter("{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}{Properties}{NewLine}", null);
 

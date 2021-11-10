@@ -7,6 +7,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Util;
 using Xunit;
 
@@ -20,7 +21,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void One_Is_Allowed()
         {
-            var traceContext = new TraceContext(new Tracer());
+            var traceContext = new TraceContext(TracerHelper.Create());
             var spanContext = new SpanContext(null, traceContext, "Weeeee");
             var span = new Span(spanContext, null);
             var rateLimiter = new RateLimiter(maxTracesPerInterval: null);
@@ -110,7 +111,7 @@ namespace Datadog.Trace.Tests.Sampling
 
         private static int AskTheRateLimiterABunchOfTimes(RateLimiter rateLimiter, int howManyTimes)
         {
-            var traceContext = new TraceContext(new Tracer());
+            var traceContext = new TraceContext(TracerHelper.Create());
             var spanContext = new SpanContext(null, traceContext, "Weeeee");
             var span = new Span(spanContext, null);
 

@@ -12,6 +12,7 @@ using System.Data.SqlClient;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Util;
 using Moq;
 using MySql.Data.MySqlClient;
@@ -166,7 +167,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var tracerSettings = new TracerSettings(source);
-            var tracer = new Tracer(tracerSettings);
+            var tracer = TracerHelper.Create(tracerSettings);
 
             // Create scope
             using (var outerScope = ScopeFactory.CreateDbCommandScope(tracer, new CustomDbCommand()))
@@ -193,7 +194,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var tracerSettings = new TracerSettings(source);
-            var tracer = new Tracer(tracerSettings);
+            var tracer = TracerHelper.Create(tracerSettings);
 
             // Create scope
             using (var outerScope = ScopeFactory.CreateDbCommandScope(tracer, command))
@@ -213,7 +214,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             };
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var tracerSettings = new TracerSettings(source);
-            var tracer = new Tracer(tracerSettings);
+            var tracer = TracerHelper.Create(tracerSettings);
 
             // Create scope
             using (var outerScope = ScopeFactory.CreateDbCommandScope(tracer, command))
