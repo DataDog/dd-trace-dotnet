@@ -77,7 +77,7 @@ namespace Datadog.Trace.Tests
                     StartupDiagnosticLogEnabled = false,
                     GlobalTags = new Dictionary<string, string> { { "test-tag", "original-value" } },
                 };
-                Tracer.ReplaceGlobalSettings(oldSettings);
+                Tracer.Configure(oldSettings);
 
                 var span = Tracer.Instance.StartActive("Test span");
 
@@ -89,7 +89,7 @@ namespace Datadog.Trace.Tests
                     GlobalTags = new Dictionary<string, string> { { "test-tag", "new-value" } },
                 };
 
-                Tracer.ReplaceGlobalSettings(newSettings);
+                Tracer.Configure(newSettings);
 
                 span.Dispose();
 
