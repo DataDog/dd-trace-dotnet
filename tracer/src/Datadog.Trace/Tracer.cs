@@ -60,11 +60,11 @@ namespace Datadog.Trace
         /// </param>
         [Obsolete("This API is deprecated, as it replaces the global settings for all Tracer instances in the application. " +
                   "If you were using this API to configure the global Tracer.Instance in code, use the static "
-                + nameof(Tracer) + "." + nameof(ReplaceGlobalSettings) + "() to replace the global Tracer settings for the application")]
+                + nameof(Tracer) + "." + nameof(Configure) + "() to replace the global Tracer settings for the application")]
         public Tracer(TracerSettings settings)
         {
             // TODO: Switch to immutable settings
-            ReplaceGlobalSettings(settings);
+            Configure(settings);
 
             // update the count of Tracer instances
             Interlocked.Increment(ref _liveTracerCount);
@@ -127,7 +127,7 @@ namespace Datadog.Trace
             }
 
             // TODO: Make this API internal
-            [Obsolete("Use " + nameof(Tracer) + "." + nameof(ReplaceGlobalSettings) + " to configure the global Tracer" +
+            [Obsolete("Use " + nameof(Tracer) + "." + nameof(Configure) + " to configure the global Tracer" +
                       " instance in code.")]
             set
             {
@@ -183,7 +183,7 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="settings"> A <see cref="TracerSettings"/> instance with the desired settings,
         /// or null to use the default configuration sources. This is used to configure global settings</param>
-        public static void ReplaceGlobalSettings(TracerSettings settings)
+        public static void Configure(TracerSettings settings)
         {
             // TODO: Switch to immutable settings
             TracerManager.ReplaceGlobalManager(settings, TracerManagerFactory.Instance);
