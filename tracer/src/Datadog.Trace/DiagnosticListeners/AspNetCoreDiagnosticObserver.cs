@@ -292,16 +292,13 @@ namespace Datadog.Trace.DiagnosticListeners
             {
                 foreach (var part in pathSegment.DuckCast<RoutePatternPathSegmentStruct>().Parts)
                 {
-                    if (DuckType.CanCreate<RoutePatternContentPartStruct>(part))
+                    if (part.TryDuckCast(out RoutePatternContentPartStruct contentPart))
                     {
-                        var contentPart = part.DuckCast<RoutePatternContentPartStruct>();
                         sb.Append('/');
                         sb.Append(contentPart.Content);
                     }
-                    else if (DuckType.CanCreate<RoutePatternParameterPartStruct>(part))
+                    else if (part.TryDuckCast(out RoutePatternParameterPartStruct parameter))
                     {
-                        var parameter = part.DuckCast<RoutePatternParameterPartStruct>();
-
                         var parameterName = parameter.Name;
                         if (parameterName.Equals("area", StringComparison.OrdinalIgnoreCase))
                         {
