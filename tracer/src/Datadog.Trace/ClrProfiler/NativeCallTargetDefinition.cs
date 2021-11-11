@@ -112,6 +112,10 @@ namespace Datadog.Trace.ClrProfiler
             }
 
             Marshal.FreeHGlobal(TargetSignatureTypes);
+            if (TargetMethodArgumentsToLoadLength > 0)
+            {
+                Marshal.FreeHGlobal(TargetMethodArgumentsToLoad);
+            }
         }
     }
 }
