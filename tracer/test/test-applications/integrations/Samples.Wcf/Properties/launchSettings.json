@@ -15,7 +15,7 @@
         "DD_DOTNET_TRACER_HOME": "$(SolutionDir)tracer\\bin\\tracer-home",
         "DD_INTEGRATIONS": "$(SolutionDir)tracer\\bin\\tracer-home\\integrations.json",
         "DD_VERSION": "1.0.0",
-        "DD_TRACE_WCF_ENABLE_NEW_INSTRUMENTATION": "true",
+        "DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED": "true",
         "DD_TRACE_HEADER_TAGS": "upstream-service:upstream-service-tag"
       },
       "nativeDebugging": true
