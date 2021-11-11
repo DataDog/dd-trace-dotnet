@@ -77,13 +77,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = new MockTracerAgent(agentPort))
             using (RunSampleAndWaitForExit(agent.Port, arguments: $"{binding} Port={wcfPort}"))
             {
-                var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName)
-                                    .Where(s => !s.Resource.Contains("schemas.xmlsoap.org") && !s.Resource.Contains("www.w3.org"));
+                // Filter out WCF spans unrelated to the actual request handling, and filter them before returning spans
+                // so we can wait on the exact number of spans we expect.
+                agent.SpanFilters.Add(s => !s.Resource.Contains("schemas.xmlsoap.org") && !s.Resource.Contains("www.w3.org"));
+                var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings(binding, enableCallTarget, enableNewWcfInstrumentation);
 
-                // Overriding the type name here as we have multiple test classes in the file
-                // Ensures that we get nice file nesting in Solution Explorer
                 await Verifier.Verify(spans, settings)
                               .UseMethodName("_");
             }
