@@ -4,181 +4,88 @@
 // </copyright>
 
 using System;
-using System.Diagnostics;
 
 namespace Datadog.Trace.Util
 {
-#if !NETCOREAPP3_1_OR_GREATER
     /// <summary>
     /// Dedicated helper class for consistently referencing Process and AppDomain information.
     /// </summary>
     internal static class DomainMetadata
     {
-        private const string UnknownName = "unknown";
-        private static bool _initialized;
-        private static string _currentProcessName;
-        private static string _currentProcessMachineName;
-        private static int _currentProcessId;
+        private static readonly DomainMetadataImpl _instance = new DomainMetadataImpl();
 
-        private static bool _processDataUnavailable;
-        private static bool _domainDataPoisoned;
-        private static bool? _isAppInsightsAppDomain;
+        public static string ProcessName => _instance.ProcessName;
 
-        static DomainMetadata()
+        public static string MachineName => _instance.MachineName;
+
+        public static int ProcessId => _instance.ProcessId;
+
+        public static string AppDomainName => _instance.AppDomainName;
+
+        public static int AppDomainId => _instance.AppDomainId;
+
+        public static bool ShouldAvoidAppDomain() => _instance.ShouldAvoidAppDomain();
+
+        private class DomainMetadataImpl
         {
-            TrySetProcess();
+            private string _currentProcessName;
+            private string _currentProcessMachineName;
+            private int _currentProcessId;
+            private string _appDomainName;
+            private int _appDomainId;
+            private bool _isAppInsightsAppDomain;
 
-            if (_processDataUnavailable)
+            public DomainMetadataImpl()
             {
-                _currentProcessName = UnknownName;
-                _currentProcessMachineName = UnknownName;
-                _currentProcessId = -1;
-            }
-        }
+                const string UnknownName = "unknown";
 
-        public static string ProcessName => _currentProcessName;
-
-        public static string MachineName => _currentProcessMachineName;
-
-        public static int ProcessId => _currentProcessId;
-
-        public static string AppDomainName
-        {
-            get
-            {
                 try
                 {
-                    return !_domainDataPoisoned ? AppDomain.CurrentDomain.FriendlyName : UnknownName;
+                    // Get Process data
+                    ProcessHelpers.GetCurrentProcessInformation(out _currentProcessName, out _currentProcessMachineName, out _currentProcessId);
+
+                    try
+                    {
+                        _appDomainName = AppDomain.CurrentDomain.FriendlyName;
+                    }
+                    catch
+                    {
+                        _appDomainName = UnknownName;
+                    }
+
+                    try
+                    {
+                        _appDomainId = AppDomain.CurrentDomain.Id;
+                    }
+                    catch
+                    {
+                        _appDomainId = -1;
+                    }
+
+                    _isAppInsightsAppDomain = _appDomainName.IndexOf("ApplicationInsights", StringComparison.OrdinalIgnoreCase) >= 0;
                 }
                 catch
                 {
-                    _domainDataPoisoned = true;
-                    return UnknownName;
+                    _currentProcessName = UnknownName;
+                    _currentProcessMachineName = UnknownName;
+                    _currentProcessId = -1;
+                    _appDomainName = UnknownName;
+                    _appDomainId = -1;
+                    _isAppInsightsAppDomain = false;
                 }
             }
-        }
 
-        public static int AppDomainId
-        {
-            get
-            {
-                try
-                {
-                    return !_domainDataPoisoned ? AppDomain.CurrentDomain.Id : -1;
-                }
-                catch
-                {
-                    _domainDataPoisoned = true;
-                    return -1;
-                }
-            }
-        }
+            public string ProcessName => _currentProcessName;
 
-        public static bool ShouldAvoidAppDomain()
-        {
-            var isAppInsightsAppDomain = _isAppInsightsAppDomain;
+            public string MachineName => _currentProcessMachineName;
 
-            if (isAppInsightsAppDomain == null)
-            {
-                isAppInsightsAppDomain = AppDomainName.IndexOf("ApplicationInsights", StringComparison.OrdinalIgnoreCase) >= 0;
-                _isAppInsightsAppDomain = isAppInsightsAppDomain;
-            }
+            public int ProcessId => _currentProcessId;
 
-            return isAppInsightsAppDomain.Value;
-        }
+            public string AppDomainName => _appDomainName;
 
-        private static void TrySetProcess()
-        {
-            try
-            {
-                if (!_processDataUnavailable && !_initialized)
-                {
-                    _initialized = true;
-                    ProcessHelpers.GetCurrentProcessInformation(out _currentProcessName, out _currentProcessMachineName, out _currentProcessId);
-                }
-            }
-            catch
-            {
-                _processDataUnavailable = true;
-            }
+            public int AppDomainId => _appDomainId;
+
+            public bool ShouldAvoidAppDomain() => _isAppInsightsAppDomain;
         }
     }
-#else
-    /// <summary>
-    /// Dedicated helper class for consistently referencing Process and AppDomain information.
-    /// </summary>
-    internal static class DomainMetadata
-    {
-        private const string UnknownName = "unknown";
-        private static bool _initialized;
-        private static bool _processDataUnavailable;
-
-        private static string _currentProcessName;
-        private static string _currentProcessMachineName;
-        private static int _currentProcessId;
-        private static string _appDomainName;
-        private static int _appDomainId;
-        private static bool _isAppInsightsAppDomain;
-
-        static DomainMetadata()
-        {
-            TrySetProcess();
-
-            if (_processDataUnavailable)
-            {
-                _currentProcessName = UnknownName;
-                _currentProcessMachineName = UnknownName;
-                _currentProcessId = -1;
-            }
-
-            try
-            {
-                _appDomainName = AppDomain.CurrentDomain.FriendlyName;
-            }
-            catch
-            {
-                _appDomainName = UnknownName;
-            }
-
-            try
-            {
-                _appDomainId = AppDomain.CurrentDomain.Id;
-            }
-            catch
-            {
-                _appDomainId = -1;
-            }
-
-            _isAppInsightsAppDomain = _appDomainName.IndexOf("ApplicationInsights", StringComparison.OrdinalIgnoreCase) >= 0;
-        }
-
-        public static string ProcessName => _currentProcessName;
-
-        public static string MachineName => _currentProcessMachineName;
-
-        public static int ProcessId => _currentProcessId;
-
-        public static string AppDomainName => _appDomainName;
-
-        public static int AppDomainId => _appDomainId;
-
-        public static bool ShouldAvoidAppDomain() => _isAppInsightsAppDomain;
-
-        private static void TrySetProcess()
-        {
-            try
-            {
-                if (!_processDataUnavailable && !_initialized)
-                {
-                    _initialized = true;
-                    ProcessHelpers.GetCurrentProcessInformation(out _currentProcessName, out _currentProcessMachineName, out _currentProcessId);
-                }
-            }
-            catch
-            {
-                _processDataUnavailable = true;
-            }
-        }
-    }
-#endif
 }
