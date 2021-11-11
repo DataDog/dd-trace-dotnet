@@ -8,7 +8,7 @@ namespace Samples.Wcf.Bindings.Custom
     {
         public bool HandleError(Exception error)
         {
-            Console.WriteLine($"[Server] CustomErrorHandler.HandleError called with the following error: {error.Message}");
+            LoggingHelper.WriteLineWithDate($"[Server] CustomErrorHandler.HandleError called with the following error: {error.Message}");
 
             // We expect to throw unhandled exceptions by the request processing pipeline
             // Return true so that the WCF session is not aborted

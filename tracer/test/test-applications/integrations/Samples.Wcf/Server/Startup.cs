@@ -23,11 +23,11 @@ namespace Samples.Wcf.Server
             }
 
             selfHost.Opening += (sender, eventArgs) => Console.Write("Opening... ");
-            selfHost.Opened += (sender, eventArgs) => Console.WriteLine("done.");
+            selfHost.Opened += (sender, eventArgs) => LoggingHelper.WriteLineWithDate("done.");
             selfHost.Closing += (sender, eventArgs) => Console.Write("Closing... ");
-            selfHost.Closed += (sender, eventArgs) => Console.WriteLine("done.");
-            selfHost.Faulted += (sender, eventArgs) => Console.WriteLine("Faulted.");
-            selfHost.UnknownMessageReceived += (sender, eventArgs) => Console.WriteLine($"UnknownMessageReceived: {eventArgs.Message}");
+            selfHost.Closed += (sender, eventArgs) => LoggingHelper.WriteLineWithDate("done.");
+            selfHost.Faulted += (sender, eventArgs) => LoggingHelper.WriteLineWithDate("Faulted.");
+            selfHost.UnknownMessageReceived += (sender, eventArgs) => LoggingHelper.WriteLineWithDate($"UnknownMessageReceived: {eventArgs.Message}");
 
             return selfHost;
         }

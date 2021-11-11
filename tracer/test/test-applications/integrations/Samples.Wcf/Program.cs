@@ -20,7 +20,7 @@ namespace Samples.Wcf
 
             // Accept a Port=# argument
             string port = args.FirstOrDefault(arg => arg.StartsWith("Port="))?.Split('=')[1] ?? WcfPort;
-            Console.WriteLine($"Port {port}");
+            LoggingHelper.WriteLineWithDate($"Port {port}");
 
             if (args.Length > 0 && args[0].Equals("WSHttpBinding", StringComparison.OrdinalIgnoreCase))
             {
@@ -56,17 +56,17 @@ namespace Samples.Wcf
 
             try
             {
-                Console.WriteLine("[Server] Starting the server.");
+                LoggingHelper.WriteLineWithDate("[Server] Starting the server.");
                 server.Open();
-                Console.WriteLine("[Server] The server is ready.");
+                LoggingHelper.WriteLineWithDate("[Server] The server is ready.");
 
-                Console.WriteLine("[Client] Starting the client.");
+                LoggingHelper.WriteLineWithDate("[Client] Starting the client.");
                 await Client.Startup.InvokeCalculatorService(binding, baseAddress, expectedExceptionCount);
-                Console.WriteLine("[Client] The client has exited.");
+                LoggingHelper.WriteLineWithDate("[Client] The client has exited.");
             }
             catch (CommunicationException ce)
             {
-                Console.WriteLine("An exception occurred: {0}", ce.Message);
+                LoggingHelper.WriteLineWithDate($"An exception occurred: {ce.Message}");
                 server.Abort();
                 server = null;
             }

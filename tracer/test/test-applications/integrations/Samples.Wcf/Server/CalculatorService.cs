@@ -7,24 +7,24 @@ namespace Samples.Wcf.Server
     {
         public double ServerSyncAdd(double n1, double n2)
         {
-            Console.WriteLine("[Server] Received ServerSyncAdd({0},{1})", n1, n2);
+            LoggingHelper.WriteLineWithDate($"[Server] Received ServerSyncAdd({n1},{n2})");
             double result = n1 + n2;
 
-            Console.WriteLine("[Server] Return: {0}", result);
+            LoggingHelper.WriteLineWithDate($"[Server] Return: {result}");
             return result;
         }
 
         public async Task<double> ServerTaskAdd(double n1, double n2)
         {
-            Console.WriteLine("[Server] Received ServerTaskAdd({0},{1})", n1, n2);
+            LoggingHelper.WriteLineWithDate($"[Server] Received ServerTaskAdd({n1},{n2})");
             double result = await PerformAddWithDelay(n1, n2);
-            Console.WriteLine("[Server] Return: {0}", result);
+            LoggingHelper.WriteLineWithDate($"[Server] Return: {result}");
             return result;
         }
 
         public IAsyncResult BeginServerAsyncAdd(double n1, double n2, AsyncCallback callback, object state)
         {
-            Console.WriteLine("[Server] Received BeginServerAsyncAdd({0},{1})", n1, n2);
+            LoggingHelper.WriteLineWithDate($"[Server] Received BeginServerAsyncAdd({n1},{n2})");
             var tcs = new TaskCompletionSource<double>(state);
 
             var task = PerformAddWithDelay(n1, n2);
@@ -39,8 +39,8 @@ namespace Samples.Wcf.Server
 
         public double EndServerAsyncAdd(IAsyncResult asyncResult)
         {
-            Console.WriteLine("[Server] Received EndServerAsyncAdd(asyncResult)");
-            Console.WriteLine("[Server] Return: {0}", asyncResult);
+            LoggingHelper.WriteLineWithDate("[Server] Received EndServerAsyncAdd(asyncResult)");
+            LoggingHelper.WriteLineWithDate($"[Server] Return: {asyncResult}");
             return ((Task<double>)asyncResult).Result;
         }
 
