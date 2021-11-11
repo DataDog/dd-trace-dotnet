@@ -25,7 +25,7 @@ namespace TraceContext.InvalidOperationException
                 var ddTraceSettings = TracerSettings.FromDefaultSources();
                 ddTraceSettings.LogsInjectionEnabled = true;
                 ddTraceSettings.TraceEnabled = true;
-                Tracer.ReplaceGlobalSettings(ddTraceSettings);
+                Tracer.Configure(ddTraceSettings);
                 var tracer = Tracer.Instance;
 
                 var totalIterations = 400_000;
