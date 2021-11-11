@@ -176,7 +176,7 @@ if(ISLINUX)
 endif()
 
 # Sets compiler options
-add_compile_options(-std=c++17 -fPIC -fms-extensions)
+add_compile_options(-std=c++17 -fPIC -fms-extensions -pthread)
 add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
 add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined)
 if (ISMACOS)
@@ -287,9 +287,10 @@ set_target_properties("Datadog.Trace.ClrProfiler.Native" PROPERTIES PREFIX "")
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
-set(LINKING_LIBRARIES ${LINKING_LIBRARIES} Threads::Threads)
 
 # ******************************************************
 # Define linker libraries
 # ******************************************************
 target_link_libraries("Datadog.Trace.ClrProfiler.Native" "Datadog.Trace.ClrProfiler.Native.static" Threads::Threads)
+
+include(GNUInstallDirs)
