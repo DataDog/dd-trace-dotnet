@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -146,6 +147,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 ValidateSpans(spans, (span) => span.Resource, expected);
             }
+        }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("Category", "ArmUnsupported")]
+        public void IntegrationDisabled()
+        {
+            int agentPort = TcpPortProvider.GetOpenPort();
+            string packageVersion = PackageVersions.ElasticSearch7.First()[0] as string;
+
+            SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationIds.ElasticsearchNet)}_ENABLED", "false");
+
+            using var agent = new MockTracerAgent(agentPort);
+            using var process = RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion);
+            var spans = agent.WaitForSpans(1).Where(s => s.Type == "elasticsearch").ToList();
+
+            Assert.Empty(spans);
         }
     }
 }

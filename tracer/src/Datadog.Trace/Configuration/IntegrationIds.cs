@@ -23,8 +23,7 @@ namespace Datadog.Trace.Configuration
         MsTestV2,
         Wcf,
         WebRequest,
-        ElasticsearchNet5,
-        ElasticsearchNet, // NOTE: keep this name without the 6 to avoid breaking changes
+        ElasticsearchNet,
         ServiceStackRedis,
         StackExchangeRedis,
         ServiceRemoting,
