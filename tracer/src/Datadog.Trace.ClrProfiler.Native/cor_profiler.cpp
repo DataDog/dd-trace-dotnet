@@ -1251,6 +1251,7 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
                 wrapperType = WSTRING(current.wrapperType);
             }
 
+            bool useTargetMethodArgumentsToLoad = current.useTargetMethodArgumentsToLoad;
             std::vector<USHORT> targetMethodArgumentsToLoad;
             for (int sIdx = 0; sIdx < current.targetMethodArgumentsToLoadLength; sIdx++)
             {
@@ -1278,9 +1279,9 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
                 MethodReplacement(
                     {},
                     MethodReference(targetAssembly, targetType, targetMethod, EmptyWStr, minVersion, maxVersion,
-                        {}, signatureTypes, targetMethodArgumentsToLoad),
+                        {}, signatureTypes, useTargetMethodArgumentsToLoad, targetMethodArgumentsToLoad),
                     MethodReference(wrapperAssembly, wrapperType, EmptyWStr, calltarget_modification_action, {}, {}, {},
-                                    {}, {})));
+                                    {}, false, {})));
 
             if (Logger::IsDebugEnabled())
             {
@@ -3439,8 +3440,8 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
     bool isVoid = (retTypeFlags & TypeFlagVoid) > 0;
     bool isStatic = !(caller->method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS);
     std::vector<FunctionMethodArgument> methodArguments = caller->method_signature.GetMethodArguments();
+    bool useCustomArgumentsTargetMethodArguments = method_replacement->target_method.use_target_method_arguments_to_load;
     std::vector<USHORT> methodArgumentsToLoad = method_replacement->target_method.target_method_arguments_to_load;
-    bool useCustomArgumentsTargetMethodArguments = methodArgumentsToLoad.size() > 0;
     int numArgs = useCustomArgumentsTargetMethodArguments
                       ? (int) methodArgumentsToLoad.size()
                       : caller->method_signature.NumberOfArguments();

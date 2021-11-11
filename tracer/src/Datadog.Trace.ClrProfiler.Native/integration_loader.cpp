@@ -307,7 +307,7 @@ namespace
             }
         }
         return MethodReference(assembly, type, method, action, Version(min_major, min_minor, min_patch, 0),
-                               Version(max_major, max_minor, max_patch, USHRT_MAX), signature, signature_type_array, target_method_arguments_to_load_array);
+                               Version(max_major, max_minor, max_patch, USHRT_MAX), signature, signature_type_array, false, target_method_arguments_to_load_array);
     }
 
 } // namespace

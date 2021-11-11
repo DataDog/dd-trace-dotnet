@@ -247,16 +247,17 @@ struct MethodReference
     const Version min_version;
     const Version max_version;
     const std::vector<WSTRING> signature_types;
+    const bool use_target_method_arguments_to_load;
     const std::vector<USHORT> target_method_arguments_to_load;
 
     MethodReference() :
-        min_version(Version(0, 0, 0, 0)), max_version(Version(USHRT_MAX, USHRT_MAX, USHRT_MAX, USHRT_MAX))
+        min_version(Version(0, 0, 0, 0)), max_version(Version(USHRT_MAX, USHRT_MAX, USHRT_MAX, USHRT_MAX)), use_target_method_arguments_to_load(false)
     {
     }
 
     MethodReference(const WSTRING& assembly_name, WSTRING type_name, WSTRING method_name, WSTRING action,
                     Version min_version, Version max_version, const std::vector<BYTE>& method_signature,
-                    const std::vector<WSTRING>& signature_types, const std::vector<USHORT>& target_method_arguments_to_load) :
+                    const std::vector<WSTRING>& signature_types, const bool use_target_method_arguments_to_load, const std::vector<USHORT>& target_method_arguments_to_load) :
         assembly(*AssemblyReference::GetFromCache(assembly_name)),
         type_name(type_name),
         method_name(method_name),
@@ -265,6 +266,7 @@ struct MethodReference
         min_version(min_version),
         max_version(max_version),
         signature_types(signature_types),
+        use_target_method_arguments_to_load(use_target_method_arguments_to_load),
         target_method_arguments_to_load(target_method_arguments_to_load)
     {
     }
@@ -338,6 +340,7 @@ typedef struct _CallTargetDefinition
     WCHAR* targetMethod;
     WCHAR** signatureTypes;
     USHORT signatureTypesLength;
+    bool useTargetMethodArgumentsToLoad;
     USHORT* targetMethodArgumentsToLoad;
     USHORT targetMethodArgumentsToLoadLength;
     USHORT targetMinimumMajor;

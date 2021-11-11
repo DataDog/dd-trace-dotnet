@@ -188,20 +188,27 @@ namespace PrepareRelease
 
                     swriter.Write(" }, ");
 
-                    swriter.Write($" new ushort[] {{ ");
-                    for (var s = 0; s < integration.TargetMethodArgumentsToLoad.Length; s++)
+                    if (integration.TargetMethodArgumentsToLoad.Length > 0)
                     {
-                        if (s == integration.TargetMethodArgumentsToLoad.Length - 1)
+                        swriter.Write($" new ushort[] {{ ");
+                        for (var s = 0; s < integration.TargetMethodArgumentsToLoad.Length; s++)
                         {
-                            swriter.Write($"{integration.TargetMethodArgumentsToLoad[s]}");
+                            if (s == integration.TargetMethodArgumentsToLoad.Length - 1)
+                            {
+                                swriter.Write($"{integration.TargetMethodArgumentsToLoad[s]}");
+                            }
+                            else
+                            {
+                                swriter.Write($"{integration.TargetMethodArgumentsToLoad[s]}, ");
+                            }
                         }
-                        else
-                        {
-                            swriter.Write($"{integration.TargetMethodArgumentsToLoad[s]}, ");
-                        }
-                    }
 
-                    swriter.Write(" }, ");
+                        swriter.Write(" }, ");
+                    }
+                    else
+                    {
+                        swriter.Write("null, ");
+                    }
 
                     swriter.Write($"{integration.TargetMinimumMajor}, ");
                     swriter.Write($"{integration.TargetMinimumMinor}, ");

@@ -24,6 +24,9 @@ namespace Datadog.Trace.ClrProfiler
 
         public ushort TargetSignatureTypesLength;
 
+        [MarshalAs(UnmanagedType.U1)]
+        public bool UseTargetMethodArgumentsToLoad;
+
         public IntPtr TargetMethodArgumentsToLoad;
 
         public ushort TargetMethodArgumentsToLoadLength;
@@ -78,6 +81,7 @@ namespace Datadog.Trace.ClrProfiler
 
             TargetSignatureTypesLength = (ushort)(targetSignatureTypes?.Length ?? 0);
 
+            UseTargetMethodArgumentsToLoad = targetMethodArgumentsToLoad is not null;
             TargetMethodArgumentsToLoad = IntPtr.Zero;
             if (targetMethodArgumentsToLoad?.Length > 0)
             {
