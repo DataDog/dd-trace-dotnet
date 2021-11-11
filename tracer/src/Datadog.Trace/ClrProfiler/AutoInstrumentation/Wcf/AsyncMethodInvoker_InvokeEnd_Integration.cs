@@ -24,25 +24,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         TargetMethodArgumentsToLoad = new ushort[] { 0, 2 }, // DO NOT pass the "out object[]" parameter into the instrumentation method
         MinimumVersion = "4.0.0",
         MaximumVersion = "4.*.*",
-        IntegrationName = IntegrationName)]
+        IntegrationName = WcfCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class AsyncMethodInvoker_InvokeEnd_Integration
     {
-        private const string IntegrationName = nameof(IntegrationIds.Wcf);
-        private static readonly Func<object> _getCurrentOperationContext;
-
-        static AsyncMethodInvoker_InvokeEnd_Integration()
-        {
-            var operationContextType = Type.GetType("System.ServiceModel.OperationContext, System.ServiceModel, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089", throwOnError: false);
-            if (operationContextType is not null)
-            {
-                var property = operationContextType.GetProperty("Current", BindingFlags.Public | BindingFlags.Static);
-                var method = property.GetGetMethod();
-                _getCurrentOperationContext = (Func<object>)method.CreateDelegate(typeof(Func<object>));
-            }
-        }
-
         /// <summary>
         /// OnMethodEnd callback
         /// </summary>
