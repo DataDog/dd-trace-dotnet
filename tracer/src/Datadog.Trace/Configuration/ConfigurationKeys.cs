@@ -364,12 +364,6 @@ namespace Datadog.Trace.Configuration
         public const string KafkaCreateConsumerScopeEnabled = "DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED";
 
         /// <summary>
-        /// Configuration key to enable or disable the updated WCF instrumentation
-        /// </summary>
-        /// <seealso cref="TracerSettings.WcfEnableNewInstrumentation"/>
-        public const string WcfEnableNewInstrumentation = "DD_TRACE_WCF_ENABLE_NEW_INSTRUMENTATION";
-
-        /// <summary>
         /// Configuration key for enabling or disabling CI Visibility.
         /// Default is value is false (disabled).
         /// </summary>
@@ -426,6 +420,13 @@ namespace Datadog.Trace.Configuration
             /// Feature Flag: enables instrumenting calls to netstandard.dll (only applies to CallSite instrumentation)
             /// </summary>
             public const string NetStandardEnabled = "DD_TRACE_NETSTANDARD_ENABLED";
+
+            /// <summary>
+            /// Configuration key to enable or disable the updated WCF instrumentation that delays execution
+            /// until later in the WCF pipeline when the WCF server exception handling is established.
+            /// </summary>
+            /// <seealso cref="TracerSettings.DelayWcfInstrumentationEnabled"/>
+            public const string DelayWcfInstrumentationEnabled = "DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED ";
         }
     }
 }

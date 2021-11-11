@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         /// <returns>Calltarget state value</returns>
         public static CallTargetState OnMethodBegin<TTarget, TRequestContext, TOperationContext>(TTarget instance, TRequestContext request, TOperationContext currentOperationContext)
         {
-            if (Tracer.Instance.Settings.WcfEnableNewInstrumentation)
+            if (Tracer.Instance.Settings.DelayWcfInstrumentationEnabled)
             {
                 return CallTargetState.GetDefault();
             }
