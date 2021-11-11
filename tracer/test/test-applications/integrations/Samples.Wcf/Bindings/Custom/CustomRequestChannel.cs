@@ -2,7 +2,7 @@ using System;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 
-namespace Samples.Wcf
+namespace Samples.Wcf.Bindings.Custom
 {
     public class CustomRequestChannel : CustomChannelBase, IRequestChannel
     {

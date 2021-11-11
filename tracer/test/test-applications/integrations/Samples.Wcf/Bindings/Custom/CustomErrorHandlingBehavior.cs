@@ -4,7 +4,7 @@ using System.ServiceModel.Channels;
 using System.ServiceModel.Description;
 using System.ServiceModel.Dispatcher;
 
-namespace Samples.Wcf
+namespace Samples.Wcf.Bindings.Custom
 {
     public class CustomErrorHandlingBehavior : IServiceBehavior, IEndpointBehavior
     {

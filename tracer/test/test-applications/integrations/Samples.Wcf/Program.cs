@@ -3,6 +3,7 @@ using System.Linq;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Threading.Tasks;
+using Samples.Wcf.Bindings.Custom;
 
 namespace Samples.Wcf
 {

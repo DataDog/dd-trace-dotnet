@@ -2,7 +2,7 @@ using System;
 using System.ServiceModel.Channels;
 using System.ServiceModel.Dispatcher;
 
-namespace Samples.Wcf
+namespace Samples.Wcf.Bindings.Custom
 {
     public class CustomErrorHandler : IErrorHandler
     {

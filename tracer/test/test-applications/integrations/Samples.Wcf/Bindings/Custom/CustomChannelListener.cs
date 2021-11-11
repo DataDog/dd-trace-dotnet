@@ -1,7 +1,7 @@
 using System;
 using System.ServiceModel.Channels;
 
-namespace Samples.Wcf
+namespace Samples.Wcf.Bindings.Custom
 {
     public class CustomChannelListener<TChannel> : ChannelListenerBase<TChannel> where TChannel : class, IChannel
     {

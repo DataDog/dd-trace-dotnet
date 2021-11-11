@@ -2,7 +2,7 @@ using System;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 
-namespace Samples.Wcf
+namespace Samples.Wcf.Bindings.Custom
 {
     public class CustomChannelBase : IChannel, ICommunicationObject
     {
@@ -19,11 +19,13 @@ namespace Samples.Wcf
 
         public CommunicationState State => _innerChannel.State;
 
+#pragma warning disable CS0067
         public event EventHandler Closed;
         public event EventHandler Closing;
         public event EventHandler Faulted;
         public event EventHandler Opened;
         public event EventHandler Opening;
+#pragma warning restore CS0067
 
         public void Abort()
             => _innerChannel.Abort();
