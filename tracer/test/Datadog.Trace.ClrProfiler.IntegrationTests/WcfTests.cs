@@ -62,7 +62,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetCallTargetSettings(enableCallTarget);
             if (enableNewWcfInstrumentation)
             {
-                SetEnvironmentVariable("DD_TRACE_WCF_ENABLE_NEW_INSTRUMENTATION", "true");
+                SetEnvironmentVariable("DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED", "true");
             }
 
             Output.WriteLine("Starting WcfTests.SubmitsTraces. Starting the Samples.Wcf requires ADMIN privileges");
