@@ -261,14 +261,6 @@ elseif(ISLINUX)
         -static-libgcc
         -static-libstdc++
     )
-
-    # ******************************************************
-    # Ensure PThreads
-    # ******************************************************
-    set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
-    set(THREADS_PREFER_PTHREAD_FLAG TRUE)
-    find_package(Threads REQUIRED)
-    set(LINKING_LIBRARIES ${LINKING_LIBRARIES} Threads::Threads)
 endif()
 
 # ******************************************************
@@ -288,6 +280,14 @@ else()
 endif()
 
 set_target_properties("Datadog.Trace.ClrProfiler.Native" PROPERTIES PREFIX "")
+
+# ******************************************************
+# Ensure PThreads
+# ******************************************************
+set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+set(THREADS_PREFER_PTHREAD_FLAG TRUE)
+find_package(Threads REQUIRED)
+set(LINKING_LIBRARIES ${LINKING_LIBRARIES} Threads::Threads)
 
 # ******************************************************
 # Define linker libraries
