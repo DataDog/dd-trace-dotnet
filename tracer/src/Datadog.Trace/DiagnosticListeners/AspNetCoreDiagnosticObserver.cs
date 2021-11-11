@@ -43,7 +43,6 @@ namespace Datadog.Trace.DiagnosticListeners
         private const string DiagnosticListenerName = "Microsoft.AspNetCore";
         private const string HttpRequestInOperationName = "aspnet_core.request";
         private const string MvcOperationName = "aspnet_core_mvc.request";
-        private const string NoHostSpecified = "UNKNOWN_HOST";
 
         private static readonly int PrefixLength = "Microsoft.AspNetCore.".Length;
 
