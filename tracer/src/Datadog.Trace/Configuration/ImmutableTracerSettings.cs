@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Configuration
@@ -35,7 +36,6 @@ namespace Datadog.Trace.Configuration
             ServiceName = settings.ServiceName;
             ServiceVersion = settings.ServiceVersion;
             TraceEnabled = settings.TraceEnabled;
-            DisabledIntegrationNames = settings.DisabledIntegrationNames;
             AdoNetExcludedTypes = settings.AdoNetExcludedTypes;
             AgentUri = settings.AgentUri;
             TracesTransport = settings.TracesTransport;
@@ -49,9 +49,9 @@ namespace Datadog.Trace.Configuration
             MaxTracesSubmittedPerSecond = settings.MaxTracesSubmittedPerSecond;
             CustomSamplingRules = settings.CustomSamplingRules;
             GlobalSamplingRate = settings.GlobalSamplingRate;
-            Integrations = settings.Integrations;
-            GlobalTags = settings.GlobalTags;
-            HeaderTags = settings.HeaderTags;
+            Integrations = new ImmutableIntegrationSettingsCollection(settings.Integrations, settings.DisabledIntegrationNames);
+            GlobalTags = new ReadOnlyDictionary<string, string>(settings.GlobalTags);
+            HeaderTags = new ReadOnlyDictionary<string, string>(settings.HeaderTags);
             DogStatsdPort = settings.DogStatsdPort;
             TracerMetricsEnabled = settings.TracerMetricsEnabled;
             RuntimeMetricsEnabled = settings.RuntimeMetricsEnabled;
@@ -92,12 +92,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.TraceEnabled"/>
         public bool TraceEnabled { get; }
-
-        /// <summary>
-        /// Gets the names of disabled integrations.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.DisabledIntegrations"/>
-        public HashSet<string> DisabledIntegrationNames { get; }
 
         /// <summary>
         /// Gets the AdoNet types to exclude from automatic instrumentation.
@@ -149,6 +143,7 @@ namespace Datadog.Trace.Configuration
         /// See the documentation for more details.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.GlobalAnalyticsEnabled"/>
+        [Obsolete(DeprecationMessages.AppAnalytics)]
         public bool AnalyticsEnabled { get; }
 
         /// <summary>
@@ -181,7 +176,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets a collection of <see cref="Integrations"/> keyed by integration name.
         /// </summary>
-        public IntegrationSettingsCollection Integrations { get; }
+        public ImmutableIntegrationSettingsCollection Integrations { get; }
 
         /// <summary>
         /// Gets the global tags, which are applied to all <see cref="Span"/>s.
@@ -211,13 +206,6 @@ namespace Datadog.Trace.Configuration
         /// are enabled and sent to DogStatsd.
         /// </summary>
         public bool RuntimeMetricsEnabled { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether the use
-        /// of System.Diagnostics.DiagnosticSource is enabled.
-        /// Default is <c>true</c>.
-        /// </summary>
-        public bool DiagnosticSourceEnabled => GlobalSettings.Source.DiagnosticSourceEnabled;
 
         /// <summary>
         /// Gets a value indicating whether partial flush is enabled

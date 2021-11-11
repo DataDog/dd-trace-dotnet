@@ -5,8 +5,6 @@
 
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Datadog.Trace.Configuration
 {
@@ -19,7 +17,6 @@ namespace Datadog.Trace.Configuration
         private readonly ConcurrentDictionary<string, IntegrationSettings> _settingsByName;
         private readonly Func<string, IntegrationSettings> _valueFactory;
         private readonly IntegrationSettings[] _settingsById;
-        private ICollection<string> _disabledIntegrations;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="IntegrationSettingsCollection"/> class.
@@ -38,16 +35,15 @@ namespace Datadog.Trace.Configuration
                 }
 
                 // We have no id for this integration, it will only be available in _settingsByName
-                var settings = new IntegrationSettings(name, _source);
-
-                if (_disabledIntegrations?.Contains(name) == true)
-                {
-                    settings.Enabled = false;
-                }
-
-                return settings;
+                return new IntegrationSettings(name, _source);
             };
         }
+
+        internal IConfigurationSource Source => _source;
+
+        internal ConcurrentDictionary<string, IntegrationSettings> SettingsByName => _settingsByName;
+
+        internal IntegrationSettings[] SettingsById => _settingsById;
 
         /// <summary>
         /// Gets the <see cref="IntegrationSettings"/> for the specified integration.
@@ -61,24 +57,6 @@ namespace Datadog.Trace.Configuration
             get
             {
                 return integration.Name == null ? _settingsById[integration.Id] : _settingsByName.GetOrAdd(integration.Name, _valueFactory);
-            }
-        }
-
-        internal void SetDisabledIntegrations(HashSet<string> disabledIntegrationNames)
-        {
-            if (disabledIntegrationNames == null || disabledIntegrationNames.Count == 0)
-            {
-                return;
-            }
-
-            _disabledIntegrations = disabledIntegrationNames;
-
-            foreach (var settings in _settingsById.Concat(_settingsByName.Values))
-            {
-                if (disabledIntegrationNames.Contains(settings.IntegrationName))
-                {
-                    settings.Enabled = false;
-                }
             }
         }
 

@@ -512,14 +512,6 @@ namespace Datadog.Trace.Configuration
             return new ImmutableTracerSettings(this);
         }
 
-        [Obsolete(DeprecationMessages.AppAnalytics)]
-        internal double? GetIntegrationAnalyticsSampleRate(IntegrationInfo integration, bool enabledWithGlobalSetting)
-        {
-            var integrationSettings = Integrations[integration];
-            var analyticsEnabled = integrationSettings.AnalyticsEnabled ?? (enabledWithGlobalSetting && AnalyticsEnabled);
-            return analyticsEnabled ? integrationSettings.AnalyticsSampleRate : (double?)null;
-        }
-
         private static IDictionary<string, string> InitializeHeaderTags(IDictionary<string, string> configurationDictionary)
         {
             var headerTags = new Dictionary<string, string>();
