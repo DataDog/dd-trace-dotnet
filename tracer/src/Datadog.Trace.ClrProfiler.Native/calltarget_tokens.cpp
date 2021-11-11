@@ -873,8 +873,8 @@ HRESULT CallTargetTokens::ModifyLocalSigAndInitialize(void* rewriterWrapperPtr, 
 
 HRESULT CallTargetTokens::WriteBeginMethod(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
                                            const TypeInfo* currentType,
-                                           std::vector<FunctionMethodArgument>& methodArguments,
-                                           std::vector<USHORT>& argsToLoad, ILInstr** instruction)
+                                           const std::vector<FunctionMethodArgument>& methodArguments,
+                                           const std::vector<USHORT>& argsToLoad, ILInstr** instruction)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
