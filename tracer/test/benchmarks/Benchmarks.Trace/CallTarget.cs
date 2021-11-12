@@ -67,7 +67,7 @@ namespace Benchmarks.Trace
             {
                 try
                 {
-                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1>(targetInstance, arg1);
+                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1>(targetInstance, ref arg1);
                 }
                 catch (Exception ex)
                 {
@@ -108,7 +108,7 @@ namespace Benchmarks.Trace
             {
                 try
                 {
-                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2>(targetInstance, arg1, arg2);
+                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2>(targetInstance, ref arg1, ref arg2);
                 }
                 catch (Exception ex)
                 {
@@ -149,7 +149,7 @@ namespace Benchmarks.Trace
             {
                 try
                 {
-                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3>(targetInstance, arg1, arg2, arg3);
+                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3>(targetInstance, ref arg1, ref arg2, ref arg3);
                 }
                 catch (Exception ex)
                 {
@@ -190,7 +190,7 @@ namespace Benchmarks.Trace
             {
                 try
                 {
-                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4>(targetInstance, arg1, arg2, arg3, arg4);
+                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4>(targetInstance, ref arg1, ref arg2, ref arg3, ref arg4);
                 }
                 catch (Exception ex)
                 {
@@ -231,7 +231,7 @@ namespace Benchmarks.Trace
             {
                 try
                 {
-                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5>(targetInstance, arg1, arg2, arg3, arg4, arg5);
+                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5>(targetInstance, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5);
                 }
                 catch (Exception ex)
                 {
@@ -272,7 +272,7 @@ namespace Benchmarks.Trace
             {
                 try
                 {
-                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>(targetInstance, arg1, arg2, arg3, arg4, arg5, arg6);
+                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>(targetInstance, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5, ref arg6);
                 }
                 catch (Exception ex)
                 {
@@ -313,7 +313,7 @@ namespace Benchmarks.Trace
             {
                 try
                 {
-                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7>(targetInstance, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7>(targetInstance, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5, ref arg6, ref arg7);
                 }
                 catch (Exception ex)
                 {
@@ -354,7 +354,7 @@ namespace Benchmarks.Trace
             {
                 try
                 {
-                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>(targetInstance, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>(targetInstance, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5, ref arg6, ref arg7, ref arg8);
                 }
                 catch (Exception ex)
                 {
@@ -436,7 +436,7 @@ namespace Benchmarks.Trace
             {
                 try
                 {
-                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1>(targetInstance, arg1);
+                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1>(targetInstance, ref arg1);
                 }
                 catch (Exception ex)
                 {
@@ -474,7 +474,7 @@ namespace Benchmarks.Trace
             {
                 try
                 {
-                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2>(targetInstance, arg1, arg2);
+                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2>(targetInstance, ref arg1, ref arg2);
                 }
                 catch (Exception ex)
                 {
@@ -512,7 +512,7 @@ namespace Benchmarks.Trace
             {
                 try
                 {
-                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3>(targetInstance, arg1, arg2, arg3);
+                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3>(targetInstance, ref arg1, ref arg2, ref arg3);
                 }
                 catch (Exception ex)
                 {
@@ -550,7 +550,7 @@ namespace Benchmarks.Trace
             {
                 try
                 {
-                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4>(targetInstance, arg1, arg2, arg3, arg4);
+                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4>(targetInstance, ref arg1, ref arg2, ref arg3, ref arg4);
                 }
                 catch (Exception ex)
                 {
@@ -588,7 +588,7 @@ namespace Benchmarks.Trace
             {
                 try
                 {
-                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5>(targetInstance, arg1, arg2, arg3, arg4, arg5);
+                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5>(targetInstance, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5);
                 }
                 catch (Exception ex)
                 {
@@ -626,7 +626,7 @@ namespace Benchmarks.Trace
             {
                 try
                 {
-                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>(targetInstance, arg1, arg2, arg3, arg4, arg5, arg6);
+                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>(targetInstance, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5, ref arg6);
                 }
                 catch (Exception ex)
                 {
@@ -664,7 +664,7 @@ namespace Benchmarks.Trace
             {
                 try
                 {
-                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7>(targetInstance, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7>(targetInstance, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5, ref arg6, ref arg7);
                 }
                 catch (Exception ex)
                 {
@@ -702,7 +702,7 @@ namespace Benchmarks.Trace
             {
                 try
                 {
-                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>(targetInstance, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+                    state = CallTargetInvoker.BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>(targetInstance, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5, ref arg6, ref arg7, ref arg8);
                 }
                 catch (Exception ex)
                 {
