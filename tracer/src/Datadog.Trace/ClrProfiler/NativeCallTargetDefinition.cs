@@ -24,6 +24,13 @@ namespace Datadog.Trace.ClrProfiler
 
         public ushort TargetSignatureTypesLength;
 
+        [MarshalAs(UnmanagedType.U1)]
+        public bool UseTargetMethodArgumentsToLoad;
+
+        public IntPtr TargetMethodArgumentsToLoad;
+
+        public ushort TargetMethodArgumentsToLoadLength;
+
         public ushort TargetMinimumMajor;
 
         public ushort TargetMinimumMinor;
@@ -47,6 +54,7 @@ namespace Datadog.Trace.ClrProfiler
                 string targetType,
                 string targetMethod,
                 string[] targetSignatureTypes,
+                ushort[] targetMethodArgumentsToLoad,
                 ushort targetMinimumMajor,
                 ushort targetMinimumMinor,
                 ushort targetMinimumPatch,
@@ -72,6 +80,22 @@ namespace Datadog.Trace.ClrProfiler
             }
 
             TargetSignatureTypesLength = (ushort)(targetSignatureTypes?.Length ?? 0);
+
+            UseTargetMethodArgumentsToLoad = targetMethodArgumentsToLoad is not null;
+            TargetMethodArgumentsToLoad = IntPtr.Zero;
+            if (targetMethodArgumentsToLoad?.Length > 0)
+            {
+                // The Marshal operations only operate on short not ushort (CLS-compliance)
+                TargetMethodArgumentsToLoad = Marshal.AllocHGlobal(targetMethodArgumentsToLoad.Length * Marshal.SizeOf(typeof(short)));
+                var ptr = TargetMethodArgumentsToLoad;
+                for (var i = 0; i < targetMethodArgumentsToLoad.Length; i++)
+                {
+                    Marshal.WriteInt16(ptr, (short)targetMethodArgumentsToLoad[i]);
+                    ptr += Marshal.SizeOf(typeof(short));
+                }
+            }
+
+            TargetMethodArgumentsToLoadLength = (ushort)(targetMethodArgumentsToLoad?.Length ?? 0);
             TargetMinimumMajor = targetMinimumMajor;
             TargetMinimumMinor = targetMinimumMinor;
             TargetMinimumPatch = targetMinimumPatch;
@@ -92,6 +116,10 @@ namespace Datadog.Trace.ClrProfiler
             }
 
             Marshal.FreeHGlobal(TargetSignatureTypes);
+            if (TargetMethodArgumentsToLoadLength > 0)
+            {
+                Marshal.FreeHGlobal(TargetMethodArgumentsToLoad);
+            }
         }
     }
 }

@@ -69,7 +69,7 @@ TEST_F(CLRHelperTest, FiltersIntegrationsByCaller) {
   {
       L"integration-1",
       {
-          {L"Assembly.One", L"SomeType", L"SomeMethod", L"ReplaceTargetMethod", min_ver_, max_ver_, {}, empty_sig_type_},
+          {L"Assembly.One", L"SomeType", L"SomeMethod", L"ReplaceTargetMethod", min_ver_, max_ver_, {}, empty_sig_type_, false, empty_load_args_},
           {},
           {}
       }
@@ -79,7 +79,7 @@ TEST_F(CLRHelperTest, FiltersIntegrationsByCaller) {
   {
       L"integration-2",
       {
-          {L"Assembly.Two", L"SomeType", L"SomeMethod", L"ReplaceTargetMethod", min_ver_, max_ver_, {}, empty_sig_type_},
+          {L"Assembly.Two", L"SomeType", L"SomeMethod", L"ReplaceTargetMethod", min_ver_, max_ver_, {}, empty_sig_type_, false, empty_load_args_},
           {},
           {}
       }
@@ -114,19 +114,21 @@ TEST_F(CLRHelperTest, FiltersIntegrationsByTarget) {
                        min_ver_,
                        max_ver_,
                        {},
-                       empty_sig_type_},
+                       empty_sig_type_,
+                       false,
+                       empty_load_args_},
                       {}}
   };
 
   IntegrationMethod i2 = {
       L"integration-2",
       {{},
-        {L"Assembly.Two", L"SomeType", L"SomeMethod", L"ReplaceTargetMethod", min_ver_, max_ver_, {}, empty_sig_type_},
+        {L"Assembly.Two", L"SomeType", L"SomeMethod", L"ReplaceTargetMethod", min_ver_, max_ver_, {}, empty_sig_type_, false, empty_load_args_},
         {}}};
 
   IntegrationMethod i3 = {
       L"integration-3",
-      {{}, {L"System.Runtime", L"", L"", L"ReplaceTargetMethod", min_ver_, max_ver_, {}, empty_sig_type_}, {}}};
+      {{}, {L"System.Runtime", L"", L"", L"ReplaceTargetMethod", min_ver_, max_ver_, {}, empty_sig_type_, false, empty_load_args_}, {}}};
 
   std::vector<IntegrationMethod> all = {i1, i2, i3};
   std::vector<IntegrationMethod> expected = {i1, i3};
@@ -143,7 +145,9 @@ TEST_F(CLRHelperTest, FiltersFlattenedIntegrationMethodsByTargetAssembly) {
                        min_ver_,
                        max_ver_,
                        {},
-                       empty_sig_type_},
+                       empty_sig_type_,
+                       false,
+                       empty_load_args_},
                       {}};
 
   MethodReplacement excluded_method = {{},
@@ -154,7 +158,9 @@ TEST_F(CLRHelperTest, FiltersFlattenedIntegrationMethodsByTargetAssembly) {
                        min_ver_,
                        max_ver_,
                        {},
-                       empty_sig_type_},
+                       empty_sig_type_,
+                       false,
+                       empty_load_args_},
                       {}};
 
   IntegrationMethod included_integration = {L"integration-2", included_method};
@@ -184,7 +190,9 @@ TEST_F(CLRHelperTest, FiltersFlattenedIntegrationMethodsByTarget) {
                               min_ver_,
                               max_ver_,
                               {},
-                              empty_sig_type_};
+                              empty_sig_type_,
+                              false,
+                              empty_load_args_};
 
   MethodReference excluded = {L"Samples.ExampleLibrary",
                               L"SomeType",
@@ -193,7 +201,9 @@ TEST_F(CLRHelperTest, FiltersFlattenedIntegrationMethodsByTarget) {
                               Version(0, 0, 0, 0),
                               Version(0, 1, 0, 0),
                               {},
-                              empty_sig_type_};
+                              empty_sig_type_,
+                              false,
+                              empty_load_args_};
 
   std::vector<IntegrationMethod> all =
   {

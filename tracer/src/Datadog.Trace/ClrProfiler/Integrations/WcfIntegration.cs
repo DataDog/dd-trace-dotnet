@@ -105,18 +105,18 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
         internal static Scope CreateScope(object requestContext)
         {
-            var requestMessage = requestContext.GetProperty<object>("RequestMessage").GetValueOrDefault();
-
-            if (requestMessage == null)
-            {
-                return null;
-            }
-
             var tracer = Tracer.Instance;
 
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
+                return null;
+            }
+
+            var requestMessage = requestContext.GetProperty<object>("RequestMessage").GetValueOrDefault();
+
+            if (requestMessage == null)
+            {
                 return null;
             }
 
