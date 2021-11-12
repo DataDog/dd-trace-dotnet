@@ -18,8 +18,7 @@ namespace Datadog.Trace.Util
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DbCommandCache));
 
-        private static ConcurrentDictionary<string, KeyValuePair<string, string>[]> _cache
-            = new ConcurrentDictionary<string, KeyValuePair<string, string>[]>();
+        private static ConcurrentDictionary<string, KeyValuePair<string, string>[]> _cache = new();
 
         /// <summary>
         /// Gets or sets the underlying cache, to be used for unit tests

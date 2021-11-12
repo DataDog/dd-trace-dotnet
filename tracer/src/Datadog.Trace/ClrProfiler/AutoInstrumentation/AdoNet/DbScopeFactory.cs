@@ -15,6 +15,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DbScopeFactory));
 
+        /// <summary>
+        /// Do not call directly. Only called from <see cref="DbScopeFactory{TCommand}"/> and from tests.
+        /// ADO.NET integrations should call <see cref="DbScopeFactory{TCommand}.CreateDbCommandScope"/> instead.
+        /// </summary>
         public static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationInfo integration, string dbType, string operationName)
         {
             if (!tracer.Settings.IsIntegrationEnabled(integration))
