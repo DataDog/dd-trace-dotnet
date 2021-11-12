@@ -899,7 +899,7 @@ HRESULT CallTargetTokens::WriteBeginMethod(void* rewriterWrapperPtr, mdTypeRef i
         unsigned callTargetStateBuffer;
         auto callTargetStateSize = CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
 
-        auto signatureLength = 6 + (numArguments * 2) + callTargetStateSize;
+        auto signatureLength = 6 + (numArguments * 3) + callTargetStateSize;
         COR_SIGNATURE signature[signatureBufferSize];
         unsigned offset = 0;
 
@@ -916,6 +916,7 @@ HRESULT CallTargetTokens::WriteBeginMethod(void* rewriterWrapperPtr, mdTypeRef i
 
         for (auto i = 0; i < numArguments; i++)
         {
+            signature[offset++] = ELEMENT_TYPE_BYREF;
             signature[offset++] = ELEMENT_TYPE_MVAR;
             signature[offset++] = 0x01 + (i + 1);
         }

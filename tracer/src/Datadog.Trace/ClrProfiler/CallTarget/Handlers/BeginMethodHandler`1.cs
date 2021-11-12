@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
         {
             try
             {
-                DynamicMethod dynMethod = IntegrationMapper.CreateBeginMethodDelegate(typeof(TIntegration), typeof(TTarget), new[] { typeof(TArg1) });
+                DynamicMethod dynMethod = IntegrationMapper.CreateBeginMethodDelegate(typeof(TIntegration), typeof(TTarget), new[] { typeof(TArg1).MakeByRefType() });
                 if (dynMethod != null)
                 {
                     _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
@@ -32,17 +32,17 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             {
                 if (_invokeDelegate is null)
                 {
-                    _invokeDelegate = (instance, arg1) => CallTargetState.GetDefault();
+                    _invokeDelegate = (TTarget instance, ref TArg1 arg1) => CallTargetState.GetDefault();
                 }
             }
         }
 
-        internal delegate CallTargetState InvokeDelegate(TTarget instance, TArg1 arg1);
+        internal delegate CallTargetState InvokeDelegate(TTarget instance, ref TArg1 arg1);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static CallTargetState Invoke(TTarget instance, TArg1 arg1)
+        internal static CallTargetState Invoke(TTarget instance, ref TArg1 arg1)
         {
-            return new CallTargetState(Tracer.Instance.ActiveScope, _invokeDelegate(instance, arg1));
+            return new CallTargetState(Tracer.Instance.ActiveScope, _invokeDelegate(instance, ref arg1));
         }
     }
 }

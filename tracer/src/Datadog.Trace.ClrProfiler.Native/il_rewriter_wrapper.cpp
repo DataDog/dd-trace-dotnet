@@ -95,6 +95,25 @@ ILInstr* ILRewriterWrapper::LoadArgument(const UINT16 index) const
     return pNewInstr;
 }
 
+ILInstr* ILRewriterWrapper::LoadArgumentRef(const UINT16 index) const
+{
+    ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
+
+    if (index <= 255)
+    {
+        pNewInstr->m_opcode = CEE_LDARGA_S;
+        pNewInstr->m_Arg8 = static_cast<UINT8>(index);
+    }
+    else
+    {
+        pNewInstr->m_opcode = CEE_LDARGA;
+        pNewInstr->m_Arg16 = index;
+    }
+
+    m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
+    return pNewInstr;
+}
+
 void ILRewriterWrapper::Cast(const mdTypeRef type_ref) const
 {
     ILInstr* pNewInstr = m_ILRewriter->NewILInstr();

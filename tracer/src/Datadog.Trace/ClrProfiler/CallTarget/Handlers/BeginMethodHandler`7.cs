@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
         {
             try
             {
-                DynamicMethod dynMethod = IntegrationMapper.CreateBeginMethodDelegate(typeof(TIntegration), typeof(TTarget), new[] { typeof(TArg1), typeof(TArg2), typeof(TArg3), typeof(TArg4), typeof(TArg5), typeof(TArg6), typeof(TArg7) });
+                DynamicMethod dynMethod = IntegrationMapper.CreateBeginMethodDelegate(typeof(TIntegration), typeof(TTarget), new[] { typeof(TArg1).MakeByRefType(), typeof(TArg2).MakeByRefType(), typeof(TArg3).MakeByRefType(), typeof(TArg4).MakeByRefType(), typeof(TArg5).MakeByRefType(), typeof(TArg6).MakeByRefType(), typeof(TArg7).MakeByRefType() });
                 if (dynMethod != null)
                 {
                     _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
@@ -32,17 +32,17 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             {
                 if (_invokeDelegate is null)
                 {
-                    _invokeDelegate = (instance, arg1, arg2, arg3, arg4, arg5, arg6, arg7) => CallTargetState.GetDefault();
+                    _invokeDelegate = (TTarget instance, ref TArg1 arg1, ref TArg2 arg2, ref TArg3 arg3, ref TArg4 arg4, ref TArg5 arg5, ref TArg6 arg6, ref TArg7 arg7) => CallTargetState.GetDefault();
                 }
             }
         }
 
-        internal delegate CallTargetState InvokeDelegate(TTarget instance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4, TArg5 arg5, TArg6 arg6, TArg7 arg7);
+        internal delegate CallTargetState InvokeDelegate(TTarget instance, ref TArg1 arg1, ref TArg2 arg2, ref TArg3 arg3, ref TArg4 arg4, ref TArg5 arg5, ref TArg6 arg6, ref TArg7 arg7);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static CallTargetState Invoke(TTarget instance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4, TArg5 arg5, TArg6 arg6, TArg7 arg7)
+        internal static CallTargetState Invoke(TTarget instance, ref TArg1 arg1, ref TArg2 arg2, ref TArg3 arg3, ref TArg4 arg4, ref TArg5 arg5, ref TArg6 arg6, ref TArg7 arg7)
         {
-            return new CallTargetState(Tracer.Instance.ActiveScope, _invokeDelegate(instance, arg1, arg2, arg3, arg4, arg5, arg6, arg7));
+            return new CallTargetState(Tracer.Instance.ActiveScope, _invokeDelegate(instance, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5, ref arg6, ref arg7));
         }
     }
 }

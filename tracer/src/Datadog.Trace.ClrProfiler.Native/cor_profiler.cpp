@@ -2587,7 +2587,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
         // Load the arguments directly (FastPath)
         for (int i = 0; i < numArgs; i++)
         {
-            reWriterWrapper.LoadArgument(i + (isStatic ? 0 : 1));
+            reWriterWrapper.LoadArgumentRef(i + (isStatic ? 0 : 1));
             const auto& argTypeFlags = methodArguments[i].GetTypeFlags(elementType);
             if (argTypeFlags & TypeFlagByRef)
             {

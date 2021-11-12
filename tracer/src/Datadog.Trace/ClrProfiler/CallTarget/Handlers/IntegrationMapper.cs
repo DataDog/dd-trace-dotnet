@@ -113,6 +113,8 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             for (var i = mustLoadInstance ? 1 : 0; i < onMethodBeginParameters.Length; i++)
             {
                 Type sourceParameterType = argumentsTypes[mustLoadInstance ? i - 1 : i];
+                sourceParameterType = sourceParameterType.GetElementType();
+
                 Type targetParameterType = onMethodBeginParameters[i].ParameterType;
                 Type targetParameterTypeConstraint = null;
                 Type parameterProxyType = null;
@@ -138,6 +140,8 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 }
 
                 WriteLoadArgument(ilWriter, i, mustLoadInstance);
+                ilWriter.Emit(OpCodes.Ldobj, sourceParameterType);
+
                 if (parameterProxyType != null)
                 {
                     WriteCreateNewProxyInstance(ilWriter, parameterProxyType, sourceParameterType);
