@@ -4,18 +4,11 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Data;
 using Datadog.Trace.Agent;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
-using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Util;
 using Moq;
-using MySql.Data.MySqlClient;
-using Npgsql;
 using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests
@@ -24,14 +17,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
     {
         // declare here instead of using ScopeFactory.UrlIdPlaceholder so tests fails if value changes
         private const string Id = "?";
-
-        public static IEnumerable<object[]> GetDbCommandScopeData()
-        {
-            yield return new object[] { new System.Data.SqlClient.SqlCommand() };
-            yield return new object[] { new MySqlCommand() };
-            yield return new object[] { new NpgsqlCommand() };
-            yield return new object[] { new Microsoft.Data.SqlClient.SqlCommand() };
-        }
 
         [Theory]
         [InlineData("users/", "users/")]
@@ -152,74 +137,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                         Assert.Null(automaticScope2);
                     }
                 }
-            }
-        }
-
-        [Theory]
-        [MemberData(nameof(GetDbCommandScopeData))]
-        public void CreateDbCommandScope_ReturnsNullForExcludedAdoNetTypes(IDbCommand command)
-        {
-            // Set up tracer
-            var collection = new NameValueCollection
-            {
-                { ConfigurationKeys.AdoNetExcludedTypes, command.GetType().FullName }
-            };
-            IConfigurationSource source = new NameValueConfigurationSource(collection);
-            var tracerSettings = new TracerSettings(source);
-            var tracer = TracerHelper.Create(tracerSettings);
-
-            // Create scope
-            using (var outerScope = ScopeFactory.CreateDbCommandScope(tracer, new CustomDbCommand()))
-            {
-                using (var innerScope = ScopeFactory.CreateDbCommandScope(tracer, command))
-                {
-                    Assert.Null(innerScope);
-                }
-
-                Assert.NotNull(outerScope);
-            }
-        }
-
-        [Theory]
-        [MemberData(nameof(GetDbCommandScopeData))]
-        public void CreateDbCommandScope_UsesReplacementServiceNameWhenProvided(IDbCommand command)
-        {
-            // Set up tracer
-            DbScopeFactory.TryGetIntegrationDetails(command.GetType().FullName, out _, out var dbType);
-
-            var collection = new NameValueCollection
-            {
-                { ConfigurationKeys.ServiceNameMappings, $"{dbType}:my-custom-type" }
-            };
-
-            IConfigurationSource source = new NameValueConfigurationSource(collection);
-            var tracerSettings = new TracerSettings(source);
-            var tracer = TracerHelper.Create(tracerSettings);
-
-            // Create scope
-            using (var outerScope = DbScopeFactory.CreateDbCommandScope(tracer, command))
-            {
-                Assert.Equal("my-custom-type", outerScope.Span.ServiceName);
-            }
-        }
-
-        [Theory]
-        [MemberData(nameof(GetDbCommandScopeData))]
-        public void CreateDbCommandScope_IgnoresReplacementServiceNameWhenNotProvided(IDbCommand command)
-        {
-            // Set up tracer
-            var collection = new NameValueCollection
-            {
-                { ConfigurationKeys.ServiceNameMappings, $"something:my-custom-type" }
-            };
-            IConfigurationSource source = new NameValueConfigurationSource(collection);
-            var tracerSettings = new TracerSettings(source);
-            var tracer = TracerHelper.Create(tracerSettings);
-
-            // Create scope
-            using (var outerScope = DbScopeFactory.CreateDbCommandScope(tracer, command))
-            {
-                Assert.NotEqual("my-custom-type", outerScope.Span.ServiceName);
             }
         }
     }
