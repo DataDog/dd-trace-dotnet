@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31702.278
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.31903.286
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.Trace.ClrProfiler.Native", "tracer\src\Datadog.Trace.ClrProfiler.Native\Datadog.Trace.ClrProfiler.Native.vcxproj", "{91B6272F-5780-4C94-8071-DBBA7B4F67F3}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -429,6 +429,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNetCoreMinimalAp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AspNetCoreSmokeTest", "tracer\test\test-applications\regression\AspNetCoreSmokeTest\AspNetCoreSmokeTest.csproj", "{BED94A61-6FD9-4103-BD35-70B4798C301C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNet.VersionConflict", "tracer\test\test-applications\aspnet\Samples.AspNet.VersionConflict\Samples.AspNet.VersionConflict.csproj", "{FAB2B108-E5BE-4647-869B-1DC5D362252E}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{24d3e547-8897-4111-baa2-b92f50cc13d4}*SharedItemsImports = 5
@@ -442,6 +444,7 @@ Global
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{bbb60b0f-bf01-4499-936a-4a299a9acfd4}*SharedItemsImports = 4
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{c41b289a-a344-49df-a1bd-081753f9a286}*SharedItemsImports = 5
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{f5582f54-e911-4258-b419-5e894d338c5b}*SharedItemsImports = 4
+		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{fab2b108-e5be-4647-869b-1dc5d362252e}*SharedItemsImports = 4
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1856,6 +1859,18 @@ Global
 		{BED94A61-6FD9-4103-BD35-70B4798C301C}.Release|x64.Build.0 = Release|Any CPU
 		{BED94A61-6FD9-4103-BD35-70B4798C301C}.Release|x86.ActiveCfg = Release|Any CPU
 		{BED94A61-6FD9-4103-BD35-70B4798C301C}.Release|x86.Build.0 = Release|Any CPU
+		{FAB2B108-E5BE-4647-869B-1DC5D362252E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FAB2B108-E5BE-4647-869B-1DC5D362252E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FAB2B108-E5BE-4647-869B-1DC5D362252E}.Debug|x64.ActiveCfg = Debug|x64
+		{FAB2B108-E5BE-4647-869B-1DC5D362252E}.Debug|x64.Build.0 = Debug|x64
+		{FAB2B108-E5BE-4647-869B-1DC5D362252E}.Debug|x86.ActiveCfg = Debug|x86
+		{FAB2B108-E5BE-4647-869B-1DC5D362252E}.Debug|x86.Build.0 = Debug|x86
+		{FAB2B108-E5BE-4647-869B-1DC5D362252E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FAB2B108-E5BE-4647-869B-1DC5D362252E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FAB2B108-E5BE-4647-869B-1DC5D362252E}.Release|x64.ActiveCfg = Release|x64
+		{FAB2B108-E5BE-4647-869B-1DC5D362252E}.Release|x64.Build.0 = Release|x64
+		{FAB2B108-E5BE-4647-869B-1DC5D362252E}.Release|x86.ActiveCfg = Release|x86
+		{FAB2B108-E5BE-4647-869B-1DC5D362252E}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -2006,6 +2021,7 @@ Global
 		{65A66859-2735-4DD6-A927-B416B7A62D0F} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{2A6D3042-C675-4EA3-A8E7-5BDD3C5758EA} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{BED94A61-6FD9-4103-BD35-70B4798C301C} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
+		{FAB2B108-E5BE-4647-869B-1DC5D362252E} = {AFA0AB23-64F0-4AC1-9050-6CE8FE06F580}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
