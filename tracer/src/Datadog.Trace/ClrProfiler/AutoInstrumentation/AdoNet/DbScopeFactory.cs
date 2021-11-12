@@ -76,14 +76,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             out IntegrationIds? integrationId,
             out string dbType)
         {
-            if (commandTypeFullName == null || commandTypeFullName.Length < 20)
-            {
-                // "Npgsql.NpgsqlCommand" is the shortest string at 20 characters
-                integrationId = null;
-                dbType = null;
-                return false;
-            }
-
             // TODO: optimize this switch
             switch (commandTypeFullName)
             {
