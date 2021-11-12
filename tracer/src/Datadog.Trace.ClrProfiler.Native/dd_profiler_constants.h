@@ -87,7 +87,7 @@ const WSTRING microsoft_aspnetcore_hosting_assemblyName = WStr("Microsoft.AspNet
 const WSTRING dapper_assemblyName = WStr("Dapper");
 
 const WSTRING managed_profiler_full_assembly_version =
-    WStr("Datadog.Trace, Version=1.29.1.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
+    WStr("Datadog.Trace, Version=1.30.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
 
 const WSTRING managed_profiler_name = WStr("Datadog.Trace");
 

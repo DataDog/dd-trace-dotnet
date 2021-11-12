@@ -1,5 +1,60 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
+## [Release 1.30.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.30.0)
+
+## Changes
+* Make vuln app database samples path work cross OS (#1824)
+* Add the standardizes logs for AppSec (#1894)
+* Refactor reverse duck-typing and add negative tests (#1900)
+* Additional updates for the joint MSI (#1915)
+* Correct _dd.appsec.enabled (#1918)
+* Refactor ModuleMetadata handling to reduce memory allocations (#1931)
+* [Appsec] Send events in utf 8 without byte marker (#1932)
+* Use UserKeep(2)/UserReject(-1) in the rules-based sampler (#1937)
+* Add AssemblyLoadContext to logs for netcoreapp assembly builds (#1977)
+* Update tests and CI App environment variable parser fixes. (#1995)
+* Cherry-pick/backport to master (#1996)
+* [AppSec] Update waf version to 1.14  (#1998)
+* Use sensible default service name in AAS (Functions & WebApps) (#2007)
+
+## Fixes
+* Shared Managed Loader delays loading assemblies until AD has initialized. (#1916)
+* Fix typo in comments (#1928)
+* Escape http.url tag in AspNetCore spans (#1938)
+* Properly set sampling priority when using GetRequestStream (#1947)
+* Fix issue with WAF with x86 on x64 (#1984)
+* Add modified WCF CallTarget instrumentation via opt-in environment variable (#1992)
+* Stop writing warning to log about ServiceFabric if we're not running in ServiceFabric (#1999)
+
+## Build / Test
+* Add test application for MySqlConnector nuget package (#1863)
+* Build a beta MSI that contains multiple .NET products (#1870)
+* Don't use ITestOutputHelper after test has finished (#1877)
+* Improve testing for Aerospike (#1889)
+* Upgrade to Alpine 3.14 (#1899)
+* Remove the "comprehensive" testing suite (#1907)
+* Clean the workspace before building on ARM64 (#1908)
+* Create version.txt (#1917)
+* Update Datadog.Trace to 1.19.1 in regression test (#1919)
+* Don't downgrade cmake on OSX (#1920)
+* Include the package version in all the MySqlConnector tests (#1921)
+* Modify the GitLab CI to build and sign the multi-product MSI (#1924)
+* Give some time for the aspnetcore process to exit in AppSec tests (#1926)
+* Use GitHub API to hide old code coverage/benchmark reports when adding a new one (#1927)
+* Run log injection tests on linux (#1929)
+* Update dependabot PRs  (#1930)
+* Small build fixes (#1936)
+* Add a "LatestMajors" option for testing all major package versions (#1939)
+* Add system tests into CI (#1942)
+* Fix GitHub Actions workflows (#1946)
+* Fix condition in Datadog.Trace.proj breaking the build on master (#1950)
+* "Update test package versions" PR has to run UpdateIntegrationsJson (#1954)
+* Treat release/ branches as the "main" branch (#1963)
+* Use anyCPU on Mac as well for target: CompileRegressionDependencyLibs (#1994)
+* Don't push artifacts to AWS/Azure unless on main/master (#2019)
+
+[Changes since 1.29.0](https://github.com/DataDog/dd-trace-dotnet/compare/v1.29.0...v1.30.0)
+
 ## [Release 1.29.1-prerelease](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.29.0)
 
 ## Changes
