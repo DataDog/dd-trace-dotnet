@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTracesWithNetStandard()
+        public void SubmitsTraces()
         {
             const int expectedSpanCount = 42;
             const string dbType = "fake";
