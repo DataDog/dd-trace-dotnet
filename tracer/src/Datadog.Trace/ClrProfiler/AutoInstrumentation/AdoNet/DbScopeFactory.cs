@@ -15,18 +15,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DbScopeFactory));
 
-        public static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command)
-        {
-            if (TryGetIntegrationDetails(command.GetType().FullName, out var integrationId, out var dbTypeName))
-            {
-                var integration = IntegrationRegistry.GetIntegrationInfo(integrationId.ToString());
-                var operationName = $"{dbTypeName}.query";
-                return CreateDbCommandScope(tracer, command, integration, dbTypeName, operationName);
-            }
-
-            return null;
-        }
-
         public static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationInfo integration, string dbType, string operationName)
         {
             if (!tracer.Settings.IsIntegrationEnabled(integration))

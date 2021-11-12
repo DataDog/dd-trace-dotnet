@@ -18,15 +18,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         private static readonly Type _commandType;
         private static readonly string _dbTypeName;
         private static readonly string _operationName;
-        private static readonly IntegrationInfo? _integrationInfo;
+        private static readonly IntegrationInfo _integrationInfo;
 
         static DbScopeFactory()
         {
-            _commandType = typeof(TCommand);
+            var commandType = typeof(TCommand);
 
-            if (DbScopeFactory.TryGetIntegrationDetails(_commandType.FullName, out var integrationId, out var dbTypeName))
+            if (DbScopeFactory.TryGetIntegrationDetails(commandType.FullName, out var integrationId, out var dbTypeName))
             {
                 // cache values for this TCommand type
+                _commandType = commandType;
                 _dbTypeName = dbTypeName;
                 _operationName = $"{_dbTypeName}.query";
                 _integrationInfo = IntegrationRegistry.GetIntegrationInfo(integrationId.ToString());
@@ -37,15 +38,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         {
             var commandType = command.GetType();
 
-            if (commandType == _commandType && _integrationInfo != null)
+            if (commandType == _commandType)
             {
-                // use the cached values if command type is TCommand
-                return DbScopeFactory.CreateDbCommandScope(tracer, command, _integrationInfo.Value, _dbTypeName, _operationName);
+                // use the cached values if command.GetType() == typeof(TCommand)
+                return DbScopeFactory.CreateDbCommandScope(tracer, command, _integrationInfo, _dbTypeName, _operationName);
             }
 
-            // if command type is not TCommand, we are probably instrumenting a method
+            // if command.GetType() != typeof(TCommand), we are probably instrumenting a method
             // defined in a base class like DbCommand and we can't use the cached values
-            return DbScopeFactory.CreateDbCommandScope(tracer, command);
+            if (DbScopeFactory.TryGetIntegrationDetails(command.GetType().FullName, out var integrationId, out var dbTypeName))
+            {
+                var integration = IntegrationRegistry.GetIntegrationInfo(integrationId.ToString());
+                var operationName = $"{dbTypeName}.query";
+                return DbScopeFactory.CreateDbCommandScope(tracer, command, integration, dbTypeName, operationName);
+            }
+
+            return null;
         }
     }
 }
