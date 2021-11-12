@@ -15,12 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DbScopeFactory));
 
-        /// <summary>
-        /// Do not call this method directly from instrumentation code.
-        /// ADO.NET instrumentation should call <see cref="DbScopeFactory{TCommand}.CreateDbCommandScope"/> instead.
-        /// This method is only called from <see cref="DbScopeFactory{TCommand}"/> and from tests.
-        /// </summary>
-        public static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationInfo integration, string dbType, string operationName)
+        private static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationInfo integration, string dbType, string operationName)
         {
             if (!tracer.Settings.IsIntegrationEnabled(integration))
             {
@@ -98,6 +93,50 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     integrationId = null;
                     dbType = null;
                     return false;
+            }
+        }
+
+        public static class Cache<TCommand>
+        {
+            private static readonly Type _commandType;
+            private static readonly string _dbTypeName;
+            private static readonly string _operationName;
+            private static readonly IntegrationInfo _integrationInfo;
+
+            static Cache()
+            {
+                var commandType = typeof(TCommand);
+
+                if (TryGetIntegrationDetails(commandType.FullName, out var integrationId, out var dbTypeName))
+                {
+                    // cache values for this TCommand type
+                    _commandType = commandType;
+                    _dbTypeName = dbTypeName;
+                    _operationName = $"{_dbTypeName}.query";
+                    _integrationInfo = IntegrationRegistry.GetIntegrationInfo(integrationId.ToString());
+                }
+            }
+
+            public static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command)
+            {
+                var commandType = command.GetType();
+
+                if (commandType == _commandType)
+                {
+                    // use the cached values if command.GetType() == typeof(TCommand)
+                    return DbScopeFactory.CreateDbCommandScope(tracer, command, _integrationInfo, _dbTypeName, _operationName);
+                }
+
+                // if command.GetType() != typeof(TCommand), we are probably instrumenting a method
+                // defined in a base class like DbCommand and we can't use the cached values
+                if (TryGetIntegrationDetails(command.GetType().FullName, out var integrationId, out var dbTypeName))
+                {
+                    var integration = IntegrationRegistry.GetIntegrationInfo(integrationId.ToString());
+                    var operationName = $"{dbTypeName}.query";
+                    return DbScopeFactory.CreateDbCommandScope(tracer, command, integration, dbTypeName, operationName);
+                }
+
+                return null;
             }
         }
     }
