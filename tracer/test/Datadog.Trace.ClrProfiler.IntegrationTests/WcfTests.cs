@@ -67,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             Output.WriteLine("Starting WcfTests.SubmitsTraces. Starting the Samples.Wcf requires ADMIN privileges");
 
-            var expectedSpanCount = 9;
+            var expectedSpanCount = 6;
 
             const string expectedOperationName = "wcf.request";
 
@@ -80,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // Filter out WCF spans unrelated to the actual request handling, and filter them before returning spans
                 // so we can wait on the exact number of spans we expect.
                 agent.SpanFilters.Add(s => !s.Resource.Contains("schemas.xmlsoap.org") && !s.Resource.Contains("www.w3.org"));
-                var spans = agent.WaitForSpans(expectedSpanCount, timeoutInMilliseconds: 60000, operationName: expectedOperationName);
+                var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings(binding, enableCallTarget, enableNewWcfInstrumentation);
 
