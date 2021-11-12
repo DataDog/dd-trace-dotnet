@@ -113,8 +113,6 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             for (var i = mustLoadInstance ? 1 : 0; i < onMethodBeginParameters.Length; i++)
             {
                 Type sourceParameterType = argumentsTypes[mustLoadInstance ? i - 1 : i];
-                sourceParameterType = sourceParameterType.GetElementType();
-
                 Type targetParameterType = onMethodBeginParameters[i].ParameterType;
                 Type targetParameterTypeConstraint = null;
                 Type parameterProxyType = null;
@@ -125,26 +123,43 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                     targetParameterTypeConstraint = targetParameterType.GetGenericParameterConstraints().FirstOrDefault(pType => pType != typeof(IDuckType));
                     if (targetParameterTypeConstraint is null)
                     {
-                        callGenericTypes.Add(sourceParameterType);
+                        callGenericTypes.Add(targetParameterType.IsByRef ? sourceParameterType : sourceParameterType.GetElementType());
                     }
                     else
                     {
-                        var result = DuckType.GetOrCreateProxyType(targetParameterTypeConstraint, sourceParameterType);
+                        var result = DuckType.GetOrCreateProxyType(targetParameterTypeConstraint, sourceParameterType.GetElementType());
                         parameterProxyType = result.ProxyType;
                         callGenericTypes.Add(parameterProxyType);
                     }
                 }
-                else if (!targetParameterType.IsAssignableFrom(sourceParameterType) && (!(sourceParameterType.IsEnum && targetParameterType.IsEnum)))
+                else if (!(sourceParameterType.IsEnum && targetParameterType.IsEnum))
                 {
-                    throw new InvalidCastException($"The target parameter {targetParameterType} can't be assigned from {sourceParameterType}");
+                    var srcParameterType = sourceParameterType.IsByRef ? sourceParameterType.GetElementType() : sourceParameterType;
+                    var trgParameterType = targetParameterType.IsByRef ? targetParameterType.GetElementType() : targetParameterType;
+                    if (!trgParameterType.IsAssignableFrom(srcParameterType))
+                    {
+                        throw new InvalidCastException($"The target parameter {targetParameterType} can't be assigned from {sourceParameterType}");
+                    }
                 }
 
-                WriteLoadArgument(ilWriter, i, mustLoadInstance);
-                ilWriter.Emit(OpCodes.Ldobj, sourceParameterType);
-
-                if (parameterProxyType != null)
+                if (!targetParameterType.IsByRef)
                 {
-                    WriteCreateNewProxyInstance(ilWriter, parameterProxyType, sourceParameterType);
+                    WriteLoadArgument(ilWriter, i, mustLoadInstance);
+                    sourceParameterType = sourceParameterType.IsByRef ? sourceParameterType.GetElementType() : sourceParameterType;
+                    ilWriter.Emit(OpCodes.Ldobj, sourceParameterType);
+
+                    if (parameterProxyType != null)
+                    {
+                        WriteCreateNewProxyInstance(ilWriter, parameterProxyType, sourceParameterType);
+                    }
+                }
+                else if (parameterProxyType == null)
+                {
+                    WriteLoadArgumentRef(ilWriter, i, mustLoadInstance);
+                }
+                else
+                {
+                    throw new InvalidCastException($"DuckType constraints is not supported on ByRef parameters. The target parameter {targetParameterType} can't be assigned from {sourceParameterType}");
                 }
             }
 
@@ -743,6 +758,16 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                     il.Emit(OpCodes.Ldarg_S, index);
                     break;
             }
+        }
+
+        private static void WriteLoadArgumentRef(ILGenerator il, int index, bool isStatic)
+        {
+            if (!isStatic)
+            {
+                index += 1;
+            }
+
+            il.Emit(OpCodes.Ldarga_S, index);
         }
 
         private static T ConvertType<T>(object value)
