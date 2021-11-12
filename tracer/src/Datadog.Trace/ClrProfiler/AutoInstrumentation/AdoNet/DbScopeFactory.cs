@@ -27,6 +27,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 return null;
             }
 
+            Scope scope = null;
+
             try
             {
                 Span parent = tracer.ActiveScope?.Span;
@@ -51,16 +53,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
                 tags.SetAnalyticsSampleRate(integration, tracer.Settings, enabledWithGlobalSetting: false);
 
-                Scope scope = tracer.StartActiveWithTags(operationName, tags: tags, serviceName: serviceName);
+                scope = tracer.StartActiveWithTags(operationName, tags: tags, serviceName: serviceName);
                 scope.Span.AddTagsFromDbCommand(command);
-
-                return scope;
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error creating or populating scope.");
-                return null;
             }
+
+            return scope;
         }
 
         public static bool TryGetIntegrationDetails(
