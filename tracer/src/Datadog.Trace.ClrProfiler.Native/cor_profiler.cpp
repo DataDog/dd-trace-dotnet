@@ -1197,7 +1197,7 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
     // *** Get SharedContext TypeDef
     //
     mdTypeDef sharedContextTypeDef;
-    auto hr = module_metadata.metadata_import->FindTypeDefByName(WStr("Datadog.Trace.SharedContext"), mdTokenNil,
+    auto hr = module_metadata.metadata_import->FindTypeDefByName(WStr("Datadog.Trace.ClrProfiler.SharedContext"), mdTokenNil,
                                                             &sharedContextTypeDef);
     if (FAILED(hr))
     {
@@ -1346,7 +1346,7 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
 
         mdTypeRef sharedContextTypeRef;
         hr = module_metadata.metadata_emit->DefineTypeRefByName(
-            managed_profiler_assemblyRef, WStr("Datadog.Trace.SharedContext"), &sharedContextTypeRef);
+            managed_profiler_assemblyRef, WStr("Datadog.Trace.ClrProfiler.SharedContext"), &sharedContextTypeRef);
 
         if (FAILED(hr))
         {

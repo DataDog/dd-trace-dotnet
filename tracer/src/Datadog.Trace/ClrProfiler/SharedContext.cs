@@ -8,7 +8,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
-namespace Datadog.Trace
+namespace Datadog.Trace.ClrProfiler
 {
     /// <summary>
     /// Class to share context between Tracers from different versions
