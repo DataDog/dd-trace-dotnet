@@ -106,6 +106,8 @@ namespace Datadog.Trace.ClrProfiler
     {
         public static IDistributedTracer Instance { get; } = BuildDistributedTracer();
 
+        public static object GetDistributedTracer() => Instance;
+
         private static IDistributedTracer BuildDistributedTracer()
         {
             var parent = GetParent();

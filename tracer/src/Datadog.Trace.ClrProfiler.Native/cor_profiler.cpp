@@ -1274,10 +1274,10 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
         //
         // *** GetDistributedTrace MethodDef ***
         //
-        COR_SIGNATURE getInstanceSignature[] = {IMAGE_CEE_CS_CALLCONV_DEFAULT, 0, ELEMENT_TYPE_OBJECT};
+        COR_SIGNATURE getDistributedTracerSignature[] = {IMAGE_CEE_CS_CALLCONV_DEFAULT, 0, ELEMENT_TYPE_OBJECT};
         mdMethodDef getDistributedTraceMethodDef;
-        hr = module_metadata.metadata_import->FindMethod(distributedTracerTypeDef, WStr("get_Instance"),
-                                                         getInstanceSignature, 3, &getDistributedTraceMethodDef);
+        hr = module_metadata.metadata_import->FindMethod(distributedTracerTypeDef, WStr("GetDistributedTracer"),
+                                                         getDistributedTracerSignature, 3, &getDistributedTraceMethodDef);
         if (FAILED(hr))
         {
             Logger::Warn("Error Rewriting for Distributed Tracing on getting get_Instance MethodDef");
@@ -1289,8 +1289,8 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
         // *** GetDistributedTrace MemberRef ***
         //
         mdMemberRef getDistributedTraceMemberRef;
-        hr = module_metadata.metadata_emit->DefineMemberRef(distributedTracerTypeRef, WStr("get_Instance"),
-                                                            getInstanceSignature, 3,
+        hr = module_metadata.metadata_emit->DefineMemberRef(distributedTracerTypeRef, WStr("GetDistributedTracer"),
+                                                            getDistributedTracerSignature, 3,
                                                             &getDistributedTraceMemberRef);
         if (FAILED(hr))
         {
@@ -1311,15 +1311,15 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
 
         if (FAILED(hr))
         {
-            Logger::Warn("Error rewriting get_Instance->[AutoInstrumentation]get_Instance");
+            Logger::Warn("Error rewriting GetDistributedTracer->[AutoInstrumentation]GetDistributedTracer");
             return hr;
         }
 
-        Logger::Info("Rewriting get_Instance->[AutoInstrumentation]get_Instance");
+        Logger::Info("Rewriting GetDistributedTracer->[AutoInstrumentation]GetDistributedTracer");
 
         if (IsDumpILRewriteEnabled())
         {
-            Logger::Info(GetILCodes("After -> get_Instance. ", &getterRewriter,
+            Logger::Info(GetILCodes("After -> GetDistributedTracer. ", &getterRewriter,
                                     GetFunctionInfo(module_metadata.metadata_import, getDistributedTraceMethodDef),
                                     module_metadata));
         }
