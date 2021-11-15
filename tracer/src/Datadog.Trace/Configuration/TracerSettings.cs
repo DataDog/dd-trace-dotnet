@@ -31,6 +31,7 @@ namespace Datadog.Trace.Configuration
         public const int DefaultAgentPort = 8126;
 
         private int _partialFlushMinSpans;
+        private DomainMetadata _domainMetadata;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TracerSettings"/> class with default values.
@@ -217,6 +218,10 @@ namespace Datadog.Trace.Configuration
 
             DelayWcfInstrumentationEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.DelayWcfInstrumentationEnabled)
                                             ?? false;
+
+            // we cached the static instance here, because is being used in the hotpath
+            // by IsIntegrationEnabled method (called from all integrations)
+            _domainMetadata = DomainMetadata.Instance;
         }
 
         /// <summary>
@@ -544,7 +549,7 @@ namespace Datadog.Trace.Configuration
 
         internal bool IsIntegrationEnabled(IntegrationInfo integration, bool defaultValue = true)
         {
-            if (TraceEnabled && !DomainMetadata.ShouldAvoidAppDomain())
+            if (TraceEnabled && !_domainMetadata.ShouldAvoidAppDomain())
             {
                 return Integrations[integration].Enabled ?? defaultValue;
             }
@@ -554,7 +559,7 @@ namespace Datadog.Trace.Configuration
 
         internal bool IsIntegrationEnabled(string integrationName)
         {
-            if (TraceEnabled && !DomainMetadata.ShouldAvoidAppDomain())
+            if (TraceEnabled && !_domainMetadata.ShouldAvoidAppDomain())
             {
                 bool? enabled = Integrations[integrationName].Enabled;
                 return enabled != false;
