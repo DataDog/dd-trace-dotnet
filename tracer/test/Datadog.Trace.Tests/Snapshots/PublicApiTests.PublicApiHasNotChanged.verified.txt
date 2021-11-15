@@ -280,7 +280,7 @@ namespace Datadog.Trace
         public Datadog.Trace.Span SetTag(string key, string value) { }
         public override string ToString() { }
     }
-    public class SpanContext : Datadog.Trace.ISpanContext
+    public class SpanContext : Datadog.Trace.ISpanContext, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>>, System.Collections.Generic.IReadOnlyCollection<System.Collections.Generic.KeyValuePair<string, string>>, System.Collections.Generic.IReadOnlyDictionary<string, string>, System.Collections.IEnumerable
     {
         public SpanContext(ulong? traceId, ulong spanId, Datadog.Trace.SamplingPriority? samplingPriority = default, string serviceName = null) { }
         public Datadog.Trace.ISpanContext Parent { get; }
