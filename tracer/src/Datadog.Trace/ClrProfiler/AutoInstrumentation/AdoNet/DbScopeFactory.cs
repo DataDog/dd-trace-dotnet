@@ -129,7 +129,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
                 // if command.GetType() != typeof(TCommand), we are probably instrumenting a method
                 // defined in a base class like DbCommand and we can't use the cached values
-                if (TryGetIntegrationDetails(command.GetType().FullName, out var integrationId, out var dbTypeName))
+                if (TryGetIntegrationDetails(commandType.FullName, out var integrationId, out var dbTypeName))
                 {
                     var integration = IntegrationRegistry.GetIntegrationInfo(integrationId.ToString());
                     var operationName = $"{dbTypeName}.query";
