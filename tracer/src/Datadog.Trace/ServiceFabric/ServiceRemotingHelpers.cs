@@ -147,7 +147,7 @@ namespace Datadog.Trace.ServiceFabric
         {
             try
             {
-                var scope = Tracer.Instance.ActiveScope;
+                var scope = Tracer.Instance.InternalActiveScope;
 
                 if (scope == null)
                 {

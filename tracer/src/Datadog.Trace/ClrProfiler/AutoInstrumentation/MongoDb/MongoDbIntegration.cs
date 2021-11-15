@@ -148,7 +148,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 
         private static Scope GetActiveMongoDbScope(Tracer tracer)
         {
-            var scope = tracer.ActiveScope;
+            var scope = tracer.InternalActiveScope;
 
             var parent = scope?.Span;
 

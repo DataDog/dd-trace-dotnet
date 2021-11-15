@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     return null;
                 }
 
-                var parent = tracer.ActiveScope?.Span;
+                var parent = tracer.InternalActiveScope?.Span;
                 if (parent is not null &&
                     parent.OperationName == KafkaConstants.ProduceOperationName &&
                     parent.GetTag(Tags.InstrumentationName) != null)
@@ -89,7 +89,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     return null;
                 }
 
-                var parent = tracer.ActiveScope?.Span;
+                var parent = tracer.InternalActiveScope?.Span;
                 if (parent is not null &&
                     parent.OperationName == KafkaConstants.ConsumeOperationName &&
                     parent.GetTag(Tags.InstrumentationName) != null)
@@ -171,7 +171,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     return;
                 }
 
-                var activeScope = tracer.ActiveScope;
+                var activeScope = tracer.InternalActiveScope;
                 var currentSpan = activeScope?.Span;
                 if (currentSpan?.OperationName != KafkaConstants.ConsumeOperationName)
                 {

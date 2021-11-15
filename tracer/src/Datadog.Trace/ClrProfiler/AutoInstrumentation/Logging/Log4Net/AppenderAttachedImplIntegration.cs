@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
                 loggingEvent.Properties[CorrelationIdentifier.VersionKey] = tracer.Settings.ServiceVersion ?? string.Empty;
                 loggingEvent.Properties[CorrelationIdentifier.EnvKey] = tracer.Settings.Environment ?? string.Empty;
 
-                var span = tracer.ActiveScope?.Span;
+                var span = tracer.InternalActiveScope?.Span;
                 if (span is not null)
                 {
                     loggingEvent.Properties[CorrelationIdentifier.TraceIdKey] = span.TraceId;

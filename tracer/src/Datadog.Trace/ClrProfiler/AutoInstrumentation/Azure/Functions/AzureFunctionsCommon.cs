@@ -126,7 +126,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     BindingSource = bindingSourceType.FullName
                 };
 
-                if (tracer.ActiveScope == null)
+                if (tracer.InternalActiveScope == null)
                 {
                     // This is the root scope
                     tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);

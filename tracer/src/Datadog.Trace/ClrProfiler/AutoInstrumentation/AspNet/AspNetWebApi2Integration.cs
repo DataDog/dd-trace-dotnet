@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 SpanContext propagatedContext = null;
                 var tagsFromHeaders = Enumerable.Empty<KeyValuePair<string, string>>();
 
-                if (request != null && tracer.ActiveScope == null)
+                if (request != null && tracer.InternalActiveScope == null)
                 {
                     try
                     {

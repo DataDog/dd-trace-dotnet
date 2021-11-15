@@ -102,7 +102,7 @@ namespace Datadog.Trace.AspNet
                 SpanContext propagatedContext = null;
                 var tagsFromHeaders = Enumerable.Empty<KeyValuePair<string, string>>();
 
-                if (tracer.ActiveScope == null)
+                if (tracer.InternalActiveScope == null)
                 {
                     try
                     {

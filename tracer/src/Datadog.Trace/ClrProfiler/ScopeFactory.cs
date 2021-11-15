@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler
 
         public static Scope GetActiveHttpScope(Tracer tracer)
         {
-            var scope = tracer.ActiveScope;
+            var scope = tracer.InternalActiveScope;
 
             var parent = scope?.Span;
 
@@ -79,7 +79,7 @@ namespace Datadog.Trace.ClrProfiler
         {
             tags = null;
 
-            if (!tracer.Settings.IsIntegrationEnabled(integrationId) || PlatformHelpers.PlatformStrategy.ShouldSkipClientSpan(tracer.ActiveScope) || HttpBypassHelper.UriContainsAnyOf(requestUri, tracer.Settings.HttpClientExcludedUrlSubstrings))
+            if (!tracer.Settings.IsIntegrationEnabled(integrationId) || PlatformHelpers.PlatformStrategy.ShouldSkipClientSpan(tracer.InternalActiveScope) || HttpBypassHelper.UriContainsAnyOf(requestUri, tracer.Settings.HttpClientExcludedUrlSubstrings))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;
