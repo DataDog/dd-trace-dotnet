@@ -67,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
 
                 var tracer = Tracer.Instance;
 
-                var parent = tracer.ActiveScope?.Span;
+                var parent = tracer.InternalActiveScope?.Span;
 
                 if (parent != null &&
                     parent.Type == SpanTypes.Sql &&

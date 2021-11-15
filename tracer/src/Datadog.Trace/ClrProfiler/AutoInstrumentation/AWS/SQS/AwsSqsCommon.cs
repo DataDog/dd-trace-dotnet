@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 
             try
             {
-                Span parent = tracer.ActiveScope?.Span;
+                Span parent = tracer.InternalActiveScope?.Span;
 
                 tags = new AwsSqsTags();
                 string serviceName = tracer.Settings.GetServiceName(tracer, DatadogAwsSqsServiceName);

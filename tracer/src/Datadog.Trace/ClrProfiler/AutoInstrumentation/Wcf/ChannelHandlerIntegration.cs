@@ -109,7 +109,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                     httpMethod = httpRequestProperty.GetProperty<string>("Method").GetValueOrDefault()?.ToUpperInvariant();
 
                     // try to extract propagated context values from http headers
-                    if (tracer.ActiveScope == null)
+                    if (tracer.InternalActiveScope == null)
                     {
                         try
                         {

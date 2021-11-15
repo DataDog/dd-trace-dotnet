@@ -149,7 +149,12 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the active scope
         /// </summary>
-        public Scope ActiveScope => TracerManager.ScopeManager.Active;
+        public Scope ActiveScope => InternalActiveScope;
+
+        /// <summary>
+        /// Gets the active scope
+        /// </summary>
+        internal Scope InternalActiveScope => TracerManager.ScopeManager.Active;
 
         /// <summary>
         /// Gets the default service name for traces where a service name is not specified.

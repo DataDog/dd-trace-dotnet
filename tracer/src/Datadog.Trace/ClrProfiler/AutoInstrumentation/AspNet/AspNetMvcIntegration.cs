@@ -144,7 +144,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     var tracer = Tracer.Instance;
                     var tagsFromHeaders = Enumerable.Empty<KeyValuePair<string, string>>();
 
-                    if (tracer.ActiveScope == null)
+                    if (tracer.InternalActiveScope == null)
                     {
                         try
                         {

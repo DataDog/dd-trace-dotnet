@@ -582,7 +582,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            Span span = tracer.ActiveScope?.Span;
+            Span span = tracer.InternalActiveScope?.Span;
 
             if (span != null)
             {
@@ -704,7 +704,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            Span parentSpan = tracer.ActiveScope?.Span;
+            Span parentSpan = tracer.InternalActiveScope?.Span;
 
             if (parentSpan != null && arg.TryDuckCast<BeforeActionStruct>(out var typedArg))
             {
@@ -743,7 +743,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            var scope = tracer.ActiveScope;
+            var scope = tracer.InternalActiveScope;
 
             if (scope is not null && ReferenceEquals(scope.Span.OperationName, MvcOperationName))
             {
@@ -760,7 +760,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            var scope = tracer.ActiveScope;
+            var scope = tracer.InternalActiveScope;
 
             if (scope != null)
             {
@@ -797,7 +797,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            var span = tracer.ActiveScope?.Span;
+            var span = tracer.InternalActiveScope?.Span;
 
             if (span != null && arg.TryDuckCast<UnhandledExceptionStruct>(out var unhandledStruct))
             {
