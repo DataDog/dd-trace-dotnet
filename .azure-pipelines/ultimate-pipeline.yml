@@ -473,6 +473,7 @@ stages:
     pool:
       vmImage: ubuntu-18.04
     steps:
+    - checkout: none
     - bash: |
         matrix="{"
         for framework in "net461" "netcoreapp2.1" "netcoreapp3.0" "netcoreapp3.1" "net5.0" "net6.0"; do
@@ -548,6 +549,7 @@ stages:
     pool:
       vmImage: ubuntu-18.04
     steps:
+      - checkout: none
       - bash: |
           matrix="{"
           for framework in "net461" "netcoreapp2.1" "netcoreapp3.0" "netcoreapp3.1" "net5.0" "net6.0"; do
