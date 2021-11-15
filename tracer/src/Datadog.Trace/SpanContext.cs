@@ -199,7 +199,8 @@ namespace Datadog.Trace
                     return true;
 
                 case HttpHeaderNames.SamplingPriority:
-                    var samplingPriority = SamplingPriority;
+                    var samplingPriority = SamplingPriority ?? TraceContext?.SamplingPriority;
+
                     value = samplingPriority != null ? ((int)samplingPriority.Value).ToString() : null;
                     return true;
 

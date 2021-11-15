@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#if NETFRAMEWORK
+
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
@@ -64,3 +66,5 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNet
         }
     }
 }
+
+#endif
