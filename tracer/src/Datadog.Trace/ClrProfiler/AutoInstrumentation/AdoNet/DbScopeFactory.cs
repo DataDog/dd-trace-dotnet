@@ -98,10 +98,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
         public static class Cache<TCommand>
         {
-            private static readonly Type _commandType;
-            private static readonly string _dbTypeName;
-            private static readonly string _operationName;
-            private static readonly IntegrationInfo _integrationInfo;
+            private static readonly Type CommandType;
+            private static readonly string DbTypeName;
+            private static readonly string OperationName;
+            private static readonly IntegrationInfo IntegrationInfo;
 
             static Cache()
             {
@@ -110,10 +110,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 if (TryGetIntegrationDetails(commandType.FullName, out var integrationId, out var dbTypeName))
                 {
                     // cache values for this TCommand type
-                    _commandType = commandType;
-                    _dbTypeName = dbTypeName;
-                    _operationName = $"{_dbTypeName}.query";
-                    _integrationInfo = IntegrationRegistry.GetIntegrationInfo(integrationId.ToString());
+                    CommandType = commandType;
+                    DbTypeName = dbTypeName;
+                    OperationName = $"{DbTypeName}.query";
+                    IntegrationInfo = IntegrationRegistry.GetIntegrationInfo(integrationId.ToString());
                 }
             }
 
@@ -121,10 +121,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             {
                 var commandType = command.GetType();
 
-                if (commandType == _commandType)
+                if (commandType == CommandType)
                 {
                     // use the cached values if command.GetType() == typeof(TCommand)
-                    return DbScopeFactory.CreateDbCommandScope(tracer, command, _integrationInfo, _dbTypeName, _operationName);
+                    return DbScopeFactory.CreateDbCommandScope(tracer, command, IntegrationInfo, DbTypeName, OperationName);
                 }
 
                 // if command.GetType() != typeof(TCommand), we are probably instrumenting a method
