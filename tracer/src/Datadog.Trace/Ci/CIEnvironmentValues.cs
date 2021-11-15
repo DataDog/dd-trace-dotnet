@@ -554,7 +554,14 @@ namespace Datadog.Trace.Ci
         {
             IsCI = true;
             Provider = "github";
-            Repository = string.Format("https://github.com/{0}.git", EnvironmentHelpers.GetEnvironmentVariable("GITHUB_REPOSITORY"));
+
+            var serverUrl = EnvironmentHelpers.GetEnvironmentVariable("GITHUB_SERVER_URL");
+            if (string.IsNullOrWhiteSpace(serverUrl))
+            {
+                serverUrl = "https://github.com";
+            }
+
+            Repository = $"{serverUrl}/{EnvironmentHelpers.GetEnvironmentVariable("GITHUB_REPOSITORY")}.git";
             Commit = EnvironmentHelpers.GetEnvironmentVariable("GITHUB_SHA");
 
             string headRef = EnvironmentHelpers.GetEnvironmentVariable("GITHUB_HEAD_REF");
@@ -573,8 +580,17 @@ namespace Datadog.Trace.Ci
             PipelineId = EnvironmentHelpers.GetEnvironmentVariable("GITHUB_RUN_ID");
             PipelineNumber = EnvironmentHelpers.GetEnvironmentVariable("GITHUB_RUN_NUMBER");
             PipelineName = EnvironmentHelpers.GetEnvironmentVariable("GITHUB_WORKFLOW");
-            PipelineUrl = $"https://github.com/{EnvironmentHelpers.GetEnvironmentVariable("GITHUB_REPOSITORY")}/commit/{Commit}/checks";
-            JobUrl = PipelineUrl;
+            var attempts = EnvironmentHelpers.GetEnvironmentVariable("GITHUB_RUN_ATTEMPT");
+            if (string.IsNullOrWhiteSpace(attempts))
+            {
+                PipelineUrl = $"{serverUrl}/{EnvironmentHelpers.GetEnvironmentVariable("GITHUB_REPOSITORY")}/actions/runs/{PipelineId}";
+            }
+            else
+            {
+                PipelineUrl = $"{serverUrl}/{EnvironmentHelpers.GetEnvironmentVariable("GITHUB_REPOSITORY")}/actions/runs/{PipelineId}/attempts/{EnvironmentHelpers.GetEnvironmentVariable("GITHUB_RUN_ATTEMPT")}";
+            }
+
+            JobUrl = $"{serverUrl}/{EnvironmentHelpers.GetEnvironmentVariable("GITHUB_REPOSITORY")}/commit/{Commit}/checks";
         }
 
         private static void SetupTeamcityEnvironment()
