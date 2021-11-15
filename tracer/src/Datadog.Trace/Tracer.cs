@@ -299,7 +299,7 @@ namespace Datadog.Trace
         {
             if (parent == null && !ignoreActiveScope)
             {
-                parent = SharedContext.GetSpanContext() ?? TracerManager.ScopeManager.Active?.Span?.Context;
+                parent = DistributedTracer.Instance.GetSpanContext() ?? TracerManager.ScopeManager.Active?.Span?.Context;
             }
 
             ITraceContext traceContext;
