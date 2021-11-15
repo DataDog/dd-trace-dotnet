@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Logging;
 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 #pragma warning disable SA1600 // Elements should be documented
@@ -104,28 +105,27 @@ namespace Datadog.Trace.ClrProfiler
 
     public static class DistributedTracer
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DistributedTracer));
+
         public static IDistributedTracer Instance { get; } = BuildDistributedTracer();
 
         public static object GetDistributedTracer() => Instance;
 
         private static IDistributedTracer BuildDistributedTracer()
         {
-            var parent = GetParent();
+            var parent = GetDistributedTracer();
 
             if (parent == null)
             {
+                Log.Information("Building automatic tracer");
                 return new AutomaticTracer();
             }
 
             var parentTracer = parent.DuckAs<IAutomaticTracer>();
 
-            return new ManualTracer(parentTracer);
-        }
+            Log.Information("Building manual tracer, connected to " + parent.GetType().Assembly.ToString());
 
-        public static object GetParent()
-        {
-            // TODO: To be rewritten by the profiler
-            return null;
+            return new ManualTracer(parentTracer);
         }
     }
 }
