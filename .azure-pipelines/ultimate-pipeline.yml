@@ -1483,3 +1483,69 @@ stages:
 
     - script: docker run --rm dd-trace-dotnet/$(dockerTag)-smoke-test
       displayName: Test $(dockerTag) Docker image
+
+- stage: installer_smoke_tests_arm64
+  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  dependsOn: [build_arm64]
+  jobs:
+    - template: steps/update-github-status-jobs.yml
+      parameters:
+        jobs: [linux]
+
+    - job: generator
+      pool:
+        vmImage: ubuntu-18.04
+      steps:
+        - checkout: none
+        - bash: |
+            matrix="{"
+            for i in \
+              "net6.0 6.0-bullseye-slim" \
+              "net5.0 5.0-bullseye-slim" \
+              "net5.0 5.0-buster-slim" \
+              "net5.0 5.0-focal" \
+            ; do fwAndImage=( $i )
+              publishFramework="${fwAndImage[0]}";
+              runtimeImageTag="${fwAndImage[1]}";
+              name="${runtimeImageTag//./_}"
+
+              matrix="${matrix} '${name}':"
+              matrix="${matrix} { 'installCmd': 'dpkg -i ./datadog-dotnet-apm_*_arm64.deb', "
+              matrix="${matrix} 'dockerTag': '${name}', "
+              matrix="${matrix} 'publishFramework': '${publishFramework}', "
+              matrix="${matrix} 'linuxArtifacts': 'linux-packages-arm64', "
+              matrix="${matrix} 'runtimeImage': 'mcr.microsoft.com/dotnet/aspnet:${runtimeImageTag}' },"
+            done;
+            matrix="${matrix::-1} }"
+            echo "##vso[task.setVariable variable=values;isOutput=true]${matrix}"
+          name: mtrx
+
+    - job: linux
+      dependsOn: [generator]
+      strategy:
+        matrix: $[ dependencies.generator.outputs['mtrx.values'] ]
+      variables:
+        smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
+      pool:
+        name: Arm64
+
+      steps:
+        - task: DownloadPipelineArtifact@2
+          displayName: Download artifacts to smoke test directory
+          inputs:
+            artifact: $(linuxArtifacts)
+            path: $(smokeTestAppDir)/artifacts
+
+        - script: |
+            docker build \
+              --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+              --build-arg RUNTIME_IMAGE=$(runtimeImage) \
+              --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+              --build-arg INSTALL_CMD="$(installCmd)" \
+              --tag dd-trace-dotnet/$(dockerTag)-smoke-test \
+              --file "$(System.DefaultWorkingDirectory)/tracer/build/_build/docker/smoke.dockerfile" \
+              "$(smokeTestAppDir)"
+          displayName: Build $(dockerTag) Docker image
+
+        - script: docker run --rm dd-trace-dotnet/$(dockerTag)-smoke-test
+          displayName: Test $(dockerTag) Docker image
