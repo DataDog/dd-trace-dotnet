@@ -1234,19 +1234,6 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
 
     if (autoInstrumentationModule)
     {
-        const auto assembly_metadata = GetAssemblyImportMetadata(module_metadata.assembly_import);
-        managed_profiler_assembly_property.szName = module_metadata.assemblyName;
-
-        hr = module_metadata.assembly_import->GetAssemblyProps(
-            assembly_metadata.assembly_token, &managed_profiler_assembly_property.ppbPublicKey,
-            &managed_profiler_assembly_property.pcbPublicKey, &managed_profiler_assembly_property.pulHashAlgId, NULL, 0,
-            NULL, &managed_profiler_assembly_property.pMetaData, &managed_profiler_assembly_property.assemblyFlags);
-        if (FAILED(hr))
-        {
-            Logger::Warn("Error Rewriting for Distributed Tracing on GetAssemblyProps");
-            return hr;
-        }
-        
         //
         // *** GetDistributedTrace ***
         //
@@ -1328,6 +1315,42 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
     }
     else
     {
+        if (IsDebugEnabled())
+        {
+            Logger::Info("pcbPublicKey: ", managed_profiler_assembly_property.pcbPublicKey);
+            Logger::Info("pcbPublicKey: ", HexStr(managed_profiler_assembly_property.ppbPublicKey,
+                                                  managed_profiler_assembly_property.pcbPublicKey));
+            Logger::Info("pcbPublicKey: ");
+            const auto ppbPublicKey = (BYTE*) managed_profiler_assembly_property.ppbPublicKey;
+            for (auto i = 0; i < managed_profiler_assembly_property.pcbPublicKey; i++)
+            {
+                Logger::Info(" -> ", (int) ppbPublicKey[i]);
+            }
+            Logger::Info("szName: ", managed_profiler_assembly_property.szName);
+
+            Logger::Info("Metadata.cbLocale: ", managed_profiler_assembly_property.pMetaData.cbLocale);
+            Logger::Info("Metadata.szLocale: ", managed_profiler_assembly_property.pMetaData.szLocale);
+
+            if (managed_profiler_assembly_property.pMetaData.rOS != nullptr)
+            {
+                Logger::Info("Metadata.rOS.dwOSMajorVersion: ",
+                             managed_profiler_assembly_property.pMetaData.rOS->dwOSMajorVersion);
+                Logger::Info("Metadata.rOS.dwOSMinorVersion: ",
+                             managed_profiler_assembly_property.pMetaData.rOS->dwOSMinorVersion);
+                Logger::Info("Metadata.rOS.dwOSPlatformId: ",
+                             managed_profiler_assembly_property.pMetaData.rOS->dwOSPlatformId);
+            }
+
+            Logger::Info("Metadata.usBuildNumber: ", managed_profiler_assembly_property.pMetaData.usBuildNumber);
+            Logger::Info("Metadata.usMajorVersion: ", managed_profiler_assembly_property.pMetaData.usMajorVersion);
+            Logger::Info("Metadata.usMinorVersion: ", managed_profiler_assembly_property.pMetaData.usMinorVersion);
+            Logger::Info("Metadata.usRevisionNumber: ", managed_profiler_assembly_property.pMetaData.usRevisionNumber);
+
+            Logger::Info("pulHashAlgId: ", managed_profiler_assembly_property.pulHashAlgId);
+            Logger::Info("sizeof(pulHashAlgId): ", sizeof(managed_profiler_assembly_property.pulHashAlgId));
+            Logger::Info("assemblyFlags: ", managed_profiler_assembly_property.assemblyFlags);
+        }
+
         //
         // *** Import Current Version of assembly
         //
@@ -1338,7 +1361,7 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
             &managed_profiler_assembly_property.pulHashAlgId, sizeof(managed_profiler_assembly_property.pulHashAlgId),
             managed_profiler_assembly_property.assemblyFlags, &managed_profiler_assemblyRef);
 
-        if (managed_profiler_assemblyRef == mdAssemblyRefNil)
+        if (FAILED(hr) || managed_profiler_assemblyRef == mdAssemblyRefNil)
         {
             Logger::Warn("Error Rewriting for Distributed Tracing on getting ManagedProfiler AssemblyRef");
             return hr;
