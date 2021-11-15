@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces()
         {
-            const int expectedSpanCount = 42;
+            const int expectedSpanCount = 21;
             const string dbType = "fake";
             const string expectedOperationName = dbType + ".query";
             const string expectedServiceName = "Samples.FakeDbCommand-" + dbType;
@@ -30,17 +30,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             using var agent = new MockTracerAgent(agentPort);
             using var process = RunSampleAndWaitForExit(agent.Port);
-            var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
+            var spans = agent.WaitForSpans(expectedSpanCount);
 
             Assert.Equal(expectedSpanCount, spans.Count);
 
             foreach (var span in spans)
             {
-                Assert.Equal(expectedOperationName, span.Name);
                 Assert.Equal(expectedServiceName, span.Service);
-                Assert.Equal(SpanTypes.Sql, span.Type);
-                Assert.Equal(dbType, span.Tags[Tags.DbType]);
                 Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
+
+                // we do NOT expect any `fake.query` spans
+                Assert.NotEqual(expectedOperationName, span.Name);
+                Assert.NotEqual(SpanTypes.Sql, span.Type);
+                Assert.NotEqual(dbType, span.Tags?[Tags.DbType]);
             }
         }
     }
