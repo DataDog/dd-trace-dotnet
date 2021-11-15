@@ -561,7 +561,8 @@ namespace Datadog.Trace.Ci
                 serverUrl = "https://github.com";
             }
 
-            Repository = $"{serverUrl}/{EnvironmentHelpers.GetEnvironmentVariable("GITHUB_REPOSITORY")}.git";
+            var rawRepository = $"{serverUrl}/{EnvironmentHelpers.GetEnvironmentVariable("GITHUB_REPOSITORY")}";
+            Repository = $"{rawRepository}.git";
             Commit = EnvironmentHelpers.GetEnvironmentVariable("GITHUB_SHA");
 
             string headRef = EnvironmentHelpers.GetEnvironmentVariable("GITHUB_HEAD_REF");
@@ -583,11 +584,11 @@ namespace Datadog.Trace.Ci
             var attempts = EnvironmentHelpers.GetEnvironmentVariable("GITHUB_RUN_ATTEMPT");
             if (string.IsNullOrWhiteSpace(attempts))
             {
-                PipelineUrl = $"{serverUrl}/{EnvironmentHelpers.GetEnvironmentVariable("GITHUB_REPOSITORY")}/actions/runs/{PipelineId}";
+                PipelineUrl = $"{rawRepository}/actions/runs/{PipelineId}";
             }
             else
             {
-                PipelineUrl = $"{serverUrl}/{EnvironmentHelpers.GetEnvironmentVariable("GITHUB_REPOSITORY")}/actions/runs/{PipelineId}/attempts/{EnvironmentHelpers.GetEnvironmentVariable("GITHUB_RUN_ATTEMPT")}";
+                PipelineUrl = $"{rawRepository}/actions/runs/{PipelineId}/attempts/{attempts}";
             }
 
             JobUrl = $"{serverUrl}/{EnvironmentHelpers.GetEnvironmentVariable("GITHUB_REPOSITORY")}/commit/{Commit}/checks";
