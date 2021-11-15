@@ -1432,6 +1432,29 @@ stages:
         done;
 
         for i in \
+          "net5.0 35-5.0" \
+          "netcoreapp3.1 35-3.1" \
+          "net6.0 34-6.0" \
+          "net5.0 34-5.0" \
+          "netcoreapp3.1 34-3.1" \
+          "net5.0 33-5.0" \
+          "netcoreapp3.1 33-3.1" \
+          "netcoreapp3.1 29-3.1" \
+          "netcoreapp2.1 29-2.1" \
+        ; do fwAndImage=( $i )
+          publishFramework="${fwAndImage[0]}";
+          runtimeImageTag="${fwAndImage[1]}";
+          name="${runtimeImageTag//./_}"
+
+          matrix="${matrix} 'fedora-${name}':"
+          matrix="${matrix} { 'installCmd': 'rpm -Uvh ./datadog-dotnet-apm*-1.x86_64.rpm', "
+          matrix="${matrix} 'dockerTag': '${name}', "
+          matrix="${matrix} 'publishFramework': '${publishFramework}', "
+          matrix="${matrix} 'linuxArtifacts': 'linux-packages-debian', "
+          matrix="${matrix} 'runtimeImage': 'andrewlock/dotnet-fedora:${runtimeImageTag}' },"
+        done;
+
+        for i in \
           "net6.0 6.0-alpine3.14" \
           "net5.0 5.0-alpine3.14" \
           "net5.0 5.0-alpine3.13" \
