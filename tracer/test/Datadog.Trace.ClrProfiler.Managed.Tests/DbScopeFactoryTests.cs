@@ -18,10 +18,15 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
     {
         public static IEnumerable<object[]> GetDbCommands()
         {
-            yield return new object[] { new System.Data.SqlClient.SqlCommand(),    nameof(IntegrationIds.SqlClient), DbType.SqlServer  };
-            yield return new object[] { new Microsoft.Data.SqlClient.SqlCommand(), nameof(IntegrationIds.SqlClient), DbType.SqlServer  };
-            yield return new object[] { new MySql.Data.MySqlClient.MySqlCommand(), nameof(IntegrationIds.MySql),     DbType.MySql      };
-            yield return new object[] { new Npgsql.NpgsqlCommand(),                nameof(IntegrationIds.Npgsql),    DbType.PostgreSql };
+            yield return new object[] { new System.Data.SqlClient.SqlCommand(),              nameof(IntegrationIds.SqlClient), DbType.SqlServer  };
+            yield return new object[] { new Microsoft.Data.SqlClient.SqlCommand(),           nameof(IntegrationIds.SqlClient), DbType.SqlServer  };
+            yield return new object[] { new MySql.Data.MySqlClient.MySqlCommand(),           nameof(IntegrationIds.MySql),     DbType.MySql      };
+            yield return new object[] { new MySqlConnector.MySqlCommand(),                   nameof(IntegrationIds.MySql),     DbType.MySql      };
+            yield return new object[] { new Npgsql.NpgsqlCommand(),                          nameof(IntegrationIds.Npgsql),    DbType.PostgreSql };
+            yield return new object[] { new Microsoft.Data.Sqlite.SqliteCommand(),           nameof(IntegrationIds.Sqlite),    DbType.Sqlite     };
+            yield return new object[] { new System.Data.SQLite.SQLiteCommand(),              nameof(IntegrationIds.Sqlite),    DbType.Sqlite     };
+            yield return new object[] { new Oracle.ManagedDataAccess.Client.OracleCommand(), nameof(IntegrationIds.Oracle),    DbType.Oracle     };
+            yield return new object[] { new Oracle.DataAccess.Client.OracleCommand(),        nameof(IntegrationIds.Oracle),    DbType.Oracle     };
         }
 
         [Theory]
@@ -88,22 +93,22 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         }
 
         [Theory]
-        [InlineData("System.Data.SqlClient.SqlCommand",              true,  IntegrationIds.SqlClient, DbType.SqlServer)]
-        [InlineData("Microsoft.Data.SqlClient.SqlCommand",           true,  IntegrationIds.SqlClient, DbType.SqlServer)]
-        [InlineData("Npgsql.NpgsqlCommand",                          true,  IntegrationIds.Npgsql,    DbType.PostgreSql)]
-        [InlineData("MySql.Data.MySqlClient.MySqlCommand",           true,  IntegrationIds.MySql,     DbType.MySql)]
-        [InlineData("MySqlConnector.MySqlCommand",                   true,  IntegrationIds.MySql,     DbType.MySql)]
-        [InlineData("Oracle.ManagedDataAccess.Client.OracleCommand", true,  IntegrationIds.Oracle,    DbType.Oracle)]
-        [InlineData("Oracle.DataAccess.Client.OracleCommand",        true,  IntegrationIds.Oracle,    DbType.Oracle)]
-        [InlineData("System.Data.SQLite.SQLiteCommand",              true,  IntegrationIds.Sqlite,    DbType.Sqlite)]
-        [InlineData("Microsoft.Data.Sqlite.SqliteCommand",           true,  IntegrationIds.Sqlite,    DbType.Sqlite)]
-        [InlineData("UnknownCommand",                                false, null,                     null)]
-        internal void TryGetIntegrationDetails_CorrectNameGenerated(string commandTypeFullName, bool expectedReturn, IntegrationIds? expectedIntegrationId, string expectedDbType)
+        [MemberData(nameof(GetDbCommands))]
+        internal void TryGetIntegrationDetails_CorrectNameGenerated(IDbCommand command, string expectedIntegrationName, string expectedDbType)
         {
-            bool actualReturn = DbScopeFactory.TryGetIntegrationDetails(commandTypeFullName, out var actualIntegrationId, out var actualDbType);
-            Assert.Equal(expectedReturn, actualReturn);
-            Assert.Equal(expectedIntegrationId, actualIntegrationId);
+            bool result = DbScopeFactory.TryGetIntegrationDetails(command.GetType().FullName, out var actualIntegrationId, out var actualDbType);
+            Assert.True(result);
+            Assert.Equal(expectedIntegrationName, actualIntegrationId.ToString());
             Assert.Equal(expectedDbType, actualDbType);
+        }
+
+        [Fact]
+        internal void TryGetIntegrationDetails_FailsForUnknownCommandType()
+        {
+            bool result = DbScopeFactory.TryGetIntegrationDetails("UnknownCommand", out var actualIntegrationId, out var actualDbType);
+            Assert.False(result);
+            Assert.False(actualIntegrationId.HasValue);
+            Assert.Null(actualDbType);
         }
 
         private static Tracer CreateTracerWithIntegrationEnabled(string integrationName, bool enabled)
