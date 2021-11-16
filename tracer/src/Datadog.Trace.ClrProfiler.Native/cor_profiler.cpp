@@ -224,8 +224,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     //
     managed_profiler_assembly_reference = AssemblyReference::GetFromCache(managed_profiler_full_assembly_version);
 
+    const auto currentModuleFileName = GetCurrentModuleFileName();
+    if (currentModuleFileName == EmptyWStr)
+    {
+        Logger::Error("Profiler filepath: cannot be calculated.");
+        return E_FAIL;
+    }
+
     // we're in!
-    Logger::Info("Profiler FilePath: ", GetCurrentModuleFileName());
+    Logger::Info("Profiler filepath: ", currentModuleFileName);
     Logger::Info("Profiler attached.");
     this->info_->AddRef();
     is_attached_.store(true);
