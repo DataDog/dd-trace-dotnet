@@ -64,7 +64,7 @@ namespace Datadog.Trace
                                      UnknownServiceName;
 
             statsd = settings.TracerMetricsEnabled
-                         ? (statsd ?? CreateDogStatsdClient(settings, defaultServiceName, settings.Exporter.DogStatsdPort))
+                         ? (statsd ?? CreateDogStatsdClient(settings, defaultServiceName))
                          : null;
             sampler ??= GetSampler(settings);
             agentWriter ??= GetAgentWriter(settings, statsd, sampler);
@@ -72,7 +72,7 @@ namespace Datadog.Trace
 
             if (settings.RuntimeMetricsEnabled && !DistributedTracer.Instance.IsChildTracer)
             {
-                runtimeMetrics ??= new RuntimeMetricsWriter(statsd ?? CreateDogStatsdClient(settings, defaultServiceName, settings.Exporter.DogStatsdPort), TimeSpan.FromSeconds(10));
+                runtimeMetrics ??= new RuntimeMetricsWriter(statsd ?? CreateDogStatsdClient(settings, defaultServiceName), TimeSpan.FromSeconds(10));
             }
 
             logSubmissionManager = DirectLogSubmissionManager.Create(
@@ -131,12 +131,12 @@ namespace Datadog.Trace
 
         protected virtual IAgentWriter GetAgentWriter(ImmutableTracerSettings settings, IDogStatsd statsd, ISampler sampler)
         {
-            var apiRequestFactory = TransportStrategy.Get(settings.Exporter);
+            var apiRequestFactory = TracesTransportStrategy.Get(settings.Exporter);
             var api = new Api(settings.Exporter.AgentUri, apiRequestFactory, statsd, rates => sampler.SetDefaultSampleRates(rates), settings.Exporter.PartialFlushEnabled);
             return new AgentWriter(api, statsd, maxBufferSize: settings.TraceBufferSize);
         }
 
-        private static IDogStatsd CreateDogStatsdClient(ImmutableTracerSettings settings, string serviceName, int port)
+        private static IDogStatsd CreateDogStatsdClient(ImmutableTracerSettings settings, string serviceName)
         {
             try
             {
@@ -161,21 +161,29 @@ namespace Datadog.Trace
                 }
 
                 var statsd = new DogStatsdService();
-                if (AzureAppServices.Metadata.IsRelevant)
+                if (settings.Exporter.MetricsTransport == Vendors.StatsdClient.Transport.TransportType.NamedPipe)
                 {
-                    // Environment variables set by the Azure App Service extension are used internally.
+                    // Environment variables set by the Azure App Service extension are used internal to the config api.
                     // Setting the server name will force UDP, when we need named pipes.
                     statsd.Configure(new StatsdConfig
                     {
                         ConstantTags = constantTags.ToArray()
                     });
                 }
-                else
+                else if (settings.Exporter.MetricsTransport == Vendors.StatsdClient.Transport.TransportType.UDS)
+                {
+                    statsd.Configure(new StatsdConfig
+                    {
+                        StatsdServerName = $"{ExporterSettings.UnixDomainSocketPrefix}{settings.Exporter.MetricsUnixDomainSocketPath}",
+                        ConstantTags = constantTags.ToArray()
+                    });
+                }
+                else if (settings.Exporter.MetricsTransport == Vendors.StatsdClient.Transport.TransportType.UDP)
                 {
                     statsd.Configure(new StatsdConfig
                     {
                         StatsdServerName = settings.Exporter.AgentUri.DnsSafeHost,
-                        StatsdPort = port,
+                        StatsdPort = settings.Exporter.DogStatsdPort,
                         ConstantTags = constantTags.ToArray()
                     });
                 }

@@ -4,6 +4,8 @@
 // </copyright>
 
 using System;
+using System.IO;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Vendors.StatsdClient.Transport;
 
 namespace Datadog.Trace.Configuration
@@ -29,6 +31,21 @@ namespace Datadog.Trace.Configuration
         /// The default port value for dogstatsd.
         /// </summary>
         internal const int DefaultDogstatsdPort = 8125;
+
+        /// <summary>
+        /// Prefix for unix domain sockets.
+        /// </summary>
+        internal const string UnixDomainSocketPrefix = "unix://";
+
+        /// <summary>
+        /// Default traces UDS path.
+        /// </summary>
+        internal const string DefaultTracesUnixDomainSocket = "/var/run/datadog/apm.socket";
+
+        /// <summary>
+        /// Default metrics UDS path.
+        /// </summary>
+        internal const string DefaultMetricsUnixDomainSocket = "/var/run/datadog/dsd.socket";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ExporterSettings"/> class with default values.
@@ -92,6 +109,18 @@ namespace Datadog.Trace.Configuration
         public string MetricsPipeName { get; set; }
 
         /// <summary>
+        /// Gets or sets the unix domain socket path where the Tracer can connect to the Agent.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.TracesUnixDomainSocketPath"/>
+        public string TracesUnixDomainSocketPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the unix domain socket path where the Tracer can send stats.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.MetricsUnixDomainSocketPath"/>
+        public string MetricsUnixDomainSocketPath { get; set; }
+
+        /// <summary>
         /// Gets or sets the port where the DogStatsd server is listening for connections.
         /// Default is <c>8125</c>.
         /// </summary>
@@ -133,13 +162,14 @@ namespace Datadog.Trace.Configuration
 
         private void ConfigureMetricsTransport(IConfigurationSource source, bool isWindows)
         {
-            var metricsTransport = TransportType.UDP; // default
+            TransportType? metricsTransport = null;
 
             var dogStatsdPort = source?.GetInt32(ConfigurationKeys.DogStatsdPort);
 
-            // Agent port is set to zero in places like AAS where it's needed to prevent port conflict
-            // The agent will fail to start if it can not bind a port
-            if (dogStatsdPort == 0)
+            // Agent port is set to zero in places like AAS where it's needed to prevent port conflict.
+            // The agent will fail to start if it can not bind a port.
+            // If the dogstatsd port isn't explicitly configured, check for pipes or sockets.
+            if (dogStatsdPort == 0 || dogStatsdPort == null)
             {
                 MetricsPipeName = source?.GetString(ConfigurationKeys.MetricsPipeName);
 
@@ -147,13 +177,30 @@ namespace Datadog.Trace.Configuration
                 {
                     metricsTransport = TransportType.NamedPipe;
                 }
-            }
-            else
-            {
-                DogStatsdPort = dogStatsdPort ?? DefaultDogstatsdPort;
+                else if (!isWindows)
+                {
+                    var metricsUnixDomainSocketPath = source?.GetString(ConfigurationKeys.MetricsUnixDomainSocketPath);
+                    if (metricsUnixDomainSocketPath != null)
+                    {
+                        metricsTransport = TransportType.UDS;
+                        MetricsUnixDomainSocketPath = metricsUnixDomainSocketPath;
+                    }
+                    else if (File.Exists(DefaultMetricsUnixDomainSocket))
+                    {
+                        metricsTransport = TransportType.UDS;
+                        MetricsUnixDomainSocketPath = DefaultMetricsUnixDomainSocket;
+                    }
+                }
             }
 
-            MetricsTransport = metricsTransport;
+            if (metricsTransport == null)
+            {
+                // UDP if nothing explicit was configured or a port is set
+                DogStatsdPort = dogStatsdPort ?? DefaultDogstatsdPort;
+                metricsTransport = TransportType.UDP;
+            }
+
+            MetricsTransport = metricsTransport ?? TransportType.UDP;
         }
 
         private void ConfigureTraceTransport(IConfigurationSource source, bool isWindows)
@@ -173,11 +220,20 @@ namespace Datadog.Trace.Configuration
             // Agent port is set to zero in places like AAS where it's needed to prevent port conflict
             // The agent will fail to start if it can not bind a port
             var hasExplicitTcpConfig = agentPort != 0 && agentHost != null;
+            var isConventionBasedSocket = false;
 
             if (hasExplicitTcpConfig)
             {
                 // If there is any explicit configuration for TCP, prioritize it
-                traceTransport = TracesTransportType.Default;
+                if (agentHost.StartsWith(UnixDomainSocketPrefix))
+                {
+                    isConventionBasedSocket = true;
+                    hasExplicitTcpConfig = false;
+                }
+                else
+                {
+                    hasExplicitTcpConfig = true;
+                }
             }
             else if (isWindows)
             {
@@ -195,6 +251,34 @@ namespace Datadog.Trace.Configuration
 #else
                     ?? 500;
 #endif
+            }
+            else
+            {
+                if (isConventionBasedSocket)
+                {
+                    traceTransport = TracesTransportType.UnixDomainSocket;
+                    TracesUnixDomainSocketPath = agentHost;
+                }
+                else
+                {
+                    // check for explicit UDS config
+                    var traceSocket = source?.GetString(ConfigurationKeys.TracesUnixDomainSocketPath);
+
+                    if (traceSocket != null)
+                    {
+                        traceTransport = TracesTransportType.UnixDomainSocket;
+                        TracesUnixDomainSocketPath = traceSocket;
+                    }
+                    else
+                    {
+                        // check for default file
+                        if (File.Exists(DefaultTracesUnixDomainSocket))
+                        {
+                            traceTransport = TracesTransportType.UnixDomainSocket;
+                            TracesUnixDomainSocketPath = DefaultTracesUnixDomainSocket;
+                        }
+                    }
+                }
             }
 
             // Still build the Uri no matter what the transport as we send it in the http message

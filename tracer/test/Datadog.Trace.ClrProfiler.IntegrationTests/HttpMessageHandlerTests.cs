@@ -12,6 +12,8 @@ using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 
+#if NETCOREAPP
+
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [CollectionDefinition(nameof(HttpMessageHandlerTests), DisableParallelization = true)]
@@ -44,6 +46,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(IntegrationConfig))]
         public void HttpClient_SubmitsTraces(InstrumentationOptions instrumentation, bool enableSocketsHandler)
         {
+            EnvironmentHelper.EnableUnixDomainSockets();
             ConfigureInstrumentation(instrumentation, enableSocketsHandler);
 
             var expectedAsyncCount = CalculateExpectedAsyncSpans(instrumentation);
@@ -220,3 +223,4 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
     }
 }
+#endif

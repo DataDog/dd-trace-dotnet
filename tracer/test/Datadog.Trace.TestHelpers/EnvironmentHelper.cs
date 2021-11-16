@@ -66,6 +66,12 @@ namespace Datadog.Trace.TestHelpers
                           : string.Empty;
         }
 
+        public TestTransports TransportType { get; set; } = TestTransports.Tcp;
+
+        public string TraceAlternateTransportPath { get; private set; }
+
+        public string StatsAlternateTransportPath { get; private set; }
+
         public bool DebugModeEnabled { get; set; }
 
         public Dictionary<string, string> CustomEnvironmentVariables { get; set; } = new Dictionary<string, string>();
@@ -214,11 +220,11 @@ namespace Datadog.Trace.TestHelpers
                 environmentVariables["DD_PROFILER_PROCESSES"] = Path.GetFileName(processToProfile);
             }
 
-            environmentVariables["DD_TRACE_AGENT_HOSTNAME"] = "127.0.0.1";
-            environmentVariables["DD_TRACE_AGENT_PORT"] = agentPort.ToString();
-
             // for ASP.NET Core sample apps, set the server's port
             environmentVariables["ASPNETCORE_URLS"] = $"http://127.0.0.1:{aspNetCorePort}/";
+
+            environmentVariables["DD_TRACE_AGENT_HOSTNAME"] = "127.0.0.1";
+            environmentVariables["DD_TRACE_AGENT_PORT"] = agentPort.ToString();
 
             if (statsdPort != null)
             {
@@ -262,6 +268,19 @@ namespace Datadog.Trace.TestHelpers
             foreach (var key in CustomEnvironmentVariables.Keys)
             {
                 environmentVariables[key] = CustomEnvironmentVariables[key];
+            }
+
+            ClearTcpConfigForExplicitTransports(environmentVariables);
+        }
+
+        public void ClearTcpConfigForExplicitTransports(StringDictionary environmentVariables)
+        {
+            if (TransportType == TestTransports.Uds || TransportType == TestTransports.WindowsNamedPipe)
+            {
+                environmentVariables.Remove("DD_TRACE_AGENT_HOSTNAME");
+                environmentVariables.Remove("DD_TRACE_AGENT_PORT");
+                environmentVariables.Remove("DD_DOGSTATSD_PORT");
+                environmentVariables.Remove("DD_AGENT_HOST");
             }
         }
 
@@ -432,18 +451,49 @@ namespace Datadog.Trace.TestHelpers
             return $"net{_major}{_minor}{_patch ?? string.Empty}";
         }
 
+        public void EnabledWindowsNamedPipes(string tracePipeName = null, string statsPipeName = null)
+        {
+            TraceAlternateTransportPath = tracePipeName ?? Path.GetRandomFileName();
+            StatsAlternateTransportPath = statsPipeName ?? Path.GetRandomFileName();
+            CustomEnvironmentVariables.Add("DD_TRACE_PIPE_NAME", TraceAlternateTransportPath);
+            CustomEnvironmentVariables.Add("DD_DOGSTATSD_PIPE_NAME", StatsAlternateTransportPath);
+            TransportType = TestTransports.WindowsNamedPipe;
+        }
+
+        public void EnableUnixDomainSockets(string traceUdsName = null, string statsUdsName = null)
+        {
+            TraceAlternateTransportPath = traceUdsName ?? Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            StatsAlternateTransportPath = statsUdsName ?? Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            CustomEnvironmentVariables.Add("DD_APM_RECEIVER_SOCKET", TraceAlternateTransportPath);
+            CustomEnvironmentVariables.Add("DD_DOGSTATSD_SOCKET", StatsAlternateTransportPath);
+            TransportType = TestTransports.Uds;
+        }
+
         public MockTracerAgent GetMockAgent(bool useStatsD = false)
         {
-            // Strategy pattern for agent transports goes here
-            var agentPort = TcpPortProvider.GetOpenPort();
-            var agent = new MockTracerAgent(agentPort, useStatsd: useStatsD);
-
-            _output.WriteLine($"Assigned port {agent.Port} for the agentPort.");
-
-            if (useStatsD)
+            MockTracerAgent agent = null;
+#if NETCOREAPP
+            // Decide between transports
+            if (TransportType == TestTransports.Uds)
             {
-                _output.WriteLine($"Assigning port {agent.StatsdPort} for the statsdPort.");
+                agent = new MockTracerAgent(traceUdsName: TraceAlternateTransportPath, statsUdsName: StatsAlternateTransportPath);
             }
+            else if (TransportType == TestTransports.WindowsNamedPipe)
+            {
+                throw new NotImplementedException("Windows named pipe mock tracer agent is not yet implemented.");
+            }
+            else
+            {
+                // Default
+                var agentPort = TcpPortProvider.GetOpenPort();
+                agent = new MockTracerAgent(agentPort, useStatsd: useStatsD);
+            }
+#else
+            var agentPort = TcpPortProvider.GetOpenPort();
+            agent = new MockTracerAgent(agentPort, useStatsd: useStatsD);
+#endif
+
+            _output.WriteLine($"Agent listener info: {agent.ListenerInfo}");
 
             return agent;
         }

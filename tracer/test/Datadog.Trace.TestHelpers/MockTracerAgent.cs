@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -23,13 +24,46 @@ namespace Datadog.Trace.TestHelpers
     {
         private readonly HttpListener _listener;
         private readonly UdpClient _udpClient;
-        private readonly Thread _listenerThread;
+        private readonly Thread _tracesListenerThread;
         private readonly Thread _statsdThread;
         private readonly CancellationTokenSource _cancellationTokenSource;
+
+#if NETCOREAPP
+        private readonly UnixDomainSocketEndPoint _tracesPath;
+        private readonly Socket _udsTracesServer;
+        // private readonly UnixDomainSocketEndPoint _statsEndpoint;
+        // private readonly Socket _udsStatsServer;
+
+        public MockTracerAgent(string traceUdsName, string statsUdsName = null)
+        {
+            _cancellationTokenSource = new CancellationTokenSource();
+
+            ListenerInfo = $"Traces at {traceUdsName}";
+
+            if (statsUdsName != null)
+            {
+                ListenerInfo += $", Stats at {statsUdsName}";
+                // _statsEndpoint = new UnixDomainSocketEndPoint(statsUdsName);
+                // _udsStatsServer = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.IP);
+                // _udsStatsServer.Bind(_statsEndpoint);
+                // _statsdThread = new Thread(HandleUdsStats) { IsBackground = true };
+                // _statsdThread.Start();
+            }
+
+            _tracesPath = new UnixDomainSocketEndPoint(traceUdsName);
+            _udsTracesServer = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.IP);
+            _udsTracesServer.Bind(_tracesPath);
+            _udsTracesServer.Listen(5);
+
+            _tracesListenerThread = new Thread(HandleUdsTraces) { IsBackground = true };
+            _tracesListenerThread.Start();
+        }
+#endif
 
         public MockTracerAgent(int port = 8126, int retries = 5, bool useStatsd = false)
         {
             _cancellationTokenSource = new CancellationTokenSource();
+            var listeners = new List<string>();
 
             if (useStatsd)
             {
@@ -56,6 +90,8 @@ namespace Datadog.Trace.TestHelpers
 
                     break;
                 }
+
+                listeners.Add($"Stats at port {StatsdPort}");
             }
 
             // try up to 5 consecutive ports before giving up
@@ -75,8 +111,9 @@ namespace Datadog.Trace.TestHelpers
                     Port = port;
                     _listener = listener;
 
-                    _listenerThread = new Thread(HandleHttpRequests);
-                    _listenerThread.Start();
+                    listeners.Add($"Traces at port {Port}");
+                    _tracesListenerThread = new Thread(HandleHttpRequests);
+                    _tracesListenerThread.Start();
 
                     return;
                 }
@@ -85,6 +122,10 @@ namespace Datadog.Trace.TestHelpers
                     // only catch the exception if there are retries left
                     port = TcpPortProvider.GetOpenPort();
                     retries--;
+                }
+                finally
+                {
+                    ListenerInfo = string.Join(", ", listeners);
                 }
 
                 // always close listener if exception is thrown,
@@ -97,6 +138,8 @@ namespace Datadog.Trace.TestHelpers
 
         public event EventHandler<EventArgs<IList<IList<MockSpan>>>> RequestDeserialized;
 
+        public string ListenerInfo { get; }
+
         /// <summary>
         /// Gets the TCP port that this Agent is listening on.
         /// Can be different from <see cref="MockTracerAgent(int, int)"/>'s <c>initialPort</c>
@@ -108,6 +151,10 @@ namespace Datadog.Trace.TestHelpers
         /// Gets the UDP port for statsd
         /// </summary>
         public int StatsdPort { get; }
+
+        public string TracesUdsPath { get; }
+
+        public string StatsUdsPath { get; }
 
         /// <summary>
         /// Gets the filters used to filter out spans we don't want to look at for a test.
@@ -194,6 +241,10 @@ namespace Datadog.Trace.TestHelpers
             _listener?.Stop();
             _cancellationTokenSource.Cancel();
             _udpClient?.Close();
+#if NETCOREAPP
+            _udsTracesServer?.Dispose();
+            // _udsStatsServer?.Dispose();
+#endif
         }
 
         protected virtual void OnRequestReceived(HttpListenerContext context)
@@ -242,6 +293,112 @@ namespace Datadog.Trace.TestHelpers
                 }
             }
         }
+
+#if NETCOREAPP
+        private void HandleUdsStats()
+        {
+            while (!_cancellationTokenSource.IsCancellationRequested)
+            {
+                try
+                {
+                    var bytesReceived = default(Span<byte>);
+                    using (var handler = _udsTracesServer.Accept())
+                    {
+                        using (var ns = new NetworkStream(handler))
+                        {
+                            ns.Read(bytesReceived);
+                        }
+                    }
+
+                    StatsdRequests.Enqueue(Encoding.UTF8.GetString(bytesReceived));
+                }
+                catch (Exception) when (_cancellationTokenSource.IsCancellationRequested)
+                {
+                    return;
+                }
+            }
+        }
+
+        private void HandleUdsTraces()
+        {
+            while (!_cancellationTokenSource.IsCancellationRequested)
+            {
+                try
+                {
+                    var bytesReceived = default(Span<byte>);
+                    string request;
+                    using (var handler = _udsTracesServer.Accept())
+                    {
+                        using (var ns = new NetworkStream(handler))
+                        {
+                            var bytes = ns.Read(bytesReceived);
+                            request = Encoding.ASCII.GetString(bytesReceived);
+                            using (var writer = new StreamWriter(ns))
+                            {
+                                var responseBody = Encoding.UTF8.GetBytes("{}");
+                                var contentLength64 = responseBody.LongLength;
+
+                                var response = $"HTTP/1.1 200 OK";
+                                response += Environment.NewLine;
+                                response += $" Date: {DateTime.UtcNow.ToString("ddd, dd MMM yyyy H:mm::ss K")}";
+                                response += Environment.NewLine;
+                                response += $"Connection: Keep-Alive";
+                                response += Environment.NewLine;
+                                response += $"Server: Apache";
+                                response += Environment.NewLine;
+                                response += $"Content-Type: application/json";
+                                response += Environment.NewLine;
+                                response += $"Content-Length: {contentLength64}";
+                                response += Environment.NewLine;
+                                response += Environment.NewLine;
+                                response += Encoding.ASCII.GetString(responseBody);
+
+                                var responseBytes = Encoding.UTF8.GetBytes(response);
+
+                                writer.Write(responseBytes);
+                                writer.Flush();
+                            }
+                        }
+                    }
+
+                    var shouldDeserializeTraces = ShouldDeserializeTraces && !string.IsNullOrEmpty(request);
+                    if (shouldDeserializeTraces)
+                    {
+                        var parts = request.Split($"{Environment.NewLine}{Environment.NewLine}");
+                        var requestHeaderText = parts[0];
+                        var requestHeaders = new NameValueCollection();
+                        foreach (var line in requestHeaderText.Split(Environment.NewLine))
+                        {
+                            var lineParts = line.Split(":");
+                            requestHeaders.Add(lineParts[0].Trim(), lineParts[1].Trim());
+                        }
+
+                        var requestBody = parts[1];
+                        var bodyBytes = Encoding.ASCII.GetBytes(requestBody);
+                        var spans = MessagePackSerializer.Deserialize<IList<IList<Span>>>(bodyBytes);
+                        OnRequestDeserialized(spans);
+
+                        lock (this)
+                        {
+                            // we only need to lock when replacing the span collection,
+                            // not when reading it because it is immutable
+                            Spans = Spans.AddRange(spans.SelectMany(trace => trace));
+                            RequestHeaders = RequestHeaders.Add(requestHeaders);
+                        }
+                    }
+                }
+                catch (ObjectDisposedException)
+                {
+                    // the response has been already disposed.
+                }
+                catch (InvalidOperationException)
+                {
+                    // this can occur when setting Response.ContentLength64, with the framework claiming that the response has already been submitted
+                    // for now ignore, and we'll see if this introduces downstream issues
+                }
+            }
+        }
+#endif
 
         private void HandleHttpRequests()
         {
