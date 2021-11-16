@@ -6,32 +6,22 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-#pragma warning disable SA1600 // Elements should be documented
 #pragma warning disable SA1649 // File name should match first type name
 #pragma warning disable SA1402 // File may only contain a single type
-#pragma warning disable SA1204 // Static elements should appear before instance elements
 
 namespace Datadog.Trace.ClrProfiler
 {
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface IDistributedTracer
+    internal interface IDistributedTracer
     {
         SpanContext GetSpanContext();
 
         void SetSpanContext(SpanContext value);
     }
 
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
     internal interface IAutomaticTracer
     {
         object GetDistributedTrace();
@@ -108,6 +98,9 @@ namespace Datadog.Trace.ClrProfiler
         }
     }
 
+    /// <summary>
+    /// Used to distribute traces across multiple versions of the tracer
+    /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static class DistributedTracer
@@ -125,16 +118,28 @@ namespace Datadog.Trace.ClrProfiler
             }
             else
             {
-                var parentTracer = parent.DuckCast<IAutomaticTracer>();
+                try
+                {
+                    var parentTracer = parent.DuckCast<IAutomaticTracer>();
 
-                Log.Information("Building manual tracer, connected to " + parent.GetType().Assembly.ToString());
+                    Log.Information("Building manual tracer, connected to " + parent.GetType().Assembly.ToString());
 
-                Instance = new ManualTracer(parentTracer);
+                    Instance = new ManualTracer(parentTracer);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error while building the manual tracer, fallbacking to automatic");
+                    Instance = new AutomaticTracer();
+                }
             }
         }
 
         internal static IDistributedTracer Instance { get; }
 
+        /// <summary>
+        /// Get the instance of IDistributedTracer. This method will be rewritten by the profiler.
+        /// </summary>
+        /// <returns>The instance of IDistributedTracer</returns>
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
         public static object GetDistributedTracer() => Instance;
