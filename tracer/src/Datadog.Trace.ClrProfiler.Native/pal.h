@@ -97,6 +97,27 @@ inline int GetPID()
 #endif
 }
 
+inline WSTRING GetCurrentModuleFileName()
+{
+#ifdef _WIN32
+    HMODULE hModule;
+    if (GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCTSTR)GetCurrentModuleFileName,
+                           &hModule))
+    {
+        WCHAR lpFileName[1024];
+        DWORD lpFileNameLength = GetModuleFileNameW(hModule, lpFileName, 1024);
+        if (lpFileNameLength > 0)
+        {
+            return WSTRING(lpFileName, lpFileNameLength);
+        }
+    }
+#elif MACOS
+#else
+#endif
+
+    return EmptyWStr;
+}
+
 } // namespace trace
 
 #endif // DD_CLR_PROFILER_PAL_H_
