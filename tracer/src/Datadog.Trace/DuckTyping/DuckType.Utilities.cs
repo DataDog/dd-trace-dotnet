@@ -127,15 +127,5 @@ namespace Datadog.Trace.DuckTyping
         {
             return UseDirectAccessTo((ModuleBuilder)builder?.Module, targetType);
         }
-
-        /// <summary>
-        /// Gets if the direct access method should be used or the indirect method (dynamic method)
-        /// </summary>
-        /// <param name="targetType">Target type</param>
-        /// <returns>true for direct method; otherwise, false.</returns>
-        private static bool UseDirectAccessTo(Type targetType)
-        {
-            return UseDirectAccessTo((ModuleBuilder)null, targetType);
-        }
     }
 }
