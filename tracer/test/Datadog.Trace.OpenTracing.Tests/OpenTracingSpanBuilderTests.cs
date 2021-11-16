@@ -130,10 +130,10 @@ namespace Datadog.Trace.OpenTracing.Tests
         [Fact]
         public void Start_SettingServiceInParent_ImplicitChildInheritServiceName()
         {
-            IScope root = _tracer.BuildSpan(null)
+            var root = _tracer.BuildSpan(null)
                                  .WithTag(DatadogTags.ServiceName, "MyService")
                                  .StartActive(finishSpanOnDispose: true);
-            IScope child = _tracer.BuildSpan(null)
+            var child = _tracer.BuildSpan(null)
                                   .StartActive(finishSpanOnDispose: true);
 
             Assert.Equal("MyService", ((OpenTracingSpan)root.Span).Span.ServiceName);
@@ -143,10 +143,10 @@ namespace Datadog.Trace.OpenTracing.Tests
         [Fact]
         public void Start_SettingServiceInParent_ExplicitChildInheritServiceName()
         {
-            IScope root = _tracer.BuildSpan(null)
+            var root = _tracer.BuildSpan(null)
                                  .WithTag(DatadogTags.ServiceName, "MyService")
                                  .StartActive(finishSpanOnDispose: true);
-            IScope child = _tracer.BuildSpan(null)
+            var child = _tracer.BuildSpan(null)
                                   .AsChildOf(root.Span)
                                   .StartActive(finishSpanOnDispose: true);
 
@@ -160,7 +160,7 @@ namespace Datadog.Trace.OpenTracing.Tests
             ISpan span1 = _tracer.BuildSpan(null)
                                  .WithTag(DatadogTags.ServiceName, "MyService")
                                  .Start();
-            IScope root = _tracer.BuildSpan(null)
+            var root = _tracer.BuildSpan(null)
                                  .StartActive(finishSpanOnDispose: true);
 
             Assert.Equal("MyService", ((OpenTracingSpan)span1).Span.ServiceName);
