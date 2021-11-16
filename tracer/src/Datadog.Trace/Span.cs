@@ -19,7 +19,7 @@ namespace Datadog.Trace
     /// tracks the duration of an operation as well as associated metadata in
     /// the form of a resource name, a service name, and user defined tags.
     /// </summary>
-    public class Span : IDisposable
+    public class Span : ISpan
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Span>();
         private static readonly bool IsLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
@@ -148,7 +148,7 @@ namespace Datadog.Trace
         /// <param name="key">The tag's key.</param>
         /// <param name="value">The tag's value.</param>
         /// <returns>This span to allow method chaining.</returns>
-        public Span SetTag(string key, string value)
+        public ISpan SetTag(string key, string value)
         {
             if (IsFinished)
             {

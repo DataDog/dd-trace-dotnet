@@ -50,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
             if (scope is not null)
             {
-                KafkaHelper.TryInjectHeaders<TTopicPartition, TMessage>(scope.Span.Context, message);
+                KafkaHelper.TryInjectHeaders<TTopicPartition, TMessage>(scope.InternalSpan.Context, message);
                 return new CallTargetState(scope);
             }
 
@@ -70,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         public static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, CallTargetState state)
         where TResponse : IDeliveryResult
         {
-            if (state.Scope?.Span?.Tags is KafkaTags tags)
+            if (state.Scope?.InternalSpan?.Tags is KafkaTags tags)
             {
                 IDeliveryResult deliveryResult = null;
                 if (exception is not null)

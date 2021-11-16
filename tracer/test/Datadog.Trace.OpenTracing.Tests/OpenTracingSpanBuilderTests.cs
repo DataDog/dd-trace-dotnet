@@ -157,7 +157,7 @@ namespace Datadog.Trace.OpenTracing.Tests
         [Fact]
         public void Start_SettingServiceInParent_NotChildDontInheritServiceName()
         {
-            ISpan span1 = _tracer.BuildSpan(null)
+            var span1 = _tracer.BuildSpan(null)
                                  .WithTag(DatadogTags.ServiceName, "MyService")
                                  .Start();
             var root = _tracer.BuildSpan(null)

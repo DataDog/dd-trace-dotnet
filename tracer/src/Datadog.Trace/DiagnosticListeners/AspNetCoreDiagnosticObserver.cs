@@ -438,7 +438,7 @@ namespace Datadog.Trace.DiagnosticListeners
             // Create a child span for the MVC action
             var mvcSpanTags = new AspNetCoreMvcTags();
             var mvcScope = tracer.StartActiveWithTags(MvcOperationName, parentSpan.Context, tags: mvcSpanTags);
-            var span = mvcScope.Span;
+            var span = mvcScope.InternalSpan;
             span.Type = SpanTypes.Web;
 
             // This is only called with new route names, so parent tags are always AspNetCoreEndpointTags
@@ -562,7 +562,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     // Use an empty resource name here, as we will likely replace it as part of the request
                     // If we don't, update it in OnHostingHttpRequestInStop or OnHostingUnhandledException
-                    span = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, httpContext, httpContext.Request, resourceName: string.Empty).Span;
+                    span = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, httpContext, httpContext.Request, resourceName: string.Empty).InternalSpan;
                 }
 
                 if (shouldSecure)
@@ -582,7 +582,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            Span span = tracer.InternalActiveScope?.Span;
+            Span span = tracer.InternalActiveScope?.InternalSpan;
 
             if (span != null)
             {
@@ -704,7 +704,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            Span parentSpan = tracer.InternalActiveScope?.Span;
+            Span parentSpan = tracer.InternalActiveScope?.InternalSpan;
 
             if (parentSpan != null && arg.TryDuckCast<BeforeActionStruct>(out var typedArg))
             {
@@ -745,7 +745,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             var scope = tracer.InternalActiveScope;
 
-            if (scope is not null && ReferenceEquals(scope.Span.OperationName, MvcOperationName))
+            if (scope is not null && ReferenceEquals(scope.InternalSpan.OperationName, MvcOperationName))
             {
                 scope.Dispose();
             }
@@ -764,7 +764,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (scope != null)
             {
-                var span = scope.Span;
+                var span = scope.InternalSpan;
 
                 // we may need to update the resource name if none of the routing/mvc events updated it
                 // if we had an unhandled exception, the status code is already updated
@@ -797,7 +797,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            var span = tracer.InternalActiveScope?.Span;
+            var span = tracer.InternalActiveScope?.InternalSpan;
 
             if (span != null && arg.TryDuckCast<UnhandledExceptionStruct>(out var unhandledStruct))
             {

@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             {
                 string exchangeDisplayName = string.IsNullOrEmpty(exchange) ? "<default>" : exchange;
                 string routingKeyDisplayName = string.IsNullOrEmpty(routingKey) ? "<all>" : routingKey.StartsWith("amq.gen-") ? "<generated>" : routingKey;
-                scope.Span.ResourceName = $"{Command} {exchangeDisplayName} -> {routingKeyDisplayName}";
+                scope.InternalSpan.ResourceName = $"{Command} {exchangeDisplayName} -> {routingKeyDisplayName}";
 
                 if (tags != null)
                 {
@@ -76,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                         basicProperties.Headers = new Dictionary<string, object>();
                     }
 
-                    SpanContextPropagator.Instance.Inject(scope.Span.Context, basicProperties.Headers, ContextPropagation.HeadersSetter);
+                    SpanContextPropagator.Instance.Inject(scope.InternalSpan.Context, basicProperties.Headers, ContextPropagation.HeadersSetter);
                 }
             }
 

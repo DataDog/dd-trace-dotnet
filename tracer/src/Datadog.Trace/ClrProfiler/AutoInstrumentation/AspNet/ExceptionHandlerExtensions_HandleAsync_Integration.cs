@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             {
                 // Only try setting an exception if there's an active span
                 // The rest of the instrumentation will handle disposing the scope
-                scope.Span.SetException(exception);
+                scope.InternalSpan.SetException(exception);
             }
 
             return CallTargetState.GetDefault();

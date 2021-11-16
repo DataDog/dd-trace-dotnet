@@ -124,7 +124,7 @@ namespace Datadog.Trace.AspNet
                 var tags = new WebTags();
                 scope = tracer.StartActiveWithTags(_requestOperationName, propagatedContext, tags: tags);
                 // Leave resourceName blank for now - we'll update it in OnEndRequest
-                scope.Span.DecorateWebServerSpan(resourceName: null, httpMethod, host, url, tags, tagsFromHeaders);
+                scope.InternalSpan.DecorateWebServerSpan(resourceName: null, httpMethod, host, url, tags, tagsFromHeaders);
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
 
@@ -133,7 +133,7 @@ namespace Datadog.Trace.AspNet
                 // (e.g. WCF being hosted in IIS)
                 if (HttpRuntime.UsingIntegratedPipeline)
                 {
-                    SpanContextPropagator.Instance.Inject(scope.Span.Context, httpRequest.Headers.Wrap());
+                    SpanContextPropagator.Instance.Inject(scope.InternalSpan.Context, httpRequest.Headers.Wrap());
                 }
 
                 httpContext.Items[_httpContextScopeKey] = scope;
@@ -141,7 +141,7 @@ namespace Datadog.Trace.AspNet
                 var security = Security.Instance;
                 if (security.Settings.Enabled)
                 {
-                    security.InstrumentationGateway.RaiseEvent(httpContext, httpRequest, scope.Span, null);
+                    security.InstrumentationGateway.RaiseEvent(httpContext, httpRequest, scope.InternalSpan, null);
                 }
             }
             catch (Exception ex)
@@ -169,17 +169,17 @@ namespace Datadog.Trace.AspNet
                     {
                         AddHeaderTagsFromHttpResponse(app.Context, scope);
 
-                        scope.Span.SetHttpStatusCode(app.Context.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
+                        scope.InternalSpan.SetHttpStatusCode(app.Context.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
 
                         if (app.Context.Items[SharedConstants.HttpContextPropagatedResourceNameKey] is string resourceName
                             && !string.IsNullOrEmpty(resourceName))
                         {
-                            scope.Span.ResourceName = resourceName;
+                            scope.InternalSpan.ResourceName = resourceName;
                         }
                         else
                         {
                             string path = UriHelpers.GetCleanUriPath(app.Request.Url);
-                            scope.Span.ResourceName = $"{app.Request.HttpMethod.ToUpperInvariant()} {path.ToLowerInvariant()}";
+                            scope.InternalSpan.ResourceName = $"{app.Request.HttpMethod.ToUpperInvariant()} {path.ToLowerInvariant()}";
                         }
 
                         scope.Dispose();
@@ -214,7 +214,7 @@ namespace Datadog.Trace.AspNet
 
                     if (exception != null && !is404)
                     {
-                        scope.Span.SetException(exception);
+                        scope.InternalSpan.SetException(exception);
                     }
                 }
             }
@@ -242,7 +242,7 @@ namespace Datadog.Trace.AspNet
             {
                 try
                 {
-                    scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                    scope.InternalSpan.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
                 }
                 catch (PlatformNotSupportedException ex)
                 {

@@ -65,19 +65,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             {
                 if (exception != null)
                 {
-                    scope.Span.SetException(exception);
+                    scope.InternalSpan.SetException(exception);
 
                     // In case of exception, the status code is set further down the ASP.NET pipeline
                     // We use the OnRequestCompleted callback to be notified when that happens.
                     // We don't know how long it'll take for ASP.NET to invoke the callback,
                     // so we store the real finish time.
-                    var now = scope.Span.Context.TraceContext.UtcNow;
+                    var now = scope.InternalSpan.Context.TraceContext.UtcNow;
                     httpContext.AddOnRequestCompleted(h => OnRequestCompleted(h, scope, now));
                 }
                 else
                 {
                     HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, scope);
-                    scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
+                    scope.InternalSpan.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
                     scope.Dispose();
                 }
             }
@@ -88,8 +88,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         private static void OnRequestCompleted(HttpContext httpContext, Scope scope, DateTimeOffset finishTime)
         {
             HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, scope);
-            scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
-            scope.Span.Finish(finishTime);
+            scope.InternalSpan.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
+            scope.InternalSpan.Finish(finishTime);
             scope.Dispose();
         }
     }

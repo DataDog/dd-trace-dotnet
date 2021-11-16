@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
                 return null;
             }
 
-            var parent = tracer.InternalActiveScope?.Span;
+            var parent = tracer.InternalActiveScope?.InternalSpan;
             if (parent != null &&
                 parent.Type == SpanTypes.Redis &&
                 parent.GetTag(Tags.InstrumentationName) != null)
@@ -52,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
                     command = rawCommand;
                 }
 
-                var span = scope.Span;
+                var span = scope.InternalSpan;
                 span.Type = SpanTypes.Redis;
                 span.ResourceName = command;
                 tags.RawCommand = rawCommand;

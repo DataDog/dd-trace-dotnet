@@ -67,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
 
                 var tracer = Tracer.Instance;
 
-                var parent = tracer.InternalActiveScope?.Span;
+                var parent = tracer.InternalActiveScope?.InternalSpan;
 
                 if (parent != null &&
                     parent.Type == SpanTypes.Sql &&
@@ -98,7 +98,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
                 var serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
                 var scope = tracer.StartActiveWithTags(OperationName, tags: tags, serviceName: serviceName);
 
-                var span = scope.Span;
+                var span = scope.InternalSpan;
 
                 span.ResourceName = query;
                 span.Type = SpanTypes.Sql;

@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
             }
 
             var scope = Tracer.Instance.InternalActiveScope;
-            if (scope?.Span.Tags is AwsSdkTags tags)
+            if (scope?.InternalSpan.Tags is AwsSdkTags tags)
             {
                 tags.Region = executionContext.RequestContext.ClientConfig.RegionEndpoint?.SystemName;
             }
@@ -66,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
         public static CallTargetReturn<TResponseContext> OnMethodEnd<TTarget, TResponseContext>(TTarget instance, TResponseContext responseContext, Exception exception, CallTargetState state)
             where TResponseContext : IResponseContext
         {
-            if (state.Scope?.Span.Tags is AwsSdkTags tags)
+            if (state.Scope?.InternalSpan.Tags is AwsSdkTags tags)
             {
                 if (state.State is IExecutionContext executionContext)
                 {
@@ -76,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
                 }
 
                 tags.RequestId = responseContext.Response.ResponseMetadata.RequestId;
-                state.Scope.Span.SetHttpStatusCode((int)responseContext.Response.HttpStatusCode, false, Tracer.Instance.Settings);
+                state.Scope.InternalSpan.SetHttpStatusCode((int)responseContext.Response.HttpStatusCode, false, Tracer.Instance.Settings);
             }
 
             // Do not dispose the scope (if present) when exiting.

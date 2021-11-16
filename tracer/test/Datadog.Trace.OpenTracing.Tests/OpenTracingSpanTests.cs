@@ -30,7 +30,7 @@ namespace Datadog.Trace.OpenTracing.Tests
         [Fact]
         public void SetTag_Tags_TagsAreProperlySet()
         {
-            ISpan span = GetScope("Op1").Span;
+            var span = GetScope("Op1").Span;
 
             span.SetTag("StringKey", "What's tracing");
             span.SetTag("IntKey", 42);
@@ -47,7 +47,7 @@ namespace Datadog.Trace.OpenTracing.Tests
         [Fact]
         public void SetTag_SpecialTags_ServiceNameSetsService()
         {
-            ISpan span = GetScope("Op1").Span;
+            var span = GetScope("Op1").Span;
             const string value = "value";
 
             span.SetTag(DatadogTags.ServiceName, value);
@@ -59,7 +59,7 @@ namespace Datadog.Trace.OpenTracing.Tests
         [Fact]
         public void SetTag_SpecialTags_ServiceVersionSetsVersion()
         {
-            ISpan span = GetScope("Op1").Span;
+            var span = GetScope("Op1").Span;
             const string value = "value";
 
             span.SetTag(DatadogTags.ServiceVersion, value);
@@ -72,7 +72,7 @@ namespace Datadog.Trace.OpenTracing.Tests
         [Fact]
         public void SetOperationName_ValidOperationName_OperationNameIsProperlySet()
         {
-            ISpan span = GetScope("Op0").Span;
+            var span = GetScope("Op0").Span;
 
             span.SetOperationName("Op1");
 
@@ -85,7 +85,7 @@ namespace Datadog.Trace.OpenTracing.Tests
             TimeSpan expectedDuration = TimeSpan.FromMinutes(1);
             var startTime = DateTimeOffset.UtcNow - expectedDuration;
 
-            ISpan span = GetScope("Op1", startTime).Span;
+            var span = GetScope("Op1", startTime).Span;
             span.Finish();
 
             double durationDifference = Math.Abs((((OpenTracingSpan)span).Duration - expectedDuration).TotalMilliseconds);
@@ -111,7 +111,7 @@ namespace Datadog.Trace.OpenTracing.Tests
             var startTime = DateTimeOffset.UtcNow;
             var endTime = startTime.AddMilliseconds(10);
 
-            ISpan span = GetScope("Op1", startTime).Span;
+            var span = GetScope("Op1", startTime).Span;
             span.Finish(endTime);
 
             Assert.Equal(endTime - startTime, ((OpenTracingSpan)span).Duration);
@@ -123,7 +123,7 @@ namespace Datadog.Trace.OpenTracing.Tests
             var startTime = DateTimeOffset.UtcNow;
             var endTime = startTime.AddMilliseconds(-10);
 
-            ISpan span = GetScope("Op1", startTime).Span;
+            var span = GetScope("Op1", startTime).Span;
             span.Finish(endTime);
 
             Assert.Equal(TimeSpan.Zero, ((OpenTracingSpan)span).Duration);
@@ -145,7 +145,7 @@ namespace Datadog.Trace.OpenTracing.Tests
         [Fact]
         public void Context_TwoCalls_ContextStaysEqual()
         {
-            ISpan span;
+            global::OpenTracing.ISpan span;
             global::OpenTracing.ISpanContext firstContext;
 
             using (var scope = GetScope("Op1"))

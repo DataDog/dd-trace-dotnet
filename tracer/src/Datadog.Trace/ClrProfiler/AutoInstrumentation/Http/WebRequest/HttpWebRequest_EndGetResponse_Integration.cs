@@ -77,13 +77,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                     {
                         if (setSamplingPriority)
                         {
-                            scope.Span.SetTraceSamplingPriority(existingSpanContext.SamplingPriority.Value);
-                            scope.Span.Context.TraceContext.LockSamplingPriority();
+                            scope.InternalSpan.SetTraceSamplingPriority(existingSpanContext.SamplingPriority.Value);
+                            scope.InternalSpan.Context.TraceContext.LockSamplingPriority();
                         }
 
                         if (returnValue is HttpWebResponse response)
                         {
-                            scope.Span.SetHttpStatusCode((int)response.StatusCode, false, Tracer.Instance.Settings);
+                            scope.InternalSpan.SetHttpStatusCode((int)response.StatusCode, false, Tracer.Instance.Settings);
                         }
 
                         scope.DisposeWithException(exception);

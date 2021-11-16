@@ -161,7 +161,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
                     var tags = new AspNetTags();
                     scope = Tracer.Instance.StartActiveWithTags(OperationName, propagatedContext, tags: tags);
-                    span = scope.Span;
+                    span = scope.InternalSpan;
 
                     span.DecorateWebServerSpan(
                         resourceName: resourceName,
