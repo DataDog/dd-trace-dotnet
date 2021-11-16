@@ -134,7 +134,7 @@ namespace Datadog.Trace.OpenTracing.Tests
         {
             OpenTracingSpan span;
 
-            using (IScope scope = GetScope("Op1"))
+            using (var scope = GetScope("Op1"))
             {
                 span = (OpenTracingSpan)scope.Span;
             }
@@ -148,7 +148,7 @@ namespace Datadog.Trace.OpenTracing.Tests
             ISpan span;
             global::OpenTracing.ISpanContext firstContext;
 
-            using (IScope scope = GetScope("Op1"))
+            using (var scope = GetScope("Op1"))
             {
                 span = scope.Span;
                 firstContext = span.Context;
@@ -159,7 +159,7 @@ namespace Datadog.Trace.OpenTracing.Tests
             Assert.Same(firstContext, secondContext);
         }
 
-        private IScope GetScope(string operationName, DateTimeOffset? startTime = null)
+        private global::OpenTracing.IScope GetScope(string operationName, DateTimeOffset? startTime = null)
         {
             ISpanBuilder spanBuilder = new OpenTracingSpanBuilder(_tracer, operationName);
 

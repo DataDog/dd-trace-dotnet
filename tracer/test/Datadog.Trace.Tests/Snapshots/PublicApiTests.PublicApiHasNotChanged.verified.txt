@@ -243,6 +243,11 @@ namespace Datadog.Trace
         public const string TraceId = "x-datadog-trace-id";
         public const string TracingEnabled = "x-datadog-tracing-enabled";
     }
+    public interface IScope : System.IDisposable
+    {
+        Datadog.Trace.Span Span { get; }
+        void Close();
+    }
     public interface ISpanContext
     {
         string ServiceName { get; }
@@ -256,7 +261,7 @@ namespace Datadog.Trace
         AutoKeep = 1,
         UserKeep = 2,
     }
-    public class Scope : System.IDisposable
+    public class Scope : Datadog.Trace.IScope, System.IDisposable
     {
         public Datadog.Trace.Span Span { get; }
         public void Close() { }
@@ -342,7 +347,7 @@ namespace Datadog.Trace
         public Tracer() { }
         [System.Obsolete(@"This API is deprecated, as it replaces the global settings for all Tracer instances in the application. If you were using this API to configure the global Tracer.Instance in code, use the static Tracer.Configure() to replace the global Tracer settings for the application")]
         public Tracer(Datadog.Trace.Configuration.TracerSettings settings) { }
-        public Datadog.Trace.Scope ActiveScope { get; }
+        public Datadog.Trace.IScope ActiveScope { get; }
         public string DefaultServiceName { get; }
         public Datadog.Trace.Configuration.ImmutableTracerSettings Settings { get; }
         [set: System.Obsolete("Use Tracer.Configure to configure the global Tracer instance in code.")]

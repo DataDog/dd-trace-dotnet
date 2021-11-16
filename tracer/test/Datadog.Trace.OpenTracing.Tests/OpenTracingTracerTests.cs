@@ -45,10 +45,10 @@ namespace Datadog.Trace.OpenTracing.Tests
         [Fact]
         public void BuildSpan_OneChild_ChildParentProperlySet()
         {
-            IScope root = _tracer
+            var root = _tracer
                          .BuildSpan("Root")
                          .StartActive(finishSpanOnDispose: true);
-            IScope child = _tracer
+            var child = _tracer
                           .BuildSpan("Child")
                           .StartActive(finishSpanOnDispose: true);
 
@@ -62,17 +62,17 @@ namespace Datadog.Trace.OpenTracing.Tests
         [Fact]
         public void BuildSpan_2ChildrenOfRoot_ChildrenParentProperlySet()
         {
-            IScope root = _tracer
+            var root = _tracer
                          .BuildSpan("Root")
                          .StartActive(finishSpanOnDispose: true);
 
-            IScope child1 = _tracer
+            var child1 = _tracer
                            .BuildSpan("Child1")
                            .StartActive(finishSpanOnDispose: true);
 
             child1.Dispose();
 
-            IScope child2 = _tracer
+            var child2 = _tracer
                            .BuildSpan("Child2")
                            .StartActive(finishSpanOnDispose: true);
 
@@ -89,13 +89,13 @@ namespace Datadog.Trace.OpenTracing.Tests
         [Fact]
         public void BuildSpan_2LevelChildren_ChildrenParentProperlySet()
         {
-            IScope root = _tracer
+            var root = _tracer
                          .BuildSpan("Root")
                          .StartActive(finishSpanOnDispose: true);
-            IScope child1 = _tracer
+            var child1 = _tracer
                            .BuildSpan("Child1")
                            .StartActive(finishSpanOnDispose: true);
-            IScope child2 = _tracer
+            var child2 = _tracer
                            .BuildSpan("Child2")
                            .StartActive(finishSpanOnDispose: true);
 
@@ -114,7 +114,7 @@ namespace Datadog.Trace.OpenTracing.Tests
         {
             var tcs = new TaskCompletionSource<bool>();
 
-            IScope root = _tracer
+            var root = _tracer
                          .BuildSpan("Root")
                          .StartActive(finishSpanOnDispose: true);
 

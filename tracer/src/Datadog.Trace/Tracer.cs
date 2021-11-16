@@ -149,7 +149,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the active scope
         /// </summary>
-        public Scope ActiveScope => InternalActiveScope;
+        public IScope ActiveScope => InternalActiveScope;
 
         /// <summary>
         /// Gets the active scope

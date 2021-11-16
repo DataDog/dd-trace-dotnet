@@ -90,12 +90,12 @@ namespace Datadog.Trace.OpenTracing
             }
         }
 
-        public IScope StartActive()
+        public global::OpenTracing.IScope StartActive()
         {
             return StartActive(finishSpanOnDispose: true);
         }
 
-        public IScope StartActive(bool finishSpanOnDispose)
+        public global::OpenTracing.IScope StartActive(bool finishSpanOnDispose)
         {
             var span = Start();
             return _tracer.ScopeManager.Activate(span, finishSpanOnDispose);
