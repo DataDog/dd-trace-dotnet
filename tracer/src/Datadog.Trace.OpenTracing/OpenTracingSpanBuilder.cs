@@ -46,7 +46,7 @@ namespace Datadog.Trace.OpenTracing
             return this;
         }
 
-        public ISpanBuilder AsChildOf(ISpan parent)
+        public ISpanBuilder AsChildOf(global::OpenTracing.ISpan parent)
         {
             lock (_lock)
             {
@@ -70,7 +70,7 @@ namespace Datadog.Trace.OpenTracing
             return this;
         }
 
-        public ISpan Start()
+        public global::OpenTracing.ISpan Start()
         {
             lock (_lock)
             {

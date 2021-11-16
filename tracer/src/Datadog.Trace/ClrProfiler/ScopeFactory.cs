@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler
         {
             var scope = tracer.InternalActiveScope;
 
-            var parent = scope?.Span;
+            var parent = scope?.InternalSpan;
 
             if (parent != null &&
                 parent.Type == SpanTypes.Http &&

@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     return null;
                 }
 
-                var parent = tracer.InternalActiveScope?.Span;
+                var parent = tracer.InternalActiveScope?.InternalSpan;
                 if (parent is not null &&
                     parent.OperationName == KafkaConstants.ProduceOperationName &&
                     parent.GetTag(Tags.InstrumentationName) != null)
@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 string resourceName = $"Produce Topic {(string.IsNullOrEmpty(topicPartition?.Topic) ? "kafka" : topicPartition?.Topic)}";
 
-                var span = scope.Span;
+                var span = scope.InternalSpan;
                 span.Type = SpanTypes.Queue;
                 span.ResourceName = resourceName;
                 if (topicPartition?.Partition is not null && !topicPartition.Partition.IsSpecial)
@@ -89,7 +89,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     return null;
                 }
 
-                var parent = tracer.InternalActiveScope?.Span;
+                var parent = tracer.InternalActiveScope?.InternalSpan;
                 if (parent is not null &&
                     parent.OperationName == KafkaConstants.ConsumeOperationName &&
                     parent.GetTag(Tags.InstrumentationName) != null)
@@ -121,7 +121,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 string resourceName = $"Consume Topic {(string.IsNullOrEmpty(topic) ? "kafka" : topic)}";
 
-                var span = scope.Span;
+                var span = scope.InternalSpan;
                 span.Type = SpanTypes.Queue;
                 span.ResourceName = resourceName;
 
@@ -172,7 +172,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 }
 
                 var activeScope = tracer.InternalActiveScope;
-                var currentSpan = activeScope?.Span;
+                var currentSpan = activeScope?.InternalSpan;
                 if (currentSpan?.OperationName != KafkaConstants.ConsumeOperationName)
                 {
                     // Not currently in a consumer operation

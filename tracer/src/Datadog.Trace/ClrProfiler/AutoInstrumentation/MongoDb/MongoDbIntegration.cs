@@ -127,7 +127,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
             {
                 var tags = new MongoDbTags();
                 scope = tracer.StartActiveWithTags(OperationName, serviceName: serviceName, tags: tags);
-                var span = scope.Span;
+                var span = scope.InternalSpan;
                 span.Type = SpanTypes.MongoDb;
                 span.ResourceName = resourceName;
                 tags.DbName = databaseName;
@@ -150,7 +150,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
         {
             var scope = tracer.InternalActiveScope;
 
-            var parent = scope?.Span;
+            var parent = scope?.InternalSpan;
 
             if (parent != null &&
                 parent.Type == SpanTypes.MongoDb &&

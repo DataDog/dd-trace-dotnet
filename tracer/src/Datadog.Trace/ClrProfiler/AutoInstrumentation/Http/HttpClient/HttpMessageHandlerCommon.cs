@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                     tags.HttpClientHandlerType = instance.GetType().FullName;
 
                     // add distributed tracing headers to the HTTP request
-                    SpanContextPropagator.Instance.Inject(scope.Span.Context, new HttpHeadersCollection(requestMessage.Headers));
+                    SpanContextPropagator.Instance.Inject(scope.InternalSpan.Context, new HttpHeadersCollection(requestMessage.Headers));
 
                     return new CallTargetState(scope);
                 }
@@ -49,12 +49,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
             {
                 if (responseMessage.Instance is not null)
                 {
-                    scope.Span.SetHttpStatusCode(responseMessage.StatusCode, false, Tracer.Instance.Settings);
+                    scope.InternalSpan.SetHttpStatusCode(responseMessage.StatusCode, false, Tracer.Instance.Settings);
                 }
 
                 if (exception != null)
                 {
-                    scope.Span.SetException(exception);
+                    scope.InternalSpan.SetException(exception);
                 }
             }
             finally

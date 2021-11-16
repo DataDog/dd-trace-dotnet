@@ -179,7 +179,7 @@ namespace Datadog.Trace.Tests
             using (scope)
             {
                 scope.Span.SpanId.Should().NotBe(0);
-                scope.Span.RootSpanId.Should().Be(scope.Span.SpanId);
+                scope.InternalSpan.RootSpanId.Should().Be(scope.Span.SpanId);
             }
         }
 
@@ -207,7 +207,7 @@ namespace Datadog.Trace.Tests
             {
                 scope.Span.SpanId.Should().NotBe(0);
                 scope.Span.SpanId.Should().NotBe(remoteParentSpanId);           // There is an expected 1 in 2^64 chance of this line failing
-                scope.Span.RootSpanId.Should().Be(scope.Span.SpanId);
+                scope.InternalSpan.RootSpanId.Should().Be(scope.Span.SpanId);
             }
         }
 
@@ -246,9 +246,9 @@ namespace Datadog.Trace.Tests
                 scope2.Span.SpanId.Should().NotBe(0);
                 scope3.Span.SpanId.Should().NotBe(0);
 
-                scope1.Span.RootSpanId.Should().Be(scope1.Span.SpanId);
-                scope2.Span.RootSpanId.Should().Be(scope1.Span.SpanId);
-                scope3.Span.RootSpanId.Should().Be(scope1.Span.SpanId);
+                scope1.InternalSpan.RootSpanId.Should().Be(scope1.Span.SpanId);
+                scope2.InternalSpan.RootSpanId.Should().Be(scope1.Span.SpanId);
+                scope3.InternalSpan.RootSpanId.Should().Be(scope1.Span.SpanId);
             }
         }
 
@@ -273,14 +273,14 @@ namespace Datadog.Trace.Tests
                 scope3.Span.SpanId.Should().NotBe(remoteParentSpanId);          // There is an expected 1 in 2^64 chance of this line failing
                 span4.SpanId.Should().NotBe(remoteParentSpanId);                // There is an expected 1 in 2^64 chance of this line failing
 
-                scope1.Span.Context.ParentId.Should().Be(remoteParentSpanId);   // Parent (not root) of S1 is remote
+                scope1.InternalSpan.Context.ParentId.Should().Be(remoteParentSpanId);   // Parent (not root) of S1 is remote
                 span2.Context.ParentId.Should().Be(scope1.Span.SpanId);         // Parent of S2 is S1: it was created in an active S1-scope
-                scope3.Span.Context.ParentId.Should().Be(scope1.Span.SpanId);   // Parent of S3 is also S1: it was created in an active S1 scope, S2 is not a scope
+                scope3.InternalSpan.Context.ParentId.Should().Be(scope1.Span.SpanId);   // Parent of S3 is also S1: it was created in an active S1 scope, S2 is not a scope
                 span4.Context.ParentId.Should().Be(scope3.Span.SpanId);         // Parent of S4 is S3: it was created in an active S3-scope
 
-                scope1.Span.RootSpanId.Should().Be(scope1.Span.SpanId);
+                scope1.InternalSpan.RootSpanId.Should().Be(scope1.Span.SpanId);
                 span2.RootSpanId.Should().Be(scope1.Span.SpanId);
-                scope3.Span.RootSpanId.Should().Be(scope1.Span.SpanId);
+                scope3.InternalSpan.RootSpanId.Should().Be(scope1.Span.SpanId);
                 span4.RootSpanId.Should().Be(scope1.Span.SpanId);
             }
         }

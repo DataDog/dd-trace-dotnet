@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 // The OnMethodBegin and OnMethodEnd of this integration happens between KafkaProduceSyncIntegration.OnMethodBegin
                 // and KafkaProduceSyncIntegration.OnMethodEnd, so the consumer span is active for the duration of this integration
                 var activeScope = Tracer.Instance?.InternalActiveScope;
-                var span = activeScope?.Span;
+                var span = activeScope?.InternalSpan;
                 if (span is null)
                 {
                     Logger.Warning("Unexpected null span for Kafka Producer with delivery handler");
@@ -102,7 +102,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     Logger.Error(ex, "There was an error updating the delivery report handler to ");
                     // Not ideal to close the span here immediately, but as we can't trace the result,
                     // we don't really have a choice
-                    state.Scope?.Span.Finish();
+                    state.Scope?.InternalSpan.Finish();
                 }
             }
 

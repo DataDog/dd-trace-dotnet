@@ -64,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         public static CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, CallTargetState state)
             where TResponse : ICreateQueueResponse
         {
-            if (state.Scope?.Span.Tags is AwsSqsTags tags)
+            if (state.Scope?.InternalSpan.Tags is AwsSqsTags tags)
             {
                 tags.QueueUrl = response.QueueUrl;
             }

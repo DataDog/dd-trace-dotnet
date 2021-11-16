@@ -63,12 +63,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                                 {
                                     var testResult = item2.DuckCast<IWorkItem>().Result;
                                     Scope scope = NUnitIntegration.CreateScope(testResult.Test, typeof(TTarget));
-                                    scope.Span.Error = true;
-                                    scope.Span.SetTag(Tags.ErrorMsg, compositeWorkItem.Result.Message);
-                                    scope.Span.SetTag(Tags.ErrorStack, compositeWorkItem.Result.StackTrace);
-                                    scope.Span.SetTag(Tags.ErrorType, "SetUpException");
-                                    scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
-                                    scope.Span.Finish(new TimeSpan(10));
+                                    scope.InternalSpan.Error = true;
+                                    scope.InternalSpan.SetTag(Tags.ErrorMsg, compositeWorkItem.Result.Message);
+                                    scope.InternalSpan.SetTag(Tags.ErrorStack, compositeWorkItem.Result.StackTrace);
+                                    scope.InternalSpan.SetTag(Tags.ErrorType, "SetUpException");
+                                    scope.InternalSpan.SetTag(TestTags.Status, TestTags.StatusFail);
+                                    scope.InternalSpan.Finish(new TimeSpan(10));
                                     scope.Dispose();
 
                                     // we need to track all items that we tagged as error due this method uses recursion on child spans.
@@ -79,12 +79,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                             {
                                 var testResult = item.DuckCast<IWorkItem>().Result;
                                 Scope scope = NUnitIntegration.CreateScope(testResult.Test, typeof(TTarget));
-                                scope.Span.Error = true;
-                                scope.Span.SetTag(Tags.ErrorMsg, compositeWorkItem.Result.Message);
-                                scope.Span.SetTag(Tags.ErrorStack, compositeWorkItem.Result.StackTrace);
-                                scope.Span.SetTag(Tags.ErrorType, "SetUpException");
-                                scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
-                                scope.Span.Finish(new TimeSpan(10));
+                                scope.InternalSpan.Error = true;
+                                scope.InternalSpan.SetTag(Tags.ErrorMsg, compositeWorkItem.Result.Message);
+                                scope.InternalSpan.SetTag(Tags.ErrorStack, compositeWorkItem.Result.StackTrace);
+                                scope.InternalSpan.SetTag(Tags.ErrorType, "SetUpException");
+                                scope.InternalSpan.SetTag(TestTags.Status, TestTags.StatusFail);
+                                scope.InternalSpan.Finish(new TimeSpan(10));
                                 scope.Dispose();
 
                                 // we need to track all items that we tagged as error due this method uses recursion on child spans.
