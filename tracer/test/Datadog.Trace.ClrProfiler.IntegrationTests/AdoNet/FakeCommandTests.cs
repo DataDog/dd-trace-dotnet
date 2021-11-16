@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             const int expectedSpanCount = 21;
             const string dbType = "fake";
             const string expectedOperationName = dbType + ".query";
-            const string expectedServiceName = "Samples.FakeDbCommand-" + dbType;
+            const string expectedServiceName = "Samples.FakeDbCommand";
 
             int agentPort = TcpPortProvider.GetOpenPort();
 
@@ -37,12 +37,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             foreach (var span in spans)
             {
                 Assert.Equal(expectedServiceName, span.Service);
-                Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
 
                 // we do NOT expect any `fake.query` spans
                 Assert.NotEqual(expectedOperationName, span.Name);
                 Assert.NotEqual(SpanTypes.Sql, span.Type);
-                Assert.NotEqual(dbType, span.Tags?[Tags.DbType]);
+                Assert.False(span.Tags?.ContainsKey(Tags.DbType));
             }
         }
     }
