@@ -109,7 +109,8 @@ inline WSTRING GetCurrentModuleFileName()
 
 #ifdef _WIN32
     HMODULE hModule;
-    if (GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCTSTR)GetCurrentModuleFileName,
+    if (GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT | GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
+                           (LPCTSTR) GetCurrentModuleFileName,
                            &hModule))
     {
         WCHAR lpFileName[1024];
