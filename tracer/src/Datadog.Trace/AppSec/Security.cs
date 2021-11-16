@@ -176,7 +176,7 @@ namespace Datadog.Trace.AppSec
                 var managedWafResult = Waf.ReturnTypes.Managed.Return.From(wafResult);
                 if (_settings.BlockingEnabled && wafResult.ReturnCode == ReturnCode.Block)
                 {
-                    transport.Block();
+                    // no blocking currently
 #if !NETFRAMEWORK
                     var guid = Guid.NewGuid();
                     toExecute.TryAdd(guid, () => Report(transport, span, managedWafResult));
