@@ -49,18 +49,6 @@ namespace Datadog.Trace.AppSec.Transport.Http
             Blocked = blocked
         };
 
-        public void Block()
-        {
-            if (context.Items.ContainsKey(SecurityConstants.InHttpPipeKey) && context.Items[SecurityConstants.InHttpPipeKey] is bool inHttpPipe && inHttpPipe)
-            {
-                throw new BlockActionException();
-            }
-            else
-            {
-                context.Items[SecurityConstants.KillKey] = true;
-            }
-        }
-
         public IContext GetAdditiveContext()
         {
             return context.Features.Get<IContext>();
