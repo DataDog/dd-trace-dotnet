@@ -11,6 +11,7 @@
 
 #include <fstream>
 #include <unistd.h>
+#include <dlfcn.h>
 
 #endif
 
@@ -111,8 +112,13 @@ inline WSTRING GetCurrentModuleFileName()
             return WSTRING(lpFileName, lpFileNameLength);
         }
     }
-#elif MACOS
+// #elif MACOS
 #else
+    Dl_info info;
+    if (dladdr((void*)GetCurrentModuleFileName, &info))
+    {
+        return ToWSTRING(ToString(info.dli_fname));
+    }
 #endif
 
     return EmptyWStr;
