@@ -1125,6 +1125,7 @@ partial class Build
                         "Samples.AspNetCoreMvc21" => Framework == TargetFramework.NETCOREAPP2_1,
                         "Samples.AspNetCoreMvc30" => Framework == TargetFramework.NETCOREAPP3_0,
                         "Samples.AspNetCoreMvc31" => Framework == TargetFramework.NETCOREAPP3_1,
+                        "Samples.AspNetCoreMinimalApis" => Framework == TargetFramework.NET6_0,
                         "Samples.AspNetCore2" => Framework == TargetFramework.NETCOREAPP2_1,
                         "Samples.AspNetCore5" => Framework == TargetFramework.NET6_0 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NETCOREAPP3_0,
                         "Samples.GraphQL4" => Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NET6_0,

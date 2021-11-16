@@ -5,10 +5,12 @@
 
 #if !NETFRAMEWORK
 using System;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 
 #pragma warning disable SA1402 // File may only contain a single class
@@ -88,6 +90,38 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             return app;
         }
 
+        public static void AddErrorHandlerInline(IApplicationBuilder app, string path)
+        {
+            if (path.StartsWith(CustomHandlerPrefix))
+            {
+                app.UsePathBase(CustomHandlerPrefix);
+                app.UseExceptionHandler(new ExceptionHandlerOptions { ExceptionHandler = CustomHandler });
+            }
+            else if (path.StartsWith(ReExecuteHandlerPrefix))
+            {
+                app.UsePathBase(ReExecuteHandlerPrefix);
+                app.UseExceptionHandler("/");
+            }
+            else if (path.StartsWith(StatusCodeReExecutePrefix))
+            {
+                app.UsePathBase(StatusCodeReExecutePrefix);
+                app.UseStatusCodePagesWithReExecute("/");
+            }
+            else if (path.StartsWith(ExceptionPagePrefix))
+            {
+                app.UsePathBase(ExceptionPagePrefix);
+                // developer exception page added by default in .NET 6
+            }
+        }
+
+        public static PathBaseCorrectorStartupFilter GetStartupFilter(string path)
+        {
+            return new[] { CustomHandlerPrefix, ReExecuteHandlerPrefix, StatusCodeReExecutePrefix, ExceptionPagePrefix }
+                  .Where(x => path.StartsWith(x))
+                  .Select(x => new PathBaseCorrectorStartupFilter(x))
+                  .FirstOrDefault();
+        }
+
         private static IApplicationBuilder Apply(
             this IApplicationBuilder app,
             Action<IApplicationBuilder> configure)
@@ -107,6 +141,25 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
             context.Response.StatusCode = 500;
             await context.Response.WriteAsync("An error occured in the app");
+        }
+
+        public class PathBaseCorrectorStartupFilter : IStartupFilter
+        {
+            private readonly string _pathBase;
+
+            public PathBaseCorrectorStartupFilter(string pathBase)
+            {
+                _pathBase = pathBase;
+            }
+
+            public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next)
+            {
+                return app =>
+                {
+                    app.UsePathBase(_pathBase);
+                    next(app);
+                };
+            }
         }
     }
 }
