@@ -225,7 +225,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     managed_profiler_assembly_reference = AssemblyReference::GetFromCache(managed_profiler_full_assembly_version);
 
     // we're in!
-    Logger::Info("Module FileName: ", GetCurrentModuleFileName());
+    Logger::Info("Profiler FilePath: ", GetCurrentModuleFileName());
     Logger::Info("Profiler attached.");
     this->info_->AddRef();
     is_attached_.store(true);
@@ -369,8 +369,8 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata, co
     if (foundType)
     {
         // Define the actual profiler file path as a ModuleRef
-        WSTRING native_profiler_file = GetEnvironmentValue(environment::internal_trace_profiler_path);
-        if (native_profiler_file.empty())
+        WSTRING native_profiler_file = GetCurrentModuleFileName();
+        /*if (native_profiler_file.empty())
         {
             native_profiler_file = GetCLRProfilerPath();
         }
@@ -378,7 +378,7 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata, co
         if (native_profiler_file.empty())
         {
             native_profiler_file = native_dll_filename;
-        }
+        }*/
 
         Logger::Info("Rewriting PInvokes to native: ", native_profiler_file);
 
@@ -1727,11 +1727,10 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         return hr;
     }
 
-    WSTRING native_profiler_file = GetEnvironmentValue(environment::internal_trace_profiler_path);
-    Logger::Debug("GenerateVoidILStartupMethod: ", environment::internal_trace_profiler_path,
-                  " defined as: ", native_profiler_file);
+    WSTRING native_profiler_file = GetCurrentModuleFileName();
+    Logger::Debug("GenerateVoidILStartupMethod: GetCurrentModuleFileName returned: ", native_profiler_file);
 
-    if (native_profiler_file.empty())
+    /*if (native_profiler_file.empty())
     {
         native_profiler_file = GetCLRProfilerPath();
     }
@@ -1739,7 +1738,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     if (native_profiler_file.empty())
     {
         native_profiler_file = native_dll_filename;
-    }
+    }*/
 
     Logger::Debug("GenerateVoidILStartupMethod: Setting the PInvoke native profiler library path to ",
                   native_profiler_file);

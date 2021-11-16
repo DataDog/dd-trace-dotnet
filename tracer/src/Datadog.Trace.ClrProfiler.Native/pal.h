@@ -100,6 +100,13 @@ inline int GetPID()
 
 inline WSTRING GetCurrentModuleFileName()
 {
+    static WSTRING moduleFileName = EmptyWStr;
+    if (moduleFileName != EmptyWStr)
+    {
+        // use cached version
+        return moduleFileName;
+    }
+
 #ifdef _WIN32
     HMODULE hModule;
     if (GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCTSTR)GetCurrentModuleFileName,
@@ -109,15 +116,16 @@ inline WSTRING GetCurrentModuleFileName()
         DWORD lpFileNameLength = GetModuleFileNameW(hModule, lpFileName, 1024);
         if (lpFileNameLength > 0)
         {
-            return WSTRING(lpFileName, lpFileNameLength);
+            moduleFileName = WSTRING(lpFileName, lpFileNameLength);
+            return moduleFileName;
         }
     }
-// #elif MACOS
 #else
     Dl_info info;
     if (dladdr((void*)GetCurrentModuleFileName, &info))
     {
-        return ToWSTRING(ToString(info.dli_fname));
+        moduleFileName = ToWSTRING(ToString(info.dli_fname));
+        return moduleFileName;
     }
 #endif
 
