@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler
         public const string DbIntegrationName = nameof(IntegrationIds.AdoNet);
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ScopeFactory));
-        public static readonly IntegrationInfo DbIntegrationId = IntegrationRegistry.GetIntegrationInfo(DbIntegrationName);
+        public const IntegrationIds DbIntegrationId = IntegrationIds.AdoNet;
 
         public static Scope GetActiveHttpScope(Tracer tracer)
         {
@@ -50,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler
         /// <param name="tracer">The tracer instance to use to create the span.</param>
         /// <param name="integrationId">The id of the integration creating this scope.</param>
         /// <returns>A span context to use to populate headers</returns>
-        public static SpanContext CreateHttpSpanContext(Tracer tracer, IntegrationInfo integrationId)
+        public static SpanContext CreateHttpSpanContext(Tracer tracer, IntegrationIds integrationId)
         {
             if (!tracer.Settings.IsIntegrationEnabled(integrationId))
             {
@@ -87,7 +87,7 @@ namespace Datadog.Trace.ClrProfiler
         /// <param name="tags">The tags associated to the scope</param>
         /// <param name="spanId">The span ID</param>
         /// <returns>A new pre-populated scope.</returns>
-        public static Scope CreateOutboundHttpScope(Tracer tracer, string httpMethod, Uri requestUri, IntegrationInfo integrationId, out HttpTags tags, ulong? spanId = null)
+        public static Scope CreateOutboundHttpScope(Tracer tracer, string httpMethod, Uri requestUri, IntegrationIds integrationId, out HttpTags tags, ulong? spanId = null)
             => CreateOutboundHttpScope(tracer, httpMethod, requestUri, integrationId, out tags, spanId, startTime: null);
 
         /// <summary>
@@ -101,7 +101,7 @@ namespace Datadog.Trace.ClrProfiler
         /// <param name="spanId">The span ID</param>
         /// <param name="startTime">The start time that should be applied to the span</param>
         /// <returns>A new pre-populated scope.</returns>
-        internal static Scope CreateOutboundHttpScope(Tracer tracer, string httpMethod, Uri requestUri, IntegrationInfo integrationId, out HttpTags tags, ulong? spanId, DateTimeOffset? startTime)
+        internal static Scope CreateOutboundHttpScope(Tracer tracer, string httpMethod, Uri requestUri, IntegrationIds integrationId, out HttpTags tags, ulong? spanId, DateTimeOffset? startTime)
         {
             tags = null;
 

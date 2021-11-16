@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
     internal static class NUnitIntegration
     {
         internal const string IntegrationName = nameof(IntegrationIds.NUnit);
-        internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
+        internal const IntegrationIds IntegrationId = IntegrationIds.NUnit;
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(NUnitIntegration));
 
         internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);

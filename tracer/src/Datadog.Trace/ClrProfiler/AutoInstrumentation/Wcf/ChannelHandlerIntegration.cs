@@ -38,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         private const string ChannelHandlerTypeName = "System.ServiceModel.Dispatcher.ChannelHandler";
         private const string HttpRequestMessagePropertyTypeName = "System.ServiceModel.Channels.HttpRequestMessageProperty";
 
-        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
+        private const IntegrationIds IntegrationId = IntegrationIds.Wcf;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ChannelHandlerIntegration));
 
         /// <summary>

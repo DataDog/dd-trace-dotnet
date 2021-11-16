@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
         internal const string Major4 = "4";
 
         internal const string IntegrationName = nameof(IntegrationIds.GraphQL);
-        internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
+        internal const IntegrationIds IntegrationId = IntegrationIds.GraphQL;
 
         private const string ServiceName = "graphql";
         private const string ParseOperationName = "graphql.parse"; // Instrumentation not yet implemented

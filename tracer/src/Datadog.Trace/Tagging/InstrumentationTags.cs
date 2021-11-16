@@ -23,7 +23,7 @@ namespace Datadog.Trace.Tagging
 
         public double? AnalyticsSampleRate { get; set; }
 
-        public void SetAnalyticsSampleRate(IntegrationInfo integration, ImmutableTracerSettings settings, bool enabledWithGlobalSetting)
+        public void SetAnalyticsSampleRate(IntegrationIds integration, ImmutableTracerSettings settings, bool enabledWithGlobalSetting)
         {
             if (settings != null)
             {

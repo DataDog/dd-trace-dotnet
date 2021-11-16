@@ -112,7 +112,6 @@ namespace Datadog.Trace.Configuration
     }
     public class ImmutableIntegrationSettingsCollection
     {
-        public ImmutableIntegrationSettingsCollection(Datadog.Trace.Configuration.IntegrationSettingsCollection settings, System.Collections.Generic.HashSet<string> disabledIntegrationNames) { }
         public Datadog.Trace.Configuration.ImmutableIntegrationSettings this[string integrationName] { get; }
     }
     public class ImmutableTracerSettings

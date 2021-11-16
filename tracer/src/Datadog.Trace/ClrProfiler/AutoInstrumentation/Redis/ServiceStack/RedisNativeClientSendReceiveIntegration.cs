@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack
     public class RedisNativeClientSendReceiveIntegration
     {
         private const string IntegrationName = nameof(IntegrationIds.ServiceStackRedis);
-        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
+        private const IntegrationIds IntegrationId = IntegrationIds.ServiceStackRedis;
 
         /// <summary>
         /// OnMethodBegin callback

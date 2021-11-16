@@ -23,6 +23,6 @@ namespace Datadog.Trace.ServiceFabric
 
         public const string SendResponseEventName = "SendResponse";
 
-        public static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.ServiceRemoting));
+        public const IntegrationIds IntegrationId = IntegrationIds.ServiceRemoting;
     }
 }

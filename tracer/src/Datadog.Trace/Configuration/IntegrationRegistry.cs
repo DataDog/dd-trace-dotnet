@@ -33,24 +33,19 @@ namespace Datadog.Trace.Configuration
             Ids = ids;
         }
 
-        internal static string GetName(IntegrationInfo integration)
-        {
-            if (integration.Name == null)
-            {
-                return Names[integration.Id];
-            }
+        internal static string GetName(IntegrationIds integration)
+            => Names[(int)integration];
 
-            return integration.Name;
-        }
-
-        internal static IntegrationInfo GetIntegrationInfo(string integrationName)
+        internal static bool TryGetIntegrationId(string integrationName, out IntegrationIds integration)
         {
             if (Ids.TryGetValue(integrationName, out var id))
             {
-                return new IntegrationInfo(id);
+                integration = (IntegrationIds)id;
+                return true;
             }
 
-            return new IntegrationInfo(integrationName);
+            integration = default;
+            return false;
         }
     }
 }

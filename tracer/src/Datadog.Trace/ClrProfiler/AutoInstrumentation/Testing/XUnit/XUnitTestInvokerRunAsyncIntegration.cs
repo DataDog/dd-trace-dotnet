@@ -28,7 +28,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
     public static class XUnitTestInvokerRunAsyncIntegration
     {
         private const string IntegrationName = nameof(IntegrationIds.XUnit);
-        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
 
         /// <summary>
         /// OnMethodBegin callback

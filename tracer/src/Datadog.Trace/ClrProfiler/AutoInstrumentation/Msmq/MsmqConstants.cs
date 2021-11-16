@@ -23,6 +23,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
         internal const string MsmqSendCommand = "msmq.send";
         internal const string MsmqReceiveCommand = "msmq.receive";
         internal const string MsmqPeekCommand = "msmq.peek";
-        internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
+        internal const IntegrationIds IntegrationId = IntegrationIds.Msmq;
     }
 }

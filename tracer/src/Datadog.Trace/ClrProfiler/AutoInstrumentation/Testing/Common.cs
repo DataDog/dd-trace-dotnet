@@ -13,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
     {
         internal static readonly IDatadogLogger Log = Ci.CIVisibility.Log;
 
-        internal static void FlushSpans(IntegrationInfo integrationInfo)
+        internal static void FlushSpans(IntegrationIds integrationInfo)
         {
             if (!Tracer.Instance.Settings.IsIntegrationEnabled(integrationInfo))
             {

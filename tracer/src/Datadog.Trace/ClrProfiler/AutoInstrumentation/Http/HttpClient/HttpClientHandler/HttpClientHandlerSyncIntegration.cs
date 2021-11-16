@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.HttpClie
     public class HttpClientHandlerSyncIntegration
     {
         private const string IntegrationName = nameof(IntegrationIds.HttpMessageHandler);
-        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
+        private const IntegrationIds IntegrationId = IntegrationIds.HttpMessageHandler;
 
         /// <summary>
         /// OnMethodBegin callback

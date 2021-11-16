@@ -292,12 +292,15 @@ namespace Datadog.Trace
                     writer.WritePropertyName("disabled_integrations");
                     writer.WriteStartArray();
 
-                    // For consistency with previous diagnostic log, this only includes integrations
-                    // that were disabled with DD_DISABLED_INTEGRATIONS, not integrations disabled with
-                    // DD_INTEGRATION_{0}_DISABLED
-                    foreach (var integration in instanceSettings.Integrations.DisabledIntegrations)
+                    // In contrast to 1.x, this only shows _known_ integrations, but
+                    // lists them whether they were disabled with DD_DISABLED_INTEGRATIONS,
+                    // or DD_INTEGRATION_{0}_DISABLED
+                    foreach (var integration in instanceSettings.Integrations.Settings)
                     {
-                        writer.WriteValue(integration);
+                        if (integration.Enabled == false)
+                        {
+                            writer.WriteValue(integration);
+                        }
                     }
 
                     writer.WriteEndArray();

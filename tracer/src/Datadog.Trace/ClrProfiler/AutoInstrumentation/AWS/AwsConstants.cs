@@ -10,6 +10,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS
     internal static class AwsConstants
     {
         internal const string IntegrationName = nameof(IntegrationIds.AwsSdk);
-        internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
+        internal const IntegrationIds IntegrationId = IntegrationIds.AwsSdk;
     }
 }

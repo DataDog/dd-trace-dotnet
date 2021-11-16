@@ -14,6 +14,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         internal const string IDictionaryArgumentsTypeName = "System.Collections.Generic.IDictionary`2[System.String,System.Object]";
         internal const string OperationName = "amqp.command";
         internal const string ServiceName = "rabbitmq";
-        internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
+        internal const IntegrationIds IntegrationId = IntegrationIds.RabbitMQ;
     }
 }
