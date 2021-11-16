@@ -24,18 +24,16 @@ namespace Datadog.Trace.Logging
         private const LogEventLevel DefaultLogLevel = LogEventLevel.Information;
         private static readonly long? MaxLogFileSize = 10 * 1024 * 1024;
         private static readonly IDatadogLogger SharedLogger = null;
-        private static readonly ILogger InternalLogger = null;
 
         static DatadogLogging()
         {
             // No-op for if we fail to construct the file logger
             var nullRateLimiter = new NullLogRateLimiter();
-            InternalLogger =
-                new LoggerConfiguration()
-                   .WriteTo.Sink<NullSink>()
-                   .CreateLogger();
+            ILogger internalLogger = new LoggerConfiguration()
+                                    .WriteTo.Sink<NullSink>()
+                                    .CreateLogger();
 
-            SharedLogger = new DatadogSerilogLogger(InternalLogger, nullRateLimiter);
+            SharedLogger = new DatadogSerilogLogger(internalLogger, nullRateLimiter);
 
             try
             {
@@ -99,15 +97,15 @@ namespace Datadog.Trace.Logging
                     // At all costs, make sure the logger works when possible.
                 }
 
-                InternalLogger = loggerConfiguration.CreateLogger();
-                SharedLogger = new DatadogSerilogLogger(InternalLogger, nullRateLimiter);
+                internalLogger = loggerConfiguration.CreateLogger();
+                SharedLogger = new DatadogSerilogLogger(internalLogger, nullRateLimiter);
 
                 var rate = GetRateLimit();
                 ILogRateLimiter rateLimiter = rate == 0
                     ? nullRateLimiter
                     : new LogRateLimiter(rate);
 
-                SharedLogger = new DatadogSerilogLogger(InternalLogger, rateLimiter);
+                SharedLogger = new DatadogSerilogLogger(internalLogger, rateLimiter);
             }
             catch
             {
