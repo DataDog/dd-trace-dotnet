@@ -67,8 +67,10 @@ namespace Datadog.Trace.Logging
                     return;
                 }
 
+                var domainMetadata = DomainMetadata.Instance;
+
                 // Ends in a dash because of the date postfix
-                var managedLogPath = Path.Combine(logDirectory, $"dotnet-tracer-managed-{DomainMetadata.ProcessName}-.log");
+                var managedLogPath = Path.Combine(logDirectory, $"dotnet-tracer-managed-{domainMetadata.ProcessName}-.log");
 
                 var loggerConfiguration =
                     new LoggerConfiguration()
@@ -84,9 +86,9 @@ namespace Datadog.Trace.Logging
 
                 try
                 {
-                    loggerConfiguration.Enrich.WithProperty("MachineName", DomainMetadata.MachineName);
-                    loggerConfiguration.Enrich.WithProperty("Process", $"[{DomainMetadata.ProcessId} {DomainMetadata.ProcessName}]");
-                    loggerConfiguration.Enrich.WithProperty("AppDomain", $"[{DomainMetadata.AppDomainId} {DomainMetadata.AppDomainName}]");
+                    loggerConfiguration.Enrich.WithProperty("MachineName", domainMetadata.MachineName);
+                    loggerConfiguration.Enrich.WithProperty("Process", $"[{domainMetadata.ProcessId} {domainMetadata.ProcessName}]");
+                    loggerConfiguration.Enrich.WithProperty("AppDomain", $"[{domainMetadata.AppDomainId} {domainMetadata.AppDomainName}]");
 #if NETCOREAPP
                     loggerConfiguration.Enrich.WithProperty("AssemblyLoadContext", System.Runtime.Loader.AssemblyLoadContext.GetLoadContext(typeof(DatadogLogging).Assembly).Name);
 #endif

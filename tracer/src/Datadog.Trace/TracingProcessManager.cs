@@ -65,9 +65,9 @@ namespace Datadog.Trace
                     return;
                 }
 
-                if (DomainMetadata.ShouldAvoidAppDomain())
+                if (DomainMetadata.Instance.ShouldAvoidAppDomain())
                 {
-                    Log.Information("Skipping process manager initialization for AppDomain: {AppDomain}", DomainMetadata.AppDomainName);
+                    Log.Information("Skipping process manager initialization for AppDomain: {AppDomain}", DomainMetadata.Instance.AppDomainName);
                     return;
                 }
 
@@ -77,7 +77,7 @@ namespace Datadog.Trace
                     return;
                 }
 
-                Log.Debug("Starting child processes from process {ProcessName}, AppDomain {AppDomain}.", DomainMetadata.ProcessName, DomainMetadata.AppDomainName);
+                Log.Debug("Starting child processes from process {ProcessName}, AppDomain {AppDomain}.", DomainMetadata.Instance.ProcessName, DomainMetadata.Instance.AppDomainName);
                 StartProcesses();
             }
             catch (Exception ex)

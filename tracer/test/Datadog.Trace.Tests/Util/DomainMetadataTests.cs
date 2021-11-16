@@ -20,7 +20,7 @@ namespace Datadog.Trace.Tests.Util
         {
             static void AppDomainCallback()
             {
-                var result = DomainMetadata.ShouldAvoidAppDomain();
+                var result = DomainMetadata.Instance.ShouldAvoidAppDomain();
                 AppDomain.CurrentDomain.SetData(TestDataKey, result);
             }
 
