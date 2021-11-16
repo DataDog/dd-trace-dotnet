@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -20,6 +21,8 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler
 {
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public interface IDistributedTracer
     {
         SpanContext GetSpanContext();
@@ -27,7 +30,9 @@ namespace Datadog.Trace.ClrProfiler
         void SetSpanContext(SpanContext value);
     }
 
-    public interface IAutomaticTracer
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    internal interface IAutomaticTracer
     {
         object GetDistributedTrace();
 
@@ -36,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler
         // bool TrySetSamplingPriority(int samplingPriority);
     }
 
-    public class AutomaticTracer : IAutomaticTracer, IDistributedTracer
+    internal class AutomaticTracer : IAutomaticTracer, IDistributedTracer
     {
         private static readonly AsyncLocal<IReadOnlyDictionary<string, string>> DistributedTrace = new();
 
@@ -81,13 +86,13 @@ namespace Datadog.Trace.ClrProfiler
         }
     }
 
-    public class ManualTracer : IDistributedTracer
+    internal class ManualTracer : IDistributedTracer
     {
         private readonly IAutomaticTracer _parent;
 
         internal ManualTracer(IAutomaticTracer parent)
         {
-            _parent = parent;
+            _parent = parent ?? throw new ArgumentNullException(nameof(parent));
         }
 
         public SpanContext GetSpanContext()
@@ -103,29 +108,35 @@ namespace Datadog.Trace.ClrProfiler
         }
     }
 
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public static class DistributedTracer
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DistributedTracer));
 
-        public static IDistributedTracer Instance { get; } = BuildDistributedTracer();
-
-        public static object GetDistributedTracer() => Instance;
-
-        private static IDistributedTracer BuildDistributedTracer()
+        static DistributedTracer()
         {
             var parent = GetDistributedTracer();
 
             if (parent == null)
             {
                 Log.Information("Building automatic tracer");
-                return new AutomaticTracer();
+                Instance = new AutomaticTracer();
             }
+            else
+            {
+                var parentTracer = parent.DuckCast<IAutomaticTracer>();
 
-            var parentTracer = parent.DuckAs<IAutomaticTracer>();
+                Log.Information("Building manual tracer, connected to " + parent.GetType().Assembly.ToString());
 
-            Log.Information("Building manual tracer, connected to " + parent.GetType().Assembly.ToString());
-
-            return new ManualTracer(parentTracer);
+                Instance = new ManualTracer(parentTracer);
+            }
         }
+
+        internal static IDistributedTracer Instance { get; }
+
+        [Browsable(false)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public static object GetDistributedTracer() => Instance;
     }
 }
