@@ -18,7 +18,7 @@ namespace Datadog.Trace.ExtensionMethods
     /// <summary>
     /// Extension methods for the <see cref="Span"/> class.
     /// </summary>
-    public static class SpanExtensions
+    internal static class SpanExtensions
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanExtensions));
 
@@ -27,73 +27,13 @@ namespace Datadog.Trace.ExtensionMethods
         /// </summary>
         /// <param name="span">A span that belongs to the trace.</param>
         /// <param name="samplingPriority">The new sampling priority for the trace.</param>
-        public static void SetTraceSamplingPriority(this Span span, SamplingPriority samplingPriority)
+        internal static void SetTraceSamplingPriority(this Span span, SamplingPriority samplingPriority)
         {
             if (span == null) { throw new ArgumentNullException(nameof(span)); }
 
             if (span.InternalContext.TraceContext != null)
             {
                 span.InternalContext.TraceContext.SamplingPriority = samplingPriority;
-            }
-        }
-
-        /// <summary>
-        /// Adds standard tags to a span with values taken from the specified <see cref="DbCommand"/>.
-        /// </summary>
-        /// <param name="span">The span to add the tags to.</param>
-        /// <param name="command">The db command to get tags values from.</param>
-        public static void AddTagsFromDbCommand(this Span span, IDbCommand command)
-        {
-            span.ResourceName = command.CommandText;
-            span.Type = SpanTypes.Sql;
-
-            var tags = DbCommandCache.GetTagsFromDbCommand(command);
-
-            foreach (var pair in tags)
-            {
-                span.SetTag(pair.Key, pair.Value);
-            }
-        }
-
-        internal static void DecorateWebServerSpan(
-            this Span span,
-            string resourceName,
-            string method,
-            string host,
-            string httpUrl,
-            WebTags tags,
-            IEnumerable<KeyValuePair<string, string>> tagsFromHeaders)
-        {
-            span.Type = SpanTypes.Web;
-            span.ResourceName = resourceName?.Trim();
-
-            tags.HttpMethod = method;
-            tags.HttpRequestHeadersHost = host;
-            tags.HttpUrl = httpUrl;
-
-            foreach (KeyValuePair<string, string> kvp in tagsFromHeaders)
-            {
-                span.SetTag(kvp.Key, kvp.Value);
-            }
-        }
-
-        internal static void SetHeaderTags<T>(this Span span, T headers, IReadOnlyDictionary<string, string> headerTags, string defaultTagPrefix)
-            where T : IHeadersCollection
-        {
-            if (headerTags is not null && !headerTags.IsEmpty())
-            {
-                try
-                {
-                    var tagsFromHeaders = SpanContextPropagator.Instance.ExtractHeaderTags(headers, headerTags, defaultTagPrefix);
-                    foreach (KeyValuePair<string, string> kvp in tagsFromHeaders)
-                    {
-                        span.SetTag(kvp.Key, kvp.Value);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error extracting propagated HTTP headers.");
-                }
             }
         }
 
