@@ -11,6 +11,7 @@
 
 #include <fstream>
 #include <unistd.h>
+#include <dlfcn.h>
 
 #endif
 
@@ -95,6 +96,41 @@ inline int GetPID()
 #else
     return getpid();
 #endif
+}
+
+inline WSTRING GetCurrentModuleFileName()
+{
+    static WSTRING moduleFileName = EmptyWStr;
+    if (moduleFileName != EmptyWStr)
+    {
+        // use cached version
+        return moduleFileName;
+    }
+
+#ifdef _WIN32
+    HMODULE hModule;
+    if (GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT | GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
+                           (LPCTSTR) GetCurrentModuleFileName,
+                           &hModule))
+    {
+        WCHAR lpFileName[1024];
+        DWORD lpFileNameLength = GetModuleFileNameW(hModule, lpFileName, 1024);
+        if (lpFileNameLength > 0)
+        {
+            moduleFileName = WSTRING(lpFileName, lpFileNameLength);
+            return moduleFileName;
+        }
+    }
+#else
+    Dl_info info;
+    if (dladdr((void*)GetCurrentModuleFileName, &info))
+    {
+        moduleFileName = ToWSTRING(ToString(info.dli_fname));
+        return moduleFileName;
+    }
+#endif
+
+    return EmptyWStr;
 }
 
 } // namespace trace

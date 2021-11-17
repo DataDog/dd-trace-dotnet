@@ -434,6 +434,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Couchbase", "tracer
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Couchbase3", "tracer\test\test-applications\integrations\Samples.Couchbase3\Samples.Couchbase3.csproj", "{65A66859-2735-4DD6-A927-B416B7A62D0F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNetCoreMinimalApis", "tracer\test\test-applications\integrations\Samples.AspNetCoreMinimalApis\Samples.AspNetCoreMinimalApis.csproj", "{2A6D3042-C675-4EA3-A8E7-5BDD3C5758EA}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{24d3e547-8897-4111-baa2-b92f50cc13d4}*SharedItemsImports = 5
@@ -1860,6 +1862,16 @@ Global
 		{65A66859-2735-4DD6-A927-B416B7A62D0F}.Release|x64.Build.0 = Release|x64
 		{65A66859-2735-4DD6-A927-B416B7A62D0F}.Release|x86.ActiveCfg = Release|x86
 		{65A66859-2735-4DD6-A927-B416B7A62D0F}.Release|x86.Build.0 = Release|x86
+		{2A6D3042-C675-4EA3-A8E7-5BDD3C5758EA}.Debug|x64.ActiveCfg = Debug|x64
+		{2A6D3042-C675-4EA3-A8E7-5BDD3C5758EA}.Debug|x64.Build.0 = Debug|x64
+		{2A6D3042-C675-4EA3-A8E7-5BDD3C5758EA}.Debug|x86.ActiveCfg = Debug|x86
+		{2A6D3042-C675-4EA3-A8E7-5BDD3C5758EA}.Debug|x86.Build.0 = Debug|x86
+		{2A6D3042-C675-4EA3-A8E7-5BDD3C5758EA}.Release|x64.ActiveCfg = Release|x64
+		{2A6D3042-C675-4EA3-A8E7-5BDD3C5758EA}.Release|x64.Build.0 = Release|x64
+		{2A6D3042-C675-4EA3-A8E7-5BDD3C5758EA}.Release|x86.ActiveCfg = Release|x86
+		{2A6D3042-C675-4EA3-A8E7-5BDD3C5758EA}.Release|x86.Build.0 = Release|x86
+		{2A6D3042-C675-4EA3-A8E7-5BDD3C5758EA}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{2A6D3042-C675-4EA3-A8E7-5BDD3C5758EA}.Release|Any CPU.ActiveCfg = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -2011,6 +2023,7 @@ Global
 		{73252693-2563-4B20-A2F5-F8DB37B91DBE} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{6F38B456-1D16-4842-AEE5-E74564FB506A} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{65A66859-2735-4DD6-A927-B416B7A62D0F} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{2A6D3042-C675-4EA3-A8E7-5BDD3C5758EA} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}

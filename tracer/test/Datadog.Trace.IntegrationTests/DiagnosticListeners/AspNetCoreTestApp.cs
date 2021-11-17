@@ -80,6 +80,28 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
     /// </summary>
     public class EndpointRoutingStartup
     {
+        public static void ConfigureEndpoints(IEndpointRouteBuilder endpoints)
+        {
+            endpoints.MapControllers();
+            endpoints.MapDefaultControllerRoute();
+            endpoints.MapHealthChecks("/healthz", new HealthCheckOptions { Predicate = _ => false })
+                     .WithDisplayName("Custom Health Check");
+            endpoints.MapGet(
+                "/echo/{value:int?}",
+                context =>
+                {
+                    var value = context.GetRouteValue("value")?.ToString();
+                    return context.Response.WriteAsync(value ?? "No value");
+                });
+            endpoints.MapGet(
+                "/throws",
+                async ctx =>
+                {
+                    await Task.Yield();
+                    throw new Exception("Endpoint exception");
+                });
+        }
+
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers()
@@ -96,6 +118,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             services.AddAuthorization();
         }
 
+        // Used in ASP.NET Core 3.x/5
         public void Configure(IApplicationBuilder builder, IConfiguration configuration)
         {
             builder.UseMultipleErrorHandlerPipelines(app =>
@@ -103,28 +126,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
                 app.UseRouting();
                 app.UseAuthorization();
 
-                app.UseEndpoints(
-                    endpoints =>
-                    {
-                        endpoints.MapControllers();
-                        endpoints.MapDefaultControllerRoute();
-                        endpoints.MapHealthChecks("/healthz", new HealthCheckOptions { Predicate = _ => false })
-                                 .WithDisplayName("Custom Health Check");
-                        endpoints.MapGet(
-                            "/echo/{value:int?}",
-                            context =>
-                            {
-                                var value = context.GetRouteValue("value")?.ToString();
-                                return context.Response.WriteAsync(value ?? "No value");
-                            });
-                        endpoints.MapGet(
-                            "/throws",
-                            async ctx =>
-                            {
-                                await Task.Yield();
-                                throw new Exception("Endpoint exception");
-                            });
-                    });
+                app.UseEndpoints(ConfigureEndpoints);
             });
         }
     }

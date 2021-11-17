@@ -11,11 +11,14 @@ namespace Datadog.Trace.Tagging
     {
         private protected static readonly IProperty<string>[] AspNetCoreTagsProperties =
             WebTagsProperties.Concat(
-                new ReadOnlyProperty<AspNetCoreTags, string>(Trace.Tags.InstrumentationName, t => t.InstrumentationName));
+                new ReadOnlyProperty<AspNetCoreTags, string>(Trace.Tags.InstrumentationName, t => t.InstrumentationName),
+                new Property<AspNetCoreTags, string>(Trace.Tags.AspNetCoreRoute, t => t.AspNetCoreRoute, (t, v) => t.AspNetCoreRoute = v));
 
         private const string ComponentName = "aspnet_core";
 
         public string InstrumentationName => ComponentName;
+
+        public string AspNetCoreRoute { get; set; }
 
         protected override IProperty<string>[] GetAdditionalTags() => AspNetCoreTagsProperties;
     }

@@ -305,6 +305,8 @@ services:
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - TestAllPackageVersions=${TestAllPackageVersions:-true}
       - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
+      - Verify_DisableClipboard=true
+      - DiffEngine_Disabled=true
       - MONGO_HOST=mongo
       - SERVICESTACK_REDIS_HOST=servicestackredis:6379
       - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
@@ -381,7 +383,9 @@ services:
       - framework=${framework:-netcoreapp3.1}
       - baseImage=${baseImage:-debian}
       - TestAllPackageVersions=${TestAllPackageVersions:-true}
-      - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
+      - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}0
+      - Verify_DisableClipboard=true
+      - DiffEngine_Disabled=true
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - MONGO_HOST=mongo_arm64
       - SERVICESTACK_REDIS_HOST=servicestackredis_arm64:6379
