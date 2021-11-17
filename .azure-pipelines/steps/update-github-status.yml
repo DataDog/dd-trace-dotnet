@@ -1,0 +1,23 @@
+﻿parameters:
+  - name: 'checkName'
+    type: string
+
+  - name: 'status'
+    type: string
+
+  - name: 'description'
+    type: string
+
+steps:
+- script: |
+    TARGET_URL="https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$(Build.BuildId)"
+    curl -X POST \
+    -H "Accept: application/vnd.github.v3+json" \
+    -H "Authorization: Bearer $(GITHUB_TOKEN)" \
+    https://api.github.com/repos/DataDog/dd-trace-dotnet/statuses/$(OriginalCommitId) \
+    -d '{"state":"${{ parameters.status }}","context":"${{ parameters.checkName }}","description":"${{ parameters.description }}","target_url":"'"$TARGET_URL"'"}'
+  displayName: Set GitHub Status ${{ parameters.status }}
+  condition: and(succeededOrFailed(), ne(variables['Build.BuildId'], ''))
+  continueOnError: true
+  env:
+    GITHUB_TOKEN: $(GITHUB_TOKEN)
