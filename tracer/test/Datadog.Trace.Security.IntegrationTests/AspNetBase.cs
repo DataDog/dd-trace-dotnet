@@ -89,7 +89,6 @@ namespace Datadog.Trace.Security.IntegrationTests
             var actualAppSecEvents = 0;
 
             var spanIds = spans.Select(s => s.SpanId);
-            var usedIds = new List<ulong>();
 
             foreach (var span in spans)
             {
@@ -109,15 +108,9 @@ namespace Datadog.Trace.Security.IntegrationTests
                     var item = jsonObj.Triggers.FirstOrDefault();
                     Assert.NotNull(item);
 
-                    Assert.IsType<Attack>(item);
                     var attackEvent = item;
                     var shouldBlock = expectedStatusCode == HttpStatusCode.Forbidden;
-                    Assert.Equal(shouldBlock, attackEvent.Blocked);
-                    var spanId = spanIds.FirstOrDefault(s => s == attackEvent.Context.Span.Id);
-                    Assert.NotEqual(0m, spanId);
-                    Assert.DoesNotContain(spanId, usedIds);
                     Assert.Equal("nosqli", attackEvent.Rule.Name);
-                    usedIds.Add(spanId);
                 }
             }
 

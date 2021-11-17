@@ -60,6 +60,16 @@ namespace Datadog.Trace
         public const string HttpStatusCode = "http.status_code";
 
         /// <summary>
+        /// The end point requested
+        /// </summary>
+        public const string HttpEndpoint = "http.endpoint";
+
+        /// <summary>
+        /// The user agent
+        /// </summary>
+        public const string HttpUserAgent = "http.useragent";
+
+        /// <summary>
         /// The error message of an exception
         /// </summary>
         public const string ErrorMsg = "error.msg";
@@ -426,6 +436,11 @@ namespace Datadog.Trace
         /// Should contain the public IP of the host initiating the request.
         /// </summary>
         public const string ActorIp = "actor.ip";
+
+        /// <summary>
+        /// The ip as reported by the framework.
+        /// </summary>
+        public const string NetworkClientIp = "network.client.ip";
 
         internal const string ElasticsearchAction = "elasticsearch.action";
 

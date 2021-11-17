@@ -5,11 +5,16 @@
 
 #if !NETFRAMEWORK
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.EventModel;
+using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.Headers;
 using Datadog.Trace.Util.Http;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Net.Http.Headers;
 
 namespace Datadog.Trace.AppSec.Transport.Http
 {
@@ -23,32 +28,6 @@ namespace Datadog.Trace.AppSec.Transport.Http
 
         public Func<string, string> GetHeader => key => context.Request.Headers[key];
 
-        public Request Request()
-        {
-            var request = new Request
-            {
-                Method = context.Request.Method,
-                Path = context.Request.Path,
-                Scheme = context.Request.Scheme,
-                Url = context.Request.GetUrl()
-            };
-
-            if (context.Request.Host.HasValue)
-            {
-                request.Host = context.Request.Host.ToString();
-                request.RemoteIp = context.Connection.RemoteIpAddress.ToString();
-                request.Port = context.Connection.RemotePort;
-            }
-
-            return request;
-        }
-
-        public Response Response(bool blocked) => new Response
-        {
-            Status = context.Response.StatusCode,
-            Blocked = blocked
-        };
-
         public IContext GetAdditiveContext()
         {
             return context.Features.Get<IContext>();
@@ -58,6 +37,58 @@ namespace Datadog.Trace.AppSec.Transport.Http
         {
             context.Features.Set(additiveContext);
             context.Response.RegisterForDispose(additiveContext);
+        }
+
+        public IpInfo GetReportedIpInfo()
+        {
+            var ipAddress = context.Connection.RemoteIpAddress.ToString();
+            var port = context.Connection.RemotePort;
+            return new IpInfo(ipAddress, port);
+        }
+
+        public string GetUserAget()
+        {
+            return context.Request.Headers[HeaderNames.UserAgent];
+        }
+
+        public IHeadersCollection GetRequestHeaders()
+        {
+            return new HeadersCollectionAdapter(context.Request.Headers);
+        }
+
+        private readonly struct HeadersCollectionAdapter : IHeadersCollection
+        {
+            private readonly IHeaderDictionary _headers;
+
+            public HeadersCollectionAdapter(IHeaderDictionary headers)
+            {
+                _headers = headers;
+            }
+
+            public IEnumerable<string> GetValues(string name)
+            {
+                if (_headers.TryGetValue(name, out var values))
+                {
+                    return values.ToArray();
+                }
+
+                return Enumerable.Empty<string>();
+            }
+
+            public void Set(string name, string value)
+            {
+                throw new NotImplementedException();
+            }
+
+            public void Add(string name, string value)
+            {
+                throw new NotImplementedException();
+            }
+
+            public void Remove(string name)
+            {
+                throw new NotImplementedException();
+            }
         }
     }
 }
