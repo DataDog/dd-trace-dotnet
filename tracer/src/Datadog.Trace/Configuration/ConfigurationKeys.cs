@@ -420,13 +420,6 @@ namespace Datadog.Trace.Configuration
             /// Feature Flag: enables instrumenting calls to netstandard.dll (only applies to CallSite instrumentation)
             /// </summary>
             public const string NetStandardEnabled = "DD_TRACE_NETSTANDARD_ENABLED";
-
-            /// <summary>
-            /// Configuration key to enable or disable the updated WCF instrumentation that delays execution
-            /// until later in the WCF pipeline when the WCF server exception handling is established.
-            /// </summary>
-            /// <seealso cref="TracerSettings.DelayWcfInstrumentationEnabled"/>
-            public const string DelayWcfInstrumentationEnabled = "DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED";
         }
     }
 }

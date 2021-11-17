@@ -212,7 +212,6 @@ namespace
         USHORT max_minor = USHRT_MAX;
         USHORT max_patch = USHRT_MAX;
         std::vector<WSTRING> signature_type_array;
-        std::vector<USHORT> target_method_arguments_to_load_array; // Do not populate this because this only applies to CallTarget and we no longer use integrations.json
         WSTRING action = EmptyWStr;
 
         if (is_target_method)
@@ -307,7 +306,7 @@ namespace
             }
         }
         return MethodReference(assembly, type, method, action, Version(min_major, min_minor, min_patch, 0),
-                               Version(max_major, max_minor, max_patch, USHRT_MAX), signature, signature_type_array, false, target_method_arguments_to_load_array);
+                               Version(max_major, max_minor, max_patch, USHRT_MAX), signature, signature_type_array);
     }
 
 } // namespace
