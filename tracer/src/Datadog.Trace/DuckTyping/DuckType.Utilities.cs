@@ -87,10 +87,10 @@ namespace Datadog.Trace.DuckTyping
         {
             // The condition to apply duck chaining is:
             // 1. Is a struct with the DuckCopy attribute
-            // 2. Both types must be differents.
+            // 2. Both types must be different.
             // 3. The proxy type (duck chaining proxy definition type) can't be a struct
             // 4. The proxy type can't be a generic parameter (should be a well known type)
-            // 5. Can't be a base type or an iterface implemented by the targetType type.
+            // 5. Can't be a base type or an interface implemented by the targetType type.
             // 6. The proxy type can't be a CLR type
             return proxyType.GetCustomAttribute<DuckCopyAttribute>() != null ||
                 (proxyType != targetType &&
@@ -101,7 +101,7 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
-        /// Gets if the direct access method should be used or the inderect method (dynamic method)
+        /// Gets if the direct access method should be used or the indirect method (dynamic method)
         /// </summary>
         /// <param name="builder">Module builder</param>
         /// <param name="targetType">Target type</param>
@@ -118,7 +118,7 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
-        /// Gets if the direct access method should be used or the inderect method (dynamic method)
+        /// Gets if the direct access method should be used or the indirect method (dynamic method)
         /// </summary>
         /// <param name="builder">Type builder</param>
         /// <param name="targetType">Target type</param>
@@ -126,16 +126,6 @@ namespace Datadog.Trace.DuckTyping
         private static bool UseDirectAccessTo(TypeBuilder builder, Type targetType)
         {
             return UseDirectAccessTo((ModuleBuilder)builder?.Module, targetType);
-        }
-
-        /// <summary>
-        /// Gets if the direct access method should be used or the inderect method (dynamic method)
-        /// </summary>
-        /// <param name="targetType">Target type</param>
-        /// <returns>true for direct method; otherwise, false.</returns>
-        private static bool UseDirectAccessTo(Type targetType)
-        {
-            return UseDirectAccessTo((ModuleBuilder)null, targetType);
         }
     }
 }
