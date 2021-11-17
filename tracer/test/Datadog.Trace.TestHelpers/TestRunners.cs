@@ -17,6 +17,7 @@ namespace Datadog.Trace.TestHelpers
                                                                     "vstest.console",
                                                                     "xunit.console.x86",
                                                                     "xunit.console.x64",
+                                                                    "ReSharperTestRunner",
                                                                     "ReSharperTestRunner64",
                                                                     "ReSharperTestRunner64c"
                                                                 };
