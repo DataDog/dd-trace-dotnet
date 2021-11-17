@@ -25,5 +25,9 @@ namespace Datadog.Trace.AppSec.Transport
         string GetUserAget();
 
         IHeadersCollection GetRequestHeaders();
+
+        IHeadersCollection GetResponseHeaders();
+
+        void OnCompleted(Action completedCallback);
     }
 }

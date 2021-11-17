@@ -49,6 +49,16 @@ namespace Datadog.Trace.AppSec.Transport.Http
         {
             return new NameValueHeadersCollection(context.Request.Headers);
         }
+
+        public IHeadersCollection GetResponseHeaders()
+        {
+            return new NameValueHeadersCollection(context.Response.Headers);
+        }
+
+        public void OnCompleted(Action completedCallback)
+        {
+            context.AddOnRequestCompleted(_ => completedCallback());
+        }
     }
 }
 #endif

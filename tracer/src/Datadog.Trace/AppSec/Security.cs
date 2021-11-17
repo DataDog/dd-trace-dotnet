@@ -27,6 +27,7 @@ namespace Datadog.Trace.AppSec
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Security>();
 
         private static readonly Dictionary<string, string> RequestHeaders;
+        private static readonly Dictionary<string, string> ResponseHeaders;
 
         private static Security _instance;
         private static bool _globalInstanceInitialized;
@@ -57,10 +58,20 @@ namespace Datadog.Trace.AppSec
                 "user-agent",
                 "Accept",
                 "Accept-Encoding",
-                "Accept-Language"
+                "Accept-Language",
             };
 
             RequestHeaders = requestHeaders.ToDictionary(x => x, _ => string.Empty);
+
+            var responseHeaders = new List<string>()
+            {
+                "content-length",
+                "content-type",
+                "Content-Encoding",
+                "Content-Language",
+            };
+
+            ResponseHeaders = responseHeaders.ToDictionary(x => x, _ => string.Empty);
         }
 
         /// <summary>
@@ -198,6 +209,16 @@ namespace Datadog.Trace.AppSec
             {
                 span.SetTag(tag.Key, tag.Value);
             }
+
+            transport.OnCompleted(() =>
+            {
+                var headers = transport.GetResponseHeaders();
+                var tags = SpanContextPropagator.Instance.ExtractHeaderTags(headers, ResponseHeaders, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                foreach (var tag in tags)
+                {
+                    span.SetTag(tag.Key, tag.Value);
+                }
+            });
         }
 
         private Span GetLocalRootSpan(Span span)

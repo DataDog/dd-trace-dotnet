@@ -56,6 +56,20 @@ namespace Datadog.Trace.AppSec.Transport.Http
             return new HeadersCollectionAdapter(context.Request.Headers);
         }
 
+        public IHeadersCollection GetResponseHeaders()
+        {
+            return new HeadersCollectionAdapter(context.Response.Headers);
+        }
+
+        public void OnCompleted(Action completedCallback)
+        {
+            context.Response.OnCompleted(() =>
+            {
+                completedCallback();
+                return Task.CompletedTask;
+            });
+        }
+
         private readonly struct HeadersCollectionAdapter : IHeadersCollection
         {
             private readonly IHeaderDictionary _headers;
