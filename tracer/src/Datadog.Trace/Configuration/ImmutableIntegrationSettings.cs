@@ -33,7 +33,7 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether
         /// this integration is enabled.
         /// </summary>
-        public bool? Enabled { get; internal set; }
+        public bool? Enabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether
