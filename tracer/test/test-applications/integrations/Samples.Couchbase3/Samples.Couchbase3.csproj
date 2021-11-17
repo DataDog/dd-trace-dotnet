@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <ApiVersion Condition="'$(ApiVersion)' == ''">3.2.3</ApiVersion>
-    <DefineConstants Condition="'$(ApiVersion)'&gt;='3.1.0'">$(DefineConstants);COUCHBASE_3_0_0</DefineConstants>
+    <DefineConstants Condition="'$(ApiVersion)'&lt;'3.1.2'">$(DefineConstants);COUCHBASE_3_0</DefineConstants>
     <OutputType>Exe</OutputType>
   </PropertyGroup>
 
