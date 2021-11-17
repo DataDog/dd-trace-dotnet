@@ -21,8 +21,13 @@ namespace Samples.Couchbase3
             var bucket = await cluster.BucketAsync("default");
 
             // get a user-defined collection reference
+#if COUCHBASE_3_0_0
             var scope = await bucket.ScopeAsync("tenant_agent_00");
             var collection = await scope.CollectionAsync("users");
+#else
+            var scope = bucket.Scope("tenant_agent_00");
+            var collection = scope.Collection("users");
+#endif
 
             // Upsert Document
             var upsertResult = await collection.UpsertAsync("my-document-key", new { Name = "Ted", Age = 31 });
