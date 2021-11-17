@@ -1,7 +1,7 @@
 name: Auto bump test package versions
 
 on:
-  pull_request:
+  pull_request_target:
     branches: [master, main]
   workflow_dispatch:
 
@@ -19,7 +19,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
         with:
-          ref: master
+          ref: ${{ github.event.pull_request.base.sha }}
 
       - uses: actions/setup-dotnet@v1
         with:
