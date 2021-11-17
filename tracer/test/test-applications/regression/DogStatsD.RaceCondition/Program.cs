@@ -24,7 +24,8 @@ namespace DogStatsD.RaceCondition
                 ddTraceSettings.TracerMetricsEnabled = true;
                 GlobalSettings.SetDebugEnabled(true);
 
-                var tracer = new Tracer(ddTraceSettings);
+                Tracer.Configure(ddTraceSettings);
+                var tracer = Tracer.Instance;
                 var totalIterations = 100;
                 var threadRepresentation = Enumerable.Range(0, 25).ToArray();
                 var threadCount = threadRepresentation.Length;
