@@ -82,12 +82,15 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             Assert.Equal("aspnet_core.request", span.OperationName);
             Assert.Equal("aspnet_core", span.GetTag(Tags.InstrumentationName));
             Assert.Equal(SpanTypes.Web, span.Type);
-            Assert.Equal("GET /home/?/action", span.ResourceName);
             Assert.Equal(SpanKinds.Server, span.GetTag(Tags.SpanKind));
             Assert.Equal("GET", span.GetTag(Tags.HttpMethod));
             Assert.Equal("localhost", span.GetTag(Tags.HttpRequestHeadersHost));
             Assert.Equal("http://localhost/home/1/action", span.GetTag(Tags.HttpUrl));
             Assert.Equal(TracerConstants.Language, span.GetTag(Tags.Language));
+
+            // Resource isn't populated until request end
+            observer.OnNext(new KeyValuePair<string, object>("Microsoft.AspNetCore.Hosting.HttpRequestIn.Stop", context));
+            Assert.Equal("GET /home/?/action", span.ResourceName);
         }
 
         private static Tracer GetTracer()

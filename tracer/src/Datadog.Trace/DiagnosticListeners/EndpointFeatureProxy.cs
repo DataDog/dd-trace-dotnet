@@ -1,4 +1,4 @@
-﻿// <copyright file="IEndpointFeature.cs" company="Datadog">
+﻿// <copyright file="EndpointFeatureProxy.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -15,12 +15,13 @@ namespace Datadog.Trace.DiagnosticListeners
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface IEndpointFeature
+    public class EndpointFeatureProxy
     {
         /// <summary>
         /// Delegates to IEndpointFeature.Endpoint;
         /// </summary>
+        /// <returns>The <see cref="RouteEndpoint"/> proxy</returns>
         [Duck(Name = "Microsoft.AspNetCore.Http.Features.IEndpointFeature.get_Endpoint")]
-        RouteEndpoint GetEndpoint();
+        public virtual RouteEndpoint GetEndpoint() => default;
     }
 }

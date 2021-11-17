@@ -43,7 +43,6 @@ namespace Datadog.Trace.DiagnosticListeners
         private const string DiagnosticListenerName = "Microsoft.AspNetCore";
         private const string HttpRequestInOperationName = "aspnet_core.request";
         private const string MvcOperationName = "aspnet_core_mvc.request";
-        private const string NoHostSpecified = "UNKNOWN_HOST";
 
         private static readonly int PrefixLength = "Microsoft.AspNetCore.".Length;
 
@@ -293,16 +292,13 @@ namespace Datadog.Trace.DiagnosticListeners
             {
                 foreach (var part in pathSegment.DuckCast<RoutePatternPathSegmentStruct>().Parts)
                 {
-                    if (DuckType.CanCreate<RoutePatternContentPartStruct>(part))
+                    if (part.TryDuckCast(out RoutePatternContentPartStruct contentPart))
                     {
-                        var contentPart = part.DuckCast<RoutePatternContentPartStruct>();
                         sb.Append('/');
                         sb.Append(contentPart.Content);
                     }
-                    else if (DuckType.CanCreate<RoutePatternParameterPartStruct>(part))
+                    else if (part.TryDuckCast(out RoutePatternParameterPartStruct parameter))
                     {
-                        var parameter = part.DuckCast<RoutePatternParameterPartStruct>();
-
                         var parameterName = parameter.Name;
                         if (parameterName.Equals("area", StringComparison.OrdinalIgnoreCase))
                         {
@@ -440,10 +436,13 @@ namespace Datadog.Trace.DiagnosticListeners
         private static Span StartMvcCoreSpan(Tracer tracer, Span parentSpan, BeforeActionStruct typedArg, HttpContext httpContext, HttpRequest request)
         {
             // Create a child span for the MVC action
-            var mvcSpanTags = new AspNetCoreEndpointTags();
+            var mvcSpanTags = new AspNetCoreMvcTags();
             var mvcScope = tracer.StartActiveWithTags(MvcOperationName, parentSpan.Context, tags: mvcSpanTags);
             var span = mvcScope.Span;
             span.Type = SpanTypes.Web;
+
+            // This is only called with new route names, so parent tags are always AspNetCoreEndpointTags
+            var parentTags = (AspNetCoreEndpointTags)parentSpan.Tags;
 
             var trackingFeature = httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>();
             var isUsingEndpointRouting = trackingFeature.IsUsingEndpointRouting;
@@ -452,8 +451,7 @@ namespace Datadog.Trace.DiagnosticListeners
             if (isFirstExecution)
             {
                 trackingFeature.IsFirstPipelineExecution = false;
-                var url = httpContext.Request.GetUrl();
-                if (!string.Equals(url, trackingFeature.OriginalUrl))
+                if (!trackingFeature.MatchesOriginalPath(httpContext.Request))
                 {
                     // URL has changed from original, so treat this execution as a "subsequent" request
                     // Typically occurs for 404s for example
@@ -513,13 +511,17 @@ namespace Datadog.Trace.DiagnosticListeners
                         controllerName: controllerName,
                         actionName: actionName);
 
-                    resourceName = $"{trackingFeature.HttpMethod} {request.PathBase}{resourcePathName}";
+                    resourceName = $"{parentTags.HttpMethod} {request.PathBase.Value}{resourcePathName}";
                     aspNetRoute = routeTemplate?.TemplateText.ToLowerInvariant();
                 }
             }
 
-            // mirror the parent if we couldn't extract a route
-            span.ResourceName = resourceName ?? parentSpan.ResourceName;
+            // mirror the parent if we couldn't extract a route for some reason
+            // (and the parent is not using the placeholder resource name)
+            span.ResourceName = resourceName
+                             ?? (string.IsNullOrEmpty(parentSpan.ResourceName)
+                                     ? AspNetCoreRequestHandler.GetDefaultResourceName(httpContext.Request)
+                                     : parentSpan.ResourceName);
 
             mvcSpanTags.AspNetCoreAction = actionName;
             mvcSpanTags.AspNetCoreController = controllerName;
@@ -531,11 +533,7 @@ namespace Datadog.Trace.DiagnosticListeners
             {
                 // If we're using endpoint routing or this is a pipeline re-execution,
                 // these will already be set correctly
-                if (parentSpan.Tags is AspNetCoreEndpointTags parentTags)
-                {
-                    parentTags.AspNetCoreRoute = aspNetRoute;
-                }
-
+                parentTags.AspNetCoreRoute = aspNetRoute;
                 parentSpan.ResourceName = span.ResourceName;
             }
 
@@ -562,7 +560,9 @@ namespace Datadog.Trace.DiagnosticListeners
                 Span span = null;
                 if (shouldTrace)
                 {
-                    span = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, security, httpContext).Span;
+                    // Use an empty resource name here, as we will likely replace it as part of the request
+                    // If we don't, update it in OnHostingHttpRequestInStop or OnHostingUnhandledException
+                    span = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, httpContext, httpContext.Request, resourceName: string.Empty).Span;
                 }
 
                 if (shouldSecure)
@@ -601,8 +601,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     trackingFeature.IsUsingEndpointRouting = true;
                     trackingFeature.IsFirstPipelineExecution = false;
 
-                    var url = httpContext.Request.GetUrl();
-                    if (!string.Equals(url, trackingFeature.OriginalUrl))
+                    if (!trackingFeature.MatchesOriginalPath(httpContext.Request))
                     {
                         // URL has changed from original, so treat this execution as a "subsequent" request
                         // Typically occurs for 404s for example
@@ -626,7 +625,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 RouteEndpoint? endpoint = null;
 
-                if (rawEndpointFeature.TryDuckCast<IEndpointFeature>(out var endpointFeatureInterface))
+                if (rawEndpointFeature.TryDuckCast<EndpointFeatureProxy>(out var endpointFeatureInterface))
                 {
                     endpoint = endpointFeatureInterface.GetEndpoint();
                 }
@@ -676,7 +675,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     controllerName: controllerName,
                     actionName: actionName);
 
-                var resourceName = $"{trackingFeature.HttpMethod} {request.PathBase}{resourcePathName}";
+                var resourceName = $"{tags.HttpMethod} {request.PathBase}{resourcePathName}";
 
                 // NOTE: We could set the controller/action/area tags on the parent span
                 // But instead we re-extract them in the MVC endpoint as these are MVC
@@ -765,12 +764,24 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (scope != null)
             {
+                var span = scope.Span;
+
+                // we may need to update the resource name if none of the routing/mvc events updated it
                 // if we had an unhandled exception, the status code is already updated
-                if (!scope.Span.Error && arg.TryDuckCast<HttpRequestInStopStruct>(out var httpRequest))
+                if (string.IsNullOrEmpty(span.ResourceName) || !span.Error)
                 {
+                    var httpRequest = arg.DuckCast<HttpRequestInStopStruct>();
                     HttpContext httpContext = httpRequest.HttpContext;
-                    scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, tracer.Settings);
-                    scope.Span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                    if (string.IsNullOrEmpty(span.ResourceName))
+                    {
+                        span.ResourceName = AspNetCoreRequestHandler.GetDefaultResourceName(httpContext.Request);
+                    }
+
+                    if (!span.Error)
+                    {
+                        span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, tracer.Settings);
+                        span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                    }
                 }
 
                 scope.Dispose();
@@ -854,7 +865,7 @@ namespace Datadog.Trace.DiagnosticListeners
         /// <summary>
         /// Proxy for ducktyping IEndpointFeature when the interface is not implemented explicitly
         /// </summary>
-        /// <seealso cref="IEndpointFeature"/>
+        /// <seealso cref="EndpointFeatureProxy"/>
         [DuckCopy]
         public struct EndpointFeatureStruct
         {
