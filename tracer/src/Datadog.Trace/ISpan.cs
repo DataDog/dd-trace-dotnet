@@ -59,6 +59,11 @@ namespace Datadog.Trace
         ulong SpanId { get; }
 
         /// <summary>
+        /// Gets the span's span context
+        /// </summary>
+        ISpanContext Context { get;  }
+
+        /// <summary>
         /// Add a the specified tag to this span.
         /// </summary>
         /// <param name="key">The tag's key.</param>

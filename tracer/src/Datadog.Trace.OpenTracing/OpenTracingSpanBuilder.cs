@@ -75,7 +75,7 @@ namespace Datadog.Trace.OpenTracing
             lock (_lock)
             {
                 ISpanContext parentContext = GetParentContext();
-                Span ddSpan = _tracer.DatadogTracer.StartSpan(_operationName, parentContext, _serviceName, _start, _ignoreActiveSpan);
+                ISpan ddSpan = _tracer.DatadogTracer.StartSpan(_operationName, parentContext, _serviceName, _start, _ignoreActiveSpan);
                 var otSpan = new OpenTracingSpan(ddSpan);
 
                 if (_tags != null)

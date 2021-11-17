@@ -88,7 +88,9 @@ namespace Datadog.Trace.OpenTracing.Tests
             var span = GetScope("Op1", startTime).Span;
             span.Finish();
 
-            double durationDifference = Math.Abs((((OpenTracingSpan)span).Duration - expectedDuration).TotalMilliseconds);
+            var otSpan = (OpenTracingSpan)span;
+            var ddSpan = (Span)otSpan.Span;
+            double durationDifference = Math.Abs((ddSpan.Duration - expectedDuration).TotalMilliseconds);
             Assert.True(durationDifference < 100);
         }
 
@@ -114,7 +116,9 @@ namespace Datadog.Trace.OpenTracing.Tests
             var span = GetScope("Op1", startTime).Span;
             span.Finish(endTime);
 
-            Assert.Equal(endTime - startTime, ((OpenTracingSpan)span).Duration);
+            var otSpan = (OpenTracingSpan)span;
+            var ddSpan = (Span)otSpan.Span;
+            Assert.Equal(endTime - startTime, ddSpan.Duration);
         }
 
         [Fact]
@@ -126,7 +130,9 @@ namespace Datadog.Trace.OpenTracing.Tests
             var span = GetScope("Op1", startTime).Span;
             span.Finish(endTime);
 
-            Assert.Equal(TimeSpan.Zero, ((OpenTracingSpan)span).Duration);
+            var otSpan = (OpenTracingSpan)span;
+            var ddSpan = (Span)otSpan.Span;
+            Assert.Equal(TimeSpan.Zero, ddSpan.Duration);
         }
 
         [Fact]
@@ -139,7 +145,8 @@ namespace Datadog.Trace.OpenTracing.Tests
                 span = (OpenTracingSpan)scope.Span;
             }
 
-            Assert.True(span.Duration > TimeSpan.Zero);
+            var ddSpan = (Span)span.Span;
+            Assert.True(ddSpan.Duration > TimeSpan.Zero);
         }
 
         [Fact]

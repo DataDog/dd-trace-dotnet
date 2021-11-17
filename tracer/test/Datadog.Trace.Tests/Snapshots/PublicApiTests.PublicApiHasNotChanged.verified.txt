@@ -250,6 +250,7 @@ namespace Datadog.Trace
     }
     public interface ISpan : System.IDisposable
     {
+        Datadog.Trace.ISpanContext Context { get; }
         bool Error { get; set; }
         string OperationName { get; set; }
         string ResourceName { get; set; }
@@ -284,6 +285,7 @@ namespace Datadog.Trace
     }
     public class Span : Datadog.Trace.ISpan, System.IDisposable
     {
+        public Datadog.Trace.ISpanContext Context { get; }
         public bool Error { get; set; }
         public string OperationName { get; set; }
         public string ResourceName { get; set; }

@@ -31,9 +31,9 @@ namespace Datadog.Trace.ExtensionMethods
         {
             if (span == null) { throw new ArgumentNullException(nameof(span)); }
 
-            if (span.Context.TraceContext != null)
+            if (span.InternalContext.TraceContext != null)
             {
-                span.Context.TraceContext.SamplingPriority = samplingPriority;
+                span.InternalContext.TraceContext.SamplingPriority = samplingPriority;
             }
         }
 
