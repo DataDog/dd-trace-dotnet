@@ -104,7 +104,7 @@ namespace Datadog.Trace.Tools.Runner.Crank
 
                         var duration = (maxTimeStamp - minTimeStamp);
 
-                        Span span = tracer.StartSpan("crank.test", startTime: minTimeStamp);
+                        Span span = tracer.StartSpanWithTags("crank.test", startTime: minTimeStamp);
 
                         span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
                         span.Type = SpanTypes.Test;

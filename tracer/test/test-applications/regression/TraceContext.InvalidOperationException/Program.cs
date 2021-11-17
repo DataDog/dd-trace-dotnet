@@ -46,7 +46,7 @@ namespace TraceContext.InvalidOperationException
                                 {
                                     try
                                     {
-                                        Span firstSpan;
+                                        ISpan firstSpan;
                                         using (var outerScope = tracer.StartActive("outer-span"))
                                         {
                                             // Save the span so we can later re-use its TraceContext

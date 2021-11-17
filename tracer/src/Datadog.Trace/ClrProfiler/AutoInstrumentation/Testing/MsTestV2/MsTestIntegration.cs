@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
             string testSuite = testMethodInfo.TestClassName;
             string testName = testMethodInfo.TestMethodName;
 
-            Scope scope = Tracer.Instance.StartActive("mstest.test", serviceName: Tracer.Instance.DefaultServiceName);
+            Scope scope = Tracer.Instance.StartActiveWithTags("mstest.test", serviceName: Tracer.Instance.DefaultServiceName);
             Span span = scope.InternalSpan;
 
             span.Type = SpanTypes.Test;

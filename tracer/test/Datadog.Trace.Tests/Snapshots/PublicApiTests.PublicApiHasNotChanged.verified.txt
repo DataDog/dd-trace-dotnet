@@ -367,11 +367,11 @@ namespace Datadog.Trace
         public Datadog.Trace.Configuration.ImmutableTracerSettings Settings { get; }
         [set: System.Obsolete("Use Tracer.Configure to configure the global Tracer instance in code.")]
         public static Datadog.Trace.Tracer Instance { get; set; }
-        public Datadog.Trace.Scope ActivateSpan(Datadog.Trace.Span span, bool finishOnClose = true) { }
+        public Datadog.Trace.IScope ActivateSpan(Datadog.Trace.ISpan span, bool finishOnClose = true) { }
         protected override void Finalize() { }
         public System.Threading.Tasks.Task ForceFlushAsync() { }
-        public Datadog.Trace.Scope StartActive(string operationName, Datadog.Trace.ISpanContext parent = null, string serviceName = null, System.DateTimeOffset? startTime = default, bool ignoreActiveScope = false, bool finishOnClose = true) { }
-        public Datadog.Trace.Span StartSpan(string operationName, Datadog.Trace.ISpanContext parent = null, string serviceName = null, System.DateTimeOffset? startTime = default, bool ignoreActiveScope = false) { }
+        public Datadog.Trace.IScope StartActive(string operationName, Datadog.Trace.ISpanContext parent = null, string serviceName = null, System.DateTimeOffset? startTime = default, bool ignoreActiveScope = false, bool finishOnClose = true) { }
+        public Datadog.Trace.ISpan StartSpan(string operationName, Datadog.Trace.ISpanContext parent = null, string serviceName = null, System.DateTimeOffset? startTime = default, bool ignoreActiveScope = false) { }
         public static void Configure(Datadog.Trace.Configuration.TracerSettings settings) { }
     }
 }

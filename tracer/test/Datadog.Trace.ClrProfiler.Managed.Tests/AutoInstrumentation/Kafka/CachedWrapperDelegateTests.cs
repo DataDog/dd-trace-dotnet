@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Kafka
             };
 
             var tracer = GetTracer();
-            var span = tracer.StartSpan("Test operation");
+            var span = (Span)tracer.StartSpan("Test operation");
             var wrapper = KafkaProduceSyncDeliveryHandlerIntegration.CachedWrapperDelegate<Action<DeliveryReport<string, string>>>.CreateWrapper(original, span);
 
             wrapper.Invoke(testReport);
@@ -45,12 +45,12 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Kafka
 
             var tracer = GetTracer();
 
-            var stringSpan = tracer.StartSpan("Test string message operation");
+            var stringSpan = (Span)tracer.StartSpan("Test string message operation");
             var stringWrapper = KafkaProduceSyncDeliveryHandlerIntegration
                          .CachedWrapperDelegate<Action<DeliveryReport<string, string>>>.CreateWrapper(x => { }, stringSpan);
             stringWrapper.Invoke(stringReport);
 
-            var intSpan = tracer.StartSpan("Test int message operation");
+            var intSpan = (Span)tracer.StartSpan("Test int message operation");
             var intWrapper = KafkaProduceSyncDeliveryHandlerIntegration
                                .CachedWrapperDelegate<Action<DeliveryReport<int, string>>>.CreateWrapper(x => { }, intSpan);
             intWrapper.Invoke(intReport);

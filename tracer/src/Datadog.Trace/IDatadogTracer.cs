@@ -19,11 +19,11 @@ namespace Datadog.Trace
 
         ImmutableTracerSettings Settings { get; }
 
-        Span StartSpan(string operationName);
+        ISpan StartSpan(string operationName);
 
-        Span StartSpan(string operationName, ISpanContext parent);
+        ISpan StartSpan(string operationName, ISpanContext parent);
 
-        Span StartSpan(string operationName, ISpanContext parent, string serviceName, DateTimeOffset? startTime, bool ignoreActiveScope);
+        ISpan StartSpan(string operationName, ISpanContext parent, string serviceName, DateTimeOffset? startTime, bool ignoreActiveScope);
 
         void Write(ArraySegment<Span> span);
 
@@ -32,7 +32,7 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="span">The span to activate.</param>
         /// <returns>A Scope object wrapping this span.</returns>
-        Scope ActivateSpan(Span span);
+        IScope ActivateSpan(ISpan span);
 
         /// <summary>
         /// Make a span the active span and return its new scope.
@@ -40,6 +40,6 @@ namespace Datadog.Trace
         /// <param name="span">The span to activate.</param>
         /// <param name="finishOnClose">Determines whether closing the returned scope will also finish the span.</param>
         /// <returns>A Scope object wrapping this span.</returns>
-        Scope ActivateSpan(Span span, bool finishOnClose);
+        IScope ActivateSpan(ISpan span, bool finishOnClose);
     }
 }

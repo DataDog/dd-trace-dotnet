@@ -104,7 +104,7 @@ namespace Samples.TracingWithoutLimits
         {
             Counts[Key(serviceName, operationName)]++;
 
-            Scope root;
+            IScope root;
 
             using (root = Tracer.Instance.StartActive(operationName: operationName, serviceName: serviceName))
             {
@@ -166,7 +166,7 @@ namespace Samples.TracingWithoutLimits
             return $"{service}_{operation}_{priority}";
         }
 
-        private static ConcurrentDictionary<string, double> GetMetrics(Scope root)
+        private static ConcurrentDictionary<string, double> GetMetrics(IScope root)
         {
             ConcurrentDictionary<string, double> metrics = null;
 

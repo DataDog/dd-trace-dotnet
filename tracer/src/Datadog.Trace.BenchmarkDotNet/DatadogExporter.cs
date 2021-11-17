@@ -63,7 +63,7 @@ namespace Datadog.Trace.BenchmarkDotNet
 
                 foreach (var report in summary.Reports)
                 {
-                    Span span = tracer.StartSpan("benchmarkdotnet.test", startTime: startTime);
+                    Span span = tracer.StartSpanWithTags("benchmarkdotnet.test", startTime: startTime);
                     double durationNanoseconds = 0;
 
                     span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
