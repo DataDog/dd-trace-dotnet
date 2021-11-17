@@ -218,8 +218,8 @@ namespace Datadog.Trace.Tests
             SpanContext remoteParentSpanCtx = new SpanContext(traceId: null, spanId: remoteParentSpanId);
 
             using (Span span1 = (Span)_tracer.StartSpan(operationName: "Operation Root", parent: remoteParentSpanCtx))
-            using (Span span2 = (Span)_tracer.StartSpan(operationName: "Operation Middle", parent: span1.Context))
-            using (Span span3 = (Span)_tracer.StartSpan(operationName: "Operation Leaf", parent: span2.Context))
+            using (Span span2 = (Span)_tracer.StartSpan(operationName: "Operation Middle", parent: span1.InternalContext))
+            using (Span span3 = (Span)_tracer.StartSpan(operationName: "Operation Leaf", parent: span2.InternalContext))
             {
                 span1.SpanId.Should().NotBe(0);
                 span2.SpanId.Should().NotBe(0);
@@ -273,10 +273,10 @@ namespace Datadog.Trace.Tests
                 scope3.Span.SpanId.Should().NotBe(remoteParentSpanId);          // There is an expected 1 in 2^64 chance of this line failing
                 span4.SpanId.Should().NotBe(remoteParentSpanId);                // There is an expected 1 in 2^64 chance of this line failing
 
-                scope1.InternalSpan.Context.ParentId.Should().Be(remoteParentSpanId);   // Parent (not root) of S1 is remote
-                span2.Context.ParentId.Should().Be(scope1.Span.SpanId);         // Parent of S2 is S1: it was created in an active S1-scope
-                scope3.InternalSpan.Context.ParentId.Should().Be(scope1.Span.SpanId);   // Parent of S3 is also S1: it was created in an active S1 scope, S2 is not a scope
-                span4.Context.ParentId.Should().Be(scope3.Span.SpanId);         // Parent of S4 is S3: it was created in an active S3-scope
+                scope1.InternalSpan.InternalContext.ParentId.Should().Be(remoteParentSpanId);   // Parent (not root) of S1 is remote
+                span2.InternalContext.ParentId.Should().Be(scope1.Span.SpanId);         // Parent of S2 is S1: it was created in an active S1-scope
+                scope3.InternalSpan.InternalContext.ParentId.Should().Be(scope1.Span.SpanId);   // Parent of S3 is also S1: it was created in an active S1 scope, S2 is not a scope
+                span4.InternalContext.ParentId.Should().Be(scope3.Span.SpanId);         // Parent of S4 is S3: it was created in an active S3-scope
 
                 scope1.InternalSpan.RootSpanId.Should().Be(scope1.Span.SpanId);
                 span2.RootSpanId.Should().Be(scope1.Span.SpanId);

@@ -26,21 +26,21 @@ namespace Datadog.Trace
 
         private readonly object _lock = new object();
 
-        internal Span(SpanContext context, DateTimeOffset? start)
-            : this(context, start, null)
+        internal Span(SpanContext internalContext, DateTimeOffset? start)
+            : this(internalContext, start, null)
         {
         }
 
-        internal Span(SpanContext context, DateTimeOffset? start, ITags tags)
+        internal Span(SpanContext internalContext, DateTimeOffset? start, ITags tags)
         {
             Tags = tags ?? new CommonTags();
-            Context = context;
-            StartTime = start ?? Context.TraceContext.UtcNow;
+            InternalContext = internalContext;
+            StartTime = start ?? InternalContext.TraceContext.UtcNow;
 
             Log.Debug(
                 "Span started: [s_id: {SpanID}, p_id: {ParentId}, t_id: {TraceId}]",
                 SpanId,
-                Context.ParentId,
+                InternalContext.ParentId,
                 TraceId);
         }
 
@@ -71,19 +71,24 @@ namespace Datadog.Trace
         /// </summary>
         public string ServiceName
         {
-            get => Context.ServiceName;
-            set => Context.ServiceName = value;
+            get => InternalContext.ServiceName;
+            set => InternalContext.ServiceName = value;
         }
 
         /// <summary>
         /// Gets the trace's unique identifier.
         /// </summary>
-        public ulong TraceId => Context.TraceId;
+        public ulong TraceId => InternalContext.TraceId;
 
         /// <summary>
         /// Gets the span's unique identifier.
         /// </summary>
-        public ulong SpanId => Context.SpanId;
+        public ulong SpanId => InternalContext.SpanId;
+
+        /// <summary>
+        /// Gets the span's span context
+        /// </summary>
+        public ISpanContext Context => InternalContext;
 
         /// <summary>
         /// Gets <i>local root span id</i>, i.e. the <c>SpanId</c> of the span that is the root of the local, non-reentrant
@@ -98,14 +103,14 @@ namespace Datadog.Trace
         {
             get
             {
-                Span localRootSpan = Context.TraceContext?.RootSpan;
+                Span localRootSpan = InternalContext.TraceContext?.RootSpan;
                 return (localRootSpan == null || localRootSpan == this) ? SpanId : localRootSpan.SpanId;
             }
         }
 
         internal ITags Tags { get; set; }
 
-        internal SpanContext Context { get; }
+        internal SpanContext InternalContext { get; }
 
         internal DateTimeOffset StartTime { get; private set; }
 
@@ -113,9 +118,9 @@ namespace Datadog.Trace
 
         internal bool IsFinished { get; private set; }
 
-        internal bool IsRootSpan => Context.TraceContext?.RootSpan == this;
+        internal bool IsRootSpan => InternalContext.TraceContext?.RootSpan == this;
 
-        internal bool IsTopLevel => Context.Parent == null || Context.Parent.ServiceName != ServiceName;
+        internal bool IsTopLevel => InternalContext.Parent == null || InternalContext.Parent.ServiceName != ServiceName;
 
         /// <summary>
         /// Returns a <see cref="string" /> that represents this instance.
@@ -126,10 +131,10 @@ namespace Datadog.Trace
         public override string ToString()
         {
             var sb = new StringBuilder();
-            sb.AppendLine($"TraceId: {Context.TraceId}");
-            sb.AppendLine($"ParentId: {Context.ParentId}");
-            sb.AppendLine($"SpanId: {Context.SpanId}");
-            sb.AppendLine($"Origin: {Context.Origin}");
+            sb.AppendLine($"TraceId: {InternalContext.TraceId}");
+            sb.AppendLine($"ParentId: {InternalContext.ParentId}");
+            sb.AppendLine($"SpanId: {InternalContext.SpanId}");
+            sb.AppendLine($"Origin: {InternalContext.Origin}");
             sb.AppendLine($"ServiceName: {ServiceName}");
             sb.AppendLine($"OperationName: {OperationName}");
             sb.AppendLine($"Resource: {ResourceName}");
@@ -160,14 +165,14 @@ namespace Datadog.Trace
             switch (key)
             {
                 case Trace.Tags.Origin:
-                    Context.Origin = value;
+                    InternalContext.Origin = value;
                     break;
                 case Trace.Tags.SamplingPriority:
                     if (Enum.TryParse(value, out SamplingPriority samplingPriority) &&
                         Enum.IsDefined(typeof(SamplingPriority), samplingPriority))
                     {
                         // allow setting the sampling priority via a tag
-                        Context.TraceContext.SamplingPriority = samplingPriority;
+                        InternalContext.TraceContext.SamplingPriority = samplingPriority;
                     }
 
                     break;
@@ -175,7 +180,7 @@ namespace Datadog.Trace
                     if (value?.ToBoolean() == true)
                     {
                         // user-friendly tag to set UserKeep priority
-                        Context.TraceContext.SamplingPriority = SamplingPriority.UserKeep;
+                        InternalContext.TraceContext.SamplingPriority = SamplingPriority.UserKeep;
                     }
 
                     break;
@@ -183,7 +188,7 @@ namespace Datadog.Trace
                     if (value?.ToBoolean() == true)
                     {
                         // user-friendly tag to set UserReject priority
-                        Context.TraceContext.SamplingPriority = SamplingPriority.UserReject;
+                        InternalContext.TraceContext.SamplingPriority = SamplingPriority.UserReject;
                     }
 
                     break;
@@ -264,7 +269,7 @@ namespace Datadog.Trace
         /// </summary>
         public void Finish()
         {
-            Finish(Context.TraceContext.ElapsedSince(StartTime));
+            Finish(InternalContext.TraceContext.ElapsedSince(StartTime));
         }
 
         /// <summary>
@@ -320,9 +325,9 @@ namespace Datadog.Trace
             switch (key)
             {
                 case Trace.Tags.SamplingPriority:
-                    return ((int?)(Context.TraceContext?.SamplingPriority ?? Context.SamplingPriority))?.ToString();
+                    return ((int?)(InternalContext.TraceContext?.SamplingPriority ?? InternalContext.SamplingPriority))?.ToString();
                 case Trace.Tags.Origin:
-                    return Context.Origin;
+                    return InternalContext.Origin;
                 default:
                     return Tags.GetTag(key);
             }
@@ -350,13 +355,13 @@ namespace Datadog.Trace
 
             if (shouldCloseSpan)
             {
-                Context.TraceContext.CloseSpan(this);
+                InternalContext.TraceContext.CloseSpan(this);
 
                 if (IsLogLevelDebugEnabled)
                 {
                     Log.Debug(
                         "Span closed: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] for (Service: {ServiceName}, Resource: {ResourceName}, Operation: {OperationName}, Tags: [{Tags}])",
-                        new object[] { SpanId, Context.ParentId, TraceId, ServiceName, ResourceName, OperationName, Tags });
+                        new object[] { SpanId, InternalContext.ParentId, TraceId, ServiceName, ResourceName, OperationName, Tags });
                 }
             }
         }
@@ -375,7 +380,7 @@ namespace Datadog.Trace
 
         internal void ResetStartTime()
         {
-            StartTime = Context.TraceContext.UtcNow;
+            StartTime = InternalContext.TraceContext.UtcNow;
         }
     }
 }

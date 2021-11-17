@@ -76,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                         basicProperties.Headers = new Dictionary<string, object>();
                     }
 
-                    SpanContextPropagator.Instance.Inject(scope.InternalSpan.Context, basicProperties.Headers, ContextPropagation.HeadersSetter);
+                    SpanContextPropagator.Instance.Inject(scope.InternalSpan.InternalContext, basicProperties.Headers, ContextPropagation.HeadersSetter);
                 }
             }
 

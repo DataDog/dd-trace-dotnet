@@ -49,12 +49,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             var scope = AwsSqsCommon.CreateScope(Tracer.Instance, Operation, out AwsSqsTags tags);
             tags.QueueUrl = requestProxy.QueueUrl;
 
-            if (scope?.InternalSpan?.Context != null && requestProxy.Entries.Count > 0)
+            if (scope?.InternalSpan?.InternalContext != null && requestProxy.Entries.Count > 0)
             {
                 for (int i = 0; i < requestProxy.Entries.Count; i++)
                 {
                     var entry = requestProxy.Entries[i].DuckCast<IContainsMessageAttributes>();
-                    ContextPropagation.InjectHeadersIntoMessage<TSendMessageBatchRequest>(entry, scope?.InternalSpan?.Context);
+                    ContextPropagation.InjectHeadersIntoMessage<TSendMessageBatchRequest>(entry, scope?.InternalSpan?.InternalContext);
                 }
             }
 
