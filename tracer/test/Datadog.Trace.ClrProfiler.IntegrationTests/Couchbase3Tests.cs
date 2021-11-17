@@ -34,8 +34,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "ArmUnsupported")]
         public void SubmitTraces(string packageVersion)
         {
-            SetCallTargetSettings(true);
-
             int agentPort = TcpPortProvider.GetOpenPort();
             using (var agent = new MockTracerAgent(agentPort))
             using (RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
