@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler
 
             if (span != null)
             {
-                return tracer.ActivateSpan(span);
+                return tracer.ActivateSpanInternal(span);
             }
 
             return null;
@@ -103,7 +103,7 @@ namespace Datadog.Trace.ClrProfiler
                 tags = new HttpTags();
 
                 string serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
-                span = tracer.StartSpan(OperationName, tags, serviceName: serviceName, traceId: traceId, spanId: spanId, startTime: startTime, addToTraceContext: addToTraceContext);
+                span = tracer.StartSpanWithTags(OperationName, tags, serviceName: serviceName, traceId: traceId, spanId: spanId, startTime: startTime, addToTraceContext: addToTraceContext);
 
                 span.Type = SpanTypes.Http;
                 span.ResourceName = $"{httpMethod} {resourceUrl}";

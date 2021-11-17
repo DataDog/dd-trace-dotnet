@@ -31,7 +31,7 @@ namespace Datadog.Trace.Tests.Logging
             return new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
         }
 
-        internal static void LogInSpanWithServiceName(Tracer tracer, ILog logger, Func<string, object, bool, IDisposable> openMappedContext, string service, out Scope scope)
+        internal static void LogInSpanWithServiceName(Tracer tracer, ILog logger, Func<string, object, bool, IDisposable> openMappedContext, string service, out IScope scope)
         {
             using (scope = tracer.StartActive("span", serviceName: service))
             {
@@ -42,7 +42,7 @@ namespace Datadog.Trace.Tests.Logging
             }
         }
 
-        internal static void LogInParentSpan(Tracer tracer, ILog logger, Func<string, object, bool, IDisposable> openMappedContext, out Scope parentScope, out Scope childScope)
+        internal static void LogInParentSpan(Tracer tracer, ILog logger, Func<string, object, bool, IDisposable> openMappedContext, out IScope parentScope, out IScope childScope)
         {
             using (parentScope = tracer.StartActive("parent"))
             {
@@ -60,7 +60,7 @@ namespace Datadog.Trace.Tests.Logging
             }
         }
 
-        internal static void LogInChildSpan(Tracer tracer, ILog logger, Func<string, object, bool, IDisposable> openMappedContext, out Scope parentScope, out Scope childScope)
+        internal static void LogInChildSpan(Tracer tracer, ILog logger, Func<string, object, bool, IDisposable> openMappedContext, out IScope parentScope, out IScope childScope)
         {
             using (parentScope = tracer.StartActive("parent"))
             {
@@ -74,7 +74,7 @@ namespace Datadog.Trace.Tests.Logging
             }
         }
 
-        internal static void LogOutsideSpans(Tracer tracer, ILog logger, Func<string, object, bool, IDisposable> openMappedContext, out Scope parentScope, out Scope childScope)
+        internal static void LogOutsideSpans(Tracer tracer, ILog logger, Func<string, object, bool, IDisposable> openMappedContext, out IScope parentScope, out IScope childScope)
         {
             logger.Log(LogLevel.Info, () => $"{LogPrefix}Logged before starting/activating a scope");
 
@@ -92,7 +92,7 @@ namespace Datadog.Trace.Tests.Logging
             logger.Log(LogLevel.Info, () => $"{LogPrefix}Closed child scope so there is no active scope.");
         }
 
-        internal static void LogEverywhere(Tracer tracer, ILog logger, Func<string, object, bool, IDisposable> openMappedContext, out Scope parentScope, out Scope childScope)
+        internal static void LogEverywhere(Tracer tracer, ILog logger, Func<string, object, bool, IDisposable> openMappedContext, out IScope parentScope, out IScope childScope)
         {
             logger.Log(LogLevel.Info, () => $"{LogPrefix}Logged before starting/activating a scope");
 

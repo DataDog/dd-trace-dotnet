@@ -136,7 +136,7 @@ namespace Datadog.Trace.ServiceFabric
                 tags.RemotingInvocationId = messageHeader.InvocationId;
             }
 
-            Span span = tracer.StartSpan(GetSpanName(spanKind), tags, context);
+            Span span = tracer.StartSpanWithTags(GetSpanName(spanKind), tags, context);
             span.ResourceName = resourceName;
             tags.SetAnalyticsSampleRate(ServiceRemotingConstants.IntegrationId, Tracer.Instance.Settings, enabledWithGlobalSetting: false);
 

@@ -127,7 +127,7 @@ namespace Datadog.Trace.Tests.Logging
             Assert.All(filteredLogs, e => LogEventDoesNotContainCorrelationIdentifiers(e));
         }
 
-        internal static void LogEventContains(string nLogString, string service, string version, string env, Scope scope)
+        internal static void LogEventContains(string nLogString, string service, string version, string env, IScope scope)
         {
             Assert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.ServiceKey, service), nLogString);
             Assert.Contains(string.Format(NLogExpectedStringFormat, CorrelationIdentifier.EnvKey, env), nLogString);
