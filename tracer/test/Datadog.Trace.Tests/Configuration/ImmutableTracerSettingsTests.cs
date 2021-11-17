@@ -19,6 +19,7 @@ namespace Datadog.Trace.Tests.Configuration
         // These properties are present on TracerSettings, but not on ImmutableTracerSettings
         private static readonly string[] ExcludedProperties =
         {
+            nameof(TracerSettings.AdoNetExcludedTypes),
             nameof(TracerSettings.DisabledIntegrationNames),
             nameof(TracerSettings.DiagnosticSourceEnabled),
         };

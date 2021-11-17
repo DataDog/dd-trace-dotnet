@@ -36,7 +36,6 @@ namespace Datadog.Trace.Configuration
             ServiceName = settings.ServiceName;
             ServiceVersion = settings.ServiceVersion;
             TraceEnabled = settings.TraceEnabled;
-            AdoNetExcludedTypes = settings.AdoNetExcludedTypes;
             AgentUri = settings.AgentUri;
             TracesTransport = settings.TracesTransport;
             TracesPipeName = settings.TracesPipeName;
@@ -92,12 +91,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.TraceEnabled"/>
         public bool TraceEnabled { get; }
-
-        /// <summary>
-        /// Gets the AdoNet types to exclude from automatic instrumentation.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.AdoNetExcludedTypes"/>
-        public HashSet<string> AdoNetExcludedTypes { get; }
 
         /// <summary>
         /// Gets the Uri where the Tracer can connect to the Agent.
