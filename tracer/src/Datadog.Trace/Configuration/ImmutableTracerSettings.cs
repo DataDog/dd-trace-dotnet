@@ -174,12 +174,12 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets the global tags, which are applied to all <see cref="Span"/>s.
         /// </summary>
-        public IDictionary<string, string> GlobalTags { get; }
+        public IReadOnlyDictionary<string, string> GlobalTags { get; }
 
         /// <summary>
         /// Gets the map of header keys to tag names, which are applied to the root <see cref="Span"/> of incoming requests.
         /// </summary>
-        public IDictionary<string, string> HeaderTags { get; }
+        public IReadOnlyDictionary<string, string> HeaderTags { get; }
 
         /// <summary>
         /// Gets the port where the DogStatsd server is listening for connections.

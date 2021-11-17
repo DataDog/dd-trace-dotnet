@@ -70,7 +70,7 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
-        public static bool IsEmpty<TKey, TValue>(this IDictionary<TKey, TValue> dictionary)
+        public static bool IsEmpty<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> dictionary)
         {
             if (dictionary is ConcurrentDictionary<TKey, TValue> concurrentDictionary)
             {
@@ -80,6 +80,6 @@ namespace Datadog.Trace.ExtensionMethods
             return dictionary.Count == 0;
         }
 
-        public static bool IsNullOrEmpty<TKey, TValue>(this IDictionary<TKey, TValue> dictionary) => dictionary?.IsEmpty() ?? true;
+        public static bool IsNullOrEmpty<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> dictionary) => dictionary?.IsEmpty() ?? true;
     }
 }
