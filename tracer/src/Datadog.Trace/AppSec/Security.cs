@@ -13,6 +13,7 @@ using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -180,6 +181,21 @@ namespace Datadog.Trace.AppSec
             }
         }
 
+        private static void AddHeaderTags(Span span, IHeadersCollection headers, Dictionary<string, string> headersToCollect)
+        {
+            var tags = SpanContextPropagator.Instance.ExtractHeaderTags(headers, headersToCollect, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+            foreach (var tag in tags)
+            {
+                span.SetTag(tag.Key, tag.Value);
+            }
+        }
+
+        private static Span GetLocalRootSpan(Span span)
+        {
+            var localRootSpan = span.Context.TraceContext?.RootSpan;
+            return (localRootSpan == null) ? span : localRootSpan;
+        }
+
         /// <summary>
         /// Frees resouces
         /// </summary>
@@ -188,7 +204,7 @@ namespace Datadog.Trace.AppSec
         private void Report(ITransport transport, Span span, WafMatch[] results, bool blocked)
         {
             span.SetTag(Tags.AppSecEvent, "true");
-            span.SetTraceSamplingPriority(SamplingPriority.AppSecKeep);
+            span.SetTraceSamplingPriority(SamplingPriority.UserKeep);
 
             LogMatchesIfDebugEnabled(results, blocked);
 
@@ -204,32 +220,18 @@ namespace Datadog.Trace.AppSec
             span.SetTag(Tags.ActorIp, ipInfo.IpAddress);
 
             var headers = transport.GetRequestHeaders();
-            var tags = SpanContextPropagator.Instance.ExtractHeaderTags(headers, RequestHeaders, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
-            foreach (var tag in tags)
-            {
-                span.SetTag(tag.Key, tag.Value);
-            }
+            AddHeaderTags(span, headers, RequestHeaders);
 
             transport.OnCompleted(() =>
             {
                 var headers = transport.GetResponseHeaders();
-                var tags = SpanContextPropagator.Instance.ExtractHeaderTags(headers, ResponseHeaders, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
-                foreach (var tag in tags)
-                {
-                    span.SetTag(tag.Key, tag.Value);
-                }
+                AddHeaderTags(span, headers, ResponseHeaders);
             });
-        }
-
-        private Span GetLocalRootSpan(Span span)
-        {
-            var localRootSpan = span.Context.TraceContext?.RootSpan;
-            return (localRootSpan == null) ? span : localRootSpan;
         }
 
         private void RunWafAndReact(IDictionary<string, object> args, ITransport transport, Span span)
         {
-            span = GetLocalRootSpan(span);
+            span = Security.GetLocalRootSpan(span);
 
             AnnotateSpan(span);
 
