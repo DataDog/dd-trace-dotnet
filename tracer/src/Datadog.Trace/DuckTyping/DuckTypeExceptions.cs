@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 #pragma warning disable SA1649 // File name must match first type name
@@ -40,6 +41,7 @@ namespace Datadog.Trace.DuckTyping
         }
 
         [DebuggerHidden]
+        [DoesNotReturn]
         internal static void Throw()
         {
             throw new DuckTypeProxyTypeDefinitionIsNull();
@@ -57,6 +59,7 @@ namespace Datadog.Trace.DuckTyping
         }
 
         [DebuggerHidden]
+        [DoesNotReturn]
         internal static void Throw()
         {
             throw new DuckTypeTargetObjectInstanceIsNull();
@@ -74,6 +77,7 @@ namespace Datadog.Trace.DuckTyping
         }
 
         [DebuggerHidden]
+        [DoesNotReturn]
         internal static void Throw(Type actualType, Type expectedType)
         {
             throw new DuckTypeInvalidTypeConversionException(actualType, expectedType);
@@ -91,6 +95,7 @@ namespace Datadog.Trace.DuckTyping
         }
 
         [DebuggerHidden]
+        [DoesNotReturn]
         internal static void Throw(PropertyInfo property)
         {
             throw new DuckTypePropertyCantBeReadException(property);
@@ -108,6 +113,7 @@ namespace Datadog.Trace.DuckTyping
         }
 
         [DebuggerHidden]
+        [DoesNotReturn]
         internal static void Throw(PropertyInfo property)
         {
             throw new DuckTypePropertyCantBeWrittenException(property);
@@ -125,6 +131,7 @@ namespace Datadog.Trace.DuckTyping
         }
 
         [DebuggerHidden]
+        [DoesNotReturn]
         internal static void Throw(PropertyInfo property)
         {
             throw new DuckTypePropertyArgumentsLengthException(property);
@@ -142,6 +149,7 @@ namespace Datadog.Trace.DuckTyping
         }
 
         [DebuggerHidden]
+        [DoesNotReturn]
         internal static void Throw(FieldInfo field)
         {
             throw new DuckTypeFieldIsReadonlyException(field);
@@ -159,26 +167,10 @@ namespace Datadog.Trace.DuckTyping
         }
 
         [DebuggerHidden]
+        [DoesNotReturn]
         internal static void Throw(string name, string duckAttributeName)
         {
             throw new DuckTypePropertyOrFieldNotFoundException(name, duckAttributeName);
-        }
-    }
-
-    /// <summary>
-    /// DuckType type is not public exception
-    /// </summary>
-    internal class DuckTypeTypeIsNotPublicException : DuckTypeException
-    {
-        private DuckTypeTypeIsNotPublicException(Type type, string argumentName)
-            : base($"The type '{type.FullName}' must be public, argument: '{argumentName}'")
-        {
-        }
-
-        [DebuggerHidden]
-        internal static void Throw(Type type, string argumentName)
-        {
-            throw new DuckTypeTypeIsNotPublicException(type, argumentName);
         }
     }
 
@@ -193,6 +185,7 @@ namespace Datadog.Trace.DuckTyping
         }
 
         [DebuggerHidden]
+        [DoesNotReturn]
         internal static void Throw(Type type)
         {
             throw new DuckTypeStructMembersCannotBeChangedException(type);
@@ -210,6 +203,7 @@ namespace Datadog.Trace.DuckTyping
         }
 
         [DebuggerHidden]
+        [DoesNotReturn]
         internal static void Throw(MethodInfo method)
         {
             throw new DuckTypeTargetMethodNotFoundException(method);
@@ -227,6 +221,7 @@ namespace Datadog.Trace.DuckTyping
         }
 
         [DebuggerHidden]
+        [DoesNotReturn]
         internal static void Throw(MethodInfo proxyMethod, ParameterInfo targetParameterInfo)
         {
             throw new DuckTypeProxyMethodParameterIsMissingException(proxyMethod, targetParameterInfo);
@@ -244,6 +239,7 @@ namespace Datadog.Trace.DuckTyping
         }
 
         [DebuggerHidden]
+        [DoesNotReturn]
         internal static void Throw(MethodInfo proxyMethod, MethodInfo targetMethod)
         {
             throw new DuckTypeProxyAndTargetMethodParameterSignatureMismatchException(proxyMethod, targetMethod);
@@ -261,6 +257,7 @@ namespace Datadog.Trace.DuckTyping
         }
 
         [DebuggerHidden]
+        [DoesNotReturn]
         internal static void Throw(MethodInfo proxyMethod, MethodInfo targetMethod)
         {
             throw new DuckTypeProxyAndTargetMethodReturnTypeMismatchException(proxyMethod, targetMethod);
@@ -278,6 +275,7 @@ namespace Datadog.Trace.DuckTyping
         }
 
         [DebuggerHidden]
+        [DoesNotReturn]
         internal static void Throw(MethodInfo proxyMethod)
         {
             throw new DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException(proxyMethod);
@@ -295,6 +293,7 @@ namespace Datadog.Trace.DuckTyping
         }
 
         [DebuggerHidden]
+        [DoesNotReturn]
         internal static void Throw(MethodInfo proxyMethod, MethodInfo targetMethod, MethodInfo targetMethod2)
         {
             throw new DuckTypeTargetMethodAmbiguousMatchException(proxyMethod, targetMethod, targetMethod2);
@@ -312,6 +311,7 @@ namespace Datadog.Trace.DuckTyping
         }
 
         [DebuggerHidden]
+        [DoesNotReturn]
         internal static void Throw(Type type)
         {
             throw new DuckTypeReverseProxyBaseIsStructException(type);
@@ -329,6 +329,7 @@ namespace Datadog.Trace.DuckTyping
         }
 
         [DebuggerHidden]
+        [DoesNotReturn]
         internal static void Throw(Type type)
         {
             throw new DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException(type);
@@ -346,6 +347,7 @@ namespace Datadog.Trace.DuckTyping
         }
 
         [DebuggerHidden]
+        [DoesNotReturn]
         internal static void Throw(PropertyInfo property)
         {
             throw new DuckTypeReverseProxyPropertyCannotBeAbstractException(property);
@@ -363,6 +365,7 @@ namespace Datadog.Trace.DuckTyping
         }
 
         [DebuggerHidden]
+        [DoesNotReturn]
         internal static void Throw(MethodInfo method)
         {
             throw new DuckTypeIncorrectReverseMethodUsageException(method);
@@ -380,6 +383,7 @@ namespace Datadog.Trace.DuckTyping
         }
 
         [DebuggerHidden]
+        [DoesNotReturn]
         internal static void Throw(PropertyInfo property)
         {
             throw new DuckTypeIncorrectReversePropertyUsageException(property);
@@ -397,6 +401,7 @@ namespace Datadog.Trace.DuckTyping
         }
 
         [DebuggerHidden]
+        [DoesNotReturn]
         internal static void Throw(IEnumerable<MethodInfo> methods)
         {
             throw new DuckTypeReverseProxyMissingMethodImplementationException(methods);
@@ -414,6 +419,7 @@ namespace Datadog.Trace.DuckTyping
         }
 
         [DebuggerHidden]
+        [DoesNotReturn]
         internal static void Throw(MethodInfo method)
         {
             throw new DuckTypeReverseAttributeParameterNamesMismatchException(method);
@@ -432,6 +438,7 @@ namespace Datadog.Trace.DuckTyping
         }
 
         [DebuggerHidden]
+        [DoesNotReturn]
         internal static void Throw(MethodInfo implementationMethod, MethodInfo targetMethod)
         {
             throw new DuckTypeReverseProxyMustImplementGenericMethodAsGenericException(implementationMethod, targetMethod);

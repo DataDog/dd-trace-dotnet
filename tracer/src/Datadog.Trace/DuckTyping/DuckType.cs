@@ -969,11 +969,6 @@ namespace Datadog.Trace.DuckTyping
             /// </summary>
             public static readonly Type Type = typeof(T);
 
-            /// <summary>
-            /// Gets if the T type is visible
-            /// </summary>
-            public static readonly bool IsVisible = Type.IsPublic || Type.IsNestedPublic;
-
             private static CreateTypeResult _fastPath = default;
 
             /// <summary>
