@@ -81,6 +81,11 @@
     <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.22.0 -->
     <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.22.0" />
 
+    <!-- Integration: Couchbase.NetClient -->
+    <!-- Assembly: Couchbase.NetClient -->
+    <!-- Latest package https://www.nuget.org/packages/CouchbaseNetClient/3.2.3 -->
+    <PackageReference Include="CouchbaseNetClient" Version="3.2.3" />
+
     <!-- Integration: Elasticsearch.Net -->
     <!-- Assembly: Elasticsearch.Net -->
     <!-- Latest package https://www.nuget.org/packages/Elasticsearch.Net/7.15.1 -->

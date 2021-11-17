@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">3.2.3</ApiVersion>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CouchbaseNetClient" Version="$(ApiVersion)" />
+  </ItemGroup>
+
+</Project>
