@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #else
 #if NETFRAMEWORK
 #endif
-                new object[] { "3.7.1.29" },
+                new object[] { "3.7.1.36" },
 #endif
             };
 
@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #else
 #if NETFRAMEWORK
 #endif
-                new object[] { "7.15.1" },
+                new object[] { "7.15.2" },
 #endif
             };
 
@@ -271,7 +271,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #else
 #if NETFRAMEWORK
 #endif
-                new object[] { "3.22.0" },
+                new object[] { "3.22.1" },
 #endif
             };
 
@@ -315,7 +315,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NETFRAMEWORK
                 new object[] { "1.2.11" },
 #endif
-                new object[] { "2.0.12" },
+                new object[] { "2.0.13" },
 #endif
             };
 
@@ -329,6 +329,32 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NETFRAMEWORK
 #endif
                 new object[] { "4.2.4" },
+#endif
+            };
+
+        public static IEnumerable<object[]> Couchbase =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETFRAMEWORK
+#endif
+                new object[] { "2.7.26" },
+#endif
+            };
+
+        public static IEnumerable<object[]> Couchbase3 =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETFRAMEWORK
+#endif
+                new object[] { "3.2.4" },
 #endif
             };
 

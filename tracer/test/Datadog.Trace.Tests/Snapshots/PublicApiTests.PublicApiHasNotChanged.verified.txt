@@ -259,6 +259,7 @@ namespace Datadog.Trace
         public const string Benchmark = "benchmark";
         public const string Build = "build";
         public const string Custom = "custom";
+        public const string Db = "db";
         public const string Http = "http";
         public const string Queue = "queue";
         public const string Serverless = "serverless";
