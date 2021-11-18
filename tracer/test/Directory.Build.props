@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <!-- StyleCop -->
-  <ItemGroup>
+  <ItemGroup Condition="$(MSBuildProjectExtension) == '.csproj'">
     <Compile Include="$(MSBuildThisFileDirectory)GlobalSuppressions.cs" Link="GlobalSuppressions.test.cs" />
   </ItemGroup>
 
