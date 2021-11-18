@@ -22,8 +22,7 @@ namespace Samples.Couchbase3
 
             // get a user-defined collection reference
 #if COUCHBASE_3_0
-            var scope = bucket.Scope("tenant_agent_00");
-            var collection = scope.Collection("users");
+            var collection = bucket.DefaultCollection();
 #else
             var scope = await bucket.ScopeAsync("tenant_agent_00");
             var collection = await scope.CollectionAsync("users");
