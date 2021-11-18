@@ -18,15 +18,15 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
     {
         public static IEnumerable<object[]> GetDbCommands()
         {
-            yield return new object[] { new System.Data.SqlClient.SqlCommand(),              nameof(IntegrationIds.SqlClient), DbType.SqlServer  };
-            yield return new object[] { new Microsoft.Data.SqlClient.SqlCommand(),           nameof(IntegrationIds.SqlClient), DbType.SqlServer  };
-            yield return new object[] { new MySql.Data.MySqlClient.MySqlCommand(),           nameof(IntegrationIds.MySql),     DbType.MySql      };
-            yield return new object[] { new MySqlConnector.MySqlCommand(),                   nameof(IntegrationIds.MySql),     DbType.MySql      };
-            yield return new object[] { new Npgsql.NpgsqlCommand(),                          nameof(IntegrationIds.Npgsql),    DbType.PostgreSql };
-            yield return new object[] { new Microsoft.Data.Sqlite.SqliteCommand(),           nameof(IntegrationIds.Sqlite),    DbType.Sqlite     };
-            yield return new object[] { new System.Data.SQLite.SQLiteCommand(),              nameof(IntegrationIds.Sqlite),    DbType.Sqlite     };
-            yield return new object[] { new Oracle.ManagedDataAccess.Client.OracleCommand(), nameof(IntegrationIds.Oracle),    DbType.Oracle     };
-            yield return new object[] { new Oracle.DataAccess.Client.OracleCommand(),        nameof(IntegrationIds.Oracle),    DbType.Oracle     };
+            yield return new object[] { new System.Data.SqlClient.SqlCommand(),              nameof(IntegrationId.SqlClient), DbType.SqlServer  };
+            yield return new object[] { new Microsoft.Data.SqlClient.SqlCommand(),           nameof(IntegrationId.SqlClient), DbType.SqlServer  };
+            yield return new object[] { new MySql.Data.MySqlClient.MySqlCommand(),           nameof(IntegrationId.MySql),     DbType.MySql      };
+            yield return new object[] { new MySqlConnector.MySqlCommand(),                   nameof(IntegrationId.MySql),     DbType.MySql      };
+            yield return new object[] { new Npgsql.NpgsqlCommand(),                          nameof(IntegrationId.Npgsql),    DbType.PostgreSql };
+            yield return new object[] { new Microsoft.Data.Sqlite.SqliteCommand(),           nameof(IntegrationId.Sqlite),    DbType.Sqlite     };
+            yield return new object[] { new System.Data.SQLite.SQLiteCommand(),              nameof(IntegrationId.Sqlite),    DbType.Sqlite     };
+            yield return new object[] { new Oracle.ManagedDataAccess.Client.OracleCommand(), nameof(IntegrationId.Oracle),    DbType.Oracle     };
+            yield return new object[] { new Oracle.DataAccess.Client.OracleCommand(),        nameof(IntegrationId.Oracle),    DbType.Oracle     };
         }
 
         [Theory]
