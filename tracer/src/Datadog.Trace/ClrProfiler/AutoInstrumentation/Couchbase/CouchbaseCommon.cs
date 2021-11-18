@@ -25,11 +25,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         internal const string MaxVersion2 = "2";
         internal const string MinVersion3 = "3";
         internal const string MaxVersion3 = "3";
-        internal const string IntegrationName = nameof(IntegrationIds.Couchbase);
+        internal const string IntegrationName = nameof(Configuration.IntegrationId.Couchbase);
 
         private const string OperationName = "couchbase.query";
         private const string ServiceName = "couchbase";
-        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
+        private const IntegrationId IntegrationId = Configuration.IntegrationId.Couchbase;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CouchbaseCommon));
 
         internal static CallTargetState CommonOnMethodBeginV3<TOperation>(TOperation tOperation)

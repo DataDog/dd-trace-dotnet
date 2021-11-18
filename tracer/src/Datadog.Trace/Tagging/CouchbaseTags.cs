@@ -22,7 +22,7 @@ namespace Datadog.Trace.Tagging
 
         public override string SpanKind => SpanKinds.Client;
 
-        public string InstrumentationName => nameof(IntegrationIds.Couchbase);
+        public string InstrumentationName => nameof(IntegrationId.Couchbase);
 
         public string OperationCode { get; set; }
 
