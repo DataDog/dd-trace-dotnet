@@ -68,7 +68,6 @@ namespace Honeypot
             NugetPackages.Add("log4net", new [] { "log4net" });
             NugetPackages.Add("Microsoft.Azure.WebJobs.Host", new [] { "Microsoft.Azure.WebJobs" });
             NugetPackages.Add("Microsoft.Azure.WebJobs.Script.WebHost", new string[] { });
-            NugetPackages.Add("Couchbase.NetClient", new string[] { "CouchbaseNetClient" });
         }
 
         private IntegrationMap()
