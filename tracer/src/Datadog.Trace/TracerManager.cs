@@ -293,8 +293,9 @@ namespace Datadog.Trace
                     writer.WriteStartArray();
 
                     // In contrast to 1.x, this only shows _known_ integrations, but
-                    // lists them whether they were disabled with DD_DISABLED_INTEGRATIONS,
-                    // or DD_INTEGRATION_{0}_DISABLED
+                    // lists them whether they were explicitly disabled with
+                    // DD_DISABLED_INTEGRATIONS, DD_TRACE_{0}_ENABLED, DD_{0}_ENABLED,
+                    // or manually in code.
                     foreach (var integration in instanceSettings.Integrations.Settings)
                     {
                         if (integration.Enabled == false)
