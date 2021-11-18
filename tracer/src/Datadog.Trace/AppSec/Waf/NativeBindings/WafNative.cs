@@ -354,7 +354,6 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                 var installDir = ReducedRegistryAccess.ReadLocalMachineString(path, "InstallPath");
                 if (installDir != null)
                 {
-                    Log.Information($"AddPathFromMsiSettings {installDir}");
                     paths.Add(installDir);
                 }
             }
