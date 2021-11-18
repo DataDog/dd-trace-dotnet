@@ -99,10 +99,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
         public static class Cache<TCommand>
         {
+            // ReSharper disable StaticMemberInGenericType
+            // Static fields used intentionally to cache a different set of values for each TCommand.
             private static readonly Type CommandType;
             private static readonly string DbTypeName;
             private static readonly string OperationName;
             private static readonly IntegrationId IntegrationId;
+            // ReSharper restore StaticMemberInGenericType
 
             static Cache()
             {
