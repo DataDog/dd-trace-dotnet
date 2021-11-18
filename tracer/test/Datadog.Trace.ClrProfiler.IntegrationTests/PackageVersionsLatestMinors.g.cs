@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
                 new object[] { "3.3.103.26" },
                 new object[] { "3.5.1.28" },
-                new object[] { "3.7.1.36" },
+                new object[] { "3.7.1.29" },
 #endif
             };
 
@@ -85,7 +85,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "7.12.1" },
                 new object[] { "7.13.2" },
                 new object[] { "7.14.1" },
-                new object[] { "7.15.2" },
+                new object[] { "7.15.1" },
 #endif
             };
 
@@ -381,7 +381,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.19.0" },
                 new object[] { "3.20.1" },
                 new object[] { "3.21.0" },
-                new object[] { "3.22.1" },
+                new object[] { "3.22.0" },
 #endif
             };
 
@@ -450,7 +450,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NETFRAMEWORK
                 new object[] { "1.2.11" },
 #endif
-                new object[] { "2.0.13" },
+                new object[] { "2.0.12" },
 #endif
             };
 
@@ -466,39 +466,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "4.0.3" },
                 new object[] { "4.1.6" },
                 new object[] { "4.2.4" },
-#endif
-            };
-
-        public static IEnumerable<object[]> Couchbase =>
-
-            new List<object[]>
-            {
-#if DEFAULT_SAMPLES
-                new object[] { string.Empty },
-#else
-#if NETFRAMEWORK
-#endif
-                new object[] { "2.2.8" },
-                new object[] { "2.3.11" },
-                new object[] { "2.4.8" },
-                new object[] { "2.5.12" },
-                new object[] { "2.6.2" },
-                new object[] { "2.7.26" },
-#endif
-            };
-
-        public static IEnumerable<object[]> Couchbase3 =>
-
-            new List<object[]>
-            {
-#if DEFAULT_SAMPLES
-                new object[] { string.Empty },
-#else
-#if NETFRAMEWORK
-#endif
-                new object[] { "3.0.7" },
-                new object[] { "3.1.7" },
-                new object[] { "3.2.4" },
 #endif
             };
 
