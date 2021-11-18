@@ -1,9 +1,11 @@
-﻿// <copyright file="DoesNotReturnAttribute.cs" company="Datadog">
+﻿// <copyright file="System.Diagnostics.CodeAnalysis.Attributes.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#pragma warning disable SA1649 // file name should match first type name
 #pragma warning disable SA1402 // file may only contain a single type
+
 #if !NETCOREAPP3_0_OR_GREATER
 
 // This file contains attributes from the System.Diagnostics.CodeAnalysis namespace
@@ -23,7 +25,7 @@ namespace System.Diagnostics.CodeAnalysis
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     [AttributeUsage(AttributeTargets.Method, Inherited = false)]
-    public sealed class DoesNotReturnAttribute : Attribute
+    internal sealed class DoesNotReturnAttribute : Attribute
     {
     }
 
@@ -33,7 +35,7 @@ namespace System.Diagnostics.CodeAnalysis
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     [AttributeUsage(AttributeTargets.Parameter)]
-    public sealed class NotNullWhenAttribute : Attribute
+    internal sealed class NotNullWhenAttribute : Attribute
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="NotNullWhenAttribute"/> class with the specified return value condition.
@@ -47,5 +49,8 @@ namespace System.Diagnostics.CodeAnalysis
         public bool ReturnValue { get; }
     }
 }
+
 #endif
+
 #pragma warning restore SA1402
+#pragma warning restore SA1649
