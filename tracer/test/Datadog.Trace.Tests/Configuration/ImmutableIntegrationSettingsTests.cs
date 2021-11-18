@@ -16,7 +16,7 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData(false)]
         public void ImmutableSettingsRespectsOverride(bool initiallyEnabled)
         {
-            var name = nameof(IntegrationIds.Kafka);
+            var name = nameof(IntegrationId.Kafka);
             var settings = new IntegrationSettings(name, source: null)
             {
                 Enabled = initiallyEnabled
@@ -32,7 +32,7 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData(false)]
         public void ImmutableSettingsRespectsOriginalIfNotOverridden(bool initiallyEnabled)
         {
-            var name = nameof(IntegrationIds.Kafka);
+            var name = nameof(IntegrationId.Kafka);
             var settings = new IntegrationSettings(name, source: null)
             {
                 Enabled = initiallyEnabled

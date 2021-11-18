@@ -296,7 +296,7 @@ namespace Datadog.Trace.Configuration
             return source[statusCode];
         }
 
-        internal bool IsIntegrationEnabled(IntegrationIds integration, bool defaultValue = true)
+        internal bool IsIntegrationEnabled(IntegrationId integration, bool defaultValue = true)
         {
             if (TraceEnabled && !DomainMetadata.ShouldAvoidAppDomain())
             {
@@ -307,7 +307,7 @@ namespace Datadog.Trace.Configuration
         }
 
         [Obsolete(DeprecationMessages.AppAnalytics)]
-        internal double? GetIntegrationAnalyticsSampleRate(IntegrationIds integration, bool enabledWithGlobalSetting)
+        internal double? GetIntegrationAnalyticsSampleRate(IntegrationId integration, bool enabledWithGlobalSetting)
         {
             var integrationSettings = Integrations[integration];
             var analyticsEnabled = integrationSettings.AnalyticsEnabled ?? (enabledWithGlobalSetting && AnalyticsEnabled);

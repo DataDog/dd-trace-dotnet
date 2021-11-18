@@ -27,9 +27,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.CurlHand
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class CurlHandlerIntegration
     {
-        private const string IntegrationName = nameof(IntegrationIds.HttpMessageHandler);
-        private const IntegrationIds IntegrationId = IntegrationIds.HttpMessageHandler;
-        private const IntegrationIds CurlHandlerIntegrationId = IntegrationIds.CurlHandler;
+        private const string IntegrationName = nameof(Configuration.IntegrationId.HttpMessageHandler);
+        private const IntegrationId IntegrationId = Configuration.IntegrationId.HttpMessageHandler;
+        private const IntegrationId CurlHandlerIntegrationId = IntegrationId.CurlHandler;
         private static readonly Func<bool> IsIntegrationEnabledFunc = () => Tracer.Instance.Settings.IsIntegrationEnabled(CurlHandlerIntegrationId, defaultValue: true);
 
         /// <summary>

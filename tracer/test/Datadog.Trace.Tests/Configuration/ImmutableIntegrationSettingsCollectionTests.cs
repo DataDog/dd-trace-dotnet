@@ -43,28 +43,28 @@ namespace Datadog.Trace.Tests.Configuration
 
             var final = new ImmutableIntegrationSettingsCollection(builderCollection, disabledIntegrations);
 
-            var kafka = final[IntegrationIds.Kafka];
+            var kafka = final[IntegrationId.Kafka];
             kafka.Enabled.Should().BeTrue();
             kafka.AnalyticsEnabled.Should().BeTrue();
             kafka.AnalyticsSampleRate.Should().Be(0.2);
 
-            var graphql = final[IntegrationIds.GraphQL];
+            var graphql = final[IntegrationId.GraphQL];
             graphql.Enabled.Should().BeFalse();
             graphql.AnalyticsEnabled.Should().BeFalse();
             graphql.AnalyticsSampleRate.Should().Be(1.0);
 
-            var wcf = final[IntegrationIds.Wcf];
+            var wcf = final[IntegrationId.Wcf];
             wcf.Enabled.Should().BeFalse();
             wcf.AnalyticsEnabled.Should().BeFalse();
             wcf.AnalyticsSampleRate.Should().Be(0.2);
 
-            var mongodb = final[IntegrationIds.MongoDb];
+            var mongodb = final[IntegrationId.MongoDb];
             mongodb.Enabled.Should().BeFalse();
 
-            var msmq = final[IntegrationIds.Msmq];
+            var msmq = final[IntegrationId.Msmq];
             msmq.Enabled.Should().BeFalse();
 
-            var consmos = final[IntegrationIds.CosmosDb];
+            var consmos = final[IntegrationId.CosmosDb];
             consmos.Enabled.Should().BeNull();
         }
     }

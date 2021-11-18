@@ -35,8 +35,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class ConnectionMultiplexerExecuteAsyncImplIntegration
     {
-        private const string IntegrationName = nameof(IntegrationIds.StackExchangeRedis);
-        private const IntegrationIds IntegrationId = IntegrationIds.StackExchangeRedis;
+        private const string IntegrationName = nameof(Configuration.IntegrationId.StackExchangeRedis);
+        private const IntegrationId IntegrationId = Configuration.IntegrationId.StackExchangeRedis;
 
         /// <summary>
         /// OnMethodBegin callback

@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class RedisExecuteAsyncIntegration
     {
-        private const IntegrationIds IntegrationId = IntegrationIds.StackExchangeRedis;
+        private const IntegrationId IntegrationId = Configuration.IntegrationId.StackExchangeRedis;
 
         /// <summary>
         /// OnMethodBegin callback

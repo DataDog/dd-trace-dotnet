@@ -31,7 +31,7 @@ namespace Datadog.Trace.Tagging
 
         public override string SpanKind => SpanKinds.Server;
 
-        public string InstrumentationName => nameof(Datadog.Trace.Configuration.IntegrationIds.AzureFunctions);
+        public string InstrumentationName => nameof(Datadog.Trace.Configuration.IntegrationId.AzureFunctions);
 
         public string Language => TracerConstants.Language;
 

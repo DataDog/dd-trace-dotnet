@@ -13,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7
         internal const string ElasticsearchAssemblyName = "Elasticsearch.Net";
         internal const string TransportTypeName = "Elasticsearch.Net.Transport`1";
 
-        internal const string IntegrationName = nameof(IntegrationIds.ElasticsearchNet);
-        internal const IntegrationIds IntegrationId = IntegrationIds.ElasticsearchNet;
+        internal const string IntegrationName = nameof(Configuration.IntegrationId.ElasticsearchNet);
+        internal const IntegrationId IntegrationId = Configuration.IntegrationId.ElasticsearchNet;
     }
 }

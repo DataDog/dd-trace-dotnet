@@ -17,8 +17,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         private const string SqsServiceName = "SQS";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AwsSqsCommon));
 
-        internal const string IntegrationName = nameof(IntegrationIds.AwsSqs);
-        internal const IntegrationIds IntegrationId = IntegrationIds.AwsSqs;
+        internal const string IntegrationName = nameof(Configuration.IntegrationId.AwsSqs);
+        internal const IntegrationId IntegrationId = Configuration.IntegrationId.AwsSqs;
 
         public static Scope CreateScope(Tracer tracer, string operation, out AwsSqsTags tags, ISpanContext parentContext = null)
         {

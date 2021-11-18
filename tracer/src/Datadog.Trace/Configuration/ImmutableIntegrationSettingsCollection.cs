@@ -51,7 +51,7 @@ namespace Datadog.Trace.Configuration
             }
         }
 
-        internal ImmutableIntegrationSettings this[IntegrationIds integration]
+        internal ImmutableIntegrationSettings this[IntegrationId integration]
             => Settings[(int)integration];
 
         private static ImmutableIntegrationSettings[] GetIntegrationSettingsById(

@@ -20,12 +20,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static class RabbitMQIntegration
     {
-        internal const string IntegrationName = nameof(IntegrationIds.RabbitMQ);
+        internal const string IntegrationName = nameof(Configuration.IntegrationId.RabbitMQ);
 
         private const string OperationName = "amqp.command";
         private const string ServiceName = "rabbitmq";
 
-        internal const IntegrationIds IntegrationId = IntegrationIds.RabbitMQ;
+        internal const IntegrationId IntegrationId = Configuration.IntegrationId.RabbitMQ;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RabbitMQIntegration));
 
         internal static Scope CreateScope(Tracer tracer, out RabbitMQTags tags, string command, string spanKind, ISpanContext parentContext = null, DateTimeOffset? startTime = null, string queue = null, string exchange = null, string routingKey = null)

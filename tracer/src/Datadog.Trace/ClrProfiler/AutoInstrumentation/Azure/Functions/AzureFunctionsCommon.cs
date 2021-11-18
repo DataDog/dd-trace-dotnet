@@ -17,11 +17,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 {
     internal static class AzureFunctionsCommon
     {
-        public const string IntegrationName = nameof(IntegrationIds.AzureFunctions);
+        public const string IntegrationName = nameof(Configuration.IntegrationId.AzureFunctions);
 
         public const string OperationName = "azure-functions.invoke";
         public const string SpanType = SpanTypes.Serverless;
-        public const IntegrationIds IntegrationId = IntegrationIds.AzureFunctions;
+        public const IntegrationId IntegrationId = Configuration.IntegrationId.AzureFunctions;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AzureFunctionsCommon));
         private static readonly AspNetCoreHttpRequestHandler AspNetCoreRequestHandler = new AspNetCoreHttpRequestHandler(Log, OperationName, IntegrationId);
