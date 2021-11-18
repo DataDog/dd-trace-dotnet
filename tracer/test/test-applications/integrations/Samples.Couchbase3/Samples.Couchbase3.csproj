@@ -8,7 +8,8 @@
 
   <ItemGroup>
     <PackageReference Include="CouchbaseNetClient" Version="$(ApiVersion)" />
-    <PackageReference Condition="'$(ApiVersion)' == '3.0.0'" Include="Microsoft.Bcl.AsyncInterfaces" Version="1.0.0.0" />
+    <PackageReference Condition="'$(ApiVersion)' == '3.0.0' OR ('$(ApiVersion)'&gt;='3.1.2' AND '$(ApiVersion)'&lt;='3.1.7')"
+                      Include="Microsoft.Bcl.AsyncInterfaces" Version="1.0.0.0" />
   </ItemGroup>
 
 </Project>
