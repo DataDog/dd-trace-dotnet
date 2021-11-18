@@ -5,7 +5,6 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -56,6 +55,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     "Hello", "Hello", "GetErrorMap", "GetErrorMap", "SelectBucket", "SelectBucket",
                     "Set", "Get", "Delete"
                 };
+
+                if (packageVersion == "3.0.7")
+                {
+                    expected.Remove("Get");
+                    expected.Add("MultiLookup");
+                }
 
                 ValidateSpans(spans, (span) => span.Resource, expected);
             }

@@ -23,12 +23,8 @@ namespace Samples.Couchbase
         {
             var config = GetConnectionConfig();
             _cluster = new Cluster(config);
-#if COUCHBASE_2_2
-            _bucket = _cluster.OpenBucket("default", "password");
-#else
             _cluster.Authenticate("default", "password");
             _bucket = _cluster.OpenBucket("default");
-#endif
             RetrieveAndUpdate();
             await RetrieveAndUpdateAsync();
         }

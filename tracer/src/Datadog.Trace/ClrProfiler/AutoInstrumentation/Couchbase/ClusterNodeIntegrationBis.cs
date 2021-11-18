@@ -21,6 +21,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
        MinimumVersion = "3.1.3",
        MaximumVersion = CouchbaseCommon.MaxVersion3,
        IntegrationName = CouchbaseCommon.IntegrationName)]
+    [InstrumentMethod(
+        AssemblyName = CouchbaseCommon.CouchbaseClientAssemblyName,
+        TypeName = "Couchbase.Core.ClusterNode",
+        MethodName = "ExecuteOp",
+        ReturnTypeName = ClrNames.Task,
+        ParameterTypeNames = new[] { CouchbaseCommon.CouchbaseConnectionV3TypeName, CouchbaseCommon.CouchbaseOperationV3TypeName, ClrNames.CancellationToken },
+        MinimumVersion = CouchbaseCommon.MinVersion3,
+        MaximumVersion = "3.1.1",
+        IntegrationName = CouchbaseCommon.IntegrationName)]
     // ReSharper disable once InconsistentNaming
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
