@@ -4,7 +4,7 @@
 // </copyright>
 
 using System;
-using System.Collections.Concurrent;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Configuration
 {
@@ -13,10 +13,8 @@ namespace Datadog.Trace.Configuration
     /// </summary>
     public class IntegrationSettingsCollection
     {
-        private readonly IConfigurationSource _source;
-        private readonly ConcurrentDictionary<string, IntegrationSettings> _settingsByName;
-        private readonly Func<string, IntegrationSettings> _valueFactory;
-        private readonly IntegrationSettings[] _settingsById;
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<IntegrationSettingsCollection>();
+        private readonly IntegrationSettings[] _settings;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="IntegrationSettingsCollection"/> class.
@@ -24,39 +22,31 @@ namespace Datadog.Trace.Configuration
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
         public IntegrationSettingsCollection(IConfigurationSource source)
         {
-            _source = source;
-            _settingsByName = new ConcurrentDictionary<string, IntegrationSettings>();
-            _settingsById = GetIntegrationSettings(source);
-            _valueFactory = name =>
-            {
-                if (IntegrationRegistry.Ids.TryGetValue(name, out var id))
-                {
-                    return _settingsById[id];
-                }
-
-                // We have no id for this integration, it will only be available in _settingsByName
-                return new IntegrationSettings(name, _source);
-            };
+            _settings = GetIntegrationSettings(source);
         }
 
-        internal IConfigurationSource Source => _source;
-
-        internal ConcurrentDictionary<string, IntegrationSettings> SettingsByName => _settingsByName;
-
-        internal IntegrationSettings[] SettingsById => _settingsById;
+        internal IntegrationSettings[] Settings => _settings;
 
         /// <summary>
         /// Gets the <see cref="IntegrationSettings"/> for the specified integration.
         /// </summary>
         /// <param name="integrationName">The name of the integration.</param>
         /// <returns>The integration-specific settings for the specified integration.</returns>
-        public IntegrationSettings this[string integrationName] => this[new IntegrationInfo(integrationName)];
-
-        internal IntegrationSettings this[IntegrationInfo integration]
+        public IntegrationSettings this[string integrationName]
         {
             get
             {
-                return integration.Name == null ? _settingsById[integration.Id] : _settingsByName.GetOrAdd(integration.Name, _valueFactory);
+                if (IntegrationRegistry.TryGetIntegrationId(integrationName, out var integrationId))
+                {
+                    return _settings[(int)integrationId];
+                }
+
+                Log.Warning(
+                    "Accessed integration settings for unknown integration {IntegrationName}. " +
+                    "Returning default settings, changes will not be saved",
+                    integrationName);
+
+                return new IntegrationSettings(integrationName, source: null);
             }
         }
 

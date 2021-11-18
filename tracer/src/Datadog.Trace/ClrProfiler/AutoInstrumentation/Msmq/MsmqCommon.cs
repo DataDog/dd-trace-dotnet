@@ -13,13 +13,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
 {
     internal static class MsmqCommon
     {
-        internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(MsmqConstants.IntegrationName);
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MsmqCommon));
 
         internal static Scope CreateScope<TMessageQueue>(Tracer tracer, string command, string spanKind, TMessageQueue messageQueue, bool? messagePartofTransaction = null)
             where TMessageQueue : IMessageQueue
         {
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!tracer.Settings.IsIntegrationEnabled(MsmqConstants.IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;

@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class HttpModule_Integration
     {
-        private const string IntegrationName = nameof(IntegrationIds.AspNet);
+        private const string IntegrationName = nameof(IntegrationId.AspNet);
 
         /// <summary>
         /// Indicates whether we're initializing the HttpModule for the first time

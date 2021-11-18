@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         private const string MinimumVersion = "4";
         private const string MaximumVersion = "5";
 
-        private const string IntegrationName = nameof(IntegrationIds.AspNetMvc);
+        private const string IntegrationName = nameof(IntegrationId.AspNetMvc);
 
         /// <summary>
         /// OnMethodEnd callback

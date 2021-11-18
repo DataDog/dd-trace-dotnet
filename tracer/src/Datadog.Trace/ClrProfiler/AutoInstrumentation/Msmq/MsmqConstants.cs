@@ -11,7 +11,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
 {
     internal static class MsmqConstants
     {
-        internal const string IntegrationName = nameof(IntegrationIds.Msmq);
+        internal const string IntegrationName = nameof(Configuration.IntegrationId.Msmq);
         internal const string OperationName = "msmq.command";
         internal const string ServiceName = "msmq";
         internal const string MsmqCursorHandle = "System.Messaging.Interop.CursorHandle";
@@ -23,6 +23,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
         internal const string MsmqSendCommand = "msmq.send";
         internal const string MsmqReceiveCommand = "msmq.receive";
         internal const string MsmqPeekCommand = "msmq.peek";
-        internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
+        internal const IntegrationId IntegrationId = Configuration.IntegrationId.Msmq;
     }
 }

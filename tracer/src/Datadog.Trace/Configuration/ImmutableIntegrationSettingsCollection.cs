@@ -3,10 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Configuration
 {
@@ -15,64 +13,52 @@ namespace Datadog.Trace.Configuration
     /// </summary>
     public class ImmutableIntegrationSettingsCollection
     {
-        private readonly IConfigurationSource _source;
-        private readonly HashSet<string> _disabledIntegrations;
-        private readonly ConcurrentDictionary<string, ImmutableIntegrationSettings> _settingsByName;
-        private readonly Func<string, ImmutableIntegrationSettings> _valueFactory;
-        private readonly ImmutableIntegrationSettings[] _settingsById;
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<IntegrationSettingsCollection>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ImmutableIntegrationSettingsCollection"/> class.
         /// </summary>
         /// <param name="settings">The <see cref="IntegrationSettingsCollection"/> to populate the immutable settings.</param>
         /// <param name="disabledIntegrationNames">Additional integrations that should be disabled</param>
-        public ImmutableIntegrationSettingsCollection(
+        internal ImmutableIntegrationSettingsCollection(
             IntegrationSettingsCollection settings,
             HashSet<string> disabledIntegrationNames)
         {
-            _source = settings.Source;
-            _disabledIntegrations = disabledIntegrationNames ?? throw new ArgumentNullException(nameof(disabledIntegrationNames));
-            _settingsById = GetIntegrationSettingsById(settings, disabledIntegrationNames);
-            _settingsByName = GetIntegrationSettingsByName(settings, disabledIntegrationNames);
-            _valueFactory = name =>
-            {
-                if (IntegrationRegistry.Ids.TryGetValue(name, out var id))
-                {
-                    return _settingsById[id];
-                }
-
-                // We have no id for this integration, it will only be available in _settingsByName
-                var initialSettings = new IntegrationSettings(name, _source);
-                var isExplicitlyDisabled = _disabledIntegrations.Contains(name);
-
-                return new ImmutableIntegrationSettings(initialSettings, isExplicitlyDisabled);
-            };
+            Settings = GetIntegrationSettingsById(settings, disabledIntegrationNames);
         }
 
-        internal ICollection<string> DisabledIntegrations => _disabledIntegrations;
+        internal ImmutableIntegrationSettings[] Settings { get; }
 
         /// <summary>
-        /// Gets the <see cref="IntegrationSettings"/> for the specified integration.
+        /// Gets the <see cref="ImmutableIntegrationSettings"/> for the specified integration.
         /// </summary>
         /// <param name="integrationName">The name of the integration.</param>
         /// <returns>The integration-specific settings for the specified integration.</returns>
-        public ImmutableIntegrationSettings this[string integrationName] => this[new IntegrationInfo(integrationName)];
-
-        internal ImmutableIntegrationSettings this[IntegrationInfo integration]
+        public ImmutableIntegrationSettings this[string integrationName]
         {
             get
             {
-                return integration.Name == null
-                           ? _settingsById[integration.Id]
-                           : _settingsByName.GetOrAdd(integration.Name, _valueFactory);
+                if (IntegrationRegistry.TryGetIntegrationId(integrationName, out var integrationId))
+                {
+                    return Settings[(int)integrationId];
+                }
+
+                Log.Warning(
+                    "Accessed integration settings for unknown integration {IntegrationName}. Returning default settings",
+                    integrationName);
+
+                return new ImmutableIntegrationSettings(integrationName);
             }
         }
+
+        internal ImmutableIntegrationSettings this[IntegrationId integration]
+            => Settings[(int)integration];
 
         private static ImmutableIntegrationSettings[] GetIntegrationSettingsById(
             IntegrationSettingsCollection settings,
             HashSet<string> disabledIntegrationNames)
         {
-            var allExistingSettings = settings.SettingsById;
+            var allExistingSettings = settings.Settings;
             var integrations = new ImmutableIntegrationSettings[allExistingSettings.Length];
 
             for (int i = 0; i < integrations.Length; i++)
@@ -84,21 +70,6 @@ namespace Datadog.Trace.Configuration
             }
 
             return integrations;
-        }
-
-        private static ConcurrentDictionary<string, ImmutableIntegrationSettings> GetIntegrationSettingsByName(
-            IntegrationSettingsCollection settings,
-            HashSet<string> disabledIntegrationNames)
-        {
-            var existingSettings = settings
-                                  .SettingsByName
-                                  .Values
-                                  .Select(
-                                       setting => new KeyValuePair<string, ImmutableIntegrationSettings>(
-                                           setting.IntegrationName,
-                                           new ImmutableIntegrationSettings(setting, disabledIntegrationNames.Contains(setting.IntegrationName))));
-
-            return new ConcurrentDictionary<string, ImmutableIntegrationSettings>(existingSettings);
         }
     }
 }

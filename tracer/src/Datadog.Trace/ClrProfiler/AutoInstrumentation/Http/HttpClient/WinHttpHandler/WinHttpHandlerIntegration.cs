@@ -27,9 +27,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.WinHttpH
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class WinHttpHandlerIntegration
     {
-        private const string IntegrationName = nameof(IntegrationIds.HttpMessageHandler);
-        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
-        private static readonly IntegrationInfo WinHttpHandlerIntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.WinHttpHandler));
+        private const string IntegrationName = nameof(Configuration.IntegrationId.HttpMessageHandler);
+        private const IntegrationId IntegrationId = Configuration.IntegrationId.HttpMessageHandler;
+        private const IntegrationId WinHttpHandlerIntegrationId = IntegrationId.WinHttpHandler;
         private static readonly Func<bool> IsIntegrationEnabledFunc = () => Tracer.Instance.Settings.IsIntegrationEnabled(WinHttpHandlerIntegrationId, defaultValue: true);
 
         /// <summary>

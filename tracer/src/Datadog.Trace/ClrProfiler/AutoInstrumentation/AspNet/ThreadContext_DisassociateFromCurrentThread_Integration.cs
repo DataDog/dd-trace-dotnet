@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class ThreadContext_DisassociateFromCurrentThread_Integration
     {
-        private const string IntegrationName = nameof(IntegrationIds.AspNet);
+        private const string IntegrationName = nameof(IntegrationId.AspNet);
 
         /// <summary>
         /// OnMethodBegin callback

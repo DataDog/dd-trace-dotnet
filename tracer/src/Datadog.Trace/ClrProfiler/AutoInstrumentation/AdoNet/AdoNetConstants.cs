@@ -10,8 +10,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 {
     internal static class AdoNetConstants
     {
-        internal const string IntegrationName = nameof(IntegrationIds.AdoNet);
-        internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
+        internal const string IntegrationName = nameof(Configuration.IntegrationId.AdoNet);
+        internal const IntegrationId IntegrationId = Configuration.IntegrationId.AdoNet;
 
         internal struct SystemDataClientData : IAdoNetClientData
         {

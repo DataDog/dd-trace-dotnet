@@ -24,13 +24,13 @@ namespace Datadog.Trace.PlatformHelpers
     internal sealed class AspNetCoreHttpRequestHandler
     {
         private readonly IDatadogLogger _log;
-        private readonly IntegrationInfo _integrationId;
+        private readonly IntegrationId _integrationId;
         private readonly string _requestInOperationName;
 
         public AspNetCoreHttpRequestHandler(
             IDatadogLogger log,
             string requestInOperationName,
-            IntegrationInfo integrationInfo)
+            IntegrationId integrationInfo)
         {
             _log = log;
             _integrationId = integrationInfo;

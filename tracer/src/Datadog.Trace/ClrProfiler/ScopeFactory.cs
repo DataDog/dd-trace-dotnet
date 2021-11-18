@@ -22,10 +22,10 @@ namespace Datadog.Trace.ClrProfiler
     {
         public const string OperationName = "http.request";
         public const string ServiceName = "http-client";
-        public const string DbIntegrationName = nameof(IntegrationIds.AdoNet);
+        public const string DbIntegrationName = nameof(IntegrationId.AdoNet);
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ScopeFactory));
-        public static readonly IntegrationInfo DbIntegrationId = IntegrationRegistry.GetIntegrationInfo(DbIntegrationName);
+        public const IntegrationId DbIntegrationId = IntegrationId.AdoNet;
 
         public static Scope GetActiveHttpScope(Tracer tracer)
         {
@@ -55,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler
         /// <param name="spanId">The span id</param>
         /// <param name="startTime">The start time that should be applied to the span</param>
         /// <returns>A new pre-populated scope.</returns>
-        internal static Scope CreateOutboundHttpScope(Tracer tracer, string httpMethod, Uri requestUri, IntegrationInfo integrationId, out HttpTags tags, ulong? traceId = null, ulong? spanId = null, DateTimeOffset? startTime = null)
+        internal static Scope CreateOutboundHttpScope(Tracer tracer, string httpMethod, Uri requestUri, IntegrationId integrationId, out HttpTags tags, ulong? traceId = null, ulong? spanId = null, DateTimeOffset? startTime = null)
         {
             var span = CreateInactiveOutboundHttpSpan(tracer, httpMethod, requestUri, integrationId, out tags, traceId, spanId, startTime, addToTraceContext: true);
 
@@ -80,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler
         /// <param name="startTime">The start time that should be applied to the span</param>
         /// <param name="addToTraceContext">Set to false if the span is meant to be discarded. In that case, the span won't be added to the TraceContext.</param>
         /// <returns>A new pre-populated scope.</returns>
-        internal static Span CreateInactiveOutboundHttpSpan(Tracer tracer, string httpMethod, Uri requestUri, IntegrationInfo integrationId, out HttpTags tags, ulong? traceId, ulong? spanId, DateTimeOffset? startTime, bool addToTraceContext)
+        internal static Span CreateInactiveOutboundHttpSpan(Tracer tracer, string httpMethod, Uri requestUri, IntegrationId integrationId, out HttpTags tags, ulong? traceId, ulong? spanId, DateTimeOffset? startTime, bool addToTraceContext)
         {
             tags = null;
 

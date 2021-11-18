@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class ThreadContext_AssociateWithCurrentThread_Integration
     {
-        private const string IntegrationName = nameof(IntegrationIds.AspNet);
+        private const string IntegrationName = nameof(IntegrationId.AspNet);
         private const string HttpContextScopeKey = "__Datadog.Trace.AspNet.TracingHttpModule-aspnet.request";
 
         /// <summary>

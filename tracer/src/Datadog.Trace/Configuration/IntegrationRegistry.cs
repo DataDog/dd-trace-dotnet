@@ -17,12 +17,12 @@ namespace Datadog.Trace.Configuration
 
         static IntegrationRegistry()
         {
-            var values = Enum.GetValues(typeof(IntegrationIds));
+            var values = Enum.GetValues(typeof(IntegrationId));
             var ids = new Dictionary<string, int>(values.Length);
 
             Names = new string[values.Cast<int>().Max() + 1];
 
-            foreach (IntegrationIds value in values)
+            foreach (IntegrationId value in values)
             {
                 var name = value.ToString();
 
@@ -33,24 +33,19 @@ namespace Datadog.Trace.Configuration
             Ids = ids;
         }
 
-        internal static string GetName(IntegrationInfo integration)
-        {
-            if (integration.Name == null)
-            {
-                return Names[integration.Id];
-            }
+        internal static string GetName(IntegrationId integration)
+            => Names[(int)integration];
 
-            return integration.Name;
-        }
-
-        internal static IntegrationInfo GetIntegrationInfo(string integrationName)
+        internal static bool TryGetIntegrationId(string integrationName, out IntegrationId integration)
         {
             if (Ids.TryGetValue(integrationName, out var id))
             {
-                return new IntegrationInfo(id);
+                integration = (IntegrationId)id;
+                return true;
             }
 
-            return new IntegrationInfo(integrationName);
+            integration = default;
+            return false;
         }
     }
 }

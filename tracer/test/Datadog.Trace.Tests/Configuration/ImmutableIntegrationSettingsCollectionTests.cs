@@ -43,49 +43,28 @@ namespace Datadog.Trace.Tests.Configuration
 
             var final = new ImmutableIntegrationSettingsCollection(builderCollection, disabledIntegrations);
 
-            var foo = final["foo"];
-            foo.Enabled.Should().BeTrue();
-            foo.AnalyticsEnabled.Should().BeTrue();
-            foo.AnalyticsSampleRate.Should().Be(0.2);
-
-            var bar = final["bar"];
-            bar.Enabled.Should().BeFalse();
-            bar.AnalyticsEnabled.Should().BeFalse();
-            bar.AnalyticsSampleRate.Should().Be(1.0);
-
-            var baz = final["baz"];
-            baz.Enabled.Should().BeFalse();
-            baz.AnalyticsEnabled.Should().BeFalse();
-            baz.AnalyticsSampleRate.Should().Be(0.6);
-
-            var foobar = final["foobar"];
-            foobar.Enabled.Should().BeFalse();
-
-            var unknown = final["unknown"];
-            unknown.Enabled.Should().BeNull();
-
-            var kafka = final[nameof(IntegrationIds.Kafka)];
+            var kafka = final[IntegrationId.Kafka];
             kafka.Enabled.Should().BeTrue();
             kafka.AnalyticsEnabled.Should().BeTrue();
             kafka.AnalyticsSampleRate.Should().Be(0.2);
 
-            var graphql = final[nameof(IntegrationIds.GraphQL)];
+            var graphql = final[IntegrationId.GraphQL];
             graphql.Enabled.Should().BeFalse();
             graphql.AnalyticsEnabled.Should().BeFalse();
             graphql.AnalyticsSampleRate.Should().Be(1.0);
 
-            var wcf = final[nameof(IntegrationIds.Wcf)];
+            var wcf = final[IntegrationId.Wcf];
             wcf.Enabled.Should().BeFalse();
             wcf.AnalyticsEnabled.Should().BeFalse();
             wcf.AnalyticsSampleRate.Should().Be(0.2);
 
-            var mongodb = final[nameof(IntegrationIds.MongoDb)];
+            var mongodb = final[IntegrationId.MongoDb];
             mongodb.Enabled.Should().BeFalse();
 
-            var msmq = final[nameof(IntegrationIds.Msmq)];
+            var msmq = final[IntegrationId.Msmq];
             msmq.Enabled.Should().BeFalse();
 
-            var consmos = final[nameof(IntegrationIds.CosmosDb)];
+            var consmos = final[IntegrationId.CosmosDb];
             consmos.Enabled.Should().BeNull();
         }
     }

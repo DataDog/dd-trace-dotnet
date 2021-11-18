@@ -24,6 +24,11 @@ namespace Datadog.Trace.Configuration
             AnalyticsSampleRate = settings.AnalyticsSampleRate;
         }
 
+        internal ImmutableIntegrationSettings(string name)
+        {
+            IntegrationName = name;
+        }
+
         /// <summary>
         /// Gets the name of the integration. Used to retrieve integration-specific settings.
         /// </summary>

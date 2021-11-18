@@ -302,7 +302,7 @@ namespace Datadog.Trace.Configuration
             return source[statusCode];
         }
 
-        internal bool IsIntegrationEnabled(IntegrationInfo integration, bool defaultValue = true)
+        internal bool IsIntegrationEnabled(IntegrationId integration, bool defaultValue = true)
         {
             if (TraceEnabled && !_domainMetadata.ShouldAvoidAppDomain())
             {
@@ -312,19 +312,8 @@ namespace Datadog.Trace.Configuration
             return false;
         }
 
-        internal bool IsIntegrationEnabled(string integrationName)
-        {
-            if (TraceEnabled && !_domainMetadata.ShouldAvoidAppDomain())
-            {
-                bool? enabled = Integrations[integrationName].Enabled;
-                return enabled != false;
-            }
-
-            return false;
-        }
-
         [Obsolete(DeprecationMessages.AppAnalytics)]
-        internal double? GetIntegrationAnalyticsSampleRate(IntegrationInfo integration, bool enabledWithGlobalSetting)
+        internal double? GetIntegrationAnalyticsSampleRate(IntegrationId integration, bool enabledWithGlobalSetting)
         {
             var integrationSettings = Integrations[integration];
             var analyticsEnabled = integrationSettings.AnalyticsEnabled ?? (enabledWithGlobalSetting && AnalyticsEnabled);
