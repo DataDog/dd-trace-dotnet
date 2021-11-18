@@ -706,11 +706,9 @@ partial class Build
                 .ToList();
 
             testProjects.ForEach(EnsureResultsDirectory);
-            var filter = (string.IsNullOrEmpty(Filter), IsArm64, IsAlpine) switch
+            var filter = (string.IsNullOrEmpty(Filter), IsArm64) switch
             {
-                (true, true, false) => "(Category!=ArmUnsupported)",
-                (true, false, true) => "(Category!=AlpineUnsupported)",
-                (true, true, true) => "(Category!=AlpineUnsupported)&(Category!=ArmUnsupported)",
+                (true, true) => "(Category!=ArmUnsupported)",
                 _ => Filter
             };
             try

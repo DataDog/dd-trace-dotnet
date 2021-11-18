@@ -354,6 +354,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                 var installDir = ReducedRegistryAccess.ReadLocalMachineString(path, "InstallPath");
                 if (installDir != null)
                 {
+                    Log.Information($"AddPathFromMsiSettings {installDir}");
                     paths.Add(installDir);
                 }
             }
@@ -488,25 +489,6 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             return success;
         }
 
-        private static bool IsMuslBasedLinux()
-        {
-            var muslDistros = new[] { "alpine" };
-
-            var files =
-                Directory.GetFiles("/etc", "*release")
-                    .Concat(Directory.GetFiles("/etc", "*version"))
-                    .ToList();
-
-            if (File.Exists("/etc/issue"))
-            {
-                files.Add("/etc/issue");
-            }
-
-            return files
-                .Select(File.ReadAllText)
-                .Any(fileContents => muslDistros.Any(distroId => fileContents.ToLowerInvariant().Contains(distroId)));
-        }
-
         private static void GetLibNameAndRuntimeId(FrameworkDescription frameworkDescription, out string libName, out string runtimeId)
         {
             string runtimeIdPart1, libPrefix, libExt;
@@ -519,10 +501,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                     libExt = "dylib";
                     break;
                 case OSPlatform.Linux:
-                    runtimeIdPart1 =
-                        IsMuslBasedLinux() ?
-                            "linux-musl" :
-                            "linux";
+                    runtimeIdPart1 = "linux";
                     libPrefix = "lib";
                     libExt = "so";
                     break;
