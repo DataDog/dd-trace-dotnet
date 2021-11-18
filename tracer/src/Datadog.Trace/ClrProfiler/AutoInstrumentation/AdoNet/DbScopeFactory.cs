@@ -5,6 +5,7 @@
 
 using System;
 using System.Data;
+using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
@@ -62,6 +63,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
         public static bool TryGetIntegrationDetails(
             string commandTypeFullName,
+            [NotNullWhen(true)] out IntegrationId? integrationId,
+            [NotNullWhen(true)] out string dbType)
         {
             // TODO: optimize this switch
             switch (commandTypeFullName)
