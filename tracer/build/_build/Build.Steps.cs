@@ -719,7 +719,7 @@ partial class Build
         .Executes(() =>
         {
             // We run linux integration tests in AnyCPU, but Windows on the specific architecture
-            var platform = IsLinux ? MSBuildTargetPlatform.MSIL : TargetPlatform;
+            var platform = !IsWin ? MSBuildTargetPlatform.MSIL : TargetPlatform;
 
             DotNetMSBuild(x => x
                 .SetTargetPath(MsBuildProject)
@@ -1191,12 +1191,11 @@ partial class Build
         .After(CompileLinuxIntegrationTests)
         .Description("Runs the linux integration tests")
         .Requires(() => Framework)
-        .Requires(() => IsLinux)
+        .Requires(() => !IsWin)
         .Executes(() =>
         {
             ParallelIntegrationTests.ForEach(EnsureResultsDirectory);
             ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
-
 
             var filter = (string.IsNullOrEmpty(Filter), IsArm64) switch
             {
