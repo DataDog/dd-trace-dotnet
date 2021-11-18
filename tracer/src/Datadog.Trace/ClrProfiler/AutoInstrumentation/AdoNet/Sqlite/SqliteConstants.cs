@@ -11,7 +11,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Sqlite
     {
         internal struct MicrosoftDataSqliteClientData : IAdoNetClientData
         {
-            public string IntegrationName => nameof(IntegrationIds.Sqlite);
+            public string IntegrationName => nameof(IntegrationId.Sqlite);
 
             public string AssemblyName => "Microsoft.Data.Sqlite";
 
@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Sqlite
 
         internal struct SystemDataSqliteClientData : IAdoNetClientData
         {
-            public string IntegrationName => nameof(IntegrationIds.Sqlite);
+            public string IntegrationName => nameof(IntegrationId.Sqlite);
 
             public string AssemblyName => "System.Data.SQLite";
 

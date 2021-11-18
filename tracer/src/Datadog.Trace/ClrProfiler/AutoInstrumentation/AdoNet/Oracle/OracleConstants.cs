@@ -11,7 +11,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Oracle
     {
         internal struct OracleClientData : IAdoNetClientData
         {
-            public string IntegrationName => nameof(IntegrationIds.Oracle);
+            public string IntegrationName => nameof(IntegrationId.Oracle);
 
             public string AssemblyName => "Oracle.ManagedDataAccess";
 
@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Oracle
 
         internal struct OracleCoreClientData : IAdoNetClientData
         {
-            public string IntegrationName => nameof(IntegrationIds.Oracle);
+            public string IntegrationName => nameof(IntegrationId.Oracle);
 
             public string AssemblyName => "Oracle.ManagedDataAccess";
 
@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Oracle
 
         internal struct OracleDataAccessClientData : IAdoNetClientData
         {
-            public string IntegrationName => nameof(IntegrationIds.Oracle);
+            public string IntegrationName => nameof(IntegrationId.Oracle);
 
             public string AssemblyName => "Oracle.DataAccess";
 

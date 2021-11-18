@@ -11,7 +11,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.MySql
     {
         internal struct MySqlDataClientData : IAdoNetClientData
         {
-            public string IntegrationName => nameof(IntegrationIds.MySql);
+            public string IntegrationName => nameof(IntegrationId.MySql);
 
             public string AssemblyName => "MySql.Data";
 
@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.MySql
 
         internal struct MySqlData8ClientData : IAdoNetClientData
         {
-            public string IntegrationName => nameof(IntegrationIds.MySql);
+            public string IntegrationName => nameof(IntegrationId.MySql);
 
             public string AssemblyName => "MySql.Data";
 
@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.MySql
 
         internal struct MySqlConnectorClientData : IAdoNetClientData
         {
-            public string IntegrationName => nameof(IntegrationIds.MySql);
+            public string IntegrationName => nameof(IntegrationId.MySql);
 
             public string AssemblyName => "MySqlConnector";
 

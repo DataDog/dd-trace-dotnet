@@ -15,9 +15,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DbScopeFactory));
 
-        private static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationInfo integration, string dbType, string operationName)
+        private static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationId integrationId, string dbType, string operationName)
         {
-            if (!tracer.Settings.IsIntegrationEnabled(integration))
+            if (!tracer.Settings.IsIntegrationEnabled(integrationId))
             {
                 // integration disabled, don't create a scope, skip this span
                 return null;
@@ -44,10 +44,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 var tags = new SqlTags
                            {
                                DbType = dbType,
-                               InstrumentationName = integration.Name
+                               InstrumentationName = integrationId.ToString()
                            };
 
-                tags.SetAnalyticsSampleRate(integration, tracer.Settings, enabledWithGlobalSetting: false);
+                tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
 
                 scope = tracer.StartActiveWithTags(operationName, tags: tags, serviceName: serviceName);
                 scope.Span.AddTagsFromDbCommand(command);
@@ -62,31 +62,29 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
         public static bool TryGetIntegrationDetails(
             string commandTypeFullName,
-            out IntegrationIds? integrationId,
-            out string dbType)
         {
             // TODO: optimize this switch
             switch (commandTypeFullName)
             {
                 case "System.Data.SqlClient.SqlCommand" or "Microsoft.Data.SqlClient.SqlCommand":
-                    integrationId = IntegrationIds.SqlClient;
+                    integrationId = IntegrationId.SqlClient;
                     dbType = DbType.SqlServer;
                     return true;
                 case "Npgsql.NpgsqlCommand":
-                    integrationId = IntegrationIds.Npgsql;
+                    integrationId = IntegrationId.Npgsql;
                     dbType = DbType.PostgreSql;
                     return true;
                 case "MySql.Data.MySqlClient.MySqlCommand" or "MySqlConnector.MySqlCommand":
-                    integrationId = IntegrationIds.MySql;
+                    integrationId = IntegrationId.MySql;
                     dbType = DbType.MySql;
                     return true;
                 case "Oracle.ManagedDataAccess.Client.OracleCommand" or "Oracle.DataAccess.Client.OracleCommand":
-                    integrationId = IntegrationIds.Oracle;
+                    integrationId = IntegrationId.Oracle;
                     dbType = DbType.Oracle;
                     return true;
                 case "System.Data.SQLite.SQLiteCommand" or "Microsoft.Data.Sqlite.SqliteCommand":
                     // note capitalization in SQLite/Sqlite
-                    integrationId = IntegrationIds.Sqlite;
+                    integrationId = IntegrationId.Sqlite;
                     dbType = DbType.Sqlite;
                     return true;
                 default:
@@ -101,7 +99,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             private static readonly Type CommandType;
             private static readonly string DbTypeName;
             private static readonly string OperationName;
-            private static readonly IntegrationInfo IntegrationInfo;
+            private static readonly IntegrationId IntegrationId;
 
             static Cache()
             {
@@ -113,7 +111,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     CommandType = commandType;
                     DbTypeName = dbTypeName;
                     OperationName = $"{DbTypeName}.query";
-                    IntegrationInfo = IntegrationRegistry.GetIntegrationInfo(integrationId.ToString());
+                    IntegrationId = integrationId.Value;
                 }
             }
 
@@ -124,16 +122,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 if (commandType == CommandType)
                 {
                     // use the cached values if command.GetType() == typeof(TCommand)
-                    return DbScopeFactory.CreateDbCommandScope(tracer, command, IntegrationInfo, DbTypeName, OperationName);
+                    return DbScopeFactory.CreateDbCommandScope(tracer, command, IntegrationId, DbTypeName, OperationName);
                 }
 
                 // if command.GetType() != typeof(TCommand), we are probably instrumenting a method
                 // defined in a base class like DbCommand and we can't use the cached values
                 if (TryGetIntegrationDetails(commandType.FullName, out var integrationId, out var dbTypeName))
                 {
-                    var integration = IntegrationRegistry.GetIntegrationInfo(integrationId.ToString());
                     var operationName = $"{dbTypeName}.query";
-                    return DbScopeFactory.CreateDbCommandScope(tracer, command, integration, dbTypeName, operationName);
+                    return DbScopeFactory.CreateDbCommandScope(tracer, command, integrationId.Value, dbTypeName, operationName);
                 }
 
                 return null;
