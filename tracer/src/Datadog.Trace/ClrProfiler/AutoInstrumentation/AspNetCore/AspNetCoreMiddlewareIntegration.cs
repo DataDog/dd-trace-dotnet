@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         ReturnTypeName = ClrNames.Void,
         MinimumVersion = Major3,
         MaximumVersion = Major6,
-        IntegrationName = nameof(IntegrationIds.AspNetCore))]
+        IntegrationName = nameof(IntegrationId.AspNetCore))]
     [InstrumentMethod(
         AssemblyName = AssemblyName,
         TypeName = InternalApplicationBuilder,
@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         ReturnTypeName = "Microsoft.AspNetCore.Http.RequestDelegate",
         MinimumVersion = Major2,
         MaximumVersion = Major2,
-        IntegrationName = nameof(IntegrationIds.AspNetCore))]
+        IntegrationName = nameof(IntegrationId.AspNetCore))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static class AspNetCoreMiddlewareIntegration

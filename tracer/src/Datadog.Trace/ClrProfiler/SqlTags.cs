@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler
 
         public string DbType { get; set; }
 
-        public string InstrumentationName => nameof(IntegrationIds.AdoNet);
+        public string InstrumentationName => nameof(IntegrationId.AdoNet);
 
         public string DbName { get; set; }
 

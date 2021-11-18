@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
 
         public override string SpanKind => SpanKinds.Client;
 
-        public string InstrumentationName => nameof(IntegrationIds.StackExchangeRedis);
+        public string InstrumentationName => nameof(IntegrationId.StackExchangeRedis);
 
         public string RawCommand { get; set; }
 

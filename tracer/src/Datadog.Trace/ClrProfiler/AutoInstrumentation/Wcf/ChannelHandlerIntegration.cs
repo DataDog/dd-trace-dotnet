@@ -34,11 +34,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class ChannelHandlerIntegration
     {
-        private const string IntegrationName = nameof(IntegrationIds.Wcf);
+        private const string IntegrationName = nameof(Configuration.IntegrationId.Wcf);
         private const string ChannelHandlerTypeName = "System.ServiceModel.Dispatcher.ChannelHandler";
         private const string HttpRequestMessagePropertyTypeName = "System.ServiceModel.Channels.HttpRequestMessageProperty";
 
-        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
+        private const IntegrationId IntegrationId = Configuration.IntegrationId.Wcf;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ChannelHandlerIntegration));
 
         /// <summary>

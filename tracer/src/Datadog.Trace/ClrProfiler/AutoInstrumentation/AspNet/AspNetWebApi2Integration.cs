@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
     {
         private const string OperationName = "aspnet-webapi.request";
 
-        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.AspNetWebApi2));
+        private const IntegrationId IntegrationId = Configuration.IntegrationId.AspNetWebApi2;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AspNetWebApi2Integration));
 
         internal static Scope CreateScope(IHttpControllerContext controllerContext, out AspNetTags tags)

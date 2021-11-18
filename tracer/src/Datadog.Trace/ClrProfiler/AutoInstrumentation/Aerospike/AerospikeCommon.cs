@@ -17,8 +17,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
     {
         private const string ServiceName = "aerospike";
         private const string OperationName = "aerospike.command";
-        public const string IntegrationName = nameof(IntegrationIds.Aerospike);
-        internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
+        public const string IntegrationName = nameof(Configuration.IntegrationId.Aerospike);
+        internal const IntegrationId IntegrationId = Configuration.IntegrationId.Aerospike;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AerospikeCommon));
 

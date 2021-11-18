@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         private const string Major5Minor1 = "5.1";
         private const string Major5MinorX = "5";
 
-        private const string IntegrationName = nameof(IntegrationIds.AspNetWebApi2);
+        private const string IntegrationName = nameof(IntegrationId.AspNetWebApi2);
 
         /// <summary>
         /// OnMethodBegin callback

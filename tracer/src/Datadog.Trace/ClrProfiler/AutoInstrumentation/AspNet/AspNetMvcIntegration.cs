@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
         private const string RouteCollectionRouteTypeName = "System.Web.Mvc.Routing.RouteCollectionRoute";
 
-        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.AspNetMvc));
+        private const IntegrationId IntegrationId = Configuration.IntegrationId.AspNetMvc;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AspNetMvcIntegration));
 
         /// <summary>

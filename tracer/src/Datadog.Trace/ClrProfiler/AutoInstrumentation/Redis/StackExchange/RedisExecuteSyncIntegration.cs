@@ -18,8 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class RedisExecuteSyncIntegration
     {
-        private const string IntegrationName = nameof(IntegrationIds.StackExchangeRedis);
-        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
+        private const IntegrationId IntegrationId = Configuration.IntegrationId.StackExchangeRedis;
 
         /// <summary>
         /// OnMethodBegin callback

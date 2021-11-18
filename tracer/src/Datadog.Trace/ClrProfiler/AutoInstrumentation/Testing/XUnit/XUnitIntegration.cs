@@ -15,8 +15,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 {
     internal static class XUnitIntegration
     {
-        internal const string IntegrationName = nameof(IntegrationIds.XUnit);
-        internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
+        internal const string IntegrationName = nameof(Configuration.IntegrationId.XUnit);
+        internal const IntegrationId IntegrationId = Configuration.IntegrationId.XUnit;
 
         internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 

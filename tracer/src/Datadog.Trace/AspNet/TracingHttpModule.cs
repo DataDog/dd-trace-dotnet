@@ -29,7 +29,7 @@ namespace Datadog.Trace.AspNet
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class TracingHttpModule : IHttpModule
     {
-        internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(nameof(IntegrationIds.AspNet));
+        internal static readonly IntegrationId IntegrationId = IntegrationId.AspNet;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TracingHttpModule));
 

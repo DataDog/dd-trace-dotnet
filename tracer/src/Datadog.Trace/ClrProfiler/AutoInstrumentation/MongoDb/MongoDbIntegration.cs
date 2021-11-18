@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static class MongoDbIntegration
     {
-        internal const string IntegrationName = nameof(IntegrationIds.MongoDb);
+        internal const string IntegrationName = nameof(Configuration.IntegrationId.MongoDb);
 
         internal const string Major2 = "2";
         internal const string Major2Minor1 = "2.1";
@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 
         private const string IWireProtocolGeneric = "MongoDB.Driver.Core.WireProtocol.IWireProtocol`1";
 
-        internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
+        internal const IntegrationId IntegrationId = Configuration.IntegrationId.MongoDb;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MongoDbIntegration));
 

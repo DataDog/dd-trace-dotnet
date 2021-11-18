@@ -10,8 +10,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
 {
     internal static class LoggerIntegrationCommon
     {
-        public const string IntegrationName = nameof(IntegrationIds.ILogger);
-        private static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
+        public const string IntegrationName = nameof(Configuration.IntegrationId.ILogger);
+        private const IntegrationId IntegrationId = Configuration.IntegrationId.ILogger;
 
         private static readonly DatadogLoggingScope DatadogScope = new();
 

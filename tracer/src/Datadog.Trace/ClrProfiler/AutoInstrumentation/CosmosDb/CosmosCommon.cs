@@ -21,8 +21,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
         public const string Major3Minor6 = "3.6.0";
         public const string Major3MinorX = "3";
 
-        public const string IntegrationName = nameof(IntegrationIds.CosmosDb);
-        internal static readonly IntegrationInfo IntegrationId = IntegrationRegistry.GetIntegrationInfo(IntegrationName);
+        public const string IntegrationName = nameof(Configuration.IntegrationId.CosmosDb);
+        internal const IntegrationId IntegrationId = Configuration.IntegrationId.CosmosDb;
 
         private const string OperationName = "cosmosdb.query";
         private const string ServiceName = "cosmosdb";
