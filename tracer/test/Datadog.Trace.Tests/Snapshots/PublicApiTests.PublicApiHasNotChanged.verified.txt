@@ -103,6 +103,51 @@ namespace Datadog.Trace.Configuration
         int? GetInt32(string key);
         string GetString(string key);
     }
+    public class ImmutableIntegrationSettings
+    {
+        public bool? AnalyticsEnabled { get; }
+        public double AnalyticsSampleRate { get; }
+        public bool? Enabled { get; }
+        public string IntegrationName { get; }
+    }
+    public class ImmutableIntegrationSettingsCollection
+    {
+        public ImmutableIntegrationSettingsCollection(Datadog.Trace.Configuration.IntegrationSettingsCollection settings, System.Collections.Generic.HashSet<string> disabledIntegrationNames) { }
+        public Datadog.Trace.Configuration.ImmutableIntegrationSettings this[string integrationName] { get; }
+    }
+    public class ImmutableTracerSettings
+    {
+        public ImmutableTracerSettings(Datadog.Trace.Configuration.IConfigurationSource source) { }
+        public ImmutableTracerSettings(Datadog.Trace.Configuration.TracerSettings settings) { }
+        public System.Collections.Generic.HashSet<string> AdoNetExcludedTypes { get; }
+        public System.Uri AgentUri { get; }
+        [System.Obsolete("App Analytics has been replaced by Tracing without Limits. For more information s" +
+            "ee https://docs.datadoghq.com/tracing/legacy_app_analytics/")]
+        public bool AnalyticsEnabled { get; }
+        public string CustomSamplingRules { get; }
+        public int DogStatsdPort { get; }
+        public string Environment { get; }
+        public double? GlobalSamplingRate { get; }
+        public System.Collections.Generic.IReadOnlyDictionary<string, string> GlobalTags { get; }
+        public System.Collections.Generic.IReadOnlyDictionary<string, string> HeaderTags { get; }
+        public Datadog.Trace.Configuration.ImmutableIntegrationSettingsCollection Integrations { get; }
+        public bool KafkaCreateConsumerScopeEnabled { get; }
+        public bool LogsInjectionEnabled { get; }
+        public int MaxTracesSubmittedPerSecond { get; }
+        public string MetricsPipeName { get; }
+        public bool PartialFlushEnabled { get; }
+        public int PartialFlushMinSpans { get; }
+        public bool RuntimeMetricsEnabled { get; }
+        public string ServiceName { get; }
+        public string ServiceVersion { get; }
+        public bool StartupDiagnosticLogEnabled { get; }
+        public bool TraceEnabled { get; }
+        public bool TracerMetricsEnabled { get; }
+        public string TracesPipeName { get; }
+        public int TracesPipeTimeoutMs { get; }
+        public string TracesTransport { get; }
+        public static Datadog.Trace.Configuration.ImmutableTracerSettings FromDefaultSources() { }
+    }
     public class IntegrationSettings
     {
         public IntegrationSettings(string integrationName, Datadog.Trace.Configuration.IConfigurationSource source) { }
@@ -176,6 +221,7 @@ namespace Datadog.Trace.Configuration
         public string TracesPipeName { get; set; }
         public int TracesPipeTimeoutMs { get; set; }
         public string TracesTransport { get; set; }
+        public Datadog.Trace.Configuration.ImmutableTracerSettings Build() { }
         public void SetHttpClientErrorStatusCodes(System.Collections.Generic.IEnumerable<int> statusCodes) { }
         public void SetHttpServerErrorStatusCodes(System.Collections.Generic.IEnumerable<int> statusCodes) { }
         public void SetServiceNameMappings(System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>> mappings) { }
@@ -302,7 +348,7 @@ namespace Datadog.Trace
         public Tracer(Datadog.Trace.Configuration.TracerSettings settings) { }
         public Datadog.Trace.Scope ActiveScope { get; }
         public string DefaultServiceName { get; }
-        public Datadog.Trace.Configuration.TracerSettings Settings { get; }
+        public Datadog.Trace.Configuration.ImmutableTracerSettings Settings { get; }
         [set: System.Obsolete("Use Tracer.Configure to configure the global Tracer instance in code.")]
         public static Datadog.Trace.Tracer Instance { get; set; }
         public Datadog.Trace.Scope ActivateSpan(Datadog.Trace.Span span, bool finishOnClose = true) { }

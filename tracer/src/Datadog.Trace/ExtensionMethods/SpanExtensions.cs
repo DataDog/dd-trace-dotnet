@@ -77,7 +77,7 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
-        internal static void SetHeaderTags<T>(this Span span, T headers, IDictionary<string, string> headerTags, string defaultTagPrefix)
+        internal static void SetHeaderTags<T>(this Span span, T headers, IReadOnlyDictionary<string, string> headerTags, string defaultTagPrefix)
             where T : IHeadersCollection
         {
             if (headerTags is not null && !headerTags.IsEmpty())
@@ -97,7 +97,7 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
-        internal static void SetHttpStatusCode(this Span span, int statusCode, bool isServer, TracerSettings tracerSettings)
+        internal static void SetHttpStatusCode(this Span span, int statusCode, bool isServer, ImmutableTracerSettings tracerSettings)
         {
             string statusCodeString = ConvertStatusCodeToString(statusCode);
 

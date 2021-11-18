@@ -77,7 +77,7 @@ namespace Datadog.Trace
         /// The <see cref="TracerManager"/> created will be scoped specifically to this instance.
         /// </summary>
         internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ISampler sampler, IScopeManager scopeManager, IDogStatsd statsd)
-            : this(TracerManagerFactory.Instance.CreateTracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics: null, libLogSubscriber: null))
+            : this(TracerManagerFactory.Instance.CreateTracerManager(settings?.Build(), agentWriter, sampler, scopeManager, statsd, runtimeMetrics: null, libLogSubscriber: null))
         {
         }
 
@@ -159,7 +159,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets this tracer's settings.
         /// </summary>
-        public TracerSettings Settings => TracerManager.Settings;
+        public ImmutableTracerSettings Settings => TracerManager.Settings;
 
         /// <summary>
         /// Gets the tracer's scope manager, which determines which span is currently active, if any.
@@ -185,8 +185,7 @@ namespace Datadog.Trace
         /// or null to use the default configuration sources. This is used to configure global settings</param>
         public static void Configure(TracerSettings settings)
         {
-            // TODO: Switch to immutable settings
-            TracerManager.ReplaceGlobalManager(settings, TracerManagerFactory.Instance);
+            TracerManager.ReplaceGlobalManager(settings?.Build(), TracerManagerFactory.Instance);
         }
 
         /// <summary>

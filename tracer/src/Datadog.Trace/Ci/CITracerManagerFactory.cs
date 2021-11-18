@@ -17,7 +17,7 @@ namespace Datadog.Trace.Ci
     internal class CITracerManagerFactory : TracerManagerFactory
     {
         protected override TracerManager CreateTracerManagerFrom(
-            TracerSettings settings,
+            ImmutableTracerSettings settings,
             IAgentWriter agentWriter,
             ISampler sampler,
             IScopeManager scopeManager,
@@ -29,12 +29,12 @@ namespace Datadog.Trace.Ci
             return new CITracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, libLogSubscriber, defaultServiceName);
         }
 
-        protected override ISampler GetSampler(TracerSettings settings)
+        protected override ISampler GetSampler(ImmutableTracerSettings settings)
         {
             return new CISampler();
         }
 
-        protected override IAgentWriter GetAgentWriter(TracerSettings settings, IDogStatsd statsd, ISampler sampler)
+        protected override IAgentWriter GetAgentWriter(ImmutableTracerSettings settings, IDogStatsd statsd, ISampler sampler)
         {
             return new CIAgentWriter(settings, sampler);
         }

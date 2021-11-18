@@ -24,7 +24,7 @@ namespace Datadog.Trace.AppSec.Transports
 
         internal Sender()
         {
-            _apiRequestFactory = TransportStrategy.Get(TracerSettings.FromDefaultSources()) ?? Api.CreateRequestFactory();
+            _apiRequestFactory = TransportStrategy.Get(ImmutableTracerSettings.FromDefaultSources()) ?? Api.CreateRequestFactory();
             var settings = Tracer.Instance.Settings;
             // todo: read from configuration key?
             _uri = new Uri(settings.AgentUri, "appsec/proxy/api/v2/appsecevts");
