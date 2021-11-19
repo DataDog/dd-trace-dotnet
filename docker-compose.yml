@@ -103,6 +103,12 @@ services:
       - "127.0.0.1:27017:27017"
     command: mongod
 
+  couchbase:
+    image: bentonam/couchbase-docker:community-5.0.1
+    ports:
+      - "8091-8094:8091-8094"
+      - "11210:11210"
+
   elasticsearch7:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.14.1
     ports:
@@ -317,6 +323,8 @@ services:
       - KAFKA_BROKER_HOST=kafka-broker:29092
       - AWS_SQS_HOST=aws_sqs:9324
       - AEROSPIKE_HOST=aerospike:3000
+      - COUCHBASE_HOST=couchbase
+      - COUCHBASE_PORT=8091
     depends_on:
       - aerospike
       - servicestackredis
@@ -333,6 +341,7 @@ services:
       - kafka-broker
       - kafka-zookeeper
       - aws_sqs
+      - couchbase
 
   StartDependencies:
     image: andrewlock/wait-for-dependencies
@@ -352,9 +361,10 @@ services:
       - kafka-broker
       - kafka-zookeeper
       - aws_sqs
+      - couchbase
     environment:
       - TIMEOUT_LENGTH=120
-    command: aerospike:3000 servicestackredis:6379 stackexchangeredis:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 aws_sqs:9324
+    command: aerospike:3000 servicestackredis:6379 stackexchangeredis:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 aws_sqs:9324 couchbase:11210
 
   IntegrationTests.ARM64:
     build:
