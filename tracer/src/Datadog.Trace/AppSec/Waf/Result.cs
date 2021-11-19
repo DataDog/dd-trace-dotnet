@@ -13,15 +13,17 @@ namespace Datadog.Trace.AppSec.Waf
 {
     internal class Result : IResult
     {
+        private readonly WafNative wafNative;
         private DdwafResultStruct returnStruct;
         private DDWAF_RET_CODE returnCode;
 
         private bool disposed;
 
-        public Result(DdwafResultStruct returnStruct, DDWAF_RET_CODE returnCode)
+        public Result(DdwafResultStruct returnStruct, DDWAF_RET_CODE returnCode, WafNative wafNative)
         {
             this.returnStruct = returnStruct;
             this.returnCode = returnCode;
+            this.wafNative = wafNative;
         }
 
         ~Result()
@@ -48,7 +50,7 @@ namespace Datadog.Trace.AppSec.Waf
 
             disposed = true;
 
-            WafNative.ResultFree(ref returnStruct);
+            wafNative.ResultFree(ref returnStruct);
         }
 
         public void Dispose()

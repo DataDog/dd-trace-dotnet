@@ -4,9 +4,6 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -21,83 +18,73 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private const string DllName = "ddwaf";
 #endif
 
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(WafNative));
+        private readonly IDatadogLogger _log = DatadogLogging.GetLoggerFor(typeof(WafNative));
 
-        private static readonly GetVersionDelegate GetVersionField;
-        private static readonly InitDelegate InitField;
-        private static readonly ResultFreeDelegate ResultFreeField;
-        private static readonly InitContextDelegate InitContextField;
-        private static readonly RunDelegate RunField;
-        private static readonly DestroyDelegate DestroyField;
-        private static readonly ContextDestroyDelegate ContextDestroyField;
-        private static readonly ObjectInvalidDelegate ObjectInvalidField;
-        private static readonly ObjectStringLengthDelegateX64 ObjectStringLengthFieldX64;
-        private static readonly ObjectStringLengthDelegateX86 ObjectStringLengthFieldX86;
-        private static readonly ObjectSignedDelegate ObjectSignedField;
-        private static readonly ObjectUnsignedDelegate ObjectUnsignField;
-        private static readonly ObjectArrayDelegate ObjectArrayField;
-        private static readonly ObjectMapDelegate ObjectMapField;
-        private static readonly ObjectArrayAddDelegate ObjectArrayAddField;
-        private static readonly ObjectMapAddDelegateX64 ObjectMapAddFieldX64;
-        private static readonly ObjectMapAddDelegateX86 ObjectMapAddFieldX86;
-        private static readonly ObjectFreeDelegate ObjectFreeField;
-        private static readonly SetupLogCallbackDelegate SetupLogCallbackField;
-        private static readonly IntPtr ObjectFreeFuncPtrField;
+        private readonly GetVersionDelegate _getVersionField;
+        private readonly InitDelegate _initField;
+        private readonly ResultFreeDelegate _resultFreeField;
+        private readonly InitContextDelegate _initContextField;
+        private readonly RunDelegate _runField;
+        private readonly DestroyDelegate _destroyField;
+        private readonly ContextDestroyDelegate _contextDestroyField;
+        private readonly ObjectInvalidDelegate _objectInvalidField;
+        private readonly ObjectStringLengthDelegateX64 _objectStringLengthFieldX64;
+        private readonly ObjectStringLengthDelegateX86 _objectStringLengthFieldX86;
+        private readonly ObjectSignedDelegate _objectSignedField;
+        private readonly ObjectUnsignedDelegate _objectUnsignField;
+        private readonly ObjectArrayDelegate _objectArrayField;
+        private readonly ObjectMapDelegate _objectMapField;
+        private readonly ObjectArrayAddDelegate _objectArrayAddField;
+        private readonly ObjectMapAddDelegateX64 _objectMapAddFieldX64;
+        private readonly ObjectMapAddDelegateX86 _objectMapAddFieldX86;
+        private readonly ObjectFreeDelegate _objectFreeField;
+        private readonly IntPtr _objectFreeFuncPtrField;
 
-        static WafNative()
+        /// <summary>
+        /// Initializes a new instance of the <see cref="WafNative"/> class.
+        /// </summary>
+        /// <param name="handle">Can't be a null pointer. Waf library must be loaded by now</param>
+        internal WafNative(IntPtr handle)
         {
-            var fd = FrameworkDescription.Create();
+            _initField = GetDelegateForNativeFunction<InitDelegate>(handle, "ddwaf_init");
+            _destroyField = GetDelegateForNativeFunction<DestroyDelegate>(handle, "ddwaf_destroy");
+            _initContextField = GetDelegateForNativeFunction<InitContextDelegate>(handle, "ddwaf_context_init");
+            _runField = GetDelegateForNativeFunction<RunDelegate>(handle, "ddwaf_run");
+            _contextDestroyField = GetDelegateForNativeFunction<ContextDestroyDelegate>(handle, "ddwaf_context_destroy");
+            _resultFreeField = GetDelegateForNativeFunction<ResultFreeDelegate>(handle, "ddwaf_result_free");
+            _objectInvalidField = GetDelegateForNativeFunction<ObjectInvalidDelegate>(handle, "ddwaf_object_invalid");
+            _objectStringLengthFieldX64 =
+                Environment.Is64BitProcess ?
+                    GetDelegateForNativeFunction<ObjectStringLengthDelegateX64>(handle, "ddwaf_object_stringl") :
+                    null;
+            _objectStringLengthFieldX86 =
+                Environment.Is64BitProcess ?
+                    null :
+                    GetDelegateForNativeFunction<ObjectStringLengthDelegateX86>(handle, "ddwaf_object_stringl");
+            _objectSignedField = GetDelegateForNativeFunction<ObjectSignedDelegate>(handle, "ddwaf_object_signed");
+            _objectUnsignField = GetDelegateForNativeFunction<ObjectUnsignedDelegate>(handle, "ddwaf_object_unsigned");
+            _objectArrayField = GetDelegateForNativeFunction<ObjectArrayDelegate>(handle, "ddwaf_object_array");
+            _objectMapField = GetDelegateForNativeFunction<ObjectMapDelegate>(handle, "ddwaf_object_map");
+            _objectArrayAddField = GetDelegateForNativeFunction<ObjectArrayAddDelegate>(handle, "ddwaf_object_array_add");
+            _objectMapAddFieldX64 =
+                Environment.Is64BitProcess ?
+                    GetDelegateForNativeFunction<ObjectMapAddDelegateX64>(handle, "ddwaf_object_map_addl") :
+                    null;
+            _objectMapAddFieldX86 =
+                Environment.Is64BitProcess ?
+                    null :
+                    GetDelegateForNativeFunction<ObjectMapAddDelegateX86>(handle, "ddwaf_object_map_addl");
+            _objectFreeField = GetDelegateForNativeFunction<ObjectFreeDelegate>(handle, "ddwaf_object_free", out _objectFreeFuncPtrField);
+            _getVersionField = GetDelegateForNativeFunction<GetVersionDelegate>(handle, "ddwaf_get_version");
 
-            string libName, runtimeId;
-            GetLibNameAndRuntimeId(fd, out libName, out runtimeId);
-
-            // libName or runtimeId being null means platform is not supported
-            // no point attempting to load the library
-            if (libName != null && runtimeId != null)
-            {
-                var paths = GetDatadogNativeFolders(fd, runtimeId);
-                if (TryLoadLibraryFromPaths(libName, paths, out IntPtr handle))
-                {
-                    InitField = GetDelegateForNativeFunction<InitDelegate>(handle, "ddwaf_init");
-                    DestroyField = GetDelegateForNativeFunction<DestroyDelegate>(handle, "ddwaf_destroy");
-                    InitContextField = GetDelegateForNativeFunction<InitContextDelegate>(handle, "ddwaf_context_init");
-                    RunField = GetDelegateForNativeFunction<RunDelegate>(handle, "ddwaf_run");
-                    ContextDestroyField = GetDelegateForNativeFunction<ContextDestroyDelegate>(handle, "ddwaf_context_destroy");
-                    ResultFreeField = GetDelegateForNativeFunction<ResultFreeDelegate>(handle, "ddwaf_result_free");
-                    ObjectInvalidField = GetDelegateForNativeFunction<ObjectInvalidDelegate>(handle, "ddwaf_object_invalid");
-                    ObjectStringLengthFieldX64 =
-                        Environment.Is64BitProcess ?
-                            GetDelegateForNativeFunction<ObjectStringLengthDelegateX64>(handle, "ddwaf_object_stringl") :
-                            null;
-                    ObjectStringLengthFieldX86 =
-                        Environment.Is64BitProcess ?
-                            null :
-                            GetDelegateForNativeFunction<ObjectStringLengthDelegateX86>(handle, "ddwaf_object_stringl");
-                    ObjectSignedField = GetDelegateForNativeFunction<ObjectSignedDelegate>(handle, "ddwaf_object_signed");
-                    ObjectUnsignField = GetDelegateForNativeFunction<ObjectUnsignedDelegate>(handle, "ddwaf_object_unsigned");
-                    ObjectArrayField = GetDelegateForNativeFunction<ObjectArrayDelegate>(handle, "ddwaf_object_array");
-                    ObjectMapField = GetDelegateForNativeFunction<ObjectMapDelegate>(handle, "ddwaf_object_map");
-                    ObjectArrayAddField = GetDelegateForNativeFunction<ObjectArrayAddDelegate>(handle, "ddwaf_object_array_add");
-                    ObjectMapAddFieldX64 =
-                        Environment.Is64BitProcess ?
-                            GetDelegateForNativeFunction<ObjectMapAddDelegateX64>(handle, "ddwaf_object_map_addl") :
-                            null;
-                    ObjectMapAddFieldX86 =
-                        Environment.Is64BitProcess ?
-                            null :
-                            GetDelegateForNativeFunction<ObjectMapAddDelegateX86>(handle, "ddwaf_object_map_addl");
-                    ObjectFreeField = GetDelegateForNativeFunction<ObjectFreeDelegate>(handle, "ddwaf_object_free", out ObjectFreeFuncPtrField);
-                    GetVersionField = GetDelegateForNativeFunction<GetVersionDelegate>(handle, "ddwaf_get_version");
-
-                    // setup logging
-                    var setupLogging = GetDelegateForNativeFunction<SetupLoggingDelegate>(handle, "ddwaf_set_log_cb");
-                    // convert to a delegate and attempt to pin it by assigning it to static field
-                    SetupLogCallbackField = LoggingCallback;
-                    // set the log level and setup the loger
-                    var level = GlobalSettings.Source.DebugEnabled ? DDWAF_LOG_LEVEL.DDWAF_DEBUG : DDWAF_LOG_LEVEL.DDWAF_INFO;
-                    setupLogging(Marshal.GetFunctionPointerForDelegate(SetupLogCallbackField), level);
-                }
-            }
+            // setup logging
+            var setupLogging = GetDelegateForNativeFunction<SetupLoggingDelegate>(handle, "ddwaf_set_log_cb");
+            // convert to a delegate and attempt to pin it by assigning it to  field
+            SetupLogCallbackDelegate setupLogCallbackField = LoggingCallback;
+            // set the log level and setup the logger
+            var level = GlobalSettings.Source.DebugEnabled ? DDWAF_LOG_LEVEL.DDWAF_DEBUG : DDWAF_LOG_LEVEL.DDWAF_INFO;
+            setupLogging(Marshal.GetFunctionPointerForDelegate(setupLogCallbackField), level);
+            Encoder = new Encoder(this);
         }
 
         private delegate void GetVersionDelegate(ref DdwafVersionStruct version);
@@ -157,118 +144,123 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             DDWAF_AFTER_LAST,
         }
 
-        internal static IntPtr ObjectFreeFuncPtr
+        internal Encoder Encoder { get; }
+
+        internal IntPtr ObjectFreeFuncPtr
         {
-            get { return ObjectFreeFuncPtrField; }
+            get
+            {
+                return _objectFreeFuncPtrField;
+            }
         }
 
-        internal static DdwafVersionStruct GetVersion()
+        internal DdwafVersionStruct GetVersion()
         {
             DdwafVersionStruct version = default;
-            GetVersionField(ref version);
+            _getVersionField(ref version);
             return version;
         }
 
-        internal static IntPtr Init(IntPtr wafRule, ref DdwafConfigStruct config)
+        internal IntPtr Init(IntPtr wafRule, ref DdwafConfigStruct config)
         {
-            return InitField(wafRule, ref config);
+            return _initField(wafRule, ref config);
         }
 
-        internal static void ResultFree(ref DdwafResultStruct output)
+        internal void ResultFree(ref DdwafResultStruct output)
         {
-            ResultFreeField(ref output);
+            _resultFreeField(ref output);
         }
 
-        internal static IntPtr InitContext(IntPtr powerwafHandle, IntPtr objFree)
+        internal IntPtr InitContext(IntPtr powerwafHandle, IntPtr objFree)
         {
-            return InitContextField(powerwafHandle, objFree);
+            return _initContextField(powerwafHandle, objFree);
         }
 
-        internal static DDWAF_RET_CODE Run(IntPtr context, IntPtr newArgs, ref DdwafResultStruct result, ulong timeLeftInUs)
+        internal DDWAF_RET_CODE Run(IntPtr context, IntPtr newArgs, ref DdwafResultStruct result, ulong timeLeftInUs)
         {
-            return RunField(context, newArgs, ref result, timeLeftInUs);
+            return _runField(context, newArgs, ref result, timeLeftInUs);
         }
 
-        internal static void Destroy(IntPtr handle)
+        internal void Destroy(IntPtr handle)
         {
-            DestroyField(handle);
+            _destroyField(handle);
         }
 
-        internal static void ContextDestroy(IntPtr handle)
+        internal void ContextDestroy(IntPtr handle)
         {
-            ContextDestroyField(handle);
+            _contextDestroyField(handle);
         }
 
-        internal static IntPtr ObjectInvalid()
+        internal IntPtr ObjectInvalid()
         {
             var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(DdwafObjectStruct)));
-            ObjectInvalidField(ptr);
+            _objectInvalidField(ptr);
             return ptr;
         }
 
-        internal static IntPtr ObjectStringLength(string s, ulong length)
+        internal IntPtr ObjectStringLength(string s, ulong length)
         {
             var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(DdwafObjectStruct)));
             if (Environment.Is64BitProcess)
             {
-                ObjectStringLengthFieldX64(ptr, s, length);
+                _objectStringLengthFieldX64(ptr, s, length);
             }
             else
             {
-                ObjectStringLengthFieldX86(ptr, s, (uint)length);
+                _objectStringLengthFieldX86(ptr, s, (uint)length);
             }
 
             return ptr;
         }
 
-        internal static IntPtr ObjectSigned(long value)
+        internal IntPtr ObjectSigned(long value)
         {
             var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(DdwafObjectStruct)));
-            ObjectSignedField(ptr, value);
+            _objectSignedField(ptr, value);
             return ptr;
         }
 
-        internal static IntPtr ObjectUnsigned(ulong value)
+        internal IntPtr ObjectUnsigned(ulong value)
         {
             var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(DdwafObjectStruct)));
-            ObjectUnsignField(ptr, value);
+            _objectUnsignField(ptr, value);
             return ptr;
         }
 
-        internal static IntPtr ObjectArray()
+        internal IntPtr ObjectArray()
         {
             var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(DdwafObjectStruct)));
-            ObjectArrayField(ptr);
+            _objectArrayField(ptr);
             return ptr;
         }
 
-        internal static IntPtr ObjectMap()
+        internal IntPtr ObjectMap()
         {
             var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(DdwafObjectStruct)));
-            ObjectMapField(ptr);
+            _objectMapField(ptr);
             return ptr;
         }
 
-        internal static bool ObjectArrayAdd(IntPtr array, IntPtr entry)
+        internal bool ObjectArrayAdd(IntPtr array, IntPtr entry)
         {
-            return ObjectArrayAddField(array, entry);
+            return _objectArrayAddField(array, entry);
         }
 
-        // Setting entryNameLength to 0 will result in the entryName length being re-computed with strlen
-        internal static bool ObjectMapAdd(IntPtr map, string entryName, ulong entryNameLength, IntPtr entry)
+// Setting entryNameLength to 0 will result in the entryName length being re-computed with strlen
+        internal bool ObjectMapAdd(IntPtr map, string entryName, ulong entryNameLength, IntPtr entry)
         {
             return
                 Environment.Is64BitProcess ?
-                    ObjectMapAddFieldX64(map, entryName, entryNameLength, entry) :
-                    ObjectMapAddFieldX86(map, entryName, (uint)entryNameLength, entry);
+                    _objectMapAddFieldX64(map, entryName, entryNameLength, entry) :
+                    _objectMapAddFieldX86(map, entryName, (uint)entryNameLength, entry);
         }
 
-        internal static void ObjectFree(IntPtr input)
+        internal void ObjectFree(IntPtr input)
         {
-            ObjectFreeField(input);
+            _objectFreeField(input);
         }
 
-        private static void LoggingCallback(
+        private void LoggingCallback(
             DDWAF_LOG_LEVEL level,
             string function,
             string file,
@@ -281,254 +273,36 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             {
                 case DDWAF_LOG_LEVEL.DDWAF_TRACE:
                 case DDWAF_LOG_LEVEL.DDWAF_DEBUG:
-                    Log.Debug(formattedMessage);
+                    _log.Debug(formattedMessage);
                     break;
                 case DDWAF_LOG_LEVEL.DDWAF_INFO:
-                    Log.Information(formattedMessage);
+                    _log.Information(formattedMessage);
                     break;
                 case DDWAF_LOG_LEVEL.DDWAF_WARN:
-                    Log.Warning(formattedMessage);
+                    _log.Warning(formattedMessage);
                     break;
                 case DDWAF_LOG_LEVEL.DDWAF_ERROR:
                 case DDWAF_LOG_LEVEL.DDWAF_AFTER_LAST:
-                    Log.Error(formattedMessage);
+                    _log.Error(formattedMessage);
                     break;
                 default:
-                    Log.Error("[Unknown level] " + formattedMessage);
+                    _log.Error("[Unknown level] " + formattedMessage);
                     break;
             }
         }
 
-        private static T GetDelegateForNativeFunction<T>(IntPtr handle, string functionName, out IntPtr funcPtr)
+        private T GetDelegateForNativeFunction<T>(IntPtr handle, string functionName, out IntPtr funcPtr)
             where T : Delegate
         {
             funcPtr = NativeLibrary.GetExport(handle, functionName);
-            Log.Debug("GetDelegateForNativeFunction -  funcPtr: " + funcPtr);
+            _log.Debug("GetDelegateForNativeFunction -  funcPtr: " + funcPtr);
             return (T)Marshal.GetDelegateForFunctionPointer(funcPtr, typeof(T));
         }
 
-        private static T GetDelegateForNativeFunction<T>(IntPtr handle, string functionName)
+        private T GetDelegateForNativeFunction<T>(IntPtr handle, string functionName)
             where T : Delegate
         {
             return GetDelegateForNativeFunction<T>(handle, functionName, out var _);
-        }
-
-        private static List<string> GetDatadogNativeFolders(FrameworkDescription frameworkDescription, string runtimeId)
-        {
-            // first get anything "home folder" like
-            // if running under Windows:
-            // - get msi install location
-            // - then get the default program files folder (because of a know issue in the installer for location of the x86 folder on a 64bit OS)
-            // then combine with the profiler's location
-            // taking into account that these locations could be the same place
-
-            var paths = GetHomeFolders(runtimeId);
-
-            if (frameworkDescription.OSPlatform == OSPlatform.Windows)
-            {
-                var programFilesFolder = GetProgramFilesFolder();
-                paths.Add(programFilesFolder);
-
-                AddPathFromMsiSettings(paths);
-            }
-
-            var profilerFolder = GetProfilerFolder(frameworkDescription);
-            if (!string.IsNullOrWhiteSpace(profilerFolder))
-            {
-                paths.Add(profilerFolder);
-            }
-            else
-            {
-                // this is expected under Windows, but problematic under other OSs
-                Log.Debug("Couldn't find profilerFolder");
-            }
-
-            return paths.Distinct().ToList();
-        }
-
-        private static void AddPathFromMsiSettings(List<string> paths)
-        {
-            void AddInstallDirFromRegKey(string bitness)
-            {
-                var path = $@"SOFTWARE\Datadog\Datadog .NET Tracer {bitness}-bit";
-                var installDir = ReducedRegistryAccess.ReadLocalMachineString(path, "InstallPath");
-                if (installDir != null)
-                {
-                    paths.Add(installDir);
-                }
-            }
-
-            if (Environment.Is64BitOperatingSystem)
-            {
-                AddInstallDirFromRegKey("64");
-            }
-
-            AddInstallDirFromRegKey("32");
-        }
-
-        private static string GetProgramFilesFolder()
-        {
-            // should be already adapted to the type of process / OS
-            var programFilesRoot = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-
-            return Path.Combine(programFilesRoot, "Datadog", ".NET Tracer");
-        }
-
-        private static string GetProfilerFolder(FrameworkDescription frameworkDescription)
-        {
-            var profilerEnvVar =
-                frameworkDescription.IsCoreClr() ? "CORECLR_PROFILER_PATH" : "COR_PROFILER_PATH";
-            var profilerEnvVarBitsExt =
-                profilerEnvVar + (Environment.Is64BitProcess ? "_64" : "_32");
-
-            var profilerPathsEnvVars = new List<string>()
-            {
-                profilerEnvVarBitsExt,
-                profilerEnvVar
-            };
-
-            // it is unlikely that the security library would be in a sub folder from
-            // where the profiler lives, so just use this paths directly
-            var profilerFolders =
-                profilerPathsEnvVars
-                    .Select(Environment.GetEnvironmentVariable)
-                    .Where(x => !string.IsNullOrWhiteSpace(x))
-                    .Select(Path.GetDirectoryName)
-                    .FirstOrDefault();
-
-            return profilerFolders;
-        }
-
-        private static List<string> GetHomeFolders(string runtimeId)
-        {
-            List<string> GetRuntimeSpecificVersions(string path)
-            {
-                return new List<string>()
-                {
-                    path,
-                    Path.Combine(path, runtimeId),
-                    Path.Combine(path, runtimeId, "native"),
-                };
-            }
-
-            // treat any path that could contain integrations.json as home folder
-            var integrationsPaths = Environment.GetEnvironmentVariable("DD_INTEGRATIONS")
-                    ?.Split(';')
-                    ?.Where(x => !string.IsNullOrWhiteSpace(x))
-                    ?.Select(Path.GetDirectoryName)
-                    ?.ToList()
-                        ?? new List<string>();
-
-            // the real trace home
-            var tracerHome = Environment.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME");
-            if (!string.IsNullOrWhiteSpace(tracerHome))
-            {
-                integrationsPaths.Add(tracerHome);
-            }
-
-            // include the appdomain base as this will help framework samples running in IIS find the library
-            var currentDir =
-                string.IsNullOrEmpty(AppDomain.CurrentDomain.RelativeSearchPath) ?
-                    AppDomain.CurrentDomain.BaseDirectory : AppDomain.CurrentDomain.RelativeSearchPath;
-
-            if (!string.IsNullOrWhiteSpace(currentDir))
-            {
-                integrationsPaths.Add(currentDir);
-                Log.Debug("currentDir is {CurrentDir}", currentDir);
-            }
-            else
-            {
-                Log.Debug("currentDir is null or empty");
-            }
-
-            // the home folder could contain the native dll directly, but it could also
-            // be under a runtime specific folder
-            var paths =
-                integrationsPaths
-                    .Distinct()
-                    .SelectMany(GetRuntimeSpecificVersions)
-                    .ToList();
-
-            return paths;
-        }
-
-        private static bool TryLoadLibraryFromPaths(string libName, List<string> paths, out IntPtr handle)
-        {
-            var success = false;
-            handle = IntPtr.Zero;
-
-            foreach (var path in paths)
-            {
-                var libFullPath = Path.Combine(path, libName);
-
-                if (!File.Exists(libFullPath))
-                {
-                    continue;
-                }
-
-                var loaded = NativeLibrary.TryLoad(libFullPath, out handle);
-
-                if (loaded)
-                {
-                    success = true;
-                    Log.Information($"Loaded library '{libName}' from '{path}' with handle '{handle}'");
-                    break;
-                }
-                else
-                {
-                    Log.Warning($"Failed to load library '{libName}' from '{path}'");
-                }
-            }
-
-            if (!success)
-            {
-                Log.Warning($"Failed to load library '{libName}' from any of the following '{string.Join(", ", paths)}'");
-            }
-
-            return success;
-        }
-
-        private static void GetLibNameAndRuntimeId(FrameworkDescription frameworkDescription, out string libName, out string runtimeId)
-        {
-            string runtimeIdPart1, libPrefix, libExt;
-
-            switch (frameworkDescription.OSPlatform)
-            {
-                case OSPlatform.MacOS:
-                    runtimeIdPart1 = "osx";
-                    libPrefix = "lib";
-                    libExt = "dylib";
-                    break;
-                case OSPlatform.Linux:
-                    runtimeIdPart1 = "linux";
-                    libPrefix = "lib";
-                    libExt = "so";
-                    break;
-                case OSPlatform.Windows:
-                    runtimeIdPart1 = "win";
-                    libPrefix = string.Empty;
-                    libExt = "dll";
-                    break;
-                default:
-                    // unsupported platform
-                    runtimeIdPart1 = null;
-                    libPrefix = null;
-                    libExt = null;
-                    break;
-            }
-
-            if (runtimeIdPart1 != null && libPrefix != null && libExt != null)
-            {
-                libName = libPrefix + "ddwaf." + libExt;
-                runtimeId = Environment.Is64BitProcess ? runtimeIdPart1 + "-x64" : runtimeIdPart1 + "-x86";
-            }
-            else
-            {
-                Log.Warning($"Unsupported platform: " + Environment.OSVersion.Platform);
-
-                libName = null;
-                runtimeId = null;
-            }
         }
     }
 }

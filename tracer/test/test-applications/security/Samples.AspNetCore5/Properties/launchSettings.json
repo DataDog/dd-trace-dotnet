@@ -39,7 +39,7 @@
         // "DD_TRACE_PIPE_NAME": "datadogtrace-95EE571C-2583-4754-ABF4-5732F91F1C94",
         "DD_VERSION": "1.0.0",
         "DD_TRACE_HEADER_TAGS": "sample.correlation.identifier, Server",
-        "DD_TRACE_DEBUG": "0",
+        "DD_TRACE_DEBUG": "1",
         "DD_APPSEC_IPHEADER": "globalip-address"
       },
       "Logging": {
