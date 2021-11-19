@@ -65,7 +65,7 @@ namespace Datadog.Trace.AppSec.Waf
                 }
                 else
                 {
-                    Log.Error(ex, "AppSec could not read the rule file emmbeded in the manifest as it was invalid. AppSec will not run any protections in this application.");
+                    Log.Error(ex, "AppSec could not read the rule file embedded in the manifest as it was invalid. AppSec will not run any protections in this application.");
                 }
 
                 return null;
@@ -75,6 +75,12 @@ namespace Datadog.Trace.AppSec.Waf
             {
                 DdwafConfigStruct args = default;
                 var ruleHandle = WafNative.Init(configObj.RawPtr, ref args);
+                // can happen for example if ruleset file and waf version aren't compatible
+                if (ruleHandle == IntPtr.Zero)
+                {
+                    return null;
+                }
+
                 return new Waf(new WafHandle(ruleHandle));
             }
             finally

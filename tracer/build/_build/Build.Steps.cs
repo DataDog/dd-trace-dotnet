@@ -706,13 +706,7 @@ partial class Build
                 .ToList();
 
             testProjects.ForEach(EnsureResultsDirectory);
-            var filter = (string.IsNullOrEmpty(Filter), IsArm64, IsAlpine) switch
-            {
-                (true, true, false) => "(Category!=ArmUnsupported)",
-                (true, false, true) => "(Category!=AlpineUnsupported)",
-                (true, true, true) => "(Category!=AlpineUnsupported)&(Category!=ArmUnsupported)",
-                _ => Filter
-            };
+            var filter = string.IsNullOrEmpty(Filter) && IsArm64 ? "(Category!=ArmUnsupported)" : Filter;
             try
             {
                 DotNetTest(x => x
