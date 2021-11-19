@@ -137,7 +137,7 @@ namespace Datadog.Trace.ExtensionMethods
         /// <param name="value">Input string to convert into tag name</param>
         /// <param name="normalizedTagName">If the method returns true, the normalized header tag name</param>
         /// <returns>Returns whether the conversion was successful</returns>
-        public static bool TryConvertToNormalizedHeaderTagName(this string value, out string normalizedTagName)
+        public static bool TryConvertToNormalizedTagNameIncludingPeriods(this string value, out string normalizedTagName)
         {
             if (string.IsNullOrWhiteSpace(value))
             {

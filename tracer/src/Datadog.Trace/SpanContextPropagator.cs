@@ -182,7 +182,9 @@ namespace Datadog.Trace
                     var cacheKey = new Key(headerNameToTagName.Key, defaultTagPrefix);
                     string tagNameResult = DefaultTagMappingCache.GetOrAdd(cacheKey, key =>
                     {
-                        if (key.HeaderName.TryConvertToNormalizedHeaderTagName(out string normalizedHeaderTagName))
+                        string normalizedHeaderTagName;
+                        if (Tracer.Instance.Settings.LeavePeriodsInHeaderTags ? key.HeaderName.TryConvertToNormalizedTagName(out normalizedHeaderTagName) :
+                            key.HeaderName.TryConvertToNormalizedTagNameIncludingPeriods(out normalizedHeaderTagName))
                         {
                             return key.TagPrefix + "." + normalizedHeaderTagName;
                         }

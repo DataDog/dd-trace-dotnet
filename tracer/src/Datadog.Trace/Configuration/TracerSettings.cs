@@ -147,7 +147,7 @@ namespace Datadog.Trace.Configuration
                          new Dictionary<string, string>();
 
             // Filter out tags with empty keys or empty values, and trim whitespace
-            HeaderTags = InitializeHeaderTags(inputHeaderTags);
+            HeaderTags = InitializeHeaderTags(inputHeaderTags, LeavePeriodsInHeaderTags);
 
             var serviceNameMappings = source?.GetDictionary(ConfigurationKeys.ServiceNameMappings)
                                       ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
@@ -202,6 +202,8 @@ namespace Datadog.Trace.Configuration
 
             RouteTemplateResourceNamesEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled)
                                                    ?? true;
+
+            LeavePeriodsInHeaderTags = source?.GetBool(ConfigurationKeys.FeatureFlags.LeavePeriodsInHeaderTags) ?? false;
 
             PartialFlushEnabled = source?.GetBool(ConfigurationKeys.PartialFlushEnabled)
                 // default value
@@ -453,6 +455,12 @@ namespace Datadog.Trace.Configuration
         internal bool RouteTemplateResourceNamesEnabled { get; }
 
         /// <summary>
+        /// Gets a value indicating whether the replacement of periods by underscores in header tags is disabled
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.FeatureFlags.LeavePeriodsInHeaderTags"/>
+        internal bool LeavePeriodsInHeaderTags { get; }
+
+        /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources
         /// returned by <see cref="CreateDefaultConfigurationSource"/>.
         /// </summary>
@@ -512,7 +520,7 @@ namespace Datadog.Trace.Configuration
             return new ImmutableTracerSettings(this);
         }
 
-        private static IDictionary<string, string> InitializeHeaderTags(IDictionary<string, string> configurationDictionary)
+        private static IDictionary<string, string> InitializeHeaderTags(IDictionary<string, string> configurationDictionary, bool leavePeriodsInHeaderTags)
         {
             var headerTags = new Dictionary<string, string>();
 
@@ -522,9 +530,13 @@ namespace Datadog.Trace.Configuration
                 {
                     headerTags.Add(kvp.Key.Trim(), string.Empty);
                 }
-                else if (!string.IsNullOrWhiteSpace(kvp.Key) && kvp.Value.TryConvertToNormalizedHeaderTagName(out string result))
+                else if (!string.IsNullOrWhiteSpace(kvp.Key))
                 {
-                    headerTags.Add(kvp.Key.Trim(), result);
+                    string result;
+                    if (leavePeriodsInHeaderTags ? kvp.Value.TryConvertToNormalizedTagName(out result) : kvp.Value.TryConvertToNormalizedTagNameIncludingPeriods(out result))
+                    {
+                        headerTags.Add(kvp.Key.Trim(), result);
+                    }
                 }
             }
 

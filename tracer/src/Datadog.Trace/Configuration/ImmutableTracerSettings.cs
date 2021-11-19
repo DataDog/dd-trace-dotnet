@@ -68,6 +68,7 @@ namespace Datadog.Trace.Configuration
             TraceBufferSize = settings.TraceBufferSize;
             TraceBatchInterval = settings.TraceBatchInterval;
             RouteTemplateResourceNamesEnabled = settings.RouteTemplateResourceNamesEnabled;
+            LeavePeriodsInHeaderTags = settings.LeavePeriodsInHeaderTags;
 
             // we cached the static instance here, because is being used in the hotpath
             // by IsIntegrationEnabled method (called from all integrations)
@@ -273,6 +274,12 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled"/>
         internal bool RouteTemplateResourceNamesEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the replacement of periods by underscores in header tags is disabled
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.FeatureFlags.LeavePeriodsInHeaderTags"/>
+        internal bool LeavePeriodsInHeaderTags { get; }
 
         /// <summary>
         /// Create a <see cref="ImmutableTracerSettings"/> populated from the default sources
