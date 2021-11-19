@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             const int totalSpanCount = 21;
             const string expectedOperationName = "sqlite.query";
 
-            SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationIds.Sqlite)}_ENABLED", "false");
+            SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.Sqlite)}_ENABLED", "false");
 
             string packageVersion = PackageVersions.MicrosoftDataSqlite.First()[0] as string;
             int agentPort = TcpPortProvider.GetOpenPort();

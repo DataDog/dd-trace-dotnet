@@ -55,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             const int totalSpanCount = 21;
             const string expectedOperationName = "sql-server.query";
 
-            SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationIds.SqlClient)}_ENABLED", "false");
+            SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.SqlClient)}_ENABLED", "false");
 
             int agentPort = TcpPortProvider.GetOpenPort();
             using var agent = new MockTracerAgent(agentPort);

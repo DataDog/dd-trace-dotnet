@@ -71,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             const int totalSpanCount = 21;
             const string expectedOperationName = "mysql.query";
 
-            SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationIds.MySql)}_ENABLED", "false");
+            SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.MySql)}_ENABLED", "false");
 
             string packageVersion = PackageVersions.MySqlData.First()[0] as string;
             int agentPort = TcpPortProvider.GetOpenPort();

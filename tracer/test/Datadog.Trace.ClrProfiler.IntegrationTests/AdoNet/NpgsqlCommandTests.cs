@@ -69,7 +69,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             const int totalSpanCount = 21;
             const string expectedOperationName = "postgres.query";
 
-            SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationIds.Npgsql)}_ENABLED", "false");
+            SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.Npgsql)}_ENABLED", "false");
 
             string packageVersion = PackageVersions.Npgsql.First()[0] as string;
             int agentPort = TcpPortProvider.GetOpenPort();
