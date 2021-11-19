@@ -76,42 +76,21 @@ namespace Datadog.Trace.Tagging
                 }
             }
 
-            foreach (var property in GetAdditionalTags())
-            {
-                var value = property.Getter(this);
-
-                if (value != null)
-                {
-                    sb.Append($"{property.Key} (tag):{value},");
-                }
-            }
-
-            foreach (var property in GetAdditionalMetrics())
-            {
-                var value = property.Getter(this);
-
-                if (value != null)
-                {
-                    sb.Append($"{property.Key} (metric):{value.Value},");
-                }
-            }
+            WriteAdditionalTags(sb);
+            WriteAdditionalMetrics(sb);
 
             return StringBuilderCache.GetStringAndRelease(sb);
         }
 
-        protected virtual IProperty<string>[] GetAdditionalTags() => Array.Empty<IProperty<string>>();
-
-        protected virtual IProperty<double?>[] GetAdditionalMetrics() => Array.Empty<IProperty<double?>>();
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void WriteTag(ref byte[] bytes, ref int offset, string key, string value)
+        protected static void WriteTag(ref byte[] bytes, ref int offset, string key, string value)
         {
             offset += MessagePackBinary.WriteString(ref bytes, offset, key);
             offset += MessagePackBinary.WriteString(ref bytes, offset, value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void WriteMetric(ref byte[] bytes, ref int offset, string key, double value)
+        protected static void WriteMetric(ref byte[] bytes, ref int offset, string key, double value)
         {
             offset += MessagePackBinary.WriteString(ref bytes, offset, key);
             offset += MessagePackBinary.WriteDouble(ref bytes, offset, value);
@@ -146,21 +125,8 @@ namespace Datadog.Trace.Tagging
                 }
             }
 
-            foreach (var property in GetAdditionalTags())
-            {
-                var value = property.Getter(this);
-
-                if (value != null)
-                {
-                    if (property.Key == Trace.Tags.Origin)
-                    {
-                        isOriginWritten = true;
-                    }
-
-                    count++;
-                    WriteTag(ref bytes, ref offset, property.Key, value);
-                }
-            }
+            count += WriteAdditionalTags(ref bytes, ref offset, out var originWasWritten);
+            isOriginWritten |= originWasWritten;
 
             if (span.IsTopLevel)
             {
@@ -184,6 +150,22 @@ namespace Datadog.Trace.Tagging
             }
 
             return offset - originalOffset;
+        }
+
+        protected virtual int WriteAdditionalTags(ref byte[] bytes, ref int offset, out bool isOriginWritten)
+        {
+            isOriginWritten = false;
+            return 0;
+        }
+
+        protected virtual int WriteAdditionalMetrics(ref byte[] bytes, ref int offset) => 0;
+
+        protected virtual void WriteAdditionalTags(StringBuilder builder)
+        {
+        }
+
+        protected virtual void WriteAdditionalMetrics(StringBuilder builder)
+        {
         }
 
         private int WriteMetrics(ref byte[] bytes, int offset, Span span)
@@ -213,16 +195,7 @@ namespace Datadog.Trace.Tagging
                 }
             }
 
-            foreach (var property in GetAdditionalMetrics())
-            {
-                var value = property.Getter(this);
-
-                if (value != null)
-                {
-                    count++;
-                    WriteMetric(ref bytes, ref offset, property.Key, value.Value);
-                }
-            }
+            count += WriteAdditionalMetrics(ref bytes, ref offset);
 
             if (span.IsTopLevel)
             {

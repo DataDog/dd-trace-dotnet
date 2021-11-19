@@ -51,6 +51,32 @@ namespace MyTests.TestListNameSpace
                     break;
             }
         }
+
+        protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, out bool isOriginWritten)
+        {
+            var count = 0;
+            if (Id != null)
+            {
+                count++;
+                WriteTag(ref bytes, ref offset, ""TestId"", Id);
+            }
+
+            count += base.WriteAdditionalTags(ref bytes, ref offset, out var isOriginWrittenInBase);
+            isOriginWritten = isOriginWrittenInBase;
+            return count;
+        }
+
+        protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
+        {
+            if (Id != null)
+            {
+                sb.Append(""TestId (tag):"")
+                  .Append(Id)
+                  .Append(',');
+            }
+
+            base.WriteAdditionalTags(sb);
+        }
     }
 }
 ";
@@ -99,6 +125,30 @@ namespace MyTests.TestListNameSpace
                     base.SetMetric(key, value);
                     break;
             }
+        }
+
+        protected override int WriteAdditionalMetrics(ref byte[] bytes, ref int offset)
+        {
+            var count = 0;
+            if (Id != null)
+            {
+                count++;
+                WriteMetric(ref bytes, ref offset, ""TestId"", Id.Value);
+            }
+
+            return count + base.WriteAdditionalMetrics(ref bytes, ref offset);
+        }
+
+        protected override void WriteAdditionalMetrics(System.Text.StringBuilder sb)
+        {
+            if (Id != null)
+            {
+                sb.Append(""TestId (metric):"")
+                  .Append(Id.Value)
+                  .Append(',');
+            }
+
+            base.WriteAdditionalMetrics(sb);
         }
     }
 }
@@ -156,6 +206,45 @@ namespace MyTests.TestListNameSpace
                     break;
             }
         }
+
+        protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, out bool isOriginWritten)
+        {
+            var count = 0;
+            if (Id != null)
+            {
+                count++;
+                WriteTag(ref bytes, ref offset, ""IdTag"", Id);
+            }
+
+            if (Name != null)
+            {
+                count++;
+                WriteTag(ref bytes, ref offset, ""NameTag"", Name);
+            }
+
+            count += base.WriteAdditionalTags(ref bytes, ref offset, out var isOriginWrittenInBase);
+            isOriginWritten = isOriginWrittenInBase;
+            return count;
+        }
+
+        protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
+        {
+            if (Id != null)
+            {
+                sb.Append(""IdTag (tag):"")
+                  .Append(Id)
+                  .Append(',');
+            }
+
+            if (Name != null)
+            {
+                sb.Append(""NameTag (tag):"")
+                  .Append(Name)
+                  .Append(',');
+            }
+
+            base.WriteAdditionalTags(sb);
+        }
     }
 }
 ";
@@ -211,6 +300,43 @@ namespace MyTests.TestListNameSpace
                     break;
             }
         }
+
+        protected override int WriteAdditionalMetrics(ref byte[] bytes, ref int offset)
+        {
+            var count = 0;
+            if (Id != null)
+            {
+                count++;
+                WriteMetric(ref bytes, ref offset, ""IdMetric"", Id.Value);
+            }
+
+            if (Name != null)
+            {
+                count++;
+                WriteMetric(ref bytes, ref offset, ""NameMetric"", Name.Value);
+            }
+
+            return count + base.WriteAdditionalMetrics(ref bytes, ref offset);
+        }
+
+        protected override void WriteAdditionalMetrics(System.Text.StringBuilder sb)
+        {
+            if (Id != null)
+            {
+                sb.Append(""IdMetric (metric):"")
+                  .Append(Id.Value)
+                  .Append(',');
+            }
+
+            if (Name != null)
+            {
+                sb.Append(""NameMetric (metric):"")
+                  .Append(Name.Value)
+                  .Append(',');
+            }
+
+            base.WriteAdditionalMetrics(sb);
+        }
     }
 }
 ";
@@ -259,6 +385,45 @@ namespace MyTests.TestListNameSpace
                     base.SetTag(key, value);
                     break;
             }
+        }
+
+        protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, out bool isOriginWritten)
+        {
+            var count = 0;
+            if (Id != null)
+            {
+                count++;
+                WriteTag(ref bytes, ref offset, ""IdTag"", Id);
+            }
+
+            if (Name != null)
+            {
+                count++;
+                WriteTag(ref bytes, ref offset, ""NameTag"", Name);
+            }
+
+            count += base.WriteAdditionalTags(ref bytes, ref offset, out var isOriginWrittenInBase);
+            isOriginWritten = isOriginWrittenInBase;
+            return count;
+        }
+
+        protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
+        {
+            if (Id != null)
+            {
+                sb.Append(""IdTag (tag):"")
+                  .Append(Id)
+                  .Append(',');
+            }
+
+            if (Name != null)
+            {
+                sb.Append(""NameTag (tag):"")
+                  .Append(Name)
+                  .Append(',');
+            }
+
+            base.WriteAdditionalTags(sb);
         }
     }
 }
@@ -309,9 +474,141 @@ namespace MyTests.TestListNameSpace
                     break;
             }
         }
+
+        protected override int WriteAdditionalMetrics(ref byte[] bytes, ref int offset)
+        {
+            var count = 0;
+            if (Id != null)
+            {
+                count++;
+                WriteMetric(ref bytes, ref offset, ""IdMetric"", Id.Value);
+            }
+
+            if (Name != null)
+            {
+                count++;
+                WriteMetric(ref bytes, ref offset, ""NameMetric"", Name.Value);
+            }
+
+            return count + base.WriteAdditionalMetrics(ref bytes, ref offset);
+        }
+
+        protected override void WriteAdditionalMetrics(System.Text.StringBuilder sb)
+        {
+            if (Id != null)
+            {
+                sb.Append(""IdMetric (metric):"")
+                  .Append(Id.Value)
+                  .Append(',');
+            }
+
+            if (Name != null)
+            {
+                sb.Append(""NameMetric (metric):"")
+                  .Append(Name.Value)
+                  .Append(',');
+            }
+
+            base.WriteAdditionalMetrics(sb);
+        }
     }
 }
 ";
+            var (diagnostics, output) = TestHelpers.GetGeneratedOutput<TagListGenerator>(input);
+            Assert.Equal(expected, output);
+            Assert.Empty(diagnostics);
+        }
+
+        [Fact]
+        public void CanGenerateTagsListWithTagThatContainsOrigin()
+        {
+            const string input = @"using Datadog.Trace.SourceGenerators;
+namespace MyTests.TestListNameSpace
+{
+    public class TestList 
+    { 
+        [TagName(""TestId"")]
+    	public string Id { get; set; }
+
+        [TagName(""_dd.origin"")]
+    	public string Origin { get; set; }
+    }
+}";
+            const string expected = @"// <auto-generated/>
+#nullable enable
+
+namespace MyTests.TestListNameSpace
+{
+    partial class TestList
+    {
+        public override string? GetTag(string key)
+        {
+            return key switch
+            {
+                ""TestId"" => Id,
+                ""_dd.origin"" => Origin,
+                _ => base.GetTag(key),
+            };
+        }
+
+        public override void SetTag(string key, string value)
+        {
+            switch(key)
+            {
+                case ""TestId"": 
+                    Id = value;
+                    break;
+                case ""_dd.origin"": 
+                    Origin = value;
+                    break;
+                default: 
+                    base.SetTag(key, value);
+                    break;
+            }
+        }
+
+        protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, out bool isOriginWritten)
+        {
+            var count = 0;
+            if (Id != null)
+            {
+                count++;
+                WriteTag(ref bytes, ref offset, ""TestId"", Id);
+            }
+
+            if (Origin != null)
+            {
+                count++;
+                WriteTag(ref bytes, ref offset, ""_dd.origin"", Origin);
+            }
+
+            count += base.WriteAdditionalTags(ref bytes, ref offset, out var isOriginWrittenInBase);
+            isOriginWritten = isOriginWrittenInBase || Origin is not null;
+            return count;
+        }
+
+        protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
+        {
+            if (Id != null)
+            {
+                sb.Append(""TestId (tag):"")
+                  .Append(Id)
+                  .Append(',');
+            }
+
+            if (Origin != null)
+            {
+                sb.Append(""_dd.origin (tag):"")
+                  .Append(Origin)
+                  .Append(',');
+            }
+
+            base.WriteAdditionalTags(sb);
+        }
+    }
+}
+";
+
             var (diagnostics, output) = TestHelpers.GetGeneratedOutput<TagListGenerator>(input);
             Assert.Equal(expected, output);
             Assert.Empty(diagnostics);

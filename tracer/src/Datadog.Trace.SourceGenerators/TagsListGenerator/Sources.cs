@@ -135,6 +135,75 @@ internal sealed class MetricNameAttribute : System.Attribute
                     base.SetTag(key, value);
                     break;
             }
+        }
+
+        protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, out bool isOriginWritten)
+        {
+            var count = 0;
+            ");
+                    string? originProperty = null;
+                    for (int i = 0; i < tagList.TagProperties.Count; i++)
+                    {
+                        var property = tagList.TagProperties[i];
+                        sb.Append(@"if (")
+                          .Append(property.PropertyName)
+                          .Append(@" != null)
+            {
+                count++;
+                WriteTag(ref bytes, ref offset, """)
+                          .Append(property.TagValue)
+                          .Append(@""", ")
+                          .Append(property.PropertyName)
+                          .Append(@");
+            }
+
+            ");
+                        if (property.TagValue == "_dd.origin")
+                        {
+                            originProperty = property.PropertyName;
+                        }
+                    }
+
+                    sb.Append(
+                        @"count += base.WriteAdditionalTags(ref bytes, ref offset, out var isOriginWrittenInBase);
+            isOriginWritten = isOriginWrittenInBase");
+
+                    if (originProperty is not null)
+                    {
+                        sb.Append(@" || ")
+                          .Append(originProperty)
+                          .Append(@" is not null");
+                    }
+
+                    sb.Append(@";
+            return count;
+        }
+
+        protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
+        {
+            ");
+                    for (int i = 0; i < tagList.TagProperties.Count; i++)
+                    {
+                        var property = tagList.TagProperties[i];
+                        sb.Append(@"if (")
+                          .Append(property.PropertyName)
+                          .Append(
+                               @" != null)
+            {
+                sb.Append(""")
+                          .Append(property.TagValue)
+                          .Append(@" (tag):"")
+                  .Append(")
+                          .Append(property.PropertyName)
+                          .Append(
+                               @")
+                  .Append(',');
+            }
+
+            ");
+                    }
+
+                    sb.Append(@"base.WriteAdditionalTags(sb);
         }");
                 }
 
@@ -201,6 +270,59 @@ internal sealed class MetricNameAttribute : System.Attribute
                     base.SetMetric(key, value);
                     break;
             }
+        }
+
+        protected override int WriteAdditionalMetrics(ref byte[] bytes, ref int offset)
+        {
+            var count = 0;
+            ");
+                    for (int i = 0; i < tagList.MetricProperties.Count; i++)
+                    {
+                        var property = tagList.MetricProperties[i];
+                        sb.Append(@"if (")
+                          .Append(property.PropertyName)
+                          .Append(@" != null)
+            {
+                count++;
+                WriteMetric(ref bytes, ref offset, """)
+                          .Append(property.TagValue)
+                          .Append(@""", ")
+                          .Append(property.PropertyName)
+                          .Append(@".Value);
+            }
+
+            ");
+                    }
+
+                    sb.Append(
+                        @"return count + base.WriteAdditionalMetrics(ref bytes, ref offset);
+        }
+
+        protected override void WriteAdditionalMetrics(System.Text.StringBuilder sb)
+        {
+            ");
+                    for (int i = 0; i < tagList.MetricProperties.Count; i++)
+                    {
+                        var property = tagList.MetricProperties[i];
+                        sb.Append(@"if (")
+                          .Append(property.PropertyName)
+                          .Append(
+                               @" != null)
+            {
+                sb.Append(""")
+                          .Append(property.TagValue)
+                          .Append(@" (metric):"")
+                  .Append(")
+                          .Append(property.PropertyName)
+                          .Append(
+                               @".Value)
+                  .Append(',');
+            }
+
+            ");
+                    }
+
+                    sb.Append(@"base.WriteAdditionalMetrics(sb);
         }");
                 }
 
