@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+#if NET6_0_OR_GREATER
+using System.Text.Json.Serialization;
+#endif
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -143,7 +146,11 @@ namespace LogsInjection.ILogger
                         }, new System.Text.Json.JsonSerializerOptions()
                         {
                             WriteIndented = false,
+#if NET6_0_OR_GREATER
+                            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+#else
                             IgnoreNullValues = true,
+#endif
                         });
 #endif
 
