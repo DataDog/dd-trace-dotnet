@@ -1,7 +1,9 @@
 #include "loader.h"
 
 #ifdef _WIN32
-#include "DllMain.h"
+#include <windows.h>
+EXTERN_C IMAGE_DOS_HEADER __ImageBase;
+#define HINST_THISCOMPONENT ((HINSTANCE)&__ImageBase)
 #endif
 
 #include "il_rewriter_wrapper.h"
@@ -1746,7 +1748,7 @@ namespace shared
         _loadersLoadedSet.insert(appDomainId);
 
 #ifdef _WIN32
-        HINSTANCE hInstance = DllHandle;
+        HINSTANCE hInstance = HINST_THISCOMPONENT;
         LPCWSTR dllLpName;
         LPCWSTR symbolsLpName;
 
