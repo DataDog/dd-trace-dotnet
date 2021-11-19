@@ -8,6 +8,7 @@ namespace Datadog.Trace.SourceGenerators.TagsListGenerator
     internal static class Constants
     {
         public const string TagNameAttribute = "Datadog.Trace.SourceGenerators.TagNameAttribute";
+        public const string MetricNameAttribute = "Datadog.Trace.SourceGenerators.MetricNameAttribute";
 
         public const string Usage = nameof(Usage);
     }
