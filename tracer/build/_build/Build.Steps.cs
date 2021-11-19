@@ -1235,12 +1235,11 @@ partial class Build
         .After(CompileLinuxIntegrationTests)
         .Description("Runs the linux integration tests")
         .Requires(() => Framework)
-        .Requires(() => IsLinux)
+        .Requires(() => !IsWin)
         .Executes(() =>
         {
             ParallelIntegrationTests.ForEach(EnsureResultsDirectory);
             ClrProfilerIntegrationTests.ForEach(EnsureResultsDirectory);
-
 
             var filter = (string.IsNullOrEmpty(Filter), IsArm64) switch
             {

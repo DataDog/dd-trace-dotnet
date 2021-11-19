@@ -238,7 +238,7 @@ partial class Build : NukeBuild
         .DependsOn(CompileLinuxIntegrationTests);
 
     Target BuildAndRunLinuxIntegrationTests => _ => _
-        .Requires(() => IsLinux)
+        .Requires(() => !IsWin)
         .Description("Builds and runs the linux integration tests. Requires docker-compose dependencies")
         .DependsOn(BuildLinuxIntegrationTests)
         .DependsOn(RunLinuxIntegrationTests);
