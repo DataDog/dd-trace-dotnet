@@ -39,6 +39,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private readonly ObjectMapAddDelegateX86 _objectMapAddFieldX86;
         private readonly ObjectFreeDelegate _objectFreeField;
         private readonly IntPtr _objectFreeFuncPtrField;
+        private readonly SetupLogCallbackDelegate setupLogCallbackField;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WafNative"/> class.
@@ -80,7 +81,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             // setup logging
             var setupLogging = GetDelegateForNativeFunction<SetupLoggingDelegate>(handle, "ddwaf_set_log_cb");
             // convert to a delegate and attempt to pin it by assigning it to  field
-            SetupLogCallbackDelegate setupLogCallbackField = LoggingCallback;
+            setupLogCallbackField = LoggingCallback;
             // set the log level and setup the logger
             var level = GlobalSettings.Source.DebugEnabled ? DDWAF_LOG_LEVEL.DDWAF_DEBUG : DDWAF_LOG_LEVEL.DDWAF_INFO;
             setupLogging(Marshal.GetFunctionPointerForDelegate(setupLogCallbackField), level);
