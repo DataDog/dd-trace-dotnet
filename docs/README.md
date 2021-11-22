@@ -1,25 +1,20 @@
 # .NET Tracer for Datadog APM
 
+
 ## Installation and Usage
 
 Please [read our documentation](https://docs.datadoghq.com/tracing/setup/dotnet) for instructions on setting up .NET tracing and details about supported frameworks.
 
 ## Downloads
-Package|Download
--|-
+|Package|Download|
+|-------|--------|
 Windows and Linux Installers|[See releases](https://github.com/DataDog/dd-trace-dotnet/releases)
 `Datadog.Trace`|[![Datadog.Trace](https://img.shields.io/nuget/vpre/Datadog.Trace.svg)](https://www.nuget.org/packages/Datadog.Trace)
 `Datadog.Trace.OpenTracing`|[![Datadog.Trace.OpenTracing](https://img.shields.io/nuget/vpre/Datadog.Trace.OpenTracing.svg)](https://www.nuget.org/packages/Datadog.Trace.OpenTracing)
 
-## Build Status on `master`
-
-Pipeline Stage         | Windows     |Linux   |  
------------------------|-------------|--------|
-Build                  | [![Build Windows](https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/status/consolidated-pipeline?branchName=master&stageName=build_windows)](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/latest?definitionId=54&branchName=master) | [![Build Linux](https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/status/consolidated-pipeline?branchName=master&stageName=build_linux)](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/latest?definitionId=54&branchName=master) 
-Unit Tests             | [![Build Status](https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/status/consolidated-pipeline?branchName=master&stageName=build_windows)](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/latest?definitionId=54&branchName=master) | [![Build Status](https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/status/consolidated-pipeline?branchName=master&stageName=unit_tests_linux)](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/latest?definitionId=54&branchName=master) 
-Integration Tests       | [![Build Status](https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/status/consolidated-pipeline?branchName=master&stageName=integration_tests_windows_iis)](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/latest?definitionId=54&branchName=master) [![Build Status](https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/status/consolidated-pipeline?branchName=master&stageName=integration_tests_windows)](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/latest?definitionId=54&branchName=master) | [![Build Status](https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/status/consolidated-pipeline?branchName=master&stageName=integration_tests_linux)](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/latest?definitionId=54&branchName=master)
-
 # Development
+
+Build status on `master`: [![Build](https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/status/consolidated-pipeline?branchName=master&stageName=build_windows)](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/latest?definitionId=54&branchName=master)
 
 ## Components
 
