@@ -1,4 +1,4 @@
-﻿// <copyright file="WafConfigurator.cs" company="Datadog">
+// <copyright file="WafConfigurator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,15 +7,17 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
-using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec.Waf.Initialization
 {
     internal static class WafConfigurator
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(WafConfigurator));
+
         internal static IntPtr? Configure(string rulesFile, WafNative wafNative)
         {
             var argCache = new List<Obj>();
@@ -84,6 +86,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 try
                 {
                     var eventsProp = root.Value<JArray>("rules");
+                    Log.Debug($"eventspropo {eventsProp.Count}");
                     foreach (var ev in eventsProp)
                     {
                         var idProp = ev.Value<JValue>("id");
