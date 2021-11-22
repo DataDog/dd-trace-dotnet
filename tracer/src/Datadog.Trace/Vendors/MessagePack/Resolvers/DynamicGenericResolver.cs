@@ -135,6 +135,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Internal
 
 #if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
 
+#if NETCOREAPP
                 // ValueTask
                 else if (genericType == typeof(ValueTask<>))
                 {
@@ -144,6 +145,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Internal
                 {
                     return CreateInstance(typeof(NullableFormatter<>), new[] { nullableElementType });
                 }
+#endif
 
                 // Tuple
                 else if (ti.FullName.StartsWith("System.Tuple"))

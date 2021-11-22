@@ -570,6 +570,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Formatters
         }
     }
 
+#if NETCOREAPP
     internal sealed class ValueTaskFormatter<T> : IMessagePackFormatter<ValueTask<T>>
     {
         public int Serialize(ref byte[] bytes, int offset, ValueTask<T> value, IFormatterResolver formatterResolver)
@@ -583,6 +584,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Formatters
             return new ValueTask<T>(v);
         }
     }
+#endif
 
 #endif
 }
