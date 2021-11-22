@@ -33,7 +33,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Resolvers
         }
     }
 
-//#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
+//#if NETSTANDARD || NETFRAMEWORK
 
 //    /// <summary>
 //    /// In `object`, when serializing resolve by concrete type and when deserializing use primitive.

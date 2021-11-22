@@ -88,7 +88,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Internal
             if (entry == null) goto NOT_FOUND;
 
             {
-#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
+#if NETSTANDARD || NETFRAMEWORK
                 ref var v = ref entry[0];
 #else
                 var v = entry[0];
@@ -102,7 +102,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Internal
 
             for (int i = 1; i < entry.Length; i++)
             {
-#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
+#if NETSTANDARD || NETFRAMEWORK
                 ref var v = ref entry[i];
 #else
                 var v = entry[i];
@@ -119,15 +119,30 @@ namespace Datadog.Trace.Vendors.MessagePack.Internal
             return false;
         }
 
-#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
+#if NETSTANDARD || NETFRAMEWORK
         static readonly bool Is32Bit = (IntPtr.Size == 4);
 #endif
 
-#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
+#if NETSTANDARD || NETFRAMEWORK
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         static ulong ByteArrayGetHashCode(byte[] x, int offset, int count)
         {
+#if NETSTANDARD || NETFRAMEWORK
+            // FarmHash https://github.com/google/farmhash
+            if (x == null) return 0;
+
+            if (Is32Bit)
+            {
+                return (ulong)FarmHash.Hash32(x, offset, count);
+            }
+            else
+            {
+                return FarmHash.Hash64(x, offset, count);
+            }
+
+#else
+
             // FNV1-1a 32bit https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
             uint hash = 0;
             if (x != null)
@@ -142,6 +157,8 @@ namespace Datadog.Trace.Vendors.MessagePack.Internal
             }
 
             return (ulong)hash;
+
+#endif
         }
 
         static int CalculateCapacity(int collectionSize, float loadFactor)

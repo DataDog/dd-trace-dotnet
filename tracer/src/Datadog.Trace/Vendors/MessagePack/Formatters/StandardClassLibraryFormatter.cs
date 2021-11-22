@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 
-#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
+#if NETSTANDARD || NETFRAMEWORK
 using System.Threading.Tasks;
 #endif
 
@@ -411,7 +411,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Formatters
         }
     }
 
-#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
+#if NETSTANDARD || NETFRAMEWORK
 
     internal sealed class BigIntegerFormatter : IMessagePackFormatter<System.Numerics.BigInteger>
     {
@@ -567,6 +567,20 @@ namespace Datadog.Trace.Vendors.MessagePack.Formatters
                 var v = formatterResolver.GetFormatterWithVerify<T>().Deserialize(bytes, offset, formatterResolver, out readSize);
                 return Task.FromResult(v);
             }
+        }
+    }
+
+    internal sealed class ValueTaskFormatter<T> : IMessagePackFormatter<ValueTask<T>>
+    {
+        public int Serialize(ref byte[] bytes, int offset, ValueTask<T> value, IFormatterResolver formatterResolver)
+        {
+            return formatterResolver.GetFormatterWithVerify<T>().Serialize(ref bytes, offset, value.Result, formatterResolver);
+        }
+
+        public ValueTask<T> Deserialize(byte[] bytes, int offset, IFormatterResolver formatterResolver, out int readSize)
+        {
+            var v = formatterResolver.GetFormatterWithVerify<T>().Deserialize(bytes, offset, formatterResolver, out readSize);
+            return new ValueTask<T>(v);
         }
     }
 

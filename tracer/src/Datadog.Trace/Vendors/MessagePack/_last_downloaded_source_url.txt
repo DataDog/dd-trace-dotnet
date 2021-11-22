@@ -1,1 +1,1 @@
-﻿https://github.com/neuecc/MessagePack-CSharp/archive/v1.9.3.zip
+https://github.com/neuecc/MessagePack-CSharp/archive/refs/tags/v1.9.11.zip

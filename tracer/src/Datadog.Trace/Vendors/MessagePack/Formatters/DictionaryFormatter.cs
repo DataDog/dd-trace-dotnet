@@ -7,13 +7,13 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
-#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
+#if NETSTANDARD || NETFRAMEWORK
 using System.Collections.Concurrent;
 #endif
 
 namespace Datadog.Trace.Vendors.MessagePack.Formatters
 {
-#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
+#if NETSTANDARD || NETFRAMEWORK
 
     // unfortunately, can't use IDictionary<KVP> because supports IReadOnlyDictionary.
     internal abstract class DictionaryFormatterBase<TKey, TValue, TIntermediate, TEnumerator, TDictionary> : IMessagePackFormatter<TDictionary>

@@ -13,7 +13,7 @@ using System.Reflection;
 using System.Collections.ObjectModel;
 using System.Collections;
 
-#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
+#if NETSTANDARD || NETFRAMEWORK
 using System.Threading.Tasks;
 #endif
 
@@ -66,7 +66,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Internal
               {typeof(SortedList<,>), typeof(SortedListFormatter<,>)},
               {typeof(ILookup<,>), typeof(InterfaceLookupFormatter<,>)},
               {typeof(IGrouping<,>), typeof(InterfaceGroupingFormatter<,>)},
-#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
+#if NETSTANDARD || NETFRAMEWORK
               {typeof(ObservableCollection<>), typeof(ObservableCollectionFormatter<>)},
               {typeof(ReadOnlyObservableCollection<>),(typeof(ReadOnlyObservableCollectionFormatter<>))},
               {typeof(IReadOnlyList<>), typeof(InterfaceReadOnlyListFormatter<>)},
@@ -133,10 +133,17 @@ namespace Datadog.Trace.Vendors.MessagePack.Internal
                     return CreateInstance(typeof(NullableFormatter<>), new[] { nullableElementType });
                 }
 
-#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
+#if NETSTANDARD || NETFRAMEWORK
 
                 // ValueTask
-                // Deleted, unneeded for Datadog.Trace
+                else if (genericType == typeof(ValueTask<>))
+                {
+                    return CreateInstance(typeof(ValueTaskFormatter<>), ti.GenericTypeArguments);
+                }
+                else if (isNullable && nullableElementType.IsConstructedGenericType && nullableElementType.GetGenericTypeDefinition() == typeof(ValueTask<>))
+                {
+                    return CreateInstance(typeof(NullableFormatter<>), new[] { nullableElementType });
+                }
 
                 // Tuple
                 else if (ti.FullName.StartsWith("System.Tuple"))
@@ -176,7 +183,41 @@ namespace Datadog.Trace.Vendors.MessagePack.Internal
                 }
 
                 // ValueTuple
-                // Deleted, unneeded for Datadog.Trace
+                else if (ti.FullName.StartsWith("System.ValueTuple"))
+                {
+                    Type tupleFormatterType = null;
+                    switch (ti.GenericTypeArguments.Length)
+                    {
+                        case 1:
+                            tupleFormatterType = typeof(ValueTupleFormatter<>);
+                            break;
+                        case 2:
+                            tupleFormatterType = typeof(ValueTupleFormatter<,>);
+                            break;
+                        case 3:
+                            tupleFormatterType = typeof(ValueTupleFormatter<,,>);
+                            break;
+                        case 4:
+                            tupleFormatterType = typeof(ValueTupleFormatter<,,,>);
+                            break;
+                        case 5:
+                            tupleFormatterType = typeof(ValueTupleFormatter<,,,,>);
+                            break;
+                        case 6:
+                            tupleFormatterType = typeof(ValueTupleFormatter<,,,,,>);
+                            break;
+                        case 7:
+                            tupleFormatterType = typeof(ValueTupleFormatter<,,,,,,>);
+                            break;
+                        case 8:
+                            tupleFormatterType = typeof(ValueTupleFormatter<,,,,,,,>);
+                            break;
+                        default:
+                            break;
+                    }
+
+                    return CreateInstance(tupleFormatterType, ti.GenericTypeArguments);
+                }
 
 #endif
 

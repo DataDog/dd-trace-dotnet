@@ -25,7 +25,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             }
             catch (TypeInitializationException ex)
             {
-#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
+#if NETSTANDARD || NETFRAMEWORK
                 // The fact that we're using static constructors to initialize this is an internal detail.
                 // Rethrow the inner exception if there is one.
                 // Do it carefully so as to not stomp on the original callstack.

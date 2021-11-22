@@ -131,7 +131,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return resolver.GetFormatterWithVerify<T>().Serialize(ref bytes, offset, value, resolver);
         }
 
-#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
+#if NETSTANDARD || NETFRAMEWORK
 
         /// <summary>
         /// Serialize to stream(async).
@@ -258,7 +258,7 @@ namespace Datadog.Trace.Vendors.MessagePack
             return resolver.GetFormatterWithVerify<T>().Deserialize(bytes, offset, resolver, out readSize);
         }
 
-#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
+#if NETSTANDARD || NETFRAMEWORK
 
         public static System.Threading.Tasks.Task<T> DeserializeAsync<T>(Stream stream)
         {
