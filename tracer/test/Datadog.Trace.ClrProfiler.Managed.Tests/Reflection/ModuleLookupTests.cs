@@ -4,7 +4,6 @@
 // </copyright>
 
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -44,14 +43,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         public void Lookup_Self_Succeeds()
         {
             var expectedModule = typeof(ModuleLookupTests).Assembly.ManifestModule;
-            var lookup = ModuleLookup.Get(expectedModule.ModuleVersionId);
-            Assert.Equal(expectedModule, lookup);
-        }
-
-        [Fact]
-        public void Lookup_DatadogTraceClrProfilerManaged_Succeeds()
-        {
-            var expectedModule = typeof(MethodBuilder<>).Assembly.ManifestModule;
             var lookup = ModuleLookup.Get(expectedModule.ModuleVersionId);
             Assert.Equal(expectedModule, lookup);
         }
