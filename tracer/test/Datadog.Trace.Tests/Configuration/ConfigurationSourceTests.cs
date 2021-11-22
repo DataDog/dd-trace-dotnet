@@ -65,6 +65,7 @@ namespace Datadog.Trace.Tests.Configuration
             yield return new object[] { CreateFunc(s => s.MaxTracesSubmittedPerSecond), 100 };
             yield return new object[] { CreateFunc(s => s.TracerMetricsEnabled), false };
             yield return new object[] { CreateFunc(s => s.DogStatsdPort), 8125 };
+            yield return new object[] { CreateFunc(s => s.LeavePeriodsInHeaderTags), false };
         }
 
         public static IEnumerable<object[]> GetTestData()
@@ -99,6 +100,8 @@ namespace Datadog.Trace.Tests.Configuration
             yield return new object[] { ConfigurationKeys.HeaderTags, "header1:tag1,header2:Content-Type,header3: Content-Type ,header4:C!!!ont_____ent----tYp!/!e,header5:Some.Header,header6:9invalidtagname,:invalidtagonly,validheaderonly:,validheaderwithoutcolon,:", CreateFunc(s => s.HeaderTags), HeaderTagsWithOptionalMappings };
             yield return new object[] { ConfigurationKeys.HeaderTags, "header1:tag1,header2:tag1", CreateFunc(s => s.HeaderTags), HeaderTagsSameTag };
             yield return new object[] { ConfigurationKeys.HeaderTags, "header1:tag1,header1:tag2", CreateFunc(s => s.HeaderTags.Count), 1 };
+
+            yield return new object[] { ConfigurationKeys.FeatureFlags.LeavePeriodsInHeaderTags, "true", CreateFunc(s => s.LeavePeriodsInHeaderTags), true };
         }
 
         // JsonConfigurationSource needs to be tested with JSON data, which cannot be used with the other IConfigurationSource implementations.
@@ -317,6 +320,24 @@ namespace Datadog.Trace.Tests.Configuration
 
             var actualValue = settingGetter(settings);
             Assert.Equal(expectedValue, actualValue);
+        }
+
+        [Theory]
+        [InlineData(false, "tag_1")]
+        [InlineData(true, "tag.1")]
+        public void TestHeadersNormalization(bool leavePeriodsInHeaderTags, string expectedHeader)
+        {
+            var expectedValue = new Dictionary<string, string> { { "header", expectedHeader } };
+            var collection = new NameValueCollection
+            {
+                { ConfigurationKeys.FeatureFlags.LeavePeriodsInHeaderTags, leavePeriodsInHeaderTags.ToString() },
+                { ConfigurationKeys.HeaderTags, "header:tag.1" },
+            };
+
+            IConfigurationSource source = new NameValueConfigurationSource(collection);
+            var settings = new TracerSettings(source);
+
+            Assert.Equal(expectedValue, settings.HeaderTags);
         }
     }
 }
