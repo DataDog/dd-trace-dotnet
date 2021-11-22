@@ -1,4 +1,4 @@
-// <copyright file="HeadersCollectionTests.cs" company="Datadog">
+// <copyright file="SpanContextPropagatorTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,17 +12,12 @@ using System.Net;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.TestHelpers;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests
 {
-    // TODO: for now, these tests cover all of this,
-    // but we should probably split them up into actual *unit* tests for:
-    // - HttpHeadersCollection wrapper over HttpHeaders (Get, Set, Add, Remove)
-    // - NameValueHeadersCollection wrapper over NameValueCollection (Get, Set, Add, Remove)
-    // - SpanContextPropagator.Inject()
-    // - SpanContextPropagator.Extract()
-    public class HeadersCollectionTests
+    public class SpanContextPropagatorTests
     {
         private static readonly string TestPrefix = "test.prefix";
 
@@ -70,7 +65,10 @@ namespace Datadog.Trace.Tests
             const string customHeader2Name = "DD-CUSTOM-HEADER-MISMATCHING-CASE";
             const string customHeader2Value = "match2";
             const string customHeader2TagName = "custom-header2-tag";
-            string customHeader2LowercaseHeaderName = customHeader2Name.ToLowerInvariant();
+            var customHeader2LowercaseHeaderName = customHeader2Name.ToLowerInvariant();
+
+            // Initialize SpanContextPropagator and HeaderNormalizer mock
+            var spanContextPropagator = CreateSpanContextPropagatorWithStrictMock();
 
             // Add headers
             headers.Add(customHeader1Name, customHeader1Value);
@@ -86,7 +84,7 @@ namespace Datadog.Trace.Tests
             expectedResults.Add(customHeader2TagName, customHeader2Value);
 
             // Test
-            var tagsFromHeader = SpanContextPropagator.Instance.ExtractHeaderTags(headers, headerTags, TestPrefix);
+            var tagsFromHeader = spanContextPropagator.ExtractHeaderTags(headers, headerTags, TestPrefix);
 
             // Assert
             Assert.NotNull(tagsFromHeader);
@@ -97,6 +95,9 @@ namespace Datadog.Trace.Tests
         [MemberData(nameof(GetHeaderCollectionImplementations))]
         internal void ExtractHeaderTags_EmptyHeaders_AddsNoTags(IHeadersCollection headers)
         {
+            // Initialize SpanContextPropagator and HeaderNormalizer mock
+            var spanContextPropagator = CreateSpanContextPropagatorWithStrictMock();
+
             // Do not add headers
 
             // Initialize header-tag arguments and expectations
@@ -106,7 +107,7 @@ namespace Datadog.Trace.Tests
             var expectedResults = new Dictionary<string, string>();
 
             // Test
-            var tagsFromHeader = SpanContextPropagator.Instance.ExtractHeaderTags(headers, headerTags, TestPrefix);
+            var tagsFromHeader = spanContextPropagator.ExtractHeaderTags(headers, headerTags, TestPrefix);
 
             // Assert
             Assert.NotNull(tagsFromHeader);
@@ -117,6 +118,9 @@ namespace Datadog.Trace.Tests
         [MemberData(nameof(GetHeaderCollectionImplementations))]
         internal void ExtractHeaderTags_EmptyHeaderTags_AddsNoTags(IHeadersCollection headers)
         {
+            // Initialize SpanContextPropagator and HeaderNormalizer mock
+            var spanContextPropagator = CreateSpanContextPropagatorWithStrictMock();
+
             // Add headers
             headers.Add("x-header-test-runner", "xunit");
 
@@ -125,7 +129,7 @@ namespace Datadog.Trace.Tests
             var expectedResults = new Dictionary<string, string>();
 
             // Test
-            var tagsFromHeader = SpanContextPropagator.Instance.ExtractHeaderTags(headers, headerToTagMap, TestPrefix);
+            var tagsFromHeader = spanContextPropagator.ExtractHeaderTags(headers, headerToTagMap, TestPrefix);
 
             // Assert
             Assert.NotNull(tagsFromHeader);
@@ -136,28 +140,33 @@ namespace Datadog.Trace.Tests
         [MemberData(nameof(GetHeaderCollectionImplementations))]
         internal void ExtractHeaderTags_ForEmptyStringMappings_CreatesNormalizedTagWithPrefix(IHeadersCollection headers)
         {
-            string invalidCharacterSequence = "*|&#$%&^`.";
-            string normalizedReplacementSequence = new string('_', invalidCharacterSequence.Length);
+            const string header1 = "x-header-test-runner";
+            const string header2 = "x-header-1datadog-any";
+            // Used to avoid verifying methods with out params
+            const string normalizerPrefix = "normalized_";
+
+            // Initialize SpanContextPropagator and HeaderNormalizer mock
+            var spanContextPropagator = CreateSpanContextPropagatorWithSetupMock(normalizerPrefix, header1, header2);
 
             // Add headers
-            headers.Add("x-header-test-runner", "xunit");
-            headers.Add($"x-header-1DATADOG-{invalidCharacterSequence}", "true");
+            headers.Add(header1, "xunit");
+            headers.Add(header2, "true");
 
             // Initialize header-tag arguments and expectations
             var headerToTagMap = new Dictionary<string, string>
             {
-                { "x-header-test-runner", string.Empty },
-                { $"x-header-1DATADOG-{invalidCharacterSequence}", string.Empty },
+                { header1, string.Empty },
+                { header2, string.Empty },
             };
 
             var expectedResults = new Dictionary<string, string>
             {
-                { TestPrefix + "." + "x-header-test-runner", "xunit" },
-                { TestPrefix + "." + $"x-header-1datadog-{normalizedReplacementSequence}", "true" }
+                { TestPrefix + "." + normalizerPrefix + header1, "xunit" },
+                { TestPrefix + "." + normalizerPrefix + header2, "true" }
             };
 
             // Test
-            var tagsFromHeader = SpanContextPropagator.Instance.ExtractHeaderTags(headers, headerToTagMap, TestPrefix);
+            var tagsFromHeader = spanContextPropagator.ExtractHeaderTags(headers, headerToTagMap, TestPrefix);
 
             // Assert
             Assert.NotNull(tagsFromHeader);
@@ -168,7 +177,10 @@ namespace Datadog.Trace.Tests
         [MemberData(nameof(GetHeaderCollectionImplementations))]
         internal void Extract_EmptyHeadersReturnsNull(IHeadersCollection headers)
         {
-            var resultContext = SpanContextPropagator.Instance.Extract(headers);
+            // Initialize SpanContextPropagator and HeaderNormalizer mock
+            var spanContextPropagator = CreateSpanContextPropagatorWithStrictMock();
+
+            var resultContext = spanContextPropagator.Extract(headers);
             Assert.Null(resultContext);
         }
 
@@ -181,9 +193,12 @@ namespace Datadog.Trace.Tests
             const SamplingPriority samplingPriority = SamplingPriority.UserKeep;
             const string origin = "synthetics";
 
+            // Initialize SpanContextPropagator and HeaderNormalizer mock
+            var spanContextPropagator = CreateSpanContextPropagatorWithStrictMock();
+
             var context = new SpanContext(traceId, spanId, samplingPriority, null, origin);
-            SpanContextPropagator.Instance.Inject(context, headers);
-            var resultContext = SpanContextPropagator.Instance.Extract(headers);
+            spanContextPropagator.Inject(context, headers);
+            var resultContext = spanContextPropagator.Extract(headers);
 
             Assert.NotNull(resultContext);
             Assert.Equal(context.SpanId, resultContext.SpanId);
@@ -200,8 +215,11 @@ namespace Datadog.Trace.Tests
             const string samplingPriority = "2";
             const string origin = "synthetics";
 
+            // Initialize SpanContextPropagator and HeaderNormalizer mock
+            var spanContextPropagator = CreateSpanContextPropagatorWithStrictMock();
+
             InjectContext(headers, traceId, spanId, samplingPriority, origin);
-            var resultContext = SpanContextPropagator.Instance.Extract(headers);
+            var resultContext = spanContextPropagator.Extract(headers);
 
             // invalid traceId should return a null context even if other values are set
             Assert.Null(resultContext);
@@ -222,7 +240,10 @@ namespace Datadog.Trace.Tests
                 ((int)samplingPriority).ToString(CultureInfo.InvariantCulture),
                 origin);
 
-            var resultContext = SpanContextPropagator.Instance.Extract(headers);
+            // Initialize SpanContextPropagator and HeaderNormalizer mock
+            var spanContextPropagator = CreateSpanContextPropagatorWithStrictMock();
+
+            var resultContext = spanContextPropagator.Extract(headers);
 
             Assert.NotNull(resultContext);
             Assert.Equal(traceId, resultContext.TraceId);
@@ -248,7 +269,10 @@ namespace Datadog.Trace.Tests
                 samplingPriority,
                 origin);
 
-            var resultContext = SpanContextPropagator.Instance.Extract(headers);
+            // Initialize SpanContextPropagator and HeaderNormalizer mock
+            var spanContextPropagator = CreateSpanContextPropagatorWithStrictMock();
+
+            var resultContext = spanContextPropagator.Extract(headers);
 
             Assert.NotNull(resultContext);
             Assert.Equal(traceId, resultContext.TraceId);
@@ -274,7 +298,10 @@ namespace Datadog.Trace.Tests
                 samplingPriority,
                 origin);
 
-            var resultContext = SpanContextPropagator.Instance.Extract(headers);
+            // Initialize SpanContextPropagator and HeaderNormalizer mock
+            var spanContextPropagator = CreateSpanContextPropagatorWithStrictMock();
+
+            var resultContext = spanContextPropagator.Extract(headers);
 
             Assert.NotNull(resultContext);
             Assert.Equal(traceId, resultContext.TraceId);
@@ -289,6 +316,26 @@ namespace Datadog.Trace.Tests
             headers.Add(HttpHeaderNames.ParentId, spanId);
             headers.Add(HttpHeaderNames.SamplingPriority, samplingPriority);
             headers.Add(HttpHeaderNames.Origin, origin);
+        }
+
+        private static SpanContextPropagator CreateSpanContextPropagatorWithStrictMock()
+        {
+            var mock = new Mock<IHeaderNormalizer>(MockBehavior.Strict);
+            return new SpanContextPropagator(mock.Object);
+        }
+
+        private static SpanContextPropagator CreateSpanContextPropagatorWithSetupMock(string normalizerPrefix, params string[] normalizedStringToReturn)
+        {
+            var headerNormalizerMock = new Mock<IHeaderNormalizer>();
+            foreach (var stringToNormalize in normalizedStringToReturn)
+            {
+                var outValue = normalizerPrefix + stringToNormalize;
+                headerNormalizerMock
+                   .Setup(normalizer => normalizer.TryConvertToNormalizedTagNameIncludingPeriods(stringToNormalize, out outValue))
+                   .Returns(true);
+            }
+
+            return new SpanContextPropagator(headerNormalizerMock.Object);
         }
     }
 }

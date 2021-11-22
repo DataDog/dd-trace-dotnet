@@ -7,7 +7,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 
@@ -24,11 +23,20 @@ namespace Datadog.Trace
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SpanContextPropagator>();
         private static readonly ConcurrentDictionary<Key, string> DefaultTagMappingCache = new ConcurrentDictionary<Key, string>();
 
+        private readonly IHeaderNormalizer _headerNormalizer;
+
         private SpanContextPropagator()
         {
+            _headerNormalizer = new HeaderNormalizer();
         }
 
-        public static SpanContextPropagator Instance { get; } = new SpanContextPropagator();
+        // For tests only
+        internal SpanContextPropagator(IHeaderNormalizer headerNormalizer)
+        {
+            _headerNormalizer = headerNormalizer;
+        }
+
+        public static SpanContextPropagator Instance { get; } = new();
 
         /// <summary>
         /// Propagates the specified context by adding new headers to a <see cref="IHeadersCollection"/>.
@@ -183,8 +191,8 @@ namespace Datadog.Trace
                     string tagNameResult = DefaultTagMappingCache.GetOrAdd(cacheKey, key =>
                     {
                         string normalizedHeaderTagName;
-                        if (Tracer.Instance.Settings.LeavePeriodsInHeaderTags ? key.HeaderName.TryConvertToNormalizedTagName(out normalizedHeaderTagName) :
-                            key.HeaderName.TryConvertToNormalizedTagNameIncludingPeriods(out normalizedHeaderTagName))
+                        if (Tracer.Instance.Settings.LeavePeriodsInHeaderTags ? _headerNormalizer.TryConvertToNormalizedTagName(key.HeaderName, out normalizedHeaderTagName) :
+                                _headerNormalizer.TryConvertToNormalizedTagNameIncludingPeriods(key.HeaderName, out normalizedHeaderTagName))
                         {
                             return key.TagPrefix + "." + normalizedHeaderTagName;
                         }

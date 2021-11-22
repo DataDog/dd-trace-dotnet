@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Headers;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
@@ -20,6 +21,8 @@ namespace Datadog.Trace.Configuration
     /// </summary>
     public class TracerSettings
     {
+        private static readonly HeaderNormalizer HeaderNormalizer = new HeaderNormalizer();
+
         /// <summary>
         /// The default host value for <see cref="AgentUri"/>.
         /// </summary>
@@ -533,7 +536,9 @@ namespace Datadog.Trace.Configuration
                 else if (!string.IsNullOrWhiteSpace(kvp.Key))
                 {
                     string result;
-                    if (leavePeriodsInHeaderTags ? kvp.Value.TryConvertToNormalizedTagName(out result) : kvp.Value.TryConvertToNormalizedTagNameIncludingPeriods(out result))
+                    if (leavePeriodsInHeaderTags ?
+                            HeaderNormalizer.TryConvertToNormalizedTagName(kvp.Value, out result) :
+                            HeaderNormalizer.TryConvertToNormalizedTagNameIncludingPeriods(kvp.Value, out result))
                     {
                         headerTags.Add(kvp.Key.Trim(), result);
                     }
