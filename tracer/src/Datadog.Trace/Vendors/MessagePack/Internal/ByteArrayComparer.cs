@@ -12,7 +12,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Internal
     {
 #if ENABLE_UNSAFE_MSGPACK
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
 
         static readonly bool Is32Bit = (IntPtr.Size == 4);
 
@@ -31,7 +31,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Internal
 
 #endif
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static unsafe bool Equals(byte[] xs, int xsOffset, int xsCount, byte[] ys)
@@ -39,7 +39,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Internal
             return Equals(xs, xsOffset, xsCount, ys, 0, ys.Length);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static unsafe bool Equals(byte[] xs, int xsOffset, int xsCount, byte[] ys, int ysOffset, int ysCount)
@@ -101,7 +101,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Internal
         }
 
 #else
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static bool Equals(byte[] xs, int xsOffset, int xsCount, byte[] ys)
@@ -119,7 +119,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Internal
             return true;
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
 #endif
         public static bool Equals(byte[] xs, int xsOffset, int xsCount, byte[] ys, int ysOffset, int ysCount)

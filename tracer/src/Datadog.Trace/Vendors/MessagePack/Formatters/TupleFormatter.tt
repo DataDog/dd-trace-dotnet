@@ -4,17 +4,17 @@
 <#@ import namespace="System.Text" #>
 <#@ import namespace="System.Collections.Generic" #>
 <#@ output extension=".cs" #>
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
 
 using System;
 
 namespace MessagePack.Formatters
 {
-<# for(var i = 1; i <= 8; i++) { 
+<# for(var i = 1; i <= 8; i++) {
     Func<int, string> toT = x => "T" + ((x == 8) ? "Rest" : x.ToString());
     Func<int, string> toItem = x => ((x == 8) ? "Rest" : "Item" + x);
-    var ts = string.Join(", ", Enumerable.Range(1, i).Select(x => toT(x))); 
-    var t = "Tuple<" + ts + ">"; 
+    var ts = string.Join(", ", Enumerable.Range(1, i).Select(x => toT(x)));
+    var t = "Tuple<" + ts + ">";
 #>
 
     public sealed class TupleFormatter<<#= ts #>> : IMessagePackFormatter<<#= t #>>

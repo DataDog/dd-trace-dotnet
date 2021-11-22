@@ -23,7 +23,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Internal
             root = new AutomataNode(0);
         }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         public unsafe void Add(string str, int value)
         {
             var bytes = Encoding.UTF8.GetBytes(str);
@@ -243,7 +243,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Internal
                 return v;
             }
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
 
             public unsafe AutomataNode SearchNext(ref byte* p, ref int rest)
             {
@@ -350,7 +350,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Internal
                 // key = AutomataKeyGen.GetKey(ref p, ref rest);
                 il.EmitLdloca(p);
                 il.EmitLdloca(rest);
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
                 il.EmitCall(AutomataKeyGen.GetKeyMethod);
 #else
                 il.EmitCall(AutomataKeyGen.GetGetKeyMethod());
@@ -472,7 +472,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Internal
     {
         internal delegate ulong PointerDelegate<T>(ref T p, ref int rest);
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
         public static readonly MethodInfo GetKeyMethod = typeof(AutomataKeyGen).GetRuntimeMethod("GetKey", new[] { typeof(byte).MakePointerType().MakeByRefType(), typeof(int).MakeByRefType() });
 #endif
 
@@ -698,7 +698,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Internal
 
 #endif
 
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
 
         public static unsafe ulong GetKey(ref byte* p, ref int rest)
         {

@@ -8,7 +8,7 @@ namespace Datadog.Trace.Vendors.MessagePack.LZ4
 {
     internal static partial class LZ4Codec
     {
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
 
         public static int Encode(byte[] input, int inputOffset, int inputLength, byte[] output, int outputOffset, int outputLength)
         {

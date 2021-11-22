@@ -9,7 +9,7 @@ using Datadog.Trace.Vendors.MessagePack.Internal;
 
 namespace Datadog.Trace.Vendors.MessagePack.Resolvers
 {
-#if NETSTANDARD || NETFRAMEWORK
+#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP
 
     /// <summary>
     /// Used for `object` fields/collections, ex: var arr = new object[] { 1, "a", new Model() };
