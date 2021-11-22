@@ -9,9 +9,11 @@ using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.MessagePack;
+using FluentAssertions;
 using Moq;
 using Xunit;
 
@@ -71,8 +73,13 @@ namespace Datadog.Trace.Tests.Tagging
 
                 var random = new Random();
 
-                ValidateProperties<string>(type, "GetAdditionalTags", () => Guid.NewGuid().ToString());
-                ValidateProperties<double?>(type, "GetAdditionalMetrics", () => random.NextDouble());
+                Action<ITags, string, string> setTag = (tagsList, name, value) => tagsList.SetTag(name, value);
+                Func<ITags, string, string> getTag = (tagsList, name) => tagsList.GetTag(name);
+                Action<ITags, string, double?> setMetric = (tagsList, name, value) => tagsList.SetMetric(name, value);
+                Func<ITags, string, double?> getMetric = (tagsList, name) => tagsList.GetMetric(name);
+
+                ValidateProperties(type, setTag, getTag, () => Guid.NewGuid().ToString());
+                ValidateProperties(type, setMetric, getMetric, () => random.NextDouble());
             }
         }
 
@@ -147,53 +154,69 @@ namespace Datadog.Trace.Tests.Tagging
             }
         }
 
-        private void ValidateProperties<T>(Type type, string methodName, Func<T> valueGenerator)
+        private static void ValidateProperties<T>(Type type, Action<ITags, string, T> setTagValue, Func<ITags, string, T> getTagValue, Func<T> valueGenerator)
         {
             var instance = (ITags)Activator.CreateInstance(type);
-
-            var allTags = (IProperty<T>[])type.GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic)
-                .Invoke(instance, null);
-
-            var tags = allTags.Where(t => !t.IsReadOnly).ToArray();
-            var readonlyTags = allTags.Where(t => t.IsReadOnly).ToArray();
+            var isTag = typeof(T) == typeof(string);
 
             var allProperties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
-                .Where(p => p.PropertyType == typeof(T))
-                .ToArray();
+                                    .Where(p => p.PropertyType == typeof(T));
 
-            var properties = allProperties.Where(p => p.CanWrite).ToArray();
-            var readonlyProperties = allProperties.Where(p => !p.CanWrite).ToArray();
+            var propertyAndTagName = allProperties
+                                    .Select(property =>
+                                     {
+                                         var name = isTag
+                                                        ? property.GetCustomAttribute<TagNameAttribute>()?.TagName
+                                                        : property.GetCustomAttribute<MetricNameAttribute>()?.MetricName;
+                                         return (property, tagOrMetric: name);
+                                     })
+                                    .ToArray();
 
-            Assert.True(properties.Length == tags.Length, $"Mismatch between readonly properties and tags count for type {type}");
-            Assert.True(readonlyProperties.Length == readonlyTags.Length, $"Mismatch between readonly properties and tags count for type {type}");
+            propertyAndTagName
+               .Should()
+               .OnlyContain(x => !string.IsNullOrEmpty(x.tagOrMetric));
+
+            var writeableProperties = propertyAndTagName.Where(p => p.property.CanWrite).ToArray();
+            var readonlyProperties = propertyAndTagName.Where(p => !p.property.CanWrite).ToArray();
 
             // ---------- Test read-write properties
-            var testValues = Enumerable.Range(0, tags.Length).Select(_ => valueGenerator()).ToArray();
+            var testValues = Enumerable.Range(0, writeableProperties.Length).Select(_ => valueGenerator()).ToArray();
 
-            // Check for each tag that the getter and the setter are mapped on the same property
-            for (int i = 0; i < tags.Length; i++)
+            for (var i = 0; i < writeableProperties.Length; i++)
             {
-                var tag = tags[i];
+                var (property, tagName) = writeableProperties[i];
+                var testValue = testValues[i];
 
-                tag.Setter(instance, testValues[i]);
+                setTagValue(instance, tagName, testValue);
 
-                Assert.True(testValues[i].Equals(tag.Getter(instance)), $"Getter and setter mismatch for tag {tag.Key} of type {type.Name}");
+                property.GetValue(instance).Should().Be(testValue, $"Getter and setter mismatch for tag {property.Name} of type {type.Name}");
+
+                var actualValue = getTagValue(instance, tagName);
+
+                actualValue.Should().Be(testValue, $"Getter and setter mismatch for tag {property.Name} of type {type.Name}");
             }
 
             // Check that all read/write properties were mapped
             var remainingValues = new HashSet<T>(testValues);
 
-            foreach (var property in properties)
+            foreach (var property in writeableProperties)
             {
-                Assert.True(remainingValues.Remove((T)property.GetValue(instance)), $"Property {property.Name} of type {type.Name} is not mapped");
+                remainingValues.Remove((T)property.property.GetValue(instance))
+                               .Should()
+                               .BeTrue($"Property {property.property.Name} of type {type.Name} is not mapped");
             }
 
             // ---------- Test readonly properties
-            remainingValues = new HashSet<T>(readonlyProperties.Select(p => (T)p.GetValue(instance)));
+            remainingValues = new HashSet<T>(readonlyProperties.Select(p => (T)p.property.GetValue(instance)));
 
-            foreach (var tag in readonlyTags)
+            foreach (var propertyAndTag in readonlyProperties)
             {
-                Assert.True(remainingValues.Remove(tag.Getter(instance)), $"Tag {tag.Key} of type {type.Name} is not mapped");
+                var tagName = propertyAndTag.tagOrMetric;
+                var tagValue = getTagValue(instance, tagName);
+
+                remainingValues.Remove(tagValue)
+                               .Should()
+                               .BeTrue($"Property {propertyAndTag.property.Name} of type {type.Name} is not mapped");
             }
         }
 
