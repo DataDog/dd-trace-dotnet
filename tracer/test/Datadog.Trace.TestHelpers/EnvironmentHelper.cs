@@ -166,7 +166,6 @@ namespace Datadog.Trace.TestHelpers
                 // Datadog
                 "DD_PROFILER_PROCESSES",
                 "DD_DOTNET_TRACER_HOME",
-                "DD_INTEGRATIONS",
                 "DD_DISABLED_INTEGRATIONS",
                 "DD_SERVICE",
                 "DD_VERSION",
