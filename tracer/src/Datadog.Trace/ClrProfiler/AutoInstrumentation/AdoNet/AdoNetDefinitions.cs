@@ -10,7 +10,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstant
  * Task<int> .ExecuteNonQueryAsync(CancellationToken)
  ********************************************************************************/
 
-// Task<int> System.Data.Common.DBCommand.ExecuteNonQueryAsync(CancellationToken)
+// Task<int> System.Data.Common.DbCommand.ExecuteNonQueryAsync(CancellationToken)
 [assembly: CommandExecuteNonQueryAsync(typeof(SystemDataClientData))]
 [assembly: CommandExecuteNonQueryAsync(typeof(SystemDataCommonClientData))]
 
@@ -18,7 +18,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstant
  * Task<DbDataReader> .ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
  ********************************************************************************/
 
-// Task<DbDataReader> System.Data.Common.DBCommand.ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
+// Task<DbDataReader> System.Data.Common.DbCommand.ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
 [assembly: CommandExecuteDbDataReaderWithBehaviorAndCancellationAsync(typeof(SystemDataClientData))]
 [assembly: CommandExecuteDbDataReaderWithBehaviorAndCancellationAsync(typeof(SystemDataCommonClientData))]
 
@@ -26,6 +26,6 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstant
  * Task<object> .ExecuteScalarAsync(CancellationToken)
  ********************************************************************************/
 
-// Task<object> System.Data.Common.DBCommand.ExecuteScalarAsync(CancellationToken)
+// Task<object> System.Data.Common.DbCommand.ExecuteScalarAsync(CancellationToken)
 [assembly: CommandExecuteScalarAsync(typeof(SystemDataClientData))]
 [assembly: CommandExecuteScalarAsync(typeof(SystemDataCommonClientData))]

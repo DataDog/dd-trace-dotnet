@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
@@ -18,8 +19,7 @@ namespace Datadog.Trace.Util
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DbCommandCache));
 
-        private static ConcurrentDictionary<string, KeyValuePair<string, string>[]> _cache
-            = new ConcurrentDictionary<string, KeyValuePair<string, string>[]>();
+        private static ConcurrentDictionary<string, KeyValuePair<string, string>[]> _cache = new();
 
         /// <summary>
         /// Gets or sets the underlying cache, to be used for unit tests
@@ -39,7 +39,13 @@ namespace Datadog.Trace.Util
 
         public static KeyValuePair<string, string>[] GetTagsFromDbCommand(IDbCommand command)
         {
-            var connectionString = command.Connection.ConnectionString;
+            var connectionString = command.Connection?.ConnectionString;
+
+            if (connectionString is null)
+            {
+                return Array.Empty<KeyValuePair<string, string>>();
+            }
+
             var cache = _cache;
 
             if (cache != null)

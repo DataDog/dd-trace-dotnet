@@ -11,6 +11,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Oracle
     {
         internal struct OracleClientData : IAdoNetClientData
         {
+            public string IntegrationName => nameof(IntegrationId.Oracle);
+
             public string AssemblyName => "Oracle.ManagedDataAccess";
 
             public string SqlCommandType => "Oracle.ManagedDataAccess.Client.OracleCommand";
@@ -26,6 +28,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Oracle
 
         internal struct OracleCoreClientData : IAdoNetClientData
         {
+            public string IntegrationName => nameof(IntegrationId.Oracle);
+
             public string AssemblyName => "Oracle.ManagedDataAccess";
 
             public string SqlCommandType => "Oracle.ManagedDataAccess.Client.OracleCommand";
@@ -41,6 +45,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Oracle
 
         internal struct OracleDataAccessClientData : IAdoNetClientData
         {
+            public string IntegrationName => nameof(IntegrationId.Oracle);
+
             public string AssemblyName => "Oracle.DataAccess";
 
             public string SqlCommandType => "Oracle.DataAccess.Client.OracleCommand";

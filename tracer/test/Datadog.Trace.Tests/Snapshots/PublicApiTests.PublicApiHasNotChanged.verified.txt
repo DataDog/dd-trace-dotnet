@@ -16,7 +16,6 @@ namespace Datadog.Trace.Configuration
     }
     public static class ConfigurationKeys
     {
-        public const string AdoNetExcludedTypes = "DD_TRACE_ADONET_EXCLUDED_TYPES";
         public const string AgentHost = "DD_AGENT_HOST";
         public const string AgentPort = "DD_TRACE_AGENT_PORT";
         public const string AgentUri = "DD_TRACE_AGENT_URL";
@@ -118,7 +117,6 @@ namespace Datadog.Trace.Configuration
     {
         public ImmutableTracerSettings(Datadog.Trace.Configuration.IConfigurationSource source) { }
         public ImmutableTracerSettings(Datadog.Trace.Configuration.TracerSettings settings) { }
-        public System.Collections.Generic.HashSet<string> AdoNetExcludedTypes { get; }
         public System.Uri AgentUri { get; }
         [System.Obsolete("App Analytics has been replaced by Tracing without Limits. For more information s" +
             "ee https://docs.datadoghq.com/tracing/legacy_app_analytics/")]
@@ -191,7 +189,6 @@ namespace Datadog.Trace.Configuration
         public const int DefaultAgentPort = 8126;
         public TracerSettings() { }
         public TracerSettings(Datadog.Trace.Configuration.IConfigurationSource source) { }
-        public System.Collections.Generic.HashSet<string> AdoNetExcludedTypes { get; set; }
         public System.Uri AgentUri { get; set; }
         [System.Obsolete("App Analytics has been replaced by Tracing without Limits. For more information s" +
             "ee https://docs.datadoghq.com/tracing/legacy_app_analytics/")]
