@@ -26,6 +26,13 @@ namespace Datadog.Trace.Tests
             return GetHeaderCollectionFactories().Select(factory => new object[] { factory() });
         }
 
+        public static IEnumerable<object[]> GetHeaderCollectionImplementationsAndOptionsToNormalizePeriods()
+        {
+            return from headersFactory in GetHeaderCollectionFactories()
+                   from normalizePeriods in new object[] { true, false }
+                   select new[] { headersFactory(), normalizePeriods };
+        }
+
         public static IEnumerable<object[]> GetHeadersInvalidIdsCartesianProduct()
         {
             return from headersFactory in GetHeaderCollectionFactories()
@@ -137,16 +144,16 @@ namespace Datadog.Trace.Tests
         }
 
         [Theory]
-        [MemberData(nameof(GetHeaderCollectionImplementations))]
-        internal void ExtractHeaderTags_ForEmptyStringMappings_CreatesNormalizedTagWithPrefix(IHeadersCollection headers)
+        [MemberData(nameof(GetHeaderCollectionImplementationsAndOptionsToNormalizePeriods))]
+        internal void ExtractHeaderTags_ForEmptyStringMappings_CreatesNormalizedTagWithPrefix(IHeadersCollection headers, bool normalizePeriods)
         {
             const string header1 = "x-header-test-runner";
             const string header2 = "x-header-1datadog-any";
             // Used to avoid verifying methods with out params
-            const string normalizerPrefix = "normalized_";
+            const string normalizerPrefix = "normalized.";
 
             // Initialize SpanContextPropagator and HeaderNormalizer mock
-            var spanContextPropagator = CreateSpanContextPropagatorWithSetupMock(normalizerPrefix, header1, header2);
+            var spanContextPropagator = CreateSpanContextPropagatorWithSetupMock(normalizerPrefix, normalizePeriods, header1, header2);
 
             // Add headers
             headers.Add(header1, "xunit");
@@ -324,15 +331,25 @@ namespace Datadog.Trace.Tests
             return new SpanContextPropagator(mock.Object);
         }
 
-        private static SpanContextPropagator CreateSpanContextPropagatorWithSetupMock(string normalizerPrefix, params string[] normalizedStringToReturn)
+        private static SpanContextPropagator CreateSpanContextPropagatorWithSetupMock(string normalizerPrefix, bool normalizePeriods, params string[] normalizedStringToReturn)
         {
             var headerNormalizerMock = new Mock<IHeaderNormalizer>();
             foreach (var stringToNormalize in normalizedStringToReturn)
             {
                 var outValue = normalizerPrefix + stringToNormalize;
-                headerNormalizerMock
-                   .Setup(normalizer => normalizer.TryConvertToNormalizedTagNameIncludingPeriods(stringToNormalize, out outValue))
-                   .Returns(true);
+
+                if (normalizePeriods)
+                {
+                    headerNormalizerMock
+                       .Setup(normalizer => normalizer.TryConvertToNormalizedTagNameIncludingPeriods(stringToNormalize, out outValue))
+                       .Returns(true);
+                }
+                else
+                {
+                    headerNormalizerMock
+                       .Setup(normalizer => normalizer.TryConvertToNormalizedTagName(stringToNormalize, out outValue))
+                       .Returns(true);
+                }
             }
 
             return new SpanContextPropagator(headerNormalizerMock.Object);
