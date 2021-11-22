@@ -111,9 +111,9 @@ In version 1.x, you could disable automatic instrumentation of all ADO.NET integ
 * `SqlClient` (SQL Server)
 * `Sqlite`
 
-This enables you to disable specific ADO.NET integrations if required. [See our documentation for a complete list of supported integration IDS](https://docs.datadoghq.com/tracing/setup_overview/compatibility_requirements/dotnet-core/#integrations).
+This allows you to disable specific ADO.NET integrations if required. [See our documentation for a complete list of supported integration IDS](https://docs.datadoghq.com/tracing/setup_overview/compatibility_requirements/dotnet-core/#integrations).
 
-This change also removes the now-obsolete `TracerSettings.AdoNetExcludedTypes` setting, and corresponding environment variable `DD_TRACE_ADONET_EXCLUDED_TYPES`. Replace usages of these (for an example integration ID `MyIntegrationId`) with `TracerSettings.Integrations["MyIntegrationId"].Enabled` and `DD_TRACE_MyIntegrationId_ENABLED` respectively: 
+This change also removes the now-obsolete `TracerSettings.AdoNetExcludedTypes` setting and the corresponding environment variable `DD_TRACE_ADONET_EXCLUDED_TYPES`. Replace usages of these with `TracerSettings.Integrations["<INTEGRATION_NAME>"].Enabled` and `DD_TRACE_<INTEGRATION_NAME>_ENABLED`, respectively: 
 
 ```csharp
 using Datadog.Trace;
@@ -124,9 +124,9 @@ settings.AdoNetExcludedTypes.Add("MySql");      // <- Delete this line
 settings.Integrations["MySql"].Enabled = false; // <- Add this line
 ```
 
-### ElasticsearchNet5 integration ID has been removed
+### `ElasticsearchNet5` integration ID has been removed
 
-In version 1.x, the integration ID for `Elasticsearch.Net` in version 5.x was `ElasticsearchNet5`, and for version 6.x+ was `ElasticsearchNet`. From version 2.0, support for the ID `ElasticsearchNet5` has been removed, and instead `ElasticsearchNet` now can be used to  
+In version 1.x, the integration ID for `Elasticsearch.Net` in version 5.x was `ElasticsearchNet5`, and for version 6.x+ was `ElasticsearchNet`. From version 2.0, support for the ID `ElasticsearchNet5` has been removed, and instead `ElasticsearchNet` now can be used for all versions of `Elasticsearch.Net`.
 
 Replace usages of `ElasticsearchNet5` with `ElasticsearchNet`
 
@@ -164,7 +164,7 @@ In version 2.0 the public `Tracer` API has been updated to expose `IScope` and `
 ```csharp
 using Datadog.Trace;
 
-// no changes required here
+// No changes required here
 using (var scope = Tracer.Instance.StartActive("my-operation")
 {
 }
@@ -207,9 +207,9 @@ In version 2.0, `DD_TRACE_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED` is **enabled** 
 
 If you do not wish to take advantage of the improved route names, you can disabled the feature by setting the `DD_TRACE_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED` environment variable to `0`.
 
-### CallSite instrumentation has been removed
+### Call-site instrumentation has been removed
 
-From version 2.0, callsite automatic instrumentation has been removed and replaced with calltarget instrumentation. This has been the default mode [since version 1.28.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.28.0). Calltarget provides performance improvements over callsite, but we no longer support instrumenting some custom implementations of `DbCommand`. If you find spans are missing from your traces after upgrading, please raise an issue on GitHub, or contact [support](https://docs.datadoghq.com/help).
+From version 2.0, call-site automatic instrumentation has been removed and replaced with call-target instrumentation. This has been the default mode [since version 1.28.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.28.0). Call-target instrumentation provides performance improvements over call-site instrumentation, but we no longer support instrumenting some custom implementations of `DbCommand`. If you find spans are missing from your traces after upgrading, please raise an issue on GitHub, or contact [support](https://docs.datadoghq.com/help).
 
 ### Integrations.json has been removed
 
