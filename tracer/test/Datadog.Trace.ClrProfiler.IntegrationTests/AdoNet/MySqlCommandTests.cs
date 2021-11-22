@@ -73,10 +73,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.MySql)}_ENABLED", "false");
 
-            string packageVersion = PackageVersions.MySqlData.First()[0] as string;
             int agentPort = TcpPortProvider.GetOpenPort();
             using var agent = new MockTracerAgent(agentPort);
-            using var process = RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion);
+
+            // don't use the first package version which is 6.x and is not supported on ARM64.
+            // use the default package version for the sample, currently 8.0.17.
+            // string packageVersion = PackageVersions.MySqlData.First()[0] as string;
+            using var process = RunSampleAndWaitForExit(agent.Port /* , packageVersion: packageVersion */);
             var spans = agent.WaitForSpans(totalSpanCount, returnAllOperations: true);
 
             Assert.NotEmpty(spans);
