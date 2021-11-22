@@ -184,6 +184,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Internal
                     return CreateInstance(tupleFormatterType, ti.GenericTypeArguments);
                 }
 
+#if NETSTANDARD || NETCOREAPP
                 // ValueTuple
                 else if (ti.FullName.StartsWith("System.ValueTuple"))
                 {
@@ -220,6 +221,7 @@ namespace Datadog.Trace.Vendors.MessagePack.Internal
 
                     return CreateInstance(tupleFormatterType, ti.GenericTypeArguments);
                 }
+#endif
 
 #endif
 
