@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler
 
         private bool _multipleTracers;
 
-        public SpanContext GetSpanContext()
+        SpanContext IDistributedTracer.GetSpanContext()
         {
             if (_multipleTracers)
             {
@@ -61,17 +61,17 @@ namespace Datadog.Trace.ClrProfiler
             return null;
         }
 
-        public void SetSpanContext(SpanContext value)
+        void IDistributedTracer.SetSpanContext(SpanContext value)
         {
             // Locally setting the SpanContext, no need to do anything
         }
 
-        public void LockSamplingPriority()
+        void IDistributedTracer.LockSamplingPriority()
         {
             _child?.LockSamplingPriority();
         }
 
-        public SamplingPriority? TrySetSamplingPriority(SamplingPriority? samplingPriority)
+        SamplingPriority? IDistributedTracer.TrySetSamplingPriority(SamplingPriority? samplingPriority)
         {
             if (_child == null)
             {
@@ -85,7 +85,7 @@ namespace Datadog.Trace.ClrProfiler
         /// Gets the internal distributed trace object
         /// </summary>
         /// <returns>Shared distributed trace object instance</returns>
-        object IAutomaticTracer.GetDistributedTrace()
+        public object GetDistributedTrace()
         {
             return Tracer.Instance.ActiveScope?.Span.Context;
         }
@@ -94,13 +94,13 @@ namespace Datadog.Trace.ClrProfiler
         /// Sets the internal distributed trace object
         /// </summary>
         /// <param name="value">Shared distributed trace object instance</param>
-        void IAutomaticTracer.SetDistributedTrace(object value)
+        public void SetDistributedTrace(object value)
         {
             _multipleTracers = true;
             DistributedTrace.Value = value as IReadOnlyDictionary<string, string>;
         }
 
-        void ICommonTracer.LockSamplingPriority()
+        public void LockSamplingPriority()
         {
             var traceContext = Tracer.Instance.ActiveScope?.Span.Context?.TraceContext;
 
@@ -112,7 +112,7 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
-        int? ICommonTracer.TrySetSamplingPriority(int? samplingPriority)
+        public int? TrySetSamplingPriority(int? samplingPriority)
         {
             var traceContext = Tracer.Instance.ActiveScope?.Span.Context?.TraceContext;
 
