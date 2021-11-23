@@ -1,8 +1,8 @@
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Web.Mvc;
 using Datadog.Trace;
-using Datadog.Trace.ExtensionMethods;
 
 namespace Samples.AspNet.VersionConflict.Controllers
 {
@@ -39,7 +39,37 @@ namespace Samples.AspNet.VersionConflict.Controllers
             return View(result);
         }
 
-        public ActionResult Sampling()
+        public ActionResult Sampling(bool parentTrace = true)
+        {
+            if (parentTrace)
+            {
+                CreateTraces();
+            }
+            else
+            {
+                // Same test but without a parent automatic trace
+                var mutex = new ManualResetEventSlim();
+
+                ThreadPool.UnsafeQueueUserWorkItem(_ =>
+                {
+                    try
+                    {
+                        CreateTraces();
+                    }
+                    finally
+                    {
+                        mutex.Set();
+                    }
+
+                }, null);
+
+                mutex.Wait();
+            }
+            
+            return View();
+        }
+
+        private void CreateTraces()
         {
             using (var scope = Tracer.Instance.StartActive("Manual"))
             {
@@ -59,8 +89,6 @@ namespace Samples.AspNet.VersionConflict.Controllers
                     Tracer.Instance.StartActive("Child").Dispose();
                 }
             }
-
-            return View();
         }
     }
 }

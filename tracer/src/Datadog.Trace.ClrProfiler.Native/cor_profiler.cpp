@@ -1280,7 +1280,7 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
                                                          getDistributedTracerSignature, 3, &getDistributedTraceMethodDef);
         if (FAILED(hr))
         {
-            Logger::Warn("Error Rewriting for Distributed Tracing on getting get_Instance MethodDef");
+            Logger::Warn("Error Rewriting for Distributed Tracing on getting GetDistributedTracer MethodDef");
             return hr;
         }
 
@@ -1294,7 +1294,7 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
                                                             &getDistributedTraceMemberRef);
         if (FAILED(hr))
         {
-            Logger::Warn("Error Rewriting for Distributed Tracing on getting GetInstance MemberRef");
+            Logger::Warn("Error Rewriting for Distributed Tracing on getting GetDistributedTracer MemberRef");
             return hr;
         }
 

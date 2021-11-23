@@ -27,8 +27,8 @@
     <TargetFrameworkProfile />
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Datadog.Trace, Version=2.255.252.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb, processorArchitecture=MSIL">
-      <HintPath>..\..\..\..\..\packages\Datadog.Trace.2.255.252\lib\net461\Datadog.Trace.dll</HintPath>
+    <Reference Include="Datadog.Trace, Version=2.255.251.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb, processorArchitecture=MSIL">
+      <HintPath>..\..\..\..\..\packages\Datadog.Trace.2.255.251\lib\net461\Datadog.Trace.dll</HintPath>
     </Reference>
     <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
       <HintPath>..\..\..\..\..\packages\EntityFramework.6.2.0\lib\net45\EntityFramework.dll</HintPath>
@@ -101,26 +101,15 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App_Start\RouteConfig.cs" />
-    <Compile Include="App_Start\WebApiConfig.cs" />
-    <Compile Include="Areas\Datadog\Controllers\DogHouseController.cs" />
-    <Compile Include="Areas\Datadog\DatadogAreaRegistration.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
-    <Compile Include="Handlers\CustomTracingExceptionHandler.cs" />
-    <Compile Include="Handlers\PassThroughQuerySuccessMessageHandler.cs" />
-    <Compile Include="Handlers\TerminatingQuerySuccessMessageHandler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Views\web.config" />
-    <Content Include="Areas\Datadog\Views\web.config" />
-    <Content Include="Areas\Datadog\Views\_ViewStart.cshtml" />
-    <Content Include="Areas\Datadog\Views\Shared\_Layout.cshtml" />
-    <Content Include="Areas\Datadog\Views\DogHouse\Index.cshtml" />
     <None Include="packages.config" />
-    <None Include="nuget.config" />
     <Content Include="Views\_Layout.cshtml" />
     <Content Include="Views\_ViewStart.cshtml" />
     <Content Include="Views\Home\Index.cshtml" />
@@ -133,9 +122,7 @@
       <DependentUpon>Web.config</DependentUpon>
     </None>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Areas\Datadog\Models\" />
-  </ItemGroup>
+  <ItemGroup />
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
