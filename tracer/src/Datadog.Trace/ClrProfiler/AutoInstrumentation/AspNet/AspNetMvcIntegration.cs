@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     return null;
                 }
 
-                Span span = null;
+                ISpan span = null;
                 // integration enabled, go create a scope!
                 if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
                 {
@@ -161,7 +161,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
                     var tags = new AspNetTags();
                     scope = Tracer.Instance.StartActiveInternal(OperationName, propagatedContext, tags: tags);
-                    span = scope.InternalSpan;
+                    span = scope.Span;
 
                     span.DecorateWebServerSpan(
                         resourceName: resourceName,

@@ -11,7 +11,7 @@ namespace Datadog.Trace.AppSec
 {
     internal class InstrumentationGatewayEventArgs : EventArgs
     {
-        public InstrumentationGatewayEventArgs(IDictionary<string, object> eventData, ITransport transport, Span relatedSpan)
+        public InstrumentationGatewayEventArgs(IDictionary<string, object> eventData, ITransport transport, ISpan relatedSpan)
         {
             EventData = eventData;
             Transport = transport;
@@ -22,6 +22,6 @@ namespace Datadog.Trace.AppSec
 
         public ITransport Transport { get; }
 
-        public Span RelatedSpan { get; }
+        public ISpan RelatedSpan { get; }
     }
 }

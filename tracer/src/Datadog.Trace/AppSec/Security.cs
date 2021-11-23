@@ -146,7 +146,7 @@ namespace Datadog.Trace.AppSec
 
         internal Version DdlibWafVersion => _waf?.Version;
 
-        private static void AnnotateSpan(Span span)
+        private static void AnnotateSpan(ISpan span)
         {
             // we should only tag service entry span, the first span opened for a
             // service. For WAF it's safe to assume we always have service entry spans
@@ -206,7 +206,7 @@ namespace Datadog.Trace.AppSec
         /// </summary>
         public void Dispose() => _waf?.Dispose();
 
-        private void Report(ITransport transport, Span span, WafMatch[] results, bool blocked)
+        private void Report(ITransport transport, ISpan span, WafMatch[] results, bool blocked)
         {
             span.SetTag(Tags.AppSecEvent, "true");
             span.SetTraceSamplingPriority(SamplingPriority.UserKeep);
@@ -238,7 +238,7 @@ namespace Datadog.Trace.AppSec
             });
         }
 
-        private void RunWafAndReact(IDictionary<string, object> args, ITransport transport, Span span)
+        private void RunWafAndReact(IDictionary<string, object> args, ITransport transport, ISpan span)
         {
             span = Security.GetLocalRootSpan(span);
 

@@ -68,8 +68,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
                         if (state.State != null && state.State.TryDuckCast<ITestMethodRunner>(out var testMethodRunner))
                         {
                             var scope = MsTestIntegration.OnMethodBegin(testMethodRunner.TestMethodInfo, testMethodRunner.GetType());
-                            scope.InternalSpan.SetTag(TestTags.Status, TestTags.StatusSkip);
-                            scope.InternalSpan.SetTag(TestTags.SkipReason, unitTestResult.ErrorMessage);
+                            scope.Span.SetTag(TestTags.Status, TestTags.StatusSkip);
+                            scope.Span.SetTag(TestTags.SkipReason, unitTestResult.ErrorMessage);
                             scope.Dispose();
                         }
                     }

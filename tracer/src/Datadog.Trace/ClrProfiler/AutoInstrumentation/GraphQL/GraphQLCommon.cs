@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
                 string serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
                 scope = tracer.StartActiveInternal(ValidateOperationName, serviceName: serviceName, tags: tags);
 
-                var span = scope.InternalSpan;
+                var span = scope.Span;
                 span.Type = SpanTypes.GraphQL;
                 tags.Source = document.OriginalQuery;
 
@@ -81,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
                 string serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
                 scope = tracer.StartActiveInternal(ExecuteOperationName, serviceName: serviceName, tags: tags);
 
-                var span = scope.InternalSpan;
+                var span = scope.Span;
                 span.Type = SpanTypes.GraphQL;
                 span.ResourceName = $"{operationType} {operationName ?? "operation"}";
 
@@ -99,7 +99,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
             return scope;
         }
 
-        internal static void RecordExecutionErrorsIfPresent(Span span, string errorType, IExecutionErrors executionErrors)
+        internal static void RecordExecutionErrorsIfPresent(ISpan span, string errorType, IExecutionErrors executionErrors)
         {
             var errorCount = executionErrors?.Count ?? 0;
 

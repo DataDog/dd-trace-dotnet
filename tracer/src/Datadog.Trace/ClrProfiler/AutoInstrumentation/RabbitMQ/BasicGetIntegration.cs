@@ -88,7 +88,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 if (scope != null)
                 {
                     string queueDisplayName = string.IsNullOrEmpty(queue) || !queue.StartsWith("amq.gen-") ? queue : "<generated>";
-                    scope.InternalSpan.ResourceName = $"{Command} {queueDisplayName}";
+                    scope.Span.ResourceName = $"{Command} {queueDisplayName}";
 
                     if (tags != null && messageSize != null)
                     {
@@ -97,7 +97,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 
                     if (exception != null)
                     {
-                        scope.InternalSpan.SetException(exception);
+                        scope.Span.SetException(exception);
                     }
                 }
             }

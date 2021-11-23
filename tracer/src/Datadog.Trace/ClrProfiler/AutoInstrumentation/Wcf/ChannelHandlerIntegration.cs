@@ -126,7 +126,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
 
                 var tags = new WebTags();
                 scope = tracer.StartActiveInternal("wcf.request", propagatedContext, tags: tags);
-                var span = scope.InternalSpan;
+                var span = scope.Span;
 
                 object requestHeaders = requestMessage.GetProperty<object>("Headers").GetValueOrDefault();
                 string action = requestHeaders.GetProperty<string>("Action").GetValueOrDefault();

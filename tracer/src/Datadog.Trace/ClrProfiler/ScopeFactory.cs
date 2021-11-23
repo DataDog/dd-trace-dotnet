@@ -22,11 +22,11 @@ namespace Datadog.Trace.ClrProfiler
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ScopeFactory));
 
-        public static Scope GetActiveHttpScope(Tracer tracer)
+        public static IScope GetActiveHttpScope(Tracer tracer)
         {
-            var scope = tracer.InternalActiveScope;
+            var scope = tracer.ActiveScope;
 
-            var parent = scope?.InternalSpan;
+            var parent = scope?.Span;
 
             if (parent != null &&
                 parent.Type == SpanTypes.Http &&

@@ -79,7 +79,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 }
                 else if (exception is not null)
                 {
-                    scope?.InternalSpan?.SetException(exception);
+                    scope?.Span?.SetException(exception);
                 }
             }
 

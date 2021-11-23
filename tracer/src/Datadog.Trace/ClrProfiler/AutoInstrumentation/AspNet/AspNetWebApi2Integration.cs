@@ -66,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
                 tags = new AspNetTags();
                 scope = tracer.StartActiveInternal(OperationName, propagatedContext, tags: tags);
-                UpdateSpan(controllerContext, scope.InternalSpan, tags, tagsFromHeaders);
+                UpdateSpan(controllerContext, scope.Span, tags, tagsFromHeaders);
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
             }
@@ -78,7 +78,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             return scope;
         }
 
-        internal static void UpdateSpan(IHttpControllerContext controllerContext, Span span, AspNetTags tags, IEnumerable<KeyValuePair<string, string>> headerTags)
+        internal static void UpdateSpan(IHttpControllerContext controllerContext, ISpan span, AspNetTags tags, IEnumerable<KeyValuePair<string, string>> headerTags)
         {
             try
             {

@@ -80,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
                                 string testExceptionName = testException.GetType().Name;
                                 if (testExceptionName != "UnitTestAssertException" && testExceptionName != "AssertInconclusiveException")
                                 {
-                                    scope.InternalSpan.SetException(testException);
+                                    scope.Span.SetException(testException);
                                 }
 
                                 errorMessage = testException.Message;
@@ -92,18 +92,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
                                 case UnitTestOutcome.Error:
                                 case UnitTestOutcome.Failed:
                                 case UnitTestOutcome.Timeout:
-                                    scope.InternalSpan.SetTag(TestTags.Status, TestTags.StatusFail);
-                                    scope.InternalSpan.Error = true;
-                                    scope.InternalSpan.SetTag(Tags.ErrorMsg, errorMessage);
-                                    scope.InternalSpan.SetTag(Tags.ErrorStack, errorStackTrace);
+                                    scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
+                                    scope.Span.Error = true;
+                                    scope.Span.SetTag(Tags.ErrorMsg, errorMessage);
+                                    scope.Span.SetTag(Tags.ErrorStack, errorStackTrace);
                                     break;
                                 case UnitTestOutcome.Inconclusive:
                                 case UnitTestOutcome.NotRunnable:
-                                    scope.InternalSpan.SetTag(TestTags.Status, TestTags.StatusSkip);
-                                    scope.InternalSpan.SetTag(TestTags.SkipReason, errorMessage);
+                                    scope.Span.SetTag(TestTags.Status, TestTags.StatusSkip);
+                                    scope.Span.SetTag(TestTags.SkipReason, errorMessage);
                                     break;
                                 case UnitTestOutcome.Passed:
-                                    scope.InternalSpan.SetTag(TestTags.Status, TestTags.StatusPass);
+                                    scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
                                     break;
                             }
                         }
@@ -111,8 +111,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
 
                     if (exception != null)
                     {
-                        scope.InternalSpan.SetException(exception);
-                        scope.InternalSpan.SetTag(TestTags.Status, TestTags.StatusFail);
+                        scope.Span.SetException(exception);
+                        scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
                     }
 
                     scope.Dispose();

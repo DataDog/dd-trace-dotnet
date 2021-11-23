@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 
@@ -27,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     return null;
                 }
 
-                var parent = tracer.InternalActiveScope?.InternalSpan;
+                var parent = tracer.ActiveScope?.Span;
                 if (parent is not null &&
                     parent.OperationName == KafkaConstants.ProduceOperationName &&
                     parent.GetTag(Tags.InstrumentationName) != null)
@@ -46,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 string resourceName = $"Produce Topic {(string.IsNullOrEmpty(topicPartition?.Topic) ? "kafka" : topicPartition?.Topic)}";
 
-                var span = scope.InternalSpan;
+                var span = scope.Span;
                 span.Type = SpanTypes.Queue;
                 span.ResourceName = resourceName;
                 if (topicPartition?.Partition is not null && !topicPartition.Partition.IsSpecial)
@@ -89,7 +90,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     return null;
                 }
 
-                var parent = tracer.InternalActiveScope?.InternalSpan;
+                var parent = tracer.ActiveScope?.Span;
                 if (parent is not null &&
                     parent.OperationName == KafkaConstants.ConsumeOperationName &&
                     parent.GetTag(Tags.InstrumentationName) != null)
@@ -121,7 +122,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 string resourceName = $"Consume Topic {(string.IsNullOrEmpty(topic) ? "kafka" : topic)}";
 
-                var span = scope.InternalSpan;
+                var span = scope.Span;
                 span.Type = SpanTypes.Queue;
                 span.ResourceName = resourceName;
 
@@ -135,11 +136,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     tags.Offset = offset.ToString();
                 }
 
-                if (message is not null && message.Timestamp.Type != 0)
+                if (message is not null && message.Timestamp.Type != 0 && span.TryGetTimeSinceStart(message.Timestamp.UtcDateTime, out TimeSpan result))
                 {
-                    var consumeTime = span.StartTime.UtcDateTime;
-                    var produceTime = message.Timestamp.UtcDateTime;
-                    tags.MessageQueueTimeMs = Math.Max(0, (consumeTime - produceTime).TotalMilliseconds);
+                    tags.MessageQueueTimeMs = Math.Max(0, result.TotalMilliseconds);
                 }
 
                 if (message is not null && message.Value is null)
@@ -172,7 +171,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 }
 
                 var activeScope = tracer.InternalActiveScope;
-                var currentSpan = activeScope?.InternalSpan;
+                var currentSpan = activeScope?.Span;
                 if (currentSpan?.OperationName != KafkaConstants.ConsumeOperationName)
                 {
                     // Not currently in a consumer operation

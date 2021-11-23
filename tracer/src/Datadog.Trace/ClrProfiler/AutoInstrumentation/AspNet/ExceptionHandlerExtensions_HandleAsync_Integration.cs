@@ -47,14 +47,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         public static CallTargetState OnMethodBegin<TTarget, TExceptionHandler, TExceptionContext>(TTarget instance, TExceptionHandler handler, TExceptionContext context, CancellationToken cancellationToken)
             where TExceptionContext : IExceptionContext
         {
-            var scope = Tracer.Instance.InternalActiveScope;
+            var scope = Tracer.Instance.ActiveScope;
             var exception = context.Exception;
 
             if (scope is not null && exception is not null)
             {
                 // Only try setting an exception if there's an active span
                 // The rest of the instrumentation will handle disposing the scope
-                scope.InternalSpan.SetException(exception);
+                scope.Span.SetException(exception);
             }
 
             return CallTargetState.GetDefault();

@@ -50,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             string skipReason = null;
 
             Scope scope = Tracer.Instance.StartActiveInternal("nunit.test", serviceName: Tracer.Instance.DefaultServiceName);
-            Span span = scope.InternalSpan;
+            ISpan span = scope.Span;
 
             span.Type = SpanTypes.Test;
             span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
@@ -160,29 +160,29 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
                 if (exTypeName == "NUnit.Framework.SuccessException")
                 {
-                    scope.InternalSpan.SetTag(TestTags.Status, TestTags.StatusPass);
-                    scope.InternalSpan.SetTag(TestTags.Message, ex.Message);
+                    scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
+                    scope.Span.SetTag(TestTags.Message, ex.Message);
                 }
                 else if (exTypeName == "NUnit.Framework.IgnoreException" || exTypeName == "NUnit.Framework.InconclusiveException")
                 {
-                    scope.InternalSpan.SetTag(TestTags.Status, TestTags.StatusSkip);
-                    scope.InternalSpan.SetTag(TestTags.SkipReason, ex.Message);
+                    scope.Span.SetTag(TestTags.Status, TestTags.StatusSkip);
+                    scope.Span.SetTag(TestTags.SkipReason, ex.Message);
                 }
                 else
                 {
-                    scope.InternalSpan.SetException(ex);
-                    scope.InternalSpan.SetTag(TestTags.Status, TestTags.StatusFail);
+                    scope.Span.SetException(ex);
+                    scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
                 }
             }
             else
             {
-                scope.InternalSpan.SetTag(TestTags.Status, TestTags.StatusPass);
+                scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
             }
         }
 
         internal static void FinishSkippedScope(Scope scope, string skipReason)
         {
-            var span = scope?.InternalSpan;
+            var span = scope?.Span;
             if (span != null)
             {
                 span.SetTag(TestTags.Status, TestTags.StatusSkip);
