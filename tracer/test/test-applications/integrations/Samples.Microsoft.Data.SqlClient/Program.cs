@@ -20,6 +20,8 @@ namespace Samples.Microsoft.Data.SqlClient
                 await RelationalDatabaseTestHarness.RunAllAsync<SqlCommand>(connection, commandFactory, commandExecutor, cts.Token);
             }
 
+            // Version 4.0.0 causes a hard crash
+#if !SQLCLIENT_4
             // Test the result when the ADO.NET provider assembly is loaded through Assembly.LoadFile
             // On .NET Core this results in a new assembly being loaded whose types are not considered the same
             // as the types loaded through the default loading mechanism, potentially causing type casting issues in CallSite instrumentation
@@ -29,7 +31,7 @@ namespace Samples.Microsoft.Data.SqlClient
                 // Do not use the strongly typed SqlCommandExecutor because the type casts will fail
                 await RelationalDatabaseTestHarness.RunBaseClassesAsync(connection, commandFactory, cts.Token);
             }
-
+#endif
             // allow time to flush
             await Task.Delay(2000, cts.Token);
         }

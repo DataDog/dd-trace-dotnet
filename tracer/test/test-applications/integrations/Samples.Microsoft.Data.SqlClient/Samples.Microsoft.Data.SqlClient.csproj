@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <ApiVersion Condition="'$(ApiVersion)' == ''">2.0.1</ApiVersion>
+    <DefineConstants Condition="'$(ApiVersion)'&gt;='4.0.0'">$(DefineConstants);SQLCLIENT_4</DefineConstants>
 
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
