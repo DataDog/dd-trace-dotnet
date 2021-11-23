@@ -38,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 string serviceName = settings.GetServiceName(tracer, KafkaConstants.ServiceName);
                 var tags = new KafkaTags(SpanKinds.Producer);
 
-                scope = tracer.StartActiveWithTags(
+                scope = tracer.StartActiveInternal(
                     KafkaConstants.ProduceOperationName,
                     tags: tags,
                     serviceName: serviceName,
@@ -117,7 +117,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 var tags = new KafkaTags(SpanKinds.Consumer);
 
-                scope = tracer.StartActiveWithTags(KafkaConstants.ConsumeOperationName, parent: propagatedContext, tags: tags, serviceName: serviceName);
+                scope = tracer.StartActiveInternal(KafkaConstants.ConsumeOperationName, parent: propagatedContext, tags: tags, serviceName: serviceName);
 
                 string resourceName = $"Consume Topic {(string.IsNullOrEmpty(topic) ? "kafka" : topic)}";
 

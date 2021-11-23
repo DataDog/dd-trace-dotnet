@@ -122,7 +122,7 @@ namespace Datadog.Trace.AspNet
                 string url = httpRequest.RawUrl.ToLowerInvariant();
 
                 var tags = new WebTags();
-                scope = tracer.StartActiveWithTags(_requestOperationName, propagatedContext, tags: tags);
+                scope = tracer.StartActiveInternal(_requestOperationName, propagatedContext, tags: tags);
                 // Leave resourceName blank for now - we'll update it in OnEndRequest
                 scope.InternalSpan.DecorateWebServerSpan(resourceName: null, httpMethod, host, url, tags, tagsFromHeaders);
 

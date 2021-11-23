@@ -42,7 +42,7 @@ namespace Benchmarks.Trace
         [Benchmark]
         public void StartFinishScope()
         {
-            using (Scope scope = Tracer.StartActiveWithTags("operation"))
+            using (Scope scope = Tracer.StartActiveInternal("operation"))
             {
                 scope.InternalSpan.SetTraceSamplingPriority(SamplingPriority.UserReject);
             }

@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 }
 
                 tags = new AspNetTags();
-                scope = tracer.StartActiveWithTags(OperationName, propagatedContext, tags: tags);
+                scope = tracer.StartActiveInternal(OperationName, propagatedContext, tags: tags);
                 UpdateSpan(controllerContext, scope.InternalSpan, tags, tagsFromHeaders);
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);

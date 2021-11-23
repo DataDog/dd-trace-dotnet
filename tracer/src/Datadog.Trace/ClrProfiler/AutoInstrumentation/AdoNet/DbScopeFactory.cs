@@ -50,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
                 tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
 
-                scope = tracer.StartActiveWithTags(operationName, tags: tags, serviceName: serviceName);
+                scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName);
                 scope.InternalSpan.AddTagsFromDbCommand(command);
             }
             catch (Exception ex)
