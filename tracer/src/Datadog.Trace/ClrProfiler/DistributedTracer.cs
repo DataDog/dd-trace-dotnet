@@ -68,6 +68,7 @@ namespace Datadog.Trace.ClrProfiler
 
         void IDistributedTracer.LockSamplingPriority()
         {
+            Log.Information("Automatic - LockSamplingPriority - " + (_child != null).ToString());
             _child?.LockSamplingPriority();
         }
 
@@ -75,10 +76,15 @@ namespace Datadog.Trace.ClrProfiler
         {
             if (_child == null)
             {
+                Log.Information("Automatic - TrySetSamplingPriority - no child");
                 return samplingPriority;
             }
 
-            return (SamplingPriority?)_child.TrySetSamplingPriority((int?)samplingPriority);
+            var priority = (SamplingPriority?)_child.TrySetSamplingPriority((int?)samplingPriority);
+
+            Log.Information("Automatic - TrySetSamplingPriority - initial: {initial}, actual: {actual}", samplingPriority, priority);
+
+            return priority;
         }
 
         /// <summary>
@@ -133,21 +139,24 @@ namespace Datadog.Trace.ClrProfiler
                 }
                 else
                 {
-                    traceContext.SamplingPriority = (SamplingPriority)samplingPriority;
+                    traceContext.SamplingPriority = (SamplingPriority?)samplingPriority;
                 }
             }
 
             return samplingPriority;
         }
 
-        void IAutomaticTracer.Register(object manualTracer)
+        public void Register(object manualTracer)
         {
+            Log.Information("Registering {child} as child tracer", manualTracer.GetType());
             _child = manualTracer.DuckAs<ICommonTracer>();
         }
     }
 
-    internal class ManualTracer : IDistributedTracer
+    internal class ManualTracer : IDistributedTracer, ICommonTracer
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ManualTracer));
+
         private readonly IAutomaticTracer _parent;
 
         internal ManualTracer(IAutomaticTracer parent)
@@ -156,26 +165,66 @@ namespace Datadog.Trace.ClrProfiler
             _parent.Register(this);
         }
 
-        public SpanContext GetSpanContext()
+        SpanContext IDistributedTracer.GetSpanContext()
         {
             var values = _parent.GetDistributedTrace();
 
             return SpanContextPropagator.Instance.Extract(values as IReadOnlyDictionary<string, string>);
         }
 
-        public void SetSpanContext(SpanContext value)
+        void IDistributedTracer.SetSpanContext(SpanContext value)
         {
             _parent.SetDistributedTrace(value);
         }
 
-        public void LockSamplingPriority()
+        void IDistributedTracer.LockSamplingPriority()
         {
             _parent.LockSamplingPriority();
         }
 
-        public SamplingPriority? TrySetSamplingPriority(SamplingPriority? samplingPriority)
+        SamplingPriority? IDistributedTracer.TrySetSamplingPriority(SamplingPriority? samplingPriority)
         {
             return (SamplingPriority?)_parent.TrySetSamplingPriority((int?)samplingPriority);
+        }
+
+        public void LockSamplingPriority()
+        {
+            var traceContext = Tracer.Instance.ActiveScope?.Span.Context?.TraceContext;
+
+            // If there is no trace context, when a new span is propagated the sampling priority will automatically be locked
+            // because it will be considered as a distributed trace
+            if (traceContext != null)
+            {
+                traceContext.LockSamplingPriority();
+            }
+        }
+
+        public int? TrySetSamplingPriority(int? samplingPriority)
+        {
+            var traceContext = Tracer.Instance.ActiveScope?.Span.Context?.TraceContext;
+
+            // If there is no trace context, when a new span is propagated the sampling priority will automatically be locked
+            // because it will be considered as a distributed trace
+            if (traceContext != null)
+            {
+                if (traceContext.IsSamplingPriorityLocked())
+                {
+                    var currentSamplingPriority = traceContext.SamplingPriority;
+
+                    if (currentSamplingPriority != null)
+                    {
+                        return (int)currentSamplingPriority.Value;
+                    }
+
+                    Log.Warning("SamplingPriority is locked without value");
+                }
+                else
+                {
+                    traceContext.SamplingPriority = (SamplingPriority?)samplingPriority;
+                }
+            }
+
+            return samplingPriority;
         }
     }
 
