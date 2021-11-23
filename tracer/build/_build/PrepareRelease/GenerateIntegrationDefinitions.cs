@@ -130,7 +130,6 @@ namespace PrepareRelease
                                              TargetAssembly = assemblyNames,
                                              TargetType = GetPropertyValue<string>(attribute, "TypeName"),
                                              TargetMethod = GetPropertyValue<string>(attribute, "MethodName"),
-                                             TargetMethodArgumentsToLoad = (GetPropertyValue<ushort[]>(attribute, "TargetMethodArgumentsToLoad") ?? Enumerable.Empty<ushort>()).ToArray(),
                                              TargetSignatureTypes = new string[] { GetPropertyValue<string>(attribute, "ReturnTypeName") }
                                                                    .Concat(GetPropertyValue<string[]>(attribute, "ParameterTypeNames") ?? Enumerable.Empty<string>())
                                                                    .ToArray(),
@@ -187,28 +186,6 @@ namespace PrepareRelease
                     }
 
                     swriter.Write(" }, ");
-
-                    if (integration.TargetMethodArgumentsToLoad.Length > 0)
-                    {
-                        swriter.Write($" new ushort[] {{ ");
-                        for (var s = 0; s < integration.TargetMethodArgumentsToLoad.Length; s++)
-                        {
-                            if (s == integration.TargetMethodArgumentsToLoad.Length - 1)
-                            {
-                                swriter.Write($"{integration.TargetMethodArgumentsToLoad[s]}");
-                            }
-                            else
-                            {
-                                swriter.Write($"{integration.TargetMethodArgumentsToLoad[s]}, ");
-                            }
-                        }
-
-                        swriter.Write(" }, ");
-                    }
-                    else
-                    {
-                        swriter.Write("null, ");
-                    }
 
                     swriter.Write($"{integration.TargetMinimumMajor}, ");
                     swriter.Write($"{integration.TargetMinimumMinor}, ");
