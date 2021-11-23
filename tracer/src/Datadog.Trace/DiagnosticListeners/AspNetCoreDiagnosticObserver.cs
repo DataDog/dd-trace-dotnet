@@ -412,7 +412,7 @@ namespace Datadog.Trace.DiagnosticListeners
             return string.IsNullOrEmpty(simplifiedRoute) ? "/" : simplifiedRoute.ToLowerInvariant();
         }
 
-        private static void SetLegacyResourceNames(BeforeActionStruct typedArg, Span span)
+        private static void SetLegacyResourceNames(BeforeActionStruct typedArg, ISpan span)
         {
             ActionDescriptor actionDescriptor = typedArg.ActionDescriptor;
             HttpRequest request = typedArg.HttpContext.Request;
@@ -433,16 +433,21 @@ namespace Datadog.Trace.DiagnosticListeners
             span.ResourceName = resourceName;
         }
 
-        private static Span StartMvcCoreSpan(Tracer tracer, Span parentSpan, BeforeActionStruct typedArg, HttpContext httpContext, HttpRequest request)
+        private static ISpan StartMvcCoreSpan(Tracer tracer, ISpan parentSpan, BeforeActionStruct typedArg, HttpContext httpContext, HttpRequest request)
         {
             // Create a child span for the MVC action
             var mvcSpanTags = new AspNetCoreMvcTags();
-            var mvcScope = tracer.StartActiveInternal(MvcOperationName, parentSpan.InternalContext, tags: mvcSpanTags);
-            var span = mvcScope.InternalSpan;
+            var mvcScope = tracer.StartActiveInternal(MvcOperationName, parentSpan.Context, tags: mvcSpanTags);
+            var span = mvcScope.Span;
             span.Type = SpanTypes.Web;
 
             // This is only called with new route names, so parent tags are always AspNetCoreEndpointTags
-            var parentTags = (AspNetCoreEndpointTags)parentSpan.Tags;
+            AspNetCoreEndpointTags parentTags = null;
+            if (parentSpan is IHasTags parentSpanWithTags
+                && parentSpanWithTags.Tags is AspNetCoreEndpointTags endpointTags)
+            {
+                parentTags = endpointTags;
+            }
 
             var trackingFeature = httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>();
             var isUsingEndpointRouting = trackingFeature.IsUsingEndpointRouting;
@@ -511,7 +516,7 @@ namespace Datadog.Trace.DiagnosticListeners
                         controllerName: controllerName,
                         actionName: actionName);
 
-                    resourceName = $"{parentTags.HttpMethod} {request.PathBase.Value}{resourcePathName}";
+                    resourceName = $"{parentTags?.HttpMethod} {request.PathBase.Value}{resourcePathName}";
                     aspNetRoute = routeTemplate?.TemplateText.ToLowerInvariant();
                 }
             }
@@ -533,8 +538,11 @@ namespace Datadog.Trace.DiagnosticListeners
             {
                 // If we're using endpoint routing or this is a pipeline re-execution,
                 // these will already be set correctly
-                parentTags.AspNetCoreRoute = aspNetRoute;
                 parentSpan.ResourceName = span.ResourceName;
+                if (parentTags != null)
+                {
+                    parentTags.AspNetCoreRoute = aspNetRoute;
+                }
             }
 
             return span;
@@ -557,12 +565,12 @@ namespace Datadog.Trace.DiagnosticListeners
             {
                 HttpContext httpContext = requestStruct.HttpContext;
                 HttpRequest request = httpContext.Request;
-                Span span = null;
+                ISpan span = null;
                 if (shouldTrace)
                 {
                     // Use an empty resource name here, as we will likely replace it as part of the request
                     // If we don't, update it in OnHostingHttpRequestInStop or OnHostingUnhandledException
-                    span = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, httpContext, httpContext.Request, resourceName: string.Empty).InternalSpan;
+                    span = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, httpContext, httpContext.Request, resourceName: string.Empty).Span;
                 }
 
                 if (shouldSecure)
@@ -582,11 +590,11 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            Span span = tracer.InternalActiveScope?.InternalSpan;
+            ISpan span = tracer.ActiveScope?.Span;
 
-            if (span != null)
+            if (span != null && span is IHasTags spanWithTags)
             {
-                var tags = span.Tags as AspNetCoreEndpointTags;
+                var tags = spanWithTags.Tags as AspNetCoreEndpointTags;
                 if (tags is null || !arg.TryDuckCast<HttpRequestInEndpointMatchedStruct>(out var typedArg))
                 {
                     // Shouldn't happen in normal execution
@@ -704,7 +712,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            Span parentSpan = tracer.InternalActiveScope?.InternalSpan;
+            ISpan parentSpan = tracer.ActiveScope?.Span;
 
             if (parentSpan != null && arg.TryDuckCast<BeforeActionStruct>(out var typedArg))
             {
@@ -713,7 +721,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 // NOTE: This event is the start of the action pipeline. The action has been selected, the route
                 //       has been selected but no filters have run and model binding hasn't occurred.
-                Span span = null;
+                ISpan span = null;
                 if (shouldTrace)
                 {
                     if (!tracer.Settings.RouteTemplateResourceNamesEnabled)
@@ -745,7 +753,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             var scope = tracer.InternalActiveScope;
 
-            if (scope is not null && ReferenceEquals(scope.InternalSpan.OperationName, MvcOperationName))
+            if (scope is not null && ReferenceEquals(scope.Span.OperationName, MvcOperationName))
             {
                 scope.Dispose();
             }
@@ -764,7 +772,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (scope != null)
             {
-                var span = scope.InternalSpan;
+                var span = scope.Span;
 
                 // we may need to update the resource name if none of the routing/mvc events updated it
                 // if we had an unhandled exception, the status code is already updated
@@ -797,7 +805,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            var span = tracer.InternalActiveScope?.InternalSpan;
+            var span = tracer.ActiveScope?.Span;
 
             if (span != null && arg.TryDuckCast<UnhandledExceptionStruct>(out var unhandledStruct))
             {

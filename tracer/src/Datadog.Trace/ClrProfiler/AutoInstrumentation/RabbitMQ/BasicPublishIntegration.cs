@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             {
                 string exchangeDisplayName = string.IsNullOrEmpty(exchange) ? "<default>" : exchange;
                 string routingKeyDisplayName = string.IsNullOrEmpty(routingKey) ? "<all>" : routingKey.StartsWith("amq.gen-") ? "<generated>" : routingKey;
-                scope.InternalSpan.ResourceName = $"{Command} {exchangeDisplayName} -> {routingKeyDisplayName}";
+                scope.Span.ResourceName = $"{Command} {exchangeDisplayName} -> {routingKeyDisplayName}";
 
                 if (tags != null)
                 {

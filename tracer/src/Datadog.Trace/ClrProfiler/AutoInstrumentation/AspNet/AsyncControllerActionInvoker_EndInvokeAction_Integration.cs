@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             {
                 if (exception != null)
                 {
-                    scope.InternalSpan.SetException(exception);
+                    scope.Span.SetException(exception);
 
                     // In case of exception, the status code is set further down the ASP.NET pipeline
                     // We use the OnRequestCompleted callback to be notified when that happens.
@@ -77,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 else
                 {
                     HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, scope);
-                    scope.InternalSpan.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
+                    scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
                     scope.Dispose();
                 }
             }
@@ -88,8 +88,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         private static void OnRequestCompleted(HttpContext httpContext, Scope scope, DateTimeOffset finishTime)
         {
             HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, scope);
-            scope.InternalSpan.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
-            scope.InternalSpan.Finish(finishTime);
+            scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
+            scope.Span.Finish(finishTime);
             scope.Dispose();
         }
     }

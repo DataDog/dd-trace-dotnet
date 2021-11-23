@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
 
                 scope = tracer.StartActiveInternal(MsmqConstants.OperationName, serviceName: serviceName, tags: tags);
 
-                var span = scope.InternalSpan;
+                var span = scope.Span;
                 span.Type = SpanTypes.Queue;
                 span.ResourceName = $"{command} {messageQueue.Path}";
             }

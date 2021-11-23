@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 // The OnMethodBegin and OnMethodEnd of this integration happens between KafkaProduceSyncIntegration.OnMethodBegin
                 // and KafkaProduceSyncIntegration.OnMethodEnd, so the consumer span is active for the duration of this integration
                 var activeScope = Tracer.Instance?.InternalActiveScope;
-                var span = activeScope?.InternalSpan;
+                var span = activeScope?.Span;
                 if (span is null)
                 {
                     Logger.Warning("Unexpected null span for Kafka Producer with delivery handler");
@@ -102,7 +102,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     Logger.Error(ex, "There was an error updating the delivery report handler to ");
                     // Not ideal to close the span here immediately, but as we can't trace the result,
                     // we don't really have a choice
-                    state.Scope?.InternalSpan.Finish();
+                    state.Scope?.Span.Finish();
                 }
             }
 
@@ -179,9 +179,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 _createWrapper = (CreateWrapperDelegate)wrapActionMethod.CreateDelegate(typeof(CreateWrapperDelegate));
             }
 
-            private delegate TActionDelegate CreateWrapperDelegate(TActionDelegate value, Span span);
+            private delegate TActionDelegate CreateWrapperDelegate(TActionDelegate value, ISpan span);
 
-            public static TActionDelegate CreateWrapper(TActionDelegate value, Span span)
+            public static TActionDelegate CreateWrapper(TActionDelegate value, ISpan span)
             {
                 // we call the delegate passing the instance of the previous delegate
                 return _createWrapper(value, span);

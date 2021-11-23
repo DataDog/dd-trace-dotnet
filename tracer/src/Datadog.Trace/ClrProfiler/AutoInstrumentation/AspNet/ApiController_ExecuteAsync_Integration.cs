@@ -92,11 +92,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             var controllerContext = (IHttpControllerContext)state.State;
 
             // some fields aren't set till after execution, so populate anything missing
-            AspNetWebApi2Integration.UpdateSpan(controllerContext, scope.InternalSpan, (AspNetTags)scope.InternalSpan.Tags, Enumerable.Empty<KeyValuePair<string, string>>());
+            AspNetWebApi2Integration.UpdateSpan(controllerContext, scope.Span, (AspNetTags)scope.InternalSpan.Tags, Enumerable.Empty<KeyValuePair<string, string>>());
 
             if (exception != null)
             {
-                scope.InternalSpan.SetException(exception);
+                scope.Span.SetException(exception);
 
                 // We don't have access to the final status code at this point
                 // Ask the HttpContext to call us back to that we can get it
@@ -118,7 +118,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             else
             {
                 HttpContextHelper.AddHeaderTagsFromHttpResponse(HttpContext.Current, scope);
-                scope.InternalSpan.SetHttpStatusCode(responseMessage.DuckCast<HttpResponseMessageStruct>().StatusCode, isServer: true, Tracer.Instance.Settings);
+                scope.Span.SetHttpStatusCode(responseMessage.DuckCast<HttpResponseMessageStruct>().StatusCode, isServer: true, Tracer.Instance.Settings);
                 scope.Dispose();
             }
 
@@ -128,8 +128,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         private static void OnRequestCompleted(HttpContext httpContext, Scope scope, DateTimeOffset finishTime)
         {
             HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, scope);
-            scope.InternalSpan.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
-            scope.InternalSpan.Finish(finishTime);
+            scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
+            scope.Span.Finish(finishTime);
             scope.Dispose();
         }
     }

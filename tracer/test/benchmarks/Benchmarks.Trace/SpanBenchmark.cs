@@ -44,7 +44,7 @@ namespace Benchmarks.Trace
         {
             using (Scope scope = Tracer.StartActiveInternal("operation"))
             {
-                scope.InternalSpan.SetTraceSamplingPriority(SamplingPriority.UserReject);
+                scope.Span.SetTraceSamplingPriority(SamplingPriority.UserReject);
             }
         }
     }

@@ -369,7 +369,7 @@ namespace Datadog.Trace
         {
             if (parent == null && !ignoreActiveScope)
             {
-                parent = TracerManager.ScopeManager.Active?.InternalSpan?.InternalContext;
+                parent = TracerManager.ScopeManager.Active?.Span?.Context;
             }
 
             ITraceContext traceContext;

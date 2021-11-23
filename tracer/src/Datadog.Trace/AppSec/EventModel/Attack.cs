@@ -26,7 +26,7 @@ namespace Datadog.Trace.AppSec.EventModel
         [JsonProperty("context")]
         public Context Context { get; set; }
 
-        public static Attack From(Waf.ReturnTypes.Managed.Return result, Trace.Span span, Transport.ITransport transport, string customIpHeader, IEnumerable<string> extraHeaders)
+        public static Attack From(Waf.ReturnTypes.Managed.Return result, Trace.ISpan span, Transport.ITransport transport, string customIpHeader, IEnumerable<string> extraHeaders)
         {
             var resultData = result.ResultData[0];
             var ruleMatch = resultData.RuleMatches.FirstOrDefault();

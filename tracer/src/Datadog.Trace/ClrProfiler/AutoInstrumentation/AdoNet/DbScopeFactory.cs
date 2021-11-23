@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
             try
             {
-                Span parent = tracer.InternalActiveScope?.InternalSpan;
+                ISpan parent = tracer.ActiveScope?.Span;
 
                 if (parent is { Type: SpanTypes.Sql } &&
                     parent.GetTag(Tags.DbType) == dbType &&
@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
 
                 scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName);
-                scope.InternalSpan.AddTagsFromDbCommand(command);
+                scope.Span.AddTagsFromDbCommand(command);
             }
             catch (Exception ex)
             {

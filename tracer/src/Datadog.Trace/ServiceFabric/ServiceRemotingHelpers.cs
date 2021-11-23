@@ -157,9 +157,9 @@ namespace Datadog.Trace.ServiceFabric
 
                 string expectedSpanName = GetSpanName(spanKind);
 
-                if (expectedSpanName != scope.InternalSpan.OperationName)
+                if (expectedSpanName != scope.Span.OperationName)
                 {
-                    Log.Warning("Expected span name {expectedSpanName}, but found {actualSpanName} instead.", expectedSpanName, scope.InternalSpan.OperationName);
+                    Log.Warning("Expected span name {expectedSpanName}, but found {actualSpanName} instead.", expectedSpanName, scope.Span.OperationName);
                     return;
                 }
 
@@ -170,7 +170,7 @@ namespace Datadog.Trace.ServiceFabric
 
                     if (exception != null)
                     {
-                        scope.InternalSpan?.SetException(exception);
+                        scope.Span?.SetException(exception);
                     }
                 }
                 catch (Exception ex)

@@ -75,11 +75,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
             {
                 if (exception != null)
                 {
-                    scope.InternalSpan?.SetException(exception);
+                    scope.Span?.SetException(exception);
                 }
                 else
                 {
-                    GraphQLCommon.RecordExecutionErrorsIfPresent(scope.InternalSpan, ErrorType, validationResult.Item1.Errors);
+                    GraphQLCommon.RecordExecutionErrorsIfPresent(scope.Span, ErrorType, validationResult.Item1.Errors);
                 }
             }
             finally

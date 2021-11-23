@@ -34,12 +34,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 
             try
             {
-                Span parent = tracer.InternalActiveScope?.InternalSpan;
-
                 tags = new AwsSqsTags();
                 string serviceName = tracer.Settings.GetServiceName(tracer, DatadogAwsSqsServiceName);
                 scope = tracer.StartActiveInternal(SqsOperationName, parent: parentContext, tags: tags, serviceName: serviceName);
-                var span = scope.InternalSpan;
+                var span = scope.Span;
 
                 span.Type = SpanTypes.Http;
                 span.ResourceName = $"{SqsServiceName}.{operation}";

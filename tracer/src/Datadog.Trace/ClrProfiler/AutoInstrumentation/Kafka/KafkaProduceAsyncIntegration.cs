@@ -70,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         public static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, CallTargetState state)
         where TResponse : IDeliveryResult
         {
-            if (state.Scope?.InternalSpan?.Tags is KafkaTags tags)
+            if (state.Scope?.Span is IHasTags spanWithTags && spanWithTags.Tags is KafkaTags tags)
             {
                 IDeliveryResult deliveryResult = null;
                 if (exception is not null)

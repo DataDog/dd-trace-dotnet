@@ -49,12 +49,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
             {
                 if (responseMessage.Instance is not null)
                 {
-                    scope.InternalSpan.SetHttpStatusCode(responseMessage.StatusCode, false, Tracer.Instance.Settings);
+                    scope.Span.SetHttpStatusCode(responseMessage.StatusCode, false, Tracer.Instance.Settings);
                 }
 
                 if (exception != null)
                 {
-                    scope.InternalSpan.SetException(exception);
+                    scope.Span.SetException(exception);
                 }
             }
             finally

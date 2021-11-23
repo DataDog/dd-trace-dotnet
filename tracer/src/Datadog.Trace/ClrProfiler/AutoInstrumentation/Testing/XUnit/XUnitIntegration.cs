@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
             string testFramework = "xUnit";
 
             Scope scope = Tracer.Instance.StartActiveInternal("xunit.test", serviceName: Tracer.Instance.DefaultServiceName);
-            Span span = scope.InternalSpan;
+            ISpan span = scope.Span;
 
             span.Type = SpanTypes.Test;
             span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
@@ -104,18 +104,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
             {
                 if (exception.GetType().Name == "SkipException")
                 {
-                    scope.InternalSpan.SetTag(TestTags.Status, TestTags.StatusSkip);
-                    scope.InternalSpan.SetTag(TestTags.SkipReason, exception.Message);
+                    scope.Span.SetTag(TestTags.Status, TestTags.StatusSkip);
+                    scope.Span.SetTag(TestTags.SkipReason, exception.Message);
                 }
                 else
                 {
-                    scope.InternalSpan.SetException(exception);
-                    scope.InternalSpan.SetTag(TestTags.Status, TestTags.StatusFail);
+                    scope.Span.SetException(exception);
+                    scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
                 }
             }
             else
             {
-                scope.InternalSpan.SetTag(TestTags.Status, TestTags.StatusPass);
+                scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
             }
 
             scope.Dispose();
