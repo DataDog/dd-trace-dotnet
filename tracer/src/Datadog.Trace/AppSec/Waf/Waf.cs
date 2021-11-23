@@ -22,12 +22,14 @@ namespace Datadog.Trace.AppSec.Waf
 
         private readonly IntPtr ruleHandle;
         private readonly WafNative wafNative;
+        private readonly Encoder encoder;
         private bool disposed = false;
 
-        private Waf(IntPtr ruleHandle, WafNative wafNative)
+        private Waf(IntPtr ruleHandle, WafNative wafNative, Encoder encoder)
         {
             this.ruleHandle = ruleHandle;
             this.wafNative = wafNative;
+            this.encoder = encoder;
         }
 
         ~Waf()
@@ -58,13 +60,9 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             var wafNative = new WafNative(libraryHandle);
-            var ruleHandle = WafConfigurator.Configure(rulesFile, wafNative);
-            if (ruleHandle == null)
-            {
-                return null;
-            }
-
-            return new Waf(ruleHandle.Value, wafNative);
+            var encoder = new Encoder(wafNative);
+            var ruleHandle = WafConfigurator.Configure(rulesFile, wafNative, encoder);
+            return ruleHandle == null ? null : new Waf(ruleHandle.Value, wafNative, encoder);
         }
 
         public IContext CreateContext()
@@ -77,7 +75,7 @@ namespace Datadog.Trace.AppSec.Waf
                 throw new Exception("WAF initialization failed.");
             }
 
-            return new Context(handle, wafNative);
+            return new Context(handle, wafNative, encoder);
         }
 
         public void Dispose()

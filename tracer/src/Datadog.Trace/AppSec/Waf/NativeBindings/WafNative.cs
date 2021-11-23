@@ -85,7 +85,6 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             // set the log level and setup the logger
             var level = GlobalSettings.Source.DebugEnabled ? DDWAF_LOG_LEVEL.DDWAF_DEBUG : DDWAF_LOG_LEVEL.DDWAF_INFO;
             setupLogging(Marshal.GetFunctionPointerForDelegate(setupLogCallbackField), level);
-            Encoder = new Encoder(this);
         }
 
         private delegate void GetVersionDelegate(ref DdwafVersionStruct version);
@@ -144,8 +143,6 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             DDWAF_ERROR,
             DDWAF_AFTER_LAST,
         }
-
-        internal Encoder Encoder { get; }
 
         internal IntPtr ObjectFreeFuncPtr
         {

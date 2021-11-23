@@ -14,9 +14,8 @@ namespace Datadog.Trace.AppSec.Waf
     internal class Result : IResult
     {
         private readonly WafNative wafNative;
+        private readonly DDWAF_RET_CODE returnCode;
         private DdwafResultStruct returnStruct;
-        private DDWAF_RET_CODE returnCode;
-
         private bool disposed;
 
         public Result(DdwafResultStruct returnStruct, DDWAF_RET_CODE returnCode, WafNative wafNative)

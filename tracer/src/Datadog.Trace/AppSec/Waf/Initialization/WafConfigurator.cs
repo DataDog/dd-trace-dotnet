@@ -18,10 +18,10 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(WafConfigurator));
 
-        internal static IntPtr? Configure(string rulesFile, WafNative wafNative)
+        internal static IntPtr? Configure(string rulesFile, WafNative wafNative, Encoder encoder)
         {
             var argCache = new List<Obj>();
-            var configObj = GetConfigObj(rulesFile, argCache, wafNative.Encoder);
+            var configObj = GetConfigObj(rulesFile, argCache, encoder);
             if (configObj == null)
             {
                 return null;

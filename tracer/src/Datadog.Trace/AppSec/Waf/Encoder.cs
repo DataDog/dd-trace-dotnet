@@ -71,10 +71,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         private static string TrunacteLongString(string s) => s.Length > MaxStringLength ? s.Substring(0, MaxStringLength) : s;
 
-        public Obj Encode(object o, List<Obj> argCache)
-        {
-            return EncodeInternal(o, argCache, MaxObjectDepth);
-        }
+        public Obj Encode(object o, List<Obj> argCache) => EncodeInternal(o, argCache, MaxObjectDepth);
 
         private Obj EncodeInternal(object o, List<Obj> argCache, int remainingDepth)
         {
