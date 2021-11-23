@@ -11,7 +11,7 @@ using OpenTracing.Propagation;
 
 namespace Datadog.Trace.OpenTracing
 {
-    internal class OpenTracingTracer : ITracer
+    internal class OpenTracingTracer : global::OpenTracing.ITracer
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<OpenTracingTracer>();
 
@@ -42,7 +42,7 @@ namespace Datadog.Trace.OpenTracing
 
         public OpenTracingSpan ActiveSpan => (OpenTracingSpan)ScopeManager.Active?.Span;
 
-        global::OpenTracing.ISpan ITracer.ActiveSpan => ScopeManager.Active?.Span;
+        global::OpenTracing.ISpan global::OpenTracing.ITracer.ActiveSpan => ScopeManager.Active?.Span;
 
         public ISpanBuilder BuildSpan(string operationName)
         {

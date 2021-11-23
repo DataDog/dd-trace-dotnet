@@ -270,6 +270,16 @@ namespace Datadog.Trace
         ulong SpanId { get; }
         ulong TraceId { get; }
     }
+    public interface ITracer
+    {
+        Datadog.Trace.IScope ActiveScope { get; }
+        string DefaultServiceName { get; }
+        Datadog.Trace.Configuration.ImmutableTracerSettings Settings { get; }
+        Datadog.Trace.IScope ActivateSpan(Datadog.Trace.ISpan span);
+        Datadog.Trace.IScope ActivateSpan(Datadog.Trace.ISpan span, bool finishOnClose);
+        Datadog.Trace.IScope StartActive(string operationName, Datadog.Trace.ISpanContext parent = null, string serviceName = null, System.DateTimeOffset? startTime = default, bool ignoreActiveScope = false, bool finishOnClose = true);
+        Datadog.Trace.ISpan StartSpan(string operationName, Datadog.Trace.ISpanContext parent = null, string serviceName = null, System.DateTimeOffset? startTime = default, bool ignoreActiveScope = false);
+    }
     public enum SamplingPriority
     {
         UserReject = -1,
@@ -357,7 +367,7 @@ namespace Datadog.Trace
         public const string SqlRows = "sql.rows";
         public const string Version = "version";
     }
-    public class Tracer
+    public class Tracer : Datadog.Trace.ITracer
     {
         [System.Obsolete("This API is deprecated. Use Tracer.Instance to obtain a Tracer instance to create" +
             " spans.")]
