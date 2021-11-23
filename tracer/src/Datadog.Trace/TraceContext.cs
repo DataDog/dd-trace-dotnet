@@ -46,10 +46,7 @@ namespace Datadog.Trace
             get => _samplingPriority;
             set
             {
-                if (!_samplingPriorityLocked)
-                {
-                    _samplingPriority = DistributedTracer.Instance.TrySetSamplingPriority(value);
-                }
+                SetSamplingPriority(value);
             }
         }
 
@@ -153,7 +150,7 @@ namespace Datadog.Trace
             }
         }
 
-        public void LockSamplingPriority()
+        public void LockSamplingPriority(bool notifyDistributedTracer = true)
         {
             if (_samplingPriority == null)
             {
@@ -162,7 +159,26 @@ namespace Datadog.Trace
             else
             {
                 _samplingPriorityLocked = true;
-                DistributedTracer.Instance.LockSamplingPriority();
+
+                if (notifyDistributedTracer)
+                {
+                    DistributedTracer.Instance.LockSamplingPriority();
+                }
+            }
+        }
+
+        public void SetSamplingPriority(SamplingPriority? samplingPriority, bool notifyDistributedTracer = true)
+        {
+            if (!_samplingPriorityLocked)
+            {
+                if (notifyDistributedTracer)
+                {
+                    _samplingPriority = DistributedTracer.Instance.TrySetSamplingPriority(samplingPriority);
+                }
+                else
+                {
+                    _samplingPriority = samplingPriority;
+                }
             }
         }
 

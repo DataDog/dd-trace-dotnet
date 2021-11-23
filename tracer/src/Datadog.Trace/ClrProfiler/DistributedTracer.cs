@@ -108,48 +108,18 @@ namespace Datadog.Trace.ClrProfiler
 
         public void LockSamplingPriority()
         {
-            var traceContext = Tracer.Instance.ActiveScope?.Span.Context?.TraceContext;
-
-            // If there is no trace context, when a new span is propagated the sampling priority will automatically be locked
-            // because it will be considered as a distributed trace
-            if (traceContext != null)
-            {
-                traceContext.LockSamplingPriority();
-            }
+            DistributedTracer.LockSamplingPriorityImpl();
         }
 
         public int? TrySetSamplingPriority(int? samplingPriority)
         {
-            var traceContext = Tracer.Instance.ActiveScope?.Span.Context?.TraceContext;
-
-            // If there is no trace context, when a new span is propagated the sampling priority will automatically be locked
-            // because it will be considered as a distributed trace
-            if (traceContext != null)
-            {
-                if (traceContext.IsSamplingPriorityLocked())
-                {
-                    var currentSamplingPriority = traceContext.SamplingPriority;
-
-                    if (currentSamplingPriority != null)
-                    {
-                        return (int)currentSamplingPriority.Value;
-                    }
-
-                    Log.Warning("SamplingPriority is locked without value");
-                }
-                else
-                {
-                    traceContext.SamplingPriority = (SamplingPriority?)samplingPriority;
-                }
-            }
-
-            return samplingPriority;
+            return DistributedTracer.TrySetSamplingPriorityImpl(samplingPriority);
         }
 
         public void Register(object manualTracer)
         {
             Log.Information("Registering {child} as child tracer", manualTracer.GetType());
-            _child = manualTracer.DuckAs<ICommonTracer>();
+            _child = manualTracer.DuckCast<ICommonTracer>();
         }
     }
 
@@ -189,42 +159,12 @@ namespace Datadog.Trace.ClrProfiler
 
         public void LockSamplingPriority()
         {
-            var traceContext = Tracer.Instance.ActiveScope?.Span.Context?.TraceContext;
-
-            // If there is no trace context, when a new span is propagated the sampling priority will automatically be locked
-            // because it will be considered as a distributed trace
-            if (traceContext != null)
-            {
-                traceContext.LockSamplingPriority();
-            }
+            DistributedTracer.LockSamplingPriorityImpl();
         }
 
         public int? TrySetSamplingPriority(int? samplingPriority)
         {
-            var traceContext = Tracer.Instance.ActiveScope?.Span.Context?.TraceContext;
-
-            // If there is no trace context, when a new span is propagated the sampling priority will automatically be locked
-            // because it will be considered as a distributed trace
-            if (traceContext != null)
-            {
-                if (traceContext.IsSamplingPriorityLocked())
-                {
-                    var currentSamplingPriority = traceContext.SamplingPriority;
-
-                    if (currentSamplingPriority != null)
-                    {
-                        return (int)currentSamplingPriority.Value;
-                    }
-
-                    Log.Warning("SamplingPriority is locked without value");
-                }
-                else
-                {
-                    traceContext.SamplingPriority = (SamplingPriority?)samplingPriority;
-                }
-            }
-
-            return samplingPriority;
+            return DistributedTracer.TrySetSamplingPriorityImpl(samplingPriority);
         }
     }
 
@@ -273,5 +213,45 @@ namespace Datadog.Trace.ClrProfiler
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
         public static object GetDistributedTracer() => Instance;
+
+        internal static void LockSamplingPriorityImpl()
+        {
+            var traceContext = Tracer.Instance.ActiveScope?.Span.Context?.TraceContext;
+
+            // If there is no trace context, when a new span is propagated the sampling priority will automatically be locked
+            // because it will be considered as a distributed trace
+            if (traceContext != null)
+            {
+                traceContext.LockSamplingPriority(notifyDistributedTracer: false);
+            }
+        }
+
+        internal static int? TrySetSamplingPriorityImpl(int? samplingPriority)
+        {
+            var traceContext = Tracer.Instance.ActiveScope?.Span.Context?.TraceContext;
+
+            // If there is no trace context, when a new span is propagated the sampling priority will automatically be locked
+            // because it will be considered as a distributed trace
+            if (traceContext != null)
+            {
+                if (traceContext.IsSamplingPriorityLocked())
+                {
+                    var currentSamplingPriority = traceContext.SamplingPriority;
+
+                    if (currentSamplingPriority != null)
+                    {
+                        return (int)currentSamplingPriority.Value;
+                    }
+
+                    Log.Warning("SamplingPriority is locked without value");
+                }
+                else
+                {
+                    traceContext.SetSamplingPriority((SamplingPriority?)samplingPriority, notifyDistributedTracer: false);
+                }
+            }
+
+            return samplingPriority;
+        }
     }
 }
