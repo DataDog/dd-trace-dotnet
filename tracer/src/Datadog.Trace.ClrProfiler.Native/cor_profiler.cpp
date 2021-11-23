@@ -1251,14 +1251,6 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
                 wrapperType = WSTRING(current.wrapperType);
             }
 
-            bool useTargetMethodArgumentsToLoad = current.useTargetMethodArgumentsToLoad;
-            std::vector<USHORT> targetMethodArgumentsToLoad;
-            for (int sIdx = 0; sIdx < current.targetMethodArgumentsToLoadLength; sIdx++)
-            {
-                const auto currentArgumentIndex = current.targetMethodArgumentsToLoad[sIdx];
-                targetMethodArgumentsToLoad.push_back(currentArgumentIndex);
-            }
-
             std::vector<WSTRING> signatureTypes;
             for (int sIdx = 0; sIdx < current.signatureTypesLength; sIdx++)
             {
@@ -1279,9 +1271,9 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
                 MethodReplacement(
                     {},
                     MethodReference(targetAssembly, targetType, targetMethod, EmptyWStr, minVersion, maxVersion,
-                        {}, signatureTypes, useTargetMethodArgumentsToLoad, targetMethodArgumentsToLoad),
+                        {}, signatureTypes),
                     MethodReference(wrapperAssembly, wrapperType, EmptyWStr, calltarget_modification_action, {}, {}, {},
-                                    {}, false, {})));
+                                    {})));
 
             if (Logger::IsDebugEnabled())
             {
@@ -3440,11 +3432,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
     bool isVoid = (retTypeFlags & TypeFlagVoid) > 0;
     bool isStatic = !(caller->method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS);
     std::vector<FunctionMethodArgument> methodArguments = caller->method_signature.GetMethodArguments();
-    bool useCustomArgumentsTargetMethodArguments = method_replacement->target_method.use_target_method_arguments_to_load;
-    std::vector<USHORT> methodArgumentsToLoad = method_replacement->target_method.target_method_arguments_to_load;
-    int numArgs = useCustomArgumentsTargetMethodArguments
-                      ? (int) methodArgumentsToLoad.size()
-                      : caller->method_signature.NumberOfArguments();
+    int numArgs = caller->method_signature.NumberOfArguments();
     auto metaEmit = module_metadata->metadata_emit;
     auto metaImport = module_metadata->metadata_import;
 
@@ -3559,11 +3547,8 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
         // Load the arguments directly (FastPath)
         for (int i = 0; i < numArgs; i++)
         {
-            int loadIndex = useCustomArgumentsTargetMethodArguments
-                                ? methodArgumentsToLoad[i]
-                                : i;
-            reWriterWrapper.LoadArgument(loadIndex + (isStatic ? 0 : 1));
-            auto argTypeFlags = methodArguments[loadIndex].GetTypeFlags(elementType);
+            reWriterWrapper.LoadArgument(i + (isStatic ? 0 : 1));
+            auto argTypeFlags = methodArguments[i].GetTypeFlags(elementType);
             if (argTypeFlags & TypeFlagByRef)
             {
                 Logger::Warn("*** CallTarget_RewriterCallback(): Methods with ref parameters "
@@ -3579,12 +3564,8 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
         for (int i = 0; i < numArgs; i++)
         {
             reWriterWrapper.BeginLoadValueIntoArray(i);
-
-            int loadIndex = useCustomArgumentsTargetMethodArguments
-                                ? methodArgumentsToLoad[i]
-                                : i;
-            reWriterWrapper.LoadArgument(loadIndex + (isStatic ? 0 : 1));
-            auto argTypeFlags = methodArguments[loadIndex].GetTypeFlags(elementType);
+            reWriterWrapper.LoadArgument(i + (isStatic ? 0 : 1));
+            auto argTypeFlags = methodArguments[i].GetTypeFlags(elementType);
             if (argTypeFlags & TypeFlagByRef)
             {
                 Logger::Warn("*** CallTarget_RewriterCallback(): Methods with ref parameters "
@@ -3593,7 +3574,7 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
             }
             if (argTypeFlags & TypeFlagBoxedType)
             {
-                auto tok = methodArguments[loadIndex].GetTypeTok(metaEmit, callTargetTokens->GetCorLibAssemblyRef());
+                auto tok = methodArguments[i].GetTypeTok(metaEmit, callTargetTokens->GetCorLibAssemblyRef());
                 if (tok == mdTokenNil)
                 {
                     return S_FALSE;
@@ -3640,7 +3621,6 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
 
     ILInstr* beginCallInstruction;
     hr = callTargetTokens->WriteBeginMethod(&reWriterWrapper, wrapper_type_ref, &caller->type, methodArguments,
-                                            methodArgumentsToLoad,
                                             &beginCallInstruction);
     if (FAILED(hr))
     {

@@ -15,7 +15,6 @@ class CLRHelperTestBase : public ::testing::Test {
   Version min_ver_ = Version(0, 0, 0, 0);
   Version max_ver_ = Version(USHRT_MAX, USHRT_MAX, USHRT_MAX, USHRT_MAX);
   std::vector<WSTRING> empty_sig_type_;
-  std::vector<USHORT> empty_load_args_;
 
   void LoadMetadataDependencies() {
     ICLRMetaHost* metahost = nullptr;

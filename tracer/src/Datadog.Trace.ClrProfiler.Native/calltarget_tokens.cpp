@@ -873,8 +873,7 @@ HRESULT CallTargetTokens::ModifyLocalSigAndInitialize(void* rewriterWrapperPtr, 
 
 HRESULT CallTargetTokens::WriteBeginMethod(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
                                            const TypeInfo* currentType,
-                                           const std::vector<FunctionMethodArgument>& methodArguments,
-                                           const std::vector<USHORT>& argsToLoad, ILInstr** instruction)
+                                           std::vector<FunctionMethodArgument>& methodArguments, ILInstr** instruction)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -885,9 +884,7 @@ HRESULT CallTargetTokens::WriteBeginMethod(void* rewriterWrapperPtr, mdTypeRef i
     ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
     ModuleMetadata* module_metadata = GetMetadata();
 
-    auto numArgsToLoad = argsToLoad.size();
-    bool useArgToLoad = numArgsToLoad > 0;
-    auto numArguments = useArgToLoad ? (int) numArgsToLoad : (int) methodArguments.size();
+    auto numArguments = (int) methodArguments.size();
     if (numArguments >= FASTPATH_COUNT)
     {
         return WriteBeginMethodWithArgumentsArray(rewriterWrapperPtr, integrationTypeRef, currentType, instruction);
@@ -950,17 +947,7 @@ HRESULT CallTargetTokens::WriteBeginMethod(void* rewriterWrapperPtr, mdTypeRef i
     ULONG argumentsSignatureSize[FASTPATH_COUNT];
     for (auto i = 0; i < numArguments; i++)
     {
-        FunctionMethodArgument methodArgument;
-        if (useArgToLoad)
-        {
-            methodArgument = methodArguments[argsToLoad[i]];
-        }
-        else
-        {
-            methodArgument = methodArguments[i];
-        }
-
-        auto signatureSize = methodArgument.GetSignature(argumentsSignatureBuffer[i]);
+        auto signatureSize = methodArguments[i].GetSignature(argumentsSignatureBuffer[i]);
         argumentsSignatureSize[i] = signatureSize;
         signatureLength += signatureSize;
     }

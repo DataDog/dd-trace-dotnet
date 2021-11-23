@@ -17,8 +17,6 @@ namespace PrepareRelease
 
         public string TargetMethod { get; init; }
 
-        public ushort[] TargetMethodArgumentsToLoad { get; init; }
-
         public string[] TargetSignatureTypes { get; init; }
 
         public ushort TargetMinimumMajor { get; init; }
