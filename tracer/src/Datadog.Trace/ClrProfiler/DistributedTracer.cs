@@ -149,12 +149,18 @@ namespace Datadog.Trace.ClrProfiler
 
         void IDistributedTracer.LockSamplingPriority()
         {
+            Log.Information("Manual - LockSamplingPriority");
+
             _parent.LockSamplingPriority();
         }
 
         SamplingPriority? IDistributedTracer.TrySetSamplingPriority(SamplingPriority? samplingPriority)
         {
-            return (SamplingPriority?)_parent.TrySetSamplingPriority((int?)samplingPriority);
+            var actualPriority = (SamplingPriority?)_parent.TrySetSamplingPriority((int?)samplingPriority);
+
+            Log.Information("Manual - TrySetSamplingPriority - initial: {initial}, actual: {actual}", samplingPriority, actualPriority);
+
+            return actualPriority;
         }
 
         public void LockSamplingPriority()
