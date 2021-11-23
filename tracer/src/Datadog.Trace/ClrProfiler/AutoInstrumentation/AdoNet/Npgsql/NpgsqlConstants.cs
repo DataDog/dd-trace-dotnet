@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Npgsql
 
             public string MinimumVersion => "4.0.0";
 
-            public string MaximumVersion => "5.*.*";
+            public string MaximumVersion => "6.*.*";
 
             public string DataReaderType => "Npgsql.NpgsqlDataReader";
 
