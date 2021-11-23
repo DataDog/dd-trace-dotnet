@@ -2,15 +2,9 @@
 
 ## [Release 1.30.1](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.30.1)
 
-## Changes
-* [2.0] Split integration id `AdoNet` into individual ids per db type (#2008)
-* Remove the newline between the log message and properties (#2070)
-
 ## Fixes
-* [2.0] remove unused class `MethodBuilder` and test references (#2074)
-
-## Build / Test
-* Try switch dependabot generation to use pull_request_target (#2055)
+* [AppSec] Waf fixes: reading register for waf and unit tests for alpine (#2074)
+* Revert "Add modified WCF CallTarget instrumentation via opt-in environment variable" (#2081)
 
 [Changes since 1.30.0](https://github.com/DataDog/dd-trace-dotnet/compare/v1.30.0...v1.30.1)
 
