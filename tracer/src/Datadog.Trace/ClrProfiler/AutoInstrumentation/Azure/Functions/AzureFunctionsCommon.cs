@@ -130,11 +130,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 {
                     // This is the root scope
                     tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
-                    scope = tracer.StartActiveWithTags(OperationName, tags: tags);
+                    scope = tracer.StartActiveInternal(OperationName, tags: tags);
                 }
                 else
                 {
-                    scope = tracer.StartActiveWithTags(OperationName);
+                    scope = tracer.StartActiveInternal(OperationName);
                     foreach (var tagProperty in AzureFunctionsTags.AzureFunctionsExtraTags)
                     {
                         scope.Root.InternalSpan.SetTag(tagProperty.Key, tagProperty.Getter(tags));

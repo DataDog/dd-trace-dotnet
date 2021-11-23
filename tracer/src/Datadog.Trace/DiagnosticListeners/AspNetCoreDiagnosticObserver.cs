@@ -437,7 +437,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             // Create a child span for the MVC action
             var mvcSpanTags = new AspNetCoreMvcTags();
-            var mvcScope = tracer.StartActiveWithTags(MvcOperationName, parentSpan.InternalContext, tags: mvcSpanTags);
+            var mvcScope = tracer.StartActiveInternal(MvcOperationName, parentSpan.InternalContext, tags: mvcSpanTags);
             var span = mvcScope.InternalSpan;
             span.Type = SpanTypes.Web;
 
