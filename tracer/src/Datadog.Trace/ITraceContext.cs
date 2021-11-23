@@ -21,6 +21,8 @@ namespace Datadog.Trace
 
         void LockSamplingPriority();
 
+        bool IsSamplingPriorityLocked();
+
         TimeSpan ElapsedSince(DateTimeOffset date);
     }
 }

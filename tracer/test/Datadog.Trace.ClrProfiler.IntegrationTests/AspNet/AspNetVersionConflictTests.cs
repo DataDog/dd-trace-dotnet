@@ -35,9 +35,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNet
         [Trait("LoadFromGAC", "True")]
         public async Task SubmitsTraces()
         {
-            var spans = await GetWebServerSpans("/home/sendrequest", _iisFixture.Agent, _iisFixture.HttpPort, System.Net.HttpStatusCode.OK, expectedSpanCount: 6, filterServerSpans: false);
+            // 4 spans for the base request: aspnet.request / aspnet-mvc.request / Manual / http.request
+            // + 2 spans for the outgoing request: aspnet.request / aspnet-mvc.request
+            const int expectedSpans = 6;
 
-            Output.WriteLine($"Received {spans.Count} spans");
+            var spans = await GetWebServerSpans("/home/sendrequest", _iisFixture.Agent, _iisFixture.HttpPort, System.Net.HttpStatusCode.OK, expectedSpans, filterServerSpans: false);
+
+            spans.Should().HaveCount(expectedSpans);
 
             foreach (var span in spans)
             {
@@ -63,6 +67,39 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNet
 
             httpSpan.TraceId.Should().Be(rootSpan.TraceId);
             httpSpan.Name.Should().Be("http.request");
+        }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("LoadFromGAC", "True")]
+        public async Task Sampling()
+        {
+            // 6 spans for the base request: aspnet.request / aspnet-mvc.request / Manual / http.request / http.request / Child
+            // + 2 * 2 spans for the outgoing requests: aspnet.request / aspnet-mvc.request
+            const int expectedSpans = 10;
+
+            var spans = await GetWebServerSpans("/home/sampling", _iisFixture.Agent, _iisFixture.HttpPort, System.Net.HttpStatusCode.OK, expectedSpans, filterServerSpans: false);
+
+            spans.Should().HaveCount(expectedSpans);
+
+            foreach (var span in spans)
+            {
+                var samplingPriority = string.Empty;
+
+                if (span.Metrics.ContainsKey(Metrics.SamplingPriority))
+                {
+                    samplingPriority = span.Metrics[Metrics.SamplingPriority].ToString();
+                }
+
+                Output.WriteLine($"{span.Name} - {span.TraceId} - {span.SpanId} - {span.ParentId} - {span.Resource} - {samplingPriority}");
+            }
+
+            // Make sure there is only one root span
+            spans.Where(s => s.ParentId == null).Should().HaveCount(1);
+
+            // The sampling priority should be UserKeep for all spans
+            spans.Should().OnlyContain(s => !s.Metrics.ContainsKey(Metrics.SamplingPriority) || s.Metrics[Metrics.SamplingPriority] == 2);
         }
     }
 }

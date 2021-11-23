@@ -20,26 +20,36 @@ namespace Datadog.Trace.ClrProfiler
         SpanContext GetSpanContext();
 
         void SetSpanContext(SpanContext value);
+
+        void LockSamplingPriority();
+
+        SamplingPriority? TrySetSamplingPriority(SamplingPriority? samplingPriority);
     }
 
-    internal interface IAutomaticTracer
+    internal interface ICommonTracer
+    {
+        void LockSamplingPriority();
+
+        int? TrySetSamplingPriority(int? samplingPriority);
+    }
+
+    internal interface IAutomaticTracer : ICommonTracer
     {
         object GetDistributedTrace();
 
         void SetDistributedTrace(object trace);
 
-        // bool TrySetSamplingPriority(int samplingPriority);
+        void Register(object manualTracer);
     }
 
     internal class AutomaticTracer : IAutomaticTracer, IDistributedTracer
     {
         private static readonly AsyncLocal<IReadOnlyDictionary<string, string>> DistributedTrace = new();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AutomaticTracer));
+
+        private ICommonTracer _child;
 
         private bool _multipleTracers;
-
-        internal AutomaticTracer()
-        {
-        }
 
         public SpanContext GetSpanContext()
         {
@@ -56,11 +66,26 @@ namespace Datadog.Trace.ClrProfiler
             // Locally setting the SpanContext, no need to do anything
         }
 
+        public void LockSamplingPriority()
+        {
+            _child?.LockSamplingPriority();
+        }
+
+        public SamplingPriority? TrySetSamplingPriority(SamplingPriority? samplingPriority)
+        {
+            if (_child == null)
+            {
+                return samplingPriority;
+            }
+
+            return (SamplingPriority?)_child.TrySetSamplingPriority((int?)samplingPriority);
+        }
+
         /// <summary>
         /// Gets the internal distributed trace object
         /// </summary>
         /// <returns>Shared distributed trace object instance</returns>
-        public object GetDistributedTrace()
+        object IAutomaticTracer.GetDistributedTrace()
         {
             return Tracer.Instance.ActiveScope?.Span.Context;
         }
@@ -69,10 +94,55 @@ namespace Datadog.Trace.ClrProfiler
         /// Sets the internal distributed trace object
         /// </summary>
         /// <param name="value">Shared distributed trace object instance</param>
-        public void SetDistributedTrace(object value)
+        void IAutomaticTracer.SetDistributedTrace(object value)
         {
             _multipleTracers = true;
             DistributedTrace.Value = value as IReadOnlyDictionary<string, string>;
+        }
+
+        void ICommonTracer.LockSamplingPriority()
+        {
+            var traceContext = Tracer.Instance.ActiveScope?.Span.Context?.TraceContext;
+
+            // If there is no trace context, when a new span is propagated the sampling priority will automatically be locked
+            // because it will be considered as a distributed trace
+            if (traceContext != null)
+            {
+                traceContext.LockSamplingPriority();
+            }
+        }
+
+        int? ICommonTracer.TrySetSamplingPriority(int? samplingPriority)
+        {
+            var traceContext = Tracer.Instance.ActiveScope?.Span.Context?.TraceContext;
+
+            // If there is no trace context, when a new span is propagated the sampling priority will automatically be locked
+            // because it will be considered as a distributed trace
+            if (traceContext != null)
+            {
+                if (traceContext.IsSamplingPriorityLocked())
+                {
+                    var currentSamplingPriority = traceContext.SamplingPriority;
+
+                    if (currentSamplingPriority != null)
+                    {
+                        return (int)currentSamplingPriority.Value;
+                    }
+
+                    Log.Warning("SamplingPriority is locked without value");
+                }
+                else
+                {
+                    traceContext.SamplingPriority = (SamplingPriority)samplingPriority;
+                }
+            }
+
+            return samplingPriority;
+        }
+
+        void IAutomaticTracer.Register(object manualTracer)
+        {
+            _child = manualTracer.DuckAs<ICommonTracer>();
         }
     }
 
@@ -83,6 +153,7 @@ namespace Datadog.Trace.ClrProfiler
         internal ManualTracer(IAutomaticTracer parent)
         {
             _parent = parent ?? throw new ArgumentNullException(nameof(parent));
+            _parent.Register(this);
         }
 
         public SpanContext GetSpanContext()
@@ -95,6 +166,16 @@ namespace Datadog.Trace.ClrProfiler
         public void SetSpanContext(SpanContext value)
         {
             _parent.SetDistributedTrace(value);
+        }
+
+        public void LockSamplingPriority()
+        {
+            _parent.LockSamplingPriority();
+        }
+
+        public SamplingPriority? TrySetSamplingPriority(SamplingPriority? samplingPriority)
+        {
+            return (SamplingPriority?)_parent.TrySetSamplingPriority((int?)samplingPriority);
         }
     }
 
