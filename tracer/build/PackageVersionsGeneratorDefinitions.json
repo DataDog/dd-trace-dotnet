@@ -47,7 +47,11 @@
     "SampleProjectName": "Samples.Npgsql",
     "NugetPackageSearchName": "Npgsql",
     "MinVersion": "4.0.0",
-    "MaxVersionExclusive": "5.0.0"
+    "MaxVersionExclusive": "7.0.0",
+    "VersionConditions": [{
+      "MinVersion": "6.0.0",
+      "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0"]
+    }]
   },
   {
     "IntegrationName": "RabbitMQ",
@@ -68,7 +72,7 @@
     "SampleProjectName": "Samples.Microsoft.Data.SqlClient",
     "NugetPackageSearchName": "Microsoft.Data.SqlClient",
     "MinVersion": "1.0.0",
-    "MaxVersionExclusive": "4.0.0"
+    "MaxVersionExclusive": "5.0.0"
   },
   {
     "IntegrationName": "StackExchangeRedis",
@@ -104,14 +108,14 @@
     "SampleProjectName": "Samples.MySqlConnector",
     "NugetPackageSearchName": "MySqlConnector",
     "MinVersion": "1.0.0",
-    "MaxVersionExclusive": "2.0.0"
+    "MaxVersionExclusive": "3.0.0"
   },
   {
     "IntegrationName": "MicrosoftDataSqlite",
     "SampleProjectName": "Samples.Microsoft.Data.Sqlite",
     "NugetPackageSearchName": "Microsoft.Data.Sqlite",
     "MinVersion": "2.0.0",
-    "MaxVersionExclusive": "6.0.0"
+    "MaxVersionExclusive": "7.0.0"
   },
   {
     "IntegrationName": "XUnit",
