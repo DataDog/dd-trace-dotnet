@@ -51,7 +51,7 @@ namespace Datadog.Trace.AppSec.Waf
         /// </summary>
         /// <param name="rulesFile">can be null, means use rules embedded in the manifest </param>
         /// <returns>the waf wrapper around waf native</returns>
-        internal static Waf Create(string rulesFile)
+        internal static Waf Create(string rulesFile = null)
         {
             var libraryHandle = LibraryLoader.LoadAndGetHandle();
             if (libraryHandle == IntPtr.Zero)

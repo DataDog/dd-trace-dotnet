@@ -119,7 +119,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                 args.Add(AddressesConstants.RequestMethod, "GET");
             }
 
-            using var waf = Waf.Create(FileName);
+            using var waf = Waf.Create();
             waf.Should().NotBeNull();
             using var context = waf.CreateContext();
             var result = context.Run(args);
