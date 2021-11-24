@@ -87,11 +87,11 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                 var msgOut = StringBuilderCache.Acquire(256);
                 var size = FormatMessage(FORMAT_MESSAGE.ALLOCATE_BUFFER | FORMAT_MESSAGE.FROM_SYSTEM | FORMAT_MESSAGE.IGNORE_INSERTS, IntPtr.Zero, hresult, 0, ref msgOut, (uint)msgOut.Capacity, IntPtr.Zero);
                 var message = msgOut.ToString().Trim();
-                Log.Warning("Error ocurred when calling {Function} message was: 0x{HResult}: {Message}", source, hresult.ToString("X8"), message);
+                Log.Warning("Error occurred when calling {Function} message was: 0x{HResult}: {Message}", source, hresult.ToString("X8"), message);
             }
             else
             {
-                Log.Warning("Error ocurred when calling {Function} but no error message was set", source);
+                Log.Warning("Error occurred when calling {Function} but no error message was set", source);
             }
         }
 
