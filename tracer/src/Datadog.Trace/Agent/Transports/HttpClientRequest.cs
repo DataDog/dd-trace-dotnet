@@ -63,10 +63,10 @@ namespace Datadog.Trace.Agent.Transports
             }
         }
 
-        public async Task<IApiResponse> PostAsync(ArraySegment<byte> traces, string contentType)
+        public async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType)
         {
             // re-create HttpContent on every retry because some versions of HttpClient always dispose of it, so we can't reuse.
-            using (var content = new ByteArrayContent(traces.Array, traces.Offset, traces.Count))
+            using (var content = new ByteArrayContent(bytes.Array, bytes.Offset, bytes.Count))
             {
                 content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
                 _request.Content = content;
