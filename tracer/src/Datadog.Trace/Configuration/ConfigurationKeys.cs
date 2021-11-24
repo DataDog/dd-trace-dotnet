@@ -422,11 +422,11 @@ namespace Datadog.Trace.Configuration
             public const string RouteTemplateResourceNamesEnabled = "DD_TRACE_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED";
 
             /// <summary>
-            /// Feature Flag: disables the replacement of periods by underscores in header tags.
-            /// This is needed for compatibility with other tracers
+            /// Feature Flag: enables the replacement of periods by underscores in header tags.
+            /// This is needed for compatibility with other tracers and enabled by default.
             /// </summary>
-            /// <seealso cref="TracerSettings.LeavePeriodsInHeaderTags"/>
-            public const string LeavePeriodsInHeaderTags = "DD_TRACE_LEAVE_PERIODS_IN_HEADER_TAGS";
+            /// <seealso cref="TracerSettings.ReplacePeriodsInHeaderTags"/>
+            public const string ReplacePeriodsInHeaderTags = "DD_TRACE_REPLACE_HEAD_TAG_PERIODS_ENABLED";
         }
     }
 }
