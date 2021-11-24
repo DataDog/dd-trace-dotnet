@@ -290,7 +290,7 @@ struct AssemblyProperty
     }
 
     AssemblyProperty(WSTRING szName, void* ppbPublicKey, ULONG pcbPublicKey, ULONG pulHashAlgId, DWORD assemblyFlags,
-                     USHORT usMajorVersion, USHORT usMinorVersion, USHORT usRevisionNumber) :
+                     USHORT usMajorVersion, USHORT usMinorVersion, USHORT usBuildNumber, USHORT usRevisionNumber) :
         szName(szName),
         ppbPublicKey(ppbPublicKey),
         pcbPublicKey(pcbPublicKey),
@@ -299,6 +299,7 @@ struct AssemblyProperty
     {
         pMetaData.usMajorVersion = usMajorVersion;
         pMetaData.usMinorVersion = usMinorVersion;
+        pMetaData.usBuildNumber = usBuildNumber;
         pMetaData.usRevisionNumber = usRevisionNumber;
     }
 };

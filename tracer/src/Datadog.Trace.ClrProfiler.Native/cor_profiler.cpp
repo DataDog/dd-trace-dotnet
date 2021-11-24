@@ -611,13 +611,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         RewritingPInvokeMaps(module_metadata, appsec_nonwindows_nativemethods_type);
 #endif // _WIN32
 
-        const auto& expected_assembly_reference = trace::AssemblyReference(managed_profiler_full_assembly_version);
-
         // if (IsVersionCompatibilityEnabled() && !runtime_information_.is_core())
         if (IsVersionCompatibilityEnabled())
         {
             RewriteForDistributedTracing(module_metadata, module_id,
-                                         assemblyVersion == expected_assembly_reference.version.str());
+                                         assemblyVersion == managed_profiler_assembly_reference->version.str());
         }
     }
     else
