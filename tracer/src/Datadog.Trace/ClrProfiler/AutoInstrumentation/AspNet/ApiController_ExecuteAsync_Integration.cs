@@ -92,7 +92,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             var controllerContext = (IHttpControllerContext)state.State;
 
             // some fields aren't set till after execution, so populate anything missing
-            AspNetWebApi2Integration.UpdateSpan(controllerContext, scope.Span, (AspNetTags)scope.InternalSpan.Tags, Enumerable.Empty<KeyValuePair<string, string>>());
+            var span = scope.Span as IHasTags;
+            var aspNetTags = span.Tags as AspNetTags;
+            AspNetWebApi2Integration.UpdateSpan(controllerContext, scope.Span, aspNetTags, Enumerable.Empty<KeyValuePair<string, string>>());
 
             if (exception != null)
             {
@@ -106,7 +108,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 {
                     // We don't know how long it'll take for ASP.NET to invoke the callback,
                     // so we store the real finish time
-                    var now = scope.InternalSpan.InternalContext.TraceContext.UtcNow;
+                    DateTimeOffset now;
+                    if (scope.Span is Span implementationSpan)
+                    {
+                        now = implementationSpan.InternalContext.TraceContext.UtcNow;
+                    }
+                    else
+                    {
+                        now = DateTimeOffset.UtcNow;
+                    }
+
                     httpContext.AddOnRequestCompleted(h => OnRequestCompleted(h, scope, now));
                 }
                 else
