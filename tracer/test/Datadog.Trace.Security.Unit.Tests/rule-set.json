@@ -2080,6 +2080,46 @@
       "transformers": []
     },
     {
+      "id": "crs-941-100",
+      "name": "XSS Attack Detected via libinjection",
+      "tags": {
+        "type": "xss",
+        "crs_id": "941100",
+        "category": "attack_attempt"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.cookies"
+              },
+              {
+                "address": "server.request.headers.no_cookies",
+                "key_path": [
+                  "user-agent",
+                  "referer"
+                ]
+              },
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              },
+              {
+                "address": "server.request.path_params"
+              }
+            ]
+          },
+          "operator": "is_xss"
+        }
+      ],
+      "transformers": [
+        "removeNulls"
+      ]
+    },
+    {
       "id": "crs-941-110",
       "name": "XSS Filter - Category 1: Script Tag Vector",
       "tags": {
@@ -2117,46 +2157,6 @@
             }
           },
           "operator": "match_regex"
-        }
-      ],
-      "transformers": [
-        "removeNulls"
-      ]
-    },
-    {
-      "id": "crs-941-100",
-      "name": "XSS Attack Detected via libinjection",
-      "tags": {
-        "type": "xss",
-        "crs_id": "941100",
-        "category": "attack_attempt"
-      },
-      "conditions": [
-        {
-          "parameters": {
-            "inputs": [
-              {
-                "address": "server.request.cookies"
-              },
-              {
-                "address": "server.request.headers.no_cookies",
-                "key_path": [
-                  "user-agent",
-                  "referer"
-                ]
-              },
-              {
-                "address": "server.request.query"
-              },
-              {
-                "address": "server.request.body"
-              },
-              {
-                "address": "server.request.path_params"
-              }
-            ]
-          },
-          "operator": "is_xss"
         }
       ],
       "transformers": [
@@ -2705,46 +2705,10 @@
       "transformers": []
     },
     {
-      "id": "crs-942-500",
-      "name": "MySQL in-line comment detected",
-      "tags": {
-        "type": "sqli",
-        "crs_id": "942500",
-        "category": "attack_attempt"
-      },
-      "conditions": [
-        {
-          "parameters": {
-            "inputs": [
-              {
-                "address": "server.request.cookies"
-              },
-              {
-                "address": "server.request.query"
-              },
-              {
-                "address": "server.request.body"
-              },
-              {
-                "address": "server.request.path_params"
-              }
-            ],
-            "regex": "(?i:/\\*[!+](?:[\\w\\s=_\\-(?:)]+)?\\*/)",
-            "options": {
-              "case_sensitive": true,
-              "min_length": 5
-            }
-          },
-          "operator": "match_regex"
-        }
-      ],
-      "transformers": []
-    },
-    {
       "id": "crs-942-100",
       "name": "SQL Injection Attack Detected via libinjection",
       "tags": {
-        "type": "sqli",
+        "type": "sql_injection",
         "crs_id": "942100",
         "category": "attack_attempt"
       },
@@ -2777,7 +2741,7 @@
       "id": "crs-942-140",
       "name": "SQL Injection Attack: Common DB Names Detected",
       "tags": {
-        "type": "sqli",
+        "type": "sql_injection",
         "crs_id": "942140",
         "category": "attack_attempt"
       },
@@ -2812,7 +2776,7 @@
       "id": "crs-942-160",
       "name": "Detects blind sqli tests using sleep() or benchmark()",
       "tags": {
-        "type": "sqli",
+        "type": "sql_injection",
         "crs_id": "942160",
         "category": "attack_attempt"
       },
@@ -2848,7 +2812,7 @@
       "id": "crs-942-190",
       "name": "Detects MSSQL code execution and information gathering attempts",
       "tags": {
-        "type": "sqli",
+        "type": "sql_injection",
         "crs_id": "942190",
         "category": "attack_attempt"
       },
@@ -2883,7 +2847,7 @@
       "id": "crs-942-220",
       "name": "Looking for integer overflow attacks, these are taken from skipfish, except 2.2.2250738585072011e-308 is the \\\"magic number\\\" crash",
       "tags": {
-        "type": "sqli",
+        "type": "sql_injection",
         "crs_id": "942220",
         "category": "attack_attempt"
       },
@@ -2919,7 +2883,7 @@
       "id": "crs-942-240",
       "name": "Detects MySQL charset switch and MSSQL DoS attempts",
       "tags": {
-        "type": "sqli",
+        "type": "sql_injection",
         "crs_id": "942240",
         "category": "attack_attempt"
       },
@@ -2954,7 +2918,7 @@
       "id": "crs-942-250",
       "name": "Detects MATCH AGAINST, MERGE and EXECUTE IMMEDIATE injections",
       "tags": {
-        "type": "sqli",
+        "type": "sql_injection",
         "crs_id": "942250",
         "category": "attack_attempt"
       },
@@ -2990,7 +2954,7 @@
       "id": "crs-942-270",
       "name": "Looking for basic sql injection. Common attack string for mysql, oracle and others",
       "tags": {
-        "type": "sqli",
+        "type": "sql_injection",
         "crs_id": "942270",
         "category": "attack_attempt"
       },
@@ -3025,7 +2989,7 @@
       "id": "crs-942-280",
       "name": "Detects Postgres pg_sleep injection, waitfor delay attacks and database shutdown attempts",
       "tags": {
-        "type": "sqli",
+        "type": "sql_injection",
         "crs_id": "942280",
         "category": "attack_attempt"
       },
@@ -3060,7 +3024,7 @@
       "id": "crs-942-290",
       "name": "Finds basic MongoDB SQL injection attempts",
       "tags": {
-        "type": "nosqli",
+        "type": "nosql_injection",
         "crs_id": "942290",
         "category": "attack_attempt"
       },
@@ -3096,7 +3060,7 @@
       "id": "crs-942-360",
       "name": "Detects concatenated basic SQL injection and SQLLFI attempts",
       "tags": {
-        "type": "sqli",
+        "type": "sql_injection",
         "crs_id": "942360",
         "category": "attack_attempt"
       },
@@ -3119,6 +3083,42 @@
             ],
             "regex": "(?:^[\\W\\d]+\\s*?(?:alter\\s*(?:a(?:(?:pplication\\s*rol|ggregat)e|s(?:ymmetric\\s*ke|sembl)y|u(?:thorization|dit)|vailability\\s*group)|c(?:r(?:yptographic\\s*provider|edential)|o(?:l(?:latio|um)|nversio)n|ertificate|luster)|s(?:e(?:rv(?:ice|er)|curity|quence|ssion|arch)|y(?:mmetric\\s*key|nonym)|togroup|chema)|m(?:a(?:s(?:ter\\s*key|k)|terialized)|e(?:ssage\\s*type|thod)|odule)|l(?:o(?:g(?:file\\s*group|in)|ckdown)|a(?:ngua|r)ge|ibrary)|t(?:(?:abl(?:espac)?|yp)e|r(?:igger|usted)|hreshold|ext)|p(?:a(?:rtition|ckage)|ro(?:cedur|fil)e|ermission)|d(?:i(?:mension|skgroup)|atabase|efault|omain)|r(?:o(?:l(?:lback|e)|ute)|e(?:sourc|mot)e)|f(?:u(?:lltext|nction)|lashback|oreign)|e(?:xte(?:nsion|rnal)|(?:ndpoi|ve)nt)|in(?:dex(?:type)?|memory|stance)|b(?:roker\\s*priority|ufferpool)|x(?:ml\\s*schema|srobject)|w(?:ork(?:load)?|rapper)|hi(?:erarchy|stogram)|o(?:perator|utline)|(?:nicknam|queu)e|us(?:age|er)|group|java|view)\\b|(?:(?:(?:trunc|cre)at|renam)e|d(?:e(?:lete|sc)|rop)|(?:inser|selec)t|load)\\s+\\w+|u(?:nion\\s*(?:(?:distin|sele)ct|all)\\b|pdate\\s+\\w+))|\\b(?:(?:(?:(?:trunc|cre|upd)at|renam)e|(?:inser|selec)t|de(?:lete|sc)|alter|load)\\s+(?:group_concat|load_file|char)\\b\\s*\\(?|end\\s*?\\);)|[\\\"'`\\w]\\s+as\\b\\s*[\\\"'`\\w]+\\s*\\bfrom|[\\s(?:]load_file\\s*?\\(|[\\\"'`]\\s+regexp\\W)",
             "options": {
+              "min_length": 5
+            }
+          },
+          "operator": "match_regex"
+        }
+      ],
+      "transformers": []
+    },
+    {
+      "id": "crs-942-500",
+      "name": "MySQL in-line comment detected",
+      "tags": {
+        "type": "sql_injection",
+        "crs_id": "942500",
+        "category": "attack_attempt"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.cookies"
+              },
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              },
+              {
+                "address": "server.request.path_params"
+              }
+            ],
+            "regex": "(?i:/\\*[!+](?:[\\w\\s=_\\-(?:)]+)?\\*/)",
+            "options": {
+              "case_sensitive": true,
               "min_length": 5
             }
           },
@@ -3423,7 +3423,7 @@
       "id": "sqr-000-007",
       "name": "NoSQL: Detect common exploitation strategy",
       "tags": {
-        "type": "nosqli",
+        "type": "nosql_injection",
         "category": "attack_attempt"
       },
       "conditions": [
