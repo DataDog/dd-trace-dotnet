@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         public static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         {
             // If we are already in a consumer scope, close it.
-            KafkaHelper.CloseConsumerScope(Tracer.Instance);
+            KafkaHelper.CloseConsumerScope(Tracer.InternalInstance);
             return CallTargetState.GetDefault();
         }
 

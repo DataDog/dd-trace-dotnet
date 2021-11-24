@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             // manually doing duck cast here so we have access to the _original_ TopicPartition type
             // as a generic parameter, for injecting headers
             Scope scope = KafkaHelper.CreateProducerScope(
-                Tracer.Instance,
+                Tracer.InternalInstance,
                 topicPartition.DuckCast<ITopicPartition>(),
                 isTombstone: message.Value is null,
                 finishOnClose: deliveryHandler is null);

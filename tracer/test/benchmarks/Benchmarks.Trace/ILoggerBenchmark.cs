@@ -138,7 +138,7 @@ namespace Benchmarks.Trace
                     };
 
                     // Logs injection emulation
-                    LoggerIntegrationCommon.AddScope(Tracer.Instance, callback, textWriter);
+                    LoggerIntegrationCommon.AddScope(Tracer.InternalInstance, callback, textWriter);
                     scopeProvider.ForEachScope(callback, textWriter);
                 }
             }

@@ -99,7 +99,7 @@ namespace Datadog.Trace.ClrProfiler
                 else
                 {
                     Log.Debug("Initializing tracer singleton instance.");
-                    _ = Tracer.Instance;
+                    _ = Tracer.InternalInstance;
                 }
             }
             catch (Exception ex)

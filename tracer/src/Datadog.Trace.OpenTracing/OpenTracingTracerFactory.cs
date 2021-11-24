@@ -40,7 +40,7 @@ namespace Datadog.Trace.OpenTracing
             }
 
             Tracer.Configure(configuration);
-            return new OpenTracingTracer(Tracer.Instance);
+            return new OpenTracingTracer(Tracer.InternalInstance);
         }
 
         /// <summary>

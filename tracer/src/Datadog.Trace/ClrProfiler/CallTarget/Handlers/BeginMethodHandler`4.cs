@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static CallTargetState Invoke(TTarget instance, TArg1 arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4)
         {
-            return new CallTargetState(Tracer.Instance.InternalActiveScope, _invokeDelegate(instance, arg1, arg2, arg3, arg4));
+            return new CallTargetState(Tracer.InternalInstance.InternalActiveScope, _invokeDelegate(instance, arg1, arg2, arg3, arg4));
         }
     }
 }

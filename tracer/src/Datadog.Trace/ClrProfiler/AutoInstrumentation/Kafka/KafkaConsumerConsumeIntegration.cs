@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         public static CallTargetState OnMethodBegin<TTarget>(TTarget instance, int millisecondsTimeout)
         {
             // If we are already in a consumer scope, close it, and start a new one on method exit.
-            KafkaHelper.CloseConsumerScope(Tracer.Instance);
+            KafkaHelper.CloseConsumerScope(Tracer.InternalInstance);
             return CallTargetState.GetDefault();
         }
 
@@ -66,13 +66,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 // This sets the span as active and either disposes it immediately
                 // or disposes it on the next call to Consumer.Consume()
                 Scope scope = KafkaHelper.CreateConsumerScope(
-                    Tracer.Instance,
+                    Tracer.InternalInstance,
                     consumeResult.Topic,
                     consumeResult.Partition,
                     consumeResult.Offset,
                     consumeResult.Message);
 
-                if (!Tracer.Instance.Settings.KafkaCreateConsumerScopeEnabled)
+                if (!Tracer.InternalInstance.Settings.KafkaCreateConsumerScopeEnabled)
                 {
                     // Close and dispose the scope immediately
                     scope.DisposeWithException(exception);

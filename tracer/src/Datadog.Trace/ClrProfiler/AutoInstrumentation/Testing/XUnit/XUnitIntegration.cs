@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
         internal const string IntegrationName = nameof(Configuration.IntegrationId.XUnit);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.XUnit;
 
-        internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
+        internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.InternalInstance.Settings.IsIntegrationEnabled(IntegrationId);
 
         internal static Scope CreateScope(ref TestRunnerStruct runnerInstance, Type targetType)
         {
@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 
             string testFramework = "xUnit";
 
-            Scope scope = Tracer.Instance.StartActiveInternal("xunit.test", serviceName: Tracer.Instance.DefaultServiceName);
+            Scope scope = Tracer.InternalInstance.StartActiveInternal("xunit.test", serviceName: Tracer.InternalInstance.DefaultServiceName);
             ISpan span = scope.Span;
 
             span.Type = SpanTypes.Test;

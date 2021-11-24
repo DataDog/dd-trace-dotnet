@@ -59,7 +59,7 @@ namespace Datadog.Trace.BenchmarkDotNet
 
             try
             {
-                Tracer tracer = Tracer.Instance;
+                Tracer tracer = Tracer.InternalInstance;
 
                 foreach (var report in summary.Reports)
                 {
