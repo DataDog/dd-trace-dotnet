@@ -131,9 +131,9 @@ namespace Datadog.Trace.AspNet
                 // Decorate the incoming HTTP Request with distributed tracing headers
                 // in case the next processor cannot access the stored Scope
                 // (e.g. WCF being hosted in IIS)
-                if (HttpRuntime.UsingIntegratedPipeline)
+                if (HttpRuntime.UsingIntegratedPipeline && scope.Span.Context is SpanContext spanContext)
                 {
-                    SpanContextPropagator.Instance.Inject(scope.InternalSpan.InternalContext, httpRequest.Headers.Wrap());
+                    SpanContextPropagator.Instance.Inject(spanContext, httpRequest.Headers.Wrap());
                 }
 
                 httpContext.Items[_httpContextScopeKey] = scope;
