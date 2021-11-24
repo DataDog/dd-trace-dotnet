@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.WinHttpH
         private const string IntegrationName = nameof(Configuration.IntegrationId.HttpMessageHandler);
         private const IntegrationId IntegrationId = Configuration.IntegrationId.HttpMessageHandler;
         private const IntegrationId WinHttpHandlerIntegrationId = IntegrationId.WinHttpHandler;
-        private static readonly Func<bool> IsIntegrationEnabledFunc = () => Tracer.Instance.Settings.IsIntegrationEnabled(WinHttpHandlerIntegrationId, defaultValue: true);
+        private static readonly Func<bool> IsIntegrationEnabledFunc = () => Tracer.InternalInstance.Settings.IsIntegrationEnabled(WinHttpHandlerIntegrationId, defaultValue: true);
 
         /// <summary>
         /// OnMethodBegin callback

@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
 
         internal static CallTargetState CommonOnMethodBeginV3<TOperation>(TOperation tOperation)
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId) || tOperation == null)
+            if (!Tracer.InternalInstance.Settings.IsIntegrationEnabled(IntegrationId) || tOperation == null)
             {
                 // integration disabled, don't create a scope, skip this trace
                 return CallTargetState.GetDefault();
@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
 
         internal static CallTargetState CommonOnMethodBegin<TOperation>(TOperation tOperation)
         {
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId) || tOperation == null)
+            if (!Tracer.InternalInstance.Settings.IsIntegrationEnabled(IntegrationId) || tOperation == null)
             {
                 // integration disabled, don't create a scope, skip this trace
                 return CallTargetState.GetDefault();
@@ -81,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         {
             try
             {
-                var tracer = Tracer.Instance;
+                var tracer = Tracer.InternalInstance;
                 var serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
                 var scope = tracer.StartActiveInternal(OperationName, serviceName: serviceName, tags: tags);
                 scope.Span.Type = SpanTypes.Db;

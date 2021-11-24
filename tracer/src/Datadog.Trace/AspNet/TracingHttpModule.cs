@@ -76,7 +76,7 @@ namespace Datadog.Trace.AspNet
 
             try
             {
-                var tracer = Tracer.Instance;
+                var tracer = Tracer.InternalInstance;
 
                 if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
                 {
@@ -156,7 +156,7 @@ namespace Datadog.Trace.AspNet
         {
             try
             {
-                if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
+                if (!Tracer.InternalInstance.Settings.IsIntegrationEnabled(IntegrationId))
                 {
                     // integration disabled
                     return;
@@ -169,7 +169,7 @@ namespace Datadog.Trace.AspNet
                     {
                         AddHeaderTagsFromHttpResponse(app.Context, scope);
 
-                        scope.Span.SetHttpStatusCode(app.Context.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
+                        scope.Span.SetHttpStatusCode(app.Context.Response.StatusCode, isServer: true, Tracer.InternalInstance.Settings);
 
                         if (app.Context.Items[SharedConstants.HttpContextPropagatedResourceNameKey] is string resourceName
                             && !string.IsNullOrEmpty(resourceName))
@@ -238,11 +238,11 @@ namespace Datadog.Trace.AspNet
 
         private void AddHeaderTagsFromHttpResponse(System.Web.HttpContext httpContext, Scope scope)
         {
-            if (httpContext != null && HttpRuntime.UsingIntegratedPipeline && _canReadHttpResponseHeaders && !Tracer.Instance.Settings.HeaderTags.IsNullOrEmpty())
+            if (httpContext != null && HttpRuntime.UsingIntegratedPipeline && _canReadHttpResponseHeaders && !Tracer.InternalInstance.Settings.HeaderTags.IsNullOrEmpty())
             {
                 try
                 {
-                    scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                    scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.InternalInstance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
                 }
                 catch (PlatformNotSupportedException ex)
                 {

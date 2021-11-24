@@ -81,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 return null;
             }
 
-            var tracer = Tracer.Instance;
+            var tracer = Tracer.InternalInstance;
 
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {

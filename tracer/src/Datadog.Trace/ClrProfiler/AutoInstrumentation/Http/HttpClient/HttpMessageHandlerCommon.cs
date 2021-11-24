@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
         {
             if (requestMessage.Instance is not null && IsTracingEnabled(requestMessage.Headers, isTracingEnableFunc))
             {
-                Scope scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, requestMessage.Method.Method, requestMessage.RequestUri, integrationId, out HttpTags tags);
+                Scope scope = ScopeFactory.CreateOutboundHttpScope(Tracer.InternalInstance, requestMessage.Method.Method, requestMessage.RequestUri, integrationId, out HttpTags tags);
                 if (scope != null)
                 {
                     tags.HttpClientHandlerType = instance.GetType().FullName;
@@ -52,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
             {
                 if (responseMessage.Instance is not null)
                 {
-                    scope.Span.SetHttpStatusCode(responseMessage.StatusCode, false, Tracer.Instance.Settings);
+                    scope.Span.SetHttpStatusCode(responseMessage.StatusCode, false, Tracer.InternalInstance.Settings);
                 }
 
                 if (exception != null)

@@ -277,6 +277,7 @@ namespace Datadog.Trace
         Datadog.Trace.Configuration.ImmutableTracerSettings Settings { get; }
         Datadog.Trace.IScope ActivateSpan(Datadog.Trace.ISpan span);
         Datadog.Trace.IScope ActivateSpan(Datadog.Trace.ISpan span, bool finishOnClose);
+        System.Threading.Tasks.Task ForceFlushAsync();
         Datadog.Trace.IScope StartActive(string operationName, Datadog.Trace.ISpanContext parent = null, string serviceName = null, System.DateTimeOffset? startTime = default, bool ignoreActiveScope = false, bool finishOnClose = true);
         Datadog.Trace.ISpan StartSpan(string operationName, Datadog.Trace.ISpanContext parent = null, string serviceName = null, System.DateTimeOffset? startTime = default, bool ignoreActiveScope = false);
     }
@@ -377,8 +378,7 @@ namespace Datadog.Trace
         public Datadog.Trace.IScope ActiveScope { get; }
         public string DefaultServiceName { get; }
         public Datadog.Trace.Configuration.ImmutableTracerSettings Settings { get; }
-        [set: System.Obsolete("Use Tracer.Configure to configure the global Tracer instance in code.")]
-        public static Datadog.Trace.Tracer Instance { get; set; }
+        public static Datadog.Trace.ITracer Instance { get; }
         public Datadog.Trace.IScope ActivateSpan(Datadog.Trace.ISpan span, bool finishOnClose = true) { }
         protected override void Finalize() { }
         public System.Threading.Tasks.Task ForceFlushAsync() { }

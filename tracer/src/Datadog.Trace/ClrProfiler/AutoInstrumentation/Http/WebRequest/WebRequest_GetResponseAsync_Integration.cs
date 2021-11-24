@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
             {
                 if (returnValue is HttpWebResponse response)
                 {
-                    Tracer tracer = Tracer.Instance;
+                    Tracer tracer = Tracer.InternalInstance;
                     state.Scope.Span.SetHttpStatusCode((int)response.StatusCode, false, tracer.Settings);
                 }
 
