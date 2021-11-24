@@ -16,12 +16,16 @@ namespace Datadog.Trace.AppSec.Waf
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Context>();
         private readonly IntPtr contextHandle;
-        private readonly List<Obj> argCache = new List<Obj>();
+        private readonly WafNative wafNative;
+        private readonly Encoder encoder;
+        private readonly List<Obj> argCache = new();
         private bool disposed = false;
 
-        public Context(IntPtr contextHandle)
+        public Context(IntPtr contextHandle, WafNative wafNative, Encoder encoder)
         {
             this.contextHandle = contextHandle;
+            this.wafNative = wafNative;
+            this.encoder = encoder;
         }
 
         ~Context()
@@ -33,7 +37,7 @@ namespace Datadog.Trace.AppSec.Waf
         {
             LogParametersIfDebugEnabled(args);
 
-            var pwArgs = Encoder.Encode(args, argCache);
+            var pwArgs = encoder.Encode(args, argCache);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
@@ -43,15 +47,14 @@ namespace Datadog.Trace.AppSec.Waf
             var rawAgs = pwArgs.RawPtr;
             DdwafResultStruct retNative = default;
 
-            var code = WafNative.Run(contextHandle, rawAgs, ref retNative, 1000000);
+            var code = wafNative.Run(contextHandle, rawAgs, ref retNative, 1000000);
 
-            var ret = new Result(retNative, code);
+            var ret = new Result(retNative, code, wafNative);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
                 Log.Debug<ReturnCode, string>(
-                    @"AppSec In-App WAF returned: {ReturnCode} {Data}
-Took {PerfTotalRuntime} ms",
+                    @"AppSec In-App WAF returned: {ReturnCode} {Data} Took {PerfTotalRuntime} ms",
                     ret.ReturnCode,
                     ret.Data,
                     retNative.PerfTotalRuntime);
@@ -91,7 +94,7 @@ Took {PerfTotalRuntime} ms",
                 arg.Dispose();
             }
 
-            WafNative.ContextDestroy(contextHandle);
+            wafNative.ContextDestroy(contextHandle);
         }
 
         public void Dispose()

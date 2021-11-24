@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -38,7 +37,6 @@ namespace Datadog.Trace.AppSec
         private readonly IWaf _waf;
         private readonly InstrumentationGateway _instrumentationGateway;
         private readonly SecuritySettings _settings;
-        private readonly ConcurrentDictionary<Guid, Action> toExecute = new();
 
         static Security()
         {
@@ -92,7 +90,7 @@ namespace Datadog.Trace.AppSec
                 _settings.Enabled = _settings.Enabled && AreArchitectureAndOsSupported();
                 if (_settings.Enabled)
                 {
-                    _waf = waf ?? Waf.Waf.Initialize(_settings.Rules);
+                    _waf = waf ?? Waf.Waf.Create(_settings.Rules);
                     if (_waf != null)
                     {
                         _instrumentationGateway.InstrumentationGatewayEvent += InstrumentationGatewayInstrumentationGatewayEvent;
