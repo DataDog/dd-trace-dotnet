@@ -12,7 +12,7 @@ using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNet
+namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
 {
     [Collection("IisTests")]
     public class AspNetVersionConflictTests : TestHelper, IClassFixture<IisFixture>

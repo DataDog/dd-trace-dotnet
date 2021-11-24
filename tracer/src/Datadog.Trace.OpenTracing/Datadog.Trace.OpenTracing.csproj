@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <!-- NuGet -->
-    <Version>1.30.0</Version>
+    <Version>2.255.255</Version>
     <Title>Datadog APM - OpenTracing</Title>
     <Description>Provides OpenTracing support for Datadog APM</Description>
     <PackageTags>$(PackageTags);OpenTracing</PackageTags>

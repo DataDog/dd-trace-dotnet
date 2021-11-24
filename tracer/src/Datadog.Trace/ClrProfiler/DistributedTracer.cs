@@ -21,16 +21,16 @@ namespace Datadog.Trace.ClrProfiler
 
         static DistributedTracer()
         {
-            var parent = GetDistributedTracer();
+            try
+            {
+                var parent = GetDistributedTracer();
 
-            if (parent == null)
-            {
-                Log.Information("Building automatic tracer");
-                Instance = new AutomaticTracer();
-            }
-            else
-            {
-                try
+                if (parent == null)
+                {
+                    Log.Information("Building automatic tracer");
+                    Instance = new AutomaticTracer();
+                }
+                else
                 {
                     var parentTracer = parent.DuckCast<IAutomaticTracer>();
 
@@ -38,11 +38,11 @@ namespace Datadog.Trace.ClrProfiler
 
                     Instance = new ManualTracer(parentTracer);
                 }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error while building the manual tracer, fallbacking to automatic");
-                    Instance = new AutomaticTracer();
-                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error while building the tracer, fallbacking to automatic");
+                Instance = new AutomaticTracer();
             }
         }
 

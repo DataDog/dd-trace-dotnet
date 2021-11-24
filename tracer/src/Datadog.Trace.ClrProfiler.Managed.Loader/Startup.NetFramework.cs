@@ -37,13 +37,40 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             }
 
             var path = Path.Combine(ManagedProfilerDirectory, $"{assemblyName}.dll");
+
             if (File.Exists(path))
             {
-                StartupLogger.Debug("Loading {0}", path);
+                if (args.Name.StartsWith("Datadog.Trace, Version=") && args.Name != AssemblyName)
+                {
+                    StartupLogger.Debug("Trying to load {0} which does not match the expected version ({1})", args.Name, AssemblyName);
+                    return null;
+                }
+
+                StartupLogger.Debug("Resolving {0}, loading {1}", args.Name, path);
                 return Assembly.LoadFrom(path);
             }
 
             return null;
+        }
+
+        private static void TryLoadManagedAssembly()
+        {
+            try
+            {
+                var assembly = Assembly.Load(AssemblyName);
+
+                if (assembly != null)
+                {
+                    // call method Datadog.Trace.ClrProfiler.Instrumentation.Initialize()
+                    var type = assembly.GetType("Datadog.Trace.ClrProfiler.Instrumentation", throwOnError: false);
+                    var method = type?.GetRuntimeMethod("Initialize", parameters: new Type[0]);
+                    method?.Invoke(obj: null, parameters: null);
+                }
+            }
+            catch (Exception ex)
+            {
+                StartupLogger.Log(ex, "Error when loading managed assemblies.");
+            }
         }
     }
 }

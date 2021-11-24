@@ -120,8 +120,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
 
         if (app_pool_id_value.size() > 1 && app_pool_id_value.at(0) == '~')
         {
-            Logger::Info("DATADOG TRACER DIAGNOSTICS - Profiler disabled: ", environment::azure_app_services_app_pool_id, " ",
-                         app_pool_id_value, " is recognized as an Azure App Services infrastructure process.");
+            Logger::Info(
+                "DATADOG TRACER DIAGNOSTICS - Profiler disabled: ", environment::azure_app_services_app_pool_id, " ",
+                app_pool_id_value, " is recognized as an Azure App Services infrastructure process.");
             return E_FAIL;
         }
 
@@ -140,7 +141,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
 
         if (!functions_worker_runtime_value.empty() && !IsAzureFunctionsEnabled())
         {
-            Logger::Info("DATADOG TRACER DIAGNOSTICS - Profiler disabled: Azure Functions are not officially supported. Enable instrumentation with DD_TRACE_AZURE_FUNCTIONS_ENABLED.");
+            Logger::Info("DATADOG TRACER DIAGNOSTICS - Profiler disabled: Azure Functions are not officially "
+                         "supported. Enable instrumentation with DD_TRACE_AZURE_FUNCTIONS_ENABLED.");
             return E_FAIL;
         }
     }
@@ -162,9 +164,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         return this->CallTarget_RewriterCallback(mod, method);
     };
 
-    rejit_handler =
-        info10 != nullptr ? std::make_unique<RejitHandler>(info10, callback)
-                          : std::make_unique<RejitHandler>(this->info_, callback);
+    rejit_handler = info10 != nullptr ? std::make_unique<RejitHandler>(info10, callback)
+                                      : std::make_unique<RejitHandler>(this->info_, callback);
 
     DWORD event_mask = COR_PRF_MONITOR_JIT_COMPILATION | COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
                        COR_PRF_MONITOR_MODULE_LOADS | COR_PRF_MONITOR_ASSEMBLY_LOADS | COR_PRF_MONITOR_APPDOMAIN_LOADS |
@@ -303,16 +304,16 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
         // used multiple times for logging
         const auto& expected_version = expected_assembly_reference.version.str();
 
-        bool is_viable_version;
+        bool is_viable_version = (assembly_metadata.version == expected_assembly_reference.version);
 
-        if (runtime_information_.is_core())
-        {
-            is_viable_version = (assembly_metadata.version >= expected_assembly_reference.version);
-        }
-        else
-        {
-            is_viable_version = (assembly_metadata.version == expected_assembly_reference.version);
-        }
+        // if (runtime_information_.is_core())
+        //{
+        //    is_viable_version = (assembly_metadata.version >= expected_assembly_reference.version);
+        //}
+        // else
+        //{
+        //    is_viable_version = (assembly_metadata.version == expected_assembly_reference.version);
+        //}
 
         // Check that Major.Minor.Build matches the profiler version.
         // On .NET Core, allow managed library to be a higher version than the native library.
@@ -355,8 +356,8 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata, co
 
     // We are in the right module, so we try to load the mdTypeDef from the target type name.
     mdTypeDef nativeMethodsTypeDef = mdTypeDefNil;
-    auto foundType = FindTypeDefByName(nativemethods_type_name,
-                                        module_metadata.assemblyName, metadata_import, nativeMethodsTypeDef);
+    auto foundType =
+        FindTypeDefByName(nativemethods_type_name, module_metadata.assemblyName, metadata_import, nativeMethodsTypeDef);
     if (foundType)
     {
         // Define the actual profiler file path as a ModuleRef
@@ -369,10 +370,9 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata, co
         {
             // Enumerate all methods inside the native methods type with the PInvokes
             Enumerator<mdMethodDef> enumMethods = Enumerator<mdMethodDef>(
-                [metadata_import, nativeMethodsTypeDef](HCORENUM* ptr, mdMethodDef arr[], ULONG max, ULONG* cnt) -> HRESULT
-                {
-                    return metadata_import->EnumMethods(ptr, nativeMethodsTypeDef, arr, max, cnt);
-                }, [metadata_import](HCORENUM ptr) -> void { metadata_import->CloseEnum(ptr); });
+                [metadata_import, nativeMethodsTypeDef](HCORENUM* ptr, mdMethodDef arr[], ULONG max, ULONG* cnt)
+                    -> HRESULT { return metadata_import->EnumMethods(ptr, nativeMethodsTypeDef, arr, max, cnt); },
+                [metadata_import](HCORENUM ptr) -> void { metadata_import->CloseEnum(ptr); });
 
             EnumeratorIterator<mdMethodDef> enumIterator = enumMethods.begin();
             while (enumIterator != enumMethods.end())
@@ -396,18 +396,18 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata, co
                     if (SUCCEEDED(hr))
                     {
                         // Define a new PInvoke map with the new ModuleRef of the actual profiler file path
-                        hr = metadata_emit->DefinePinvokeMap(methodDef, pdwMappingFlags,
-                                                                WSTRING(importName).c_str(), profiler_ref);
+                        hr = metadata_emit->DefinePinvokeMap(methodDef, pdwMappingFlags, WSTRING(importName).c_str(),
+                                                             profiler_ref);
                         if (FAILED(hr))
                         {
                             Logger::Warn("ModuleLoadFinished: DefinePinvokeMap to the actual profiler file path "
-                                            "failed, trying to restore the previous one.");
+                                         "failed, trying to restore the previous one.");
                             hr = metadata_emit->DefinePinvokeMap(methodDef, pdwMappingFlags,
-                                                                    WSTRING(importName).c_str(), importModule);
+                                                                 WSTRING(importName).c_str(), importModule);
                             if (FAILED(hr))
                             {
-                                // We only warn that we cannot rewrite the PInvokeMap but we still continue the module load.
-                                // These errors must be handled on the caller with a try/catch.
+                                // We only warn that we cannot rewrite the PInvokeMap but we still continue the module
+                                // load. These errors must be handled on the caller with a try/catch.
                                 Logger::Warn("ModuleLoadFinished: Error trying to restore the previous PInvokeMap.");
                             }
                         }
@@ -468,12 +468,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
     if (Logger::IsDebugEnabled())
     {
         Logger::Debug("ModuleLoadFinished: ", module_id, " ", module_info.assembly.name, " AppDomain ",
-                      module_info.assembly.app_domain_id, " ", module_info.assembly.app_domain_name,
-                      std::boolalpha,
-                      " | IsNGEN = ", module_info.IsNGEN(),
-                      " | IsDynamic = ", module_info.IsDynamic(),
-                      " | IsResource = ", module_info.IsResource(),
-                      std::noboolalpha);
+                      module_info.assembly.app_domain_id, " ", module_info.assembly.app_domain_name, std::boolalpha,
+                      " | IsNGEN = ", module_info.IsNGEN(), " | IsDynamic = ", module_info.IsDynamic(),
+                      " | IsResource = ", module_info.IsResource(), std::noboolalpha);
     }
 
     if (module_info.IsNGEN())
@@ -514,8 +511,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
 
         corAssemblyProperty.szName = module_info.assembly.name;
 
-        Logger::Info("COR library: ", corAssemblyProperty.szName, " ", corAssemblyProperty.pMetaData.usMajorVersion, ".",
-                     corAssemblyProperty.pMetaData.usMinorVersion, ".", corAssemblyProperty.pMetaData.usRevisionNumber);
+        Logger::Info("COR library: ", corAssemblyProperty.szName, " ", corAssemblyProperty.pMetaData.usMajorVersion,
+                     ".", corAssemblyProperty.pMetaData.usMinorVersion, ".",
+                     corAssemblyProperty.pMetaData.usRevisionNumber);
 
         if (rejit_handler != nullptr)
         {
@@ -531,8 +529,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
     // In this case, do not insert another startup hook into that non-shared AppDomain
     if (module_info.assembly.name == datadog_trace_clrprofiler_managed_loader_assemblyName)
     {
-        Logger::Info("ModuleLoadFinished: Datadog.Trace.ClrProfiler.Managed.Loader loaded into AppDomain ", app_domain_id, " ",
-                     module_info.assembly.app_domain_name);
+        Logger::Info("ModuleLoadFinished: Datadog.Trace.ClrProfiler.Managed.Loader loaded into AppDomain ",
+                     app_domain_id, " ", module_info.assembly.app_domain_name);
         first_jit_compilation_app_domains.insert(app_domain_id);
         return S_OK;
     }
@@ -541,7 +539,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
     {
         // We cannot obtain writable metadata interfaces on Windows Runtime modules
         // or instrument their IL.
-        Logger::Debug("ModuleLoadFinished skipping Windows Metadata module: ", module_id, " ", module_info.assembly.name);
+        Logger::Debug("ModuleLoadFinished skipping Windows Metadata module: ", module_id, " ",
+                      module_info.assembly.name);
         return S_OK;
     }
 
@@ -603,8 +602,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         const auto& assemblyImport = GetAssemblyImportMetadata(assembly_import);
         const auto& assemblyVersion = assemblyImport.version.str();
 
-        Logger::Info("ModuleLoadFinished: ", managed_profiler_name, " v", assemblyVersion,
-                     " - Fix PInvoke maps");
+        Logger::Info("ModuleLoadFinished: ", managed_profiler_name, " v", assemblyVersion, " - Fix PInvoke maps");
 #ifdef _WIN32
         RewritingPInvokeMaps(module_metadata, windows_nativemethods_type);
         RewritingPInvokeMaps(module_metadata, appsec_windows_nativemethods_type);
@@ -615,6 +613,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
 
         const auto& expected_assembly_reference = trace::AssemblyReference(managed_profiler_full_assembly_version);
 
+        // if (IsVersionCompatibilityEnabled() && !runtime_information_.is_core())
         if (IsVersionCompatibilityEnabled())
         {
             RewriteForDistributedTracing(module_metadata, module_id,
@@ -657,7 +656,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
     }
 
     const auto& moduleInfo = GetModuleInfo(this->info_, module_id);
-    
+
     if (moduleInfo.IsValid())
     {
         if (Logger::IsDebugEnabled())
@@ -782,8 +781,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
 
     const auto& module_info = GetModuleInfo(this->info_, module_id);
 
-    bool has_loader_injected_in_appdomain = first_jit_compilation_app_domains.find(module_info.assembly.app_domain_id) !=
-                                            first_jit_compilation_app_domains.end();
+    bool has_loader_injected_in_appdomain =
+        first_jit_compilation_app_domains.find(module_info.assembly.app_domain_id) !=
+        first_jit_compilation_app_domains.end();
 
     if (has_loader_injected_in_appdomain)
     {
@@ -816,8 +816,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
 
     if (Logger::IsDebugEnabled())
     {
-        Logger::Debug("JITCompilationStarted: function_id=", function_id, " token=", function_token, " name=", caller.type.name,
-                      ".", caller.name, "()");
+        Logger::Debug("JITCompilationStarted: function_id=", function_id, " token=", function_token,
+                      " name=", caller.type.name, ".", caller.name, "()");
     }
 
     // IIS: Ensure that the startup hook is inserted into System.Web.Compilation.BuildManager.InvokePreStartInitMethods.
@@ -848,8 +848,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     {
         bool domain_neutral_assembly = runtime_information_.is_desktop() && corlib_module_loaded &&
                                        module_metadata->app_domain_id == corlib_app_domain_id;
-        Logger::Info("JITCompilationStarted: Startup hook registered in function_id=", function_id, " token=", function_token,
-                     " name=", caller.type.name, ".", caller.name, "(), assembly_name=", module_metadata->assemblyName,
+        Logger::Info("JITCompilationStarted: Startup hook registered in function_id=", function_id,
+                     " token=", function_token, " name=", caller.type.name, ".", caller.name,
+                     "(), assembly_name=", module_metadata->assemblyName,
                      " app_domain_id=", module_metadata->app_domain_id, " domain_neutral=", domain_neutral_assembly);
 
         first_jit_compilation_app_domains.insert(module_metadata->app_domain_id);
@@ -857,7 +858,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
         hr = RunILStartupHook(module_metadata->metadata_emit, module_id, function_token);
         if (FAILED(hr))
         {
-            Logger::Warn("JITCompilationStarted: Call to RunILStartupHook() failed for ", module_id, " ", function_token);
+            Logger::Warn("JITCompilationStarted: Call to RunILStartupHook() failed for ", module_id, " ",
+                         function_token);
             return S_OK;
         }
 
@@ -924,7 +926,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId, Function
         return S_OK;
     }
 
-    if (is_attached_ && rejit_handler != nullptr && rejit_handler->HasModuleAndMethod(calleeModuleId, calleFunctionToken))
+    if (is_attached_ && rejit_handler != nullptr &&
+        rejit_handler->HasModuleAndMethod(calleeModuleId, calleFunctionToken))
     {
         Logger::Debug("*** JITInlining: Inlining disabled for [ModuleId=", calleeModuleId,
                       ", MethodDef=", TokenStr(&calleFunctionToken), "]");
@@ -984,12 +987,13 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
                 Version(current.targetMaximumMajor, current.targetMaximumMinor, current.targetMaximumPatch, 0);
 
             const auto& integration = IntegrationDefinition(
-                    MethodReference(targetAssembly, targetType, targetMethod, minVersion, maxVersion, signatureTypes),
-                    TypeReference(integrationAssembly, integrationType, {}, {}));
+                MethodReference(targetAssembly, targetType, targetMethod, minVersion, maxVersion, signatureTypes),
+                TypeReference(integrationAssembly, integrationType, {}, {}));
 
             if (Logger::IsDebugEnabled())
             {
-                Logger::Debug("  * Target: ", targetAssembly, " | ", targetType, ".", targetMethod, "(", signatureTypes.size(), ") { ", minVersion.str(), " - ", maxVersion.str(), " } [",
+                Logger::Debug("  * Target: ", targetAssembly, " | ", targetType, ".", targetMethod, "(",
+                              signatureTypes.size(), ") { ", minVersion.str(), " - ", maxVersion.str(), " } [",
                               integrationAssembly, " | ", integrationType, "]");
             }
 
@@ -1030,9 +1034,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(const WCHAR* wszAss
 {
     if (IsAzureAppServices())
     {
-        Logger::Debug("GetAssemblyReferences skipping entire callback because this is running in Azure App Services, which "
-                      "isn't yet supported for this feature. AssemblyPath=",
-                      wszAssemblyPath);
+        Logger::Debug(
+            "GetAssemblyReferences skipping entire callback because this is running in Azure App Services, which "
+            "isn't yet supported for this feature. AssemblyPath=",
+            wszAssemblyPath);
         return S_OK;
     }
 
@@ -1060,7 +1065,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(const WCHAR* wszAss
     {
         if (assembly_name.rfind(skip_assembly_pattern, 0) == 0)
         {
-            Logger::Debug("GetAssemblyReferences skipping module by pattern: Name=", assembly_name, " Path=", wszAssemblyPath);
+            Logger::Debug("GetAssemblyReferences skipping module by pattern: Name=", assembly_name,
+                          " Path=", wszAssemblyPath);
             return S_OK;
         }
     }
@@ -1069,7 +1075,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(const WCHAR* wszAss
     {
         if (assembly_name == skip_assembly)
         {
-            Logger::Debug("GetAssemblyReferences skipping known assembly: Name=", assembly_name, " Path=", wszAssemblyPath);
+            Logger::Debug("GetAssemblyReferences skipping known assembly: Name=", assembly_name,
+                          " Path=", wszAssemblyPath);
             return S_OK;
         }
     }
@@ -1090,7 +1097,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(const WCHAR* wszAss
     else
     {
         assembly_metadata.szLocale = const_cast<WCHAR*>(managed_profiler_assembly_reference->locale.c_str());
-        assembly_metadata.cbLocale = (DWORD)(managed_profiler_assembly_reference->locale.size());
+        assembly_metadata.cbLocale = (DWORD) (managed_profiler_assembly_reference->locale.size());
     }
 
     DWORD public_key_size = 8;
@@ -1117,8 +1124,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(const WCHAR* wszAss
         return S_OK;
     }
 
-    Logger::Debug("GetAssemblyReferences extending assembly closure for ", assembly_name, " to include ", asmRefInfo.szName,
-                  ". Path=", wszAssemblyPath);
+    Logger::Debug("GetAssemblyReferences extending assembly closure for ", assembly_name, " to include ",
+                  asmRefInfo.szName, ". Path=", wszAssemblyPath);
 
     return S_OK;
 }
@@ -1132,7 +1139,8 @@ bool CorProfiler::IsAttached() const
 // Helper methods
 //
 bool CorProfiler::GetIntegrationTypeRef(ModuleMetadata& module_metadata, ModuleID module_id,
-                                        const IntegrationDefinition& integration_definition, mdTypeRef& integration_type_ref)
+                                        const IntegrationDefinition& integration_definition,
+                                        mdTypeRef& integration_type_ref)
 {
     const auto& integration_key = integration_definition.integration_type.get_cache_key();
 
@@ -1262,8 +1270,9 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
         }
 
         mdTypeRef distributedTracerTypeRef;
-        hr = module_metadata.metadata_emit->DefineTypeRefByName(
-            managed_profiler_assemblyRef, WStr("Datadog.Trace.ClrProfiler.DistributedTracer"), &distributedTracerTypeRef);
+        hr = module_metadata.metadata_emit->DefineTypeRefByName(managed_profiler_assemblyRef,
+                                                                WStr("Datadog.Trace.ClrProfiler.DistributedTracer"),
+                                                                &distributedTracerTypeRef);
 
         if (FAILED(hr))
         {
@@ -1277,13 +1286,13 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
         COR_SIGNATURE getDistributedTracerSignature[] = {IMAGE_CEE_CS_CALLCONV_DEFAULT, 0, ELEMENT_TYPE_OBJECT};
         mdMethodDef getDistributedTraceMethodDef;
         hr = module_metadata.metadata_import->FindMethod(distributedTracerTypeDef, WStr("GetDistributedTracer"),
-                                                         getDistributedTracerSignature, 3, &getDistributedTraceMethodDef);
+                                                         getDistributedTracerSignature, 3,
+                                                         &getDistributedTraceMethodDef);
         if (FAILED(hr))
         {
             Logger::Warn("Error Rewriting for Distributed Tracing on getting GetDistributedTracer MethodDef");
             return hr;
         }
-
 
         //
         // *** GetDistributedTrace MemberRef ***
@@ -1472,8 +1481,7 @@ std::string CorProfiler::GetILCodes(const std::string& title, ILRewriter* rewrit
 
             if (cInstr->m_opcode == CEE_CALL || cInstr->m_opcode == CEE_CALLVIRT || cInstr->m_opcode == CEE_NEWOBJ)
             {
-                const auto memberInfo =
-                    GetFunctionInfo(module_metadata.metadata_import, (mdMemberRef) cInstr->m_Arg32);
+                const auto memberInfo = GetFunctionInfo(module_metadata.metadata_import, (mdMemberRef) cInstr->m_Arg32);
                 orig_sstream << "  | ";
                 orig_sstream << ToString(memberInfo.type.name);
                 orig_sstream << ".";
@@ -1573,7 +1581,8 @@ HRESULT CorProfiler::RunILStartupHook(const ComPtr<IMetaDataEmit2>& metadata_emi
 
     if (FAILED(hr))
     {
-        Logger::Warn("RunILStartupHook: Call to ILRewriter.Export() failed for ModuleID=", module_id, " ", function_token);
+        Logger::Warn("RunILStartupHook: Call to ILRewriter.Export() failed for ModuleID=", module_id, " ",
+                     function_token);
         return hr;
     }
 
@@ -2354,7 +2363,8 @@ HRESULT CorProfiler::AddIISPreStartInitFlags(const ModuleID module_id, const mdT
 
     if (FAILED(hr))
     {
-        Logger::Warn("RunILStartupHook: Call to ILRewriter.Export() failed for ModuleID=", module_id, " ", function_token);
+        Logger::Warn("RunILStartupHook: Call to ILRewriter.Export() failed for ModuleID=", module_id, " ",
+                     function_token);
         return hr;
     }
 
@@ -2486,8 +2496,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ReJITError(ModuleID moduleId, mdMethodDef
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID functionId,
-                                                                      BOOL* pbUseCachedFunction)
+HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID functionId, BOOL* pbUseCachedFunction)
 {
     auto _ = trace::Stats::Instance()->JITCachedFunctionSearchStartedMeasure();
     if (!is_attached_ || !pbUseCachedFunction)
@@ -2506,7 +2515,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     HRESULT hr = this->info_->GetFunctionInfo(functionId, nullptr, &module_id, &function_token);
     if (FAILED(hr))
     {
-        Logger::Warn("JITCachedFunctionSearchStarted: Call to ICorProfilerInfo4.GetFunctionInfo() failed for ", functionId);
+        Logger::Warn("JITCachedFunctionSearchStarted: Call to ICorProfilerInfo4.GetFunctionInfo() failed for ",
+                     functionId);
         return S_OK;
     }
 
@@ -2523,8 +2533,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     const auto& appDomainId = module_info.assembly.app_domain_id;
 
     const bool has_loader_injected_in_appdomain =
-        first_jit_compilation_app_domains.find(appDomainId) !=
-        first_jit_compilation_app_domains.end();
+        first_jit_compilation_app_domains.find(appDomainId) != first_jit_compilation_app_domains.end();
 
     if (!has_loader_injected_in_appdomain)
     {
@@ -2620,28 +2629,27 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
     mdTypeRef integration_type_ref = mdTypeRefNil;
     if (!GetIntegrationTypeRef(module_metadata, module_id, *integration_definition, integration_type_ref))
     {
-        Logger::Warn(
-            "*** CallTarget_RewriterCallback() skipping method: Integration Type Ref cannot be found for ",
-            " token=", function_token, " caller_name=", caller->type.name, ".",
-            caller->name, "()");
+        Logger::Warn("*** CallTarget_RewriterCallback() skipping method: Integration Type Ref cannot be found for ",
+                     " token=", function_token, " caller_name=", caller->type.name, ".", caller->name, "()");
         return S_FALSE;
     }
 
     if (IsDebugEnabled())
     {
-        Logger::Debug("*** CallTarget_RewriterCallback() Start: ", caller->type.name, ".", caller->name, "() [IsVoid=",
-                      isVoid, ", IsStatic=", isStatic,
-                      ", IntegrationType=", integration_definition->integration_type.name,
-                      ", Arguments=", numArgs, "]");
+        Logger::Debug("*** CallTarget_RewriterCallback() Start: ", caller->type.name, ".", caller->name,
+                      "() [IsVoid=", isVoid, ", IsStatic=", isStatic,
+                      ", IntegrationType=", integration_definition->integration_type.name, ", Arguments=", numArgs,
+                      "]");
     }
 
     // First we check if the managed profiler has not been loaded yet
     if (!ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata.app_domain_id))
     {
-        Logger::Warn("*** CallTarget_RewriterCallback() skipping method: Method replacement found but the managed profiler has "
-                     "not yet been loaded into AppDomain with id=",
-                     module_metadata.app_domain_id, " token=", function_token, " caller_name=", caller->type.name, ".",
-                     caller->name, "()");
+        Logger::Warn(
+            "*** CallTarget_RewriterCallback() skipping method: Method replacement found but the managed profiler has "
+            "not yet been loaded into AppDomain with id=",
+            module_metadata.app_domain_id, " token=", function_token, " caller_name=", caller->type.name, ".",
+            caller->name, "()");
         return S_FALSE;
     }
 
@@ -2793,7 +2801,8 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
             Logger::Debug("Caller Type Extend From.IsValid: ", caller->type.extend_from->IsValid());
             Logger::Debug("Caller Type Extend From.Name: ", caller->type.extend_from->name);
             Logger::Debug("Caller Type Extend From.TokenType: ", caller->type.extend_from->token_type);
-            Logger::Debug("Caller Type Extend From.Spec: ", HexStr(&caller->type.extend_from->type_spec, sizeof(mdTypeSpec)));
+            Logger::Debug("Caller Type Extend From.Spec: ",
+                          HexStr(&caller->type.extend_from->type_spec, sizeof(mdTypeSpec)));
             Logger::Debug("Caller Type Extend From.ValueType: ", caller->type.extend_from->valueType);
         }
         //
@@ -3036,7 +3045,8 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
     if (IsDumpILRewriteEnabled())
     {
         Logger::Info(original_code);
-        Logger::Info(GetILCodes("*** CallTarget_RewriterCallback(): Modified Code: ", &rewriter, *caller, module_metadata));
+        Logger::Info(
+            GetILCodes("*** CallTarget_RewriterCallback(): Modified Code: ", &rewriter, *caller, module_metadata));
     }
 
     hr = rewriter.Export();
@@ -3049,9 +3059,9 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
         return S_FALSE;
     }
 
-    Logger::Info("*** CallTarget_RewriterCallback() Finished: ", caller->type.name, ".", caller->name, "() [IsVoid=", isVoid, ", IsStatic=", isStatic,
-                 ", IntegrationType=", integration_definition->integration_type.name,
-                 ", Arguments=", numArgs, "]");
+    Logger::Info("*** CallTarget_RewriterCallback() Finished: ", caller->type.name, ".", caller->name,
+                 "() [IsVoid=", isVoid, ", IsStatic=", isStatic,
+                 ", IntegrationType=", integration_definition->integration_type.name, ", Arguments=", numArgs, "]");
     return S_OK;
 }
 
