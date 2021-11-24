@@ -39,6 +39,8 @@ namespace Datadog.Trace.TestHelpers
                 listener.Prefixes.Add($"http://localhost:{port}/");
                 listener.Prefixes.Add($"http://127.0.0.1:{port}/v1/input/");
                 listener.Prefixes.Add($"http://localhost:{port}/v1/input/");
+                listener.Prefixes.Add($"http://127.0.0.1:{port}/api/v2/logs/");
+                listener.Prefixes.Add($"http://localhost:{port}/api/v2/logs/");
 
                 try
                 {

@@ -388,7 +388,7 @@ namespace Datadog.Trace.Configuration
 
             /// <summary>
             /// Configuration key for the url to send logs to.
-            /// Default value is <c>https://http-intake.logs.datadoghq.eu:443</c>.
+            /// Default value is <c>https://http-intake.logs.datadoghq.com:443</c>.
             /// </summary>
             /// <seealso cref="TracerSettings.DirectLogSubmissionUrl"/>
             public const string Url = "DD_LOGS_DIRECT_SUBMISSION_URL";

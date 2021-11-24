@@ -96,6 +96,9 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
                     var logSize = Encoding.UTF8.GetByteCount(serializedLog);
                     if (logSize > MaxMessageSizeBytes)
                     {
+                        // Note that the logs intake will actually accept oversized logs, and then truncate them to 1MB
+                        // We could continue to send the log as long as the total size isn't over 5MB, but not sure if
+                        // it's worth it or not, so excluding for now.
                         _logger.Error<int, string>("Log dropped as too large ({Size} bytes) to send to logs intake: {Log}", logSize, serializedLog);
                         _oversizeLogCallback?.Invoke(log);
                         continue;

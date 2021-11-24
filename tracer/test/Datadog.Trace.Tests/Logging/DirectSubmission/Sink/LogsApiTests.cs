@@ -28,12 +28,12 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         private static readonly Func<Uri, TestApiRequest> SingleFaultyRequest = x => new FaultyApiRequest(x);
 
         [Theory]
-        [InlineData("http://http-intake.logs.datadoghq.com", "http://http-intake.logs.datadoghq.com/v1/input")]
-        [InlineData("http://http-intake.logs.datadoghq.com/", "http://http-intake.logs.datadoghq.com/v1/input")]
-        [InlineData("https://http-intake.logs.datadoghq.com:443", "https://http-intake.logs.datadoghq.com:443/v1/input")]
-        [InlineData("http://localhost:8080", "http://localhost:8080/v1/input")]
-        [InlineData("http://localhost:8080/sub-path", "http://localhost:8080/sub-path/v1/input")]
-        [InlineData("http://localhost:8080/sub-path/", "http://localhost:8080/sub-path/v1/input")]
+        [InlineData("http://http-intake.logs.datadoghq.com", "http://http-intake.logs.datadoghq.com/api/v2/logs")]
+        [InlineData("http://http-intake.logs.datadoghq.com/", "http://http-intake.logs.datadoghq.com/api/v2/logs")]
+        [InlineData("https://http-intake.logs.datadoghq.com:443", "https://http-intake.logs.datadoghq.com:443/api/v2/logs")]
+        [InlineData("http://localhost:8080", "http://localhost:8080/api/v2/logs")]
+        [InlineData("http://localhost:8080/sub-path", "http://localhost:8080/sub-path/api/v2/logs")]
+        [InlineData("http://localhost:8080/sub-path/", "http://localhost:8080/sub-path/api/v2/logs")]
         public async Task SendsRequestToCorrectUrl(string baseUri, string expected)
         {
             var baseEndpoint = new Uri(baseUri);

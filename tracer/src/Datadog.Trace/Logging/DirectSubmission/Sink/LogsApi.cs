@@ -12,7 +12,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
 {
     internal class LogsApi : ILogsApi
     {
-        internal const string LogIntakePath = "v1/input";
+        internal const string LogIntakePath = "api/v2/logs";
         internal const string IntakeHeaderNameApiKey = "DD-API-KEY";
 
         private const string MimeType = "application/json";
@@ -68,7 +68,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
 
                 Exception exception = null;
                 var isFinalTry = retriesRemaining <= 0;
-                var isClientError = false;
+                var shouldRetry = true;
 
                 try
                 {
@@ -85,9 +85,19 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
                             return;
                         }
 
-                        isClientError = response.StatusCode is >=400 and < 500;
+                        shouldRetry = response.StatusCode switch
+                        {
+                            400 => false, // Bad request (likely an issue in the payload formatting)
+                            401 => false, // Unauthorized (likely a missing API Key)
+                            403 => false, // Permission issue (likely using an invalid API Key)
+                            408 => true, // Request Timeout, request should be retried after some time
+                            413 => false, // Payload too large (batch is above 5MB uncompressed)
+                            429 => true, // Too Many Requests, request should be retried after some time
+                            >= 400 and < 500 => false, // generic "client" error, don't retry
+                            _ => true // Something else, probably server error, do retry
+                        };
 
-                        if (isClientError || isFinalTry)
+                        if (!shouldRetry || isFinalTry)
                         {
                             try
                             {
@@ -118,7 +128,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
                 }
 
                 // Error handling block
-                if (isClientError || isFinalTry)
+                if (!shouldRetry || isFinalTry)
                 {
                     // stop retrying
                     Log.Error<int, string>(exception, "An error occurred while sending {Count} traces to the intake at {IntakeEndpoint}", numberOfLogs, _apiRequestFactory.Info(_logsIntakeEndpoint));
