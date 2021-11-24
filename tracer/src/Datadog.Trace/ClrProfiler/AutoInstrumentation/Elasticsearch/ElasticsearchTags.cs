@@ -10,19 +10,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
 {
     internal partial class ElasticsearchTags : InstrumentationTags
     {
-        [TagName(Trace.Tags.SpanKind)]
+        [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Client;
 
-        [TagName(Trace.Tags.InstrumentationName)]
+        [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName => ElasticsearchNetCommon.ComponentValue;
 
-        [TagName(Trace.Tags.ElasticsearchAction)]
+        [Tag(Trace.Tags.ElasticsearchAction)]
         public string Action { get; set; }
 
-        [TagName(Trace.Tags.ElasticsearchMethod)]
+        [Tag(Trace.Tags.ElasticsearchMethod)]
         public string Method { get; set; }
 
-        [TagName(Trace.Tags.ElasticsearchUrl)]
+        [Tag(Trace.Tags.ElasticsearchUrl)]
         public string Url { get; set; }
     }
 }

@@ -11,10 +11,10 @@ namespace Datadog.Trace.Tagging
     {
         private const string ComponentName = "aspnet_core";
 
-        [TagName(Trace.Tags.InstrumentationName)]
+        [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName => ComponentName;
 
-        [TagName(Trace.Tags.AspNetCoreRoute)]
+        [Tag(Trace.Tags.AspNetCoreRoute)]
         public string AspNetCoreRoute { get; set; }
     }
 }

@@ -17,25 +17,25 @@ namespace Datadog.Trace.Tagging
         private const string BindingSourceTagName = Trace.Tags.AzureFunctionBindingSource;
         private const string TriggerTypeTagName = Trace.Tags.AzureFunctionTriggerType;
 
-        [TagName(Trace.Tags.SpanKind)]
+        [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Server;
 
-        [TagName(InstrumentationTagName)]
+        [Tag(InstrumentationTagName)]
         public string InstrumentationName => nameof(Datadog.Trace.Configuration.IntegrationId.AzureFunctions);
 
-        [TagName(LanguageTagName)]
+        [Tag(LanguageTagName)]
         public string Language => TracerConstants.Language;
 
-        [TagName(ShortNameTagName)]
+        [Tag(ShortNameTagName)]
         public string ShortName { get; set; }
 
-        [TagName(FullNameTagName)]
+        [Tag(FullNameTagName)]
         public string FullName { get; set; }
 
-        [TagName(BindingSourceTagName)]
+        [Tag(BindingSourceTagName)]
         public string BindingSource { get; set; }
 
-        [TagName(TriggerTypeTagName)]
+        [Tag(TriggerTypeTagName)]
         public string TriggerType { get; set; } = "Unknown";
 
         /// <summary>

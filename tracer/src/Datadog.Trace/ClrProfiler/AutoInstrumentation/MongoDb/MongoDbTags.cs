@@ -10,25 +10,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 {
     internal partial class MongoDbTags : InstrumentationTags
     {
-        [TagName(Trace.Tags.SpanKind)]
+        [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Client;
 
-        [TagName(Trace.Tags.InstrumentationName)]
+        [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName => MongoDbIntegration.IntegrationName;
 
-        [TagName(Trace.Tags.DbName)]
+        [Tag(Trace.Tags.DbName)]
         public string DbName { get; set; }
 
-        [TagName(Trace.Tags.MongoDbQuery)]
+        [Tag(Trace.Tags.MongoDbQuery)]
         public string Query { get; set; }
 
-        [TagName(Trace.Tags.MongoDbCollection)]
+        [Tag(Trace.Tags.MongoDbCollection)]
         public string Collection { get; set; }
 
-        [TagName(Trace.Tags.OutHost)]
+        [Tag(Trace.Tags.OutHost)]
         public string Host { get; set; }
 
-        [TagName(Trace.Tags.OutPort)]
+        [Tag(Trace.Tags.OutPort)]
         public string Port { get; set; }
     }
 }

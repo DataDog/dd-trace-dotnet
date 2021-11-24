@@ -19,7 +19,7 @@ namespace MyTests.TestListNameSpace
 {
     public class TestList 
     { 
-        [TagName(""TestId"")]
+        [Tag(""TestId"")]
     	public string Id { get; set; }
     }
 }";
@@ -94,7 +94,7 @@ namespace MyTests.TestListNameSpace
 {
     public class TestList 
     { 
-        [MetricName(""TestId"")]
+        [Metric(""TestId"")]
     	public double? Id { get; set; }
     }
 }";
@@ -167,10 +167,10 @@ namespace MyTests.TestListNameSpace
 {
     public class TestList 
     { 
-        [TagName(""IdTag"")]
+        [Tag(""IdTag"")]
     	public string Id { get; set; }
 
-        [TagName(""NameTag"")]
+        [Tag(""NameTag"")]
     	public string Name { get; set; }
     }
 }";
@@ -261,10 +261,10 @@ namespace MyTests.TestListNameSpace
 {
     public class TestList 
     { 
-        [MetricName(""IdMetric"")]
+        [Metric(""IdMetric"")]
     	public double? Id { get; set; }
 
-        [MetricName(""NameMetric"")]
+        [Metric(""NameMetric"")]
     	public double? Name { get; set; }
     }
 }";
@@ -353,10 +353,10 @@ namespace MyTests.TestListNameSpace
 {
     public class TestList 
     { 
-        [TagName(""IdTag"")]
+        [Tag(""IdTag"")]
     	public string Id { get; } = ""Some Value"";
 
-        [TagName(""NameTag"")]
+        [Tag(""NameTag"")]
     	public string Name => ""Some Name"";
     }
 }";
@@ -441,10 +441,10 @@ namespace MyTests.TestListNameSpace
 {
     public class TestList 
     { 
-        [MetricName(""IdMetric"")]
+        [Metric(""IdMetric"")]
     	public double? Id { get; } = ""Some Value"";
 
-        [MetricName(""NameMetric"")]
+        [Metric(""NameMetric"")]
     	public double? Name => ""Some Name"";
     }
 }";
@@ -527,10 +527,10 @@ namespace MyTests.TestListNameSpace
 {
     public class TestList 
     { 
-        [TagName(""TestId"")]
+        [Tag(""TestId"")]
     	public string Id { get; set; }
 
-        [TagName(""_dd.origin"")]
+        [Tag(""_dd.origin"")]
     	public string Origin { get; set; }
     }
 }";
@@ -624,7 +624,7 @@ namespace MyTests.TestListNameSpace
 {
     public class TestList 
     { 
-        [TagName(" + key + @")]
+        [Tag(" + key + @")]
     	public string Id { get; set; }
     }
 }";
@@ -642,7 +642,7 @@ namespace MyTests.TestListNameSpace
 {
     public class TestList 
     { 
-        [MetricName(" + key + @")]
+        [Metric(" + key + @")]
     	public double? Id { get; set; }
     }
 }";
@@ -658,8 +658,8 @@ namespace MyTests.TestListNameSpace
 {
     public class TestList 
     { 
-        [TagName(""MyTagName"")]
-        [MetricName(""MyMetricName"")]
+        [Tag(""MyTagName"")]
+        [Metric(""MyMetricName"")]
     	public string Id { get; set; }
     }
 }";
@@ -678,7 +678,7 @@ namespace MyTests.TestListNameSpace
 {
     public class TestList 
     { 
-        [TagName(""MyTagName"")]
+        [Tag(""MyTagName"")]
     	public " + returnType + @" Id { get; set; }
     }
 }";
@@ -699,7 +699,7 @@ namespace MyTests.TestListNameSpace
 {
     public class TestList 
     { 
-        [MetricName(""MyTagName"")]
+        [Metric(""MyTagName"")]
     	public " + returnType + @" Id { get; set; }
     }
 }";

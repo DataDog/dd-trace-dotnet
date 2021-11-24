@@ -14,7 +14,7 @@ namespace Datadog.Trace.Tagging
     {
         public abstract string SpanKind { get; }
 
-        [MetricName(Trace.Tags.Analytics)]
+        [Metric(Trace.Tags.Analytics)]
         public double? AnalyticsSampleRate { get; set; }
 
         public void SetAnalyticsSampleRate(IntegrationId integration, ImmutableTracerSettings settings, bool enabledWithGlobalSetting)

@@ -9,16 +9,16 @@ namespace Datadog.Trace.Tagging
 {
     internal partial class AspNetTags : WebTags
     {
-        [TagName(Trace.Tags.AspNetRoute)]
+        [Tag(Trace.Tags.AspNetRoute)]
         public string AspNetRoute { get; set; }
 
-        [TagName(Trace.Tags.AspNetController)]
+        [Tag(Trace.Tags.AspNetController)]
         public string AspNetController { get; set; }
 
-        [TagName(Trace.Tags.AspNetAction)]
+        [Tag(Trace.Tags.AspNetAction)]
         public string AspNetAction { get; set; }
 
-        [TagName(Trace.Tags.AspNetArea)]
+        [Tag(Trace.Tags.AspNetArea)]
         public string AspNetArea { get; set; }
     }
 }

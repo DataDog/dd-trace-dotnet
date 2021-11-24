@@ -22,13 +22,13 @@ namespace Datadog.Trace.SourceGenerators;
 /// Used for source generation.
 /// </summary>
 [System.AttributeUsage(System.AttributeTargets.Property, AllowMultiple = false)]
-internal sealed class TagNameAttribute : System.Attribute
+internal sealed class TagAttribute : System.Attribute
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref=""TagNameAttribute""/> class.
+    /// Initializes a new instance of the <see cref=""TagAttribute""/> class.
     /// </summary>
     /// <param name=""tagName"">The name of the datadog tag the property corresponds to</param>
-    public TagNameAttribute(string tagName) =>
+    public TagAttribute(string tagName) =>
         this.TagName = tagName;
 
     /// <summary>
@@ -43,13 +43,13 @@ internal sealed class TagNameAttribute : System.Attribute
 /// Used for source generation.
 /// </summary>
 [System.AttributeUsage(System.AttributeTargets.Property, AllowMultiple = false)]
-internal sealed class MetricNameAttribute : System.Attribute
+internal sealed class MetricAttribute : System.Attribute
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref=""MetricNameAttribute""/> class.
+    /// Initializes a new instance of the <see cref=""MetricAttribute""/> class.
     /// </summary>
     /// <param name=""metricName"">The name of the datadog metric the property corresponds to</param>
-    public MetricNameAttribute(string metricName) =>
+    public MetricAttribute(string metricName) =>
         this.MetricName = metricName;
 
     /// <summary>

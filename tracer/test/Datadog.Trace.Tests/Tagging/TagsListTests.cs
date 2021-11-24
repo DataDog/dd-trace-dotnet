@@ -166,8 +166,8 @@ namespace Datadog.Trace.Tests.Tagging
                                     .Select(property =>
                                      {
                                          var name = isTag
-                                                        ? property.GetCustomAttribute<TagNameAttribute>()?.TagName
-                                                        : property.GetCustomAttribute<MetricNameAttribute>()?.MetricName;
+                                                        ? property.GetCustomAttribute<TagAttribute>()?.TagName
+                                                        : property.GetCustomAttribute<MetricAttribute>()?.MetricName;
                                          return (property, tagOrMetric: name);
                                      })
                                     .ToArray();

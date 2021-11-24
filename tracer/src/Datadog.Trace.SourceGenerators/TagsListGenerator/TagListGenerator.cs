@@ -26,7 +26,7 @@ namespace Datadog.Trace.SourceGenerators.TagsListGenerator
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
             // Register the attribute source
-            context.RegisterPostInitializationOutput(ctx => ctx.AddSource("TagNameAttribute.g.cs", Sources.Attributes));
+            context.RegisterPostInitializationOutput(ctx => ctx.AddSource("TagAttribute.g.cs", Sources.Attributes));
 
             IncrementalValuesProvider<ClassDeclarationSyntax> classDeclarations =
                 context.SyntaxProvider.CreateSyntaxProvider(IsAttributedProperty, GetPotentialClassesForGeneration)
@@ -58,7 +58,7 @@ namespace Datadog.Trace.SourceGenerators.TagsListGenerator
                     INamedTypeSymbol attributeContainingTypeSymbol = attributeSymbol.ContainingType;
                     string fullName = attributeContainingTypeSymbol.ToDisplayString();
 
-                    if (fullName == Constants.TagNameAttribute || fullName == Constants.MetricNameAttribute)
+                    if (fullName == Constants.TagAttribute || fullName == Constants.MetricAttribute)
                     {
                         return propertyDeclarationSyntax.Parent as ClassDeclarationSyntax;
                     }
@@ -92,9 +92,9 @@ namespace Datadog.Trace.SourceGenerators.TagsListGenerator
             Action<Diagnostic> reportDiagnostic,
             CancellationToken cancellationToken)
         {
-            INamedTypeSymbol? tagNameAttribute = compilation.GetTypeByMetadataName(Constants.TagNameAttribute);
-            INamedTypeSymbol? metricNameAttribute = compilation.GetTypeByMetadataName(Constants.MetricNameAttribute);
-            if (tagNameAttribute is null || metricNameAttribute is null)
+            INamedTypeSymbol? tagAttribute = compilation.GetTypeByMetadataName(Constants.TagAttribute);
+            INamedTypeSymbol? metricAttribute = compilation.GetTypeByMetadataName(Constants.MetricAttribute);
+            if (tagAttribute is null || metricAttribute is null)
             {
                 // nothing to do if these types aren't available
                 return Array.Empty<TagList>();
@@ -150,12 +150,12 @@ namespace Datadog.Trace.SourceGenerators.TagsListGenerator
                         {
                             var isTag = false;
                             var isMetric = false;
-                            if (tagNameAttribute.Equals(attributeData.AttributeClass, SymbolEqualityComparer.Default))
+                            if (tagAttribute.Equals(attributeData.AttributeClass, SymbolEqualityComparer.Default))
                             {
                                 tagAttributeData = attributeData;
                                 isTag = true;
                             }
-                            else if (metricNameAttribute.Equals(attributeData.AttributeClass, SymbolEqualityComparer.Default))
+                            else if (metricAttribute.Equals(attributeData.AttributeClass, SymbolEqualityComparer.Default))
                             {
                                 metricAttributeData = attributeData;
                                 isMetric = true;
@@ -192,7 +192,7 @@ namespace Datadog.Trace.SourceGenerators.TagsListGenerator
                                 break;
                             }
 
-                            // Supports [TagName("some.tag")] or [MetricName("some.metric")]
+                            // Supports [Tag("some.tag")] or [Metric("some.metric")]
                             if (attributeData.ConstructorArguments.Length != 1)
                             {
                                 hasMisconfiguredInput = true;

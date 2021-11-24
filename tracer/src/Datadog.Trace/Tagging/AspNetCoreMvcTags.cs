@@ -9,16 +9,16 @@ namespace Datadog.Trace.Tagging
 {
     internal partial class AspNetCoreMvcTags : AspNetCoreTags
     {
-        [TagName(Trace.Tags.AspNetCoreController)]
+        [Tag(Trace.Tags.AspNetCoreController)]
         public string AspNetCoreController { get; set; }
 
-        [TagName(Trace.Tags.AspNetCoreAction)]
+        [Tag(Trace.Tags.AspNetCoreAction)]
         public string AspNetCoreAction { get; set; }
 
-        [TagName(Trace.Tags.AspNetCoreArea)]
+        [Tag(Trace.Tags.AspNetCoreArea)]
         public string AspNetCoreArea { get; set; }
 
-        [TagName(Trace.Tags.AspNetCorePage)]
+        [Tag(Trace.Tags.AspNetCorePage)]
         public string AspNetCorePage { get; set; }
     }
 }

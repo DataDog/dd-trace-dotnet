@@ -20,23 +20,23 @@ namespace Datadog.Trace.Tagging
         /// <param name="spanKind">kind of span</param>
         public MsmqTags(string spanKind) => SpanKind = spanKind;
 
-        [TagName(Trace.Tags.MsmqCommand)]
+        [Tag(Trace.Tags.MsmqCommand)]
         public string Command { get; set; }
 
         /// <inheritdoc/>
-        [TagName(Trace.Tags.SpanKind)]
+        [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind { get; }
 
-        [TagName(Trace.Tags.InstrumentationName)]
+        [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName => "msmq";
 
-        [TagName(Trace.Tags.MsmqQueuePath)]
+        [Tag(Trace.Tags.MsmqQueuePath)]
         public string Path { get; set; }
 
-        [TagName(Trace.Tags.MsmqMessageWithTransaction)]
+        [Tag(Trace.Tags.MsmqMessageWithTransaction)]
         public string MessageWithTransaction { get; set; }
 
-        [TagName(Trace.Tags.MsmqIsTransactionalQueue)]
+        [Tag(Trace.Tags.MsmqIsTransactionalQueue)]
         public string IsTransactionalQueue { get; set; }
     }
 }

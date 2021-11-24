@@ -11,7 +11,7 @@ namespace Datadog.Trace.SourceGenerators.TagsListGenerator.Diagnostics
     {
         // internal for testing
         internal const string Id = "TL2";
-        private const string Message = "You may not use both [TagName] and [MetricName]";
+        private const string Message = "You may not use both [Tag] and [Metric]";
         private const string Title = "Duplicate attributes";
 
         public static Diagnostic Create(SyntaxNode? currentNode, SyntaxNode? additionalLocation) =>

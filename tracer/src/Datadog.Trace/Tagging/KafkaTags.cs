@@ -26,22 +26,22 @@ namespace Datadog.Trace.Tagging
             SpanKind = spanKind;
         }
 
-        [TagName(Trace.Tags.SpanKind)]
+        [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind { get; }
 
-        [TagName(Trace.Tags.InstrumentationName)]
+        [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName => ComponentName;
 
-        [TagName(Trace.Tags.KafkaPartition)]
+        [Tag(Trace.Tags.KafkaPartition)]
         public string Partition { get; set; }
 
-        [TagName(Trace.Tags.KafkaOffset)]
+        [Tag(Trace.Tags.KafkaOffset)]
         public string Offset { get; set; }
 
-        [TagName(Trace.Tags.KafkaTombstone)]
+        [Tag(Trace.Tags.KafkaTombstone)]
         public string Tombstone { get; set; }
 
-        [MetricName(Trace.Metrics.MessageQueueTimeMs)]
+        [Metric(Trace.Metrics.MessageQueueTimeMs)]
         public double? MessageQueueTimeMs { get; set; }
     }
 }

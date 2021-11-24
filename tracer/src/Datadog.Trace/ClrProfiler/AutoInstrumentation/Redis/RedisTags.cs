@@ -11,19 +11,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
 {
     internal partial class RedisTags : InstrumentationTags
     {
-        [TagName(Trace.Tags.SpanKind)]
+        [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Client;
 
-        [TagName(Trace.Tags.InstrumentationName)]
+        [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName => nameof(IntegrationId.StackExchangeRedis);
 
-        [TagName(Trace.Tags.RedisRawCommand)]
+        [Tag(Trace.Tags.RedisRawCommand)]
         public string RawCommand { get; set; }
 
-        [TagName(Trace.Tags.OutHost)]
+        [Tag(Trace.Tags.OutHost)]
         public string Host { get; set; }
 
-        [TagName(Trace.Tags.OutPort)]
+        [Tag(Trace.Tags.OutPort)]
         public string Port { get; set; }
     }
 }

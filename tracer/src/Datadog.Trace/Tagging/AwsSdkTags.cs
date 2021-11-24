@@ -9,31 +9,31 @@ namespace Datadog.Trace.Tagging
 {
     internal abstract partial class AwsSdkTags : InstrumentationTags, IHasStatusCode
     {
-        [TagName(Trace.Tags.InstrumentationName)]
+        [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName => "aws-sdk";
 
-        [TagName(Trace.Tags.AwsAgentName)]
+        [Tag(Trace.Tags.AwsAgentName)]
         public string AgentName => "dotnet-aws-sdk";
 
-        [TagName(Trace.Tags.AwsOperationName)]
+        [Tag(Trace.Tags.AwsOperationName)]
         public string Operation { get; set; }
 
-        [TagName(Trace.Tags.AwsRegion)]
+        [Tag(Trace.Tags.AwsRegion)]
         public string Region { get; set; }
 
-        [TagName(Trace.Tags.AwsRequestId)]
+        [Tag(Trace.Tags.AwsRequestId)]
         public string RequestId { get; set; }
 
-        [TagName(Trace.Tags.AwsServiceName)]
+        [Tag(Trace.Tags.AwsServiceName)]
         public string Service { get; set; }
 
-        [TagName(Trace.Tags.HttpMethod)]
+        [Tag(Trace.Tags.HttpMethod)]
         public string HttpMethod { get; set; }
 
-        [TagName(Trace.Tags.HttpUrl)]
+        [Tag(Trace.Tags.HttpUrl)]
         public string HttpUrl { get; set; }
 
-        [TagName(Trace.Tags.HttpStatusCode)]
+        [Tag(Trace.Tags.HttpStatusCode)]
         public string HttpStatusCode { get; set; }
     }
 }

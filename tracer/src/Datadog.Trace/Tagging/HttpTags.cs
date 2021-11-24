@@ -11,22 +11,22 @@ namespace Datadog.Trace.Tagging
     {
         private const string HttpClientHandlerTypeKey = "http-client-handler-type";
 
-        [TagName(Trace.Tags.SpanKind)]
+        [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Client;
 
-        [TagName(Trace.Tags.InstrumentationName)]
+        [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName { get; set; }
 
-        [TagName(Trace.Tags.HttpMethod)]
+        [Tag(Trace.Tags.HttpMethod)]
         public string HttpMethod { get; set; }
 
-        [TagName(Trace.Tags.HttpUrl)]
+        [Tag(Trace.Tags.HttpUrl)]
         public string HttpUrl { get; set; }
 
-        [TagName(HttpClientHandlerTypeKey)]
+        [Tag(HttpClientHandlerTypeKey)]
         public string HttpClientHandlerType { get; set; }
 
-        [TagName(Trace.Tags.HttpStatusCode)]
+        [Tag(Trace.Tags.HttpStatusCode)]
         public string HttpStatusCode { get; set; }
     }
 }

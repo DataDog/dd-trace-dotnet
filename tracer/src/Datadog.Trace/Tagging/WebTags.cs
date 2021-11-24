@@ -9,22 +9,22 @@ namespace Datadog.Trace.Tagging
 {
     internal partial class WebTags : InstrumentationTags, IHasStatusCode
     {
-        [TagName(Trace.Tags.SpanKind)]
+        [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Server;
 
-        [TagName(Trace.Tags.HttpMethod)]
+        [Tag(Trace.Tags.HttpMethod)]
         public string HttpMethod { get; set; }
 
-        [TagName(Trace.Tags.HttpRequestHeadersHost)]
+        [Tag(Trace.Tags.HttpRequestHeadersHost)]
         public string HttpRequestHeadersHost { get; set; }
 
-        [TagName(Trace.Tags.HttpUrl)]
+        [Tag(Trace.Tags.HttpUrl)]
         public string HttpUrl { get; set; }
 
-        [TagName(Trace.Tags.Language)]
+        [Tag(Trace.Tags.Language)]
         public string Language => TracerConstants.Language;
 
-        [TagName(Trace.Tags.HttpStatusCode)]
+        [Tag(Trace.Tags.HttpStatusCode)]
         public string HttpStatusCode { get; set; }
     }
 }

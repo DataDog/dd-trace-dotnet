@@ -11,25 +11,25 @@ namespace Datadog.Trace.Tagging
 {
     internal partial class CouchbaseTags : InstrumentationTags
     {
-        [TagName(Trace.Tags.SpanKind)]
+        [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Client;
 
-        [TagName(Trace.Tags.InstrumentationName)]
+        [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName => nameof(IntegrationId.Couchbase);
 
-        [TagName(Trace.Tags.CouchbaseOperationCode)]
+        [Tag(Trace.Tags.CouchbaseOperationCode)]
         public string OperationCode { get; set; }
 
-        [TagName(Trace.Tags.CouchbaseOperationBucket)]
+        [Tag(Trace.Tags.CouchbaseOperationBucket)]
         public string Bucket { get; set; }
 
-        [TagName(Trace.Tags.CouchbaseOperationKey)]
+        [Tag(Trace.Tags.CouchbaseOperationKey)]
         public string Key { get; set; }
 
-        [TagName(Trace.Tags.OutHost)]
+        [Tag(Trace.Tags.OutHost)]
         public string Host { get; set; }
 
-        [TagName(Trace.Tags.OutPort)]
+        [Tag(Trace.Tags.OutPort)]
         public string Port { get; set; }
     }
 }

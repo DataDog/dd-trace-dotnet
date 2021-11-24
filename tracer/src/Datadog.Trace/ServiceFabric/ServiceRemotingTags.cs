@@ -25,42 +25,42 @@ namespace Datadog.Trace.ServiceFabric
             SpanKind = spanKind;
         }
 
-        [TagName(Trace.Tags.SpanKind)]
+        [Tag(Trace.Tags.SpanKind)]
         public override string? SpanKind { get; }
 
         // general Service Fabric
-        [TagName(TagNames.ApplicationId)]
+        [Tag(TagNames.ApplicationId)]
         public string? ApplicationId { get; set; }
 
-        [TagName(TagNames.ApplicationName)]
+        [Tag(TagNames.ApplicationName)]
         public string? ApplicationName { get; set; }
 
-        [TagName(TagNames.PartitionId)]
+        [Tag(TagNames.PartitionId)]
         public string? PartitionId { get; set; }
 
-        [TagName(TagNames.NodeId)]
+        [Tag(TagNames.NodeId)]
         public string? NodeId { get; set; }
 
-        [TagName(TagNames.NodeName)]
+        [Tag(TagNames.NodeName)]
         public string? NodeName { get; set; }
 
-        [TagName(TagNames.ServiceName)]
+        [Tag(TagNames.ServiceName)]
         public string? ServiceName { get; set; }
 
         // Service Remoting
-        [TagName(TagNames.RemotingUri)]
+        [Tag(TagNames.RemotingUri)]
         public string? RemotingUri { get; set; }
 
-        [TagName(TagNames.RemotingMethodName)]
+        [Tag(TagNames.RemotingMethodName)]
         public string? RemotingMethodName { get; set; }
 
-        [TagName(TagNames.RemotingMethodId)]
+        [Tag(TagNames.RemotingMethodId)]
         public string? RemotingMethodId { get; set; }
 
-        [TagName(TagNames.RemotingInterfaceId)]
+        [Tag(TagNames.RemotingInterfaceId)]
         public string? RemotingInterfaceId { get; set; }
 
-        [TagName(TagNames.RemotingInvocationId)]
+        [Tag(TagNames.RemotingInvocationId)]
         public string? RemotingInvocationId { get; set; }
 
         internal static class TagNames

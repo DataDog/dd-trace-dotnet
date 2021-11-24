@@ -27,28 +27,28 @@ namespace Datadog.Trace.Tagging
             SpanKind = spanKind;
         }
 
-        [TagName(Trace.Tags.SpanKind)]
+        [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind { get; }
 
-        [TagName(Trace.Tags.InstrumentationName)]
+        [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName { get; set; }
 
-        [TagName(Trace.Tags.AmqpCommand)]
+        [Tag(Trace.Tags.AmqpCommand)]
         public string Command { get; set; }
 
-        [TagName(Trace.Tags.AmqpDeliveryMode)]
+        [Tag(Trace.Tags.AmqpDeliveryMode)]
         public string DeliveryMode { get; set; }
 
-        [TagName(Trace.Tags.AmqpExchange)]
+        [Tag(Trace.Tags.AmqpExchange)]
         public string Exchange { get; set; }
 
-        [TagName(Trace.Tags.AmqpRoutingKey)]
+        [Tag(Trace.Tags.AmqpRoutingKey)]
         public string RoutingKey { get; set; }
 
-        [TagName(Trace.Tags.MessageSize)]
+        [Tag(Trace.Tags.MessageSize)]
         public string MessageSize { get; set; }
 
-        [TagName(Trace.Tags.AmqpQueue)]
+        [Tag(Trace.Tags.AmqpQueue)]
         public string Queue { get; set; }
     }
 }
