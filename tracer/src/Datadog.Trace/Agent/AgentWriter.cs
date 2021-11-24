@@ -54,7 +54,9 @@ namespace Datadog.Trace.Agent
 
         static AgentWriter()
         {
-            var data = Vendors.MessagePack.MessagePackSerializer.Serialize(Array.Empty<Span[]>());
+            // empty array is a single byte with value 10010000 = 144
+            // https://github.com/msgpack/msgpack/blob/master/spec.md#array-format-family
+            byte[] data = { 144 };
             EmptyPayload = new ArraySegment<byte>(data);
         }
 

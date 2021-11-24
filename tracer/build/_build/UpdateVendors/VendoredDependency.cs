@@ -43,13 +43,6 @@ namespace UpdateVendors
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "StatsdClient"));
 
             Add(
-                libraryName: "MessagePack",
-                version: "1.9.3",
-                downloadUrl: "https://github.com/neuecc/MessagePack-CSharp/archive/v1.9.3.zip",
-                pathToSrc: new[] { "MessagePack-CSharp-1.9.3", "src", "MessagePack" },
-                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "MessagePack"));
-
-            Add(
                 libraryName: "Newtonsoft.Json",
                 version: "12.0.1",
                 downloadUrl: "https://github.com/JamesNK/Newtonsoft.Json/archive/12.0.1.zip",

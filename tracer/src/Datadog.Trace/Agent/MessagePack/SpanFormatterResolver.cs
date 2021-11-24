@@ -3,9 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.MessagePack.Formatters;
-using Datadog.Trace.Vendors.MessagePack.Resolvers;
 
 namespace Datadog.Trace.Agent.MessagePack
 {
@@ -13,21 +13,25 @@ namespace Datadog.Trace.Agent.MessagePack
     {
         public static readonly IFormatterResolver Instance = new SpanFormatterResolver();
 
-        private readonly IMessagePackFormatter<Span> _formatter;
+        private readonly ArraySegmentFormatter<Span> _arraySegmentFormatter = new();
 
         private SpanFormatterResolver()
         {
-            _formatter = SpanMessagePackFormatter.Instance;
         }
 
         public IMessagePackFormatter<T> GetFormatter<T>()
         {
             if (typeof(T) == typeof(Span))
             {
-                return (IMessagePackFormatter<T>)_formatter;
+                return (IMessagePackFormatter<T>)SpanMessagePackFormatter.Instance;
             }
 
-            return StandardResolver.Instance.GetFormatter<T>();
+            if (typeof(T) == typeof(ArraySegment<Span>))
+            {
+                return (IMessagePackFormatter<T>)(object)_arraySegmentFormatter;
+            }
+
+            throw new InvalidOperationException($"Type not supported by {nameof(SpanFormatterResolver)}: {typeof(T).Name}");
         }
     }
 }

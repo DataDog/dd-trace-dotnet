@@ -7,7 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Agent;
-using Datadog.Trace.Agent.MessagePack;
+using MessagePack;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Agent
@@ -21,7 +21,8 @@ namespace Datadog.Trace.Tests.Agent
         [InlineData(50, 50, true)]
         public void SerializeSpans(int traceCount, int spanCount, bool resizeExpected)
         {
-            var buffer = new SpanBuffer(10 * 1024 * 1024, SpanFormatterResolver.Instance);
+            // serialize with MessagePack code from Datadog.Trace.dll
+            var buffer = new SpanBuffer(10 * 1024 * 1024, Datadog.Trace.Agent.MessagePack.SpanFormatterResolver.Instance);
 
             var traces = new List<ArraySegment<Span>>();
 
@@ -49,7 +50,8 @@ namespace Datadog.Trace.Tests.Agent
 
             var content = buffer.Data;
 
-            var result = MessagePack.MessagePackSerializer.Deserialize<FakeSpan[][]>(content);
+            // deserialize with nuget
+            var result = global::MessagePack.MessagePackSerializer.Deserialize<FakeSpan[][]>(content);
 
             var resized = content.Count > SpanBuffer.InitialBufferSize;
 
@@ -64,7 +66,8 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public void Overflow()
         {
-            var buffer = new SpanBuffer(10, SpanFormatterResolver.Instance);
+            // serialize with MessagePack code from Datadog.Trace.dll
+            var buffer = new SpanBuffer(10, Datadog.Trace.Agent.MessagePack.SpanFormatterResolver.Instance);
 
             Assert.False(buffer.IsFull);
 
@@ -90,7 +93,8 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public void LockingBuffer()
         {
-            var buffer = new SpanBuffer(10 * 1024 * 1024, SpanFormatterResolver.Instance);
+            // serialize with MessagePack code from Datadog.Trace.dll
+            var buffer = new SpanBuffer(10 * 1024 * 1024, Datadog.Trace.Agent.MessagePack.SpanFormatterResolver.Instance);
 
             var trace = new ArraySegment<Span>(new[] { new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow) });
 
@@ -108,7 +112,8 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public void ClearingBuffer()
         {
-            var buffer = new SpanBuffer(10 * 1024 * 1024, SpanFormatterResolver.Instance);
+            // serialize with MessagePack code from Datadog.Trace.dll
+            var buffer = new SpanBuffer(10 * 1024 * 1024, Datadog.Trace.Agent.MessagePack.SpanFormatterResolver.Instance);
 
             var trace = new ArraySegment<Span>(new[]
             {
@@ -136,46 +141,47 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public void InvalidSize()
         {
-            Assert.Throws<ArgumentException>(() => new SpanBuffer(4, SpanFormatterResolver.Instance));
+            // serialize with MessagePack code from Datadog.Trace.dll
+            Assert.Throws<ArgumentException>(() => new SpanBuffer(4, Datadog.Trace.Agent.MessagePack.SpanFormatterResolver.Instance));
         }
 
-        [MessagePack.MessagePackObject]
+        [MessagePackObject]
         public struct FakeSpan
         {
-            [MessagePack.Key("trace_id")]
+            [Key("trace_id")]
             public ulong TraceId { get; set; }
 
-            [MessagePack.Key("span_id")]
+            [Key("span_id")]
             public ulong SpanId { get; set; }
 
-            [MessagePack.Key("name")]
+            [Key("name")]
             public string Name { get; set; }
 
-            [MessagePack.Key("resource")]
+            [Key("resource")]
             public string Resource { get; set; }
 
-            [MessagePack.Key("service")]
+            [Key("service")]
             public string Service { get; set; }
 
-            [MessagePack.Key("type")]
+            [Key("type")]
             public string Type { get; set; }
 
-            [MessagePack.Key("start")]
+            [Key("start")]
             public long Start { get; set; }
 
-            [MessagePack.Key("duration")]
+            [Key("duration")]
             public long Duration { get; set; }
 
-            [MessagePack.Key("parent_id")]
+            [Key("parent_id")]
             public ulong? ParentId { get; set; }
 
-            [MessagePack.Key("error")]
+            [Key("error")]
             public byte Error { get; set; }
 
-            [MessagePack.Key("meta")]
+            [Key("meta")]
             public Dictionary<string, string> Tags { get; set; }
 
-            [MessagePack.Key("metrics")]
+            [Key("metrics")]
             public Dictionary<string, double> Metrics { get; set; }
         }
     }
