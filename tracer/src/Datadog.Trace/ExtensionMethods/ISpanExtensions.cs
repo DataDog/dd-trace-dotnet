@@ -64,6 +64,21 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
+        /// <summary>
+        /// Sets the sampling priority for the trace that contains the specified <see cref="Span"/>.
+        /// </summary>
+        /// <param name="span">A span that belongs to the trace.</param>
+        /// <param name="samplingPriority">The new sampling priority for the trace.</param>
+        public static void SetTraceSamplingPriority(this ISpan span, SamplingPriority samplingPriority)
+        {
+            if (span == null) { throw new ArgumentNullException(nameof(span)); }
+
+            if (span.Context is SpanContext spanContext && spanContext.TraceContext != null)
+            {
+                spanContext.TraceContext.SamplingPriority = samplingPriority;
+            }
+        }
+
         internal static void DecorateWebServerSpan(
             this ISpan span,
             string resourceName,
@@ -198,21 +213,6 @@ namespace Datadog.Trace.ExtensionMethods
             {
                 // Noop
                 return span;
-            }
-        }
-
-        /// <summary>
-        /// Sets the sampling priority for the trace that contains the specified <see cref="Span"/>.
-        /// </summary>
-        /// <param name="span">A span that belongs to the trace.</param>
-        /// <param name="samplingPriority">The new sampling priority for the trace.</param>
-        internal static void SetTraceSamplingPriority(this ISpan span, SamplingPriority samplingPriority)
-        {
-            if (span == null) { throw new ArgumentNullException(nameof(span)); }
-
-            if (span is Span internalSpan && internalSpan.InternalContext.TraceContext != null)
-            {
-                internalSpan.InternalContext.TraceContext.SamplingPriority = samplingPriority;
             }
         }
 
