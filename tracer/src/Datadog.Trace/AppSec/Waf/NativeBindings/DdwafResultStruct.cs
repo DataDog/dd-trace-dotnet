@@ -11,7 +11,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
     [StructLayout(LayoutKind.Sequential)]
     internal struct DdwafResultStruct
     {
-        [Obsolete("This member will be removed from then ddwaf library vby a future PR")]
+        [Obsolete("This member will be removed from then ddwaf library by a future PR")]
         public DDWAF_RET_CODE Action;
 
         public IntPtr Data;

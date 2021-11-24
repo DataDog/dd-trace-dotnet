@@ -300,7 +300,7 @@ namespace Datadog.Trace
                     {
                         if (integration.Enabled == false)
                         {
-                            writer.WriteValue(integration);
+                            writer.WriteValue(integration.IntegrationName);
                         }
                     }
 

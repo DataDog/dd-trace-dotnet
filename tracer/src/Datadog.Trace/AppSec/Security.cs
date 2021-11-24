@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -33,7 +32,6 @@ namespace Datadog.Trace.AppSec
         private readonly IAppSecAgentWriter _agentWriter;
         private readonly InstrumentationGateway _instrumentationGateway;
         private readonly SecuritySettings _settings;
-        private readonly ConcurrentDictionary<Guid, Action> toExecute = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Security"/> class with default settings.
@@ -54,7 +52,7 @@ namespace Datadog.Trace.AppSec
                 _settings.Enabled = _settings.Enabled && AreArchitectureAndOsSupported();
                 if (_settings.Enabled)
                 {
-                    _waf = waf ?? Waf.Waf.Initialize(_settings.Rules);
+                    _waf = waf ?? Waf.Waf.Create(_settings.Rules);
                     if (_waf != null)
                     {
                         _agentWriter = agentWriter ?? new AppSecAgentWriter();
@@ -124,17 +122,9 @@ namespace Datadog.Trace.AppSec
         }
 
         /// <summary>
-        /// Frees resouces
+        /// Frees resources
         /// </summary>
         public void Dispose() => _waf?.Dispose();
-
-        internal void Execute(Guid guid)
-        {
-            if (toExecute.TryRemove(guid, out var value))
-            {
-                value();
-            }
-        }
 
         private void Report(ITransport transport, ISpan span, Waf.ReturnTypes.Managed.Return result)
         {
@@ -174,21 +164,7 @@ namespace Datadog.Trace.AppSec
                 }
 
                 var managedWafResult = Waf.ReturnTypes.Managed.Return.From(wafResult);
-                if (_settings.BlockingEnabled && wafResult.ReturnCode == ReturnCode.Block)
-                {
-                    // no blocking currently
-#if !NETFRAMEWORK
-                    var guid = Guid.NewGuid();
-                    toExecute.TryAdd(guid, () => Report(transport, span, managedWafResult));
-                    transport.AddRequestScope(guid);
-#else
-                    Report(transport, span, managedWafResult);
-#endif
-                }
-                else
-                {
-                    Report(transport, span, managedWafResult);
-                }
+                Report(transport, span, managedWafResult);
             }
         }
 
