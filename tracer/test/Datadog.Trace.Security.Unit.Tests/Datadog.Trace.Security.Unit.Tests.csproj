@@ -5,8 +5,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="rule-set.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <Content Include="..\..\src\Datadog.Trace\AppSec\Waf\rule-set.json">
+      <Link>rule-set.json</Link>
     </Content>
   </ItemGroup>
 
