@@ -235,7 +235,7 @@ namespace Datadog.Trace.OpenTracing.Tests
         [Fact]
         public void SetDefaultServiceName()
         {
-            ITracer tracer = OpenTracingTracerFactory.CreateTracer(defaultServiceName: "DefaultServiceName");
+            var tracer = OpenTracingTracerFactory.CreateTracer(defaultServiceName: "DefaultServiceName");
 
             var scope = tracer.BuildSpan("Operation")
                               .StartActive();
@@ -275,7 +275,7 @@ namespace Datadog.Trace.OpenTracing.Tests
         [Fact]
         public void OverrideDefaultServiceName_WithTag()
         {
-            ITracer tracer = OpenTracingTracerFactory.CreateTracer(defaultServiceName: "DefaultServiceName");
+            var tracer = OpenTracingTracerFactory.CreateTracer(defaultServiceName: "DefaultServiceName");
 
             var scope = tracer.BuildSpan("Operation")
                               .WithTag(DatadogTags.ServiceName, "MyAwesomeService")
@@ -290,7 +290,7 @@ namespace Datadog.Trace.OpenTracing.Tests
         [Fact]
         public void OverrideDefaultServiceName_SetTag()
         {
-            ITracer tracer = OpenTracingTracerFactory.CreateTracer(defaultServiceName: "DefaultServiceName");
+            var tracer = OpenTracingTracerFactory.CreateTracer(defaultServiceName: "DefaultServiceName");
 
             var scope = tracer.BuildSpan("Operation")
                               .StartActive();
@@ -340,7 +340,7 @@ namespace Datadog.Trace.OpenTracing.Tests
         [Fact]
         public void Parent_OverrideDefaultServiceName_WithTag()
         {
-            ITracer tracer = OpenTracingTracerFactory.CreateTracer(defaultServiceName: "DefaultServiceName");
+            var tracer = OpenTracingTracerFactory.CreateTracer(defaultServiceName: "DefaultServiceName");
 
             var parentScope = tracer.BuildSpan("ParentOperation")
                                     .WithTag(DatadogTags.ServiceName, "MyAwesomeService")
@@ -359,7 +359,7 @@ namespace Datadog.Trace.OpenTracing.Tests
         [Fact]
         public void Parent_OverrideDefaultServiceName_SetTag()
         {
-            ITracer tracer = OpenTracingTracerFactory.CreateTracer(defaultServiceName: "DefaultServiceName");
+            var tracer = OpenTracingTracerFactory.CreateTracer(defaultServiceName: "DefaultServiceName");
 
             var parentScope = tracer.BuildSpan("ParentOperation")
                                     .StartActive();
