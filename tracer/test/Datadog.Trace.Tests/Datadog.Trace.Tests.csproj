@@ -41,8 +41,4 @@
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="2.2.0" />
   </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="PublicApiGenerator" Version="10.2.0" />
-  </ItemGroup>
 </Project>
