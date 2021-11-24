@@ -49,9 +49,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             var scope = AwsSqsCommon.CreateScope(Tracer.Instance, Operation, out AwsSqsTags tags);
             tags.QueueUrl = requestProxy.QueueUrl;
 
-            if (scope?.InternalSpan.InternalContext != null)
+            if (scope?.Span.Context is SpanContext spanContext)
             {
-                ContextPropagation.InjectHeadersIntoMessage<TSendMessageRequest>(requestProxy, scope.InternalSpan.InternalContext);
+                ContextPropagation.InjectHeadersIntoMessage<TSendMessageRequest>(requestProxy, spanContext);
             }
 
             return new CallTargetState(scope);
