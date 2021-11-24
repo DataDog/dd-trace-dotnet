@@ -535,10 +535,7 @@ namespace Datadog.Trace.Configuration
                 }
                 else if (!string.IsNullOrWhiteSpace(kvp.Key))
                 {
-                    string result;
-                    if (replacePeriodsInHeaderTags ?
-                        HeaderNormalizer.TryConvertToNormalizedTagNameIncludingPeriods(kvp.Value, out result) :
-                        HeaderNormalizer.TryConvertToNormalizedTagName(kvp.Value, out result))
+                    if (HeaderNormalizer.TryConvertToNormalizedTagName(kvp.Value, replacePeriodsInHeaderTags, out var result))
                     {
                         headerTags.Add(kvp.Key.Trim(), result);
                     }

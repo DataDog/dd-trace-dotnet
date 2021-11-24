@@ -24,7 +24,7 @@ namespace Datadog.Trace.Tests.Headers
         [InlineData(" original_length_201_with_one_leading_whitespace________________________________________________________________________________________________________________________________________________________", true, "original_length_201_with_one_leading_whitespace________________________________________________________________________________________________________________________________________________________")]
         public void TryConvertToNormalizedTagName(string input, bool expectedConversionSuccess, string expectedTagName)
         {
-            bool actualConversionSuccess = _headerNormalizer.TryConvertToNormalizedTagName(input, out string actualTagName);
+            bool actualConversionSuccess = _headerNormalizer.TryConvertToNormalizedTagName(input, false, out string actualTagName);
             Assert.Equal(expectedConversionSuccess, actualConversionSuccess);
 
             if (actualConversionSuccess)
@@ -45,7 +45,7 @@ namespace Datadog.Trace.Tests.Headers
         [InlineData(" original_length_201_with_one_leading_whitespace________________________________________________________________________________________________________________________________________________________", true, "original_length_201_with_one_leading_whitespace________________________________________________________________________________________________________________________________________________________")]
         public void TryConvertToNormalizedHeaderTagName(string input, bool expectedConversionSuccess, string expectedTagName)
         {
-            bool actualConversionSuccess = _headerNormalizer.TryConvertToNormalizedTagNameIncludingPeriods(input, out string actualTagName);
+            bool actualConversionSuccess = _headerNormalizer.TryConvertToNormalizedTagName(input, true, out string actualTagName);
             Assert.Equal(expectedConversionSuccess, actualConversionSuccess);
 
             if (actualConversionSuccess)

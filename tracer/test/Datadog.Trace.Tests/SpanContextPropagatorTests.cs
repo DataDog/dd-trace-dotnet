@@ -341,13 +341,13 @@ namespace Datadog.Trace.Tests
                 if (normalizePeriods)
                 {
                     headerNormalizerMock
-                       .Setup(normalizer => normalizer.TryConvertToNormalizedTagNameIncludingPeriods(stringToNormalize, out outValue))
+                       .Setup(normalizer => normalizer.TryConvertToNormalizedTagName(stringToNormalize, true, out outValue))
                        .Returns(true);
                 }
                 else
                 {
                     headerNormalizerMock
-                       .Setup(normalizer => normalizer.TryConvertToNormalizedTagName(stringToNormalize, out outValue))
+                       .Setup(normalizer => normalizer.TryConvertToNormalizedTagName(stringToNormalize, false, out outValue))
                        .Returns(true);
                 }
             }

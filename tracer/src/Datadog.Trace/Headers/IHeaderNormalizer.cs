@@ -16,26 +16,15 @@ namespace Datadog.Trace.Headers
         ///    - Underscores
         ///    - Minuses
         ///    - Colons
-        ///    - Periods
         ///    - Slashes
+        ///    - Periods (depending on the normalizePeriods flag)
         ///
         /// Note: This method will trim leading/trailing whitespace before checking the requirements.
         /// </summary>
         /// <param name="value">Input string to convert into tag name</param>
+        /// <param name="normalizePeriods">Flag stating if periods will be converted to underscores</param>
         /// <param name="normalizedTagName">If the method returns true, the normalized tag name</param>
         /// <returns>Returns whether the conversion was successful</returns>
-        bool TryConvertToNormalizedTagName(string value, out string normalizedTagName);
-
-        /// <summary>
-        /// Attempts to convert the input to a valid tag name following the rules
-        /// described in <see cref="TryConvertToNormalizedTagName(string, out string)"/>
-        ///
-        /// Additionally, the resulting tag name replaces any periods with underscores so that
-        /// the tag does not create any further object nesting.
-        /// </summary>
-        /// <param name="value">Input string to convert into tag name</param>
-        /// <param name="normalizedTagName">If the method returns true, the normalized header tag name</param>
-        /// <returns>Returns whether the conversion was successful</returns>
-        bool TryConvertToNormalizedTagNameIncludingPeriods(string value, out string normalizedTagName);
+        bool TryConvertToNormalizedTagName(string value, bool normalizePeriods, out string normalizedTagName);
     }
 }
