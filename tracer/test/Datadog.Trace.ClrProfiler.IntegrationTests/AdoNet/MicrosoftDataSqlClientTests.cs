@@ -48,6 +48,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             var isVersion4 = !string.IsNullOrWhiteSpace(packageVersion)
                           && new Version(packageVersion) >= new Version("4.0.0");
 
+            if (isVersion4 && FrameworkDescription.Instance.OSPlatform != OSPlatform.Windows)
+            {
+                // Version 4.0.0 has an issue on Linux https://github.com/dotnet/SqlClient/issues/1390
+                return;
+            }
+
             var expectedSpanCount = isVersion4 ? 91 : 147;
             const string dbType = "sql-server";
             const string expectedOperationName = dbType + ".query";
