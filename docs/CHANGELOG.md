@@ -1,5 +1,13 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
+## [Release 1.30.1](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.30.1)
+
+## Fixes
+* [AppSec] Waf fixes: reading register for waf and unit tests for alpine (#2074)
+* Revert "Add modified WCF CallTarget instrumentation via opt-in environment variable" (#2081)
+
+[Changes since 1.30.0](https://github.com/DataDog/dd-trace-dotnet/compare/v1.30.0...v1.30.1)
+
 ## [Release 1.30.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.30.0)
 
 ## Changes
