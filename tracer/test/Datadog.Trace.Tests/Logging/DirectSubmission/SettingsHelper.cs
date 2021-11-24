@@ -24,7 +24,6 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
             return DirectLogSubmissionSettings.Create(
                 host: "some_host",
                 source: "csharp",
-                transport: "HTTP",
                 intakeUrl: "https://localhost:1234",
                 apiKey: "abcdef",
                 minimumLevel: DirectSubmissionLogLevel.Debug,

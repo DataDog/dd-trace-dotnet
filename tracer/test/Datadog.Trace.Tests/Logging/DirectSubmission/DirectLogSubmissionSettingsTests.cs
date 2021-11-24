@@ -120,8 +120,6 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         [Theory]
         [InlineData(ConfigurationKeys.LogsInjectionEnabled, "0")]
         [InlineData(ConfigurationKeys.DirectLogSubmission.EnabledIntegrations, "Garbage")]
-        [InlineData(ConfigurationKeys.DirectLogSubmission.Transport, "")]
-        [InlineData(ConfigurationKeys.DirectLogSubmission.Transport, "FILE")]
         public void InvalidSettingWarnsButDoesNotDisableDirectLogSubmission(string setting, string value)
         {
             var apiKey = "some_key";
@@ -164,7 +162,6 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
             logSettings.ApiKey.Should().Be(apiKey);
             logSettings.Host.Should().Be(hostName);
             logSettings.IntakeUrl?.ToString().Should().Be("http://localhost:1234/");
-            logSettings.Transport.Should().Be(LogsTransportStrategy.Http);
             logSettings.GlobalTags.Should().Be("sometag:value");
             logSettings.IsEnabled.Should().BeTrue();
             logSettings.MinimumLevel.Should().Be(DirectSubmissionLogLevel.Information);

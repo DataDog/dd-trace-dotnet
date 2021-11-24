@@ -154,8 +154,6 @@ namespace Datadog.Trace.Configuration
                                    ?? HostMetadata.Instance.Hostname;
             DirectLogSubmissionSource = source?.GetString(ConfigurationKeys.DirectLogSubmission.Source)
                                      ?? "csharp"; // default
-            DirectLogSubmissionTransport = source?.GetString(ConfigurationKeys.DirectLogSubmission.Transport)
-                                        ?? "HTTP"; // default
             DirectLogSubmissionUrl = source?.GetString(ConfigurationKeys.DirectLogSubmission.Url)
                                         ?? "https://http-intake.logs.datadoghq.com:443"; // default
 
@@ -354,12 +352,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DirectLogSubmission.GlobalTags" />
         internal IDictionary<string, string> DirectLogSubmissionGlobalTags { get; set; }
-
-        /// <summary>
-        /// Gets or sets the transport to use for communicating with the trace agent.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.DirectLogSubmission.Transport" />
-        internal string DirectLogSubmissionTransport { get; set; }
 
         /// <summary>
         /// Gets or sets the url to send logs to

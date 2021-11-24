@@ -13,32 +13,17 @@ namespace Datadog.Trace.Logging.DirectSubmission
 {
     internal static class LogsTransportStrategy
     {
-        public const string Http = "HTTP";
-        public const string Tcp = "TCP";
-        public const string Default = Http;
-        public static readonly string[] ValidTransports = { Http, Tcp };
-
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Tracer>();
 
         public static IApiRequestFactory Get(DirectLogSubmissionSettings settings)
         {
-            switch (settings.Transport)
-            {
-                case Tcp:
-                    // TODO: Support TCP, including TLS etc
-                    throw new InvalidOperationException("TCP is not currently supported for direct log submission");
-                    // Log.Information("Using {FactoryType} for log submission transport.", nameof(TcpStreamFactory));
-                    // return new HttpStreamRequestFactory(new TcpStreamFactory(settings.IntakeUrl.Host, settings.IntakeUrl.Port), new DatadogHttpClient());
-                case Http:
-                default:
 #if NETCOREAPP
-                    Log.Information("Using {FactoryType} for log submission transport.", nameof(HttpClientRequestFactory));
-                    return new HttpClientRequestFactory();
+            Log.Information("Using {FactoryType} for log submission transport.", nameof(HttpClientRequestFactory));
+            return new HttpClientRequestFactory();
 #else
-                    Log.Information("Using {FactoryType} for log submission transport.", nameof(ApiWebRequestFactory));
-                    return new ApiWebRequestFactory();
+            Log.Information("Using {FactoryType} for log submission transport.", nameof(ApiWebRequestFactory));
+            return new ApiWebRequestFactory();
 #endif
-            }
         }
     }
 }

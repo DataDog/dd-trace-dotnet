@@ -383,17 +383,8 @@ namespace Datadog.Trace.Configuration
             public const string GlobalTags = "DD_LOGS_DIRECT_SUBMISSION_TAGS";
 
             /// <summary>
-            /// Configuration key for the transport to use for communicating with the trace agent.
-            /// Default value is <c>HTTP</c>.
-            /// Options available: <c>HTTP</c>,<c>TCP</c>
-            /// </summary>
-            /// <seealso cref="TracerSettings.DirectLogSubmissionTransport"/>
-            public const string Transport = "DD_LOGS_DIRECT_SUBMISSION_TRANSPORT";
-
-            /// <summary>
             /// Configuration key for the url to send logs to.
             /// Default value is <c>https://http-intake.logs.datadoghq.eu:443</c>.
-            /// If using <c>TCP</c> <see cref="Transport"/>, the scheme will be ignored
             /// </summary>
             /// <seealso cref="TracerSettings.DirectLogSubmissionUrl"/>
             public const string Url = "DD_LOGS_DIRECT_SUBMISSION_URL";

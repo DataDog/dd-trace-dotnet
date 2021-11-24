@@ -29,7 +29,6 @@ namespace Datadog.Trace.Logging.DirectSubmission
         private DirectLogSubmissionSettings(
             string host,
             string source,
-            string transport,
             string globalTags,
             Uri intakeUrl,
             string apiKey,
@@ -47,7 +46,6 @@ namespace Datadog.Trace.Logging.DirectSubmission
             ValidationErrors = validationErrors;
             EnabledIntegrationNames = enabledIntegrationNames;
             MinimumLevel = minimumLevel;
-            Transport = transport;
             _enabledIntegrations = enabledIntegrations;
             IsEnabled = isEnabled;
         }
@@ -55,8 +53,6 @@ namespace Datadog.Trace.Logging.DirectSubmission
         public bool IsEnabled { get; }
 
         public DirectSubmissionLogLevel MinimumLevel { get; }
-
-        public string Transport { get; }
 
         public string Host { get; }
 
@@ -79,7 +75,6 @@ namespace Datadog.Trace.Logging.DirectSubmission
             => Create(
                 host: settings.DirectLogSubmissionHost,
                 source: settings.DirectLogSubmissionSource,
-                transport: settings.DirectLogSubmissionTransport,
                 intakeUrl: settings.DirectLogSubmissionUrl,
                 apiKey: apiKey,
                 minimumLevel: settings.DirectLogSubmissionMinimumLevel,
@@ -91,7 +86,6 @@ namespace Datadog.Trace.Logging.DirectSubmission
         public static DirectLogSubmissionSettings Create(
             string host,
             string source,
-            string transport,
             string intakeUrl,
             string apiKey,
             DirectSubmissionLogLevel minimumLevel,
@@ -119,13 +113,6 @@ namespace Datadog.Trace.Logging.DirectSubmission
             {
                 isEnabled = false;
                 validationErrors.Add($"Missing required setting '{ConfigurationKeys.DirectLogSubmission.Source}'.");
-            }
-
-            transport = transport?.ToUpperInvariant();
-            if (transport is null || !LogsTransportStrategy.ValidTransports.Contains(transport))
-            {
-                validationErrors.Add($"Unknown transport '{transport}'. Defaulting to HTTP.");
-                transport = LogsTransportStrategy.Http;
             }
 
             if (!Uri.TryCreate(intakeUrl, UriKind.Absolute, out var intakeUri))
@@ -183,7 +170,6 @@ namespace Datadog.Trace.Logging.DirectSubmission
             return new DirectLogSubmissionSettings(
                 host: host,
                 source: source,
-                transport: transport,
                 globalTags: stringifiedTags,
                 intakeUrl: intakeUri,
                 apiKey: apiKey,
@@ -219,7 +205,6 @@ namespace Datadog.Trace.Logging.DirectSubmission
             return new DirectLogSubmissionSettings(
                 null,
                 null,
-                transport: LogsTransportStrategy.Http,
                 globalTags: null,
                 intakeUrl: new Uri("http://localhost"),
                 apiKey: null,
