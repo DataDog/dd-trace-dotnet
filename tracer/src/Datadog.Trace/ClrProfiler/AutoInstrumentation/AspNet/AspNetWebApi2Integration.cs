@@ -146,10 +146,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     tags,
                     headerTags);
 
-                tags.AspNetAction = action;
-                tags.AspNetController = controller;
-                tags.AspNetArea = area;
-                tags.AspNetRoute = route;
+                if (tags is not null)
+                {
+                    tags.AspNetAction = action;
+                    tags.AspNetController = controller;
+                    tags.AspNetArea = area;
+                    tags.AspNetRoute = route;
+                }
 
                 if (newResourceNamesEnabled)
                 {

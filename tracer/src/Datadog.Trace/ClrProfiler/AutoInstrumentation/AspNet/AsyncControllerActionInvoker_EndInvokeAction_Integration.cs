@@ -71,7 +71,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     // We use the OnRequestCompleted callback to be notified when that happens.
                     // We don't know how long it'll take for ASP.NET to invoke the callback,
                     // so we store the real finish time.
-                    var now = scope.InternalSpan.InternalContext.TraceContext.UtcNow;
+                    DateTimeOffset now;
+                    if (scope.Span is Span span)
+                    {
+                        now = span.InternalContext.TraceContext.UtcNow;
+                    }
+                    else
+                    {
+                        now = DateTimeOffset.UtcNow;
+                    }
+
                     httpContext.AddOnRequestCompleted(h => OnRequestCompleted(h, scope, now));
                 }
                 else

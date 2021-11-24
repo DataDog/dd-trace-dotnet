@@ -22,7 +22,6 @@ namespace Datadog.Trace
         {
             Parent = parent;
             Span = span;
-            InternalSpan = span as Span;
             _scopeManager = scopeManager;
             _finishOnClose = finishOnClose;
         }
@@ -31,11 +30,6 @@ namespace Datadog.Trace
         /// Gets the active span wrapped in this scope
         /// </summary>
         public ISpan Span { get; }
-
-        /// <summary>
-        /// Gets the active span wrapped in this scope
-        /// </summary>
-        internal Span InternalSpan { get; }
 
         internal Scope Parent { get; }
 
@@ -50,7 +44,7 @@ namespace Datadog.Trace
 
             if (_finishOnClose)
             {
-                InternalSpan.Finish();
+                Span.Finish();
             }
         }
 
