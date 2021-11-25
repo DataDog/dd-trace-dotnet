@@ -106,15 +106,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 {
                     // We don't know how long it'll take for ASP.NET to invoke the callback,
                     // so we store the real finish time
-                    DateTimeOffset now;
-                    if (scope.Span is Span implementationSpan)
-                    {
-                        now = implementationSpan.InternalContext.TraceContext.UtcNow;
-                    }
-                    else
-                    {
-                        now = DateTimeOffset.UtcNow;
-                    }
+                    var now = scope.Span.InternalContext.TraceContext.UtcNow;
 
                     httpContext.AddOnRequestCompleted(h => OnRequestCompleted(h, scope, now));
                 }

@@ -48,9 +48,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 isTombstone: message.Value is null,
                 finishOnClose: true);
 
-            if (scope is not null && scope.Span.Context is SpanContext spanContext)
+            if (scope is not null)
             {
-                KafkaHelper.TryInjectHeaders<TTopicPartition, TMessage>(spanContext, message);
+                KafkaHelper.TryInjectHeaders<TTopicPartition, TMessage>(scope.Span.InternalContext, message);
                 return new CallTargetState(scope);
             }
 
