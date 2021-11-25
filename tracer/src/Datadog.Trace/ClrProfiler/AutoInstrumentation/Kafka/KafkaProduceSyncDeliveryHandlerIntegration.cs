@@ -1,4 +1,4 @@
-﻿// <copyright file="KafkaProduceSyncDeliveryHandlerIntegration.cs" company="Datadog">
+// <copyright file="KafkaProduceSyncDeliveryHandlerIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -116,12 +116,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         /// <param name="span">A <see cref="Span"/> that can be manipulated when the action is invoked</param>
         /// <typeparam name="TDeliveryReport">Type of the delivery report</typeparam>
         /// <returns>The wrapped action</returns>
-        public static Action<TDeliveryReport> WrapAction<TDeliveryReport>(Action<TDeliveryReport> originalHandler, Span span)
+        public static Action<TDeliveryReport> WrapAction<TDeliveryReport>(Action<TDeliveryReport> originalHandler, ISpan span)
         {
             return new Action<TDeliveryReport>(
                 value =>
                 {
-                    if (span.Tags is KafkaTags tags && value.TryDuckCast<IDeliveryReport>(out var report))
+                    if (span is IHasTags spanWithTags && spanWithTags.Tags is KafkaTags tags && value.TryDuckCast<IDeliveryReport>(out var report))
                     {
                         var isError = report?.Error is not null && report.Error.IsError;
                         if (isError)
