@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
@@ -77,7 +79,49 @@ internal static partial class DotNetSettingsExtensions
 
         return settings;
     }
-    
+
+    public static T SetDebuggerEnvironmentVariables<T>(this T settings, AbsolutePath tracerHomeDirectory)
+        where T : ToolSettings
+    {
+        settings = settings.SetProcessEnvironmentVariable("DD_DEBUGGER_ENABLED", "1");
+        SetProfilerEnvironmentVariables(settings, tracerHomeDirectory);
+
+        return settings;
+    }
+
+    public static T SetProfilerEnvironmentVariables<T>(this T settings, AbsolutePath tracerHomeDirectory)
+        where T : ToolSettings
+    {
+        var envVars = new Dictionary<string, string>()
+        {
+            {"COR_ENABLE_PROFILING", "1"},
+            {"COR_PROFILER", "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"},
+            {"COR_PROFILER_PATH_32", tracerHomeDirectory / "win-x86" / "Datadog.Trace.ClrProfiler.Native.dll"},
+            {"COR_PROFILER_PATH_64", tracerHomeDirectory / "win-x64" / "Datadog.Trace.ClrProfiler.Native.dll"},
+            {"CORECLR_ENABLE_PROFILING", "1"},
+            {"CORECLR_PROFILER", "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"},
+            {"DD_INTEGRATIONS", tracerHomeDirectory / "integrations.json" },
+            {"DD_DOTNET_TRACER_HOME", tracerHomeDirectory },
+        };
+
+        if (EnvironmentInfo.IsWin)
+        {
+            envVars.Add("CORECLR_PROFILER_PATH_32", tracerHomeDirectory / "win-x86" / "Datadog.Trace.ClrProfiler.Native.dll");
+            envVars.Add("CORECLR_PROFILER_PATH_64", tracerHomeDirectory / "win-x64" / "Datadog.Trace.ClrProfiler.Native.dll");
+        }
+        else
+        {
+            envVars.Add("CORECLR_PROFILER_PATH", tracerHomeDirectory / "Datadog.Trace.ClrProfiler.Native.so");
+        }
+
+        foreach (var keyValuePair in envVars)
+        {
+            settings = settings.SetProcessEnvironmentVariable(keyValuePair.Key, keyValuePair.Value);
+        }
+
+        return settings;
+    }
+
     public static T EnableNoDependencies<T>(this T settings)
         where T: MSBuildSettings
     {
@@ -125,5 +169,44 @@ internal static partial class DotNetSettingsExtensions
         }
 
         return settings.SetProcessToolPath(dotnetPath);
+    }
+
+    public static DotNetBuildSettings SetTargetFramework(this DotNetBuildSettings settings, TargetFramework framework)
+    {
+        return framework is null
+                   ? settings
+                   : settings.SetFramework(framework);
+    }
+
+    public static DotNetTestSettings SetTargetFramework(this DotNetTestSettings settings, TargetFramework framework)
+    {
+        return framework is null
+                   ? settings
+                   : settings.SetFramework(framework);
+    }
+
+
+    /// <summary>
+    /// Set filters for tests to ignore
+    /// </summary>
+    public static T SetIgnoreFilter<T>(this T settings, string[] testsToIgnore)
+        where T : DotNetTestSettings
+    {
+        if (testsToIgnore != null && testsToIgnore.Any())
+        {
+            var sb = new StringBuilder();
+            foreach (var testToIgnore in testsToIgnore)
+            {
+                sb.Append("FullyQualifiedName!~");
+                sb.Append(testToIgnore);
+                sb.Append(value: '&');
+            }
+
+            sb.Remove(sb.Length - 1, 1);
+
+            settings = settings.SetFilter(sb.ToString());
+        }
+
+        return settings;
     }
 }
