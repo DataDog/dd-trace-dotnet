@@ -100,7 +100,7 @@ namespace Datadog.Trace.MSBuild
             {
                 Log.Debug("Build Started");
 
-                _buildSpan = _tracer.StartSpanInternal(BuildTags.BuildOperationName);
+                _buildSpan = _tracer.StartSpan(BuildTags.BuildOperationName);
                 _buildSpan.SetMetric(Tags.Analytics, 1.0d);
                 _buildSpan.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
 
@@ -173,7 +173,7 @@ namespace Datadog.Trace.MSBuild
 
                 string projectName = Path.GetFileName(e.ProjectFile);
 
-                Span projectSpan = _tracer.StartSpanInternal(BuildTags.BuildOperationName, parent: parentSpan.Context, serviceName: projectName);
+                Span projectSpan = _tracer.StartSpan(BuildTags.BuildOperationName, parent: parentSpan.Context, serviceName: projectName);
                 projectSpan.ResourceName = projectName;
                 projectSpan.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
                 projectSpan.Type = SpanTypes.Build;

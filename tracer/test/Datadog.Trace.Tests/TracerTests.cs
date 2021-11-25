@@ -54,7 +54,7 @@ namespace Datadog.Trace.Tests
         public void StartActive_NoActiveScope_RootSpan()
         {
             var scope = (Scope)_tracer.StartActive("Operation", null);
-            var span = (Span)scope.Span;
+            var span = scope.Span;
 
             Assert.True(span.IsRootSpan);
         }
@@ -65,8 +65,8 @@ namespace Datadog.Trace.Tests
             var parentScope = (Scope)_tracer.StartActive("Parent");
             var childScope = (Scope)_tracer.StartActive("Child");
 
-            var parentSpan = (Span)parentScope.Span;
-            var childSpan = (Span)childScope.Span;
+            var parentSpan = parentScope.Span;
+            var childSpan = childScope.Span;
 
             Assert.Equal(parentSpan.Context, childSpan.InternalContext.Parent);
         }
@@ -76,7 +76,7 @@ namespace Datadog.Trace.Tests
         {
             var firstScope = _tracer.StartActive("First");
             var secondScope = (Scope)_tracer.StartActive("Second", ignoreActiveScope: true);
-            var secondSpan = (Span)secondScope.Span;
+            var secondSpan = secondScope.Span;
 
             Assert.True(secondSpan.IsRootSpan);
         }
@@ -85,7 +85,7 @@ namespace Datadog.Trace.Tests
         public void StartActive_FinishOnClose_SpanIsFinishedWhenScopeIsClosed()
         {
             var scope = (Scope)_tracer.StartActive("Operation");
-            var span = (Span)scope.Span;
+            var span = scope.Span;
             Assert.False(span.IsFinished);
 
             scope.Close();
@@ -101,7 +101,7 @@ namespace Datadog.Trace.Tests
             Span span;
             using (scope = (Scope)_tracer.StartActive("Operation"))
             {
-                span = (Span)scope.Span;
+                span = scope.Span;
                 Assert.False(span.IsFinished);
             }
 
@@ -113,7 +113,7 @@ namespace Datadog.Trace.Tests
         public void StartActive_NoFinishOnClose_SpanIsNotFinishedWhenScopeIsClosed()
         {
             var scope = (Scope)_tracer.StartActive("Operation", finishOnClose: false);
-            var span = (Span)scope.Span;
+            var span = scope.Span;
             Assert.False(span.IsFinished);
 
             scope.Dispose();
@@ -125,9 +125,9 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void StartActive_SetParentManually_ParentIsSet()
         {
-            var parent = (Span)_tracer.StartSpan("Parent");
+            var parent = _tracer.StartSpan("Parent");
             var childScope = (Scope)_tracer.StartActive("Child", parent.InternalContext);
-            var childSpan = (Span)childScope.Span;
+            var childSpan = childScope.Span;
 
             Assert.Equal(parent.InternalContext, childSpan.InternalContext.Parent);
         }
@@ -141,7 +141,7 @@ namespace Datadog.Trace.Tests
 
             var parent = new SpanContext(traceId, parentId, samplingPriority);
             var child = (Scope)_tracer.StartActive("Child", parent);
-            var childSpan = (Span)child.Span;
+            var childSpan = child.Span;
 
             Assert.True(childSpan.IsRootSpan);
             Assert.Equal(traceId, parent.TraceId);
@@ -216,19 +216,19 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void StartManula_ActiveScope_UseCurrentScopeAsParent()
         {
-            var parentSpan = _tracer.StartSpanInternal("Parent");
+            var parentSpan = _tracer.StartSpan("Parent");
             _tracer.ActivateSpan(parentSpan);
             var childSpan = _tracer.StartSpan("Child");
 
-            Assert.Equal(((Span)parentSpan).InternalContext, ((Span)childSpan).InternalContext.Parent);
+            Assert.Equal(parentSpan.InternalContext, childSpan.InternalContext.Parent);
         }
 
         [Fact]
         public void StartManual_IgnoreActiveScope_RootSpan()
         {
-            var firstSpan = _tracer.StartSpanInternal("First");
+            var firstSpan = _tracer.StartSpan("First");
             _tracer.ActivateSpan(firstSpan);
-            var secondSpan = (Span)_tracer.StartSpan("Second", ignoreActiveScope: true);
+            var secondSpan = _tracer.StartSpan("Second", ignoreActiveScope: true);
 
             Assert.True(secondSpan.IsRootSpan);
         }
@@ -237,14 +237,14 @@ namespace Datadog.Trace.Tests
         public void StartActive_2ChildrenOfRoot_ChildrenParentProperlySet()
         {
             var root = (Scope)_tracer.StartActive("Root");
-            var rootSpan = (Span)root.Span;
+            var rootSpan = root.Span;
 
             var child1 = (Scope)_tracer.StartActive("Child1");
-            var child1Span = (Span)child1.Span;
+            var child1Span = child1.Span;
             child1.Dispose();
 
             var child2 = (Scope)_tracer.StartActive("Child2");
-            var child2Span = (Span)child2.Span;
+            var child2Span = child2.Span;
 
             Assert.Equal(rootSpan.InternalContext.TraceContext, (ITraceContext)child1Span.InternalContext.TraceContext);
             Assert.Equal(rootSpan.InternalContext.SpanId, child1Span.InternalContext.ParentId);
@@ -259,13 +259,13 @@ namespace Datadog.Trace.Tests
             var child1 = (Scope)_tracer.StartActive("Child1");
             var child2 = (Scope)_tracer.StartActive("Child2");
 
-            var rootSpan = (Span)root.Span;
-            var child1Span = (Span)child1.Span;
-            var child2Span = (Span)child2.Span;
+            var rootSpan = root.Span;
+            var child1Span = child1.Span;
+            var child2Span = child2.Span;
 
-            Assert.Equal(rootSpan.InternalContext.TraceContext, (ITraceContext)child1Span.InternalContext.TraceContext);
+            Assert.Equal(rootSpan.InternalContext.TraceContext, child1Span.InternalContext.TraceContext);
             Assert.Equal(rootSpan.InternalContext.SpanId, child1Span.InternalContext.ParentId);
-            Assert.Equal(rootSpan.InternalContext.TraceContext, (ITraceContext)child2Span.InternalContext.TraceContext);
+            Assert.Equal(rootSpan.InternalContext.TraceContext, child2Span.InternalContext.TraceContext);
             Assert.Equal(child1Span.InternalContext.SpanId, child2Span.InternalContext.ParentId);
         }
 
@@ -275,7 +275,7 @@ namespace Datadog.Trace.Tests
             var tcs = new TaskCompletionSource<bool>();
 
             var root = (Scope)_tracer.StartActive("Root");
-            var rootSpan = (Span)root.Span;
+            var rootSpan = root.Span;
 
             Func<Tracer, Task<IScope>> createSpanAsync = async (t) =>
             {
@@ -285,17 +285,17 @@ namespace Datadog.Trace.Tests
             var tasks = Enumerable.Range(0, 10).Select(x => createSpanAsync(_tracer)).ToArray();
 
             var syncChild = (Scope)_tracer.StartActive("SyncChild");
-            var syncChildSpan = (Span)syncChild.Span;
+            var syncChildSpan = syncChild.Span;
             tcs.SetResult(true);
 
-            Assert.Equal(rootSpan.InternalContext.TraceContext, (ITraceContext)syncChildSpan.InternalContext.TraceContext);
+            Assert.Equal(rootSpan.InternalContext.TraceContext, syncChildSpan.InternalContext.TraceContext);
             Assert.Equal(rootSpan.InternalContext.SpanId, syncChildSpan.InternalContext.ParentId);
             foreach (var task in tasks)
             {
                 var scope = (Scope)await task;
-                var span = (Span)scope.Span;
+                var span = scope.Span;
 
-                Assert.Equal(rootSpan.InternalContext.TraceContext, (ITraceContext)span.InternalContext.TraceContext);
+                Assert.Equal(rootSpan.InternalContext.TraceContext, span.InternalContext.TraceContext);
                 Assert.Equal(rootSpan.InternalContext.SpanId, span.InternalContext.ParentId);
             }
         }
@@ -381,10 +381,10 @@ namespace Datadog.Trace.Tests
             var propagatedContext = new SpanContext(traceId, spanId, samplingPriority, null, origin);
 
             using var firstScope = (Scope)_tracer.StartActive("First Span", propagatedContext);
-            var firstSpan = (Span)firstScope.Span;
+            var firstSpan = firstScope.Span;
 
             using var secondScope = (Scope)_tracer.StartActive("Child", firstSpan.Context);
-            var secondSpan = (Span)secondScope.Span;
+            var secondSpan = secondScope.Span;
 
             IHeadersCollection headers = WebRequest.CreateHttp("http://localhost").Headers.Wrap();
 
