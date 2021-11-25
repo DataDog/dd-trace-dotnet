@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #else
 #if NETFRAMEWORK
 #endif
-                new object[] { "3.7.1.36" },
+                new object[] { "3.7.2" },
 #endif
             };
 
@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #else
 #if NETFRAMEWORK
 #endif
-                new object[] { "2.13.2" },
+                new object[] { "2.14.0" },
 #endif
             };
 
@@ -93,7 +93,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #else
 #if NETFRAMEWORK
 #endif
-                new object[] { "4.1.9" },
+                new object[] { "4.1.10" },
 #endif
             };
 
@@ -164,7 +164,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NETFRAMEWORK
                 new object[] { "4.5.14" },
 #endif
-                new object[] { "5.12.0" },
+                new object[] { "5.13.2" },
 #endif
             };
 
@@ -205,8 +205,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NETFRAMEWORK
 #endif
                 new object[] { "2.2.6" },
-                new object[] { "3.1.20" },
-                new object[] { "5.0.11" },
+                new object[] { "3.1.21" },
+                new object[] { "5.0.12" },
 #endif
             };
 
@@ -245,7 +245,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #else
 #if NETFRAMEWORK
 #endif
-                new object[] { "2.2.7" },
+                new object[] { "2.2.8" },
 #endif
             };
 
@@ -271,7 +271,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #else
 #if NETFRAMEWORK
 #endif
-                new object[] { "3.22.1" },
+                new object[] { "3.23.0" },
 #endif
             };
 
@@ -328,7 +328,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #else
 #if NETFRAMEWORK
 #endif
-                new object[] { "4.2.4" },
+                new object[] { "4.2.6" },
 #endif
             };
 
