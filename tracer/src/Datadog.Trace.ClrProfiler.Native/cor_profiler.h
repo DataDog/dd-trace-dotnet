@@ -69,7 +69,7 @@ private:
     bool ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id);
     std::string GetILCodes(const std::string& title, ILRewriter* rewriter, const FunctionInfo& caller,
                            const ModuleMetadata& module_metadata);
-    HRESULT RewriteForDistributedTracing(const ModuleMetadata& module_metadata, ModuleID module_id, bool autoInstrumentationModule);
+    HRESULT RewriteForDistributedTracing(const ModuleMetadata& module_metadata, ModuleID module_id);
     //
     // Startup methods
     //

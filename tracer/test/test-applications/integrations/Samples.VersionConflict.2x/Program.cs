@@ -9,8 +9,6 @@ namespace Samples.VersionConflict_2x
     {
         static async Task Main()
         {
-            Debugger.Launch();
-
             using (WebServer.Start(out var url))
             {
                 using (var scope = Tracer.Instance.StartActive("Manual"))

@@ -45,7 +45,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
                 var httpSpans = spans.Where(s => s.Name == "http.request").ToList();
 
                 httpSpans.Should().HaveCount(2);
-                httpSpans.Should().Contain(s => s.Metrics[Metrics.SamplingPriority] == (double)SamplingPriority.UserKeep);
+                httpSpans.Should().OnlyContain(
+                    s => !s.Metrics.ContainsKey(Metrics.SamplingPriority) || s.Metrics[Metrics.SamplingPriority] == (double)SamplingPriority.UserKeep);
             }
         }
     }

@@ -304,16 +304,16 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
         // used multiple times for logging
         const auto& expected_version = expected_assembly_reference.version.str();
 
-        bool is_viable_version = (assembly_metadata.version == expected_assembly_reference.version);
+        bool is_viable_version;
 
-        // if (runtime_information_.is_core())
-        //{
-        //    is_viable_version = (assembly_metadata.version >= expected_assembly_reference.version);
-        //}
-        // else
-        //{
-        //    is_viable_version = (assembly_metadata.version == expected_assembly_reference.version);
-        //}
+        if (runtime_information_.is_core())
+        {
+            is_viable_version = (assembly_metadata.version >= expected_assembly_reference.version);
+        }
+        else
+        {
+            is_viable_version = (assembly_metadata.version == expected_assembly_reference.version);
+        }
 
         // Check that Major.Minor.Build matches the profiler version.
         // On .NET Core, allow managed library to be a higher version than the native library.
@@ -611,11 +611,28 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         RewritingPInvokeMaps(module_metadata, appsec_nonwindows_nativemethods_type);
 #endif // _WIN32
 
-        // if (IsVersionCompatibilityEnabled() && !runtime_information_.is_core())
         if (IsVersionCompatibilityEnabled())
         {
-            RewriteForDistributedTracing(module_metadata, module_id,
-                                         assemblyVersion == managed_profiler_assembly_reference->version.str());
+            // No need to rewrite if the target assembly matches the expected version
+            if (assemblyImport.version != managed_profiler_assembly_reference->version)
+            {
+                // Don't rewrite on .NET Core if the target assembly has a higher version than the expected
+                if (!runtime_information_.is_core() ||
+                    assemblyImport.version < managed_profiler_assembly_reference->version)
+                {
+                    RewriteForDistributedTracing(module_metadata, module_id);
+                }
+                else
+                {
+                    Logger::Debug("Skipping version conflict fix for ", assemblyVersion,
+                                  " because running on .NET Core with a higher version than expected");
+                }
+            }
+            else
+            {
+                Logger::Debug("Skipping version conflict fix for ", assemblyVersion,
+                              " because the version matches the expected one");
+            }
         }
     }
     else
@@ -1196,140 +1213,134 @@ bool CorProfiler::ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_i
            managed_profiler_loaded_app_domains.find(app_domain_id) != managed_profiler_loaded_app_domains.end();
 }
 
-HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_metadata, ModuleID module_id,
-                                                  bool autoInstrumentationModule)
+HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_metadata, ModuleID module_id)
 {
     HRESULT hr = S_OK;
 
-    if (!autoInstrumentationModule)
+    if (IsDebugEnabled())
     {
-        if (IsDebugEnabled())
+        Logger::Info("pcbPublicKey: ", managed_profiler_assembly_property.pcbPublicKey);
+        Logger::Info("pcbPublicKey: ", HexStr(managed_profiler_assembly_property.ppbPublicKey,
+                                              managed_profiler_assembly_property.pcbPublicKey));
+        Logger::Info("pcbPublicKey: ");
+        const auto ppbPublicKey = (BYTE*) managed_profiler_assembly_property.ppbPublicKey;
+        for (auto i = 0; i < managed_profiler_assembly_property.pcbPublicKey; i++)
         {
-            Logger::Info("pcbPublicKey: ", managed_profiler_assembly_property.pcbPublicKey);
-            Logger::Info("pcbPublicKey: ", HexStr(managed_profiler_assembly_property.ppbPublicKey,
-                                                  managed_profiler_assembly_property.pcbPublicKey));
-            Logger::Info("pcbPublicKey: ");
-            const auto ppbPublicKey = (BYTE*) managed_profiler_assembly_property.ppbPublicKey;
-            for (auto i = 0; i < managed_profiler_assembly_property.pcbPublicKey; i++)
-            {
-                Logger::Info(" -> ", (int) ppbPublicKey[i]);
-            }
-            Logger::Info("szName: ", managed_profiler_assembly_property.szName);
+            Logger::Info(" -> ", (int) ppbPublicKey[i]);
+        }
+        Logger::Info("szName: ", managed_profiler_assembly_property.szName);
 
-            Logger::Info("Metadata.cbLocale: ", managed_profiler_assembly_property.pMetaData.cbLocale);
-            Logger::Info("Metadata.szLocale: ", managed_profiler_assembly_property.pMetaData.szLocale);
+        Logger::Info("Metadata.cbLocale: ", managed_profiler_assembly_property.pMetaData.cbLocale);
+        Logger::Info("Metadata.szLocale: ", managed_profiler_assembly_property.pMetaData.szLocale);
 
-            if (managed_profiler_assembly_property.pMetaData.rOS != nullptr)
-            {
-                Logger::Info("Metadata.rOS.dwOSMajorVersion: ",
-                             managed_profiler_assembly_property.pMetaData.rOS->dwOSMajorVersion);
-                Logger::Info("Metadata.rOS.dwOSMinorVersion: ",
-                             managed_profiler_assembly_property.pMetaData.rOS->dwOSMinorVersion);
-                Logger::Info("Metadata.rOS.dwOSPlatformId: ",
-                             managed_profiler_assembly_property.pMetaData.rOS->dwOSPlatformId);
-            }
-
-            Logger::Info("Metadata.usBuildNumber: ", managed_profiler_assembly_property.pMetaData.usBuildNumber);
-            Logger::Info("Metadata.usMajorVersion: ", managed_profiler_assembly_property.pMetaData.usMajorVersion);
-            Logger::Info("Metadata.usMinorVersion: ", managed_profiler_assembly_property.pMetaData.usMinorVersion);
-            Logger::Info("Metadata.usRevisionNumber: ", managed_profiler_assembly_property.pMetaData.usRevisionNumber);
-
-            Logger::Info("pulHashAlgId: ", managed_profiler_assembly_property.pulHashAlgId);
-            Logger::Info("sizeof(pulHashAlgId): ", sizeof(managed_profiler_assembly_property.pulHashAlgId));
-            Logger::Info("assemblyFlags: ", managed_profiler_assembly_property.assemblyFlags);
+        if (managed_profiler_assembly_property.pMetaData.rOS != nullptr)
+        {
+            Logger::Info("Metadata.rOS.dwOSMajorVersion: ",
+                         managed_profiler_assembly_property.pMetaData.rOS->dwOSMajorVersion);
+            Logger::Info("Metadata.rOS.dwOSMinorVersion: ",
+                         managed_profiler_assembly_property.pMetaData.rOS->dwOSMinorVersion);
+            Logger::Info("Metadata.rOS.dwOSPlatformId: ",
+                         managed_profiler_assembly_property.pMetaData.rOS->dwOSPlatformId);
         }
 
-        //
-        // *** Get DistributedTracer TypeDef
-        //
-        mdTypeDef distributedTracerTypeDef;
-        hr = module_metadata.metadata_import->FindTypeDefByName(WStr("Datadog.Trace.ClrProfiler.DistributedTracer"),
-                                                                mdTokenNil, &distributedTracerTypeDef);
-        if (FAILED(hr))
-        {
-            Logger::Warn("Error Rewriting for Distributed Tracing on getting DistributedTracer TypeDef");
-            return hr;
-        }
+        Logger::Info("Metadata.usBuildNumber: ", managed_profiler_assembly_property.pMetaData.usBuildNumber);
+        Logger::Info("Metadata.usMajorVersion: ", managed_profiler_assembly_property.pMetaData.usMajorVersion);
+        Logger::Info("Metadata.usMinorVersion: ", managed_profiler_assembly_property.pMetaData.usMinorVersion);
+        Logger::Info("Metadata.usRevisionNumber: ", managed_profiler_assembly_property.pMetaData.usRevisionNumber);
 
-        //
-        // *** Import Current Version of assembly
-        //
-        mdAssemblyRef managed_profiler_assemblyRef;
-        hr = module_metadata.assembly_emit->DefineAssemblyRef(
-            managed_profiler_assembly_property.ppbPublicKey, managed_profiler_assembly_property.pcbPublicKey,
-            managed_profiler_assembly_property.szName.data(), &managed_profiler_assembly_property.pMetaData,
-            &managed_profiler_assembly_property.pulHashAlgId, sizeof(managed_profiler_assembly_property.pulHashAlgId),
-            managed_profiler_assembly_property.assemblyFlags, &managed_profiler_assemblyRef);
+        Logger::Info("pulHashAlgId: ", managed_profiler_assembly_property.pulHashAlgId);
+        Logger::Info("sizeof(pulHashAlgId): ", sizeof(managed_profiler_assembly_property.pulHashAlgId));
+        Logger::Info("assemblyFlags: ", managed_profiler_assembly_property.assemblyFlags);
+    }
 
-        if (FAILED(hr) || managed_profiler_assemblyRef == mdAssemblyRefNil)
-        {
-            Logger::Warn("Error Rewriting for Distributed Tracing on getting ManagedProfiler AssemblyRef");
-            return hr;
-        }
+    //
+    // *** Get DistributedTracer TypeDef
+    //
+    mdTypeDef distributedTracerTypeDef;
+    hr = module_metadata.metadata_import->FindTypeDefByName(WStr("Datadog.Trace.ClrProfiler.DistributedTracer"),
+                                                            mdTokenNil, &distributedTracerTypeDef);
+    if (FAILED(hr))
+    {
+        Logger::Warn("Error Rewriting for Distributed Tracing on getting DistributedTracer TypeDef");
+        return hr;
+    }
 
-        mdTypeRef distributedTracerTypeRef;
-        hr = module_metadata.metadata_emit->DefineTypeRefByName(managed_profiler_assemblyRef,
-                                                                WStr("Datadog.Trace.ClrProfiler.DistributedTracer"),
-                                                                &distributedTracerTypeRef);
+    //
+    // *** Import Current Version of assembly
+    //
+    mdAssemblyRef managed_profiler_assemblyRef;
+    hr = module_metadata.assembly_emit->DefineAssemblyRef(
+        managed_profiler_assembly_property.ppbPublicKey, managed_profiler_assembly_property.pcbPublicKey,
+        managed_profiler_assembly_property.szName.data(), &managed_profiler_assembly_property.pMetaData,
+        &managed_profiler_assembly_property.pulHashAlgId, sizeof(managed_profiler_assembly_property.pulHashAlgId),
+        managed_profiler_assembly_property.assemblyFlags, &managed_profiler_assemblyRef);
 
-        if (FAILED(hr))
-        {
-            Logger::Warn("Error Rewriting for Distributed Tracing on getting DistributedTracer TypeRef");
-            return hr;
-        }
+    if (FAILED(hr) || managed_profiler_assemblyRef == mdAssemblyRefNil)
+    {
+        Logger::Warn("Error Rewriting for Distributed Tracing on getting ManagedProfiler AssemblyRef");
+        return hr;
+    }
 
-        //
-        // *** GetDistributedTrace MethodDef ***
-        //
-        COR_SIGNATURE getDistributedTracerSignature[] = {IMAGE_CEE_CS_CALLCONV_DEFAULT, 0, ELEMENT_TYPE_OBJECT};
-        mdMethodDef getDistributedTraceMethodDef;
-        hr = module_metadata.metadata_import->FindMethod(distributedTracerTypeDef, WStr("GetDistributedTracer"),
-                                                         getDistributedTracerSignature, 3,
-                                                         &getDistributedTraceMethodDef);
-        if (FAILED(hr))
-        {
-            Logger::Warn("Error Rewriting for Distributed Tracing on getting GetDistributedTracer MethodDef");
-            return hr;
-        }
+    mdTypeRef distributedTracerTypeRef;
+    hr = module_metadata.metadata_emit->DefineTypeRefByName(
+        managed_profiler_assemblyRef, WStr("Datadog.Trace.ClrProfiler.DistributedTracer"), &distributedTracerTypeRef);
 
-        //
-        // *** GetDistributedTrace MemberRef ***
-        //
-        mdMemberRef getDistributedTraceMemberRef;
-        hr = module_metadata.metadata_emit->DefineMemberRef(distributedTracerTypeRef, WStr("GetDistributedTracer"),
-                                                            getDistributedTracerSignature, 3,
-                                                            &getDistributedTraceMemberRef);
-        if (FAILED(hr))
-        {
-            Logger::Warn("Error Rewriting for Distributed Tracing on getting GetDistributedTracer MemberRef");
-            return hr;
-        }
+    if (FAILED(hr))
+    {
+        Logger::Warn("Error Rewriting for Distributed Tracing on getting DistributedTracer TypeRef");
+        return hr;
+    }
 
-        ILRewriter getterRewriter(this->info_, nullptr, module_id, getDistributedTraceMethodDef);
-        getterRewriter.InitializeTiny();
+    //
+    // *** GetDistributedTrace MethodDef ***
+    //
+    COR_SIGNATURE getDistributedTracerSignature[] = {IMAGE_CEE_CS_CALLCONV_DEFAULT, 0, ELEMENT_TYPE_OBJECT};
+    mdMethodDef getDistributedTraceMethodDef;
+    hr = module_metadata.metadata_import->FindMethod(distributedTracerTypeDef, WStr("GetDistributedTracer"),
+                                                     getDistributedTracerSignature, 3, &getDistributedTraceMethodDef);
+    if (FAILED(hr))
+    {
+        Logger::Warn("Error Rewriting for Distributed Tracing on getting GetDistributedTracer MethodDef");
+        return hr;
+    }
 
-        // Modify first instruction from ldnull to call
-        ILRewriterWrapper getterWrapper(&getterRewriter);
-        getterWrapper.SetILPosition(getterRewriter.GetILList()->m_pNext);
-        getterWrapper.CallMember(getDistributedTraceMemberRef, false);
-        getterWrapper.Return();
+    //
+    // *** GetDistributedTrace MemberRef ***
+    //
+    mdMemberRef getDistributedTraceMemberRef;
+    hr =
+        module_metadata.metadata_emit->DefineMemberRef(distributedTracerTypeRef, WStr("GetDistributedTracer"),
+                                                       getDistributedTracerSignature, 3, &getDistributedTraceMemberRef);
+    if (FAILED(hr))
+    {
+        Logger::Warn("Error Rewriting for Distributed Tracing on getting GetDistributedTracer MemberRef");
+        return hr;
+    }
 
-        hr = getterRewriter.Export();
+    ILRewriter getterRewriter(this->info_, nullptr, module_id, getDistributedTraceMethodDef);
+    getterRewriter.InitializeTiny();
 
-        if (FAILED(hr))
-        {
-            Logger::Warn("Error rewriting GetDistributedTracer->[AutoInstrumentation]GetDistributedTracer");
-            return hr;
-        }
+    // Modify first instruction from ldnull to call
+    ILRewriterWrapper getterWrapper(&getterRewriter);
+    getterWrapper.SetILPosition(getterRewriter.GetILList()->m_pNext);
+    getterWrapper.CallMember(getDistributedTraceMemberRef, false);
+    getterWrapper.Return();
 
-        Logger::Info("Rewriting GetDistributedTracer->[AutoInstrumentation]GetDistributedTracer");
+    hr = getterRewriter.Export();
 
-        if (IsDumpILRewriteEnabled())
-        {
-            Logger::Info(GetILCodes("After -> GetDistributedTracer. ", &getterRewriter,
-                                    GetFunctionInfo(module_metadata.metadata_import, getDistributedTraceMethodDef),
-                                    module_metadata));
-        }
+    if (FAILED(hr))
+    {
+        Logger::Warn("Error rewriting GetDistributedTracer->[AutoInstrumentation]GetDistributedTracer");
+        return hr;
+    }
+
+    Logger::Info("Rewriting GetDistributedTracer->[AutoInstrumentation]GetDistributedTracer");
+
+    if (IsDumpILRewriteEnabled())
+    {
+        Logger::Info(GetILCodes("After -> GetDistributedTracer. ", &getterRewriter,
+                                GetFunctionInfo(module_metadata.metadata_import, getDistributedTraceMethodDef),
+                                module_metadata));
     }
 
     return hr;

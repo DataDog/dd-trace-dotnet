@@ -52,26 +52,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
             return null;
         }
-
-        private static void TryLoadManagedAssembly()
-        {
-            try
-            {
-                var assembly = Assembly.Load(AssemblyName);
-
-                if (assembly != null)
-                {
-                    // call method Datadog.Trace.ClrProfiler.Instrumentation.Initialize()
-                    var type = assembly.GetType("Datadog.Trace.ClrProfiler.Instrumentation", throwOnError: false);
-                    var method = type?.GetRuntimeMethod("Initialize", parameters: new Type[0]);
-                    method?.Invoke(obj: null, parameters: null);
-                }
-            }
-            catch (Exception ex)
-            {
-                StartupLogger.Log(ex, "Error when loading managed assemblies.");
-            }
-        }
     }
 }
 

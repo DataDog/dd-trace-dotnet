@@ -80,7 +80,7 @@ const WSTRING system_private_corelib_assemblyName = WStr("System.Private.CoreLib
 const WSTRING datadog_trace_clrprofiler_managed_loader_assemblyName = WStr("Datadog.Trace.ClrProfiler.Managed.Loader");
 
 const WSTRING managed_profiler_full_assembly_version =
-    WStr("Datadog.Trace, Version=2.255.255.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
+    WStr("Datadog.Trace, Version=1.30.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
 
 const WSTRING managed_profiler_name = WStr("Datadog.Trace");
 
@@ -110,7 +110,7 @@ const AssemblyProperty managed_profiler_assembly_property = AssemblyProperty(
                   75,  234, 178, 64,  92,  80,  28, 138, 48,  203, 27,  49,  177, 84,  30,  214, 110, 39,  217, 130,
                   49,  105, 236, 40,  21,  176, 12, 238, 238, 204, 141, 90,  27,  244, 61,  182, 125, 41,  97,  163,
                   233, 190, 161, 57,  127, 4,   62, 192, 116, 145, 112, 150, 73,  37,  47,  85,  101, 183, 86,  197},
-    160, 32772, 1, 2, 255, 255, 0);
+    160, 32772, 1, 1, 30, 0, 0);
 
 } // namespace trace
 
