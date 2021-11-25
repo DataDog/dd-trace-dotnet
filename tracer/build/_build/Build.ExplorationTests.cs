@@ -282,8 +282,8 @@ partial class Build
         if (!SkipClone)
         {
             var cloneCommand = CloneLatest
-                                   ? $"git clone {testDescription.GitRepositoryUrl} {ExplorationTestsDirectory}/{testDescription.Name}"
-                                   : $"git clone -b {testDescription.GitRepositoryTag} {testDescription.GitRepositoryUrl} {ExplorationTestsDirectory}/{testDescription.Name}"
+                                   ? $"clone {testDescription.GitRepositoryUrl} {ExplorationTestsDirectory}/{testDescription.Name}"
+                                   : $"clone -b {testDescription.GitRepositoryTag} {testDescription.GitRepositoryUrl} {ExplorationTestsDirectory}/{testDescription.Name}"
                 ;
 
 
