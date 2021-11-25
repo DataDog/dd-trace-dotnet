@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Nuke.Common.IO;
+using Nuke.Common.ProjectModel;
 
 namespace GeneratePackageVersions
 {
@@ -36,14 +37,14 @@ namespace GeneratePackageVersions
             }
         }
 
-        public async Task GenerateVersions()
+        public async Task GenerateVersions(Solution solution)
         {
             var definitions = File.ReadAllText(_definitionsFilePath);
             var entries = JsonConvert.DeserializeObject<PackageVersionEntry[]>(definitions);
-            await RunFileGeneratorWithPackageEntries(entries);
+            await RunFileGeneratorWithPackageEntries(entries, solution);
         }
 
-        private async Task RunFileGeneratorWithPackageEntries(IEnumerable<PackageVersionEntry> entries)
+        private async Task RunFileGeneratorWithPackageEntries(IEnumerable<PackageVersionEntry> entries, Solution solution)
         {
             _latestMinors.Start();
             _latestMajors.Start();
@@ -51,11 +52,10 @@ namespace GeneratePackageVersions
 
             foreach (var entry in entries)
             {
-                Version entryNetCoreMinVersion;
-                if (!Version.TryParse(entry.MinVersionNetCore, out entryNetCoreMinVersion))
-                {
-                    entryNetCoreMinVersion = new Version("0.0.0.0");
-                }
+                var supportedTargetFrameworks = solution
+                                               .GetProject(entry.SampleProjectName)
+                                               .GetTargetFrameworks()
+                                               .Select(x => (TargetFramework)new TargetFramework.TargetFrameworkTypeConverter().ConvertFrom(x));
 
                 var packageVersions = await NuGetPackageHelper.GetNugetPackageVersions(entry);
                 var orderedPackageVersions =
@@ -68,39 +68,85 @@ namespace GeneratePackageVersions
                        .ThenBy(v => v.Build)
                        .ToList();
 
+                var orderedWithFramework =
+                    from version in orderedPackageVersions
+                    from framework in supportedTargetFrameworks
+                    where IsSupported(entry, version.ToString(), framework)
+                    select (version, framework);
+
                 // Add the last for every minor
-                var orderedLastMinorPackageVersions = orderedPackageVersions
-                    .GroupBy(v => $"{v.Major}.{v.Minor}")
-                    .Select(group => group.Max());
+                var latestMinors = SelectMax(orderedWithFramework, v => $"{v.Major}.{v.Minor}");
+                var latestMajors = SelectMax(orderedWithFramework, v => v.Major);
 
-                var lastMinorNetFrameworkVersions = orderedLastMinorPackageVersions
-                    .Where(v => v.CompareTo(entryNetCoreMinVersion) < 0)
-                    .Select(v => v.ToString());
-
-                var lastMinorNetCoreVersions = orderedLastMinorPackageVersions
-                    .Where(v => v.CompareTo(entryNetCoreMinVersion) >= 0)
-                    .Select(v => v.ToString());
-
-                var orderedLastMajorPackageVersions = orderedPackageVersions
-                    .GroupBy(v => v.Major)
-                    .Select(group => group.Max());
-
-                var lastMajorNetFrameworkVersions = orderedLastMajorPackageVersions
-                    .Where(v => v.CompareTo(entryNetCoreMinVersion) < 0)
-                    .Select(v => v.ToString());
-
-                var lastMajorNetCoreVersions = orderedLastMajorPackageVersions
-                    .Where(v => v.CompareTo(entryNetCoreMinVersion) >= 0)
-                    .Select(v => v.ToString());
-
-                _latestMinors.Write(entry, lastMinorNetFrameworkVersions, lastMinorNetCoreVersions);
-                _latestMajors.Write(entry, lastMajorNetFrameworkVersions, lastMajorNetCoreVersions);
-                _strategyGenerator.Write(entry, null, null);
+                _latestMinors.Write(entry, latestMinors);
+                _latestMajors.Write(entry, latestMajors);
+                _strategyGenerator.Write(entry, null);
             }
 
             _latestMinors.Finish();
             _latestMajors.Finish();
             _strategyGenerator.Finish();
+        }
+
+        static IEnumerable<(TargetFramework framework, IEnumerable<Version> versions)> SelectMax<T>(
+            IEnumerable<(Version version, TargetFramework framework)> orderedPackageVersionsByFramework,
+            Func<Version, T> groupBy)
+        {
+            return orderedPackageVersionsByFramework
+                  .GroupBy(x => x.framework)
+                  .Select(x =>
+                   {
+                       var framework = x.Key;
+                       var versions = x
+                                     .Select(v => v.version)
+                                     .GroupBy(groupBy)
+                                     .Select(group => group.Max());
+                       return (framework, versions);
+                   });
+        }
+
+        private bool IsSupported(PackageVersionEntry entry, string packageVersion, TargetFramework targetFramework)
+        {
+            var condition = entry
+                  .VersionConditions
+                  .FirstOrDefault(condition => AppliesToPackageVersion(packageVersion, condition));
+
+            if (condition is null)
+            {
+                return true;
+            }
+
+            if (condition.ExcludeTargetFrameworks.Any()
+             && condition.ExcludeTargetFrameworks.Contains(targetFramework))
+            {
+                return false;
+            }
+
+            if (condition.IncludeOnlyTargetFrameworks.Any()
+             && !condition.IncludeOnlyTargetFrameworks.Contains(targetFramework))
+            {
+                return false;
+            }
+
+            return true;
+
+
+            bool AppliesToPackageVersion(
+                string packageVersionText,
+                PackageVersionEntry.PackageVersionConditionEntry condition)
+            {
+                var packageVersion = new Version(packageVersionText);
+                if (!Version.TryParse(condition.MinVersion, out var minSemanticVersion))
+                {
+                    minSemanticVersion = new Version(entry.MinVersion);
+                }
+
+                if (!Version.TryParse(condition.MaxVersionExclusive, out var maxSemanticVersion))
+                {
+                    maxSemanticVersion = new Version(entry.MaxVersionExclusive);
+                }
+                return packageVersion >= minSemanticVersion && packageVersion < maxSemanticVersion;
+            }
         }
 
         private class PackageGroup
@@ -127,10 +173,10 @@ namespace GeneratePackageVersions
                 _xUnitFileGenerator.Start();
             }
 
-            public void Write(PackageVersionEntry entry, IEnumerable<string> netFrameworkversions, IEnumerable<string> netCoreVersions)
+            public void Write(PackageVersionEntry entry, IEnumerable<(TargetFramework framework, IEnumerable<Version> versions)> versions)
             {
-                _msBuildPropsFileGenerator.Write(entry, netFrameworkversions, netCoreVersions);
-                _xUnitFileGenerator.Write(entry, netFrameworkversions, netCoreVersions);
+                _msBuildPropsFileGenerator.Write(entry, versions);
+                _xUnitFileGenerator.Write(entry, versions);
             }
 
             public void Finish()

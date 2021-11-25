@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Text;
 
 namespace GeneratePackageVersions
@@ -39,24 +40,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 @"    }
 }";
 
-        private const string EntryFormat =
-@"                new object[] {{ ""{0}"" }},";
+        private const string EntryFormat = @"
+                new object[] {{ ""{0}"" }},";
 
         private const string BodyFormat =
-@"{0}        public static IEnumerable<object[]> {1} =>
+@"      public static IEnumerable<object[]> {0} =>
 
             new List<object[]>
             {{
 #if DEFAULT_SAMPLES
                 new object[] {{ string.Empty }},
-#else{2}
+#else{1}
 #endif
-            }};{3}
+            }};
 ";
-
-        private const string IfNetFrameworkDirectiveConst =
-@"
-#if NETFRAMEWORK";
 
         private const string EndIfDirectiveConst =
 @"
@@ -86,31 +83,28 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        public override void Write(PackageVersionEntry packageVersionEntry, IEnumerable<string> netFrameworkPackageVersions, IEnumerable<string> netCorePackageVersions)
+        public override void Write(PackageVersionEntry packageVersionEntry, IEnumerable<(TargetFramework framework, IEnumerable<Version> versions)> versions)
         {
             Debug.Assert(Started, "Cannot call Write() before calling Start()");
             Debug.Assert(!Finished, "Cannot call Write() after calling Finish()");
 
             var bodyStringBuilder = new StringBuilder();
 
-            bodyStringBuilder.Append(IfNetFrameworkDirectiveConst);
-            foreach (var packageVersion in netFrameworkPackageVersions)
+            foreach (var (framework, packageVersions) in versions)
             {
-                bodyStringBuilder.AppendLine();
-                bodyStringBuilder.Append(string.Format(EntryFormat, packageVersion));
+                var fx = framework.ToString().ToUpper().Replace('.', '_');
+
+                bodyStringBuilder.Append(@$"
+#if {fx}");
+                foreach (var version in packageVersions)
+                {
+                    bodyStringBuilder.AppendFormat(EntryFormat, version);
+                }
+
+                bodyStringBuilder.Append(EndIfDirectiveConst);
             }
 
-            bodyStringBuilder.Append(EndIfDirectiveConst);
-
-            foreach (var packageVersion in netCorePackageVersions)
-            {
-                bodyStringBuilder.AppendLine();
-                bodyStringBuilder.Append(string.Format(EntryFormat, packageVersion));
-            }
-
-            string ifDirective = string.IsNullOrEmpty(packageVersionEntry.SampleTargetFramework) ? string.Empty : $"#if {packageVersionEntry.SampleTargetFramework.ToUpper().Replace('.', '_')}{Environment.NewLine}";
-            string endifDirective = string.IsNullOrEmpty(packageVersionEntry.SampleTargetFramework) ? string.Empty : EndIfDirectiveConst;
-            FileStringBuilder.AppendLine(string.Format(BodyFormat, ifDirective, packageVersionEntry.IntegrationName, bodyStringBuilder.ToString(), endifDirective));
+            FileStringBuilder.AppendLine(string.Format(BodyFormat, packageVersionEntry.IntegrationName, bodyStringBuilder.ToString()));
         }
     }
 }

@@ -4,16 +4,22 @@
     "SampleProjectName": "Samples.AWS.SQS",
     "NugetPackageSearchName": "AWSSDK.SQS",
     "MinVersion": "3.0.0",
-    "MinVersionNetCore": "3.3.0",
-    "MaxVersionExclusive": "3.8.0"
+    "MaxVersionExclusive": "3.8.0",
+    "VersionConditions": [{
+      "MaxVersionExclusive": "3.3.0",
+      "IncludeOnlyTargetFrameworks": ["net461"]
+    }]
   },
   {
     "IntegrationName": "MongoDB",
     "SampleProjectName": "Samples.MongoDB",
     "NugetPackageSearchName": "MongoDB.Driver",
     "MinVersion": "2.0.0",
-    "MinVersionNetCore": "2.3.0",
-    "MaxVersionExclusive": "3.0.0"
+    "MaxVersionExclusive": "3.0.0",
+    "VersionConditions": [{
+      "MaxVersionExclusive": "2.3.0",
+      "IncludeOnlyTargetFrameworks": ["net461"]
+    }]
   },
   {
     "IntegrationName": "ElasticSearch7",
@@ -69,16 +75,22 @@
     "SampleProjectName": "Samples.StackExchange.Redis",
     "NugetPackageSearchName": "StackExchange.Redis",
     "MinVersion": "1.0.187",
-    "MinVersionNetCore": "1.1.605",
-    "MaxVersionExclusive": "2.0.0"
+    "MaxVersionExclusive": "2.0.0",
+    "VersionConditions": [{
+      "MaxVersionExclusive": "1.1.605",
+      "IncludeOnlyTargetFrameworks": ["net461"]
+    }]
   },
   {
     "IntegrationName": "ServiceStackRedis",
     "SampleProjectName": "Samples.ServiceStack.Redis",
     "NugetPackageSearchName": "ServiceStack.Redis",
     "MinVersion": "4.0.48",
-    "MinVersionNetCore": "5.0.0",
-    "MaxVersionExclusive": "6.0.0"
+    "MaxVersionExclusive": "6.0.0",
+    "VersionConditions": [{
+      "MaxVersionExclusive": "5.0.0",
+      "IncludeOnlyTargetFrameworks": ["net461"]
+    }]
   },
   {
     "IntegrationName": "MySqlData",
@@ -141,24 +153,33 @@
     "SampleProjectName": "LogsInjection.Serilog",
     "NugetPackageSearchName": "Serilog",
     "MinVersion": "1.0.0",
-    "MinVersionNetCore": "2.0.0",
-    "MaxVersionExclusive": "3.0.0"
+    "MaxVersionExclusive": "3.0.0",
+    "VersionConditions": [{
+      "MaxVersionExclusive": "2.0.0",
+      "IncludeOnlyTargetFrameworks": ["net461"]
+    }]
   },
   {
     "IntegrationName": "NLog",
     "SampleProjectName": "LogsInjection.NLog",
     "NugetPackageSearchName": "NLog",
     "MinVersion": "1.0.0",
-    "MinVersionNetCore": "4.5.0",
-    "MaxVersionExclusive": "5.0.0"
+    "MaxVersionExclusive": "5.0.0",
+    "VersionConditions": [{
+      "MaxVersionExclusive": "4.5.0",
+      "IncludeOnlyTargetFrameworks": ["net461"]
+    }]
   },
   {
     "IntegrationName": "log4net",
     "SampleProjectName": "LogsInjection.Log4Net",
     "NugetPackageSearchName": "log4net",
     "MinVersion": "1.0.0",
-    "MinVersionNetCore": "2.0.6",
-    "MaxVersionExclusive": "3.0.0"
+    "MaxVersionExclusive": "3.0.0",
+    "VersionConditions": [{
+      "MaxVersionExclusive": "2.0.6",
+      "IncludeOnlyTargetFrameworks": ["net461"]
+    }]
   },
   {
     "IntegrationName": "Aerospike",
