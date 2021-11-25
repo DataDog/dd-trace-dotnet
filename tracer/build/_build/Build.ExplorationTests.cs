@@ -263,6 +263,7 @@ partial class Build
                    .SetTargetFramework(Framework)
                    .SetConfiguration(BuildConfiguration)
                    .SetIgnoreFilter(testDescription.TestsToIgnore)
+                   .WithMemoryDumpAfter(1)
                     ;
 
                 x = monitoringType switch
