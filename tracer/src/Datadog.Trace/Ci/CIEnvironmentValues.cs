@@ -67,7 +67,7 @@ namespace Datadog.Trace.Ci
 
         public static string WorkspacePath { get; private set; }
 
-        public static void DecorateSpan(ISpan span)
+        public static void DecorateSpan(Span span)
         {
             if (span == null)
             {
@@ -675,7 +675,7 @@ namespace Datadog.Trace.Ci
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void SetTagIfNotNullOrEmpty(this ISpan span, string key, string value)
+        private static void SetTagIfNotNullOrEmpty(this Span span, string key, string value)
         {
             if (!string.IsNullOrEmpty(value))
             {

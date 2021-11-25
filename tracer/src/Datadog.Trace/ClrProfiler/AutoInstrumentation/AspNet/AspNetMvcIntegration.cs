@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     return null;
                 }
 
-                ISpan span = null;
+                Span span = null;
                 // integration enabled, go create a scope!
                 if (Tracer.InternalInstance.Settings.IsIntegrationEnabled(IntegrationId))
                 {

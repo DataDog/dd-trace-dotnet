@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
             string testName = testMethodInfo.TestMethodName;
 
             Scope scope = Tracer.InternalInstance.StartActiveInternal("mstest.test", serviceName: Tracer.InternalInstance.DefaultServiceName);
-            ISpan span = scope.Span;
+            Span span = scope.Span;
 
             span.Type = SpanTypes.Test;
             span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);

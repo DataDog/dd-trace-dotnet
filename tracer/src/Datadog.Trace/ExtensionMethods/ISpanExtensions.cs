@@ -1,4 +1,4 @@
-﻿// <copyright file="ISpanExtensions.cs" company="Datadog">
+// <copyright file="ISpanExtensions.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -104,54 +104,6 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
-        /// <summary>
-        /// Record the end time of the span and flushes it to the backend.
-        /// After the span has been finished all modifications will be ignored.
-        /// </summary>
-        internal static void Finish(this ISpan span, TimeSpan duration)
-        {
-            if (span is Span internalSpan)
-            {
-                internalSpan.Finish(duration);
-            }
-        }
-
-        internal static bool TryGetTimeSinceStart(this ISpan span, DateTime endTime, out TimeSpan result)
-        {
-            if (span is Span internalSpan)
-            {
-                result = internalSpan.StartTime.UtcDateTime - endTime;
-                return true;
-            }
-            else
-            {
-                result = TimeSpan.MaxValue;
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Sets the sampling priority for the trace that contains the specified <see cref="Span"/>.
-        /// </summary>
-        /// <param name="span">A span that belongs to the trace.</param>
-        internal static void LockSamplingPriority(this ISpan span)
-        {
-            if (span == null) { throw new ArgumentNullException(nameof(span)); }
-
-            if (span is Span internalSpan && internalSpan.InternalContext.TraceContext != null)
-            {
-                internalSpan.InternalContext.TraceContext.LockSamplingPriority();
-            }
-        }
-
-        internal static void ResetStartTime(this ISpan span)
-        {
-            if (span is Span internalSpan)
-            {
-                internalSpan.ResetStartTime();
-            }
-        }
-
         internal static void SetHeaderTags<T>(this ISpan span, T headers, IReadOnlyDictionary<string, string> headerTags, string defaultTagPrefix)
             where T : IHeadersCollection
         {
@@ -172,11 +124,11 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
-        internal static void SetHttpStatusCode(this ISpan span, int statusCode, bool isServer, ImmutableTracerSettings tracerSettings)
+        internal static void SetHttpStatusCode(this Span span, int statusCode, bool isServer, ImmutableTracerSettings tracerSettings)
         {
             string statusCodeString = ConvertStatusCodeToString(statusCode);
 
-            if (span is IHasTags spanWithTags && spanWithTags.Tags is IHasStatusCode statusCodeTags)
+            if (span.Tags is IHasStatusCode statusCodeTags)
             {
                 statusCodeTags.HttpStatusCode = statusCodeString;
             }
@@ -195,24 +147,6 @@ namespace Datadog.Trace.ExtensionMethods
                 {
                     span.SetTag(Tags.ErrorMsg, $"The HTTP response has status code {statusCodeString}.");
                 }
-            }
-        }
-
-        internal static ISpan SetMetric(this ISpan span, string key, double? value)
-        {
-            if (span is Span internalSpan)
-            {
-                return internalSpan.SetMetric(key, value);
-            }
-            else if (span is IHasTags spanWithTags)
-            {
-                spanWithTags.Tags.SetMetric(key, value);
-                return span;
-            }
-            else
-            {
-                // Noop
-                return span;
             }
         }
 

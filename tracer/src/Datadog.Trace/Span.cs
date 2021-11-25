@@ -19,7 +19,7 @@ namespace Datadog.Trace
     /// tracks the duration of an operation as well as associated metadata in
     /// the form of a resource name, a service name, and user defined tags.
     /// </summary>
-    public class Span : ISpan, IHasTags
+    public class Span : ISpan
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Span>();
         private static readonly bool IsLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
@@ -121,11 +121,6 @@ namespace Datadog.Trace
         internal bool IsRootSpan => InternalContext.TraceContext?.RootSpan == this;
 
         internal bool IsTopLevel => InternalContext.Parent == null || InternalContext.Parent.ServiceName != ServiceName;
-
-        /// <summary>
-        /// Gets or sets the ITags implementation
-        /// </summary>
-        ITags IHasTags.Tags { get => Tags; set => Tags = value; }
 
         /// <summary>
         /// Returns a <see cref="string" /> that represents this instance.

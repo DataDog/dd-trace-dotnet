@@ -116,12 +116,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         /// <param name="span">A <see cref="Span"/> that can be manipulated when the action is invoked</param>
         /// <typeparam name="TDeliveryReport">Type of the delivery report</typeparam>
         /// <returns>The wrapped action</returns>
-        public static Action<TDeliveryReport> WrapAction<TDeliveryReport>(Action<TDeliveryReport> originalHandler, ISpan span)
+        public static Action<TDeliveryReport> WrapAction<TDeliveryReport>(Action<TDeliveryReport> originalHandler, Span span)
         {
             return new Action<TDeliveryReport>(
                 value =>
                 {
-                    if (span is IHasTags spanWithTags && spanWithTags.Tags is KafkaTags tags && value.TryDuckCast<IDeliveryReport>(out var report))
+                    if (span.Tags is KafkaTags tags && value.TryDuckCast<IDeliveryReport>(out var report))
                     {
                         var isError = report?.Error is not null && report.Error.IsError;
                         if (isError)
@@ -179,9 +179,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 _createWrapper = (CreateWrapperDelegate)wrapActionMethod.CreateDelegate(typeof(CreateWrapperDelegate));
             }
 
-            private delegate TActionDelegate CreateWrapperDelegate(TActionDelegate value, ISpan span);
+            private delegate TActionDelegate CreateWrapperDelegate(TActionDelegate value, Span span);
 
-            public static TActionDelegate CreateWrapper(TActionDelegate value, ISpan span)
+            public static TActionDelegate CreateWrapper(TActionDelegate value, Span span)
             {
                 // we call the delegate passing the instance of the previous delegate
                 return _createWrapper(value, span);

@@ -50,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             string skipReason = null;
 
             Scope scope = Tracer.InternalInstance.StartActiveInternal("nunit.test", serviceName: Tracer.InternalInstance.DefaultServiceName);
-            ISpan span = scope.Span;
+            Span span = scope.Span;
 
             span.Type = SpanTypes.Test;
             span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);

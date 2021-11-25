@@ -99,7 +99,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
             return scope;
         }
 
-        internal static void RecordExecutionErrorsIfPresent(ISpan span, string errorType, IExecutionErrors executionErrors)
+        internal static void RecordExecutionErrorsIfPresent(Span span, string errorType, IExecutionErrors executionErrors)
         {
             var errorCount = executionErrors?.Count ?? 0;
 

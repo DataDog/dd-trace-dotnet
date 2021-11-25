@@ -1,4 +1,4 @@
-﻿// <copyright file="KafkaHelper.cs" company="Datadog">
+// <copyright file="KafkaHelper.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -136,9 +136,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     tags.Offset = offset.ToString();
                 }
 
-                if (message is not null && message.Timestamp.Type != 0 && span.TryGetTimeSinceStart(message.Timestamp.UtcDateTime, out TimeSpan result))
+                if (message is not null && message.Timestamp.Type != 0)
                 {
-                    tags.MessageQueueTimeMs = Math.Max(0, result.TotalMilliseconds);
+                    var consumeTime = span.StartTime.UtcDateTime;
+                    var produceTime = message.Timestamp.UtcDateTime;
+                    tags.MessageQueueTimeMs = Math.Max(0, (consumeTime - produceTime).TotalMilliseconds);
                 }
 
                 if (message is not null && message.Value is null)

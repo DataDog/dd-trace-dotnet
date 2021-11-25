@@ -78,7 +78,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             return scope;
         }
 
-        internal static void UpdateSpan(IHttpControllerContext controllerContext, ISpan span, AspNetTags tags, IEnumerable<KeyValuePair<string, string>> headerTags)
+        internal static void UpdateSpan(IHttpControllerContext controllerContext, Span span, AspNetTags tags, IEnumerable<KeyValuePair<string, string>> headerTags)
         {
             try
             {

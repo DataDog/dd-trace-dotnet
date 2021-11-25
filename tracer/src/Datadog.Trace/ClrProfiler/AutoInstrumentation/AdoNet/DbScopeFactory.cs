@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
             try
             {
-                ISpan parent = tracer.ActiveScope?.Span;
+                Span parent = tracer.InternalActiveScope?.Span;
 
                 if (parent is { Type: SpanTypes.Sql } &&
                     parent.GetTag(Tags.DbType) == dbType &&

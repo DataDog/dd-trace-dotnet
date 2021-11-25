@@ -216,7 +216,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void StartManula_ActiveScope_UseCurrentScopeAsParent()
         {
-            var parentSpan = _tracer.StartSpan("Parent");
+            var parentSpan = _tracer.StartSpanInternal("Parent");
             _tracer.ActivateSpan(parentSpan);
             var childSpan = _tracer.StartSpan("Child");
 
@@ -226,7 +226,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void StartManual_IgnoreActiveScope_RootSpan()
         {
-            var firstSpan = _tracer.StartSpan("First");
+            var firstSpan = _tracer.StartSpanInternal("First");
             _tracer.ActivateSpan(firstSpan);
             var secondSpan = (Span)_tracer.StartSpan("Second", ignoreActiveScope: true);
 

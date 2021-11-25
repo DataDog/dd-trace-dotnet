@@ -1,4 +1,4 @@
-﻿// <copyright file="KafkaProduceAsyncIntegration.cs" company="Datadog">
+// <copyright file="KafkaProduceAsyncIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -70,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         public static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, CallTargetState state)
         where TResponse : IDeliveryResult
         {
-            if (state.Scope?.Span is IHasTags spanWithTags && spanWithTags.Tags is KafkaTags tags)
+            if (state.Scope?.Span?.Tags is KafkaTags tags)
             {
                 IDeliveryResult deliveryResult = null;
                 if (exception is not null)

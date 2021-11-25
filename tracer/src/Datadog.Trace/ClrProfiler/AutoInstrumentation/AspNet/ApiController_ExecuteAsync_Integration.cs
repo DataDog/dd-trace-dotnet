@@ -92,9 +92,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             var controllerContext = (IHttpControllerContext)state.State;
 
             // some fields aren't set till after execution, so populate anything missing
-            var span = scope.Span as IHasTags;
-            var aspNetTags = span.Tags as AspNetTags;
-            AspNetWebApi2Integration.UpdateSpan(controllerContext, scope.Span, aspNetTags, Enumerable.Empty<KeyValuePair<string, string>>());
+            AspNetWebApi2Integration.UpdateSpan(controllerContext, scope.Span, (AspNetTags)scope.Span.Tags, Enumerable.Empty<KeyValuePair<string, string>>());
 
             if (exception != null)
             {

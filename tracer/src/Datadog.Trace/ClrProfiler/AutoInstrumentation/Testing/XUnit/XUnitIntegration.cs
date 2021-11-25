@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
             string testFramework = "xUnit";
 
             Scope scope = Tracer.InternalInstance.StartActiveInternal("xunit.test", serviceName: Tracer.InternalInstance.DefaultServiceName);
-            ISpan span = scope.Span;
+            Span span = scope.Span;
 
             span.Type = SpanTypes.Test;
             span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
