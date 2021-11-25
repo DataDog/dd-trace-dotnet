@@ -13,19 +13,16 @@ namespace Datadog.Trace.Ci.Tags
         /// <summary>
         /// Test suite name
         /// </summary>
-        [FeatureTracking]
         public const string Suite = "test.suite";
 
         /// <summary>
         /// Test name
         /// </summary>
-        [FeatureTracking]
         public const string Name = "test.name";
 
         /// <summary>
         /// Test type
         /// </summary>
-        [FeatureTracking]
         public const string Type = "test.type";
 
         /// <summary>
@@ -41,31 +38,26 @@ namespace Datadog.Trace.Ci.Tags
         /// <summary>
         /// Test framework
         /// </summary>
-        [FeatureTracking]
         public const string Framework = "test.framework";
 
         /// <summary>
         /// Test framework version
         /// </summary>
-        [FeatureTracking]
         public const string FrameworkVersion = "test.framework_version";
 
         /// <summary>
         /// Test parameters
         /// </summary>
-        [FeatureTracking]
         public const string Parameters = "test.parameters";
 
         /// <summary>
         /// Test traits
         /// </summary>
-        [FeatureTracking]
         public const string Traits = "test.traits";
 
         /// <summary>
         /// Test status
         /// </summary>
-        [FeatureTracking]
         public const string Status = "test.status";
 
         /// <summary>
@@ -86,13 +78,11 @@ namespace Datadog.Trace.Ci.Tags
         /// <summary>
         /// Test skip reason
         /// </summary>
-        [FeatureTracking]
         public const string SkipReason = "test.skip_reason";
 
         /// <summary>
         /// Test output message
         /// </summary>
-        [FeatureTracking]
         public const string Message = "test.message";
 
         /// <summary>
