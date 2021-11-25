@@ -49,8 +49,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 return null;
             }
 
-            StartupLogger.Debug("Resolving {0}\r\n{1}", args.Name, Environment.StackTrace);
-
             var path = Path.Combine(ManagedProfilerDirectory, $"{assemblyName.Name}.dll");
 
             // Only load the main profiler into the default Assembly Load Context.
@@ -67,26 +65,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             }
 
             return null;
-        }
-
-        private static void TryLoadManagedAssembly()
-        {
-            try
-            {
-                var assembly = Assembly.Load(AssemblyName);
-
-                if (assembly != null)
-                {
-                    // call method Datadog.Trace.ClrProfiler.Instrumentation.Initialize()
-                    var type = assembly.GetType("Datadog.Trace.ClrProfiler.Instrumentation", throwOnError: false);
-                    var method = type?.GetRuntimeMethod("Initialize", parameters: new Type[0]);
-                    method?.Invoke(obj: null, parameters: null);
-                }
-            }
-            catch (Exception ex)
-            {
-                StartupLogger.Log(ex, "Error when loading managed assemblies.");
-            }
         }
     }
 }

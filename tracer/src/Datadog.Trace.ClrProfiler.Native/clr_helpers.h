@@ -299,8 +299,7 @@ struct AssemblyProperty
     }
 
 public:
-    AssemblyProperty WithVersion(USHORT usMajorVersion, USHORT usMinorVersion, USHORT usBuildNumber,
-                                USHORT usRevisionNumber)
+    AssemblyProperty WithVersion(USHORT usMajorVersion, USHORT usMinorVersion, USHORT usBuildNumber, USHORT usRevisionNumber)
     {
         pMetaData.usMajorVersion = usMajorVersion;
         pMetaData.usMinorVersion = usMinorVersion;
