@@ -132,11 +132,12 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                         callGenericTypes.Add(parameterProxyType);
                     }
                 }
-                else if (!(sourceParameterType.IsEnum && targetParameterType.IsEnum))
+                else
                 {
                     var srcParameterType = sourceParameterType.IsByRef ? sourceParameterType.GetElementType() : sourceParameterType;
                     var trgParameterType = targetParameterType.IsByRef ? targetParameterType.GetElementType() : targetParameterType;
-                    if (!trgParameterType.IsAssignableFrom(srcParameterType))
+
+                    if (!trgParameterType.IsAssignableFrom(srcParameterType) && (!(srcParameterType.IsEnum && trgParameterType.IsEnum)))
                     {
                         throw new InvalidCastException($"The target parameter {targetParameterType} can't be assigned from {sourceParameterType}");
                     }
