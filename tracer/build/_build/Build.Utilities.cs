@@ -245,40 +245,4 @@ partial class Build
         {
             SyncMsiContent.Run(TracerDirectory, TracerHomeDirectory);
         });
-
-    Target CiAppFeatureTracking => _ => _
-       .Description("Generate the CIApp FeatureTracking JSON")
-       .DependsOn(Clean, Restore, CreateRequiredDirectories, CompileManagedSrc, PublishManagedProfiler) // We load the dlls from the output, so need to do a clean build
-       .Executes(() =>
-        {
-            // Just grab the first one for now
-            var assemblyPath = TracerHomeDirectory
-                            .GlobFiles("**/netcoreapp*/Datadog.Trace.dll")
-                            .Select(x => x.ToString())
-                            .First();
-
-            var assembly = Assembly.LoadFrom(assemblyPath);
-            var featureTrackingAttribute = assembly.GetType("Datadog.Trace.Ci.FeatureTrackingAttribute");
-            var types = new[] { "Datadog.Trace.Ci.Tags.CommonTags", "Datadog.Trace.Ci.Tags.TestTags" }
-                       .Select(type => assembly.GetType(type))
-                       .ToArray();
-
-            var values = GetFeatureTrackingValueFromType(types);
-
-            var json = Newtonsoft.Json.JsonConvert.SerializeObject(values);
-            var output = OutputDirectory / "ci-app-spec.json";
-
-            Logger.Info($"Writing spec to '{output}'");
-            File.WriteAllText(output, json);
-
-            IEnumerable<string> GetFeatureTrackingValueFromType(params Type[] types)
-            {
-                return types
-                      .SelectMany(type => type.GetFields())
-                      .Where(f => f.GetCustomAttributes(featureTrackingAttribute, true).Length > 0)
-                      .Select(f => f.GetValue(null).ToString())
-                      .OrderBy(v => v);
-            }
-        });
-
 }
