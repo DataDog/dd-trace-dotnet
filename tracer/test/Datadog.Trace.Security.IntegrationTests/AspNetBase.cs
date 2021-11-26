@@ -110,7 +110,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 
                     var attackEvent = item;
                     var shouldBlock = expectedStatusCode == HttpStatusCode.Forbidden;
-                    Assert.Equal("nosqli", attackEvent.Rule.Name);
+                    Assert.Equal("Finds basic MongoDB SQL injection attempts", attackEvent.Rule.Name);
                 }
             }
 

@@ -255,7 +255,6 @@ namespace Datadog.Trace
         AutoReject = 0,
         AutoKeep = 1,
         UserKeep = 2,
-        AppSecKeep = 4,
     }
     public class Scope : System.IDisposable
     {
@@ -319,16 +318,19 @@ namespace Datadog.Trace
         public const string ErrorMsg = "error.msg";
         public const string ErrorStack = "error.stack";
         public const string ErrorType = "error.type";
+        public const string HttpEndpoint = "http.endpoint";
         public const string HttpMethod = "http.method";
         public const string HttpRequestHeadersHost = "http.request.headers.host";
         public const string HttpStatusCode = "http.status_code";
         public const string HttpUrl = "http.url";
+        public const string HttpUserAgent = "http.useragent";
         public const string InstrumentationName = "component";
         public const string InstrumentedMethod = "instrumented.method";
         public const string Language = "language";
         public const string ManualDrop = "manual.drop";
         public const string ManualKeep = "manual.keep";
         public const string MessageSize = "message.size";
+        public const string NetworkClientIp = "network.client.ip";
         public const string OutHost = "out.host";
         public const string OutPort = "out.port";
         public const string SamplingPriority = "sampling.priority";

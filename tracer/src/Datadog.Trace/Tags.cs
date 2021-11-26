@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-
 namespace Datadog.Trace
 {
     /// <summary>
@@ -430,7 +428,7 @@ namespace Datadog.Trace
         /// <summary>
         /// The details of the security event
         /// </summary>
-        public const string AppSecJson = "_dd.appsec.json";
+        internal const string AppSecJson = "_dd.appsec.json";
 
         /// <summary>
         /// Should contain the public IP of the host initiating the request.
