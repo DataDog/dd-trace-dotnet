@@ -307,6 +307,28 @@ stages:
         displayName: Publish NuGet packages
         artifact: nuget-packages
 
+- stage: build_test_nuget
+  dependsOn: []
+  jobs:
+    - template: steps/update-github-status-jobs.yml
+      parameters:
+        jobs: [build_and_pack]
+
+    - job: build_and_pack
+      pool:
+        vmImage: windows-2019
+      steps:
+
+        - template: steps/install-latest-dotnet-sdk.yml
+
+        - script: tracer\build.cmd UpdateVersion BuildTracerHome PackNuGet -Version "2.255.250"
+          displayName: Build tracer home
+
+        - publish: $(artifacts)\nuget\Datadog.Trace.2.255.250.nupkg
+          displayName: Upload "version bumped" test nuget
+          artifact: version-bumped-test-nuget
+
+
 - stage: unit_tests_windows
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: build_windows
