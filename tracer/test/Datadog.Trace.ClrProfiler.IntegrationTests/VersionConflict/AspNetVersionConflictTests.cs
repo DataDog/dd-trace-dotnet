@@ -5,6 +5,7 @@
 
 #if NETFRAMEWORK
 
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -134,9 +135,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
 
             response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK, $"server returned an error: {content}");
 
-            _iisFixture.Agent.WaitForSpans(expectedSpans, returnAllOperations: true);
+            var spans = _iisFixture.Agent.WaitForSpans(expectedSpans, returnAllOperations: true);
 
-            var result = JObject.Parse(content);
+            spans.Should().HaveCount(expectedSpans);
+
+            var mvcSpan = spans.Single(s => s.Name == "aspnet-mvc.request");
+
+            mvcSpan.Tags.Should().Contain(new KeyValuePair<string, string>("Test", "OK"));
+
+            var rootSpan = spans.Single(s => s.Name == "aspnet.request");
+
+            rootSpan.Metrics.Should().Contain(new KeyValuePair<string, double>(Metrics.SamplingPriority, (double)SamplingPriority.UserKeep));
+
+            var result = JObject.Parse(content)["Instance"];
+
+            result.Should().NotBeNull();
+
+            result["OperationName"].Value<string>().Should().Be(mvcSpan.Name);
+            result["ResourceName"].Value<string>().Should().Be(mvcSpan.Resource);
+            result["Type"].Value<string>().Should().Be(mvcSpan.Type);
+            result["ServiceName"].Value<string>().Should().Be(mvcSpan.Service);
         }
 
         private static bool VerifySpan(MockTracerAgent.Span span, bool parentTrace)

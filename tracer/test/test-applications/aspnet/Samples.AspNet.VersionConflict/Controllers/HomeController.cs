@@ -5,6 +5,8 @@ using System.Threading;
 using System.Reflection;
 using System.Web.Mvc;
 using Datadog.Trace;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Samples.AspNet.VersionConflict.Controllers
 {
@@ -46,7 +48,7 @@ namespace Samples.AspNet.VersionConflict.Controllers
 
             scope.Span.SetTag(Tags.SamplingPriority, "UserKeep");
 
-            return Json(scope.Span);
+            return Content(JsonConvert.SerializeObject(scope.Span, typeof(ISpan), new JsonSerializerSettings()));
         }
 
         public ActionResult SendRequest()
