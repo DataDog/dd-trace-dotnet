@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler
 
             if (span != null)
             {
-                return tracer.ActivateSpanInternal(span);
+                return tracer.ActivateSpan(span);
             }
 
             return null;
