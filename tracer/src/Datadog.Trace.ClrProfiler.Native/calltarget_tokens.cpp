@@ -946,11 +946,33 @@ HRESULT CallTargetTokens::WriteBeginMethod(void* rewriterWrapperPtr, mdTypeRef i
 
     PCCOR_SIGNATURE argumentsSignatureBuffer[FASTPATH_COUNT];
     ULONG argumentsSignatureSize[FASTPATH_COUNT];
+    unsigned elementType;
     for (auto i = 0; i < numArguments; i++)
     {
-        auto signatureSize = methodArguments[i].GetSignature(argumentsSignatureBuffer[i]);
-        argumentsSignatureSize[i] = signatureSize;
-        signatureLength += signatureSize;
+        const auto& argTypeFlags = methodArguments[i].GetTypeFlags(elementType);
+        if (argTypeFlags & TypeFlagByRef)
+        {
+            PCCOR_SIGNATURE argSigBuff;
+            auto signatureSize = methodArguments[i].GetSignature(argSigBuff);
+            if (argSigBuff[0] == ELEMENT_TYPE_BYREF)
+            {
+                argumentsSignatureBuffer[i] = argSigBuff + 1;
+                argumentsSignatureSize[i] = signatureSize - 1;
+                signatureLength += signatureSize - 1;
+            }
+            else
+            {
+                argumentsSignatureBuffer[i] = argSigBuff;
+                argumentsSignatureSize[i] = signatureSize;
+                signatureLength += signatureSize;
+            }
+        }
+        else
+        {
+            auto signatureSize = methodArguments[i].GetSignature(argumentsSignatureBuffer[i]);
+            argumentsSignatureSize[i] = signatureSize;
+            signatureLength += signatureSize;
+        }
     }
 
     COR_SIGNATURE signature[signatureBufferSize];

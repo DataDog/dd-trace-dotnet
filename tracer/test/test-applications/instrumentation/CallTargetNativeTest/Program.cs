@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using CallTargetNativeTest.NoOp;
 using Datadog.Trace.ClrProfiler;
 
 namespace CallTargetNativeTest
@@ -23,8 +24,11 @@ namespace CallTargetNativeTest
 
         static void InjectCallTargetDefinitions()
         {
+            const string TargetAssembly = "CallTargetNativeTest";
+            string integrationAssembly = typeof(NoOp.Noop0ArgumentsIntegration).Assembly.FullName;
+
             var definitionsList = new List<NativeCallTargetDefinition>();
-            definitionsList.Add(new("CallTargetNativeTest", "CallTargetNativeTest.With0ArgumentsThrowOnAsyncEnd", "Wait2Seconds", new[] { "_" }, 0, 0, 0, 1, 1, 1, "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb", "CallTargetNativeTest.NoOp.Noop0ArgumentsIntegration"));
+            definitionsList.Add(new(TargetAssembly, "CallTargetNativeTest.With0ArgumentsThrowOnAsyncEnd", "Wait2Seconds", new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, "CallTargetNativeTest.NoOp.Noop0ArgumentsIntegration"));
 
             for (var i = 0; i < 10; i++)
             {
@@ -42,12 +46,18 @@ namespace CallTargetNativeTest
 
                 foreach (var tType in withTypes)
                 {
-                    definitionsList.Add(new("CallTargetNativeTest", tType, "VoidMethod", signaturesArray, 0, 0, 0, 1, 1, 1, "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb", wrapperTypeVoid));
-                    definitionsList.Add(new("CallTargetNativeTest", tType, "ReturnValueMethod", signaturesArray, 0, 0, 0, 1, 1, 1, "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb", wrapperType));
-                    definitionsList.Add(new("CallTargetNativeTest", tType, "ReturnReferenceMethod", signaturesArray, 0, 0, 0, 1, 1, 1, "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb", wrapperType));
-                    definitionsList.Add(new("CallTargetNativeTest", tType, "ReturnGenericMethod", signaturesArray, 0, 0, 0, 1, 1, 1, "CallTargetNativeTest, Version=1.0.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb", wrapperType));
+                    definitionsList.Add(new(TargetAssembly, tType, "VoidMethod", signaturesArray, 0, 0, 0, 1, 1, 1, integrationAssembly, wrapperTypeVoid));
+                    definitionsList.Add(new(TargetAssembly, tType, "ReturnValueMethod", signaturesArray, 0, 0, 0, 1, 1, 1, integrationAssembly, wrapperType));
+                    definitionsList.Add(new(TargetAssembly, tType, "ReturnReferenceMethod", signaturesArray, 0, 0, 0, 1, 1, 1, integrationAssembly, wrapperType));
+                    definitionsList.Add(new(TargetAssembly, tType, "ReturnGenericMethod", signaturesArray, 0, 0, 0, 1, 1, 1, integrationAssembly, wrapperType));
                 }
             }
+
+            // Add By Ref integrations
+            definitionsList.Add(new(TargetAssembly, typeof(WithRefArguments).FullName, "VoidMethod", new[] { "_", "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(StringAndIntRefModificationVoidIntegration).FullName));
+            definitionsList.Add(new(TargetAssembly, typeof(WithRefArguments).FullName, "VoidRefMethod", new[] { "_", "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(StringAndIntRefModificationVoidIntegration).FullName));
+
+            definitionsList.Add(new(TargetAssembly, typeof(WithOutArguments).FullName, "VoidMethod", new[] { "_", "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(StringAndIntOutVoidIntegration).FullName));
 
             NativeMethods.InitializeProfiler(Guid.NewGuid().ToString("N"), definitionsList.ToArray());
         }
@@ -106,6 +116,16 @@ namespace CallTargetNativeTest
                         Argument9();
                         break;
                     }
+                case "withref":
+                    {
+                        WithRefArguments();
+                        break;
+                    }
+                case "without":
+                    {
+                        WithOutArguments();
+                        break;
+                    }
                 case "all":
                     {
                         Argument0();
@@ -118,6 +138,8 @@ namespace CallTargetNativeTest
                         Argument7();
                         Argument8();
                         Argument9();
+                        WithRefArguments();
+                        WithOutArguments();
                         break;
                     }
                 default:
@@ -129,6 +151,68 @@ namespace CallTargetNativeTest
             // Sleep to minimize the risk of segfault caused by https://github.com/dotnet/runtime/issues/11885
             Thread.Sleep(5000);
 #endif
+        }
+
+        private static void WithRefArguments()
+        {
+            var wRefArg = new WithRefArguments();
+            Console.WriteLine($"{typeof(WithRefArguments).FullName}.VoidMethod");
+            RunMethod(() =>
+            {
+                wRefArg.VoidMethod("MyString", 15);
+
+                if (wRefArg.StringValue != "MyString (Modified)")
+                {
+                    throw new Exception("Error modifying string value.");
+                }
+
+                if (wRefArg.IntValue != 42)
+                {
+                    throw new Exception("Error modifying int value.");
+                }
+            });
+
+            Console.WriteLine($"{typeof(WithRefArguments).FullName}.VoidRefMethod");
+            RunMethod(() =>
+            {
+                string strVal = "MyString";
+                int intVal = 15;
+
+                wRefArg.VoidRefMethod(ref strVal, ref intVal);
+
+                if (strVal != "MyString (Modified)")
+                {
+                    throw new Exception("Error modifying string value.");
+                }
+
+                if (intVal != 42)
+                {
+                    throw new Exception("Error modifying int value.");
+                }
+            });
+        }
+
+        private static void WithOutArguments()
+        {
+            var wOutArg = new WithOutArguments();
+            Console.WriteLine($"{typeof(WithOutArguments).FullName}.VoidMethod");
+            RunMethod(() =>
+            {
+                string strValue;
+                int intValue;
+
+                wOutArg.VoidMethod(out strValue, out intValue);
+
+                if (strValue != "Arg01")
+                {
+                    throw new Exception("Error modifying string value.");
+                }
+
+                if (intValue != 12)
+                {
+                    throw new Exception("Error modifying int value.");
+                }
+            });
         }
 
         private static void Argument0()
@@ -1265,7 +1349,6 @@ namespace CallTargetNativeTest
             RunMethod(() => w9TEnd.ReturnGenericMethod<int, int, Tuple<int, int>, ulong>(42, 99, Tuple.Create(1, 2), Task.CompletedTask, CancellationToken.None, 987, "Arg7-Value", Assembly.GetExecutingAssembly(), null));
             Console.WriteLine();
         }
-
 
         private static void RunMethod(Action action)
         {

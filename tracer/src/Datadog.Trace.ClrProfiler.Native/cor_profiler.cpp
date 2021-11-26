@@ -2587,13 +2587,14 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
         // Load the arguments directly (FastPath)
         for (int i = 0; i < numArgs; i++)
         {
-            reWriterWrapper.LoadArgumentRef(i + (isStatic ? 0 : 1));
             const auto& argTypeFlags = methodArguments[i].GetTypeFlags(elementType);
             if (argTypeFlags & TypeFlagByRef)
             {
-                Logger::Warn("*** CallTarget_RewriterCallback(): Methods with ref parameters "
-                             "cannot be instrumented. ");
-                return S_FALSE;
+                reWriterWrapper.LoadArgument(i + (isStatic ? 0 : 1));
+            }
+            else
+            {
+                reWriterWrapper.LoadArgumentRef(i + (isStatic ? 0 : 1));
             }
         }
     }

@@ -156,7 +156,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 }
                 else if (parameterProxyType == null)
                 {
-                    WriteLoadArgumentRef(ilWriter, i, mustLoadInstance);
+                    WriteLoadArgument(ilWriter, i, mustLoadInstance);
                 }
                 else
                 {
