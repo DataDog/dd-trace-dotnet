@@ -73,8 +73,8 @@
 
     <!-- Integration: AWSSDK.SQS -->
     <!-- Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.1.46 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.1.46" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.2 -->
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.2" />
 
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!-- Assembly: Microsoft.Azure.Cosmos.Client -->
@@ -133,18 +133,18 @@
 
     <!-- Integration: MongoDB.Driver.Core -->
     <!-- Assembly: MongoDB.Driver.Core -->
-    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver.Core/2.13.2 -->
-    <PackageReference Include="MongoDB.Driver.Core" Version="2.13.2" />
+    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver.Core/2.14.0 -->
+    <PackageReference Include="MongoDB.Driver.Core" Version="2.14.0" />
 
     <!-- Integration: MongoDB.Driver.Core -->
     <!-- Assembly: MongoDB.Driver.Core -->
-    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver/2.13.2 -->
-    <PackageReference Include="MongoDB.Driver" Version="2.13.2" />
+    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver/2.14.0 -->
+    <PackageReference Include="MongoDB.Driver" Version="2.14.0" />
 
     <!-- Integration: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
     <!-- Assembly: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
-    <!-- Latest package https://www.nuget.org/packages/MSTest.TestAdapter/2.2.7 -->
-    <PackageReference Include="MSTest.TestAdapter" Version="2.2.7" />
+    <!-- Latest package https://www.nuget.org/packages/MSTest.TestAdapter/2.2.8 -->
+    <PackageReference Include="MSTest.TestAdapter" Version="2.2.8" />
 
     <!-- Integration: Microsoft.VisualStudio.TestPlatform.TestFramework -->
     <!-- Assembly: Microsoft.VisualStudio.TestPlatform.TestFramework -->

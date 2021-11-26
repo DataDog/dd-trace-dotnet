@@ -75,7 +75,7 @@ namespace Datadog.Trace.TestHelpers
                 traceAgentPort: traceAgentPort,
                 statsdPort: statsdPort,
                 aspNetCorePort: aspNetCorePort,
-                processToProfile: exec);
+                processToProfile: exec + ";testhost.exe");
         }
 
         public ProcessResult RunDotnetTestSampleAndWaitForExit(int traceAgentPort, int? statsdPort = null, string arguments = null, string packageVersion = "", string framework = "")
