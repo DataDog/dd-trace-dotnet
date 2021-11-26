@@ -150,7 +150,13 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the active scope
         /// </summary>
-        public IScope ActiveScope => InternalActiveScope;
+        public IScope ActiveScope
+        {
+            get
+            {
+                return DistributedTracer.Instance.GetActiveScope() ?? InternalActiveScope;
+            }
+        }
 
         /// <summary>
         /// Gets the active scope

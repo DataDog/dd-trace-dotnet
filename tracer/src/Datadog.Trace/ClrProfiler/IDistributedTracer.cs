@@ -9,6 +9,8 @@ namespace Datadog.Trace.ClrProfiler
     {
         SpanContext GetSpanContext();
 
+        IScope GetActiveScope();
+
         void SetSpanContext(SpanContext value);
 
         void LockSamplingPriority();

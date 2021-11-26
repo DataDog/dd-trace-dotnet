@@ -17,6 +17,12 @@ namespace Datadog.Trace.ClrProfiler
 
         private ICommonTracer _child;
 
+        IScope IDistributedTracer.GetActiveScope()
+        {
+            // The automatic tracer doesn't need to get the manual active trace
+            return null;
+        }
+
         SpanContext IDistributedTracer.GetSpanContext()
         {
             if (_child is null)
@@ -51,6 +57,11 @@ namespace Datadog.Trace.ClrProfiler
             }
 
             return (SamplingPriority?)_child.TrySetSamplingPriority((int?)samplingPriority);
+        }
+
+        public object GetActiveScope()
+        {
+            return Tracer.Instance.InternalActiveScope;
         }
 
         /// <summary>

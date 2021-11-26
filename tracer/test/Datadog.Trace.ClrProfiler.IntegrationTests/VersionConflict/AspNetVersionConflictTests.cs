@@ -6,9 +6,12 @@
 #if NETFRAMEWORK
 
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -112,6 +115,28 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
 
             // The sampling priority should be UserKeep for all spans
             spans.Should().OnlyContain(s => VerifySpan(s, parentTrace));
+        }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("LoadFromGAC", "True")]
+
+        public async Task ParentScope()
+        {
+            // aspnet.request + aspnet-mvc.request
+            const int expectedSpans = 2;
+
+            using var client = new HttpClient();
+
+            var response = await client.GetAsync($"http://localhost:{_iisFixture.HttpPort}/home/parentScope");
+            var content = await response.Content.ReadAsStringAsync();
+
+            response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK, $"server returned an error: {content}");
+
+            _iisFixture.Agent.WaitForSpans(expectedSpans, returnAllOperations: true);
+
+            var result = JObject.Parse(content);
         }
 
         private static bool VerifySpan(MockTracerAgent.Span span, bool parentTrace)
