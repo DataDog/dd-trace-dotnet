@@ -275,11 +275,8 @@ namespace Datadog.Trace
         Datadog.Trace.IScope ActiveScope { get; }
         string DefaultServiceName { get; }
         Datadog.Trace.Configuration.ImmutableTracerSettings Settings { get; }
-        Datadog.Trace.IScope ActivateSpan(Datadog.Trace.ISpan span);
-        Datadog.Trace.IScope ActivateSpan(Datadog.Trace.ISpan span, bool finishOnClose);
         System.Threading.Tasks.Task ForceFlushAsync();
         Datadog.Trace.IScope StartActive(string operationName, Datadog.Trace.ISpanContext parent = null, string serviceName = null, System.DateTimeOffset? startTime = default, bool ignoreActiveScope = false, bool finishOnClose = true);
-        Datadog.Trace.ISpan StartSpan(string operationName, Datadog.Trace.ISpanContext parent = null, string serviceName = null, System.DateTimeOffset? startTime = default, bool ignoreActiveScope = false);
     }
     public enum SamplingPriority
     {
@@ -290,7 +287,7 @@ namespace Datadog.Trace
     }
     public class Scope : Datadog.Trace.IScope, System.IDisposable
     {
-        public Datadog.Trace.ISpan Span { get; }
+        public Datadog.Trace.Span Span { get; }
         public void Close() { }
         public void Dispose() { }
     }
@@ -379,11 +376,9 @@ namespace Datadog.Trace
         public string DefaultServiceName { get; }
         public Datadog.Trace.Configuration.ImmutableTracerSettings Settings { get; }
         public static Datadog.Trace.ITracer Instance { get; }
-        public Datadog.Trace.IScope ActivateSpan(Datadog.Trace.ISpan span, bool finishOnClose = true) { }
         protected override void Finalize() { }
         public System.Threading.Tasks.Task ForceFlushAsync() { }
         public Datadog.Trace.IScope StartActive(string operationName, Datadog.Trace.ISpanContext parent = null, string serviceName = null, System.DateTimeOffset? startTime = default, bool ignoreActiveScope = false, bool finishOnClose = true) { }
-        public Datadog.Trace.ISpan StartSpan(string operationName, Datadog.Trace.ISpanContext parent = null, string serviceName = null, System.DateTimeOffset? startTime = default, bool ignoreActiveScope = false) { }
         public static void Configure(Datadog.Trace.Configuration.TracerSettings settings) { }
     }
 }
