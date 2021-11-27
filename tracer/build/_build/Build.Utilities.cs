@@ -40,7 +40,7 @@ partial class Build
     AbsolutePath IisExpressApplicationConfig =>
         RootDirectory / ".vs" / Solution.Name / "config" / "applicationhost.config";
 
-    readonly IEnumerable<string> GacProjects = new []
+    readonly IEnumerable<string> GacProjects = new[]
     {
         Projects.DatadogTrace,
         Projects.DatadogTraceAspNet
@@ -90,7 +90,7 @@ partial class Build
         .Requires(() => IsWin)
         .Executes(() =>
         {
-            var envVars = new Dictionary<string,string>(new ProcessStartInfo().Environment);
+            var envVars = new Dictionary<string, string>(new ProcessStartInfo().Environment);
 
             // Override environment variables
             envVars["COR_ENABLE_PROFILING"] = "1";
@@ -98,6 +98,7 @@ partial class Build
             envVars["COR_PROFILER_PATH_64"] = TracerHomeDirectory / "win-x64" / "Datadog.Trace.ClrProfiler.Native.dll";
             envVars["COR_PROFILER_PATH_32"] = TracerHomeDirectory / "win-x86" / "Datadog.Trace.ClrProfiler.Native.dll";
             envVars["DD_DOTNET_TRACER_HOME"] = TracerHomeDirectory;
+            envVars["DD_APPSEC_ENABLED"] = "true";
 
             if (ExtraEnvVars?.Length > 0)
             {
@@ -120,7 +121,7 @@ partial class Build
         .Requires(() => Framework)
         .Executes(() =>
         {
-            var envVars = new Dictionary<string,string>()
+            var envVars = new Dictionary<string, string>()
             {
                 {"COR_ENABLE_PROFILING", "1"},
                 {"COR_PROFILER", "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"},
@@ -156,7 +157,7 @@ partial class Build
             {
                 Logger.Info($"Running sample '{SampleName}'");
             }
-            else if(System.IO.File.Exists(SampleName))
+            else if (System.IO.File.Exists(SampleName))
             {
                 project = SampleName;
                 Logger.Info($"Running project '{SampleName}'");
@@ -201,13 +202,13 @@ partial class Build
        .Description("Updates the vendored dependency code and dependabot template")
        .Executes(async () =>
        {
-            var dependabotProj = TracerDirectory / "dependabot"  /  "Datadog.Dependabot.Vendors.csproj";
-            DependabotFileManager.UpdateVendors(dependabotProj);
+           var dependabotProj = TracerDirectory / "dependabot" / "Datadog.Dependabot.Vendors.csproj";
+           DependabotFileManager.UpdateVendors(dependabotProj);
 
-            var vendorDirectory = Solution.GetProject(Projects.DatadogTrace).Directory / "Vendors";
-            var downloadDirectory = TemporaryDirectory / "Downloads";
-            EnsureCleanDirectory(downloadDirectory);
-            await UpdateVendorsTool.UpdateVendors(downloadDirectory, vendorDirectory);
+           var vendorDirectory = Solution.GetProject(Projects.DatadogTrace).Directory / "Vendors";
+           var downloadDirectory = TemporaryDirectory / "Downloads";
+           EnsureCleanDirectory(downloadDirectory);
+           await UpdateVendorsTool.UpdateVendors(downloadDirectory, vendorDirectory);
        });
 
     Target UpdateIntegrationsJson => _ => _

@@ -211,6 +211,8 @@ namespace Datadog.Trace.AppSec
             var json = JsonConvert.SerializeObject(new AppSecJson { Triggers = results });
             span.SetTag(Tags.AppSecJson, json);
 
+            span.SetTag(Tags.Origin, "appsec");
+
             span.SetTag(Tags.HttpUserAgent, transport.GetUserAget());
 
             var reportedIpInfo = transport.GetReportedIpInfo();
