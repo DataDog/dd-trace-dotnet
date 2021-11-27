@@ -97,9 +97,9 @@ namespace Datadog.Trace.Security.IntegrationTests
                     assert(span);
                 }
 
+                // not all tags will have security events, only the route ones
                 var gotTag = span.Tags.TryGetValue(Tags.AppSecJson, out var json);
-                Assert.Equal(enableSecurity, gotTag);
-                if (enableSecurity)
+                if (gotTag)
                 {
                     actualAppSecEvents++;
 
