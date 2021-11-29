@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Telemetry
@@ -18,6 +17,7 @@ namespace Datadog.Trace.Telemetry
 
         public TelemetryData[] BuildTelemetryData(
             ApplicationTelemetryData application,
+            HostTelemetryData host,
             ConfigTelemetryData configuration,
             ICollection<DependencyTelemetryData> dependencies,
             ICollection<IntegrationTelemetryData> integrations)
@@ -37,13 +37,13 @@ namespace Datadog.Trace.Telemetry
                     Integrations = integrations,
                 };
 
-                return new[] { GetRequest(application, TelemetryRequestTypes.AppStarted, payload) };
+                return new[] { GetRequest(application, host, TelemetryRequestTypes.AppStarted, payload) };
             }
 
             if (dependencies is null && integrations is null)
             {
                 Log.Debug("No changes in telemetry, sending heartbeat");
-                return new[] { GetRequest(application, TelemetryRequestTypes.AppHeartbeat, payload: null) };
+                return new[] { GetRequest(application, host, TelemetryRequestTypes.AppHeartbeat, payload: null) };
             }
 
             if (dependencies is null)
@@ -51,7 +51,7 @@ namespace Datadog.Trace.Telemetry
                 Log.Debug("Integrations updated, sending app-integrations-change");
                 var payload = new AppIntegrationsChangedPayload { Integrations = integrations };
 
-                return new[] { GetRequest(application, TelemetryRequestTypes.AppIntegrationsChanged, payload), };
+                return new[] { GetRequest(application, host, TelemetryRequestTypes.AppIntegrationsChanged, payload), };
             }
 
             if (integrations is null)
@@ -59,7 +59,7 @@ namespace Datadog.Trace.Telemetry
                 Log.Debug("Dependencies updated, sending app-dependencies-loaded");
                 var payload = new AppDependenciesLoadedPayload { Dependencies = dependencies };
 
-                return new[] { GetRequest(application, TelemetryRequestTypes.AppDependenciesLoaded, payload), };
+                return new[] { GetRequest(application, host, TelemetryRequestTypes.AppDependenciesLoaded, payload), };
             }
 
             Log.Debug("Dependencies updated, sending app-dependencies-loaded");
@@ -69,35 +69,36 @@ namespace Datadog.Trace.Telemetry
 
             return new[]
             {
-                GetRequest(application, TelemetryRequestTypes.AppDependenciesLoaded, depsPayload),
-                GetRequest(application, TelemetryRequestTypes.AppIntegrationsChanged, integrationsPayload),
+                GetRequest(application, host, TelemetryRequestTypes.AppDependenciesLoaded, depsPayload),
+                GetRequest(application, host, TelemetryRequestTypes.AppIntegrationsChanged, integrationsPayload),
             };
         }
 
-        public TelemetryData BuildHeartBeatTelemetryData(ApplicationTelemetryData application)
+        public TelemetryData BuildHeartBeatTelemetryData(ApplicationTelemetryData application, HostTelemetryData host)
         {
-            if (application is null)
+            if (application is null || host is null)
             {
                 Log.Debug("Telemetry not initialized, skipping");
                 return null;
             }
 
-            return GetRequest(application, TelemetryRequestTypes.AppClosing, payload: null);
+            return GetRequest(application, host, TelemetryRequestTypes.AppClosing, payload: null);
         }
 
-        public TelemetryData BuildAppClosingTelemetryData(ApplicationTelemetryData application)
+        public TelemetryData BuildAppClosingTelemetryData(ApplicationTelemetryData application, HostTelemetryData host)
         {
-            if (application is null)
+            if (application is null || host is null)
             {
                 Log.Debug("Telemetry not initialized, skipping");
                 return null;
             }
 
-            return GetRequest(application, TelemetryRequestTypes.AppClosing, payload: null);
+            return GetRequest(application, host, TelemetryRequestTypes.AppClosing, payload: null);
         }
 
         private TelemetryData GetRequest(
             ApplicationTelemetryData application,
+            HostTelemetryData host,
             string requestType,
             IPayload payload)
         {
@@ -107,6 +108,7 @@ namespace Datadog.Trace.Telemetry
             {
                 SeqId = sequence,
                 Application = application,
+                Host = host,
                 RuntimeId = Tracer.RuntimeId,
                 TracerTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
                 RequestType = requestType,

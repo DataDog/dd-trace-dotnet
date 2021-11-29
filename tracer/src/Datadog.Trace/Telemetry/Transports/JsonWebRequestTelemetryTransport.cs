@@ -40,7 +40,9 @@ namespace Datadog.Trace.Telemetry
                     request.Headers.Add(defaultHeader.Key, defaultHeader.Value);
                 }
 
-                request.Headers.Add(TelemetryConstants.TimestampHeader, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
+                request.Headers.Add(TelemetryConstants.ApiVersionHeader, data.ApiVersion);
+                request.Headers.Add(TelemetryConstants.RequestTypeHeader, data.RequestType);
+
                 using (var requestStream = await request.GetRequestStreamAsync().ConfigureAwait(false))
                 {
                     await requestStream.WriteAsync(bytes, 0, bytes.Length).ConfigureAwait(false);

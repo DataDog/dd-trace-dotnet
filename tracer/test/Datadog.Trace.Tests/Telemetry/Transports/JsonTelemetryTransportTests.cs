@@ -36,6 +36,16 @@ namespace Datadog.Trace.Tests.Telemetry
                     LanguageName = "node.js",
                     LanguageVersion = "14.16.1",
                 },
+                Host = new HostTelemetryData()
+                {
+                    Hostname = "i-09ecf74c319c49be8",
+                    ContainerId = "d39b145254d1f9c337fdd2be132f6650c6f5bc274bfa28aaa204a908a1134096",
+                    Os =  "GNU/Linux",
+                    OsVersion = "ubuntu 18.04.5 LTS (Bionic Beaver)",
+                    KernelName = "Linux",
+                    KernelRelease = "5.4.0-1037-gcp",
+                    KernelVersion = "#40~18.04.1-Ubuntu SMP Fri Feb 5 15:41:35 UTC 2021"
+                },
                 Payload = new AppStartedPayload
                 {
                     Integrations = new List<IntegrationTelemetryData>
@@ -72,7 +82,6 @@ namespace Datadog.Trace.Tests.Telemetry
                             Version = "1.19.0"
                         },
                     },
-                    Configuration = new ConfigTelemetryData { OsVersion = "10", OsName = "Windows" },
                     AdditionalPayload = new Dictionary<string, object> { { "to_be", "determined" }, }
                 }
             };

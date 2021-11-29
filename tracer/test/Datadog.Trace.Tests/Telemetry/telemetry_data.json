@@ -12,6 +12,15 @@
     "service_version": "1.2.3",
     "language_version": "14.16.1"
   },
+  "host": {
+    "hostname": "i-09ecf74c319c49be8",
+    "container_id": "d39b145254d1f9c337fdd2be132f6650c6f5bc274bfa28aaa204a908a1134096",
+    "os": "GNU/Linux",
+    "os_version": "ubuntu 18.04.5 LTS (Bionic Beaver)",
+    "kernel_name": "Linux",
+    "kernel_release": "5.4.0-1037-gcp",
+    "kernel_version": "#40~18.04.1-Ubuntu SMP Fri Feb 5 15:41:35 UTC 2021"
+  },
   "payload": {
     "integrations": [
       {
@@ -40,10 +49,7 @@
         "version": "1.19.0"
       }
     ],
-    "configuration": {
-      "os_version": "10",
-      "os_name": "Windows"
-    },
+    "configuration": {},
     "additional_payload": {
       "to_be": "determined"
     }

@@ -22,5 +22,7 @@ namespace Datadog.Trace.Telemetry
         public string RuntimeName { get; set; }
 
         public string RuntimeVersion { get; set; }
+
+        public string RuntimePatches { get; set; }
     }
 }

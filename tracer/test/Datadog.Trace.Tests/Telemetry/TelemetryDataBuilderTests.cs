@@ -17,10 +17,12 @@ namespace Datadog.Trace.Tests.Telemetry
     public class TelemetryDataBuilderTests
     {
         private readonly ApplicationTelemetryData _application;
+        private readonly HostTelemetryData _host;
 
         public TelemetryDataBuilderTests()
         {
             _application = new ApplicationTelemetryData { Env = "integration-ci", ServiceName = "Test Service" };
+            _host = new HostTelemetryData();
         }
 
         [Fact]
@@ -31,7 +33,7 @@ namespace Datadog.Trace.Tests.Telemetry
             Assert.Throws<ArgumentNullException>(
                 () =>
                 {
-                    builder.BuildTelemetryData(null, null, null, null);
+                    builder.BuildTelemetryData(null, null, null, null, null);
                 });
         }
 
@@ -40,17 +42,17 @@ namespace Datadog.Trace.Tests.Telemetry
         {
             var builder = new TelemetryDataBuilder();
 
-            var result = builder.BuildAppClosingTelemetryData(null);
+            var result = builder.BuildAppClosingTelemetryData(null, null);
 
             result.Should().BeNull();
         }
 
         [Fact]
-        public void WhenHasApplicationData_GeneratesAppClosingTelemetry()
+        public void WhenHasApplicationAndHostData_GeneratesAppClosingTelemetry()
         {
             var builder = new TelemetryDataBuilder();
 
-            var result = builder.BuildAppClosingTelemetryData(_application);
+            var result = builder.BuildAppClosingTelemetryData(_application, _host);
 
             result.Should().NotBeNull();
             result.Application.Should().Be(_application);
@@ -63,13 +65,13 @@ namespace Datadog.Trace.Tests.Telemetry
         {
             var builder = new TelemetryDataBuilder();
 
-            var data = builder.BuildTelemetryData(_application, null, null, null);
+            var data = builder.BuildTelemetryData(_application, _host, null, null, null);
             data.Should().ContainSingle().Which.SeqId.Should().Be(1);
 
-            data = builder.BuildTelemetryData(_application, null, null, null);
+            data = builder.BuildTelemetryData(_application, _host, null, null, null);
             data.Should().ContainSingle().Which.SeqId.Should().Be(2);
 
-            var closingData = builder.BuildAppClosingTelemetryData(_application);
+            var closingData = builder.BuildAppClosingTelemetryData(_application, _host);
             closingData.Should().NotBeNull();
             closingData.SeqId.Should().Be(3);
         }
@@ -88,7 +90,7 @@ namespace Datadog.Trace.Tests.Telemetry
             var expected = expectedRequests.Split(',');
             var builder = new TelemetryDataBuilder();
 
-            var result = builder.BuildTelemetryData(_application, config, dependencies, integrations);
+            var result = builder.BuildTelemetryData(_application, _host, config, dependencies, integrations);
 
             result.Should().NotBeNull();
             result.Select(x => x.RequestType)

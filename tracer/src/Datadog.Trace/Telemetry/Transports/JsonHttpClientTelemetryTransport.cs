@@ -38,7 +38,8 @@ namespace Datadog.Trace.Telemetry
                 {
                     Content = new StringContent(serializedData, Encoding.UTF8, "application/json")
                 };
-                request.Headers.Add(TelemetryConstants.TimestampHeader, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
+                request.Headers.Add(TelemetryConstants.ApiVersionHeader, data.ApiVersion);
+                request.Headers.Add(TelemetryConstants.RequestTypeHeader, data.RequestType);
 
                 var response = await _httpClient.SendAsync(request).ConfigureAwait(false);
                 if (response.IsSuccessStatusCode)

@@ -138,7 +138,8 @@ namespace Datadog.Trace.Telemetry
             try
             {
                 var application = _configuration.GetApplicationData();
-                if (application is null)
+                var host = _configuration.GetHostData();
+                if (application is null || host is null)
                 {
                     Log.Debug("Telemetry not initialized, skipping");
                     return;
@@ -149,7 +150,7 @@ namespace Datadog.Trace.Telemetry
                 var dependencies = _dependencies.GetData();
                 var integrations = _integrations.GetData();
 
-                var data = _dataBuilder.BuildTelemetryData(application, configuration, dependencies, integrations);
+                var data = _dataBuilder.BuildTelemetryData(application, host, configuration, dependencies, integrations);
                 if (data is null)
                 {
                     Log.Debug("No telemetry data, skipping");
@@ -173,7 +174,8 @@ namespace Datadog.Trace.Telemetry
             try
             {
                 var application = _configuration.GetApplicationData();
-                var data = _dataBuilder.BuildAppClosingTelemetryData(application);
+                var host = _configuration.GetHostData();
+                var data = _dataBuilder.BuildAppClosingTelemetryData(application, host);
 
                 if (data is null)
                 {
