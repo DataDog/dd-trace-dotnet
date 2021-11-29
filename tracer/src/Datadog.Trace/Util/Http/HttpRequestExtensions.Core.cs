@@ -5,9 +5,9 @@
 
 #if !NETFRAMEWORK
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.Logging;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
@@ -16,6 +16,7 @@ namespace Datadog.Trace.Util.Http
     internal static partial class HttpRequestExtensions
     {
         private const string NoHostSpecified = "UNKNOWN_HOST";
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HttpRequestExtensions));
 
         internal static Dictionary<string, object> PrepareArgsForWaf(this HttpRequest request, RouteData routeDatas = null)
         {
@@ -25,7 +26,15 @@ namespace Datadog.Trace.Util.Http
             {
                 if (!k.Equals("cookie", System.StringComparison.OrdinalIgnoreCase))
                 {
-                    headersDic.Add(k.ToLowerInvariant(), request.Headers[k]);
+                    var key = k.ToLowerInvariant();
+                    if (!headersDic.ContainsKey(key))
+                    {
+                        headersDic.Add(key, request.Headers[k]);
+                    }
+                    else
+                    {
+                        Log.Warning("Header {key} couldn't be added as argument to the waf", key);
+                    }
                 }
             }
 
@@ -46,16 +55,33 @@ namespace Datadog.Trace.Util.Http
             var queryStringDic = new Dictionary<string, List<string>>(request.Query.Count);
             foreach (var kvp in request.Query)
             {
-                queryStringDic.Add(kvp.Key, kvp.Value.ToList());
+                if (!queryStringDic.ContainsKey(kvp.Key))
+                {
+                    queryStringDic.Add(kvp.Key, kvp.Value.ToList());
+                }
+                else
+                {
+                    Log.Warning("Query string with {key} couldn't be added as argument to the waf", kvp.Key);
+                }
             }
 
             var dict = new Dictionary<string, object>
             {
-                { AddressesConstants.RequestMethod, request.Method },
-                { AddressesConstants.RequestUriRaw, url },
-                { AddressesConstants.RequestQuery, queryStringDic },
-                { AddressesConstants.RequestHeaderNoCookies, headersDic },
-                { AddressesConstants.RequestCookies, cookiesDic },
+                {
+                    AddressesConstants.RequestMethod, request.Method
+                },
+                {
+                    AddressesConstants.RequestUriRaw, url
+                },
+                {
+                    AddressesConstants.RequestQuery, queryStringDic
+                },
+                {
+                    AddressesConstants.RequestHeaderNoCookies, headersDic
+                },
+                {
+                    AddressesConstants.RequestCookies, cookiesDic
+                },
             };
 
             if (routeDatas != null && routeDatas.Values.Any())

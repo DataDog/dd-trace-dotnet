@@ -5,16 +5,18 @@
 #if NETFRAMEWORK
 
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Web;
 using System.Web.Routing;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Util.Http
 {
     internal static partial class HttpRequestExtensions
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HttpRequestExtensions));
+
         internal static Dictionary<string, object> PrepareArgsForWaf(this HttpRequest request, RouteData routeDatas = null)
         {
             var headersDic = new Dictionary<string, string>(request.Headers.Keys.Count);
@@ -23,7 +25,15 @@ namespace Datadog.Trace.Util.Http
             {
                 if (!k.Equals("cookie", System.StringComparison.OrdinalIgnoreCase))
                 {
-                    headersDic.Add(k.ToLowerInvariant(), request.Headers[k]);
+                    var key = k.ToLowerInvariant();
+                    if (!headersDic.ContainsKey(key))
+                    {
+                        headersDic.Add(key, request.Headers[k]);
+                    }
+                    else
+                    {
+                        Log.Warning("Header {key} couldn't be added as argument to the waf", key);
+                    }
                 }
             }
 
@@ -46,7 +56,14 @@ namespace Datadog.Trace.Util.Http
             foreach (var k in request.QueryString.AllKeys)
             {
                 var values = request.QueryString[k];
-                queryDic.Add(k, values);
+                if (queryDic.ContainsKey(k))
+                {
+                    queryDic.Add(k, values);
+                }
+                else
+                {
+                    Log.Warning("Header {key} couldn't be added as argument to the waf", k);
+                }
             }
 
             var dict = new Dictionary<string, object>
