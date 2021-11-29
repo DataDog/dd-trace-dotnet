@@ -7,10 +7,6 @@ namespace Datadog.Trace.Telemetry
 {
     internal class ConfigTelemetryData
     {
-        public string OsName { get; set; }
-
-        public string OsVersion { get; set; }
-
         public string Platform { get; set; }
 
         public bool? Enabled { get; set; }

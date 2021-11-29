@@ -9,8 +9,11 @@ namespace Datadog.Trace.Telemetry
 {
     internal class TelemetryConstants
     {
+        public const string ApiVersion = "v1";
+
         public const string DefaultEndpoint = "https://tracer-telemetry-edge.datadoghq.com/api/v1/apm-app-env";
-        public const string TimestampHeader = "DD-Tracer-Timestamp";
+        public const string ApiVersionHeader = "DD-Telemetry-API-Version";
+        public const string RequestTypeHeader = "DD-Telemetry-Request-Type";
 
         public static readonly TimeSpan RefreshInterval = TimeSpan.FromMinutes(1);
     }

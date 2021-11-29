@@ -21,6 +21,7 @@ namespace Datadog.Trace.Telemetry
         private AzureAppServices _azureApServicesMetadata;
         private volatile bool _isTracerInitialized = false;
         private ApplicationTelemetryData _applicationData = null;
+        private HostTelemetryData _hostData = null;
 
         public void RecordTracerSettings(
             ImmutableTracerSettings settings,
@@ -50,6 +51,18 @@ namespace Datadog.Trace.Telemetry
                 RuntimeName = FrameworkDescription.Instance.Name,
             };
 
+            var host = HostMetadata.Instance;
+            _hostData = new HostTelemetryData
+            {
+                ContainerId = ContainerMetadata.GetContainerId(),
+                Os = FrameworkDescription.Instance.OSPlatform,
+                OsVersion = Environment.OSVersion.ToString(),
+                Hostname = host.Hostname,
+                KernelName = host.KernelName,
+                KernelRelease = host.KernelRelease,
+                KernelVersion = host.KernelVersion,
+            };
+
             _isTracerInitialized = true;
             SetHasChanges();
         }
@@ -74,6 +87,14 @@ namespace Datadog.Trace.Telemetry
         }
 
         /// <summary>
+        /// Get the application data. Will be null if not yet initialized.
+        /// </summary>
+        public HostTelemetryData GetHostData()
+        {
+            return _hostData;
+        }
+
+        /// <summary>
         /// Get the latest data to send to the intake.
         /// </summary>
         /// <returns>Null if there are no changes, or the collector is not yet initialized</returns>
@@ -87,8 +108,6 @@ namespace Datadog.Trace.Telemetry
 
             var data = new ConfigTelemetryData
             {
-                OsName = FrameworkDescription.Instance.OSPlatform,
-                OsVersion = Environment.OSVersion.ToString(),
                 Platform = FrameworkDescription.Instance.ProcessArchitecture,
                 Enabled = _settings.TraceEnabled,
                 AgentUrl = _settings.AgentUri.ToString(),

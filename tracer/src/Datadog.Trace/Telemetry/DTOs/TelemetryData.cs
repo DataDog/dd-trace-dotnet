@@ -11,7 +11,7 @@ namespace Datadog.Trace.Telemetry
     /// </summary>
     internal class TelemetryData
     {
-        public string ApiVersion => "v1";
+        public string ApiVersion => TelemetryConstants.ApiVersion;
 
         /// <summary>
         /// Gets or sets requested API function
@@ -31,6 +31,8 @@ namespace Datadog.Trace.Telemetry
         public int SeqId { get; set; }
 
         public ApplicationTelemetryData Application { get; set; }
+
+        public HostTelemetryData Host { get; set; }
 
         public IPayload Payload { get; set; }
     }
