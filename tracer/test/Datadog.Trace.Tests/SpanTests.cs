@@ -164,7 +164,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void SpanIds_SingleSpanIsRoot()
         {
-            Span span = (Span)_tracer.StartSpan("Operation Galactic Storm");
+            Span span = _tracer.StartSpan("Operation Galactic Storm");
             using (span)
             {
                 span.SpanId.Should().NotBe(0);
@@ -219,9 +219,9 @@ namespace Datadog.Trace.Tests
             const ulong remoteParentSpanId = 1234567890123456789;
             SpanContext remoteParentSpanCtx = new SpanContext(traceId: null, spanId: remoteParentSpanId);
 
-            using (var span1 = _tracer.StartSpan(operationName: "Operation Root", parent: remoteParentSpanCtx))
-            using (var span2 = _tracer.StartSpan(operationName: "Operation Middle", parent: span1.Context))
-            using (var span3 = _tracer.StartSpan(operationName: "Operation Leaf", parent: span2.Context))
+            using (Span span1 = _tracer.StartSpan(operationName: "Operation Root", parent: remoteParentSpanCtx))
+            using (Span span2 = _tracer.StartSpan(operationName: "Operation Middle", parent: span1.Context))
+            using (Span span3 = _tracer.StartSpan(operationName: "Operation Leaf", parent: span2.Context))
             {
                 span1.SpanId.Should().NotBe(0);
                 span2.SpanId.Should().NotBe(0);
@@ -265,9 +265,9 @@ namespace Datadog.Trace.Tests
             SpanContext remoteParentSpanCtx = new SpanContext(traceId: null, spanId: remoteParentSpanId);
 
             using (Scope scope1 = (Scope)_tracer.StartActive(operationName: "Operation Root", parent: remoteParentSpanCtx))
-            using (var span2 = _tracer.StartSpan(operationName: "Operation Middle 1"))
+            using (Span span2 = _tracer.StartSpan(operationName: "Operation Middle 1"))
             using (Scope scope3 = (Scope)_tracer.StartActive(operationName: "Operation Middle 2"))
-            using (var span4 = _tracer.StartSpan(operationName: "Operation Leaf"))
+            using (Span span4 = _tracer.StartSpan(operationName: "Operation Leaf"))
             {
                 var span1 = scope1.Span;
                 var span3 = scope3.Span;

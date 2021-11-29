@@ -511,7 +511,7 @@ namespace Datadog.Trace.DiagnosticListeners
                         controllerName: controllerName,
                         actionName: actionName);
 
-                    resourceName = $"{parentTags?.HttpMethod} {request.PathBase.Value}{resourcePathName}";
+                    resourceName = $"{parentTags.HttpMethod} {request.PathBase.Value}{resourcePathName}";
                     aspNetRoute = routeTemplate?.TemplateText.ToLowerInvariant();
                 }
             }
@@ -533,11 +533,8 @@ namespace Datadog.Trace.DiagnosticListeners
             {
                 // If we're using endpoint routing or this is a pipeline re-execution,
                 // these will already be set correctly
+                parentTags.AspNetCoreRoute = aspNetRoute;
                 parentSpan.ResourceName = span.ResourceName;
-                if (parentTags != null)
-                {
-                    parentTags.AspNetCoreRoute = aspNetRoute;
-                }
             }
 
             return span;

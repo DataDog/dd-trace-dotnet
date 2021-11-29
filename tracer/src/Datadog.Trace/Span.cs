@@ -26,15 +26,15 @@ namespace Datadog.Trace
 
         private readonly object _lock = new object();
 
-        internal Span(SpanContext internalContext, DateTimeOffset? start)
-            : this(internalContext, start, null)
+        internal Span(SpanContext context, DateTimeOffset? start)
+            : this(context, start, null)
         {
         }
 
-        internal Span(SpanContext internalContext, DateTimeOffset? start, ITags tags)
+        internal Span(SpanContext context, DateTimeOffset? start, ITags tags)
         {
             Tags = tags ?? new CommonTags();
-            Context = internalContext;
+            Context = context;
             StartTime = start ?? Context.TraceContext.UtcNow;
 
             Log.Debug(
