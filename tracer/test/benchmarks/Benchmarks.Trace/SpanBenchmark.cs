@@ -31,7 +31,7 @@ namespace Benchmarks.Trace
         [Benchmark]
         public void StartFinishSpan()
         {
-            Span span = Tracer.StartSpanInternal("operation");
+            var span = Tracer.StartSpan("operation");
             span.SetTraceSamplingPriority(SamplingPriority.UserReject);
             span.Finish();
         }
