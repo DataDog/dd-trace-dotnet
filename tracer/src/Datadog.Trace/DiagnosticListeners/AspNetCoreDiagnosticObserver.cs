@@ -899,41 +899,6 @@ namespace Datadog.Trace.DiagnosticListeners
             public bool IsCatchAll;
             public bool EncodeSlashes;
         }
-
-        private readonly struct HeadersCollectionAdapter : IHeadersCollection
-        {
-            private readonly IHeaderDictionary _headers;
-
-            public HeadersCollectionAdapter(IHeaderDictionary headers)
-            {
-                _headers = headers;
-            }
-
-            public IEnumerable<string> GetValues(string name)
-            {
-                if (_headers.TryGetValue(name, out var values))
-                {
-                    return values.ToArray();
-                }
-
-                return Enumerable.Empty<string>();
-            }
-
-            public void Set(string name, string value)
-            {
-                throw new NotImplementedException();
-            }
-
-            public void Add(string name, string value)
-            {
-                throw new NotImplementedException();
-            }
-
-            public void Remove(string name)
-            {
-                throw new NotImplementedException();
-            }
-        }
     }
 }
 #endif

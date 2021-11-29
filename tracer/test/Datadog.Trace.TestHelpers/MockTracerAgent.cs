@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.Specialized;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -208,8 +207,6 @@ namespace Datadog.Trace.TestHelpers
             RequestDeserialized?.Invoke(this, new EventArgs<IList<IList<Span>>>(traces));
         }
 
-        private bool IsAppSecTrace(HttpListenerContext context) => context.Request.Headers[AppSec.Transports.Sender.AppSecHeaderKey] != null;
-
         private void AssertHeader(
             NameValueCollection headers,
             string headerKey,
@@ -255,8 +252,7 @@ namespace Datadog.Trace.TestHelpers
                 {
                     var ctx = _listener.GetContext();
                     OnRequestReceived(ctx);
-                    var shouldDeserializeTraces = ShouldDeserializeTraces && !IsAppSecTrace(ctx);
-                    if (shouldDeserializeTraces)
+                    if (ShouldDeserializeTraces)
                     {
                         var spans = MessagePackSerializer.Deserialize<IList<IList<Span>>>(ctx.Request.InputStream);
                         OnRequestDeserialized(spans);
