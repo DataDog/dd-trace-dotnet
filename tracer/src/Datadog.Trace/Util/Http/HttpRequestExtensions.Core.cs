@@ -42,13 +42,13 @@ namespace Datadog.Trace.Util.Http
             foreach (var k in request.Cookies)
             {
                 var keyExists = cookiesDic.TryGetValue(k.Key, out var value);
-                if (keyExists)
+                if (!keyExists)
                 {
-                    value.Add(k.Value);
+                    cookiesDic.Add(k.Key, new List<string> { k.Value ?? string.Empty });
                 }
                 else
                 {
-                    cookiesDic.Add(k.Key, new List<string> { k.Value ?? string.Empty });
+                    value.Add(k.Value);
                 }
             }
 

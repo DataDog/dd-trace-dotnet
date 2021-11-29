@@ -42,13 +42,13 @@ namespace Datadog.Trace.Util.Http
             {
                 var cookie = request.Cookies[i];
                 var keyExists = cookiesDic.TryGetValue(cookie.Name, out var value);
-                if (keyExists)
+                if (!keyExists)
                 {
-                    value.Add(cookie.Value);
+                    cookiesDic.Add(cookie.Name, new List<string> { cookie.Value ?? string.Empty });
                 }
                 else
                 {
-                    cookiesDic.Add(cookie.Name, new List<string> { cookie.Value ?? string.Empty });
+                    value.Add(cookie.Value);
                 }
             }
 
@@ -56,13 +56,13 @@ namespace Datadog.Trace.Util.Http
             foreach (var k in request.QueryString.AllKeys)
             {
                 var values = request.QueryString[k];
-                if (queryDic.ContainsKey(k))
+                if (!queryDic.ContainsKey(k))
                 {
                     queryDic.Add(k, values);
                 }
                 else
                 {
-                    Log.Warning("Header {key} couldn't be added as argument to the waf", k);
+                    Log.Warning("Query string {key} couldn't be added as argument to the waf", k);
                 }
             }
 
