@@ -54,7 +54,7 @@ namespace Datadog.Trace.Tests
         {
             // The 100 additional milliseconds account for the clock precision
             var startTime = DateTimeOffset.UtcNow.AddMinutes(-1).AddMilliseconds(-100);
-            var span = (Span)_tracer.StartSpan("Operation", startTime: startTime);
+            var span = _tracer.StartSpan("Operation", startTime: startTime);
 
             span.Finish();
 
@@ -64,7 +64,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public async Task Finish_NoEndTimeProvided_SpanWriten()
         {
-            var span = (Span)_tracer.StartSpan("Operation");
+            var span = _tracer.StartSpan("Operation");
             await Task.Delay(TimeSpan.FromMilliseconds(1));
             span.Finish();
 
@@ -77,7 +77,7 @@ namespace Datadog.Trace.Tests
         {
             var startTime = DateTimeOffset.UtcNow;
             var endTime = DateTime.UtcNow.AddMilliseconds(10);
-            var span = (Span)_tracer.StartSpan("Operation", startTime: startTime);
+            var span = _tracer.StartSpan("Operation", startTime: startTime);
 
             span.Finish(endTime);
 
@@ -89,7 +89,7 @@ namespace Datadog.Trace.Tests
         {
             var startTime = DateTimeOffset.UtcNow;
             var endTime = DateTime.UtcNow.AddMilliseconds(-10);
-            var span = (Span)_tracer.StartSpan("Operation", startTime: startTime);
+            var span = _tracer.StartSpan("Operation", startTime: startTime);
 
             span.Finish(endTime);
 
@@ -123,7 +123,7 @@ namespace Datadog.Trace.Tests
             {
                 Span span;
 
-                using (span = (Span)_tracer.StartSpan("Operation"))
+                using (span = _tracer.StartSpan("Operation"))
                 {
                     stopwatch.Restart();
                     Sleep();
@@ -133,7 +133,7 @@ namespace Datadog.Trace.Tests
                 span.Duration.Should().BeGreaterOrEqualTo(stopwatch.Elapsed);
 
                 stopwatch.Restart();
-                using (span = (Span)_tracer.StartSpan("Operation"))
+                using (span = _tracer.StartSpan("Operation"))
                 {
                     Sleep();
                 }
@@ -176,7 +176,7 @@ namespace Datadog.Trace.Tests
         public void SpanIds_SingleScopeIsRoot()
         {
             Scope scope = (Scope)_tracer.StartActive("Operation Galactic Storm");
-            Span span = (Span)scope.Span;
+            var span = scope.Span;
             using (scope)
             {
                 span.SpanId.Should().NotBe(0);
@@ -189,7 +189,7 @@ namespace Datadog.Trace.Tests
         {
             const ulong remoteParentSpanId = 1234567890123456789;
             SpanContext remoteParentSpanCtx = new SpanContext(traceId: null, spanId: remoteParentSpanId);
-            Span span = (Span)_tracer.StartSpan(operationName: "Operation Galactic Storm", parent: remoteParentSpanCtx);
+            var span = _tracer.StartSpan(operationName: "Operation Galactic Storm", parent: remoteParentSpanCtx);
             using (span)
             {
                 span.SpanId.Should().NotBe(0);
@@ -204,7 +204,7 @@ namespace Datadog.Trace.Tests
             const ulong remoteParentSpanId = 1234567890123456789;
             SpanContext remoteParentSpanCtx = new SpanContext(traceId: null, spanId: remoteParentSpanId);
             Scope scope = (Scope)_tracer.StartActive(operationName: "Operation Galactic Storm", parent: remoteParentSpanCtx);
-            Span span = (Span)scope.Span;
+            var span = scope.Span;
             using (scope)
             {
                 span.SpanId.Should().NotBe(0);
@@ -219,9 +219,9 @@ namespace Datadog.Trace.Tests
             const ulong remoteParentSpanId = 1234567890123456789;
             SpanContext remoteParentSpanCtx = new SpanContext(traceId: null, spanId: remoteParentSpanId);
 
-            using (Span span1 = (Span)_tracer.StartSpan(operationName: "Operation Root", parent: remoteParentSpanCtx))
-            using (Span span2 = (Span)_tracer.StartSpan(operationName: "Operation Middle", parent: span1.InternalContext))
-            using (Span span3 = (Span)_tracer.StartSpan(operationName: "Operation Leaf", parent: span2.InternalContext))
+            using (var span1 = _tracer.StartSpan(operationName: "Operation Root", parent: remoteParentSpanCtx))
+            using (var span2 = _tracer.StartSpan(operationName: "Operation Middle", parent: span1.Context))
+            using (var span3 = _tracer.StartSpan(operationName: "Operation Leaf", parent: span2.Context))
             {
                 span1.SpanId.Should().NotBe(0);
                 span2.SpanId.Should().NotBe(0);
@@ -248,9 +248,9 @@ namespace Datadog.Trace.Tests
                 scope2.Span.SpanId.Should().NotBe(0);
                 scope3.Span.SpanId.Should().NotBe(0);
 
-                var span1 = (Span)scope1.Span;
-                var span2 = (Span)scope2.Span;
-                var span3 = (Span)scope3.Span;
+                var span1 = scope1.Span;
+                var span2 = scope2.Span;
+                var span3 = scope3.Span;
 
                 span1.RootSpanId.Should().Be(scope1.Span.SpanId);
                 span2.RootSpanId.Should().Be(scope1.Span.SpanId);
@@ -265,12 +265,12 @@ namespace Datadog.Trace.Tests
             SpanContext remoteParentSpanCtx = new SpanContext(traceId: null, spanId: remoteParentSpanId);
 
             using (Scope scope1 = (Scope)_tracer.StartActive(operationName: "Operation Root", parent: remoteParentSpanCtx))
-            using (Span span2 = (Span)_tracer.StartSpan(operationName: "Operation Middle 1"))
+            using (var span2 = _tracer.StartSpan(operationName: "Operation Middle 1"))
             using (Scope scope3 = (Scope)_tracer.StartActive(operationName: "Operation Middle 2"))
-            using (Span span4 = (Span)_tracer.StartSpan(operationName: "Operation Leaf"))
+            using (var span4 = _tracer.StartSpan(operationName: "Operation Leaf"))
             {
-                var span1 = (Span)scope1.Span;
-                var span3 = (Span)scope3.Span;
+                var span1 = scope1.Span;
+                var span3 = scope3.Span;
 
                 span1.SpanId.Should().NotBe(0);
                 span2.SpanId.Should().NotBe(0);
@@ -282,10 +282,10 @@ namespace Datadog.Trace.Tests
                 span3.SpanId.Should().NotBe(remoteParentSpanId);          // There is an expected 1 in 2^64 chance of this line failing
                 span4.SpanId.Should().NotBe(remoteParentSpanId);                // There is an expected 1 in 2^64 chance of this line failing
 
-                span1.InternalContext.ParentId.Should().Be(remoteParentSpanId);   // Parent (not root) of S1 is remote
-                span2.InternalContext.ParentId.Should().Be(scope1.Span.SpanId);         // Parent of S2 is S1: it was created in an active S1-scope
-                span3.InternalContext.ParentId.Should().Be(scope1.Span.SpanId);   // Parent of S3 is also S1: it was created in an active S1 scope, S2 is not a scope
-                span4.InternalContext.ParentId.Should().Be(scope3.Span.SpanId);         // Parent of S4 is S3: it was created in an active S3-scope
+                span1.Context.ParentId.Should().Be(remoteParentSpanId);   // Parent (not root) of S1 is remote
+                span2.Context.ParentId.Should().Be(scope1.Span.SpanId);         // Parent of S2 is S1: it was created in an active S1-scope
+                span3.Context.ParentId.Should().Be(scope1.Span.SpanId);   // Parent of S3 is also S1: it was created in an active S1 scope, S2 is not a scope
+                span4.Context.ParentId.Should().Be(scope3.Span.SpanId);         // Parent of S4 is S3: it was created in an active S3-scope
 
                 span1.RootSpanId.Should().Be(scope1.Span.SpanId);
                 span2.RootSpanId.Should().Be(scope1.Span.SpanId);

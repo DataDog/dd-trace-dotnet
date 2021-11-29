@@ -50,12 +50,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                 {
                     var span = ScopeFactory.CreateInactiveOutboundHttpSpan(tracer, request.Method, request.RequestUri, WebRequestCommon.IntegrationId, out _, traceId: null, spanId: null, startTime: null, addToTraceContext: false);
 
-                    if (span?.InternalContext != null)
+                    if (span?.Context != null)
                     {
                         // Add distributed tracing headers to the HTTP request.
                         // We don't want to set an active scope now, because it's possible that EndGetResponse will never be called.
                         // Instead, we generate a spancontext and inject it in the headers. EndGetResponse will fetch them and create an active scope with the right id.
-                        SpanContextPropagator.Instance.Inject(span.InternalContext, request.Headers.Wrap());
+                        SpanContextPropagator.Instance.Inject(span.Context, request.Headers.Wrap());
                     }
                 }
             }

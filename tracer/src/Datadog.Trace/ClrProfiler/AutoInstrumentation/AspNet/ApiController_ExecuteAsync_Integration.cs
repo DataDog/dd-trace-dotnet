@@ -106,7 +106,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 {
                     // We don't know how long it'll take for ASP.NET to invoke the callback,
                     // so we store the real finish time
-                    var now = scope.Span.InternalContext.TraceContext.UtcNow;
+                    var now = scope.Span.Context.TraceContext.UtcNow;
 
                     httpContext.AddOnRequestCompleted(h => OnRequestCompleted(h, scope, now));
                 }

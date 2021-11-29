@@ -68,7 +68,7 @@ namespace Datadog.Trace.Tests
             var parentSpan = parentScope.Span;
             var childSpan = childScope.Span;
 
-            Assert.Equal(parentSpan.Context, childSpan.InternalContext.Parent);
+            Assert.Equal(parentSpan.Context, childSpan.Context.Parent);
         }
 
         [Fact]
@@ -126,10 +126,10 @@ namespace Datadog.Trace.Tests
         public void StartActive_SetParentManually_ParentIsSet()
         {
             var parent = _tracer.StartSpan("Parent");
-            var childScope = (Scope)_tracer.StartActive("Child", parent.InternalContext);
+            var childScope = (Scope)_tracer.StartActive("Child", parent.Context);
             var childSpan = childScope.Span;
 
-            Assert.Equal(parent.InternalContext, childSpan.InternalContext.Parent);
+            Assert.Equal(parent.Context, childSpan.Context.Parent);
         }
 
         [Fact]
@@ -147,10 +147,10 @@ namespace Datadog.Trace.Tests
             Assert.Equal(traceId, parent.TraceId);
             Assert.Equal(parentId, parent.SpanId);
             Assert.Null(parent.TraceContext);
-            Assert.Equal(parent, childSpan.InternalContext.Parent);
-            Assert.Equal(parentId, childSpan.InternalContext.ParentId);
-            Assert.NotNull(childSpan.InternalContext.TraceContext);
-            Assert.Equal(samplingPriority, childSpan.InternalContext.TraceContext.SamplingPriority);
+            Assert.Equal(parent, childSpan.Context.Parent);
+            Assert.Equal(parentId, childSpan.Context.ParentId);
+            Assert.NotNull(childSpan.Context.TraceContext);
+            Assert.Equal(samplingPriority, childSpan.Context.TraceContext.SamplingPriority);
         }
 
         [Fact]
@@ -220,7 +220,7 @@ namespace Datadog.Trace.Tests
             _tracer.ActivateSpan(parentSpan);
             var childSpan = _tracer.StartSpan("Child");
 
-            Assert.Equal(parentSpan.InternalContext, childSpan.InternalContext.Parent);
+            Assert.Equal(parentSpan.Context, childSpan.Context.Parent);
         }
 
         [Fact]
@@ -246,10 +246,10 @@ namespace Datadog.Trace.Tests
             var child2 = (Scope)_tracer.StartActive("Child2");
             var child2Span = child2.Span;
 
-            Assert.Equal(rootSpan.InternalContext.TraceContext, (ITraceContext)child1Span.InternalContext.TraceContext);
-            Assert.Equal(rootSpan.InternalContext.SpanId, child1Span.InternalContext.ParentId);
-            Assert.Equal(rootSpan.InternalContext.TraceContext, (ITraceContext)child2Span.InternalContext.TraceContext);
-            Assert.Equal(rootSpan.InternalContext.SpanId, child2Span.InternalContext.ParentId);
+            Assert.Equal(rootSpan.Context.TraceContext, child1Span.Context.TraceContext);
+            Assert.Equal(rootSpan.Context.SpanId, child1Span.Context.ParentId);
+            Assert.Equal(rootSpan.Context.TraceContext, child2Span.Context.TraceContext);
+            Assert.Equal(rootSpan.Context.SpanId, child2Span.Context.ParentId);
         }
 
         [Fact]
@@ -263,10 +263,10 @@ namespace Datadog.Trace.Tests
             var child1Span = child1.Span;
             var child2Span = child2.Span;
 
-            Assert.Equal(rootSpan.InternalContext.TraceContext, child1Span.InternalContext.TraceContext);
-            Assert.Equal(rootSpan.InternalContext.SpanId, child1Span.InternalContext.ParentId);
-            Assert.Equal(rootSpan.InternalContext.TraceContext, child2Span.InternalContext.TraceContext);
-            Assert.Equal(child1Span.InternalContext.SpanId, child2Span.InternalContext.ParentId);
+            Assert.Equal(rootSpan.Context.TraceContext, child1Span.Context.TraceContext);
+            Assert.Equal(rootSpan.Context.SpanId, child1Span.Context.ParentId);
+            Assert.Equal(rootSpan.Context.TraceContext, child2Span.Context.TraceContext);
+            Assert.Equal(child1Span.Context.SpanId, child2Span.Context.ParentId);
         }
 
         [Fact]
@@ -288,15 +288,15 @@ namespace Datadog.Trace.Tests
             var syncChildSpan = syncChild.Span;
             tcs.SetResult(true);
 
-            Assert.Equal(rootSpan.InternalContext.TraceContext, syncChildSpan.InternalContext.TraceContext);
-            Assert.Equal(rootSpan.InternalContext.SpanId, syncChildSpan.InternalContext.ParentId);
+            Assert.Equal(rootSpan.Context.TraceContext, syncChildSpan.Context.TraceContext);
+            Assert.Equal(rootSpan.Context.SpanId, syncChildSpan.Context.ParentId);
             foreach (var task in tasks)
             {
                 var scope = (Scope)await task;
                 var span = scope.Span;
 
-                Assert.Equal(rootSpan.InternalContext.TraceContext, span.InternalContext.TraceContext);
-                Assert.Equal(rootSpan.InternalContext.SpanId, span.InternalContext.ParentId);
+                Assert.Equal(rootSpan.Context.TraceContext, span.Context.TraceContext);
+                Assert.Equal(rootSpan.Context.SpanId, span.Context.ParentId);
             }
         }
 
@@ -359,14 +359,14 @@ namespace Datadog.Trace.Tests
             var firstSpan = (Span)firstScope.Span;
 
             Assert.True(firstSpan.IsRootSpan);
-            Assert.Equal(origin, firstSpan.InternalContext.Origin);
+            Assert.Equal(origin, firstSpan.Context.Origin);
             Assert.Equal(origin, firstSpan.GetTag(Tags.Origin));
 
             using var secondScope = (Scope)_tracer.StartActive("Child", firstSpan.Context);
             var secondSpan = (Span)secondScope.Span;
 
             Assert.False(secondSpan.IsRootSpan);
-            Assert.Equal(origin, secondSpan.InternalContext.Origin);
+            Assert.Equal(origin, secondSpan.Context.Origin);
             Assert.Equal(origin, secondSpan.GetTag(Tags.Origin));
         }
 
@@ -388,12 +388,12 @@ namespace Datadog.Trace.Tests
 
             IHeadersCollection headers = WebRequest.CreateHttp("http://localhost").Headers.Wrap();
 
-            SpanContextPropagator.Instance.Inject(secondSpan.InternalContext, headers);
+            SpanContextPropagator.Instance.Inject(secondSpan.Context, headers);
             var resultContext = SpanContextPropagator.Instance.Extract(headers);
 
             Assert.NotNull(resultContext);
-            Assert.Equal(firstSpan.InternalContext.Origin, resultContext.Origin);
-            Assert.Equal(secondSpan.InternalContext.Origin, resultContext.Origin);
+            Assert.Equal(firstSpan.Context.Origin, resultContext.Origin);
+            Assert.Equal(secondSpan.Context.Origin, resultContext.Origin);
             Assert.Equal(origin, resultContext.Origin);
         }
 

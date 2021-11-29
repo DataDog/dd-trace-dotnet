@@ -66,7 +66,7 @@ namespace Datadog.Trace
 
                     if (_samplingPriority == null)
                     {
-                        if (span.InternalContext.Parent is SpanContext context && context.SamplingPriority != null)
+                        if (span.Context.Parent is SpanContext context && context.SamplingPriority != null)
                         {
                             // this is a root span created from a propagated context that contains a sampling priority.
                             // lock sampling priority when a span is started from a propagated trace.

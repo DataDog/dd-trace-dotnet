@@ -19,7 +19,7 @@ namespace Datadog.Trace
     /// tracks the duration of an operation as well as associated metadata in
     /// the form of a resource name, a service name, and user defined tags.
     /// </summary>
-    public class Span : ISpan
+    public partial class Span : ISpan
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Span>();
         private static readonly bool IsLogLevelDebugEnabled = Log.IsEnabled(LogEventLevel.Debug);
@@ -34,61 +34,56 @@ namespace Datadog.Trace
         internal Span(SpanContext internalContext, DateTimeOffset? start, ITags tags)
         {
             Tags = tags ?? new CommonTags();
-            InternalContext = internalContext;
-            StartTime = start ?? InternalContext.TraceContext.UtcNow;
+            Context = internalContext;
+            StartTime = start ?? Context.TraceContext.UtcNow;
 
             Log.Debug(
                 "Span started: [s_id: {SpanID}, p_id: {ParentId}, t_id: {TraceId}]",
                 SpanId,
-                InternalContext.ParentId,
+                Context.ParentId,
                 TraceId);
         }
 
         /// <summary>
         /// Gets or sets operation name
         /// </summary>
-        public string OperationName { get; set; }
+        internal string OperationName { get; set; }
 
         /// <summary>
         /// Gets or sets the resource name
         /// </summary>
-        public string ResourceName { get; set; }
+        internal string ResourceName { get; set; }
 
         /// <summary>
         /// Gets or sets the type of request this span represents (ex: web, db).
         /// Not to be confused with span kind.
         /// </summary>
         /// <seealso cref="SpanTypes"/>
-        public string Type { get; set; }
+        internal string Type { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether this span represents an error
         /// </summary>
-        public bool Error { get; set; }
+        internal bool Error { get; set; }
 
         /// <summary>
         /// Gets or sets the service name.
         /// </summary>
-        public string ServiceName
+        internal string ServiceName
         {
-            get => InternalContext.ServiceName;
-            set => InternalContext.ServiceName = value;
+            get => Context.ServiceName;
+            set => Context.ServiceName = value;
         }
 
         /// <summary>
         /// Gets the trace's unique identifier.
         /// </summary>
-        public ulong TraceId => InternalContext.TraceId;
+        internal ulong TraceId => Context.TraceId;
 
         /// <summary>
         /// Gets the span's unique identifier.
         /// </summary>
-        public ulong SpanId => InternalContext.SpanId;
-
-        /// <summary>
-        /// Gets the span's span context
-        /// </summary>
-        public ISpanContext Context => InternalContext;
+        internal ulong SpanId => Context.SpanId;
 
         /// <summary>
         /// Gets <i>local root span id</i>, i.e. the <c>SpanId</c> of the span that is the root of the local, non-reentrant
@@ -103,14 +98,14 @@ namespace Datadog.Trace
         {
             get
             {
-                Span localRootSpan = InternalContext.TraceContext?.RootSpan;
+                Span localRootSpan = Context.TraceContext?.RootSpan;
                 return (localRootSpan == null || localRootSpan == this) ? SpanId : localRootSpan.SpanId;
             }
         }
 
         internal ITags Tags { get; set; }
 
-        internal SpanContext InternalContext { get; }
+        internal SpanContext Context { get; }
 
         internal DateTimeOffset StartTime { get; private set; }
 
@@ -118,9 +113,18 @@ namespace Datadog.Trace
 
         internal bool IsFinished { get; private set; }
 
-        internal bool IsRootSpan => InternalContext.TraceContext?.RootSpan == this;
+        internal bool IsRootSpan => Context.TraceContext?.RootSpan == this;
 
-        internal bool IsTopLevel => InternalContext.Parent == null || InternalContext.Parent.ServiceName != ServiceName;
+        internal bool IsTopLevel => Context.Parent == null || Context.Parent.ServiceName != ServiceName;
+
+        /// <summary>
+        /// Record the end time of the span and flushes it to the backend.
+        /// After the span has been finished all modifications will be ignored.
+        /// </summary>
+        public void Dispose()
+        {
+            Finish();
+        }
 
         /// <summary>
         /// Returns a <see cref="string" /> that represents this instance.
@@ -131,10 +135,10 @@ namespace Datadog.Trace
         public override string ToString()
         {
             var sb = new StringBuilder();
-            sb.AppendLine($"TraceId: {InternalContext.TraceId}");
-            sb.AppendLine($"ParentId: {InternalContext.ParentId}");
-            sb.AppendLine($"SpanId: {InternalContext.SpanId}");
-            sb.AppendLine($"Origin: {InternalContext.Origin}");
+            sb.AppendLine($"TraceId: {Context.TraceId}");
+            sb.AppendLine($"ParentId: {Context.ParentId}");
+            sb.AppendLine($"SpanId: {Context.SpanId}");
+            sb.AppendLine($"Origin: {Context.Origin}");
             sb.AppendLine($"ServiceName: {ServiceName}");
             sb.AppendLine($"OperationName: {OperationName}");
             sb.AppendLine($"Resource: {ResourceName}");
@@ -153,7 +157,7 @@ namespace Datadog.Trace
         /// <param name="key">The tag's key.</param>
         /// <param name="value">The tag's value.</param>
         /// <returns>This span to allow method chaining.</returns>
-        public ISpan SetTag(string key, string value)
+        internal ISpan SetTag(string key, string value)
         {
             if (IsFinished)
             {
@@ -165,14 +169,14 @@ namespace Datadog.Trace
             switch (key)
             {
                 case Trace.Tags.Origin:
-                    InternalContext.Origin = value;
+                    Context.Origin = value;
                     break;
                 case Trace.Tags.SamplingPriority:
                     if (Enum.TryParse(value, out SamplingPriority samplingPriority) &&
                         Enum.IsDefined(typeof(SamplingPriority), samplingPriority))
                     {
                         // allow setting the sampling priority via a tag
-                        InternalContext.TraceContext.SamplingPriority = samplingPriority;
+                        Context.TraceContext.SamplingPriority = samplingPriority;
                     }
 
                     break;
@@ -180,7 +184,7 @@ namespace Datadog.Trace
                     if (value?.ToBoolean() == true)
                     {
                         // user-friendly tag to set UserKeep priority
-                        InternalContext.TraceContext.SamplingPriority = SamplingPriority.UserKeep;
+                        Context.TraceContext.SamplingPriority = SamplingPriority.UserKeep;
                     }
 
                     break;
@@ -188,7 +192,7 @@ namespace Datadog.Trace
                     if (value?.ToBoolean() == true)
                     {
                         // user-friendly tag to set UserReject priority
-                        InternalContext.TraceContext.SamplingPriority = SamplingPriority.UserReject;
+                        Context.TraceContext.SamplingPriority = SamplingPriority.UserReject;
                     }
 
                     break;
@@ -267,9 +271,9 @@ namespace Datadog.Trace
         /// Record the end time of the span and flushes it to the backend.
         /// After the span has been finished all modifications will be ignored.
         /// </summary>
-        public void Finish()
+        internal void Finish()
         {
-            Finish(InternalContext.TraceContext.ElapsedSince(StartTime));
+            Finish(Context.TraceContext.ElapsedSince(StartTime));
         }
 
         /// <summary>
@@ -277,25 +281,16 @@ namespace Datadog.Trace
         /// After the span has been finished all modifications will be ignored.
         /// </summary>
         /// <param name="finishTimestamp">Explicit value for the end time of the Span</param>
-        public void Finish(DateTimeOffset finishTimestamp)
+        internal void Finish(DateTimeOffset finishTimestamp)
         {
             Finish(finishTimestamp - StartTime);
-        }
-
-        /// <summary>
-        /// Record the end time of the span and flushes it to the backend.
-        /// After the span has been finished all modifications will be ignored.
-        /// </summary>
-        public void Dispose()
-        {
-            Finish();
         }
 
         /// <summary>
         /// Add the StackTrace and other exception metadata to the span
         /// </summary>
         /// <param name="exception">The exception.</param>
-        public void SetException(Exception exception)
+        internal void SetException(Exception exception)
         {
             Error = true;
 
@@ -320,14 +315,14 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="key">The tag's key</param>
         /// <returns> The value for the tag with the key specified, or null if the tag does not exist</returns>
-        public string GetTag(string key)
+        internal string GetTag(string key)
         {
             switch (key)
             {
                 case Trace.Tags.SamplingPriority:
-                    return ((int?)(InternalContext.TraceContext?.SamplingPriority ?? InternalContext.SamplingPriority))?.ToString();
+                    return ((int?)(Context.TraceContext?.SamplingPriority ?? Context.SamplingPriority))?.ToString();
                 case Trace.Tags.Origin:
-                    return InternalContext.Origin;
+                    return Context.Origin;
                 default:
                     return Tags.GetTag(key);
             }
@@ -355,13 +350,13 @@ namespace Datadog.Trace
 
             if (shouldCloseSpan)
             {
-                InternalContext.TraceContext.CloseSpan(this);
+                Context.TraceContext.CloseSpan(this);
 
                 if (IsLogLevelDebugEnabled)
                 {
                     Log.Debug(
                         "Span closed: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] for (Service: {ServiceName}, Resource: {ResourceName}, Operation: {OperationName}, Tags: [{Tags}])",
-                        new object[] { SpanId, InternalContext.ParentId, TraceId, ServiceName, ResourceName, OperationName, Tags });
+                        new object[] { SpanId, Context.ParentId, TraceId, ServiceName, ResourceName, OperationName, Tags });
                 }
             }
         }
@@ -380,7 +375,7 @@ namespace Datadog.Trace
 
         internal void ResetStartTime()
         {
-            StartTime = InternalContext.TraceContext.UtcNow;
+            StartTime = Context.TraceContext.UtcNow;
         }
     }
 }

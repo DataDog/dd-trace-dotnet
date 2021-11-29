@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-
 namespace Datadog.Trace
 {
     /// <summary>
@@ -13,7 +11,7 @@ namespace Datadog.Trace
     /// all newly created spans that are not created with the ignoreActiveSpan
     /// parameter will be automatically children of the active span.
     /// </summary>
-    public class Scope : IScope
+    public partial class Scope : IScope
     {
         private readonly IScopeManager _scopeManager;
         private readonly bool _finishOnClose;
@@ -29,29 +27,11 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the active span wrapped in this scope
         /// </summary>
-        public Span Span { get; }
-
-        /// <summary>
-        /// Gets the active span wrapped in this scope
-        /// </summary>
-        ISpan IScope.Span => Span;
+        internal Span Span { get; }
 
         internal Scope Parent { get; }
 
         internal Scope Root => Parent?.Root ?? this;
-
-        /// <summary>
-        /// Closes the current scope and makes its parent scope active
-        /// </summary>
-        public void Close()
-        {
-            _scopeManager.Close(this);
-
-            if (_finishOnClose)
-            {
-                Span.Finish();
-            }
-        }
 
         /// <summary>
         /// Closes the current scope and makes its parent scope active
@@ -66,6 +46,19 @@ namespace Datadog.Trace
             {
                 // Ignore disposal exceptions here...
                 // TODO: Log? only in test/debug? How should Close() concerns be handled (i.e. independent?)
+            }
+        }
+
+        /// <summary>
+        /// Closes the current scope and makes its parent scope active
+        /// </summary>
+        internal void Close()
+        {
+            _scopeManager.Close(this);
+
+            if (_finishOnClose)
+            {
+                Span.Finish();
             }
         }
     }

@@ -314,7 +314,7 @@ namespace Datadog.Trace.Tagging
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _runtimeIdValueBytes);
             }
 
-            string origin = span.InternalContext.Origin;
+            string origin = span.Context.Origin;
             if (!isOriginWritten && !string.IsNullOrEmpty(origin))
             {
                 count++;

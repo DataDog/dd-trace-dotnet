@@ -65,7 +65,7 @@ namespace Datadog.Trace.ServiceFabric
                     if (messageHeaders != null)
                     {
                         SpanContextPropagator.Instance.Inject(
-                            span.InternalContext,
+                            span.Context,
                             messageHeaders,
                             (headers, headerName, headerValue) => headers.TryAddHeader(headerName, headerValue));
                     }
