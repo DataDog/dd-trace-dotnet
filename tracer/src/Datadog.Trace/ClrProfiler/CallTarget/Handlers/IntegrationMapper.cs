@@ -123,24 +123,44 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                     targetParameterTypeConstraint = targetParameterType.GetGenericParameterConstraints().FirstOrDefault(pType => pType != typeof(IDuckType));
                     if (targetParameterTypeConstraint is null)
                     {
-                        callGenericTypes.Add(sourceParameterType);
+                        callGenericTypes.Add(targetParameterType.IsByRef ? sourceParameterType : sourceParameterType.GetElementType());
                     }
                     else
                     {
-                        var result = DuckType.GetOrCreateProxyType(targetParameterTypeConstraint, sourceParameterType);
+                        var result = DuckType.GetOrCreateProxyType(targetParameterTypeConstraint, sourceParameterType.GetElementType());
                         parameterProxyType = result.ProxyType;
                         callGenericTypes.Add(parameterProxyType);
                     }
                 }
-                else if (!targetParameterType.IsAssignableFrom(sourceParameterType) && (!(sourceParameterType.IsEnum && targetParameterType.IsEnum)))
+                else
                 {
-                    throw new InvalidCastException($"The target parameter {targetParameterType} can't be assigned from {sourceParameterType}");
+                    var srcParameterType = sourceParameterType.IsByRef ? sourceParameterType.GetElementType() : sourceParameterType;
+                    var trgParameterType = targetParameterType.IsByRef ? targetParameterType.GetElementType() : targetParameterType;
+
+                    if (!trgParameterType.IsAssignableFrom(srcParameterType) && (!(srcParameterType.IsEnum && trgParameterType.IsEnum)))
+                    {
+                        throw new InvalidCastException($"The target parameter {targetParameterType} can't be assigned from {sourceParameterType}");
+                    }
                 }
 
-                WriteLoadArgument(ilWriter, i, mustLoadInstance);
-                if (parameterProxyType != null)
+                if (!targetParameterType.IsByRef)
                 {
-                    WriteCreateNewProxyInstance(ilWriter, parameterProxyType, sourceParameterType);
+                    WriteLoadArgument(ilWriter, i, mustLoadInstance);
+                    sourceParameterType = sourceParameterType.IsByRef ? sourceParameterType.GetElementType() : sourceParameterType;
+                    ilWriter.Emit(OpCodes.Ldobj, sourceParameterType);
+
+                    if (parameterProxyType != null)
+                    {
+                        WriteCreateNewProxyInstance(ilWriter, parameterProxyType, sourceParameterType);
+                    }
+                }
+                else if (parameterProxyType == null)
+                {
+                    WriteLoadArgument(ilWriter, i, mustLoadInstance);
+                }
+                else
+                {
+                    throw new InvalidCastException($"DuckType constraints is not supported on ByRef parameters. The target parameter {targetParameterType} can't be assigned from {sourceParameterType}");
                 }
             }
 
@@ -739,6 +759,16 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                     il.Emit(OpCodes.Ldarg_S, index);
                     break;
             }
+        }
+
+        private static void WriteLoadArgumentRef(ILGenerator il, int index, bool isStatic)
+        {
+            if (!isStatic)
+            {
+                index += 1;
+            }
+
+            il.Emit(OpCodes.Ldarga_S, index);
         }
 
         private static T ConvertType<T>(object value)

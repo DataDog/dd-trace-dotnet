@@ -35,6 +35,18 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
+        public static void EnableByRefInstrumentation()
+        {
+            if (IsWindows)
+            {
+                Windows.EnableByRefInstrumentation();
+            }
+            else
+            {
+                NonWindows.EnableByRefInstrumentation();
+            }
+        }
+
         // the "dll" extension is required on .NET Framework
         // and optional on .NET Core
         private static class Windows
@@ -44,6 +56,9 @@ namespace Datadog.Trace.ClrProfiler
 
             [DllImport("Datadog.Trace.ClrProfiler.Native.dll")]
             public static extern void InitializeProfiler([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
+
+            [DllImport("Datadog.Trace.ClrProfiler.Native.dll")]
+            public static extern void EnableByRefInstrumentation();
         }
 
         // assume .NET Core if not running on Windows
@@ -54,6 +69,9 @@ namespace Datadog.Trace.ClrProfiler
 
             [DllImport("Datadog.Trace.ClrProfiler.Native")]
             public static extern void InitializeProfiler([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
+
+            [DllImport("Datadog.Trace.ClrProfiler.Native")]
+            public static extern void EnableByRefInstrumentation();
         }
     }
 }

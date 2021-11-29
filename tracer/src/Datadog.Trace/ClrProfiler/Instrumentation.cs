@@ -71,6 +71,17 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
+                Log.Debug("Enabling by ref instrumentation.");
+                NativeMethods.EnableByRefInstrumentation();
+                Log.Information("ByRef instrumentation enabled.");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "ByRef instrumentation cannot be enabled: ");
+            }
+
+            try
+            {
                 Log.Debug("Sending CallTarget integration definitions to native library.");
                 var payload = InstrumentationDefinitions.GetAllDefinitions();
                 NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);

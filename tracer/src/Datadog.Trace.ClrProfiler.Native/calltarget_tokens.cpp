@@ -804,7 +804,8 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArgumentsArray(void* rewriterWrapp
  * PUBLIC
  **/
 
-CallTargetTokens::CallTargetTokens(ModuleMetadata* module_metadata_ptr)
+CallTargetTokens::CallTargetTokens(ModuleMetadata* module_metadata_ptr, const bool enableByRefInstrumentation) :
+    enable_by_ref_instrumentation(enableByRefInstrumentation)
 {
     this->module_metadata_ptr = module_metadata_ptr;
     for (int i = 0; i < FASTPATH_COUNT; i++)
@@ -899,7 +900,15 @@ HRESULT CallTargetTokens::WriteBeginMethod(void* rewriterWrapperPtr, mdTypeRef i
         unsigned callTargetStateBuffer;
         auto callTargetStateSize = CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
 
-        auto signatureLength = 6 + (numArguments * 2) + callTargetStateSize;
+        unsigned long signatureLength;
+        if (enable_by_ref_instrumentation)
+        {
+            signatureLength = 6 + (numArguments * 3) + callTargetStateSize;
+        }
+        else
+        {
+            signatureLength = 6 + (numArguments * 2) + callTargetStateSize;
+        }
         COR_SIGNATURE signature[signatureBufferSize];
         unsigned offset = 0;
 
@@ -916,6 +925,10 @@ HRESULT CallTargetTokens::WriteBeginMethod(void* rewriterWrapperPtr, mdTypeRef i
 
         for (auto i = 0; i < numArguments; i++)
         {
+            if (enable_by_ref_instrumentation)
+            {
+                signature[offset++] = ELEMENT_TYPE_BYREF;
+            }
             signature[offset++] = ELEMENT_TYPE_MVAR;
             signature[offset++] = 0x01 + (i + 1);
         }
@@ -945,11 +958,33 @@ HRESULT CallTargetTokens::WriteBeginMethod(void* rewriterWrapperPtr, mdTypeRef i
 
     PCCOR_SIGNATURE argumentsSignatureBuffer[FASTPATH_COUNT];
     ULONG argumentsSignatureSize[FASTPATH_COUNT];
+    unsigned elementType;
     for (auto i = 0; i < numArguments; i++)
     {
-        auto signatureSize = methodArguments[i].GetSignature(argumentsSignatureBuffer[i]);
-        argumentsSignatureSize[i] = signatureSize;
-        signatureLength += signatureSize;
+        const auto& argTypeFlags = methodArguments[i].GetTypeFlags(elementType);
+        if (enable_by_ref_instrumentation && (argTypeFlags & TypeFlagByRef))
+        {
+            PCCOR_SIGNATURE argSigBuff;
+            auto signatureSize = methodArguments[i].GetSignature(argSigBuff);
+            if (argSigBuff[0] == ELEMENT_TYPE_BYREF)
+            {
+                argumentsSignatureBuffer[i] = argSigBuff + 1;
+                argumentsSignatureSize[i] = signatureSize - 1;
+                signatureLength += signatureSize - 1;
+            }
+            else
+            {
+                argumentsSignatureBuffer[i] = argSigBuff;
+                argumentsSignatureSize[i] = signatureSize;
+                signatureLength += signatureSize;
+            }
+        }
+        else
+        {
+            auto signatureSize = methodArguments[i].GetSignature(argumentsSignatureBuffer[i]);
+            argumentsSignatureSize[i] = signatureSize;
+            signatureLength += signatureSize;
+        }
     }
 
     COR_SIGNATURE signature[signatureBufferSize];

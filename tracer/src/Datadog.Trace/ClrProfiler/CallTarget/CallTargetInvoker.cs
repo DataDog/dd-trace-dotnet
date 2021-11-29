@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         {
             if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
-                return BeginMethodHandler<TIntegration, TTarget, TArg1>.Invoke(instance, arg1);
+                return BeginMethodHandler<TIntegration, TTarget, TArg1>.Invoke(instance, ref arg1);
             }
 
             return CallTargetState.GetDefault();
@@ -73,7 +73,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         {
             if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
-                return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2>.Invoke(instance, arg1, arg2);
+                return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2>.Invoke(instance, ref arg1, ref arg2);
             }
 
             return CallTargetState.GetDefault();
@@ -97,7 +97,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         {
             if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
-                return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3>.Invoke(instance, arg1, arg2, arg3);
+                return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3>.Invoke(instance, ref arg1, ref arg2, ref arg3);
             }
 
             return CallTargetState.GetDefault();
@@ -123,7 +123,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         {
             if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
-                return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4>.Invoke(instance, arg1, arg2, arg3, arg4);
+                return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4>.Invoke(instance, ref arg1, ref arg2, ref arg3, ref arg4);
             }
 
             return CallTargetState.GetDefault();
@@ -151,7 +151,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         {
             if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
-                return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5>.Invoke(instance, arg1, arg2, arg3, arg4, arg5);
+                return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5>.Invoke(instance, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5);
             }
 
             return CallTargetState.GetDefault();
@@ -181,7 +181,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         {
             if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
-                return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>.Invoke(instance, arg1, arg2, arg3, arg4, arg5, arg6);
+                return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>.Invoke(instance, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5, ref arg6);
             }
 
             return CallTargetState.GetDefault();
@@ -213,7 +213,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         {
             if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
-                return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7>.Invoke(instance, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+                return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7>.Invoke(instance, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5, ref arg6, ref arg7);
             }
 
             return CallTargetState.GetDefault();
@@ -247,7 +247,223 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         {
             if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
-                return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>.Invoke(instance, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+                return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>.Invoke(instance, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5, ref arg6, ref arg7, ref arg8);
+            }
+
+            return CallTargetState.GetDefault();
+        }
+
+        /// <summary>
+        /// Begin Method Invoker
+        /// </summary>
+        /// <typeparam name="TIntegration">Integration type</typeparam>
+        /// <typeparam name="TTarget">Target type</typeparam>
+        /// <typeparam name="TArg1">First argument type</typeparam>
+        /// <param name="instance">Instance value</param>
+        /// <param name="arg1">First argument value</param>
+        /// <returns>Call target state</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1>(TTarget instance, ref TArg1 arg1)
+        {
+            if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
+            {
+                return BeginMethodHandler<TIntegration, TTarget, TArg1>.Invoke(instance, ref arg1);
+            }
+
+            return CallTargetState.GetDefault();
+        }
+
+        /// <summary>
+        /// Begin Method Invoker
+        /// </summary>
+        /// <typeparam name="TIntegration">Integration type</typeparam>
+        /// <typeparam name="TTarget">Target type</typeparam>
+        /// <typeparam name="TArg1">First argument type</typeparam>
+        /// <typeparam name="TArg2">Second argument type</typeparam>
+        /// <param name="instance">Instance value</param>
+        /// <param name="arg1">First argument value</param>
+        /// <param name="arg2">Second argument value</param>
+        /// <returns>Call target state</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2>(TTarget instance, ref TArg1 arg1, ref TArg2 arg2)
+        {
+            if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
+            {
+                return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2>.Invoke(instance, ref arg1, ref arg2);
+            }
+
+            return CallTargetState.GetDefault();
+        }
+
+        /// <summary>
+        /// Begin Method Invoker
+        /// </summary>
+        /// <typeparam name="TIntegration">Integration type</typeparam>
+        /// <typeparam name="TTarget">Target type</typeparam>
+        /// <typeparam name="TArg1">First argument type</typeparam>
+        /// <typeparam name="TArg2">Second argument type</typeparam>
+        /// <typeparam name="TArg3">Third argument type</typeparam>
+        /// <param name="instance">Instance value</param>
+        /// <param name="arg1">First argument value</param>
+        /// <param name="arg2">Second argument value</param>
+        /// <param name="arg3">Third argument value</param>
+        /// <returns>Call target state</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3>(TTarget instance, ref TArg1 arg1, ref TArg2 arg2, ref TArg3 arg3)
+        {
+            if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
+            {
+                return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3>.Invoke(instance, ref arg1, ref arg2, ref arg3);
+            }
+
+            return CallTargetState.GetDefault();
+        }
+
+        /// <summary>
+        /// Begin Method Invoker
+        /// </summary>
+        /// <typeparam name="TIntegration">Integration type</typeparam>
+        /// <typeparam name="TTarget">Target type</typeparam>
+        /// <typeparam name="TArg1">First argument type</typeparam>
+        /// <typeparam name="TArg2">Second argument type</typeparam>
+        /// <typeparam name="TArg3">Third argument type</typeparam>
+        /// <typeparam name="TArg4">Fourth argument type</typeparam>
+        /// <param name="instance">Instance value</param>
+        /// <param name="arg1">First argument value</param>
+        /// <param name="arg2">Second argument value</param>
+        /// <param name="arg3">Third argument value</param>
+        /// <param name="arg4">Fourth argument value</param>
+        /// <returns>Call target state</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4>(TTarget instance, ref TArg1 arg1, ref TArg2 arg2, ref TArg3 arg3, ref TArg4 arg4)
+        {
+            if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
+            {
+                return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4>.Invoke(instance, ref arg1, ref arg2, ref arg3, ref arg4);
+            }
+
+            return CallTargetState.GetDefault();
+        }
+
+        /// <summary>
+        /// Begin Method Invoker
+        /// </summary>
+        /// <typeparam name="TIntegration">Integration type</typeparam>
+        /// <typeparam name="TTarget">Target type</typeparam>
+        /// <typeparam name="TArg1">First argument type</typeparam>
+        /// <typeparam name="TArg2">Second argument type</typeparam>
+        /// <typeparam name="TArg3">Third argument type</typeparam>
+        /// <typeparam name="TArg4">Fourth argument type</typeparam>
+        /// <typeparam name="TArg5">Fifth argument type</typeparam>
+        /// <param name="instance">Instance value</param>
+        /// <param name="arg1">First argument value</param>
+        /// <param name="arg2">Second argument value</param>
+        /// <param name="arg3">Third argument value</param>
+        /// <param name="arg4">Fourth argument value</param>
+        /// <param name="arg5">Fifth argument value</param>
+        /// <returns>Call target state</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5>(TTarget instance, ref TArg1 arg1, ref TArg2 arg2, ref TArg3 arg3, ref TArg4 arg4, ref TArg5 arg5)
+        {
+            if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
+            {
+                return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5>.Invoke(instance, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5);
+            }
+
+            return CallTargetState.GetDefault();
+        }
+
+        /// <summary>
+        /// Begin Method Invoker
+        /// </summary>
+        /// <typeparam name="TIntegration">Integration type</typeparam>
+        /// <typeparam name="TTarget">Target type</typeparam>
+        /// <typeparam name="TArg1">First argument type</typeparam>
+        /// <typeparam name="TArg2">Second argument type</typeparam>
+        /// <typeparam name="TArg3">Third argument type</typeparam>
+        /// <typeparam name="TArg4">Fourth argument type</typeparam>
+        /// <typeparam name="TArg5">Fifth argument type</typeparam>
+        /// <typeparam name="TArg6">Sixth argument type</typeparam>
+        /// <param name="instance">Instance value</param>
+        /// <param name="arg1">First argument value</param>
+        /// <param name="arg2">Second argument value</param>
+        /// <param name="arg3">Third argument value</param>
+        /// <param name="arg4">Fourth argument value</param>
+        /// <param name="arg5">Fifth argument value</param>
+        /// <param name="arg6">Sixth argument value</param>
+        /// <returns>Call target state</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>(TTarget instance, ref TArg1 arg1, ref TArg2 arg2, ref TArg3 arg3, ref TArg4 arg4, ref TArg5 arg5, ref TArg6 arg6)
+        {
+            if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
+            {
+                return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>.Invoke(instance, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5, ref arg6);
+            }
+
+            return CallTargetState.GetDefault();
+        }
+
+        /// <summary>
+        /// Begin Method Invoker
+        /// </summary>
+        /// <typeparam name="TIntegration">Integration type</typeparam>
+        /// <typeparam name="TTarget">Target type</typeparam>
+        /// <typeparam name="TArg1">First argument type</typeparam>
+        /// <typeparam name="TArg2">Second argument type</typeparam>
+        /// <typeparam name="TArg3">Third argument type</typeparam>
+        /// <typeparam name="TArg4">Fourth argument type</typeparam>
+        /// <typeparam name="TArg5">Fifth argument type</typeparam>
+        /// <typeparam name="TArg6">Sixth argument type</typeparam>
+        /// <typeparam name="TArg7">Seventh argument type</typeparam>
+        /// <param name="instance">Instance value</param>
+        /// <param name="arg1">First argument value</param>
+        /// <param name="arg2">Second argument value</param>
+        /// <param name="arg3">Third argument value</param>
+        /// <param name="arg4">Fourth argument value</param>
+        /// <param name="arg5">Fifth argument value</param>
+        /// <param name="arg6">Sixth argument value</param>
+        /// <param name="arg7">Seventh argument value</param>
+        /// <returns>Call target state</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7>(TTarget instance, ref TArg1 arg1, ref TArg2 arg2, ref TArg3 arg3, ref TArg4 arg4, ref TArg5 arg5, ref TArg6 arg6, ref TArg7 arg7)
+        {
+            if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
+            {
+                return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7>.Invoke(instance, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5, ref arg6, ref arg7);
+            }
+
+            return CallTargetState.GetDefault();
+        }
+
+        /// <summary>
+        /// Begin Method Invoker
+        /// </summary>
+        /// <typeparam name="TIntegration">Integration type</typeparam>
+        /// <typeparam name="TTarget">Target type</typeparam>
+        /// <typeparam name="TArg1">First argument type</typeparam>
+        /// <typeparam name="TArg2">Second argument type</typeparam>
+        /// <typeparam name="TArg3">Third argument type</typeparam>
+        /// <typeparam name="TArg4">Fourth argument type</typeparam>
+        /// <typeparam name="TArg5">Fifth argument type</typeparam>
+        /// <typeparam name="TArg6">Sixth argument type</typeparam>
+        /// <typeparam name="TArg7">Seventh argument type</typeparam>
+        /// <typeparam name="TArg8">Eighth argument type</typeparam>
+        /// <param name="instance">Instance value</param>
+        /// <param name="arg1">First argument value</param>
+        /// <param name="arg2">Second argument value</param>
+        /// <param name="arg3">Third argument value</param>
+        /// <param name="arg4">Fourth argument value</param>
+        /// <param name="arg5">Fifth argument value</param>
+        /// <param name="arg6">Sixth argument value</param>
+        /// <param name="arg7">Seventh argument value</param>
+        /// <param name="arg8">Eighth argument value</param>
+        /// <returns>Call target state</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static CallTargetState BeginMethod<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>(TTarget instance, ref TArg1 arg1, ref TArg2 arg2, ref TArg3 arg3, ref TArg4 arg4, ref TArg5 arg5, ref TArg6 arg6, ref TArg7 arg7, ref TArg8 arg8)
+        {
+            if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
+            {
+                return BeginMethodHandler<TIntegration, TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>.Invoke(instance, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5, ref arg6, ref arg7, ref arg8);
             }
 
             return CallTargetState.GetDefault();

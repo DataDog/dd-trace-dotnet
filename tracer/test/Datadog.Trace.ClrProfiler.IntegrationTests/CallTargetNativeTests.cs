@@ -79,5 +79,60 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
             }
         }
+
+        [SkippableFact]
+        public void MethodRefArguments()
+        {
+            int agentPort = TcpPortProvider.GetOpenPort();
+
+            using (new MockTracerAgent(agentPort))
+            using (var processResult = RunSampleAndWaitForExit(agentPort, arguments: "withref"))
+            {
+                string beginMethodString = $"ProfilerOK: BeginMethod\\({2}\\)";
+                int beginMethodCount = Regex.Matches(processResult.StandardOutput, beginMethodString).Count;
+                int endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod\\(").Count;
+
+                string[] typeNames = new string[]
+                {
+                    ".VoidMethod",
+                    ".VoidRefMethod",
+                };
+
+                Assert.Equal(2, beginMethodCount);
+                Assert.Equal(2, endMethodCount);
+
+                foreach (var typeName in typeNames)
+                {
+                    Assert.Contains(typeName, processResult.StandardOutput);
+                }
+            }
+        }
+
+        [SkippableFact]
+        public void MethodOutArguments()
+        {
+            int agentPort = TcpPortProvider.GetOpenPort();
+
+            using (new MockTracerAgent(agentPort))
+            using (var processResult = RunSampleAndWaitForExit(agentPort, arguments: "without"))
+            {
+                string beginMethodString = $"ProfilerOK: BeginMethod\\({2}\\)";
+                int beginMethodCount = Regex.Matches(processResult.StandardOutput, beginMethodString).Count;
+                int endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod\\(").Count;
+
+                string[] typeNames = new string[]
+                {
+                    ".VoidMethod",
+                };
+
+                Assert.Equal(1, beginMethodCount);
+                Assert.Equal(1, endMethodCount);
+
+                foreach (var typeName in typeNames)
+                {
+                    Assert.Contains(typeName, processResult.StandardOutput);
+                }
+            }
+        }
     }
 }

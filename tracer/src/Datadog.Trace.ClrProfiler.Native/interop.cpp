@@ -28,6 +28,11 @@ EXTERN_C VOID STDAPICALLTYPE InitializeProfiler(WCHAR* id, trace::CallTargetDefi
     return trace::profiler->InitializeProfiler(id, items, size);
 }
 
+EXTERN_C VOID STDAPICALLTYPE EnableByRefInstrumentation()
+{
+    return trace::profiler->EnableByRefInstrumentation();
+}
+
 #ifndef _WIN32
 EXTERN_C void *dddlopen (const char *__file, int __mode)
 {
