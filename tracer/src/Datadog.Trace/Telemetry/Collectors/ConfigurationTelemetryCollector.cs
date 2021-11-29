@@ -16,41 +16,40 @@ namespace Datadog.Trace.Telemetry
     {
         private int _tracerInstanceCount = 0;
         private int _hasChangesFlag = 0;
-        private ImmutableTracerSettings _settings;
-        private SecuritySettings _securitySettings;
-        private AzureAppServices _azureApServicesMetadata;
+        private volatile CurrentSettings _settings;
+        private volatile SecuritySettings _securitySettings;
         private volatile bool _isTracerInitialized = false;
-        private ApplicationTelemetryData _applicationData = null;
+        private AzureAppServices _azureApServicesMetadata;
         private HostTelemetryData _hostData = null;
 
         public void RecordTracerSettings(
-            ImmutableTracerSettings settings,
+            ImmutableTracerSettings tracerSettings,
             string defaultServiceName,
             AzureAppServices appServicesMetadata)
         {
-            // Increment number of tracer instances
-            var tracerCount = Interlocked.Increment(ref _tracerInstanceCount);
-            if (tracerCount != 1)
-            {
-                // We only record configuration telemetry from the first Tracer created
-                SetHasChanges();
-                return;
-            }
-
-            _settings = settings;
-            _azureApServicesMetadata = appServicesMetadata;
-
-            _applicationData = new ApplicationTelemetryData
+            // Increment number of times this has been called
+            var reconfigureCount = Interlocked.Increment(ref _tracerInstanceCount);
+            var appData = new ApplicationTelemetryData
             {
                 ServiceName = defaultServiceName,
-                Env = settings.Environment,
-                ServiceVersion = settings.ServiceVersion,
+                Env = tracerSettings.Environment,
+                ServiceVersion = tracerSettings.ServiceVersion,
                 TracerVersion = TracerConstants.AssemblyVersion,
                 LanguageName = "dotnet",
                 LanguageVersion = FrameworkDescription.Instance.ProductVersion,
                 RuntimeName = FrameworkDescription.Instance.Name,
             };
 
+            _settings = new CurrentSettings(tracerSettings, appData);
+
+            // The remaining properties can't change, so only need to set them the first time
+            if (reconfigureCount != 1)
+            {
+                SetHasChanges();
+                return;
+            }
+
+            _azureApServicesMetadata = appServicesMetadata;
             var host = HostMetadata.Instance;
             _hostData = new HostTelemetryData
             {
@@ -83,7 +82,8 @@ namespace Datadog.Trace.Telemetry
         /// </summary>
         public ApplicationTelemetryData GetApplicationData()
         {
-            return _applicationData;
+            var settings = _settings;
+            return settings?.ApplicationData;
         }
 
         /// <summary>
@@ -106,22 +106,24 @@ namespace Datadog.Trace.Telemetry
                 return null;
             }
 
+            var settings = _settings.Settings;
+
             var data = new ConfigTelemetryData
             {
                 Platform = FrameworkDescription.Instance.ProcessArchitecture,
-                Enabled = _settings.TraceEnabled,
-                AgentUrl = _settings.AgentUri.ToString(),
+                Enabled = settings.TraceEnabled,
+                AgentUrl = settings.Exporter.AgentUri.ToString(),
                 Debug = GlobalSettings.Source.DebugEnabled,
 #pragma warning disable CS0618
-                AnalyticsEnabled = _settings.AnalyticsEnabled,
+                AnalyticsEnabled = settings.AnalyticsEnabled,
 #pragma warning restore CS0618
-                SampleRate = _settings.GlobalSamplingRate,
-                SamplingRules = _settings.CustomSamplingRules,
-                LogInjectionEnabled = _settings.LogsInjectionEnabled,
-                RuntimeMetricsEnabled = _settings.RuntimeMetricsEnabled,
-                RoutetemplateResourcenamesEnabled = _settings.RouteTemplateResourceNamesEnabled,
-                PartialflushEnabled = _settings.PartialFlushEnabled,
-                PartialflushMinspans = _settings.PartialFlushMinSpans,
+                SampleRate = settings.GlobalSamplingRate,
+                SamplingRules = settings.CustomSamplingRules,
+                LogInjectionEnabled = settings.LogsInjectionEnabled,
+                RuntimeMetricsEnabled = settings.RuntimeMetricsEnabled,
+                RoutetemplateResourcenamesEnabled = settings.RouteTemplateResourceNamesEnabled,
+                PartialflushEnabled = settings.Exporter.PartialFlushEnabled,
+                PartialflushMinspans = settings.Exporter.PartialFlushMinSpans,
                 AasConfigurationError = _azureApServicesMetadata.IsUnsafeToTrace,
                 TracerInstanceCount = _tracerInstanceCount,
                 SecurityEnabled = _securitySettings?.Enabled,
@@ -155,6 +157,19 @@ namespace Datadog.Trace.Telemetry
         private void SetHasChanges()
         {
             Interlocked.Exchange(ref _hasChangesFlag, 1);
+        }
+
+        private class CurrentSettings
+        {
+            public CurrentSettings(ImmutableTracerSettings settings, ApplicationTelemetryData applicationData)
+            {
+                Settings = settings;
+                ApplicationData = applicationData;
+            }
+
+            public ImmutableTracerSettings Settings { get; }
+
+            public ApplicationTelemetryData ApplicationData { get; }
         }
     }
 }
