@@ -5,6 +5,7 @@
 
 using System;
 using System.IO;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.PlatformHelpers
 {
@@ -12,7 +13,10 @@ namespace Datadog.Trace.PlatformHelpers
     {
         static HostMetadata()
         {
-            TryGetKernelInformation(out var kernel, out var release, out var version);
+            TryGetKernelInformation(
+                kernel: out var kernel,
+                kernelRelease: out var release,
+                kernelVersion: out var version);
 
             Instance = new HostMetadata(
                 hostname: GetHostInternal(),
@@ -126,13 +130,13 @@ namespace Datadog.Trace.PlatformHelpers
         {
             try
             {
-                var host = Environment.MachineName;
+                var host = EnvironmentHelpers.GetMachineName();
                 if (!string.IsNullOrEmpty(host))
                 {
                     return host;
                 }
 
-                return Environment.GetEnvironmentVariable("COMPUTERNAME");
+                return EnvironmentHelpers.GetEnvironmentVariable("COMPUTERNAME");
             }
             catch (InvalidOperationException)
             {
