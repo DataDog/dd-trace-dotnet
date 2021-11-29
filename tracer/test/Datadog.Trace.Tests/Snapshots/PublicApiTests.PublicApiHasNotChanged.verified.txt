@@ -287,26 +287,11 @@ namespace Datadog.Trace
     }
     public class Scope : Datadog.Trace.IScope, System.IDisposable
     {
-        public Datadog.Trace.Span Span { get; }
-        public void Close() { }
         public void Dispose() { }
     }
     public class Span : Datadog.Trace.ISpan, System.IDisposable
     {
-        public Datadog.Trace.ISpanContext Context { get; }
-        public bool Error { get; set; }
-        public string OperationName { get; set; }
-        public string ResourceName { get; set; }
-        public string ServiceName { get; set; }
-        public ulong SpanId { get; }
-        public ulong TraceId { get; }
-        public string Type { get; set; }
         public void Dispose() { }
-        public void Finish() { }
-        public void Finish(System.DateTimeOffset finishTimestamp) { }
-        public string GetTag(string key) { }
-        public void SetException(System.Exception exception) { }
-        public Datadog.Trace.ISpan SetTag(string key, string value) { }
         public override string ToString() { }
     }
     public class SpanContext : Datadog.Trace.ISpanContext
