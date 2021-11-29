@@ -5,6 +5,7 @@
 
 using System;
 using System.Threading;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Telemetry
@@ -13,19 +14,21 @@ namespace Datadog.Trace.Telemetry
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Tracer>();
 
-        internal static ITelemetryController CreateTelemetryController()
-            => CreateTelemetryController(TelemetrySettings.FromDefaultSources());
+        private static readonly ConfigurationTelemetryCollector Configuration = new();
+        private static readonly DependencyTelemetryCollector Dependencies = new();
+        private static readonly IntegrationTelemetryCollector Integrations = new();
 
-        internal static ITelemetryController CreateTelemetryController(TelemetrySettings settings)
+        internal static ITelemetryController CreateTelemetryController(ImmutableTracerSettings tracerSettings)
         {
+            var settings = TelemetrySettings.FromDefaultSources(tracerSettings);
             if (settings.TelemetryEnabled)
             {
                 try
                 {
                     return new TelemetryController(
-                        new ConfigurationTelemetryCollector(),
-                        new DependencyTelemetryCollector(),
-                        new IntegrationTelemetryCollector(),
+                        Configuration,
+                        Dependencies,
+                        Integrations,
                         new TelemetryTransportFactory(settings.TelemetryUrl).Create(),
                         TelemetryConstants.RefreshInterval);
                 }

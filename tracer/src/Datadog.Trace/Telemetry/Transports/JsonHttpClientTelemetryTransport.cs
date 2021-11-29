@@ -34,7 +34,7 @@ namespace Datadog.Trace.Telemetry
                 // have to buffer in memory so we know the content length
                 var serializedData = SerializeTelemetry(data);
 
-                var request = new HttpRequestMessage(HttpMethod.Post, "/")
+                var request = new HttpRequestMessage(HttpMethod.Post, TelemetryConstants.TelemetryPath)
                 {
                     Content = new StringContent(serializedData, Encoding.UTF8, "application/json")
                 };

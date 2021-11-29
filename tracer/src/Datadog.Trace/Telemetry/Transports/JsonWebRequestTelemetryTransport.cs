@@ -7,7 +7,6 @@ using System;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Telemetry
@@ -15,11 +14,11 @@ namespace Datadog.Trace.Telemetry
     internal class JsonWebRequestTelemetryTransport : JsonTelemetryTransportBase
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<JsonWebRequestTelemetryTransport>();
-        private readonly Uri _baseEndpoint;
+        private readonly Uri _endpoint;
 
         public JsonWebRequestTelemetryTransport(Uri baseEndpoint)
         {
-            _baseEndpoint = baseEndpoint;
+            _endpoint = new Uri(baseEndpoint, TelemetryConstants.TelemetryPath);
         }
 
         public override async Task PushTelemetry(TelemetryData data)
@@ -30,7 +29,7 @@ namespace Datadog.Trace.Telemetry
                 var serializedData = SerializeTelemetry(data);
                 var bytes = Encoding.UTF8.GetBytes(serializedData);
 
-                var request = WebRequest.CreateHttp(_baseEndpoint);
+                var request = WebRequest.CreateHttp(_endpoint);
                 request.Method = "POST";
                 request.ContentType = "application/json";
                 request.ContentLength = bytes.Length;
