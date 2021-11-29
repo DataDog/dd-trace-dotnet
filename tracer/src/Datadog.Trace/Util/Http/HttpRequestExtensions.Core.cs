@@ -29,10 +29,18 @@ namespace Datadog.Trace.Util.Http
                 }
             }
 
-            var cookiesDic = new Dictionary<string, string>(request.Cookies.Keys.Count);
-            foreach (var k in request.Cookies.Keys)
+            var cookiesDic = new Dictionary<string, List<string>>(request.Cookies.Keys.Count);
+            foreach (var k in request.Cookies)
             {
-                cookiesDic.Add(k, request.Cookies[k]);
+                var keyExists = cookiesDic.TryGetValue(k.Key, out var value);
+                if (keyExists)
+                {
+                    value.Add(k.Value);
+                }
+                else
+                {
+                    cookiesDic.Add(k.Key, new List<string> { k.Value ?? string.Empty });
+                }
             }
 
             var queryStringDic = new Dictionary<string, List<string>>(request.Query.Count);

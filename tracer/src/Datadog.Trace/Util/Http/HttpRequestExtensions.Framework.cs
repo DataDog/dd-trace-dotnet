@@ -27,10 +27,19 @@ namespace Datadog.Trace.Util.Http
                 }
             }
 
-            var cookiesDic = new Dictionary<string, string>(request.Cookies.AllKeys.Length);
-            foreach (var k in request.Cookies.AllKeys)
+            var cookiesDic = new Dictionary<string, List<string>>(request.Cookies.AllKeys.Length);
+            for (var i = 0; i < request.Cookies.Count; i++)
             {
-                cookiesDic.Add(k, request.Cookies[k].Value);
+                var cookie = request.Cookies[i];
+                var keyExists = cookiesDic.TryGetValue(cookie.Name, out var value);
+                if (keyExists)
+                {
+                    value.Add(cookie.Value);
+                }
+                else
+                {
+                    cookiesDic.Add(cookie.Name, new List<string> { cookie.Value ?? string.Empty });
+                }
             }
 
             var queryDic = new Dictionary<string, string>(request.QueryString.AllKeys.Length);
@@ -42,11 +51,21 @@ namespace Datadog.Trace.Util.Http
 
             var dict = new Dictionary<string, object>
             {
-                { AddressesConstants.RequestMethod, request.HttpMethod },
-                { AddressesConstants.RequestUriRaw, request.Url.AbsoluteUri },
-                { AddressesConstants.RequestQuery, queryDic },
-                { AddressesConstants.RequestHeaderNoCookies, headersDic },
-                { AddressesConstants.RequestCookies, cookiesDic },
+                {
+                    AddressesConstants.RequestMethod, request.HttpMethod
+                },
+                {
+                    AddressesConstants.RequestUriRaw, request.Url.AbsoluteUri
+                },
+                {
+                    AddressesConstants.RequestQuery, queryDic
+                },
+                {
+                    AddressesConstants.RequestHeaderNoCookies, headersDic
+                },
+                {
+                    AddressesConstants.RequestCookies, cookiesDic
+                },
             };
 
             if (routeDatas != null && routeDatas.Values.Any())
