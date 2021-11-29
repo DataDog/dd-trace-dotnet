@@ -39,16 +39,17 @@ namespace Datadog.Trace.Util.Http
             }
 
             var cookiesDic = new Dictionary<string, List<string>>(request.Cookies.Keys.Count);
-            foreach (var k in request.Cookies)
+            for (var i = 0; i < request.Cookies.Count; i++)
             {
-                var keyExists = cookiesDic.TryGetValue(k.Key, out var value);
+                var cookie = request.Cookies.ElementAt(i);
+                var keyExists = cookiesDic.TryGetValue(cookie.Key, out var value);
                 if (!keyExists)
                 {
-                    cookiesDic.Add(k.Key, new List<string> { k.Value ?? string.Empty });
+                    cookiesDic.Add(cookie.Key, new List<string> { cookie.Value ?? string.Empty });
                 }
                 else
                 {
-                    value.Add(k.Value);
+                    value.Add(cookie.Value);
                 }
             }
 
