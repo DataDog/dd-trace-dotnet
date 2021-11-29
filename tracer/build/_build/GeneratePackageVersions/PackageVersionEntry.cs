@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+
 namespace GeneratePackageVersions
 {
     public class PackageVersionEntry : IPackageVersionEntry
@@ -15,10 +17,16 @@ namespace GeneratePackageVersions
 
         public string MinVersion { get; set; }
 
-        public string MinVersionNetCore { get; set; } = string.Empty;
-
         public string MaxVersionExclusive { get; set; }
 
-        public string SampleTargetFramework { get; set; }
+        public PackageVersionConditionEntry[] VersionConditions { get; set; } = Array.Empty<PackageVersionConditionEntry>();
+
+        public record PackageVersionConditionEntry
+        {
+            public string MinVersion { get; init; }
+            public string MaxVersionExclusive { get; init; }
+            public TargetFramework[] ExcludeTargetFrameworks { get; init; } = Array.Empty<TargetFramework>();
+            public TargetFramework[] IncludeOnlyTargetFrameworks { get; init; } = Array.Empty<TargetFramework>();
+        }
     }
 }

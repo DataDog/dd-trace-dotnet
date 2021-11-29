@@ -72,15 +72,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        public override void Write(PackageVersionEntry packageVersionEntry, IEnumerable<string> netFrameworkPackageVersions, IEnumerable<string> netCorePackageVersions)
+        public override void Write(PackageVersionEntry packageVersionEntry, IEnumerable<(TargetFramework framework, IEnumerable<Version> versions)> valueTuples)
         {
             Debug.Assert(Started, "Cannot call Write() before calling Start()");
             Debug.Assert(!Finished, "Cannot call Write() after calling Finish()");
 
             FileStringBuilder.AppendLine();
-            string ifDirective = string.IsNullOrEmpty(packageVersionEntry.SampleTargetFramework) ? string.Empty : $"#if {packageVersionEntry.SampleTargetFramework.ToUpper().Replace('.', '_')}{Environment.NewLine}";
-            string endifDirective = string.IsNullOrEmpty(packageVersionEntry.SampleTargetFramework) ? string.Empty : EndIfDirectiveConst;
-            FileStringBuilder.AppendLine(string.Format(BodyFormat, packageVersionEntry.IntegrationName, ifDirective, endifDirective));
+            FileStringBuilder.AppendLine(string.Format(BodyFormat, packageVersionEntry.IntegrationName, string.Empty, string.Empty));
         }
     }
 }

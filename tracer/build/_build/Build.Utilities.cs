@@ -194,7 +194,7 @@ partial class Build
            var testDir = Solution.GetProject(Projects.ClrProfilerIntegrationTests).Directory;
 
            var versionGenerator = new PackageVersionGenerator(TracerDirectory, testDir);
-           await versionGenerator.GenerateVersions();
+           await versionGenerator.GenerateVersions(Solution);
        });
 
     Target UpdateVendoredCode => _ => _
