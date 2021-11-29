@@ -48,6 +48,11 @@ namespace Datadog.Trace
         public const string HttpMethod = "http.method";
 
         /// <summary>
+        /// Framework specific key, that is the resource part of the url with parameters replaced by place holders
+        /// </summary>
+        internal const string EndPoint = "http.endpoint";
+
+        /// <summary>
         /// The host of an HTTP request
         /// </summary>
         public const string HttpRequestHeadersHost = "http.request.headers.host";
