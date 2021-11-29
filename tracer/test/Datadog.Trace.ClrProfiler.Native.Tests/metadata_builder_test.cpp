@@ -60,7 +60,7 @@ class MetadataBuilderTest : public ::testing::Test {
     const std::vector<IntegrationDefinition> integrations;
     module_metadata_ =
         new ModuleMetadata(metadataImport, metadataEmit, assemblyImport, assemblyEmit, assemblyName, app_domain_id,
-                           module_version_id, std::make_unique<std::vector<IntegrationDefinition>>(integrations), NULL);
+                           module_version_id, std::make_unique<std::vector<IntegrationDefinition>>(integrations), NULL, true);
 
     mdModule module;
     hr = metadataImport->GetModuleFromScope(&module);
