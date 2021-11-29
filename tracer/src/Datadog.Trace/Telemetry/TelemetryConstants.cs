@@ -10,9 +10,10 @@ namespace Datadog.Trace.Telemetry
     internal class TelemetryConstants
     {
         public const string ApiVersion = "v1";
-        public const string TelemetryPath = "/api/v2/apmtelemetry";
-        public const string AgentTelemetryEndpoint = "telemetry/proxy";
+        public const string TelemetryPath = "api/v2/apmtelemetry";
+        public const string AgentTelemetryEndpoint = "telemetry/proxy/";
 
+        public const string ApiKeyHeader = "DD-API-KEY";
         public const string ApiVersionHeader = "DD-Telemetry-API-Version";
         public const string RequestTypeHeader = "DD-Telemetry-Request-Type";
 

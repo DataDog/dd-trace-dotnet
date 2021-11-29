@@ -14,10 +14,12 @@ namespace Datadog.Trace.Telemetry
     internal class JsonWebRequestTelemetryTransport : JsonTelemetryTransportBase
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<JsonWebRequestTelemetryTransport>();
+        private readonly string _apiKey;
         private readonly Uri _endpoint;
 
-        public JsonWebRequestTelemetryTransport(Uri baseEndpoint)
+        public JsonWebRequestTelemetryTransport(Uri baseEndpoint, string apiKey)
         {
+            _apiKey = apiKey;
             _endpoint = new Uri(baseEndpoint, TelemetryConstants.TelemetryPath);
         }
 
@@ -37,6 +39,11 @@ namespace Datadog.Trace.Telemetry
                 foreach (var defaultHeader in TelemetryHttpHeaderNames.DefaultHeaders)
                 {
                     request.Headers.Add(defaultHeader.Key, defaultHeader.Value);
+                }
+
+                if (!string.IsNullOrEmpty(_apiKey))
+                {
+                    request.Headers.Add(TelemetryConstants.ApiKeyHeader, _apiKey);
                 }
 
                 request.Headers.Add(TelemetryConstants.ApiVersionHeader, data.ApiVersion);

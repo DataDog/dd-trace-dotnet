@@ -18,9 +18,17 @@ namespace Datadog.Trace.Telemetry
 
             var requestedTelemetryUri = source?.GetString(ConfigurationKeys.Telemetry.Uri);
 
-            TelemetryUrl = !string.IsNullOrEmpty(requestedTelemetryUri) && Uri.TryCreate(requestedTelemetryUri, UriKind.Absolute, out var telemetryUri)
-                               ? telemetryUri
-                               : new Uri(tracerSettings.AgentUri, TelemetryConstants.AgentTelemetryEndpoint);
+            if (!string.IsNullOrEmpty(requestedTelemetryUri) && Uri.TryCreate(requestedTelemetryUri, UriKind.Absolute, out var telemetryUri))
+            {
+                // if we're using a custom telemetry Uri, then it could be an external intake and need the api key
+                TelemetryUrl = telemetryUri;
+                ApiKey = source.GetString(ConfigurationKeys.Environment);
+            }
+            else
+            {
+                // sending to the agent, so no api key required
+                TelemetryUrl = new Uri(tracerSettings.Exporter.AgentUri, TelemetryConstants.AgentTelemetryEndpoint);
+            }
         }
 
         /// <summary>
@@ -34,6 +42,11 @@ namespace Datadog.Trace.Telemetry
         /// </summary>
         /// <seealso cref="ConfigurationKeys.Telemetry.Uri"/>
         public Uri TelemetryUrl { get; }
+
+        /// <summary>
+        /// Gets the api key to use when sending requests to the telemetry intake
+        /// </summary>
+        public string ApiKey { get; }
 
         public static TelemetrySettings FromDefaultSources(ImmutableTracerSettings tracerSettings)
             => new TelemetrySettings(GlobalSettings.CreateDefaultConfigurationSource(), tracerSettings);
