@@ -255,7 +255,6 @@ namespace Datadog.Trace
         AutoReject = 0,
         AutoKeep = 1,
         UserKeep = 2,
-        AppSecKeep = 4,
     }
     public class Scope : System.IDisposable
     {

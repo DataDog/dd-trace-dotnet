@@ -5,66 +5,65 @@
 
 #if !NETFRAMEWORK
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.EventModel;
+using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.Headers;
 using Datadog.Trace.Util.Http;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Net.Http.Headers;
 
 namespace Datadog.Trace.AppSec.Transport.Http
 {
     internal class HttpTransport : ITransport
     {
-        private readonly HttpContext context;
+        private readonly HttpContext _context;
 
-        public HttpTransport(HttpContext context) => this.context = context;
+        public HttpTransport(HttpContext context) => _context = context;
 
-        public bool IsSecureConnection => context.Request.IsHttps;
+        public bool IsSecureConnection => _context.Request.IsHttps;
 
-        public Func<string, string> GetHeader => key => context.Request.Headers[key];
-
-        public Request Request()
-        {
-            var request = new Request
-            {
-                Method = context.Request.Method,
-                Path = context.Request.Path,
-                Scheme = context.Request.Scheme,
-                Url = context.Request.GetUrl()
-            };
-
-            if (context.Request.Host.HasValue)
-            {
-                request.Host = context.Request.Host.ToString();
-                request.RemoteIp = context.Connection.RemoteIpAddress.ToString();
-                request.Port = context.Connection.RemotePort;
-            }
-
-            return request;
-        }
-
-        public Response Response(bool blocked) => new Response
-        {
-            Status = context.Response.StatusCode,
-            Blocked = blocked
-        };
+        public Func<string, string> GetHeader => key => _context.Request.Headers[key];
 
         public IContext GetAdditiveContext()
         {
-            return context.Features.Get<IContext>();
+            return _context.Features.Get<IContext>();
         }
 
-        public void SetAdditiveContext(IContext additiveContext)
+        public void SetAdditiveContext(IContext additive_context)
         {
-            context.Features.Set(additiveContext);
-            context.Response.RegisterForDispose(additiveContext);
+            _context.Features.Set(additive_context);
+            _context.Response.RegisterForDispose(additive_context);
         }
 
-        public void AddRequestScope(Guid guid) => context.Items.Add("Security", guid);
+        public IpInfo GetReportedIpInfo()
+        {
+            var ipAddress = _context.Connection.RemoteIpAddress.ToString();
+            var port = _context.Connection.RemotePort;
+            return new IpInfo(ipAddress, port);
+        }
+
+        public string GetUserAget()
+        {
+            return _context.Request.Headers[HeaderNames.UserAgent];
+        }
+
+        public IHeadersCollection GetRequestHeaders()
+        {
+            return new HeadersCollectionAdapter(_context.Request.Headers);
+        }
+
+        public IHeadersCollection GetResponseHeaders()
+        {
+            return new HeadersCollectionAdapter(_context.Response.Headers);
+        }
 
         public void OnCompleted(Action completedCallback)
         {
-            context.Response.OnCompleted(() =>
+            _context.Response.OnCompleted(() =>
             {
                 completedCallback();
                 return Task.CompletedTask;

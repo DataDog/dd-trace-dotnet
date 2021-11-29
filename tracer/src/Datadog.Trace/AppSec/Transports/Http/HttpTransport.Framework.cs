@@ -10,57 +10,54 @@ using System.Web;
 using Datadog.Trace.AppSec.EventModel;
 using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.Headers;
 
 namespace Datadog.Trace.AppSec.Transport.Http
 {
     internal class HttpTransport : ITransport
     {
         private const string WafKey = "waf";
-        private readonly HttpContext context;
+        private readonly HttpContext _context;
 
-        public HttpTransport(HttpContext context) => this.context = context;
+        public HttpTransport(HttpContext context) => _context = context;
 
-        public bool IsSecureConnection => context.Request.IsSecureConnection;
+        public bool IsSecureConnection => _context.Request.IsSecureConnection;
 
-        public Func<string, string> GetHeader => key => context.Request.Headers[key];
+        public Func<string, string> GetHeader => key => _context.Request.Headers[key];
 
-        public void AddRequestScope(Guid guid)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IContext GetAdditiveContext() => context.Items[WafKey] as IContext;
-
-        public Request Request()
-        {
-            var extracted = IpExtractor.ExtractAddressAndPort(context.Request.UserHostAddress, context.Request.IsSecureConnection);
-            var request = new Request()
-            {
-                Url = context.Request.Url.ToString(),
-                Method = context.Request.HttpMethod,
-                Scheme = context.Request.Url.Scheme,
-                Host = context.Request.UserHostName,
-                RemoteIp = extracted.IpAddress,
-                RemotePort = extracted.Port
-            };
-            return request;
-        }
-
-        public Response Response(bool blocked) => new()
-        {
-            Status = context.Response.StatusCode,
-            Blocked = blocked
-        };
+        public IContext GetAdditiveContext() => _context.Items[WafKey] as IContext;
 
         public void SetAdditiveContext(IContext additiveContext)
         {
-            context.DisposeOnPipelineCompleted(additiveContext);
-            context.Items[WafKey] = additiveContext;
+            _context.DisposeOnPipelineCompleted(additiveContext);
+            _context.Items[WafKey] = additiveContext;
+        }
+
+        public IpInfo GetReportedIpInfo()
+        {
+            var hostAddress = _context.Request.UserHostAddress;
+            var isSecure = _context.Request.IsSecureConnection;
+            return IpExtractor.ExtractAddressAndPort(hostAddress, isSecure);
+        }
+
+        public string GetUserAget()
+        {
+            return _context.Request.UserAgent;
+        }
+
+        public IHeadersCollection GetRequestHeaders()
+        {
+            return new NameValueHeadersCollection(_context.Request.Headers);
+        }
+
+        public IHeadersCollection GetResponseHeaders()
+        {
+            return new NameValueHeadersCollection(_context.Response.Headers);
         }
 
         public void OnCompleted(Action completedCallback)
         {
-            context.AddOnRequestCompleted(_ => completedCallback());
+            _context.AddOnRequestCompleted(_ => completedCallback());
         }
     }
 }

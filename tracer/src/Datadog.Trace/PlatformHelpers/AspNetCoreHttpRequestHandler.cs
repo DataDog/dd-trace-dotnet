@@ -128,41 +128,6 @@ namespace Datadog.Trace.PlatformHelpers
             return scope;
         }
 
-        private readonly struct HeadersCollectionAdapter : IHeadersCollection
-        {
-            private readonly IHeaderDictionary _headers;
-
-            public HeadersCollectionAdapter(IHeaderDictionary headers)
-            {
-                _headers = headers;
-            }
-
-            public IEnumerable<string> GetValues(string name)
-            {
-                if (_headers.TryGetValue(name, out var values))
-                {
-                    return values.ToArray();
-                }
-
-                return Enumerable.Empty<string>();
-            }
-
-            public void Set(string name, string value)
-            {
-                throw new NotImplementedException();
-            }
-
-            public void Add(string name, string value)
-            {
-                throw new NotImplementedException();
-            }
-
-            public void Remove(string name)
-            {
-                throw new NotImplementedException();
-            }
-        }
-
         /// <summary>
         /// Holds state that we want to pass between diagnostic source events
         /// </summary>
