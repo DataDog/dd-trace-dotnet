@@ -40,39 +40,35 @@ namespace Datadog.Trace.AppSec
 
         static Security()
         {
-            var requestHeaders = new List<string>()
+            RequestHeaders = new Dictionary<string, string>()
             {
-                "X-FORWARDED-FOR",
-                "X-CLIENT-IP",
-                "X-REAL-IP",
-                "X-FORWARDED",
-                "X-CLUSTER-CLIENT-IP",
-                "FORWARDED-FOR",
-                "FORWARDED",
-                "VIA",
-                "TRUE-CLIENT-IP",
-                "Content-Length",
-                "Content-Type",
-                "Content-Encoding",
-                "Content-Language",
-                "Host",
-                "user-agent",
-                "Accept",
-                "Accept-Encoding",
-                "Accept-Language",
+                { "X-FORWARDED-FOR", string.Empty },
+                { "X-CLIENT-IP", string.Empty },
+                { "X-REAL-IP", string.Empty },
+                { "X-FORWARDED", string.Empty },
+                { "X-CLUSTER-CLIENT-IP", string.Empty },
+                { "FORWARDED-FOR", string.Empty },
+                { "FORWARDED", string.Empty },
+                { "VIA", string.Empty },
+                { "TRUE-CLIENT-IP", string.Empty },
+                { "Content-Length", string.Empty },
+                { "Content-Type", string.Empty },
+                { "Content-Encoding", string.Empty },
+                { "Content-Language", string.Empty },
+                { "Host", string.Empty },
+                { "user-agent", string.Empty },
+                { "Accept", string.Empty },
+                { "Accept-Encoding", string.Empty },
+                { "Accept-Language", string.Empty },
             };
 
-            RequestHeaders = requestHeaders.ToDictionary(x => x, _ => string.Empty);
-
-            var responseHeaders = new List<string>()
+            ResponseHeaders = new Dictionary<string, string>()
             {
-                "content-length",
-                "content-type",
-                "Content-Encoding",
-                "Content-Language",
+                { "content-length", string.Empty },
+                { "content-type", string.Empty },
+                { "Content-Encoding", string.Empty },
+                { "Content-Language", string.Empty },
             };
-
-            ResponseHeaders = responseHeaders.ToDictionary(x => x, _ => string.Empty);
         }
 
         /// <summary>
@@ -193,7 +189,7 @@ namespace Datadog.Trace.AppSec
         private static Span GetLocalRootSpan(Span span)
         {
             var localRootSpan = span.Context.TraceContext?.RootSpan;
-            return (localRootSpan == null) ? span : localRootSpan;
+            return localRootSpan ?? span;
         }
 
         private static void TryAddEndPoint(Span span)
