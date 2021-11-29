@@ -10,7 +10,7 @@ namespace Datadog.Trace.Telemetry
 {
     internal class TelemetrySettings
     {
-        public TelemetrySettings(IConfigurationSource source)
+        public TelemetrySettings(IConfigurationSource source, ImmutableTracerSettings tracerSettings)
         {
             TelemetryEnabled = source?.GetBool(ConfigurationKeys.Telemetry.Enabled) ??
                                // default value
@@ -20,7 +20,7 @@ namespace Datadog.Trace.Telemetry
 
             TelemetryUrl = !string.IsNullOrEmpty(requestedTelemetryUri) && Uri.TryCreate(requestedTelemetryUri, UriKind.Absolute, out var telemetryUri)
                                ? telemetryUri
-                               : new Uri(TelemetryConstants.DefaultEndpoint);
+                               : new Uri(tracerSettings.AgentUri, TelemetryConstants.AgentTelemetryEndpoint);
         }
 
         /// <summary>
@@ -35,7 +35,7 @@ namespace Datadog.Trace.Telemetry
         /// <seealso cref="ConfigurationKeys.Telemetry.Uri"/>
         public Uri TelemetryUrl { get; }
 
-        public static TelemetrySettings FromDefaultSources()
-            => new TelemetrySettings(GlobalSettings.CreateDefaultConfigurationSource());
+        public static TelemetrySettings FromDefaultSources(ImmutableTracerSettings tracerSettings)
+            => new TelemetrySettings(GlobalSettings.CreateDefaultConfigurationSource(), tracerSettings);
     }
 }

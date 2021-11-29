@@ -45,7 +45,7 @@ namespace Datadog.Trace
                 statsd: null,
                 runtimeMetrics: null,
                 logSubmissionManager: previous?.DirectLogSubmission,
-                telemetry: previous?.Telemetry); // reuse telemetry instance throughout lifetime
+                telemetry: null);
         }
 
         /// <summary>
@@ -87,7 +87,7 @@ namespace Datadog.Trace
                 settings.Environment,
                 settings.ServiceVersion);
 
-            telemetry ??= TelemetryFactory.CreateTelemetryController();
+            telemetry ??= TelemetryFactory.CreateTelemetryController(settings);
             telemetry.RecordTracerSettings(settings, defaultServiceName, AzureAppServices.Metadata);
             telemetry.RecordSecuritySettings(Security.Instance.Settings);
 
