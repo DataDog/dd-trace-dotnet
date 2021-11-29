@@ -598,7 +598,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
 
         const auto& module_metadata =
             ModuleMetadata(metadata_import, metadata_emit, assembly_import, assembly_emit, module_info.assembly.name,
-                           module_info.assembly.app_domain_id, &corAssemblyProperty);
+                           module_info.assembly.app_domain_id, &corAssemblyProperty, enable_by_ref_instrumentation);
 
         Logger::Info("ModuleLoadFinished: ", managed_profiler_name, " - Fix PInvoke maps");
 #ifdef _WIN32
@@ -793,7 +793,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
 
     std::unique_ptr<ModuleMetadata> module_metadata = std::make_unique<ModuleMetadata>(
         metadataImport, metadataEmit, assemblyImport, assemblyEmit, module_info.assembly.name,
-        module_info.assembly.app_domain_id, &corAssemblyProperty);
+        module_info.assembly.app_domain_id, &corAssemblyProperty, enable_by_ref_instrumentation);
 
     // get function info
     const auto& caller = GetFunctionInfo(module_metadata->metadata_import, function_token);
@@ -1008,6 +1008,17 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
 
         Logger::Info("InitializeProfiler: Total integrations in profiler: ", integration_definitions_.size());
     }
+}
+
+void CorProfiler::EnableByRefInstrumentation()
+{
+    enable_by_ref_instrumentation = true;
+    if (rejit_handler != nullptr)
+    {
+        rejit_handler->SetEnableByRefInstrumentation(true);
+    }
+
+    Logger::Info("ByRef Instrumentation enabled.");
 }
 
 //
@@ -2588,13 +2599,26 @@ HRESULT CorProfiler::CallTarget_RewriterCallback(RejitHandlerModule* moduleHandl
         for (int i = 0; i < numArgs; i++)
         {
             const auto& argTypeFlags = methodArguments[i].GetTypeFlags(elementType);
-            if (argTypeFlags & TypeFlagByRef)
+            if (enable_by_ref_instrumentation)
             {
-                reWriterWrapper.LoadArgument(i + (isStatic ? 0 : 1));
+                if (argTypeFlags & TypeFlagByRef)
+                {
+                    reWriterWrapper.LoadArgument(i + (isStatic ? 0 : 1));
+                }
+                else
+                {
+                    reWriterWrapper.LoadArgumentRef(i + (isStatic ? 0 : 1));
+                }
             }
             else
             {
-                reWriterWrapper.LoadArgumentRef(i + (isStatic ? 0 : 1));
+                reWriterWrapper.LoadArgument(i + (isStatic ? 0 : 1));
+                if (argTypeFlags & TypeFlagByRef)
+                {
+                    Logger::Warn("*** CallTarget_RewriterCallback(): Methods with ref parameters "
+                                 "cannot be instrumented. ");
+                    return S_FALSE;
+                }
             }
         }
     }

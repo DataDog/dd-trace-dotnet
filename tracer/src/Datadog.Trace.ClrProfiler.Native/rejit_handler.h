@@ -123,6 +123,7 @@ private:
 
     std::unique_ptr<UniqueBlockingQueue<RejitItem>> m_rejit_queue;
     std::unique_ptr<std::thread> m_rejit_queue_thread;
+    bool enable_by_ref_instrumentation = false;
 
     std::mutex m_ngenModules_lock;
     std::vector<ModuleID> m_ngenModules;
@@ -139,6 +140,7 @@ public:
                  std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> rewriteCallback);
 
     RejitHandlerModule* GetOrAddModule(ModuleID moduleId);
+    void SetEnableByRefInstrumentation(bool enableByRefInstrumentation);
 
     void RemoveModule(ModuleID moduleId);
     bool HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef);
