@@ -8,8 +8,6 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
 
 namespace Datadog.Trace.Telemetry
 {
@@ -18,12 +16,17 @@ namespace Datadog.Trace.Telemetry
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<JsonHttpClientTelemetryTransport>();
         private readonly HttpClient _httpClient;
 
-        public JsonHttpClientTelemetryTransport(HttpClient httpClient)
+        public JsonHttpClientTelemetryTransport(HttpClient httpClient, string apiKey)
         {
             _httpClient = httpClient;
             foreach (var defaultHeader in TelemetryHttpHeaderNames.DefaultHeaders)
             {
                 _httpClient.DefaultRequestHeaders.Add(defaultHeader.Key, defaultHeader.Value);
+            }
+
+            if (!string.IsNullOrEmpty(apiKey))
+            {
+                _httpClient.DefaultRequestHeaders.Add(TelemetryConstants.ApiKeyHeader, apiKey);
             }
         }
 

@@ -12,10 +12,12 @@ namespace Datadog.Trace.Telemetry
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TelemetryTransportFactory>();
         private readonly Uri _baseEndpoint;
+        private readonly string _apiKey;
 
-        public TelemetryTransportFactory(Uri baseEndpoint)
+        public TelemetryTransportFactory(Uri baseEndpoint, string apiKey)
         {
             _baseEndpoint = baseEndpoint;
+            _apiKey = apiKey;
         }
 
         public ITelemetryTransport Create()
@@ -23,10 +25,10 @@ namespace Datadog.Trace.Telemetry
 #if NETCOREAPP
             Log.Debug("Using {FactoryType} for telemetry transport.", nameof(JsonHttpClientTelemetryTransport));
             var httpClient = new System.Net.Http.HttpClient { BaseAddress = _baseEndpoint };
-            return new JsonHttpClientTelemetryTransport(httpClient);
+            return new JsonHttpClientTelemetryTransport(httpClient, _apiKey);
 #else
             Log.Debug("Using {FactoryType} for telemetry transport.", nameof(JsonWebRequestTelemetryTransport));
-            return new JsonWebRequestTelemetryTransport(_baseEndpoint);
+            return new JsonWebRequestTelemetryTransport(_baseEndpoint, _apiKey);
 #endif
         }
     }
