@@ -196,12 +196,12 @@ namespace Datadog.Trace.AppSec
             return (localRootSpan == null) ? span : localRootSpan;
         }
 
-        private static void AddEndPoint(Span span)
+        private static void TryAddEndPoint(Span span)
         {
             var route = span.GetTag(Tags.AspNetCoreRoute) ?? span.GetTag(Tags.AspNetRoute);
             if (route != null)
             {
-                span.SetTag(Tags.EndPoint, route);
+                span.SetTag(Tags.HttpEndpoint, route);
             }
         }
 
@@ -235,7 +235,7 @@ namespace Datadog.Trace.AppSec
 
             transport.OnCompleted(() =>
             {
-                AddEndPoint(span);
+                TryAddEndPoint(span);
 
                 var headers = transport.GetResponseHeaders();
                 AddHeaderTags(span, headers, ResponseHeaders);

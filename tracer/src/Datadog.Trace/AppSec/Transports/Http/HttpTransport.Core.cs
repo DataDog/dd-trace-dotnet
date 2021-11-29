@@ -20,89 +20,54 @@ namespace Datadog.Trace.AppSec.Transport.Http
 {
     internal class HttpTransport : ITransport
     {
-        private readonly HttpContext context;
+        private readonly HttpContext _context;
 
-        public HttpTransport(HttpContext context) => this.context = context;
+        public HttpTransport(HttpContext context) => _context = context;
 
-        public bool IsSecureConnection => context.Request.IsHttps;
+        public bool IsSecureConnection => _context.Request.IsHttps;
 
-        public Func<string, string> GetHeader => key => context.Request.Headers[key];
+        public Func<string, string> GetHeader => key => _context.Request.Headers[key];
 
         public IContext GetAdditiveContext()
         {
-            return context.Features.Get<IContext>();
+            return _context.Features.Get<IContext>();
         }
 
-        public void SetAdditiveContext(IContext additiveContext)
+        public void SetAdditiveContext(IContext additive_context)
         {
-            context.Features.Set(additiveContext);
-            context.Response.RegisterForDispose(additiveContext);
+            _context.Features.Set(additive_context);
+            _context.Response.RegisterForDispose(additive_context);
         }
 
         public IpInfo GetReportedIpInfo()
         {
-            var ipAddress = context.Connection.RemoteIpAddress.ToString();
-            var port = context.Connection.RemotePort;
+            var ipAddress = _context.Connection.RemoteIpAddress.ToString();
+            var port = _context.Connection.RemotePort;
             return new IpInfo(ipAddress, port);
         }
 
         public string GetUserAget()
         {
-            return context.Request.Headers[HeaderNames.UserAgent];
+            return _context.Request.Headers[HeaderNames.UserAgent];
         }
 
         public IHeadersCollection GetRequestHeaders()
         {
-            return new HeadersCollectionAdapter(context.Request.Headers);
+            return new HeadersCollectionAdapter(_context.Request.Headers);
         }
 
         public IHeadersCollection GetResponseHeaders()
         {
-            return new HeadersCollectionAdapter(context.Response.Headers);
+            return new HeadersCollectionAdapter(_context.Response.Headers);
         }
 
         public void OnCompleted(Action completedCallback)
         {
-            context.Response.OnCompleted(() =>
+            _context.Response.OnCompleted(() =>
             {
                 completedCallback();
                 return Task.CompletedTask;
             });
-        }
-
-        private readonly struct HeadersCollectionAdapter : IHeadersCollection
-        {
-            private readonly IHeaderDictionary _headers;
-
-            public HeadersCollectionAdapter(IHeaderDictionary headers)
-            {
-                _headers = headers;
-            }
-
-            public IEnumerable<string> GetValues(string name)
-            {
-                if (_headers.TryGetValue(name, out var values))
-                {
-                    return values.ToArray();
-                }
-
-                return Enumerable.Empty<string>();
-            }
-
-            public void Set(string name, string value)
-            {
-                throw new NotImplementedException();
-            }
-
-            public void Add(string name, string value)
-            {
-                throw new NotImplementedException();
-            }
-
-            public void Remove(string name)
-            {
-                throw new NotImplementedException();
-            }
         }
     }
 }
