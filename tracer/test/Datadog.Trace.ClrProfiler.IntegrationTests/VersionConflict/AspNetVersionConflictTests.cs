@@ -43,12 +43,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
 
             var spans = await GetWebServerSpans("/home/sendrequest", _iisFixture.Agent, _iisFixture.HttpPort, System.Net.HttpStatusCode.OK, expectedSpans, filterServerSpans: false);
 
-            spans.Should().HaveCount(expectedSpans);
-
             foreach (var span in spans)
             {
                 Output.WriteLine($"{span.Name} - {span.TraceId} - {span.SpanId} - {span.ParentId} - {span.Resource}");
             }
+
+            spans.Should().HaveCount(expectedSpans);
 
             // Using Single to make sure there is no orphaned span
             var rootSpan = spans.Single(s => s.ParentId == null);

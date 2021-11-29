@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler
         /// Gets the internal distributed trace object
         /// </summary>
         /// <returns>Shared distributed trace object instance</returns>
-        public object GetDistributedTrace()
+        public IReadOnlyDictionary<string, string> GetDistributedTrace()
         {
             return Tracer.Instance.ActiveScope?.Span.Context;
         }
@@ -55,9 +55,9 @@ namespace Datadog.Trace.ClrProfiler
         /// Sets the internal distributed trace object
         /// </summary>
         /// <param name="value">Shared distributed trace object instance</param>
-        public void SetDistributedTrace(object value)
+        public void SetDistributedTrace(IReadOnlyDictionary<string, string> value)
         {
-            DistributedTrace.Value = value as IReadOnlyDictionary<string, string>;
+            DistributedTrace.Value = value;
         }
 
         public void Register(object manualTracer)

@@ -3,13 +3,15 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Collections.Generic;
+
 namespace Datadog.Trace.ClrProfiler
 {
     internal interface IAutomaticTracer : ICommonTracer
     {
-        object GetDistributedTrace();
+        IReadOnlyDictionary<string, string> GetDistributedTrace();
 
-        void SetDistributedTrace(object trace);
+        void SetDistributedTrace(IReadOnlyDictionary<string, string> trace);
 
         void Register(object manualTracer);
     }

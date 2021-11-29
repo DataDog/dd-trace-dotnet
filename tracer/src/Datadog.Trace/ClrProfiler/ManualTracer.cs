@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 
 namespace Datadog.Trace.ClrProfiler
 {
@@ -22,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler
         {
             var values = _parent.GetDistributedTrace();
 
-            return SpanContextPropagator.Instance.Extract(values as IReadOnlyDictionary<string, string>);
+            return SpanContextPropagator.Instance.Extract(values);
         }
 
         void IDistributedTracer.SetSpanContext(SpanContext value)

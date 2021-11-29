@@ -616,17 +616,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
             // No need to rewrite if the target assembly matches the expected version
             if (assemblyImport.version != managed_profiler_assembly_reference->version)
             {
-                // Don't rewrite on .NET Core if the target assembly has a higher version than the expected
-                if (!runtime_information_.is_core() ||
-                    assemblyImport.version < managed_profiler_assembly_reference->version)
-                {
-                    RewriteForDistributedTracing(module_metadata, module_id);
-                }
-                else
+                if (runtime_information_.is_core() && assemblyImport.version > managed_profiler_assembly_reference->version)
                 {
                     Logger::Debug("Skipping version conflict fix for ", assemblyVersion,
                                   " because running on .NET Core with a higher version than expected");
                 }
+                else
+                {
+                    RewriteForDistributedTracing(module_metadata, module_id);
+                }                
             }
             else
             {
@@ -1220,7 +1218,7 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
     if (IsDebugEnabled())
     {
         Logger::Info("pcbPublicKey: ", managed_profiler_assembly_property.pcbPublicKey);
-        Logger::Info("pcbPublicKey: ", HexStr(managed_profiler_assembly_property.ppbPublicKey,
+        Logger::Info("ppbPublicKey: ", HexStr(managed_profiler_assembly_property.ppbPublicKey,
                                               managed_profiler_assembly_property.pcbPublicKey));
         Logger::Info("pcbPublicKey: ");
         const auto ppbPublicKey = (BYTE*) managed_profiler_assembly_property.ppbPublicKey;
@@ -1261,7 +1259,7 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
                                                             mdTokenNil, &distributedTracerTypeDef);
     if (FAILED(hr))
     {
-        Logger::Warn("Error Rewriting for Distributed Tracing on getting DistributedTracer TypeDef");
+        Logger::Warn("Error rewriting for Distributed Tracing on getting DistributedTracer TypeDef");
         return hr;
     }
 
@@ -1277,7 +1275,7 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
 
     if (FAILED(hr) || managed_profiler_assemblyRef == mdAssemblyRefNil)
     {
-        Logger::Warn("Error Rewriting for Distributed Tracing on getting ManagedProfiler AssemblyRef");
+        Logger::Warn("Error rewriting for Distributed Tracing on getting ManagedProfiler AssemblyRef");
         return hr;
     }
 
@@ -1287,7 +1285,7 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
 
     if (FAILED(hr))
     {
-        Logger::Warn("Error Rewriting for Distributed Tracing on getting DistributedTracer TypeRef");
+        Logger::Warn("Error rewriting for Distributed Tracing on getting DistributedTracer TypeRef");
         return hr;
     }
 
@@ -1300,7 +1298,7 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
                                                      getDistributedTracerSignature, 3, &getDistributedTraceMethodDef);
     if (FAILED(hr))
     {
-        Logger::Warn("Error Rewriting for Distributed Tracing on getting GetDistributedTracer MethodDef");
+        Logger::Warn("Error rewriting for Distributed Tracing on getting GetDistributedTracer MethodDef");
         return hr;
     }
 
@@ -1313,7 +1311,7 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
                                                        getDistributedTracerSignature, 3, &getDistributedTraceMemberRef);
     if (FAILED(hr))
     {
-        Logger::Warn("Error Rewriting for Distributed Tracing on getting GetDistributedTracer MemberRef");
+        Logger::Warn("Error rewriting for Distributed Tracing on defining GetDistributedTracer MemberRef");
         return hr;
     }
 

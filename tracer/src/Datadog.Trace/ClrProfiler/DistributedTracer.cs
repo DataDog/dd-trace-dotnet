@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error while building the tracer, fallbacking to automatic");
+                Log.Error(ex, "Error while building the tracer, falling back to automatic");
                 Instance = new AutomaticTracer();
             }
         }
