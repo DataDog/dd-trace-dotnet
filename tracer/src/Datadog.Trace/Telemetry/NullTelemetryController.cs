@@ -32,5 +32,9 @@ namespace Datadog.Trace.Telemetry
         public void RecordSecuritySettings(SecuritySettings settings)
         {
         }
+
+        public void Dispose(bool sendAppClosingTelemetry)
+        {
+        }
     }
 }

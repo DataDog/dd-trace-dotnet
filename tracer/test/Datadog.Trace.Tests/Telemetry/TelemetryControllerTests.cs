@@ -31,7 +31,7 @@ namespace Datadog.Trace.Tests.Telemetry
 
         public TelemetryControllerTests()
         {
-            _transport = new TestTelemetryTransport();
+            _transport = new TestTelemetryTransport(pushResult: true);
             _controller = new TelemetryController(
                 new ConfigurationTelemetryCollector(),
                 new DependencyTelemetryCollector(),
@@ -48,6 +48,39 @@ namespace Datadog.Trace.Tests.Telemetry
             _controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName", EmptyAasMetadata);
 
             var data = await WaitForRequestStarted(_transport, _timeout);
+        }
+
+        [Fact]
+        public void TelemetryControllerCanBeDisposedTwice()
+        {
+            _controller.Dispose();
+            _controller.Dispose();
+        }
+
+        [Fact]
+        public async Task TelemetryControllerDisposesOnFatalErrorFromTelemetry()
+        {
+            var transport = new TestTelemetryTransport(pushResult: false); // fail to push telemetry
+            var controller = new TelemetryController(
+                new ConfigurationTelemetryCollector(),
+                new DependencyTelemetryCollector(),
+                new IntegrationTelemetryCollector(),
+                transport,
+                _refreshInterval);
+
+            controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName", EmptyAasMetadata);
+
+            var data = await WaitForRequestStarted(transport, _timeout);
+
+            (await WaitForFatalError(controller)).Should().BeTrue("controller should be disposed on failed push");
+
+            var previousDataCount = data.Count;
+
+            controller.IntegrationRunning(IntegrationId.Kafka);
+
+            // Shouldn't receive any more data,
+            await Task.Delay(3_000);
+            transport.GetData().Count.Should().Be(previousDataCount, "Should not send more data after disposal");
         }
 
         [Fact]
@@ -92,22 +125,45 @@ namespace Datadog.Trace.Tests.Telemetry
                 await Task.Delay(_refreshInterval);
             }
 
-            throw new Exception($"Transport did not receive required data before the timeout {timeout.TotalMilliseconds}ms");
+            throw new TimeoutException($"Transport did not receive required data before the timeout {timeout.TotalMilliseconds}ms");
+        }
+
+        private async Task<bool> WaitForFatalError(TelemetryController controller)
+        {
+            var deadline = DateTimeOffset.UtcNow.Add(_timeout);
+            while (DateTimeOffset.UtcNow < deadline)
+            {
+                if (controller.FatalError)
+                {
+                    // was disposed
+                    return true;
+                }
+
+                await Task.Delay(_refreshInterval);
+            }
+
+            return false;
         }
 
         internal class TestTelemetryTransport : ITelemetryTransport
         {
             private readonly ConcurrentStack<TelemetryData> _data = new();
+            private readonly bool _pushResult;
+
+            public TestTelemetryTransport(bool pushResult)
+            {
+                _pushResult = pushResult;
+            }
 
             public List<TelemetryData> GetData()
             {
                 return _data.ToList();
             }
 
-            public Task PushTelemetry(TelemetryData data)
+            public Task<bool> PushTelemetry(TelemetryData data)
             {
                 _data.Push(data);
-                return Task.FromResult(0);
+                return Task.FromResult(_pushResult);
             }
         }
     }

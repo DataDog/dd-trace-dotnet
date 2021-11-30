@@ -42,8 +42,8 @@ namespace Datadog.Trace.Telemetry
 
             if (dependencies is null && integrations is null)
             {
-                Log.Debug("No changes in telemetry, sending heartbeat");
-                return new[] { GetRequest(application, host, TelemetryRequestTypes.AppHeartbeat, payload: null) };
+                Log.Debug("No changes in telemetry");
+                return Array.Empty<TelemetryData>();
             }
 
             if (dependencies is null)
@@ -76,23 +76,11 @@ namespace Datadog.Trace.Telemetry
 
         public TelemetryData BuildHeartBeatTelemetryData(ApplicationTelemetryData application, HostTelemetryData host)
         {
-            if (application is null || host is null)
-            {
-                Log.Debug("Telemetry not initialized, skipping");
-                return null;
-            }
-
-            return GetRequest(application, host, TelemetryRequestTypes.AppClosing, payload: null);
+            return GetRequest(application, host, TelemetryRequestTypes.AppHeartbeat, payload: null);
         }
 
         public TelemetryData BuildAppClosingTelemetryData(ApplicationTelemetryData application, HostTelemetryData host)
         {
-            if (application is null || host is null)
-            {
-                Log.Debug("Telemetry not initialized, skipping");
-                return null;
-            }
-
             return GetRequest(application, host, TelemetryRequestTypes.AppClosing, payload: null);
         }
 

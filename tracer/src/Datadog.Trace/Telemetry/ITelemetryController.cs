@@ -36,5 +36,11 @@ namespace Datadog.Trace.Telemetry
         /// Called when app sec security is enabled to record the security settings
         /// </summary>
         public void RecordSecuritySettings(SecuritySettings settings);
+
+        /// <summary>
+        /// Dispose resources for sending telemetry
+        /// </summary>
+        /// <param name="sendAppClosingTelemetry">True if the controller should send "app closing" telemetry before disposing</param>
+        public void Dispose(bool sendAppClosingTelemetry);
     }
 }

@@ -38,16 +38,6 @@ namespace Datadog.Trace.Tests.Telemetry
         }
 
         [Fact]
-        public void WhenNoApplicationData_DoesNotGenerateAppClosingTelemetry()
-        {
-            var builder = new TelemetryDataBuilder();
-
-            var result = builder.BuildAppClosingTelemetryData(null, null);
-
-            result.Should().BeNull();
-        }
-
-        [Fact]
         public void WhenHasApplicationAndHostData_GeneratesAppClosingTelemetry()
         {
             var builder = new TelemetryDataBuilder();
@@ -65,10 +55,11 @@ namespace Datadog.Trace.Tests.Telemetry
         {
             var builder = new TelemetryDataBuilder();
 
-            var data = builder.BuildTelemetryData(_application, _host, null, null, null);
+            var config = new ConfigTelemetryData();
+            var data = builder.BuildTelemetryData(_application, _host, config, null, null);
             data.Should().ContainSingle().Which.SeqId.Should().Be(1);
 
-            data = builder.BuildTelemetryData(_application, _host, null, null, null);
+            data = builder.BuildTelemetryData(_application, _host, config, null, null);
             data.Should().ContainSingle().Which.SeqId.Should().Be(2);
 
             var closingData = builder.BuildAppClosingTelemetryData(_application, _host);
@@ -87,7 +78,7 @@ namespace Datadog.Trace.Tests.Telemetry
             var config = hasConfiguration ? new ConfigTelemetryData() : null;
             var dependencies = hasDependencies ? new List<DependencyTelemetryData>() : null;
             var integrations = hasIntegrations ? new List<IntegrationTelemetryData>() : null;
-            var expected = expectedRequests.Split(',');
+            var expected = string.IsNullOrEmpty(expectedRequests) ? Array.Empty<string>() : expectedRequests.Split(',');
             var builder = new TelemetryDataBuilder();
 
             var result = builder.BuildTelemetryData(_application, _host, config, dependencies, integrations);
@@ -133,6 +124,23 @@ namespace Datadog.Trace.Tests.Telemetry
             }
         }
 
+        [Fact]
+        public void GeneratesHeartBeatData()
+        {
+            var builder = new TelemetryDataBuilder();
+            var applicationData = _application;
+            var hostData = _host;
+
+            var result = builder.BuildHeartBeatTelemetryData(applicationData, hostData);
+
+            result.Should().NotBeNull();
+            result.Application.Should().Be(_application);
+            result.Host.Should().Be(_host);
+            result.SeqId.Should().Be(1);
+            result.RequestType.Should().Be(TelemetryRequestTypes.AppHeartbeat);
+            result.Payload.Should().BeNull();
+        }
+
         public class TestData
         {
             public static TheoryData<bool, bool, bool, string> Data => new()
@@ -142,7 +150,7 @@ namespace Datadog.Trace.Tests.Telemetry
                     { true, true, false, TelemetryRequestTypes.AppStarted },
                     { true, false, true, TelemetryRequestTypes.AppStarted },
                     { true, false, false, TelemetryRequestTypes.AppStarted },
-                    { false, false, false, TelemetryRequestTypes.AppHeartbeat },
+                    { false, false, false, string.Empty },
                     { false, true, false, TelemetryRequestTypes.AppDependenciesLoaded },
                     { false, false, true, TelemetryRequestTypes.AppIntegrationsChanged },
                     { false, true, true, $"{TelemetryRequestTypes.AppIntegrationsChanged},{TelemetryRequestTypes.AppDependenciesLoaded}" },
