@@ -21,7 +21,7 @@ namespace Datadog.Trace.Util.Http
         internal static Dictionary<string, object> PrepareArgsForWaf(this HttpRequest request, RouteData routeDatas = null)
         {
             var url = GetUrl(request);
-            var headersDic = new Dictionary<string, string>(request.Headers.Keys.Count);
+            var headersDic = new Dictionary<string, string[]>(request.Headers.Keys.Count);
             foreach (var k in request.Headers.Keys)
             {
                 if (!k.Equals("cookie", System.StringComparison.OrdinalIgnoreCase))
@@ -29,7 +29,7 @@ namespace Datadog.Trace.Util.Http
                     var key = k.ToLowerInvariant();
                     if (!headersDic.ContainsKey(key))
                     {
-                        headersDic.Add(key, request.Headers[k]);
+                        headersDic.Add(key, request.Headers[key]);
                     }
                     else
                     {
@@ -53,12 +53,12 @@ namespace Datadog.Trace.Util.Http
                 }
             }
 
-            var queryStringDic = new Dictionary<string, List<string>>(request.Query.Count);
+            var queryStringDic = new Dictionary<string, string[]>(request.Query.Count);
             foreach (var kvp in request.Query)
             {
                 if (!queryStringDic.ContainsKey(kvp.Key))
                 {
-                    queryStringDic.Add(kvp.Key, kvp.Value.ToList());
+                    queryStringDic.Add(kvp.Key, kvp.Value);
                 }
                 else
                 {
