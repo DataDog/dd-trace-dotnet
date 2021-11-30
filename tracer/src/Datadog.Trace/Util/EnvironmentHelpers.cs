@@ -37,6 +37,24 @@ namespace Datadog.Trace.Util
         }
 
         /// <summary>
+        /// Safe wrapper around Environment.MachineName
+        /// </summary>
+        /// <returns>The value of <see cref="Environment.MachineName"/>, or null if an error occured</returns>
+        public static string GetMachineName()
+        {
+            try
+            {
+                return Environment.MachineName;
+            }
+            catch (Exception ex)
+            {
+                Logger.Value.Warning(ex, "Error while reading machine name");
+            }
+
+            return null;
+        }
+
+        /// <summary>
         /// Safe wrapper around Environment.GetEnvironmentVariable
         /// </summary>
         /// <param name="key">Name of the environment variable to fetch</param>
