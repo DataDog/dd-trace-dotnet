@@ -69,7 +69,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
         // Internal for testing
         internal static object AddDirectSubmissionLoggerProvider(TLoggerFactory loggerFactory, DirectSubmissionLoggerProvider provider)
         {
-            // Need tto use the
             var proxy = provider.DuckImplement(ProviderInterfaces);
             var loggerFactoryProxy = loggerFactory.DuckCast<ILoggerFactory>();
             loggerFactoryProxy.AddProvider(proxy);
