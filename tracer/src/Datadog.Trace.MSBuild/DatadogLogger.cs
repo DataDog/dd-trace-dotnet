@@ -73,7 +73,7 @@ namespace Datadog.Trace.MSBuild
 
             try
             {
-                _tracer = Tracer.InternalInstance;
+                _tracer = Tracer.Instance;
 
                 // Attach to the eventSource events only if we successfully get the tracer instance.
                 eventSource.BuildStarted += EventSource_BuildStarted;

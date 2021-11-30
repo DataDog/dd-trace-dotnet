@@ -65,13 +65,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                 var existingSpanContext = SpanContextPropagator.Instance.Extract(request.Headers.Wrap());
 
                 // If this operation creates the trace, then we need to re-apply the sampling priority
-                bool setSamplingPriority = existingSpanContext?.SamplingPriority != null && Tracer.InternalInstance.ActiveScope == null;
+                bool setSamplingPriority = existingSpanContext?.SamplingPriority != null && Tracer.Instance.ActiveScope == null;
 
                 Scope scope = null;
 
                 try
                 {
-                    scope = ScopeFactory.CreateOutboundHttpScope(Tracer.InternalInstance, request.Method, request.RequestUri, WebRequestCommon.IntegrationId, out var tags, traceId: existingSpanContext?.TraceId, spanId: existingSpanContext?.SpanId, startTime);
+                    scope = ScopeFactory.CreateOutboundHttpScope(Tracer.Instance, request.Method, request.RequestUri, WebRequestCommon.IntegrationId, out var tags, traceId: existingSpanContext?.TraceId, spanId: existingSpanContext?.SpanId, startTime);
 
                     if (scope is not null)
                     {
@@ -83,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
 
                         if (returnValue is HttpWebResponse response)
                         {
-                            scope.Span.SetHttpStatusCode((int)response.StatusCode, false, Tracer.InternalInstance.Settings);
+                            scope.Span.SetHttpStatusCode((int)response.StatusCode, false, Tracer.Instance.Settings);
                         }
 
                         scope.DisposeWithException(exception);

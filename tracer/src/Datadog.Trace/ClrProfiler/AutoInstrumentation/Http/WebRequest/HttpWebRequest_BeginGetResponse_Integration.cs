@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
         {
             if (instance is HttpWebRequest request && WebRequestCommon.IsTracingEnabled(request))
             {
-                var tracer = Tracer.InternalInstance;
+                var tracer = Tracer.Instance;
 
                 // We may have already set headers
                 if (request.Headers.Get(HttpHeaderNames.TraceId) is null)

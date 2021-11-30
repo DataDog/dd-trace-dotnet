@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
 
         internal static void FlushSpans(IntegrationId integrationInfo)
         {
-            if (!Tracer.InternalInstance.Settings.IsIntegrationEnabled(integrationInfo))
+            if (!Tracer.Instance.Settings.IsIntegrationEnabled(integrationInfo))
             {
                 return;
             }

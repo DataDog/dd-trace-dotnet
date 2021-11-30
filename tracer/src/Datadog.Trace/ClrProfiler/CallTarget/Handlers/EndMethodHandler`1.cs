@@ -77,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
                 // Restore previous scope if there is a continuation
                 // This is used to mimic the ExecutionContext copy from the StateMachine
-                if (((IDatadogTracer)Tracer.InternalInstance).ScopeManager is IScopeRawAccess rawAccess)
+                if (((IDatadogTracer)Tracer.Instance).ScopeManager is IScopeRawAccess rawAccess)
                 {
                     rawAccess.Active = state.PreviousScope;
                 }

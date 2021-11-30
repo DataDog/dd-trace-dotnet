@@ -83,7 +83,7 @@ namespace Datadog.Trace.Tools.Runner.Crank
                     }
 
                     Tracer.Configure(tracerSettings);
-                    Tracer tracer = Tracer.InternalInstance;
+                    Tracer tracer = Tracer.Instance;
 
                     foreach (var jobItem in result.JobResults.Jobs)
                     {

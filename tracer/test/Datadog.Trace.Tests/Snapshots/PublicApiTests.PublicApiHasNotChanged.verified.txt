@@ -275,7 +275,6 @@ namespace Datadog.Trace
         Datadog.Trace.IScope ActiveScope { get; }
         string DefaultServiceName { get; }
         Datadog.Trace.Configuration.ImmutableTracerSettings Settings { get; }
-        System.Threading.Tasks.Task ForceFlushAsync();
         Datadog.Trace.IScope StartActive(string operationName, Datadog.Trace.ISpanContext parent = null, string serviceName = null, System.DateTimeOffset? startTime = default, bool ignoreActiveScope = false, bool finishOnClose = true);
     }
     public enum SamplingPriority
@@ -360,7 +359,8 @@ namespace Datadog.Trace
         public Datadog.Trace.IScope ActiveScope { get; }
         public string DefaultServiceName { get; }
         public Datadog.Trace.Configuration.ImmutableTracerSettings Settings { get; }
-        public static Datadog.Trace.ITracer Instance { get; }
+        [set: System.Obsolete("Use Tracer.Configure to configure the global Tracer instance in code.")]
+        public static Datadog.Trace.Tracer Instance { get; set; }
         protected override void Finalize() { }
         public System.Threading.Tasks.Task ForceFlushAsync() { }
         public Datadog.Trace.IScope StartActive(string operationName, Datadog.Trace.ISpanContext parent = null, string serviceName = null, System.DateTimeOffset? startTime = default, bool ignoreActiveScope = false, bool finishOnClose = true) { }

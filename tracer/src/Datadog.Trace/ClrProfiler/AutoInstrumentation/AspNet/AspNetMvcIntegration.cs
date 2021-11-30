@@ -56,9 +56,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
                 Span span = null;
                 // integration enabled, go create a scope!
-                if (Tracer.InternalInstance.Settings.IsIntegrationEnabled(IntegrationId))
+                if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
                 {
-                    var newResourceNamesEnabled = Tracer.InternalInstance.Settings.RouteTemplateResourceNamesEnabled;
+                    var newResourceNamesEnabled = Tracer.Instance.Settings.RouteTemplateResourceNamesEnabled;
                     string host = httpContext.Request.Headers.Get("Host");
                     string httpMethod = httpContext.Request.HttpMethod.ToUpperInvariant();
                     string url = httpContext.Request.RawUrl.ToLowerInvariant();
@@ -141,7 +141,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     }
 
                     SpanContext propagatedContext = null;
-                    var tracer = Tracer.InternalInstance;
+                    var tracer = Tracer.Instance;
                     var tagsFromHeaders = Enumerable.Empty<KeyValuePair<string, string>>();
 
                     if (tracer.InternalActiveScope == null)
@@ -160,7 +160,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     }
 
                     var tags = new AspNetTags();
-                    scope = Tracer.InternalInstance.StartActiveInternal(OperationName, propagatedContext, tags: tags);
+                    scope = Tracer.Instance.StartActiveInternal(OperationName, propagatedContext, tags: tags);
                     span = scope.Span;
 
                     span.DecorateWebServerSpan(

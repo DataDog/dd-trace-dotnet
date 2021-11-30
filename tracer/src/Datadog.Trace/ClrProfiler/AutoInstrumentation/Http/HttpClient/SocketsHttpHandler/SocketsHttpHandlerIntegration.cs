@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.SocketsH
         private const string IntegrationName = nameof(Configuration.IntegrationId.HttpMessageHandler);
         private const IntegrationId IntegrationId = Configuration.IntegrationId.HttpMessageHandler;
         private const IntegrationId SocketHandlerIntegrationId = IntegrationId.HttpSocketsHandler;
-        private static readonly Func<bool> IsIntegrationEnabledFunc = () => Tracer.InternalInstance.Settings.IsIntegrationEnabled(SocketHandlerIntegrationId, defaultValue: true);
+        private static readonly Func<bool> IsIntegrationEnabledFunc = () => Tracer.Instance.Settings.IsIntegrationEnabled(SocketHandlerIntegrationId, defaultValue: true);
 
         /// <summary>
         /// OnMethodBegin callback

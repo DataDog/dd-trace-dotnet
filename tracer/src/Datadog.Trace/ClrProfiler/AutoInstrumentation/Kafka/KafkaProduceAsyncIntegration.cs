@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             where TMessage : IMessage
         {
             Scope scope = KafkaHelper.CreateProducerScope(
-                Tracer.InternalInstance,
+                Tracer.Instance,
                 topicPartition.DuckCast<ITopicPartition>(),
                 isTombstone: message.Value is null,
                 finishOnClose: true);

@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
                 return CallTargetState.GetDefault();
             }
 
-            var scope = Tracer.InternalInstance.InternalActiveScope;
+            var scope = Tracer.Instance.InternalActiveScope;
             if (scope?.Span.Tags is AwsSdkTags tags)
             {
                 tags.Region = executionContext.RequestContext.ClientConfig.RegionEndpoint?.SystemName;
@@ -76,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
                 }
 
                 tags.RequestId = responseContext.Response.ResponseMetadata.RequestId;
-                state.Scope.Span.SetHttpStatusCode((int)responseContext.Response.HttpStatusCode, false, Tracer.InternalInstance.Settings);
+                state.Scope.Span.SetHttpStatusCode((int)responseContext.Response.HttpStatusCode, false, Tracer.Instance.Settings);
             }
 
             // Do not dispose the scope (if present) when exiting.

@@ -25,11 +25,11 @@ namespace Datadog.Trace.Tests
 
             TracerRestorerAttribute.SetTracer(tracerOne);
             Tracer.Instance.Should().Be(tracerOne);
-            Tracer.InternalInstance.TracerManager.Should().Be(tracerOne.TracerManager);
+            Tracer.Instance.TracerManager.Should().Be(tracerOne.TracerManager);
 
             TracerRestorerAttribute.SetTracer(tracerTwo);
             Tracer.Instance.Should().Be(tracerTwo);
-            Tracer.InternalInstance.TracerManager.Should().Be(tracerTwo.TracerManager);
+            Tracer.Instance.TracerManager.Should().Be(tracerTwo.TracerManager);
 
             TracerRestorerAttribute.SetTracer(null);
             Tracer.Instance.Should().BeNull();
@@ -43,7 +43,7 @@ namespace Datadog.Trace.Tests
 
             TracerRestorerAttribute.SetTracer(tracerOne);
             Tracer.Instance.Should().Be(tracerOne);
-            Tracer.InternalInstance.TracerManager.Should().Be(tracerOne.TracerManager);
+            Tracer.Instance.TracerManager.Should().Be(tracerOne.TracerManager);
 
             TracerRestorerAttribute.SetTracer(null);
             Tracer.Instance.Should().BeNull();
@@ -51,13 +51,13 @@ namespace Datadog.Trace.Tests
             // Set the locked tracer
             TracerRestorerAttribute.SetTracer(tracerTwo);
             Tracer.Instance.Should().Be(tracerTwo);
-            Tracer.InternalInstance.TracerManager.Should().Be(tracerTwo.TracerManager);
+            Tracer.Instance.TracerManager.Should().Be(tracerTwo.TracerManager);
 
             // We test the locked tracer cannot be replaced.
 #pragma warning disable CS0618 // Setter isn't actually obsolete, just should be internal
-            Assert.Throws<InvalidOperationException>(() => Tracer.InternalInstance = tracerOne);
+            Assert.Throws<InvalidOperationException>(() => Tracer.Instance = tracerOne);
 
-            Assert.Throws<InvalidOperationException>(() => Tracer.InternalInstance = null);
+            Assert.Throws<InvalidOperationException>(() => Tracer.Instance = null);
 
             Assert.Throws<InvalidOperationException>(() => TracerManager.ReplaceGlobalManager(null, TracerManagerFactory.Instance));
             Assert.Throws<InvalidOperationException>(() => TracerManager.ReplaceGlobalManager(null, new CITracerManagerFactory()));

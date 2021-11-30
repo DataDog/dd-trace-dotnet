@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
         public static CallTargetState OnMethodBegin<TTarget, TLoggingEvent>(TTarget instance, TLoggingEvent loggingEvent)
             where TLoggingEvent : ILoggingEvent
         {
-            var tracer = Tracer.InternalInstance;
+            var tracer = Tracer.Instance;
 
             if (tracer.Settings.LogsInjectionEnabled &&
                 !loggingEvent.Properties.Contains(CorrelationIdentifier.ServiceKey))

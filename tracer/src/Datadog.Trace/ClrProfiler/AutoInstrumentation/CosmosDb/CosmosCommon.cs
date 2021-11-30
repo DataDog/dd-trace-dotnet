@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
 
         private static CallTargetState CreateCosmosDbCallState<TTarget, TQueryDefinition>(Func<object, Tuple<string, string, string>> extractProperties, TTarget instance, TQueryDefinition queryDefinition)
         {
-            if (!Tracer.InternalInstance.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return CallTargetState.GetDefault();
@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
                     query = queryDefinitionObj.QueryText;
                 }
 
-                var tracer = Tracer.InternalInstance;
+                var tracer = Tracer.Instance;
 
                 var parent = tracer.ActiveScope?.Span;
 

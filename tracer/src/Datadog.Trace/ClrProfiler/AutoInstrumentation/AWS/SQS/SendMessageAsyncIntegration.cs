@@ -48,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 
             var requestProxy = request.DuckCast<ISendMessageRequest>();
 
-            var scope = AwsSqsCommon.CreateScope(Tracer.InternalInstance, Operation, out AwsSqsTags tags);
+            var scope = AwsSqsCommon.CreateScope(Tracer.Instance, Operation, out AwsSqsTags tags);
             tags.QueueUrl = requestProxy.QueueUrl;
 
             if (scope?.Span.Context != null)

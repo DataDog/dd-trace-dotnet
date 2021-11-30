@@ -46,7 +46,7 @@ namespace Datadog.Trace.ServiceFabric
         /// <param name="e">The event arguments.</param>
         private static void ServiceRemotingClientEvents_SendRequest(object? sender, EventArgs? e)
         {
-            var tracer = Tracer.InternalInstance;
+            var tracer = Tracer.Instance;
 
             if (!_initialized || !tracer.Settings.IsIntegrationEnabled(ServiceRemotingConstants.IntegrationId))
             {
@@ -92,7 +92,7 @@ namespace Datadog.Trace.ServiceFabric
         /// or <c>IServiceRemotingFailedResponseEventArgs</c> on failure.</param>
         private static void ServiceRemotingClientEvents_ReceiveResponse(object? sender, EventArgs? e)
         {
-            if (!_initialized || !Tracer.InternalInstance.Settings.IsIntegrationEnabled(ServiceRemotingConstants.IntegrationId))
+            if (!_initialized || !Tracer.Instance.Settings.IsIntegrationEnabled(ServiceRemotingConstants.IntegrationId))
             {
                 return;
             }

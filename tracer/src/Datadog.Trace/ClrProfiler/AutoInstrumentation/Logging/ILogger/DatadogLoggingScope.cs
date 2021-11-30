@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
         private readonly string _service;
         private readonly string _env;
         private readonly string _version;
-        private readonly ITracer _tracer;
+        private readonly Tracer _tracer;
         private readonly string _cachedFormat;
 
         public DatadogLoggingScope()
@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
         {
         }
 
-        internal DatadogLoggingScope(ITracer tracer)
+        internal DatadogLoggingScope(Tracer tracer)
         {
             _tracer = tracer;
             _service = tracer.DefaultServiceName ?? string.Empty;

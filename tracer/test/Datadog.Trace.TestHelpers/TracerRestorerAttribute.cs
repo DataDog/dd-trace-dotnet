@@ -17,7 +17,7 @@ namespace Datadog.Trace.TestHelpers
 
         public override void Before(MethodInfo methodUnderTest)
         {
-            _tracer = Tracer.InternalInstance;
+            _tracer = Tracer.Instance;
             _tracerManager = _tracer.TracerManager;
             base.Before(methodUnderTest);
         }

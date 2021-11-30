@@ -36,13 +36,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
             try
             {
-                if (!Tracer.InternalInstance.Settings.IsIntegrationEnabled(IntegrationId))
+                if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
                 {
                     // integration disabled, don't create a scope, skip this trace
                     return null;
                 }
 
-                var tracer = Tracer.InternalInstance;
+                var tracer = Tracer.Instance;
                 var request = controllerContext.Request;
                 SpanContext propagatedContext = null;
                 var tagsFromHeaders = Enumerable.Empty<KeyValuePair<string, string>>();
@@ -82,7 +82,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         {
             try
             {
-                var newResourceNamesEnabled = Tracer.InternalInstance.Settings.RouteTemplateResourceNamesEnabled;
+                var newResourceNamesEnabled = Tracer.Instance.Settings.RouteTemplateResourceNamesEnabled;
                 var request = controllerContext.Request;
                 Uri requestUri = request.RequestUri;
 

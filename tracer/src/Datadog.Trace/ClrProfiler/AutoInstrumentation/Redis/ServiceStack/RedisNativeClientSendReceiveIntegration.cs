@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack
         public static CallTargetState OnMethodBegin<TTarget, TFunc, TAction>(TTarget instance, byte[][] cmdWithBinaryArgs, TFunc fn, TAction completePipelineFn, bool sendWithoutRead)
             where TTarget : IRedisNativeClient
         {
-            Scope scope = RedisHelper.CreateScope(Tracer.InternalInstance, IntegrationId, instance.Host ?? string.Empty, instance.Port.ToString(CultureInfo.InvariantCulture), GetRawCommand(cmdWithBinaryArgs));
+            Scope scope = RedisHelper.CreateScope(Tracer.Instance, IntegrationId, instance.Host ?? string.Empty, instance.Port.ToString(CultureInfo.InvariantCulture), GetRawCommand(cmdWithBinaryArgs));
             if (scope is not null)
             {
                 return new CallTargetState(scope);

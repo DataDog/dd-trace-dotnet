@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace
@@ -28,13 +27,6 @@ namespace Datadog.Trace
         /// Gets this tracer's settings.
         /// </summary>
         ImmutableTracerSettings Settings { get; }
-
-        /// <summary>
-        /// Forces the tracer to immediately flush pending traces and send them to the agent.
-        /// To be called when the appdomain or the process is about to be killed in a non-graceful way.
-        /// </summary>
-        /// <returns>Task used to track the async flush operation</returns>
-        Task ForceFlushAsync();
 
         /// <summary>
         /// This creates a new span with the given parameters and makes it active.

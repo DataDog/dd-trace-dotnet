@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
 
         internal static Scope CreateScope(Tracer tracer, IntegrationId integrationId, string host, string port, string rawCommand)
         {
-            if (!Tracer.InternalInstance.Settings.IsIntegrationEnabled(integrationId))
+            if (!Tracer.Instance.Settings.IsIntegrationEnabled(integrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
                 return null;

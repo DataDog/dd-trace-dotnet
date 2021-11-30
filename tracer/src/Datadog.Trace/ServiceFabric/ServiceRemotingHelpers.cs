@@ -138,7 +138,7 @@ namespace Datadog.Trace.ServiceFabric
 
             Span span = tracer.StartSpan(GetSpanName(spanKind), tags, context);
             span.ResourceName = resourceName;
-            tags.SetAnalyticsSampleRate(ServiceRemotingConstants.IntegrationId, Tracer.InternalInstance.Settings, enabledWithGlobalSetting: false);
+            tags.SetAnalyticsSampleRate(ServiceRemotingConstants.IntegrationId, Tracer.Instance.Settings, enabledWithGlobalSetting: false);
 
             return span;
         }
@@ -147,7 +147,7 @@ namespace Datadog.Trace.ServiceFabric
         {
             try
             {
-                var scope = Tracer.InternalInstance.InternalActiveScope;
+                var scope = Tracer.Instance.InternalActiveScope;
 
                 if (scope == null)
                 {
