@@ -20,8 +20,14 @@ namespace Datadog.Trace.ClrProfiler
         SpanContext IDistributedTracer.GetSpanContext()
         {
             var values = _parent.GetDistributedTrace();
-
-            return SpanContextPropagator.Instance.Extract(values);
+            if (values is SpanContext spanContext)
+            {
+                return spanContext;
+            }
+            else
+            {
+                return SpanContextPropagator.Instance.Extract(values);
+            }
         }
 
         void IDistributedTracer.SetSpanContext(SpanContext value)

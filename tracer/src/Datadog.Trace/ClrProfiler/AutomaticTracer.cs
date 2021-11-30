@@ -19,12 +19,23 @@ namespace Datadog.Trace.ClrProfiler
 
         SpanContext IDistributedTracer.GetSpanContext()
         {
-            return _child != null ? SpanContextPropagator.Instance.Extract(DistributedTrace.Value) : null;
+            if (_child is null)
+            {
+                return null;
+            }
+            else if (DistributedTrace.Value is SpanContext spanContext)
+            {
+                return spanContext;
+            }
+            else
+            {
+                return SpanContextPropagator.Instance.Extract(DistributedTrace.Value);
+            }
         }
 
         void IDistributedTracer.SetSpanContext(SpanContext value)
         {
-            // Locally setting the SpanContext, no need to do anything
+            DistributedTrace.Value = value;
         }
 
         void IDistributedTracer.LockSamplingPriority()
@@ -48,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler
         /// <returns>Shared distributed trace object instance</returns>
         public IReadOnlyDictionary<string, string> GetDistributedTrace()
         {
-            return Tracer.Instance.ActiveScope?.Span.Context;
+            return DistributedTrace.Value;
         }
 
         /// <summary>
@@ -57,7 +68,10 @@ namespace Datadog.Trace.ClrProfiler
         /// <param name="value">Shared distributed trace object instance</param>
         public void SetDistributedTrace(IReadOnlyDictionary<string, string> value)
         {
-            DistributedTrace.Value = value;
+            if (_child != null)
+            {
+                DistributedTrace.Value = value;
+            }
         }
 
         public void Register(object manualTracer)
