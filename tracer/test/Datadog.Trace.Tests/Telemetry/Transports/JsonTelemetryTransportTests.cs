@@ -105,10 +105,10 @@ namespace Datadog.Trace.Tests.Telemetry
         {
             public string SerializedData { get; private set; }
 
-            public override Task PushTelemetry(TelemetryData data)
+            public override Task<bool> PushTelemetry(TelemetryData data)
             {
                 SerializedData = SerializeTelemetry(data);
-                return Task.FromResult(0);
+                return Task.FromResult(true);
             }
         }
     }
