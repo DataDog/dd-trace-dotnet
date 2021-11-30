@@ -48,9 +48,10 @@ namespace Datadog.Trace.Tests.DistributedTracer
             automaticTracer.Register(Mock.Of<ICommonTracer>());
 
             var distributedTracer = (IDistributedTracer)automaticTracer;
+            var expectedSpanContext = new SpanContext(1, 2);
 
-            distributedTracer.SetSpanContext(new SpanContext(1, 2));
-            distributedTracer.GetSpanContext().Should().BeNull("SetSpanContext on automatic tracer shouldn't do anything");
+            distributedTracer.SetSpanContext(expectedSpanContext);
+            distributedTracer.GetSpanContext().Should().BeEquivalentTo(expectedSpanContext);
         }
 
         [Fact]
