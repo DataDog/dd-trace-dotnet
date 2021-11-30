@@ -5,9 +5,9 @@
 
 #if !NETFRAMEWORK
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.Logging;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
@@ -16,38 +16,83 @@ namespace Datadog.Trace.Util.Http
     internal static partial class HttpRequestExtensions
     {
         private const string NoHostSpecified = "UNKNOWN_HOST";
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HttpRequestExtensions));
 
         internal static Dictionary<string, object> PrepareArgsForWaf(this HttpRequest request, RouteData routeDatas = null)
         {
             var url = GetUrl(request);
-            var headersDic = new Dictionary<string, string>(request.Headers.Keys.Count);
+            var headersDic = new Dictionary<string, string[]>(request.Headers.Keys.Count);
             foreach (var k in request.Headers.Keys)
             {
                 if (!k.Equals("cookie", System.StringComparison.OrdinalIgnoreCase))
                 {
-                    headersDic.Add(k.ToLowerInvariant(), request.Headers[k]);
+                    var key = k.ToLowerInvariant();
+#if NETCOREAPP
+                    if (!headersDic.TryAdd(key, request.Headers[key]))
+                    {
+#else
+                    if (!headersDic.ContainsKey(key))
+                    {
+                        headersDic.Add(key, request.Headers[key]);
+                    }
+                    else
+                    {
+#endif
+                        Log.Warning("Header {key} couldn't be added as argument to the waf", key);
+                    }
                 }
             }
 
-            var cookiesDic = new Dictionary<string, string>(request.Cookies.Keys.Count);
-            foreach (var k in request.Cookies.Keys)
+            var cookiesDic = new Dictionary<string, List<string>>(request.Cookies.Keys.Count);
+            for (var i = 0; i < request.Cookies.Count; i++)
             {
-                cookiesDic.Add(k, request.Cookies[k]);
+                var cookie = request.Cookies.ElementAt(i);
+                var keyExists = cookiesDic.TryGetValue(cookie.Key, out var value);
+                if (!keyExists)
+                {
+                    cookiesDic.Add(cookie.Key, new List<string> { cookie.Value ?? string.Empty });
+                }
+                else
+                {
+                    value.Add(cookie.Value);
+                }
             }
 
-            var queryStringDic = new Dictionary<string, List<string>>(request.Query.Count);
+            var queryStringDic = new Dictionary<string, string[]>(request.Query.Count);
             foreach (var kvp in request.Query)
             {
-                queryStringDic.Add(kvp.Key, kvp.Value.ToList());
+#if NETCOREAPP
+                if (!queryStringDic.TryAdd(kvp.Key, kvp.Value))
+                {
+#else
+                if (!queryStringDic.ContainsKey(kvp.Key))
+                {
+                    queryStringDic.Add(kvp.Key, kvp.Value);
+                }
+                else
+                {
+#endif
+                    Log.Warning("Query string with {key} couldn't be added as argument to the waf", kvp.Key);
+                }
             }
 
             var dict = new Dictionary<string, object>
             {
-                { AddressesConstants.RequestMethod, request.Method },
-                { AddressesConstants.RequestUriRaw, url },
-                { AddressesConstants.RequestQuery, queryStringDic },
-                { AddressesConstants.RequestHeaderNoCookies, headersDic },
-                { AddressesConstants.RequestCookies, cookiesDic },
+                {
+                    AddressesConstants.RequestMethod, request.Method
+                },
+                {
+                    AddressesConstants.RequestUriRaw, url
+                },
+                {
+                    AddressesConstants.RequestQuery, queryStringDic
+                },
+                {
+                    AddressesConstants.RequestHeaderNoCookies, headersDic
+                },
+                {
+                    AddressesConstants.RequestCookies, cookiesDic
+                },
             };
 
             if (routeDatas != null && routeDatas.Values.Any())
