@@ -38,10 +38,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         /// <param name="inputs">Input arguments</param>
         /// <param name="outputs">Output arguments</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget>(TTarget instance, object instanceArg, object[] inputs, out object[] outputs)
+        public static CallTargetState OnMethodBegin<TTarget>(TTarget instance, object instanceArg, object[] inputs, ref object[] outputs)
         {
-            outputs = default;
-
             // TODO Just use the OperationContext.Current object to get the span information
             // context.IncomingMessageHeaders contains:
             //  - Action
