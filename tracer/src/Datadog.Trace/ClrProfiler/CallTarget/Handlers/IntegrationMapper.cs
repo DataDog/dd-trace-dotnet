@@ -123,13 +123,27 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                     targetParameterTypeConstraint = targetParameterType.GetGenericParameterConstraints().FirstOrDefault(pType => pType != typeof(IDuckType));
                     if (targetParameterTypeConstraint is null)
                     {
-                        callGenericTypes.Add(targetParameterType.IsByRef ? sourceParameterType : sourceParameterType.GetElementType());
+                        callGenericTypes.Add(sourceParameterType.GetElementType());
                     }
                     else
                     {
                         var result = DuckType.GetOrCreateProxyType(targetParameterTypeConstraint, sourceParameterType.GetElementType());
                         parameterProxyType = result.ProxyType;
                         callGenericTypes.Add(parameterProxyType);
+                    }
+                }
+                else if (targetParameterType.IsByRef && targetParameterType.GetElementType() is { IsGenericParameter: true } elementType)
+                {
+                    // ByRef generic parameters needs to be unwrapped before accessing the `IsGenericParameter` property.
+                    var genTargetParameterType = genericArgumentsTypes[elementType.GenericParameterPosition];
+                    targetParameterTypeConstraint = genTargetParameterType.GetGenericParameterConstraints().FirstOrDefault(pType => pType != typeof(IDuckType));
+                    if (targetParameterTypeConstraint is null)
+                    {
+                        callGenericTypes.Add(sourceParameterType.GetElementType());
+                    }
+                    else
+                    {
+                        throw new InvalidCastException($"DuckType constraints cannot be used in ByRef arguments. ({targetParameterTypeConstraint})");
                     }
                 }
                 else
