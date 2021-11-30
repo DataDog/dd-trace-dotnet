@@ -1,4 +1,6 @@
+using System;
 using System.ServiceModel;
+using System.Threading.Tasks;
 
 namespace Samples.Wcf.Server
 {
@@ -6,12 +8,13 @@ namespace Samples.Wcf.Server
     public interface ICalculator
     {
         [OperationContract]
-        double Add(double n1, double n2);
+        double ServerSyncAdd(double n1, double n2);
+
         [OperationContract]
-        double Subtract(double n1, double n2);
-        [OperationContract]
-        double Multiply(double n1, double n2);
-        [OperationContract]
-        double Divide(double n1, double n2);
+        Task<double> ServerTaskAdd(double n1, double n2);
+
+        [OperationContract(AsyncPattern = true)]
+        IAsyncResult BeginServerAsyncAdd(double n1, double n2, AsyncCallback callback, object state);
+        double EndServerAsyncAdd(IAsyncResult result);
     }
 }
