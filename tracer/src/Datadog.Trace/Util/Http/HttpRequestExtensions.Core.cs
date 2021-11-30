@@ -27,12 +27,17 @@ namespace Datadog.Trace.Util.Http
                 if (!k.Equals("cookie", System.StringComparison.OrdinalIgnoreCase))
                 {
                     var key = k.ToLowerInvariant();
+#if NETCOREAPP
+                    if (!headersDic.TryAdd(key, request.Headers[key]))
+                    {
+#else
                     if (!headersDic.ContainsKey(key))
                     {
                         headersDic.Add(key, request.Headers[key]);
                     }
                     else
                     {
+#endif
                         Log.Warning("Header {key} couldn't be added as argument to the waf", key);
                     }
                 }
@@ -56,12 +61,17 @@ namespace Datadog.Trace.Util.Http
             var queryStringDic = new Dictionary<string, string[]>(request.Query.Count);
             foreach (var kvp in request.Query)
             {
-                if (!queryStringDic.ContainsKey(kvp.Key))
+#if NETCOREAPP
+                if (!queryStringDic.TryAdd(kvp.Key, kvp.Value))
                 {
-                    queryStringDic.Add(kvp.Key, kvp.Value);
+#else
+                if (!headersDic.ContainsKey(key))
+                {
+                    headersDic.Add(key, request.Headers[key]);
                 }
                 else
                 {
+#endif
                     Log.Warning("Query string with {key} couldn't be added as argument to the waf", kvp.Key);
                 }
             }
