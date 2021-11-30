@@ -15,11 +15,6 @@ namespace environment
     // Sets whether debug mode is enabled. Default is false.
     const WSTRING debug_enabled = WStr("DD_TRACE_DEBUG");
 
-    // Sets the paths to integration definition JSON files.
-    // Supports multiple values separated with semi-colons, for example:
-    // "C:\Program Files\Datadog .NET Tracer\integrations.json;D:\temp\test_integrations.json"
-    const WSTRING integrations_path = WStr("DD_INTEGRATIONS");
-
     // Sets the path to the profiler's home directory, for example:
     // "C:\Program Files\Datadog .NET Tracer\" or "/opt/datadog/"
     const WSTRING profiler_home_path = WStr("DD_DOTNET_TRACER_HOME");

@@ -125,25 +125,21 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
         {
             List<string> GetRuntimeSpecificVersions(string path)
             {
-                return new List<string>()
-                {
-                    path, Path.Combine(path, runtimeId), Path.Combine(path, runtimeId, "native"),
-                };
+                return new List<string>
+                       {
+                           path,
+                           Path.Combine(path, runtimeId),
+                           Path.Combine(path, runtimeId, "native"),
+                       };
             }
 
-            // treat any path that could contain integrations.json as home folder
-            var integrationsPaths = Environment.GetEnvironmentVariable("DD_INTEGRATIONS")
-                                              ?.Split(';')
-                                              ?.Where(x => !string.IsNullOrWhiteSpace(x))
-                                              ?.Select(Path.GetDirectoryName)
-                                              ?.ToList()
-                                 ?? new List<string>();
+            var paths = new List<string>();
 
             // the real trace home
             var tracerHome = Environment.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME");
             if (!string.IsNullOrWhiteSpace(tracerHome))
             {
-                integrationsPaths.Add(tracerHome);
+                paths.Add(tracerHome);
             }
 
             // include the appdomain base as this will help framework samples running in IIS find the library
@@ -153,7 +149,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
 
             if (!string.IsNullOrWhiteSpace(currentDir))
             {
-                integrationsPaths.Add(currentDir);
+                paths.Add(currentDir);
                 Log.Debug("currentDir is {CurrentDir}", currentDir);
             }
             else
@@ -163,13 +159,13 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
 
             // the home folder could contain the native dll directly, but it could also
             // be under a runtime specific folder
-            var paths =
-                integrationsPaths
+            var allPaths =
+                paths
                    .Distinct()
                    .SelectMany(GetRuntimeSpecificVersions)
                    .ToList();
 
-            return paths;
+            return allPaths;
         }
 
         private static bool TryLoadLibraryFromPaths(string libName, List<string> paths, out IntPtr handle)
