@@ -78,21 +78,18 @@ namespace Samples.AspNet.VersionConflict.Controllers
             {
                 scope.Span.SetTag(Tags.SamplingPriority, "UserKeep");
 
-                using (var innerScope = Tracer.Instance.StartActive("Manual-Inner"))
+                using (var client = new HttpClient())
                 {
-                    using (var client = new HttpClient())
-                    {
-                        var target = Url.Action("Index", "Home", null, "http");
+                    var target = Url.Action("Index", "Home", null, "http");
 
-                        _ = client.GetStringAsync(target).Result;
+                    _ = client.GetStringAsync(target).Result;
 
-                        // This should be ignored because the sampling priority has been locked
-                        scope.Span.SetTag(Tags.SamplingPriority, "UserReject");
+                    // This should be ignored because the sampling priority has been locked
+                    scope.Span.SetTag(Tags.SamplingPriority, "UserReject");
 
-                        _ = client.GetStringAsync(target).Result;
+                    _ = client.GetStringAsync(target).Result;
 
-                        Tracer.Instance.StartActive("Child").Dispose();
-                    }
+                    Tracer.Instance.StartActive("Child").Dispose();
                 }
             }
         }
