@@ -142,7 +142,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
                 3 => DirectSubmissionLogLevelExtensions.Warning,
                 4 => DirectSubmissionLogLevelExtensions.Error,
                 5 => DirectSubmissionLogLevelExtensions.Fatal, // Critical
-                _ => throw new ArgumentOutOfRangeException(nameof(logLevel))
+                _ => DirectSubmissionLogLevelExtensions.Unknown,
             };
 
         private readonly struct WriterWrapper

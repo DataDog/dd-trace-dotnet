@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.Formatti
                 3 => DirectSubmissionLogLevelExtensions.Warning,
                 4 => DirectSubmissionLogLevelExtensions.Error,
                 5 => DirectSubmissionLogLevelExtensions.Fatal,
-                _ => throw new ArgumentOutOfRangeException(nameof(logLevel))
+                _ => DirectSubmissionLogLevelExtensions.Unknown,
             };
 #else
         private static string GetLogLevelString(LogEventLevelDuck logLevel) =>
@@ -52,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.Formatti
                 LogEventLevelDuck.Warning => DirectSubmissionLogLevelExtensions.Warning,
                 LogEventLevelDuck.Error => DirectSubmissionLogLevelExtensions.Error,
                 LogEventLevelDuck.Fatal => DirectSubmissionLogLevelExtensions.Fatal,
-                _ => throw new ArgumentOutOfRangeException(nameof(logLevel))
+                _ => DirectSubmissionLogLevelExtensions.Unknown,
             };
 #endif
 

@@ -26,9 +26,9 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         }
 
         [Fact]
-        public void GetName_ThrowsForUnknownLogLevel()
+        public void GetName_HandlesUnknownLogLevels()
         {
-            Assert.Throws<InvalidOperationException>(() => ((DirectSubmissionLogLevel)123).GetName());
+            ((DirectSubmissionLogLevel)123).GetName().Should().Be("UNKNOWN");
         }
 
         [Fact]

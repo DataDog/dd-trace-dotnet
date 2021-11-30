@@ -16,6 +16,8 @@ namespace Datadog.Trace.Logging.DirectSubmission
         public const string Error = "Error";
         public const string Fatal = "Fatal";
 
+        public const string Unknown = "UNKNOWN";
+
         public static string GetName(this DirectSubmissionLogLevel logLevel)
             => logLevel switch
             {
@@ -25,7 +27,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
                 DirectSubmissionLogLevel.Warning => Warning,
                 DirectSubmissionLogLevel.Error => Error,
                 DirectSubmissionLogLevel.Fatal => Fatal,
-                _ => throw new InvalidOperationException("Unknown log level " + logLevel),
+                _ => Unknown,
             };
 
         public static DirectSubmissionLogLevel Parse(string value, DirectSubmissionLogLevel defaultLevel)

@@ -91,7 +91,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
                 4 => DirectSubmissionLogLevelExtensions.Error,
                 5 => DirectSubmissionLogLevelExtensions.Fatal,
                 // Technically there's a 6, off, but should never have this level in a log message
-                _ => throw new ArgumentOutOfRangeException(nameof(logLevel))
+                _ => DirectSubmissionLogLevelExtensions.Unknown,
             };
     }
 }
