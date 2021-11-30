@@ -5,6 +5,7 @@
 
 using System;
 using System.ComponentModel;
+using System.Reflection.Emit;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
@@ -41,54 +42,105 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
         /// <returns>Calltarget state value</returns>
         public static CallTargetState OnMethodBegin<TTarget, TArg1, TArg2, TArg3>(TTarget instance, TArg1 testMethod, TArg2 testMethodInfo, ref TArg3 notRunnableResult)
         {
-            MsTestIntegration.Log.Warning(" ############ (instance) " + instance?.ToString() ?? "(null)");
-            MsTestIntegration.Log.Warning(" ############ (testMethod) " + testMethod?.ToString() ?? "(null)");
-            MsTestIntegration.Log.Warning(" ############ (testMethodInfo) " + testMethodInfo?.ToString() ?? "(null)");
-            MsTestIntegration.Log.Warning(" ############ (notRunnableResult) " + notRunnableResult?.ToString() ?? "(null)");
-            return new CallTargetState(null, testMethod);
+            return new CallTargetState(null, new CustomState(testMethod, testMethodInfo, PtrConverter<TArg3>.GetPointer(ref notRunnableResult)));
         }
 
         /// <summary>
         /// OnAsyncMethodEnd callback
         /// </summary>
         /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TReturn">Type of the return value</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
         /// <param name="returnValue">Return value</param>
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        public static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
+        public static CallTargetReturn<bool> OnMethodEnd<TTarget>(TTarget instance, bool returnValue, Exception exception, CallTargetState state)
         {
             if (!MsTestIntegration.IsEnabled)
             {
-                return new CallTargetReturn<TReturn>(returnValue);
+                return new CallTargetReturn<bool>(returnValue);
             }
 
-            MsTestIntegration.Log.Warning(" ############ (returnValue) " + returnValue?.ToString() ?? "(null)");
+            var customState = (CustomState)state.State;
+            var notRunnableResult = customState.GetNotRunnableResult();
 
-            /*
-            if (returnValue is Array returnValueArray && returnValueArray.Length == 1)
+            if (!returnValue && notRunnableResult is Array notRunnableResultArray && notRunnableResultArray.Length == 1)
             {
-                object unitTestResultObject = returnValueArray.GetValue(0);
-                if (unitTestResultObject != null && unitTestResultObject.TryDuckCast<UnitTestResultStruct>(out var unitTestResult))
+                object unitTestResultObject = notRunnableResultArray.GetValue(0);
+
+                if (unitTestResultObject != null &&
+                    unitTestResultObject.TryDuckCast<UnitTestResultStruct>(out var unitTestResult) &&
+                    customState.TestMethodInfo.TryDuckCast<ITestMethod>(out var testMethodInfo))
                 {
                     var outcome = unitTestResult.Outcome;
                     if (outcome == UnitTestResultOutcome.Inconclusive || outcome == UnitTestResultOutcome.NotRunnable || outcome == UnitTestResultOutcome.Ignored)
                     {
-                        MsTestIntegration.Log.Warning(" ############ " + instance?.ToString());
-                        MsTestIntegration.Log.Warning(" ############ " + state.State?.ToString());
-
                         // This instrumentation catches all tests being ignored
-                        var scope = MsTestIntegration.OnMethodBegin(instance.TestMethodInfo, instance.GetType());
+                        var scope = MsTestIntegration.OnMethodBegin(testMethodInfo, instance.GetType());
                         scope.Span.SetTag(TestTags.Status, TestTags.StatusSkip);
                         scope.Span.SetTag(TestTags.SkipReason, unitTestResult.ErrorMessage);
                         scope.Dispose();
                     }
                 }
-            }*/
+            }
 
-            return new CallTargetReturn<TReturn>(returnValue);
+            return new CallTargetReturn<bool>(returnValue);
+        }
+
+        private readonly struct CustomState
+        {
+            public readonly object TestMethod;
+            public readonly object TestMethodInfo;
+            public readonly IntPtr NotRunnableResultIntPtr;
+
+            internal CustomState(object testMethod, object testMethodInfo, IntPtr notRunnableResultIntPtr)
+            {
+                TestMethod = testMethod;
+                TestMethodInfo = testMethodInfo;
+                NotRunnableResultIntPtr = notRunnableResultIntPtr;
+            }
+
+            public object GetNotRunnableResult()
+            {
+                try
+                {
+                    return PtrConverter<object>.GetValue(NotRunnableResultIntPtr);
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+        }
+
+        private static class PtrConverter<T>
+        {
+            private static GetPointerDelegate _getPointer;
+            private static GetValueDelegate _getValue;
+
+            static PtrConverter()
+            {
+                var dGetPointer = new DynamicMethod("GetPointer", typeof(IntPtr), new Type[] { typeof(T).MakeByRefType() }, typeof(PtrConverter<T>), true);
+                var ilGetPointer = dGetPointer.GetILGenerator();
+                ilGetPointer.Emit(OpCodes.Ldarg_0);
+                ilGetPointer.Emit(OpCodes.Ret);
+                _getPointer = (GetPointerDelegate)dGetPointer.CreateDelegate(typeof(GetPointerDelegate));
+
+                var dGetValue = new DynamicMethod("GetValue", typeof(T), new Type[] { typeof(IntPtr) }, typeof(PtrConverter<T>), true);
+                var ilGetValue = dGetValue.GetILGenerator();
+                ilGetValue.Emit(OpCodes.Ldarg_0);
+                ilGetValue.Emit(OpCodes.Ldobj, typeof(T));
+                ilGetValue.Emit(OpCodes.Ret);
+                _getValue = (GetValueDelegate)dGetValue.CreateDelegate(typeof(GetValueDelegate));
+            }
+
+            private delegate IntPtr GetPointerDelegate(ref T arg);
+
+            private delegate T GetValueDelegate(IntPtr ptr);
+
+            public static IntPtr GetPointer(ref T arg) => _getPointer(ref arg);
+
+            public static T GetValue(IntPtr ptr) => _getValue(ptr);
         }
     }
 }

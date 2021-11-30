@@ -64,16 +64,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
                 Scope scope = state.Scope;
                 if (scope != null)
                 {
-                    MsTestIntegration.Log.Warning("***** " + returnValue.ToString());
-
                     Array returnValueArray = returnValue as Array;
                     if (returnValueArray.Length == 1)
                     {
-                        MsTestIntegration.Log.Warning("***** " + returnValueArray.Length.ToString());
-
                         object testResultObject = returnValueArray.GetValue(0);
 
-                        MsTestIntegration.Log.Warning("***** " + testResultObject.ToString());
                         if (testResultObject != null &&
                             testResultObject.TryDuckCast<TestResultStruct>(out var testResult))
                         {
@@ -92,9 +87,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
                                 errorMessage = testException.Message;
                                 errorStackTrace = testException.ToString();
                             }
-
-                            MsTestIntegration.Log.Warning("***** " + testResult.ToString());
-                            MsTestIntegration.Log.Warning("***** " + testResult.Outcome.ToString());
 
                             switch (testResult.Outcome)
                             {
