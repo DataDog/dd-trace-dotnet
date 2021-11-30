@@ -28,11 +28,14 @@ namespace Samples.AspNet.VersionConflict.Controllers
 
             using (Tracer.Instance.StartActive("Manual"))
             {
-                using (var client = new HttpClient())
+                using (var innerScope = Tracer.Instance.StartActive("Manual-Inner"))
                 {
-                    var target = Url.Action("Index", "Home", null, "http");
-                    var content = client.GetStringAsync(target).Result;
-                    result = content.Length;
+                    using (var client = new HttpClient())
+                    {
+                        var target = Url.Action("Index", "Home", null, "http");
+                        var content = client.GetStringAsync(target).Result;
+                        result = content.Length;
+                    }
                 }
             }
 
@@ -75,18 +78,21 @@ namespace Samples.AspNet.VersionConflict.Controllers
             {
                 scope.Span.SetTag(Tags.SamplingPriority, "UserKeep");
 
-                using (var client = new HttpClient())
+                using (var innerScope = Tracer.Instance.StartActive("Manual-Inner"))
                 {
-                    var target = Url.Action("Index", "Home", null, "http");
+                    using (var client = new HttpClient())
+                    {
+                        var target = Url.Action("Index", "Home", null, "http");
 
-                    _ = client.GetStringAsync(target).Result;
+                        _ = client.GetStringAsync(target).Result;
 
-                    // This should be ignored because the sampling priority has been locked
-                    scope.Span.SetTag(Tags.SamplingPriority, "UserReject");
+                        // This should be ignored because the sampling priority has been locked
+                        scope.Span.SetTag(Tags.SamplingPriority, "UserReject");
 
-                    _ = client.GetStringAsync(target).Result;
+                        _ = client.GetStringAsync(target).Result;
 
-                    Tracer.Instance.StartActive("Child").Dispose();
+                        Tracer.Instance.StartActive("Child").Dispose();
+                    }
                 }
             }
         }

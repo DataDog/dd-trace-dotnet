@@ -37,15 +37,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
         [Trait("LoadFromGAC", "True")]
         public async Task SubmitsTraces()
         {
-            // 4 spans for the base request: aspnet.request / aspnet-mvc.request / Manual / http.request
+            // 4 spans for the base request: aspnet.request / aspnet-mvc.request / Manual / Manual-Inner / http.request
             // + 2 spans for the outgoing request: aspnet.request / aspnet-mvc.request
-            const int expectedSpans = 6;
+            const int expectedSpans = 7;
 
             var spans = await GetWebServerSpans("/home/sendrequest", _iisFixture.Agent, _iisFixture.HttpPort, System.Net.HttpStatusCode.OK, expectedSpans, filterServerSpans: false);
 
             foreach (var span in spans)
             {
-                Output.WriteLine($"{span.Name} - {span.TraceId} - {span.SpanId} - {span.ParentId} - {span.Resource}");
+                Output.WriteLine($"Name:{span.Name} - TraceId:{span.TraceId} - SpanID:{span.SpanId} - ParentId:{span.ParentId} - Resource:{span.Resource}");
             }
 
             spans.Should().HaveCount(expectedSpans);
@@ -65,7 +65,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
             manualSpan.TraceId.Should().Be(rootSpan.TraceId);
             manualSpan.Name.Should().Be("Manual");
 
-            var httpSpan = spans.Single(s => s.ParentId == manualSpan.SpanId);
+            var manualInnerSpan = spans.Single(s => s.ParentId == mvcSpan.SpanId);
+
+            manualInnerSpan.TraceId.Should().Be(rootSpan.TraceId);
+            manualInnerSpan.Name.Should().Be("Manual-Inner");
+
+            var httpSpan = spans.Single(s => s.ParentId == manualInnerSpan.SpanId);
 
             httpSpan.TraceId.Should().Be(rootSpan.TraceId);
             httpSpan.Name.Should().Be("http.request");
