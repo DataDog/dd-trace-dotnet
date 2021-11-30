@@ -65,9 +65,9 @@ namespace Datadog.Trace.Util.Http
                 if (!queryStringDic.TryAdd(kvp.Key, kvp.Value))
                 {
 #else
-                if (!headersDic.ContainsKey(key))
+                if (!queryStringDic.ContainsKey(kvp.Key))
                 {
-                    headersDic.Add(key, request.Headers[key]);
+                    queryStringDic.Add(kvp.Key, kvp.Value);
                 }
                 else
                 {
