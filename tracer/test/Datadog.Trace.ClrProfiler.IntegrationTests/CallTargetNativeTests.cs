@@ -88,8 +88,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (new MockTracerAgent(agentPort))
             using (var processResult = RunSampleAndWaitForExit(agentPort, arguments: "withref"))
             {
-                string beginMethodString = $"ProfilerOK: BeginMethod\\({2}\\)";
-                int beginMethodCount = Regex.Matches(processResult.StandardOutput, beginMethodString).Count;
+                int beginMethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({1}\\)").Count;
+                int begin2MethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({2}\\)").Count;
                 int endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod\\(").Count;
 
                 string[] typeNames = new string[]
@@ -99,7 +99,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 };
 
                 Assert.Equal(2, beginMethodCount);
-                Assert.Equal(2, endMethodCount);
+                Assert.Equal(2, begin2MethodCount);
+                Assert.Equal(4, endMethodCount);
 
                 foreach (var typeName in typeNames)
                 {
@@ -116,8 +117,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (new MockTracerAgent(agentPort))
             using (var processResult = RunSampleAndWaitForExit(agentPort, arguments: "without"))
             {
-                string beginMethodString = $"ProfilerOK: BeginMethod\\({2}\\)";
-                int beginMethodCount = Regex.Matches(processResult.StandardOutput, beginMethodString).Count;
+                int beginMethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({1}\\)").Count;
+                int begin2MethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({2}\\)").Count;
                 int endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod\\(").Count;
 
                 string[] typeNames = new string[]
@@ -126,7 +127,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 };
 
                 Assert.Equal(1, beginMethodCount);
-                Assert.Equal(1, endMethodCount);
+                Assert.Equal(1, begin2MethodCount);
+                Assert.Equal(2, endMethodCount);
 
                 foreach (var typeName in typeNames)
                 {

@@ -56,8 +56,12 @@ namespace CallTargetNativeTest
             // Add By Ref integrations
             definitionsList.Add(new(TargetAssembly, typeof(WithRefArguments).FullName, "VoidMethod", new[] { "_", "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(StringAndIntRefModificationVoidIntegration).FullName));
             definitionsList.Add(new(TargetAssembly, typeof(WithRefArguments).FullName, "VoidRefMethod", new[] { "_", "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(StringAndIntRefModificationVoidIntegration).FullName));
+            definitionsList.Add(new(TargetAssembly, typeof(WithRefArguments).FullName, "VoidMethod", new[] { "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(GenericRefModificationVoidIntegration).FullName));
+            definitionsList.Add(new(TargetAssembly, typeof(WithRefArguments).FullName, "VoidRefMethod", new[] { "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(GenericRefModificationVoidIntegration).FullName));
 
+            // Add Out integrations
             definitionsList.Add(new(TargetAssembly, typeof(WithOutArguments).FullName, "VoidMethod", new[] { "_", "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(StringAndIntOutVoidIntegration).FullName));
+            definitionsList.Add(new(TargetAssembly, typeof(WithOutArguments).FullName, "VoidMethod", new[] { "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(GenericOutModificationVoidIntegration).FullName));
 
             NativeMethods.InitializeProfiler(Guid.NewGuid().ToString("N"), definitionsList.ToArray());
         }
@@ -159,6 +163,11 @@ namespace CallTargetNativeTest
             Console.WriteLine($"{typeof(WithRefArguments).FullName}.VoidMethod");
             RunMethod(() =>
             {
+                wRefArg.VoidMethod("MyString");
+            });
+
+            RunMethod(() =>
+            {
                 wRefArg.VoidMethod("MyString", 15);
 
                 if (wRefArg.StringValue != "MyString (Modified)")
@@ -173,6 +182,16 @@ namespace CallTargetNativeTest
             });
 
             Console.WriteLine($"{typeof(WithRefArguments).FullName}.VoidRefMethod");
+            RunMethod(() =>
+            {
+                string strVal = "MyString";
+                wRefArg.VoidRefMethod(ref strVal);
+
+                if (strVal != "Hello world")
+                {
+                    throw new Exception("Error modifying string value.");
+                }
+            });
             RunMethod(() =>
             {
                 string strVal = "MyString";
@@ -196,6 +215,16 @@ namespace CallTargetNativeTest
         {
             var wOutArg = new WithOutArguments();
             Console.WriteLine($"{typeof(WithOutArguments).FullName}.VoidMethod");
+            RunMethod(() =>
+            {
+                string strValue;
+                wOutArg.VoidMethod(out strValue);
+
+                if (strValue != "Arg01")
+                {
+                    throw new Exception("Error modifying string value.");
+                }
+            });
             RunMethod(() =>
             {
                 string strValue;

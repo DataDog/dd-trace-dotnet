@@ -22,5 +22,15 @@ namespace CallTargetNativeTest
             StringValue = arg1;
             IntValue = arg2;
         }
+
+
+        public void VoidMethod(string arg1)
+        {
+        }
+
+        public void VoidRefMethod(ref string arg1)
+        {
+            arg1 = "Hello world";
+        }
     }
 }
