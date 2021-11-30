@@ -454,5 +454,13 @@ namespace Datadog.Trace
         internal const string CouchbaseOperationCode = "couchbase.operation.code";
         internal const string CouchbaseOperationBucket = "couchbase.operation.bucket";
         internal const string CouchbaseOperationKey = "couchbase.operation.key";
+
+        /// <summary>
+        /// Internal Datadog tags that are propagated between services using the "x-datadog-tags" header.
+        /// </summary>
+        internal static class Propagated
+        {
+            public const string UpstreamServices = "_dd.p.upstream_services";
+        }
     }
 }
