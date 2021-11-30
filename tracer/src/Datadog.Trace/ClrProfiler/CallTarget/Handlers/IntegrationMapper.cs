@@ -132,10 +132,10 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                         callGenericTypes.Add(parameterProxyType);
                     }
                 }
-                else if (targetParameterType.IsByRef && targetParameterType.GetElementType().IsGenericParameter)
+                else if (targetParameterType.IsByRef && targetParameterType.GetElementType() is { IsGenericParameter: true } elementType)
                 {
                     // ByRef generic parameters needs to be unwrapped before accessing the `IsGenericParameter` property.
-                    var genTargetParameterType = genericArgumentsTypes[targetParameterType.GetElementType().GenericParameterPosition];
+                    var genTargetParameterType = genericArgumentsTypes[elementType.GenericParameterPosition];
                     targetParameterTypeConstraint = genTargetParameterType.GetGenericParameterConstraints().FirstOrDefault(pType => pType != typeof(IDuckType));
                     if (targetParameterTypeConstraint is null)
                     {
