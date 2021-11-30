@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
             manualSpan.TraceId.Should().Be(rootSpan.TraceId);
             manualSpan.Name.Should().Be("Manual");
 
-            var manualInnerSpan = spans.Single(s => s.ParentId == mvcSpan.SpanId);
+            var manualInnerSpan = spans.Single(s => s.ParentId == manualSpan.SpanId);
 
             manualInnerSpan.TraceId.Should().Be(rootSpan.TraceId);
             manualInnerSpan.Name.Should().Be("Manual-Inner");
