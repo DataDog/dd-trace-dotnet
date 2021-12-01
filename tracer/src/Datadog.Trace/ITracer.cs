@@ -19,11 +19,6 @@ namespace Datadog.Trace
         IScope ActiveScope { get; }
 
         /// <summary>
-        /// Gets the default service name for traces where a service name is not specified.
-        /// </summary>
-        string DefaultServiceName { get; }
-
-        /// <summary>
         /// Gets this tracer's settings.
         /// </summary>
         ImmutableTracerSettings Settings { get; }

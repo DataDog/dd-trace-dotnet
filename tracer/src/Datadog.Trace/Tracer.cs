@@ -177,11 +177,6 @@ namespace Datadog.Trace
         IScope ITracer.ActiveScope => ActiveScope;
 
         /// <summary>
-        /// Gets the default service name for traces where a service name is not specified.
-        /// </summary>
-        string ITracer.DefaultServiceName => DefaultServiceName;
-
-        /// <summary>
         /// Gets this tracer's settings.
         /// </summary>
         ImmutableTracerSettings ITracer.Settings => Settings;
