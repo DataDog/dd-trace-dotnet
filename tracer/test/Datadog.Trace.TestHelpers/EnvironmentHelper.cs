@@ -470,25 +470,9 @@ namespace Datadog.Trace.TestHelpers
 
         public MockTracerAgent GetMockAgent(bool useStatsD = false)
         {
-            MockTracerAgent agent;
             AgentPort = TcpPortProvider.GetOpenPort();
             _output.WriteLine($"Assigning port {AgentPort} for the agentPort.");
-#if NETCOREAPP
-            // Decide between transports
-            if (TransportType == TestTransports.Uds)
-            {
-                agent = new MockTracerAgent(traceUdsName: TraceUdsName, statsUdsName: StatsUdsName);
-            }
-            else
-            {
-                // Default
-                agent = new MockTracerAgent(AgentPort);
-            }
-#else
-            agent = new MockTracerAgent(AgentPort, useStatsd: useStatsD);
-#endif
-
-            return agent;
+            return new MockTracerAgent(AgentPort, useStatsd: useStatsD);
         }
     }
 }
