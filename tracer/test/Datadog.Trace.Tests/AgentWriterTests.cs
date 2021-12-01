@@ -34,6 +34,8 @@ namespace Datadog.Trace.Tests
         public async Task WriteTrace_2Traces_SendToApi()
         {
             var trace = new[] { new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow) };
+
+            // serialize with MessagePack code from Datadog.Trace.dll
             var expectedData1 = Datadog.Trace.Vendors.MessagePack.MessagePackSerializer.Serialize(trace, SpanFormatterResolver.Instance);
 
             _agentWriter.WriteTrace(new ArraySegment<Span>(trace));
@@ -44,6 +46,8 @@ namespace Datadog.Trace.Tests
             _api.Invocations.Clear();
 
             trace = new[] { new Span(new SpanContext(2, 2), DateTimeOffset.UtcNow) };
+
+            // serialize with MessagePack code from Datadog.Trace.dll
             var expectedData2 = Datadog.Trace.Vendors.MessagePack.MessagePackSerializer.Serialize(trace, SpanFormatterResolver.Instance);
 
             _agentWriter.WriteTrace(new ArraySegment<Span>(trace));
@@ -297,6 +301,8 @@ namespace Datadog.Trace.Tests
 
             const double expectedTraceKeepRate = 0.75;
             rootSpan.SetMetric(Metrics.TracesKeepRate, expectedTraceKeepRate);
+
+            // serialize with MessagePack code from Datadog.Trace.dll
             var expectedData = Datadog.Trace.Vendors.MessagePack.MessagePackSerializer.Serialize(trace, SpanFormatterResolver.Instance);
             await agent.FlushAndCloseAsync();
 
@@ -363,6 +369,7 @@ namespace Datadog.Trace.Tests
 
         private static int ComputeSizeOfTrace(ArraySegment<Span> trace)
         {
+            // serialize with MessagePack code from Datadog.Trace.dll
             return Datadog.Trace.Vendors.MessagePack.MessagePackSerializer.Serialize(trace, SpanFormatterResolver.Instance).Length;
         }
 
