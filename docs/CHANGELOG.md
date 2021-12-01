@@ -1,5 +1,18 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
+## [Release 1.31.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.31.0)
+
+## Changes
+* [AppSec] Report attacks by the _dd.appsec.triggers tag (#1923)
+* [AppSec] Change waf initialization to have better logging (#2068)
+* [AppSec] Upgrade WAF rule set (#2086)
+* [Appsec] Fix duplicate key in cookies when building waf args (#2098)
+
+## Fixes
+* Remove insertion of blocking middleware (#2011)
+
+[Changes since 1.30.1](https://github.com/DataDog/dd-trace-dotnet/compare/v1.30.1...v1.31.0)
+
 ## [Release 1.30.1](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.30.1)
 
 ## Fixes
