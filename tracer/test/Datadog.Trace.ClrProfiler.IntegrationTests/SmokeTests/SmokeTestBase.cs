@@ -61,14 +61,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
             // clear all relevant environment variables to start with a clean slate
             EnvironmentHelper.ClearProfilerEnvironmentVariables();
 
-            int agentPort = TcpPortProvider.GetOpenPort();
             int aspNetCorePort = TcpPortProvider.GetOpenPort(); // unused for now
-            Output.WriteLine($"Assigning port {agentPort} for the agentPort.");
             Output.WriteLine($"Assigning port {aspNetCorePort} for the aspNetCorePort.");
 
             ProcessResult result;
 
-            using (var agent = new MockTracerAgent(agentPort))
+            using (var agent = EnvironmentHelper.GetMockAgent())
             {
                 agent.ShouldDeserializeTraces = shouldDeserializeTraces;
 

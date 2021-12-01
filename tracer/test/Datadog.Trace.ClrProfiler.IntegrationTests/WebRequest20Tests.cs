@@ -30,13 +30,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             const string expectedOperationName = "http.request";
             const string expectedServiceName = "Samples.WebRequest.NetFramework20-http-client";
 
-            int agentPort = TcpPortProvider.GetOpenPort();
             int httpPort = TcpPortProvider.GetOpenPort();
-
-            Output.WriteLine($"Assigning port {agentPort} for the agentPort.");
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
 
-            using (var agent = new MockTracerAgent(agentPort))
+            using (var agent = EnvironmentHelper.GetMockAgent())
             using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"Port={httpPort}"))
             {
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
@@ -67,10 +64,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             const string expectedOperationName = "http.request";
 
-            int agentPort = TcpPortProvider.GetOpenPort();
             int httpPort = TcpPortProvider.GetOpenPort();
 
-            using (var agent = new MockTracerAgent(agentPort))
+            using (var agent = EnvironmentHelper.GetMockAgent())
             using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"TracingDisabled Port={httpPort}"))
             {
                 var spans = agent.WaitForSpans(1, 3000, operationName: expectedOperationName);

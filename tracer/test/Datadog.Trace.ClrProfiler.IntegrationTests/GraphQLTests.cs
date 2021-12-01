@@ -69,10 +69,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public void SubmitsTraces()
         {
-            int agentPort = TcpPortProvider.GetOpenPort();
             int aspNetCorePort = TcpPortProvider.GetOpenPort();
 
-            using (var agent = new MockTracerAgent(agentPort))
+            using (var agent = EnvironmentHelper.GetMockAgent())
             using (Process process = StartSample(agent.Port, arguments: null, packageVersion: string.Empty, aspNetCorePort: aspNetCorePort))
             {
                 var wh = new EventWaitHandle(false, EventResetMode.AutoReset);

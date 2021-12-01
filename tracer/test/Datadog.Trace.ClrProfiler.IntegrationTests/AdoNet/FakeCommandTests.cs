@@ -26,10 +26,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             const string expectedOperationName = dbType + ".query";
             const string expectedServiceName = "Samples.FakeDbCommand";
 
-            int agentPort = TcpPortProvider.GetOpenPort();
-
-            using var agent = new MockTracerAgent(agentPort);
-            using var process = RunSampleAndWaitForExit(agent.Port);
+            using var agent = EnvironmentHelper.GetMockAgent();
+            using var process = RunSampleAndWaitForExit(EnvironmentHelper.AgentPort);
             var spans = agent.WaitForSpans(expectedSpanCount);
 
             Assert.Equal(expectedSpanCount, spans.Count);

@@ -26,9 +26,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         public void SubmitsTraces(string packageVersion)
         {
-            int agentPort = TcpPortProvider.GetOpenPort();
-
-            using (var agent = new MockTracerAgent(agentPort))
+            using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent.Port, arguments: $"{TestPrefix}", packageVersion: packageVersion))
             {
                 // note: ignore the INFO command because it's timing is unpredictable (on Linux?)

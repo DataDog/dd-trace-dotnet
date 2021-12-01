@@ -48,6 +48,7 @@ namespace Datadog.Trace.TestHelpers
             _requiresProfiling = requiresProfiling;
             TracerHome = GetTracerHomePath();
             ProfilerPath = GetProfilerPath();
+            IntegrationsJsonPath = GetIntegrationsJsonFilePath();
 
             var parts = _targetFramework.FrameworkName.Split(',');
             _runtime = parts[0];
@@ -67,6 +68,14 @@ namespace Datadog.Trace.TestHelpers
                           : string.Empty;
         }
 
+        public TestTransports TransportType { get; set; } = TestTransports.Tcp;
+
+        public int AgentPort { get; private set; }
+
+        public string TraceUdsName { get; private set; }
+
+        public string StatsUdsName { get; private set; }
+
         public bool DebugModeEnabled { get; set; }
 
         public Dictionary<string, string> CustomEnvironmentVariables { get; set; } = new Dictionary<string, string>();
@@ -76,6 +85,8 @@ namespace Datadog.Trace.TestHelpers
         public string ProfilerPath { get; }
 
         public string TracerHome { get; }
+
+        public string IntegrationsJsonPath { get; }
 
         public string FullSampleName => $"{_appNamePrepend}{SampleName}";
 
@@ -147,6 +158,18 @@ namespace Datadog.Trace.TestHelpers
             return path;
         }
 
+        public static string GetIntegrationsJsonFilePath()
+        {
+            string fileName = "integrations.json";
+            var path = Path.Combine(GetTracerHomePath(), fileName);
+            if (!File.Exists(path))
+            {
+                throw new Exception($"Attempt 3: Unable to find integrations at {path}");
+            }
+
+            return path;
+        }
+
         public static void ClearProfilerEnvironmentVariables()
         {
             var environmentVariables = new[]
@@ -166,11 +189,13 @@ namespace Datadog.Trace.TestHelpers
                 // Datadog
                 "DD_PROFILER_PROCESSES",
                 "DD_DOTNET_TRACER_HOME",
+                "DD_INTEGRATIONS",
                 "DD_DISABLED_INTEGRATIONS",
                 "DD_SERVICE",
                 "DD_VERSION",
                 "DD_TAGS",
                 "DD_APPSEC_ENABLED",
+                "DD_TRACE_CALLTARGET_ENABLED"
             };
 
             foreach (string variable in environmentVariables)
@@ -186,7 +211,8 @@ namespace Datadog.Trace.TestHelpers
             StringDictionary environmentVariables,
             string processToProfile = null,
             bool enableSecurity = false,
-            bool enableBlocking = false)
+            bool enableBlocking = false,
+            bool callTargetEnabled = false)
         {
             string profilerEnabled = _requiresProfiling ? "1" : "0";
             environmentVariables["DD_DOTNET_TRACER_HOME"] = TracerHome;
@@ -209,11 +235,17 @@ namespace Datadog.Trace.TestHelpers
                 environmentVariables["DD_TRACE_DEBUG"] = "1";
             }
 
+            if (callTargetEnabled)
+            {
+                environmentVariables["DD_TRACE_CALLTARGET_ENABLED"] = "1";
+            }
+
             if (!string.IsNullOrEmpty(processToProfile))
             {
                 environmentVariables["DD_PROFILER_PROCESSES"] = Path.GetFileName(processToProfile);
             }
 
+            environmentVariables["DD_INTEGRATIONS"] = IntegrationsJsonPath;
             environmentVariables["DD_TRACE_AGENT_HOSTNAME"] = "127.0.0.1";
             environmentVariables["DD_TRACE_AGENT_PORT"] = agentPort.ToString();
 
@@ -352,7 +384,7 @@ namespace Datadog.Trace.TestHelpers
                                      Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
                                      "dotnet",
                                      "dotnet.exe"),
-                _ =>  "dotnet",
+                _ => "dotnet",
             };
 
         public string GetSampleProjectDirectory()
@@ -425,6 +457,38 @@ namespace Datadog.Trace.TestHelpers
             }
 
             return $"net{_major}{_minor}{_patch ?? string.Empty}";
+        }
+
+        public void EnableUnixDomainSockets(string traceUdsName, string statsUdsName)
+        {
+            CustomEnvironmentVariables.Add("DD_TRACE_AGENT_UNIX_DOMAIN_SOCKET", traceUdsName);
+            CustomEnvironmentVariables.Add("DD_DOGSTATSD_UNIX_DOMAIN_SOCKET", statsUdsName);
+            TraceUdsName = traceUdsName;
+            StatsUdsName = statsUdsName;
+            TransportType = TestTransports.Uds;
+        }
+
+        public MockTracerAgent GetMockAgent(bool useStatsD = false)
+        {
+            MockTracerAgent agent;
+            AgentPort = TcpPortProvider.GetOpenPort();
+            _output.WriteLine($"Assigning port {AgentPort} for the agentPort.");
+#if NETCOREAPP
+            // Decide between transports
+            if (TransportType == TestTransports.Uds)
+            {
+                agent = new MockTracerAgent(traceUdsName: TraceUdsName, statsUdsName: StatsUdsName);
+            }
+            else
+            {
+                // Default
+                agent = new MockTracerAgent(AgentPort);
+            }
+#else
+            agent = new MockTracerAgent(AgentPort, useStatsd: useStatsD);
+#endif
+
+            return agent;
         }
     }
 }

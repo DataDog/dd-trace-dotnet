@@ -22,9 +22,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public void RunChecksProject()
         {
             SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
-            int agentPort = TcpPortProvider.GetOpenPort();
 
-            using (var agent = new MockTracerAgent(agentPort))
+            using (var agent = EnvironmentHelper.GetMockAgent())
             using (var processResult = RunSampleAndWaitForExit(agentPort))
             {
                 Assert.True(processResult.ExitCode == 0, $"Process exited with code {processResult.ExitCode}");

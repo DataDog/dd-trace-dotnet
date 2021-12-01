@@ -36,8 +36,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public void InjectsLogs()
         {
-            int agentPort = TcpPortProvider.GetOpenPort();
-            using (var agent = new MockTracerAgent(agentPort))
+            using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent.Port, aspNetCorePort: 0))
             {
                 var spans = agent.WaitForSpans(1, 2500);

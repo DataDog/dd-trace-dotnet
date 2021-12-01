@@ -69,10 +69,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             const string expectedOperationName = "wcf.request";
 
-            int agentPort = TcpPortProvider.GetOpenPort();
             int wcfPort = 8585;
 
-            using (var agent = new MockTracerAgent(agentPort))
+            using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent.Port, arguments: $"{binding} Port={wcfPort}"))
             {
                 // Filter out WCF spans unrelated to the actual request handling, and filter them before returning spans

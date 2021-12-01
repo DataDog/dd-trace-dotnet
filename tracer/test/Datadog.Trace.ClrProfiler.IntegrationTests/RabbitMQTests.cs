@@ -50,8 +50,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             int emptyBasicGetCount = 0;
 
-            int agentPort = TcpPortProvider.GetOpenPort();
-            using (var agent = new MockTracerAgent(agentPort))
+            using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent.Port, arguments: $"{TestPrefix}", packageVersion: packageVersion))
             {
                 var spans = agent.WaitForSpans(expectedSpanCount); // Do not filter on operation name because they will vary depending on instrumented method

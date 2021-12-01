@@ -40,9 +40,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
                 SetEnvironmentVariable("DD_DUMP_ILREWRITE_ENABLED", "1");
 
-                int agentPort = TcpPortProvider.GetOpenPort();
-
-                using (var agent = new MockTracerAgent(agentPort))
+                using (var agent = EnvironmentHelper.GetMockAgent())
                 using (ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
                 {
                     spans = agent.WaitForSpans(ExpectedSpanCount)
