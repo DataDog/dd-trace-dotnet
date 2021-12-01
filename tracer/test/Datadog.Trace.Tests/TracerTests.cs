@@ -13,6 +13,7 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Tests.PlatformHelpers;
 using Datadog.Trace.Vendors.StatsdClient;
 using FluentAssertions;
 using Moq;
@@ -310,7 +311,10 @@ namespace Datadog.Trace.Tests
 
             if (expectedServiceName == null)
             {
-                Assert.Contains(span.ServiceName, TestRunners.ValidNames);
+                // due to the service name fallback, if this runs at the same time as AzureAppServicesMetadataTests,
+                // then AzureAppServices.IsRelevant returns true, and we may pull the service name from the AAS env vars
+                var expectedServiceNames = TestRunners.ValidNames.Concat(new[] { AzureAppServicesMetadataTests.DeploymentId });
+                Assert.Contains(span.ServiceName, expectedServiceNames);
             }
             else
             {
