@@ -715,6 +715,17 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
                         continue;
                     }
 
+                    // Loading ancestor assembly metadata (to check assembly versions)
+
+                    // ...
+
+
+                    // Looking for the method to rewrite
+
+                    // ...
+
+
+
                     Logger::Info("[Integration]: ", ancestorTypeInfo->name, " -> [Actual Type]: ", typeInfo.name,
                                  " -> [ModuleId]: ", ancestorModuleId);
                 }
@@ -785,7 +796,7 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
                     [&metadataImport](HCORENUM ptr) -> void { metadataImport->CloseEnum(ptr); });
 
                 auto enumIterator = enumMethods.begin();
-                while (enumIterator != enumMethods.end())
+                for (; enumIterator != enumMethods.end(); enumIterator = ++enumIterator)
                 {
                     auto methodDef = *enumIterator;
 
@@ -794,7 +805,6 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
                     if (!caller.IsValid())
                     {
                         Logger::Warn("    * The caller for the methoddef: ", TokenStr(&methodDef), " is not valid!");
-                        enumIterator = ++enumIterator;
                         continue;
                     }
 
@@ -806,7 +816,6 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
                     {
                         Logger::Warn("    * The method signature: ", functionInfo.method_signature.str(),
                                      " cannot be parsed.");
-                        enumIterator = ++enumIterator;
                         continue;
                     }
 
@@ -817,7 +826,6 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
                     {
                         Logger::Debug("    * The caller for the methoddef: ", integration.target_method.method_name,
                                       " doesn't have the right number of arguments (", numOfArgs, " arguments).");
-                        enumIterator = ++enumIterator;
                         continue;
                     }
 
@@ -841,7 +849,6 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
                     {
                         Logger::Debug("    * The caller for the methoddef: ", integration.target_method.method_name,
                                       " doesn't have the right type of arguments.");
-                        enumIterator = ++enumIterator;
                         continue;
                     }
 
@@ -888,7 +895,6 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
                         ", AppDomainId=", moduleHandler->GetModuleMetadata()->app_domain_id,
                         ", Assembly=", moduleHandler->GetModuleMetadata()->assemblyName, ", Type=", caller.type.name,
                         ", Method=", caller.name, "(", numOfArgs, " params), Signature=", caller.signature.str(), "]");
-                    enumIterator = ++enumIterator;
                 }
             }
         }
