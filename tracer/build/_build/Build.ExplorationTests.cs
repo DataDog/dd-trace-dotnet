@@ -215,12 +215,15 @@ partial class Build
                    .WithMemoryDumpAfter(1)
                     ;
 
-                x = monitoringType switch
+                var envVariables = monitoringType switch
                 {
-                    MonitoringType.Debugger => x.SetDebuggerEnvironmentVariables(TracerHomeDirectory),
-                    MonitoringType.Profiler => x.SetProfilerEnvironmentVariables(TracerHomeDirectory),
+                    MonitoringType.Debugger => GetDebuggerEnvironmentVariables(TracerHomeDirectory),
+                    MonitoringType.Profiler => GetProfilerEnvironmentVariables(TracerHomeDirectory),
                     _ => throw new ArgumentOutOfRangeException(nameof(monitoringType), monitoringType, null)
                 };
+
+                AddExtraEnvVariables(envVariables);
+                x = x.SetProcessEnvironmentVariables(envVariables);
 
                 return x;
             });

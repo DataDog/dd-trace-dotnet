@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using Nuke.Common;
 using Nuke.Common.IO;
-using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.MSBuild;
@@ -73,48 +72,6 @@ internal static partial class DotNetSettingsExtensions
         where T: ToolSettings
     {
         foreach (var keyValuePair in variables)
-        {
-            settings = settings.SetProcessEnvironmentVariable(keyValuePair.Key, keyValuePair.Value);
-        }
-
-        return settings;
-    }
-
-    public static T SetDebuggerEnvironmentVariables<T>(this T settings, AbsolutePath tracerHomeDirectory)
-        where T : ToolSettings
-    {
-        settings = settings.SetProcessEnvironmentVariable("DD_DEBUGGER_ENABLED", "1");
-        SetProfilerEnvironmentVariables(settings, tracerHomeDirectory);
-
-        return settings;
-    }
-
-    public static T SetProfilerEnvironmentVariables<T>(this T settings, AbsolutePath tracerHomeDirectory)
-        where T : ToolSettings
-    {
-        var envVars = new Dictionary<string, string>()
-        {
-            {"COR_ENABLE_PROFILING", "1"},
-            {"COR_PROFILER", "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"},
-            {"COR_PROFILER_PATH_32", tracerHomeDirectory / "win-x86" / "Datadog.Trace.ClrProfiler.Native.dll"},
-            {"COR_PROFILER_PATH_64", tracerHomeDirectory / "win-x64" / "Datadog.Trace.ClrProfiler.Native.dll"},
-            {"CORECLR_ENABLE_PROFILING", "1"},
-            {"CORECLR_PROFILER", "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"},
-            {"DD_INTEGRATIONS", tracerHomeDirectory / "integrations.json" },
-            {"DD_DOTNET_TRACER_HOME", tracerHomeDirectory },
-        };
-
-        if (EnvironmentInfo.IsWin)
-        {
-            envVars.Add("CORECLR_PROFILER_PATH_32", tracerHomeDirectory / "win-x86" / "Datadog.Trace.ClrProfiler.Native.dll");
-            envVars.Add("CORECLR_PROFILER_PATH_64", tracerHomeDirectory / "win-x64" / "Datadog.Trace.ClrProfiler.Native.dll");
-        }
-        else
-        {
-            envVars.Add("CORECLR_PROFILER_PATH", tracerHomeDirectory / "Datadog.Trace.ClrProfiler.Native.so");
-        }
-
-        foreach (var keyValuePair in envVars)
         {
             settings = settings.SetProcessEnvironmentVariable(keyValuePair.Key, keyValuePair.Value);
         }
@@ -193,5 +150,15 @@ internal static partial class DotNetSettingsExtensions
         }
 
         return settings;
+    }
+
+    public static DotNetTestSettings WithMemoryDumpAfter(this DotNetTestSettings settings, int timeoutInMinutes)
+    {
+        return settings.SetProcessArgumentConfigurator(
+            args =>
+                args.Add("--blame-hang")
+                    .Add("--blame-hang-dump-type full")
+                    .Add($"--blame-hang-timeout {timeoutInMinutes}m")
+        );
     }
 }

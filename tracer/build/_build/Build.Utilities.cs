@@ -99,14 +99,7 @@ partial class Build
             envVars["COR_PROFILER_PATH_32"] = TracerHomeDirectory / "win-x86" / "Datadog.Trace.ClrProfiler.Native.dll";
             envVars["DD_DOTNET_TRACER_HOME"] = TracerHomeDirectory;
 
-            if (ExtraEnvVars?.Length > 0)
-            {
-                foreach (var envVar in ExtraEnvVars)
-                {
-                    var kvp = envVar.Split('=');
-                    envVars[kvp[0]] = kvp[1];
-                }
-            }
+            AddExtraEnvVariables(envVars);
 
             Logger.Info($"Running sample '{SampleName}' in IIS Express");
             IisExpress.Value(
@@ -118,21 +111,12 @@ partial class Build
         .Description("Builds and runs a sample app using dotnet run, enabling profiling.")
         .Requires(() => SampleName)
         .Requires(() => Framework)
-        .Executes(() =>
-        {
-            var envVars = new Dictionary<string, string>()
-            {
-                { "ASPNETCORE_URLS", "http://*:5003" }
-            };
+        .Executes(() => {
 
-            if (ExtraEnvVars?.Length > 0)
-            {
-                foreach (var envVar in ExtraEnvVars)
-                {
-                    var kvp = envVar.Split('=');
-                    envVars[kvp[0]] = kvp[1];
-                }
-            }
+            var envVars = GetProfilerEnvironmentVariables(TracerHomeDirectory);
+            envVars.Add("ASPNETCORE_URLS", "http://*:5003");
+
+            AddExtraEnvVariables(envVars);
 
             string project = Solution.GetProject(SampleName)?.Path;
             if (project is not null)
@@ -165,7 +149,6 @@ partial class Build
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
                 .SetProperty("platform", TargetPlatform)
-                .SetProfilerEnvironmentVariables(TracerHomeDirectory)
                 .SetProcessEnvironmentVariables(envVars));
 
         });
