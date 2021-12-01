@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
 
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (var processResult = RunSampleAndWaitForExit(agentPort))
+            using (var processResult = RunSampleAndWaitForExit(EnvironmentHelper.AgentPort))
             {
                 Assert.True(processResult.ExitCode == 0, $"Process exited with code {processResult.ExitCode}");
             }

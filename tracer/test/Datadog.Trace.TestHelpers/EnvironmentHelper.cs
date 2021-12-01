@@ -68,13 +68,7 @@ namespace Datadog.Trace.TestHelpers
                           : string.Empty;
         }
 
-        public TestTransports TransportType { get; set; } = TestTransports.Tcp;
-
         public int AgentPort { get; private set; }
-
-        public string TraceUdsName { get; private set; }
-
-        public string StatsUdsName { get; private set; }
 
         public bool DebugModeEnabled { get; set; }
 
@@ -457,15 +451,6 @@ namespace Datadog.Trace.TestHelpers
             }
 
             return $"net{_major}{_minor}{_patch ?? string.Empty}";
-        }
-
-        public void EnableUnixDomainSockets(string traceUdsName, string statsUdsName)
-        {
-            CustomEnvironmentVariables.Add("DD_TRACE_AGENT_UNIX_DOMAIN_SOCKET", traceUdsName);
-            CustomEnvironmentVariables.Add("DD_DOGSTATSD_UNIX_DOMAIN_SOCKET", statsUdsName);
-            TraceUdsName = traceUdsName;
-            StatsUdsName = statsUdsName;
-            TransportType = TestTransports.Uds;
         }
 
         public MockTracerAgent GetMockAgent(bool useStatsD = false)

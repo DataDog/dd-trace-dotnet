@@ -23,8 +23,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public void SubmitsMetrics()
         {
-            Output.WriteLine($"Assigning port {agentPort} for the agentPort.");
-
             SetEnvironmentVariable("DD_RUNTIME_METRICS_ENABLED", "1");
 
             using var agent = EnvironmentHelper.GetMockAgent();
