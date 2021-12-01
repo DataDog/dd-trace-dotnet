@@ -171,21 +171,6 @@ internal static partial class DotNetSettingsExtensions
         return settings.SetProcessToolPath(dotnetPath);
     }
 
-    public static DotNetBuildSettings SetTargetFramework(this DotNetBuildSettings settings, TargetFramework framework)
-    {
-        return framework is null
-                   ? settings
-                   : settings.SetFramework(framework);
-    }
-
-    public static DotNetTestSettings SetTargetFramework(this DotNetTestSettings settings, TargetFramework framework)
-    {
-        return framework is null
-                   ? settings
-                   : settings.SetFramework(framework);
-    }
-
-
     /// <summary>
     /// Set filters for tests to ignore
     /// </summary>
