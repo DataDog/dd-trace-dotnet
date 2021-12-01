@@ -86,6 +86,11 @@ bool IsAzureFunctionsEnabled()
     CheckIfTrue(GetEnvironmentValue(environment::azure_functions_enabled));
 }
 
+bool IsVersionCompatibilityEnabled()
+{
+    ToBooleanWithDefault(GetEnvironmentValue(environment::internal_version_compatibility), true);
+}
+
 } // namespace trace
 
 #endif // DD_CLR_PROFILER_ENVIRONMENT_VARIABLES_UTIL_H_

@@ -288,6 +288,26 @@ struct AssemblyProperty
     AssemblyProperty() : ppbPublicKey(nullptr), pcbPublicKey(0), pulHashAlgId(0), szName(EmptyWStr)
     {
     }
+
+    AssemblyProperty(WSTRING szName, void* ppbPublicKey, ULONG pcbPublicKey, ULONG pulHashAlgId, DWORD assemblyFlags) :
+        szName(szName),
+        ppbPublicKey(ppbPublicKey),
+        pcbPublicKey(pcbPublicKey),
+        pulHashAlgId(pulHashAlgId),
+        assemblyFlags(assemblyFlags)
+    {
+    }
+
+public:
+    AssemblyProperty WithVersion(USHORT usMajorVersion, USHORT usMinorVersion, USHORT usBuildNumber, USHORT usRevisionNumber)
+    {
+        pMetaData.usMajorVersion = usMajorVersion;
+        pMetaData.usMinorVersion = usMinorVersion;
+        pMetaData.usBuildNumber = usBuildNumber;
+        pMetaData.usRevisionNumber = usRevisionNumber;
+
+        return *this;
+    }
 };
 
 struct ModuleInfo

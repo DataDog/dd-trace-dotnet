@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -26,6 +27,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [Trait("Category", "ArmUnsupported")]
         public void SubmitsTraces(string packageVersion)
         {
+#if NETCOREAPP3_0
+            if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IsAlpine")) // set in dockerfile
+             && !string.IsNullOrEmpty(packageVersion)
+             && new Version(packageVersion) >= new Version("6.0.0"))
+            {
+                Output.WriteLine("Skipping as Microsoft.Data.Sqlite hanqs on Alpine .NET Core 3.0 with 6.0.0 package");
+                return;
+            }
+#endif
             const int expectedSpanCount = 91;
             const string dbType = "sqlite";
             const string expectedOperationName = dbType + ".query";

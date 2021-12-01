@@ -200,6 +200,53 @@ namespace Datadog.Trace
             }
         }
 
+        /// <summary>
+        /// Extracts a <see cref="SpanContext"/> from its serialized dictionary.
+        /// </summary>
+        /// <param name="serializedSpanContext">The serialized dictionary.</param>
+        /// <returns>A new <see cref="SpanContext"/> that contains the values obtained from the serialized dictionary.</returns>
+        internal SpanContext Extract(IReadOnlyDictionary<string, string> serializedSpanContext)
+        {
+            if (serializedSpanContext == null)
+            {
+                return null;
+            }
+
+            ulong traceId = 0;
+
+            if (serializedSpanContext.TryGetValue(HttpHeaderNames.TraceId, out var rawTraceId))
+            {
+                ulong.TryParse(rawTraceId, out traceId);
+            }
+
+            if (traceId == 0)
+            {
+                // a valid traceId is required to use distributed tracing
+                return null;
+            }
+
+            ulong parentId = 0;
+
+            if (serializedSpanContext.TryGetValue(HttpHeaderNames.ParentId, out var rawParentId))
+            {
+                ulong.TryParse(rawParentId, out parentId);
+            }
+
+            SamplingPriority? samplingPriority = null;
+
+            if (serializedSpanContext.TryGetValue(HttpHeaderNames.SamplingPriority, out var rawSamplingPriority))
+            {
+                if (int.TryParse(rawSamplingPriority, out var intSamplingPriority))
+                {
+                    samplingPriority = (SamplingPriority)intSamplingPriority;
+                }
+            }
+
+            serializedSpanContext.TryGetValue(HttpHeaderNames.Origin, out var origin);
+
+            return new SpanContext(traceId, parentId, samplingPriority, null, origin);
+        }
+
         private static ulong ParseUInt64<T>(T headers, string headerName)
             where T : IHeadersCollection
         {

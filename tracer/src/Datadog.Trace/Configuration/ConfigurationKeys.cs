@@ -412,6 +412,13 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <seealso cref="TracerSettings.RouteTemplateResourceNamesEnabled"/>
             public const string RouteTemplateResourceNamesEnabled = "DD_TRACE_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED";
+
+            /// <summary>
+            /// Configuration key to enable or disable the updated WCF instrumentation that delays execution
+            /// until later in the WCF pipeline when the WCF server exception handling is established.
+            /// </summary>
+            /// <seealso cref="TracerSettings.DelayWcfInstrumentationEnabled"/>
+            public const string DelayWcfInstrumentationEnabled = "DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED";
         }
     }
 }

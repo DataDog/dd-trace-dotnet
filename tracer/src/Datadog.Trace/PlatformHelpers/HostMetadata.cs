@@ -114,6 +114,7 @@ namespace Datadog.Trace.PlatformHelpers
                     var fullVersion = File.ReadAllText("/proc/version");
 
                     ParseKernel(fullVersion, out kernel, out kernelRelease, out kernelVersion);
+                    return;
                 }
             }
             catch

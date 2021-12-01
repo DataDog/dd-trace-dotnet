@@ -5,48 +5,84 @@
 #if NETFRAMEWORK
 
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Web;
 using System.Web.Routing;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Util.Http
 {
     internal static partial class HttpRequestExtensions
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HttpRequestExtensions));
+
         internal static Dictionary<string, object> PrepareArgsForWaf(this HttpRequest request, RouteData routeDatas = null)
         {
-            var headersDic = new Dictionary<string, string>(request.Headers.Keys.Count);
+            var headersDic = new Dictionary<string, string[]>(request.Headers.Keys.Count);
             var headerKeys = request.Headers.Keys;
             foreach (string k in headerKeys)
             {
                 if (!k.Equals("cookie", System.StringComparison.OrdinalIgnoreCase))
                 {
-                    headersDic.Add(k.ToLowerInvariant(), request.Headers[k]);
+                    var key = k.ToLowerInvariant();
+                    if (!headersDic.ContainsKey(key))
+                    {
+                        headersDic.Add(key, request.Headers.GetValues(key));
+                    }
+                    else
+                    {
+                        Log.Warning("Header {key} couldn't be added as argument to the waf", key);
+                    }
                 }
             }
 
-            var cookiesDic = new Dictionary<string, string>(request.Cookies.AllKeys.Length);
-            foreach (var k in request.Cookies.AllKeys)
+            var cookiesDic = new Dictionary<string, List<string>>(request.Cookies.AllKeys.Length);
+            for (var i = 0; i < request.Cookies.Count; i++)
             {
-                cookiesDic.Add(k, request.Cookies[k].Value);
+                var cookie = request.Cookies[i];
+                var keyExists = cookiesDic.TryGetValue(cookie.Name, out var value);
+                if (!keyExists)
+                {
+                    cookiesDic.Add(cookie.Name, new List<string> { cookie.Value ?? string.Empty });
+                }
+                else
+                {
+                    value.Add(cookie.Value);
+                }
             }
 
-            var queryDic = new Dictionary<string, string>(request.QueryString.AllKeys.Length);
+            var queryDic = new Dictionary<string, string[]>(request.QueryString.AllKeys.Length);
             foreach (var k in request.QueryString.AllKeys)
             {
-                var values = request.QueryString[k];
-                queryDic.Add(k, values);
+                var values = request.QueryString.GetValues(k);
+                if (!queryDic.ContainsKey(k))
+                {
+                    queryDic.Add(k, values);
+                }
+                else
+                {
+                    Log.Warning("Query string {key} couldn't be added as argument to the waf", k);
+                }
             }
 
             var dict = new Dictionary<string, object>
             {
-                { AddressesConstants.RequestMethod, request.HttpMethod },
-                { AddressesConstants.RequestUriRaw, request.Url.AbsoluteUri },
-                { AddressesConstants.RequestQuery, queryDic },
-                { AddressesConstants.RequestHeaderNoCookies, headersDic },
-                { AddressesConstants.RequestCookies, cookiesDic },
+                {
+                    AddressesConstants.RequestMethod, request.HttpMethod
+                },
+                {
+                    AddressesConstants.RequestUriRaw, request.Url.AbsoluteUri
+                },
+                {
+                    AddressesConstants.RequestQuery, queryDic
+                },
+                {
+                    AddressesConstants.RequestHeaderNoCookies, headersDic
+                },
+                {
+                    AddressesConstants.RequestCookies, cookiesDic
+                },
             };
 
             if (routeDatas != null && routeDatas.Values.Any())

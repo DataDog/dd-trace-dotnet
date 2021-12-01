@@ -10,8 +10,6 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
 using System.Text;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 
 namespace PrepareRelease
 {
@@ -26,7 +24,7 @@ namespace PrepareRelease
             foreach (var outputDirectory in outputDirectories)
             {
                 var utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
-                
+
                 // CallTarget
                 var calltargetPath = Path.Combine(outputDirectory, "src", "Datadog.Trace", "ClrProfiler", "InstrumentationDefinitions.Generated.cs");
                 Console.WriteLine($"Writing {calltargetPath}...");

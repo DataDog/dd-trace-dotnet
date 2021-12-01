@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Sqlite
 
             public string MinimumVersion => "2.0.0";
 
-            public string MaximumVersion => "5.*.*";
+            public string MaximumVersion => "6.*.*";
 
             public string DataReaderType => "Microsoft.Data.Sqlite.SqliteDataReader";
 

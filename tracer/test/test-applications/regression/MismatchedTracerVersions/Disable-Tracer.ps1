@@ -1,7 +1,6 @@
 $ErrorActionPreference = 'SilentlyContinue'
 
 Remove-Item 'env:DD_DOTNET_TRACER_HOME'
-Remove-Item 'env:DD_INTEGRATIONS'
 Remove-Item 'env:DD_TRACE_LOG_DIRECTORY'
 Remove-Item 'env:DD_PROFILER_EXCLUDE_PROCESSES'
 

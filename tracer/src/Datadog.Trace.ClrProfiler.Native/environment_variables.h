@@ -15,11 +15,6 @@ namespace environment
     // Sets whether debug mode is enabled. Default is false.
     const WSTRING debug_enabled = WStr("DD_TRACE_DEBUG");
 
-    // Sets the paths to integration definition JSON files.
-    // Supports multiple values separated with semi-colons, for example:
-    // "C:\Program Files\Datadog .NET Tracer\integrations.json;D:\temp\test_integrations.json"
-    const WSTRING integrations_path = WStr("DD_INTEGRATIONS");
-
     // Sets the path to the profiler's home directory, for example:
     // "C:\Program Files\Datadog .NET Tracer\" or "/opt/datadog/"
     const WSTRING profiler_home_path = WStr("DD_DOTNET_TRACER_HOME");
@@ -99,6 +94,9 @@ namespace environment
 
     // Sets whether to enable JIT inlining
     const WSTRING clr_enable_inlining = WStr("DD_CLR_ENABLE_INLINING");
+
+    // Enables the compatibility with other versions of Datadog.Trace
+    const WSTRING internal_version_compatibility = WStr("DD_INTERNAL_TRACE_VERSION_COMPATIBILITY");
 
     // Sets whether to enable NGEN images.
     const WSTRING clr_enable_ngen = WStr("DD_CLR_ENABLE_NGEN");

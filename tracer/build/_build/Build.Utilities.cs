@@ -211,7 +211,7 @@ partial class Build
        });
 
     Target UpdateIntegrationsJson => _ => _
-       .Description("Update the integrations.json file")
+       .Description("Update the integration definitions file")
        .DependsOn(Clean, Restore, CreateRequiredDirectories, CompileManagedSrc, PublishManagedProfiler) // We load the dlls from the output, so need to do a clean build
        .Executes(async () =>
         {

@@ -75,6 +75,11 @@ struct Version
         return major == other.major && minor == other.minor && build == other.build && revision == other.revision;
     }
 
+    inline bool operator!=(const Version& other) const
+    {
+        return !(*this == other);
+    }
+
     inline WSTRING str() const
     {
         std::stringstream ss;
@@ -244,8 +249,7 @@ struct TypeReference
     const Version min_version;
     const Version max_version;
 
-    TypeReference() :
-        min_version(Version(0, 0, 0, 0)), max_version(Version(USHRT_MAX, USHRT_MAX, USHRT_MAX, USHRT_MAX))
+    TypeReference() : min_version(Version(0, 0, 0, 0)), max_version(Version(USHRT_MAX, USHRT_MAX, USHRT_MAX, USHRT_MAX))
     {
     }
 
@@ -280,9 +284,8 @@ struct MethodReference
     {
     }
 
-    MethodReference(const WSTRING& assembly_name, WSTRING type_name, WSTRING method_name, 
-                    Version min_version, Version max_version,
-                    const std::vector<WSTRING>& signature_types) :
+    MethodReference(const WSTRING& assembly_name, WSTRING type_name, WSTRING method_name, Version min_version,
+                    Version max_version, const std::vector<WSTRING>& signature_types) :
         type(assembly_name, type_name, min_version, max_version),
         method_name(method_name),
         signature_types(signature_types)

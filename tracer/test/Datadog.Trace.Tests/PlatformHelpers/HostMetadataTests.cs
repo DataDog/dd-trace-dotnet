@@ -50,6 +50,17 @@ namespace Datadog.Trace.Tests.PlatformHelpers
             version.Should().Be(expectedVersion);
         }
 
+        [Fact]
+        public void CanRetrieveKernelInfo()
+        {
+            if (FrameworkDescription.Instance.OSPlatform == OSPlatform.Linux)
+            {
+                HostMetadata.Instance.KernelName.Should().NotBeNullOrEmpty();
+                HostMetadata.Instance.KernelRelease.Should().NotBeNullOrEmpty();
+                HostMetadata.Instance.KernelVersion.Should().NotBeNullOrEmpty();
+            }
+        }
+
         public static class TestData
         {
             /// <summary>
