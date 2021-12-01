@@ -6,11 +6,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Integration: Microsoft.Data.SqlClient -->
-    <!-- Assembly: Microsoft.Data.SqlClient -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.SqlClient/4.0.0 -->
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="4.0.0" />
-
     <!-- Integration: Microsoft.Data.Sqlite -->
     <!-- Assembly: Microsoft.Data.Sqlite -->
     <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.Sqlite/6.0.0 -->
