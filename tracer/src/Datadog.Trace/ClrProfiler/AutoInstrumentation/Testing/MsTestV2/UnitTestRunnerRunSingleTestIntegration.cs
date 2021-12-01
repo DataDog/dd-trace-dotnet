@@ -18,8 +18,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
         AssemblyName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
         TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.UnitTestRunner",
         MethodName = "RunSingleTest",
-        ReturnTypeName = "_",
-        ParameterTypeNames = new string[] { "_", "_" },
+        ReturnTypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.UnitTestResult[]",
+        ParameterTypeNames = new string[] { "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.TestMethod", "System.Collections.Generic.IDictionary`2[System.String,System.Object]" },
         MinimumVersion = "14.0.0",
         MaximumVersion = "14.*.*",
         IntegrationName = MsTestIntegration.IntegrationName)]
@@ -27,21 +27,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static class UnitTestRunnerRunSingleTestIntegration
     {
-        /// <summary>
-        /// OnMethodBegin callback
-        /// </summary>
-        /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TArg1">Type of the arg1</typeparam>
-        /// <typeparam name="TArg2">Type of the arg2</typeparam>
-        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="testMethod">Test method argument</param>
-        /// <param name="testContextProperties">Test method info argument</param>
-        /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget, TArg1, TArg2>(TTarget instance, TArg1 testMethod, TArg2 testContextProperties)
-        {
-            return new CallTargetState(null, testMethod);
-        }
-
         /// <summary>
         /// OnMethodEnd callback
         /// </summary>
@@ -60,6 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
             }
 
             var objTestMethodInfo = MsTestIntegration.IsTestMethodRunnableThreadLocal.Value;
+            MsTestIntegration.IsTestMethodRunnableThreadLocal.Value = null;
             if (objTestMethodInfo is not null && returnValue is Array returnValueArray && returnValueArray.Length == 1)
             {
                 object unitTestResultObject = returnValueArray.GetValue(0);
@@ -78,8 +64,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
                         scope.Dispose();
                     }
                 }
-
-                MsTestIntegration.IsTestMethodRunnableThreadLocal.Value = null;
             }
 
             return new CallTargetReturn<TReturn>(returnValue);

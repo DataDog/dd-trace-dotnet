@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
         AssemblyName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
         TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodRunner",
         MethodName = "Execute",
-        ReturnTypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.UnitTestResult",
+        ReturnTypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.UnitTestResult[]",
         ParameterTypeNames = new string[0],
         MinimumVersion = "14.0.0",
         MaximumVersion = "14.*.*",
@@ -27,17 +27,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static class TestMethodRunnerExecuteIntegration
     {
-        /// <summary>
-        /// OnMethodBegin callback
-        /// </summary>
-        /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
-        {
-            return CallTargetState.GetDefault();
-        }
-
         /// <summary>
         /// OnMethodEnd callback
         /// </summary>
