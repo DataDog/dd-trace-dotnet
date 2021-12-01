@@ -302,19 +302,20 @@ struct IntegrationDefinition
 {
     const MethodReference target_method;
     const TypeReference integration_type;
+    const bool is_abstract = false;
 
     IntegrationDefinition()
     {
     }
 
-    IntegrationDefinition(MethodReference target_method, TypeReference integration_type) :
-        target_method(target_method), integration_type(integration_type)
+    IntegrationDefinition(MethodReference target_method, TypeReference integration_type, bool isAbstract) :
+        target_method(target_method), integration_type(integration_type), is_abstract(isAbstract)
     {
     }
 
     inline bool operator==(const IntegrationDefinition& other) const
     {
-        return target_method == other.target_method && integration_type == other.integration_type;
+        return target_method == other.target_method && integration_type == other.integration_type && is_abstract == other.is_abstract;
     }
 };
 

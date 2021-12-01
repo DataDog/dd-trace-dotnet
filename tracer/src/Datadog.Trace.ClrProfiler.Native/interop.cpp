@@ -33,6 +33,11 @@ EXTERN_C VOID STDAPICALLTYPE EnableByRefInstrumentation()
     return trace::profiler->EnableByRefInstrumentation();
 }
 
+EXTERN_C VOID STDAPICALLTYPE AddAbstractInstrumentation(WCHAR* id, trace::CallTargetDefinition* items, int size)
+{
+    return trace::profiler->AddAbstractInstrumentation(id, items, size);
+}
+
 #ifndef _WIN32
 EXTERN_C void *dddlopen (const char *__file, int __mode)
 {

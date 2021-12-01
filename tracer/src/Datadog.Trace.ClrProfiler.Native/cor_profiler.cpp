@@ -956,11 +956,37 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId, Function
 void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int size)
 {
     auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
-
     WSTRING definitionsId = WSTRING(id);
     Logger::Info("InitializeProfiler: received id: ", definitionsId, " from managed side with ", size,
                  " integrations.");
 
+    InternalAddInstrumentation(id, items, size, false);
+}
+
+void CorProfiler::EnableByRefInstrumentation()
+{
+    enable_by_ref_instrumentation = true;
+    if (rejit_handler != nullptr)
+    {
+        rejit_handler->SetEnableByRefInstrumentation(true);
+    }
+
+    Logger::Info("ByRef Instrumentation enabled.");
+}
+
+void CorProfiler::AddAbstractInstrumentation(WCHAR* id, CallTargetDefinition* items, int size)
+{
+    auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
+    WSTRING definitionsId = WSTRING(id);
+    Logger::Info("AddAbstractInstrumentation: received id: ", definitionsId, " from managed side with ", size,
+                 " integrations.");
+
+    InternalAddInstrumentation(id, items, size, true);
+}
+
+void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* items, int size, bool isAbstract)
+{
+    WSTRING definitionsId = WSTRING(id);
     std::scoped_lock<std::mutex> definitionsLock(definitions_ids_lock_);
 
     if (definitions_ids_.find(definitionsId) != definitions_ids_.end())
@@ -1001,7 +1027,7 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
 
             const auto& integration = IntegrationDefinition(
                 MethodReference(targetAssembly, targetType, targetMethod, minVersion, maxVersion, signatureTypes),
-                TypeReference(integrationAssembly, integrationType, {}, {}));
+                TypeReference(integrationAssembly, integrationType, {}, {}), isAbstract);
 
             if (Logger::IsDebugEnabled())
             {
@@ -1037,17 +1063,6 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
 
         Logger::Info("InitializeProfiler: Total integrations in profiler: ", integration_definitions_.size());
     }
-}
-
-void CorProfiler::EnableByRefInstrumentation()
-{
-    enable_by_ref_instrumentation = true;
-    if (rejit_handler != nullptr)
-    {
-        rejit_handler->SetEnableByRefInstrumentation(true);
-    }
-
-    Logger::Info("ByRef Instrumentation enabled.");
 }
 
 //

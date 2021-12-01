@@ -64,6 +64,11 @@ namespace CallTargetNativeTest
             definitionsList.Add(new(TargetAssembly, typeof(WithOutArguments).FullName, "VoidMethod", new[] { "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(GenericOutModificationVoidIntegration).FullName));
 
             NativeMethods.InitializeProfiler(Guid.NewGuid().ToString("N"), definitionsList.ToArray());
+
+            NativeMethods.AddAbstractInstrumentation(Guid.NewGuid().ToString("N"), new NativeCallTargetDefinition[]
+            {
+                new(TargetAssembly, typeof(AbstractClass).FullName, "VoidMethod", new[] { "_", "_" }, 0,0,0,1,1,1, integrationAssembly, typeof(Noop1ArgumentsVoidIntegration).FullName)
+            });
         }
 
         static void RunTests(string[] args)
@@ -130,6 +135,11 @@ namespace CallTargetNativeTest
                         WithOutArguments();
                         break;
                     }
+                case "abstract":
+                    {
+                        AbstractMethod();
+                        break;
+                    }
                 case "all":
                     {
                         Argument0();
@@ -144,6 +154,7 @@ namespace CallTargetNativeTest
                         Argument9();
                         WithRefArguments();
                         WithOutArguments();
+                        AbstractMethod();
                         break;
                     }
                 default:
@@ -242,6 +253,17 @@ namespace CallTargetNativeTest
                     throw new Exception("Error modifying int value.");
                 }
             });
+        }
+
+        private static void AbstractMethod()
+        {
+            var impl01 = new Impl01OfAbstract();
+            Console.WriteLine($"{typeof(Impl01OfAbstract).FullName}.VoidMethod");
+            RunMethod(() => impl01.VoidMethod("Hello World"));
+
+            var impl02 = new Impl02OfAbstract();
+            Console.WriteLine($"{typeof(Impl02OfAbstract).FullName}.VoidMethod");
+            RunMethod(() => impl02.VoidMethod("Hello World"));
         }
 
         private static void Argument0()

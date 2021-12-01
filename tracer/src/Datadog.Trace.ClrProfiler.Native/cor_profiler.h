@@ -83,6 +83,11 @@ private:
     //
     HRESULT CallTarget_RewriterCallback(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler);
 
+    //
+    // Initialization methods
+    //
+    void InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* items, int size, bool isAbstract);
+
 public:
     CorProfiler() = default;
 
@@ -140,6 +145,7 @@ public:
     //
     void InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int size);
     void EnableByRefInstrumentation();
+    void AddAbstractInstrumentation(WCHAR* id, CallTargetDefinition* items, int size);
 };
 
 // Note: Generally you should not have a single, global callback implementation,
