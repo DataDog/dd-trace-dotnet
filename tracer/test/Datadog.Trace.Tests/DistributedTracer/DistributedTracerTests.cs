@@ -5,15 +5,16 @@
 
 using System;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests.DistributedTracer
 {
-    [CollectionDefinition(nameof(DistributedTracerTests), DisableParallelization = true)]
-    [Collection(nameof(DistributedTracerTests))]
+    [Collection(nameof(TracerInstanceTestCollection))]
     [DistributedTracerRestorer]
+    [TracerRestorer]
     public class DistributedTracerTests
     {
         [Theory]

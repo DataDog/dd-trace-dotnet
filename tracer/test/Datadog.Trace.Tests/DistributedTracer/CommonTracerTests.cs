@@ -4,11 +4,14 @@
 // </copyright>
 
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Tests.DistributedTracer
 {
+    [Collection(nameof(TracerInstanceTestCollection))]
+    [TracerRestorer]
     public class CommonTracerTests
     {
         [Fact]
