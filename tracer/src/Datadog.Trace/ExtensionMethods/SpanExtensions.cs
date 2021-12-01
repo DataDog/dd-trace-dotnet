@@ -39,31 +39,6 @@ namespace Datadog.Trace.ExtensionMethods
         }
 
         /// <summary>
-        /// Add the StackTrace and other exception metadata to the span
-        /// </summary>
-        /// <param name="span">The span to add the exception to.</param>
-        /// <param name="exception">The exception.</param>
-        public static void SetException(this ISpan span, Exception exception)
-        {
-            span.Error = true;
-
-            if (exception != null)
-            {
-                // for AggregateException, use the first inner exception until we can support multiple errors.
-                // there will be only one error in most cases, and even if there are more and we lose
-                // the other ones, it's still better than the generic "one or more errors occurred" message.
-                if (exception is AggregateException aggregateException && aggregateException.InnerExceptions.Count > 0)
-                {
-                    exception = aggregateException.InnerExceptions[0];
-                }
-
-                span.SetTag(Trace.Tags.ErrorMsg, exception.Message);
-                span.SetTag(Trace.Tags.ErrorStack, exception.ToString());
-                span.SetTag(Trace.Tags.ErrorType, exception.GetType().ToString());
-            }
-        }
-
-        /// <summary>
         /// Sets the sampling priority for the trace that contains the specified <see cref="ISpan"/>.
         /// </summary>
         /// <param name="span">A span that belongs to the trace.</param>
