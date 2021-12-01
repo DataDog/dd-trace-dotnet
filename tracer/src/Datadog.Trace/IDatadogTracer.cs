@@ -10,7 +10,8 @@ using Datadog.Trace.Sampling;
 namespace Datadog.Trace
 {
     /// <summary>
-    /// Internal interface used for mocking the Tracer in <see cref="TraceContext"/> and its associated tests
+    /// Internal interface used for mocking the Tracer in <see cref="TraceContext"/>, its associated tests,
+    /// and the AgentWriterTests
     /// </summary>
     internal interface IDatadogTracer
     {
@@ -19,8 +20,6 @@ namespace Datadog.Trace
         ISampler Sampler { get; }
 
         ImmutableTracerSettings Settings { get; }
-
-        Span StartSpan(string operationName, ISpanContext parent, string serviceName, DateTimeOffset? startTime, bool ignoreActiveScope);
 
         void Write(ArraySegment<Span> span);
     }

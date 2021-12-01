@@ -17,12 +17,12 @@ namespace Datadog.Trace.OpenTracing
 
         private readonly Dictionary<string, ICodec> _codecs;
 
-        public OpenTracingTracer(IDatadogTracer datadogTracer)
+        public OpenTracingTracer(IDatadogOpenTracingTracer datadogTracer)
             : this(datadogTracer, new global::OpenTracing.Util.AsyncLocalScopeManager())
         {
         }
 
-        public OpenTracingTracer(IDatadogTracer datadogTracer, global::OpenTracing.IScopeManager scopeManager)
+        public OpenTracingTracer(IDatadogOpenTracingTracer datadogTracer, global::OpenTracing.IScopeManager scopeManager)
         {
             DatadogTracer = datadogTracer;
             DefaultServiceName = datadogTracer.DefaultServiceName;
@@ -34,7 +34,7 @@ namespace Datadog.Trace.OpenTracing
             };
         }
 
-        public IDatadogTracer DatadogTracer { get; }
+        public IDatadogOpenTracingTracer DatadogTracer { get; }
 
         public string DefaultServiceName { get; }
 
