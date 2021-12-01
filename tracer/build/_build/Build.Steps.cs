@@ -1186,12 +1186,14 @@ partial class Build
             var targets = new[] { "RestoreSamplesForPackageVersionsOnly", "RestoreAndBuildSamplesForPackageVersionsOnly" };
 
             // /nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
+            // /nowarn:NETSDK1138 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
             DotNetMSBuild(x => x
                 .SetTargetPath(MsBuildProject)
                 .SetConfiguration(BuildConfiguration)
                 .EnableNoDependencies()
                 .SetProperty("TargetFramework", Framework.ToString())
                 .SetProperty("BuildInParallel", "true")
+                .SetProperty("CheckEolTargetFramework", "false")
                 .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
                 .When(TestAllPackageVersions, o => o.SetProperty("TestAllPackageVersions", "true"))
                 .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))

@@ -53,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.MySql
 
             public string MinimumVersion => "1.0.0";
 
-            public string MaximumVersion => "1.*.*";
+            public string MaximumVersion => "2.*.*";
 
             public string DataReaderType => "MySqlConnector.MySqlDataReader";
 
