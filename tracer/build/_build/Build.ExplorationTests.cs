@@ -1,9 +1,7 @@
 using System;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using Nuke.Common;
-using Nuke.Common.Execution;
 using Nuke.Common.IO;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tooling;
@@ -13,30 +11,14 @@ using static Nuke.Common.Tools.DotNet.DotNetTasks;
 public enum MonitoringType
 {
     Debugger, Profiler
-
 }
 
-[TypeConverter(typeof(ExplorationTestNameTypeConverter))]
-public class ExplorationTestName : Enumeration
+public enum ExplorationTestName
 {
-    public static ExplorationTestName eShopOnWeb = new ExplorationTestName { Value = "eshoponweb" };
-    public static ExplorationTestName protobuf = new ExplorationTestName { Value = "protobuf" };
-    public static ExplorationTestName cake = new ExplorationTestName { Value = "cake" };
-    public static ExplorationTestName Swashbuckle = new ExplorationTestName { Value = "swashbuckle" };
-    public static ExplorationTestName Paket = new ExplorationTestName { Value = "paket" };
-    public static ExplorationTestName ILSpy = new ExplorationTestName { Value = "ilspy" };
-
-    public static implicit operator string(ExplorationTestName type)
-    {
-        return type.Value;
-    }
-
-    public class ExplorationTestNameTypeConverter : TypeConverter<ExplorationTestName>
-    {
-    }
+    eShopOnWeb, protobuf, cake, swashbuckle, paket, ilspy
 }
 
-public class ExplorationTestDescription
+class ExplorationTestDescription
 {
     public string GitRepositoryUrl { get; set; }
     public string GitRepositoryTag { get; set; }
@@ -51,70 +33,51 @@ public class ExplorationTestDescription
         return SupportedFrameworks.Any(framework => framework.Equals(targetFramework));
     }
 
-    public static ExplorationTestDescription[] GetAllTestDescriptions()
+    public static ExplorationTestDescription[] GetAllExplorationTestDescriptions()
     {
-        return typeof(ExplorationTestName)
-              .GetFields(ReflectionService.Static)
-              .Select(x => x.GetValue(null))
-              .Cast<ExplorationTestName>()
-              .Select(GetExplorationTestDescription)
-              .ToArray();
+        return Enum.GetValues<ExplorationTestName>()
+                   .Select(GetExplorationTestDescription)
+                   .ToArray()
+            ;
     }
 
-    public static ExplorationTestDescription GetExplorationTestDescription(ExplorationTestName testName)
+    public static ExplorationTestDescription GetExplorationTestDescription(ExplorationTestName name)
     {
-        if (testName.Equals(ExplorationTestName.eShopOnWeb))
+        var description = name switch
         {
-            return new ExplorationTestDescription()
+            ExplorationTestName.eShopOnWeb => new ExplorationTestDescription()
             {
                 GitRepositoryUrl = "https://github.com/dotnet-architecture/eShopOnWeb.git",
                 Name = "eShopOnWeb",
                 GitRepositoryTag = "netcore2.1",
                 PathToUnitTestProject = "tests/UnitTests",
                 SupportedFrameworks = new[] { TargetFramework.NETCOREAPP2_1 }
-            };
-        }
-
-        if (testName.Equals(ExplorationTestName.protobuf))
-        {
-            return new ExplorationTestDescription()
+            },
+            ExplorationTestName.protobuf => new ExplorationTestDescription()
             {
                 GitRepositoryUrl = "https://github.com/protocolbuffers/protobuf.git",
                 Name = "protobuf",
                 GitRepositoryTag = "v3.19.1",
                 PathToUnitTestProject = "csharp/src/Google.Protobuf.Test",
                 SupportedFrameworks = new[] { TargetFramework.NETCOREAPP2_1, TargetFramework.NET5_0, }
-            };
-        }
-
-        if (testName.Equals(ExplorationTestName.cake))
-        {
-            return new ExplorationTestDescription()
+            },
+            ExplorationTestName.cake => new ExplorationTestDescription()
             {
                 GitRepositoryUrl = "https://github.com/cake-build/cake.git",
                 Name = "cake",
                 GitRepositoryTag = "v1.3.0",
                 PathToUnitTestProject = "src/Cake.Common.Tests",
                 SupportedFrameworks = new[] { TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0 }
-
-            };
-        }
-
-        if (testName.Equals(ExplorationTestName.Swashbuckle))
-        {
-            return new ExplorationTestDescription()
+            },
+            ExplorationTestName.swashbuckle => new ExplorationTestDescription()
             {
                 GitRepositoryUrl = "https://github.com/domaindrivendev/Swashbuckle.AspNetCore.git",
                 Name = "Swashbuckle.AspNetCore",
                 GitRepositoryTag = "v6.2.3",
                 PathToUnitTestProject = "test/Swashbuckle.AspNetCore.SwaggerGen.Test",
                 SupportedFrameworks = new[] { TargetFramework.NET6_0 }
-            };
-        }
-
-        if (testName.Equals(ExplorationTestName.Paket))
-        {
-            return new ExplorationTestDescription()
+            },
+            ExplorationTestName.paket => new ExplorationTestDescription()
             {
                 GitRepositoryUrl = "https://github.com/fsprojects/Paket.git",
                 Name = "Paket",
@@ -122,12 +85,8 @@ public class ExplorationTestDescription
                 PathToUnitTestProject = "tests/Paket.Tests",
                 TestsToIgnore = new[] { "Loading assembly metadata works" },
                 SupportedFrameworks = new[] { TargetFramework.NET461, TargetFramework.NETCOREAPP3_1 }
-            };
-        }
-
-        if (testName.Equals(ExplorationTestName.ILSpy))
-        {
-            return new ExplorationTestDescription()
+            },
+            ExplorationTestName.ilspy => new ExplorationTestDescription()
             {
                 GitRepositoryUrl = "https://github.com/icsharpcode/ILSpy.git",
                 Name = "ILSpy",
@@ -135,10 +94,11 @@ public class ExplorationTestDescription
                 PathToUnitTestProject = "ICSharpCode.Decompiler.Tests",
                 TestsToIgnore = new[] { "ICSharpCode.Decompiler.Tests", "UseMc", "_net45", "ImplicitConversions", "ExplicitConversions", "ICSharpCode_Decompiler", "NewtonsoftJson_pcl_debug", "NRefactory_CSharp", "Random_TestCase_1" },
                 SupportedFrameworks = new[] { TargetFramework.NET461, TargetFramework.NETCOREAPP3_1 }
-            };
-        }
+            },
+            _ => throw new ArgumentOutOfRangeException(nameof(name), name, null)
+        };
 
-        throw new NotImplementedException($"This exploration test '{testName}' is not supported");
+        return description;
     }
 }
 
@@ -147,22 +107,20 @@ partial class Build
     AbsolutePath ExplorationTestsDirectory => RootDirectory / "exploration-tests";
 
     [Parameter("Indicates name of exploration test to run. If not specified, will run all tests sequentially.")]
-    readonly ExplorationTestName ExplorationTestName;
+    readonly ExplorationTestName? ExplorationTestName;
 
-    [Parameter("Indicates whether exploration tests should skip cloning. Default false.")]
-    readonly bool SkipClone;
+    [Parameter("Indicates whether exploration tests should skip repository cloning. Useful for local development. Default false.")]
+    readonly bool ExplorationSkipClone;
 
-    [Parameter("Indicates whether build of exploration tests should be skipped. Useful for local development. Default false.")]
-    readonly bool SkipBuild;
-
-    [Parameter("Indicates whether exploration tests should run on latest repository commit. Useful if you want to update tested repositories to the latest tags. Default false.")]
-    readonly bool CloneLatest;
+    [Parameter("Indicates whether exploration tests should run on latest repository commit. Useful if you want to update tested repositories to the latest tags. Default false.", 
+               List = false)]
+    readonly bool ExplorationCloneLatest;
 
     Target RunExplorationTests_Debugger
         => _ => _
                .Description("Run exploration tests for debugger.")
-               .Unlisted()
                .After(Clean)
+               .Requires(() => ExplorationTestName)
                .Executes(() =>
                 {
                     PrepareMonitoringEnvironment_Debugger();
@@ -202,7 +160,7 @@ partial class Build
         //TODO TBD
     }
 
-    void RunExplorationTestAssertions_Profiler ()
+    void RunExplorationTestAssertions_Profiler()
     {
         Logger.Info($"Running assertions tests for profiler.");
         //TODO TBD
@@ -210,13 +168,16 @@ partial class Build
 
     void GitCloneAndRunUnitTests(MonitoringType monitoringType)
     {
-        if (ExplorationTestName != null)
+        if (ExplorationTestName.HasValue)
         {
-            GitCloneAndRunUnitTest(ExplorationTestDescription.GetExplorationTestDescription(ExplorationTestName), monitoringType);
+            Logger.Info($"Provided exploration test name is {ExplorationTestName}.");
+            GitCloneAndRunUnitTest(ExplorationTestDescription.GetExplorationTestDescription(ExplorationTestName.Value), monitoringType);
         }
         else
         {
-            foreach (var testDescription in ExplorationTestDescription.GetAllTestDescriptions())
+            Logger.Info($"Exploration test name is not provided. Running all.");
+
+            foreach (var testDescription in ExplorationTestDescription.GetAllExplorationTestDescriptions())
             {
                 GitCloneAndRunUnitTest(testDescription, monitoringType);
             }
@@ -225,6 +186,8 @@ partial class Build
 
     void GitCloneAndRunUnitTest(ExplorationTestDescription testDescription, MonitoringType monitoringType)
     {
+        Logger.Info($"Running exploration test {testDescription.Name}.");
+
         if (Framework != null && !testDescription.IsFrameworkSupported(Framework))
         {
             Logger.Warn($"This framework '{Framework}' is not listed in the project's target frameworks of {testDescription.Name}");
@@ -232,15 +195,12 @@ partial class Build
         }
 
         var projectPath = GiClone(testDescription);
-        if (!SkipBuild)
-        {
-            DotNetBuild(
-                x => x
-                    .SetProjectFile(projectPath)
-                    .SetConfiguration(BuildConfiguration)
-                    .When(Framework != null, settings => settings.SetFramework(Framework))
-            );
-        }
+        DotNetBuild(
+            x => x
+                .SetProjectFile(projectPath)
+                .SetConfiguration(BuildConfiguration)
+                .When(Framework != null, settings => settings.SetFramework(Framework))
+        );
 
         DotNetTest(
             x =>
@@ -268,9 +228,9 @@ partial class Build
 
     string GiClone(ExplorationTestDescription testDescription)
     {
-        if (!SkipClone)
+        if (!ExplorationSkipClone)
         {
-            var cloneCommand = CloneLatest
+            var cloneCommand = ExplorationCloneLatest
                                    ? $"clone {testDescription.GitRepositoryUrl} {ExplorationTestsDirectory}/{testDescription.Name}"
                                    : $"clone -b {testDescription.GitRepositoryTag} {testDescription.GitRepositoryUrl} {ExplorationTestsDirectory}/{testDescription.Name}";
 
