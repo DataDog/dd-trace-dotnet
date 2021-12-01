@@ -60,6 +60,7 @@ public class ExplorationTestDescription
               .Select(GetExplorationTestDescription)
               .ToArray();
     }
+
     public static ExplorationTestDescription GetExplorationTestDescription(ExplorationTestName testName)
     {
         if (testName.Equals(ExplorationTestName.eShopOnWeb))
@@ -160,6 +161,7 @@ partial class Build
     Target RunExplorationTests_Debugger
         => _ => _
                .Description("Run exploration tests for debugger.")
+               .Unlisted()
                .After(Clean)
                .DependsOn(PrepareMonitoringEnvironment_Debugger)
                .Executes(() =>
@@ -249,7 +251,7 @@ partial class Build
                 x => x
                     .SetProjectFile(projectPath)
                     .SetConfiguration(BuildConfiguration)
-                    .SetTargetFramework(Framework)
+                    .When(Framework != null, settings => settings.SetFramework(Framework))
             );
         }
 
@@ -260,8 +262,8 @@ partial class Build
                    .SetProjectFile(projectPath)
                    .EnableNoRestore()
                    .EnableNoBuild()
-                   .SetTargetFramework(Framework)
                    .SetConfiguration(BuildConfiguration)
+                   .When(Framework != null, settings => settings.SetFramework(Framework))
                    .SetIgnoreFilter(testDescription.TestsToIgnore)
                    .WithMemoryDumpAfter(1)
                     ;
