@@ -34,19 +34,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.Formatti
                 RenderProperties);
         }
 
-#if NET45
-        private static string GetLogLevelString(object logLevel) =>
-            (int)logLevel switch
-            {
-                0 => DirectSubmissionLogLevelExtensions.Verbose,
-                1 => DirectSubmissionLogLevelExtensions.Debug,
-                2 => DirectSubmissionLogLevelExtensions.Information,
-                3 => DirectSubmissionLogLevelExtensions.Warning,
-                4 => DirectSubmissionLogLevelExtensions.Error,
-                5 => DirectSubmissionLogLevelExtensions.Fatal,
-                _ => DirectSubmissionLogLevelExtensions.Unknown,
-            };
-#else
         private static string GetLogLevelString(LogEventLevelDuck logLevel) =>
             logLevel switch
             {
@@ -58,7 +45,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.Formatti
                 LogEventLevelDuck.Fatal => DirectSubmissionLogLevelExtensions.Fatal,
                 _ => DirectSubmissionLogLevelExtensions.Unknown,
             };
-#endif
 
         private static LogPropertyRenderingDetails RenderProperties(JsonTextWriter writer, ILogEvent logEvent)
         {

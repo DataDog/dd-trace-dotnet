@@ -25,11 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog
         /// <summary>
         /// Gets the level of the event.
         /// </summary>
-#if NET45
-        public object Level { get; }
-#else
         public LogEventLevelDuck Level { get; }
-#endif
 
         /// <summary>
         /// Gets the message template describing the event.

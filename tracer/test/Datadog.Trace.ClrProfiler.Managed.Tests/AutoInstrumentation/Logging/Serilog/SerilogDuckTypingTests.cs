@@ -65,7 +65,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.Se
                            && x.Value.ToString() == property.Value.ToString());
             }
         }
-#if !NET452
 
         [Fact]
         public void CanDuckTypeLoggerConfiguration()
@@ -198,7 +197,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.Se
                       .Should()
                       .ContainInOrder(values);
         }
-#endif
 
         public class TestSerilogSink
         {
