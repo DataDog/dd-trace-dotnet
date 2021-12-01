@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler
 
         public void LockSamplingPriority()
         {
-            var traceContext = Tracer.Instance.ActiveScope?.Span.Context?.TraceContext;
+            var traceContext = Tracer.Instance.InternalActiveScope?.Span.Context?.TraceContext;
 
             if (traceContext != null)
             {
@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler
 
         public int? TrySetSamplingPriority(int? samplingPriority)
         {
-            var traceContext = Tracer.Instance.ActiveScope?.Span.Context?.TraceContext;
+            var traceContext = Tracer.Instance.InternalActiveScope?.Span.Context?.TraceContext;
 
             // If there is no trace context, when a new span is propagated the sampling priority will automatically be locked
             // because it will be considered as a distributed trace

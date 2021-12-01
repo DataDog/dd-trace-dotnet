@@ -19,7 +19,7 @@ namespace Datadog.Trace.Tests.DistributedTracer
         {
             var commonTracer = new CommonTracerImpl();
 
-            using (var scope = Tracer.Instance.StartActive("Test"))
+            using (var scope = (Scope)Tracer.Instance.StartActive("Test"))
             {
                 scope.Span.Context.TraceContext.IsSamplingPriorityLocked().Should().BeFalse();
 
@@ -57,7 +57,7 @@ namespace Datadog.Trace.Tests.DistributedTracer
 
             var expectedSamplingPriority = SamplingPriority.UserKeep;
 
-            using var scope = Tracer.Instance.StartActive("Test");
+            using var scope = (Scope)Tracer.Instance.StartActive("Test");
             scope.Span.Context.TraceContext.SetSamplingPriority(expectedSamplingPriority);
             scope.Span.Context.TraceContext.LockSamplingPriority();
 
@@ -73,7 +73,7 @@ namespace Datadog.Trace.Tests.DistributedTracer
 
             var expectedSamplingPriority = SamplingPriority.UserKeep;
 
-            using var scope = Tracer.Instance.StartActive("Test");
+            using var scope = (Scope)Tracer.Instance.StartActive("Test");
 
             var actualSamplingPriority = (SamplingPriority?)commonTracer.TrySetSamplingPriority((int?)expectedSamplingPriority);
 
