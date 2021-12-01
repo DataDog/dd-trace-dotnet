@@ -273,7 +273,6 @@ namespace Datadog.Trace
     public interface ITracer
     {
         Datadog.Trace.IScope ActiveScope { get; }
-        string DefaultServiceName { get; }
         Datadog.Trace.Configuration.ImmutableTracerSettings Settings { get; }
         Datadog.Trace.IScope StartActive(string operationName, Datadog.Trace.ISpanContext parent = null, string serviceName = null, System.DateTimeOffset? startTime = default, bool ignoreActiveScope = false, bool finishOnClose = true);
     }
@@ -369,7 +368,7 @@ namespace Datadog.Trace
 }
 namespace Datadog.Trace.ExtensionMethods
 {
-    public static class ISpanExtensions
+    public static class SpanExtensions
     {
         public static void AddTagsFromDbCommand(this Datadog.Trace.ISpan span, System.Data.IDbCommand command) { }
         public static void SetException(this Datadog.Trace.ISpan span, System.Exception exception) { }
