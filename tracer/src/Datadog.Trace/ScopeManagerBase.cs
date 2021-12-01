@@ -4,6 +4,8 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace
@@ -46,6 +48,7 @@ namespace Datadog.Trace
             SpanOpened?.Invoke(this, scopeOpenedArgs);
 
             Active = scope;
+            DistributedTracer.Instance.SetSpanContext(scope.Span.Context);
 
             if (newParent != null)
             {
@@ -72,6 +75,10 @@ namespace Datadog.Trace
             // if the scope that was just closed was the active scope,
             // set its parent as the new active scope
             Active = scope.Parent;
+
+            // scope.Parent is null for distributed traces, so use scope.Span.Context.Parent
+            DistributedTracer.Instance.SetSpanContext(scope.Span.Context.Parent as SpanContext);
+
             SpanDeactivated?.Invoke(this, new SpanEventArgs(scope.Span));
 
             if (!isRootSpan)

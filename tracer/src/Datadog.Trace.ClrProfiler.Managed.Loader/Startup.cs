@@ -13,6 +13,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     /// </summary>
     public partial class Startup
     {
+        private const string AssemblyName = "Datadog.Trace, Version=1.30.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
+
         /// <summary>
         /// Initializes static members of the <see cref="Startup"/> class.
         /// This method also attempts to load the Datadog.Trace .NET assembly.
@@ -39,13 +41,13 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         {
             try
             {
-                var assembly = Assembly.Load("Datadog.Trace, Version=1.30.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
+                var assembly = Assembly.Load(AssemblyName);
 
                 if (assembly != null)
                 {
                     // call method Datadog.Trace.ClrProfiler.Instrumentation.Initialize()
                     var type = assembly.GetType("Datadog.Trace.ClrProfiler.Instrumentation", throwOnError: false);
-                    var method = type?.GetRuntimeMethod("Initialize", parameters: new Type[0]);
+                    var method = type?.GetRuntimeMethod("Initialize", parameters: Type.EmptyTypes);
                     method?.Invoke(obj: null, parameters: null);
                 }
             }

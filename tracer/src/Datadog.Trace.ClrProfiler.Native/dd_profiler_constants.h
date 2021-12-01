@@ -99,6 +99,19 @@ const WSTRING native_dll_filename = WStr("Datadog.Trace.ClrProfiler.Native.dylib
 const WSTRING native_dll_filename = WStr("Datadog.Trace.ClrProfiler.Native.so");
 #endif
 
+const AssemblyProperty managed_profiler_assembly_property = AssemblyProperty(
+    managed_profiler_name,
+    new BYTE[160]{0,   36,  0,   0,   4,   128, 0,  0,   148, 0,   0,   0,   6,   2,   0,   0,   0,   36,  0,   0,
+                  82,  83,  65,  49,  0,   4,   0,  0,   1,   0,   1,   0,   37,  184, 85,  200, 188, 65,  177, 212,
+                  126, 119, 127, 194, 71,  57,  41, 153, 202, 111, 85,  60,  219, 3,   15,  172, 142, 59,  208, 16,
+                  23,  29,  237, 153, 130, 84,  13, 152, 133, 83,  147, 95,  68,  247, 221, 88,  203, 75,  23,  251,
+                  185, 38,  83,  213, 194, 220, 81, 18,  105, 104, 134, 102, 91,  49,  124, 111, 146, 121, 91,  246,
+                  75,  234, 178, 64,  92,  80,  28, 138, 48,  203, 27,  49,  177, 84,  30,  214, 110, 39,  217, 130,
+                  49,  105, 236, 40,  21,  176, 12, 238, 238, 204, 141, 90,  27,  244, 61,  182, 125, 41,  97,  163,
+                  233, 190, 161, 57,  127, 4,   62, 192, 116, 145, 112, 150, 73,  37,  47,  85,  101, 183, 86,  197},
+    160, 32772, 1)
+        .WithVersion(1, 30, 0, 0);
+
 } // namespace trace
 
 #endif // DD_PROFILER_CONSTANTS_H

@@ -5,6 +5,7 @@
 
 using System;
 using System.Diagnostics;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Tagging;
@@ -45,10 +46,7 @@ namespace Datadog.Trace
             get => _samplingPriority;
             set
             {
-                if (!_samplingPriorityLocked)
-                {
-                    _samplingPriority = value;
-                }
+                SetSamplingPriority(value);
             }
         }
 
@@ -152,7 +150,7 @@ namespace Datadog.Trace
             }
         }
 
-        public void LockSamplingPriority()
+        public void LockSamplingPriority(bool notifyDistributedTracer = true)
         {
             if (_samplingPriority == null)
             {
@@ -161,8 +159,30 @@ namespace Datadog.Trace
             else
             {
                 _samplingPriorityLocked = true;
+
+                if (notifyDistributedTracer)
+                {
+                    DistributedTracer.Instance.LockSamplingPriority();
+                }
             }
         }
+
+        public void SetSamplingPriority(SamplingPriority? samplingPriority, bool notifyDistributedTracer = true)
+        {
+            if (!_samplingPriorityLocked)
+            {
+                if (notifyDistributedTracer)
+                {
+                    _samplingPriority = DistributedTracer.Instance.TrySetSamplingPriority(samplingPriority);
+                }
+                else
+                {
+                    _samplingPriority = samplingPriority;
+                }
+            }
+        }
+
+        public bool IsSamplingPriorityLocked() => _samplingPriorityLocked;
 
         public TimeSpan ElapsedSince(DateTimeOffset date)
         {

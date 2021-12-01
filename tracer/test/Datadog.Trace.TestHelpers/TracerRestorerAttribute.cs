@@ -5,6 +5,7 @@
 
 using System;
 using System.Reflection;
+using Datadog.Trace.ClrProfiler;
 using Xunit.Sdk;
 
 namespace Datadog.Trace.TestHelpers
@@ -14,17 +15,20 @@ namespace Datadog.Trace.TestHelpers
     {
         private Tracer _tracer;
         private TracerManager _tracerManager;
+        private IDistributedTracer _distributedTracer;
 
         public override void Before(MethodInfo methodUnderTest)
         {
             _tracer = Tracer.Instance;
             _tracerManager = _tracer.TracerManager;
+            _distributedTracer = ClrProfiler.DistributedTracer.Instance;
             base.Before(methodUnderTest);
         }
 
         public override void After(MethodInfo methodUnderTest)
         {
             SetTracer(_tracer, _tracerManager);
+            ClrProfiler.DistributedTracer.SetInstanceOnlyForTests(_distributedTracer);
             base.After(methodUnderTest);
         }
 
