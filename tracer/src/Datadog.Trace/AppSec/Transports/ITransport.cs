@@ -4,8 +4,9 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.AppSec.EventModel;
+using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.Headers;
 
 namespace Datadog.Trace.AppSec.Transport
 {
@@ -15,18 +16,18 @@ namespace Datadog.Trace.AppSec.Transport
 
         Func<string, string> GetHeader { get; }
 
-        Response Response(bool blocked);
-
-        void Block();
-
         IContext GetAdditiveContext();
 
         void SetAdditiveContext(IContext additiveContext);
 
-        void AddRequestScope(Guid guid);
+        IpInfo GetReportedIpInfo();
+
+        string GetUserAget();
+
+        IHeadersCollection GetRequestHeaders();
+
+        IHeadersCollection GetResponseHeaders();
 
         void OnCompleted(Action completedCallback);
-
-        Request Request();
     }
 }

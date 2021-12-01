@@ -47,11 +47,5 @@ namespace Datadog.Trace
         /// code or configuration (e.g. the rules sampler).
         /// </summary>
         UserKeep = 2,
-
-        /// <summary>
-        /// Trace should be kept (sampled).
-        /// Sampling decision made due to an application security event.
-        /// </summary>
-        AppSecKeep = 4,
     }
 }

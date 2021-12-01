@@ -116,10 +116,6 @@ namespace Datadog.Trace.ClrProfiler
                 new("System.Web", "System.Web.ThreadContext", "AssociateWithCurrentThread",  new[] { "System.Void", "System.Boolean" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ThreadContext_AssociateWithCurrentThread_Integration"),
                 new("System.Web", "System.Web.ThreadContext", "DisassociateFromCurrentThread",  new[] { "System.Void" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ThreadContext_DisassociateFromCurrentThread_Integration"),
 
-                // AspNetCore
-                new("Microsoft.AspNetCore.Http", "Microsoft.AspNetCore.Builder.ApplicationBuilder", "Build",  new[] { "System.Void" }, 3, 0, 0, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.AspNetCoreMiddlewareIntegration"),
-                new("Microsoft.AspNetCore.Http", "Microsoft.AspNetCore.Builder.Internal.ApplicationBuilder", "Build",  new[] { "Microsoft.AspNetCore.Http.RequestDelegate" }, 2, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.AspNetCoreMiddlewareIntegration"),
-
                 // AspNetMvc
                 new("System.Web.Mvc", "System.Web.Mvc.Async.AsyncControllerActionInvoker", "BeginInvokeAction",  new[] { "System.IAsyncResult", "System.Web.Mvc.ControllerContext", "System.String", "System.AsyncCallback", "System.Object" }, 4, 0, 0, 5, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.AsyncControllerActionInvoker_BeginInvokeAction_Integration"),
                 new("System.Web.Mvc", "System.Web.Mvc.Async.AsyncControllerActionInvoker", "EndInvokeAction",  new[] { "System.Boolean", "System.IAsyncResult" }, 4, 0, 0, 5, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.AsyncControllerActionInvoker_EndInvokeAction_Integration"),
