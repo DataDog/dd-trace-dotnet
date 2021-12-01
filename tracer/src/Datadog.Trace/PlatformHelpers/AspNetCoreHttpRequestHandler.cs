@@ -71,7 +71,7 @@ namespace Datadog.Trace.PlatformHelpers
             return null;
         }
 
-        private IEnumerable<KeyValuePair<string, string>> ExtractHeaderTags(HttpRequest request, IDatadogTracer tracer)
+        private IEnumerable<KeyValuePair<string, string>> ExtractHeaderTags(HttpRequest request, Tracer tracer)
         {
             var settings = tracer.Settings;
 
