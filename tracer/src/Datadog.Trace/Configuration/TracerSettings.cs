@@ -170,6 +170,22 @@ namespace Datadog.Trace.Configuration
                                                   ?.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries) ??
                                             Enumerable.Empty<string>();
             DirectLogSubmissionEnabledIntegrations = new HashSet<string>(logSubmissionIntegrations, StringComparer.OrdinalIgnoreCase);
+
+            var batchSizeLimit = source?.GetInt32(ConfigurationKeys.DirectLogSubmission.BatchSizeLimit);
+            DirectLogSubmissionBatchSizeLimit = batchSizeLimit is null or <= 0
+                                                    ? 1000 // default
+                                                    : batchSizeLimit.Value;
+
+            var queueSizeLimit = source?.GetInt32(ConfigurationKeys.DirectLogSubmission.QueueSizeLimit);
+            DirectLogSubmissionQueueSizeLimit = queueSizeLimit is null or <= 0
+                                                    ? 100_000 // default
+                                                    : queueSizeLimit.Value;
+
+            var seconds = source?.GetInt32(ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds);
+            DirectLogSubmissionBatchPeriod = TimeSpan.FromSeconds(
+                seconds is null or <= 0
+                    ? 2 // default
+                    : seconds.Value);
         }
 
         /// <summary>
@@ -364,6 +380,24 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DirectLogSubmission.Url" />
         internal DirectSubmissionLogLevel DirectLogSubmissionMinimumLevel { get; set; }
+
+        /// <summary>
+        /// Gets or sets the maximum number of logs to send at one time
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.DirectLogSubmission.BatchSizeLimit"/>
+        internal int DirectLogSubmissionBatchSizeLimit { get; set; }
+
+        /// <summary>
+        /// Gets or sets the maximum number of logs to hold in internal queue at any one time
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.DirectLogSubmission.QueueSizeLimit"/>
+        internal int DirectLogSubmissionQueueSizeLimit { get; set; }
+
+        /// <summary>
+        /// Gets or sets the time to wait between checking for batches
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.DirectLogSubmission.BatchPeriodSeconds"/>
+        internal TimeSpan DirectLogSubmissionBatchPeriod { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating the size in bytes of the trace buffer

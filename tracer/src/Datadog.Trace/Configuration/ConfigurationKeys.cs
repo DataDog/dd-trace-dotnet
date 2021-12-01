@@ -400,6 +400,27 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <seealso cref="TracerSettings.DirectLogSubmissionMinimumLevel"/>
             public const string MinimumLevel = "DD_LOGS_DIRECT_SUBMISSION_MINIMUM_LEVEL";
+
+            /// <summary>
+            /// Configuration key for the maximum number of logs to send at one time
+            /// Default value is <c>1,000</c>, the maximum accepted by the Datadog log API
+            /// </summary>
+            /// <seealso cref="TracerSettings.DirectLogSubmissionBatchSizeLimit"/>
+            public const string BatchSizeLimit = "DD_LOGS_DIRECT_SUBMISSION_MAX_BATCH_SIZE";
+
+            /// <summary>
+            /// Configuration key for the maximum number of logs to hold in internal queue at any one time
+            /// Default value is <c>100,000</c>.
+            /// </summary>
+            /// <seealso cref="TracerSettings.DirectLogSubmissionQueueSizeLimit"/>
+            public const string QueueSizeLimit = "DD_LOGS_DIRECT_SUBMISSION_MAX_QUEUE_SIZE";
+
+            /// <summary>
+            /// Configuration key for the time to wait between checking for batches
+            /// Default value is <c>2</c>s.
+            /// </summary>
+            /// <seealso cref="TracerSettings.DirectLogSubmissionBatchPeriod"/>
+            public const string BatchPeriodSeconds = "DD_LOGS_DIRECT_SUBMISSION_BATCH_PERIOD_SECONDS";
         }
     }
 }

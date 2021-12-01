@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
 
 namespace Datadog.Trace.Logging.DirectSubmission
 {
@@ -36,7 +37,8 @@ namespace Datadog.Trace.Logging.DirectSubmission
             DirectSubmissionLogLevel minimumLevel,
             bool[] enabledIntegrations,
             List<string> validationErrors,
-            List<string> enabledIntegrationNames)
+            List<string> enabledIntegrationNames,
+            BatchingSinkOptions batchingOptions)
         {
             Host = host;
             Source = source;
@@ -48,6 +50,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
             MinimumLevel = minimumLevel;
             _enabledIntegrations = enabledIntegrations;
             IsEnabled = isEnabled;
+            BatchingOptions = batchingOptions;
         }
 
         public bool IsEnabled { get; }
@@ -68,6 +71,8 @@ namespace Datadog.Trace.Logging.DirectSubmission
 
         public List<string> EnabledIntegrationNames { get; }
 
+        public BatchingSinkOptions BatchingOptions { get; }
+
         public static DirectLogSubmissionSettings Create(
             TracerSettings settings,
             string apiKey,
@@ -81,7 +86,11 @@ namespace Datadog.Trace.Logging.DirectSubmission
                 globalTags: settings.DirectLogSubmissionGlobalTags,
                 enabledLogShippingIntegrations: settings.DirectLogSubmissionEnabledIntegrations,
                 isLogsInjectionEnabled: settings.LogsInjectionEnabled,
-                globallyEnabledIntegrations: enabledIntegrations);
+                globallyEnabledIntegrations: enabledIntegrations,
+                batchingOptions: new BatchingSinkOptions(
+                    batchSizeLimit: settings.DirectLogSubmissionBatchSizeLimit,
+                    queueLimit: settings.DirectLogSubmissionQueueSizeLimit,
+                    period: settings.DirectLogSubmissionBatchPeriod));
 
         public static DirectLogSubmissionSettings Create(
             string host,
@@ -92,7 +101,8 @@ namespace Datadog.Trace.Logging.DirectSubmission
             IDictionary<string, string> globalTags,
             ICollection<string> enabledLogShippingIntegrations,
             bool isLogsInjectionEnabled,
-            ImmutableIntegrationSettingsCollection globallyEnabledIntegrations)
+            ImmutableIntegrationSettingsCollection globallyEnabledIntegrations,
+            BatchingSinkOptions batchingOptions)
         {
             if (enabledLogShippingIntegrations.Count == 0)
             {
@@ -177,7 +187,8 @@ namespace Datadog.Trace.Logging.DirectSubmission
                 minimumLevel: minimumLevel,
                 enabledIntegrations: enabledIntegrations,
                 validationErrors,
-                enabledIntegrationNames);
+                enabledIntegrationNames,
+                batchingOptions);
         }
 
         private static string StringifyGlobalTags(IDictionary<string, string> globalTags)
@@ -212,7 +223,8 @@ namespace Datadog.Trace.Logging.DirectSubmission
                 minimumLevel: DirectSubmissionLogLevel.Fatal,
                 enabledIntegrations: null,
                 validationErrors: emptyList,
-                enabledIntegrationNames: emptyList);
+                enabledIntegrationNames: emptyList,
+                batchingOptions: new BatchingSinkOptions(batchSizeLimit: 1, queueLimit: 1, TimeSpan.MaxValue));
         }
 
         public bool IsIntegrationEnabled(IntegrationId integrationId)

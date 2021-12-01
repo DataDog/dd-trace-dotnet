@@ -39,12 +39,10 @@ namespace Datadog.Trace.Logging.DirectSubmission
                 return new DirectLogSubmissionManager(settings, new NullDatadogSink(), formatter);
             }
 
-            // TODO: create batching options from config? Or should we not expose these options, and stick to the defaults?
-            var batchingOptions = new BatchingSinkOptions();
             var apiFactory = LogsTransportStrategy.Get(settings);
             var logsApi = new LogsApi(settings.IntakeUrl, settings.ApiKey, apiFactory);
 
-            return new DirectLogSubmissionManager(settings, new DatadogSink(logsApi, formatter, batchingOptions), formatter);
+            return new DirectLogSubmissionManager(settings, new DatadogSink(logsApi, formatter, settings.BatchingOptions), formatter);
         }
 
         public void Dispose()

@@ -3,10 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
+using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging
 {
@@ -31,7 +33,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging
                 isLogsInjectionEnabled: true,
                 new ImmutableIntegrationSettingsCollection(
                     new IntegrationSettingsCollection(null),
-                    new HashSet<string>()));
+                    new HashSet<string>()),
+                batchingOptions: new BatchingSinkOptions(1000, 100_000, TimeSpan.FromSeconds(2)));
         }
     }
 }

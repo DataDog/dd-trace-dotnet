@@ -27,6 +27,9 @@ namespace Datadog.Trace.Tests.Configuration
             nameof(TracerSettings.DirectLogSubmissionGlobalTags),
             nameof(TracerSettings.DirectLogSubmissionUrl),
             nameof(TracerSettings.DirectLogSubmissionMinimumLevel),
+            nameof(TracerSettings.DirectLogSubmissionBatchSizeLimit),
+            nameof(TracerSettings.DirectLogSubmissionQueueSizeLimit),
+            nameof(TracerSettings.DirectLogSubmissionBatchPeriod),
         };
 
         [Fact]

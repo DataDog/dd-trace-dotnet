@@ -20,15 +20,16 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
 {
     public class BatchingSinkTests
     {
-        private static readonly int TinyWaitMs = 200;
-        private static readonly int MicroWaitMs = 1;
+        private const int DefaultQueueLimit = 100_000;
+        private static readonly TimeSpan TinyWait = TimeSpan.FromMilliseconds(200);
+        private static readonly TimeSpan MicroWait = TimeSpan.FromMilliseconds(1);
 
         // Some very, very approximate tests here :)
 
         [Fact]
         public void WhenAnEventIsEnqueuedItIsWrittenToABatch_OnFlush()
         {
-            var pbs = new InMemoryBatchedSink(TimeSpan.Zero, new BatchingSinkOptions(batchSizeLimit: 2, periodMs: TinyWaitMs));
+            var pbs = new InMemoryBatchedSink(TimeSpan.Zero, new BatchingSinkOptions(batchSizeLimit: 2, queueLimit: DefaultQueueLimit, period: TinyWait));
             var evt = new TestEvent("Some event");
             pbs.EnqueueLog(evt);
             pbs.Dispose();
@@ -43,7 +44,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
         [Fact]
         public void WhenAnEventIsEnqueuedItIsWrittenToABatch_OnTimer()
         {
-            var pbs = new InMemoryBatchedSink(TimeSpan.Zero, new BatchingSinkOptions(batchSizeLimit: 2, periodMs: TinyWaitMs));
+            var pbs = new InMemoryBatchedSink(TimeSpan.Zero, new BatchingSinkOptions(batchSizeLimit: 2, queueLimit: DefaultQueueLimit, period: TinyWait));
             var evt = new TestEvent("Some event");
             pbs.EnqueueLog(evt);
             WaitForBatches(pbs);
@@ -58,8 +59,8 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
         [Fact]
         public void WhenAnEventIsEnqueuedItIsWrittenToABatch_FlushWhileRunning()
         {
-            var batchEmitDelay = TimeSpan.FromMilliseconds(TinyWaitMs + TinyWaitMs);
-            var pbs = new InMemoryBatchedSink(batchEmitDelay, new BatchingSinkOptions(batchSizeLimit: 2, periodMs: MicroWaitMs));
+            var batchEmitDelay = TinyWait + TinyWait;
+            var pbs = new InMemoryBatchedSink(batchEmitDelay, new BatchingSinkOptions(batchSizeLimit: 2, queueLimit: DefaultQueueLimit, period: MicroWait));
 
             var evt = new TestEvent("Some event");
             pbs.EnqueueLog(evt);
@@ -76,7 +77,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
             var deadline = DateTime.UtcNow.AddMinutes(2);
             while (pbs.Batches.Count == 0 && DateTime.UtcNow < deadline)
             {
-                Thread.Sleep(TinyWaitMs);
+                Thread.Sleep(TinyWait);
             }
         }
 

@@ -25,13 +25,13 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
     internal class BatchingSinkOptions
     {
         public BatchingSinkOptions(
-            int batchSizeLimit = 1_000,
-            int? queueLimit = 100_000,
-            int periodMs = 2_000)
+            int batchSizeLimit,
+            int queueLimit,
+            TimeSpan period)
         {
             BatchSizeLimit = batchSizeLimit;
             QueueLimit = queueLimit;
-            Period = TimeSpan.FromMilliseconds(periodMs);
+            Period = period;
         }
 
         /// <summary>
