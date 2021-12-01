@@ -258,8 +258,8 @@ partial class Build
             {
                 x = x
                    .SetProjectFile(projectPath)
-                   .SetNoRestore(true)
-                   .SetNoBuild(true)
+                   .EnableNoRestore()
+                   .EnableNoBuild()
                    .SetTargetFramework(Framework)
                    .SetConfiguration(BuildConfiguration)
                    .SetIgnoreFilter(testDescription.TestsToIgnore)
