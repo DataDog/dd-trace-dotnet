@@ -7,14 +7,18 @@ using System;
 using System.Collections;
 using System.Text;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.Formatting
 {
-    internal class SerilogLogFormatter
+    internal static class SerilogLogFormatter
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SerilogLogFormatter));
+
         public static void FormatLogEvent(LogFormatter logFormatter, StringBuilder sb, ILogEvent logEvent)
         {
             var message = logEvent.RenderMessage();
@@ -111,61 +115,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.Formatti
                 return;
             }
 
-            throw new InvalidOperationException("Unknown value type " + value.GetType());
-        }
-
-        private static void FormatLiteral(JsonWriter writer, object value)
-        {
-            if (value is null)
+            if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                writer.WriteNull();
-                return;
+                Log.Debug($"Unknown Serilog LogEventPropertyValue '{value.GetType()}': skipping in log message");
+                LogFormatter.WriteValue(writer, value: null);
             }
-
-            if (value is string str)
-            {
-                writer.WriteValue(str);
-                return;
-            }
-
-            if (value is ValueType)
-            {
-                switch (value)
-                {
-                    case int or uint or long or byte or sbyte or short or ushort:
-                        writer.WriteValue(Convert.ToInt64(value));
-                        return;
-                    case ulong ulongValue: // can't safely be cast to long
-                        writer.WriteValue(ulongValue);
-                        return;
-                    case decimal decimalValue:
-                        writer.WriteValue(decimalValue);
-                        return;
-                    case double d:
-                        writer.WriteValue(d);
-                        return;
-                    case float f:
-                        writer.WriteValue(f);
-                        return;
-                    case bool b:
-                        writer.WriteValue(b);
-                        return;
-                    case char c:
-                        writer.WriteValue(c);
-                        return;
-                    case DateTime dt:
-                        writer.WriteValue(dt);
-                        return;
-                    case DateTimeOffset dto:
-                        writer.WriteValue(dto);
-                        return;
-                    case TimeSpan timeSpan:
-                        writer.WriteValue(timeSpan);
-                        return;
-                }
-            }
-
-            writer.WriteValue(value.ToString());
         }
 
         private static void FormatSequence(JsonTextWriter writer, IEnumerable properties)
