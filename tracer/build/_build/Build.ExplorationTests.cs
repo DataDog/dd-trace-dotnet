@@ -285,8 +285,7 @@ partial class Build
         {
             var cloneCommand = CloneLatest
                                    ? $"clone {testDescription.GitRepositoryUrl} {ExplorationTestsDirectory}/{testDescription.Name}"
-                                   : $"clone -b {testDescription.GitRepositoryTag} {testDescription.GitRepositoryUrl} {ExplorationTestsDirectory}/{testDescription.Name}"
-                ;
+                                   : $"clone -b {testDescription.GitRepositoryTag} {testDescription.GitRepositoryUrl} {ExplorationTestsDirectory}/{testDescription.Name}";
 
 
             GitTasks.Git(cloneCommand);
