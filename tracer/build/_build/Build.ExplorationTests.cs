@@ -163,63 +163,50 @@ partial class Build
                .Description("Run exploration tests for debugger.")
                .Unlisted()
                .After(Clean)
-               .DependsOn(PrepareMonitoringEnvironment_Debugger)
                .Executes(() =>
-               {
-                   GitCloneAndRunUnitTests(MonitoringType.Debugger);
-               })
-               .Triggers(RunExplorationTestAssertions_Debugger)
+                {
+                    PrepareMonitoringEnvironment_Debugger();
+                    GitCloneAndRunUnitTests(MonitoringType.Debugger);
+                    RunExplorationTestAssertions_Debugger();
+                })
         ;
 
-    Target PrepareMonitoringEnvironment_Debugger
-        => _ => _
-           .Executes(() =>
-           {
-               Logger.Info($"Prepare environment variables for debugger.");
-               //TODO TBD
-           })
-        ;
+    void PrepareMonitoringEnvironment_Debugger()
+    {
+        Logger.Info($"Prepare environment variables for profiler.");
+        //TODO TBD
+    }
 
-    Target RunExplorationTestAssertions_Debugger
-        => _ => _
-               .Description("Run exploration test assertions.")
-               .Unlisted()
-               .Executes(() =>
-               {
-                   Logger.Info($"Running assertions tests for debugger.");
-                   //TODO TBD
-               });
+    void RunExplorationTestAssertions_Debugger()
+    {
+        Logger.Info($"Running assertions tests for debugger.");
+        //TODO TBD
+    }
 
     Target RunExplorationTests_Profiler
         => _ => _
                .Description("Run exploration tests for profiler.")
                .After(Clean)
-               .DependsOn(PrepareMonitoringEnvironment_Profiler)
                .Executes(() =>
-               {
-                   GitCloneAndRunUnitTests(MonitoringType.Profiler);
-               })
-               .Triggers(RunExplorationTestAssertions_Profiler)
+                {
+                    PrepareMonitoringEnvironment_Profiler();
+                    GitCloneAndRunUnitTests(MonitoringType.Profiler);
+                    RunExplorationTestAssertions_Profiler();
+                })
         ;
 
-    Target PrepareMonitoringEnvironment_Profiler
-        => _ => _
-           .Executes(() =>
-           {
-               Logger.Info($"Prepare environment variables for profiler.");
-               //TODO TBD
-           })
-        ;
 
-    Target RunExplorationTestAssertions_Profiler
-        => _ => _
-               .Description("Run exploration test assertions.")
-               .Unlisted()
-               .Executes(() =>
-               {
-                   Logger.Info($"Running assertions tests for profiler.");
-                   //TODO TBD
-               });
+    void PrepareMonitoringEnvironment_Profiler()
+    {
+        Logger.Info($"Prepare environment variables for profiler.");
+        //TODO TBD
+    }
+
+    void RunExplorationTestAssertions_Profiler ()
+    {
+        Logger.Info($"Running assertions tests for profiler.");
+        //TODO TBD
+    }
 
     void GitCloneAndRunUnitTests(MonitoringType monitoringType)
     {
