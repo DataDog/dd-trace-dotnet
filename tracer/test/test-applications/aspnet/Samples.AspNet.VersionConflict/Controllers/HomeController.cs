@@ -1,6 +1,8 @@
+using System;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
+using System.Reflection;
 using System.Web.Mvc;
 using Datadog.Trace;
 
@@ -8,6 +10,8 @@ namespace Samples.AspNet.VersionConflict.Controllers
 {
     public class HomeController : Controller
     {
+        private static readonly Version _manualTracingVersion = new Version("2.255.251.0");
+
         public ActionResult Index()
         {
             var envVars = SampleHelpers.GetDatadogEnvironmentVariables();
@@ -26,15 +30,20 @@ namespace Samples.AspNet.VersionConflict.Controllers
         {
             int result = 0;
 
+            // Create two nested manual spans to make sure the parent-child relationship is maintained
             using (Tracer.Instance.StartActive("Manual"))
             {
                 using (var innerScope = Tracer.Instance.StartActive("Manual-Inner"))
                 {
-                    using (var client = new HttpClient())
+                    // Create two nested automatic spans to make sure the parent-child relationship is maintained
+                    using (StartAutomaticTrace("Automatic-Outer"))
                     {
-                        var target = Url.Action("Index", "Home", null, "http");
-                        var content = client.GetStringAsync(target).Result;
-                        result = content.Length;
+                        using (var client = new HttpClient())
+                        {
+                            var target = Url.Action("Index", "Home", null, "http");
+                            var content = client.GetStringAsync(target).Result;
+                            result = content.Length;
+                        }
                     }
                 }
             }
@@ -92,6 +101,27 @@ namespace Samples.AspNet.VersionConflict.Controllers
                     Tracer.Instance.StartActive("Child").Dispose();
                 }
             }
+        }
+
+        private static IDisposable StartAutomaticTrace(string operationName)
+        {
+            // Get the Datadog.Trace.Tracer type from the automatic instrumentation assembly
+            Assembly automaticAssembly = AppDomain.CurrentDomain.GetAssemblies().Single(asm => asm.GetName().Name.Equals("Datadog.Trace") && asm.GetName().Version < _manualTracingVersion);
+            Type tracerType = automaticAssembly.GetType("Datadog.Trace.Tracer");
+
+            // Invoke 'Tracer.Instance'
+            var instanceGetMethod = tracerType.GetProperty("Instance", BindingFlags.Static | BindingFlags.Public).GetGetMethod();
+            object instance = instanceGetMethod.Invoke(null, new object[] {});
+
+            // Invoke 'public Scope StartActive(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false, bool finishOnClose = true)'
+            var startActive = tracerType.GetMethod("StartActive");
+            object parent = null;
+            string serviceName = null;
+            DateTimeOffset? startTime = null;
+            bool ignoreActiveScope = false;
+            bool finishOnClose = true;
+
+            return (IDisposable)startActive.Invoke(instance, new[] { operationName, parent, serviceName, startTime, ignoreActiveScope, finishOnClose });
         }
     }
 }

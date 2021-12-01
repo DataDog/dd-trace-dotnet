@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
         {
             // 4 spans for the base request: aspnet.request / aspnet-mvc.request / Manual / Manual-Inner / http.request
             // + 2 spans for the outgoing request: aspnet.request / aspnet-mvc.request
-            const int expectedSpans = 7;
+            const int expectedSpans = 8;
 
             var spans = await GetWebServerSpans("/home/sendrequest", _iisFixture.Agent, _iisFixture.HttpPort, System.Net.HttpStatusCode.OK, expectedSpans, filterServerSpans: false);
 
@@ -70,7 +70,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
             manualInnerSpan.TraceId.Should().Be(rootSpan.TraceId);
             manualInnerSpan.Name.Should().Be("Manual-Inner");
 
-            var httpSpan = spans.Single(s => s.ParentId == manualInnerSpan.SpanId);
+            var automaticOuterSpan = spans.Single(s => s.ParentId == manualInnerSpan.SpanId);
+
+            automaticOuterSpan.TraceId.Should().Be(rootSpan.TraceId);
+            automaticOuterSpan.Name.Should().Be("Automatic-Outer");
+
+            var httpSpan = spans.Single(s => s.ParentId == automaticOuterSpan.SpanId);
 
             httpSpan.TraceId.Should().Be(rootSpan.TraceId);
             httpSpan.Name.Should().Be("http.request");
