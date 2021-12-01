@@ -14,6 +14,7 @@ namespace Datadog.Trace.Agent.MessagePack
         public static readonly IFormatterResolver Instance = new SpanFormatterResolver();
 
         private readonly ArraySegmentFormatter<Span> _arraySegmentFormatter = new();
+        private readonly ArrayFormatter<Span> _arrayFormatter = new();
 
         private SpanFormatterResolver()
         {
@@ -28,7 +29,15 @@ namespace Datadog.Trace.Agent.MessagePack
 
             if (typeof(T) == typeof(ArraySegment<Span>))
             {
-                return (IMessagePackFormatter<T>)(object)_arraySegmentFormatter;
+                // double casting to make compiler happy
+                return (IMessagePackFormatter<T>)(IMessagePackFormatter<ArraySegment<Span>>)_arraySegmentFormatter;
+            }
+
+            // used only in tests
+            if (typeof(T) == typeof(Span[]))
+            {
+                // double casting to make compiler happy
+                return (IMessagePackFormatter<T>)(IMessagePackFormatter<Span[]>)_arrayFormatter;
             }
 
             throw new InvalidOperationException($"Type not supported by {nameof(SpanFormatterResolver)}: {typeof(T).Name}");

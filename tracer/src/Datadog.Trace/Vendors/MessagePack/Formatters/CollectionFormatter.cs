@@ -11,6 +11,31 @@ using System.Linq;
 
 namespace Datadog.Trace.Vendors.MessagePack.Formatters
 {
+    internal sealed class ArrayFormatter<T> : IMessagePackFormatter<T[]>
+    {
+        public int Serialize(ref byte[] bytes, int offset, T[] value, IFormatterResolver formatterResolver)
+        {
+            if (value == null)
+            {
+                return MessagePackBinary.WriteNil(ref bytes, offset);
+            }
+            else
+            {
+                var startOffset = offset;
+                var formatter = formatterResolver.GetFormatterWithVerify<T>();
+
+                offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, value.Length);
+
+                for (int i = 0; i < value.Length; i++)
+                {
+                    offset += formatter.Serialize(ref bytes, offset, value[i], formatterResolver);
+                }
+
+                return offset - startOffset;
+            }
+        }
+    }
+
     internal sealed class ArraySegmentFormatter<T> : IMessagePackFormatter<ArraySegment<T>>
     {
         public int Serialize(ref byte[] bytes, int offset, ArraySegment<T> value, IFormatterResolver formatterResolver)
