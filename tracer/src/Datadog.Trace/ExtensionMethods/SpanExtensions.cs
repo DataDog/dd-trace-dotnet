@@ -1,4 +1,4 @@
-// <copyright file="ISpanExtensions.cs" company="Datadog">
+// <copyright file="SpanExtensions.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -18,8 +18,7 @@ namespace Datadog.Trace.ExtensionMethods
     /// <summary>
     /// Extension methods for the <see cref="ISpan"/> class.
     /// </summary>
-    // ReSharper disable once InconsistentNaming
-    public static class ISpanExtensions
+    public static class SpanExtensions
     {
         /// <summary>
         /// Adds standard tags to a span with values taken from the specified <see cref="DbCommand"/>.
@@ -65,7 +64,7 @@ namespace Datadog.Trace.ExtensionMethods
         }
 
         /// <summary>
-        /// Sets the sampling priority for the trace that contains the specified <see cref="Span"/>.
+        /// Sets the sampling priority for the trace that contains the specified <see cref="ISpan"/>.
         /// </summary>
         /// <param name="span">A span that belongs to the trace.</param>
         /// <param name="samplingPriority">The new sampling priority for the trace.</param>

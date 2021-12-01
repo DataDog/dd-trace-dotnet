@@ -9,7 +9,6 @@ using System.Runtime.CompilerServices;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 {
