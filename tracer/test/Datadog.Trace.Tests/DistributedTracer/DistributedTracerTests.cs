@@ -21,11 +21,11 @@ namespace Datadog.Trace.Tests.DistributedTracer
         [InlineData(false)]
         public void LockSamplingPriority(bool notifyDistributedTracer)
         {
-            using var scope = Tracer.Instance.StartActive("Test");
-
             var distributedTracer = new Mock<IDistributedTracer>();
 
             ClrProfiler.DistributedTracer.SetInstanceOnlyForTests(distributedTracer.Object);
+
+            using var scope = Tracer.Instance.StartActive("Test");
 
             scope.Span.Context.TraceContext.LockSamplingPriority(notifyDistributedTracer);
 
@@ -37,8 +37,6 @@ namespace Datadog.Trace.Tests.DistributedTracer
         [Fact]
         public void GetSpanContext()
         {
-            using var parentScope = Tracer.Instance.StartActive("Parent");
-
             var distributedTracer = new Mock<IDistributedTracer>();
 
             var spanContext = new SpanContext(1, 2, SamplingPriority.UserKeep);
@@ -46,6 +44,8 @@ namespace Datadog.Trace.Tests.DistributedTracer
             distributedTracer.Setup(t => t.GetSpanContext()).Returns(spanContext);
 
             ClrProfiler.DistributedTracer.SetInstanceOnlyForTests(distributedTracer.Object);
+
+            using var parentScope = Tracer.Instance.StartActive("Parent");
 
             using var scope = Tracer.Instance.StartActive("Test");
 
