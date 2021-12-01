@@ -679,22 +679,44 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
 
                 auto typeDefEnum = EnumTypeDefs(metadataImport);
                 auto typeDefIterator = typeDefEnum.begin();
-                while (typeDefIterator != typeDefEnum.end())
+                for (; typeDefIterator != typeDefEnum.end(); typeDefIterator = ++typeDefIterator)
                 {
                     auto typeDef = *typeDefIterator;
-                
                     const auto typeInfo = GetTypeInfo(metadataImport, typeDef);
-                    
-                    if (typeInfo.extend_from != nullptr)
+
+                    if (typeInfo.extend_from == nullptr)
                     {
-                        if (typeInfo.extend_from->name == integration.target_method.type.name)
-                        {
-                            Logger::Info("[Integration]: ", typeInfo.extend_from->name, " -> [Actual Type]:", typeInfo.name);
-                        
-                        }
+                        continue;
                     }
 
-                    typeDefIterator = ++typeDefIterator;
+                    const auto ancestorTypeInfo = typeInfo.extend_from.get();
+
+                    // Validate the type name we already have
+                    if (ancestorTypeInfo->name != integration.target_method.type.name)
+                    {
+                        continue;
+                    }
+
+                    ModuleID ancestorModuleId = moduleInfo.id;
+
+                    // We check the assembly name
+                    if (ancestorTypeInfo->scopeToken != mdTokenNil)
+                    {
+                        // Different module (moduleRef)
+                        const auto& extModule = GetModuleInfo(m_profilerInfo, ancestorTypeInfo->scopeToken);
+                        if (extModule.assembly.name != integration.target_method.type.assembly.name)
+                        {
+                            continue;
+                        }
+                        ancestorModuleId = extModule.id;
+                    }
+                    else if (moduleInfo.assembly.name != integration.target_method.type.assembly.name)
+                    {
+                        continue;
+                    }
+
+                    Logger::Info("[Integration]: ", ancestorTypeInfo->name, " -> [Actual Type]: ", typeInfo.name,
+                                 " -> [ModuleId]: ", ancestorModuleId);
                 }
 
                 Logger::Warn("##################### Abstract integration detected! [END]");
