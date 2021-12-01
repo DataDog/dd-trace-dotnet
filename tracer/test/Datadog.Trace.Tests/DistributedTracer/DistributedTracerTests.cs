@@ -49,7 +49,7 @@ namespace Datadog.Trace.Tests.DistributedTracer
 
             using var scope = Tracer.Instance.StartActive("Test");
 
-            distributedTracer.Verify(t => t.GetSpanContext(), Times.Once);
+            distributedTracer.Verify(t => t.GetSpanContext(), Times.Exactly(2));
             scope.Span.TraceId.Should().Be(spanContext.TraceId);
             scope.Span.Context.TraceContext.SamplingPriority.Should().Be(spanContext.SamplingPriority);
         }
