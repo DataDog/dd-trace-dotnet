@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Agent;
-using MessagePack;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Agent
@@ -145,43 +144,43 @@ namespace Datadog.Trace.Tests.Agent
             Assert.Throws<ArgumentException>(() => new SpanBuffer(4, Datadog.Trace.Agent.MessagePack.SpanFormatterResolver.Instance));
         }
 
-        [MessagePackObject]
+        [MessagePack.MessagePackObject]
         public struct FakeSpan
         {
-            [Key("trace_id")]
+            [MessagePack.Key("trace_id")]
             public ulong TraceId { get; set; }
 
-            [Key("span_id")]
+            [MessagePack.Key("span_id")]
             public ulong SpanId { get; set; }
 
-            [Key("name")]
+            [MessagePack.Key("name")]
             public string Name { get; set; }
 
-            [Key("resource")]
+            [MessagePack.Key("resource")]
             public string Resource { get; set; }
 
-            [Key("service")]
+            [MessagePack.Key("service")]
             public string Service { get; set; }
 
-            [Key("type")]
+            [MessagePack.Key("type")]
             public string Type { get; set; }
 
-            [Key("start")]
+            [MessagePack.Key("start")]
             public long Start { get; set; }
 
-            [Key("duration")]
+            [MessagePack.Key("duration")]
             public long Duration { get; set; }
 
-            [Key("parent_id")]
+            [MessagePack.Key("parent_id")]
             public ulong? ParentId { get; set; }
 
-            [Key("error")]
+            [MessagePack.Key("error")]
             public byte Error { get; set; }
 
-            [Key("meta")]
+            [MessagePack.Key("meta")]
             public Dictionary<string, string> Tags { get; set; }
 
-            [Key("metrics")]
+            [MessagePack.Key("metrics")]
             public Dictionary<string, double> Metrics { get; set; }
         }
     }

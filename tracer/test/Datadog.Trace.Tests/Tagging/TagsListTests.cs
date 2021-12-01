@@ -116,10 +116,10 @@ namespace Datadog.Trace.Tests.Tagging
                 span.SetMetric(i.ToString(), i);
             }
 
-            var buffer = new byte[0];
+            byte[] buffer = new byte[0];
 
             // serialize with MessagePack serializer in Datadog.Trace.dll
-            Datadog.Trace.MessagePack.MessagePackSerializer.Serialize(ref buffer, 0, span, SpanFormatterResolver.Instance);
+            SpanMessagePackFormatter.Instance.Serialize(ref buffer, 0, span, formatterResolver: null);
 
             // deserialize with public nuget
             var deserializedSpan = global::MessagePack.MessagePackSerializer.Deserialize<FakeSpan>(buffer);
