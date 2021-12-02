@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Threading;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
@@ -20,6 +21,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
         internal const string IntegrationName = nameof(Configuration.IntegrationId.MsTestV2);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.MsTestV2;
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MsTestIntegration));
+
+        internal static readonly ThreadLocal<object> IsTestMethodRunnableThreadLocal = new ThreadLocal<object>();
 
         internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 

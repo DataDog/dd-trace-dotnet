@@ -19,7 +19,7 @@ namespace Samples.MSTestTests
             }
             context.WriteLine(string.Empty);
         }
-        
+
         [TestMethod]
         public void SimplePassTest()
         {

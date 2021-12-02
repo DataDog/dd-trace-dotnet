@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
         IntegrationName = MsTestIntegration.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class TestMethodAttributeExecuteIntegration
+    public static class TestMethodAttributeExecuteIntegration
     {
         /// <summary>
         /// OnMethodBegin callback
@@ -48,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
         }
 
         /// <summary>
-        /// OnAsyncMethodEnd callback
+        /// OnMethodEnd callback
         /// </summary>
         /// <typeparam name="TTarget">Type of the target</typeparam>
         /// <typeparam name="TReturn">Type of the return value</typeparam>
@@ -68,6 +68,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
                     if (returnValueArray.Length == 1)
                     {
                         object testResultObject = returnValueArray.GetValue(0);
+
                         if (testResultObject != null &&
                             testResultObject.TryDuckCast<TestResultStruct>(out var testResult))
                         {
