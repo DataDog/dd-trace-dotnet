@@ -38,7 +38,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
         /// <returns>Calltarget state value</returns>
         public static CallTargetState OnMethodBegin<TTarget, TArg1, TArg2, TArg3>(TTarget instance, TArg1 testMethod, TArg2 testMethodInfo, ref TArg3 notRunnableResult)
         {
-            MsTestIntegration.IsTestMethodRunnableThreadLocal.Value = testMethodInfo;
+            if (MsTestIntegration.IsEnabled)
+            {
+                MsTestIntegration.IsTestMethodRunnableThreadLocal.Value = testMethodInfo;
+            }
+
             return CallTargetState.GetDefault();
         }
     }
