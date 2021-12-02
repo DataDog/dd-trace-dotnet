@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [Trait("Category", "TestIntegrations")]
         public void SubmitTraces(string packageVersion)
         {
-            List<MockTracerAgent.Span> spans = null;
+            List<MockSpan> spans = null;
             try
             {
                 SetEnvironmentVariable("DD_CIVISIBILITY_ENABLED", "1");
@@ -55,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                     foreach (var targetSpan in spans)
                     {
                         // check the name
-                        Assert.Equal("xunit.test", targetSpan.Name);
+                        Assert.Equal("xunit.test", targetSpan.OperationName);
 
                         // check the CIEnvironmentValues decoration.
                         CheckCIEnvironmentValuesDecoration(targetSpan);
@@ -158,7 +158,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             }
         }
 
-        private static void WriteSpans(List<MockTracerAgent.Span> spans)
+        private static void WriteSpans(List<MockSpan> spans)
         {
             if (spans is null || spans.Count == 0)
             {
@@ -173,9 +173,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 Console.Write($" {i++}) ");
                 Console.Write($"TraceId={span.TraceId}, ");
                 Console.Write($"SpanId={span.SpanId}, ");
-                Console.Write($"Service={span.Service}, ");
-                Console.Write($"Name={span.Name}, ");
-                Console.Write($"Resource={span.Resource}, ");
+                Console.Write($"Service={span.ServiceName}, ");
+                Console.Write($"Name={span.OperationName}, ");
+                Console.Write($"Resource={span.ResourceName}, ");
                 Console.Write($"Type={span.Type}, ");
                 Console.Write($"Error={span.Error}");
                 Console.WriteLine();
@@ -191,32 +191,32 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             Console.WriteLine("***********************************");
         }
 
-        private static void AssertTargetSpanAnyOf(MockTracerAgent.Span targetSpan, string key, params string[] values)
+        private static void AssertTargetSpanAnyOf(MockSpan targetSpan, string key, params string[] values)
         {
             string actualValue = targetSpan.Tags[key];
             Assert.Contains(actualValue, values);
             targetSpan.Tags.Remove(key);
         }
 
-        private static void AssertTargetSpanEqual(MockTracerAgent.Span targetSpan, string key, string value)
+        private static void AssertTargetSpanEqual(MockSpan targetSpan, string key, string value)
         {
             Assert.Equal(value, targetSpan.Tags[key]);
             targetSpan.Tags.Remove(key);
         }
 
-        private static void AssertTargetSpanExists(MockTracerAgent.Span targetSpan, string key)
+        private static void AssertTargetSpanExists(MockSpan targetSpan, string key)
         {
             Assert.True(targetSpan.Tags.ContainsKey(key));
             targetSpan.Tags.Remove(key);
         }
 
-        private static void AssertTargetSpanContains(MockTracerAgent.Span targetSpan, string key, string value)
+        private static void AssertTargetSpanContains(MockSpan targetSpan, string key, string value)
         {
             Assert.Contains(value, targetSpan.Tags[key]);
             targetSpan.Tags.Remove(key);
         }
 
-        private static void CheckCIEnvironmentValuesDecoration(MockTracerAgent.Span targetSpan)
+        private static void CheckCIEnvironmentValuesDecoration(MockSpan targetSpan)
         {
             var context = new SpanContext(null, null, null, null);
             var span = new Span(context, DateTimeOffset.UtcNow);
@@ -254,7 +254,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             }
         }
 
-        private static void CheckRuntimeValues(MockTracerAgent.Span targetSpan)
+        private static void CheckRuntimeValues(MockSpan targetSpan)
         {
             FrameworkDescription framework = FrameworkDescription.Instance;
 
@@ -266,25 +266,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             AssertTargetSpanEqual(targetSpan, CommonTags.OSVersion, Environment.OSVersion.VersionString);
         }
 
-        private static void CheckTraitsValues(MockTracerAgent.Span targetSpan)
+        private static void CheckTraitsValues(MockSpan targetSpan)
         {
             // Check the traits tag value
             AssertTargetSpanEqual(targetSpan, TestTags.Traits, "{\"Category\":[\"Category01\"],\"Compatibility\":[\"Windows\",\"Linux\"]}");
         }
 
-        private static void CheckOriginTag(MockTracerAgent.Span targetSpan)
+        private static void CheckOriginTag(MockSpan targetSpan)
         {
             // Check the test origin tag
             AssertTargetSpanEqual(targetSpan, Tags.Origin, TestTags.CIAppTestOriginName);
         }
 
-        private static void CheckSimpleTestSpan(MockTracerAgent.Span targetSpan)
+        private static void CheckSimpleTestSpan(MockSpan targetSpan)
         {
             // Check the Test Status
             AssertTargetSpanEqual(targetSpan, TestTags.Status, TestTags.StatusPass);
         }
 
-        private static void CheckSimpleSkipFromAttributeTest(MockTracerAgent.Span targetSpan)
+        private static void CheckSimpleSkipFromAttributeTest(MockSpan targetSpan)
         {
             // Check the Test Status
             AssertTargetSpanEqual(targetSpan, TestTags.Status, TestTags.StatusSkip);
@@ -293,7 +293,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             AssertTargetSpanEqual(targetSpan, TestTags.SkipReason, "Simple skip reason");
         }
 
-        private static void CheckSimpleErrorTest(MockTracerAgent.Span targetSpan)
+        private static void CheckSimpleErrorTest(MockSpan targetSpan)
         {
             // Check the Test Status
             AssertTargetSpanEqual(targetSpan, TestTags.Status, TestTags.StatusFail);

@@ -48,14 +48,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion);
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
-            int actualSpanCount = spans.Count(s => s.ParentId.HasValue && !s.Resource.Equals("SHOW WARNINGS", StringComparison.OrdinalIgnoreCase)); // Remove unexpected DB spans from the calculation
+            int actualSpanCount = spans.Count(s => s.ParentId.HasValue && !s.ResourceName.Equals("SHOW WARNINGS", StringComparison.OrdinalIgnoreCase)); // Remove unexpected DB spans from the calculation
 
             Assert.Equal(expectedSpanCount, actualSpanCount);
 
             foreach (var span in spans)
             {
-                Assert.Equal(expectedOperationName, span.Name);
-                Assert.Equal(expectedServiceName, span.Service);
+                Assert.Equal(expectedOperationName, span.OperationName);
+                Assert.Equal(expectedServiceName, span.ServiceName);
                 Assert.Equal(SpanTypes.Sql, span.Type);
                 Assert.Equal(dbType, span.Tags[Tags.DbType]);
                 Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
@@ -77,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             var spans = agent.WaitForSpans(totalSpanCount, returnAllOperations: true);
 
             Assert.NotEmpty(spans);
-            Assert.Empty(spans.Where(s => s.Name.Equals(expectedOperationName)));
+            Assert.Empty(spans.Where(s => s.OperationName.Equals(expectedOperationName)));
         }
     }
 }

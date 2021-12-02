@@ -101,7 +101,7 @@ namespace Datadog.Trace.Tests
 
                 var spans = agent.WaitForSpans(count: 1);
                 var received = spans.Should().ContainSingle().Subject;
-                received.Name.Should().Be("Test span");
+                received.OperationName.Should().Be("Test span");
                 received.Tags.Should().Contain("test-tag", "original-value");
             }
         }

@@ -11,6 +11,7 @@ using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.MessagePack;
 using FluentAssertions;
@@ -132,7 +133,7 @@ namespace Datadog.Trace.Tests.Tagging
             Vendors.MessagePack.MessagePackSerializer.Serialize(ref buffer, 0, span, resolver);
 
             // use nuget MessagePack to deserialize
-            var deserializedSpan = global::MessagePack.MessagePackSerializer.Deserialize<FakeSpan>(buffer);
+            var deserializedSpan = global::MessagePack.MessagePackSerializer.Deserialize<MockSpan>(buffer);
 
             // For top-level spans, there is one tag added during serialization
             Assert.Equal(topLevelSpan ? 17 : 16, deserializedSpan.Tags.Count);

@@ -61,22 +61,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                  .ToList();
 
                 spans.Should()
-                     .OnlyContain(span => span.Name == "aerospike.command")
-                     .And.OnlyContain(span => span.Service == "Samples.Aerospike-aerospike")
+                     .OnlyContain(span => span.OperationName == "aerospike.command")
+                     .And.OnlyContain(span => span.ServiceName == "Samples.Aerospike-aerospike")
                      .And.OnlyContain(span => span.Tags[Tags.SpanKind] == SpanKinds.Client)
                      .And.OnlyContain(span => ValidateSpanKey(span));
 
-                spans.Select(span => span.Resource).Should().ContainInOrder(expectedSpans);
+                spans.Select(span => span.ResourceName).Should().ContainInOrder(expectedSpans);
             }
         }
 
-        private static bool ValidateSpanKey(MockTracerAgent.Span span)
+        private static bool ValidateSpanKey(MockSpan span)
         {
-            if (span.Resource.Contains("Batch"))
+            if (span.ResourceName.Contains("Batch"))
             {
                 return span.Tags[Tags.AerospikeKey] == "test:myset1:mykey1;test:myset2:mykey2;test:myset3:mykey3";
             }
-            else if (span.Resource.Contains("Record"))
+            else if (span.ResourceName.Contains("Record"))
             {
                 return span.Tags[Tags.AerospikeKey] == "test:myset1"
                     && span.Tags[Tags.AerospikeNamespace] == "test"

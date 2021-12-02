@@ -46,13 +46,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         continue;
                     }
 
-                    if (span.Service == "Samples.MongoDB-mongodb")
+                    if (span.ServiceName == "Samples.MongoDB-mongodb")
                     {
                         span.Name.Should().Be("mongodb.query");
                         span.Type.Should().Be(SpanTypes.MongoDb);
                         span.Tags.Should().NotContainKey(Tags.Version, "external service span should not have service version tag.");
 
-                        if (span.Resource != null && span.Resource != "mongodb.query")
+                        if (span.ResourceName != null && span.ResourceName != "mongodb.query")
                         {
                             spansWithResourceName++;
 

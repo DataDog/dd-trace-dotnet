@@ -88,8 +88,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             foreach (var span in elasticSpans)
             {
-                Assert.Equal("elasticsearch.query", span.Name);
-                Assert.Equal("Development Web Site-elasticsearch", span.Service);
+                Assert.Equal("elasticsearch.query", span.OperationName);
+                Assert.Equal("Development Web Site-elasticsearch", span.ServiceName);
                 Assert.Equal("elasticsearch", span.Type);
             }
         }

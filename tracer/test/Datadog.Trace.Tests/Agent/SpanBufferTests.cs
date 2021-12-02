@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
+using Datadog.Trace.TestHelpers;
 using MessagePack; // use nuget MessagePack to deserialize
 using Xunit;
 
@@ -50,7 +51,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var content = buffer.Data;
 
-            var result = MessagePackSerializer.Deserialize<FakeSpan[][]>(content);
+            var result = MessagePackSerializer.Deserialize<MockSpan[][]>(content);
 
             var resized = content.Count > SpanBuffer.InitialBufferSize;
 

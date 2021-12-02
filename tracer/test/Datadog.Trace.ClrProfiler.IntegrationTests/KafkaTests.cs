@@ -56,11 +56,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // Due to manual/autocommit behaviour
             allSpans.Should().HaveCountGreaterOrEqualTo(TotalExpectedSpanCount);
 
-            var allProducerSpans = allSpans.Where(x => x.Name == "kafka.produce").ToList();
+            var allProducerSpans = allSpans.Where(x => x.OperationName == "kafka.produce").ToList();
             var successfulProducerSpans = allProducerSpans.Where(x => x.Error == 0).ToList();
             var errorProducerSpans = allProducerSpans.Where(x => x.Error > 0).ToList();
 
-            var allConsumerSpans = allSpans.Where(x => x.Name == "kafka.consume").ToList();
+            var allConsumerSpans = allSpans.Where(x => x.OperationName == "kafka.consume").ToList();
             var successfulConsumerSpans = allConsumerSpans.Where(x => x.Error == 0).ToList();
             var errorConsumerSpans = allConsumerSpans.Where(x => x.Error > 0).ToList();
 
@@ -132,22 +132,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        private void VerifyProducerSpanProperties(List<MockTracerAgent.Span> producerSpans, string resourceName, int expectedCount)
+        private void VerifyProducerSpanProperties(List<MockSpan> producerSpans, string resourceName, int expectedCount)
         {
             producerSpans.Should()
                          .HaveCount(expectedCount)
-                         .And.OnlyContain(x => x.Service == "Samples.Kafka-kafka")
-                         .And.OnlyContain(x => x.Resource == resourceName)
+                         .And.OnlyContain(x => x.ServiceName == "Samples.Kafka-kafka")
+                         .And.OnlyContain(x => x.ResourceName == resourceName)
                          .And.OnlyContain(x => x.Metrics.ContainsKey(Tags.Measured) && x.Metrics[Tags.Measured] == 1.0);
         }
 
-        private void VerifyConsumerSpanProperties(List<MockTracerAgent.Span> consumerSpans, string resourceName, int expectedCount)
+        private void VerifyConsumerSpanProperties(List<MockSpan> consumerSpans, string resourceName, int expectedCount)
         {
             // HaveCountGreaterOrEqualTo because same message may be consumed by both
             consumerSpans.Should()
                          .HaveCountGreaterOrEqualTo(expectedCount)
-                         .And.OnlyContain(x => x.Service == "Samples.Kafka-kafka")
-                         .And.OnlyContain(x => x.Resource == resourceName)
+                         .And.OnlyContain(x => x.ServiceName == "Samples.Kafka-kafka")
+                         .And.OnlyContain(x => x.ResourceName == resourceName)
                          .And.OnlyContain(x => x.Metrics.ContainsKey(Tags.Measured) && x.Metrics[Tags.Measured] == 1.0)
                          .And.OnlyContain(x => x.Metrics.ContainsKey(Metrics.MessageQueueTimeMs))
                          .And.OnlyContain(x => x.Tags.ContainsKey(Tags.KafkaOffset) && Regex.IsMatch(x.Tags[Tags.KafkaOffset], @"^[0-9]+$"))

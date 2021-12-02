@@ -260,8 +260,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    Assert.Equal("redis.command", span.Name);
-                    Assert.Equal("Samples.StackExchange.Redis-redis", span.Service);
+                    Assert.Equal("redis.command", span.OperationName);
+                    Assert.Equal("Samples.StackExchange.Redis-redis", span.ServiceName);
                     Assert.Equal(SpanTypes.Redis, span.Type);
                     Assert.Equal(host, DictionaryExtensions.GetValueOrDefault(span.Tags, "out.host"));
                     Assert.Equal(port, DictionaryExtensions.GetValueOrDefault(span.Tags, "out.port"));
@@ -271,7 +271,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var spanLookup = new Dictionary<Tuple<string, string>, int>();
                 foreach (var span in spans)
                 {
-                    var key = new Tuple<string, string>(span.Resource, DictionaryExtensions.GetValueOrDefault(span.Tags, "redis.raw_command"));
+                    var key = new Tuple<string, string>(span.ResourceName, DictionaryExtensions.GetValueOrDefault(span.Tags, "redis.raw_command"));
                     if (spanLookup.ContainsKey(key))
                     {
                         spanLookup[key]++;

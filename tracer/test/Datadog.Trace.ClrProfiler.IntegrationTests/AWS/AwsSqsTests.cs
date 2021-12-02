@@ -15,14 +15,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 {
     public class AwsSqsTests : TestHelper
     {
-        private static List<MockTracerAgent.Span> _expectedSpans = new()
+        private static List<MockSpan> _expectedSpans = new()
         {
 #if NETFRAMEWORK
             // Method: CreateSqsQueue
-            AwsSqsSpan.GetDefault("CreateQueue")
-                    .WithTag("aws.queue.name", "MySyncSQSQueue"),
-            AwsSqsSpan.GetDefault("CreateQueue")
-                    .WithTag("aws.queue.name", "MySyncSQSQueue2"),
+            AwsSqsSpan.GetDefault("CreateQueue", queueName: "MySyncSQSQueue"),
+            AwsSqsSpan.GetDefault("CreateQueue", queueName: "MySyncSQSQueue2"),
 
             // Method: SendMessagesWithInjectedHeaders
             AwsSqsSpan.GetDefault("SendMessage"),
@@ -67,10 +65,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 #endif
             // Note: Resource names will match the SQS API, which does not have Async suffixes
             // Method: CreateSqsQueueAsync
-            AwsSqsSpan.GetDefault("CreateQueue")
-                    .WithTag("aws.queue.name", "MyAsyncSQSQueue"),
-            AwsSqsSpan.GetDefault("CreateQueue")
-                    .WithTag("aws.queue.name", "MyAsyncSQSQueue2"),
+            AwsSqsSpan.GetDefault("CreateQueue", queueName: "MyAsyncSQSQueue"),
+            AwsSqsSpan.GetDefault("CreateQueue", queueName: "MyAsyncSQSQueue2"),
 
             // Method: SendMessagesWithInjectedHeadersAsync
             AwsSqsSpan.GetDefault("SendMessage"),
@@ -138,31 +134,35 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             }
         }
 
-        private class AwsSqsSpan : MockTracerAgent.Span
+        private class AwsSqsSpan : MockSpan
         {
-            public static AwsSqsSpan GetDefault(string operationName)
+            public static AwsSqsSpan GetDefault(string operationName, string queueName = null)
             {
-                return new AwsSqsSpan()
+                var span = new AwsSqsSpan
+                           {
+                               OperationName = "sqs.request",
+                               ResourceName = $"SQS.{operationName}",
+                               ServiceName = "Samples.AWS.SQS-aws-sqs",
+                               Tags = new()
+                                      {
+                                          { "component", "aws-sdk" },
+                                          { "span.kind", "client" },
+                                          { "aws.agent", "dotnet-aws-sdk" },
+                                          { "aws.operation", operationName },
+                                          { "aws.service", "SQS" },
+                                          { "http.method", "POST" },
+                                          { "http.status_code", "200" },
+                                      },
+                               Metrics = new() { { "_dd.top_level", 1 } },
+                               Type = SpanTypes.Http,
+                           };
+
+                if (queueName is not null)
                 {
-                    Name = "sqs.request",
-                    Resource = $"SQS.{operationName}",
-                    Service = "Samples.AWS.SQS-aws-sqs",
-                    Tags = new()
-                    {
-                        { "component", "aws-sdk" },
-                        { "span.kind", "client" },
-                        { "aws.agent", "dotnet-aws-sdk" },
-                        { "aws.operation", operationName },
-                        { "aws.service", "SQS" },
-                        { "http.method", "POST" },
-                        { "http.status_code", "200" },
-                    },
-                    Metrics = new()
-                    {
-                        { "_dd.top_level", 1 }
-                    },
-                    Type = SpanTypes.Http,
-                };
+                    span.Tags["aws.queue.name"] = queueName;
+                }
+
+                return span;
             }
         }
     }

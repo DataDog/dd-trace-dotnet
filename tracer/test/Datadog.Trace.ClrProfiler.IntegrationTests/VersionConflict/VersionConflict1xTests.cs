@@ -33,11 +33,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
 
                 // The version conflict fix does not work with the 1.x branch, so http traces should be orphaned
 
-                var httpSpan = spans.Single(s => s.Name == "http.request");
+                var httpSpan = spans.Single(s => s.OperationName == "http.request");
 
                 httpSpan.ParentId.Should().BeNull();
 
-                var manualSpan = spans.Single(s => s.Name == "Manual");
+                var manualSpan = spans.Single(s => s.OperationName == "Manual");
 
                 manualSpan.Metrics[Metrics.SamplingPriority].Should().Be((double)SamplingPriority.UserReject);
             }
