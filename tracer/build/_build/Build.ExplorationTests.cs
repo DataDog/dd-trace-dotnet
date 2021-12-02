@@ -91,7 +91,7 @@ class ExplorationTestDescription
             {
                 GitRepositoryUrl = "https://github.com/icsharpcode/ILSpy.git",
                 Name = "ILSpy",
-                GitRepositoryTag = "v6.2.1",
+                GitRepositoryTag = "v7.1",
                 PathToUnitTestProject = "ICSharpCode.Decompiler.Tests",
                 TestsToIgnore = new[] { "ICSharpCode.Decompiler.Tests", "UseMc", "_net45", "ImplicitConversions", "ExplicitConversions", "ICSharpCode_Decompiler", "NewtonsoftJson_pcl_debug", "NRefactory_CSharp", "Random_TestCase_1" },
                 SupportedFrameworks = new[] { TargetFramework.NET461, TargetFramework.NETCOREAPP3_1 }
@@ -111,11 +111,11 @@ partial class Build
     readonly ExplorationTestName? ExplorationTestName;
 
     [Parameter("Indicates whether exploration tests should skip repository cloning. Useful for local development. Default false.")]
-    readonly bool ExplorationSkipClone;
+    readonly bool ExplorationTestSkipClone;
 
     [Parameter("Indicates whether exploration tests should run on latest repository commit. Useful if you want to update tested repositories to the latest tags. Default false.", 
                List = false)]
-    readonly bool ExplorationCloneLatest;
+    readonly bool ExplorationTestCloneLatest;
 
     Target RunExplorationTests_Debugger
         => _ => _
@@ -124,15 +124,15 @@ partial class Build
                .Requires(() => ExplorationTestName)
                .Executes(() =>
                 {
-                    PrepareExplorationEnvironment_Debugger();
+                    PrepareExplorationTestEnvironment_Debugger();
 
                     var envVariables = GetEnvVariables(ExplorationTestUseCase.Debugger);
-                    GitCloneAndRunExplorationUnitTests(envVariables);
+                    RunExplorationTestsGitCloneAndUnitTest(envVariables);
                     RunExplorationTestAssertions_Debugger();
                 })
         ;
 
-    void PrepareExplorationEnvironment_Debugger()
+    void PrepareExplorationTestEnvironment_Debugger()
     {
         Logger.Info($"Prepare environment variables for profiler.");
         //TODO TBD
@@ -150,16 +150,16 @@ partial class Build
                .After(Clean)
                .Executes(() =>
                 {
-                    PrepareExplorationEnvironment_ContinuousProfiler();
+                    PrepareExplorationTestEnvironment_ContinuousProfiler();
                     
                     var envVariables = GetEnvVariables(ExplorationTestUseCase.ContinuousProfiler);
-                    GitCloneAndRunExplorationUnitTests(envVariables);
+                    RunExplorationTestsGitCloneAndUnitTest(envVariables);
                     RunExplorationTestAssertions_ContinuousProfiler();
                 })
         ;
 
 
-    void PrepareExplorationEnvironment_ContinuousProfiler()
+    void PrepareExplorationTestEnvironment_ContinuousProfiler()
     {
         Logger.Info($"Prepare environment variables for profiler.");
         //TODO TBD
@@ -190,7 +190,7 @@ partial class Build
         return envVariables;
     }
 
-    void GitCloneAndRunExplorationUnitTests(Dictionary<string, string> envVariables)
+    void RunExplorationTestsGitCloneAndUnitTest(Dictionary<string, string> envVariables)
     {
         if (ExplorationTestName.HasValue)
         {
@@ -222,6 +222,8 @@ partial class Build
         }
 
         var projectPath = GiClone(testDescription);
+        Logger.Info($"Test project path is {projectPath}");
+
         DotNetBuild(
             x => x
                 .SetProjectFile(projectPath)
@@ -249,9 +251,9 @@ partial class Build
 
     string GiClone(ExplorationTestDescription testDescription)
     {
-        if (!ExplorationSkipClone)
+        if (!ExplorationTestSkipClone)
         {
-            var cloneCommand = ExplorationCloneLatest
+            var cloneCommand = ExplorationTestCloneLatest
                                    ? $"clone {testDescription.GitRepositoryUrl} {ExplorationTestsDirectory}/{testDescription.Name}"
                                    : $"clone -b {testDescription.GitRepositoryTag} {testDescription.GitRepositoryUrl} {ExplorationTestsDirectory}/{testDescription.Name}";
 
