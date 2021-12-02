@@ -655,7 +655,7 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
             {
                 // Abstract methods support.
                 Logger::Warn("##################### Abstract integration detected! [START]");
-                
+
                 if (assemblyMetadata == nullptr)
                 {
                     Logger::Debug("  Loading Assembly Metadata...");
@@ -697,8 +697,6 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
                         continue;
                     }
 
-                    ModuleID ancestorModuleId = moduleInfo.id;
-
                     // We check the assembly name
                     if (ancestorTypeInfo->scopeToken != mdTokenNil)
                     {
@@ -708,26 +706,65 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
                         {
                             continue;
                         }
-                        ancestorModuleId = extModule.id;
+
+                        // Loading ancestor assembly metadata (to check assembly versions)
+                        Logger::Debug("  Loading ancestor Assembly Metadata...");
+                        ComPtr<IUnknown> ancestorMetadataInterface;
+                        auto hr =
+                            m_profilerInfo->GetModuleMetaData(extModule.id, ofRead | ofWrite, IID_IMetaDataImport2,
+                                                              ancestorMetadataInterface.GetAddressOf());
+                        if (FAILED(hr))
+                        {
+                            Logger::Warn("CallTarget_RequestRejitForModule failed to get metadata interface for ",
+                                         extModule.id, " ", integration.target_method.type.assembly.name);
+                            break;
+                        }
+                        ComPtr<IMetaDataAssemblyImport> ancestorAssemblyImport =
+                            ancestorMetadataInterface.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
+                        const auto& ancestorAssemblyMetadata =
+                            std::make_unique<AssemblyMetadata>(GetAssemblyImportMetadata(assemblyImport));
+                        Logger::Debug("  Assembly Metadata loaded for: ", ancestorAssemblyMetadata->name, "(",
+                                      ancestorAssemblyMetadata->version.str(), ").");
+
+                        // Check min version
+                        if (integration.target_method.type.min_version > ancestorAssemblyMetadata->version)
+                        {
+                            continue;
+                        }
+
+                        // Check max version
+                        if (integration.target_method.type.max_version < ancestorAssemblyMetadata->version)
+                        {
+                            continue;
+                        }
                     }
-                    else if (moduleInfo.assembly.name != integration.target_method.type.assembly.name)
+                    else
                     {
-                        continue;
+                        // Check module name
+                        if (moduleInfo.assembly.name != integration.target_method.type.assembly.name)
+                        {
+                            continue;
+                        }
+
+                        // Check min version
+                        if (integration.target_method.type.min_version > assemblyMetadata->version)
+                        {
+                            continue;
+                        }
+
+                        // Check max version
+                        if (integration.target_method.type.max_version < assemblyMetadata->version)
+                        {
+                            continue;
+                        }
                     }
-
-                    // Loading ancestor assembly metadata (to check assembly versions)
-
-                    // ...
-
 
                     // Looking for the method to rewrite
-
                     // ...
 
 
 
-                    Logger::Info("[Integration]: ", ancestorTypeInfo->name, " -> [Actual Type]: ", typeInfo.name,
-                                 " -> [ModuleId]: ", ancestorModuleId);
+                    Logger::Info("[Integration]: ", ancestorTypeInfo->name, " -> [Actual Type]: ", typeInfo.name);
                 }
 
                 Logger::Warn("##################### Abstract integration detected! [END]");

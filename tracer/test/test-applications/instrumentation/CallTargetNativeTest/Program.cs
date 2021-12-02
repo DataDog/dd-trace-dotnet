@@ -158,7 +158,7 @@ namespace CallTargetNativeTest
                         break;
                     }
                 default:
-                    Console.WriteLine("Run with the profiler and use a number from 0-9/all as an argument.");
+                    Console.WriteLine("Run with the profiler and use a number from 0-9/withref/without/abstract/all as an argument.");
                     return;
             }
 
