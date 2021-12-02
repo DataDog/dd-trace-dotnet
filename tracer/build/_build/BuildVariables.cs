@@ -33,15 +33,17 @@ public static class BuildVariables
         }
     }
 
-    public static void AddExtraEnvVariables(this Dictionary<string, string> envVars, string [] extraEnvVars)
+    public static void AddExtraEnvVariables(this Dictionary<string, string> envVars, string[] extraEnvVars)
     {
-        if (extraEnvVars?.Length > 0)
+        if (extraEnvVars == null || extraEnvVars.Length == 0)
         {
-            foreach (var envVar in extraEnvVars)
-            {
-                var kvp = envVar.Split('=');
-                envVars[kvp[0]] = kvp[1];
-            }
+            return;
+        }
+
+        foreach (var envVar in extraEnvVars)
+        {
+            var kvp = envVar.Split('=');
+            envVars[kvp[0]] = kvp[1];
         }
     }
 }
