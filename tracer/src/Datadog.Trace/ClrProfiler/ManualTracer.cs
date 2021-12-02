@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 
 namespace Datadog.Trace.ClrProfiler
 {
@@ -16,6 +17,8 @@ namespace Datadog.Trace.ClrProfiler
             _parent = parent ?? throw new ArgumentNullException(nameof(parent));
             _parent.Register(this);
         }
+
+        IReadOnlyDictionary<string, string> IDistributedTracer.GetSpanContextRaw() => _parent.GetDistributedTrace();
 
         SpanContext IDistributedTracer.GetSpanContext()
         {

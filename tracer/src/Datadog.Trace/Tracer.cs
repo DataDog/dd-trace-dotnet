@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -153,7 +154,13 @@ namespace Datadog.Trace
         public IScope ActiveScope => InternalActiveScope;
 
         /// <summary>
-        /// Gets the active scope
+        /// Gets the active span context dictionary by consulting DistributedTracer.Instance
+        /// </summary>
+        internal IReadOnlyDictionary<string, string> DistributedSpanContext => DistributedTracer.Instance.GetSpanContextRaw() ?? InternalActiveScope?.Span?.Context;
+
+        /// <summary>
+        /// Gets the active scope. This will always return the latest Scope object from this tracer without
+        /// consulting DistributedTracer.Instance
         /// </summary>
         internal Scope InternalActiveScope => TracerManager.ScopeManager.Active;
 

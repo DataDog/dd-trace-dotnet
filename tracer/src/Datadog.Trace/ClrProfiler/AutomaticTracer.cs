@@ -17,6 +17,18 @@ namespace Datadog.Trace.ClrProfiler
 
         private ICommonTracer _child;
 
+        IReadOnlyDictionary<string, string> IDistributedTracer.GetSpanContextRaw()
+        {
+            if (_child is null)
+            {
+                return null;
+            }
+            else
+            {
+                return DistributedTrace.Value;
+            }
+        }
+
         SpanContext IDistributedTracer.GetSpanContext()
         {
             if (_child is null)
