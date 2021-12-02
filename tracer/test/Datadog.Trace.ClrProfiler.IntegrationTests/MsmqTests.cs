@@ -6,6 +6,7 @@
 #if NETFRAMEWORK
 using System;
 using System.Linq;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -43,6 +44,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var transactionalTraces = 0;
             var nonTransactionalTraces = 0;
 
+            using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
             using var processResult = RunSampleAndWaitForExit(agent, arguments: $"5 5");
 
@@ -107,6 +109,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             purgeCount.Should().Be(expectedPurgeCount);
             receiveCount.Should().Be(expectedReceiveCount);
             peekCount.Should().Be(expectedPeekCount);
+            telemetry.AssertIntegrationEnabled(IntegrationId.Msmq);
         }
     }
 }
