@@ -101,7 +101,7 @@ namespace Datadog.Trace.ClrProfiler
             {
                 Log.Debug("Sending CallTarget abstract integration definitions to native library.");
                 var payload = InstrumentationDefinitions.GetAbstractDefinitions();
-                NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
+                NativeMethods.AddAbstractInstrumentation(payload.DefinitionsId, payload.Definitions);
                 foreach (var def in payload.Definitions)
                 {
                     def.Dispose();

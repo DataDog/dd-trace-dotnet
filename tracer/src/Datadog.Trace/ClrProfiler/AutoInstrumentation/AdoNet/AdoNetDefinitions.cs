@@ -1,4 +1,4 @@
-﻿// <copyright file="AdoNetDefinitions.cs" company="Datadog">
+// <copyright file="AdoNetDefinitions.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -29,3 +29,27 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstant
 // Task<object> System.Data.Common.DbCommand.ExecuteScalarAsync(CancellationToken)
 [assembly: CommandExecuteScalarAsync(typeof(SystemDataClientData))]
 [assembly: CommandExecuteScalarAsync(typeof(SystemDataCommonClientData))]
+
+/********************************************************************************
+ * int .ExecuteNonQuery()
+ ********************************************************************************/
+
+// int System.Data.Common.DbCommand.ExecuteNonQuery()
+[assembly: CommandExecuteNonQuery(typeof(SystemDataClientData), Datadog.Trace.ClrProfiler.IntegrationType.Abstract)]
+[assembly: CommandExecuteNonQuery(typeof(SystemDataCommonClientData), Datadog.Trace.ClrProfiler.IntegrationType.Abstract)]
+
+/********************************************************************************
+ * object .ExecuteScalar()
+ ********************************************************************************/
+
+// object System.Data.Common.DbCommand.ExecuteScalar()
+[assembly: CommandExecuteScalar(typeof(SystemDataClientData), Datadog.Trace.ClrProfiler.IntegrationType.Abstract)]
+[assembly: CommandExecuteScalar(typeof(SystemDataCommonClientData), Datadog.Trace.ClrProfiler.IntegrationType.Abstract)]
+
+/********************************************************************************
+ * [*]DataReader [Command].ExecuteDbDataReader(CommandBehavior)
+ ********************************************************************************/
+
+// DbDataReader System.Data.Common.DbCommand.ExecuteDbDataReader(CommandBehavior)
+[assembly: CommandExecuteDbDataReaderWithBehavior(typeof(SystemDataClientData), Datadog.Trace.ClrProfiler.IntegrationType.Abstract)]
+[assembly: CommandExecuteDbDataReaderWithBehavior(typeof(SystemDataCommonClientData), Datadog.Trace.ClrProfiler.IntegrationType.Abstract)]
