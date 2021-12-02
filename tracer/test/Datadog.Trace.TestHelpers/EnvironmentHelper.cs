@@ -430,8 +430,9 @@ namespace Datadog.Trace.TestHelpers
         {
             // Strategy pattern for agent transports goes here
             var agentPort = TcpPortProvider.GetOpenPort();
-            _output.WriteLine($"Assigning port {agentPort} for the agentPort.");
-            return new MockTracerAgent(agentPort, useStatsd: useStatsD);
+            var agent = new MockTracerAgent(agentPort, useStatsd: useStatsD);
+            _output.WriteLine($"Assigned port {agent.Port} for the agentPort.");
+            return agent;
         }
     }
 }
