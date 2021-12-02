@@ -5,6 +5,7 @@
 
 #if NETFRAMEWORK
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -128,6 +129,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
             // aspnet.request + aspnet-mvc.request
             const int expectedSpans = 2;
 
+            var testStart = DateTime.UtcNow;
             using var client = new HttpClient();
 
             var response = await client.GetAsync($"http://localhost:{_iisFixture.HttpPort}/home/parentScope");
@@ -135,7 +137,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
 
             response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK, $"server returned an error: {content}");
 
-            var spans = _iisFixture.Agent.WaitForSpans(expectedSpans, returnAllOperations: true);
+            var spans = _iisFixture.Agent.WaitForSpans(expectedSpans, minDateTime: testStart, returnAllOperations: true);
 
             spans.Should().HaveCount(expectedSpans);
 
@@ -147,13 +149,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
 
             rootSpan.Metrics.Should().Contain(new KeyValuePair<string, double>(Metrics.SamplingPriority, (double)SamplingPriority.UserKeep));
 
-            var result = JObject.Parse(content)["Instance"];
+            var result = JObject.Parse(content);
 
             result.Should().NotBeNull();
 
             result["OperationName"].Value<string>().Should().Be(mvcSpan.Name);
             result["ResourceName"].Value<string>().Should().Be(mvcSpan.Resource);
-            result["Type"].Value<string>().Should().Be(mvcSpan.Type);
             result["ServiceName"].Value<string>().Should().Be(mvcSpan.Service);
         }
 
