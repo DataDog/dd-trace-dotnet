@@ -99,7 +99,7 @@ partial class Build
             envVars["COR_PROFILER_PATH_32"] = TracerHomeDirectory / "win-x86" / "Datadog.Trace.ClrProfiler.Native.dll";
             envVars["DD_DOTNET_TRACER_HOME"] = TracerHomeDirectory;
 
-            AddExtraEnvVariables(envVars);
+            envVars.AddExtraEnvVariables(ExtraEnvVars);
 
             Logger.Info($"Running sample '{SampleName}' in IIS Express");
             IisExpress.Value(
@@ -113,10 +113,9 @@ partial class Build
         .Requires(() => Framework)
         .Executes(() => {
 
-            var envVars = GetProfilerEnvironmentVariables(TracerHomeDirectory);
-            envVars.Add("ASPNETCORE_URLS", "http://*:5003");
-
-            AddExtraEnvVariables(envVars);
+            var envVars = new Dictionary<string, string> { { "ASPNETCORE_URLS", "http://*:5003" } };
+            envVars.AddProfilerEnvironmentVariables(TracerHomeDirectory);
+            envVars.AddExtraEnvVariables(ExtraEnvVars);
 
             string project = Solution.GetProject(SampleName)?.Path;
             if (project is not null)

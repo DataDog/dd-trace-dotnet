@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Nuke.Common;
@@ -90,7 +91,7 @@ class ExplorationTestDescription
             {
                 GitRepositoryUrl = "https://github.com/icsharpcode/ILSpy.git",
                 Name = "ILSpy",
-                GitRepositoryTag = "6.2.1",
+                GitRepositoryTag = "v6.2.1",
                 PathToUnitTestProject = "ICSharpCode.Decompiler.Tests",
                 TestsToIgnore = new[] { "ICSharpCode.Decompiler.Tests", "UseMc", "_net45", "ImplicitConversions", "ExplicitConversions", "ICSharpCode_Decompiler", "NewtonsoftJson_pcl_debug", "NRefactory_CSharp", "Random_TestCase_1" },
                 SupportedFrameworks = new[] { TargetFramework.NET461, TargetFramework.NETCOREAPP3_1 }
@@ -215,14 +216,21 @@ partial class Build
                    .WithMemoryDumpAfter(1)
                     ;
 
-                var envVariables = monitoringType switch
+                var envVariables = new Dictionary<string, string>();
+                switch (monitoringType)
                 {
-                    MonitoringType.Debugger => GetDebuggerEnvironmentVariables(TracerHomeDirectory),
-                    MonitoringType.Profiler => GetProfilerEnvironmentVariables(TracerHomeDirectory),
-                    _ => throw new ArgumentOutOfRangeException(nameof(monitoringType), monitoringType, null)
-                };
+                    case MonitoringType.Debugger:
+                        envVariables.AddDebuggerEnvironmentVariables(TracerHomeDirectory);
+                        break;
+                    case MonitoringType.Profiler:
+                        envVariables.AddProfilerEnvironmentVariables(TracerHomeDirectory);
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(monitoringType), monitoringType, null);
+                }
 
-                AddExtraEnvVariables(envVariables);
+                envVariables.AddExtraEnvVariables(ExtraEnvVars);
+
                 x = x.SetProcessEnvironmentVariables(envVariables);
 
                 return x;
