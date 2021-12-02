@@ -68,8 +68,6 @@ namespace Datadog.Trace.TestHelpers
                           : string.Empty;
         }
 
-        public int AgentPort { get; private set; }
-
         public bool DebugModeEnabled { get; set; }
 
         public Dictionary<string, string> CustomEnvironmentVariables { get; set; } = new Dictionary<string, string>();
@@ -455,9 +453,9 @@ namespace Datadog.Trace.TestHelpers
 
         public MockTracerAgent GetMockAgent(bool useStatsD = false)
         {
-            AgentPort = TcpPortProvider.GetOpenPort();
-            _output.WriteLine($"Assigning port {AgentPort} for the agentPort.");
-            return new MockTracerAgent(AgentPort, useStatsd: useStatsD);
+            var agentPort = TcpPortProvider.GetOpenPort();
+            _output.WriteLine($"Assigning port {agentPort} for the agentPort.");
+            return new MockTracerAgent(agentPort, useStatsd: useStatsD);
         }
     }
 }
