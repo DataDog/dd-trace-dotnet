@@ -9,7 +9,7 @@ using Nuke.Common.Tooling;
 using Nuke.Common.Tools.Git;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
-public enum MonitoringType
+public enum ExplorationTestUseCase
 {
     Debugger, ContinuousProfiler
 }
@@ -124,13 +124,15 @@ partial class Build
                .Requires(() => ExplorationTestName)
                .Executes(() =>
                 {
-                    PrepareMonitoringEnvironment_Debugger();
-                    GitCloneAndRunUnitTests(MonitoringType.Debugger);
+                    PrepareExplorationEnvironment_Debugger();
+
+                    var envVariables = GetEnvVariables(ExplorationTestUseCase.Debugger);
+                    GitCloneAndRunExplorationUnitTests(envVariables);
                     RunExplorationTestAssertions_Debugger();
                 })
         ;
 
-    void PrepareMonitoringEnvironment_Debugger()
+    void PrepareExplorationEnvironment_Debugger()
     {
         Logger.Info($"Prepare environment variables for profiler.");
         //TODO TBD
@@ -142,37 +144,61 @@ partial class Build
         //TODO TBD
     }
 
-    Target RunExplorationTests_Profiler
+    Target RunExplorationTests_ContinuousProfiler
         => _ => _
                .Description("Run exploration tests for profiler.")
                .After(Clean)
                .Executes(() =>
                 {
-                    PrepareMonitoringEnvironment_Profiler();
-                    GitCloneAndRunUnitTests(MonitoringType.ContinuousProfiler);
-                    RunExplorationTestAssertions_Profiler();
+                    PrepareExplorationEnvironment_ContinuousProfiler();
+                    
+                    var envVariables = GetEnvVariables(ExplorationTestUseCase.ContinuousProfiler);
+                    GitCloneAndRunExplorationUnitTests(envVariables);
+                    RunExplorationTestAssertions_ContinuousProfiler();
                 })
         ;
 
 
-    void PrepareMonitoringEnvironment_Profiler()
+    void PrepareExplorationEnvironment_ContinuousProfiler()
     {
         Logger.Info($"Prepare environment variables for profiler.");
         //TODO TBD
     }
 
-    void RunExplorationTestAssertions_Profiler()
+    void RunExplorationTestAssertions_ContinuousProfiler()
     {
         Logger.Info($"Running assertions tests for profiler.");
         //TODO TBD
     }
 
-    void GitCloneAndRunUnitTests(MonitoringType monitoringType)
+    Dictionary<string, string> GetEnvVariables(ExplorationTestUseCase usecase)
+    {
+        var envVariables = new Dictionary<string, string>();
+        switch (usecase)
+        {
+            case ExplorationTestUseCase.Debugger:
+                envVariables.AddDebuggerEnvironmentVariables(TracerHomeDirectory);
+                break;
+            case ExplorationTestUseCase.ContinuousProfiler:
+                envVariables.AddContinuousProfilerEnvironmentVariables(TracerHomeDirectory);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(usecase), usecase, null);
+        }
+
+        envVariables.AddExtraEnvVariables(ExtraEnvVars);
+        return envVariables;
+    }
+
+    void GitCloneAndRunExplorationUnitTests(Dictionary<string, string> envVariables)
     {
         if (ExplorationTestName.HasValue)
         {
             Logger.Info($"Provided exploration test name is {ExplorationTestName}.");
-            GitCloneAndRunUnitTest(ExplorationTestDescription.GetExplorationTestDescription(ExplorationTestName.Value), monitoringType);
+            
+            var testDescription = ExplorationTestDescription.GetExplorationTestDescription(ExplorationTestName.Value);
+
+            GitCloneAndRunUnitTest(testDescription, envVariables);
         }
         else
         {
@@ -180,12 +206,12 @@ partial class Build
 
             foreach (var testDescription in ExplorationTestDescription.GetAllExplorationTestDescriptions())
             {
-                GitCloneAndRunUnitTest(testDescription, monitoringType);
+                GitCloneAndRunUnitTest(testDescription, envVariables);
             }
         }
     }
 
-    void GitCloneAndRunUnitTest(ExplorationTestDescription testDescription, MonitoringType monitoringType)
+    void GitCloneAndRunUnitTest(ExplorationTestDescription testDescription, Dictionary<string, string> envVariables)
     {
         Logger.Info($"Running exploration test {testDescription.Name}.");
 
@@ -212,26 +238,10 @@ partial class Build
                    .EnableNoBuild()
                    .SetConfiguration(BuildConfiguration)
                    .When(Framework != null, settings => settings.SetFramework(Framework))
+                   .SetProcessEnvironmentVariables(envVariables)
                    .SetIgnoreFilter(testDescription.TestsToIgnore)
                    .WithMemoryDumpAfter(1)
                     ;
-
-                var envVariables = new Dictionary<string, string>();
-                switch (monitoringType)
-                {
-                    case MonitoringType.Debugger:
-                        envVariables.AddDebuggerEnvironmentVariables(TracerHomeDirectory);
-                        break;
-                    case MonitoringType.ContinuousProfiler:
-                        envVariables.AddContinuousProfilerEnvironmentVariables(TracerHomeDirectory);
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException(nameof(monitoringType), monitoringType, null);
-                }
-
-                envVariables.AddExtraEnvVariables(ExtraEnvVars);
-
-                x = x.SetProcessEnvironmentVariables(envVariables);
 
                 return x;
             });

@@ -856,11 +856,11 @@ stages:
     steps:
       - bash: |
           matrix="{"
-          for monitoringType in "debugger" "profiler"; do
+          for explorationTestUseCase in "debugger" "continuousProfiler"; do
             for explorationTestName in "eshoponweb" "protobuf" "cake" "swashbuckle" "paket" "ilspy"; do
-              name="${monitoringType//./_}_${explorationTestName}"
+              name="${explorationTestUseCase//./_}_${explorationTestName}"
               matrix="${matrix} '${name}':"
-              matrix="${matrix} { 'monitoringType': '${monitoringType}', "
+              matrix="${matrix} { 'explorationTestUseCase': '${explorationTestUseCase}', "
               matrix="${matrix} 'explorationTestName': '${explorationTestName}' },"
             done
           done
@@ -883,7 +883,7 @@ stages:
         includeX86: true
     - template: steps/restore-working-directory.yml
 
-    - script: tracer\build.cmd RunExplorationTests_$(monitoringType) -ExplorationTestName $(explorationTestName)
+    - script: tracer\build.cmd RunExplorationTests_$(explorationTestUseCase) -ExplorationTestName $(explorationTestName)
       displayName: BuildWindowsIntegrationTests
 
     - task: PublishTestResults@2
@@ -895,7 +895,7 @@ stages:
 
     - publish: tracer/build_data
       displayName: Uploading exploration_tests_windows tracer logs
-      artifact: exploration_tests_windows_tracer_logs_$(monitoringType)_$(explorationTestName)
+      artifact: exploration_tests_windows_tracer_logs_$(explorationTestUseCase)_$(explorationTestName)
       condition: succeededOrFailed()
       continueOnError: true
 
