@@ -40,7 +40,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 return (IMessagePackFormatter<T>)(IMessagePackFormatter<Span[]>)_arrayFormatter;
             }
 
-            throw new InvalidOperationException($"Type not supported by {nameof(SpanFormatterResolver)}: {typeof(T).Name}");
+            return null;
         }
     }
 }
