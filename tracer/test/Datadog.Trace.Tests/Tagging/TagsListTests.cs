@@ -127,10 +127,12 @@ namespace Datadog.Trace.Tests.Tagging
 
             var buffer = new byte[0];
 
+            // use vendored MessagePack to serialize
             var resolver = new FormatterResolverWrapper(SpanFormatterResolver.Instance);
-            MessagePackSerializer.Serialize(ref buffer, 0, span, resolver);
+            Vendors.MessagePack.MessagePackSerializer.Serialize(ref buffer, 0, span, resolver);
 
-            var deserializedSpan = MessagePack.MessagePackSerializer.Deserialize<FakeSpan>(buffer);
+            // use nuget MessagePack to deserialize
+            var deserializedSpan = global::MessagePack.MessagePackSerializer.Deserialize<FakeSpan>(buffer);
 
             // For top-level spans, there is one tag added during serialization
             Assert.Equal(topLevelSpan ? 17 : 16, deserializedSpan.Tags.Count);
@@ -220,43 +222,43 @@ namespace Datadog.Trace.Tests.Tagging
             }
         }
 
-        [MessagePack.MessagePackObject]
+        [global::MessagePack.MessagePackObject]
         public struct FakeSpan
         {
-            [MessagePack.Key("trace_id")]
+            [global::MessagePack.Key("trace_id")]
             public ulong TraceId { get; set; }
 
-            [MessagePack.Key("span_id")]
+            [global::MessagePack.Key("span_id")]
             public ulong SpanId { get; set; }
 
-            [MessagePack.Key("name")]
+            [global::MessagePack.Key("name")]
             public string Name { get; set; }
 
-            [MessagePack.Key("resource")]
+            [global::MessagePack.Key("resource")]
             public string Resource { get; set; }
 
-            [MessagePack.Key("service")]
+            [global::MessagePack.Key("service")]
             public string Service { get; set; }
 
-            [MessagePack.Key("type")]
+            [global::MessagePack.Key("type")]
             public string Type { get; set; }
 
-            [MessagePack.Key("start")]
+            [global::MessagePack.Key("start")]
             public long Start { get; set; }
 
-            [MessagePack.Key("duration")]
+            [global::MessagePack.Key("duration")]
             public long Duration { get; set; }
 
-            [MessagePack.Key("parent_id")]
+            [global::MessagePack.Key("parent_id")]
             public ulong? ParentId { get; set; }
 
-            [MessagePack.Key("error")]
+            [global::MessagePack.Key("error")]
             public byte Error { get; set; }
 
-            [MessagePack.Key("meta")]
+            [global::MessagePack.Key("meta")]
             public Dictionary<string, string> Tags { get; set; }
 
-            [MessagePack.Key("metrics")]
+            [global::MessagePack.Key("metrics")]
             public Dictionary<string, double> Metrics { get; set; }
         }
     }
