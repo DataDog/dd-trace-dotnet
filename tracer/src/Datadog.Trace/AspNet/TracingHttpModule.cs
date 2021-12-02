@@ -102,7 +102,7 @@ namespace Datadog.Trace.AspNet
                 SpanContext propagatedContext = null;
                 var tagsFromHeaders = Enumerable.Empty<KeyValuePair<string, string>>();
 
-                if (tracer.ActiveScope == null)
+                if (tracer.InternalActiveScope == null)
                 {
                     try
                     {
@@ -122,7 +122,7 @@ namespace Datadog.Trace.AspNet
                 string url = httpRequest.RawUrl.ToLowerInvariant();
 
                 var tags = new WebTags();
-                scope = tracer.StartActiveWithTags(_requestOperationName, propagatedContext, tags: tags);
+                scope = tracer.StartActiveInternal(_requestOperationName, propagatedContext, tags: tags);
                 // Leave resourceName blank for now - we'll update it in OnEndRequest
                 scope.Span.DecorateWebServerSpan(resourceName: null, httpMethod, host, url, tags, tagsFromHeaders);
 

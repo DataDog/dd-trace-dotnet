@@ -27,6 +27,7 @@ namespace TraceContext.InvalidOperationException
                 ddTraceSettings.TraceEnabled = true;
                 Tracer.Configure(ddTraceSettings);
                 var tracer = Tracer.Instance;
+                var internalTracer = Datadog.Trace.DuckTyping.DuckType.Create<IInternalTracer>(tracer);
 
                 var totalIterations = 400_000;
                 var threadRepresentation = Enumerable.Range(0, 5).ToArray();
@@ -46,7 +47,7 @@ namespace TraceContext.InvalidOperationException
                                 {
                                     try
                                     {
-                                        Span firstSpan;
+                                        ISpan firstSpan;
                                         using (var outerScope = tracer.StartActive("outer-span"))
                                         {
                                             // Save the span so we can later re-use its TraceContext
@@ -74,7 +75,7 @@ namespace TraceContext.InvalidOperationException
                                         // Now that the entire set of spans has been closed and queued
                                         // to be written to the agent, re-open that same TraceContext
                                         // Repeat the operation to trigger the exception
-                                        using (var outerScope = tracer.ActivateSpan(firstSpan))
+                                        using (var outerScope = internalTracer.ActivateSpan((Span)firstSpan))
                                         {
                                             // Initialize scopes/spans to aggressively open
                                             var threadScopes = new Stack<IDisposable>();
@@ -145,6 +146,11 @@ namespace TraceContext.InvalidOperationException
         {
             Success = 0,
             UnknownError = -10
+        }
+
+        interface IInternalTracer
+        {
+            Scope ActivateSpan(Span span, bool finishOnClose = true);
         }
     }
 }

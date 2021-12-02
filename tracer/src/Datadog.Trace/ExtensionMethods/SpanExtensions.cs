@@ -9,40 +9,23 @@ using System.Data;
 using System.Data.Common;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Headers;
-using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.ExtensionMethods
 {
     /// <summary>
-    /// Extension methods for the <see cref="Span"/> class.
+    /// Extension methods for the <see cref="ISpan"/> class.
     /// </summary>
     public static class SpanExtensions
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanExtensions));
-
-        /// <summary>
-        /// Sets the sampling priority for the trace that contains the specified <see cref="Span"/>.
-        /// </summary>
-        /// <param name="span">A span that belongs to the trace.</param>
-        /// <param name="samplingPriority">The new sampling priority for the trace.</param>
-        public static void SetTraceSamplingPriority(this Span span, SamplingPriority samplingPriority)
-        {
-            if (span == null) { throw new ArgumentNullException(nameof(span)); }
-
-            if (span.Context.TraceContext != null)
-            {
-                span.Context.TraceContext.SamplingPriority = samplingPriority;
-            }
-        }
-
         /// <summary>
         /// Adds standard tags to a span with values taken from the specified <see cref="DbCommand"/>.
         /// </summary>
         /// <param name="span">The span to add the tags to.</param>
         /// <param name="command">The db command to get tags values from.</param>
-        public static void AddTagsFromDbCommand(this Span span, IDbCommand command)
+        public static void AddTagsFromDbCommand(this ISpan span, IDbCommand command)
         {
             span.ResourceName = command.CommandText;
             span.Type = SpanTypes.Sql;
@@ -55,8 +38,23 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
+        /// <summary>
+        /// Sets the sampling priority for the trace that contains the specified <see cref="ISpan"/>.
+        /// </summary>
+        /// <param name="span">A span that belongs to the trace.</param>
+        /// <param name="samplingPriority">The new sampling priority for the trace.</param>
+        public static void SetTraceSamplingPriority(this ISpan span, SamplingPriority samplingPriority)
+        {
+            if (span == null) { throw new ArgumentNullException(nameof(span)); }
+
+            if (span.Context is SpanContext spanContext && spanContext.TraceContext != null)
+            {
+                spanContext.TraceContext.SamplingPriority = samplingPriority;
+            }
+        }
+
         internal static void DecorateWebServerSpan(
-            this Span span,
+            this ISpan span,
             string resourceName,
             string method,
             string host,
@@ -67,9 +65,12 @@ namespace Datadog.Trace.ExtensionMethods
             span.Type = SpanTypes.Web;
             span.ResourceName = resourceName?.Trim();
 
-            tags.HttpMethod = method;
-            tags.HttpRequestHeadersHost = host;
-            tags.HttpUrl = httpUrl;
+            if (tags is not null)
+            {
+                tags.HttpMethod = method;
+                tags.HttpRequestHeadersHost = host;
+                tags.HttpUrl = httpUrl;
+            }
 
             foreach (KeyValuePair<string, string> kvp in tagsFromHeaders)
             {
@@ -77,7 +78,7 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
-        internal static void SetHeaderTags<T>(this Span span, T headers, IReadOnlyDictionary<string, string> headerTags, string defaultTagPrefix)
+        internal static void SetHeaderTags<T>(this ISpan span, T headers, IReadOnlyDictionary<string, string> headerTags, string defaultTagPrefix)
             where T : IHeadersCollection
         {
             if (headerTags is not null && !headerTags.IsEmpty())

@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         public static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
         {
-            var scope = Tracer.Instance.ActiveScope;
+            var scope = Tracer.Instance.InternalActiveScope;
             scope.DisposeWithException(exception);
             return new CallTargetReturn<TReturn>(returnValue);
         }

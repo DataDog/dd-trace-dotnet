@@ -149,11 +149,11 @@ namespace Datadog.Trace.Tests
         {
             var spans = new List<(Scope Scope, bool IsTopLevel)>();
 
-            spans.Add((_tracer.StartActive("Root", serviceName: "root"), true));
-            spans.Add((_tracer.StartActive("Child1", serviceName: "root"), false));
-            spans.Add((_tracer.StartActive("Child2", serviceName: "child"), true));
-            spans.Add((_tracer.StartActive("Child3", serviceName: "child"), false));
-            spans.Add((_tracer.StartActive("Child4", serviceName: "root"), true));
+            spans.Add(((Scope)_tracer.StartActive("Root", serviceName: "root"), true));
+            spans.Add(((Scope)_tracer.StartActive("Child1", serviceName: "root"), false));
+            spans.Add(((Scope)_tracer.StartActive("Child2", serviceName: "child"), true));
+            spans.Add(((Scope)_tracer.StartActive("Child3", serviceName: "child"), false));
+            spans.Add(((Scope)_tracer.StartActive("Child4", serviceName: "root"), true));
 
             foreach (var (scope, expectedResult) in spans)
             {
@@ -175,11 +175,12 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void SpanIds_SingleScopeIsRoot()
         {
-            Scope scope = _tracer.StartActive("Operation Galactic Storm");
+            Scope scope = (Scope)_tracer.StartActive("Operation Galactic Storm");
+            var span = scope.Span;
             using (scope)
             {
-                scope.Span.SpanId.Should().NotBe(0);
-                scope.Span.RootSpanId.Should().Be(scope.Span.SpanId);
+                span.SpanId.Should().NotBe(0);
+                span.RootSpanId.Should().Be(scope.Span.SpanId);
             }
         }
 
@@ -188,7 +189,7 @@ namespace Datadog.Trace.Tests
         {
             const ulong remoteParentSpanId = 1234567890123456789;
             SpanContext remoteParentSpanCtx = new SpanContext(traceId: null, spanId: remoteParentSpanId);
-            Span span = _tracer.StartSpan(operationName: "Operation Galactic Storm", parent: remoteParentSpanCtx);
+            var span = _tracer.StartSpan(operationName: "Operation Galactic Storm", parent: remoteParentSpanCtx);
             using (span)
             {
                 span.SpanId.Should().NotBe(0);
@@ -202,12 +203,13 @@ namespace Datadog.Trace.Tests
         {
             const ulong remoteParentSpanId = 1234567890123456789;
             SpanContext remoteParentSpanCtx = new SpanContext(traceId: null, spanId: remoteParentSpanId);
-            Scope scope = _tracer.StartActive(operationName: "Operation Galactic Storm", parent: remoteParentSpanCtx);
+            Scope scope = (Scope)_tracer.StartActive(operationName: "Operation Galactic Storm", parent: remoteParentSpanCtx);
+            var span = scope.Span;
             using (scope)
             {
-                scope.Span.SpanId.Should().NotBe(0);
-                scope.Span.SpanId.Should().NotBe(remoteParentSpanId);           // There is an expected 1 in 2^64 chance of this line failing
-                scope.Span.RootSpanId.Should().Be(scope.Span.SpanId);
+                span.SpanId.Should().NotBe(0);
+                span.SpanId.Should().NotBe(remoteParentSpanId);           // There is an expected 1 in 2^64 chance of this line failing
+                span.RootSpanId.Should().Be(scope.Span.SpanId);
             }
         }
 
@@ -238,17 +240,21 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void SpanIds_RootOfScopeHierarchy()
         {
-            using (Scope scope1 = _tracer.StartActive(operationName: "Operation Root"))
-            using (Scope scope2 = _tracer.StartActive(operationName: "Operation Middle"))
-            using (Scope scope3 = _tracer.StartActive(operationName: "Operation Leaf"))
+            using (Scope scope1 = (Scope)_tracer.StartActive(operationName: "Operation Root"))
+            using (Scope scope2 = (Scope)_tracer.StartActive(operationName: "Operation Middle"))
+            using (Scope scope3 = (Scope)_tracer.StartActive(operationName: "Operation Leaf"))
             {
                 scope1.Span.SpanId.Should().NotBe(0);
                 scope2.Span.SpanId.Should().NotBe(0);
                 scope3.Span.SpanId.Should().NotBe(0);
 
-                scope1.Span.RootSpanId.Should().Be(scope1.Span.SpanId);
-                scope2.Span.RootSpanId.Should().Be(scope1.Span.SpanId);
-                scope3.Span.RootSpanId.Should().Be(scope1.Span.SpanId);
+                var span1 = scope1.Span;
+                var span2 = scope2.Span;
+                var span3 = scope3.Span;
+
+                span1.RootSpanId.Should().Be(scope1.Span.SpanId);
+                span2.RootSpanId.Should().Be(scope1.Span.SpanId);
+                span3.RootSpanId.Should().Be(scope1.Span.SpanId);
             }
         }
 
@@ -258,29 +264,32 @@ namespace Datadog.Trace.Tests
             const ulong remoteParentSpanId = 1234567890123456789;
             SpanContext remoteParentSpanCtx = new SpanContext(traceId: null, spanId: remoteParentSpanId);
 
-            using (Scope scope1 = _tracer.StartActive(operationName: "Operation Root", parent: remoteParentSpanCtx))
+            using (Scope scope1 = (Scope)_tracer.StartActive(operationName: "Operation Root", parent: remoteParentSpanCtx))
             using (Span span2 = _tracer.StartSpan(operationName: "Operation Middle 1"))
-            using (Scope scope3 = _tracer.StartActive(operationName: "Operation Middle 2"))
+            using (Scope scope3 = (Scope)_tracer.StartActive(operationName: "Operation Middle 2"))
             using (Span span4 = _tracer.StartSpan(operationName: "Operation Leaf"))
             {
-                scope1.Span.SpanId.Should().NotBe(0);
+                var span1 = scope1.Span;
+                var span3 = scope3.Span;
+
+                span1.SpanId.Should().NotBe(0);
                 span2.SpanId.Should().NotBe(0);
-                scope3.Span.SpanId.Should().NotBe(0);
+                span3.SpanId.Should().NotBe(0);
                 span4.SpanId.Should().NotBe(0);
 
-                scope1.Span.SpanId.Should().NotBe(remoteParentSpanId);          // There is an expected 1 in 2^64 chance of this line failing
+                span1.SpanId.Should().NotBe(remoteParentSpanId);          // There is an expected 1 in 2^64 chance of this line failing
                 span2.SpanId.Should().NotBe(remoteParentSpanId);                // There is an expected 1 in 2^64 chance of this line failing
-                scope3.Span.SpanId.Should().NotBe(remoteParentSpanId);          // There is an expected 1 in 2^64 chance of this line failing
+                span3.SpanId.Should().NotBe(remoteParentSpanId);          // There is an expected 1 in 2^64 chance of this line failing
                 span4.SpanId.Should().NotBe(remoteParentSpanId);                // There is an expected 1 in 2^64 chance of this line failing
 
-                scope1.Span.Context.ParentId.Should().Be(remoteParentSpanId);   // Parent (not root) of S1 is remote
+                span1.Context.ParentId.Should().Be(remoteParentSpanId);   // Parent (not root) of S1 is remote
                 span2.Context.ParentId.Should().Be(scope1.Span.SpanId);         // Parent of S2 is S1: it was created in an active S1-scope
-                scope3.Span.Context.ParentId.Should().Be(scope1.Span.SpanId);   // Parent of S3 is also S1: it was created in an active S1 scope, S2 is not a scope
+                span3.Context.ParentId.Should().Be(scope1.Span.SpanId);   // Parent of S3 is also S1: it was created in an active S1 scope, S2 is not a scope
                 span4.Context.ParentId.Should().Be(scope3.Span.SpanId);         // Parent of S4 is S3: it was created in an active S3-scope
 
-                scope1.Span.RootSpanId.Should().Be(scope1.Span.SpanId);
+                span1.RootSpanId.Should().Be(scope1.Span.SpanId);
                 span2.RootSpanId.Should().Be(scope1.Span.SpanId);
-                scope3.Span.RootSpanId.Should().Be(scope1.Span.SpanId);
+                span3.RootSpanId.Should().Be(scope1.Span.SpanId);
                 span4.RootSpanId.Should().Be(scope1.Span.SpanId);
             }
         }

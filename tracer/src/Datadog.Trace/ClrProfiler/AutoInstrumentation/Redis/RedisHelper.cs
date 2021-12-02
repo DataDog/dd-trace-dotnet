@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
             {
                 var tags = new RedisTags();
 
-                scope = tracer.StartActiveWithTags(OperationName, serviceName: serviceName, tags: tags);
+                scope = tracer.StartActiveInternal(OperationName, serviceName: serviceName, tags: tags);
                 int separatorIndex = rawCommand.IndexOf(' ');
                 string command;
 

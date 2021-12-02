@@ -71,7 +71,7 @@ namespace Datadog.Trace.PlatformHelpers
             return null;
         }
 
-        private IEnumerable<KeyValuePair<string, string>> ExtractHeaderTags(HttpRequest request, IDatadogTracer tracer)
+        private IEnumerable<KeyValuePair<string, string>> ExtractHeaderTags(HttpRequest request, Tracer tracer)
         {
             var settings = tracer.Settings;
 
@@ -119,7 +119,7 @@ namespace Datadog.Trace.PlatformHelpers
                 tags = new AspNetCoreTags();
             }
 
-            var scope = tracer.StartActiveWithTags(_requestInOperationName, propagatedContext, tags: tags);
+            var scope = tracer.StartActiveInternal(_requestInOperationName, propagatedContext, tags: tags);
 
             scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, tags, tagsFromHeaders);
 

@@ -1,4 +1,4 @@
-﻿// <copyright file="KafkaProduceSyncDeliveryHandlerIntegration.cs" company="Datadog">
+// <copyright file="KafkaProduceSyncDeliveryHandlerIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 // The current span should be started in KafkaProduceSyncIntegration.OnMethodBegin
                 // The OnMethodBegin and OnMethodEnd of this integration happens between KafkaProduceSyncIntegration.OnMethodBegin
                 // and KafkaProduceSyncIntegration.OnMethodEnd, so the consumer span is active for the duration of this integration
-                var activeScope = Tracer.Instance?.ActiveScope;
+                var activeScope = Tracer.Instance?.InternalActiveScope;
                 var span = activeScope?.Span;
                 if (span is null)
                 {

@@ -159,7 +159,7 @@ namespace Datadog.Trace.Tests.Logging
             Assert.Empty(noSpanLog.Properties);
         }
 
-        internal static void LogEventContains(Serilog.Events.LogEvent logEvent, string service, string version, string env, Scope scope)
+        internal static void LogEventContains(Serilog.Events.LogEvent logEvent, string service, string version, string env, IScope scope)
         {
             Contains(logEvent, service, version, env, scope.Span.TraceId, scope.Span.SpanId);
         }

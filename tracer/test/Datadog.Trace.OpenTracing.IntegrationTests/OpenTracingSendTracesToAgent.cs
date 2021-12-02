@@ -101,7 +101,7 @@ namespace Datadog.Trace.OpenTracing.IntegrationTests
 
         private static void CompareSpans(MockTracerAgent.Span receivedSpan, OpenTracingSpan openTracingSpan)
         {
-            var span = openTracingSpan.DDSpan;
+            var span = (Span)openTracingSpan.Span;
             receivedSpan.Should().BeEquivalentTo(new
             {
                 TraceId = span.TraceId,

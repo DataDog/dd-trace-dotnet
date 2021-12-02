@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
             {
                 var tags = new AerospikeTags();
                 var serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
-                scope = tracer.StartActiveWithTags(OperationName, tags: tags, serviceName: serviceName);
+                scope = tracer.StartActiveInternal(OperationName, tags: tags, serviceName: serviceName);
                 var span = scope.Span;
 
                 if (target.TryDuckCast<HasKey>(out var hasKey))

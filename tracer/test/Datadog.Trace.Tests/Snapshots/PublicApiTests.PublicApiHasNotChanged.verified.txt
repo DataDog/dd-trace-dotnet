@@ -243,11 +243,38 @@ namespace Datadog.Trace
         public const string TraceId = "x-datadog-trace-id";
         public const string TracingEnabled = "x-datadog-tracing-enabled";
     }
+    public interface IScope : System.IDisposable
+    {
+        Datadog.Trace.ISpan Span { get; }
+        void Close();
+    }
+    public interface ISpan : System.IDisposable
+    {
+        Datadog.Trace.ISpanContext Context { get; }
+        bool Error { get; set; }
+        string OperationName { get; set; }
+        string ResourceName { get; set; }
+        string ServiceName { get; set; }
+        ulong SpanId { get; }
+        ulong TraceId { get; }
+        string Type { get; set; }
+        void Finish();
+        void Finish(System.DateTimeOffset finishTimestamp);
+        string GetTag(string key);
+        void SetException(System.Exception exception);
+        Datadog.Trace.ISpan SetTag(string key, string value);
+    }
     public interface ISpanContext
     {
         string ServiceName { get; }
         ulong SpanId { get; }
         ulong TraceId { get; }
+    }
+    public interface ITracer
+    {
+        Datadog.Trace.IScope ActiveScope { get; }
+        Datadog.Trace.Configuration.ImmutableTracerSettings Settings { get; }
+        Datadog.Trace.IScope StartActive(string operationName, Datadog.Trace.ISpanContext parent = null, string serviceName = null, System.DateTimeOffset? startTime = default, bool ignoreActiveScope = false, bool finishOnClose = true);
     }
     public enum SamplingPriority
     {
@@ -256,27 +283,13 @@ namespace Datadog.Trace
         AutoKeep = 1,
         UserKeep = 2,
     }
-    public class Scope : System.IDisposable
+    public class Scope : Datadog.Trace.IScope, System.IDisposable
     {
-        public Datadog.Trace.Span Span { get; }
-        public void Close() { }
         public void Dispose() { }
     }
-    public class Span : System.IDisposable
+    public class Span : Datadog.Trace.ISpan, System.IDisposable
     {
-        public bool Error { get; set; }
-        public string OperationName { get; set; }
-        public string ResourceName { get; set; }
-        public string ServiceName { get; set; }
-        public ulong SpanId { get; }
-        public ulong TraceId { get; }
-        public string Type { get; set; }
         public void Dispose() { }
-        public void Finish() { }
-        public void Finish(System.DateTimeOffset finishTimestamp) { }
-        public string GetTag(string key) { }
-        public void SetException(System.Exception exception) { }
-        public Datadog.Trace.Span SetTag(string key, string value) { }
         public override string ToString() { }
     }
     public class SpanContext : Datadog.Trace.ISpanContext, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>>, System.Collections.Generic.IReadOnlyCollection<System.Collections.Generic.KeyValuePair<string, string>>, System.Collections.Generic.IReadOnlyDictionary<string, string>, System.Collections.IEnumerable
@@ -335,23 +348,21 @@ namespace Datadog.Trace
         public const string SqlRows = "sql.rows";
         public const string Version = "version";
     }
-    public class Tracer
+    public class Tracer : Datadog.Trace.ITracer
     {
         [System.Obsolete("This API is deprecated. Use Tracer.Instance to obtain a Tracer instance to create" +
             " spans.")]
         public Tracer() { }
         [System.Obsolete(@"This API is deprecated, as it replaces the global settings for all Tracer instances in the application. If you were using this API to configure the global Tracer.Instance in code, use the static Tracer.Configure() to replace the global Tracer settings for the application")]
         public Tracer(Datadog.Trace.Configuration.TracerSettings settings) { }
-        public Datadog.Trace.Scope ActiveScope { get; }
+        public Datadog.Trace.IScope ActiveScope { get; }
         public string DefaultServiceName { get; }
         public Datadog.Trace.Configuration.ImmutableTracerSettings Settings { get; }
         [set: System.Obsolete("Use Tracer.Configure to configure the global Tracer instance in code.")]
         public static Datadog.Trace.Tracer Instance { get; set; }
-        public Datadog.Trace.Scope ActivateSpan(Datadog.Trace.Span span, bool finishOnClose = true) { }
         protected override void Finalize() { }
         public System.Threading.Tasks.Task ForceFlushAsync() { }
-        public Datadog.Trace.Scope StartActive(string operationName, Datadog.Trace.ISpanContext parent = null, string serviceName = null, System.DateTimeOffset? startTime = default, bool ignoreActiveScope = false, bool finishOnClose = true) { }
-        public Datadog.Trace.Span StartSpan(string operationName, Datadog.Trace.ISpanContext parent = null, string serviceName = null, System.DateTimeOffset? startTime = default, bool ignoreActiveScope = false) { }
+        public Datadog.Trace.IScope StartActive(string operationName, Datadog.Trace.ISpanContext parent = null, string serviceName = null, System.DateTimeOffset? startTime = default, bool ignoreActiveScope = false, bool finishOnClose = true) { }
         public static void Configure(Datadog.Trace.Configuration.TracerSettings settings) { }
     }
 }
@@ -359,8 +370,8 @@ namespace Datadog.Trace.ExtensionMethods
 {
     public static class SpanExtensions
     {
-        public static void AddTagsFromDbCommand(this Datadog.Trace.Span span, System.Data.IDbCommand command) { }
-        public static void SetTraceSamplingPriority(this Datadog.Trace.Span span, Datadog.Trace.SamplingPriority samplingPriority) { }
+        public static void AddTagsFromDbCommand(this Datadog.Trace.ISpan span, System.Data.IDbCommand command) { }
+        public static void SetTraceSamplingPriority(this Datadog.Trace.ISpan span, Datadog.Trace.SamplingPriority samplingPriority) { }
     }
 }
 namespace Datadog.Trace.Logging

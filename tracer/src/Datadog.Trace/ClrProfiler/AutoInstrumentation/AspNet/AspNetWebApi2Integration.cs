@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 SpanContext propagatedContext = null;
                 var tagsFromHeaders = Enumerable.Empty<KeyValuePair<string, string>>();
 
-                if (request != null && tracer.ActiveScope == null)
+                if (request != null && tracer.InternalActiveScope == null)
                 {
                     try
                     {
@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 }
 
                 tags = new AspNetTags();
-                scope = tracer.StartActiveWithTags(OperationName, propagatedContext, tags: tags);
+                scope = tracer.StartActiveInternal(OperationName, propagatedContext, tags: tags);
                 UpdateSpan(controllerContext, scope.Span, tags, tagsFromHeaders);
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
@@ -146,10 +146,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     tags,
                     headerTags);
 
-                tags.AspNetAction = action;
-                tags.AspNetController = controller;
-                tags.AspNetArea = area;
-                tags.AspNetRoute = route;
+                if (tags is not null)
+                {
+                    tags.AspNetAction = action;
+                    tags.AspNetController = controller;
+                    tags.AspNetArea = area;
+                    tags.AspNetRoute = route;
+                }
 
                 if (newResourceNamesEnabled)
                 {

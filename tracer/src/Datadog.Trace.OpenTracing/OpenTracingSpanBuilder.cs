@@ -46,7 +46,7 @@ namespace Datadog.Trace.OpenTracing
             return this;
         }
 
-        public ISpanBuilder AsChildOf(ISpan parent)
+        public ISpanBuilder AsChildOf(global::OpenTracing.ISpan parent)
         {
             lock (_lock)
             {
@@ -70,12 +70,12 @@ namespace Datadog.Trace.OpenTracing
             return this;
         }
 
-        public ISpan Start()
+        public global::OpenTracing.ISpan Start()
         {
             lock (_lock)
             {
                 ISpanContext parentContext = GetParentContext();
-                Span ddSpan = _tracer.DatadogTracer.StartSpan(_operationName, parentContext, _serviceName, _start, _ignoreActiveSpan);
+                ISpan ddSpan = _tracer.DatadogTracer.StartSpan(_operationName, parentContext, _serviceName, _start, _ignoreActiveSpan);
                 var otSpan = new OpenTracingSpan(ddSpan);
 
                 if (_tags != null)
@@ -90,12 +90,12 @@ namespace Datadog.Trace.OpenTracing
             }
         }
 
-        public IScope StartActive()
+        public global::OpenTracing.IScope StartActive()
         {
             return StartActive(finishSpanOnDispose: true);
         }
 
-        public IScope StartActive(bool finishSpanOnDispose)
+        public global::OpenTracing.IScope StartActive(bool finishSpanOnDispose)
         {
             var span = Start();
             return _tracer.ScopeManager.Activate(span, finishSpanOnDispose);

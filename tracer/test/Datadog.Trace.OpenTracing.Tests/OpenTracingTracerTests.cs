@@ -45,40 +45,40 @@ namespace Datadog.Trace.OpenTracing.Tests
         [Fact]
         public void BuildSpan_OneChild_ChildParentProperlySet()
         {
-            IScope root = _tracer
+            var root = _tracer
                          .BuildSpan("Root")
                          .StartActive(finishSpanOnDispose: true);
-            IScope child = _tracer
+            var child = _tracer
                           .BuildSpan("Child")
                           .StartActive(finishSpanOnDispose: true);
 
-            Span rootDatadogSpan = ((OpenTracingSpan)root.Span).Span;
-            Span childDatadogSpan = ((OpenTracingSpan)child.Span).Span;
+            Span rootDatadogSpan = (Span)((OpenTracingSpan)root.Span).Span;
+            Span childDatadogSpan = (Span)((OpenTracingSpan)child.Span).Span;
 
-            Assert.Equal(rootDatadogSpan.Context.TraceContext, (ITraceContext)childDatadogSpan.Context.TraceContext);
+            Assert.Equal(rootDatadogSpan.Context.TraceContext, childDatadogSpan.Context.TraceContext);
             Assert.Equal(rootDatadogSpan.Context.SpanId, childDatadogSpan.Context.ParentId);
         }
 
         [Fact]
         public void BuildSpan_2ChildrenOfRoot_ChildrenParentProperlySet()
         {
-            IScope root = _tracer
+            var root = _tracer
                          .BuildSpan("Root")
                          .StartActive(finishSpanOnDispose: true);
 
-            IScope child1 = _tracer
+            var child1 = _tracer
                            .BuildSpan("Child1")
                            .StartActive(finishSpanOnDispose: true);
 
             child1.Dispose();
 
-            IScope child2 = _tracer
+            var child2 = _tracer
                            .BuildSpan("Child2")
                            .StartActive(finishSpanOnDispose: true);
 
-            Span rootDatadogSpan = ((OpenTracingSpan)root.Span).Span;
-            Span child1DatadogSpan = ((OpenTracingSpan)child1.Span).Span;
-            Span child2DatadogSpan = ((OpenTracingSpan)child2.Span).Span;
+            Span rootDatadogSpan = (Span)((OpenTracingSpan)root.Span).Span;
+            Span child1DatadogSpan = (Span)((OpenTracingSpan)child1.Span).Span;
+            Span child2DatadogSpan = (Span)((OpenTracingSpan)child2.Span).Span;
 
             Assert.Same(rootDatadogSpan.Context.TraceContext, child1DatadogSpan.Context.TraceContext);
             Assert.Equal(rootDatadogSpan.Context.SpanId, child1DatadogSpan.Context.ParentId);
@@ -89,19 +89,19 @@ namespace Datadog.Trace.OpenTracing.Tests
         [Fact]
         public void BuildSpan_2LevelChildren_ChildrenParentProperlySet()
         {
-            IScope root = _tracer
+            var root = _tracer
                          .BuildSpan("Root")
                          .StartActive(finishSpanOnDispose: true);
-            IScope child1 = _tracer
+            var child1 = _tracer
                            .BuildSpan("Child1")
                            .StartActive(finishSpanOnDispose: true);
-            IScope child2 = _tracer
+            var child2 = _tracer
                            .BuildSpan("Child2")
                            .StartActive(finishSpanOnDispose: true);
 
-            Span rootDatadogSpan = ((OpenTracingSpan)root.Span).Span;
-            Span child1DatadogSpan = ((OpenTracingSpan)child1.Span).Span;
-            Span child2DatadogSpan = ((OpenTracingSpan)child2.Span).Span;
+            Span rootDatadogSpan = (Span)((OpenTracingSpan)root.Span).Span;
+            Span child1DatadogSpan = (Span)((OpenTracingSpan)child1.Span).Span;
+            Span child2DatadogSpan = (Span)((OpenTracingSpan)child2.Span).Span;
 
             Assert.Same(rootDatadogSpan.Context.TraceContext, child1DatadogSpan.Context.TraceContext);
             Assert.Equal(rootDatadogSpan.Context.SpanId, child1DatadogSpan.Context.ParentId);
@@ -114,7 +114,7 @@ namespace Datadog.Trace.OpenTracing.Tests
         {
             var tcs = new TaskCompletionSource<bool>();
 
-            IScope root = _tracer
+            var root = _tracer
                          .BuildSpan("Root")
                          .StartActive(finishSpanOnDispose: true);
 
@@ -126,18 +126,20 @@ namespace Datadog.Trace.OpenTracing.Tests
             var tasks = Enumerable.Range(0, 10).Select(x => createSpanAsync(_tracer)).ToArray();
 
             var syncChild = (OpenTracingSpan)_tracer.BuildSpan("SyncChild").Start();
+            var syncChildSpanContext = ((Span)syncChild.Span).Context;
             tcs.SetResult(true);
 
-            Span rootDatadogSpan = ((OpenTracingSpan)root.Span).Span;
+            Span rootDatadogSpan = (Span)((OpenTracingSpan)root.Span).Span;
 
-            Assert.Equal(rootDatadogSpan.Context.TraceContext, (ITraceContext)syncChild.DDSpan.Context.TraceContext);
-            Assert.Equal(rootDatadogSpan.Context.SpanId, syncChild.DDSpan.Context.ParentId);
+            Assert.Equal(rootDatadogSpan.Context.TraceContext, syncChildSpanContext.TraceContext);
+            Assert.Equal(rootDatadogSpan.Context.SpanId, syncChildSpanContext.ParentId);
 
             foreach (var task in tasks)
             {
                 var span = await task;
-                Assert.Equal(rootDatadogSpan.Context.TraceContext, (ITraceContext)span.DDSpan.Context.TraceContext);
-                Assert.Equal(rootDatadogSpan.Context.SpanId, span.DDSpan.Context.ParentId);
+                var spanContext = ((Span)syncChild.Span).Context;
+                Assert.Equal(rootDatadogSpan.Context.TraceContext, spanContext.TraceContext);
+                Assert.Equal(rootDatadogSpan.Context.SpanId, spanContext.ParentId);
             }
         }
 
@@ -233,7 +235,7 @@ namespace Datadog.Trace.OpenTracing.Tests
         [Fact]
         public void SetDefaultServiceName()
         {
-            ITracer tracer = OpenTracingTracerFactory.CreateTracer(defaultServiceName: "DefaultServiceName");
+            var tracer = OpenTracingTracerFactory.CreateTracer(defaultServiceName: "DefaultServiceName");
 
             var scope = tracer.BuildSpan("Operation")
                               .StartActive();
@@ -273,7 +275,7 @@ namespace Datadog.Trace.OpenTracing.Tests
         [Fact]
         public void OverrideDefaultServiceName_WithTag()
         {
-            ITracer tracer = OpenTracingTracerFactory.CreateTracer(defaultServiceName: "DefaultServiceName");
+            var tracer = OpenTracingTracerFactory.CreateTracer(defaultServiceName: "DefaultServiceName");
 
             var scope = tracer.BuildSpan("Operation")
                               .WithTag(DatadogTags.ServiceName, "MyAwesomeService")
@@ -288,7 +290,7 @@ namespace Datadog.Trace.OpenTracing.Tests
         [Fact]
         public void OverrideDefaultServiceName_SetTag()
         {
-            ITracer tracer = OpenTracingTracerFactory.CreateTracer(defaultServiceName: "DefaultServiceName");
+            var tracer = OpenTracingTracerFactory.CreateTracer(defaultServiceName: "DefaultServiceName");
 
             var scope = tracer.BuildSpan("Operation")
                               .StartActive();
@@ -338,7 +340,7 @@ namespace Datadog.Trace.OpenTracing.Tests
         [Fact]
         public void Parent_OverrideDefaultServiceName_WithTag()
         {
-            ITracer tracer = OpenTracingTracerFactory.CreateTracer(defaultServiceName: "DefaultServiceName");
+            var tracer = OpenTracingTracerFactory.CreateTracer(defaultServiceName: "DefaultServiceName");
 
             var parentScope = tracer.BuildSpan("ParentOperation")
                                     .WithTag(DatadogTags.ServiceName, "MyAwesomeService")
@@ -357,7 +359,7 @@ namespace Datadog.Trace.OpenTracing.Tests
         [Fact]
         public void Parent_OverrideDefaultServiceName_SetTag()
         {
-            ITracer tracer = OpenTracingTracerFactory.CreateTracer(defaultServiceName: "DefaultServiceName");
+            var tracer = OpenTracingTracerFactory.CreateTracer(defaultServiceName: "DefaultServiceName");
 
             var parentScope = tracer.BuildSpan("ParentOperation")
                                     .StartActive();

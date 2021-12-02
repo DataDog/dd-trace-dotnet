@@ -3,12 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-namespace Datadog.Trace.Tests
+using Datadog.Trace.Tests;
+
+namespace Datadog.Trace.OpenTracing.Tests
 {
     public class PublicApiTests : PublicApiTestsBase
     {
         public PublicApiTests()
-            : base(typeof(Tracer).Assembly)
+            : base(typeof(OpenTracingTracer).Assembly)
         {
         }
     }
