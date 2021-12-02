@@ -697,11 +697,13 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
                         continue;
                     }
 
-                    // We check the assembly name
+                    // Validate assembly data
                     if (ancestorTypeInfo->scopeToken != mdTokenNil)
                     {
                         // Different module (moduleRef)
                         const auto& extModule = GetModuleInfo(m_profilerInfo, ancestorTypeInfo->scopeToken);
+
+                        // We check the assembly name
                         if (extModule.assembly.name != integration.target_method.type.assembly.name)
                         {
                             continue;
