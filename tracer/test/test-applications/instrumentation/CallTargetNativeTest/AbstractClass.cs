@@ -1,3 +1,5 @@
+using System;
+
 namespace CallTargetNativeTest
 {
     internal abstract class AbstractClass
@@ -9,6 +11,11 @@ namespace CallTargetNativeTest
     {
         public override void VoidMethod(string name)
         {
+        }
+
+        public void OtherMethod()
+        {
+            Console.WriteLine("Hello from the other method");
         }
     }
 
