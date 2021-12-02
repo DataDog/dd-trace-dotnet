@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(MethodArgumentsData))]
         public void MethodArgumentsInstrumentation(int numberOfArguments, bool fastPath)
         {
-            using (EnvironmentHelper.GetMockAgent())
+            using (var agent = EnvironmentHelper.GetMockAgent())
             using (var processResult = RunSampleAndWaitForExit(agent.Port, arguments: numberOfArguments.ToString()))
             {
                 string beginMethodString = $"ProfilerOK: BeginMethod\\({numberOfArguments}\\)";
@@ -81,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         public void MethodRefArguments()
         {
-            using (EnvironmentHelper.GetMockAgent())
+            using (var agent = EnvironmentHelper.GetMockAgent())
             using (var processResult = RunSampleAndWaitForExit(agent.Port, arguments: "withref"))
             {
                 int beginMethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({1}\\)").Count;
@@ -108,7 +108,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         public void MethodOutArguments()
         {
-            using (EnvironmentHelper.GetMockAgent())
+            using (var agent = EnvironmentHelper.GetMockAgent())
             using (var processResult = RunSampleAndWaitForExit(agent.Port, arguments: "without"))
             {
                 int beginMethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({1}\\)").Count;
