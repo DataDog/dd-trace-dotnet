@@ -794,27 +794,29 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
                                   assemblyMetadata->version.str(), ").");
                 }
 
-                // If the integration is in a different module than the target method
+                // If the integration is in a different assembly than the target method
                 if (assemblyMetadata->name != integration.target_method.type.assembly.name)
                 {
-                    // Check if the current module contains a reference to the module of the integration
-                    auto moduleRefEnum = EnumModuleRefs(metadataImport);
-                    auto moduleRefIterator = moduleRefEnum.begin();
-                    bool moduleRefFound = false;
-                    for (; moduleRefIterator != moduleRefEnum.end(); moduleRefIterator = ++moduleRefIterator)
+                    // Check if the current module contains a reference to the assembly of the integration
+                    auto assemblyRefEnum = EnumAssemblyRefs(assemblyImport);
+                    auto assemblyRefIterator = assemblyRefEnum.begin();
+                    bool assemblyRefFound = false;
+                    for (; assemblyRefIterator != assemblyRefEnum.end(); assemblyRefIterator = ++assemblyRefIterator)
                     {
-                        auto moduleRef = *moduleRefIterator;
-                        const auto moduleInfo = GetTypeInfo(metadataImport, moduleRef);
+                        auto assemblyRef = *assemblyRefIterator;
+                        const auto& assemblyRefMetadata = GetReferencedAssemblyMetadata(assemblyImport, assemblyRef);
 
-                        if (moduleInfo.name == integration.target_method.type.assembly.name)
+                        if (assemblyRefMetadata.name == integration.target_method.type.assembly.name &&
+                            integration.target_method.type.min_version <= assemblyRefMetadata.version &&
+                            integration.target_method.type.max_version >= assemblyRefMetadata.version)
                         {
-                            moduleRefFound = true;
+                            assemblyRefFound = true;
                             break;
                         }
                     }
 
                     // If the module reference was not found we skip the integration
-                    if (!moduleRefFound)
+                    if (!assemblyRefFound)
                     {
                         continue;
                     }
@@ -842,46 +844,37 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
                         continue;
                     }
 
-                    // Validate assembly data (scopeToken has the moduleRef of the ancestor type)
+                    // Validate assembly data (scopeToken has the moduleRef or assemblyRef of the ancestor type)
                     if (ancestorTypeInfo->scopeToken != mdTokenNil)
                     {
-                        // Different module (moduleRef)
-                        const auto& extModule = GetModuleInfo(m_profilerInfo, ancestorTypeInfo->scopeToken);
+                        const auto tokenType = TypeFromToken(ancestorTypeInfo->scopeToken);
 
-                        // We check the assembly name
-                        if (extModule.assembly.name != integration.target_method.type.assembly.name)
+                        if (tokenType == mdtAssemblyRef)
                         {
-                            continue;
+                            const auto& ancestorAssemblyMetadata =
+                                GetReferencedAssemblyMetadata(assemblyImport, ancestorTypeInfo->scopeToken);
+
+                            // We check the assembly name
+                            if (ancestorAssemblyMetadata.name != integration.target_method.type.assembly.name)
+                            {
+                                continue;
+                            }
+
+                            // Check min version
+                            if (integration.target_method.type.min_version > ancestorAssemblyMetadata.version)
+                            {
+                                continue;
+                            }
+
+                            // Check max version
+                            if (integration.target_method.type.max_version < ancestorAssemblyMetadata.version)
+                            {
+                                continue;
+                            }
                         }
-
-                        // Loading ancestor assembly metadata (to check assembly versions)
-                        Logger::Debug("  Loading ancestor Assembly Metadata...");
-                        ComPtr<IUnknown> ancestorMetadataInterface;
-                        auto hr =
-                            m_profilerInfo->GetModuleMetaData(extModule.id, ofRead | ofWrite, IID_IMetaDataImport2,
-                                                              ancestorMetadataInterface.GetAddressOf());
-                        if (FAILED(hr))
+                        else
                         {
-                            Logger::Warn("CallTarget_RequestRejitForModule failed to get metadata interface for ",
-                                         extModule.id, " ", integration.target_method.type.assembly.name);
-                            break;
-                        }
-                        ComPtr<IMetaDataAssemblyImport> ancestorAssemblyImport =
-                            ancestorMetadataInterface.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
-                        const auto& ancestorAssemblyMetadata =
-                            std::make_unique<AssemblyMetadata>(GetAssemblyImportMetadata(assemblyImport));
-                        Logger::Debug("  Assembly Metadata loaded for: ", ancestorAssemblyMetadata->name, "(",
-                                      ancestorAssemblyMetadata->version.str(), ").");
-
-                        // Check min version
-                        if (integration.target_method.type.min_version > ancestorAssemblyMetadata->version)
-                        {
-                            continue;
-                        }
-
-                        // Check max version
-                        if (integration.target_method.type.max_version < ancestorAssemblyMetadata->version)
-                        {
+                            Logger::Warn("Unknown token type");
                             continue;
                         }
                     }

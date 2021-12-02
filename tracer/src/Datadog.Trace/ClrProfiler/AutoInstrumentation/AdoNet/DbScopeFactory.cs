@@ -97,9 +97,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     dbType = DbType.Sqlite;
                     return true;
                 default:
-                    integrationId = null;
-                    dbType = null;
-                    return false;
+                    integrationId = IntegrationId.AdoNet;
+                    dbType = commandTypeFullName.Substring(commandTypeFullName.LastIndexOf(".") + 1).ToLowerInvariant();
+                    return true;
             }
         }
 
