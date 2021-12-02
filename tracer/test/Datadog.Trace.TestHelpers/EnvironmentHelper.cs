@@ -17,7 +17,6 @@ namespace Datadog.Trace.TestHelpers
 {
     public class EnvironmentHelper
     {
-        private static readonly Assembly ExecutingAssembly = Assembly.GetExecutingAssembly();
         private static readonly string RuntimeFrameworkDescription = RuntimeInformation.FrameworkDescription.ToLower();
 
         private readonly ITestOutputHelper _output;
@@ -48,7 +47,6 @@ namespace Datadog.Trace.TestHelpers
             _requiresProfiling = requiresProfiling;
             TracerHome = GetTracerHomePath();
             ProfilerPath = GetProfilerPath();
-            IntegrationsJsonPath = GetIntegrationsJsonFilePath();
 
             var parts = _targetFramework.FrameworkName.Split(',');
             _runtime = parts[0];
@@ -77,8 +75,6 @@ namespace Datadog.Trace.TestHelpers
         public string ProfilerPath { get; }
 
         public string TracerHome { get; }
-
-        public string IntegrationsJsonPath { get; }
 
         public string FullSampleName => $"{_appNamePrepend}{SampleName}";
 
@@ -150,18 +146,6 @@ namespace Datadog.Trace.TestHelpers
             return path;
         }
 
-        public static string GetIntegrationsJsonFilePath()
-        {
-            string fileName = "integrations.json";
-            var path = Path.Combine(GetTracerHomePath(), fileName);
-            if (!File.Exists(path))
-            {
-                throw new Exception($"Attempt 3: Unable to find integrations at {path}");
-            }
-
-            return path;
-        }
-
         public static void ClearProfilerEnvironmentVariables()
         {
             var environmentVariables = new[]
@@ -181,13 +165,11 @@ namespace Datadog.Trace.TestHelpers
                 // Datadog
                 "DD_PROFILER_PROCESSES",
                 "DD_DOTNET_TRACER_HOME",
-                "DD_INTEGRATIONS",
                 "DD_DISABLED_INTEGRATIONS",
                 "DD_SERVICE",
                 "DD_VERSION",
                 "DD_TAGS",
                 "DD_APPSEC_ENABLED",
-                "DD_TRACE_CALLTARGET_ENABLED"
             };
 
             foreach (string variable in environmentVariables)
@@ -227,17 +209,11 @@ namespace Datadog.Trace.TestHelpers
                 environmentVariables["DD_TRACE_DEBUG"] = "1";
             }
 
-            if (callTargetEnabled)
-            {
-                environmentVariables["DD_TRACE_CALLTARGET_ENABLED"] = "1";
-            }
-
             if (!string.IsNullOrEmpty(processToProfile))
             {
                 environmentVariables["DD_PROFILER_PROCESSES"] = Path.GetFileName(processToProfile);
             }
 
-            environmentVariables["DD_INTEGRATIONS"] = IntegrationsJsonPath;
             environmentVariables["DD_TRACE_AGENT_HOSTNAME"] = "127.0.0.1";
             environmentVariables["DD_TRACE_AGENT_PORT"] = agentPort.ToString();
 
