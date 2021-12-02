@@ -233,9 +233,6 @@ partial class Build
             var integrations = GenerateIntegrationDefinitions.GetAllIntegrations(assemblies);
 
             GenerateIntegrationDefinitions.Run(integrations, TracerDirectory);
-
-            var dependabotProj = TracerDirectory / "dependabot" / "Datadog.Dependabot.Integrations.csproj";
-            await DependabotFileManager.UpdateIntegrations(dependabotProj, integrations);
         });
 
     Target UpdateVersion => _ => _
