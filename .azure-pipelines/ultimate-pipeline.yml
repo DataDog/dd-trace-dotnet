@@ -884,7 +884,7 @@ stages:
     - template: steps/restore-working-directory.yml
 
     - script: tracer\build.cmd RunExplorationTests_$(explorationTestUseCase) -ExplorationTestName $(explorationTestName)
-      displayName: BuildWindowsIntegrationTests
+      displayName: RunExplorationTest
 
     - task: PublishTestResults@2
       displayName: publish test results
