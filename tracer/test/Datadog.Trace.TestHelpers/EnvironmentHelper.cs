@@ -429,8 +429,9 @@ namespace Datadog.Trace.TestHelpers
         public MockTracerAgent GetMockAgent(bool useStatsD = false)
         {
             var agentPort = TcpPortProvider.GetOpenPort();
-            _output.WriteLine($"Assigning port {agentPort} for the agentPort.");
-            return new MockTracerAgent(agentPort, useStatsd: useStatsD);
+            var agent = new MockTracerAgent(agentPort, useStatsd: useStatsD);
+            _output.WriteLine($"Assigned port {agent.Port} for the agentPort.");
+            return agent;
         }
     }
 }
