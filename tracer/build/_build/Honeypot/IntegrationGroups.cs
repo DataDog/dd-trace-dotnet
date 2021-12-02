@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using GeneratePackageVersions;
+using Nuke.Common;
 
 namespace Honeypot
 {
@@ -116,7 +117,10 @@ namespace Honeypot
 
                 var packages = await NuGetPackageHelper.GetPackageMetadatas(searchCriteria);
 
-                var potentiallySupportedPackages = packages.Where(p => p.Identity.HasVersion).OrderByDescending(p => p.Identity.Version);
+                var potentiallySupportedPackages = packages
+                                                  .Where(p => p.Identity.HasVersion)
+                                                  .OrderByDescending(p => p.Identity.Version)
+                                                  .ToList();
 
                 // TODO: Download and check referenced assemblies for assembly versions
                 //foreach (var potentiallySupportedPackage in potentiallySupportedPackages)
@@ -127,11 +131,24 @@ namespace Honeypot
                 var latestPackage = potentiallySupportedPackages.First();
                 var latestVersion = new Version(latestPackage.Identity.Version.ToNormalizedString());
 
+                var latestSupportedPackage = potentiallySupportedPackages
+                    .FirstOrDefault(x => x.Identity.Version.Version <= MaximumAssemblyVersion);
+
+                if (latestSupportedPackage is null)
+                {
+                    Logger.Warn($"No version of {packageName} below maximum package version {MaximumAssemblyVersion}." +
+                                $"Using latest instead");
+                }
+
+                var latestSupportedVersion = latestSupportedPackage is null
+                                                 ? latestVersion
+                                                 : new Version(latestSupportedPackage.Identity.Version.ToNormalizedString());
+
                 Packages.Add(new IntegrationPackage
                 {
                     NugetName = latestPackage.Identity.Id,
                     LatestNuget = latestVersion,
-                    LatestSupportedNuget = latestVersion,
+                    LatestSupportedNuget = latestSupportedVersion,
                 });
             }
         }
