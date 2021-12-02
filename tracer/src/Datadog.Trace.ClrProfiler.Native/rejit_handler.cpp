@@ -772,7 +772,7 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
         {
             if (integration.is_abstract)
             {
-                // Abstract methods support.
+                // Abstract methods handling.
                 if (assemblyMetadata == nullptr)
                 {
                     Logger::Debug("  Loading Assembly Metadata...");
@@ -815,7 +815,7 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
                         }
                     }
 
-                    // If the module reference was not found we skip the integration
+                    // If the assembly reference was not found we skip the integration
                     if (!assemblyRefFound)
                     {
                         continue;
@@ -844,7 +844,7 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
                         continue;
                     }
 
-                    // Validate assembly data (scopeToken has the moduleRef or assemblyRef of the ancestor type)
+                    // Validate assembly data (scopeToken has the assemblyRef of the ancestor type)
                     if (ancestorTypeInfo->scopeToken != mdTokenNil)
                     {
                         const auto tokenType = TypeFromToken(ancestorTypeInfo->scopeToken);
@@ -874,7 +874,7 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
                         }
                         else
                         {
-                            Logger::Warn("Unknown token type");
+                            Logger::Warn("Unknown token type (Not supported)");
                             continue;
                         }
                     }
