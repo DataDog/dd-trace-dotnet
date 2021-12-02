@@ -46,7 +46,7 @@ namespace Datadog.Trace.AppSec.Transport.Http
             return new IpInfo(ipAddress, port);
         }
 
-        public string GetUserAget()
+        public string GetUserAgent()
         {
             return _context.Request.Headers[HeaderNames.UserAgent];
         }

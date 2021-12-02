@@ -40,7 +40,7 @@ namespace Datadog.Trace.AppSec.Transport.Http
             return IpExtractor.ExtractAddressAndPort(hostAddress, isSecure);
         }
 
-        public string GetUserAget()
+        public string GetUserAgent()
         {
             return _context.Request.UserAgent;
         }
