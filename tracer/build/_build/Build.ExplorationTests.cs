@@ -11,7 +11,7 @@ using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
 public enum MonitoringType
 {
-    Debugger, Profiler
+    Debugger, ContinuousProfiler
 }
 
 public enum ExplorationTestName
@@ -149,7 +149,7 @@ partial class Build
                .Executes(() =>
                 {
                     PrepareMonitoringEnvironment_Profiler();
-                    GitCloneAndRunUnitTests(MonitoringType.Profiler);
+                    GitCloneAndRunUnitTests(MonitoringType.ContinuousProfiler);
                     RunExplorationTestAssertions_Profiler();
                 })
         ;
@@ -222,8 +222,8 @@ partial class Build
                     case MonitoringType.Debugger:
                         envVariables.AddDebuggerEnvironmentVariables(TracerHomeDirectory);
                         break;
-                    case MonitoringType.Profiler:
-                        envVariables.AddProfilerEnvironmentVariables(TracerHomeDirectory);
+                    case MonitoringType.ContinuousProfiler:
+                        envVariables.AddContinuousProfilerEnvironmentVariables(TracerHomeDirectory);
                         break;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(monitoringType), monitoringType, null);
