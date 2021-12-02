@@ -1,4 +1,4 @@
-﻿// <copyright file="DiagnosticContextHelper.cs" company="Datadog">
+// <copyright file="DiagnosticContextHelper.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -63,11 +63,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
             mdc.Set(CorrelationIdentifier.VersionKey, tracer.Settings.ServiceVersion ?? string.Empty);
             mdc.Set(CorrelationIdentifier.EnvKey, tracer.Settings.Environment ?? string.Empty);
 
-            if (tracer.ActiveScope?.Span is { } span)
+            if (tracer.DistributedSpanContext is { } spanContext)
             {
                 removeSpanId = true;
-                mdc.Set(CorrelationIdentifier.TraceIdKey, span.TraceId.ToString());
-                mdc.Set(CorrelationIdentifier.SpanIdKey, span.SpanId.ToString());
+                mdc.Set(CorrelationIdentifier.TraceIdKey, spanContext[HttpHeaderNames.TraceId]);
+                mdc.Set(CorrelationIdentifier.SpanIdKey, spanContext[HttpHeaderNames.ParentId]);
             }
 
             return removeSpanId;
@@ -75,8 +75,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
 
         public static IDisposable SetMdlcState(MappedDiagnosticsLogicalContextSetterProxy mdlc, Tracer tracer)
         {
-            var span = tracer.ActiveScope?.Span;
-            var array = span is null
+            var spanContext = tracer.DistributedSpanContext;
+            var array = spanContext is null
                             ? new KeyValuePair<string, object>[3]
                             : new KeyValuePair<string, object>[5];
 
@@ -84,10 +84,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
             array[1] = new KeyValuePair<string, object>(CorrelationIdentifier.VersionKey, tracer.Settings.ServiceVersion ?? string.Empty);
             array[2] = new KeyValuePair<string, object>(CorrelationIdentifier.EnvKey, tracer.Settings.Environment ?? string.Empty);
 
-            if (span is not null)
+            if (spanContext is not null)
             {
-                array[3] = new KeyValuePair<string, object>(CorrelationIdentifier.TraceIdKey, span.TraceId);
-                array[4] = new KeyValuePair<string, object>(CorrelationIdentifier.SpanIdKey, span.SpanId);
+                array[3] = new KeyValuePair<string, object>(CorrelationIdentifier.TraceIdKey, spanContext[HttpHeaderNames.TraceId]);
+                array[4] = new KeyValuePair<string, object>(CorrelationIdentifier.SpanIdKey, spanContext[HttpHeaderNames.ParentId]);
             }
 
             var state = mdlc.SetScoped(array);
