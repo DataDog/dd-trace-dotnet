@@ -618,6 +618,125 @@ void RejitHandler::RequestRejitForNGenInliners()
     }
 }
 
+void RejitHandler::ProcessTypeDefForRejit(const IntegrationDefinition& integration,
+                                          ComPtr<IMetaDataImport2>& metadataImport,
+                                          ComPtr<IMetaDataEmit2>& metadataEmit,
+                                          ComPtr<IMetaDataAssemblyImport>& assemblyImport,
+                                          ComPtr<IMetaDataAssemblyEmit>& assemblyEmit, const ModuleInfo& moduleInfo,
+                                          const mdTypeDef typeDef, std::vector<ModuleID>& vtModules,
+                                          std::vector<mdMethodDef>& vtMethodDefs)
+{
+    Logger::Debug("  Looking for '", integration.target_method.type.name, ".", integration.target_method.method_name,
+                  "(", (integration.target_method.signature_types.size() - 1), " params)' method implementation.");
+
+    // Now we enumerate all methods with the same target method name. (All overloads of the method)
+    auto enumMethods = Enumerator<mdMethodDef>(
+        [&metadataImport, &integration, typeDef](HCORENUM* ptr, mdMethodDef arr[], ULONG max, ULONG* cnt) -> HRESULT {
+            return metadataImport->EnumMethodsWithName(ptr, typeDef, integration.target_method.method_name.c_str(), arr,
+                                                       max, cnt);
+        },
+        [&metadataImport](HCORENUM ptr) -> void { metadataImport->CloseEnum(ptr); });
+
+    auto enumIterator = enumMethods.begin();
+    for (; enumIterator != enumMethods.end(); enumIterator = ++enumIterator)
+    {
+        auto methodDef = *enumIterator;
+
+        // Extract the function info from the mdMethodDef
+        const auto caller = GetFunctionInfo(metadataImport, methodDef);
+        if (!caller.IsValid())
+        {
+            Logger::Warn("    * The caller for the methoddef: ", TokenStr(&methodDef), " is not valid!");
+            continue;
+        }
+
+        // We create a new function info into the heap from the caller functionInfo in the stack, to
+        // be used later in the ReJIT process
+        auto functionInfo = FunctionInfo(caller);
+        auto hr = functionInfo.method_signature.TryParse();
+        if (FAILED(hr))
+        {
+            Logger::Warn("    * The method signature: ", functionInfo.method_signature.str(), " cannot be parsed.");
+            continue;
+        }
+
+        // Compare if the current mdMethodDef contains the same number of arguments as the
+        // instrumentation target
+        const auto numOfArgs = functionInfo.method_signature.NumberOfArguments();
+        if (numOfArgs != integration.target_method.signature_types.size() - 1)
+        {
+            Logger::Debug("    * The caller for the methoddef: ", caller.name,
+                          " doesn't have the right number of arguments (", numOfArgs, " arguments).");
+            continue;
+        }
+
+        // Compare each mdMethodDef argument type to the instrumentation target
+        bool argumentsMismatch = false;
+        const auto methodArguments = functionInfo.method_signature.GetMethodArguments();
+
+        Logger::Debug("    * Comparing signature for method: ", caller.type.name, ".",
+                      caller.name);
+        for (unsigned int i = 0; i < numOfArgs; i++)
+        {
+            const auto argumentTypeName = methodArguments[i].GetTypeTokName(metadataImport);
+            const auto integrationArgumentTypeName = integration.target_method.signature_types[i + 1];
+            Logger::Debug("        -> ", argumentTypeName, " = ", integrationArgumentTypeName);
+            if (argumentTypeName != integrationArgumentTypeName && integrationArgumentTypeName != WStr("_"))
+            {
+                argumentsMismatch = true;
+                break;
+            }
+        }
+        if (argumentsMismatch)
+        {
+            Logger::Debug("    * The caller for the methoddef: ", integration.target_method.method_name,
+                          " doesn't have the right type of arguments.");
+            continue;
+        }
+
+        // As we are in the right method, we gather all information we need and stored it in to the
+        // ReJIT handler.
+        auto moduleHandler = GetOrAddModule(moduleInfo.id);
+        if (moduleHandler == nullptr)
+        {
+            Logger::Warn("Module handler is null, this only happens if the RejitHandler has been shutdown.");
+            break;
+        }
+        if (moduleHandler->GetModuleMetadata() == nullptr)
+        {
+            Logger::Debug("Creating ModuleMetadata...");
+
+            const auto moduleMetadata = new ModuleMetadata(metadataImport, metadataEmit, assemblyImport, assemblyEmit,
+                                                           moduleInfo.assembly.name, moduleInfo.assembly.app_domain_id,
+                                                           m_pCorAssemblyProperty, enable_by_ref_instrumentation);
+
+            Logger::Info("ReJIT handler stored metadata for ", moduleInfo.id, " ", moduleInfo.assembly.name,
+                         " AppDomain ", moduleInfo.assembly.app_domain_id, " ", moduleInfo.assembly.app_domain_name);
+
+            moduleHandler->SetModuleMetadata(moduleMetadata);
+        }
+
+        auto methodHandler = moduleHandler->GetOrAddMethod(methodDef);
+        if (methodHandler->GetFunctionInfo() == nullptr)
+        {
+            methodHandler->SetFunctionInfo(functionInfo);
+        }
+        if (methodHandler->GetIntegrationDefinition() == nullptr)
+        {
+            methodHandler->SetIntegrationDefinition(integration);
+        }
+
+        // Store module_id and methodDef to request the ReJIT after analyzing all integrations.
+        vtModules.push_back(moduleInfo.id);
+        vtMethodDefs.push_back(methodDef);
+
+        Logger::Debug("    * Enqueue for ReJIT [ModuleId=", moduleInfo.id, ", MethodDef=", TokenStr(&methodDef),
+                      ", AppDomainId=", moduleHandler->GetModuleMetadata()->app_domain_id,
+                      ", Assembly=", moduleHandler->GetModuleMetadata()->assemblyName, ", Type=", caller.type.name,
+                      ", Method=", caller.name, "(", numOfArgs, " params), Signature=", caller.signature.str(), "]");
+    }
+}
+
 ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
                                           const std::vector<IntegrationDefinition>& integrationDefinitions,
                                           bool enqueueInSameThread)
@@ -654,8 +773,6 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
             if (integration.is_abstract)
             {
                 // Abstract methods support.
-                Logger::Warn("##################### Abstract integration detected! [START]");
-
                 if (assemblyMetadata == nullptr)
                 {
                     Logger::Debug("  Loading Assembly Metadata...");
@@ -677,6 +794,33 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
                                   assemblyMetadata->version.str(), ").");
                 }
 
+                // If the integration is in a different module than the target method
+                if (assemblyMetadata->name != integration.target_method.type.assembly.name)
+                {
+                    // Check if the current module contains a reference to the module of the integration
+                    auto moduleRefEnum = EnumModuleRefs(metadataImport);
+                    auto moduleRefIterator = moduleRefEnum.begin();
+                    bool moduleRefFound = false;
+                    for (; moduleRefIterator != moduleRefEnum.end(); moduleRefIterator = ++moduleRefIterator)
+                    {
+                        auto moduleRef = *moduleRefIterator;
+                        const auto moduleInfo = GetTypeInfo(metadataImport, moduleRef);
+
+                        if (moduleInfo.name == integration.target_method.type.assembly.name)
+                        {
+                            moduleRefFound = true;
+                            break;
+                        }
+                    }
+
+                    // If the module reference was not found we skip the integration
+                    if (!moduleRefFound)
+                    {
+                        continue;
+                    }
+                }
+
+                // Enumerate the types of the module in search of types implementing the integration
                 auto typeDefEnum = EnumTypeDefs(metadataImport);
                 auto typeDefIterator = typeDefEnum.begin();
                 for (; typeDefIterator != typeDefEnum.end(); typeDefIterator = ++typeDefIterator)
@@ -684,6 +828,7 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
                     auto typeDef = *typeDefIterator;
                     const auto typeInfo = GetTypeInfo(metadataImport, typeDef);
 
+                    // Check if the type has ancestors
                     if (typeInfo.extend_from == nullptr)
                     {
                         continue;
@@ -697,7 +842,7 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
                         continue;
                     }
 
-                    // Validate assembly data
+                    // Validate assembly data (scopeToken has the moduleRef of the ancestor type)
                     if (ancestorTypeInfo->scopeToken != mdTokenNil)
                     {
                         // Different module (moduleRef)
@@ -761,15 +906,12 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
                         }
                     }
 
+                    //
                     // Looking for the method to rewrite
-                    // ...
-
-
-
-                    Logger::Info("[Integration]: ", ancestorTypeInfo->name, " -> [Actual Type]: ", typeInfo.name);
+                    //
+                    ProcessTypeDefForRejit(integration, metadataImport, metadataEmit, assemblyImport, assemblyEmit,
+                                           moduleInfo, typeDef, vtModules, vtMethodDefs);
                 }
-
-                Logger::Warn("##################### Abstract integration detected! [END]");
             }
             else
             {
@@ -821,120 +963,11 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
                     continue;
                 }
 
-                Logger::Debug("  Looking for '", integration.target_method.type.name, ".",
-                              integration.target_method.method_name, "(",
-                              (integration.target_method.signature_types.size() - 1), " params)' method.");
-
-                // Now we enumerate all methods with the same target method name. (All overloads of the method)
-                auto enumMethods = Enumerator<mdMethodDef>(
-                    [&metadataImport, &integration, typeDef](HCORENUM* ptr, mdMethodDef arr[], ULONG max,
-                                                             ULONG* cnt) -> HRESULT {
-                        return metadataImport->EnumMethodsWithName(
-                            ptr, typeDef, integration.target_method.method_name.c_str(), arr, max, cnt);
-                    },
-                    [&metadataImport](HCORENUM ptr) -> void { metadataImport->CloseEnum(ptr); });
-
-                auto enumIterator = enumMethods.begin();
-                for (; enumIterator != enumMethods.end(); enumIterator = ++enumIterator)
-                {
-                    auto methodDef = *enumIterator;
-
-                    // Extract the function info from the mdMethodDef
-                    const auto caller = GetFunctionInfo(metadataImport, methodDef);
-                    if (!caller.IsValid())
-                    {
-                        Logger::Warn("    * The caller for the methoddef: ", TokenStr(&methodDef), " is not valid!");
-                        continue;
-                    }
-
-                    // We create a new function info into the heap from the caller functionInfo in the stack, to
-                    // be used later in the ReJIT process
-                    auto functionInfo = FunctionInfo(caller);
-                    auto hr = functionInfo.method_signature.TryParse();
-                    if (FAILED(hr))
-                    {
-                        Logger::Warn("    * The method signature: ", functionInfo.method_signature.str(),
-                                     " cannot be parsed.");
-                        continue;
-                    }
-
-                    // Compare if the current mdMethodDef contains the same number of arguments as the
-                    // instrumentation target
-                    const auto numOfArgs = functionInfo.method_signature.NumberOfArguments();
-                    if (numOfArgs != integration.target_method.signature_types.size() - 1)
-                    {
-                        Logger::Debug("    * The caller for the methoddef: ", integration.target_method.method_name,
-                                      " doesn't have the right number of arguments (", numOfArgs, " arguments).");
-                        continue;
-                    }
-
-                    // Compare each mdMethodDef argument type to the instrumentation target
-                    bool argumentsMismatch = false;
-                    const auto methodArguments = functionInfo.method_signature.GetMethodArguments();
-                    Logger::Debug("    * Comparing signature for method: ", integration.target_method.type.name, ".",
-                                  integration.target_method.method_name);
-                    for (unsigned int i = 0; i < numOfArgs; i++)
-                    {
-                        const auto argumentTypeName = methodArguments[i].GetTypeTokName(metadataImport);
-                        const auto integrationArgumentTypeName = integration.target_method.signature_types[i + 1];
-                        Logger::Debug("        -> ", argumentTypeName, " = ", integrationArgumentTypeName);
-                        if (argumentTypeName != integrationArgumentTypeName && integrationArgumentTypeName != WStr("_"))
-                        {
-                            argumentsMismatch = true;
-                            break;
-                        }
-                    }
-                    if (argumentsMismatch)
-                    {
-                        Logger::Debug("    * The caller for the methoddef: ", integration.target_method.method_name,
-                                      " doesn't have the right type of arguments.");
-                        continue;
-                    }
-
-                    // As we are in the right method, we gather all information we need and stored it in to the
-                    // ReJIT handler.
-                    auto moduleHandler = GetOrAddModule(moduleInfo.id);
-                    if (moduleHandler == nullptr)
-                    {
-                        Logger::Warn(
-                            "Module handler is null, this only happens if the RejitHandler has been shutdown.");
-                        break;
-                    }
-                    if (moduleHandler->GetModuleMetadata() == nullptr)
-                    {
-                        Logger::Debug("Creating ModuleMetadata...");
-
-                        const auto moduleMetadata = new ModuleMetadata(
-                            metadataImport, metadataEmit, assemblyImport, assemblyEmit, moduleInfo.assembly.name,
-                            moduleInfo.assembly.app_domain_id, m_pCorAssemblyProperty, enable_by_ref_instrumentation);
-
-                        Logger::Info("ReJIT handler stored metadata for ", moduleInfo.id, " ", moduleInfo.assembly.name,
-                                     " AppDomain ", moduleInfo.assembly.app_domain_id, " ",
-                                     moduleInfo.assembly.app_domain_name);
-
-                        moduleHandler->SetModuleMetadata(moduleMetadata);
-                    }
-
-                    auto methodHandler = moduleHandler->GetOrAddMethod(methodDef);
-                    if (methodHandler->GetFunctionInfo() == nullptr)
-                    {
-                        methodHandler->SetFunctionInfo(functionInfo);
-                    }
-                    if (methodHandler->GetIntegrationDefinition() == nullptr)
-                    {
-                        methodHandler->SetIntegrationDefinition(integration);
-                    }
-
-                    // Store module_id and methodDef to request the ReJIT after analyzing all integrations.
-                    vtModules.push_back(moduleInfo.id);
-                    vtMethodDefs.push_back(methodDef);
-
-                    Logger::Debug(
-                        "    * Enqueue for ReJIT [ModuleId=", moduleInfo.id, ", MethodDef=", TokenStr(&methodDef),
-                        ", AppDomainId=", moduleHandler->GetModuleMetadata()->app_domain_id,
-                        ", Assembly=", moduleHandler->GetModuleMetadata()->assemblyName, ", Type=", caller.type.name,
-                        ", Method=", caller.name, "(", numOfArgs, " params), Signature=", caller.signature.str(), "]");
-                }
+                //
+                // Looking for the method to rewrite
+                //
+                ProcessTypeDefForRejit(integration, metadataImport, metadataEmit, assemblyImport, assemblyEmit,
+                                       moduleInfo, typeDef, vtModules, vtMethodDefs);
             }
         }
     }
