@@ -98,5 +98,10 @@ namespace Datadog.Trace.ClrProfiler
         /// Gets or sets the CallTarget Class used to instrument the method
         /// </summary>
         public Type CallTargetType { get; set; }
+
+        /// <summary>
+        /// Gets or sets the CallTarget integration type
+        /// </summary>
+        public IntegrationType CallTargetIntegrationType { get; set; } = IntegrationType.Normal;
     }
 }

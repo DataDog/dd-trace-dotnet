@@ -25,6 +25,11 @@ namespace Datadog.Trace.ClrProfiler
 
         public static void InitializeProfiler(string id, NativeCallTargetDefinition[] methodArrays)
         {
+            if (methodArrays is null || methodArrays.Length == 0)
+            {
+                return;
+            }
+
             if (IsWindows)
             {
                 Windows.InitializeProfiler(id, methodArrays, methodArrays.Length);
@@ -49,6 +54,11 @@ namespace Datadog.Trace.ClrProfiler
 
         public static void AddAbstractInstrumentation(string id, NativeCallTargetDefinition[] methodArrays)
         {
+            if (methodArrays is null || methodArrays.Length == 0)
+            {
+                return;
+            }
+
             if (IsWindows)
             {
                 Windows.AddAbstractInstrumentation(id, methodArrays, methodArrays.Length);

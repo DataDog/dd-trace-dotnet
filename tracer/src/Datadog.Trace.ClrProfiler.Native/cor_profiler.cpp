@@ -624,7 +624,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
                 else
                 {
                     RewriteForDistributedTracing(module_metadata, module_id);
-                }                
+                }
             }
             else
             {
@@ -960,7 +960,10 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
     Logger::Info("InitializeProfiler: received id: ", definitionsId, " from managed side with ", size,
                  " integrations.");
 
-    InternalAddInstrumentation(id, items, size, false);
+    if (size > 0)
+    {
+        InternalAddInstrumentation(id, items, size, false);
+    }
 }
 
 void CorProfiler::EnableByRefInstrumentation()
@@ -981,7 +984,10 @@ void CorProfiler::AddAbstractInstrumentation(WCHAR* id, CallTargetDefinition* it
     Logger::Info("AddAbstractInstrumentation: received id: ", definitionsId, " from managed side with ", size,
                  " integrations.");
 
-    InternalAddInstrumentation(id, items, size, true);
+    if (size > 0)
+    {
+        InternalAddInstrumentation(id, items, size, true);
+    }
 }
 
 void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* items, int size, bool isAbstract)

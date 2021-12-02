@@ -83,6 +83,7 @@ namespace PrepareRelease
                                          let wrapperType = callTargetType
                                          from assemblyNames in GetPropertyValue<string[]>(attribute, "AssemblyNames")
                                          let versionRange = GetPropertyValue<object>(attribute, "VersionRange")
+                                         let integrationType = GetPropertyValue<object>(attribute, "CallTargetIntegrationType")
                                          orderby integrationName, assemblyNames, GetPropertyValue<string>(attribute, "TypeName"), GetPropertyValue<string>(attribute, "MethodName")
                                          select new CallTargetDefinitionSource
                                          {
@@ -100,7 +101,8 @@ namespace PrepareRelease
                                              TargetMaximumMinor = GetPropertyValue<ushort>(versionRange, "MaximumMinor"),
                                              TargetMaximumPatch = GetPropertyValue<ushort>(versionRange, "MaximumPatch"),
                                              WrapperAssembly = assembly.FullName,
-                                             WrapperType = wrapperType.FullName
+                                             WrapperType = wrapperType.FullName,
+                                             IntegrationType = (IntegrationType)(int)integrationType
                                          };
             return callTargetIntegrations.ToList();
         }
@@ -116,11 +118,14 @@ namespace PrepareRelease
             swriter.WriteLine("{");
             swriter.WriteLine("    internal static partial class InstrumentationDefinitions");
             swriter.WriteLine("    {");
+
+            // Normal Integrations
+            var normalCallTargetIntegrations = callTargetIntegrations.Where(i => i.IntegrationType == IntegrationType.Normal).Distinct().ToList();
             swriter.WriteLine("        private static NativeCallTargetDefinition[] GetDefinitionsArray()");
             swriter.WriteLine("        {");
             swriter.WriteLine("            return new NativeCallTargetDefinition[]");
             swriter.WriteLine("            {");
-            foreach (var integrationGroup in callTargetIntegrations.Distinct().GroupBy(i => i.IntegrationName))
+            foreach (var integrationGroup in normalCallTargetIntegrations.GroupBy(i => i.IntegrationName))
             {
                 swriter.WriteLine($"                // {integrationGroup.Key}");
 
@@ -160,6 +165,55 @@ namespace PrepareRelease
             }
             swriter.WriteLine("            };");
             swriter.WriteLine("        }");
+            swriter.WriteLine("");
+
+            // Abstract Integrations
+            var abstractCallTargetIntegrations = callTargetIntegrations.Where(i => i.IntegrationType == IntegrationType.Abstract).Distinct().ToList();
+            swriter.WriteLine("        private static NativeCallTargetDefinition[] GetAbstractDefinitionsArray()");
+            swriter.WriteLine("        {");
+            swriter.WriteLine("            return new NativeCallTargetDefinition[]");
+            swriter.WriteLine("            {");
+            foreach (var integrationGroup in abstractCallTargetIntegrations.GroupBy(i => i.IntegrationName))
+            {
+                swriter.WriteLine($"                // {integrationGroup.Key}");
+
+                foreach (var integration in integrationGroup)
+                {
+                    swriter.Write($"                new(");
+                    swriter.Write($"\"{integration.TargetAssembly}\", ");
+                    swriter.Write($"\"{integration.TargetType}\", ");
+                    swriter.Write($"\"{integration.TargetMethod}\", ");
+
+                    swriter.Write($" new[] {{ ");
+                    for (var s = 0; s < integration.TargetSignatureTypes.Length; s++)
+                    {
+                        if (s == integration.TargetSignatureTypes.Length - 1)
+                        {
+                            swriter.Write($"\"{integration.TargetSignatureTypes[s]}\"");
+                        }
+                        else
+                        {
+                            swriter.Write($"\"{integration.TargetSignatureTypes[s]}\", ");
+                        }
+                    }
+
+                    swriter.Write(" }, ");
+
+                    swriter.Write($"{integration.TargetMinimumMajor}, ");
+                    swriter.Write($"{integration.TargetMinimumMinor}, ");
+                    swriter.Write($"{integration.TargetMinimumPatch}, ");
+                    swriter.Write($"{integration.TargetMaximumMajor}, ");
+                    swriter.Write($"{integration.TargetMaximumMinor}, ");
+                    swriter.Write($"{integration.TargetMaximumPatch}, ");
+                    swriter.Write($"assemblyFullName, ");
+                    swriter.Write($"\"{integration.WrapperType}\"");
+                    swriter.WriteLine($"),");
+                }
+                swriter.WriteLine();
+            }
+            swriter.WriteLine("            };");
+            swriter.WriteLine("        }");
+
             swriter.WriteLine("    }");
             swriter.WriteLine("}");
         }
