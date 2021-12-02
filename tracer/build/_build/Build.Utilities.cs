@@ -188,7 +188,7 @@ partial class Build
 
     Target GeneratePackageVersions => _ => _
        .Description("Regenerate the PackageVersions props and .cs files")
-       .After(UpdateIntegrationsJson)
+       .After(UpdateIntegrationDefinitions)
        .Executes(async () =>
        {
            var testDir = Solution.GetProject(Projects.ClrProfilerIntegrationTests).Directory;
@@ -210,7 +210,7 @@ partial class Build
             await UpdateVendorsTool.UpdateVendors(downloadDirectory, vendorDirectory);
        });
 
-    Target UpdateIntegrationsJson => _ => _
+    Target UpdateIntegrationDefinitions => _ => _
        .Description("Update the integration definitions file")
        .DependsOn(Clean, Restore, CreateRequiredDirectories, CompileManagedSrc, PublishManagedProfiler) // We load the dlls from the output, so need to do a clean build
        .Executes(async () =>
