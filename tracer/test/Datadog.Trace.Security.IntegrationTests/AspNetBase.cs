@@ -122,12 +122,12 @@ namespace Datadog.Trace.Security.IntegrationTests
                         { "appsec.event", "true" },
                         { "_dd.origin", "appsec" },
                         { "http.useragent", "Mistake Not..." },
-                        { "network.client.ip", "127.0.0.1" },
+                        // { "network.client.ip", "127.0.0.1" },
                         { "actor.ip", "86.242.244.246" },
                         { "http.request.headers.host", $"localhost:{_httpPort}" },
                         { "http.request.headers.x-forwarded", "86.242.244.246" },
                         { "http.request.headers.user-agent", "Mistake Not..." },
-                        { "http.response.headers.content-type", "text/plain; charset=utf-8" },
+                        // { "http.response.headers.content-type", "text/plain; charset=utf-8" },
                     };
                     foreach (var kvp in securityTags)
                     {

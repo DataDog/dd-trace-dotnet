@@ -37,9 +37,22 @@ namespace Datadog.Trace.Security.IntegrationTests
             var agent = await RunOnSelfHosted(enableSecurity, enableBlocking);
             await TestBlockedRequestAsync(agent, enableSecurity, expectedStatusCode, 5, new Action<TestHelpers.MockTracerAgent.Span>[]
             {
-             s => Assert.Equal("aspnet_core.request", s.Name),
-             s  => Assert.Equal("Samples.AspNetCore5", s.Service),
-             s  =>  Assert.Equal("web", s.Type)
+                 s => Assert.Equal("aspnet_core.request", s.Name),
+                 s  => Assert.Equal("Samples.AspNetCore5", s.Service),
+                 s  =>  Assert.Equal("web", s.Type),
+                 s =>
+                 {
+                    var securityTags = new Dictionary<string, string>()
+                    {
+                        { "network.client.ip", "127.0.0.1" },
+                        { "http.response.headers.content-type", "text/plain; charset=utf-8" },
+                    };
+                    foreach (var kvp in securityTags)
+                    {
+                        Assert.True(s.Tags.TryGetValue(kvp.Key, out var tagValue), $"The tag {kvp.Key} was not found");
+                        Assert.Equal(kvp.Value, tagValue);
+                    }
+                 },
             });
         }
     }

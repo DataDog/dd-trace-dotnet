@@ -879,7 +879,6 @@ partial class Build
                 .Concat(includeSecurity)
                 .Select(x => Solution.GetProject(x))
                 .Where(project =>
-                project != null &&
                 (project, project.TryGetTargetFrameworks()) switch
                 {
                     _ when exclude.Contains(project.Path) => false,
