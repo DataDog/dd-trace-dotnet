@@ -188,13 +188,23 @@ partial class Build
 
     Target GeneratePackageVersions => _ => _
        .Description("Regenerate the PackageVersions props and .cs files")
-       .After(UpdateIntegrationsJson)
+       .After(UpdateIntegrationDefinitions)
        .Executes(async () =>
        {
            var testDir = Solution.GetProject(Projects.ClrProfilerIntegrationTests).Directory;
 
            var versionGenerator = new PackageVersionGenerator(TracerDirectory, testDir);
            await versionGenerator.GenerateVersions(Solution);
+
+           var assemblies = TracerHomeDirectory
+                           .GlobFiles("**/Datadog.Trace.dll")
+                           .Select(x => x.ToString())
+                           .ToList();
+
+           var integrations = GenerateIntegrationDefinitions.GetAllIntegrations(assemblies);
+
+           var dependabotProj = TracerDirectory / "dependabot" / "Datadog.Dependabot.Integrations.csproj";
+           await DependabotFileManager.UpdateIntegrations(dependabotProj, integrations);
        });
 
     Target UpdateVendoredCode => _ => _
@@ -210,7 +220,7 @@ partial class Build
             await UpdateVendorsTool.UpdateVendors(downloadDirectory, vendorDirectory);
        });
 
-    Target UpdateIntegrationsJson => _ => _
+    Target UpdateIntegrationDefinitions => _ => _
        .Description("Update the integration definitions file")
        .DependsOn(Clean, Restore, CreateRequiredDirectories, CompileManagedSrc, PublishManagedProfiler) // We load the dlls from the output, so need to do a clean build
        .Executes(async () =>
@@ -220,13 +230,9 @@ partial class Build
                             .Select(x => x.ToString())
                             .ToList();
 
-
             var integrations = GenerateIntegrationDefinitions.GetAllIntegrations(assemblies);
 
             GenerateIntegrationDefinitions.Run(integrations, TracerDirectory);
-
-            var dependabotProj = TracerDirectory / "dependabot" / "Datadog.Dependabot.Integrations.csproj";
-            await DependabotFileManager.UpdateIntegrations(dependabotProj, integrations);
         });
 
     Target UpdateVersion => _ => _

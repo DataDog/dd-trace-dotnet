@@ -34,7 +34,7 @@ jobs:
         run: .\tracer\build.ps1 UpdateChangeLog
 
       - name: "Bump Version"
-        run: .\tracer\build.ps1 UpdateIntegrationsJson UpdateVersion UpdateMsiContents
+        run: .\tracer\build.ps1 UpdateIntegrationDefinitions UpdateVersion UpdateMsiContents
 
       - name: "Verify Changes"
         id: changes
