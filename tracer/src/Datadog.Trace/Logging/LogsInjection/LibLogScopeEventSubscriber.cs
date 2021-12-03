@@ -158,7 +158,7 @@ namespace Datadog.Trace.Logging
             // If not, do not waste cycles
             if (_executingIISPreStartInit)
             {
-                RefreshIISPreAppState(traceId: spanEventArgs.Span.TraceId);
+                RefreshIISPreAppState(traceId: spanEventArgs.TraceId);
             }
 
             if (!_executingIISPreStartInit)
@@ -172,7 +172,7 @@ namespace Datadog.Trace.Logging
         {
             if (!_executingIISPreStartInit)
             {
-                SetSerilogCompatibleLogContext(spanEventArgs.Span.TraceId, spanEventArgs.Span.SpanId);
+                SetSerilogCompatibleLogContext(spanEventArgs.TraceId, spanEventArgs.SpanId);
             }
         }
 
@@ -189,7 +189,7 @@ namespace Datadog.Trace.Logging
             if (!_executingIISPreStartInit)
             {
                 RemoveAllCorrelationIdentifierContexts();
-                SetLogContext(spanEventArgs.Span.TraceId, spanEventArgs.Span.SpanId);
+                SetLogContext(spanEventArgs.TraceId, spanEventArgs.SpanId);
             }
         }
 
