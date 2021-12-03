@@ -119,8 +119,8 @@ namespace PrepareRelease
             swriter.WriteLine("    internal static partial class InstrumentationDefinitions");
             swriter.WriteLine("    {");
 
-            // Normal Integrations
-            var normalCallTargetIntegrations = callTargetIntegrations.Where(i => i.IntegrationType == IntegrationType.Normal).Distinct().ToList();
+            // Default Integrations
+            var normalCallTargetIntegrations = callTargetIntegrations.Where(i => i.IntegrationType == IntegrationType.Default).Distinct().ToList();
             swriter.WriteLine("        private static NativeCallTargetDefinition[] GetDefinitionsArray()");
             swriter.WriteLine("        {");
             swriter.WriteLine("            return new NativeCallTargetDefinition[]");
@@ -167,13 +167,13 @@ namespace PrepareRelease
             swriter.WriteLine("        }");
             swriter.WriteLine("");
 
-            // Abstract Integrations
-            var abstractCallTargetIntegrations = callTargetIntegrations.Where(i => i.IntegrationType == IntegrationType.Abstract).Distinct().ToList();
-            swriter.WriteLine("        private static NativeCallTargetDefinition[] GetAbstractDefinitionsArray()");
+            // Derived Integrations
+            var derivedCallTargetIntegrations = callTargetIntegrations.Where(i => i.IntegrationType == IntegrationType.Derived).Distinct().ToList();
+            swriter.WriteLine("        private static NativeCallTargetDefinition[] GetDerivedDefinitionsArray()");
             swriter.WriteLine("        {");
             swriter.WriteLine("            return new NativeCallTargetDefinition[]");
             swriter.WriteLine("            {");
-            foreach (var integrationGroup in abstractCallTargetIntegrations.GroupBy(i => i.IntegrationName))
+            foreach (var integrationGroup in derivedCallTargetIntegrations.GroupBy(i => i.IntegrationName))
             {
                 swriter.WriteLine($"                // {integrationGroup.Key}");
 

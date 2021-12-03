@@ -8,13 +8,13 @@ namespace Datadog.Trace.ClrProfiler
     internal enum IntegrationType
     {
         /// <summary>
-        /// Normal calltarget integration
+        /// Default calltarget integration
         /// </summary>
-        Normal = 0,
+        Default = 0,
 
         /// <summary>
-        /// Abstract calltarget integration
+        /// Derived calltarget integration
         /// </summary>
-        Abstract = 1
+        Derived = 1
     }
 }

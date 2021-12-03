@@ -99,15 +99,15 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
-                Log.Debug("Sending CallTarget abstract integration definitions to native library.");
-                var payload = InstrumentationDefinitions.GetAbstractDefinitions();
-                NativeMethods.AddAbstractInstrumentation(payload.DefinitionsId, payload.Definitions);
+                Log.Debug("Sending CallTarget derived integration definitions to native library.");
+                var payload = InstrumentationDefinitions.GetDerivedDefinitions();
+                NativeMethods.AddDerivedInstrumentations(payload.DefinitionsId, payload.Definitions);
                 foreach (var def in payload.Definitions)
                 {
                     def.Dispose();
                 }
 
-                Log.Information<int>("The profiler has been initialized with {count} abstract definitions.", payload.Definitions.Length);
+                Log.Information<int>("The profiler has been initialized with {count} derived definitions.", payload.Definitions.Length);
             }
             catch (Exception ex)
             {

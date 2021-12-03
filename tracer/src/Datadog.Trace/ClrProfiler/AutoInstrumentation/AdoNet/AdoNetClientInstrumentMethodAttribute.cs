@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
         internal class CommandExecuteNonQueryAttribute : AdoNetClientInstrumentMethodAttribute
         {
-            public CommandExecuteNonQueryAttribute(Type adoNetClientDataType, IntegrationType integrationType = IntegrationType.Normal)
+            public CommandExecuteNonQueryAttribute(Type adoNetClientDataType, IntegrationType integrationType = IntegrationType.Default)
                 : base(adoNetClientDataType)
             {
                 MethodName = AdoNetConstants.MethodNames.ExecuteNonQuery;
@@ -146,7 +146,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
         internal class CommandExecuteDbDataReaderWithBehaviorAttribute : AdoNetClientInstrumentMethodAttribute
         {
-            public CommandExecuteDbDataReaderWithBehaviorAttribute(Type adoNetClientDataType, IntegrationType integrationType = IntegrationType.Normal)
+            public CommandExecuteDbDataReaderWithBehaviorAttribute(Type adoNetClientDataType, IntegrationType integrationType = IntegrationType.Default)
                 : base(adoNetClientDataType)
             {
                 MethodName = AdoNetConstants.MethodNames.ExecuteDbDataReader;
@@ -171,7 +171,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
         internal class CommandExecuteScalarAttribute : AdoNetClientInstrumentMethodAttribute
         {
-            public CommandExecuteScalarAttribute(Type adoNetClientDataType, IntegrationType integrationType = IntegrationType.Normal)
+            public CommandExecuteScalarAttribute(Type adoNetClientDataType, IntegrationType integrationType = IntegrationType.Default)
                 : base(adoNetClientDataType)
             {
                 MethodName = AdoNetConstants.MethodNames.ExecuteScalar;

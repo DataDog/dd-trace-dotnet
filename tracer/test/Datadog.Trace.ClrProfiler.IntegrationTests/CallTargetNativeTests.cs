@@ -150,8 +150,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 };
 
                 Assert.Equal(1, beginMethodCount);
-                Assert.Equal(2, begin1MethodCount);
-                Assert.Equal(3, endMethodCount);
+                Assert.Equal(4, begin1MethodCount);
+                Assert.Equal(5, endMethodCount);
 
                 foreach (var typeName in typeNames)
                 {

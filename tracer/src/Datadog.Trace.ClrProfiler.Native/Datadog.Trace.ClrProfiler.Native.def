@@ -7,4 +7,4 @@ EXPORTS
     GetAssemblyAndSymbolsBytes
     InitializeProfiler
     EnableByRefInstrumentation
-    AddAbstractInstrumentation
+    AddDerivedInstrumentations

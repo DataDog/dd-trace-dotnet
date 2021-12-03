@@ -52,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
-        public static void AddAbstractInstrumentation(string id, NativeCallTargetDefinition[] methodArrays)
+        public static void AddDerivedInstrumentations(string id, NativeCallTargetDefinition[] methodArrays)
         {
             if (methodArrays is null || methodArrays.Length == 0)
             {
@@ -61,11 +61,11 @@ namespace Datadog.Trace.ClrProfiler
 
             if (IsWindows)
             {
-                Windows.AddAbstractInstrumentation(id, methodArrays, methodArrays.Length);
+                Windows.AddDerivedInstrumentations(id, methodArrays, methodArrays.Length);
             }
             else
             {
-                NonWindows.AddAbstractInstrumentation(id, methodArrays, methodArrays.Length);
+                NonWindows.AddDerivedInstrumentations(id, methodArrays, methodArrays.Length);
             }
         }
 
@@ -83,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler
             public static extern void EnableByRefInstrumentation();
 
             [DllImport("Datadog.Trace.ClrProfiler.Native.dll")]
-            public static extern void AddAbstractInstrumentation([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
+            public static extern void AddDerivedInstrumentations([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
         }
 
         // assume .NET Core if not running on Windows
@@ -99,7 +99,7 @@ namespace Datadog.Trace.ClrProfiler
             public static extern void EnableByRefInstrumentation();
 
             [DllImport("Datadog.Trace.ClrProfiler.Native")]
-            public static extern void AddAbstractInstrumentation([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
+            public static extern void AddDerivedInstrumentations([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
         }
     }
 }

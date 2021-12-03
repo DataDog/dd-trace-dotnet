@@ -977,11 +977,11 @@ void CorProfiler::EnableByRefInstrumentation()
     Logger::Info("ByRef Instrumentation enabled.");
 }
 
-void CorProfiler::AddAbstractInstrumentation(WCHAR* id, CallTargetDefinition* items, int size)
+void CorProfiler::AddDerivedInstrumentations(WCHAR* id, CallTargetDefinition* items, int size)
 {
     auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
     WSTRING definitionsId = WSTRING(id);
-    Logger::Info("AddAbstractInstrumentation: received id: ", definitionsId, " from managed side with ", size,
+    Logger::Info("AddDerivedInstrumentations: received id: ", definitionsId, " from managed side with ", size,
                  " integrations.");
 
     if (size > 0)
@@ -990,7 +990,7 @@ void CorProfiler::AddAbstractInstrumentation(WCHAR* id, CallTargetDefinition* it
     }
 }
 
-void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* items, int size, bool isAbstract)
+void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* items, int size, bool isDerived)
 {
     WSTRING definitionsId = WSTRING(id);
     std::scoped_lock<std::mutex> definitionsLock(definitions_ids_lock_);
@@ -1033,7 +1033,7 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
 
             const auto& integration = IntegrationDefinition(
                 MethodReference(targetAssembly, targetType, targetMethod, minVersion, maxVersion, signatureTypes),
-                TypeReference(integrationAssembly, integrationType, {}, {}), isAbstract);
+                TypeReference(integrationAssembly, integrationType, {}, {}), isDerived);
 
             if (Logger::IsDebugEnabled())
             {

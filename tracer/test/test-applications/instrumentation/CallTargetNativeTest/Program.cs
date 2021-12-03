@@ -65,10 +65,12 @@ namespace CallTargetNativeTest
 
             NativeMethods.InitializeProfiler(Guid.NewGuid().ToString("N"), definitionsList.ToArray());
 
-            NativeMethods.AddAbstractInstrumentation(Guid.NewGuid().ToString("N"), new NativeCallTargetDefinition[]
+            NativeMethods.AddDerivedInstrumentations(Guid.NewGuid().ToString("N"), new NativeCallTargetDefinition[]
             {
                 new(TargetAssembly, typeof(AbstractClass).FullName, "VoidMethod", new[] { "_", "_" }, 0,0,0,1,1,1, integrationAssembly, typeof(Noop1ArgumentsVoidIntegration).FullName),
-                new(TargetAssembly, typeof(AbstractClass).FullName, "OtherMethod", new[] { "_" }, 0,0,0,1,1,1, integrationAssembly, typeof(Noop0ArgumentsVoidIntegration).FullName)
+                new(TargetAssembly, typeof(AbstractClass).FullName, "OtherMethod", new[] { "_" }, 0,0,0,1,1,1, integrationAssembly, typeof(Noop0ArgumentsVoidIntegration).FullName),
+                
+                new(TargetAssembly, typeof(NonAbstractClass).FullName, "VoidMethod", new[] { "_", "_" }, 0,0,0,1,1,1, integrationAssembly, typeof(Noop1ArgumentsVoidIntegration).FullName),
             });
         }
 
@@ -268,6 +270,14 @@ namespace CallTargetNativeTest
             var impl02 = new Impl02OfAbstract();
             Console.WriteLine($"{typeof(Impl02OfAbstract).FullName}.VoidMethod");
             RunMethod(() => impl02.VoidMethod("Hello World"));
+
+            var implN01 = new Impl01OfNonAbstract();
+            Console.WriteLine($"{typeof(Impl01OfNonAbstract).FullName}.VoidMethod");
+            RunMethod(() => implN01.VoidMethod("Hello World"));
+
+            var implN02 = new Impl02OfNonAbstract();
+            Console.WriteLine($"{typeof(Impl02OfNonAbstract).FullName}.VoidMethod");
+            RunMethod(() => implN02.VoidMethod("Hello World"));
         }
 
         private static void Argument0()

@@ -102,6 +102,6 @@ namespace Datadog.Trace.ClrProfiler
         /// <summary>
         /// Gets or sets the CallTarget integration type
         /// </summary>
-        public IntegrationType CallTargetIntegrationType { get; set; } = IntegrationType.Normal;
+        public IntegrationType CallTargetIntegrationType { get; set; } = IntegrationType.Default;
     }
 }

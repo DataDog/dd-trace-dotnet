@@ -86,7 +86,7 @@ private:
     //
     // Initialization methods
     //
-    void InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* items, int size, bool isAbstract);
+    void InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* items, int size, bool isDerived);
 
 public:
     CorProfiler() = default;
@@ -145,7 +145,7 @@ public:
     //
     void InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int size);
     void EnableByRefInstrumentation();
-    void AddAbstractInstrumentation(WCHAR* id, CallTargetDefinition* items, int size);
+    void AddDerivedInstrumentations(WCHAR* id, CallTargetDefinition* items, int size);
 };
 
 // Note: Generally you should not have a single, global callback implementation,

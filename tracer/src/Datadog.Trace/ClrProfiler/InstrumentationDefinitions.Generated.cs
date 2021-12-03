@@ -335,7 +335,7 @@ namespace Datadog.Trace.ClrProfiler
             };
         }
 
-        private static NativeCallTargetDefinition[] GetAbstractDefinitionsArray()
+        private static NativeCallTargetDefinition[] GetDerivedDefinitionsArray()
         {
             return new NativeCallTargetDefinition[]
             {

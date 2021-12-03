@@ -770,7 +770,7 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
 
         for (const IntegrationDefinition& integration : integrationDefinitions)
         {
-            if (integration.is_abstract)
+            if (integration.is_derived)
             {
                 // Abstract methods handling.
                 if (assemblyMetadata == nullptr)

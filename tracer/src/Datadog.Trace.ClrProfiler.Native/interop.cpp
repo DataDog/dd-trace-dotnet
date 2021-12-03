@@ -33,9 +33,9 @@ EXTERN_C VOID STDAPICALLTYPE EnableByRefInstrumentation()
     return trace::profiler->EnableByRefInstrumentation();
 }
 
-EXTERN_C VOID STDAPICALLTYPE AddAbstractInstrumentation(WCHAR* id, trace::CallTargetDefinition* items, int size)
+EXTERN_C VOID STDAPICALLTYPE AddDerivedInstrumentations(WCHAR* id, trace::CallTargetDefinition* items, int size)
 {
-    return trace::profiler->AddAbstractInstrumentation(id, items, size);
+    return trace::profiler->AddDerivedInstrumentations(id, items, size);
 }
 
 #ifndef _WIN32
