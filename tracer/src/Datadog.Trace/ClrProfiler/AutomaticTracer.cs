@@ -59,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler
             return (SamplingPriority?)_child.TrySetSamplingPriority((int?)samplingPriority);
         }
 
-        public object GetActiveScope()
+        public object GetAutomaticActiveScope()
         {
             return Tracer.Instance.InternalActiveScope;
         }

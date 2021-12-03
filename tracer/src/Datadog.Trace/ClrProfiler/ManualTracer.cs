@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler
             }
 
             // We don't own the active trace, get the scope from the parent and mock it
-            var activeScope = _parent.GetActiveScope();
+            var activeScope = _parent.GetAutomaticActiveScope();
 
             if (activeScope is null)
             {
