@@ -36,6 +36,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstant
 
 // int System.Data.Common.DbCommand.ExecuteNonQuery()
 [assembly: CommandExecuteNonQuery(typeof(SystemDataForAbstractClientData), Datadog.Trace.ClrProfiler.IntegrationType.Abstract)]
+[assembly: CommandExecuteNonQuery(typeof(NetStandardSystemDataForAbstractClientData), Datadog.Trace.ClrProfiler.IntegrationType.Abstract)]
 [assembly: CommandExecuteNonQuery(typeof(SystemDataCommonClientData), Datadog.Trace.ClrProfiler.IntegrationType.Abstract)]
 
 /********************************************************************************
@@ -44,6 +45,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstant
 
 // object System.Data.Common.DbCommand.ExecuteScalar()
 [assembly: CommandExecuteScalar(typeof(SystemDataForAbstractClientData), Datadog.Trace.ClrProfiler.IntegrationType.Abstract)]
+[assembly: CommandExecuteScalar(typeof(NetStandardSystemDataForAbstractClientData), Datadog.Trace.ClrProfiler.IntegrationType.Abstract)]
 [assembly: CommandExecuteScalar(typeof(SystemDataCommonClientData), Datadog.Trace.ClrProfiler.IntegrationType.Abstract)]
 
 /********************************************************************************
@@ -52,4 +54,5 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstant
 
 // DbDataReader System.Data.Common.DbCommand.ExecuteDbDataReader(CommandBehavior)
 [assembly: CommandExecuteDbDataReaderWithBehavior(typeof(SystemDataForAbstractClientData), Datadog.Trace.ClrProfiler.IntegrationType.Abstract)]
+[assembly: CommandExecuteDbDataReaderWithBehavior(typeof(NetStandardSystemDataForAbstractClientData), Datadog.Trace.ClrProfiler.IntegrationType.Abstract)]
 [assembly: CommandExecuteDbDataReaderWithBehavior(typeof(SystemDataCommonClientData), Datadog.Trace.ClrProfiler.IntegrationType.Abstract)]

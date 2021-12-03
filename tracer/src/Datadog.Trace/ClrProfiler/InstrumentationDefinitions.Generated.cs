@@ -340,6 +340,9 @@ namespace Datadog.Trace.ClrProfiler
             return new NativeCallTargetDefinition[]
             {
                 // 
+                new("netstandard", "System.Data.Common.DbCommand", "ExecuteDbDataReader",  new[] { "System.Data.Common.DbDataReader", "System.Data.CommandBehavior" }, 2, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorIntegration"),
+                new("netstandard", "System.Data.Common.DbCommand", "ExecuteNonQuery",  new[] { "System.Int32" }, 2, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration"),
+                new("netstandard", "System.Data.Common.DbCommand", "ExecuteScalar",  new[] { "System.Object" }, 2, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarIntegration"),
                 new("System.Data", "System.Data.Common.DbCommand", "ExecuteDbDataReader",  new[] { "System.Data.Common.DbDataReader", "System.Data.CommandBehavior" }, 2, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorIntegration"),
                 new("System.Data", "System.Data.Common.DbCommand", "ExecuteNonQuery",  new[] { "System.Int32" }, 2, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration"),
                 new("System.Data", "System.Data.Common.DbCommand", "ExecuteScalar",  new[] { "System.Object" }, 2, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarIntegration"),
