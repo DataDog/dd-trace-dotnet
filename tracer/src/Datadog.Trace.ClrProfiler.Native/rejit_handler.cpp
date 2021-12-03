@@ -829,81 +829,76 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
                 {
                     auto typeDef = *typeDefIterator;
                     const auto typeInfo = GetTypeInfo(metadataImport, typeDef);
+                    bool rewriteType = false;
+                    auto ancestorTypeInfo = typeInfo.extend_from.get();
 
                     // Check if the type has ancestors
-                    if (typeInfo.extend_from == nullptr)
+                    int maxDepth = 1;
+                    while (ancestorTypeInfo != nullptr && maxDepth > 0)
                     {
-                        continue;
-                    }
-
-                    const auto ancestorTypeInfo = typeInfo.extend_from.get();
-
-                    // Validate the type name we already have
-                    if (ancestorTypeInfo->name != integration.target_method.type.name)
-                    {
-                        continue;
-                    }
-
-                    // Validate assembly data (scopeToken has the assemblyRef of the ancestor type)
-                    if (ancestorTypeInfo->scopeToken != mdTokenNil)
-                    {
-                        const auto tokenType = TypeFromToken(ancestorTypeInfo->scopeToken);
-
-                        if (tokenType == mdtAssemblyRef)
+                        // Validate the type name we already have
+                        if (ancestorTypeInfo->name == integration.target_method.type.name)
                         {
-                            const auto& ancestorAssemblyMetadata =
-                                GetReferencedAssemblyMetadata(assemblyImport, ancestorTypeInfo->scopeToken);
-
-                            // We check the assembly name
-                            if (ancestorAssemblyMetadata.name != integration.target_method.type.assembly.name)
+                            // Validate assembly data (scopeToken has the assemblyRef of the ancestor type)
+                            if (ancestorTypeInfo->scopeToken != mdTokenNil)
                             {
-                                continue;
-                            }
+                                const auto tokenType = TypeFromToken(ancestorTypeInfo->scopeToken);
 
-                            // Check min version
-                            if (integration.target_method.type.min_version > ancestorAssemblyMetadata.version)
-                            {
-                                continue;
-                            }
+                                if (tokenType == mdtAssemblyRef)
+                                {
+                                    const auto& ancestorAssemblyMetadata =
+                                        GetReferencedAssemblyMetadata(assemblyImport, ancestorTypeInfo->scopeToken);
 
-                            // Check max version
-                            if (integration.target_method.type.max_version < ancestorAssemblyMetadata.version)
+                                    // We check the assembly name and version
+                                    if (ancestorAssemblyMetadata.name == integration.target_method.type.assembly.name &&
+                                        integration.target_method.type.min_version <= ancestorAssemblyMetadata.version &&
+                                        integration.target_method.type.max_version >= ancestorAssemblyMetadata.version)
+                                    {
+                                        rewriteType = true;
+                                        break;
+                                    }
+                                }
+                                else
+                                {
+                                    Logger::Warn("Unknown token type (Not supported)");
+                                }
+                            }
+                            else
                             {
-                                continue;
+                                // Check module name and version
+                                if (moduleInfo.assembly.name == integration.target_method.type.assembly.name &&
+                                    integration.target_method.type.min_version <= assemblyMetadata->version &&
+                                    integration.target_method.type.max_version >= assemblyMetadata->version)
+                                {
+                                    rewriteType = true;
+                                    break;
+                                }
                             }
                         }
-                        else
+
+                        // Go up
+                        ancestorTypeInfo = ancestorTypeInfo->extend_from.get();
+                        if (ancestorTypeInfo != nullptr)
                         {
-                            Logger::Warn("Unknown token type (Not supported)");
-                            continue;
+                            if (ancestorTypeInfo->name == WStr("System.ValueType") ||
+                                ancestorTypeInfo->name == WStr("System.Object") ||
+                                ancestorTypeInfo->name == WStr("System.Enum"))
+                            {
+                                ancestorTypeInfo = nullptr;
+                            }
                         }
+
+                        maxDepth--;
                     }
-                    else
+
+                    if (rewriteType)
                     {
-                        // Check module name
-                        if (moduleInfo.assembly.name != integration.target_method.type.assembly.name)
-                        {
-                            continue;
-                        }
-
-                        // Check min version
-                        if (integration.target_method.type.min_version > assemblyMetadata->version)
-                        {
-                            continue;
-                        }
-
-                        // Check max version
-                        if (integration.target_method.type.max_version < assemblyMetadata->version)
-                        {
-                            continue;
-                        }
+                        //
+                        // Looking for the method to rewrite
+                        //
+                        ProcessTypeDefForRejit(integration, metadataImport, metadataEmit, assemblyImport, assemblyEmit,
+                                               moduleInfo, typeDef, vtModules, vtMethodDefs);
                     }
-
-                    //
-                    // Looking for the method to rewrite
-                    //
-                    ProcessTypeDefForRejit(integration, metadataImport, metadataEmit, assemblyImport, assemblyEmit,
-                                           moduleInfo, typeDef, vtModules, vtMethodDefs);
                 }
             }
             else
