@@ -29,7 +29,7 @@
     <!-- Integration: Npgsql -->
     <!-- Assembly: Npgsql -->
     <!-- Latest package https://www.nuget.org/packages/Npgsql/6.0.0 -->
-    <PackageReference Include="Npgsql" Version="6.0.0" />
+    <PackageReference Include="Npgsql" Version="6.0.1" />
 
     <!-- Integration: Oracle.ManagedDataAccess -->
     <!-- Assembly: Oracle.ManagedDataAccess -->
