@@ -8,6 +8,30 @@ using System.Runtime.InteropServices;
 
 namespace Datadog.Trace.ClrProfiler
 {
+ // !                                         ██
+ //                                         ██░░██
+ //                                       ██░░░░░░██
+ //                                     ██░░░░░░░░░░██
+ //                                     ██░░░░░░░░░░██
+ //                                   ██░░░░░░░░░░░░░░██
+ //                                 ██░░░░░░██████░░░░░░██
+ //                                 ██░░░░░░██████░░░░░░██
+ //                               ██░░░░░░░░██████░░░░░░░░██
+ //                               ██░░░░░░░░██████░░░░░░░░██
+ //                             ██░░░░░░░░░░██████░░░░░░░░░░██
+ //                           ██░░░░░░░░░░░░██████░░░░░░░░░░░░██
+ //                           ██░░░░░░░░░░░░██████░░░░░░░░░░░░██
+ //                         ██░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░██
+ //                         ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██
+ //                       ██░░░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░░░██
+ //                       ██░░░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░░░██
+ //                     ██░░░░░░░░░░░░░░░░░░██████░░░░░░░░░░░░░░░░░░██
+ //                     ██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██
+ //                       ██████████████████████████████████████████
+ //
+ // If you happen to change the layout of this structure,
+ // this will lead to an AccessViolationException in netCore when using a more recent version of the nuget.
+
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     internal struct NativeCallTargetDefinition
     {
