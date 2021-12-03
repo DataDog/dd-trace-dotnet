@@ -36,7 +36,6 @@ namespace Datadog.Trace.ClrProfiler
 
             if (activeScope is null)
             {
-                Log.Warning("Parent tracer owns the active trace, yet the scope is null");
                 return null;
             }
 
