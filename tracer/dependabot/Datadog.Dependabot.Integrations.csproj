@@ -159,7 +159,7 @@
     <!-- Integration: NUnit3.TestAdapter -->
     <!-- Assembly: NUnit3.TestAdapter -->
     <!-- Latest package https://www.nuget.org/packages/NUnit3TestAdapter/4.1.0 -->
-    <PackageReference Include="NUnit3TestAdapter" Version="3.17.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.1.0" />
 
     <!-- Integration: RabbitMQ.Client -->
     <!-- Assembly: RabbitMQ.Client -->
