@@ -97,8 +97,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     dbType = DbType.Sqlite;
                     return true;
                 default:
+                    string commandType = commandTypeFullName.Substring(commandTypeFullName.LastIndexOf(".") + 1);
+                    if (commandType == "InterceptableDbCommand" || commandType == "ProfiledDbCommand")
+                    {
+                        integrationId = null;
+                        dbType = null;
+                        return false;
+                    }
+
                     integrationId = IntegrationId.AdoNet;
-                    dbType = commandTypeFullName.Substring(commandTypeFullName.LastIndexOf(".") + 1).ToLowerInvariant();
+                    dbType = commandType.ToLowerInvariant();
                     return true;
             }
         }

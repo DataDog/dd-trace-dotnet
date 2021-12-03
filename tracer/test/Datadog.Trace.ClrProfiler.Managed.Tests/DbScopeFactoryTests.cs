@@ -120,12 +120,26 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         }
 
         [Fact]
-        internal void TryGetIntegrationDetails_FailsForUnknownCommandType()
+        internal void TryGetIntegrationDetails_FailsForKnownCommandType()
         {
-            bool result = DbScopeFactory.TryGetIntegrationDetails("UnknownCommand", out var actualIntegrationId, out var actualDbType);
+            bool result = DbScopeFactory.TryGetIntegrationDetails("InterceptableDbCommand", out var actualIntegrationId, out var actualDbType);
             Assert.False(result);
             Assert.False(actualIntegrationId.HasValue);
             Assert.Null(actualDbType);
+
+            bool result2 = DbScopeFactory.TryGetIntegrationDetails("ProfiledDbCommand", out var actualIntegrationId2, out var actualDbType2);
+            Assert.False(result2);
+            Assert.False(actualIntegrationId2.HasValue);
+            Assert.Null(actualDbType2);
+        }
+
+        [Fact]
+        internal void TryGetIntegrationDetails_CustomCommandType()
+        {
+            bool result = DbScopeFactory.TryGetIntegrationDetails("UnknownCommand", out var actualIntegrationId, out var actualDbType);
+            Assert.True(result);
+            Assert.Equal(IntegrationId.AdoNet.ToString(), actualIntegrationId.ToString());
+            Assert.Equal("unknowncommand", actualDbType);
         }
 
         private static Tracer CreateTracerWithIntegrationEnabled(string integrationName, bool enabled)
