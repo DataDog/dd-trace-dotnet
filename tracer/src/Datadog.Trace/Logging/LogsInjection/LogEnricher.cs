@@ -25,13 +25,13 @@ namespace Datadog.Trace.Logging
             _logProvider = logProvider;
         }
 
-        public void Initialize(IScopeManager scopeManager, string defaultServiceName, string version, string env)
+        public void Initialize(string defaultServiceName, string version, string env)
         {
             _versionProperty = version;
             _environmentProperty = env;
             _serviceProperty = defaultServiceName;
-            _traceIdProperty = CreateTracerProperty(scopeManager, t => t.Active?.Span.TraceId.ToString());
-            _spanIdProperty = CreateTracerProperty(scopeManager, t => t.Active?.Span.SpanId.ToString());
+            _traceIdProperty = CreateTracerProperty(() => Tracer.Instance.DistributedSpanContext?[HttpHeaderNames.TraceId]);
+            _spanIdProperty = CreateTracerProperty(() => Tracer.Instance.DistributedSpanContext?[HttpHeaderNames.ParentId]);
         }
 
         public IDisposable Register()
@@ -39,7 +39,7 @@ namespace Datadog.Trace.Logging
             return new Context(_logProvider, this);
         }
 
-        protected virtual object CreateTracerProperty(IScopeManager scopeManager, Func<IScopeManager, string> getter) => new TracerProperty(scopeManager, getter);
+        protected virtual object CreateTracerProperty(Func<string> getter) => new TracerProperty(getter);
 
         /// <summary>
         /// Wraps all the individual context objects in a single instance, that can be stored in an AsyncLocal
@@ -82,18 +82,16 @@ namespace Datadog.Trace.Logging
 
         private class TracerProperty
         {
-            private readonly IScopeManager _scopeManager;
-            private readonly Func<IScopeManager, string> _getter;
+            private readonly Func<string> _getter;
 
-            public TracerProperty(IScopeManager scopeManager, Func<IScopeManager, string> getter)
+            public TracerProperty(Func<string> getter)
             {
-                _scopeManager = scopeManager;
                 _getter = getter;
             }
 
             public override string ToString()
             {
-                return _getter(_scopeManager);
+                return _getter();
             }
         }
     }

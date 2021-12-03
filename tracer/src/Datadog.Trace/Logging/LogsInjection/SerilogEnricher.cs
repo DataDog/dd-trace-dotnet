@@ -19,7 +19,6 @@ namespace Datadog.Trace.Logging
         private readonly Func<object, object> _valueFactory;
         private readonly Func<string, object, object> _propertyFactory;
 
-        private IScopeManager _scopeManager;
         private object _serviceProperty;
         private object _versionProperty;
         private object _environmentProperty;
@@ -56,10 +55,8 @@ namespace Datadog.Trace.Logging
             _propertyFactory = BuildPropertyFactory(logEventPropertyType, logEventPropertyValueType);
         }
 
-        public void Initialize(IScopeManager scopeManager, string defaultServiceName, string version, string env)
+        public void Initialize(string defaultServiceName, string version, string env)
         {
-            _scopeManager = scopeManager;
-
             _serviceProperty = _propertyFactory(CorrelationIdentifier.SerilogServiceKey, _valueFactory(defaultServiceName));
             _versionProperty = _propertyFactory(CorrelationIdentifier.SerilogVersionKey, _valueFactory(version));
             _environmentProperty = _propertyFactory(CorrelationIdentifier.SerilogEnvKey, _valueFactory(env));
@@ -83,21 +80,18 @@ namespace Datadog.Trace.Logging
         [DuckReverseMethod(ParameterTypeNames = new[] { "Serilog.Events.LogEvent, Serilog", "Serilog.Core.ILogEventPropertyFactory, Serilog" })]
         public void Enrich(ILogEvent logEvent, object propertyFactory)
         {
-            var activeScope = _scopeManager.Active;
-
-            if (activeScope == null)
+            // Only enrich this log event if the distributed trace context belongs to this Tracer
+            if (Tracer.Instance.DistributedSpanContext is SpanContext spanContext)
             {
-                return;
+                var traceIdProperty = _propertyFactory(CorrelationIdentifier.SerilogTraceIdKey, _valueFactory(spanContext.TraceId.ToString()));
+                var spanIdProperty = _propertyFactory(CorrelationIdentifier.SerilogSpanIdKey, _valueFactory(spanContext.SpanId.ToString()));
+
+                logEvent.AddPropertyIfAbsent(_serviceProperty);
+                logEvent.AddPropertyIfAbsent(_versionProperty);
+                logEvent.AddPropertyIfAbsent(_environmentProperty);
+                logEvent.AddPropertyIfAbsent(traceIdProperty);
+                logEvent.AddPropertyIfAbsent(spanIdProperty);
             }
-
-            var traceIdProperty = _propertyFactory(CorrelationIdentifier.SerilogTraceIdKey, _valueFactory(activeScope.Span.TraceId.ToString()));
-            var spanIdProperty = _propertyFactory(CorrelationIdentifier.SerilogSpanIdKey, _valueFactory(activeScope.Span.SpanId.ToString()));
-
-            logEvent.AddPropertyIfAbsent(_serviceProperty);
-            logEvent.AddPropertyIfAbsent(_versionProperty);
-            logEvent.AddPropertyIfAbsent(_environmentProperty);
-            logEvent.AddPropertyIfAbsent(traceIdProperty);
-            logEvent.AddPropertyIfAbsent(spanIdProperty);
         }
 
         private static Func<string, object, object> BuildPropertyFactory(Type logEventPropertyType, Type logEventPropertyValueType)

@@ -126,7 +126,7 @@ namespace Datadog.Trace.Logging
                 if (_logProvider is ILogProviderWithEnricher logProvider)
                 {
                     var enricher = logProvider.CreateEnricher();
-                    enricher.Initialize(scopeManager, defaultServiceName, version, env);
+                    enricher.Initialize(defaultServiceName, version, env);
                     _logEnricher = enricher;
 
                     _scopeManager.TraceStarted += RegisterLogEnricher;
