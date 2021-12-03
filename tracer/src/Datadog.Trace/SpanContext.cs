@@ -5,6 +5,7 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace
@@ -213,18 +214,20 @@ namespace Datadog.Trace
         /// <inheritdoc/>
         bool IReadOnlyDictionary<string, string>.TryGetValue(string key, out string value)
         {
+            var invariant = CultureInfo.InvariantCulture;
+
             switch (key)
             {
                 case HttpHeaderNames.TraceId:
-                    value = TraceId.ToString();
+                    value = TraceId.ToString(invariant);
                     return true;
 
                 case HttpHeaderNames.ParentId:
-                    value = SpanId.ToString();
+                    value = SpanId.ToString(invariant);
                     return true;
 
                 case HttpHeaderNames.SamplingPriority:
-                    value = SamplingPriority?.ToString();
+                    value = SamplingPriority?.ToString(invariant);
                     return true;
 
                 case HttpHeaderNames.Origin:
