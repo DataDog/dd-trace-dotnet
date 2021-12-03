@@ -132,17 +132,23 @@ namespace Datadog.Trace.Logging
                     _scopeManager.TraceStarted += RegisterLogEnricher;
                     _scopeManager.TraceEnded += ClearLogEnricher;
                 }
-                else if (_logProvider is SerilogLogProvider)
-                {
-                    // Do not set default values for Serilog because it is unsafe to set
-                    // except at the application startup, but this would require auto-instrumentation
-                    _scopeManager.SpanOpened += StackOnSpanOpened;
-                    _scopeManager.SpanClosed += StackOnSpanClosed;
-                }
-                else
+                else if (_logProvider is FallbackNLogLogProvider)
                 {
                     _scopeManager.SpanActivated += MapOnSpanActivated;
                     _scopeManager.TraceEnded += MapOnTraceEnded;
+                }
+                else
+                {
+                    // Do not subcribe to events. This is a proactive step to avoid issues
+                    // when the manual and automatic versions do not match.
+                    //
+                    // The issue is that two separate Datadog.Trace assemblies will be loaded
+                    // and each will create their own LibLogScopeEventSubscriber to modify
+                    // the static state of the logging libraries. Each has an instance-level stack to
+                    // set/unset properties (using the IDisposable pattern), but the two sides
+                    // cannot communicate so they may clear state out of the order in which it was set.
+                    //
+                    // Thus, we will be proactive and disable usage for unknown log providers.
                 }
             }
             catch (Exception ex)
@@ -167,22 +173,6 @@ namespace Datadog.Trace.Logging
             }
         }
 #endif
-
-        public void StackOnSpanOpened(object sender, SpanEventArgs spanEventArgs)
-        {
-            if (!_executingIISPreStartInit)
-            {
-                SetSerilogCompatibleLogContext(spanEventArgs.TraceId, spanEventArgs.SpanId);
-            }
-        }
-
-        public void StackOnSpanClosed(object sender, SpanEventArgs spanEventArgs)
-        {
-            if (!_executingIISPreStartInit)
-            {
-                RemoveLastCorrelationIdentifierContext();
-            }
-        }
 
         public void MapOnSpanActivated(object sender, SpanEventArgs spanEventArgs)
         {
@@ -242,15 +232,14 @@ namespace Datadog.Trace.Logging
                 _scopeManager.TraceStarted -= RegisterLogEnricher;
                 _scopeManager.TraceEnded -= ClearLogEnricher;
             }
-            else if (_logProvider is SerilogLogProvider)
-            {
-                _scopeManager.SpanOpened -= StackOnSpanOpened;
-                _scopeManager.SpanClosed -= StackOnSpanClosed;
-            }
-            else
+            else if (_logProvider is FallbackNLogLogProvider)
             {
                 _scopeManager.SpanActivated -= MapOnSpanActivated;
                 _scopeManager.TraceEnded -= MapOnTraceEnded;
+            }
+            else
+            {
+                // No unsubscribing needed
             }
 
             RemoveAllCorrelationIdentifierContexts();
@@ -271,12 +260,6 @@ namespace Datadog.Trace.Logging
                     CustomSerilogLogProvider.IsLoggerAvailable,
                     () => new CustomSerilogLogProvider()));
 
-            LogProvider.LogProviderResolvers.Insert(
-                1,
-                Tuple.Create<LogProvider.IsLoggerAvailable, LogProvider.CreateLogProvider>(
-                    NoOpSerilogLogProvider.IsLoggerAvailable,
-                    () => new NoOpSerilogLogProvider()));
-
             // Register the custom NLog providers
             LogProvider.LogProviderResolvers.Insert(
                 2,
@@ -289,15 +272,6 @@ namespace Datadog.Trace.Logging
                 Tuple.Create<LogProvider.IsLoggerAvailable, LogProvider.CreateLogProvider>(
                     FallbackNLogLogProvider.IsLoggerAvailable,
                     () => new FallbackNLogLogProvider()));
-
-            // Register the no-op log4net provider
-            // Automatic logs injection will be handled by automatic instrumentation so make
-            // sure that calls to the LibLog Log Provider result in no-ops
-            LogProvider.LogProviderResolvers.Insert(
-                4,
-                Tuple.Create<LogProvider.IsLoggerAvailable, LogProvider.CreateLogProvider>(
-                    NoOpLog4NetLogProvider.IsLoggerAvailable,
-                    () => new NoOpLog4NetLogProvider()));
         }
 
         private void SetDefaultValues()
@@ -373,39 +347,6 @@ namespace Datadog.Trace.Logging
                 _contextDisposalStack.Push(
                     LogProvider.OpenMappedContext(
                         CorrelationIdentifier.SpanIdKey, spanId.ToString(), destructure: false));
-            }
-            catch (Exception)
-            {
-                _safeToAddToMdc = false;
-                RemoveAllCorrelationIdentifierContexts();
-            }
-        }
-
-        private void SetSerilogCompatibleLogContext(ulong traceId, ulong spanId)
-        {
-            if (!_safeToAddToMdc)
-            {
-                return;
-            }
-
-            try
-            {
-                // TODO: Debug logs
-                _contextDisposalStack.Push(
-                    LogProvider.OpenMappedContext(
-                        CorrelationIdentifier.SerilogServiceKey, _defaultServiceName, destructure: false));
-                _contextDisposalStack.Push(
-                    LogProvider.OpenMappedContext(
-                        CorrelationIdentifier.SerilogVersionKey, _version, destructure: false));
-                _contextDisposalStack.Push(
-                    LogProvider.OpenMappedContext(
-                        CorrelationIdentifier.SerilogEnvKey, _env, destructure: false));
-                _contextDisposalStack.Push(
-                    LogProvider.OpenMappedContext(
-                        CorrelationIdentifier.SerilogTraceIdKey, traceId.ToString(), destructure: false));
-                _contextDisposalStack.Push(
-                    LogProvider.OpenMappedContext(
-                        CorrelationIdentifier.SerilogSpanIdKey, spanId.ToString(), destructure: false));
             }
             catch (Exception)
             {
