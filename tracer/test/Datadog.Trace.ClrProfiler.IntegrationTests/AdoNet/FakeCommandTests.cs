@@ -32,9 +32,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             // - IDbCommandGenericConstraint<SqlCommand>-netstandard: 7 spans (1 group * 7 spans)
 
             const int expectedSpanCount = 91;
-            const string dbType = "fakecommand";
+            const string dbType = "fake";
             const string expectedOperationName = dbType + ".query";
-            const string expectedServiceName = "Samples.FakeDbCommand-fakecommand";
+            const string expectedServiceName = "Samples.FakeDbCommand-fake";
 
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = RunSampleAndWaitForExit(agent.Port);

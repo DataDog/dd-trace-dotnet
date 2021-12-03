@@ -133,13 +133,20 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             Assert.Null(actualDbType2);
         }
 
-        [Fact]
-        internal void TryGetIntegrationDetails_CustomCommandType()
+        [Theory]
+        [InlineData("System.Data.SqlClient.SqlCommand", "SqlClient", "sql-server")]
+        [InlineData("MySql.Data.MySqlClient.MySqlCommand", "MySql", "mysql")]
+        [InlineData("Npgsql.NpgsqlCommand", "Npgsql", "postgres")]
+        [InlineData("ProfiledDbCommand", null, null)]
+        [InlineData("ExampleCommand", "AdoNet", "example")]
+        [InlineData("Example", "AdoNet", "example")]
+        [InlineData("Command", "AdoNet", "command")]
+        [InlineData("Custom.DB.Command", "AdoNet", "db")]
+        internal void TryGetIntegrationDetails_CustomCommandType(string commandTypeFullName, string integrationId, string expectedDbType)
         {
-            bool result = DbScopeFactory.TryGetIntegrationDetails("UnknownCommand", out var actualIntegrationId, out var actualDbType);
-            Assert.True(result);
-            Assert.Equal(IntegrationId.AdoNet.ToString(), actualIntegrationId.ToString());
-            Assert.Equal("unknowncommand", actualDbType);
+            DbScopeFactory.TryGetIntegrationDetails(commandTypeFullName, out var actualIntegrationId, out var actualDbType);
+            Assert.Equal(integrationId, actualIntegrationId?.ToString());
+            Assert.Equal(expectedDbType, actualDbType);
         }
 
         private static Tracer CreateTracerWithIntegrationEnabled(string integrationName, bool enabled)
