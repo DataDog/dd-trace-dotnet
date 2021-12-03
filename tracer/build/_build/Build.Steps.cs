@@ -1091,6 +1091,7 @@ partial class Build
                 "Samples.OracleMDA", // We don't test these yet
                 "Samples.OracleMDA.Core", // We don't test these yet
                 "MismatchedTracerVersions",
+                "IBM.Data.DB2.DBCommand",
             };
 
             // These sample projects are built using RestoreAndBuildSamplesForPackageVersions
