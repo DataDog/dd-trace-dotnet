@@ -27,8 +27,7 @@ class ExplorationTestDescription
     public string Name { get; set; }
     public string PathToUnitTestProject { get; set; }
     public string[] TestsToIgnore { get; set; }
-
-    public bool IsProjectTestSupported { get; set; }
+    public bool IsTestedByVSTest { get; set; }
 
     public TargetFramework[] SupportedFrameworks { get; set; }
 
@@ -98,7 +97,7 @@ class ExplorationTestDescription
                 PathToUnitTestProject = "ICSharpCode.Decompiler.Tests",
                 TestsToIgnore = new[] { "UseMc", "_net45", "ImplicitConversions", "ExplicitConversions", "ICSharpCode_Decompiler", "NewtonsoftJson_pcl_debug", "NRefactory_CSharp", "Random_TestCase_1", "AsyncForeach", "AsyncStreams", "AsyncUsing", "CS9_ExtensionGetEnumerator", "IndexRangeTest", "InterfaceTests", "UsingVariables" },
                 SupportedFrameworks = new[] { TargetFramework.NET461 },
-                IsProjectTestSupported = false
+                IsTestedByVSTest = true
             },
             _ => throw new ArgumentOutOfRangeException(nameof(name), name, null)
         };
@@ -240,8 +239,8 @@ partial class Build
             x =>
             {
                 x = x
-                   .When(testDescription.IsProjectTestSupported, settings => settings.SetProjectFile(projectPath))
-                   .When(!testDescription.IsProjectTestSupported
+                   .When(!testDescription.IsTestedByVSTest, settings => settings.SetProjectFile(projectPath))
+                   .When(testDescription.IsTestedByVSTest
                        , settings =>
                          {
                              var frameworkFolder = Framework ?? "*";
