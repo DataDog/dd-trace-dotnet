@@ -7,6 +7,7 @@ using Nuke.Common.IO;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.Git;
+using Nuke.Common.Tools.VSTest;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
 public enum ExplorationTestUseCase
@@ -26,6 +27,8 @@ class ExplorationTestDescription
     public string Name { get; set; }
     public string PathToUnitTestProject { get; set; }
     public string[] TestsToIgnore { get; set; }
+
+    public bool IsProjectTestSupported { get; set; }
 
     public TargetFramework[] SupportedFrameworks { get; set; }
 
@@ -93,8 +96,9 @@ class ExplorationTestDescription
                 Name = "ILSpy",
                 GitRepositoryTag = "v7.1",
                 PathToUnitTestProject = "ICSharpCode.Decompiler.Tests",
-                TestsToIgnore = new[] { "ICSharpCode.Decompiler.Tests", "UseMc", "_net45", "ImplicitConversions", "ExplicitConversions", "ICSharpCode_Decompiler", "NewtonsoftJson_pcl_debug", "NRefactory_CSharp", "Random_TestCase_1" },
-                SupportedFrameworks = new[] { TargetFramework.NET461, TargetFramework.NETCOREAPP3_1 }
+                TestsToIgnore = new[] { "UseMc", "_net45", "ImplicitConversions", "ExplicitConversions", "ICSharpCode_Decompiler", "NewtonsoftJson_pcl_debug", "NRefactory_CSharp", "Random_TestCase_1", "AsyncForeach", "AsyncStreams", "AsyncUsing", "CS9_ExtensionGetEnumerator", "IndexRangeTest", "InterfaceTests", "UsingVariables" },
+                SupportedFrameworks = new[] { TargetFramework.NET461 },
+                IsProjectTestSupported = false
             },
             _ => throw new ArgumentOutOfRangeException(nameof(name), name, null)
         };
@@ -121,7 +125,7 @@ partial class Build
         => _ => _
                .Description("Run exploration tests for debugger.")
                .After(Clean)
-               .Requires(() => ExplorationTestName)
+               .DependsOn(BuildTracerHome)
                .Executes(() =>
                 {
                     PrepareExplorationTestEnvironment_Debugger();
@@ -148,6 +152,7 @@ partial class Build
         => _ => _
                .Description("Run exploration tests for profiler.")
                .After(Clean)
+               .DependsOn(BuildTracerHome)
                .Executes(() =>
                 {
                     PrepareExplorationTestEnvironment_ContinuousProfiler();
@@ -221,7 +226,7 @@ partial class Build
             return;
         }
 
-        var projectPath = GiClone(testDescription);
+        var projectPath = GitClone(testDescription);
         Logger.Info($"Test project path is {projectPath}");
 
         DotNetBuild(
@@ -235,7 +240,15 @@ partial class Build
             x =>
             {
                 x = x
-                   .SetProjectFile(projectPath)
+                   .When(testDescription.IsProjectTestSupported, settings => settings.SetProjectFile(projectPath))
+                   .When(!testDescription.IsProjectTestSupported
+                       , settings =>
+                         {
+                             var frameworkFolder = Framework ?? "*";
+                             var projectName = Path.GetFileName(projectPath);
+
+                             return settings.SetProjectFile($"{projectPath}/bin/{BuildConfiguration}/{frameworkFolder}/{projectName}.exe");
+                         })
                    .EnableNoRestore()
                    .EnableNoBuild()
                    .SetConfiguration(BuildConfiguration)
@@ -249,7 +262,7 @@ partial class Build
             });
     }
 
-    string GiClone(ExplorationTestDescription testDescription)
+    string GitClone(ExplorationTestDescription testDescription)
     {
         if (!ExplorationTestSkipClone)
         {
