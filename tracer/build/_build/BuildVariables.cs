@@ -6,11 +6,16 @@ public static class BuildVariables
 {
     public static void AddDebuggerEnvironmentVariables(this Dictionary<string, string> envVars, AbsolutePath tracerHomeDirectory)
     {
-        envVars.AddContinuousProfilerEnvironmentVariables(tracerHomeDirectory);
+        envVars.AddTracerEnvironmentVariables(tracerHomeDirectory);
         envVars.Add("DD_DEBUGGER_ENABLED", "1");
     }
 
     public static void AddContinuousProfilerEnvironmentVariables(this Dictionary<string, string> envVars, AbsolutePath tracerHomeDirectory)
+    {
+        envVars.AddTracerEnvironmentVariables(tracerHomeDirectory);
+    }
+
+    public static void AddTracerEnvironmentVariables(this Dictionary<string, string> envVars, AbsolutePath tracerHomeDirectory)
     {
         envVars.Add("COR_ENABLE_PROFILING", "1");
         envVars.Add("COR_PROFILER", "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}");

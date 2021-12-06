@@ -132,20 +132,23 @@ partial class Build
                     var envVariables = GetEnvVariables(ExplorationTestUseCase.Debugger);
                     RunExplorationTestsGitCloneAndUnitTest(envVariables);
                     RunExplorationTestAssertions_Debugger();
+
+                    void PrepareExplorationTestEnvironment_Debugger()
+                    {
+                        Logger.Info($"Prepare environment variables for profiler.");
+                        //TODO TBD
+                    }
+
+                    void RunExplorationTestAssertions_Debugger()
+                    {
+                        Logger.Info($"Running assertions tests for debugger.");
+                        //TODO TBD
+                    }
+
+                    MoveLogsToBuildData();
                 })
         ;
 
-    void PrepareExplorationTestEnvironment_Debugger()
-    {
-        Logger.Info($"Prepare environment variables for profiler.");
-        //TODO TBD
-    }
-
-    void RunExplorationTestAssertions_Debugger()
-    {
-        Logger.Info($"Running assertions tests for debugger.");
-        //TODO TBD
-    }
 
     Target RunExplorationTests_ContinuousProfiler
         => _ => _
@@ -159,21 +162,22 @@ partial class Build
                     var envVariables = GetEnvVariables(ExplorationTestUseCase.ContinuousProfiler);
                     RunExplorationTestsGitCloneAndUnitTest(envVariables);
                     RunExplorationTestAssertions_ContinuousProfiler();
+
+                    void PrepareExplorationTestEnvironment_ContinuousProfiler()
+                    {
+                        Logger.Info($"Prepare environment variables for profiler.");
+                        //TODO TBD
+                    }
+
+                    void RunExplorationTestAssertions_ContinuousProfiler()
+                    {
+                        Logger.Info($"Running assertions tests for profiler.");
+                        //TODO TBD
+                    }
+
+                    MoveLogsToBuildData();
                 })
         ;
-
-
-    void PrepareExplorationTestEnvironment_ContinuousProfiler()
-    {
-        Logger.Info($"Prepare environment variables for profiler.");
-        //TODO TBD
-    }
-
-    void RunExplorationTestAssertions_ContinuousProfiler()
-    {
-        Logger.Info($"Running assertions tests for profiler.");
-        //TODO TBD
-    }
 
     Dictionary<string, string> GetEnvVariables(ExplorationTestUseCase usecase)
     {
