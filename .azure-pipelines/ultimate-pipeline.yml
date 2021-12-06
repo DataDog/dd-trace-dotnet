@@ -883,7 +883,7 @@ stages:
         includeX86: true
     - template: steps/restore-working-directory.yml
 
-    - script: tracer\build.cmd RunExplorationTests_$(explorationTestUseCase) -ExplorationTestName $(explorationTestName)
+    - script: tracer\build.cmd BuildTracerHome --skip RunExplorationTests_$(explorationTestUseCase) -ExplorationTestName $(explorationTestName)
       displayName: RunExplorationTest
 
     - task: PublishTestResults@2
