@@ -73,7 +73,7 @@ namespace BenchmarkComparison
                        var baseSummariesByName = baseSummary.Results
                                                            .ToDictionary(b => $"{b.Method}-{b.Toolchain}", x => x);
 
-                       var diffSummariesByName = baseSummary.Results
+                       var diffSummariesByName = diffSummary.Results
                                                            .ToDictionary(b => $"{b.Method}-{b.Toolchain}", x => x);
                        var summaryKeys = baseSummariesByName.Keys.Concat(diffSummariesByName.Keys).Distinct();
 
@@ -143,7 +143,7 @@ namespace BenchmarkComparison
                 }
 
                 var zero = ByteSize.FromBytes(0);
-                var difference = baseBytes - diffBytes;
+                var difference = diffBytes - baseBytes;
                 // handle divide by zero
                 var percentageDifference = difference == zero ? 0 : baseBytes.Bytes / difference.Bytes;
 
