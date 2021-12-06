@@ -113,7 +113,7 @@ namespace Datadog.Trace.AppSec
             catch (Exception ex)
             {
                 _settings = new(source: null) { Enabled = false };
-                Log.Error(ex, "AppSec could not start because of an unexpected error. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help.");
+                Log.Error(ex, "DDAS-0001-01: AppSec could not start because of an unexpected error. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help.");
             }
         }
 
@@ -173,7 +173,7 @@ namespace Datadog.Trace.AppSec
                 for (var i = 0; i < results.Length; i++)
                 {
                     var match = results[i];
-                    Log.Debug(blocked ? "Blocking current transaction (rule: {RuleId})" : "Detecting an attack from rule {RuleId}", match.Rule);
+                    Log.Debug(blocked ? "DDAS-0012-02: Blocking current transaction (rule: {RuleId})" : "DDAS-0012-01: Detecting an attack from rule {RuleId}", match.Rule);
                 }
             }
         }
@@ -223,7 +223,7 @@ namespace Datadog.Trace.AppSec
             if (!osSupported || !archSupported)
             {
                 Log.Error(
-                    "AppSec could not start because the current environment is not supported. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help. Host information: operating_system: {{ {OSPlatform} }}, arch: {{ {ProcessArchitecture} }}, runtime_infos: {{ {ProductVersion} }}",
+                    "DDAS-0001-02: AppSec could not start because the current environment is not supported. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help. Host information: operating_system: {{ {OSPlatform} }}, arch: {{ {ProcessArchitecture} }}, runtime_infos: {{ {ProductVersion} }}",
                     frameworkDescription.OSPlatform,
                     frameworkDescription.ProcessArchitecture,
                     frameworkDescription.ProductVersion);

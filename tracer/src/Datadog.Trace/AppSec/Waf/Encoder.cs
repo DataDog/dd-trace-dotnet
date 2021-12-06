@@ -63,8 +63,6 @@ namespace Datadog.Trace.AppSec.Waf
 
         private Obj EncodeInternal(object o, List<Obj> argCache, int remainingDepth)
         {
-            Log.Debug("Encoding type: {Type}", o?.GetType());
-
             var value =
                 o switch
                 {
@@ -93,8 +91,6 @@ namespace Datadog.Trace.AppSec.Waf
 
         private Obj EncodeList(IEnumerable<object> objEnumerator, List<Obj> argCache, int remainingDepth)
         {
-            Log.Debug("Encoding list: {Type}", objEnumerator?.GetType());
-
             var arrNat = _wafNative.ObjectArray();
 
             if (remainingDepth-- <= 0)
@@ -121,8 +117,6 @@ namespace Datadog.Trace.AppSec.Waf
 
         private Obj EncodeDictionary(IEnumerable<KeyValuePair<string, object>> objDictEnumerator, List<Obj> argCache, int remainingDepth)
         {
-            Log.Debug("Encoding dictionary: {Type}", objDictEnumerator?.GetType());
-
             var mapNat = _wafNative.ObjectMap();
 
             if (remainingDepth-- <= 0)
