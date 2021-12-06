@@ -43,14 +43,45 @@ namespace Datadog.Trace.ExtensionMethods
         /// </summary>
         /// <param name="span">A span that belongs to the trace.</param>
         /// <param name="samplingPriority">The new sampling priority for the trace.</param>
+        [Obsolete("This method is deprecated and will be removed in a future version of the tracer. Use Span.KeepTrace() or Span.DropTrace() instead.")]
         public static void SetTraceSamplingPriority(this ISpan span, SamplingPriority samplingPriority)
+        {
+            span.SetTraceSamplingPriority(samplingPriority, lockSampling: false);
+        }
+
+        internal static void SetTraceSamplingPriority(this ISpan span, SamplingPriority samplingPriority, bool lockSampling)
         {
             if (span == null) { throw new ArgumentNullException(nameof(span)); }
 
             if (span.Context is SpanContext spanContext && spanContext.TraceContext != null)
             {
                 spanContext.TraceContext.SamplingPriority = samplingPriority;
+
+                if (lockSampling)
+                {
+                    spanContext.TraceContext.LockSamplingPriority();
+                }
             }
+        }
+
+        /// <summary>
+        /// Keep the trace that contains this span.
+        /// </summary>
+        /// <param name="span">A span that belongs to the trace.</param>
+        public static void KeepTrace(this ISpan span)
+        {
+            span.SetTraceSamplingPriority(SamplingPriority.UserKeep, lockSampling: false);
+        }
+
+        /// <summary>
+        /// Drop the trace that contains this span.
+        /// The trace still counts towards aggregate statistics (e.g. counts, hits per second),
+        /// but its contents is not sent to the back and is not viewable in the Datadog APM dashboard.
+        /// </summary>
+        /// <param name="span">A span that belongs to the trace.</param>
+        public static void DropTrace(this ISpan span)
+        {
+            span.SetTraceSamplingPriority(SamplingPriority.UserReject, lockSampling: false);
         }
 
         internal static void DecorateWebServerSpan(
