@@ -66,7 +66,7 @@ namespace Datadog.Trace.BenchmarkDotNet
                     Span span = tracer.StartSpan("benchmarkdotnet.test", startTime: startTime);
                     double durationNanoseconds = 0;
 
-                    span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
+                    span.SetTraceSamplingPriority(SamplingPriority.AutoKeep, lockSampling: false);
                     span.Type = SpanTypes.Test;
                     span.ResourceName = $"{report.BenchmarkCase.Descriptor.Type.FullName}.{report.BenchmarkCase.Descriptor.WorkloadMethod.Name}";
                     CIEnvironmentValues.DecorateSpan(span);
