@@ -127,13 +127,13 @@ partial class Build
                .DependsOn(BuildTracerHome)
                .Executes(() =>
                 {
-                    PrepareExplorationTestEnvironment_Debugger();
+                    SetUpExplorationTest_Debugger();
 
                     var envVariables = GetEnvVariables(ExplorationTestUseCase.Debugger);
                     RunExplorationTestsGitCloneAndUnitTest(envVariables);
                     RunExplorationTestAssertions_Debugger();
 
-                    void PrepareExplorationTestEnvironment_Debugger()
+                    void SetUpExplorationTest_Debugger()
                     {
                         Logger.Info($"Prepare environment variables for profiler.");
                         //TODO TBD
@@ -157,13 +157,13 @@ partial class Build
                .DependsOn(BuildTracerHome)
                .Executes(() =>
                 {
-                    PrepareExplorationTestEnvironment_ContinuousProfiler();
+                    SetUpExplorationTest_ContinuousProfiler();
                     
                     var envVariables = GetEnvVariables(ExplorationTestUseCase.ContinuousProfiler);
                     RunExplorationTestsGitCloneAndUnitTest(envVariables);
                     RunExplorationTestAssertions_ContinuousProfiler();
 
-                    void PrepareExplorationTestEnvironment_ContinuousProfiler()
+                    void SetUpExplorationTest_ContinuousProfiler()
                     {
                         Logger.Info($"Prepare environment variables for profiler.");
                         //TODO TBD
