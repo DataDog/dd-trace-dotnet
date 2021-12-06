@@ -159,12 +159,22 @@ namespace Datadog.Trace
             return new SpanContext(traceId, parentId, samplingPriority, null, origin);
         }
 
-        public IEnumerable<KeyValuePair<string, string>> ExtractHeaderTags<T>(T headers, IEnumerable<KeyValuePair<string, string>> headerToTagMap, string defaultTagPrefix)
+        public IEnumerable<KeyValuePair<string, string>> ExtractHeaderTags<T>(T headers, IEnumerable<KeyValuePair<string, string>> headerToTagMap, string defaultTagPrefix, string useragent = null)
             where T : IHeadersCollection
         {
             foreach (KeyValuePair<string, string> headerNameToTagName in headerToTagMap)
             {
-                string headerValue = ParseString(headers, headerNameToTagName.Key);
+                string headerValue;
+                if (headerNameToTagName.Key == HttpHeaderNames.UserAgent && !string.IsNullOrEmpty(useragent))
+                {
+                    // A specific case for the user agent as it is splitted in .net framework web api.
+                    headerValue = useragent;
+                }
+                else
+                {
+                    headerValue = ParseString(headers, headerNameToTagName.Key);
+                }
+
                 if (headerValue is null)
                 {
                     continue;
@@ -366,6 +376,8 @@ namespace Datadog.Trace
             {
                 if (!string.IsNullOrEmpty(headerValue))
                 {
+                    Log.Information("In Parser: " + headerName + " = " + headerValue);
+
                     return headerValue;
                 }
             }
