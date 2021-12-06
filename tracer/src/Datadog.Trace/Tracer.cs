@@ -218,19 +218,10 @@ namespace Datadog.Trace
             }
         }
 
-        /// <summary>
-        /// This creates a new span with the given parameters and makes it active.
-        /// </summary>
-        /// <param name="operationName">The span's operation name</param>
-        /// <param name="parent">The span's parent</param>
-        /// <param name="serviceName">The span's service name</param>
-        /// <param name="startTime">An explicit start time for that span</param>
-        /// <param name="ignoreActiveScope">If set the span will not be a child of the currently active span</param>
-        /// <param name="finishOnClose">If set to false, closing the returned scope will not close the enclosed span </param>
-        /// <returns>A scope wrapping the newly created span</returns>
-        IScope ITracer.StartActive(string operationName, ISpanContext parent, string serviceName, DateTimeOffset? startTime, bool ignoreActiveScope, bool finishOnClose)
+        /// <inheritdoc cref="ITracer" />
+        IScope ITracer.StartActive(string operationName, CreateSpanSettings settings)
         {
-            return StartActive(operationName, parent, serviceName, startTime, ignoreActiveScope, finishOnClose);
+            return StartActive(operationName, settings.Parent, serviceName: null, settings.StartTime, ignoreActiveScope: false, finishOnClose: settings.FinishOnClose ?? true);
         }
 
         /// <summary>
