@@ -96,16 +96,17 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             foreach (var span in spans)
             {
-                foreach (var assert in assertOnSpans)
-                {
-                    assert(span);
-                }
-
                 // not all tags will have security events, only the route ones
                 var gotTag = span.Tags.TryGetValue(Tags.AppSecJson, out var json);
                 if (gotTag)
                 {
                     actualAppSecEvents++;
+
+                    // we only really care about these asserts if we're on an appsec span
+                    foreach (var assert in assertOnSpans)
+                    {
+                        assert(span);
+                    }
 
                     var jsonObj = JsonConvert.DeserializeObject<AppSecJson>(json);
 
@@ -122,12 +123,10 @@ namespace Datadog.Trace.Security.IntegrationTests
                         { "appsec.event", "true" },
                         { "_dd.origin", "appsec" },
                         { "http.useragent", "Mistake Not..." },
-                        // { "network.client.ip", "127.0.0.1" },
                         { "actor.ip", "86.242.244.246" },
                         { "http.request.headers.host", $"localhost:{_httpPort}" },
                         { "http.request.headers.x-forwarded", "86.242.244.246" },
                         { "http.request.headers.user-agent", "Mistake Not..." },
-                        // { "http.response.headers.content-type", "text/plain; charset=utf-8" },
                     };
                     foreach (var kvp in securityTags)
                     {
