@@ -165,7 +165,7 @@ namespace Datadog.Trace
             foreach (KeyValuePair<string, string> headerNameToTagName in headerToTagMap)
             {
                 string headerValue;
-                if (headerNameToTagName.Key == HttpHeaderNames.UserAgent && !string.IsNullOrEmpty(useragent))
+                if (string.Equals(headerNameToTagName.Key, HttpHeaderNames.UserAgent, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(useragent))
                 {
                     // A specific case for the user agent as it is splitted in .net framework web api.
                     headerValue = useragent;
