@@ -159,7 +159,13 @@ namespace Datadog.Trace
             return new SpanContext(traceId, parentId, samplingPriority, null, origin);
         }
 
-        public IEnumerable<KeyValuePair<string, string>> ExtractHeaderTags<T>(T headers, IEnumerable<KeyValuePair<string, string>> headerToTagMap, string defaultTagPrefix, string useragent = null)
+        public IEnumerable<KeyValuePair<string, string>> ExtractHeaderTags<T>(T headers, IEnumerable<KeyValuePair<string, string>> headerToTagMap, string defaultTagPrefix)
+            where T : IHeadersCollection
+        {
+            return ExtractHeaderTags(headers, headerToTagMap, defaultTagPrefix, string.Empty);
+        }
+
+        public IEnumerable<KeyValuePair<string, string>> ExtractHeaderTags<T>(T headers, IEnumerable<KeyValuePair<string, string>> headerToTagMap, string defaultTagPrefix, string useragent)
             where T : IHeadersCollection
         {
             foreach (KeyValuePair<string, string> headerNameToTagName in headerToTagMap)
@@ -376,7 +382,6 @@ namespace Datadog.Trace
             {
                 if (!string.IsNullOrEmpty(headerValue))
                 {
-
                     return headerValue;
                 }
             }
