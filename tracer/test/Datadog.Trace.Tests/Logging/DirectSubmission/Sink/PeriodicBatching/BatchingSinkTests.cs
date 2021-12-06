@@ -2,9 +2,9 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-// Based on https://github.com/serilog/serilog-sinks-periodicbatching/blob/66a74768196758200bff67077167cde3a7e346d5/test/Serilog.Sinks.PeriodicBatching.Tests/PeriodicBatchingSinkTests.cs
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,6 +15,7 @@ using Datadog.Trace.Logging.DirectSubmission.Sink;
 using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
 using FluentAssertions;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
 {
@@ -22,63 +23,130 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
     {
         private const int DefaultQueueLimit = 100_000;
         private static readonly TimeSpan TinyWait = TimeSpan.FromMilliseconds(200);
-        private static readonly TimeSpan MicroWait = TimeSpan.FromMilliseconds(1);
+        private static readonly TimeSpan CircuitBreakPeriod = TimeSpan.FromSeconds(1);
+
+        private static readonly BatchingSinkOptions DefaultBatchingOptions
+            = new(batchSizeLimit: 2, queueLimit: DefaultQueueLimit, period: TinyWait, circuitBreakPeriod: CircuitBreakPeriod);
+
+        private readonly ITestOutputHelper _output;
+
+        public BatchingSinkTests(ITestOutputHelper output)
+        {
+            _output = output;
+        }
 
         // Some very, very approximate tests here :)
 
         [Fact]
-        public void WhenAnEventIsEnqueuedItIsWrittenToABatch_OnFlush()
+        public void WhenRunning_AndAnEventIsQueued_ItIsWrittenToABatchOnDispose()
         {
-            var pbs = new InMemoryBatchedSink(TimeSpan.Zero, new BatchingSinkOptions(batchSizeLimit: 2, queueLimit: DefaultQueueLimit, period: TinyWait));
+            var sink = new InMemoryBatchedSink(DefaultBatchingOptions);
             var evt = new TestEvent("Some event");
-            pbs.EnqueueLog(evt);
-            pbs.Dispose();
 
-            pbs.Batches.Count.Should().Be(1);
-            pbs.Batches[0].Count.Should().Be(1);
-            pbs.Batches[0][0].Should().BeSameAs(evt);
-            pbs.IsDisposed.Should().BeTrue();
-            pbs.WasCalledAfterDisposal.Should().BeFalse();
+            sink.EnqueueLog(evt);
+            sink.Dispose();
+
+            sink.Batches.Count.Should().Be(1);
+            sink.Batches.TryPeek(out var batch).Should().BeTrue();
+            batch.Should().BeEquivalentTo(new List<DatadogLogEvent> { evt });
         }
 
         [Fact]
-        public void WhenAnEventIsEnqueuedItIsWrittenToABatch_OnTimer()
+        public void WhenRunning_AndAnEventIsQueued_ItIsWrittenToABatch()
         {
-            var pbs = new InMemoryBatchedSink(TimeSpan.Zero, new BatchingSinkOptions(batchSizeLimit: 2, queueLimit: DefaultQueueLimit, period: TinyWait));
+            var sink = new InMemoryBatchedSink(DefaultBatchingOptions);
             var evt = new TestEvent("Some event");
-            pbs.EnqueueLog(evt);
-            WaitForBatches(pbs);
-            pbs.Stop();
-            pbs.Dispose();
 
-            pbs.Batches.Count.Should().Be(1);
-            pbs.IsDisposed.Should().BeTrue();
-            pbs.WasCalledAfterDisposal.Should().BeFalse();
+            sink.EnqueueLog(evt);
+            var batches = WaitForBatches(sink);
+
+            batches.Count.Should().Be(1);
+            sink.Batches.TryPeek(out var batch).Should().BeTrue();
+            batch.Should().BeEquivalentTo(new List<DatadogLogEvent> { evt });
         }
 
         [Fact]
-        public void WhenAnEventIsEnqueuedItIsWrittenToABatch_FlushWhileRunning()
+        public void AfterDisposed_AndAnEventIsQueued_ItIsNotWrittenToABatch()
         {
-            var batchEmitDelay = TinyWait + TinyWait;
-            var pbs = new InMemoryBatchedSink(batchEmitDelay, new BatchingSinkOptions(batchSizeLimit: 2, queueLimit: DefaultQueueLimit, period: MicroWait));
-
+            var sink = new InMemoryBatchedSink(DefaultBatchingOptions);
             var evt = new TestEvent("Some event");
-            pbs.EnqueueLog(evt);
-            WaitForBatches(pbs);
-            pbs.Dispose();
+            sink.Dispose();
+            sink.EnqueueLog(evt);
 
-            pbs.Batches.Count.Should().Be(1);
-            pbs.IsDisposed.Should().BeTrue();
-            pbs.WasCalledAfterDisposal.Should().BeFalse();
+            // slightly arbitrary time to wait
+            Thread.Sleep(1_000);
+            sink.Batches.Should().BeEmpty();
         }
 
-        private static void WaitForBatches(InMemoryBatchedSink pbs)
+        [Fact]
+        public void AfterMultipleFailures_SinkIsPermanentlyDisabled()
         {
-            var deadline = DateTime.UtcNow.AddMinutes(2);
-            while (pbs.Batches.Count == 0 && DateTime.UtcNow < deadline)
+            var mutex = new ManualResetEventSlim();
+            var emitResults = Enumerable.Repeat(false, BatchingSink.FailuresBeforeCircuitBreak);
+            var sink = new InMemoryBatchedSink(
+                DefaultBatchingOptions,
+                () => mutex.Set(),
+                emitResults.ToArray());
+            var evt = new TestEvent("Some event");
+
+            for (var i = 0; i < BatchingSink.FailuresBeforeCircuitBreak; i++)
+            {
+                sink.EnqueueLog(evt);
+                WaitForBatches(sink, batchCount: i + 1);
+            }
+
+            mutex.Wait(10_000).Should().BeTrue($"Sink should be disabled after {BatchingSink.FailuresBeforeCircuitBreak} faults");
+        }
+
+        [Fact]
+        public void AfterInitialSuccessThenMultipleFailures_SinkIsTemporarilyDisabled()
+        {
+            var emitResults = new[] { true }
+               .Concat(Enumerable.Repeat(false, BatchingSink.FailuresBeforeCircuitBreak));
+
+            var sink = new InMemoryBatchedSink(
+                DefaultBatchingOptions,
+                emitResults: emitResults.ToArray());
+            var evt = new TestEvent("Some event");
+
+            // Initial success ensures we don't permanently disable the sink
+            _output.WriteLine("Queueing first event and waiting for sink");
+            sink.EnqueueLog(evt);
+            WaitForBatches(sink, batchCount: 1);
+
+            // Put the sink in a broken status (temporary)
+            for (var i = 0; i < BatchingSink.FailuresBeforeCircuitBreak; i++)
+            {
+                _output.WriteLine($"Queueing broken event {i + 1}");
+                sink.EnqueueLog(evt);
+                WaitForBatches(sink, batchCount: i + 2);
+            }
+
+            // initial enqueue should be ignored
+            _output.WriteLine($"Queueing event when broken circuit");
+            sink.EnqueueLog(evt);
+            Thread.Sleep(CircuitBreakPeriod);
+            Thread.Sleep(CircuitBreakPeriod);
+            // ensure we _don't_ have any more batches
+            sink.Batches.Count.Should().Be(BatchingSink.FailuresBeforeCircuitBreak + 1);
+
+            // queue another log now circuit is partially open
+            _output.WriteLine($"Queueing event in partially open sink");
+            sink.EnqueueLog(evt);
+            WaitForBatches(sink, batchCount: BatchingSink.FailuresBeforeCircuitBreak + 2);
+        }
+
+        private static ConcurrentStack<IList<DatadogLogEvent>> WaitForBatches(InMemoryBatchedSink pbs, int batchCount = 1)
+        {
+            var deadline = DateTime.UtcNow.AddSeconds(10_000);
+            var batches = pbs.Batches;
+            while (batches.Count < batchCount && DateTime.UtcNow < deadline)
             {
                 Thread.Sleep(TinyWait);
+                batches = pbs.Batches;
             }
+
+            return batches;
         }
 
         internal class TestEvent : DatadogLogEvent
@@ -96,60 +164,31 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
             }
         }
 
-        internal class InMemoryBatchedSink : BatchingSink, IDisposable
+        private class InMemoryBatchedSink : BatchingSink
         {
-            private readonly TimeSpan _batchEmitDelay;
-            private readonly object _stateLock = new();
-            private bool _stopped;
+            private readonly bool[] _emitResults;
+            private int _emitCount = -1;
 
-            public InMemoryBatchedSink(TimeSpan batchEmitDelay, BatchingSinkOptions sinkOptions)
-                : base(sinkOptions)
+            public InMemoryBatchedSink(
+                BatchingSinkOptions sinkOptions,
+                Action disableSinkAction = null,
+                bool[] emitResults = null)
+                : base(sinkOptions, disableSinkAction)
             {
-                _batchEmitDelay = batchEmitDelay;
+                _emitResults = emitResults ?? Array.Empty<bool>();
             }
 
-            // Postmortem only
-            public bool WasCalledAfterDisposal { get; private set; }
+            public ConcurrentStack<IList<DatadogLogEvent>> Batches { get; } = new();
 
-            public IList<IList<DatadogLogEvent>> Batches { get; } = new List<IList<DatadogLogEvent>>();
-
-            public bool IsDisposed { get; private set; }
-
-            public void Stop()
+            protected override Task<bool> EmitBatch(Queue<DatadogLogEvent> events)
             {
-                lock (_stateLock)
-                {
-                    _stopped = true;
-                }
-            }
+                Batches.Push(events.ToList());
+                _emitCount++;
+                var result = _emitCount < _emitResults.Length
+                                 ? _emitResults[_emitCount]
+                                 : true;
 
-            protected override Task EmitBatch(Queue<DatadogLogEvent> events)
-            {
-                lock (_stateLock)
-                {
-                    if (_stopped)
-                    {
-                        return Task.FromResult(0);
-                    }
-
-                    if (IsDisposed)
-                    {
-                        WasCalledAfterDisposal = true;
-                    }
-
-                    Thread.Sleep(_batchEmitDelay);
-                    Batches.Add(events.ToList());
-                }
-
-                return Task.FromResult(0);
-            }
-
-            protected override void AdditionalDispose()
-            {
-                lock (_stateLock)
-                {
-                    IsDisposed = true;
-                }
+                return Task.FromResult(result);
             }
         }
     }

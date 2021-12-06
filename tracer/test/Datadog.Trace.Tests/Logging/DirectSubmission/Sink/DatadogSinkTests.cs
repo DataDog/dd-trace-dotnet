@@ -30,7 +30,11 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         {
             var mutex = new ManualResetEventSlim();
 
-            var logsApi = new TestLogsApi(_ => mutex.Set());
+            var logsApi = new TestLogsApi(_ =>
+            {
+                mutex.Set();
+                return true;
+            });
             var options = new BatchingSinkOptions(batchSizeLimit: 2, queueLimit: DefaultQueueLimit, period: TinyWait);
             var sink = new DatadogSink(logsApi, SettingsHelper.GetFormatter(), options);
 
@@ -52,7 +56,8 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
                 logsApi,
                 SettingsHelper.GetFormatter(),
                 options,
-                oversizeLogCallback: _ => mutex.Set());
+                oversizeLogCallback: _ => mutex.Set(),
+                sinkDisabledCallback: () => { });
 
             var message = new StringBuilder().Append('x', repeatCount: 1024 * 1024).ToString();
             sink.EnqueueLog(new TestLogEvent(DirectSubmissionLogLevel.Debug, message));
@@ -69,12 +74,14 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             int logsReceived = 0;
             const int expectedCount = 2;
 
-            void LogsSentCallback(int x)
+            bool LogsSentCallback(int x)
             {
                 if (Interlocked.Add(ref logsReceived, x) == expectedCount)
                 {
                     mutex.Set();
                 }
+
+                return true;
             }
 
             var logsApi = new TestLogsApi(LogsSentCallback);
@@ -109,12 +116,14 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             int logsReceived = 0;
             const int expectedCount = 5;
 
-            void LogsSentCallback(int x)
+            bool LogsSentCallback(int x)
             {
                 if (Interlocked.Add(ref logsReceived, x) == expectedCount)
                 {
                     mutex.Set();
                 }
+
+                return true;
             }
 
             var logsApi = new TestLogsApi(LogsSentCallback);
@@ -140,6 +149,62 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             logs.Select(x => x.Message).Should().OnlyHaveUniqueItems();
         }
 
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task EmitBatchEchoesLogsApiReturnValue(bool logsApiResponse)
+        {
+            var mutex = new ManualResetEventSlim();
+            bool LogsSentCallback(int x)
+            {
+                mutex.Set();
+
+                return logsApiResponse;
+            }
+
+            var logsApi = new TestLogsApi(LogsSentCallback);
+            var options = new BatchingSinkOptions(batchSizeLimit: 2, queueLimit: DefaultQueueLimit, period: TinyWait);
+            var sink = new TestSink(logsApi, SettingsHelper.GetFormatter(), options);
+            var log = new TestLogEvent(DirectSubmissionLogLevel.Debug, "First message");
+            var queue = new Queue<DatadogLogEvent>();
+            queue.Enqueue(log);
+
+            var result = await sink.CallEmitBatch(queue);
+
+            result.Should().Be(logsApiResponse);
+        }
+
+        [Fact]
+        public void IfCircuitBreakerBreaksThenNoApiRequestsAreSent()
+        {
+            var mutex = new ManualResetEventSlim();
+            int logsReceived = 0;
+
+            bool LogsSentCallback(int x)
+            {
+                Interlocked.Add(ref logsReceived, x);
+                mutex.Set();
+                return false;
+            }
+
+            var logsApi = new TestLogsApi(LogsSentCallback);
+            var options = new BatchingSinkOptions(batchSizeLimit: 2, queueLimit: DefaultQueueLimit, period: TinyWait);
+            var sink = new DatadogSink(logsApi, SettingsHelper.GetFormatter(), options);
+
+            for (var i = 0; i < BatchingSink.FailuresBeforeCircuitBreak; i++)
+            {
+                sink.EnqueueLog(new TestLogEvent(DirectSubmissionLogLevel.Debug, "A message"));
+                mutex.Wait(10_000).Should().BeTrue();
+                mutex.Reset();
+            }
+
+            // circuit should be broken
+            sink.EnqueueLog(new TestLogEvent(DirectSubmissionLogLevel.Debug, "A message"));
+            mutex.Wait(3_000).Should().BeFalse(); // don't expect it to be set
+
+            logsReceived.Should().Be(BatchingSink.FailuresBeforeCircuitBreak);
+        }
+
         internal class TestLogEvent : DatadogLogEvent
         {
             public TestLogEvent(DirectSubmissionLogLevel level, string message)
@@ -161,9 +226,9 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
 
         internal class TestLogsApi : ILogsApi
         {
-            private readonly Action<int> _logsSentCallback;
+            private readonly Func<int, bool> _logsSentCallback;
 
-            public TestLogsApi(Action<int> logsSentCallback = null)
+            public TestLogsApi(Func<int, bool> logsSentCallback = null)
             {
                 _logsSentCallback = logsSentCallback;
             }
@@ -174,12 +239,12 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             {
             }
 
-            public Task SendLogsAsync(ArraySegment<byte> logs, int numberOfLogs)
+            public Task<bool> SendLogsAsync(ArraySegment<byte> logs, int numberOfLogs)
             {
                 // create a copy of it
                 Logs.Enqueue(new SentMessage(new ArraySegment<byte>(logs.ToArray()), numberOfLogs));
-                _logsSentCallback?.Invoke(numberOfLogs);
-                return Task.FromResult(0);
+                var result = _logsSentCallback?.Invoke(numberOfLogs) ?? true;
+                return Task.FromResult(result);
             }
         }
 
@@ -194,6 +259,19 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             public ArraySegment<byte> Logs { get; }
 
             public int NumberOfLogs { get; }
+        }
+
+        internal class TestSink : DatadogSink
+        {
+            public TestSink(ILogsApi api, LogFormatter formatter, BatchingSinkOptions sinkOptions)
+                : base(api, formatter, sinkOptions)
+            {
+            }
+
+            public Task<bool> CallEmitBatch(Queue<DatadogLogEvent> events)
+            {
+                return EmitBatch(events);
+            }
         }
     }
 }

@@ -42,7 +42,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
         {
         }
 
-        public async Task SendLogsAsync(ArraySegment<byte> logs, int numberOfLogs)
+        public async Task<bool> SendLogsAsync(ArraySegment<byte> logs, int numberOfLogs)
         {
             var retriesRemaining = MaxNumberRetries - 1;
             var nextSleepDuration = InitialSleepDurationMs;
@@ -60,7 +60,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
                 catch (Exception ex)
                 {
                     Log.Error(ex, "An error occurred while generating request to send logs to the intake at {IntakeEndpoint}", _apiRequestFactory.Info(_logsIntakeEndpoint));
-                    return;
+                    return false;
                 }
 
                 // Set additional headers
@@ -82,7 +82,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
                         if (response.StatusCode is >= 200 and < 300)
                         {
                             Log.Debug<int>("Successfully sent {Count} logs to the intake", numberOfLogs);
-                            return;
+                            return true;
                         }
 
                         shouldRetry = response.StatusCode switch
@@ -122,7 +122,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
                     if (ex.InnerException is InvalidOperationException ioe)
                     {
                         Log.Error<int, string>(ex, "An error occurred while sending {Count} logs to the intake at {IntakeEndpoint}", numberOfLogs, _apiRequestFactory.Info(_logsIntakeEndpoint));
-                        return;
+                        return false;
                     }
 #endif
                 }
@@ -132,7 +132,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
                 {
                     // stop retrying
                     Log.Error<int, string>(exception, "An error occurred while sending {Count} traces to the intake at {IntakeEndpoint}", numberOfLogs, _apiRequestFactory.Info(_logsIntakeEndpoint));
-                    return;
+                    return false;
                 }
 
                 // Before retry delay

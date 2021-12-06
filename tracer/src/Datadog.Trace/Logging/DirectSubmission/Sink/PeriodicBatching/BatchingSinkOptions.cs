@@ -28,10 +28,24 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
             int batchSizeLimit,
             int queueLimit,
             TimeSpan period)
+         : this(
+             batchSizeLimit,
+             queueLimit,
+             period,
+             circuitBreakPeriod: TimeSpan.FromTicks(period.Ticks))
+        {
+        }
+
+        public BatchingSinkOptions(
+            int batchSizeLimit,
+            int queueLimit,
+            TimeSpan period,
+            TimeSpan circuitBreakPeriod)
         {
             BatchSizeLimit = batchSizeLimit;
             QueueLimit = queueLimit;
             Period = period;
+            CircuitBreakPeriod = circuitBreakPeriod;
         }
 
         /// <summary>
@@ -43,6 +57,11 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
         /// Gets the time to wait between checking for event batches.
         /// </summary>
         public TimeSpan Period { get; }
+
+        /// <summary>
+        /// Gets the time to ignore logs when repeated failures to emit a batch cause the circuit to break.
+        /// </summary>
+        public TimeSpan CircuitBreakPeriod { get; }
 
         /// <summary>
         /// Gets maximum number of events to hold in the sink's internal queue, or <c>null</c>

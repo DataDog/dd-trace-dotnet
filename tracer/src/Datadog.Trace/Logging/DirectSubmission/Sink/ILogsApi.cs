@@ -10,6 +10,6 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
 {
     internal interface ILogsApi : IDisposable
     {
-        Task SendLogsAsync(ArraySegment<byte> logs, int numberOfLogs);
+        Task<bool> SendLogsAsync(ArraySegment<byte> logs, int numberOfLogs);
     }
 }

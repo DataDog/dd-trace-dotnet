@@ -40,10 +40,12 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             var requestFactory = new TestRequestFactory();
 
             var api = new LogsApi(baseEndpoint, "SECR3TZ", requestFactory);
-            await api.SendLogsAsync(Logs, NumberOfLogs);
+            var result = await api.SendLogsAsync(Logs, NumberOfLogs);
 
             requestFactory.RequestsSent.Should()
                           .OnlyContain(x => x.Endpoint == new Uri(expected));
+
+            result.Should().BeTrue();
         }
 
         [Fact]
@@ -54,7 +56,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
 
             var apiKey = "SECR3TZ";
             var api = new LogsApi(new Uri(DefaultIntake), apiKey, requestFactory);
-            await api.SendLogsAsync(Logs, NumberOfLogs);
+            var result = await api.SendLogsAsync(Logs, NumberOfLogs);
 
             requestFactory.RequestsSent
                           .Where(x => x is FaultyApiRequest)
@@ -65,6 +67,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
                           .Where(x => x is not FaultyApiRequest)
                           .Should()
                           .HaveCount(1);
+            result.Should().BeTrue();
         }
 
         [Fact]
@@ -106,11 +109,13 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             var requestFactory = new TestRequestFactory(x => new FaultyApiRequest(x, statusCode: 400));
 
             var api = new LogsApi(new Uri(DefaultIntake), "SECR3TZ", requestFactory);
-            await api.SendLogsAsync(Logs, NumberOfLogs);
+            var result = await api.SendLogsAsync(Logs, NumberOfLogs);
 
             using var scope = new AssertionScope();
             var request = requestFactory.RequestsSent.Should().ContainSingle().Subject;
             request.Responses.Should().ContainSingle().Which.StatusCode.Should().Be(400);
+
+            result.Should().BeFalse();
         }
 
         internal class TestRequestFactory : IApiRequestFactory

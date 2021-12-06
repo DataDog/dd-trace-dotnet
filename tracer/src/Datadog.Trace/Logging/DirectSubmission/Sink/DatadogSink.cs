@@ -46,12 +46,17 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
         private int _logCount = 0;
 
         public DatadogSink(ILogsApi api, LogFormatter formatter, BatchingSinkOptions sinkOptions)
-            : this(api, formatter, sinkOptions, oversizeLogCallback: null)
+            : this(api, formatter, sinkOptions, oversizeLogCallback: null, sinkDisabledCallback: null)
         {
         }
 
-        public DatadogSink(ILogsApi api, LogFormatter formatter, BatchingSinkOptions sinkOptions, Action<DatadogLogEvent> oversizeLogCallback)
-            : base(sinkOptions)
+        public DatadogSink(
+            ILogsApi api,
+            LogFormatter formatter,
+            BatchingSinkOptions sinkOptions,
+            Action<DatadogLogEvent> oversizeLogCallback,
+            Action sinkDisabledCallback)
+            : base(sinkOptions, sinkDisabledCallback)
         {
             _api = api;
             _formatter = formatter;
@@ -62,13 +67,14 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
         /// Emit a batch of log events to Datadog logs-backend.
         /// </summary>
         /// <param name="events">The events to emit.</param>
-        protected override async Task EmitBatch(Queue<DatadogLogEvent> events)
+        protected override async Task<bool> EmitBatch(Queue<DatadogLogEvent> events)
         {
+            var allSucceeded = true;
             try
             {
                 if (events.Count == 0)
                 {
-                    return;
+                    return true;
                 }
 
                 // Add to the first log
@@ -117,7 +123,8 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
                     if (requiredTotalSize > MaxTotalSizeBytes)
                     {
                         // send what we have, add the log to the subsequent chunk
-                        await ReplaceFinalSeparatorAndSendChunk().ConfigureAwait(false);
+                        var result = await ReplaceFinalSeparatorAndSendChunk().ConfigureAwait(false);
+                        allSucceeded &= result;
                     }
 
                     // add the log to the batch
@@ -134,32 +141,38 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
 
                 if (_logCount > 0)
                 {
-                    await ReplaceFinalSeparatorAndSendChunk().ConfigureAwait(false);
+                    var result = await ReplaceFinalSeparatorAndSendChunk().ConfigureAwait(false);
+                    allSucceeded &= result;
                 }
+
+                return allSucceeded;
             }
             catch (Exception e)
             {
                 _logger.Error(e, "An error occured sending logs to Datadog");
+                return false;
             }
         }
 
-        protected override void AdditionalDispose()
+        public override void Dispose()
         {
+            base.Dispose();
             _api.Dispose();
         }
 
-        private async Task ReplaceFinalSeparatorAndSendChunk()
+        private async Task<bool> ReplaceFinalSeparatorAndSendChunk()
         {
             // Too large for this batch, so replace final separator and send what we have
             Debug.Assert(_byteCount > 0, "Shouldn't ever be in a situation where we have 0 bytes");
 
             _serializedLogs[_byteCount - 1] = SuffixAsUtf8Byte;
-            await _api.SendLogsAsync(new ArraySegment<byte>(_serializedLogs, 0, _byteCount), _logCount).ConfigureAwait(false);
+            var result = await _api.SendLogsAsync(new ArraySegment<byte>(_serializedLogs, 0, _byteCount), _logCount).ConfigureAwait(false);
 
             // reset everything and on to the next log
             _logCount = 0;
             // keep the initial suffix
             _byteCount = 1;
+            return result;
         }
     }
 }

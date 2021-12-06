@@ -3,42 +3,29 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-// Based on https://github.com/serilog/serilog-sinks-periodicbatching/blob/66a74768196758200bff67077167cde3a7e346d5/src/Serilog.Sinks.PeriodicBatching/Sinks/PeriodicBatching/PeriodicBatchingSink.cs
-// Copyright 2013-2020 Serilog Contributors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
 {
     internal abstract class BatchingSink : IDisposable
     {
-        private readonly IDatadogLogger _logger = DatadogLogging.GetLoggerFor<BatchingSink>();
+        internal const int FailuresBeforeCircuitBreak = 10;
+
+        private readonly IDatadogLogger _log = DatadogLogging.GetLoggerFor<BatchingSink>();
         private readonly int _batchSizeLimit;
+        private readonly TimeSpan _flushPeriod;
+        private readonly TimeSpan _circuitBreakPeriod;
         private readonly BoundedConcurrentQueue<DatadogLogEvent> _queue;
-        private readonly BatchedConnectionStatus _status;
-        private readonly PortableTimer _timer;
-        private readonly object _stateLock = new();
         private readonly Queue<DatadogLogEvent> _waitingBatch = new();
+        private readonly CircuitBreaker _circuitBreaker;
+        private readonly Task _flushTask;
+        private readonly Action _disableSinkAction;
+        private readonly TaskCompletionSource<bool> _processExit = new();
+        private volatile bool _enqueueLogEnabled = true;
 
-        private bool _unloading;
-        private bool _started;
-
-        protected BatchingSink(BatchingSinkOptions sinkOptions)
+        protected BatchingSink(BatchingSinkOptions sinkOptions, Action disableSinkAction)
         {
             if (sinkOptions == null)
             {
@@ -55,13 +42,24 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
                 throw new ArgumentOutOfRangeException(nameof(sinkOptions), "The period must be greater than zero.");
             }
 
-            _batchSizeLimit = sinkOptions.BatchSizeLimit;
-            _queue = new BoundedConcurrentQueue<DatadogLogEvent>(sinkOptions.QueueLimit);
-            _status = new BatchedConnectionStatus(sinkOptions.Period);
-            _timer = new PortableTimer(_ => OnTick());
-        }
+            _disableSinkAction = disableSinkAction;
 
-        public void Dispose() => Dispose(true);
+            _batchSizeLimit = sinkOptions.BatchSizeLimit;
+            _flushPeriod = sinkOptions.Period;
+            _circuitBreakPeriod = sinkOptions.CircuitBreakPeriod;
+
+            _queue = new BoundedConcurrentQueue<DatadogLogEvent>(sinkOptions.QueueLimit);
+            _circuitBreaker = new CircuitBreaker(FailuresBeforeCircuitBreak);
+
+            _flushTask = Task.Run(FlushBuffersTaskLoopAsync);
+            _flushTask.ContinueWith(
+                t =>
+                {
+                    _log.Error(t.Exception, "Error in flush task");
+                    _disableSinkAction?.Invoke();
+                },
+                TaskContinuationOptions.OnlyOnFaulted);
+        }
 
         /// <summary>
         /// Emit the provided log event to the sink. If the sink is being disposed or
@@ -76,77 +74,66 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
                 throw new ArgumentNullException(nameof(logEvent));
             }
 
-            if (_unloading)
+            if (_processExit.Task.IsCompleted || !_enqueueLogEnabled)
             {
                 return;
-            }
-
-            if (!_started)
-            {
-                lock (_stateLock)
-                {
-                    if (_unloading)
-                    {
-                        return;
-                    }
-
-                    if (!_started)
-                    {
-                        _queue.TryEnqueue(logEvent);
-                        _started = true;
-
-                        // Special handling to try to get the first event across as quickly
-                        // as possible to show we're alive!
-                        SetTimer(TimeSpan.Zero);
-
-                        return;
-                    }
-                }
             }
 
             _queue.TryEnqueue(logEvent);
         }
 
-        private static void ResetSyncContextAndWait(Func<Task> taskFactory)
+        public virtual void Dispose()
         {
-            var prevContext = SynchronizationContext.Current;
-            SynchronizationContext.SetSynchronizationContext(null);
-            try
-            {
-                taskFactory().Wait();
-            }
-            finally
-            {
-                SynchronizationContext.SetSynchronizationContext(prevContext);
-            }
+            Dispose(finalFlush: true);
+        }
+
+        public void Dispose(bool finalFlush)
+        {
+            _processExit.TrySetResult(finalFlush);
+            _flushTask.GetAwaiter().GetResult();
         }
 
         /// <summary>
         /// Emit a batch of log events, running to completion synchronously.
         /// </summary>
         /// <param name="events">The events to emit.</param>
-        protected abstract Task EmitBatch(Queue<DatadogLogEvent> events);
+        /// <returns><c>true</c> if the batch was emitted successfully. <c>false</c> if there was an error</returns>
+        protected abstract Task<bool> EmitBatch(Queue<DatadogLogEvent> events);
 
-        /// <summary>
-        /// Free resources held by the sink.
-        /// </summary>
-        /// <param name="disposing">If true, called because the object is being disposed; if false,
-        /// the object is being disposed from the finalizer.</param>
-        private void Dispose(bool disposing)
+        private async Task FlushBuffersTaskLoopAsync()
         {
-            if (!disposing)
+            while (true)
             {
-                return;
-            }
+                if (_processExit.Task.IsCompleted)
+                {
+                    _log.Debug("Terminating Log submission loop");
+                    if (_processExit.Task.Result)
+                    {
+                        var maxShutDownDelay = Task.Delay(20_000);
+                        var finalFlushTask = FlushLogs();
+                        var completed = await Task.WhenAny(finalFlushTask, maxShutDownDelay).ConfigureAwait(false);
 
-            CloseAndFlush();
+                        if (completed != finalFlushTask)
+                        {
+                            _log.Warning("Could not finish flushing all logs before process end");
+                        }
+                    }
+
+                    return;
+                }
+
+                var circuitStatus = await FlushLogs().ConfigureAwait(false);
+
+                await HandleCircuitStatus(circuitStatus).ConfigureAwait(false);
+            }
         }
 
-        private async Task OnTick()
+        private async Task<CircuitStatus> FlushLogs()
         {
             try
             {
-                bool batchWasFull;
+                var status = CircuitStatus.Closed;
+                var haveMultipleBatchesToSend = false;
                 do
                 {
                     while (_waitingBatch.Count < _batchSizeLimit &&
@@ -157,71 +144,79 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
 
                     if (_waitingBatch.Count == 0)
                     {
-                        return;
+                        // If the first batch was full, then use that status.
+                        // If this is the first batch in this loop, then there were no logs to send
+                        // So can't say anything about the status of the API.
+                        return haveMultipleBatchesToSend ? status : _circuitBreaker.MarkSkipped();
                     }
 
-                    await EmitBatch(_waitingBatch).ConfigureAwait(false);
-
-                    batchWasFull = _waitingBatch.Count >= _batchSizeLimit;
-                    _waitingBatch.Clear();
-                    _status.MarkSuccess();
+                    var success = await EmitBatch(_waitingBatch).ConfigureAwait(false);
+                    if (success)
+                    {
+                        status = _circuitBreaker.MarkSuccess();
+                        haveMultipleBatchesToSend = _waitingBatch.Count >= _batchSizeLimit;
+                        if (haveMultipleBatchesToSend)
+                        {
+                            _waitingBatch.Clear();
+                        }
+                    }
+                    else
+                    {
+                        return _circuitBreaker.MarkFailure();
+                    }
                 }
-                while (batchWasFull); // Otherwise, allow the period to elapse
+                while (haveMultipleBatchesToSend);
+
+                return status;
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "Exception while emitting periodic batch");
-                _status.MarkFailure();
+                _log.Error(ex, "Exception while emitting periodic batch");
+                return _circuitBreaker.MarkFailure();
             }
             finally
             {
-                if (_status.ShouldDropBatch)
-                {
-                    _waitingBatch.Clear();
-                }
-
-                if (_status.ShouldDropQueue)
-                {
-                    while (_queue.TryDequeue(out _)) { }
-                }
-
-                lock (_stateLock)
-                {
-                    if (!_unloading)
-                    {
-                        SetTimer(_status.NextInterval);
-                    }
-                }
+                _waitingBatch.Clear();
             }
         }
 
-        private void SetTimer(TimeSpan interval)
+        private Task HandleCircuitStatus(CircuitStatus status)
         {
-            _timer.Start(interval);
-        }
-
-        private void CloseAndFlush()
-        {
-            lock (_stateLock)
+            var delayTillNextEmit = _flushPeriod;
+            switch (status)
             {
-                if (!_started || _unloading)
-                {
-                    return;
-                }
+                case CircuitStatus.PermanentlyBroken:
+                    _processExit.TrySetResult(false);
+                    _enqueueLogEnabled = false;
+                    _disableSinkAction?.Invoke();
 
-                _unloading = true;
+                    // clear the queue
+                    while (_queue.TryDequeue(out _)) { }
+
+                    return _processExit.Task;
+
+                case CircuitStatus.Broken:
+                    // circuit breaker is broken, so stop queuing more logs
+                    // for now but don't disable log shipping entirely
+                    _enqueueLogEnabled = false;
+                    // Wait a while before trying again
+                    delayTillNextEmit = _circuitBreakPeriod;
+                    break;
+
+                case CircuitStatus.HalfBroken:
+                    // circuit breaker is tentatively open. Start queuing logs again
+                    _enqueueLogEnabled = true;
+                    break;
+
+                case CircuitStatus.Closed:
+                default:
+                    _enqueueLogEnabled = true;
+                    break;
             }
 
-            _timer.Dispose();
-
-            // This is the place where SynchronizationContext.Current is unknown and can be != null
-            // so we prevent possible deadlocks here for sync-over-async downstream implementations
-            ResetSyncContextAndWait(OnTick);
-
-            // Dispose anything used in child implementations
-            AdditionalDispose();
+            return Task.WhenAny(
+                Task.Delay(delayTillNextEmit),
+                _processExit.Task);
         }
-
-        protected abstract void AdditionalDispose();
     }
 }
