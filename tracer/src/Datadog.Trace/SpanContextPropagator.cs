@@ -376,7 +376,6 @@ namespace Datadog.Trace
             {
                 if (!string.IsNullOrEmpty(headerValue))
                 {
-                    Log.Information("In Parser: " + headerName + " = " + headerValue);
 
                     return headerValue;
                 }
