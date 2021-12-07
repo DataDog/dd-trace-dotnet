@@ -7,6 +7,7 @@
 using System;
 using System.ComponentModel;
 using System.Web;
+using Datadog.Trace.AspNet;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
@@ -54,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
             try
             {
-                scope = httpContext?.Items[AspNetMvcIntegration.HttpContextKey] as Scope;
+                scope = SharedItems.TryPopItem<Scope>(httpContext, AspNetMvcIntegration.HttpContextKey);
             }
             catch (Exception ex)
             {

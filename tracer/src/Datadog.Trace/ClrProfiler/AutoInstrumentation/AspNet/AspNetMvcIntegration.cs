@@ -43,7 +43,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             try
             {
                 var httpContext = controllerContext.HttpContext;
-
                 if (httpContext == null)
                 {
                     return null;
@@ -173,10 +172,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
                     tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
 
-                    if (newResourceNamesEnabled)
+                    if (newResourceNamesEnabled && string.IsNullOrEmpty(controllerContext.HttpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] as string))
                     {
                         // set the resource name in the HttpContext so TracingHttpModule can update root span
-                        httpContext.Items[SharedConstants.HttpContextPropagatedResourceNameKey] = resourceName;
+                        httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] = resourceName;
                     }
                 }
             }
@@ -189,5 +188,4 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         }
     }
 }
-
 #endif
