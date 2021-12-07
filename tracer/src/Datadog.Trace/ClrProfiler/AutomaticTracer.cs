@@ -36,6 +36,7 @@ namespace Datadog.Trace.ClrProfiler
 
         void IDistributedTracer.SetSpanContext(SpanContext value)
         {
+            // This is a performance optimization. See comment in GetDistributedTrace() about potential race condition
             if (_child != null)
             {
                 DistributedTrace.Value = value;
