@@ -76,7 +76,7 @@ namespace Datadog.Trace.Logging
                        .MinimumLevel.ControlledBy(LoggingLevelSwitch)
                        .WriteTo.File(
                             managedLogPath,
-                            outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{Exception} {Properties}{NewLine}",
+                            outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {Exception} {Properties}{NewLine}",
                             rollingInterval: RollingInterval.Day,
                             rollOnFileSizeLimit: true,
                             fileSizeLimitBytes: MaxLogFileSize,
