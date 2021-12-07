@@ -23,19 +23,23 @@ namespace Datadog.Trace.ClrProfiler
             {
                 return null;
             }
-            else if (DistributedTrace.Value is SpanContext spanContext)
+
+            var value = DistributedTrace.Value;
+
+            if (value is SpanContext spanContext)
             {
                 return spanContext;
             }
-            else
-            {
-                return SpanContextPropagator.Instance.Extract(DistributedTrace.Value);
-            }
+
+            return SpanContextPropagator.Instance.Extract(value);
         }
 
         void IDistributedTracer.SetSpanContext(SpanContext value)
         {
-            DistributedTrace.Value = value;
+            if (_child != null)
+            {
+                DistributedTrace.Value = value;
+            }
         }
 
         void IDistributedTracer.LockSamplingPriority()
@@ -59,7 +63,15 @@ namespace Datadog.Trace.ClrProfiler
         /// <returns>Shared distributed trace object instance</returns>
         public IReadOnlyDictionary<string, string> GetDistributedTrace()
         {
-            return DistributedTrace.Value;
+            // There is a subtle race condition:
+            // in a server application, the automated instrumentation can be loaded first (to process the incoming request)
+            // In that case, IDistributedTracer.SetSpanContext will do nothing because the child tracer is not initialized yet.
+            // Then manual instrumentation is loaded, and DistributedTrace.Value does not contain the parent trace.
+            // To fix this, if DistributedTrace.Value is null, we also check if there's an active scope just in case.
+            // This is a compromise: we add an additional asynclocal read for the manual tracer when there is no parent trace,
+            // but it allows us to remove the asynclocal write for the automatic tracer when running without manual instrumentation.
+
+            return DistributedTrace.Value ?? Tracer.Instance.InternalActiveScope?.Span?.Context;
         }
 
         /// <summary>
