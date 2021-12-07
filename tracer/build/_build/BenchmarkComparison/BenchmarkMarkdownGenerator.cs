@@ -213,8 +213,8 @@ Allocation changes below **{BenchmarkComparer.AllocationThresholdPercent:N1}%** 
                                    Id = result.Id,
                                    BaseAllocation = result.BaseResult.Allocated,
                                    DiffAllocation = result.DiffResult.Allocated,
-                                   Change = (baseSize - diffSize).ToString(),
-                                   PercentChange = (baseSize - diffSize).Bytes / baseSize.Bytes,
+                                   Change = (diffSize - baseSize).ToString(),
+                                   PercentChange = (diffSize - baseSize).Bytes / baseSize.Bytes,
                                };
                            })
                       .OrderByDescending(result => result.PercentChange)
