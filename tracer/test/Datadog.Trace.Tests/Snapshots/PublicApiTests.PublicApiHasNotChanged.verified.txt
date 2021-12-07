@@ -275,7 +275,8 @@ namespace Datadog.Trace
     {
         Datadog.Trace.IScope ActiveScope { get; }
         Datadog.Trace.Configuration.ImmutableTracerSettings Settings { get; }
-        Datadog.Trace.IScope StartActive(string operationName, Datadog.Trace.ISpanContext parent = null, string serviceName = null, System.DateTimeOffset? startTime = default, bool ignoreActiveScope = false, bool finishOnClose = true);
+        Datadog.Trace.IScope StartActive(string operationName);
+        Datadog.Trace.IScope StartActive(string operationName, Datadog.Trace.SpanCreationSettings settings);
     }
     public enum SamplingPriority
     {
@@ -301,6 +302,12 @@ namespace Datadog.Trace
         public string ServiceName { get; set; }
         public ulong SpanId { get; }
         public ulong TraceId { get; }
+    }
+    public struct SpanCreationSettings
+    {
+        public bool? FinishOnClose { get; set; }
+        public Datadog.Trace.ISpanContext Parent { get; set; }
+        public System.DateTimeOffset? StartTime { get; set; }
     }
     public static class SpanKinds
     {
