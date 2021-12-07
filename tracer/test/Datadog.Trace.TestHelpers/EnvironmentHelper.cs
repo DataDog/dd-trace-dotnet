@@ -17,7 +17,6 @@ namespace Datadog.Trace.TestHelpers
 {
     public class EnvironmentHelper
     {
-        private static readonly Assembly ExecutingAssembly = Assembly.GetExecutingAssembly();
         private static readonly string RuntimeFrameworkDescription = RuntimeInformation.FrameworkDescription.ToLower();
 
         private readonly ITestOutputHelper _output;
@@ -352,7 +351,7 @@ namespace Datadog.Trace.TestHelpers
                                      Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
                                      "dotnet",
                                      "dotnet.exe"),
-                _ =>  "dotnet",
+                _ => "dotnet",
             };
 
         public string GetSampleProjectDirectory()
@@ -425,6 +424,22 @@ namespace Datadog.Trace.TestHelpers
             }
 
             return $"net{_major}{_minor}{_patch ?? string.Empty}";
+        }
+
+        public MockTracerAgent GetMockAgent(bool useStatsD = false)
+        {
+            // Strategy pattern for agent transports goes here
+            var agentPort = TcpPortProvider.GetOpenPort();
+            var agent = new MockTracerAgent(agentPort, useStatsd: useStatsD);
+
+            _output.WriteLine($"Assigned port {agent.Port} for the agentPort.");
+
+            if (useStatsD)
+            {
+                _output.WriteLine($"Assigning port {agent.StatsdPort} for the statsdPort.");
+            }
+
+            return agent;
         }
     }
 }

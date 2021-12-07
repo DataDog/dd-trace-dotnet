@@ -1,4 +1,4 @@
-﻿// <copyright file="SystemDataSqliteTests.cs" company="Datadog">
+// <copyright file="SystemDataSqliteTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -29,9 +29,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             const string dbType = "sqlite";
             const string expectedOperationName = dbType + ".query";
             const string expectedServiceName = "Samples.SQLite.Core-" + dbType;
-
-            int agentPort = TcpPortProvider.GetOpenPort();
-            using var agent = new MockTracerAgent(agentPort);
+            using var agent = EnvironmentHelper.GetMockAgent();
             using var process = RunSampleAndWaitForExit(agent.Port);
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
 
@@ -57,9 +55,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             const string expectedOperationName = "sqlite.query";
 
             SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.Sqlite)}_ENABLED", "false");
-
-            int agentPort = TcpPortProvider.GetOpenPort();
-            using var agent = new MockTracerAgent(agentPort);
+            using var agent = EnvironmentHelper.GetMockAgent();
             using var process = RunSampleAndWaitForExit(agent.Port);
             var spans = agent.WaitForSpans(totalSpanCount, returnAllOperations: true);
 

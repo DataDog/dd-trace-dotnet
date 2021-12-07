@@ -46,9 +46,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public void SubmitsTraces(string packageVersion)
         {
             var topic = $"sample-topic-{TestPrefix}-{packageVersion}".Replace('.', '-');
-            var agentPort = TcpPortProvider.GetOpenPort();
 
-            using var agent = new MockTracerAgent(agentPort);
+            using var agent = EnvironmentHelper.GetMockAgent();
             using var processResult = RunSampleAndWaitForExit(agent.Port, arguments: topic, packageVersion: packageVersion);
 
             var allSpans = agent.WaitForSpans(TotalExpectedSpanCount, timeoutInMilliseconds: 10_000);

@@ -26,8 +26,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // for some reason, the elumator needs a warm up run when piloted by the x86 client
             if (!Environment.Is64BitProcess)
             {
-                int agentPort = TcpPortProvider.GetOpenPort();
-                using var agent = new MockTracerAgent(agentPort);
+                using var agent = EnvironmentHelper.GetMockAgent();
                 using var processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"{TestPrefix}");
             }
         }
@@ -41,9 +40,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public void SubmitsTraces(string packageVersion)
         {
             var expectedSpanCount = 14;
-
-            int agentPort = TcpPortProvider.GetOpenPort();
-            using (var agent = new MockTracerAgent(agentPort))
+            using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent.Port, arguments: $"{TestPrefix}", packageVersion: packageVersion))
             {
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: ExpectedOperationName);

@@ -29,14 +29,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             const string expectedOperationName = "http.request";
             const string expectedServiceName = "my-custom-client";
 
-            int agentPort = TcpPortProvider.GetOpenPort();
             int httpPort = TcpPortProvider.GetOpenPort();
-            var extraArgs = string.Empty;
-
-            Output.WriteLine($"Assigning port {agentPort} for the agentPort.");
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
 
-            using (var agent = new MockTracerAgent(agentPort))
+            using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent.Port, arguments: $"Port={httpPort}"))
             {
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);

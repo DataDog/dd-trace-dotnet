@@ -57,8 +57,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
 
-            int agentPort = TcpPortProvider.GetOpenPort();
-            using (var agent = new MockTracerAgent(agentPort))
+            using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
             {
                 var spans = agent.WaitForSpans(1, 2500);
@@ -88,8 +87,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetEnvironmentVariable("DD_LOGS_INJECTION", "false");
 
-            int agentPort = TcpPortProvider.GetOpenPort();
-            using (var agent = new MockTracerAgent(agentPort))
+            using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
             {
                 var spans = agent.WaitForSpans(1, 2500);

@@ -94,13 +94,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // Set bad configuration
             SetEnvironmentVariable("DD_DOTNET_TRACER_HOME", Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
 
-            int agentPort = TcpPortProvider.GetOpenPort();
             int httpPort = TcpPortProvider.GetOpenPort();
-
-            Output.WriteLine($"Assigning port {agentPort} for the agentPort.");
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
 
-            using (var agent = new MockTracerAgent(agentPort))
+            using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent.Port, framework: targetFramework))
             {
             }
@@ -113,10 +110,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var actualMap = new Dictionary<string, int>();
 
-            int agentPort = TcpPortProvider.GetOpenPort();
-            Output.WriteLine($"Assigning port {agentPort} for the agentPort.");
-
-            using (var agent = new MockTracerAgent(agentPort))
+            using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent.Port, framework: targetFramework))
             {
                 var spans = agent.WaitForSpans(expectedSpanCount);

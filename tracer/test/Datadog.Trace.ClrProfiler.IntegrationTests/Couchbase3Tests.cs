@@ -33,8 +33,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "ArmUnsupported")]
         public void SubmitTraces(string packageVersion)
         {
-            int agentPort = TcpPortProvider.GetOpenPort();
-            using (var agent = new MockTracerAgent(agentPort))
+            using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
             {
                 var spans = agent.WaitForSpans(9, 500)

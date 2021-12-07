@@ -24,11 +24,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
             // 1 manual span + 2 http spans
             const int expectedSpanCount = 3;
 
-            int agentPort = TcpPortProvider.GetOpenPort();
-
-            Output.WriteLine($"Assigning port {agentPort} for the agentPort.");
-
-            using (var agent = new MockTracerAgent(agentPort))
+            using (var agent = EnvironmentHelper.GetMockAgent())
             using (var processResult = RunSampleAndWaitForExit(agent.Port))
             {
                 var spans = agent.WaitForSpans(expectedSpanCount);

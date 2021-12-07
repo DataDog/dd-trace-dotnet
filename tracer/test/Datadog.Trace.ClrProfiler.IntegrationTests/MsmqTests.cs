@@ -43,8 +43,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var transactionalTraces = 0;
             var nonTransactionalTraces = 0;
 
-            var agentPort = TcpPortProvider.GetOpenPort();
-            using var agent = new MockTracerAgent(agentPort);
+            using var agent = EnvironmentHelper.GetMockAgent();
             using var processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"5 5");
 
             var spans = agent.WaitForSpans(totalTransactions);

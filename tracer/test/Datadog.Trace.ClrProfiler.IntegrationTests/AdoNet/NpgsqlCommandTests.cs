@@ -42,9 +42,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             const string dbType = "postgres";
             const string expectedOperationName = dbType + ".query";
             const string expectedServiceName = "Samples.Npgsql-" + dbType;
-
-            int agentPort = TcpPortProvider.GetOpenPort();
-            using var agent = new MockTracerAgent(agentPort);
+            using var agent = EnvironmentHelper.GetMockAgent();
             using var process = RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion);
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
             int actualSpanCount = spans.Count(s => s.ParentId.HasValue); // Remove unexpected DB spans from the calculation
@@ -72,8 +70,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.Npgsql)}_ENABLED", "false");
 
             string packageVersion = PackageVersions.Npgsql.First()[0] as string;
-            int agentPort = TcpPortProvider.GetOpenPort();
-            using var agent = new MockTracerAgent(agentPort);
+            using var agent = EnvironmentHelper.GetMockAgent();
             using var process = RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion);
             var spans = agent.WaitForSpans(totalSpanCount, returnAllOperations: true);
 

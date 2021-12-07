@@ -29,9 +29,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             const string dbType = "sql-server";
             const string expectedOperationName = dbType + ".query";
             const string expectedServiceName = "Samples.SqlServer.NetFramework20-" + dbType;
-
-            int agentPort = TcpPortProvider.GetOpenPort();
-            using var agent = new MockTracerAgent(agentPort);
+            using var agent = EnvironmentHelper.GetMockAgent();
             using var process = RunSampleAndWaitForExit(agent.Port);
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
 
@@ -56,9 +54,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             const string expectedOperationName = "sql-server.query";
 
             SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.SqlClient)}_ENABLED", "false");
-
-            int agentPort = TcpPortProvider.GetOpenPort();
-            using var agent = new MockTracerAgent(agentPort);
+            using var agent = EnvironmentHelper.GetMockAgent();
             using var process = RunSampleAndWaitForExit(agent.Port);
             var spans = agent.WaitForSpans(totalSpanCount, returnAllOperations: true);
 
