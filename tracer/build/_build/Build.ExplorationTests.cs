@@ -268,11 +268,11 @@ partial class Build
         if (!ExplorationTestSkipClone)
         {
             var cloneCommand = ExplorationTestCloneLatest
-                                   ? $"clone -q {testDescription.GitRepositoryUrl} {ExplorationTestsDirectory}/{testDescription.Name}"
-                                   : $"clone -q -b {testDescription.GitRepositoryTag} {testDescription.GitRepositoryUrl} {ExplorationTestsDirectory}/{testDescription.Name}";
+                                   ? $"clone -c advice.detachedHead=false {testDescription.GitRepositoryUrl} {ExplorationTestsDirectory}/{testDescription.Name}"
+                                   : $"clone -c advice.detachedHead=false -b {testDescription.GitRepositoryTag} {testDescription.GitRepositoryUrl} {ExplorationTestsDirectory}/{testDescription.Name}";
 
 
-            GitTasks.Git(cloneCommand);
+            GitTasks.Git(cloneCommand, logOutput: false);
         }
 
         var projectPath = $"{ExplorationTestsDirectory}/{testDescription.Name}/{testDescription.PathToUnitTestProject}";
