@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// Initializes a new instance of the <see cref="CallTargetState"/> struct.
         /// </summary>
         /// <param name="scope">Scope instance</param>
-        public CallTargetState(Scope scope)
+        internal CallTargetState(Scope scope)
         {
             _previousScope = null;
             _scope = scope;
@@ -38,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// </summary>
         /// <param name="scope">Scope instance</param>
         /// <param name="state">Object state instance</param>
-        public CallTargetState(Scope scope, object state)
+        internal CallTargetState(Scope scope, object state)
         {
             _previousScope = null;
             _scope = scope;
@@ -52,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <param name="scope">Scope instance</param>
         /// <param name="state">Object state instance</param>
         /// <param name="startTime">The intended start time of the scope, intended for scopes created in the OnMethodEnd handler</param>
-        public CallTargetState(Scope scope, object state, DateTimeOffset? startTime)
+        internal CallTargetState(Scope scope, object state, DateTimeOffset? startTime)
         {
             _previousScope = null;
             _scope = scope;
@@ -71,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <summary>
         /// Gets the CallTarget BeginMethod scope
         /// </summary>
-        public Scope Scope => _scope;
+        internal Scope Scope => _scope;
 
         /// <summary>
         /// Gets the CallTarget BeginMethod state

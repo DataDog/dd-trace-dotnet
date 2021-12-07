@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         /// </summary>
         /// <param name="controllerContext">The System.Web.Mvc.ControllerContext that was passed as an argument to the instrumented method.</param>
         /// <returns>A new scope used to instrument an MVC action.</returns>
-        public static Scope CreateScope(ControllerContextStruct controllerContext)
+        internal static Scope CreateScope(ControllerContextStruct controllerContext)
         {
             Scope scope = null;
 
