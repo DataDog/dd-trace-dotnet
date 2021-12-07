@@ -22,7 +22,7 @@ namespace Datadog.Trace.AppSec.Transport
 
         IpInfo GetReportedIpInfo();
 
-        string GetUserAget();
+        string GetUserAgent();
 
         IHeadersCollection GetRequestHeaders();
 

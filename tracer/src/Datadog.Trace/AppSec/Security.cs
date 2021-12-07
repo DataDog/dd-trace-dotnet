@@ -218,7 +218,7 @@ namespace Datadog.Trace.AppSec
 
             span.SetTag(Tags.Origin, "appsec");
 
-            span.SetTag(Tags.HttpUserAgent, transport.GetUserAget());
+            span.SetTag(Tags.HttpUserAgent, transport.GetUserAgent());
 
             var reportedIpInfo = transport.GetReportedIpInfo();
             span.SetTag(Tags.NetworkClientIp, reportedIpInfo.IpAddress);
