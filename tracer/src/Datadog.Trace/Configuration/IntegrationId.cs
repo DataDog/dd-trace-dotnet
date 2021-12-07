@@ -12,6 +12,7 @@ namespace Datadog.Trace.Configuration
         WinHttpHandler,
         CurlHandler,
         AspNetCore,
+        AdoNet,
         AspNet,
         AspNetMvc,
         AspNetWebApi2,

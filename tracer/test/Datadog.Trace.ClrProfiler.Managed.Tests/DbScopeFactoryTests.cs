@@ -57,6 +57,23 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
         [Theory]
         [MemberData(nameof(GetDbCommands))]
+        public void CreateDbCommandScope_ReturnNullForAdoNetDisabledIntegration(IDbCommand command, string integrationName, string dbType)
+        {
+            // HACK: avoid analyzer warning about not using arguments
+            _ = dbType;
+
+            var tracerSettings = new TracerSettings();
+            tracerSettings.Integrations[integrationName].Enabled = true;
+            tracerSettings.Integrations[nameof(IntegrationId.AdoNet)].Enabled = false;
+            var tracer = TracerHelper.Create(tracerSettings);
+
+            // Create scope
+            using var scope = CreateDbCommandScope(tracer, command);
+            Assert.Null(scope);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetDbCommands))]
         public void CreateDbCommandScope_UsesReplacementServiceNameWhenProvided(IDbCommand command, string integrationName, string dbType)
         {
             // HACK: avoid analyzer warning about not using arguments
