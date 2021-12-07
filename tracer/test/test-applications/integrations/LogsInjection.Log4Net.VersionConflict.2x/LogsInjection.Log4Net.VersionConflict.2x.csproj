@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Datadog.Trace" Version="2.255.251" />
+    <PackageReference Include="log4net" Version="2.0.12" />
+    <PackageReference Include="log4net.Ext.Json" Version="2.0.10.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="log4net.205.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

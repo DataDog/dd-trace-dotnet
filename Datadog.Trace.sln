@@ -421,13 +421,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.N
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MySqlConnector", "tracer\test\test-applications\integrations\Samples.MySqlConnector\Samples.MySqlConnector.csproj", "{73252693-2563-4B20-A2F5-F8DB37B91DBE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Couchbase", "tracer\test\test-applications\integrations\Samples.Couchbase\Samples.Couchbase.csproj", "{6F38B456-1D16-4842-AEE5-E74564FB506A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Couchbase", "tracer\test\test-applications\integrations\Samples.Couchbase\Samples.Couchbase.csproj", "{6F38B456-1D16-4842-AEE5-E74564FB506A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Couchbase3", "tracer\test\test-applications\integrations\Samples.Couchbase3\Samples.Couchbase3.csproj", "{65A66859-2735-4DD6-A927-B416B7A62D0F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Couchbase3", "tracer\test\test-applications\integrations\Samples.Couchbase3\Samples.Couchbase3.csproj", "{65A66859-2735-4DD6-A927-B416B7A62D0F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNetCoreMinimalApis", "tracer\test\test-applications\integrations\Samples.AspNetCoreMinimalApis\Samples.AspNetCoreMinimalApis.csproj", "{2A6D3042-C675-4EA3-A8E7-5BDD3C5758EA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCoreMinimalApis", "tracer\test\test-applications\integrations\Samples.AspNetCoreMinimalApis\Samples.AspNetCoreMinimalApis.csproj", "{2A6D3042-C675-4EA3-A8E7-5BDD3C5758EA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AspNetCoreSmokeTest", "tracer\test\test-applications\regression\AspNetCoreSmokeTest\AspNetCoreSmokeTest.csproj", "{BED94A61-6FD9-4103-BD35-70B4798C301C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AspNetCoreSmokeTest", "tracer\test\test-applications\regression\AspNetCoreSmokeTest\AspNetCoreSmokeTest.csproj", "{BED94A61-6FD9-4103-BD35-70B4798C301C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNet.VersionConflict", "tracer\test\test-applications\aspnet\Samples.AspNet.VersionConflict\Samples.AspNet.VersionConflict.csproj", "{FAB2B108-E5BE-4647-869B-1DC5D362252E}"
 EndProject
@@ -435,7 +435,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.VersionConflict.1x"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.VersionConflict.2x", "tracer\test\test-applications\integrations\Samples.VersionConflict.2x\Samples.VersionConflict.2x.csproj", "{3BC38BE0-B6FF-4B05-BC63-3614A5CF9393}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LogsInjection.Serilog.VersionConflict.2x", "tracer\test\test-applications\integrations\LogsInjection.Serilog.VersionConflict.2x\LogsInjection.Serilog.VersionConflict.2x.csproj", "{BB110CA3-F108-4465-AA5F-C4F22B57F4FE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LogsInjection.Serilog.VersionConflict.2x", "tracer\test\test-applications\integrations\LogsInjection.Serilog.VersionConflict.2x\LogsInjection.Serilog.VersionConflict.2x.csproj", "{BB110CA3-F108-4465-AA5F-C4F22B57F4FE}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LogsInjection.Log4Net.VersionConflict.2x", "tracer\test\test-applications\integrations\LogsInjection.Log4Net.VersionConflict.2x\LogsInjection.Log4Net.VersionConflict.2x.csproj", "{10C5BA99-0A95-431C-8D4F-90067B8BCFFE}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -1913,6 +1915,18 @@ Global
 		{BB110CA3-F108-4465-AA5F-C4F22B57F4FE}.Release|x64.Build.0 = Release|x64
 		{BB110CA3-F108-4465-AA5F-C4F22B57F4FE}.Release|x86.ActiveCfg = Release|x86
 		{BB110CA3-F108-4465-AA5F-C4F22B57F4FE}.Release|x86.Build.0 = Release|x86
+		{10C5BA99-0A95-431C-8D4F-90067B8BCFFE}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{10C5BA99-0A95-431C-8D4F-90067B8BCFFE}.Debug|Any CPU.Build.0 = Debug|x64
+		{10C5BA99-0A95-431C-8D4F-90067B8BCFFE}.Debug|x64.ActiveCfg = Debug|x64
+		{10C5BA99-0A95-431C-8D4F-90067B8BCFFE}.Debug|x64.Build.0 = Debug|x64
+		{10C5BA99-0A95-431C-8D4F-90067B8BCFFE}.Debug|x86.ActiveCfg = Debug|x86
+		{10C5BA99-0A95-431C-8D4F-90067B8BCFFE}.Debug|x86.Build.0 = Debug|x86
+		{10C5BA99-0A95-431C-8D4F-90067B8BCFFE}.Release|Any CPU.ActiveCfg = Release|x64
+		{10C5BA99-0A95-431C-8D4F-90067B8BCFFE}.Release|Any CPU.Build.0 = Release|x64
+		{10C5BA99-0A95-431C-8D4F-90067B8BCFFE}.Release|x64.ActiveCfg = Release|x64
+		{10C5BA99-0A95-431C-8D4F-90067B8BCFFE}.Release|x64.Build.0 = Release|x64
+		{10C5BA99-0A95-431C-8D4F-90067B8BCFFE}.Release|x86.ActiveCfg = Release|x86
+		{10C5BA99-0A95-431C-8D4F-90067B8BCFFE}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -2067,6 +2081,7 @@ Global
 		{6F8B63EA-98D6-4909-BE9E-F39029C29C4F} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{3BC38BE0-B6FF-4B05-BC63-3614A5CF9393} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{BB110CA3-F108-4465-AA5F-C4F22B57F4FE} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{10C5BA99-0A95-431C-8D4F-90067B8BCFFE} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
