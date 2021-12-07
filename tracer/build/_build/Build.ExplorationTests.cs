@@ -234,6 +234,7 @@ partial class Build
             x => x
                 .SetProjectFile(projectPath)
                 .SetConfiguration(BuildConfiguration)
+                .SetProcessArgumentConfigurator(arguments => arguments.Add("-consoleLoggerParameters:ErrorsOnly"))
                 .When(Framework != null, settings => settings.SetFramework(Framework))
         );
 
@@ -256,7 +257,7 @@ partial class Build
                    .When(Framework != null, settings => settings.SetFramework(Framework))
                    .SetProcessEnvironmentVariables(envVariables)
                    .SetIgnoreFilter(testDescription.TestsToIgnore)
-                   .WithMemoryDumpAfter(2)
+                   .WithMemoryDumpAfter(5)
                     ;
 
                 return x;
@@ -268,11 +269,12 @@ partial class Build
         if (!ExplorationTestSkipClone)
         {
             var cloneCommand = ExplorationTestCloneLatest
-                                   ? $"clone -c advice.detachedHead=false {testDescription.GitRepositoryUrl} {ExplorationTestsDirectory}/{testDescription.Name}"
-                                   : $"clone -c advice.detachedHead=false -b {testDescription.GitRepositoryTag} {testDescription.GitRepositoryUrl} {ExplorationTestsDirectory}/{testDescription.Name}";
+                                   ? $"clone --depth 1 --recurse-submodules -q -c advice.detachedHead=false {testDescription.GitRepositoryUrl} {ExplorationTestsDirectory}/{testDescription.Name}"
+                                   : $"clone --depth 1 --recurse-submodules -q -c advice.detachedHead=false -b {testDescription.GitRepositoryTag} {testDescription.GitRepositoryUrl} {ExplorationTestsDirectory}/{testDescription.Name}";
 
 
-            GitTasks.Git(cloneCommand, logOutput: false);
+            GitTasks.Git(cloneCommand);
+            //GitTasks.Git("submodule update --init --recursive");
         }
 
         var projectPath = $"{ExplorationTestsDirectory}/{testDescription.Name}/{testDescription.PathToUnitTestProject}";
