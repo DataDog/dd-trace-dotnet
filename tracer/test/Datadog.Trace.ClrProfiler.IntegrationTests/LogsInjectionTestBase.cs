@@ -116,24 +116,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // Assumes we _only_ have logs for logs within traces + our startup log
                 additionalInjectedLogFilter ??= (_) => true;
                 var tracedLogs = logs.Where(log => !log.Contains(ExcludeMessagePrefix)).Where(additionalInjectedLogFilter).ToList();
+                string traceIdString = null;
 
                 // Ensure that all spans are represented (when correlated) or no spans are represented (when not correlated) in the traced logs
                 if (tracedLogs.Any())
                 {
                     var traceIds = spans.Select(x => x.TraceId.ToString()).Distinct().ToList();
-                    if (traceIds.Any())
+                    traceIds.Should().ContainSingle("the logs injection tests should be contained in one trace");
+
+                    traceIdString = traceIds.Single();
+                    switch (test.TracedLogTypes)
                     {
-                        switch (test.TracedLogTypes)
-                        {
-                            case TracedLogTypes.Correlated:
-                                string.Join(",", tracedLogs).Should().ContainAll(traceIds);
-                                break;
-                            case TracedLogTypes.NotCorrelated:
-                                string.Join(",", tracedLogs).Should().NotContainAny(traceIds);
-                                break;
-                            default:
-                                throw new InvalidOperationException("Unknown TracedLogType: " + test.TracedLogTypes);
-                        }
+                        case TracedLogTypes.Correlated:
+                            string.Join(",", tracedLogs).Should().Contain(traceIdString);
+                            break;
+                        case TracedLogTypes.NotCorrelated:
+                            string.Join(",", tracedLogs).Should().NotContain(traceIdString);
+                            break;
+                        default:
+                            throw new InvalidOperationException("Unknown TracedLogType: " + test.TracedLogTypes);
                     }
                 }
 
@@ -160,6 +161,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                .And.MatchRegex(serviceRegex)
                                .And.MatchRegex(traceIdRegex)
                                .And.MatchRegex(spanIdRegex);
+
+                            var logTraceId = Regex.Match(log, traceIdRegex).Groups[2].Value;
+                            logTraceId.Should().BeEquivalentTo(traceIdString);
                             break;
                         case TracedLogTypes.NotCorrelated:
                             log.Should()
