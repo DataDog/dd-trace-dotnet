@@ -12,7 +12,6 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -71,10 +70,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetServiceVersion("1.0.0");
             SetCallTargetSettings(enableCallTarget);
-            if (enableRouteTemplateResourceNames)
-            {
-                SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, "true");
-            }
+            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, enableRouteTemplateResourceNames.ToString());
+            SetEnvironmentVariable(ConfigurationKeys.HeaderTags, HttpHeaderNames.UserAgent + ":http_useragent");
 
             _fixture = fixture;
             _output = output;
@@ -149,6 +146,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 _httpClient = new HttpClient();
                 _httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
+                _httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.UserAgent, "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36");
             }
 
             public MockTracerAgent Agent { get; private set; }

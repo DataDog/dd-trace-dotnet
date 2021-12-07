@@ -35,5 +35,10 @@ namespace Datadog.Trace
         /// Origin of the distributed trace.
         /// </summary>
         public const string Origin = "x-datadog-origin";
+
+        /// <summary>
+        /// Origin of the distributed trace.
+        /// </summary>
+        public const string UserAgent = "User-Agent";
     }
 }

@@ -186,9 +186,25 @@ namespace Datadog.Trace
         public IEnumerable<KeyValuePair<string, string>> ExtractHeaderTags<T>(T headers, IEnumerable<KeyValuePair<string, string>> headerToTagMap, string defaultTagPrefix)
             where T : IHeadersCollection
         {
+            return ExtractHeaderTags(headers, headerToTagMap, defaultTagPrefix, string.Empty);
+        }
+
+        public IEnumerable<KeyValuePair<string, string>> ExtractHeaderTags<T>(T headers, IEnumerable<KeyValuePair<string, string>> headerToTagMap, string defaultTagPrefix, string useragent)
+            where T : IHeadersCollection
+        {
             foreach (KeyValuePair<string, string> headerNameToTagName in headerToTagMap)
             {
-                string headerValue = ParseString(headers, headerNameToTagName.Key);
+                string headerValue;
+                if (string.Equals(headerNameToTagName.Key, HttpHeaderNames.UserAgent, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(useragent))
+                {
+                    // A specific case for the user agent as it is splitted in .net framework web api.
+                    headerValue = useragent;
+                }
+                else
+                {
+                    headerValue = ParseString(headers, headerNameToTagName.Key);
+                }
+
                 if (headerValue is null)
                 {
                     continue;
