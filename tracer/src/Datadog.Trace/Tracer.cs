@@ -219,7 +219,13 @@ namespace Datadog.Trace
         }
 
         /// <inheritdoc cref="ITracer" />
-        IScope ITracer.StartActive(string operationName, CreateSpanSettings settings)
+        IScope ITracer.StartActive(string operationName)
+        {
+            return StartActive(operationName, parent: null, serviceName: null, startTime: null, ignoreActiveScope: false, finishOnClose: true);
+        }
+
+        /// <inheritdoc cref="ITracer" />
+        IScope ITracer.StartActive(string operationName, SpanCreationSettings settings)
         {
             return StartActive(operationName, settings.Parent, serviceName: null, settings.StartTime, ignoreActiveScope: false, finishOnClose: settings.FinishOnClose ?? true);
         }

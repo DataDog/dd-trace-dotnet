@@ -35,6 +35,6 @@ namespace Datadog.Trace
         /// <param name="operationName">The span's operation name</param>
         /// <param name="settings">Settings for the new <see cref="IScope"/></param>
         /// <returns>A scope wrapping the newly created span</returns>
-        IScope StartActive(string operationName, CreateSpanSettings settings);
+        IScope StartActive(string operationName, SpanCreationSettings settings);
     }
 }

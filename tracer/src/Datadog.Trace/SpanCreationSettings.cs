@@ -1,4 +1,4 @@
-﻿// <copyright file="CreateSpanSettings.cs" company="Datadog">
+﻿// <copyright file="SpanCreationSettings.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,22 +10,21 @@ namespace Datadog.Trace
     /// <summary>
     /// Settings to use when creating a new <see cref="IScope"/> and <see cref="ISpan"/>
     /// </summary>
-    public struct CreateSpanSettings
+    public struct SpanCreationSettings
     {
         /// <summary>
-        /// If set, an explicit start time for the span. If not set, uses the current time.
+        /// Gets or sets an explicit start time for the span. If not set, uses the current time.
         /// </summary>
         public DateTimeOffset? StartTime { get; set; }
 
         /// <summary>
-        /// If set, the span's parent. If not set, the current active span context will be used,
+        /// Gets or sets the span's parent. If not set, the current active span context will be used,
         /// or a new one will be created if none is currently active.
         /// </summary>
         public ISpanContext Parent { get; set; }
 
         /// <summary>
-        /// If <c>true</c>, closing the scope will close the contained span.
-        /// If set to <c>false</c>, closing the returned scope will not close the enclosed span.
+        /// Gets or sets whether closing the scope will close the contained span.
         /// If not set, defaults to <c>true</c>.
         /// </summary>
         public bool? FinishOnClose { get; set; }
