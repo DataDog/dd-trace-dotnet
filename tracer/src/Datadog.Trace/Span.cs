@@ -377,5 +377,15 @@ namespace Datadog.Trace
         {
             StartTime = Context.TraceContext.UtcNow;
         }
+
+        internal void SetStartTime(DateTimeOffset startTime)
+        {
+            StartTime = startTime;
+        }
+
+        internal void SetDuration(TimeSpan duration)
+        {
+            Duration = duration;
+        }
     }
 }

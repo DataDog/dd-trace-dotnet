@@ -287,7 +287,7 @@ namespace Datadog.Trace
         {
             if (Settings.TraceEnabled)
             {
-                TracerManager.AgentWriter.WriteTrace(trace);
+                TracerManager.WriteTrace(trace);
             }
         }
 

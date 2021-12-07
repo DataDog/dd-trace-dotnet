@@ -1,10 +1,11 @@
-﻿// <copyright file="TracerManager.cs" company="Datadog">
+// <copyright file="TracerManager.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -15,6 +16,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.TraceProcessors;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;
 
@@ -37,6 +39,7 @@ namespace Datadog.Trace
         private static object _globalInstanceLock = new();
 
         private volatile bool _isClosing = false;
+        private ITraceProcessor[] _traceProcessors;
 
         public TracerManager(
             ImmutableTracerSettings settings,
@@ -46,7 +49,8 @@ namespace Datadog.Trace
             IDogStatsd statsd,
             RuntimeMetricsWriter runtimeMetricsWriter,
             LibLogScopeEventSubscriber libLogSubscriber,
-            string defaultServiceName)
+            string defaultServiceName,
+            ITraceProcessor[] traceProcessors = null)
         {
             Settings = settings;
             AgentWriter = agentWriter;
@@ -56,6 +60,7 @@ namespace Datadog.Trace
             RuntimeMetrics = runtimeMetricsWriter;
             DefaultServiceName = defaultServiceName;
             LibLogSubscriber = libLogSubscriber;
+            _traceProcessors = traceProcessors ?? Array.Empty<ITraceProcessor>();
         }
 
         /// <summary>
@@ -400,6 +405,20 @@ namespace Datadog.Trace
             // to estimate the number of "live" Tracers than can potentially
             // send traces to the Agent
             _instance?.Statsd?.Gauge(TracerMetricNames.Health.Heartbeat, Tracer.LiveTracerCount);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteTrace(ArraySegment<Span> trace)
+        {
+            foreach (var processor in _traceProcessors)
+            {
+                if (processor is not null)
+                {
+                    trace = processor.Process(trace);
+                }
+            }
+
+            AgentWriter.WriteTrace(trace);
         }
     }
 }
