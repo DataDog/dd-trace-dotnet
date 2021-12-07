@@ -4,11 +4,8 @@
 // </copyright>
 
 using System;
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Threading;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging.LogProviders;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Logging
@@ -37,17 +34,7 @@ namespace Datadog.Trace.Logging
         private readonly ILogEnricher _logEnricher;
 
         private readonly AsyncLocal<IDisposable> _currentEnricher = new();
-
-        // Each mapped context sets a key-value pair into the logging context
-        // Disposing the returned context unsets the key-value pair
-        // Keep a stack to retain the history of our correlation identifier properties
-        // (the stack is particularly important for Serilog, see below).
-        //
-        // IMPORTANT: Serilog -- The logging contexts (throughout the entire application)
-        //            are maintained in a stack, as opposed to a map, and must be closed
-        //            in reverse-order of opening. When operating on the stack-based model,
-        //            it is only valid to add the properties once and unset them once.
-        private readonly ConcurrentStack<IDisposable> _contextDisposalStack = new ConcurrentStack<IDisposable>();
+        private readonly AsyncLocal<Context> _currentContext = new();
 
         private bool _safeToAddToMdc = true;
 
@@ -134,8 +121,8 @@ namespace Datadog.Trace.Logging
                 }
                 else if (_logProvider is FallbackNLogLogProvider)
                 {
-                    _scopeManager.SpanActivated += MapOnSpanActivated;
-                    _scopeManager.TraceEnded += MapOnTraceEnded;
+                    _scopeManager.SpanOpened += PushContext;
+                    _scopeManager.SpanClosed += PopContext;
                 }
                 else
                 {
@@ -174,21 +161,33 @@ namespace Datadog.Trace.Logging
         }
 #endif
 
-        public void MapOnSpanActivated(object sender, SpanEventArgs spanEventArgs)
+        public void PushContext(object sender, SpanEventArgs spanEventArgs)
         {
-            if (!_executingIISPreStartInit)
+            if (!_executingIISPreStartInit && _safeToAddToMdc)
             {
-                RemoveAllCorrelationIdentifierContexts();
-                SetLogContext(spanEventArgs.TraceId, spanEventArgs.SpanId);
+                try
+                {
+                    Context previousContext = _currentContext.Value;
+                    _currentContext.Value = new Context(previousContext, spanEventArgs, _logProvider, _env, _version, _defaultServiceName, spanEventArgs.TraceId.ToString(), spanEventArgs.SpanId.ToString());
+                }
+                catch (Exception)
+                {
+                    _safeToAddToMdc = false;
+                }
             }
         }
 
-        public void MapOnTraceEnded(object sender, SpanEventArgs spanEventArgs)
+        public void PopContext(object sender, SpanEventArgs spanEventArgs)
         {
-            if (!_executingIISPreStartInit)
+            if (!_executingIISPreStartInit
+                && _currentContext.Value is Context context)
             {
-                RemoveAllCorrelationIdentifierContexts();
-                SetDefaultValues();
+                if (spanEventArgs.SpanId == context.SpanId
+                    && spanEventArgs.TraceId == context.TraceId)
+                {
+                    context.Dispose();
+                    _currentContext.Value = context.PreviousContext;
+                }
             }
         }
 
@@ -234,8 +233,8 @@ namespace Datadog.Trace.Logging
             }
             else if (_logProvider is FallbackNLogLogProvider)
             {
-                _scopeManager.SpanActivated -= MapOnSpanActivated;
-                _scopeManager.TraceEnded -= MapOnTraceEnded;
+                _scopeManager.SpanOpened -= PushContext;
+                _scopeManager.SpanClosed -= PopContext;
             }
             else
             {
@@ -274,85 +273,17 @@ namespace Datadog.Trace.Logging
                     () => new FallbackNLogLogProvider()));
         }
 
-        private void SetDefaultValues()
-        {
-            SetLogContext(0, 0);
-        }
-
-        private void RemoveLastCorrelationIdentifierContext()
-        {
-            if (_logProvider is CustomSerilogLogProvider)
-            {
-                if (_scopeManager.Active == null)
-                {
-                    // We closed the last span
-                    _currentEnricher.Value?.Dispose();
-                    _currentEnricher.Value = null;
-                }
-
-                return;
-            }
-
-            // TODO: Debug logs
-            for (int i = 0; i < _numPropertiesSetOnSpanEvent; i++)
-            {
-                if (_contextDisposalStack.TryPop(out var ctxDisposable))
-                {
-                    ctxDisposable.Dispose();
-                }
-                else
-                {
-                    // There is nothing left to pop so do nothing.
-                    // Though we are in a strange circumstance if we did not balance
-                    // the stack properly
-                    Debug.Fail($"{nameof(RemoveLastCorrelationIdentifierContext)} call failed. Too few items on the context stack.");
-                }
-            }
-        }
-
         private void RemoveAllCorrelationIdentifierContexts()
         {
-            // TODO: Debug logs
-            while (_contextDisposalStack.TryPop(out IDisposable ctxDisposable))
+            Context currentContext = _currentContext.Value;
+            while (currentContext != null)
             {
-                ctxDisposable.Dispose();
+                currentContext.Dispose();
+                currentContext = currentContext.PreviousContext;
             }
 
             _currentEnricher.Value?.Dispose();
             _currentEnricher.Value = null;
-        }
-
-        private void SetLogContext(ulong traceId, ulong spanId)
-        {
-            if (!_safeToAddToMdc)
-            {
-                return;
-            }
-
-            try
-            {
-                // TODO: Debug logs
-                _contextDisposalStack.Push(
-                    LogProvider.OpenMappedContext(
-                        CorrelationIdentifier.ServiceKey, _defaultServiceName, destructure: false));
-                _contextDisposalStack.Push(
-                    LogProvider.OpenMappedContext(
-                        CorrelationIdentifier.VersionKey, _version, destructure: false));
-                _contextDisposalStack.Push(
-                    LogProvider.OpenMappedContext(
-                        CorrelationIdentifier.EnvKey, _env, destructure: false));
-                _contextDisposalStack.Push(
-                    LogProvider.OpenMappedContext(
-                        CorrelationIdentifier.TraceIdKey, traceId.ToString(), destructure: false));
-                _contextDisposalStack.Push(
-                    LogProvider.OpenMappedContext(
-                        CorrelationIdentifier.SpanIdKey, spanId.ToString(), destructure: false));
-            }
-            catch (Exception)
-            {
-                _safeToAddToMdc = false;
-                RemoveAllCorrelationIdentifierContexts();
-            }
         }
 
 #if NETFRAMEWORK
@@ -387,5 +318,57 @@ namespace Datadog.Trace.Logging
             }
         }
 #endif
+
+        /// <summary>
+        /// Wraps all the individual context objects in a single instance, that can be stored in an AsyncLocal
+        /// </summary>
+        private class Context : IDisposable
+        {
+            private readonly Context _previousContext;
+            private readonly ulong _spanIdValue;
+            private readonly ulong _traceIdValue;
+            private readonly IDisposable _environment;
+            private readonly IDisposable _version;
+            private readonly IDisposable _service;
+            private readonly IDisposable _traceId;
+            private readonly IDisposable _spanId;
+
+            public Context(Context previousContext, SpanEventArgs span, ILogProvider logProvider, string environmentProperty, string versionProperty, string serviceProperty, string traceIdProperty, string spanIdProperty)
+            {
+                _previousContext = previousContext;
+                _spanIdValue = span.SpanId;
+                _traceIdValue = span.TraceId;
+
+                try
+                {
+                    _environment = logProvider.OpenMappedContext(CorrelationIdentifier.EnvKey, environmentProperty);
+                    _version = logProvider.OpenMappedContext(CorrelationIdentifier.VersionKey, versionProperty);
+                    _service = logProvider.OpenMappedContext(CorrelationIdentifier.ServiceKey, serviceProperty);
+                    _traceId = logProvider.OpenMappedContext(CorrelationIdentifier.TraceIdKey, traceIdProperty);
+                    _spanId = logProvider.OpenMappedContext(CorrelationIdentifier.SpanIdKey, spanIdProperty);
+                }
+                catch
+                {
+                    // Clear the properties that are already mapped
+                    Dispose();
+                    throw;
+                }
+            }
+
+            public Context PreviousContext => _previousContext;
+
+            public ulong SpanId => _spanIdValue;
+
+            public ulong TraceId => _traceIdValue;
+
+            public void Dispose()
+            {
+                _environment?.Dispose();
+                _version?.Dispose();
+                _service?.Dispose();
+                _traceId?.Dispose();
+                _spanId?.Dispose();
+            }
+        }
     }
 }
