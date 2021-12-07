@@ -8,13 +8,15 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
+using Datadog.Trace.TestHelpers;
 using Serilog;
 using Serilog.Events;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Logging
 {
-    [Collection(nameof(Datadog.Trace.Tests.Logging))]
+    [Collection(nameof(TracerInstanceTestCollection))]
+    [TracerRestorer]
     public class SerilogLogProviderTests
     {
         private readonly ILogProvider _logProvider;
@@ -42,7 +44,8 @@ namespace Datadog.Trace.Tests.Logging
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
-            LoggingProviderTestHelpers.LogInParentSpan(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
+            TracerRestorerAttribute.SetTracer(tracer);
+            LoggingProviderTestHelpers.LogInParentSpan(_logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
 
             // Filter the logs
             _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
@@ -57,7 +60,8 @@ namespace Datadog.Trace.Tests.Logging
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
-            LoggingProviderTestHelpers.LogInChildSpan(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
+            TracerRestorerAttribute.SetTracer(tracer);
+            LoggingProviderTestHelpers.LogInChildSpan(_logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
 
             // Filter the logs
             _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
@@ -72,7 +76,8 @@ namespace Datadog.Trace.Tests.Logging
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
-            LoggingProviderTestHelpers.LogOutsideSpans(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
+            TracerRestorerAttribute.SetTracer(tracer);
+            LoggingProviderTestHelpers.LogOutsideSpans(_logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
 
             // Filter the logs
             _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
@@ -87,7 +92,8 @@ namespace Datadog.Trace.Tests.Logging
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
-            LoggingProviderTestHelpers.LogInSpanWithServiceName(tracer, _logger, _logProvider.OpenMappedContext, "custom-service", out var scope);
+            TracerRestorerAttribute.SetTracer(tracer);
+            LoggingProviderTestHelpers.LogInSpanWithServiceName(_logger, _logProvider.OpenMappedContext, "custom-service", out var scope);
 
             // Filter the logs
             _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
@@ -102,7 +108,8 @@ namespace Datadog.Trace.Tests.Logging
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to FALSE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: false);
-            LoggingProviderTestHelpers.LogEverywhere(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
+            TracerRestorerAttribute.SetTracer(tracer);
+            LoggingProviderTestHelpers.LogEverywhere(_logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
 
             // Filter the logs
             _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
@@ -117,14 +124,15 @@ namespace Datadog.Trace.Tests.Logging
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
+            TracerRestorerAttribute.SetTracer(tracer);
 
             var barrier1 = new Barrier(2);
             var barrier2 = new Barrier(2);
 
-            var task1 = Task.Run(() => Thread1(barrier1, tracer));
+            var task1 = Task.Run(() => Thread1(barrier1));
             barrier1.SignalAndWait(); // Wait until thread1 has created both scopes
 
-            var task2 = Task.Run(() => Thread2(barrier2, tracer));
+            var task2 = Task.Run(() => Thread2(barrier2));
             barrier2.SignalAndWait(); // Wait until thread2 has created both scopes
 
             // Both threads have created a span
@@ -190,11 +198,11 @@ namespace Datadog.Trace.Tests.Logging
             Assert.False(logEvent.Properties.ContainsKey(CorrelationIdentifier.SerilogTraceIdKey));
         }
 
-        private static void Thread1(Barrier barrier, Tracer tracer)
+        private static void Thread1(Barrier barrier)
         {
-            using (tracer.StartActive("Outer"))
+            using (Tracer.Instance.StartActive("Outer"))
             {
-                using (tracer.StartActive("Inner"))
+                using (Tracer.Instance.StartActive("Inner"))
                 {
                     barrier.SignalAndWait();
                     barrier.SignalAndWait();
@@ -205,11 +213,11 @@ namespace Datadog.Trace.Tests.Logging
             }
         }
 
-        private static void Thread2(Barrier barrier, Tracer tracer)
+        private static void Thread2(Barrier barrier)
         {
-            using (var outerScope = tracer.StartActive("Outer"))
+            using (var outerScope = Tracer.Instance.StartActive("Outer"))
             {
-                using (tracer.StartActive("Inner"))
+                using (Tracer.Instance.StartActive("Inner"))
                 {
                     barrier.SignalAndWait();
                     barrier.SignalAndWait();

@@ -6,6 +6,7 @@
 using System.Collections.Generic;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.LogProviders;
+using Datadog.Trace.TestHelpers;
 using NLog;
 using NLog.Config;
 using NLog.Layouts;
@@ -14,7 +15,8 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.Logging
 {
-    [Collection(nameof(Datadog.Trace.Tests.Logging))]
+    [Collection(nameof(TracerInstanceTestCollection))]
+    [TracerRestorer]
     [TestCaseOrderer("Datadog.Trace.TestHelpers.AlphabeticalOrderer", "Datadog.Trace.TestHelpers")]
     public class NLogLogProviderTests
     {
@@ -55,7 +57,8 @@ namespace Datadog.Trace.Tests.Logging
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
-            LoggingProviderTestHelpers.LogInParentSpan(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
+            TracerRestorerAttribute.SetTracer(tracer);
+            LoggingProviderTestHelpers.LogInParentSpan(_logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
 
             // Filter the logs
             List<string> filteredLogs = new List<string>(_target.Logs);
@@ -71,7 +74,8 @@ namespace Datadog.Trace.Tests.Logging
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
-            LoggingProviderTestHelpers.LogInChildSpan(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
+            TracerRestorerAttribute.SetTracer(tracer);
+            LoggingProviderTestHelpers.LogInChildSpan(_logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
 
             // Filter the logs
             List<string> filteredLogs = new List<string>(_target.Logs);
@@ -87,7 +91,8 @@ namespace Datadog.Trace.Tests.Logging
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
-            LoggingProviderTestHelpers.LogOutsideSpans(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
+            TracerRestorerAttribute.SetTracer(tracer);
+            LoggingProviderTestHelpers.LogOutsideSpans(_logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
 
             // Filter the logs
             List<string> filteredLogs = new List<string>(_target.Logs);
@@ -103,7 +108,8 @@ namespace Datadog.Trace.Tests.Logging
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
-            LoggingProviderTestHelpers.LogInSpanWithServiceName(tracer, _logger, _logProvider.OpenMappedContext, "custom-service", out var scope);
+            TracerRestorerAttribute.SetTracer(tracer);
+            LoggingProviderTestHelpers.LogInSpanWithServiceName(_logger, _logProvider.OpenMappedContext, "custom-service", out var scope);
 
             // Filter the logs
             List<string> filteredLogs = new List<string>(_target.Logs);
@@ -119,7 +125,8 @@ namespace Datadog.Trace.Tests.Logging
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
             var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: false);
-            LoggingProviderTestHelpers.LogEverywhere(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
+            TracerRestorerAttribute.SetTracer(tracer);
+            LoggingProviderTestHelpers.LogEverywhere(_logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
 
             // Filter the logs
             List<string> filteredLogs = new List<string>(_target.Logs);

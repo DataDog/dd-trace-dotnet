@@ -31,9 +31,9 @@ namespace Datadog.Trace.Tests.Logging
             return new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
         }
 
-        internal static void LogInSpanWithServiceName(Tracer tracer, ILog logger, Func<string, object, bool, IDisposable> openMappedContext, string service, out IScope scope)
+        internal static void LogInSpanWithServiceName(ILog logger, Func<string, object, bool, IDisposable> openMappedContext, string service, out IScope scope)
         {
-            using (scope = tracer.StartActive("span", serviceName: service))
+            using (scope = Tracer.Instance.StartActive("span", serviceName: service))
             {
                 using (var mappedContext = openMappedContext(CustomPropertyName, CustomPropertyValue, false))
                 {
@@ -42,15 +42,15 @@ namespace Datadog.Trace.Tests.Logging
             }
         }
 
-        internal static void LogInParentSpan(Tracer tracer, ILog logger, Func<string, object, bool, IDisposable> openMappedContext, out IScope parentScope, out IScope childScope)
+        internal static void LogInParentSpan(ILog logger, Func<string, object, bool, IDisposable> openMappedContext, out IScope parentScope, out IScope childScope)
         {
-            using (parentScope = tracer.StartActive("parent"))
+            using (parentScope = Tracer.Instance.StartActive("parent"))
             {
                 using (var mappedContext = openMappedContext(CustomPropertyName, CustomPropertyValue, false))
                 {
                     logger.Log(LogLevel.Info, () => $"Started and activated parent scope.");
 
-                    using (childScope = tracer.StartActive("child"))
+                    using (childScope = Tracer.Instance.StartActive("child"))
                     {
                         // Empty
                     }
@@ -60,13 +60,13 @@ namespace Datadog.Trace.Tests.Logging
             }
         }
 
-        internal static void LogInChildSpan(Tracer tracer, ILog logger, Func<string, object, bool, IDisposable> openMappedContext, out IScope parentScope, out IScope childScope)
+        internal static void LogInChildSpan(ILog logger, Func<string, object, bool, IDisposable> openMappedContext, out IScope parentScope, out IScope childScope)
         {
-            using (parentScope = tracer.StartActive("parent"))
+            using (parentScope = Tracer.Instance.StartActive("parent"))
             {
                 using (var mappedContext = openMappedContext(CustomPropertyName, CustomPropertyValue, false))
                 {
-                    using (childScope = tracer.StartActive("child"))
+                    using (childScope = Tracer.Instance.StartActive("child"))
                     {
                         logger.Log(LogLevel.Info, () => $"{LogPrefix}Started and activated child scope.");
                     }
@@ -74,15 +74,15 @@ namespace Datadog.Trace.Tests.Logging
             }
         }
 
-        internal static void LogOutsideSpans(Tracer tracer, ILog logger, Func<string, object, bool, IDisposable> openMappedContext, out IScope parentScope, out IScope childScope)
+        internal static void LogOutsideSpans(ILog logger, Func<string, object, bool, IDisposable> openMappedContext, out IScope parentScope, out IScope childScope)
         {
             logger.Log(LogLevel.Info, () => $"{LogPrefix}Logged before starting/activating a scope");
 
-            using (parentScope = tracer.StartActive("parent"))
+            using (parentScope = Tracer.Instance.StartActive("parent"))
             {
                 using (var mappedContext = openMappedContext(CustomPropertyName, CustomPropertyValue, false))
                 {
-                    using (childScope = tracer.StartActive("child"))
+                    using (childScope = Tracer.Instance.StartActive("child"))
                     {
                         // Empty
                     }
@@ -92,17 +92,17 @@ namespace Datadog.Trace.Tests.Logging
             logger.Log(LogLevel.Info, () => $"{LogPrefix}Closed child scope so there is no active scope.");
         }
 
-        internal static void LogEverywhere(Tracer tracer, ILog logger, Func<string, object, bool, IDisposable> openMappedContext, out IScope parentScope, out IScope childScope)
+        internal static void LogEverywhere(ILog logger, Func<string, object, bool, IDisposable> openMappedContext, out IScope parentScope, out IScope childScope)
         {
             logger.Log(LogLevel.Info, () => $"{LogPrefix}Logged before starting/activating a scope");
 
-            using (parentScope = tracer.StartActive("parent"))
+            using (parentScope = Tracer.Instance.StartActive("parent"))
             {
                 logger.Log(LogLevel.Info, () => $"Started and activated parent scope.");
 
                 using (var mappedContext = openMappedContext(CustomPropertyName, CustomPropertyValue, false))
                 {
-                    using (childScope = tracer.StartActive("child"))
+                    using (childScope = Tracer.Instance.StartActive("child"))
                     {
                         logger.Log(LogLevel.Info, () => $"{LogPrefix}Started and activated child scope.");
                     }
