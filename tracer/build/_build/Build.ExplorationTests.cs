@@ -268,8 +268,8 @@ partial class Build
         if (!ExplorationTestSkipClone)
         {
             var cloneCommand = ExplorationTestCloneLatest
-                                   ? $"clone {testDescription.GitRepositoryUrl} {ExplorationTestsDirectory}/{testDescription.Name}"
-                                   : $"clone -b {testDescription.GitRepositoryTag} {testDescription.GitRepositoryUrl} {ExplorationTestsDirectory}/{testDescription.Name}";
+                                   ? $"clone -q {testDescription.GitRepositoryUrl} {ExplorationTestsDirectory}/{testDescription.Name}"
+                                   : $"clone -q -b {testDescription.GitRepositoryTag} {testDescription.GitRepositoryUrl} {ExplorationTestsDirectory}/{testDescription.Name}";
 
 
             GitTasks.Git(cloneCommand);
