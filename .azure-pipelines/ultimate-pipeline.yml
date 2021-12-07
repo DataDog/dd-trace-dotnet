@@ -882,6 +882,8 @@ stages:
 
     steps:
     - template: steps/install-dotnet-sdks.yml
+      parameters:
+        includeX86: true
     - template: steps/restore-working-directory.yml
 
     - script: tracer\build.cmd RunExplorationTests_$(explorationTestUseCase) -ExplorationTestName $(explorationTestName)
