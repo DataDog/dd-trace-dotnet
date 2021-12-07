@@ -9,6 +9,8 @@ using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 {
@@ -16,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DbScopeFactory));
 
-        private static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationId integrationId, string dbType, string operationName)
+        private static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationId integrationId, string dbType, string operationName, string serviceName)
         {
             if (!tracer.Settings.IsIntegrationEnabled(integrationId))
             {
@@ -40,18 +42,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     return null;
                 }
 
-                string serviceName = tracer.Settings.GetServiceName(tracer, dbType);
-
                 var tags = new SqlTags
                            {
                                DbType = dbType,
-                               InstrumentationName = integrationId.ToString()
+                               InstrumentationName = IntegrationRegistry.GetName(integrationId),
                            };
 
                 tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
 
+                var commandTags = DbCommandCache.GetTagsFromDbCommand(command);
+                if (commandTags != null)
+                {
+                    var cachedTags = commandTags.Value;
+                    tags.DbName = cachedTags.DbName;
+                    tags.DbUser = cachedTags.DbUser;
+                    tags.OutHost = cachedTags.OutHost;
+                }
+
                 scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName);
-                scope.Span.AddTagsFromDbCommand(command);
+                scope.Span.ResourceName = command.CommandText;
+                scope.Span.Type = SpanTypes.Sql;
             }
             catch (Exception ex)
             {
@@ -105,6 +115,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             private static readonly string DbTypeName;
             private static readonly string OperationName;
             private static readonly IntegrationId IntegrationId;
+            private static string _tracerDefaultServiceName;
+            private static string _serviceName;
             // ReSharper restore StaticMemberInGenericType
 
             static Cache()
@@ -128,7 +140,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 if (commandType == CommandType)
                 {
                     // use the cached values if command.GetType() == typeof(TCommand)
-                    return DbScopeFactory.CreateDbCommandScope(tracer, command, IntegrationId, DbTypeName, OperationName);
+                    return DbScopeFactory.CreateDbCommandScope(tracer, command, IntegrationId, DbTypeName, OperationName, GetServiceName(tracer, DbTypeName));
                 }
 
                 // if command.GetType() != typeof(TCommand), we are probably instrumenting a method
@@ -136,10 +148,36 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 if (TryGetIntegrationDetails(commandType.FullName, out var integrationId, out var dbTypeName))
                 {
                     var operationName = $"{dbTypeName}.query";
-                    return DbScopeFactory.CreateDbCommandScope(tracer, command, integrationId.Value, dbTypeName, operationName);
+                    return DbScopeFactory.CreateDbCommandScope(tracer, command, integrationId.Value, dbTypeName, operationName, GetServiceName(tracer, dbTypeName));
                 }
 
                 return null;
+            }
+
+            private static string GetServiceName(Tracer tracer, string dbTypeName)
+            {
+                if (!tracer.Settings.TryGetServiceName(dbTypeName, out string serviceName))
+                {
+                    if (_tracerDefaultServiceName == tracer.DefaultServiceName)
+                    {
+                        serviceName = _serviceName;
+                    }
+                    else
+                    {
+                        if (_tracerDefaultServiceName is null)
+                        {
+                            _tracerDefaultServiceName = tracer.DefaultServiceName;
+                            serviceName = $"{_tracerDefaultServiceName}-{dbTypeName}";
+                            _serviceName = serviceName;
+                        }
+                        else
+                        {
+                            serviceName = $"{_tracerDefaultServiceName}-{dbTypeName}";
+                        }
+                    }
+                }
+
+                return serviceName;
             }
         }
     }

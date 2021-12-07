@@ -21,24 +21,6 @@ namespace Datadog.Trace.ExtensionMethods
     public static class SpanExtensions
     {
         /// <summary>
-        /// Adds standard tags to a span with values taken from the specified <see cref="DbCommand"/>.
-        /// </summary>
-        /// <param name="span">The span to add the tags to.</param>
-        /// <param name="command">The db command to get tags values from.</param>
-        public static void AddTagsFromDbCommand(this ISpan span, IDbCommand command)
-        {
-            span.ResourceName = command.CommandText;
-            span.Type = SpanTypes.Sql;
-
-            var tags = DbCommandCache.GetTagsFromDbCommand(command);
-
-            foreach (var pair in tags)
-            {
-                span.SetTag(pair.Key, pair.Value);
-            }
-        }
-
-        /// <summary>
         /// Sets the sampling priority for the trace that contains the specified <see cref="ISpan"/>.
         /// </summary>
         /// <param name="span">A span that belongs to the trace.</param>

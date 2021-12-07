@@ -5,9 +5,8 @@
 
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Tagging;
 
-namespace Datadog.Trace.ClrProfiler
+namespace Datadog.Trace.Tagging
 {
     internal class SqlTags : InstrumentationTags
     {
