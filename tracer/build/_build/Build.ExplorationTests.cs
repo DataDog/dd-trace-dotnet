@@ -123,8 +123,7 @@ partial class Build
     Target RunExplorationTests_Debugger
         => _ => _
                .Description("Run exploration tests for debugger.")
-               .After(Clean)
-               .DependsOn(BuildTracerHome)
+               .After(Clean, BuildTracerHome)
                .Executes(() =>
                 {
                     SetUpExplorationTest_Debugger();
@@ -153,8 +152,7 @@ partial class Build
     Target RunExplorationTests_ContinuousProfiler
         => _ => _
                .Description("Run exploration tests for profiler.")
-               .After(Clean)
-               .DependsOn(BuildTracerHome)
+               .After(Clean, BuildTracerHome)
                .Executes(() =>
                 {
                     SetUpExplorationTest_ContinuousProfiler();
