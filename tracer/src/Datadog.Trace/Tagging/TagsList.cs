@@ -22,6 +22,7 @@ namespace Datadog.Trace.Tagging
 
         private List<KeyValuePair<string, double>> _metrics;
         private List<KeyValuePair<string, string>> _tags;
+        private List<ITagProcessor> _tagProcessors;
 
         protected List<KeyValuePair<string, double>> Metrics => Volatile.Read(ref _metrics);
 
@@ -244,6 +245,16 @@ namespace Datadog.Trace.Tagging
             return sb.ToString();
         }
 
+        internal void AddTagProcessor(ITagProcessor tagProcessor)
+        {
+            if (_tagProcessors is null)
+            {
+                _tagProcessors = new List<ITagProcessor>();
+            }
+
+            _tagProcessors.Add(tagProcessor);
+        }
+
         protected virtual IProperty<string>[] GetAdditionalTags() => Array.Empty<IProperty<string>>();
 
         protected virtual IProperty<double?>[] GetAdditionalMetrics() => Array.Empty<IProperty<double?>>();
@@ -275,6 +286,7 @@ namespace Datadog.Trace.Tagging
             offset += MessagePackBinary.WriteMapHeaderForceMap32Block(ref bytes, offset, 0);
 
             var tags = Tags;
+            var tagProcessors = _tagProcessors;
 
             bool isOriginWritten = false;
 
@@ -286,7 +298,17 @@ namespace Datadog.Trace.Tagging
 
                     foreach (var pair in tags)
                     {
-                        WriteTag(ref bytes, ref offset, pair.Key, pair.Value);
+                        string key = pair.Key;
+                        string value = pair.Value;
+                        if (tagProcessors is not null)
+                        {
+                            for (var i = 0; i < tagProcessors.Count; i++)
+                            {
+                                tagProcessors[i]?.ProcessMeta(ref key, ref value);
+                            }
+                        }
+
+                        WriteTag(ref bytes, ref offset, key, value);
                     }
                 }
             }
@@ -303,7 +325,16 @@ namespace Datadog.Trace.Tagging
                     }
 
                     count++;
-                    WriteTag(ref bytes, ref offset, property.Key, value);
+                    string key = property.Key;
+                    if (tagProcessors is not null)
+                    {
+                        for (var i = 0; i < tagProcessors.Count; i++)
+                        {
+                            tagProcessors[i]?.ProcessMeta(ref key, ref value);
+                        }
+                    }
+
+                    WriteTag(ref bytes, ref offset, key, value);
                 }
             }
 
@@ -344,6 +375,7 @@ namespace Datadog.Trace.Tagging
             offset += MessagePackBinary.WriteMapHeaderForceMap32Block(ref bytes, offset, 0);
 
             var metrics = Metrics;
+            var tagProcessors = _tagProcessors;
 
             if (metrics != null)
             {
@@ -353,6 +385,16 @@ namespace Datadog.Trace.Tagging
 
                     foreach (var pair in metrics)
                     {
+                        string key = pair.Key;
+                        double value = pair.Value;
+                        if (tagProcessors is not null)
+                        {
+                            for (var i = 0; i < tagProcessors.Count; i++)
+                            {
+                                tagProcessors[i]?.ProcessMetric(ref key, ref value);
+                            }
+                        }
+
                         WriteMetric(ref bytes, ref offset, pair.Key, pair.Value);
                     }
                 }
@@ -365,7 +407,17 @@ namespace Datadog.Trace.Tagging
                 if (value != null)
                 {
                     count++;
-                    WriteMetric(ref bytes, ref offset, property.Key, value.Value);
+                    string key = property.Key;
+                    double val = value.Value;
+                    if (tagProcessors is not null)
+                    {
+                        for (var i = 0; i < tagProcessors.Count; i++)
+                        {
+                            tagProcessors[i]?.ProcessMetric(ref key, ref val);
+                        }
+                    }
+
+                    WriteMetric(ref bytes, ref offset, property.Key, val);
                 }
             }
 

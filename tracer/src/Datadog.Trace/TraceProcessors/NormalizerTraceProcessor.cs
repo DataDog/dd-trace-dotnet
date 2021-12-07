@@ -28,6 +28,11 @@ namespace Datadog.Trace.TraceProcessors
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<NormalizerTraceProcessor>();
         private static readonly DateTime Year2000Time = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
+        public NormalizerTraceProcessor()
+        {
+            Log.Information("NormalizerTraceProcessor initialized.");
+        }
+
         public ArraySegment<Span> Process(ArraySegment<Span> trace)
         {
             /*
@@ -52,7 +57,7 @@ namespace Datadog.Trace.TraceProcessors
                 // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/agent/normalizer.go#L44-L56
                 if (string.IsNullOrEmpty(span.ServiceName))
                 {
-                    Log.Debug("Fixing malformed trace. Service  is empty (reason:service_empty), setting span.service={serviceName}: {span}", span.ServiceName, span);
+                    Log.Information("Fixing malformed trace. Service  is empty (reason:service_empty), setting span.service={serviceName}: {span}", span.ServiceName, span);
                     span.ServiceName = DefaultServiceName;
                 }
                 else
@@ -62,7 +67,7 @@ namespace Datadog.Trace.TraceProcessors
                     if (TraceUtil.TruncateUTF8(ref serviceName, MaxServiceLen))
                     {
                         span.ServiceName = serviceName;
-                        Log.Debug("Fixing malformed trace. Service is too long (reason:service_truncate), truncating span.service to length={maxServiceLen}: {span}", MaxServiceLen, span);
+                        Log.Information("Fixing malformed trace. Service is too long (reason:service_truncate), truncating span.service to length={maxServiceLen}: {span}", MaxServiceLen, span);
                     }
 
                     span.ServiceName = TraceUtil.NormalizeTag(span.ServiceName);
@@ -71,7 +76,7 @@ namespace Datadog.Trace.TraceProcessors
                 // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/agent/normalizer.go#L69-L80
                 if (string.IsNullOrEmpty(span.OperationName))
                 {
-                    Log.Debug("Fixing malformed trace. Name is empty (reason:span_name_empty), setting span.name={name}: {span}", span.OperationName, span);
+                    Log.Information("Fixing malformed trace. Name is empty (reason:span_name_empty), setting span.name={name}: {span}", span.OperationName, span);
                     span.OperationName = DefaultSpanName;
                 }
                 else
@@ -80,35 +85,35 @@ namespace Datadog.Trace.TraceProcessors
                     if (TraceUtil.TruncateUTF8(ref operationName, MaxNameLen))
                     {
                         span.OperationName = operationName;
-                        Log.Debug("Fixing malformed trace. Name is too long (reason:span_name_truncate), truncating span.name to length={maxServiceLen}: {span}", MaxNameLen, span);
+                        Log.Information("Fixing malformed trace. Name is too long (reason:span_name_truncate), truncating span.name to length={maxServiceLen}: {span}", MaxNameLen, span);
                     }
                 }
 
                 // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/agent/normalizer.go#L82-L86
                 if (string.IsNullOrEmpty(span.ResourceName))
                 {
-                    Log.Debug("Fixing malformed trace. Resource is empty (reason:resource_empty), setting span.resource={name}: {span}", span.OperationName, span);
+                    Log.Information("Fixing malformed trace. Resource is empty (reason:resource_empty), setting span.resource={name}: {span}", span.OperationName, span);
                     span.ResourceName = span.OperationName;
                 }
 
                 // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/agent/normalizer.go#L101-L105
                 if (span.Duration < TimeSpan.Zero)
                 {
-                    Log.Debug("Fixing malformed trace. Duration is invalid (reason:invalid_duration), setting span.duration=0: {span}", span.OperationName, span);
+                    Log.Information("Fixing malformed trace. Duration is invalid (reason:invalid_duration), setting span.duration=0: {span}", span.OperationName, span);
                     span.SetDuration(TimeSpan.Zero);
                 }
 
                 // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/agent/normalizer.go#L106-L110
                 if (span.Duration.ToNanoseconds() > long.MaxValue - span.StartTime.ToUnixTimeNanoseconds())
                 {
-                    Log.Debug("Fixing malformed trace. Duration is too large and causes overflow (reason:invalid_duration), setting span.duration=0: {span}", span.OperationName, span);
+                    Log.Information("Fixing malformed trace. Duration is too large and causes overflow (reason:invalid_duration), setting span.duration=0: {span}", span.OperationName, span);
                     span.SetDuration(TimeSpan.Zero);
                 }
 
                 // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/agent/normalizer.go#L111-L119
                 if (span.StartTime < Year2000Time)
                 {
-                    Log.Debug("Fixing malformed trace. Start date is invalid (reason:invalid_start_date), setting span.start=time.now(): {span}", span);
+                    Log.Information("Fixing malformed trace. Start date is invalid (reason:invalid_start_date), setting span.start=time.now(): {span}", span);
                     var now = span.Context.TraceContext.UtcNow;
                     var start = now - span.Duration;
                     if (start.ToUnixTimeNanoseconds() < 0)
@@ -124,7 +129,7 @@ namespace Datadog.Trace.TraceProcessors
                 if (TraceUtil.TruncateUTF8(ref type, MaxTypeLen))
                 {
                     span.Type = type;
-                    Log.Debug("Fixing malformed trace. Type is too long (reason:type_truncate), truncating span.type to length={maxServiceLen}: {span}", MaxTypeLen, span);
+                    Log.Information("Fixing malformed trace. Type is too long (reason:type_truncate), truncating span.type to length={maxServiceLen}: {span}", MaxTypeLen, span);
                 }
 
                 // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/agent/normalizer.go#L126-L128

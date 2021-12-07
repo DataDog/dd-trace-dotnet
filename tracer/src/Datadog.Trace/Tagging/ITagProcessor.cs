@@ -1,15 +1,14 @@
-// <copyright file="ITraceProcessor.cs" company="Datadog">
+// <copyright file="ITagProcessor.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Text;
-
-namespace Datadog.Trace.TraceProcessors
+namespace Datadog.Trace.Tagging
 {
-    internal interface ITraceProcessor
+    internal interface ITagProcessor
     {
-        ArraySegment<Span> Process(ArraySegment<Span> trace);
+        void ProcessMeta(ref string key, ref string value);
+
+        void ProcessMetric(ref string key, ref double value);
     }
 }
