@@ -37,13 +37,13 @@ namespace Datadog.Trace.Util
             }
         }
 
-        public static TagsCacheItem? GetTagsFromDbCommand(IDbCommand command)
+        public static TagsCacheItem GetTagsFromDbCommand(IDbCommand command)
         {
             var connectionString = command.Connection?.ConnectionString;
 
             if (connectionString is null)
             {
-                return null;
+                return default;
             }
 
             var cache = _cache;
@@ -82,9 +82,9 @@ namespace Datadog.Trace.Util
             var builder = new DbConnectionStringBuilder { ConnectionString = connectionString };
 
             return new TagsCacheItem(
-                GetConnectionStringValue(builder, "Database", "Initial Catalog", "InitialCatalog"),
-                GetConnectionStringValue(builder, "User ID", "UserID"),
-                GetConnectionStringValue(builder, "Server", "Data Source", "DataSource", "Network Address", "NetworkAddress", "Address", "Addr", "Host"));
+                dbName: GetConnectionStringValue(builder, "Database", "Initial Catalog", "InitialCatalog"),
+                dbUser: GetConnectionStringValue(builder, "User ID", "UserID"),
+                outHost: GetConnectionStringValue(builder, "Server", "Data Source", "DataSource", "Network Address", "NetworkAddress", "Address", "Addr", "Host"));
         }
 
         private static string GetConnectionStringValue(DbConnectionStringBuilder builder, params string[] names)

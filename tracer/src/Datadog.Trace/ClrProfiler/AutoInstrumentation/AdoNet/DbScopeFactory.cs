@@ -50,14 +50,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
                 tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
 
-                var commandTags = DbCommandCache.GetTagsFromDbCommand(command);
-                if (commandTags != null)
-                {
-                    var cachedTags = commandTags.Value;
-                    tags.DbName = cachedTags.DbName;
-                    tags.DbUser = cachedTags.DbUser;
-                    tags.OutHost = cachedTags.OutHost;
-                }
+                var cachedTags = DbCommandCache.GetTagsFromDbCommand(command);
+                tags.DbName = cachedTags.DbName;
+                tags.DbUser = cachedTags.DbUser;
+                tags.OutHost = cachedTags.OutHost;
 
                 scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName);
                 scope.Span.ResourceName = command.CommandText;
@@ -158,23 +154,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             {
                 if (!tracer.Settings.TryGetServiceName(dbTypeName, out string serviceName))
                 {
+                    if (DbTypeName != dbTypeName)
+                    {
+                        // We cannot cache in the base class
+                        return $"{_tracerDefaultServiceName}-{dbTypeName}";
+                    }
+
+                    // If not a base class
                     if (_tracerDefaultServiceName == tracer.DefaultServiceName)
                     {
-                        serviceName = _serviceName;
+                        // Service has not changed
+                        return _serviceName;
                     }
-                    else
-                    {
-                        if (_tracerDefaultServiceName is null)
-                        {
-                            _tracerDefaultServiceName = tracer.DefaultServiceName;
-                            serviceName = $"{_tracerDefaultServiceName}-{dbTypeName}";
-                            _serviceName = serviceName;
-                        }
-                        else
-                        {
-                            serviceName = $"{_tracerDefaultServiceName}-{dbTypeName}";
-                        }
-                    }
+
+                    // We create or replace the cache with the new service name
+                    _tracerDefaultServiceName = tracer.DefaultServiceName;
+                    serviceName = $"{_tracerDefaultServiceName}-{dbTypeName}";
+                    _serviceName = serviceName;
                 }
 
                 return serviceName;

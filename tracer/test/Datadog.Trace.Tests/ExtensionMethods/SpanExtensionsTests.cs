@@ -35,13 +35,9 @@ namespace Datadog.Trace.Tests.ExtensionMethods
             var span = new Span(spanContext, null);
 
             var commandTags = DbCommandCache.GetTagsFromDbCommand(CreateDbCommand(connectionString));
-
-            if (commandTags != null)
-            {
-                Assert.Equal(expectedDbName, commandTags.Value.DbName);
-                Assert.Equal(expectedUserId, commandTags.Value.DbUser);
-                Assert.Equal(expectedHost, commandTags.Value.OutHost);
-            }
+            Assert.Equal(expectedDbName, commandTags.DbName);
+            Assert.Equal(expectedUserId, commandTags.DbUser);
+            Assert.Equal(expectedHost, commandTags.OutHost);
         }
 
         [Fact]
@@ -60,7 +56,7 @@ namespace Datadog.Trace.Tests.ExtensionMethods
                 var commandTags = DbCommandCache.GetTagsFromDbCommand(CreateDbCommand(connectionString));
 
                 Assert.NotNull(DbCommandCache.Cache);
-                Assert.Equal("myServerName" + i, commandTags.Value.OutHost);
+                Assert.Equal("myServerName" + i, commandTags.OutHost);
             }
 
             // Test the logic with cache disabled
@@ -71,7 +67,7 @@ namespace Datadog.Trace.Tests.ExtensionMethods
                 var commandTags = DbCommandCache.GetTagsFromDbCommand(CreateDbCommand(connectionString));
 
                 Assert.Null(DbCommandCache.Cache);
-                Assert.Equal("myServerName" + "NoCache" + i, commandTags.Value.OutHost);
+                Assert.Equal("myServerName" + "NoCache" + i, commandTags.OutHost);
             }
         }
 

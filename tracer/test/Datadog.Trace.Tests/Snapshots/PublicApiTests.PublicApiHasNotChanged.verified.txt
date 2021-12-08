@@ -378,7 +378,6 @@ namespace Datadog.Trace.ExtensionMethods
 {
     public static class SpanExtensions
     {
-        public static void AddTagsFromDbCommand(this Datadog.Trace.ISpan span, System.Data.IDbCommand command) { }
         public static void SetTraceSamplingPriority(this Datadog.Trace.ISpan span, Datadog.Trace.SamplingPriority samplingPriority) { }
     }
 }
