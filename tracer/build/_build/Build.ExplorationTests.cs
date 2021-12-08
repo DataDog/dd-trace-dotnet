@@ -22,12 +22,17 @@ public enum ExplorationTestName
 
 class ExplorationTestDescription
 {
+    public string Name { get; set; }
+
     public string GitRepositoryUrl { get; set; }
     public string GitRepositoryTag { get; set; }
-    public string Name { get; set; }
+    public bool IsGitShallowCloneSupported { get; set; }
+    public bool IsGitSubmodulesRequired { get; set; }
+
     public string PathToUnitTestProject { get; set; }
-    public string[] TestsToIgnore { get; set; }
     public bool IsTestedByVSTest { get; set; }
+    public string[] TestsToIgnore { get; set; }
+
 
     public TargetFramework[] SupportedFrameworks { get; set; }
 
@@ -50,54 +55,61 @@ class ExplorationTestDescription
         {
             ExplorationTestName.eShopOnWeb => new ExplorationTestDescription()
             {
-                GitRepositoryUrl = "https://github.com/dotnet-architecture/eShopOnWeb.git",
                 Name = "eShopOnWeb",
+                GitRepositoryUrl = "https://github.com/dotnet-architecture/eShopOnWeb.git",
                 GitRepositoryTag = "netcore2.1",
+                IsGitShallowCloneSupported = true,
                 PathToUnitTestProject = "tests/UnitTests",
-                SupportedFrameworks = new[] { TargetFramework.NETCOREAPP2_1 }
+                SupportedFrameworks = new[] { TargetFramework.NETCOREAPP2_1 },
             },
             ExplorationTestName.protobuf => new ExplorationTestDescription()
             {
-                GitRepositoryUrl = "https://github.com/protocolbuffers/protobuf.git",
                 Name = "protobuf",
+                GitRepositoryUrl = "https://github.com/protocolbuffers/protobuf.git",
                 GitRepositoryTag = "v3.19.1",
+                IsGitShallowCloneSupported = true,
+                IsGitSubmodulesRequired = true,
                 PathToUnitTestProject = "csharp/src/Google.Protobuf.Test",
-                SupportedFrameworks = new[] { TargetFramework.NETCOREAPP2_1, TargetFramework.NET5_0, }
+                SupportedFrameworks = new[] { TargetFramework.NETCOREAPP2_1, TargetFramework.NET5_0, },
             },
             ExplorationTestName.cake => new ExplorationTestDescription()
             {
-                GitRepositoryUrl = "https://github.com/cake-build/cake.git",
                 Name = "cake",
+                GitRepositoryUrl = "https://github.com/cake-build/cake.git",
                 GitRepositoryTag = "v1.3.0",
+                IsGitShallowCloneSupported = true,
                 PathToUnitTestProject = "src/Cake.Common.Tests",
-                SupportedFrameworks = new[] { TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0 }
+                SupportedFrameworks = new[] { TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0 },
             },
             ExplorationTestName.swashbuckle => new ExplorationTestDescription()
             {
-                GitRepositoryUrl = "https://github.com/domaindrivendev/Swashbuckle.AspNetCore.git",
                 Name = "Swashbuckle.AspNetCore",
+                GitRepositoryUrl = "https://github.com/domaindrivendev/Swashbuckle.AspNetCore.git",
                 GitRepositoryTag = "v6.2.3",
+                IsGitShallowCloneSupported = true,
                 PathToUnitTestProject = "test/Swashbuckle.AspNetCore.SwaggerGen.Test",
-                SupportedFrameworks = new[] { TargetFramework.NET6_0 }
+                SupportedFrameworks = new[] { TargetFramework.NET6_0 },
             },
             ExplorationTestName.paket => new ExplorationTestDescription()
             {
-                GitRepositoryUrl = "https://github.com/fsprojects/Paket.git",
                 Name = "Paket",
+                GitRepositoryUrl = "https://github.com/fsprojects/Paket.git",
                 GitRepositoryTag = "6.2.1",
+                IsGitShallowCloneSupported = true,
                 PathToUnitTestProject = "tests/Paket.Tests",
                 TestsToIgnore = new[] { "Loading assembly metadata works" },
-                SupportedFrameworks = new[] { TargetFramework.NET461, TargetFramework.NETCOREAPP3_1 }
+                SupportedFrameworks = new[] { TargetFramework.NET461, TargetFramework.NETCOREAPP3_1 },
             },
             ExplorationTestName.ilspy => new ExplorationTestDescription()
             {
-                GitRepositoryUrl = "https://github.com/icsharpcode/ILSpy.git",
                 Name = "ILSpy",
+                GitRepositoryUrl = "https://github.com/icsharpcode/ILSpy.git",
                 GitRepositoryTag = "v7.1",
+                IsGitSubmodulesRequired = true,
                 PathToUnitTestProject = "ICSharpCode.Decompiler.Tests",
+                IsTestedByVSTest = true,
                 TestsToIgnore = new[] { "UseMc", "_net45", "ImplicitConversions", "ExplicitConversions", "ICSharpCode_Decompiler", "NewtonsoftJson_pcl_debug", "NRefactory_CSharp", "Random_TestCase_1", "AsyncForeach", "AsyncStreams", "AsyncUsing", "CS9_ExtensionGetEnumerator", "IndexRangeTest", "InterfaceTests", "UsingVariables" },
                 SupportedFrameworks = new[] { TargetFramework.NET461 },
-                IsTestedByVSTest = true
             },
             _ => throw new ArgumentOutOfRangeException(nameof(name), name, null)
         };
@@ -268,13 +280,13 @@ partial class Build
     {
         if (!ExplorationTestSkipClone)
         {
-            var cloneCommand = ExplorationTestCloneLatest
-                                   ? $"clone --depth 1 --recurse-submodules -q -c advice.detachedHead=false {testDescription.GitRepositoryUrl} {ExplorationTestsDirectory}/{testDescription.Name}"
-                                   : $"clone --depth 1 --recurse-submodules -q -c advice.detachedHead=false -b {testDescription.GitRepositoryTag} {testDescription.GitRepositoryUrl} {ExplorationTestsDirectory}/{testDescription.Name}";
+            var depth = testDescription.IsGitShallowCloneSupported ? "--depth 1" : "";
+            var submodules = testDescription.IsGitSubmodulesRequired ? "--recurse-submodules" : "";
+            var source = ExplorationTestCloneLatest ? $"-b {testDescription.GitRepositoryTag} {testDescription.GitRepositoryUrl}" : testDescription.GitRepositoryUrl;
+            var target = $"{ExplorationTestsDirectory}/{testDescription.Name}";
 
-
+            var cloneCommand = $"clone -q -c advice.detachedHead=false {depth} {submodules} {source} {target}";
             GitTasks.Git(cloneCommand);
-            //GitTasks.Git("submodule update --init --recursive");
         }
 
         var projectPath = $"{ExplorationTestsDirectory}/{testDescription.Name}/{testDescription.PathToUnitTestProject}";
