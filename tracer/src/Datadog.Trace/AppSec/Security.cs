@@ -179,9 +179,9 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        private static void AddHeaderTags(Span span, IHeadersCollection headers, Dictionary<string, string> headersToCollect)
+        private static void AddHeaderTags(Span span, IHeadersCollection headers, Dictionary<string, string> headersToCollect, string prefix)
         {
-            var tags = SpanContextPropagator.Instance.ExtractHeaderTags(headers, headersToCollect, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+            var tags = SpanContextPropagator.Instance.ExtractHeaderTags(headers, headersToCollect, defaultTagPrefix: prefix);
             foreach (var tag in tags)
             {
                 span.SetTag(tag.Key, tag.Value);
@@ -229,14 +229,14 @@ namespace Datadog.Trace.AppSec
             span.SetTag(Tags.ActorIp, ipInfo.IpAddress);
 
             var headers = transport.GetRequestHeaders();
-            AddHeaderTags(span, headers, RequestHeaders);
+            AddHeaderTags(span, headers, RequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
 
             transport.OnCompleted(() =>
             {
                 TryAddEndPoint(span);
 
                 var headers = transport.GetResponseHeaders();
-                AddHeaderTags(span, headers, ResponseHeaders);
+                AddHeaderTags(span, headers, ResponseHeaders, SpanContextPropagator.HttpResponseHeadersTagPrefix);
             });
         }
 
