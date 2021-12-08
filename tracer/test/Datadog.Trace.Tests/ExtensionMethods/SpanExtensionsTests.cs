@@ -18,7 +18,7 @@ namespace Datadog.Trace.Tests.ExtensionMethods
         public SpanExtensionsTests()
         {
             // Reset the cache
-            DbCommandCache.Cache = new ConcurrentDictionary<string, KeyValuePair<string, string>[]>();
+            DbCommandCache.Cache = new();
         }
 
         [Theory]
@@ -34,26 +34,10 @@ namespace Datadog.Trace.Tests.ExtensionMethods
             var spanContext = new SpanContext(Mock.Of<ISpanContext>(), Mock.Of<ITraceContext>(), "test");
             var span = new Span(spanContext, null);
 
-            span.AddTagsFromDbCommand(CreateDbCommand(connectionString));
-
-            Assert.Equal(expectedDbName, span.GetTag(Tags.DbName));
-            Assert.Equal(expectedUserId, span.GetTag(Tags.DbUser));
-            Assert.Equal(expectedHost, span.GetTag(Tags.OutHost));
-        }
-
-        [Fact]
-        public void SetSpanTypeToSql()
-        {
-            const string connectionString = "Server=myServerName;Database=myDataBase;User Id=myUsername;Password=myPassword;";
-            const string commandText = "SELECT * FROM Table ORDER BY id";
-
-            var spanContext = new SpanContext(Mock.Of<ISpanContext>(), Mock.Of<ITraceContext>(), "test");
-            var span = new Span(spanContext, null);
-
-            span.AddTagsFromDbCommand(CreateDbCommand(connectionString, commandText));
-
-            Assert.Equal(SpanTypes.Sql, span.Type);
-            Assert.Equal(commandText, span.ResourceName);
+            var commandTags = DbCommandCache.GetTagsFromDbCommand(CreateDbCommand(connectionString));
+            Assert.Equal(expectedDbName, commandTags.DbName);
+            Assert.Equal(expectedUserId, commandTags.DbUser);
+            Assert.Equal(expectedHost, commandTags.OutHost);
         }
 
         [Fact]
@@ -69,10 +53,10 @@ namespace Datadog.Trace.Tests.ExtensionMethods
             {
                 var connectionString = string.Format(connectionStringTemplate, i);
 
-                span.AddTagsFromDbCommand(CreateDbCommand(connectionString));
+                var commandTags = DbCommandCache.GetTagsFromDbCommand(CreateDbCommand(connectionString));
 
                 Assert.NotNull(DbCommandCache.Cache);
-                Assert.Equal("myServerName" + i, span.GetTag(Tags.OutHost));
+                Assert.Equal("myServerName" + i, commandTags.OutHost);
             }
 
             // Test the logic with cache disabled
@@ -80,10 +64,10 @@ namespace Datadog.Trace.Tests.ExtensionMethods
             {
                 var connectionString = string.Format(connectionStringTemplate, "NoCache" + i);
 
-                span.AddTagsFromDbCommand(CreateDbCommand(connectionString));
+                var commandTags = DbCommandCache.GetTagsFromDbCommand(CreateDbCommand(connectionString));
 
                 Assert.Null(DbCommandCache.Cache);
-                Assert.Equal("myServerName" + "NoCache" + i, span.GetTag(Tags.OutHost));
+                Assert.Equal("myServerName" + "NoCache" + i, commandTags.OutHost);
             }
         }
 

@@ -1,4 +1,4 @@
-﻿// <copyright file="ImmutableTracerSettings.cs" company="Datadog">
+// <copyright file="ImmutableTracerSettings.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -323,6 +323,11 @@ namespace Datadog.Trace.Configuration
         internal string GetServiceName(Tracer tracer, string serviceName)
         {
             return ServiceNameMappings.GetServiceName(tracer.DefaultServiceName, serviceName);
+        }
+
+        internal bool TryGetServiceName(string key, out string serviceName)
+        {
+            return ServiceNameMappings.TryGetServiceName(key, out serviceName);
         }
     }
 }

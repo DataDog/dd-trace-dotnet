@@ -19,12 +19,12 @@ namespace Datadog.Trace.Util
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DbCommandCache));
 
-        private static ConcurrentDictionary<string, KeyValuePair<string, string>[]> _cache = new();
+        private static ConcurrentDictionary<string, TagsCacheItem> _cache = new();
 
         /// <summary>
         /// Gets or sets the underlying cache, to be used for unit tests
         /// </summary>
-        internal static ConcurrentDictionary<string, KeyValuePair<string, string>[]> Cache
+        internal static ConcurrentDictionary<string, TagsCacheItem> Cache
         {
             get
             {
@@ -37,13 +37,13 @@ namespace Datadog.Trace.Util
             }
         }
 
-        public static KeyValuePair<string, string>[] GetTagsFromDbCommand(IDbCommand command)
+        public static TagsCacheItem GetTagsFromDbCommand(IDbCommand command)
         {
             var connectionString = command.Connection?.ConnectionString;
 
             if (connectionString is null)
             {
-                return Array.Empty<KeyValuePair<string, string>>();
+                return default;
             }
 
             var cache = _cache;
@@ -76,25 +76,15 @@ namespace Datadog.Trace.Util
             return ExtractTagsFromConnectionString(connectionString);
         }
 
-        private static KeyValuePair<string, string>[] ExtractTagsFromConnectionString(string connectionString)
+        private static TagsCacheItem ExtractTagsFromConnectionString(string connectionString)
         {
             // Parse the connection string
             var builder = new DbConnectionStringBuilder { ConnectionString = connectionString };
 
-            return new[]
-            {
-                new KeyValuePair<string, string>(
-                    Tags.DbName,
-                    GetConnectionStringValue(builder, "Database", "Initial Catalog", "InitialCatalog")),
-
-                new KeyValuePair<string, string>(
-                    Tags.DbUser,
-                    GetConnectionStringValue(builder, "User ID", "UserID")),
-
-                new KeyValuePair<string, string>(
-                    Tags.OutHost,
-                    GetConnectionStringValue(builder, "Server", "Data Source", "DataSource", "Network Address", "NetworkAddress", "Address", "Addr", "Host"))
-            };
+            return new TagsCacheItem(
+                dbName: GetConnectionStringValue(builder, "Database", "Initial Catalog", "InitialCatalog"),
+                dbUser: GetConnectionStringValue(builder, "User ID", "UserID"),
+                outHost: GetConnectionStringValue(builder, "Server", "Data Source", "DataSource", "Network Address", "NetworkAddress", "Address", "Addr", "Host"));
         }
 
         private static string GetConnectionStringValue(DbConnectionStringBuilder builder, params string[] names)
@@ -109,6 +99,20 @@ namespace Datadog.Trace.Util
             }
 
             return null;
+        }
+
+        internal readonly struct TagsCacheItem
+        {
+            public readonly string DbName;
+            public readonly string DbUser;
+            public readonly string OutHost;
+
+            public TagsCacheItem(string dbName, string dbUser, string outHost)
+            {
+                DbName = dbName;
+                DbUser = dbUser;
+                OutHost = outHost;
+            }
         }
     }
 }

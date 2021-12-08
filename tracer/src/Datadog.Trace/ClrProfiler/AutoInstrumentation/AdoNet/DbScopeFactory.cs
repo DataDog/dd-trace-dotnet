@@ -4,11 +4,15 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 {
@@ -16,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DbScopeFactory));
 
-        private static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationId integrationId, string dbType, string operationName)
+        private static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command, IntegrationId integrationId, string dbType, string operationName, string serviceName, ref DbCommandCache.TagsCacheItem tagsFromConnectionString)
         {
             if (!tracer.Settings.IsIntegrationEnabled(integrationId) || !tracer.Settings.IsIntegrationEnabled(IntegrationId.AdoNet))
             {
@@ -40,18 +44,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     return null;
                 }
 
-                string serviceName = tracer.Settings.GetServiceName(tracer, dbType);
-
                 var tags = new SqlTags
                            {
                                DbType = dbType,
-                               InstrumentationName = integrationId.ToString()
+                               InstrumentationName = IntegrationRegistry.GetName(integrationId),
+                               DbName = tagsFromConnectionString.DbName,
+                               DbUser = tagsFromConnectionString.DbUser,
+                               OutHost = tagsFromConnectionString.OutHost,
                            };
 
                 tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
 
                 scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName);
-                scope.Span.AddTagsFromDbCommand(command);
+                scope.Span.ResourceName = command.CommandText;
+                scope.Span.Type = SpanTypes.Sql;
             }
             catch (Exception ex)
             {
@@ -105,6 +111,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             private static readonly string DbTypeName;
             private static readonly string OperationName;
             private static readonly IntegrationId IntegrationId;
+
+            // ServiceName cache
+            private static KeyValuePair<string, string> _serviceNameCache;
+
+            // ConnectionString tags cache
+            private static KeyValuePair<string, DbCommandCache.TagsCacheItem> _tagsByConnectionStringCache;
             // ReSharper restore StaticMemberInGenericType
 
             static Cache()
@@ -128,7 +140,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 if (commandType == CommandType)
                 {
                     // use the cached values if command.GetType() == typeof(TCommand)
-                    return DbScopeFactory.CreateDbCommandScope(tracer, command, IntegrationId, DbTypeName, OperationName);
+                    var tagsFromConnectionString = GetTagsFromConnectionString(command);
+                    return DbScopeFactory.CreateDbCommandScope(
+                        tracer: tracer,
+                        command: command,
+                        integrationId: IntegrationId,
+                        dbType: DbTypeName,
+                        operationName: OperationName,
+                        serviceName: GetServiceName(tracer, DbTypeName),
+                        tagsFromConnectionString: ref tagsFromConnectionString);
                 }
 
                 // if command.GetType() != typeof(TCommand), we are probably instrumenting a method
@@ -136,10 +156,67 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 if (TryGetIntegrationDetails(commandType.FullName, out var integrationId, out var dbTypeName))
                 {
                     var operationName = $"{dbTypeName}.query";
-                    return DbScopeFactory.CreateDbCommandScope(tracer, command, integrationId.Value, dbTypeName, operationName);
+                    var tagsFromConnectionString = GetTagsFromConnectionString(command);
+                    return DbScopeFactory.CreateDbCommandScope(
+                        tracer: tracer,
+                        command: command,
+                        integrationId: integrationId.Value,
+                        dbType: dbTypeName,
+                        operationName: operationName,
+                        serviceName: GetServiceName(tracer, dbTypeName),
+                        tagsFromConnectionString: ref tagsFromConnectionString);
                 }
 
                 return null;
+            }
+
+            private static string GetServiceName(Tracer tracer, string dbTypeName)
+            {
+                if (!tracer.Settings.TryGetServiceName(dbTypeName, out string serviceName))
+                {
+                    if (DbTypeName != dbTypeName)
+                    {
+                        // We cannot cache in the base class
+                        return $"{tracer.DefaultServiceName}-{dbTypeName}";
+                    }
+
+                    var serviceNameCache = _serviceNameCache;
+
+                    // If not a base class
+                    if (serviceNameCache.Key == tracer.DefaultServiceName)
+                    {
+                        // Service has not changed
+                        // Fastpath
+                        return serviceNameCache.Value;
+                    }
+
+                    // We create or replace the cache with the new service name
+                    // Slowpath
+                    var defaultServiceName = tracer.DefaultServiceName;
+                    serviceName = $"{defaultServiceName}-{dbTypeName}";
+                    _serviceNameCache = new KeyValuePair<string, string>(defaultServiceName, serviceName);
+                }
+
+                return serviceName;
+            }
+
+            private static DbCommandCache.TagsCacheItem GetTagsFromConnectionString(IDbCommand command)
+            {
+                var connectionString = command.Connection?.ConnectionString;
+
+                // Check if the connection string is the one in the cache
+                var tagsByConnectionString = _tagsByConnectionStringCache;
+                if (tagsByConnectionString.Key == connectionString)
+                {
+                    // Fastpath
+                    return tagsByConnectionString.Value;
+                }
+
+                // Cache the new tags by connection string
+                // Slowpath
+                var tags = DbCommandCache.GetTagsFromDbCommand(command);
+                _tagsByConnectionStringCache = new KeyValuePair<string, DbCommandCache.TagsCacheItem>(connectionString, tags);
+                return tags;
             }
         }
     }

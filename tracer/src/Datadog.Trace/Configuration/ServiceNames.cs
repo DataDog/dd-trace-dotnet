@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -31,6 +32,17 @@ namespace Datadog.Trace.Configuration
             {
                 return $"{applicationName}-{key}";
             }
+        }
+
+        public bool TryGetServiceName(string key, out string name)
+        {
+            if (_mappings is not null && _mappings.TryGetValue(key, out name))
+            {
+                return true;
+            }
+
+            name = null;
+            return false;
         }
 
         public void SetServiceNameMappings(IEnumerable<KeyValuePair<string, string>> mappings)
