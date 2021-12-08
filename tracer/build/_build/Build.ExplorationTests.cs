@@ -138,11 +138,18 @@ partial class Build
                .After(Clean, BuildTracerHome)
                .Executes(() =>
                 {
-                    SetUpExplorationTest_Debugger();
+                    try
+                    {
+                        SetUpExplorationTest_Debugger();
 
-                    var envVariables = GetEnvVariables(ExplorationTestUseCase.Debugger);
-                    RunExplorationTestsGitCloneAndUnitTest(envVariables);
-                    RunExplorationTestAssertions_Debugger();
+                        var envVariables = GetEnvVariables(ExplorationTestUseCase.Debugger);
+                        RunExplorationTestsGitCloneAndUnitTest(envVariables);
+                        RunExplorationTestAssertions_Debugger();
+                    }
+                    finally
+                    {
+                        MoveLogsToBuildData();
+                    }
 
                     void SetUpExplorationTest_Debugger()
                     {
@@ -155,8 +162,6 @@ partial class Build
                         Logger.Info($"Running assertions tests for debugger.");
                         //TODO TBD
                     }
-
-                    MoveLogsToBuildData();
                 })
         ;
 
@@ -167,11 +172,18 @@ partial class Build
                .After(Clean, BuildTracerHome)
                .Executes(() =>
                 {
-                    SetUpExplorationTest_ContinuousProfiler();
+                    try
+                    {
+                        SetUpExplorationTest_ContinuousProfiler();
                     
-                    var envVariables = GetEnvVariables(ExplorationTestUseCase.ContinuousProfiler);
-                    RunExplorationTestsGitCloneAndUnitTest(envVariables);
-                    RunExplorationTestAssertions_ContinuousProfiler();
+                        var envVariables = GetEnvVariables(ExplorationTestUseCase.ContinuousProfiler);
+                        RunExplorationTestsGitCloneAndUnitTest(envVariables);
+                        RunExplorationTestAssertions_ContinuousProfiler();
+                    }
+                    finally
+                    {
+                        MoveLogsToBuildData();
+                    }
 
                     void SetUpExplorationTest_ContinuousProfiler()
                     {
@@ -184,8 +196,6 @@ partial class Build
                         Logger.Info($"Running assertions tests for profiler.");
                         //TODO TBD
                     }
-
-                    MoveLogsToBuildData();
                 })
         ;
 
