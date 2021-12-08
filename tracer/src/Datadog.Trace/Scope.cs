@@ -11,7 +11,7 @@ namespace Datadog.Trace
     /// all newly created spans that are not created with the ignoreActiveSpan
     /// parameter will be automatically children of the active span.
     /// </summary>
-    public partial class Scope : IScope
+    internal partial class Scope : IScope
     {
         private readonly IScopeManager _scopeManager;
         private readonly bool _finishOnClose;

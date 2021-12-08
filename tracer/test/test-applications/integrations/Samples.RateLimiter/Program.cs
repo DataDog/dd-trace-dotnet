@@ -108,7 +108,7 @@ namespace Samples.RateLimiter
         {
             ConcurrentDictionary<string, double> metrics = null;
 
-            foreach (var property in typeof(Span)
+            foreach (var property in root.Span.GetType()
                .GetProperties(
                     BindingFlags.Instance |
                     BindingFlags.NonPublic))

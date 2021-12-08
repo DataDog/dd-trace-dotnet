@@ -285,15 +285,6 @@ namespace Datadog.Trace
         AutoKeep = 1,
         UserKeep = 2,
     }
-    public class Scope : Datadog.Trace.IScope, System.IDisposable
-    {
-        public void Dispose() { }
-    }
-    public class Span : Datadog.Trace.ISpan, System.IDisposable
-    {
-        public void Dispose() { }
-        public override string ToString() { }
-    }
     public class SpanContext : Datadog.Trace.ISpanContext, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>>, System.Collections.Generic.IReadOnlyCollection<System.Collections.Generic.KeyValuePair<string, string>>, System.Collections.Generic.IReadOnlyDictionary<string, string>, System.Collections.IEnumerable
     {
         public SpanContext(ulong? traceId, ulong spanId, Datadog.Trace.SamplingPriority? samplingPriority = default, string serviceName = null) { }
