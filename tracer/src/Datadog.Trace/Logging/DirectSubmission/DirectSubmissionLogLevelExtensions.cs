@@ -2,8 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-
-using System;
+#nullable enable
 
 namespace Datadog.Trace.Logging.DirectSubmission
 {
@@ -30,7 +29,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
                 _ => Unknown,
             };
 
-        public static DirectSubmissionLogLevel Parse(string value, DirectSubmissionLogLevel defaultLevel)
+        public static DirectSubmissionLogLevel Parse(string? value, DirectSubmissionLogLevel defaultLevel)
             => value?.ToUpperInvariant() switch
             {
                 "TRACE" => DirectSubmissionLogLevel.Verbose,

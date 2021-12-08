@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Collections.Generic;
@@ -21,11 +22,11 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
         private readonly Queue<DatadogLogEvent> _waitingBatch = new();
         private readonly CircuitBreaker _circuitBreaker;
         private readonly Task _flushTask;
-        private readonly Action _disableSinkAction;
+        private readonly Action? _disableSinkAction;
         private readonly TaskCompletionSource<bool> _processExit = new();
         private volatile bool _enqueueLogEnabled = true;
 
-        protected BatchingSink(BatchingSinkOptions sinkOptions, Action disableSinkAction)
+        protected BatchingSink(BatchingSinkOptions sinkOptions, Action? disableSinkAction)
         {
             if (sinkOptions == null)
             {

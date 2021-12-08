@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Collections.Generic;
@@ -75,8 +76,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
 
         public static DirectLogSubmissionSettings Create(
             TracerSettings settings,
-            string apiKey,
-            ImmutableIntegrationSettingsCollection enabledIntegrations)
+            string? apiKey)
             => Create(
                 host: settings.DirectLogSubmissionHost,
                 source: settings.DirectLogSubmissionSource,
@@ -93,10 +93,10 @@ namespace Datadog.Trace.Logging.DirectSubmission
                     period: settings.DirectLogSubmissionBatchPeriod));
 
         public static DirectLogSubmissionSettings Create(
-            string host,
-            string source,
-            string intakeUrl,
-            string apiKey,
+            string? host,
+            string? source,
+            string? intakeUrl,
+            string? apiKey,
             DirectSubmissionLogLevel minimumLevel,
             IDictionary<string, string> globalTags,
             ICollection<string> enabledLogShippingIntegrations,
@@ -178,11 +178,11 @@ namespace Datadog.Trace.Logging.DirectSubmission
             }
 
             return new DirectLogSubmissionSettings(
-                host: host,
-                source: source,
+                host: host ?? string.Empty,
+                source: source ?? string.Empty,
                 globalTags: stringifiedTags,
-                intakeUrl: intakeUri,
-                apiKey: apiKey,
+                intakeUrl: intakeUri!,
+                apiKey: apiKey ?? string.Empty,
                 isEnabled: isEnabled,
                 minimumLevel: minimumLevel,
                 enabledIntegrations: enabledIntegrations,
@@ -195,7 +195,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
         {
             if (globalTags.Count == 0)
             {
-                return null;
+                return string.Empty;
             }
 
             var sb = new StringBuilder();
@@ -214,14 +214,14 @@ namespace Datadog.Trace.Logging.DirectSubmission
             var emptyList = new List<string>(0);
             // not trying to enable log submission, so don't log any errors and create a _null_ implementation
             return new DirectLogSubmissionSettings(
-                null,
-                null,
-                globalTags: null,
+                host: string.Empty,
+                source: string.Empty,
+                globalTags: string.Empty,
                 intakeUrl: new Uri("http://localhost"),
-                apiKey: null,
+                apiKey: string.Empty,
                 isEnabled: false,
                 minimumLevel: DirectSubmissionLogLevel.Fatal,
-                enabledIntegrations: null,
+                enabledIntegrations: Array.Empty<bool>(),
                 validationErrors: emptyList,
                 enabledIntegrationNames: emptyList,
                 batchingOptions: new BatchingSinkOptions(batchSizeLimit: 1, queueLimit: 1, TimeSpan.MaxValue));

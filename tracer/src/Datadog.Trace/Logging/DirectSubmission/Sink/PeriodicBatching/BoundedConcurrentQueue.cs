@@ -17,9 +17,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#nullable enable
 
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 
 namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
@@ -45,7 +47,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
 
         public int Count => _queue.Count;
 
-        public bool TryDequeue(out T item)
+        public bool TryDequeue([NotNullWhen(returnValue: true)] out T? item)
         {
             if (_queueLimit == Unbounded)
             {

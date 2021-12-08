@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Collections.Generic;
@@ -39,7 +40,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
         private readonly IDatadogLogger _logger = DatadogLogging.GetLoggerFor<DatadogSink>();
         private readonly ILogsApi _api;
         private readonly LogFormatter _formatter;
-        private readonly Action<DatadogLogEvent> _oversizeLogCallback;
+        private readonly Action<DatadogLogEvent>? _oversizeLogCallback;
         private readonly StringBuilder _logStringBuilder = new(InitialBuilderSizeBytes);
         private byte[] _serializedLogs = new byte[InitialAllLogsSizeBytes];
         private int _byteCount = 0;
@@ -54,8 +55,8 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
             ILogsApi api,
             LogFormatter formatter,
             BatchingSinkOptions sinkOptions,
-            Action<DatadogLogEvent> oversizeLogCallback,
-            Action sinkDisabledCallback)
+            Action<DatadogLogEvent>? oversizeLogCallback,
+            Action? sinkDisabledCallback)
             : base(sinkOptions, sinkDisabledCallback)
         {
             _api = api;

@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Net.Sockets;
@@ -66,13 +67,13 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
                 // Set additional headers
                 request.AddHeader(IntakeHeaderNameApiKey, _apiKey);
 
-                Exception exception = null;
+                Exception? exception = null;
                 var isFinalTry = retriesRemaining <= 0;
                 var shouldRetry = true;
 
                 try
                 {
-                    IApiResponse response = null;
+                    IApiResponse? response = null;
 
                     try
                     {
@@ -119,7 +120,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
                 {
                     exception = ex;
 #if DEBUG
-                    if (ex.InnerException is InvalidOperationException ioe)
+                    if (ex.InnerException is InvalidOperationException)
                     {
                         Log.Error<int, string>(ex, "An error occurred while sending {Count} logs to the intake at {IntakeEndpoint}", numberOfLogs, _apiRequestFactory.Info(_logsIntakeEndpoint));
                         return false;
@@ -148,7 +149,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
             }
         }
 
-        private static bool IsSocketException(Exception exception)
+        private static bool IsSocketException(Exception? exception)
         {
             while (exception is not null)
             {

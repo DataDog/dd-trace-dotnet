@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Globalization;
@@ -20,12 +21,12 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
         private const string EnvPropertyName = "dd_env";
         private const string VersionPropertyName = "dd_version";
 
-        private readonly string _source;
-        private readonly string _service;
-        private readonly string _host;
-        private readonly string _globalTags;
-        private readonly string _env;
-        private readonly string _version;
+        private readonly string? _source;
+        private readonly string? _service;
+        private readonly string? _host;
+        private readonly string? _globalTags;
+        private readonly string? _env;
+        private readonly string? _version;
 
         public LogFormatter(
             DirectLogSubmissionSettings settings,
@@ -80,7 +81,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
         /// <summary>
         /// Helper for writing values as JSON
         /// </summary>
-        internal static void WriteValue(JsonWriter writer, object value)
+        internal static void WriteValue(JsonWriter writer, object? value)
         {
             if (value is null)
             {
@@ -146,7 +147,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             string message,
             int? eventId,
             string logLevel,
-            Exception exception,
+            Exception? exception,
             Func<JsonTextWriter, T, LogPropertyRenderingDetails> renderProperties)
         {
             var sw = new StringWriter(builder);
