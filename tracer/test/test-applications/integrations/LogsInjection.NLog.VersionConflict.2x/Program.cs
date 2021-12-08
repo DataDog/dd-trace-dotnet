@@ -53,7 +53,7 @@ namespace LogsInjection.NLog.VersionConflict_2x
             using (Tracer.Instance.StartActive("manual1"))
             {
                 logger.Info($"Trace: manual1");
-                using (TracerUtils.StartAutomaticTrace("automatic2"))
+                using (TracerUtils.StartAutomaticTraceLowerAssemblyVersion("automatic2"))
                 {
                     logger.Info($"Trace: manual1-automatic2");
                     using (Tracer.Instance.StartActive("manual3"))
@@ -63,7 +63,7 @@ namespace LogsInjection.NLog.VersionConflict_2x
                         {
                             logger.Info($"Trace: manual1-automatic2-manual3-manual4");
 
-                            using (TracerUtils.StartAutomaticTrace("automatic5"))
+                            using (TracerUtils.StartAutomaticTraceLowerAssemblyVersion("automatic5"))
                             {
                                 logger.Info($"Trace: manual1-automatic2-manual3-manual4-automatic5");
                             }
@@ -73,10 +73,10 @@ namespace LogsInjection.NLog.VersionConflict_2x
 
                         logger.Info($"Trace: manual1-automatic2-manual3");
 
-                        using (TracerUtils.StartAutomaticTrace("automatic4"))
+                        using (TracerUtils.StartAutomaticTraceLowerAssemblyVersion("automatic4"))
                         {
                             logger.Info($"Trace: manual1-automatic2-manual3-automatic4");
-                            using (TracerUtils.StartAutomaticTrace("automatic5"))
+                            using (TracerUtils.StartAutomaticTraceLowerAssemblyVersion("automatic5"))
                             {
                                 logger.Info($"Trace: manual1-automatic2-manual3-automatic4-automatic5");
                                 using (Tracer.Instance.StartActive("manual6"))

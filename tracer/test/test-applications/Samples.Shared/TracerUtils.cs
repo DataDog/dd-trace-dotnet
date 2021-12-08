@@ -1,3 +1,4 @@
+#if !NETCOREAPP2_1 && !NETCOREAPP2_2
 
 using System;
 using System.Linq;
@@ -8,12 +9,53 @@ namespace Samples
     public class TracerUtils
     {
         private static readonly Version _manualTracingVersion = new Version("2.255.251.0");
+        private static Assembly _automaticAssembly;
 
-        public static IDisposable StartAutomaticTrace(string operationName)
+        private static bool VersionIsLowerThanManualTracingVersion(Version version)
         {
-            // Get the Datadog.Trace.Tracer type from the automatic instrumentation assembly
-            Assembly automaticAssembly = System.AppDomain.CurrentDomain.GetAssemblies().Single(asm => asm.GetName().Name.Equals("Datadog.Trace") && asm.GetName().Version < _manualTracingVersion);
-            Type tracerType = automaticAssembly.GetType("Datadog.Trace.Tracer");
+#if NETFRAMEWORK
+            return version < _manualTracingVersion;
+#else
+            return version == _manualTracingVersion;
+#endif
+        }
+
+        private static bool VersionIsHigherThanManualTracingVersion(Version version)
+        {
+            return version > _manualTracingVersion;
+        }
+
+
+        public static IDisposable StartAutomaticTraceLowerAssemblyVersion(string operationName)
+        {
+            return StartAutomaticTrace(operationName, VersionIsLowerThanManualTracingVersion);
+        }
+
+        public static IDisposable StartAutomaticTraceHigherAssemblyVersion(string operationName)
+        {
+            return StartAutomaticTrace(operationName, VersionIsHigherThanManualTracingVersion);
+        }
+
+        private static IDisposable StartAutomaticTrace(string operationName, Func<Version, bool> versionComparisonFunc)
+        {
+            if (_automaticAssembly is null)
+            {
+                // Get the Datadog.Trace.Tracer type from the automatic instrumentation assembly
+#if NETFRAMEWORK
+                _automaticAssembly = System.AppDomain.CurrentDomain.GetAssemblies().Single(asm => asm.GetName().Name.Equals("Datadog.Trace") && versionComparisonFunc(asm.GetName().Version));
+#else
+                foreach (var alc in System.Runtime.Loader.AssemblyLoadContext.All)
+                {
+                    _automaticAssembly = alc.Assemblies.SingleOrDefault(asm => asm.GetName().Name.Equals("Datadog.Trace") && versionComparisonFunc(asm.GetName().Version));
+                    if (_automaticAssembly != null)
+                    {
+                        break;
+                    }
+                }
+#endif
+            }
+
+            Type tracerType = _automaticAssembly.GetType("Datadog.Trace.Tracer");
 
             // Invoke 'Tracer.Instance'
             var instanceGetMethod = tracerType.GetProperty("Instance", BindingFlags.Static | BindingFlags.Public).GetGetMethod();
@@ -31,3 +73,4 @@ namespace Samples
         }
     }
 }
+#endif

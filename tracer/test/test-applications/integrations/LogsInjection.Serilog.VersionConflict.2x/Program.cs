@@ -64,7 +64,7 @@ namespace LogsInjection.Serilog.VersionConflict_2x
             using (Tracer.Instance.StartActive("manual1"))
             {
                 log.Information($"Trace: manual1");
-                using (TracerUtils.StartAutomaticTrace("automatic2"))
+                using (TracerUtils.StartAutomaticTraceLowerAssemblyVersion("automatic2"))
                 {
                     log.Information($"Trace: manual1-automatic2");
                     using (Tracer.Instance.StartActive("manual3"))
@@ -74,7 +74,7 @@ namespace LogsInjection.Serilog.VersionConflict_2x
                         {
                             log.Information($"Trace: manual1-automatic2-manual3-manual4");
 
-                            using (TracerUtils.StartAutomaticTrace("automatic5"))
+                            using (TracerUtils.StartAutomaticTraceLowerAssemblyVersion("automatic5"))
                             {
                                 log.Information($"Trace: manual1-automatic2-manual3-manual4-automatic5");
                             }
@@ -84,10 +84,10 @@ namespace LogsInjection.Serilog.VersionConflict_2x
 
                         log.Information($"Trace: manual1-automatic2-manual3");
 
-                        using (TracerUtils.StartAutomaticTrace("automatic4"))
+                        using (TracerUtils.StartAutomaticTraceLowerAssemblyVersion("automatic4"))
                         {
                             log.Information($"Trace: manual1-automatic2-manual3-automatic4");
-                            using (TracerUtils.StartAutomaticTrace("automatic5"))
+                            using (TracerUtils.StartAutomaticTraceLowerAssemblyVersion("automatic5"))
                             {
                                 log.Information($"Trace: manual1-automatic2-manual3-automatic4-automatic5");
                                 using (Tracer.Instance.StartActive("manual6"))
