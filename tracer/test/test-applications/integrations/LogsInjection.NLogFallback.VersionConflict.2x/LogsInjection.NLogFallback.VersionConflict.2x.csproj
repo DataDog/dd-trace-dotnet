@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Exclude .NET Core 2.1 because it doesn't have the AssemblyLoadContext.All API-->
+    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net461;netcoreapp3.0;netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netcoreapp3.0;netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NLog" Version="4.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\dependency-libs\LogsInjectionHelper.VersionConflict\LogsInjectionHelper.VersionConflict.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="NLog.40.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
