@@ -125,6 +125,8 @@ private:
     std::unique_ptr<std::thread> m_rejit_queue_thread;
     bool enable_by_ref_instrumentation = false;
 
+    bool m_is_integration_version_checks_enabled = true;
+
     std::mutex m_ngenModules_lock;
     std::vector<ModuleID> m_ngenModules;
 
@@ -135,9 +137,11 @@ private:
 
 public:
     RejitHandler(ICorProfilerInfo7* pInfo,
-                 std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> rewriteCallback);
+                 std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> rewriteCallback,
+                 bool isIntegrationVersionChecksEnabled);
     RejitHandler(ICorProfilerInfo10* pInfo,
-                 std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> rewriteCallback);
+                 std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> rewriteCallback,
+                 bool isIntegrationVersionChecksEnabled);
 
     RejitHandlerModule* GetOrAddModule(ModuleID moduleId);
     void SetEnableByRefInstrumentation(bool enableByRefInstrumentation);

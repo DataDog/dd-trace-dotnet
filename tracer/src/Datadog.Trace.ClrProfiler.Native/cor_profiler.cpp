@@ -164,8 +164,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         return this->CallTarget_RewriterCallback(mod, method);
     };
 
-    rejit_handler = info10 != nullptr ? std::make_unique<RejitHandler>(info10, callback)
-                                      : std::make_unique<RejitHandler>(this->info_, callback);
+    rejit_handler = info10 != nullptr ? std::make_unique<RejitHandler>(info10, callback, IsIntegrationVersionChecksEnabled())
+                                      : std::make_unique<RejitHandler>(this->info_, callback, IsIntegrationVersionChecksEnabled());
 
     DWORD event_mask = COR_PRF_MONITOR_JIT_COMPILATION | COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
                        COR_PRF_MONITOR_MODULE_LOADS | COR_PRF_MONITOR_ASSEMBLY_LOADS | COR_PRF_MONITOR_APPDOMAIN_LOADS |

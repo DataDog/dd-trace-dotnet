@@ -371,23 +371,27 @@ void RejitHandler::RequestRejit(std::vector<ModuleID>& modulesVector,
 }
 
 RejitHandler::RejitHandler(ICorProfilerInfo7* pInfo,
-                           std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> rewriteCallback)
+                           std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> rewriteCallback,
+                           bool isIntegrationVersionChecksEnabled)
 {
     m_profilerInfo = pInfo;
     m_profilerInfo10 = nullptr;
     m_rewriteCallback = rewriteCallback;
     m_rejit_queue = std::make_unique<UniqueBlockingQueue<RejitItem>>();
     m_rejit_queue_thread = std::make_unique<std::thread>(EnqueueThreadLoop, this);
+    m_is_integration_version_checks_enabled = isIntegrationVersionChecksEnabled;
 }
 
 RejitHandler::RejitHandler(ICorProfilerInfo10* pInfo,
-                           std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> rewriteCallback)
+                           std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> rewriteCallback,
+                           bool isIntegrationVersionChecksEnabled)
 {
     m_profilerInfo = pInfo;
     m_profilerInfo10 = pInfo;
     m_rewriteCallback = rewriteCallback;
     m_rejit_queue = std::make_unique<UniqueBlockingQueue<RejitItem>>();
     m_rejit_queue_thread = std::make_unique<std::thread>(EnqueueThreadLoop, this);
+    m_is_integration_version_checks_enabled = isIntegrationVersionChecksEnabled;
 }
 
 RejitHandlerModule* RejitHandler::GetOrAddModule(ModuleID moduleId)
@@ -678,16 +682,23 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
                               assemblyMetadata->version.str(), ").");
             }
 
-            // Check min version
-            if (integration.target_method.type.min_version > assemblyMetadata->version)
+            if (m_is_integration_version_checks_enabled)
             {
-                continue;
-            }
+                // Check min version
+                if (integration.target_method.type.min_version > assemblyMetadata->version)
+                {
+                    continue;
+                }
 
-            // Check max version
-            if (integration.target_method.type.max_version < assemblyMetadata->version)
+                // Check max version
+                if (integration.target_method.type.max_version < assemblyMetadata->version)
+                {
+                    continue;
+                }
+            }
+            else
             {
-                continue;
+                Logger::Debug("  Version check is disabled.");
             }
 
             // We are in the right module, so we try to load the mdTypeDef from the integration target type name.

@@ -101,6 +101,10 @@ namespace environment
     // Sets whether to enable NGEN images.
     const WSTRING clr_enable_ngen = WStr("DD_CLR_ENABLE_NGEN");
 
+    // Indicates whether the profiler enables the version checker for integrations
+    // Enabled by default
+    const WSTRING integration_version_checks_enabled = WStr("DD_TRACE_INTEGRATION_VERSION_CHECKS_ENABLED");
+
 } // namespace environment
 } // namespace trace
 

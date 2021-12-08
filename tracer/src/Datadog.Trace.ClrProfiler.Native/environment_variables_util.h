@@ -91,6 +91,11 @@ bool IsVersionCompatibilityEnabled()
     ToBooleanWithDefault(GetEnvironmentValue(environment::internal_version_compatibility), true);
 }
 
+bool IsIntegrationVersionChecksEnabled()
+{
+    ToBooleanWithDefault(GetEnvironmentValue(environment::integration_version_checks_enabled), true);
+}
+
 } // namespace trace
 
 #endif // DD_CLR_PROFILER_ENVIRONMENT_VARIABLES_UTIL_H_
