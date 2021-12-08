@@ -57,7 +57,7 @@ namespace Datadog.Trace.AspNet
             {
                 return stack.Pop();
             }
-            
+
             return default(T);
         }
     }
