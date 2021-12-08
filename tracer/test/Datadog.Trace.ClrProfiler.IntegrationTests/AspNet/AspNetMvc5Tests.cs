@@ -71,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
             _testName = nameof(AspNetMvc5Tests)
                       + (classicMode ? ".Classic" : ".Integrated")
-                      + (enableRouteTemplateResourceNames ? ".NoFF" : ".WithFF");
+                      + (enableRouteTemplateResourceNames ? ".WithFF" : ".NoFF");
         }
 
         public static TheoryData<string, int> Data() => new()
