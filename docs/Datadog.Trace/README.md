@@ -103,7 +103,7 @@ Tracer.Configure(settings);
 
 ### ADO.NET integrations can be disabled individually
 
-In version 1.x, you could disable automatic instrumentation of all ADO.NET integrations using the `AdoNet` integration ID. From version 2.0, this integration ID has been removed and replaced with the following integration IDs:
+In version 1.x, you could disable automatic instrumentation of all ADO.NET integrations using the `AdoNet` integration ID. From version 2.0, you can now also disable specific integrations using the following integration IDs:
 
 * `MySql`
 * `Npgsql` (PostreSQL)
@@ -111,7 +111,7 @@ In version 1.x, you could disable automatic instrumentation of all ADO.NET integ
 * `SqlClient` (SQL Server)
 * `Sqlite`
 
-This allows you to disable specific ADO.NET integrations if required. [See our documentation for a complete list of supported integration IDS](https://docs.datadoghq.com/tracing/setup_overview/compatibility_requirements/dotnet-core/#integrations).
+This allows you to disable specific ADO.NET integrations if required. [See our documentation for a complete list of supported integration IDS](https://docs.datadoghq.com/tracing/setup_overview/compatibility_requirements/dotnet-core/#integrations). Note that you can still disable _all_ ADO.NET integrations using the `AdoNet` integration ID.
 
 This change also removes the now-obsolete `TracerSettings.AdoNetExcludedTypes` setting and the corresponding environment variable `DD_TRACE_ADONET_EXCLUDED_TYPES`. Replace usages of these with `TracerSettings.Integrations["<INTEGRATION_NAME>"].Enabled` and `DD_TRACE_<INTEGRATION_NAME>_ENABLED`, respectively: 
 
