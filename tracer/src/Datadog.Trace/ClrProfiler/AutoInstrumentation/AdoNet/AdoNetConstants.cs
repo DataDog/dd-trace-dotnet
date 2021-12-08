@@ -3,14 +3,16 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Configuration;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 {
     internal static class AdoNetConstants
     {
         internal struct SystemDataClientData : IAdoNetClientData
         {
-            // note: not a real integration id, cannot be used for configuration
-            public string IntegrationName => "AdoNet";
+            // note: not a real integration id, cannot currently be used for configuration
+            public string IntegrationName => nameof(IntegrationId.AdoNet);
 
             public string AssemblyName => "System.Data";
 
@@ -27,8 +29,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
         internal struct SystemDataCommonClientData : IAdoNetClientData
         {
-            // note: not a real integration id, cannot be used for configuration
-            public string IntegrationName => "AdoNet";
+            // note: not a real integration id, cannot currently be used for configuration
+            public string IntegrationName => nameof(IntegrationId.AdoNet);
 
             public string AssemblyName => "System.Data.Common";
 
