@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System.Text;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
@@ -11,9 +12,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
 {
     internal class LoggerDatadogLogEvent : DatadogLogEvent
     {
-        private readonly string _serializedEvent;
+        private readonly string? _serializedEvent;
 
-        public LoggerDatadogLogEvent(string serializedEvent)
+        public LoggerDatadogLogEvent(string? serializedEvent)
         {
             _serializedEvent = serializedEvent;
         }

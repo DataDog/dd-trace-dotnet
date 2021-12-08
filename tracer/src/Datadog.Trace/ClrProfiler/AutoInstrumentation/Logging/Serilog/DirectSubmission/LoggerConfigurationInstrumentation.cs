@@ -2,18 +2,18 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Logging.DirectSubmission;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog
 {
     /// <summary>
-    /// LoggerConfigurationInstrumentation calltarget instrumentation
+    /// LoggerConfiguration.CreateLogger() calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
         AssemblyName = "Serilog",
@@ -55,9 +55,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog
             // if we've already added the sink, nothing more to do.
             foreach (var logEventSink in instance.LogEventSinks)
             {
-                var sinkType = logEventSink.GetType();
-                if (sinkType == typeof(DirectSubmissionSerilogSink)
-                 || sinkType.FullName == "Serilog.Sinks.Datadog.Logs.DatadogSink")
+                if (logEventSink is DirectSubmissionSerilogSink
+                 || logEventSink?.GetType().FullName == "Serilog.Sinks.Datadog.Logs.DatadogSink")
                 {
                     sinkAlreadyAdded = true;
                     break;
@@ -67,7 +66,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog
             if (!sinkAlreadyAdded)
             {
                 var targetType = instance.Type.Assembly.GetType("Serilog.Core.ILogEventSink");
-                var sink = new DirectSubmissionSerilogSink();
+                var sink = new DirectSubmissionSerilogSink(
+                    TracerManager.Instance.DirectLogSubmission.Sink,
+                    TracerManager.Instance.DirectLogSubmission.Settings.MinimumLevel);
 
                 var proxy = sink.DuckImplement(targetType);
                 instance.LogEventSinks.Add(proxy);

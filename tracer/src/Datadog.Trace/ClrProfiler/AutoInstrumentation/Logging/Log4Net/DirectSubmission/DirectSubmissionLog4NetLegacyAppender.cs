@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System.ComponentModel;
 using System.Threading;
@@ -20,13 +21,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
     public class DirectSubmissionLog4NetLegacyAppender
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DirectSubmissionLog4NetLegacyAppender>();
-        private static DirectSubmissionLog4NetLegacyAppender _instance;
+        private static DirectSubmissionLog4NetLegacyAppender _instance = null!;
 
         private readonly IDatadogSink _sink;
-        private readonly DirectSubmissionLogLevel? _minimumLevel;
+        private readonly DirectSubmissionLogLevel _minimumLevel;
 
         // internal for testing
-        internal DirectSubmissionLog4NetLegacyAppender(IDatadogSink sink, DirectSubmissionLogLevel? minimumLevel)
+        internal DirectSubmissionLog4NetLegacyAppender(IDatadogSink sink, DirectSubmissionLogLevel minimumLevel)
         {
             _sink = sink;
             _minimumLevel = minimumLevel;
@@ -56,25 +57,27 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
         /// </summary>
         /// <param name="logEvent">The logging event</param>
         [DuckReverseMethod(ParameterTypeNames = new[] { "log4net.Core.LoggingEvent, log4net " })]
-        public void DoAppend(LoggingEventLegacyDuck logEvent)
+        public void DoAppend(LoggingEventLegacyDuck? logEvent)
         {
             if (logEvent is null)
             {
                 return;
             }
 
-            if (logEvent.Level.ToStandardLevel() < (_minimumLevel ?? TracerManager.Instance.DirectLogSubmission.Settings.MinimumLevel))
+            if (logEvent.Level.ToStandardLevel() < _minimumLevel)
             {
                 return;
             }
 
             var log = new Log4NetDatadogLogEvent(logEvent, logEvent.TimeStamp.ToUniversalTime());
-            (_sink ?? TracerManager.Instance.DirectLogSubmission.Sink).EnqueueLog(log);
+            _sink.EnqueueLog(log);
         }
 
         private static DirectSubmissionLog4NetLegacyAppender CreateStaticInstance()
         {
-            return new DirectSubmissionLog4NetLegacyAppender(null, null);
+            return new DirectSubmissionLog4NetLegacyAppender(
+                TracerManager.Instance.DirectLogSubmission.Sink,
+                TracerManager.Instance.DirectLogSubmission.Settings.MinimumLevel);
         }
     }
 }

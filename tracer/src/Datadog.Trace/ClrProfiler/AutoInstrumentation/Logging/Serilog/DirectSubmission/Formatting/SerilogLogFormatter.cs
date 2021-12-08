@@ -2,8 +2,8 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
-using System;
 using System.Collections;
 using System.Text;
 using Datadog.Trace.DuckTyping;
@@ -113,7 +113,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.Formatti
             writer.WriteStartArray();
             foreach (var property in properties)
             {
-                FormatLogEventPropertyValue(writer, property);
+                FormatLogEventPropertyValue(writer, property!);
             }
 
             writer.WriteEndArray();

@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Collections.Concurrent;
@@ -22,17 +23,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
     {
         private readonly ConcurrentDictionary<string, DirectSubmissionLogger> _loggers = new();
         private readonly IDatadogSink _sink;
-        private readonly LogFormatter _formatter;
-        private readonly DirectSubmissionLogLevel? _minimumLogLevel;
-        private IExternalScopeProvider _scopeProvider;
+        private readonly LogFormatter? _formatter;
+        private readonly DirectSubmissionLogLevel _minimumLogLevel;
+        private IExternalScopeProvider? _scopeProvider;
 
-        internal DirectSubmissionLoggerProvider()
+        internal DirectSubmissionLoggerProvider(IDatadogSink sink, DirectSubmissionLogLevel minimumLogLevel)
+            : this(sink, formatter: null, minimumLogLevel)
         {
         }
 
+        // used for testing
         internal DirectSubmissionLoggerProvider(
             IDatadogSink sink,
-            LogFormatter formatter,
+            LogFormatter? formatter,
             DirectSubmissionLogLevel minimumLogLevel)
         {
             _sink = sink;

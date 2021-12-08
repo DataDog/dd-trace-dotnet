@@ -41,7 +41,7 @@ namespace Datadog.Trace
                 scopeManager: previous?.ScopeManager, // no configuration, so can always use the same one
                 statsd: null,
                 runtimeMetrics: null,
-                logSubmissionManager: null);
+                logSubmissionManager: previous?.DirectLogSubmission);
         }
 
         /// <summary>
@@ -75,7 +75,8 @@ namespace Datadog.Trace
                 runtimeMetrics ??= new RuntimeMetricsWriter(statsd ?? CreateDogStatsdClient(settings, defaultServiceName, settings.Exporter.DogStatsdPort), TimeSpan.FromSeconds(10));
             }
 
-            logSubmissionManager ??= DirectLogSubmissionManager.Create(
+            logSubmissionManager = DirectLogSubmissionManager.Create(
+                logSubmissionManager,
                 settings.LogSubmissionSettings,
                 defaultServiceName,
                 settings.Environment,

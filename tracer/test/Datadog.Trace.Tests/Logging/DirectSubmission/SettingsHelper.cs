@@ -31,10 +31,6 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
                 minimumLevel: DirectSubmissionLogLevel.Debug,
                 globalTags: new Dictionary<string, string>(),
                 enabledLogShippingIntegrations: DirectLogSubmissionSettings.SupportedIntegrations.Select(x => x.ToString()).ToList(),
-                isLogsInjectionEnabled: true,
-                new ImmutableIntegrationSettingsCollection(
-                    new IntegrationSettingsCollection(null),
-                    new HashSet<string>()),
                 batchingOptions: new BatchingSinkOptions(1000, 100_000, TimeSpan.FromSeconds(2)));
         }
     }

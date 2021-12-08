@@ -51,7 +51,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
         {
             if (_queueLimit == Unbounded)
             {
-                return _queue.TryDequeue(out item);
+                return _queue.TryDequeue(out item!);
             }
 
             var result = false;
@@ -60,7 +60,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
             finally
             {
                 // prevent state corrupt while aborting
-                if (_queue.TryDequeue(out item))
+                if (_queue.TryDequeue(out item!))
                 {
                     Interlocked.Decrement(ref _counter);
                     result = true;

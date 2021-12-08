@@ -85,8 +85,6 @@ namespace Datadog.Trace.Logging.DirectSubmission
                 minimumLevel: settings.DirectLogSubmissionMinimumLevel,
                 globalTags: settings.DirectLogSubmissionGlobalTags,
                 enabledLogShippingIntegrations: settings.DirectLogSubmissionEnabledIntegrations,
-                isLogsInjectionEnabled: settings.LogsInjectionEnabled,
-                globallyEnabledIntegrations: enabledIntegrations,
                 batchingOptions: new BatchingSinkOptions(
                     batchSizeLimit: settings.DirectLogSubmissionBatchSizeLimit,
                     queueLimit: settings.DirectLogSubmissionQueueSizeLimit,
@@ -100,8 +98,6 @@ namespace Datadog.Trace.Logging.DirectSubmission
             DirectSubmissionLogLevel minimumLevel,
             IDictionary<string, string> globalTags,
             ICollection<string> enabledLogShippingIntegrations,
-            bool isLogsInjectionEnabled,
-            ImmutableIntegrationSettingsCollection globallyEnabledIntegrations,
             BatchingSinkOptions batchingOptions)
         {
             if (enabledLogShippingIntegrations.Count == 0)
@@ -160,21 +156,8 @@ namespace Datadog.Trace.Logging.DirectSubmission
                     continue;
                 }
 
-                if (globallyEnabledIntegrations[(IntegrationId)integrationId].Enabled == false)
-                {
-                    validationErrors.Add("Cannot use integration: " + integrationName + ", integration is disabled. ");
-                    continue;
-                }
-
                 enabledIntegrationNames.Add(integrationName);
                 enabledIntegrations[integrationId] = true;
-            }
-
-            if (enabledIntegrationNames.Count != 0 && !isLogsInjectionEnabled)
-            {
-                validationErrors.Add(
-                    "Logs injection is not enabled so logs will not be correlated with traces. " +
-                    $"Enable logs injection by setting {ConfigurationKeys.LogsInjectionEnabled}=1.");
             }
 
             return new DirectLogSubmissionSettings(

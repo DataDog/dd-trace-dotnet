@@ -42,25 +42,25 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             _version = string.IsNullOrEmpty(version) ? null : version;
         }
 
-        internal static bool IsSourceProperty(string propertyName) =>
+        internal static bool IsSourceProperty(string? propertyName) =>
             string.Equals(propertyName, SourcePropertyName, StringComparison.OrdinalIgnoreCase);
 
-        internal static bool IsServiceProperty(string propertyName) =>
+        internal static bool IsServiceProperty(string? propertyName) =>
             string.Equals(propertyName, ServicePropertyName, StringComparison.OrdinalIgnoreCase)
          || string.Equals(propertyName, "dd_service", StringComparison.OrdinalIgnoreCase)
          || string.Equals(propertyName, "dd.service", StringComparison.OrdinalIgnoreCase);
 
-        internal static bool IsHostProperty(string propertyName) =>
+        internal static bool IsHostProperty(string? propertyName) =>
             string.Equals(propertyName, HostPropertyName, StringComparison.OrdinalIgnoreCase);
 
-        internal static bool IsTagsProperty(string propertyName) =>
+        internal static bool IsTagsProperty(string? propertyName) =>
             string.Equals(propertyName, TagsPropertyName, StringComparison.OrdinalIgnoreCase);
 
-        internal static bool IsEnvProperty(string propertyName) =>
+        internal static bool IsEnvProperty(string? propertyName) =>
             string.Equals(propertyName, EnvPropertyName, StringComparison.OrdinalIgnoreCase)
          || string.Equals(propertyName, "dd.env", StringComparison.OrdinalIgnoreCase);
 
-        internal static bool IsVersionProperty(string propertyName) =>
+        internal static bool IsVersionProperty(string? propertyName) =>
             string.Equals(propertyName, VersionPropertyName, StringComparison.OrdinalIgnoreCase)
          || string.Equals(propertyName, "dd.version", StringComparison.OrdinalIgnoreCase);
 
@@ -186,7 +186,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             if (!eventId.HasValue && !string.IsNullOrEmpty(renderingDetails.MessageTemplate))
             {
                 // compute an eventID based on the message template (smaller than using the message template itself)
-                var id = EventIdHash.Compute(renderingDetails.MessageTemplate);
+                var id = EventIdHash.Compute(renderingDetails.MessageTemplate!); // we already checked it's not null
                 writer.WritePropertyName("@i", escape: false);
                 writer.WriteValue(id.ToString("x8"));
             }

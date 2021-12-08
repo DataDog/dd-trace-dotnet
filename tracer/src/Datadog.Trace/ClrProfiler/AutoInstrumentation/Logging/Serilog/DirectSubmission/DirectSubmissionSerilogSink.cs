@@ -2,14 +2,12 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System.ComponentModel;
-using System.IO;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.Formatting;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog
 {
@@ -21,18 +19,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog
     public class DirectSubmissionSerilogSink
     {
         private readonly IDatadogSink _sink;
-        private readonly int? _minimumLevel;
+        private readonly int _minimumLevel;
 
-        // internal for testing
-        internal DirectSubmissionSerilogSink()
-            : this(null, null)
-        {
-        }
-
-        internal DirectSubmissionSerilogSink(IDatadogSink sink, DirectSubmissionLogLevel? minimumLevel)
+        internal DirectSubmissionSerilogSink(IDatadogSink sink, DirectSubmissionLogLevel minimumLevel)
         {
             _sink = sink;
-            _minimumLevel = (int?)minimumLevel;
+            _minimumLevel = (int)minimumLevel;
         }
 
         /// <summary>
@@ -40,19 +32,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog
         /// </summary>
         /// <param name="logEvent">The log event to write.</param>
         [DuckReverseMethod(ParameterTypeNames = new[] { "Serilog.Events.LogEvent, Serilog" })]
-        public void Emit(ILogEvent logEvent)
+        public void Emit(ILogEvent? logEvent)
         {
             if (logEvent is null)
             {
                 return;
             }
 
-            if ((int)logEvent.Level < (_minimumLevel ?? (int)TracerManager.Instance.DirectLogSubmission.Settings.MinimumLevel))
+            if ((int)logEvent.Level < _minimumLevel)
             {
                 return;
             }
 
-            (_sink ?? TracerManager.Instance.DirectLogSubmission.Sink).EnqueueLog(new SerilogDatadogLogEvent(logEvent));
+            _sink.EnqueueLog(new SerilogDatadogLogEvent(logEvent));
         }
     }
 }

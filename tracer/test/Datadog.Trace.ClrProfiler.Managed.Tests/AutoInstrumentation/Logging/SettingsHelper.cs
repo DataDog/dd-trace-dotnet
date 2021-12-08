@@ -30,10 +30,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging
                 minimumLevel: DirectSubmissionLogLevel.Debug,
                 globalTags: new Dictionary<string, string>(),
                 enabledLogShippingIntegrations: new List<string> { nameof(IntegrationId.Serilog), nameof(IntegrationId.ILogger) },
-                isLogsInjectionEnabled: true,
-                new ImmutableIntegrationSettingsCollection(
-                    new IntegrationSettingsCollection(null),
-                    new HashSet<string>()),
                 batchingOptions: new BatchingSinkOptions(1000, 100_000, TimeSpan.FromSeconds(2)));
         }
     }

@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Collections.Generic;
@@ -21,47 +22,60 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
         // ReSharper disable StaticMemberInGenericType
         // ReSharper disable InconsistentNaming
         private static readonly NLogVersion _nLogVersion;
-        private static readonly Type _targetType;
+        private static readonly Type? _targetType;
 
         private static readonly bool _hasMappedDiagnosticsContext;
         private static readonly bool _isModernMappedDiagnosticsContext;
-        private static readonly MappedDiagnosticsProxy _mdc;
+        private static readonly MappedDiagnosticsProxy? _mdc;
         private static readonly MappedDiagnosticsContextLegacyProxy _mdcLegacy;
         private static readonly bool _hasMappedDiagnosticsLogicalContext;
         private static readonly bool _isModernMappedDiagnosticsLogicalContext;
-        private static readonly MappedDiagnosticsProxy _mdlc;
+        private static readonly MappedDiagnosticsProxy? _mdlc;
         private static readonly MappedDiagnosticsLogicalContextLegacyProxy _mdlcLegacy;
 
-        private static readonly object _targetProxy;
-        private static readonly Func<object> _createLoggingRuleFunc;
+        private static readonly object? _targetProxy;
+        private static readonly Func<object>? _createLoggingRuleFunc;
         // ReSharper restore InconsistentNaming
 
         static NLogCommon()
         {
-            var nlogAssembly = typeof(TTarget).Assembly;
-            _targetType = nlogAssembly.GetType("NLog.Targets.TargetWithContext");
-            if (_targetType is not null)
+            try
             {
-                _nLogVersion = NLogVersion.NLog45;
+                var nlogAssembly = typeof(TTarget).Assembly;
+                _targetType = nlogAssembly.GetType("NLog.Targets.TargetWithContext");
+                if (_targetType is not null)
+                {
+                    _nLogVersion = NLogVersion.NLog45;
 
-                _targetProxy = CreateNLogTargetProxy(new DirectSubmissionNLogTarget());
-                return;
+                    _targetProxy = CreateNLogTargetProxy(new DirectSubmissionNLogTarget(
+                                                             TracerManager.Instance.DirectLogSubmission.Sink,
+                                                             TracerManager.Instance.DirectLogSubmission.Settings.MinimumLevel));
+                    return;
+                }
+
+                _targetType = nlogAssembly.GetType("NLog.Targets.Target");
+
+                // Type was added in NLog 4.3, so we can use it to safely determine the version
+                var testType = nlogAssembly.GetType("NLog.Config.ExceptionRenderingFormat");
+                _nLogVersion = testType is null ? NLogVersion.NLogPre43 : NLogVersion.NLog43To45;
+
+                TryGetMdcProxy(nlogAssembly, out _hasMappedDiagnosticsContext, out _isModernMappedDiagnosticsContext, out _mdc, out _mdcLegacy);
+                TryGetMdlcProxy(nlogAssembly, out _hasMappedDiagnosticsLogicalContext, out _isModernMappedDiagnosticsLogicalContext, out _mdlc, out _mdlcLegacy);
+
+                _targetProxy = CreateNLogTargetProxy(new DirectSubmissionNLogLegacyTarget(
+                                                         TracerManager.Instance.DirectLogSubmission.Sink,
+                                                         TracerManager.Instance.DirectLogSubmission.Settings.MinimumLevel));
+
+                if (_nLogVersion == NLogVersion.NLogPre43)
+                {
+                    _createLoggingRuleFunc = CreateLoggingRuleActivator(nlogAssembly);
+                }
             }
-
-            _targetType = nlogAssembly.GetType("NLog.Targets.Target");
-
-            // Type was added in NLog 4.3, so we can use it to safely determine the version
-            var testType = nlogAssembly.GetType("NLog.Config.ExceptionRenderingFormat");
-            _nLogVersion = testType is null ? NLogVersion.NLogPre43 : NLogVersion.NLog43To45;
-
-            TryGetMdcProxy(nlogAssembly, out _hasMappedDiagnosticsContext, out _isModernMappedDiagnosticsContext, out _mdc, out _mdcLegacy);
-            TryGetMdlcProxy(nlogAssembly, out _hasMappedDiagnosticsLogicalContext, out _isModernMappedDiagnosticsLogicalContext, out _mdlc, out _mdlcLegacy);
-
-            _targetProxy = CreateNLogTargetProxy(new DirectSubmissionNLogLegacyTarget());
-
-            if (_nLogVersion == NLogVersion.NLogPre43)
+            catch (Exception ex)
             {
-                _createLoggingRuleFunc = CreateLoggingRuleActivator(nlogAssembly);
+                Log.Error(ex, "Error creating NLog target proxies for direct log shipping");
+                _targetType = null;
+                _targetProxy = null;
             }
         }
 
@@ -74,6 +88,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
 
         public static void AddDatadogTarget(object loggingConfiguration)
         {
+            if (_targetProxy is null)
+            {
+                return;
+            }
+
             switch (_nLogVersion)
             {
                 case NLogVersion.NLog45:
@@ -88,15 +107,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             }
         }
 
-        public static IDictionary<string, object> GetContextProperties()
+        public static IDictionary<string, object?>? GetContextProperties()
         {
-            IDictionary<string, object> properties = null;
+            IDictionary<string, object?>? properties = null;
             if (_hasMappedDiagnosticsContext)
             {
                 if (_isModernMappedDiagnosticsContext)
                 {
-                    var names = _mdc.GetNames();
-                    properties = new Dictionary<string, object>(names.Count);
+                    var names = _mdc!.GetNames(); // C# isn't clever enough to figure that this is never null here
+                    properties = new Dictionary<string, object?>(names.Count);
                     foreach (var name in names)
                     {
                         if (!string.IsNullOrEmpty(name))
@@ -108,13 +127,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
                 }
                 else if (_mdcLegacy.ThreadDictionary is { } dict)
                 {
-                    properties = new Dictionary<string, object>(dict.Count);
-                    foreach (string name in dict.Keys)
+                    properties = new Dictionary<string, object?>(dict.Count);
+                    foreach (string? name in dict.Keys)
                     {
                         if (!string.IsNullOrEmpty(name))
                         {
                             // could be a <string, string> or a <string, object>, depending on NLog version
-                            properties[name] = dict[name];
+                            properties[name!] = dict[name];
                         }
                     }
                 }
@@ -124,8 +143,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             {
                 if (_isModernMappedDiagnosticsLogicalContext)
                 {
-                    var names = _mdlc.GetNames();
-                    properties ??= new Dictionary<string, object>(names.Count);
+                    var names = _mdlc!.GetNames(); // C# isn't clever enough to figure that this is never null here
+                    properties ??= new Dictionary<string, object?>(names.Count);
                     foreach (var name in names)
                     {
                         if (!string.IsNullOrEmpty(name))
@@ -137,13 +156,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
                 }
                 else if (_mdlcLegacy.LogicalThreadDictionary is { } dict)
                 {
-                    properties ??= new Dictionary<string, object>(dict.Count);
-                    foreach (string name in dict.Keys)
+                    properties ??= new Dictionary<string, object?>(dict.Count);
+                    foreach (string? name in dict.Keys)
                     {
                         if (!string.IsNullOrEmpty(name))
                         {
                             // could be a <string, string> or a <string, object>, depending on NLog version
-                            properties[name] = dict[name];
+                            properties[name!] = dict[name];
                         }
                     }
                 }
@@ -219,6 +238,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
                 }
             }
 
+            if (_createLoggingRuleFunc is null)
+            {
+                // we failed on startup, so should never get to this point
+                return;
+            }
+
             // need to create and add the new target
             loggingConfigurationProxy.AddTarget(NLogConstants.DatadogTargetName, targetProxy);
 
@@ -274,7 +299,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             Assembly nlogAssembly,
             out bool haveMdcProxy,
             out bool isModernMdcProxy,
-            out MappedDiagnosticsProxy mdc,
+            out MappedDiagnosticsProxy? mdc,
             out MappedDiagnosticsContextLegacyProxy mdcLegacy)
         {
             var mdcType = nlogAssembly.GetType("NLog.MappedDiagnosticsContext");
@@ -312,7 +337,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             Assembly nlogAssembly,
             out bool haveMdlcProxy,
             out bool isModernMdlcProxy,
-            out MappedDiagnosticsProxy mdlc,
+            out MappedDiagnosticsProxy? mdlc,
             out MappedDiagnosticsLogicalContextLegacyProxy mdlcLegacy)
         {
             var mdclType = nlogAssembly.GetType("NLog.MappedDiagnosticsLogicalContext");
@@ -349,7 +374,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
         internal static Func<object> CreateLoggingRuleActivator(Assembly nlogAssembly)
         {
             var loggingRuleType = nlogAssembly.GetType("NLog.Config.LoggingRule");
-            var ctor = loggingRuleType.GetConstructor(Type.EmptyTypes);
+            var ctor = loggingRuleType!.GetConstructor(Type.EmptyTypes)!; // Nullable YOLO
 
             DynamicMethod createLoggingRuleMethod = new DynamicMethod(
                 $"NLogCommon_CreateLoggingRuleActivator",

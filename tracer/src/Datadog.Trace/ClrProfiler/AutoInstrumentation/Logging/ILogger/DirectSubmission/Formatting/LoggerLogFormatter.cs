@@ -2,8 +2,8 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
-using System;
 using System.Collections.Generic;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
     {
         private const string MessageTemplateKey = "{OriginalFormat}";
 
-        public static string FormatLogEvent<T>(LogFormatter logFormatter, in LogEntry<T> logEntry)
+        public static string? FormatLogEvent<T>(LogFormatter logFormatter, in LogEntry<T> logEntry)
         {
             var message = logEntry.Formatter(logEntry.State, logEntry.Exception);
             if (logEntry.Exception == null && message == null)
@@ -48,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
             var haveTags = false;
             var haveVersion = false;
             var haveEnv = false;
-            string messageTemplate = null;
+            string? messageTemplate = null;
 
             if (logEntry.State is { } state)
             {

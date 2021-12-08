@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.ComponentModel;
@@ -21,23 +22,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
     public class DirectSubmissionLogger
     {
         private readonly string _name;
-        private readonly IExternalScopeProvider _scopeProvider;
+        private readonly IExternalScopeProvider? _scopeProvider;
         private readonly IDatadogSink _sink;
-        private readonly LogFormatter _logFormatter;
-        private readonly int? _minimumLogLevel;
+        private readonly LogFormatter? _logFormatter;
+        private readonly int _minimumLogLevel;
 
         internal DirectSubmissionLogger(
             string name,
-            IExternalScopeProvider scopeProvider,
+            IExternalScopeProvider? scopeProvider,
             IDatadogSink sink,
-            LogFormatter logFormatter,
-            DirectSubmissionLogLevel? minimumLogLevel)
+            LogFormatter? logFormatter,
+            DirectSubmissionLogLevel minimumLogLevel)
         {
             _name = name;
             _scopeProvider = scopeProvider;
             _sink = sink;
             _logFormatter = logFormatter;
-            _minimumLogLevel = (int?)minimumLogLevel;
+            _minimumLogLevel = (int)minimumLogLevel;
         }
 
         /// <summary>
@@ -50,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
         /// <param name="formatter">Function to create a <see cref="string"/> message of the <paramref name="state"/> and <paramref name="exception"/>.</param>
         /// <typeparam name="TState">The type of the object to be written.</typeparam>
         [DuckReverseMethod(ParameterTypeNames = new[] { "Microsoft.Extensions.Logging.LogLevel", "Microsoft.Extensions.Logging.EventId", "TState", "System.Exception", "Func`3" })]
-        public void Log<TState>(int logLevel, object eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+        public void Log<TState>(int logLevel, object eventId, TState state, Exception exception, Func<TState, Exception?, string> formatter)
         {
             if (!IsEnabled(logLevel))
             {
@@ -75,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
 
             var log = new LoggerDatadogLogEvent(serializedLog);
 
-            (_sink ?? TracerManager.Instance.DirectLogSubmission.Sink).EnqueueLog(log);
+            _sink.EnqueueLog(log);
         }
 
         /// <summary>
@@ -84,8 +85,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
         /// <param name="logLevel">Level to be checked.</param>
         /// <returns><c>true</c> if enabled.</returns>
         [DuckReverseMethod(ParameterTypeNames = new[] { "Microsoft.Extensions.Logging.LogLevel, Microsoft.Extensions.Logging.Abstractions" })]
-        public bool IsEnabled(int logLevel) =>
-            logLevel >= (_minimumLogLevel ?? (int)TracerManager.Instance.DirectLogSubmission.Settings.MinimumLevel);
+        public bool IsEnabled(int logLevel) => logLevel >= _minimumLogLevel;
 
         /// <summary>
         /// Begins a logical operation scope.

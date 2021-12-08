@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 
@@ -15,9 +16,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
             string category,
             int eventId,
             TState state,
-            Exception exception,
-            Func<TState, Exception, string> formatter,
-            IExternalScopeProvider scopeProvider)
+            Exception? exception,
+            Func<TState, Exception?, string> formatter,
+            IExternalScopeProvider? scopeProvider)
         {
             Timestamp = timestamp;
             LogLevel = logLevel;
@@ -39,10 +40,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
 
         public TState State { get; }
 
-        public Exception Exception { get; }
+        public Exception? Exception { get; }
 
-        public Func<TState, Exception, string> Formatter { get; }
+        public Func<TState, Exception?, string> Formatter { get; }
 
-        public IExternalScopeProvider ScopeProvider { get; }
+        public IExternalScopeProvider? ScopeProvider { get; }
     }
 }

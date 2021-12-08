@@ -65,7 +65,7 @@ namespace Datadog.Trace.Configuration
 
             // TODO: Should we load the API key in a normal way? We don't for AAS?
             var apiKey = System.Environment.GetEnvironmentVariable(ConfigurationKeys.ApiKey);
-            LogSubmissionSettings = DirectLogSubmissionSettings.Create(settings, apiKey, Integrations);
+            LogSubmissionSettings = DirectLogSubmissionSettings.Create(settings, apiKey);
 
             // we cached the static instance here, because is being used in the hotpath
             // by IsIntegrationEnabled method (called from all integrations)
