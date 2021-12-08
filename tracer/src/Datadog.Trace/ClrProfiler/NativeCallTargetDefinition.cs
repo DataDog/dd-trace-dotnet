@@ -31,6 +31,7 @@ namespace Datadog.Trace.ClrProfiler
  //
  // If you happen to change the layout of this structure,
  // this will lead to an AccessViolationException in netCore when using a more recent version of the nuget.
+ // If you need to modify the definition, create a new interface NativeCallTargetDefinition# that will be consumed by the native layer
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     internal struct NativeCallTargetDefinition
