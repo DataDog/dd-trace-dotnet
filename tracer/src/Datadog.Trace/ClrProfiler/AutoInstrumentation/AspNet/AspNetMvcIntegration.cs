@@ -172,7 +172,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
                     tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
 
-                    if (newResourceNamesEnabled && string.IsNullOrEmpty(controllerContext.HttpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] as string))
+                    if (newResourceNamesEnabled && string.IsNullOrEmpty(httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] as string))
                     {
                         // set the resource name in the HttpContext so TracingHttpModule can update root span
                         httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] = resourceName;

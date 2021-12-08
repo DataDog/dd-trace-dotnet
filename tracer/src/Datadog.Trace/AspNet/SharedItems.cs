@@ -24,15 +24,16 @@ namespace Datadog.Trace.AspNet
             }
 
             // Storing only the scope by default to avoid allocating a stack if no inner calls are done
-            if (!context.Items.Contains(key) || context.Items[key] is null)
+            var existingItem = context.Items[key];
+            if (existingItem is null)
             {
                 context.Items[key] = item;
             }
-            else if (context.Items[key] is Stack<T> stack)
+            else if (existingItem is Stack<T> stack)
             {
                 stack.Push(item);
             }
-            else if (context.Items[key] is T previousScope)
+            else if (existingItem is T previousScope)
             {
                 var newStack = new Stack<T>();
                 newStack.Push(previousScope);
@@ -47,19 +48,16 @@ namespace Datadog.Trace.AspNet
 
         internal static T TryPopItem<T>(HttpContext context, string key)
         {
-            if (context == null || !context.Items.Contains(key) || context.Items[key] is null)
-            {
-                return default(T);
-            }
-            else if (context.Items[key] is T storedScope)
+            var item = context?.Items[key];
+            if (item is T storedScope)
             {
                 return storedScope;
             }
-            else if (context.Items[key] is Stack<T> stack && stack.Count > 0)
+            else if (item is Stack<T> stack && stack.Count > 0)
             {
                 return stack.Pop();
             }
-
+            
             return default(T);
         }
     }
