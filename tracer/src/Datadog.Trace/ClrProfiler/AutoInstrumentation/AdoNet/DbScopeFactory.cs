@@ -157,7 +157,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     if (DbTypeName != dbTypeName)
                     {
                         // We cannot cache in the base class
-                        return $"{_tracerDefaultServiceName}-{dbTypeName}";
+                        return $"{tracer.DefaultServiceName}-{dbTypeName}";
                     }
 
                     // If not a base class
