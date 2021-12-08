@@ -511,7 +511,7 @@ namespace Datadog.Trace.DiagnosticListeners
                         controllerName: controllerName,
                         actionName: actionName);
 
-                    resourceName = $"{parentTags.HttpMethod} {request.PathBase.Value}{resourcePathName}";
+                    resourceName = $"{parentTags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
                     aspNetRoute = routeTemplate?.TemplateText.ToLowerInvariant();
                 }
             }
@@ -675,7 +675,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     controllerName: controllerName,
                     actionName: actionName);
 
-                var resourceName = $"{tags.HttpMethod} {request.PathBase}{resourcePathName}";
+                var resourceName = $"{tags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
 
                 // NOTE: We could set the controller/action/area tags on the parent span
                 // But instead we re-extract them in the MVC endpoint as these are MVC
