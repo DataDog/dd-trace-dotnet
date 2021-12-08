@@ -168,9 +168,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     }
 
                     // We create or replace the cache with the new service name
-                    _tracerDefaultServiceName = tracer.DefaultServiceName;
-                    serviceName = $"{_tracerDefaultServiceName}-{dbTypeName}";
+                    var defaultServiceName = tracer.DefaultServiceName;
+                    serviceName = $"{defaultServiceName}-{dbTypeName}";
                     _serviceName = serviceName;
+                    _tracerDefaultServiceName = defaultServiceName;
                 }
 
                 return serviceName;
