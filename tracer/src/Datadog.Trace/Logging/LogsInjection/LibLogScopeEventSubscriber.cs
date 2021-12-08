@@ -198,8 +198,9 @@ namespace Datadog.Trace.Logging
                 try
                 {
                     var currentEnricher = _currentEnricher.Value;
+                    var distributedTraceStarted = Tracer.Instance.DistributedSpanContext is not null;
 
-                    if (currentEnricher == null)
+                    if (currentEnricher == null && !distributedTraceStarted)
                     {
                         _currentEnricher.Value = _logEnricher.Register();
                     }

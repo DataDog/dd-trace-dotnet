@@ -80,11 +80,11 @@ namespace Datadog.Trace.Logging
         [DuckReverseMethod(ParameterTypeNames = new[] { "Serilog.Events.LogEvent, Serilog", "Serilog.Core.ILogEventPropertyFactory, Serilog" })]
         public void Enrich(ILogEvent logEvent, object propertyFactory)
         {
-            // Only enrich this log event if the distributed trace context belongs to this Tracer
-            if (Tracer.Instance.DistributedSpanContext is SpanContext spanContext)
+            var spanContext = Tracer.Instance.DistributedSpanContext;
+            if (spanContext is not null)
             {
-                var traceIdProperty = _propertyFactory(CorrelationIdentifier.SerilogTraceIdKey, _valueFactory(spanContext.TraceId.ToString()));
-                var spanIdProperty = _propertyFactory(CorrelationIdentifier.SerilogSpanIdKey, _valueFactory(spanContext.SpanId.ToString()));
+                var traceIdProperty = _propertyFactory(CorrelationIdentifier.SerilogTraceIdKey, _valueFactory(spanContext[HttpHeaderNames.TraceId]));
+                var spanIdProperty = _propertyFactory(CorrelationIdentifier.SerilogSpanIdKey, _valueFactory(spanContext[HttpHeaderNames.ParentId]));
 
                 logEvent.AddPropertyIfAbsent(_serviceProperty);
                 logEvent.AddPropertyIfAbsent(_versionProperty);
