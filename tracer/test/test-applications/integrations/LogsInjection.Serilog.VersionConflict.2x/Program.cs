@@ -1,10 +1,7 @@
 
-using System;
 using System.IO;
-using Datadog.Trace;
-using Samples;
+using LogsInjectionHelper.VersionConflict;
 using Serilog;
-using Serilog.Core;
 using Serilog.Formatting.Json;
 using LogEventLevel = Serilog.Events.LogEventLevel;
 
@@ -39,83 +36,7 @@ namespace LogsInjection.Serilog.VersionConflict_2x
                                             jsonFilePath)
                                         .CreateLogger();
 
-            try
-            {
-                RunLoggingProcedure(log);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine(ex);
-                return (int)ExitCode.UnknownError;
-            }
-
-#if NETCOREAPP2_1
-            // Add a delay to avoid a race condition on shutdown: https://github.com/dotnet/coreclr/pull/22712
-            // This would cause a segmentation fault on .net core 2.x
-            System.Threading.Thread.Sleep(5000);
-#endif
-
-            return (int)ExitCode.Success;
-        }
-
-        private static void RunLoggingProcedure(Logger log)
-        {
-            log.Information($"{ExcludeMessagePrefix}Starting manual1 Datadog scope.");
-            using (Tracer.Instance.StartActive("manual1"))
-            {
-                log.Information($"Trace: manual1");
-                using (TracerUtils.StartAutomaticTraceLowerAssemblyVersion("automatic2"))
-                {
-                    log.Information($"Trace: manual1-automatic2");
-                    using (Tracer.Instance.StartActive("manual3"))
-                    {
-                        log.Information($"Trace: manual1-automatic2-manual3");
-                        using (Tracer.Instance.StartActive("manual4"))
-                        {
-                            log.Information($"Trace: manual1-automatic2-manual3-manual4");
-
-                            using (TracerUtils.StartAutomaticTraceLowerAssemblyVersion("automatic5"))
-                            {
-                                log.Information($"Trace: manual1-automatic2-manual3-manual4-automatic5");
-                            }
-
-                            log.Information($"Trace: manual1-automatic2-manual3-manual4");
-                        }
-
-                        log.Information($"Trace: manual1-automatic2-manual3");
-
-                        using (TracerUtils.StartAutomaticTraceLowerAssemblyVersion("automatic4"))
-                        {
-                            log.Information($"Trace: manual1-automatic2-manual3-automatic4");
-                            using (TracerUtils.StartAutomaticTraceLowerAssemblyVersion("automatic5"))
-                            {
-                                log.Information($"Trace: manual1-automatic2-manual3-automatic4-automatic5");
-                                using (Tracer.Instance.StartActive("manual6"))
-                                {
-                                    log.Information($"Trace: manual1-automatic2-manual3-automatic4-automatic5-manual6");
-                                }
-
-                                log.Information($"Trace: manual1-automatic2-manual3-automatic4-automatic5");
-                            }
-
-                            log.Information($"Trace: manual1-automatic2-manual3-automatic4");
-                        }
-
-                        log.Information($"Trace: manual1-automatic2-manual3");
-                    }
-                    log.Information($"Trace: manual1-automatic2");
-                }
-
-                log.Information($"Trace: manual1");
-            }
-
-            log.Information($"{ExcludeMessagePrefix}Exited manual1 Datadog scope.");
-        }
-
-        enum ExitCode : int
-        {
-            Success = 0,
-            UnknownError = -10
+            return LoggingMethods.RunLoggingProcedure(log.Information);
         }
     }
 }

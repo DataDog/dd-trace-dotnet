@@ -1,14 +1,13 @@
-#if !NETCOREAPP2_1 && !NETCOREAPP2_2
-
 using System;
 using System.Linq;
 using System.Reflection;
+using Datadog.Trace;
 
-namespace Samples
+namespace LogsInjectionHelper.VersionConflict
 {
     public class TracerUtils
     {
-        private static readonly Version _manualTracingVersion = new Version("2.255.251.0");
+        private static readonly Version _manualTracingVersion = typeof(Tracer).Assembly.GetName().Version;
         private static Assembly _automaticAssembly;
 
         private static bool VersionIsLowerThanManualTracingVersion(Version version)
@@ -73,4 +72,3 @@ namespace Samples
         }
     }
 }
-#endif

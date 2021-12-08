@@ -441,6 +441,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LogsInjection.Log4Net.Versi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LogsInjection.NLog.VersionConflict.2x", "tracer\test\test-applications\integrations\LogsInjection.NLog.VersionConflict.2x\LogsInjection.NLog.VersionConflict.2x.csproj", "{3B82E0A8-F880-4E2A-B85D-F158A7C88AF6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LogsInjectionHelper.VersionConflict", "tracer\test\test-applications\integrations\dependency-libs\LogsInjectionHelper.VersionConflict\LogsInjectionHelper.VersionConflict.csproj", "{B4335855-21B5-4D18-AC3A-ABA2160B748F}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		tracer\test\test-applications\Samples.Shared\Samples.Shared.projitems*{24d3e547-8897-4111-baa2-b92f50cc13d4}*SharedItemsImports = 5
@@ -1941,6 +1943,18 @@ Global
 		{3B82E0A8-F880-4E2A-B85D-F158A7C88AF6}.Release|x64.Build.0 = Release|x64
 		{3B82E0A8-F880-4E2A-B85D-F158A7C88AF6}.Release|x86.ActiveCfg = Release|x86
 		{3B82E0A8-F880-4E2A-B85D-F158A7C88AF6}.Release|x86.Build.0 = Release|x86
+		{B4335855-21B5-4D18-AC3A-ABA2160B748F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B4335855-21B5-4D18-AC3A-ABA2160B748F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B4335855-21B5-4D18-AC3A-ABA2160B748F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B4335855-21B5-4D18-AC3A-ABA2160B748F}.Debug|x64.Build.0 = Debug|Any CPU
+		{B4335855-21B5-4D18-AC3A-ABA2160B748F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B4335855-21B5-4D18-AC3A-ABA2160B748F}.Debug|x86.Build.0 = Debug|Any CPU
+		{B4335855-21B5-4D18-AC3A-ABA2160B748F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B4335855-21B5-4D18-AC3A-ABA2160B748F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B4335855-21B5-4D18-AC3A-ABA2160B748F}.Release|x64.ActiveCfg = Release|Any CPU
+		{B4335855-21B5-4D18-AC3A-ABA2160B748F}.Release|x64.Build.0 = Release|Any CPU
+		{B4335855-21B5-4D18-AC3A-ABA2160B748F}.Release|x86.ActiveCfg = Release|Any CPU
+		{B4335855-21B5-4D18-AC3A-ABA2160B748F}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -2097,6 +2111,7 @@ Global
 		{BB110CA3-F108-4465-AA5F-C4F22B57F4FE} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{10C5BA99-0A95-431C-8D4F-90067B8BCFFE} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{3B82E0A8-F880-4E2A-B85D-F158A7C88AF6} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{B4335855-21B5-4D18-AC3A-ABA2160B748F} = {8683D82A-2BBE-4199-9C36-C59F48804F90}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
