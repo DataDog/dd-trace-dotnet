@@ -3,7 +3,7 @@
     TraceId: Id_1,
     SpanId: Id_2,
     Name: aspnet-webapi.request,
-    Resource: GET api/absolute-route,
+    Resource: GET /api/absolute-route,
     Service: sample,
     Type: web,
     ParentId: Id_3,
