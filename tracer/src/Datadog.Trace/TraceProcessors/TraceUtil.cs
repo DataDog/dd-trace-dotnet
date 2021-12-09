@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.TraceProcessors
 {
@@ -18,6 +19,7 @@ namespace Datadog.Trace.TraceProcessors
         private static readonly UTF8Encoding Encoding = new UTF8Encoding(false);
 
         // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/traceutil/truncate.go#L34-L49
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TruncateUTF8(ref string value, int limit)
         {
             if (Encoding.GetByteCount(value) <= limit)
@@ -39,6 +41,7 @@ namespace Datadog.Trace.TraceProcessors
         }
 
         // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/agent/normalizer.go#L183-L188
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsValidStatusCode(string statusCode)
         {
             if (int.TryParse(statusCode, out int code))
@@ -149,11 +152,13 @@ namespace Datadog.Trace.TraceProcessors
             end:
                 if (i + jump >= 2 * MaxTagLength)
                 {
+                    i++;
                     break;
                 }
 
                 if (chars >= MaxTagLength)
                 {
+                    i++;
                     break;
                 }
             }
@@ -196,6 +201,86 @@ namespace Datadog.Trace.TraceProcessors
             }
 
             return new string(segment.Array, segment.Offset, segment.Count);
+        }
+
+        // https://github.com/DataDog/datadog-agent/blob/main/pkg/trace/traceutil/normalize.go#L208-L211
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsAlpha(char c)
+        {
+            return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+        }
+
+        // https://github.com/DataDog/datadog-agent/blob/main/pkg/trace/traceutil/normalize.go#L213-L216
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsAlphaNum(char c)
+        {
+            return IsAlpha(c) || (c >= '0' && c <= '9');
+        }
+
+        // https://github.com/DataDog/datadog-agent/blob/main/pkg/trace/traceutil/normalize.go#L218-L269
+        public static string NormMetricNameParse(string name, int limit)
+        {
+            if (name == string.Empty || Encoding.GetByteCount(name) > limit)
+            {
+                return null;
+            }
+
+            var sb = StringBuilderCache.Acquire(name.Length);
+            int i = 0;
+
+            // skip non-alphabetic characters
+            for (; i < name.Length && !IsAlpha(name[i]); i++) { }
+
+            // if there were no alphabetic characters it wasn't valid
+            if (i == name.Length)
+            {
+                return null;
+            }
+
+            for (; i < name.Length; i++)
+            {
+                char c = name[i];
+
+                if (IsAlphaNum(c))
+                {
+                    sb.Append(c);
+                }
+                else if (c == '.')
+                {
+                    // we skipped all non-alpha chars up front so we have seen at least one
+
+                    // overwrite underscores that happen before periods
+                    if (sb[sb.Length - 1] == '_')
+                    {
+                        sb[sb.Length - 1] = '.';
+                    }
+                    else
+                    {
+                        sb.Append('.');
+                    }
+                }
+                else
+                {
+                    // we skipped all non-alpha chars up front so we have seen at least one
+
+                    // no double underscores, no underscores after periods
+                    switch (sb[sb.Length - 1])
+                    {
+                        case '.':
+                        case '_':
+                        default:
+                            sb.Append('_');
+                            break;
+                    }
+                }
+            }
+
+            if (sb[sb.Length - 1] == '_')
+            {
+                sb.Remove(sb.Length - 1, 1);
+            }
+
+            return StringBuilderCache.GetStringAndRelease(sb);
         }
 
         // We cannot use Span<T> and ArraySegment<T> is readonly :(

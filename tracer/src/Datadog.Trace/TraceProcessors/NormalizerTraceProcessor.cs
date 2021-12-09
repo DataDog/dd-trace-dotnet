@@ -15,15 +15,15 @@ namespace Datadog.Trace.TraceProcessors
         // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/traceutil/normalize.go
 
         // DefaultSpanName is the default name we assign a span if it's missing and we have no reasonable fallback
-        private const string DefaultSpanName = "unnamed_operation";
+        internal const string DefaultSpanName = "unnamed_operation";
         // DefaultServiceName is the default name we assign a service if it's missing and we have no reasonable fallback
-        private const string DefaultServiceName = "unnamed-service";
+        internal const string DefaultServiceName = "unnamed-service";
         // MaxNameLen the maximum length a name can have
-        private const int MaxNameLen = 100;
+        internal const int MaxNameLen = 100;
         // MaxServiceLen the maximum length a service can have
-        private const int MaxServiceLen = 100;
+        internal const int MaxServiceLen = 100;
         // MaxTypeLen the maximum length a span type can have
-        private const int MaxTypeLen = 100;
+        internal const int MaxTypeLen = 100;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<NormalizerTraceProcessor>();
         private static readonly DateTime Year2000Time = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -55,39 +55,10 @@ namespace Datadog.Trace.TraceProcessors
             foreach (var span in trace)
             {
                 // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/agent/normalizer.go#L44-L56
-                if (string.IsNullOrEmpty(span.ServiceName))
-                {
-                    Log.Information("Fixing malformed trace. Service  is empty (reason:service_empty), setting span.service={serviceName}: {span}", span.ServiceName, span);
-                    span.ServiceName = DefaultServiceName;
-                }
-                else
-                {
-                    // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/traceutil/normalize.go#L54-L68
-                    var serviceName = span.ServiceName;
-                    if (TraceUtil.TruncateUTF8(ref serviceName, MaxServiceLen))
-                    {
-                        span.ServiceName = serviceName;
-                        Log.Information("Fixing malformed trace. Service is too long (reason:service_truncate), truncating span.service to length={maxServiceLen}: {span}", MaxServiceLen, span);
-                    }
-
-                    span.ServiceName = TraceUtil.NormalizeTag(span.ServiceName);
-                }
+                span.ServiceName = NormalizeService(span.ServiceName);
 
                 // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/agent/normalizer.go#L69-L80
-                if (string.IsNullOrEmpty(span.OperationName))
-                {
-                    Log.Information("Fixing malformed trace. Name is empty (reason:span_name_empty), setting span.name={name}: {span}", span.OperationName, span);
-                    span.OperationName = DefaultSpanName;
-                }
-                else
-                {
-                    var operationName = span.OperationName;
-                    if (TraceUtil.TruncateUTF8(ref operationName, MaxNameLen))
-                    {
-                        span.OperationName = operationName;
-                        Log.Information("Fixing malformed trace. Name is too long (reason:span_name_truncate), truncating span.name to length={maxServiceLen}: {span}", MaxNameLen, span);
-                    }
-                }
+                span.OperationName = NormalizeName(span.OperationName);
 
                 // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/agent/normalizer.go#L82-L86
                 if (string.IsNullOrEmpty(span.ResourceName))
@@ -165,6 +136,47 @@ namespace Datadog.Trace.TraceProcessors
             }
 
             return trace;
+        }
+
+        // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/traceutil/normalize.go#L52-L68
+        internal static string NormalizeService(string svc)
+        {
+            if (string.IsNullOrEmpty(svc))
+            {
+                Log.Information("Fixing malformed trace. Service  is empty (reason:service_empty), setting span.service={serviceName}.", svc);
+                return DefaultServiceName;
+            }
+
+            // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/traceutil/normalize.go#L54-L68
+            if (TraceUtil.TruncateUTF8(ref svc, MaxServiceLen))
+            {
+                Log.Information<int>("Fixing malformed trace. Service is too long (reason:service_truncate), truncating span.service to length={maxServiceLen}.", MaxServiceLen);
+            }
+
+            return TraceUtil.NormalizeTag(svc);
+        }
+
+        // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/traceutil/normalize.go#L34-L50
+        internal static string NormalizeName(string name)
+        {
+            if (string.IsNullOrEmpty(name))
+            {
+                Log.Information("Fixing malformed trace. Name is empty (reason:span_name_empty), setting span.name={name}.", name);
+                return DefaultSpanName;
+            }
+
+            if (TraceUtil.TruncateUTF8(ref name, MaxNameLen))
+            {
+                Log.Information<int>("Fixing malformed trace. Name is too long (reason:span_name_truncate), truncating span.name to length={maxServiceLen}.", MaxNameLen);
+            }
+
+            name = TraceUtil.NormMetricNameParse(name, MaxNameLen);
+            if (name is null)
+            {
+                name = DefaultSpanName;
+            }
+
+            return name;
         }
     }
 }

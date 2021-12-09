@@ -15,13 +15,13 @@ namespace Datadog.Trace.TraceProcessors
 
         // Values from: https://github.com/DataDog/datadog-agent/blob/main/pkg/trace/traceutil/truncate.go#L22-L27
         // MaxResourceLen the maximum length a span resource can have
-        private const int MaxResourceLen = 5000;
+        internal const int MaxResourceLen = 5000;
         // MaxMetaKeyLen the maximum length of metadata key
-        private const int MaxMetaKeyLen = 200;
+        internal const int MaxMetaKeyLen = 200;
         // MaxMetaValLen the maximum length of metadata value
-        private const int MaxMetaValLen = 25000;
+        internal const int MaxMetaValLen = 25000;
         // MaxMetricsKeyLen the maximum length of a metric name key
-        private const int MaxMetricsKeyLen = MaxMetaKeyLen;
+        internal const int MaxMetricsKeyLen = MaxMetaKeyLen;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TruncatorTraceProcessor>();
         private readonly TruncatorTagsProcessor truncatorTagsProcessor = new TruncatorTagsProcessor();
@@ -36,12 +36,7 @@ namespace Datadog.Trace.TraceProcessors
             foreach (var span in trace)
             {
                 // https://github.com/DataDog/datadog-agent/blob/main/pkg/trace/agent/truncator.go#L17-L21
-                var resourceName = span.ResourceName;
-                if (TraceUtil.TruncateUTF8(ref resourceName, MaxResourceLen))
-                {
-                    span.ResourceName = resourceName;
-                    Log.Information("span.truncate: truncated `Resource` (max {maxResourceLen} chars): {resource}", MaxResourceLen, span.ResourceName);
-                }
+                span.ResourceName = TruncateResource(span.ResourceName);
 
                 // Set the tags processor
                 if (span.Tags is TagsList tagsList)
@@ -51,6 +46,17 @@ namespace Datadog.Trace.TraceProcessors
             }
 
             return trace;
+        }
+
+        // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/traceutil/truncate.go#L28-L32
+        internal static string TruncateResource(string r)
+        {
+            if (TraceUtil.TruncateUTF8(ref r, MaxResourceLen))
+            {
+                Log.Information("span.truncate: truncated `Resource` (max {maxResourceLen} chars): {resource}", MaxResourceLen, r);
+            }
+
+            return r;
         }
 
         private class TruncatorTagsProcessor : ITagProcessor
