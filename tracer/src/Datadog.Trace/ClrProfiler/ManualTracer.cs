@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
@@ -50,6 +51,8 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
+        IReadOnlyDictionary<string, string> IDistributedTracer.GetSpanContextRaw() => _parent.GetDistributedTrace();
+
         SpanContext IDistributedTracer.GetSpanContext()
         {
             var values = _parent.GetDistributedTrace();
@@ -61,6 +64,11 @@ namespace Datadog.Trace.ClrProfiler
             {
                 return SpanContextPropagator.Instance.Extract(values);
             }
+        }
+
+        void IDistributedTracer.SetSpanContextRaw(IReadOnlyDictionary<string, string> value)
+        {
+            _parent.SetDistributedTrace(value);
         }
 
         void IDistributedTracer.SetSpanContext(SpanContext value)

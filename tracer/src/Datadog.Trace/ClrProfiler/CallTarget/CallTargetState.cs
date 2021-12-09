@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
@@ -21,6 +22,8 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         private readonly object _state;
         private readonly DateTimeOffset? _startTime;
 
+        private readonly IReadOnlyDictionary<string, string> _previousDistributedSpanContext;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="CallTargetState"/> struct.
         /// </summary>
@@ -31,6 +34,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
             _scope = scope;
             _state = null;
             _startTime = null;
+            _previousDistributedSpanContext = null;
         }
 
         /// <summary>
@@ -44,6 +48,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
             _scope = scope;
             _state = state;
             _startTime = null;
+            _previousDistributedSpanContext = null;
         }
 
         /// <summary>
@@ -58,14 +63,16 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
             _scope = scope;
             _state = state;
             _startTime = startTime;
+            _previousDistributedSpanContext = null;
         }
 
-        internal CallTargetState(Scope previousScope, CallTargetState state)
+        internal CallTargetState(Scope previousScope, IReadOnlyDictionary<string, string> previousDistributedSpanContext, CallTargetState state)
         {
             _previousScope = previousScope;
             _scope = state._scope;
             _state = state._state;
             _startTime = state._startTime;
+            _previousDistributedSpanContext = previousDistributedSpanContext;
         }
 
         /// <summary>
@@ -84,6 +91,8 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         public DateTimeOffset? StartTime => _startTime;
 
         internal Scope PreviousScope => _previousScope;
+
+        internal IReadOnlyDictionary<string, string> PreviousDistributedSpanContext => _previousDistributedSpanContext;
 
         /// <summary>
         /// Gets the default call target state (used by the native side to initialize the locals)

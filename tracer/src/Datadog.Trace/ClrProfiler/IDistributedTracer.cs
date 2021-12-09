@@ -3,13 +3,19 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Collections.Generic;
+
 namespace Datadog.Trace.ClrProfiler
 {
     internal interface IDistributedTracer
     {
+        IReadOnlyDictionary<string, string> GetSpanContextRaw();
+
         SpanContext GetSpanContext();
 
         IScope GetActiveScope();
+
+        void SetSpanContextRaw(IReadOnlyDictionary<string, string> value);
 
         void SetSpanContext(SpanContext value);
 
