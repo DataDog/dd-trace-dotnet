@@ -35,6 +35,7 @@ steps:
         --env DiffEngine_Disabled=true \
         --env TestAllPackageVersions=$(TestAllPackageVersions) \
         --env IncludeMinorPackageVersions=$(IncludeMinorPackageVersions) \
+        --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
         dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }} \
         dotnet /build/bin/Debug/_build.dll ${{ parameters.command }}
   displayName: Run '${{ parameters.command }}' in Docker
