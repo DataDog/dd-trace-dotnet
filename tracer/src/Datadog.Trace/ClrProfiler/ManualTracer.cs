@@ -71,14 +71,9 @@ namespace Datadog.Trace.ClrProfiler
             _parent.SetDistributedTrace(value);
         }
 
-        void IDistributedTracer.LockSamplingPriority()
+        void IDistributedTracer.SetSamplingPriority(SamplingPriority? samplingPriority)
         {
-            _parent.LockSamplingPriority();
-        }
-
-        SamplingPriority? IDistributedTracer.TrySetSamplingPriority(SamplingPriority? samplingPriority)
-        {
-            return (SamplingPriority?)_parent.TrySetSamplingPriority((int?)samplingPriority);
+            _parent.SetSamplingPriority((int?)samplingPriority);
         }
     }
 }

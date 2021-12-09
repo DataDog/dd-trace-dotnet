@@ -61,19 +61,9 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
-        void IDistributedTracer.LockSamplingPriority()
+        void IDistributedTracer.SetSamplingPriority(SamplingPriority? samplingPriority)
         {
-            _child?.LockSamplingPriority();
-        }
-
-        SamplingPriority? IDistributedTracer.TrySetSamplingPriority(SamplingPriority? samplingPriority)
-        {
-            if (_child == null)
-            {
-                return samplingPriority;
-            }
-
-            return (SamplingPriority?)_child.TrySetSamplingPriority((int?)samplingPriority);
+            _child?.SetSamplingPriority((int?)samplingPriority);
         }
 
         public object GetAutomaticActiveScope()

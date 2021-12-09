@@ -58,40 +58,24 @@ namespace Datadog.Trace.Tests.DistributedTracer
         }
 
         [Fact]
-        public void LockSamplingPriority()
+        public void SetSamplingPriority_NoChild()
+        {
+            var automaticTracer = new AutomaticTracer();
+
+            ((IDistributedTracer)automaticTracer).SetSamplingPriority(SamplingPriority.UserKeep);
+        }
+
+        [Fact]
+        public void SetSamplingPriority()
         {
             var manualTracer = new Mock<ICommonTracer>();
 
             var automaticTracer = new AutomaticTracer();
             automaticTracer.Register(manualTracer.Object);
 
-            ((IDistributedTracer)automaticTracer).LockSamplingPriority();
+            ((IDistributedTracer)automaticTracer).SetSamplingPriority(SamplingPriority.UserKeep);
 
-            manualTracer.Verify(t => t.LockSamplingPriority(), Times.Once);
-        }
-
-        [Fact]
-        public void TrySetSamplingPriority_NoChild()
-        {
-            var automaticTracer = new AutomaticTracer();
-
-            var samplingPriority = ((IDistributedTracer)automaticTracer).TrySetSamplingPriority(SamplingPriority.UserKeep);
-
-            samplingPriority.Should().Be(SamplingPriority.UserKeep, "TrySetSamplingPriority should be pass-through when there is no child");
-        }
-
-        [Fact]
-        public void TrySetSamplingPriority()
-        {
-            var manualTracer = new Mock<ICommonTracer>();
-            manualTracer.Setup(t => t.TrySetSamplingPriority(It.IsAny<int?>())).Returns((int?)SamplingPriority.UserReject);
-
-            var automaticTracer = new AutomaticTracer();
-            automaticTracer.Register(manualTracer.Object);
-
-            var samplingPriority = ((IDistributedTracer)automaticTracer).TrySetSamplingPriority(SamplingPriority.UserKeep);
-
-            samplingPriority.Should().Be(SamplingPriority.UserReject, "TrySetSamplingPriority should return the value given by the child");
+            manualTracer.Verify(t => t.SetSamplingPriority((int?)SamplingPriority.UserKeep), Times.Once);
         }
 
         [Fact]

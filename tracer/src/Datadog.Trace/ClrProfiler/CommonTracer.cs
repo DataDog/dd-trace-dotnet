@@ -13,44 +13,14 @@ namespace Datadog.Trace.ClrProfiler
     /// </summary>
     internal abstract class CommonTracer : ICommonTracer
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CommonTracer));
-
-        public void LockSamplingPriority()
+        public void SetSamplingPriority(int? samplingPriority)
         {
             var traceContext = Tracer.Instance.InternalActiveScope?.Span.Context?.TraceContext;
 
             if (traceContext != null)
             {
-                traceContext.LockSamplingPriority(notifyDistributedTracer: false);
+                traceContext.SetSamplingPriority((SamplingPriority?)samplingPriority, notifyDistributedTracer: false);
             }
-        }
-
-        public int? TrySetSamplingPriority(int? samplingPriority)
-        {
-            var traceContext = Tracer.Instance.InternalActiveScope?.Span.Context?.TraceContext;
-
-            // If there is no trace context, when a new span is propagated the sampling priority will automatically be locked
-            // because it will be considered as a distributed trace
-            if (traceContext != null)
-            {
-                if (traceContext.IsSamplingPriorityLocked())
-                {
-                    var currentSamplingPriority = traceContext.SamplingPriority;
-
-                    if (currentSamplingPriority != null)
-                    {
-                        return (int)currentSamplingPriority.Value;
-                    }
-
-                    Log.Warning("SamplingPriority is locked without value");
-                }
-                else
-                {
-                    traceContext.SetSamplingPriority((SamplingPriority?)samplingPriority, notifyDistributedTracer: false);
-                }
-            }
-
-            return samplingPriority;
         }
     }
 }

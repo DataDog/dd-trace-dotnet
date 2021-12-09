@@ -17,8 +17,6 @@ namespace Datadog.Trace.ClrProfiler
 
         void SetSpanContext(IReadOnlyDictionary<string, string> value);
 
-        void LockSamplingPriority();
-
-        SamplingPriority? TrySetSamplingPriority(SamplingPriority? samplingPriority);
+        void SetSamplingPriority(SamplingPriority? samplingPriority);
     }
 }
