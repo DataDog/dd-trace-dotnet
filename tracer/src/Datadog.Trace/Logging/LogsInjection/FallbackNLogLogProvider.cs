@@ -27,30 +27,8 @@ namespace Datadog.Trace.Logging
     {
         protected override OpenMdc GetOpenMdcMethod()
         {
-            // This is a copy/paste of the base GetOpenMdcMethod, with an additional NLog 1.x fallback
+            // This is a copy/paste of the base GetOpenMdcMethod, with the NLog 4.1+ code path removed and an additional NLog 1.x fallback
             var keyParam = Expression.Parameter(typeof(string), "key");
-
-            var ndlcContextType = FindType("NLog.NestedDiagnosticsLogicalContext", "NLog");
-            if (ndlcContextType != null)
-            {
-                var pushObjectMethod = ndlcContextType.GetMethod("PushObject", typeof(object));
-                if (pushObjectMethod != null)
-                {
-                    // NLog 4.6 introduces SetScoped with correct handling of logical callcontext (MDLC)
-                    var mdlcContextType = FindType("NLog.MappedDiagnosticsLogicalContext", "NLog");
-                    if (mdlcContextType != null)
-                    {
-                        var setScopedMethod = mdlcContextType.GetMethod("SetScoped", typeof(string), typeof(object));
-                        if (setScopedMethod != null)
-                        {
-                            var valueObjParam = Expression.Parameter(typeof(object), "value");
-                            var setScopedMethodCall = Expression.Call(null, setScopedMethod, keyParam, valueObjParam);
-                            var setMethodLambda = Expression.Lambda<Func<string, object, IDisposable>>(setScopedMethodCall, keyParam, valueObjParam).Compile();
-                            return (key, value, _) => setMethodLambda(key, value);
-                        }
-                    }
-                }
-            }
 
             var mdcContextType = FindType("NLog.MappedDiagnosticsContext", "NLog");
             if (mdcContextType is null)

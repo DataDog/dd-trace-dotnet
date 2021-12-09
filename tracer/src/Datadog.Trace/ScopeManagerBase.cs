@@ -20,6 +20,8 @@ namespace Datadog.Trace
 
         public event EventHandler<SpanEventArgs> SpanActivated;
 
+        public event EventHandler<SpanEventArgs> DistributedSpanActivated;
+
         public event EventHandler<SpanEventArgs> SpanDeactivated;
 
         public event EventHandler<SpanEventArgs> SpanClosed;
@@ -56,6 +58,7 @@ namespace Datadog.Trace
             }
 
             SpanActivated?.Invoke(this, scopeOpenedArgs);
+            DistributedSpanActivated?.Invoke(this, scopeOpenedArgs);
 
             return scope;
         }
@@ -77,13 +80,19 @@ namespace Datadog.Trace
             Active = scope.Parent;
 
             // scope.Parent is null for distributed traces, so use scope.Span.Context.Parent
-            DistributedTracer.Instance.SetSpanContext(scope.Span.Context.Parent as SpanContext);
+            var parentSpanContext = scope.Span.Context.Parent as SpanContext;
+            DistributedTracer.Instance.SetSpanContext(parentSpanContext);
 
             SpanDeactivated?.Invoke(this, new SpanEventArgs(scope.Span));
 
             if (!isRootSpan)
             {
                 SpanActivated?.Invoke(this, new SpanEventArgs(scope.Parent.Span));
+            }
+
+            if (parentSpanContext is not null)
+            {
+                DistributedSpanActivated?.Invoke(this, new SpanEventArgs(parentSpanContext));
             }
 
             SpanClosed?.Invoke(this, new SpanEventArgs(scope.Span));

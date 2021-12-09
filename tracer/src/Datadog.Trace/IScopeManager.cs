@@ -18,6 +18,8 @@ namespace Datadog.Trace
 
         event EventHandler<SpanEventArgs> SpanActivated;
 
+        event EventHandler<SpanEventArgs> DistributedSpanActivated;
+
         event EventHandler<SpanEventArgs> SpanDeactivated;
 
         event EventHandler<SpanEventArgs> SpanClosed;

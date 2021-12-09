@@ -121,8 +121,8 @@ namespace Datadog.Trace.Logging
                 }
                 else if (_logProvider is FallbackNLogLogProvider)
                 {
-                    _scopeManager.SpanOpened += PushContext;
-                    _scopeManager.SpanClosed += PopContext;
+                    _scopeManager.DistributedSpanActivated += MapOnDistributedSpanActivated;
+                    _scopeManager.SpanDeactivated += MapOnSpanDeactivated;
                 }
                 else
                 {
@@ -161,14 +161,16 @@ namespace Datadog.Trace.Logging
         }
 #endif
 
-        public void PushContext(object sender, SpanEventArgs spanEventArgs)
+        public void MapOnDistributedSpanActivated(object sender, SpanEventArgs spanEventArgs)
         {
             if (!_executingIISPreStartInit && _safeToAddToMdc)
             {
+                _currentContext.Value?.Dispose();
+                _currentContext.Value = null;
+
                 try
                 {
-                    Context previousContext = _currentContext.Value;
-                    _currentContext.Value = new Context(previousContext, spanEventArgs, _logProvider, _env, _version, _defaultServiceName, spanEventArgs.TraceId.ToString(), spanEventArgs.SpanId.ToString());
+                    _currentContext.Value = new Context(_logProvider, _env, _version, _defaultServiceName, spanEventArgs.TraceId.ToString(), spanEventArgs.SpanId.ToString());
                 }
                 catch (Exception)
                 {
@@ -177,17 +179,13 @@ namespace Datadog.Trace.Logging
             }
         }
 
-        public void PopContext(object sender, SpanEventArgs spanEventArgs)
+        public void MapOnSpanDeactivated(object sender, SpanEventArgs spanEventArgs)
         {
-            if (!_executingIISPreStartInit
-                && _currentContext.Value is Context context)
+            // Logic: If I can modify the log context, then dispose last context and set to the latest distributed span
+            if (!_executingIISPreStartInit)
             {
-                if (spanEventArgs.SpanId == context.SpanId
-                    && spanEventArgs.TraceId == context.TraceId)
-                {
-                    context.Dispose();
-                    _currentContext.Value = context.PreviousContext;
-                }
+                _currentContext.Value?.Dispose();
+                _currentContext.Value = null;
             }
         }
 
@@ -234,8 +232,8 @@ namespace Datadog.Trace.Logging
             }
             else if (_logProvider is FallbackNLogLogProvider)
             {
-                _scopeManager.SpanOpened -= PushContext;
-                _scopeManager.SpanClosed -= PopContext;
+                _scopeManager.DistributedSpanActivated -= MapOnDistributedSpanActivated;
+                _scopeManager.SpanDeactivated -= MapOnSpanDeactivated;
             }
             else
             {
@@ -276,12 +274,8 @@ namespace Datadog.Trace.Logging
 
         private void RemoveAllCorrelationIdentifierContexts()
         {
-            Context currentContext = _currentContext.Value;
-            while (currentContext != null)
-            {
-                currentContext.Dispose();
-                currentContext = currentContext.PreviousContext;
-            }
+            _currentContext.Value?.Dispose();
+            _currentContext.Value = null;
 
             _currentEnricher.Value?.Dispose();
             _currentEnricher.Value = null;
@@ -325,21 +319,14 @@ namespace Datadog.Trace.Logging
         /// </summary>
         private class Context : IDisposable
         {
-            private readonly Context _previousContext;
-            private readonly ulong _spanIdValue;
-            private readonly ulong _traceIdValue;
             private readonly IDisposable _environment;
             private readonly IDisposable _version;
             private readonly IDisposable _service;
             private readonly IDisposable _traceId;
             private readonly IDisposable _spanId;
 
-            public Context(Context previousContext, SpanEventArgs span, ILogProvider logProvider, string environmentProperty, string versionProperty, string serviceProperty, string traceIdProperty, string spanIdProperty)
+            public Context(ILogProvider logProvider, string environmentProperty, string versionProperty, string serviceProperty, string traceIdProperty, string spanIdProperty)
             {
-                _previousContext = previousContext;
-                _spanIdValue = span.SpanId;
-                _traceIdValue = span.TraceId;
-
                 try
                 {
                     _environment = logProvider.OpenMappedContext(CorrelationIdentifier.EnvKey, environmentProperty);
@@ -355,12 +342,6 @@ namespace Datadog.Trace.Logging
                     throw;
                 }
             }
-
-            public Context PreviousContext => _previousContext;
-
-            public ulong SpanId => _spanIdValue;
-
-            public ulong TraceId => _traceIdValue;
 
             public void Dispose()
             {
