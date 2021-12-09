@@ -7,116 +7,7 @@ using Nuke.Common.IO;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.Git;
-using Nuke.Common.Tools.VSTest;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
-
-public enum ExplorationTestUseCase
-{
-    Debugger, ContinuousProfiler
-}
-
-public enum ExplorationTestName
-{
-    eShopOnWeb, protobuf, cake, swashbuckle, paket, ilspy
-}
-
-class ExplorationTestDescription
-{
-    public string Name { get; set; }
-
-    public string GitRepositoryUrl { get; set; }
-    public string GitRepositoryTag { get; set; }
-    public bool IsGitShallowCloneSupported { get; set; }
-    public bool IsGitSubmodulesRequired { get; set; }
-
-    public string PathToUnitTestProject { get; set; }
-    public bool IsTestedByVSTest { get; set; }
-    public string[] TestsToIgnore { get; set; }
-
-
-    public TargetFramework[] SupportedFrameworks { get; set; }
-
-    public bool IsFrameworkSupported(TargetFramework targetFramework)
-    {
-        return SupportedFrameworks.Any(framework => framework.Equals(targetFramework));
-    }
-
-    public static ExplorationTestDescription[] GetAllExplorationTestDescriptions()
-    {
-        return Enum.GetValues<ExplorationTestName>()
-                   .Select(GetExplorationTestDescription)
-                   .ToArray()
-            ;
-    }
-
-    public static ExplorationTestDescription GetExplorationTestDescription(ExplorationTestName name)
-    {
-        var description = name switch
-        {
-            ExplorationTestName.eShopOnWeb => new ExplorationTestDescription()
-            {
-                Name = "eShopOnWeb",
-                GitRepositoryUrl = "https://github.com/dotnet-architecture/eShopOnWeb.git",
-                GitRepositoryTag = "netcore2.1",
-                IsGitShallowCloneSupported = true,
-                PathToUnitTestProject = "tests/UnitTests",
-                SupportedFrameworks = new[] { TargetFramework.NETCOREAPP2_1 },
-            },
-            ExplorationTestName.protobuf => new ExplorationTestDescription()
-            {
-                Name = "protobuf",
-                GitRepositoryUrl = "https://github.com/protocolbuffers/protobuf.git",
-                GitRepositoryTag = "v3.19.1",
-                IsGitShallowCloneSupported = true,
-                IsGitSubmodulesRequired = true,
-                PathToUnitTestProject = "csharp/src/Google.Protobuf.Test",
-                SupportedFrameworks = new[] { TargetFramework.NETCOREAPP2_1, TargetFramework.NET5_0, },
-            },
-            ExplorationTestName.cake => new ExplorationTestDescription()
-            {
-                Name = "cake",
-                GitRepositoryUrl = "https://github.com/cake-build/cake.git",
-                GitRepositoryTag = "v1.3.0",
-                IsGitShallowCloneSupported = true,
-                PathToUnitTestProject = "src/Cake.Common.Tests",
-                SupportedFrameworks = new[] { TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0 },
-            },
-            ExplorationTestName.swashbuckle => new ExplorationTestDescription()
-            {
-                Name = "Swashbuckle.AspNetCore",
-                GitRepositoryUrl = "https://github.com/domaindrivendev/Swashbuckle.AspNetCore.git",
-                GitRepositoryTag = "v6.2.3",
-                IsGitShallowCloneSupported = true,
-                PathToUnitTestProject = "test/Swashbuckle.AspNetCore.SwaggerGen.Test",
-                SupportedFrameworks = new[] { TargetFramework.NET6_0 },
-            },
-            ExplorationTestName.paket => new ExplorationTestDescription()
-            {
-                Name = "Paket",
-                GitRepositoryUrl = "https://github.com/fsprojects/Paket.git",
-                GitRepositoryTag = "6.2.1",
-                IsGitShallowCloneSupported = true,
-                PathToUnitTestProject = "tests/Paket.Tests",
-                TestsToIgnore = new[] { "Loading assembly metadata works" },
-                SupportedFrameworks = new[] { TargetFramework.NET461, TargetFramework.NETCOREAPP3_1 },
-            },
-            ExplorationTestName.ilspy => new ExplorationTestDescription()
-            {
-                Name = "ILSpy",
-                GitRepositoryUrl = "https://github.com/icsharpcode/ILSpy.git",
-                GitRepositoryTag = "v7.1",
-                IsGitSubmodulesRequired = true,
-                PathToUnitTestProject = "ICSharpCode.Decompiler.Tests",
-                IsTestedByVSTest = true,
-                TestsToIgnore = new[] { "UseMc", "_net45", "ImplicitConversions", "ExplicitConversions", "ICSharpCode_Decompiler", "NewtonsoftJson_pcl_debug", "NRefactory_CSharp", "Random_TestCase_1", "AsyncForeach", "AsyncStreams", "AsyncUsing", "CS9_ExtensionGetEnumerator", "IndexRangeTest", "InterfaceTests", "UsingVariables" },
-                SupportedFrameworks = new[] { TargetFramework.NET461 },
-            },
-            _ => throw new ArgumentOutOfRangeException(nameof(name), name, null)
-        };
-
-        return description;
-    }
-}
 
 partial class Build
 {
@@ -308,3 +199,113 @@ partial class Build
         return projectPath;
     }
 }
+
+
+public enum ExplorationTestUseCase
+{
+    Debugger, ContinuousProfiler
+}
+
+public enum ExplorationTestName
+{
+    eShopOnWeb, protobuf, cake, swashbuckle, paket, ilspy
+}
+
+class ExplorationTestDescription
+{
+    public string Name { get; set; }
+
+    public string GitRepositoryUrl { get; set; }
+    public string GitRepositoryTag { get; set; }
+    public bool IsGitShallowCloneSupported { get; set; }
+    public bool IsGitSubmodulesRequired { get; set; }
+
+    public string PathToUnitTestProject { get; set; }
+    public bool IsTestedByVSTest { get; set; }
+    public string[] TestsToIgnore { get; set; }
+
+
+    public TargetFramework[] SupportedFrameworks { get; set; }
+
+    public bool IsFrameworkSupported(TargetFramework targetFramework)
+    {
+        return SupportedFrameworks.Any(framework => framework.Equals(targetFramework));
+    }
+
+    public static ExplorationTestDescription[] GetAllExplorationTestDescriptions()
+    {
+        return Enum.GetValues<ExplorationTestName>()
+                   .Select(GetExplorationTestDescription)
+                   .ToArray()
+            ;
+    }
+
+    public static ExplorationTestDescription GetExplorationTestDescription(ExplorationTestName name)
+    {
+        var description = name switch
+        {
+            ExplorationTestName.eShopOnWeb => new ExplorationTestDescription()
+            {
+                Name = "eShopOnWeb",
+                GitRepositoryUrl = "https://github.com/dotnet-architecture/eShopOnWeb.git",
+                GitRepositoryTag = "netcore2.1",
+                IsGitShallowCloneSupported = true,
+                PathToUnitTestProject = "tests/UnitTests",
+                SupportedFrameworks = new[] { TargetFramework.NETCOREAPP2_1 },
+            },
+            ExplorationTestName.protobuf => new ExplorationTestDescription()
+            {
+                Name = "protobuf",
+                GitRepositoryUrl = "https://github.com/protocolbuffers/protobuf.git",
+                GitRepositoryTag = "v3.19.1",
+                IsGitShallowCloneSupported = true,
+                IsGitSubmodulesRequired = true,
+                PathToUnitTestProject = "csharp/src/Google.Protobuf.Test",
+                SupportedFrameworks = new[] { TargetFramework.NETCOREAPP2_1, TargetFramework.NET5_0, },
+            },
+            ExplorationTestName.cake => new ExplorationTestDescription()
+            {
+                Name = "cake",
+                GitRepositoryUrl = "https://github.com/cake-build/cake.git",
+                GitRepositoryTag = "v1.3.0",
+                IsGitShallowCloneSupported = true,
+                PathToUnitTestProject = "src/Cake.Common.Tests",
+                SupportedFrameworks = new[] { TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0 },
+            },
+            ExplorationTestName.swashbuckle => new ExplorationTestDescription()
+            {
+                Name = "Swashbuckle.AspNetCore",
+                GitRepositoryUrl = "https://github.com/domaindrivendev/Swashbuckle.AspNetCore.git",
+                GitRepositoryTag = "v6.2.3",
+                IsGitShallowCloneSupported = true,
+                PathToUnitTestProject = "test/Swashbuckle.AspNetCore.SwaggerGen.Test",
+                SupportedFrameworks = new[] { TargetFramework.NET6_0 },
+            },
+            ExplorationTestName.paket => new ExplorationTestDescription()
+            {
+                Name = "Paket",
+                GitRepositoryUrl = "https://github.com/fsprojects/Paket.git",
+                GitRepositoryTag = "6.2.1",
+                IsGitShallowCloneSupported = true,
+                PathToUnitTestProject = "tests/Paket.Tests",
+                TestsToIgnore = new[] { "Loading assembly metadata works" },
+                SupportedFrameworks = new[] { TargetFramework.NET461, TargetFramework.NETCOREAPP3_1 },
+            },
+            ExplorationTestName.ilspy => new ExplorationTestDescription()
+            {
+                Name = "ILSpy",
+                GitRepositoryUrl = "https://github.com/icsharpcode/ILSpy.git",
+                GitRepositoryTag = "v7.1",
+                IsGitSubmodulesRequired = true,
+                PathToUnitTestProject = "ICSharpCode.Decompiler.Tests",
+                IsTestedByVSTest = true,
+                TestsToIgnore = new[] { "UseMc", "_net45", "ImplicitConversions", "ExplicitConversions", "ICSharpCode_Decompiler", "NewtonsoftJson_pcl_debug", "NRefactory_CSharp", "Random_TestCase_1", "AsyncForeach", "AsyncStreams", "AsyncUsing", "CS9_ExtensionGetEnumerator", "IndexRangeTest", "InterfaceTests", "UsingVariables" },
+                SupportedFrameworks = new[] { TargetFramework.NET461 },
+            },
+            _ => throw new ArgumentOutOfRangeException(nameof(name), name, null)
+        };
+
+        return description;
+    }
+}
+
