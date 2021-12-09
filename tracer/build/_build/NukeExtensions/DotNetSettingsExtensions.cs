@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text;
 using Nuke.Common;
 using Nuke.Common.IO;
-using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.MSBuild;
@@ -77,7 +78,7 @@ internal static partial class DotNetSettingsExtensions
 
         return settings;
     }
-    
+
     public static T EnableNoDependencies<T>(this T settings)
         where T: MSBuildSettings
     {
@@ -125,5 +126,39 @@ internal static partial class DotNetSettingsExtensions
         }
 
         return settings.SetProcessToolPath(dotnetPath);
+    }
+
+    /// <summary>
+    /// Set filters for tests to ignore
+    /// </summary>
+    public static T SetIgnoreFilter<T>(this T settings, string[] testsToIgnore)
+        where T : DotNetTestSettings
+    {
+        if (testsToIgnore != null && testsToIgnore.Any())
+        {
+            var sb = new StringBuilder();
+            foreach (var testToIgnore in testsToIgnore)
+            {
+                sb.Append("FullyQualifiedName!~");
+                sb.Append(testToIgnore);
+                sb.Append(value: '&');
+            }
+
+            sb.Remove(sb.Length - 1, 1);
+
+            settings = settings.SetFilter(sb.ToString());
+        }
+
+        return settings;
+    }
+
+    public static DotNetTestSettings WithMemoryDumpAfter(this DotNetTestSettings settings, int timeoutInMinutes)
+    {
+        return settings.SetProcessArgumentConfigurator(
+            args =>
+                args.Add("--blame-hang")
+                    .Add("--blame-hang-dump-type full")
+                    .Add($"--blame-hang-timeout {timeoutInMinutes}m")
+        );
     }
 }

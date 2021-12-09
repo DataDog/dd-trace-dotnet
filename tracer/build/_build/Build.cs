@@ -116,6 +116,7 @@ partial class Build : NukeBuild
             EnsureCleanDirectory(NativeProfilerProject.Directory / "build");
             EnsureCleanDirectory(NativeProfilerProject.Directory / "deps");
             EnsureCleanDirectory(BuildDataDirectory);
+            EnsureCleanDirectory(ExplorationTestsDirectory);
             DeleteFile(WindowsTracerHomeZip);
 
             void DeleteReparsePoints(string path)
