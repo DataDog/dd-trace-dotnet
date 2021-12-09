@@ -594,6 +594,19 @@ stages:
     - script: tracer\build.cmd BuildWindowsIntegrationTests -Framework $(framework)
       displayName: BuildWindowsIntegrationTests
 
+    - powershell: |
+        $Iterations = 5
+        do {
+            Try{
+              docker-compose pull --include-deps IntegrationTests.IIS
+              $Iterations = 0
+          } catch { 
+            echo "Retrying... "
+            Start-Sleep -s 1
+            $Iterations = $Iterations - 1 }
+        } while ($Iterations -gt 0)
+      displayName: docker-compose pull IntegrationTests.IIS
+
     - task: DockerCompose@0
       displayName: docker-compose build IIS containers
       inputs:
@@ -702,6 +715,16 @@ stages:
         baseImage: $(baseImage)
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework)"
 
+    - script: |
+        # retry up to 5 times to pull the docker images
+        for i in 1 2 3 4 5; do 
+          docker-compose pull --include-deps IntegrationTests && break || sleep 5; 
+        done
+      env:
+        baseImage: $(baseImage)
+        framework: $(publishTargetFramework)
+      displayName: docker-compose pull IntegrationTests
+
     - task: DockerCompose@0
       displayName: docker-compose build IntegrationTests
       env:
@@ -792,6 +815,16 @@ stages:
             build: true
             baseImage: $(baseImage)
             command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework)"
+
+        - script: |
+            # retry up to 5 times to pull the docker images
+            for i in 1 2 3 4 5; do 
+              docker-compose pull --include-deps IntegrationTests.ARM64 && break || sleep 5; 
+            done
+          env:
+            baseImage: $(baseImage)
+            framework: $(publishTargetFramework)
+          displayName: docker-compose pull IntegrationTests
 
         - task: DockerCompose@0
           displayName: docker-compose build IntegrationTests
