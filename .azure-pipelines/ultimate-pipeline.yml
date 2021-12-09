@@ -889,13 +889,6 @@ stages:
     - script: tracer\build.cmd RunExplorationTests_$(explorationTestUseCase) -ExplorationTestName $(explorationTestName)
       displayName: RunExplorationTest
 
-    - task: PublishTestResults@2
-      displayName: publish test results
-      inputs:
-        testResultsFormat: VSTest
-        testResultsFiles: tracer/build_data/results/**/*.trx
-      condition: succeededOrFailed()
-
     - publish: tracer/build_data
       displayName: Uploading exploration_tests_windows tracer logs
       artifact: exploration_tests_windows_tracer_logs_$(explorationTestUseCase)_$(explorationTestName)
