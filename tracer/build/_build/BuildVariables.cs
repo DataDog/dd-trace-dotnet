@@ -23,7 +23,6 @@ public static class BuildVariables
         envVars.Add("COR_PROFILER_PATH_64", tracerHomeDirectory / "win-x64" / "Datadog.Trace.ClrProfiler.Native.dll");
         envVars.Add("CORECLR_ENABLE_PROFILING", "1");
         envVars.Add("CORECLR_PROFILER", "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}");
-        envVars.Add("DD_INTEGRATIONS", tracerHomeDirectory / "integrations.json");
         envVars.Add("DD_DOTNET_TRACER_HOME", tracerHomeDirectory);
 
 
