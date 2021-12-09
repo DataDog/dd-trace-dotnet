@@ -21,6 +21,7 @@ namespace Datadog.Trace.ClrProfiler
 
         static DistributedTracer()
         {
+            /*
             try
             {
                 var parent = GetDistributedTracer();
@@ -44,6 +45,9 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, "Error while building the tracer, falling back to automatic");
                 Instance = new AutomaticTracer();
             }
+            */
+
+            Instance = new DummyInstance();
         }
 
         internal static IDistributedTracer Instance { get; private set; }
@@ -61,6 +65,32 @@ namespace Datadog.Trace.ClrProfiler
         internal static void SetInstanceOnlyForTests(IDistributedTracer instance)
         {
             Instance = instance;
+        }
+
+        private class DummyInstance : IDistributedTracer
+        {
+            public SpanContext GetSpanContext()
+            {
+                return null;
+            }
+
+            public IScope GetActiveScope()
+            {
+                return null;
+            }
+
+            public void SetSpanContext(SpanContext value)
+            {
+            }
+
+            public void LockSamplingPriority()
+            {
+            }
+
+            public SamplingPriority? TrySetSamplingPriority(SamplingPriority? samplingPriority)
+            {
+                return samplingPriority;
+            }
         }
     }
 }
