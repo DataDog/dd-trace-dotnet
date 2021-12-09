@@ -75,12 +75,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             {
                 returnValue = _continuationGenerator.SetContinuation(instance, returnValue, exception, state);
 
-                // Restore previous scope if there is a continuation
+                // Restore previous scope and the previous DistributedTrace if there is a continuation
                 // This is used to mimic the ExecutionContext copy from the StateMachine
                 if (Tracer.Instance.ScopeManager is IScopeRawAccess rawAccess)
                 {
                     rawAccess.Active = state.PreviousScope;
-                    // Also set the distributed span context
                     DistributedTracer.Instance.SetSpanContextRaw(state.PreviousDistributedSpanContext);
                 }
             }
