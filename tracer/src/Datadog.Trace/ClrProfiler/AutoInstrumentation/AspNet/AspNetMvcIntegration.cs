@@ -25,6 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         internal const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetMvcIntegration";
 
         private const string OperationName = "aspnet-mvc.request";
+        private const string ChildActionOperationName = "aspnet-mvc.request.child-action";
 
         private const string RouteCollectionRouteTypeName = "System.Web.Mvc.Routing.RouteCollectionRoute";
 
@@ -62,6 +63,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     Route route = routeData?.Route as Route;
                     RouteValueDictionary routeValues = routeData?.Values;
                     bool wasAttributeRouted = false;
+                    bool isChildAction = controllerContext.ParentActionViewContext.RouteData?.Values["controller"] is not null;
+
+                    if (isChildAction && newResourceNamesEnabled)
+                    {
+                        // For child actions, we want to stick to what was requested in the http request.
+                        // And the child action being a child, then we have already computed the resourcename.
+                        resourceName = httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] as string;
+                    }
 
                     if (route == null && routeData?.Route.GetType().FullName == RouteCollectionRouteTypeName)
                     {
