@@ -857,7 +857,7 @@ stages:
       - bash: |
           matrix="{"
           for explorationTestUseCase in "debugger" "continuousProfiler"; do
-            for explorationTestName in "eshoponweb" "protobuf" "cake" "swashbuckle" "paket" "ilspy"; do
+            for explorationTestName in "eshoponweb" "protobuf" "cake" "swashbuckle" "paket" ; do
               name="${explorationTestUseCase//./_}_${explorationTestName}"
               matrix="${matrix} '${name}':"
               matrix="${matrix} { 'explorationTestUseCase': '${explorationTestUseCase}', "
