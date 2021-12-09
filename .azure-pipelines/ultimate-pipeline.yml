@@ -736,13 +736,6 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
-    - task: PublishTestResults@2
-      displayName: publish test results
-      inputs:
-        testResultsFormat: VSTest
-        testResultsFiles: tracer/build_data/results/**/*.trx
-      condition: succeededOrFailed()
-
     - template: steps/run-in-docker.yml
       parameters:
         baseImage: $(baseImage)
