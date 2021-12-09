@@ -9,6 +9,8 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal interface IAutomaticTracer : ICommonTracer
     {
+        object GetAutomaticActiveScope();
+
         IReadOnlyDictionary<string, string> GetDistributedTrace();
 
         void SetDistributedTrace(IReadOnlyDictionary<string, string> trace);

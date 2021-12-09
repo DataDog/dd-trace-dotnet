@@ -5,10 +5,15 @@
 
 #if NETFRAMEWORK
 
+using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -112,6 +117,45 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
 
             // The sampling priority should be UserKeep for all spans
             spans.Should().OnlyContain(s => VerifySpan(s, parentTrace));
+        }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("LoadFromGAC", "True")]
+
+        public async Task ParentScope()
+        {
+            // aspnet.request + aspnet-mvc.request
+            const int expectedSpans = 2;
+
+            var testStart = DateTime.UtcNow;
+            using var client = new HttpClient();
+
+            var response = await client.GetAsync($"http://localhost:{_iisFixture.HttpPort}/home/parentScope");
+            var content = await response.Content.ReadAsStringAsync();
+
+            response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK, $"server returned an error: {content}");
+
+            var spans = _iisFixture.Agent.WaitForSpans(expectedSpans, minDateTime: testStart, returnAllOperations: true);
+
+            spans.Should().HaveCount(expectedSpans);
+
+            var mvcSpan = spans.Single(s => s.Name == "aspnet-mvc.request");
+
+            mvcSpan.Tags.Should().Contain(new KeyValuePair<string, string>("Test", "OK"));
+
+            var rootSpan = spans.Single(s => s.Name == "aspnet.request");
+
+            rootSpan.Metrics.Should().Contain(new KeyValuePair<string, double>(Metrics.SamplingPriority, (double)SamplingPriority.UserKeep));
+
+            var result = JObject.Parse(content);
+
+            result.Should().NotBeNull();
+
+            result["OperationName"].Value<string>().Should().Be(mvcSpan.Name);
+            result["ResourceName"].Value<string>().Should().Be(mvcSpan.Resource);
+            result["ServiceName"].Value<string>().Should().Be(mvcSpan.Service);
         }
 
         private static bool VerifySpan(MockTracerAgent.Span span, bool parentTrace)

@@ -4,17 +4,50 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler
 {
     internal class ManualTracer : CommonTracer, IDistributedTracer
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ManualTracer));
+
         private readonly IAutomaticTracer _parent;
 
         internal ManualTracer(IAutomaticTracer parent)
         {
             _parent = parent ?? throw new ArgumentNullException(nameof(parent));
             _parent.Register(this);
+        }
+
+        IScope IDistributedTracer.GetActiveScope()
+        {
+            var activeTrace = _parent.GetDistributedTrace();
+
+            if (activeTrace is SpanContext)
+            {
+                // This is a local trace, no need to mock anything
+                return null;
+            }
+
+            // We don't own the active trace, get the scope from the parent and mock it
+            var activeScope = _parent.GetAutomaticActiveScope();
+
+            if (activeScope is null)
+            {
+                return null;
+            }
+
+            try
+            {
+                return activeScope.DuckCast<IScope>();
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Error while trying to ducktype the parent scope");
+                return null;
+            }
         }
 
         SpanContext IDistributedTracer.GetSpanContext()

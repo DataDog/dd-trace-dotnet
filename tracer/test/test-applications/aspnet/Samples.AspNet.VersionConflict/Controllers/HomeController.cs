@@ -5,12 +5,14 @@ using System.Threading;
 using System.Reflection;
 using System.Web.Mvc;
 using Datadog.Trace;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Samples.AspNet.VersionConflict.Controllers
 {
     public class HomeController : Controller
     {
-        private static readonly Version _manualTracingVersion = new Version("2.255.251.0");
+        private static readonly Version _manualTracingVersion = new Version("2.255.0.0");
 
         public ActionResult Index()
         {
@@ -26,11 +28,33 @@ namespace Samples.AspNet.VersionConflict.Controllers
             return RedirectToAction("Index");
         }
 
+        public ActionResult ParentScope()
+        {
+            var scope = Tracer.Instance.ActiveScope;
+
+            if (scope == null)
+            {
+                throw new Exception("Tracer.Instance.ActiveScope is null");
+            }
+
+            scope.Span.SetTag("Test", "OK");
+
+            var tagValue = scope.Span.GetTag("Test");
+
+            if (tagValue != "OK")
+            {
+                throw new Exception("Roundtrip tag test failed: " + (tagValue ?? "{null}"));
+            }
+
+            scope.Span.SetTag(Tags.SamplingPriority, "UserKeep");
+
+            return Content(JsonConvert.SerializeObject(scope.Span, typeof(ISpan), new JsonSerializerSettings()));
+        }
+
         public ActionResult SendRequest()
         {
-            int result = 0;
+            int result;
 
-            // Create two nested manual spans to make sure the parent-child relationship is maintained
             using (Tracer.Instance.StartActive("Manual"))
             {
                 using (var innerScope = Tracer.Instance.StartActive("Manual-Inner"))
