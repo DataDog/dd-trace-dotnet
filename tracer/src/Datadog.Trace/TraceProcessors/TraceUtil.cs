@@ -22,7 +22,7 @@ namespace Datadog.Trace.TraceProcessors
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TruncateUTF8(ref string value, int limit)
         {
-            if (Encoding.GetByteCount(value) <= limit)
+            if (string.IsNullOrEmpty(value) || Encoding.GetByteCount(value) <= limit)
             {
                 return false;
             }
@@ -55,9 +55,9 @@ namespace Datadog.Trace.TraceProcessors
         // https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/traceutil/normalize.go#L93-L204
         public static string NormalizeTag(string value)
         {
-            if (Encoding.GetByteCount(value) == 0)
+            if (string.IsNullOrEmpty(value) || Encoding.GetByteCount(value) == 0)
             {
-                return string.Empty;
+                return value;
             }
 
             char[] charArray = null;

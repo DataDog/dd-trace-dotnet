@@ -414,11 +414,21 @@ namespace Datadog.Trace
             {
                 if (processor is not null)
                 {
-                    trace = processor.Process(trace);
+                    try
+                    {
+                        trace = processor.Process(trace);
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Error(e, e.Message);
+                    }
                 }
             }
 
-            AgentWriter.WriteTrace(trace);
+            if (trace.Count > 0)
+            {
+                AgentWriter.WriteTrace(trace);
+            }
         }
     }
 }

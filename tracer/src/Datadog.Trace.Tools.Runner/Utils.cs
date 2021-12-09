@@ -297,7 +297,7 @@ namespace Datadog.Trace.Tools.Runner
             var globalSettings = GlobalSettings.CreateDefaultConfigurationSource();
             globalSettings.Add(new NameValueConfigurationSource(env));
             var tracerSettings = new TracerSettings(globalSettings);
-            var agentWriter = new CIAgentWriter(tracerSettings.Build(), new CISampler());
+            var agentWriter = new CIAgentlessWriter(tracerSettings.Build(), new CISampler());
 
             try
             {

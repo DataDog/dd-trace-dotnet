@@ -15,10 +15,11 @@ namespace Datadog.Trace.Ci
     internal class CITracerManager : TracerManager, ILockedTracer
     {
         public CITracerManager(ImmutableTracerSettings settings, IAgentWriter agentWriter, ISampler sampler, IScopeManager scopeManager, IDogStatsd statsd, RuntimeMetricsWriter runtimeMetricsWriter, LibLogScopeEventSubscriber libLogSubscriber, string defaultServiceName)
-            : base(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetricsWriter, libLogSubscriber, defaultServiceName, new TraceProcessors.ITraceProcessor[]
+            : base(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetricsWriter, libLogSubscriber, defaultServiceName, new Trace.TraceProcessors.ITraceProcessor[]
             {
-                new TraceProcessors.NormalizerTraceProcessor(),
-                new TraceProcessors.TruncatorTraceProcessor(),
+                new Trace.TraceProcessors.NormalizerTraceProcessor(),
+                new Trace.TraceProcessors.TruncatorTraceProcessor(),
+                new TraceProcessors.OriginTagTraceProcessor(settings.PartialFlushEnabled),
             })
         {
         }
