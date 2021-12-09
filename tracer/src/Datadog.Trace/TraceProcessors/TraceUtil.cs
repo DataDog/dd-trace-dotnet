@@ -57,7 +57,7 @@ namespace Datadog.Trace.TraceProcessors
                 return string.Empty;
             }
 
-            var charArray = value.ToCharArray();
+            char[] charArray = null;
             char[] upArray = null;
             char[] lowArray = null;
             int trim = 0;
@@ -66,9 +66,9 @@ namespace Datadog.Trace.TraceProcessors
             int jump = 0;
             int i = 0;
 
-            for (; i < charArray.Length; i++)
+            for (; i < value.Length; i++)
             {
-                var c = charArray[i];
+                var c = value[i];
                 jump = 1;
 
                 if ((c >= 'a' && c <= 'z') || c == ':')
@@ -79,6 +79,11 @@ namespace Datadog.Trace.TraceProcessors
 
                 if (c >= 'A' && c <= 'Z')
                 {
+                    if (charArray is null)
+                    {
+                        charArray = value.ToCharArray();
+                    }
+
                     charArray[i] = (char)(((int)value[i]) + ((int)'a' - (int)'A'));
                     chars++;
                     goto end;
@@ -100,6 +105,11 @@ namespace Datadog.Trace.TraceProcessors
                     lowArray[0] = char.ToLowerInvariant(c);
                     if (Encoding.GetByteCount(upArray) == Encoding.GetByteCount(lowArray))
                     {
+                        if (charArray is null)
+                        {
+                            charArray = value.ToCharArray();
+                        }
+
                         charArray[i] = lowArray[0];
                         c = lowArray[0];
                     }
@@ -152,9 +162,15 @@ namespace Datadog.Trace.TraceProcessors
 
             if (cuts is null || cuts.Count == 0)
             {
+                if (charArray is null)
+                {
+                    return value.Substring(trim, i + jump - trim);
+                }
+
                 return new string(charArray, trim, i + jump - trim);
             }
 
+            charArray ??= value.ToCharArray();
             var segment = new ArraySlice<char>(charArray, trim, i + jump - trim);
             int delta = trim;
             foreach (var cut in cuts)
@@ -182,6 +198,7 @@ namespace Datadog.Trace.TraceProcessors
             return new string(segment.Array, segment.Offset, segment.Count);
         }
 
+        // We cannot use Span<T> and ArraySegment<T> is readonly :(
         private readonly ref struct ArraySlice<T>
         {
             public readonly T[] Array;
