@@ -66,12 +66,7 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
-        void IDistributedTracer.SetSpanContextRaw(IReadOnlyDictionary<string, string> value)
-        {
-            _parent.SetDistributedTrace(value);
-        }
-
-        void IDistributedTracer.SetSpanContext(SpanContext value)
+        void IDistributedTracer.SetSpanContext(IReadOnlyDictionary<string, string> value)
         {
             _parent.SetDistributedTrace(value);
         }

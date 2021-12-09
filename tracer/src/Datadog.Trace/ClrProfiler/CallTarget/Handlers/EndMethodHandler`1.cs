@@ -80,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 if (Tracer.Instance.ScopeManager is IScopeRawAccess rawAccess)
                 {
                     rawAccess.Active = state.PreviousScope;
-                    DistributedTracer.Instance.SetSpanContextRaw(state.PreviousDistributedSpanContext);
+                    DistributedTracer.Instance.SetSpanContext(state.PreviousDistributedSpanContext);
                 }
             }
 

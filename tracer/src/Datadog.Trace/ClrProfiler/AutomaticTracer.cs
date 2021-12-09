@@ -52,16 +52,7 @@ namespace Datadog.Trace.ClrProfiler
             return SpanContextPropagator.Instance.Extract(value);
         }
 
-        void IDistributedTracer.SetSpanContextRaw(IReadOnlyDictionary<string, string> value)
-        {
-            // This is a performance optimization. See comment in GetDistributedTrace() about potential race condition
-            if (_child != null)
-            {
-                DistributedTrace.Value = value;
-            }
-        }
-
-        void IDistributedTracer.SetSpanContext(SpanContext value)
+        void IDistributedTracer.SetSpanContext(IReadOnlyDictionary<string, string> value)
         {
             // This is a performance optimization. See comment in GetDistributedTrace() about potential race condition
             if (_child != null)
