@@ -264,15 +264,8 @@ namespace Datadog.Trace.Logging
             //  - NLog
             //  - Log4net
 
-            // Register the custom Serilog provider
             LogProvider.LogProviderResolvers.Insert(
                 0,
-                Tuple.Create<LogProvider.IsLoggerAvailable, LogProvider.CreateLogProvider>(
-                    CustomSerilogLogProvider.IsLoggerAvailable,
-                    () => new CustomSerilogLogProvider()));
-
-            LogProvider.LogProviderResolvers.Insert(
-                1,
                 Tuple.Create<LogProvider.IsLoggerAvailable, LogProvider.CreateLogProvider>(
                     NoOpSerilogLogProvider.IsLoggerAvailable,
                     () => new NoOpSerilogLogProvider()));
@@ -281,7 +274,7 @@ namespace Datadog.Trace.Logging
             // Automatic logs injection will be handled by automatic instrumentation so make
             // sure that calls to the LibLog Log Provider result in no-ops
             LogProvider.LogProviderResolvers.Insert(
-                2,
+                1,
                 Tuple.Create<LogProvider.IsLoggerAvailable, LogProvider.CreateLogProvider>(
                     NoOpNLogLogProvider.IsLoggerAvailable,
                     () => new NoOpNLogLogProvider()));
@@ -290,7 +283,7 @@ namespace Datadog.Trace.Logging
             // Automatic logs injection will be handled by automatic instrumentation so make
             // sure that calls to the LibLog Log Provider result in no-ops
             LogProvider.LogProviderResolvers.Insert(
-                3,
+                2,
                 Tuple.Create<LogProvider.IsLoggerAvailable, LogProvider.CreateLogProvider>(
                     NoOpLog4NetLogProvider.IsLoggerAvailable,
                     () => new NoOpLog4NetLogProvider()));
@@ -303,18 +296,6 @@ namespace Datadog.Trace.Logging
 
         private void RemoveLastCorrelationIdentifierContext()
         {
-            if (_logProvider is CustomSerilogLogProvider)
-            {
-                if (_scopeManager.Active == null)
-                {
-                    // We closed the last span
-                    _currentEnricher.Value?.Dispose();
-                    _currentEnricher.Value = null;
-                }
-
-                return;
-            }
-
             // TODO: Debug logs
             for (int i = 0; i < _numPropertiesSetOnSpanEvent; i++)
             {
