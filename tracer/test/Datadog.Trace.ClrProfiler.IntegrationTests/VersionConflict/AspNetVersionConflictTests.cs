@@ -112,6 +112,40 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
                 Output.WriteLine($"{span.Name} - {span.TraceId} - {span.SpanId} - {span.ParentId} - {span.Resource} - {samplingPriority}");
             }
 
+            // Validate the correct hierarchy of spans
+            var rootSpan = spans.Single(s => s.ParentId == null && s.Name == "aspnet.request");
+            var mvcSpan = spans.Single(s => s.ParentId == rootSpan.SpanId);
+            mvcSpan.TraceId.Should().Be(rootSpan.TraceId);
+            mvcSpan.Name.Should().Be("aspnet-mvc.request");
+
+            // The manual span will be in the same trace when parentTrace=true,
+            // or the start of a new trace when parentTrace=false
+            var manualSpan = spans.Single(s => s.Name == "Manual");
+            var secondTraceId = parentTrace ? rootSpan.TraceId : manualSpan.TraceId;
+
+            manualSpan.TraceId.Should().Be(secondTraceId);
+            manualSpan.Name.Should().Be("Manual");
+
+            var nestedSpans = spans.Where(s => s.ParentId == manualSpan.SpanId).OrderBy(s => s.Start).ToArray();
+            nestedSpans.Should().HaveCount(3);
+
+            // Validate the first http request and its subspans
+            var firstHttpSpan = nestedSpans[0];
+
+            firstHttpSpan.TraceId.Should().Be(secondTraceId);
+            firstHttpSpan.Name.Should().Be("http.request");
+
+            // Validate the second http request and its subspans
+            var secondHttpSpan = nestedSpans[1];
+
+            secondHttpSpan.TraceId.Should().Be(secondTraceId);
+            secondHttpSpan.Name.Should().Be("http.request");
+
+            var manualInnerSpan = nestedSpans[2];
+
+            manualInnerSpan.TraceId.Should().Be(secondTraceId);
+            manualInnerSpan.Name.Should().Be("Child");
+
             // Make sure there is no extra root span
             spans.Where(s => s.ParentId == null).Should().HaveCount(parentTrace ? 1 : 2);
 
