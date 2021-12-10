@@ -88,7 +88,7 @@ bool IsAzureFunctionsEnabled()
 
 bool IsVersionCompatibilityEnabled()
 {
-    ToBooleanWithDefault(GetEnvironmentValue(environment::internal_version_compatibility), true);
+    ToBooleanWithDefault(GetEnvironmentValue(environment::internal_version_compatibility), false);
 }
 
 } // namespace trace

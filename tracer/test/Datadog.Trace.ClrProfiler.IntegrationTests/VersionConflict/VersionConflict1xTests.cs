@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
         {
         }
 
-        [Fact]
+        [Fact(Skip = "Version conflict temporarily disabled")]
         public void SubmitTraces()
         {
             // 1 manual span + 1 http span
