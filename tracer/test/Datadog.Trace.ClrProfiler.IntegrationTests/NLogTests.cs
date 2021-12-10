@@ -69,18 +69,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             if (packageVersion is null or "")
             {
-                // pre 4.0 can't write to text file
+#if NETFRAMEWORK
+                packageVersion = "4.1.2";
+#else
+                packageVersion = "4.5.0";
+#endif
+            }
+
+            var version = new Version(packageVersion);
+            if (version < new Version("4.0.0"))
+            {
+                // pre 4.0 can't write to json file
                 return new[] { _textFile };
             }
 
-            var unTracedLogType = new Version(packageVersion) switch
+            var unTracedLogType = logsInjectionEnabled switch
             {
                 // When logs injection is enabled, untraced logs get env, service etc
-                { } x when x >= new Version("4.1.0") && logsInjectionEnabled => UnTracedLogTypes.EnvServiceTracingPropertiesOnly,
+                true => UnTracedLogTypes.EnvServiceTracingPropertiesOnly,
                 // When logs injection is enabled, no enrichment
-                { } x when x >= new Version("4.1.0") && !logsInjectionEnabled => UnTracedLogTypes.None,
-                // older version of nlog always adds empty properties
-                _ => UnTracedLogTypes.EmptyProperties
+                false => UnTracedLogTypes.None,
             };
 
             return new[] { _textFile, GetJsonTestFile(unTracedLogType) };
