@@ -27,17 +27,17 @@ commit="--application.source.branchOrCommit #$commit_sha"
 if [ "$1" = "linux" ]; then
     echo "Running Linux  x64 throughput tests"
 
-    crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario baseline --profile linux --json baseline_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_noattack --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
-    dd-trace --crank-import="baseline_linux.json"
-    rm baseline_linux.json
+    crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_baseline --profile linux --json appsec_baseline.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_baseline --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
+    dd-trace --crank-import="appsec_baseline.json"
+    rm appsec_baseline.json
 
-    crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario calltarget --profile linux --json calltarget_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=calltarget --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
-    dd-trace --crank-import="calltarget_linux.json"
-    rm calltarget_linux.json
+    crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_noattack --profile linux --json appsec_noattack.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_noattack --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
+    dd-trace --crank-import="appsec_noattack.json"
+    rm appsec_noattack.json
 
-    crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario calltarget_ngen --profile linux --json calltarget_ngen_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=calltarget_ngen --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
-    dd-trace --crank-import="calltarget_ngen_linux.json"
-    rm calltarget_ngen_linux.json
+    crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_attack_noblocking --profile linux --json appsec_attack_noblocking.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_attack_noblocking --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
+    dd-trace --crank-import="appsec_attack_noblocking.json"
+    rm appsec_attack_noblocking.json
 
 else
     echo "Unknown argument $1"

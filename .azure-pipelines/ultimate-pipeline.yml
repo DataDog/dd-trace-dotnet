@@ -1285,7 +1285,7 @@ stages:
 
 - stage: throughput_appsec
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
-  dependsOn: [build_linux, build_arm64, build_windows]
+  dependsOn: [build_linux]
   pool: Throughput-AppSec
   jobs:
   - template: steps/update-github-status-jobs.yml
