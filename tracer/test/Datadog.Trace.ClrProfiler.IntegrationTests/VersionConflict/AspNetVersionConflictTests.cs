@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
             _iisFixture.TryStartIis(this, IisAppType.AspNetClassic);
         }
 
-        [SkippableFact(Skip = "Version conflict temporarily disabled")]
+        [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("LoadFromGAC", "True")]
@@ -86,7 +86,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
             httpSpan.Name.Should().Be("http.request");
         }
 
-        [SkippableTheory(Skip = "Version conflict temporarily disabled")]
+        [SkippableTheory]
         [InlineData(true)]
         [InlineData(false)]
         [Trait("Category", "EndToEnd")]
@@ -153,7 +153,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
             spans.Should().OnlyContain(s => VerifySpan(s, parentTrace));
         }
 
-        [SkippableFact(Skip = "Version conflict temporarily disabled")]
+        [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("LoadFromGAC", "True")]
