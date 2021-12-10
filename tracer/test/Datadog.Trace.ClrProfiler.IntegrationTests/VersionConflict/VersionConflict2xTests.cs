@@ -36,13 +36,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
 
                 rootSpan.Name.Should().Be("Manual");
                 rootSpan.Metrics.Should().ContainKey(Metrics.SamplingPriority);
-                rootSpan.Metrics[Metrics.SamplingPriority].Should().Be((double)SamplingPriority.UserKeep);
+                rootSpan.Metrics[Metrics.SamplingPriority].Should().Be((double)SamplingPriority.UserReject);
 
                 var httpSpans = spans.Where(s => s.Name == "http.request").ToList();
 
-                httpSpans.Should().HaveCount(2);
-                httpSpans.Should().OnlyContain(
-                    s => !s.Metrics.ContainsKey(Metrics.SamplingPriority) || s.Metrics[Metrics.SamplingPriority] == (double)SamplingPriority.UserKeep);
+                httpSpans.Should()
+                    .HaveCount(2)
+                    .And.OnlyContain(s => s.ParentId == rootSpan.SpanId && s.TraceId == rootSpan.TraceId)
+                    .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == (double)SamplingPriority.UserKeep)
+                    .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == (double)SamplingPriority.UserReject);
             }
         }
     }

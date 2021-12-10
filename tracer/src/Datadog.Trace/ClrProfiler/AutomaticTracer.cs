@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using Datadog.Trace.DuckTyping;
@@ -59,6 +60,11 @@ namespace Datadog.Trace.ClrProfiler
             {
                 DistributedTrace.Value = value;
             }
+        }
+
+        SamplingPriority? IDistributedTracer.GetSamplingPriority()
+        {
+            return (SamplingPriority?)_child?.GetSamplingPriority();
         }
 
         void IDistributedTracer.SetSamplingPriority(SamplingPriority? samplingPriority)

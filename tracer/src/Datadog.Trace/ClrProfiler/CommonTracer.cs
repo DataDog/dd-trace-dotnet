@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.Logging;
-
 namespace Datadog.Trace.ClrProfiler
 {
     /// <summary>
@@ -13,6 +11,11 @@ namespace Datadog.Trace.ClrProfiler
     /// </summary>
     internal abstract class CommonTracer : ICommonTracer
     {
+        public int? GetSamplingPriority()
+        {
+            return (int?)Tracer.Instance.InternalActiveScope?.Span.Context?.TraceContext?.SamplingPriority;
+        }
+
         public void SetSamplingPriority(int? samplingPriority)
         {
             var traceContext = Tracer.Instance.InternalActiveScope?.Span.Context?.TraceContext;
