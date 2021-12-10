@@ -1290,7 +1290,7 @@ stages:
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: Linux64
+      jobs: [Linux64]
   #### Throughput-AppSec Linux 64
 
   - job: Linux64
