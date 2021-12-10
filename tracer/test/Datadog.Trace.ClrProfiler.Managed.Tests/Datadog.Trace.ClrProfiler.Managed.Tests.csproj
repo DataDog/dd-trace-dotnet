@@ -1,15 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <NLogVersion Condition="'$(NLogVersion)' == ''">4.5.2</NLogVersion>
-    <DefineConstants Condition="'$(NLogVersion)'&lt;'4.0.0'">$(DefineConstants);NLOG_2</DefineConstants>
-    <DefineConstants Condition="'$(NLogVersion)'&gt;='4.0.0' and '$(NLogVersion)'&lt;'4.3.0'">$(DefineConstants);NLOG_30</DefineConstants>
-    <DefineConstants Condition="'$(NLogVersion)'&gt;='4.3.0' and '$(NLogVersion)'&lt;'4.5.0'">$(DefineConstants);NLOG_43</DefineConstants>
-    <DefineConstants Condition="'$(NLogVersion)'&gt;='4.5.0'">$(DefineConstants);NLOG_45</DefineConstants>
-  </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Confluent.Kafka" Version="1.4.3" />
-    <PackageReference Include="NLog" Version="$(NLogVersion)" Condition=" $(TargetFramework.StartsWith('net4'))" />
 
     <PackageReference Include="coverlet.collector" Version="3.0.4-preview.32">
       <PrivateAssets>all</PrivateAssets>

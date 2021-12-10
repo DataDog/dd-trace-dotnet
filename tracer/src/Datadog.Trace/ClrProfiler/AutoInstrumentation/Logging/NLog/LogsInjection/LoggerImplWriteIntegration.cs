@@ -59,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
                 }
             }
 
-            return new CallTargetState(scope: null, state: null);
+            return CallTargetState.GetDefault();
         }
 
         /// <summary>

@@ -50,6 +50,9 @@ namespace Benchmarks.Trace
 
             LogManager.Configuration = config;
             Logger = LogManager.GetCurrentClassLogger();
+
+            // Run the automatic instrumentation initialization code once outside of the microbenchmark
+            _ = DiagnosticContextHelper.Cache<NLog.Logger>.Mdlc;
         }
 
         [Benchmark]

@@ -14,11 +14,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
     {
         public static MappedDiagnosticsLogicalContextSetterProxy GetMdlcProxy(Assembly nlogAssembly)
         {
-            var mdclType = nlogAssembly.GetType("NLog.MappedDiagnosticsLogicalContext");
-            if (mdclType is not null)
+            var mdlcType = nlogAssembly.GetType("NLog.MappedDiagnosticsLogicalContext");
+            if (mdlcType is not null)
             {
                 // NLog 4.3+
-                var createTypeResult = DuckType.GetOrCreateProxyType(typeof(MappedDiagnosticsLogicalContextSetterProxy), mdclType);
+                var createTypeResult = DuckType.GetOrCreateProxyType(typeof(MappedDiagnosticsLogicalContextSetterProxy), mdlcType);
                 if (createTypeResult.Success)
                 {
                     // NLog 4.6+

@@ -47,35 +47,21 @@ namespace Datadog.Trace.Tests.Logging
             _logger = new LoggerExecutionWrapper(_logProvider.GetLogger("test"));
         }
 
-        [Fact]
-        public void LogsInjectionEnabledDoesNotAddCorrelationIdentifiers()
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void DoesNotAddCorrelationIdentifiers(bool enableLogsInjection)
         {
             // Assert that the NLog log provider is correctly being used
             Assert.IsType<NoOpNLogLogProvider>(LogProvider.CurrentLogProvider);
 
-            // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
-            var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
+            // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to the test case value
+            var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection);
             LoggingProviderTestHelpers.LogEverywhere(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
 
             // Filter the logs
             List<string> filteredLogs = new List<string>(_target.Logs);
             filteredLogs.RemoveAll(log => !log.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(filteredLogs, e => LogEventDoesNotContainCorrelationIdentifiers(e));
-        }
-
-        [Fact]
-        public void DisabledLibLogSubscriberDoesNotAddCorrelationIdentifiers()
-        {
-            // Assert that the NLog log provider is correctly being used
-            Assert.IsType<NoOpNLogLogProvider>(LogProvider.CurrentLogProvider);
-
-            // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
-            var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: false);
-            LoggingProviderTestHelpers.LogEverywhere(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
-
-            // Filter the logs
-            List<string> filteredLogs = new List<string>(_target.Logs);
-            filteredLogs.RemoveAll(log => !log.Contains(LoggingProviderTestHelpers.LogPrefix));
             Assert.All(filteredLogs, e => LogEventDoesNotContainCorrelationIdentifiers(e));
         }
 
