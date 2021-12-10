@@ -1,4 +1,4 @@
-// <copyright file="CIAgentlessWriter.cs" company="Datadog">
+// <copyright file="CIAgentWriter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,14 +11,18 @@ using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.Ci.Agent
 {
-    internal class CIAgentlessWriter : IAgentWriter
+    internal class CIAgentWriter : IAgentWriter, ICIAppWriter
     {
         private readonly AgentWriter _agentWriter = null;
 
-        public CIAgentlessWriter(ImmutableTracerSettings settings, ISampler sampler)
+        public CIAgentWriter(ImmutableTracerSettings settings, ISampler sampler)
         {
             var api = new Api(settings.AgentUri, TransportStrategy.Get(settings), null, rates => sampler.SetDefaultSampleRates(rates), settings.PartialFlushEnabled);
             _agentWriter = new AgentWriter(api, null, maxBufferSize: settings.TraceBufferSize);
+        }
+
+        public void AddEvent(IEvent @event)
+        {
         }
 
         public Task FlushAndCloseAsync()

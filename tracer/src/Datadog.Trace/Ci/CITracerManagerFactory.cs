@@ -36,8 +36,8 @@ namespace Datadog.Trace.Ci
 
         protected override IAgentWriter GetAgentWriter(ImmutableTracerSettings settings, IDogStatsd statsd, ISampler sampler)
         {
-            var api = new Api(settings.AgentUri, TransportStrategy.Get(settings), null, rates => sampler.SetDefaultSampleRates(rates), settings.PartialFlushEnabled);
-            return new AgentWriter(api, null, maxBufferSize: settings.TraceBufferSize);
+            // return new CIAgentWriter(settings, sampler);
+            return new CIFileWriter(settings, sampler);
         }
     }
 }
