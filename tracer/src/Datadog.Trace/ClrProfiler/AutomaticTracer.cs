@@ -17,6 +17,18 @@ namespace Datadog.Trace.ClrProfiler
 
         private ICommonTracer _child;
 
+        IReadOnlyDictionary<string, string> IDistributedTracer.GetSpanContextRaw()
+        {
+            if (_child is null)
+            {
+                return null;
+            }
+            else
+            {
+                return DistributedTrace.Value;
+            }
+        }
+
         IScope IDistributedTracer.GetActiveScope()
         {
             // The automatic tracer doesn't need to get the manual active trace
@@ -40,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler
             return SpanContextPropagator.Instance.Extract(value);
         }
 
-        void IDistributedTracer.SetSpanContext(SpanContext value)
+        void IDistributedTracer.SetSpanContext(IReadOnlyDictionary<string, string> value)
         {
             // This is a performance optimization. See comment in GetDistributedTrace() about potential race condition
             if (_child != null)

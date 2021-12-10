@@ -2,7 +2,7 @@
 
   
   <ItemGroup>
-    <PackageReference Include="Datadog.Trace" Version="2.255.249" />
+    <PackageReference Include="Datadog.Trace" Version="2.255.248" />
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
   </ItemGroup>
 

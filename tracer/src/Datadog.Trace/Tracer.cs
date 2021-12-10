@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -157,6 +158,11 @@ namespace Datadog.Trace
                 return DistributedTracer.Instance.GetActiveScope() ?? InternalActiveScope;
             }
         }
+
+        /// <summary>
+        /// Gets the active span context dictionary by consulting DistributedTracer.Instance
+        /// </summary>
+        internal IReadOnlyDictionary<string, string> DistributedSpanContext => DistributedTracer.Instance.GetSpanContextRaw() ?? InternalActiveScope?.Span?.Context;
 
         /// <summary>
         /// Gets the active scope
