@@ -28,7 +28,7 @@ trigger:
 #     - Managed utility APIs (may be used transitively):
       - shared/src/managed-src/Datadog.Collections/*
       - shared/src/managed-src/Datadog.Util/*
-#     - Managed Logging APIs (may be used transitively):      
+#     - Managed Logging APIs (may be used transitively):
       - shared/src/managed-src/Datadog.Logging.Emission/*
       - shared/src/managed-src/Datadog.Logging.Composition/*
       - shared/src/managed-src/Datadog.Logging/*
@@ -509,7 +509,7 @@ stages:
         Start-CosmosDbEmulator -Timeout 300
       displayName: 'Start CosmosDB Emulator'
       workingDirectory: $(Pipeline.Workspace)
-      
+
     - powershell: |
         Write-Host "Initializing LocalDB"
         sqllocaldb.exe start
@@ -781,7 +781,7 @@ stages:
             build: true
             baseImage: $(baseImage)
             command: "CleanObjFiles"
-      
+
         - template: steps/restore-working-directory.yml
           parameters:
             artifact: build-linux-arm64-working-directory
@@ -1282,6 +1282,37 @@ stages:
       env:
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
+
+- stage: throughput-appsec
+  condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
+  dependsOn: [build_linux, build_arm64, build_windows]
+  pool: Throughput-AppSec
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: Linux64
+  #### Throughput-AppSec Linux 64
+
+  - job: Linux64
+    timeoutInMinutes: 60
+
+    steps:
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux native binary
+      inputs:
+        artifact: linux-tracer-home-debian
+        path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux
+
+    - script: |
+        test ! -s "tracer/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
+        test ! -s "tracer/tracer-home-linux/libddwaf.so" && echo "tracer/tracer-home-linux/libddwaf.so does not exist" && exit 1
+        cd $(System.DefaultWorkingDirectory)/tracer/build/crank
+        chmod +x ./run-appsec.sh
+        ./run-appsec.sh "linux"
+      displayName: Crank
+      env:
+        DD_SERVICE: dd-trace-dotnet
+
 
 - stage: coverage
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))

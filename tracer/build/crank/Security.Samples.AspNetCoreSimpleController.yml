@@ -50,20 +50,3 @@ scenarios:
         duration: 240
         serverPort: 5000
         path: /hello?arg=[$slice]
-
-  appsec_attack_blocking:
-    application:
-      job: server
-      environmentVariables:
-        COR_ENABLE_PROFILING: 1
-        CORECLR_ENABLE_PROFILING: 1
-        DD_APPSEC_ENABLED: true
-        DD_APPSEC_BLOCKING_ENABLED: true
-    load:
-      job: bombardier
-      variables:
-        warmup: 30
-        duration: 240
-        serverPort: 5000
-        path: /hello?arg=[$slice]
-
