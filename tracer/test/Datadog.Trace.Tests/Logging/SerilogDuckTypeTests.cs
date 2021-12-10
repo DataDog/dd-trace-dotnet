@@ -46,7 +46,10 @@ namespace Datadog.Trace.Tests.Logging
             proxy.Properties.Should().BeEmpty();
 
             logEvent.AddPropertyIfAbsent(new LogEventProperty("key", new ScalarValue("value")));
-            proxy.Properties.Should().NotBeEmpty();
+
+            // String values are rendered with quotes unless the ':l formatter is used.
+            // Since we can't enforce a format with object.ToString(), assert the result with surrounding quotes
+            proxy.Properties["key"].ToString().Should().BeEquivalentTo("\"value\"");
         }
     }
 }

@@ -33,29 +33,16 @@ namespace Datadog.Trace.Tests.Logging
             _logger = new LoggerExecutionWrapper(_logProvider.GetLogger("Test"));
         }
 
-        [Fact]
-        public void LogsInjectionEnabledDoesNotAddCorrelationIdentifiers()
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void DoesNotAddCorrelationIdentifiers(bool enableLogsInjection)
         {
             // Assert that the Serilog log provider is correctly being used
             Assert.IsType<NoOpSerilogLogProvider>(LogProvider.CurrentLogProvider);
 
             // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to TRUE
-            var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: true);
-            LoggingProviderTestHelpers.LogEverywhere(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
-
-            // Filter the logs
-            _logEvents.RemoveAll(log => !log.MessageTemplate.ToString().Contains(LoggingProviderTestHelpers.LogPrefix));
-            Assert.All(_logEvents, e => LogEventDoesNotContainCorrelationIdentifiers(e));
-        }
-
-        [Fact]
-        public void DisabledLibLogSubscriberDoesNotAddCorrelationIdentifiers()
-        {
-            // Assert that the Serilog log provider is correctly being used
-            Assert.IsType<NoOpSerilogLogProvider>(LogProvider.CurrentLogProvider);
-
-            // Instantiate a tracer for this test with default settings and set LogsInjectionEnabled to FALSE
-            var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection: false);
+            var tracer = LoggingProviderTestHelpers.InitializeTracer(enableLogsInjection);
             LoggingProviderTestHelpers.LogEverywhere(tracer, _logger, _logProvider.OpenMappedContext, out var parentScope, out var childScope);
 
             // Filter the logs
