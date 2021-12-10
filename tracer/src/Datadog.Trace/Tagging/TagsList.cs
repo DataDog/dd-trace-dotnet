@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -434,6 +435,128 @@ namespace Datadog.Trace.Tagging
             }
 
             return offset - originalOffset;
+        }
+
+        internal IReadOnlyList<KeyValuePair<string, string>> GetAllMetaValues(Span span)
+        {
+            var tags = Tags;
+            var tagProcessors = _tagProcessors;
+            var result = new List<KeyValuePair<string, string>>();
+
+            bool isOriginWritten = false;
+
+            if (tags != null)
+            {
+                lock (tags)
+                {
+                    foreach (var pair in tags)
+                    {
+                        string key = pair.Key;
+                        string value = pair.Value;
+                        if (tagProcessors is not null)
+                        {
+                            for (var i = 0; i < tagProcessors.Count; i++)
+                            {
+                                tagProcessors[i]?.ProcessMeta(ref key, ref value);
+                            }
+                        }
+
+                        result.Add(new KeyValuePair<string, string>(key, value));
+                    }
+                }
+            }
+
+            foreach (var property in GetAdditionalTags())
+            {
+                var value = property.Getter(this);
+
+                if (value != null)
+                {
+                    if (property.Key == Trace.Tags.Origin)
+                    {
+                        isOriginWritten = true;
+                    }
+
+                    string key = property.Key;
+                    if (tagProcessors is not null)
+                    {
+                        for (var i = 0; i < tagProcessors.Count; i++)
+                        {
+                            tagProcessors[i]?.ProcessMeta(ref key, ref value);
+                        }
+                    }
+
+                    result.Add(new KeyValuePair<string, string>(key, value));
+                }
+            }
+
+            if (span.IsTopLevel)
+            {
+                result.Add(new KeyValuePair<string, string>(Trace.Tags.RuntimeId, Tracer.RuntimeId));
+            }
+
+            string origin = span.Context.Origin;
+            if (!isOriginWritten && !string.IsNullOrEmpty(origin))
+            {
+                result.Add(new KeyValuePair<string, string>(Trace.Tags.Origin, origin));
+            }
+
+            return result;
+        }
+
+        internal IReadOnlyList<KeyValuePair<string, double>> GetAllMetricsValues(Span span)
+        {
+            var metrics = Metrics;
+            var tagProcessors = _tagProcessors;
+            var result = new List<KeyValuePair<string, double>>();
+
+            if (metrics != null)
+            {
+                lock (metrics)
+                {
+                    foreach (var pair in metrics)
+                    {
+                        string key = pair.Key;
+                        double value = pair.Value;
+                        if (tagProcessors is not null)
+                        {
+                            for (var i = 0; i < tagProcessors.Count; i++)
+                            {
+                                tagProcessors[i]?.ProcessMetric(ref key, ref value);
+                            }
+                        }
+
+                        result.Add(new KeyValuePair<string, double>(pair.Key, pair.Value));
+                    }
+                }
+            }
+
+            foreach (var property in GetAdditionalMetrics())
+            {
+                var value = property.Getter(this);
+
+                if (value != null)
+                {
+                    string key = property.Key;
+                    double val = value.Value;
+                    if (tagProcessors is not null)
+                    {
+                        for (var i = 0; i < tagProcessors.Count; i++)
+                        {
+                            tagProcessors[i]?.ProcessMetric(ref key, ref val);
+                        }
+                    }
+
+                    result.Add(new KeyValuePair<string, double>(property.Key, val));
+                }
+            }
+
+            if (span.IsTopLevel)
+            {
+                result.Add(new KeyValuePair<string, double>(Trace.Metrics.TopLevelSpan, 1.0));
+            }
+
+            return result;
         }
     }
 }

@@ -29,7 +29,7 @@ namespace Datadog.Trace.Ci.Agent
         protected override Task SendEvents(IEnumerable<IEvent> events)
         {
             var str = $"c:\\temp\\file-{Guid.NewGuid().ToString("n")}.json";
-            var json = JsonConvert.SerializeObject(events, Formatting.Indented);
+            var json = JsonConvert.SerializeObject(events, Formatting.Indented, new SpanJsonConverter());
             File.WriteAllText(str, json);
             return Task.CompletedTask;
         }
