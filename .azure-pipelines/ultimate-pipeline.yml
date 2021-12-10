@@ -1283,7 +1283,7 @@ stages:
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
 
-- stage: throughput-appsec
+- stage: throughput_appsec
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
   dependsOn: [build_linux, build_arm64, build_windows]
   pool: Throughput-AppSec
