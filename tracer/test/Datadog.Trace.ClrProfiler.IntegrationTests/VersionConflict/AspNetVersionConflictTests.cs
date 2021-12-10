@@ -119,7 +119,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
             spans.Should().OnlyContain(s => VerifySpan(s, parentTrace));
         }
 
-        [SkippableFact]
+        [SkippableFact(Skip = "Version conflict temporarily disabled")]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("LoadFromGAC", "True")]
