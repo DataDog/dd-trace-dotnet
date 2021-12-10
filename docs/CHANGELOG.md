@@ -1,5 +1,28 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
+## [Release 2.0.0-prerelease](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.0.0-prerelease)
+
+## Changes
+* Mock the active span when using multiple versions of the tracer (#2095)
+* Bump supported version of NUnit3TestAdapter (#2118)
+* [AppSec] Fix tag prefix bug (#2123)
+* Add a big fat warning in NativeCallTargetDefinition file (#2126)
+* Update ITracer interface (#2131)
+* Make Span internal (#2134)
+* Improve performance of AutomaticTracer (#2135)
+* Log additional information about the AssemblyLoadContext (#2136)
+* Reinstate Integration.AdoNet integration (#2137)
+* DBScopeFactory improvements. (#2138)
+* Use PathBase.ToUriComponent in AspNetCoreDiagnosticObserver (#2141)
+* Disable version conflict fix (#2155)
+
+## Build / Test
+* Implementation of Exploration Tests (#2089)
+* Centralize Mock Trace Agent Initialization (#2114)
+* Fix asp snapshots file names (#2148)
+
+[Changes since 1.31.0](https://github.com/DataDog/dd-trace-dotnet/compare/v1.31.0...v2.0.0-prerelease)
+
 ## [Release 1.30.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.30.0)
 
 ## Changes
