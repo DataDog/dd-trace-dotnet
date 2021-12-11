@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
                 var spans = agent.WaitForSpans(1, 2500);
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
 
-                ValidateLogCorrelation(spans, _nlogPre40LogFileTests);
+                ValidateLogCorrelation(spans, _nlogPre40LogFileTests, expectedTraceCount: 1);
             }
         }
     }

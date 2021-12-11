@@ -36,13 +36,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public void InjectsLogs()
         {
+#if NETFRAMEWORK
+            var expectedTraceCount = 3;
+#else
+            var expectedTraceCount = 2;
+#endif
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent.Port, aspNetCorePort: 0))
             {
                 var spans = agent.WaitForSpans(1, 2500);
                 spans.Should().HaveCountGreaterOrEqualTo(1);
 
-                ValidateLogCorrelation(spans, _logFiles);
+                ValidateLogCorrelation(spans, _logFiles, expectedTraceCount);
             }
         }
     }

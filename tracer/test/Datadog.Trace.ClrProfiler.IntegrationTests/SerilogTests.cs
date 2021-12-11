@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
 
                 var logFiles = GetLogFiles(packageVersion, logsInjectionEnabled: true);
-                ValidateLogCorrelation(spans, logFiles, packageVersion);
+                ValidateLogCorrelation(spans, logFiles, expectedTraceCount: 1, packageVersion);
             }
         }
 
@@ -64,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
 
                 var logFiles = GetLogFiles(packageVersion, logsInjectionEnabled: false);
-                ValidateLogCorrelation(spans, logFiles, packageVersion, disableLogCorrelation: true);
+                ValidateLogCorrelation(spans, logFiles, expectedTraceCount: 0, packageVersion, disableLogCorrelation: true);
             }
         }
 

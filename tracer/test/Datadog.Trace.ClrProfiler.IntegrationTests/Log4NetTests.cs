@@ -66,15 +66,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NETFRAMEWORK
                 if (!string.IsNullOrWhiteSpace(packageVersion) && new Version(packageVersion) >= new Version("2.0.5"))
                 {
-                    ValidateLogCorrelation(spans, _nlog205LogFileTests, packageVersion);
+                    ValidateLogCorrelation(spans, _nlog205LogFileTests, expectedTraceCount: 1, packageVersion);
                 }
                 else
                 {
-                    ValidateLogCorrelation(spans, _nlogPre205LogFileTests, packageVersion);
+                    ValidateLogCorrelation(spans, _nlogPre205LogFileTests, expectedTraceCount: 1, packageVersion);
                 }
 #else
                 // Regardless of package version, for .NET Core just assert against raw log lines
-                ValidateLogCorrelation(spans, _nlogPre205LogFileTests, packageVersion);
+                ValidateLogCorrelation(spans, _nlogPre205LogFileTests, expectedTraceCount: 1, packageVersion);
 #endif
             }
         }
@@ -96,15 +96,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NETFRAMEWORK
                 if (!string.IsNullOrWhiteSpace(packageVersion) && new Version(packageVersion) >= new Version("2.0.5"))
                 {
-                    ValidateLogCorrelation(spans, _nlog205LogFileTests, packageVersion, disableLogCorrelation: true);
+                    ValidateLogCorrelation(spans, _nlog205LogFileTests, expectedTraceCount: 0, packageVersion, disableLogCorrelation: true);
                 }
                 else
                 {
-                    ValidateLogCorrelation(spans, _nlogPre205LogFileTests, packageVersion, disableLogCorrelation: true);
+                    ValidateLogCorrelation(spans, _nlogPre205LogFileTests, expectedTraceCount: 0, packageVersion, disableLogCorrelation: true);
                 }
 #else
                 // Regardless of package version, for .NET Core just assert against raw log lines
-                ValidateLogCorrelation(spans, _nlogPre205LogFileTests, packageVersion, disableLogCorrelation: true);
+                ValidateLogCorrelation(spans, _nlogPre205LogFileTests, expectedTraceCount: 0, packageVersion, disableLogCorrelation: true);
 #endif
             }
         }
