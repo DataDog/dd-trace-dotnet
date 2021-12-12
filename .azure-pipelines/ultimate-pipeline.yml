@@ -912,9 +912,9 @@ stages:
     steps:
       - bash: |
           matrix="{"
-          for baseImage in "debian" "alpine";
-            for publishTargetFramework in "netcoreapp2.1" "netcoreapp3.1" "net5.0" "net6.0";
-              for explorationTestUseCase in "debugger" "continuousProfiler"; do
+          for baseImage in "debian" "alpine" ; do
+            for publishTargetFramework in "netcoreapp2.1" "netcoreapp3.1" "net5.0" "net6.0" ; do
+              for explorationTestUseCase in "debugger" "continuousProfiler" ; do
                 for explorationTestName in "eshoponweb" "cake" ; do
                   name="${baseImage//./_}_${publishTargetFramework//./_}_${explorationTestUseCase//./_}_${explorationTestName}"
                   matrix="${matrix} '${name}':"
