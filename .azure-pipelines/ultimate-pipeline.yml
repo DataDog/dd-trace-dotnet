@@ -898,6 +898,112 @@ stages:
     - script: tracer\build.cmd CheckBuildLogsForErrors
       displayName: Check logs for errors
 
+- stage: exploration_tests_linux
+  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  dependsOn: [build_linux]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Test]
+
+  - job: generator
+    pool:
+      vmImage: ubuntu-18.04
+    steps:
+      - bash: |
+          matrix="{"
+          for baseImage in "debian" "alpine";
+            for publishTargetFramework in "netcoreapp2.1" "netcoreapp3.1" "net5.0" "net6.0";
+              for explorationTestUseCase in "debugger" "continuousProfiler"; do
+                for explorationTestName in "eshoponweb" "cake" ; do
+                  name="${baseImage//./_}_${publishTargetFramework//./_}_${explorationTestUseCase//./_}_${explorationTestName}"
+                  matrix="${matrix} '${name}':"
+                  matrix="${matrix} { 'baseImage': '${baseImage}', "
+                  matrix="${matrix} 'publishTargetFramework': '${publishTargetFramework}', "
+                  matrix="${matrix} 'explorationTestUseCase': '${explorationTestUseCase}', "
+                  matrix="${matrix} 'explorationTestName': '${explorationTestName}' },"
+                done
+              done
+            done
+          done
+          matrix="${matrix::-1} }"
+          echo "##vso[task.setVariable variable=values;isOutput=true]${matrix}"
+        name: mtrx
+
+
+  - job: Test
+    dependsOn: generator
+    strategy:
+      matrix: $[ dependencies.generator.outputs['mtrx.values'] ]
+
+    variables:
+      TestAllPackageVersions: true
+      IncludeMinorPackageVersions:  $[or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.perform_comprehensive_testing, 'true'))]
+
+    pool:
+      vmImage: ubuntu-18.04
+
+    steps:
+    # Doing a clean of obj files _before_ restore to remove build output from previous runs
+    # Can't do a full clean, as otherwise restore-working-directory fails
+    # Only necessary for ARM64, but shouldn't cause any harm on others
+    # Can't ifdef it as depends on a matrix variable
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: $(baseImage)
+        command: "CleanObjFiles"
+
+    - template: steps/restore-working-directory.yml
+      parameters:
+        artifact: build-linux-$(baseImage)-working-directory
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: $(baseImage)
+        command: "RunExplorationTests_$(explorationTestUseCase) --framework $(publishTargetFramework) --explorationTestName $(explorationTestName)"
+
+    - task: DockerCompose@0
+      displayName: docker-compose build ExplorationTests
+      env:
+        baseImage: $(baseImage)
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) ExplorationTests
+
+    - task: DockerCompose@0
+      displayName: docker-compose start dependencies
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: run --rm StartDependencies
+
+    - task: DockerCompose@0
+      displayName: docker-compose run ExplorationTests
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeFileArgs: |
+          baseImage=$(baseImage)
+          framework=$(publishTargetFramework)
+        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) ExplorationTests
+
+    - task: DockerCompose@0
+      displayName: docker-compose stop services
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: down
+      condition: succeededOrFailed()
+
+    - publish: tracer/build_data
+      artifact: profiler-logs_exploration_tests_linux_$(baseImage)_$(publishTargetFramework)_$(explorationTestUseCase)_$(explorationTestName)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        baseImage: $(baseImage)
+        command: "CheckBuildLogsForErrors"
+
 
 - stage: benchmarks
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'))
