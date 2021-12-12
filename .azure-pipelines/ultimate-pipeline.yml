@@ -964,36 +964,6 @@ stages:
         baseImage: $(baseImage)
         command: "RunExplorationTests_$(explorationTestUseCase) --framework $(publishTargetFramework) --explorationTestName $(explorationTestName)"
 
-    - task: DockerCompose@0
-      displayName: docker-compose build ExplorationTests
-      env:
-        baseImage: $(baseImage)
-      inputs:
-        containerregistrytype: Container Registry
-        dockerComposeCommand: build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) ExplorationTests
-
-    - task: DockerCompose@0
-      displayName: docker-compose start dependencies
-      inputs:
-        containerregistrytype: Container Registry
-        dockerComposeCommand: run --rm StartDependencies
-
-    - task: DockerCompose@0
-      displayName: docker-compose run ExplorationTests
-      inputs:
-        containerregistrytype: Container Registry
-        dockerComposeFileArgs: |
-          baseImage=$(baseImage)
-          framework=$(publishTargetFramework)
-        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) ExplorationTests
-
-    - task: DockerCompose@0
-      displayName: docker-compose stop services
-      inputs:
-        containerregistrytype: Container Registry
-        dockerComposeCommand: down
-      condition: succeededOrFailed()
-
     - publish: tracer/build_data
       artifact: profiler-logs_exploration_tests_linux_$(baseImage)_$(publishTargetFramework)_$(explorationTestUseCase)_$(explorationTestName)_$(System.JobAttempt)
       condition: succeededOrFailed()

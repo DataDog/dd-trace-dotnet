@@ -186,7 +186,7 @@ partial class Build
         {
             var depth = testDescription.IsGitShallowCloneSupported ? "--depth 1" : "";
             var submodules = testDescription.IsGitSubmodulesRequired ? "--recurse-submodules" : "";
-            var source = ExplorationTestCloneLatest ? $"-b {testDescription.GitRepositoryTag} {testDescription.GitRepositoryUrl}" : testDescription.GitRepositoryUrl;
+            var source = ExplorationTestCloneLatest ? testDescription.GitRepositoryUrl : $"-b {testDescription.GitRepositoryTag} {testDescription.GitRepositoryUrl}";
             var target = $"{ExplorationTestsDirectory}/{testDescription.Name}";
 
             var cloneCommand = $"clone -q -c advice.detachedHead=false {depth} {submodules} {source} {target}";
