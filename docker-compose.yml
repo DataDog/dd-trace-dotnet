@@ -350,7 +350,7 @@ services:
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-6.0.100}
     image: dd-trace-dotnet/${baseImage:-debian}-tester
-    command: dotnet /build/bin/Debug/_build.dll RunExplorationTests_${explorationTestUseCase:debugger} --framework ${framework:-netcoreapp3.1} --explorationTestName ${explorationTestName:eshoponweb} --code-coverage
+    command: dotnet /build/bin/Debug/_build.dll RunExplorationTests_${explorationTestUseCase:-debugger} --framework ${framework:-netcoreapp3.1} --explorationTestName ${explorationTestName:-eshoponweb} --code-coverage
     volumes:
       - ./:/project
     environment:
