@@ -973,7 +973,7 @@ stages:
         baseImage: $(baseImage)
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: build --build-arg baseImage=$(baseImage) --build-arg explorationTestUseCase=$(explorationTestUseCase) --build-arg explorationTestName=$(explorationTestName --build-arg framework=$(publishTargetFramework) ExplorationTests
+        dockerComposeCommand: build --build-arg baseImage=$(baseImage) --build-arg explorationTestUseCase=$(explorationTestUseCase) --build-arg explorationTestName=$(explorationTestName) --build-arg framework=$(publishTargetFramework) ExplorationTests
 
     - task: DockerCompose@0
       displayName: docker-compose start dependencies
