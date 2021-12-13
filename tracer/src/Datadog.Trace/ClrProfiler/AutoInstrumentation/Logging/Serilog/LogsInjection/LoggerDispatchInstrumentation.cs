@@ -20,7 +20,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInje
         MethodName = "Dispatch",
         ReturnTypeName = ClrNames.Void,
         ParameterTypeNames = new[] { "Serilog.Events.LogEvent" },
-        MinimumVersion = "1.4.214",
+        // Support for property names with underscores begins with Serilog package 1.4.16 / AssemblyVersion 1.4.0.0 / commit https://github.com/serilog/serilog/commit/8e8ecb32a194ac5360502ab467ada5a683ce35ba
+        MinimumVersion = "1.4.0.0",
         MaximumVersion = "1.*.*",
         IntegrationName = "Serilog")]
     [InstrumentMethod(

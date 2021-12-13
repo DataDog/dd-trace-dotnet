@@ -239,7 +239,7 @@ namespace Datadog.Trace.ClrProfiler
 
                 // Serilog
                 new("Serilog", "Serilog.Core.Logger", "Dispatch",  new[] { "System.Void", "Serilog.Events.LogEvent" }, 2, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInjection.LoggerDispatchInstrumentation"),
-                new("Serilog", "Serilog.Core.Pipeline.Logger", "Dispatch",  new[] { "System.Void", "Serilog.Events.LogEvent" }, 1, 4, 214, 1, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInjection.LoggerDispatchInstrumentation"),
+                new("Serilog", "Serilog.Core.Pipeline.Logger", "Dispatch",  new[] { "System.Void", "Serilog.Events.LogEvent" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInjection.LoggerDispatchInstrumentation"),
 
                 // ServiceStackRedis
                 new("ServiceStack.Redis", "ServiceStack.Redis.RedisNativeClient", "SendReceive",  new[] { "T", "System.Byte[][]", "System.Func`1[!!0]", "System.Action`1[System.Func`1[!!0]]", "System.Boolean" }, 4, 0, 0, 5, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack.RedisNativeClientSendReceiveIntegration"),
