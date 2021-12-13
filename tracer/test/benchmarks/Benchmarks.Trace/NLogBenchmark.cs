@@ -20,8 +20,6 @@ namespace Benchmarks.Trace
 
         static NLogBenchmark()
         {
-            LogProvider.SetCurrentLogProvider(new NoOpNLogLogProvider());
-
             var logInjectionSettings = new TracerSettings
             {
                 StartupDiagnosticLogEnabled = false,

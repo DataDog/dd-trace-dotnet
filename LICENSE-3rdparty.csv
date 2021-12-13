@@ -1,6 +1,5 @@
 Component,Origin,License,Copyright
 Datadog.Trace,https://github.com/neuecc/MessagePack-CSharp,MIT,Copyright (c) 2017 Yoshifumi Kawai and contributors
-Datadog.Trace,https://github.com/damianh/LibLog,MIT,Copyright (C) 2011-2017 Damian Hickey
 Datadog.Trace,https://github.com/serilog/serilog,Apache-2.0,Copyright (c) 2013-2018 Serilog Contributors
 Datadog.Trace,https://github.com/serilog/serilog-sinks-file,Apache-2.0,Copyright (c) 2016 Serilog Contributors
 Datadog.Trace,https://github.com/JamesNK/Newtonsoft.Json,MIT,Copyright (c) 2007 James Newton-King

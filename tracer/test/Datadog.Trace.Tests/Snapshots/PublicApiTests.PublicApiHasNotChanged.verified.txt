@@ -338,11 +338,3 @@ namespace Datadog.Trace.Logging
     }
     public delegate bool Logger(Datadog.Trace.Logging.LogLevel logLevel, System.Func<string> messageFunc, System.Exception exception = null, params object[] formatParameters);
 }
-namespace Datadog.Trace.Logging.LogProviders
-{
-    public class LibLogException : System.Exception
-    {
-        public LibLogException(string message) { }
-        public LibLogException(string message, System.Exception inner) { }
-    }
-}

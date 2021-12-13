@@ -27,8 +27,6 @@ namespace Benchmarks.Trace
 
         static SerilogBenchmark()
         {
-            LogProvider.SetCurrentLogProvider(new NoOpSerilogLogProvider());
-
             var logInjectionSettings = new TracerSettings
             {
                 StartupDiagnosticLogEnabled = false,
