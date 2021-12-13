@@ -886,7 +886,10 @@ stages:
         includeX86: true
     - template: steps/restore-working-directory.yml
 
-    - script: tracer\build.cmd RunExplorationTests_$(explorationTestUseCase) -ExplorationTestName $(explorationTestName)
+    - script: tracer\build.cmd SetupExplorationTests -ExplorationTestUseCase $(explorationTestUseCase) -ExplorationTestName $(explorationTestName)
+      displayName: RunExplorationTest
+
+    - script: tracer\build.cmd RunExplorationTests -ExplorationTestUseCase $(explorationTestUseCase) -ExplorationTestName $(explorationTestName)
       displayName: RunExplorationTest
 
     - publish: tracer/build_data
@@ -958,11 +961,11 @@ stages:
       parameters:
         artifact: build-linux-$(baseImage)-working-directory
 
-    # - template: steps/run-in-docker.yml
-    #   parameters:
-    #     build: true
-    #     baseImage: $(baseImage)
-    #     command: "RunExplorationTests_$(explorationTestUseCase) --framework $(publishTargetFramework) --explorationTestName $(explorationTestName)"
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: $(baseImage)
+        command: "SetupExplorationTests -ExplorationTestUseCase $(explorationTestUseCase) --explorationTestName $(explorationTestName) --framework $(publishTargetFramework)"
 
     - task: DockerCompose@0
       displayName: docker-compose build ExplorationTests
@@ -970,7 +973,7 @@ stages:
         baseImage: $(baseImage)
       inputs:
         containerregistrytype: Container Registry
-        dockerComposeCommand: build --build-arg baseImage=$(baseImage) --build-arg explorationTestUseCase=$(explorationTestUseCase) --build-arg framework=$(publishTargetFramework) --build-arg explorationTestName=$(explorationTestName ExplorationTests
+        dockerComposeCommand: build --build-arg baseImage=$(baseImage) --build-arg explorationTestUseCase=$(explorationTestUseCase) --build-arg explorationTestName=$(explorationTestName --build-arg framework=$(publishTargetFramework) ExplorationTests
 
     - task: DockerCompose@0
       displayName: docker-compose start dependencies

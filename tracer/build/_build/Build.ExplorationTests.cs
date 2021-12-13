@@ -2,125 +2,75 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Amazon.SimpleSystemsManagement.Model;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.Git;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
+using Target = Nuke.Common.Target;
 
 partial class Build
 {
     AbsolutePath ExplorationTestsDirectory => RootDirectory / "exploration-tests";
 
+    [Parameter("Indicates use case of exploration test to run.")]
+    readonly ExplorationTestUseCase? ExplorationTestUseCase;
+
     [Parameter("Indicates name of exploration test to run. If not specified, will run all tests sequentially.")]
     readonly ExplorationTestName? ExplorationTestName;
-
-    [Parameter("Indicates whether exploration tests should skip repository cloning. Useful for local development. Default false.")]
-    readonly bool ExplorationTestSkipClone;
 
     [Parameter("Indicates whether exploration tests should run on latest repository commit. Useful if you want to update tested repositories to the latest tags. Default false.", 
                List = false)]
     readonly bool ExplorationTestCloneLatest;
 
-    Target RunExplorationTests_Debugger
+    Target SetUpExplorationTests
         => _ => _
-               .Description("Run exploration tests for debugger.")
+               .Description("Setup exploration tests.")
+               .Requires(() => ExplorationTestUseCase != null)
                .After(Clean, BuildTracerHome)
                .Executes(() =>
                 {
-                    try
-                    {
-                        SetUpExplorationTest_Debugger();
+                    SetUpExplorationTest();
+                    GitCloneBuild();
+                });
 
-                        var envVariables = GetEnvVariables(ExplorationTestUseCase.Debugger);
-                        RunExplorationTestsGitCloneAndUnitTest(envVariables);
-                        RunExplorationTestAssertions_Debugger();
-                    }
-                    finally
-                    {
-                        MoveLogsToBuildData();
-                    }
-
-                    void SetUpExplorationTest_Debugger()
-                    {
-                        Logger.Info($"Prepare environment variables for profiler.");
-                        //TODO TBD
-                    }
-
-                    void RunExplorationTestAssertions_Debugger()
-                    {
-                        Logger.Info($"Running assertions tests for debugger.");
-                        //TODO TBD
-                    }
-                })
-        ;
-
-
-    Target RunExplorationTests_ContinuousProfiler
-        => _ => _
-               .Description("Run exploration tests for profiler.")
-               .After(Clean, BuildTracerHome)
-               .Executes(() =>
-                {
-                    try
-                    {
-                        SetUpExplorationTest_ContinuousProfiler();
-                    
-                        var envVariables = GetEnvVariables(ExplorationTestUseCase.ContinuousProfiler);
-                        RunExplorationTestsGitCloneAndUnitTest(envVariables);
-                        RunExplorationTestAssertions_ContinuousProfiler();
-                    }
-                    finally
-                    {
-                        MoveLogsToBuildData();
-                    }
-
-                    void SetUpExplorationTest_ContinuousProfiler()
-                    {
-                        Logger.Info($"Prepare environment variables for profiler.");
-                        //TODO TBD
-                    }
-
-                    void RunExplorationTestAssertions_ContinuousProfiler()
-                    {
-                        Logger.Info($"Running assertions tests for profiler.");
-                        //TODO TBD
-                    }
-                })
-        ;
-
-    Dictionary<string, string> GetEnvVariables(ExplorationTestUseCase usecase)
+    void SetUpExplorationTest()
     {
-        var envVariables = new Dictionary<string, string>();
-        switch (usecase)
+        switch (ExplorationTestUseCase)
         {
-            case ExplorationTestUseCase.Debugger:
-                envVariables.AddDebuggerEnvironmentVariables(TracerHomeDirectory);
+            case global::ExplorationTestUseCase.Debugger:
+                SetUpExplorationTest_Debugger();
                 break;
-            case ExplorationTestUseCase.ContinuousProfiler:
-                envVariables.AddContinuousProfilerEnvironmentVariables(TracerHomeDirectory);
+            case global::ExplorationTestUseCase.ContinuousProfiler:
+                SetUpExplorationTest_ContinuousProfiler();
                 break;
             default:
-                throw new ArgumentOutOfRangeException(nameof(usecase), usecase, null);
+                throw new ArgumentOutOfRangeException(nameof(ExplorationTestUseCase), ExplorationTestUseCase, null);
         }
-
-        envVariables["DD_SERVICE"]="exploration_tests";
-        envVariables["DD_VERSION"]=Version;
-
-        envVariables.AddExtraEnvVariables(ExtraEnvVars);
-        return envVariables;
     }
 
-    void RunExplorationTestsGitCloneAndUnitTest(Dictionary<string, string> envVariables)
+    void SetUpExplorationTest_Debugger()
+    {
+        Logger.Info($"Set up exploration test for debugger.");
+        //TODO TBD
+    }
+
+    void SetUpExplorationTest_ContinuousProfiler()
+    {
+        Logger.Info($"Prepare environment variables for continuous profiler.");
+        //TODO TBD
+    }
+
+    void GitCloneBuild()
     {
         if (ExplorationTestName.HasValue)
         {
             Logger.Info($"Provided exploration test name is {ExplorationTestName}.");
-            
-            var testDescription = ExplorationTestDescription.GetExplorationTestDescription(ExplorationTestName.Value);
 
-            GitCloneAndRunUnitTest(testDescription, envVariables);
+            var testDescription = ExplorationTestDescription.GetExplorationTestDescription(ExplorationTestName.Value);
+            GitCloneBuild(testDescription);
         }
         else
         {
@@ -128,23 +78,30 @@ partial class Build
 
             foreach (var testDescription in ExplorationTestDescription.GetAllExplorationTestDescriptions())
             {
-                GitCloneAndRunUnitTest(testDescription, envVariables);
+                GitCloneBuild(testDescription);
             }
         }
     }
-
-    void GitCloneAndRunUnitTest(ExplorationTestDescription testDescription, Dictionary<string, string> envVariables)
+    void GitCloneBuild(ExplorationTestDescription testDescription)
     {
-        Logger.Info($"Running exploration test {testDescription.Name}.");
-
         if (Framework != null && !testDescription.IsFrameworkSupported(Framework))
         {
-            Logger.Warn($"This framework '{Framework}' is not listed in the project's target frameworks of {testDescription.Name}");
-            return;
+            throw new InvalidActivationException($"This framework '{Framework}' is not listed in the project's target frameworks of {testDescription.Name}");
         }
 
-        var projectPath = GitClone(testDescription);
-        Logger.Info($"Test project path is {projectPath}");
+        var depth = testDescription.IsGitShallowCloneSupported ? "--depth 1" : "";
+        var submodules = testDescription.IsGitSubmodulesRequired ? "--recurse-submodules" : "";
+        var source = ExplorationTestCloneLatest ? testDescription.GitRepositoryUrl : $"-b {testDescription.GitRepositoryTag} {testDescription.GitRepositoryUrl}";
+        var target = $"{ExplorationTestsDirectory}/{testDescription.Name}";
+
+        var cloneCommand = $"clone -q -c advice.detachedHead=false {depth} {submodules} {source} {target}";
+        GitTasks.Git(cloneCommand);
+
+        var projectPath = $"{ExplorationTestsDirectory}/{testDescription.Name}/{testDescription.PathToUnitTestProject}";
+        if (!Directory.Exists(projectPath))
+        {
+            throw new DirectoryNotFoundException($"Test path '{projectPath}' doesn't exist.");
+        }
 
         DotNetBuild(
             x => x
@@ -153,53 +110,123 @@ partial class Build
                 .SetProcessArgumentConfigurator(arguments => arguments.Add("-consoleLoggerParameters:ErrorsOnly"))
                 .When(Framework != null, settings => settings.SetFramework(Framework))
         );
+    }
+
+    Target RunExplorationTests
+        => _ => _
+               .Description("Run exploration tests.")
+               .Requires(() => ExplorationTestUseCase != null)
+               .After(Clean, BuildTracerHome, SetUpExplorationTests)
+               .Executes(() =>
+                {
+                    try
+                    {
+                        var envVariables = GetEnvironmentVariables();
+                        RunExplorationTestsGitUnitTest(envVariables);
+                        RunExplorationTestAssertions();
+                    }
+                    finally
+                    {
+                        MoveLogsToBuildData();
+                    }
+                })
+        ;
+
+    Dictionary<string, string> GetEnvironmentVariables()
+    {
+        var envVariables = new Dictionary<string, string>
+        {
+            ["DD_SERVICE"] = "exploration_tests",
+            ["DD_VERSION"] = Version
+        };
+
+        switch (ExplorationTestUseCase)
+        {
+            case global::ExplorationTestUseCase.Debugger:
+                envVariables.AddDebuggerEnvironmentVariables(TracerHomeDirectory);
+                break;
+            case global::ExplorationTestUseCase.ContinuousProfiler:
+                envVariables.AddContinuousProfilerEnvironmentVariables(TracerHomeDirectory);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(ExplorationTestUseCase), ExplorationTestUseCase, null);
+        }
+
+        return envVariables;
+    }
+
+    void RunExplorationTestsGitUnitTest(Dictionary<string, string> envVariables)
+    {
+        if (ExplorationTestName.HasValue)
+        {
+            Logger.Info($"Provided exploration test name is {ExplorationTestName}.");
+            
+            var testDescription = ExplorationTestDescription.GetExplorationTestDescription(ExplorationTestName.Value);
+            GitRunUnitTest(testDescription, envVariables);
+        }
+        else
+        {
+            Logger.Info($"Exploration test name is not provided. Running all.");
+
+            foreach (var testDescription in ExplorationTestDescription.GetAllExplorationTestDescriptions())
+            {
+                GitRunUnitTest(testDescription, envVariables);
+            }
+        }
+    }
+
+    void GitRunUnitTest(ExplorationTestDescription testDescription, Dictionary<string, string> envVariables)
+    {
+        Logger.Info($"Running exploration test {testDescription.Name}.");
+
+        if (Framework != null && !testDescription.IsFrameworkSupported(Framework))
+        {
+            throw new InvalidActivationException($"This framework '{Framework}' is not listed in the project's target frameworks of {testDescription.Name}");
+        }
 
         DotNetTest(
             x =>
             {
                 x = x
-                   .When(!testDescription.IsTestedByVSTest, settings => settings.SetProjectFile(projectPath))
-                   .When(testDescription.IsTestedByVSTest
-                       , settings =>
-                         {
-                             var frameworkFolder = Framework ?? "*";
-                             var projectName = Path.GetFileName(projectPath);
-
-                             return settings.SetProjectFile($"{projectPath}/bin/{BuildConfiguration}/{frameworkFolder}/{projectName}.exe");
-                         })
+                   .SetProjectFile(testDescription.GetTestTargetPath(ExplorationTestsDirectory, Framework, BuildConfiguration))
                    .EnableNoRestore()
                    .EnableNoBuild()
                    .SetConfiguration(BuildConfiguration)
                    .When(Framework != null, settings => settings.SetFramework(Framework))
                    .SetProcessEnvironmentVariables(envVariables)
                    .SetIgnoreFilter(testDescription.TestsToIgnore)
-                   .WithMemoryDumpAfter(5)
+                   .WithMemoryDumpAfter(1)
                     ;
 
                 return x;
             });
     }
 
-    string GitClone(ExplorationTestDescription testDescription)
+    void RunExplorationTestAssertions()
     {
-        if (!ExplorationTestSkipClone)
+        switch (ExplorationTestUseCase)
         {
-            var depth = testDescription.IsGitShallowCloneSupported ? "--depth 1" : "";
-            var submodules = testDescription.IsGitSubmodulesRequired ? "--recurse-submodules" : "";
-            var source = ExplorationTestCloneLatest ? testDescription.GitRepositoryUrl : $"-b {testDescription.GitRepositoryTag} {testDescription.GitRepositoryUrl}";
-            var target = $"{ExplorationTestsDirectory}/{testDescription.Name}";
-
-            var cloneCommand = $"clone -q -c advice.detachedHead=false {depth} {submodules} {source} {target}";
-            GitTasks.Git(cloneCommand);
+            case global::ExplorationTestUseCase.Debugger:
+                RunExplorationTestAssertions_Debugger();
+                break;
+            case global::ExplorationTestUseCase.ContinuousProfiler:
+                RunExplorationTestAssertions_ContinuousProfiler();
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(ExplorationTestUseCase), ExplorationTestUseCase, null);
         }
+    }
 
-        var projectPath = $"{ExplorationTestsDirectory}/{testDescription.Name}/{testDescription.PathToUnitTestProject}";
-        if (!Directory.Exists(projectPath))
-        {
-            throw new DirectoryNotFoundException($"Test path '{projectPath}' doesn't exist.");
-        }
+    void RunExplorationTestAssertions_Debugger()
+    {
+        Logger.Info($"Running assertions tests for debugger.");
+        //TODO TBD
+    }
 
-        return projectPath;
+    void RunExplorationTestAssertions_ContinuousProfiler()
+    {
+        Logger.Info($"Running assertions tests for profiler.");
+        //TODO TBD
     }
 }
 
@@ -227,6 +254,22 @@ class ExplorationTestDescription
     public bool IsTestedByVSTest { get; set; }
     public string[] TestsToIgnore { get; set; }
 
+    public string GetTestTargetPath(AbsolutePath explorationTestsDirectory, TargetFramework framework, Configuration buildConfiguration)
+    {
+        var projectPath = $"{explorationTestsDirectory}/{Name}/{PathToUnitTestProject}";
+
+        if (!IsTestedByVSTest)
+        {
+            return projectPath;
+        }
+        else
+        {
+            var frameworkFolder = framework ?? "*";
+            var projectName = Path.GetFileName(projectPath);
+
+            return $"{projectPath}/bin/{buildConfiguration}/{frameworkFolder}/{projectName}.exe";
+        }
+    }
 
     public TargetFramework[] SupportedFrameworks { get; set; }
 
