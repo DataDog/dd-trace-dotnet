@@ -437,73 +437,6 @@ namespace Datadog.Trace.Tagging
             return offset - originalOffset;
         }
 
-        internal IReadOnlyList<KeyValuePair<string, string>> GetAllMetaValues(Span span)
-        {
-            var tags = Tags;
-            var tagProcessors = _tagProcessors;
-            var result = new List<KeyValuePair<string, string>>();
-
-            bool isOriginWritten = false;
-
-            if (tags != null)
-            {
-                lock (tags)
-                {
-                    foreach (var pair in tags)
-                    {
-                        string key = pair.Key;
-                        string value = pair.Value;
-                        if (tagProcessors is not null)
-                        {
-                            for (var i = 0; i < tagProcessors.Count; i++)
-                            {
-                                tagProcessors[i]?.ProcessMeta(ref key, ref value);
-                            }
-                        }
-
-                        result.Add(new KeyValuePair<string, string>(key, value));
-                    }
-                }
-            }
-
-            foreach (var property in GetAdditionalTags())
-            {
-                var value = property.Getter(this);
-
-                if (value != null)
-                {
-                    if (property.Key == Trace.Tags.Origin)
-                    {
-                        isOriginWritten = true;
-                    }
-
-                    string key = property.Key;
-                    if (tagProcessors is not null)
-                    {
-                        for (var i = 0; i < tagProcessors.Count; i++)
-                        {
-                            tagProcessors[i]?.ProcessMeta(ref key, ref value);
-                        }
-                    }
-
-                    result.Add(new KeyValuePair<string, string>(key, value));
-                }
-            }
-
-            if (span.IsTopLevel)
-            {
-                result.Add(new KeyValuePair<string, string>(Trace.Tags.RuntimeId, Tracer.RuntimeId));
-            }
-
-            string origin = span.Context.Origin;
-            if (!isOriginWritten && !string.IsNullOrEmpty(origin))
-            {
-                result.Add(new KeyValuePair<string, string>(Trace.Tags.Origin, origin));
-            }
-
-            return result;
-        }
-
         internal IReadOnlyList<KeyValuePair<string, double>> GetAllMetricsValues(Span span)
         {
             var metrics = Metrics;
@@ -557,6 +490,99 @@ namespace Datadog.Trace.Tagging
             }
 
             return result;
+        }
+
+        internal MetaKeyValueEnumerable GetMetaKeyValues()
+        {
+            return new MetaKeyValueEnumerable(this);
+        }
+
+        internal readonly struct MetaKeyValueEnumerable
+        {
+            private readonly TagsList _tagsList;
+
+            public MetaKeyValueEnumerable(TagsList tagsList)
+            {
+                _tagsList = tagsList;
+            }
+
+            public MetaKeyValueEnumerator GetEnumerator()
+            {
+                return new MetaKeyValueEnumerator(_tagsList);
+            }
+        }
+
+        internal struct MetaKeyValueEnumerator
+        {
+            private readonly TagsList _tagsList;
+            private readonly List<KeyValuePair<string, string>> _tags;
+            private readonly IProperty<string>[] _additionalTags;
+            private int _currentIndex;
+
+            public MetaKeyValueEnumerator(TagsList tagsList)
+            {
+                _tagsList = tagsList;
+                _tags = tagsList.Tags;
+                _additionalTags = tagsList.GetAdditionalTags();
+                _currentIndex = -1;
+                Current = default;
+            }
+
+            public KeyValuePair<string, string> Current { get; private set; }
+
+            public void Dispose()
+            {
+                Reset();
+            }
+
+            public void Reset()
+            {
+                _currentIndex = -1;
+            }
+
+            public bool MoveNext()
+            {
+                var tagProcessors = _tagsList._tagProcessors;
+                var tagsCount = _tags.Count;
+
+                _currentIndex++;
+                if (_currentIndex < tagsCount)
+                {
+                    var pair = _tags[_currentIndex];
+                    string key = pair.Key;
+                    string value = pair.Value;
+                    if (_tagsList._tagProcessors is not null)
+                    {
+                        for (var i = 0; i < tagProcessors.Count; i++)
+                        {
+                            tagProcessors[i]?.ProcessMeta(ref key, ref value);
+                        }
+                    }
+
+                    Current = new KeyValuePair<string, string>(key, value);
+                    return true;
+                }
+
+                var additionalIndex = _currentIndex - tagsCount;
+                if (additionalIndex < _additionalTags.Length)
+                {
+                    var prop = _additionalTags[additionalIndex];
+                    string key = prop.Key;
+                    var value = prop.Getter(_tagsList);
+                    if (tagProcessors is not null)
+                    {
+                        for (var i = 0; i < tagProcessors.Count; i++)
+                        {
+                            tagProcessors[i]?.ProcessMeta(ref key, ref value);
+                        }
+                    }
+
+                    Current = new KeyValuePair<string, string>(key, value);
+                    return true;
+                }
+
+                return false;
+            }
         }
     }
 }

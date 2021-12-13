@@ -63,15 +63,37 @@ namespace Datadog.Trace.Ci.Agent
             if (value.Tags is TagsList tagList)
             {
                 writer.WritePropertyName("meta");
+
+                // Meta dictionary
                 writer.WriteStartObject();
-                foreach (var item in tagList.GetAllMetaValues(value))
+                bool isOriginWritten = false;
+                foreach (var item in tagList.GetMetaKeyValues())
                 {
+                    if (item.Key == Trace.Tags.Origin)
+                    {
+                        isOriginWritten = true;
+                    }
+
                     writer.WritePropertyName(item.Key);
                     writer.WriteValue(item.Value);
                 }
 
+                if (value.IsTopLevel)
+                {
+                    writer.WritePropertyName(Trace.Tags.RuntimeId);
+                    writer.WriteValue(Tracer.RuntimeId);
+                }
+
+                string origin = value.Context.Origin;
+                if (!isOriginWritten && !string.IsNullOrEmpty(origin))
+                {
+                    writer.WritePropertyName(Trace.Tags.Origin);
+                    writer.WriteValue(origin);
+                }
+
                 writer.WriteEndObject();
 
+                // Metrics dictionary
                 writer.WritePropertyName("metrics");
                 writer.WriteStartObject();
                 foreach (var item in tagList.GetAllMetricsValues(value))
