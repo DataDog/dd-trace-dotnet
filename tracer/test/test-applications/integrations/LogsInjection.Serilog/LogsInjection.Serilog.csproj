@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <ApiVersion Condition="'$(ApiVersion)' == '' AND $(TargetFramework.StartsWith('net4')) ">1.5.14</ApiVersion>
+    <ApiVersion Condition="'$(ApiVersion)' == '' AND $(TargetFramework.StartsWith('net4')) ">1.4.16</ApiVersion>
     <ApiVersion Condition="'$(ApiVersion)' == '' AND !$(TargetFramework.StartsWith('net4')) ">2.0.0</ApiVersion>
     <DefineConstants Condition="'$(ApiVersion)'&gt;='2.0.0'">$(DefineConstants);SERILOG_2_0</DefineConstants>
     <DefineConstants Condition="'$(ApiVersion)'&gt;='1.4.152' and '$(ApiVersion)'&lt;'2.0.0'">$(DefineConstants);SERILOG_LOG_OPTIN_CROSS_APPDOMAIN</DefineConstants>
