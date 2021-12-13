@@ -84,7 +84,7 @@
     <!-- Integration: Couchbase.NetClient -->
     <!-- Assembly: Couchbase.NetClient -->
     <!-- Latest package https://www.nuget.org/packages/CouchbaseNetClient/3.2.4 -->
-    <PackageReference Include="CouchbaseNetClient" Version="3.2.4" />
+    <PackageReference Include="CouchbaseNetClient" Version="3.2.5" />
 
     <!-- Integration: Elasticsearch.Net -->
     <!-- Assembly: Elasticsearch.Net -->
