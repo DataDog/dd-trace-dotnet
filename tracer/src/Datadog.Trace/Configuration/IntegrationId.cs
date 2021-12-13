@@ -41,6 +41,6 @@ namespace Datadog.Trace.Configuration
         Npgsql,  // PostgreSQL
         Oracle,
         SqlClient, // SQL Server
-        Sqlite
+        Sqlite,
     }
 }

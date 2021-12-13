@@ -48,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         internal struct SystemDataForAbstractClientData : IAdoNetClientData
         {
             // note: not a real integration id, cannot be used for configuration
-            public string IntegrationName => "AdoNet";
+            public string IntegrationName => nameof(IntegrationId.AdoNet);
 
             public string AssemblyName => "System.Data";
 
@@ -66,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         internal struct NetStandardSystemDataForAbstractClientData : IAdoNetClientData
         {
             // note: not a real integration id, cannot be used for configuration
-            public string IntegrationName => "AdoNet";
+            public string IntegrationName => nameof(IntegrationId.AdoNet);
 
             public string AssemblyName => "netstandard";
 
