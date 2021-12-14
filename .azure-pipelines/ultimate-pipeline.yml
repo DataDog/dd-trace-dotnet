@@ -919,7 +919,7 @@ stages:
       - bash: |
           matrix="{"
           add_to_matrix () {
-            name="${baseImage//./_}_${netcoreapp2.1//./_}_${explorationTestUseCase//./_}_${explorationTestName}"
+            name="${baseImage//./_}_${publishTargetFramework//./_}_${explorationTestUseCase//./_}_${explorationTestName}"
             matrix="${matrix} '${name}':"
             matrix="${matrix} { 'baseImage': '${baseImage}', "
             matrix="${matrix} 'publishTargetFramework': '${publishTargetFramework}', "
