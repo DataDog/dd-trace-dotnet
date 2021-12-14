@@ -35,6 +35,7 @@ namespace Datadog.Trace.Ci.TraceProcessors
                 return trace;
             }
 
+            /*
             if (!_isPartialFlushEnabled)
             {
                 // Check if the last span (the root) is a test, bechmark or build span
@@ -48,6 +49,7 @@ namespace Datadog.Trace.Ci.TraceProcessors
                     return default;
                 }
             }
+            */
 
             foreach (var span in trace)
             {

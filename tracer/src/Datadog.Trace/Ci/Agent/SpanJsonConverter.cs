@@ -24,11 +24,8 @@ namespace Datadog.Trace.Ci.Agent
         {
             writer.WriteStartObject();
 
-            writer.WritePropertyName("trace_id");
-            writer.WriteValue(value.TraceId);
-
-            writer.WritePropertyName("span_id");
-            writer.WriteValue(value.SpanId);
+            writer.WritePropertyName("service");
+            writer.WriteValue(value.ServiceName);
 
             writer.WritePropertyName("name");
             writer.WriteValue(value.OperationName);
@@ -36,11 +33,14 @@ namespace Datadog.Trace.Ci.Agent
             writer.WritePropertyName("resource");
             writer.WriteValue(value.ResourceName);
 
-            writer.WritePropertyName("service");
-            writer.WriteValue(value.ServiceName);
+            writer.WritePropertyName("trace_id");
+            writer.WriteValue(value.TraceId);
 
-            writer.WritePropertyName("type");
-            writer.WriteValue(value.Type);
+            writer.WritePropertyName("span_id");
+            writer.WriteValue(value.SpanId);
+
+            writer.WritePropertyName("parent_id");
+            writer.WriteValue((ulong)(value.Context.ParentId ?? 0));
 
             writer.WritePropertyName("start");
             writer.WriteValue(value.StartTime.ToUnixTimeNanoseconds());
@@ -48,17 +48,8 @@ namespace Datadog.Trace.Ci.Agent
             writer.WritePropertyName("duration");
             writer.WriteValue(value.Duration.ToNanoseconds());
 
-            if (value.Context.ParentId != null)
-            {
-                writer.WritePropertyName("parent_id");
-                writer.WriteValue((ulong)value.Context.ParentId);
-            }
-
-            if (value.Error)
-            {
-                writer.WritePropertyName("error");
-                writer.WriteValue(1);
-            }
+            writer.WritePropertyName("error");
+            writer.WriteValue(value.Error ? 1 : 0);
 
             if (value.Tags is TagsList tagList)
             {
@@ -66,29 +57,15 @@ namespace Datadog.Trace.Ci.Agent
 
                 // Meta dictionary
                 writer.WriteStartObject();
-                bool isOriginWritten = false;
                 foreach (var item in tagList.GetMetaKeyValues())
                 {
-                    if (item.Key == Trace.Tags.Origin)
+                    if (item.Key == Trace.Tags.Origin || item.Key == Trace.Tags.Env || item.Key == Trace.Tags.Version)
                     {
-                        isOriginWritten = true;
+                        continue;
                     }
 
                     writer.WritePropertyName(item.Key);
                     writer.WriteValue(item.Value);
-                }
-
-                if (value.IsTopLevel)
-                {
-                    writer.WritePropertyName(Trace.Tags.RuntimeId);
-                    writer.WriteValue(Tracer.RuntimeId);
-                }
-
-                string origin = value.Context.Origin;
-                if (!isOriginWritten && !string.IsNullOrEmpty(origin))
-                {
-                    writer.WritePropertyName(Trace.Tags.Origin);
-                    writer.WriteValue(origin);
                 }
 
                 writer.WriteEndObject();
@@ -98,18 +75,20 @@ namespace Datadog.Trace.Ci.Agent
                 writer.WriteStartObject();
                 foreach (var item in tagList.GetMetricKeyValues())
                 {
+                    if (item.Key == Trace.Metrics.SamplingPriority)
+                    {
+                        continue;
+                    }
+
                     writer.WritePropertyName(item.Key);
                     writer.WriteValue(item.Value);
                 }
 
-                if (value.IsTopLevel)
-                {
-                    writer.WritePropertyName(Trace.Metrics.TopLevelSpan);
-                    writer.WriteValue(1.0);
-                }
-
                 writer.WriteEndObject();
             }
+
+            writer.WritePropertyName("type");
+            writer.WriteValue(value.Type);
 
             writer.WriteEndObject();
         }

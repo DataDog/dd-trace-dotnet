@@ -149,16 +149,20 @@ namespace Datadog.Trace.Ci.Agent
 
         public void WriteTrace(ArraySegment<Span> trace)
         {
-            foreach (Span span in trace)
+            int numberOfTests = 0;
+            for (var i = trace.Offset; i < trace.Count; i++)
             {
-                if (span.Type == SpanTypes.Test)
+                if (trace.Array[i].Type == SpanTypes.Test)
                 {
-                    AddEvent(new TestEvent(span));
+                    AddEvent(new TestEvent(trace.Array[i]));
+                    trace.Array[i] = null;
+                    numberOfTests++;
                 }
-                else
-                {
-                    AddEvent(new SpanEvent(span));
-                }
+            }
+
+            if (numberOfTests < trace.Count)
+            {
+                AddEvent(new TraceEvent(trace));
             }
         }
 

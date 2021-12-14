@@ -15,6 +15,8 @@ namespace Datadog.Trace.Ci.Agent
 {
     internal class CIFileWriter : CIWriter
     {
+        private static JsonConverter[] _converters = new JsonConverter[] { new SpanJsonConverter(), new TraceJsonConverter() };
+
         public CIFileWriter(ImmutableTracerSettings settings, ISampler sampler)
             : base(settings, sampler)
         {
@@ -29,7 +31,7 @@ namespace Datadog.Trace.Ci.Agent
         protected override Task SendEvents(IEnumerable<IEvent> events)
         {
             var str = $"c:\\temp\\file-{Guid.NewGuid().ToString("n")}.json";
-            var json = JsonConvert.SerializeObject(events, Formatting.Indented, new SpanJsonConverter());
+            var json = JsonConvert.SerializeObject(events, Formatting.Indented, _converters);
             File.WriteAllText(str, json);
             return Task.CompletedTask;
         }
