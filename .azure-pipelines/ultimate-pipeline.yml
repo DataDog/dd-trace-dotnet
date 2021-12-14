@@ -916,7 +916,7 @@ stages:
     pool:
       vmImage: ubuntu-18.04
     steps:
-      - powershell: |
+      - bash: |
           matrix="{"
 
           add_to_matrix () {
