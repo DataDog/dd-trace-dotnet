@@ -931,21 +931,21 @@ stages:
           for baseImage in "debian" "alpine" ; do
             for explorationTestUseCase in "debugger" "continuousProfiler" ; do
 
-              $publishTargetFramework="netcoreapp2.1"
-              $explorationTestUseCase="eshoponweb"
+              publishTargetFramework="netcoreapp2.1"
+              explorationTestUseCase="eshoponweb"
               add_to_matrix
 
-              $publishTargetFramework="netcoreapp3.1"
+              publishTargetFramework="netcoreapp3.1"
               for explorationTestName in "cake" "paket" ; do
                 add_to_matrix
               done
 
-              $publishTargetFramework="net5.0"
+              publishTargetFramework="net5.0"
               for explorationTestName in "protobuf" "cake" ; do
                 add_to_matrix
               done
 
-              $publishTargetFramework="net6.0"
+              publishTargetFramework="net6.0"
               for explorationTestName in  "cake" "swashbuckle"; do
                 add_to_matrix
               done
