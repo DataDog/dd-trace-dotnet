@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <ApiVersion Condition="'$(ApiVersion)' == '' AND $(TargetFramework.StartsWith('net4')) ">4.1.2</ApiVersion>
+    <ApiVersion Condition="'$(ApiVersion)' == '' AND $(TargetFramework.StartsWith('net4')) ">1.0.0.505</ApiVersion>
     <ApiVersion Condition="'$(ApiVersion)' == '' AND !$(TargetFramework.StartsWith('net4')) ">4.5.0</ApiVersion>
     <DefineConstants Condition="'$(ApiVersion)'&gt;='4.0.0'">$(DefineConstants);NLOG_4_0</DefineConstants>
     <DefineConstants Condition="'$(ApiVersion)'&gt;='4.6.0'">$(DefineConstants);NLOG_4_6</DefineConstants>
