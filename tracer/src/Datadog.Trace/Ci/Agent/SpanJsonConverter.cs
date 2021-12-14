@@ -96,10 +96,16 @@ namespace Datadog.Trace.Ci.Agent
                 // Metrics dictionary
                 writer.WritePropertyName("metrics");
                 writer.WriteStartObject();
-                foreach (var item in tagList.GetAllMetricsValues(value))
+                foreach (var item in tagList.GetMetricKeyValues())
                 {
                     writer.WritePropertyName(item.Key);
                     writer.WriteValue(item.Value);
+                }
+
+                if (value.IsTopLevel)
+                {
+                    writer.WritePropertyName(Trace.Metrics.TopLevelSpan);
+                    writer.WriteValue(1.0);
                 }
 
                 writer.WriteEndObject();

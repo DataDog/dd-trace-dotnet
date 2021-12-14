@@ -437,67 +437,17 @@ namespace Datadog.Trace.Tagging
             return offset - originalOffset;
         }
 
-        internal IReadOnlyList<KeyValuePair<string, double>> GetAllMetricsValues(Span span)
-        {
-            var metrics = Metrics;
-            var tagProcessors = _tagProcessors;
-            var result = new List<KeyValuePair<string, double>>();
-
-            if (metrics != null)
-            {
-                lock (metrics)
-                {
-                    foreach (var pair in metrics)
-                    {
-                        string key = pair.Key;
-                        double value = pair.Value;
-                        if (tagProcessors is not null)
-                        {
-                            for (var i = 0; i < tagProcessors.Count; i++)
-                            {
-                                tagProcessors[i]?.ProcessMetric(ref key, ref value);
-                            }
-                        }
-
-                        result.Add(new KeyValuePair<string, double>(pair.Key, pair.Value));
-                    }
-                }
-            }
-
-            foreach (var property in GetAdditionalMetrics())
-            {
-                var value = property.Getter(this);
-
-                if (value != null)
-                {
-                    string key = property.Key;
-                    double val = value.Value;
-                    if (tagProcessors is not null)
-                    {
-                        for (var i = 0; i < tagProcessors.Count; i++)
-                        {
-                            tagProcessors[i]?.ProcessMetric(ref key, ref val);
-                        }
-                    }
-
-                    result.Add(new KeyValuePair<string, double>(property.Key, val));
-                }
-            }
-
-            if (span.IsTopLevel)
-            {
-                result.Add(new KeyValuePair<string, double>(Trace.Metrics.TopLevelSpan, 1.0));
-            }
-
-            return result;
-        }
-
         internal MetaKeyValueEnumerable GetMetaKeyValues()
         {
             return new MetaKeyValueEnumerable(this);
         }
 
-        internal readonly struct MetaKeyValueEnumerable
+        internal MetricKeyValueEnumerable GetMetricKeyValues()
+        {
+            return new MetricKeyValueEnumerable(this);
+        }
+
+        internal readonly ref struct MetaKeyValueEnumerable
         {
             private readonly TagsList _tagsList;
 
@@ -512,7 +462,7 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        internal struct MetaKeyValueEnumerator
+        internal ref struct MetaKeyValueEnumerator
         {
             private readonly TagsList _tagsList;
             private readonly List<KeyValuePair<string, string>> _tags;
@@ -543,7 +493,7 @@ namespace Datadog.Trace.Tagging
             public bool MoveNext()
             {
                 var tagProcessors = _tagsList._tagProcessors;
-                var tagsCount = _tags.Count;
+                var tagsCount = _tags?.Count ?? 0;
 
                 _currentIndex++;
                 if (_currentIndex < tagsCount)
@@ -568,7 +518,7 @@ namespace Datadog.Trace.Tagging
                 {
                     var prop = _additionalTags[additionalIndex];
                     string key = prop.Key;
-                    var value = prop.Getter(_tagsList);
+                    string value = prop.Getter(_tagsList);
                     if (tagProcessors is not null)
                     {
                         for (var i = 0; i < tagProcessors.Count; i++)
@@ -578,6 +528,103 @@ namespace Datadog.Trace.Tagging
                     }
 
                     Current = new KeyValuePair<string, string>(key, value);
+                    return true;
+                }
+
+                return false;
+            }
+        }
+
+        internal readonly ref struct MetricKeyValueEnumerable
+        {
+            private readonly TagsList _tagsList;
+
+            public MetricKeyValueEnumerable(TagsList tagsList)
+            {
+                _tagsList = tagsList;
+            }
+
+            public MetricKeyValueEnumerator GetEnumerator()
+            {
+                return new MetricKeyValueEnumerator(_tagsList);
+            }
+        }
+
+        internal ref struct MetricKeyValueEnumerator
+        {
+            private readonly TagsList _tagsList;
+            private readonly List<KeyValuePair<string, double>> _metrics;
+            private readonly IProperty<double?>[] _additionalMetrics;
+            private int _currentIndex;
+
+            public MetricKeyValueEnumerator(TagsList tagsList)
+            {
+                _tagsList = tagsList;
+                _metrics = tagsList.Metrics;
+                _additionalMetrics = tagsList.GetAdditionalMetrics();
+                _currentIndex = -1;
+                Current = default;
+            }
+
+            public KeyValuePair<string, double> Current { get; private set; }
+
+            public void Dispose()
+            {
+                Reset();
+            }
+
+            public void Reset()
+            {
+                _currentIndex = -1;
+            }
+
+            public bool MoveNext()
+            {
+                var tagProcessors = _tagsList._tagProcessors;
+                var metricsCount = _metrics?.Count ?? 0;
+
+                _currentIndex++;
+                if (_currentIndex < metricsCount)
+                {
+                    var pair = _metrics[_currentIndex];
+                    string key = pair.Key;
+                    double value = pair.Value;
+                    if (_tagsList._tagProcessors is not null)
+                    {
+                        for (var i = 0; i < tagProcessors.Count; i++)
+                        {
+                            tagProcessors[i]?.ProcessMetric(ref key, ref value);
+                        }
+                    }
+
+                    Current = new KeyValuePair<string, double>(key, value);
+                    return true;
+                }
+
+                var additionalIndex = _currentIndex - metricsCount;
+                while (additionalIndex < _additionalMetrics.Length)
+                {
+                    var prop = _additionalMetrics[additionalIndex];
+                    string key = prop.Key;
+                    double? valueNullable = prop.Getter(_tagsList);
+                    if (valueNullable is null)
+                    {
+                        // skip the current property
+                        _currentIndex++;
+                        additionalIndex = _currentIndex - metricsCount;
+                        continue;
+                    }
+
+                    double value = valueNullable.Value;
+                    if (tagProcessors is not null)
+                    {
+                        for (var i = 0; i < tagProcessors.Count; i++)
+                        {
+                            tagProcessors[i]?.ProcessMetric(ref key, ref value);
+                        }
+                    }
+
+                    Current = new KeyValuePair<string, double>(key, value);
                     return true;
                 }
 
