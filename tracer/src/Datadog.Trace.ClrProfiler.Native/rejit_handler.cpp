@@ -846,4 +846,9 @@ void RejitHandler::SetEnableByRefInstrumentation(bool enableByRefInstrumentation
     enable_by_ref_instrumentation = enableByRefInstrumentation;
 }
 
+void RejitHandler::SetEnableCallTargetStateByRef(bool enableCallTargetStateByRef)
+{
+    enable_calltarget_state_by_ref = enableCallTargetStateByRef;
+}
+
 } // namespace trace

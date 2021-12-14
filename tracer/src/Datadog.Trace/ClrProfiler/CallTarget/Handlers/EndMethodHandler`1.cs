@@ -69,7 +69,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
         internal delegate CallTargetReturn<TReturn> InvokeDelegate(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static CallTargetReturn<TReturn> Invoke(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
+        internal static CallTargetReturn<TReturn> Invoke(TTarget instance, TReturn returnValue, Exception exception, ref CallTargetState state)
         {
             if (_continuationGenerator != null)
             {

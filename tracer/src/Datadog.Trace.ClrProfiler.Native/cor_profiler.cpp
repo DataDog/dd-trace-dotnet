@@ -1050,6 +1050,17 @@ void CorProfiler::EnableByRefInstrumentation()
     Logger::Info("ByRef Instrumentation enabled.");
 }
 
+void CorProfiler::EnableCallTargetStateByRef()
+{
+    enable_calltarget_state_by_ref = true;
+    if (rejit_handler != nullptr)
+    {
+        rejit_handler->SetEnableByRefInstrumentation(true);
+    }
+
+    Logger::Info("CallTargetState ByRef enabled.");
+}
+
 //
 // ICorProfilerCallback6 methods
 //

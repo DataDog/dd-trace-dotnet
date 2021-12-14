@@ -45,6 +45,7 @@ private:
     //
     std::unique_ptr<RejitHandler> rejit_handler = nullptr;
     bool enable_by_ref_instrumentation = false;
+    bool enable_calltarget_state_by_ref = false;
 
     // Cor assembly properties
     AssemblyProperty corAssemblyProperty{};
@@ -140,6 +141,7 @@ public:
     //
     void InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int size);
     void EnableByRefInstrumentation();
+    void EnableCallTargetStateByRef();
 };
 
 // Note: Generally you should not have a single, global callback implementation,
