@@ -1,4 +1,4 @@
-// <copyright file="ImmutableTransportSettings.cs" company="Datadog">
+// <copyright file="ImmutableExporterSettings.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,26 +8,26 @@ using System;
 namespace Datadog.Trace.Configuration
 {
     /// <summary>
-    /// Contains Tracer settings.
+    /// Contains exporter related settings.
     /// </summary>
-    public class ImmutableTransportSettings
+    public class ImmutableExporterSettings
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ImmutableTransportSettings"/> class
+        /// Initializes a new instance of the <see cref="ImmutableExporterSettings"/> class
         /// using the specified <see cref="IConfigurationSource"/> to initialize values.
         /// </summary>
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
-        public ImmutableTransportSettings(IConfigurationSource source)
-            : this(new TransportSettings(source))
+        public ImmutableExporterSettings(IConfigurationSource source)
+            : this(new ExporterSettings(source))
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ImmutableTransportSettings"/> class from
+        /// Initializes a new instance of the <see cref="ImmutableExporterSettings"/> class from
         /// a TracerSettings instance.
         /// </summary>
         /// <param name="settings">The tracer settings to use to populate the immutable tracer settings</param>
-        public ImmutableTransportSettings(TransportSettings settings)
+        public ImmutableExporterSettings(ExporterSettings settings)
         {
             TraceTransport = settings.TraceTransport;
             AgentUri = settings.AgentUri;

@@ -1,19 +1,17 @@
-// <copyright file="TransportSettings.cs" company="Datadog">
+// <copyright file="ExporterSettings.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
-using System.IO;
-using Datadog.Trace.Agent;
 using Datadog.Trace.Vendors.StatsdClient.Transport;
 
 namespace Datadog.Trace.Configuration
 {
     /// <summary>
-    /// Contains transport settings.
+    /// Contains exporter settings.
     /// </summary>
-    public class TransportSettings
+    public class ExporterSettings
     {
         /// <summary>
         /// The default host value for <see cref="AgentUri"/>.
@@ -31,19 +29,19 @@ namespace Datadog.Trace.Configuration
         internal const int DefaultDogstatsdPort = 8125;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TransportSettings"/> class with default values.
+        /// Initializes a new instance of the <see cref="ExporterSettings"/> class with default values.
         /// </summary>
-        public TransportSettings()
+        public ExporterSettings()
             : this(null)
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TransportSettings"/> class
+        /// Initializes a new instance of the <see cref="ExporterSettings"/> class
         /// using the specified <see cref="IConfigurationSource"/> to initialize values.
         /// </summary>
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
-        public TransportSettings(IConfigurationSource source)
+        public ExporterSettings(IConfigurationSource source)
         {
             var isWindows = FrameworkDescription.Instance.OSPlatform == OSPlatform.Windows;
             ConfigureTraceTransport(source, isWindows);

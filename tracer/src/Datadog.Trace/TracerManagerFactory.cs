@@ -127,8 +127,8 @@ namespace Datadog.Trace
 
         protected virtual IAgentWriter GetAgentWriter(ImmutableTracerSettings settings, IDogStatsd statsd, ISampler sampler)
         {
-            var apiRequestFactory = TransportStrategy.Get(settings.Transport);
-            var api = new Api(settings.Transport.AgentUri, apiRequestFactory, statsd, rates => sampler.SetDefaultSampleRates(rates), settings.PartialFlushEnabled);
+            var apiRequestFactory = TransportStrategy.Get(settings.Exporter);
+            var api = new Api(settings.Exporter.AgentUri, apiRequestFactory, statsd, rates => sampler.SetDefaultSampleRates(rates), settings.PartialFlushEnabled);
             return new AgentWriter(api, statsd, maxBufferSize: settings.TraceBufferSize);
         }
 
@@ -170,7 +170,7 @@ namespace Datadog.Trace
                 {
                     statsd.Configure(new StatsdConfig
                     {
-                        StatsdServerName = settings.Transport.AgentUri.DnsSafeHost,
+                        StatsdServerName = settings.Exporter.AgentUri.DnsSafeHost,
                         StatsdPort = port,
                         ConstantTags = constantTags.ToArray()
                     });

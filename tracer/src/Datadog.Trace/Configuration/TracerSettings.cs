@@ -61,7 +61,7 @@ namespace Datadog.Trace.Configuration
 
             Integrations = new IntegrationSettingsCollection(source);
 
-            Transport = new TransportSettings(source);
+            Exporter = new ExporterSettings(source);
 
 #pragma warning disable 618 // App analytics is deprecated, but still used
             AnalyticsEnabled = source?.GetBool(ConfigurationKeys.GlobalAnalyticsEnabled) ??
@@ -196,7 +196,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets or sets the transport settings that dictate how the tracer connects to the agent.
         /// </summary>
-        public TransportSettings Transport { get; set; }
+        public ExporterSettings Exporter { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether default Analytics are enabled.

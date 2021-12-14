@@ -21,7 +21,7 @@ namespace Datadog.Trace.Ci.Agent
         public CIAgentWriter(ImmutableTracerSettings settings, ISampler sampler)
         {
             _isPartialFlushEnabled = settings.PartialFlushEnabled;
-            var api = new Api(settings.Transport.AgentUri, TransportStrategy.Get(settings.Transport), null, rates => sampler.SetDefaultSampleRates(rates), _isPartialFlushEnabled);
+            var api = new Api(settings.Exporter.AgentUri, TransportStrategy.Get(settings.Exporter), null, rates => sampler.SetDefaultSampleRates(rates), _isPartialFlushEnabled);
             _agentWriter = new AgentWriter(api, null, maxBufferSize: settings.TraceBufferSize);
         }
 

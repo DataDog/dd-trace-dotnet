@@ -303,13 +303,13 @@ namespace Datadog.Trace.Tools.Runner
             {
                 if (!await agentWriter.Ping().ConfigureAwait(false))
                 {
-                    Console.WriteLine($"Error connecting to the Datadog Agent at {tracerSettings.Transport.AgentUri}.");
+                    Console.WriteLine($"Error connecting to the Datadog Agent at {tracerSettings.Exporter.AgentUri}.");
                     return false;
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error connecting to the Datadog Agent at {tracerSettings.Transport.AgentUri}.");
+                Console.WriteLine($"Error connecting to the Datadog Agent at {tracerSettings.Exporter.AgentUri}.");
                 Console.WriteLine(ex);
                 return false;
             }

@@ -138,13 +138,13 @@ namespace Datadog.Trace.Configuration
         public bool StartupDiagnosticLogEnabled { get; }
         public bool TraceEnabled { get; }
         public bool TracerMetricsEnabled { get; }
-        public Datadog.Trace.Configuration.ImmutableTransportSettings Transport { get; }
+        public Datadog.Trace.Configuration.ImmutableExporterSettings Exporter { get; }
         public static Datadog.Trace.Configuration.ImmutableTracerSettings FromDefaultSources() { }
     }
-    public class ImmutableTransportSettings
+    public class ImmutableExporterSettings
     {
-        public ImmutableTransportSettings(Datadog.Trace.Configuration.IConfigurationSource source) { }
-        public ImmutableTransportSettings(Datadog.Trace.Configuration.TransportSettings settings) { }
+        public ImmutableExporterSettings(Datadog.Trace.Configuration.IConfigurationSource source) { }
+        public ImmutableExporterSettings(Datadog.Trace.Configuration.ExporterSettings settings) { }
         public System.Uri AgentUri { get; }
         public string MetricsPipeName { get; }
         public Datadog.Trace.Configuration.TraceTransportType TraceTransport { get; }
@@ -221,7 +221,7 @@ namespace Datadog.Trace.Configuration
         public bool StartupDiagnosticLogEnabled { get; set; }
         public bool TraceEnabled { get; set; }
         public bool TracerMetricsEnabled { get; set; }
-        public Datadog.Trace.Configuration.TransportSettings Transport { get; set; }
+        public Datadog.Trace.Configuration.ExporterSettings Exporter { get; set; }
         public Datadog.Trace.Configuration.ImmutableTracerSettings Build() { }
         public void SetHttpClientErrorStatusCodes(System.Collections.Generic.IEnumerable<int> statusCodes) { }
         public void SetHttpServerErrorStatusCodes(System.Collections.Generic.IEnumerable<int> statusCodes) { }
@@ -229,12 +229,12 @@ namespace Datadog.Trace.Configuration
         public static Datadog.Trace.Configuration.CompositeConfigurationSource CreateDefaultConfigurationSource() { }
         public static Datadog.Trace.Configuration.TracerSettings FromDefaultSources() { }
     }
-    public class TransportSettings
+    public class ExporterSettings
     {
         public const string DefaultAgentHost = "localhost";
         public const int DefaultAgentPort = 8126;
-        public TransportSettings() { }
-        public TransportSettings(Datadog.Trace.Configuration.IConfigurationSource source) { }
+        public ExporterSettings() { }
+        public ExporterSettings(Datadog.Trace.Configuration.IConfigurationSource source) { }
         public System.Uri AgentUri { get; set; }
         public int DogStatsdPort { get; set; }
         public string MetricsPipeName { get; set; }

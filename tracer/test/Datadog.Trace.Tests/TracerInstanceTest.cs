@@ -72,7 +72,7 @@ namespace Datadog.Trace.Tests
             {
                 var oldSettings = new TracerSettings
                 {
-                    Transport = new TransportSettings()
+                    Exporter = new ExporterSettings()
                     {
                         AgentUri = new Uri($"http://127.0.0.1:{agent.Port}"),
                     },
@@ -86,7 +86,7 @@ namespace Datadog.Trace.Tests
 
                 var newSettings = new TracerSettings
                 {
-                    Transport = new TransportSettings()
+                    Exporter = new ExporterSettings()
                     {
                         AgentUri = new Uri($"http://127.0.0.1:{agent.Port}"),
                     },

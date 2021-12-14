@@ -38,7 +38,7 @@ namespace Datadog.Trace.Configuration
             ServiceName = settings.ServiceName;
             ServiceVersion = settings.ServiceVersion;
             TraceEnabled = settings.TraceEnabled;
-            Transport = new ImmutableTransportSettings(settings.Transport);
+            Exporter = new ImmutableExporterSettings(settings.Exporter);
 #pragma warning disable 618 // App analytics is deprecated, but still used
             AnalyticsEnabled = settings.AnalyticsEnabled;
 #pragma warning restore 618
@@ -95,9 +95,9 @@ namespace Datadog.Trace.Configuration
         public bool TraceEnabled { get; }
 
         /// <summary>
-        /// Gets the transport settings that dictate how the tracer connects to the agent.
+        /// Gets the exporter settings that dictate how the tracer exports data.
         /// </summary>
-        public ImmutableTransportSettings Transport { get; }
+        public ImmutableExporterSettings Exporter { get; }
 
         /// <summary>
         /// Gets a value indicating whether default Analytics are enabled.
