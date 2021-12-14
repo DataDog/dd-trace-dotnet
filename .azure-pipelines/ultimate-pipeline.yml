@@ -909,24 +909,47 @@ stages:
     parameters:
       jobs: [Test]
 
+            # for publishTargetFramework in "netcoreapp2.1" "netcoreapp3.1" "net5.0" "net6.0" ; do
+                # for explorationTestName in "eshoponweb" "cake" ; do
+
   - job: generator
     pool:
       vmImage: ubuntu-18.04
     steps:
-      - bash: |
+      - powershell: |
           matrix="{"
+
+          add_to_matrix () {
+            name="${baseImage//./_}_${netcoreapp2.1//./_}_${explorationTestUseCase//./_}_${explorationTestName}"
+            matrix="${matrix} '${name}':"
+            matrix="${matrix} { 'baseImage': '${baseImage}', "
+            matrix="${matrix} 'publishTargetFramework': '${publishTargetFramework}', "
+            matrix="${matrix} 'explorationTestUseCase': '${explorationTestUseCase}', "
+            matrix="${matrix} 'explorationTestName': '${explorationTestName}' },"
+          }
+          
           for baseImage in "debian" "alpine" ; do
-            for publishTargetFramework in "netcoreapp2.1" "netcoreapp3.1" "net5.0" "net6.0" ; do
-              for explorationTestUseCase in "debugger" "continuousProfiler" ; do
-                for explorationTestName in "eshoponweb" "cake" ; do
-                  name="${baseImage//./_}_${publishTargetFramework//./_}_${explorationTestUseCase//./_}_${explorationTestName}"
-                  matrix="${matrix} '${name}':"
-                  matrix="${matrix} { 'baseImage': '${baseImage}', "
-                  matrix="${matrix} 'publishTargetFramework': '${publishTargetFramework}', "
-                  matrix="${matrix} 'explorationTestUseCase': '${explorationTestUseCase}', "
-                  matrix="${matrix} 'explorationTestName': '${explorationTestName}' },"
-                done
+            for explorationTestUseCase in "debugger" "continuousProfiler" ; do
+
+              $publishTargetFramework="netcoreapp2.1"
+              $explorationTestUseCase="eshoponweb"
+              add_to_matrix
+
+              $publishTargetFramework="netcoreapp3.1"
+              for explorationTestName in "cake" "paket" ; do
+                add_to_matrix
               done
+
+              $publishTargetFramework="net5.0"
+              for explorationTestName in "protobuf" "cake" ; do
+                add_to_matrix
+              done
+
+              $publishTargetFramework="net6.0"
+              for explorationTestName in  "cake" "swashbuckle"; do
+                add_to_matrix
+              done
+
             done
           done
           matrix="${matrix::-1} }"
