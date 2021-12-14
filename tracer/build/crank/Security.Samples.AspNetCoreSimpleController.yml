@@ -26,6 +26,7 @@ scenarios:
         COR_ENABLE_PROFILING: 1
         CORECLR_ENABLE_PROFILING: 1
         DD_APPSEC_ENABLED: false
+        DD_APPSEC_KEEP_TRACES: false
     load:
       job: bombardier
       variables:
@@ -42,6 +43,7 @@ scenarios:
         CORECLR_ENABLE_PROFILING: 1
         DD_APPSEC_ENABLED: true
         DD_APPSEC_BLOCKING_ENABLED: true
+        DD_APPSEC_KEEP_TRACES: false
     load:
       job: bombardier
       variables:
@@ -58,6 +60,7 @@ scenarios:
         CORECLR_ENABLE_PROFILING: 1
         DD_APPSEC_ENABLED: true
         DD_APPSEC_BLOCKING_ENABLED: false
+        DD_APPSEC_KEEP_TRACES: false
     load:
       job: bombardier
       variables:
