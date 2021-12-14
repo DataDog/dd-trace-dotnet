@@ -12,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 {
     internal class TaskContinuationGenerator<TIntegration, TTarget, TReturn, TResult> : ContinuationGenerator<TTarget, TReturn>
     {
-        private static readonly Func<TTarget, TResult, Exception, CallTargetState, TResult> _continuation;
+        private static readonly ContinuationMethodDelegate _continuation;
         private static readonly bool _preserveContext;
 
         static TaskContinuationGenerator()
@@ -20,12 +20,14 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
             var result = IntegrationMapper.CreateAsyncEndMethodDelegate(typeof(TIntegration), typeof(TTarget), typeof(TResult));
             if (result.Method != null)
             {
-                _continuation = (Func<TTarget, TResult, Exception, CallTargetState, TResult>)result.Method.CreateDelegate(typeof(Func<TTarget, TResult, Exception, CallTargetState, TResult>));
+                _continuation = (ContinuationMethodDelegate)result.Method.CreateDelegate(typeof(ContinuationMethodDelegate));
                 _preserveContext = result.PreserveContext;
             }
         }
 
-        public override TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
+        internal delegate TResult ContinuationMethodDelegate(TTarget target, TResult returnValue, Exception exception, ref CallTargetState state);
+
+        public override TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, ref CallTargetState state)
         {
             if (_continuation == null)
             {
@@ -34,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 
             if (exception != null || returnValue == null)
             {
-                _continuation(instance, default, exception, state);
+                _continuation(instance, default, exception, ref state);
                 return returnValue;
             }
 
@@ -42,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 
             if (previousTask.Status == TaskStatus.RanToCompletion)
             {
-                return ToTReturn(Task.FromResult(_continuation(instance, previousTask.Result, default, state)));
+                return ToTReturn(Task.FromResult(_continuation(instance, previousTask.Result, default, ref state)));
             }
 
             return ToTReturn(ContinuationAction(previousTask, instance, state));
@@ -85,7 +87,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                 // *
                 // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
                 // *
-                continuationResult = _continuation(target, taskResult, exception, state);
+                continuationResult = _continuation(target, taskResult, exception, ref state);
             }
             catch (Exception ex)
             {

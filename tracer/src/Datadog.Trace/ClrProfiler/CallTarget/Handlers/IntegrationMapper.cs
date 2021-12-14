@@ -311,7 +311,8 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
              * OnMethodEnd signatures with 2 or 3 parameters with 1 generics:
              *      - CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, CallTargetState state);
              *      - CallTargetReturn OnMethodEnd<TTarget>(Exception exception, CallTargetState state);
-             *
+             *      - CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, ref CallTargetState state);
+             *      - CallTargetReturn OnMethodEnd<TTarget>(Exception exception, ref CallTargetState state);
              */
 
             Log.Debug($"Creating EndMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}]");
@@ -348,9 +349,13 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 throw new ArgumentException($"The Exception type parameter of the method: {EndMethodName} in type: {integrationType.FullName} is missing.");
             }
 
-            if (onMethodEndParameters[onMethodEndParameters.Length - 1].ParameterType != typeof(CallTargetState))
+            Type stateParameterType = onMethodEndParameters[onMethodEndParameters.Length - 1].ParameterType;
+            if (stateParameterType != typeof(CallTargetState))
             {
-                throw new ArgumentException($"The CallTargetState type parameter of the method: {EndMethodName} in type: {integrationType.FullName} is missing.");
+                if (!stateParameterType.IsByRef || stateParameterType.GetElementType() != typeof(CallTargetState))
+                {
+                    throw new ArgumentException($"The CallTargetState type parameter of the method: {EndMethodName} in type: {integrationType.FullName} is missing.");
+                }
             }
 
             List<Type> callGenericTypes = new List<Type>();
@@ -373,7 +378,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             DynamicMethod callMethod = new DynamicMethod(
                      $"{onMethodEndMethodInfo.DeclaringType.Name}.{onMethodEndMethodInfo.Name}",
                      typeof(CallTargetReturn),
-                     new Type[] { targetType, typeof(Exception), typeof(CallTargetState) },
+                     new Type[] { targetType, typeof(Exception), typeof(CallTargetState).MakeByRefType() },
                      onMethodEndMethodInfo.Module,
                      true);
 
@@ -395,6 +400,10 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
             // Load the state
             ilWriter.Emit(OpCodes.Ldarg_2);
+            if (!stateParameterType.IsByRef)
+            {
+                ilWriter.Emit(OpCodes.Ldobj, typeof(CallTargetState));
+            }
 
             // Call Method
             onMethodEndMethodInfo = onMethodEndMethodInfo.MakeGenericMethod(callGenericTypes.ToArray());
@@ -413,6 +422,9 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
              *      - CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state);
              *      - CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TReturn returnValue, Exception exception, CallTargetState state);
              *      - CallTargetReturn<[Type]> OnMethodEnd<TTarget>([Type] returnValue, Exception exception, CallTargetState state);
+             *      - CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, ref CallTargetState state);
+             *      - CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TReturn returnValue, Exception exception, ref CallTargetState state);
+             *      - CallTargetReturn<[Type]> OnMethodEnd<TTarget>([Type] returnValue, Exception exception, ref CallTargetState state);
              *
              */
 
@@ -450,9 +462,13 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 throw new ArgumentException($"The Exception type parameter of the method: {EndMethodName} in type: {integrationType.FullName} is missing.");
             }
 
-            if (onMethodEndParameters[onMethodEndParameters.Length - 1].ParameterType != typeof(CallTargetState))
+            Type stateParameterType = onMethodEndParameters[onMethodEndParameters.Length - 1].ParameterType;
+            if (stateParameterType != typeof(CallTargetState))
             {
-                throw new ArgumentException($"The CallTargetState type parameter of the method: {EndMethodName} in type: {integrationType.FullName} is missing.");
+                if (!stateParameterType.IsByRef || stateParameterType.GetElementType() != typeof(CallTargetState))
+                {
+                    throw new ArgumentException($"The CallTargetState type parameter of the method: {EndMethodName} in type: {integrationType.FullName} is missing.");
+                }
             }
 
             List<Type> callGenericTypes = new List<Type>();
@@ -500,7 +516,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             DynamicMethod callMethod = new DynamicMethod(
                      $"{onMethodEndMethodInfo.DeclaringType.Name}.{onMethodEndMethodInfo.Name}.{targetType.Name}.{returnType.Name}",
                      typeof(CallTargetReturn<>).MakeGenericType(returnType),
-                     new Type[] { targetType, returnType, typeof(Exception), typeof(CallTargetState) },
+                     new Type[] { targetType, returnType, typeof(Exception), typeof(CallTargetState).MakeByRefType() },
                      onMethodEndMethodInfo.Module,
                      true);
 
@@ -529,6 +545,10 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
             // Load the state
             ilWriter.Emit(OpCodes.Ldarg_3);
+            if (!stateParameterType.IsByRef)
+            {
+                ilWriter.Emit(OpCodes.Ldobj, typeof(CallTargetState));
+            }
 
             // Call Method
             onMethodEndMethodInfo = onMethodEndMethodInfo.MakeGenericMethod(callGenericTypes.ToArray());
@@ -554,6 +574,9 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
              *      - TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state);
              *      - TReturn OnAsyncMethodEnd<TTarget, TReturn>(TReturn returnValue, Exception exception, CallTargetState state);
              *      - [Type] OnAsyncMethodEnd<TTarget>([Type] returnValue, Exception exception, CallTargetState state);
+             *      - TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, ref CallTargetState state);
+             *      - TReturn OnAsyncMethodEnd<TTarget, TReturn>(TReturn returnValue, Exception exception, ref CallTargetState state);
+             *      - [Type] OnAsyncMethodEnd<TTarget>([Type] returnValue, Exception exception, ref CallTargetState state);
              *
              *      In case the continuation is for a Task/ValueTask, the returnValue type will be an object and the value null.
              *      In case the continuation is for a Task<T>/ValueTask<T>, the returnValue type will be T with the instance value after the task completes.
@@ -594,9 +617,13 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 throw new ArgumentException($"The Exception type parameter of the method: {EndAsyncMethodName} in type: {integrationType.FullName} is missing.");
             }
 
-            if (onAsyncMethodEndParameters[onAsyncMethodEndParameters.Length - 1].ParameterType != typeof(CallTargetState))
+            Type stateParameterType = onAsyncMethodEndParameters[onAsyncMethodEndParameters.Length - 1].ParameterType;
+            if (stateParameterType != typeof(CallTargetState))
             {
-                throw new ArgumentException($"The CallTargetState type parameter of the method: {EndAsyncMethodName} in type: {integrationType.FullName} is missing.");
+                if (!stateParameterType.IsByRef || stateParameterType.GetElementType() != typeof(CallTargetState))
+                {
+                    throw new ArgumentException($"The CallTargetState type parameter of the method: {EndAsyncMethodName} in type: {integrationType.FullName} is missing.");
+                }
             }
 
             bool preserveContext = onAsyncMethodEndMethodInfo.GetCustomAttribute<PreserveContextAttribute>() != null;
@@ -646,7 +673,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             DynamicMethod callMethod = new DynamicMethod(
                      $"{onAsyncMethodEndMethodInfo.DeclaringType.Name}.{onAsyncMethodEndMethodInfo.Name}.{targetType.Name}.{returnType.Name}",
                      returnType,
-                     new Type[] { targetType, returnType, typeof(Exception), typeof(CallTargetState) },
+                     new Type[] { targetType, returnType, typeof(Exception), typeof(CallTargetState).MakeByRefType() },
                      onAsyncMethodEndMethodInfo.Module,
                      true);
 
@@ -675,6 +702,10 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
             // Load the state
             ilWriter.Emit(OpCodes.Ldarg_3);
+            if (!stateParameterType.IsByRef)
+            {
+                ilWriter.Emit(OpCodes.Ldobj, typeof(CallTargetState));
+            }
 
             // Call Method
             onAsyncMethodEndMethodInfo = onAsyncMethodEndMethodInfo.MakeGenericMethod(callGenericTypes.ToArray());

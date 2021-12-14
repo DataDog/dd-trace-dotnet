@@ -61,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        public static CallTargetReturn<TValidationResult> OnMethodEnd<TTarget, TValidationResult>(TTarget instance, TValidationResult validationResult, Exception exception, CallTargetState state)
+        public static CallTargetReturn<TValidationResult> OnMethodEnd<TTarget, TValidationResult>(TTarget instance, TValidationResult validationResult, Exception exception, ref CallTargetState state)
             where TValidationResult : IValidationResult
         {
             Scope scope = state.Scope;

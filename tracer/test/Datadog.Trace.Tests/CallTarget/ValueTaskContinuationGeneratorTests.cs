@@ -15,7 +15,7 @@ namespace Datadog.Trace.Tests.CallTarget
 {
     public class ValueTaskContinuationGeneratorTests
     {
-        public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
+        public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, ref CallTargetState state)
         {
             return returnValue;
         }
@@ -24,7 +24,8 @@ namespace Datadog.Trace.Tests.CallTarget
         public async ValueTask SuccessTest()
         {
             var tcg = new ValueTaskContinuationGenerator<ValueTaskContinuationGeneratorTests, ValueTaskContinuationGeneratorTests, ValueTask>();
-            var cTask = tcg.SetContinuation(this, GetPreviousTask(), null, CallTargetState.GetDefault());
+            var state = CallTargetState.GetDefault();
+            var cTask = tcg.SetContinuation(this, GetPreviousTask(), null, ref state);
 
             await cTask;
 
@@ -45,7 +46,8 @@ namespace Datadog.Trace.Tests.CallTarget
 
             // Using the continuation
             var tcg = new ValueTaskContinuationGenerator<ValueTaskContinuationGeneratorTests, ValueTaskContinuationGeneratorTests, ValueTask>();
-            ex = await Assert.ThrowsAsync<CustomException>(() => tcg.SetContinuation(this, GetPreviousTask(), null, CallTargetState.GetDefault()).AsTask());
+            var state = CallTargetState.GetDefault();
+            ex = await Assert.ThrowsAsync<CustomException>(() => tcg.SetContinuation(this, GetPreviousTask(), null, ref state).AsTask());
             Assert.Equal("Internal Test Exception", ex.Message);
 
             async ValueTask GetPreviousTask()
@@ -66,7 +68,8 @@ namespace Datadog.Trace.Tests.CallTarget
             // Using the continuation
             task = GetPreviousTask();
             var tcg = new ValueTaskContinuationGenerator<ValueTaskContinuationGeneratorTests, ValueTaskContinuationGeneratorTests, ValueTask>();
-            await Assert.ThrowsAsync<CustomCancellationException>(() => tcg.SetContinuation(this, task, null, CallTargetState.GetDefault()).AsTask());
+            var state = CallTargetState.GetDefault();
+            await Assert.ThrowsAsync<CustomCancellationException>(() => tcg.SetContinuation(this, task, null, ref state).AsTask());
             Assert.True(task.IsCanceled);
 
             ValueTask GetPreviousTask()
@@ -104,7 +107,8 @@ namespace Datadog.Trace.Tests.CallTarget
             var synchronizationContext = new CustomSynchronizationContext();
             SynchronizationContext.SetSynchronizationContext(synchronizationContext);
 
-            var cTask = tcg.SetContinuation(this, GetPreviousTask(), null, CallTargetState.GetDefault()).AsTask();
+            var state = CallTargetState.GetDefault();
+            var cTask = tcg.SetContinuation(this, GetPreviousTask(), null, ref state).AsTask();
 
             Task.WaitAny(cTask, synchronizationContext.Task);
 
@@ -124,7 +128,8 @@ namespace Datadog.Trace.Tests.CallTarget
         public async Task SuccessGenericTest()
         {
             var tcg = new ValueTaskContinuationGenerator<ValueTaskContinuationGeneratorTests, ValueTaskContinuationGeneratorTests, ValueTask<bool>, bool>();
-            var cTask = tcg.SetContinuation(this, GetPreviousTask(), null, CallTargetState.GetDefault());
+            var state = CallTargetState.GetDefault();
+            var cTask = tcg.SetContinuation(this, GetPreviousTask(), null, ref state);
 
             await cTask;
 
@@ -146,7 +151,8 @@ namespace Datadog.Trace.Tests.CallTarget
 
             // Using the continuation
             var tcg = new ValueTaskContinuationGenerator<ValueTaskContinuationGeneratorTests, ValueTaskContinuationGeneratorTests, ValueTask<bool>, bool>();
-            ex = await Assert.ThrowsAsync<CustomException>(() => tcg.SetContinuation(this, GetPreviousTask(), null, CallTargetState.GetDefault()).AsTask());
+            var state = CallTargetState.GetDefault();
+            ex = await Assert.ThrowsAsync<CustomException>(() => tcg.SetContinuation(this, GetPreviousTask(), null, ref state).AsTask());
             Assert.Equal("Internal Test Exception", ex.Message);
 
             async ValueTask<bool> GetPreviousTask()
@@ -167,7 +173,8 @@ namespace Datadog.Trace.Tests.CallTarget
             // Using the continuation
             task = GetPreviousTask();
             var tcg = new ValueTaskContinuationGenerator<ValueTaskContinuationGeneratorTests, ValueTaskContinuationGeneratorTests, ValueTask<bool>, bool>();
-            await Assert.ThrowsAsync<CustomCancellationException>(() => tcg.SetContinuation(this, task, null, CallTargetState.GetDefault()).AsTask());
+            var state = CallTargetState.GetDefault();
+            await Assert.ThrowsAsync<CustomCancellationException>(() => tcg.SetContinuation(this, task, null, ref state).AsTask());
             Assert.True(task.IsCanceled);
 
             ValueTask<bool> GetPreviousTask()
@@ -205,7 +212,8 @@ namespace Datadog.Trace.Tests.CallTarget
             var synchronizationContext = new CustomSynchronizationContext();
             SynchronizationContext.SetSynchronizationContext(synchronizationContext);
 
-            var cTask = tcg.SetContinuation(this, GetPreviousTask(), null, CallTargetState.GetDefault()).AsTask();
+            var state = CallTargetState.GetDefault();
+            var cTask = tcg.SetContinuation(this, GetPreviousTask(), null, ref state).AsTask();
 
             Task.WaitAny(cTask, synchronizationContext.Task);
 

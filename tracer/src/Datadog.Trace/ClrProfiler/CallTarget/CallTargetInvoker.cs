@@ -5,10 +5,8 @@
 
 using System;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.ClrProfiler.CallTarget.Handlers;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.CallTarget
 {

@@ -24,7 +24,7 @@ namespace CallTargetNativeTest.NoOp
             return returnValue;
         }
 
-        public static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
+        public static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, ref CallTargetState state)
             where TTarget : IInstance, IDuckType
             where TReturn : IReturnValue
         {
@@ -39,7 +39,7 @@ namespace CallTargetNativeTest.NoOp
             return rValue;
         }
 
-        public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
+        public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, ref CallTargetState state)
             where TTarget : IInstance, IDuckType
             where TReturn : IReturnValue
         {

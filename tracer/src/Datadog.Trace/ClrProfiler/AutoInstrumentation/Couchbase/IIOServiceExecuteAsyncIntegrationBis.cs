@@ -69,9 +69,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
+        public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, ref CallTargetState state)
         {
-            return CouchbaseCommon.CommonOnMethodEnd(returnValue, exception, state);
+            return CouchbaseCommon.CommonOnMethodEnd(returnValue, exception, ref state);
         }
     }
 }
