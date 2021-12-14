@@ -36,6 +36,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public void InjectsLogs()
         {
+            // One of the traces starts by manual opening a span when the background service starts,
+            // and then it sends a HTTP request to the server.
+            // On .NET Framework, we do not yet automatically instrument AspNetCore so instead of
+            // having one distributed trace, the result is two separate traces. So expect one more trace
+            // when running on .NET Framework
 #if NETFRAMEWORK
             var expectedTraceCount = 3;
 #else

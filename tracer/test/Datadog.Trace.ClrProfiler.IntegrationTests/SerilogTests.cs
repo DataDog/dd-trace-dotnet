@@ -27,7 +27,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base(output, "LogsInjection.Serilog")
         {
             SetServiceVersion("1.0.0");
-            EnableDebugMode();
         }
 
         [SkippableTheory]

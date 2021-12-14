@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInje
             var scalarValueConstructor = scalarValueType.GetConstructor(new[] { typeof(object) });
 
             DynamicMethod createLogEventPropertyMethod = new DynamicMethod(
-                $"SerilogLogPropertyHelper",
+                "SerilogLogPropertyHelper",
                 returnType: scalarValueType,
                 parameterTypes: new Type[] { typeof(string) },
                 typeof(DuckType).Module,

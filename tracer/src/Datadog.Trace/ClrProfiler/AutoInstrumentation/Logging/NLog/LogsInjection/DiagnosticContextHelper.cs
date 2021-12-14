@@ -7,11 +7,14 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjection
 {
     internal static class DiagnosticContextHelper
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DiagnosticContextHelper));
+
         public static MappedDiagnosticsLogicalContextSetterProxy GetMdlcProxy(Assembly nlogAssembly)
         {
             var mdlcType = nlogAssembly.GetType("NLog.MappedDiagnosticsLogicalContext");
@@ -126,6 +129,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
                 }
 
                 // Something is very awry, but don't throw, just don't inject logs
+                Log.Warning("Failed to create proxies for both MDLC and MDC using TMarker={TMarker}, TMarker.Assembly={Assembly}. No automatic logs injection will occur for this assembly.", typeof(TMarker), nlogAssembly);
             }
 
             public static MappedDiagnosticsLogicalContextSetterProxy Mdlc { get; }
