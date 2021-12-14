@@ -38,11 +38,7 @@ namespace Datadog.Trace.Configuration
             ServiceName = settings.ServiceName;
             ServiceVersion = settings.ServiceVersion;
             TraceEnabled = settings.TraceEnabled;
-            AgentUri = settings.AgentUri;
-            TracesTransport = settings.TracesTransport;
-            TracesPipeName = settings.TracesPipeName;
-            TracesPipeTimeoutMs = settings.TracesPipeTimeoutMs;
-            MetricsPipeName = settings.MetricsPipeName;
+            Transport = new ImmutableTransportSettings(settings.Transport);
 #pragma warning disable 618 // App analytics is deprecated, but still used
             AnalyticsEnabled = settings.AnalyticsEnabled;
 #pragma warning restore 618
@@ -53,7 +49,6 @@ namespace Datadog.Trace.Configuration
             Integrations = new ImmutableIntegrationSettingsCollection(settings.Integrations, settings.DisabledIntegrationNames);
             GlobalTags = new ReadOnlyDictionary<string, string>(settings.GlobalTags);
             HeaderTags = new ReadOnlyDictionary<string, string>(settings.HeaderTags);
-            DogStatsdPort = settings.DogStatsdPort;
             TracerMetricsEnabled = settings.TracerMetricsEnabled;
             RuntimeMetricsEnabled = settings.RuntimeMetricsEnabled;
             PartialFlushEnabled = settings.PartialFlushEnabled;
@@ -100,41 +95,9 @@ namespace Datadog.Trace.Configuration
         public bool TraceEnabled { get; }
 
         /// <summary>
-        /// Gets the Uri where the Tracer can connect to the Agent.
-        /// Default is <c>"http://localhost:8126"</c>.
+        /// Gets the transport settings that dictate how the tracer connects to the agent.
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.AgentUri"/>
-        /// <seealso cref="ConfigurationKeys.AgentHost"/>
-        /// <seealso cref="ConfigurationKeys.AgentPort"/>
-        public Uri AgentUri { get; }
-
-        /// <summary>
-        /// Gets the key used to determine the transport for sending traces.
-        /// Default is <c>null</c>, which will use the default path decided in <see cref="Agent.Api"/>.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.TracesTransport"/>
-        public string TracesTransport { get; }
-
-        /// <summary>
-        /// Gets the windows pipe name where the Tracer can connect to the Agent.
-        /// Default is <c>null</c>.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.TracesPipeName"/>
-        public string TracesPipeName { get; }
-
-        /// <summary>
-        /// Gets the timeout in milliseconds for the windows named pipe requests.
-        /// Default is <c>100</c>.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.TracesPipeTimeoutMs"/>
-        public int TracesPipeTimeoutMs { get; }
-
-        /// <summary>
-        /// Gets the windows pipe name where the Tracer can send stats.
-        /// Default is <c>null</c>.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.MetricsPipeName"/>
-        public string MetricsPipeName { get; }
+        public ImmutableTransportSettings Transport { get; }
 
         /// <summary>
         /// Gets a value indicating whether default Analytics are enabled.

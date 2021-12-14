@@ -101,7 +101,7 @@ namespace Datadog.Trace.Tests
 
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(settings));
 
-            Assert.Equal(expected, tracerSettings.AgentUri.ToString());
+            Assert.Equal(expected, tracerSettings.Transport.AgentUri.ToString());
         }
 
         [Theory]

@@ -31,7 +31,7 @@ namespace Datadog.Trace.OpenTracing
 
             if (agentEndpoint != null)
             {
-                configuration.AgentUri = agentEndpoint;
+                configuration.Transport.AgentUri = agentEndpoint;
             }
 
             if (defaultServiceName != null)
