@@ -918,7 +918,6 @@ stages:
     steps:
       - bash: |
           matrix="{"
-
           add_to_matrix () {
             name="${baseImage//./_}_${netcoreapp2.1//./_}_${explorationTestUseCase//./_}_${explorationTestName}"
             matrix="${matrix} '${name}':"
@@ -927,32 +926,27 @@ stages:
             matrix="${matrix} 'explorationTestUseCase': '${explorationTestUseCase}', "
             matrix="${matrix} 'explorationTestName': '${explorationTestName}' },"
           }
-          
           for baseImage in "debian" "alpine" ; do
             for explorationTestUseCase in "debugger" "continuousProfiler" ; do
-
               publishTargetFramework="netcoreapp2.1"
-              explorationTestUseCase="eshoponweb"
+              explorationTestName="eshoponweb"
               add_to_matrix
-
               publishTargetFramework="netcoreapp3.1"
               for explorationTestName in "cake" "paket" ; do
                 add_to_matrix
               done
-
               publishTargetFramework="net5.0"
               for explorationTestName in "protobuf" "cake" ; do
                 add_to_matrix
               done
-
               publishTargetFramework="net6.0"
               for explorationTestName in  "cake" "swashbuckle"; do
                 add_to_matrix
               done
-
             done
           done
           matrix="${matrix::-1} }"
+          echo $matrix
           echo "##vso[task.setVariable variable=values;isOutput=true]${matrix}"
         name: mtrx
 
