@@ -307,7 +307,7 @@ class ExplorationTestDescription
                 IsGitShallowCloneSupported = true,
                 IsGitSubmodulesRequired = true,
                 PathToUnitTestProject = "csharp/src/Google.Protobuf.Test",
-                SupportedFrameworks = new[] { TargetFramework.NETCOREAPP2_1, TargetFramework.NET5_0, },
+                SupportedFrameworks = new[] { TargetFramework.NETCOREAPP2_1 },
             },
             ExplorationTestName.cake => new ExplorationTestDescription()
             {

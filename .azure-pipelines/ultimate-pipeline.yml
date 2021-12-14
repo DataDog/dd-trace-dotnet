@@ -886,6 +886,7 @@ stages:
         includeX86: true
     - template: steps/restore-working-directory.yml
 
+
     - script: tracer\build.cmd SetupExplorationTests -ExplorationTestUseCase $(explorationTestUseCase) -ExplorationTestName $(explorationTestName)
       displayName: RunExplorationTest
 
@@ -918,6 +919,7 @@ stages:
     steps:
       - bash: |
           matrix="{"
+
           add_to_matrix () {
             name="${baseImage//./_}_${publishTargetFramework//./_}_${explorationTestUseCase//./_}_${explorationTestName}"
             matrix="${matrix} '${name}':"
@@ -926,19 +928,24 @@ stages:
             matrix="${matrix} 'explorationTestUseCase': '${explorationTestUseCase}', "
             matrix="${matrix} 'explorationTestName': '${explorationTestName}' },"
           }
+
           for baseImage in "debian" "alpine" ; do
             for explorationTestUseCase in "debugger" "continuousProfiler" ; do
+
               publishTargetFramework="netcoreapp2.1"
-              explorationTestName="eshoponweb"
-              add_to_matrix
+              for explorationTestName in "eshoponweb" "protobuf" ; do
+                add_to_matrix
+              done
+
               publishTargetFramework="netcoreapp3.1"
               for explorationTestName in "cake" "paket" ; do
                 add_to_matrix
               done
+
               publishTargetFramework="net5.0"
-              for explorationTestName in "protobuf" "cake" ; do
-                add_to_matrix
-              done
+              explorationTestName="cake"
+              add_to_matrix
+
               publishTargetFramework="net6.0"
               for explorationTestName in  "cake" "swashbuckle"; do
                 add_to_matrix
