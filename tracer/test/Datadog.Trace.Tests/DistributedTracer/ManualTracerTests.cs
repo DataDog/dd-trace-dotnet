@@ -41,27 +41,15 @@ namespace Datadog.Trace.Tests.DistributedTracer
         }
 
         [Fact]
-        public void LockSamplingPriority()
+        public void SetSamplingPriority()
         {
             var automaticTracer = new Mock<IAutomaticTracer>();
-            var manualTracer = new ManualTracer(automaticTracer.Object);
-
-            ((IDistributedTracer)manualTracer).LockSamplingPriority();
-
-            automaticTracer.Verify(t => t.LockSamplingPriority(), Times.Once);
-        }
-
-        [Fact]
-        public void TrySetSamplingPriority()
-        {
-            var automaticTracer = new Mock<IAutomaticTracer>();
-            automaticTracer.Setup(t => t.TrySetSamplingPriority(It.IsAny<int?>())).Returns((int?)SamplingPriority.UserReject);
 
             var manualTracer = new ManualTracer(automaticTracer.Object);
 
-            var samplingPriority = ((IDistributedTracer)manualTracer).TrySetSamplingPriority(SamplingPriority.UserKeep);
+            ((IDistributedTracer)manualTracer).SetSamplingPriority(SamplingPriority.UserKeep);
 
-            samplingPriority.Should().Be(SamplingPriority.UserReject, "TrySetSamplingPriority should return the value given by the parent");
+            automaticTracer.Verify(t => t.SetSamplingPriority((int?)SamplingPriority.UserKeep), Times.Once());
         }
     }
 }

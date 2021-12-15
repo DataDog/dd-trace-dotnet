@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -21,6 +22,8 @@ namespace Datadog.Trace
     /// </summary>
     public class Tracer : ITracer, IDatadogTracer, IDatadogOpenTracingTracer
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Tracer));
+
         private static string _runtimeId;
 
         /// <summary>
@@ -330,12 +333,12 @@ namespace Datadog.Trace
             // otherwise start a new trace context
             if (parent is SpanContext parentSpanContext)
             {
-                traceContext = parentSpanContext.TraceContext ??
-                    new TraceContext(this) { SamplingPriority = parentSpanContext.SamplingPriority };
+                traceContext = parentSpanContext.TraceContext
+                    ?? new TraceContext(this) { SamplingPriority = parentSpanContext.SamplingPriority ?? DistributedTracer.Instance.GetSamplingPriority() };
             }
             else
             {
-                traceContext = new TraceContext(this);
+                traceContext = new TraceContext(this) { SamplingPriority = DistributedTracer.Instance.GetSamplingPriority() };
             }
 
             var finalServiceName = serviceName ?? parent?.ServiceName ?? DefaultServiceName;

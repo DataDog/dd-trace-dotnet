@@ -56,6 +56,7 @@ namespace Datadog.Trace.ClrProfiler
         SpanContext IDistributedTracer.GetSpanContext()
         {
             var values = _parent.GetDistributedTrace();
+
             if (values is SpanContext spanContext)
             {
                 return spanContext;
@@ -71,14 +72,14 @@ namespace Datadog.Trace.ClrProfiler
             _parent.SetDistributedTrace(value);
         }
 
-        void IDistributedTracer.LockSamplingPriority()
+        SamplingPriority? IDistributedTracer.GetSamplingPriority()
         {
-            _parent.LockSamplingPriority();
+            return (SamplingPriority?)_parent.GetSamplingPriority();
         }
 
-        SamplingPriority? IDistributedTracer.TrySetSamplingPriority(SamplingPriority? samplingPriority)
+        void IDistributedTracer.SetSamplingPriority(SamplingPriority? samplingPriority)
         {
-            return (SamplingPriority?)_parent.TrySetSamplingPriority((int?)samplingPriority);
+            _parent.SetSamplingPriority((int?)samplingPriority);
         }
     }
 }
