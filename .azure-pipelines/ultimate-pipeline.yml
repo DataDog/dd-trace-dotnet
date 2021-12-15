@@ -1012,6 +1012,8 @@ stages:
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
+          explorationTestUseCase=$(explorationTestUseCase)
+          explorationTestName=$(explorationTestName)
         dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e explorationTestUseCase=$(explorationTestUseCase) -e explorationTestName=$(explorationTestName) -e framework=$(publishTargetFramework) ExplorationTests
 
     - task: DockerCompose@0
