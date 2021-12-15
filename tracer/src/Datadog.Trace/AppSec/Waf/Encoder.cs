@@ -80,8 +80,9 @@ namespace Datadog.Trace.AppSec.Waf
             var value =
                 o switch
                 {
+                    null => CreateNativeString(string.Empty),
                     string s => CreateNativeString(s),
-                    JValue jv => CreateNativeString(jv.Value.ToString()),
+                    JValue jv => CreateNativeString(jv.Value?.ToString() ?? string.Empty),
                     int i => new Obj(_wafNative.ObjectSigned(i)),
                     long i => new Obj(_wafNative.ObjectSigned(i)),
                     uint i => new Obj(_wafNative.ObjectUnsigned(i)),
