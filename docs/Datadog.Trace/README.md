@@ -67,11 +67,11 @@ This section describes some of the most important breaking changes. For full det
 
 Version 2.0 of _Datadog.Trace_ added support for .NET Core 6.0 and raised the minimum supported version of .NET Framework from .NET Framework 4.5 to .NET Framework 4.6.1. If you are currently targeting version < 4.6.1, we suggest you upgrade [in line with Microsoft's guidance](https://docs.microsoft.com/en-us/lifecycle/products/microsoft-net-framework).
 
-For full details of supported versions, see [our documentation on .NET Framework compatibility requirements](https://docs.datadoghq.com/tracing/setup_overview/compatibility_requirements/dotnet-framework) and [.NET/.NET Core compatibility requirements](https://docs.datadoghq.com/tracing/setup_overview/compatibility_requirements/dotnet-core).  
+For full details of supported versions, see [our documentation on .NET Framework compatibility requirements](https://docs.datadoghq.com/tracing/setup_overview/compatibility_requirements/dotnet-framework) and [.NET/.NET Core compatibility requirements](https://docs.datadoghq.com/tracing/setup_overview/compatibility_requirements/dotnet-core).
 
 ### Singleton Tracer instances
 
-In version 1.x, you could create new `Tracer` instances with different settings for each instance, using `new Tracer()`. From version 2.0 this constructor is marked `[Obsolete]`, and it is no longer possible to create `Tracer` instances with different settings. This was done to avoid multiple problematic patterns that were hard for users to detect. 
+In version 1.x, you could create new `Tracer` instances with different settings for each instance, using `new Tracer()`. From version 2.0 this constructor is marked `[Obsolete]`, and it is no longer possible to create `Tracer` instances with different settings. This was done to avoid multiple problematic patterns that were hard for users to detect.
 
 Update your code to the following:
 
@@ -87,7 +87,7 @@ Tracer.Configure(settings);          // <- Add this line
 
 ### TracerSettings are immutable
 
-In version 1.x the `TracerSettings` object passed to a `Tracer` instance could be subsequently modified. Depending on the changes, these may or may not have been respected. In version 2.0, an `ImmutableTracerSettings` object is created when the `Tracer` instance is configured. Subsequent changes to the `TracerSettings` instance will not be observed by `Tracer`. 
+In version 1.x the `TracerSettings` object passed to a `Tracer` instance could be subsequently modified. Depending on the changes, these may or may not have been respected. In version 2.0, an `ImmutableTracerSettings` object is created when the `Tracer` instance is configured. Subsequent changes to the `TracerSettings` instance will not be observed by `Tracer`.
 
 This change should not generally require changes to your code, but the type of `Tracer.Settings` is now an `ImmutableTracerSettings` instance, not a `TracerSettings` instance.
 
@@ -115,7 +115,7 @@ In version 1.x, you could disable automatic instrumentation of all ADO.NET integ
 
 This allows you to disable specific ADO.NET integrations if required. [See our documentation for a complete list of supported integration IDS](https://docs.datadoghq.com/tracing/setup_overview/compatibility_requirements/dotnet-core/#integrations). Note that you can still disable _all_ ADO.NET integrations using the `AdoNet` integration ID.
 
-This change also removes the now-obsolete `TracerSettings.AdoNetExcludedTypes` setting and the corresponding environment variable `DD_TRACE_ADONET_EXCLUDED_TYPES`. Replace usages of these with `TracerSettings.Integrations["<INTEGRATION_NAME>"].Enabled` and `DD_TRACE_<INTEGRATION_NAME>_ENABLED`, respectively: 
+This change also removes the now-obsolete `TracerSettings.AdoNetExcludedTypes` setting and the corresponding environment variable `DD_TRACE_ADONET_EXCLUDED_TYPES`. Replace usages of these with `TracerSettings.Integrations["<INTEGRATION_NAME>"].Enabled` and `DD_TRACE_<INTEGRATION_NAME>_ENABLED`, respectively:
 
 ```csharp
 using Datadog.Trace;
@@ -147,11 +147,11 @@ The following deprecated APIs have been removed.
 
 * `TracerSettings.DebugEnabled`: Enable debug mode by setting the `DD_TRACE_DEBUG` environment variable to `1`
 * `Tags.ForceDrop` and `Tags.ForceKeep` have been removed. Use `Tags.ManualDrop` and `Tags.ManualKeep` respectively instead.
-* `SpanTypes` associated with automatic instrumentation spans, such as `MongoDb` and `Redis` have been removed.  
+* `SpanTypes` associated with automatic instrumentation spans, such as `MongoDb` and `Redis` have been removed.
 * `Tags` associated with automatic instrumentation spans, such as `AmqpCommand` and `CosmosDbContainer` have been removed.
 * `Tracer.Create()` has been removed. Use `Tracer.Configure()` instead.
 * `TracerSettings.AdoNetExcludedTypes` has been removed. Use `TracerSettings.Integrations` to disable automatic instrumentation for ADO.NET integrations in the same way as other integrations.
-* Various internal APIs that were not intended for public consumption have been removed. 
+* Various internal APIs that were not intended for public consumption have been removed.
 
 In addition, some settings have been marked obsolete:
 
@@ -208,9 +208,9 @@ bool? isEnabled = tracerSettings.Integrations["MyRandomIntegration"].Enabled;
 
 ### Default value of `DD_TRACE_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED` is now `true`
 
-Version 1.26.0 added support for the `DD_TRACE_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED` feature flag, which enabled improved span names for ASP.NET and ASP.NET Core automatic instrumentation spans, an additional span for ASP.NET Core requests, and additional tags. 
+Version 1.26.0 added support for the `DD_TRACE_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED` feature flag, which enabled improved span names for ASP.NET and ASP.NET Core automatic instrumentation spans, an additional span for ASP.NET Core requests, and additional tags.
 
-In version 2.0, `DD_TRACE_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED` is **enabled** by default. Due to the change in span names, you may need to update your monitors and dashboards to use the new resource names. 
+In version 2.0, `DD_TRACE_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED` is **enabled** by default. Due to the change in span names, you may need to update your monitors and dashboards to use the new resource names.
 
 If you do not wish to take advantage of the improved route names, you can disabled the feature by setting the `DD_TRACE_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED` environment variable to `0`.
 
