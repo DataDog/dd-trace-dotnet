@@ -60,23 +60,25 @@ namespace Datadog.Trace.Util.Http
                 }
             }
 
-            var queryStringDic = new Dictionary<string, string[]>(request.Query.Count);
+            var queryStringDic = new Dictionary<string, List<string>>(request.Query.Count);
             foreach (var kvp in request.Query)
             {
+                var value = kvp.Value;
                 var currentKey = kvp.Key ?? string.Empty;
+                // a query string like ?test only fills the key part, in IIS it only fills the value part, aligning behaviors here (also waf tests on values only)
+                if (string.IsNullOrEmpty(value))
+                {
+                    value = currentKey;
+                    currentKey = string.Empty;
+                }
 
-#if NETCOREAPP
-                if (!queryStringDic.TryAdd(currentKey, kvp.Value))
+                if (!queryStringDic.TryGetValue(currentKey, out var list))
                 {
-#else
-                if (!queryStringDic.ContainsKey(currentKey))
-                {
-                    queryStringDic.Add(currentKey, kvp.Value);
+                    queryStringDic.Add(currentKey, new List<string> { value });
                 }
                 else
                 {
-#endif
-                    Log.Warning("Query string with {key} couldn't be added as argument to the waf", currentKey);
+                    list.Add(value);
                 }
             }
 

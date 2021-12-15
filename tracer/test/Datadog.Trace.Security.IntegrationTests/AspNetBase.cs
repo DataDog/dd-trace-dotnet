@@ -81,9 +81,9 @@ namespace Datadog.Trace.Security.IntegrationTests
             _agent?.Dispose();
         }
 
-        public async Task TestBlockedRequestAsync(MockTracerAgent agent, bool enableSecurity, HttpStatusCode expectedStatusCode, int expectedSpans, IEnumerable<Action<MockTracerAgent.Span>> assertOnSpans)
+        public async Task TestBlockedRequestAsync(MockTracerAgent agent, bool enableSecurity, HttpStatusCode expectedStatusCode, int expectedSpans, IEnumerable<Action<MockTracerAgent.Span>> assertOnSpans, string url = "/Health/?arg=[$slice]")
         {
-            Func<Task<(HttpStatusCode StatusCode, string ResponseText)>> attack = () => SubmitRequest("/Health/?arg=[$slice]");
+            Func<Task<(HttpStatusCode StatusCode, string ResponseText)>> attack = () => SubmitRequest(url);
             var resultRequests = await Task.WhenAll(attack(), attack(), attack(), attack(), attack());
             agent.SpanFilters.Add(s => s.Tags.ContainsKey("http.url") && s.Tags["http.url"].IndexOf("Health", StringComparison.InvariantCultureIgnoreCase) > 0);
             var spans = agent.WaitForSpans(expectedSpans);
