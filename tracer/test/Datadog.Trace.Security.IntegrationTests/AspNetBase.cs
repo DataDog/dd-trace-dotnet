@@ -87,7 +87,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             var resultRequests = await Task.WhenAll(attack(), attack(), attack(), attack(), attack());
             agent.SpanFilters.Add(s => s.Tags.ContainsKey("http.url") && s.Tags["http.url"].IndexOf("Health", StringComparison.InvariantCultureIgnoreCase) > 0);
             var spans = agent.WaitForSpans(expectedSpans);
-            Assert.Equal(expectedSpans, spans.Count());
+            Assert.Equal(expectedSpans, spans.Count);
 
             var expectedAppSecEvents = enableSecurity ? 5 : 0;
             var actualAppSecEvents = 0;
