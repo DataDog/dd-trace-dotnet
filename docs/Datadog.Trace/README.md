@@ -35,6 +35,8 @@ Calling `Tracer.Configure()` will replace the settings for all subsequent traces
 
 > :warning: Replacing the configuration should be done once, as early as possible in your application. 
 
+If you used to set the settings programatically, also note that transport related settings have been isolated in the `ExporterSettings`. It is still encapsulated in `TracerSettings`.
+
  ### Create custom traces
 
 To create and activate a custom span, use `Tracer.Instance.StartActive()`. If a trace is already active (when created by automatic instrumentation, for example), the span will be part of the current trace. If there is no current trace, a new one will be started.
@@ -61,7 +63,7 @@ Version 2.0 of this package introduced a number of breaking changes to the API w
 
 This section describes some of the most important breaking changes. For full details see [the release notes on GitHub](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.0.0).
 
-## Updates for supported .NET versions
+### Updates for supported .NET versions
 
 Version 2.0 of _Datadog.Trace_ added support for .NET Core 6.0 and raised the minimum supported version of .NET Framework from .NET Framework 4.5 to .NET Framework 4.6.1. If you are currently targeting version < 4.6.1, we suggest you upgrade [in line with Microsoft's guidance](https://docs.microsoft.com/en-us/lifecycle/products/microsoft-net-framework).
 
@@ -159,7 +161,7 @@ In addition, some settings have been marked obsolete:
 
 ### Introduction of ISpan and IScope
 
-In version 2.0 the public `Tracer` API has been updated to expose `IScope` and `ISpan` instead of `Scope` and `Span`. In most cases, this should not require any changes to your code, but if you are currently using explicit types (instead of inferred types), then you will need to replace usages of `Scope` with `IScope` and `Span` with `ISpan`:
+In version 2.0 the public `Scope` and `Span` classes have been made internal. We now expose `IScope` and `ISpan` instead. The `Tracer` API has been updated accordingly. In most cases, this should not require any changes to your code, but if you are currently using explicit types (instead of inferred types), then you will need to replace usages of `Scope` with `IScope` and `Span` with `ISpan`:
 
 ```csharp
 using Datadog.Trace;
@@ -179,6 +181,11 @@ using (IScope scope = Tracer.Instance.StartActive("my-operation")
 {
 }
 ```
+
+### Simplification of the tracer interface
+
+In addition to returning `IScope`, the `Tracer.StartActive` method has been simplified to provide a `SpanCreationSettings`. In addition, we have removed the possibility to override the service name.
+
 
 ### Incorrect integration names are ignored
 
