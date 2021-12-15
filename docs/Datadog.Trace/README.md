@@ -35,8 +35,6 @@ Calling `Tracer.Configure()` will replace the settings for all subsequent traces
 
 > :warning: Replacing the configuration should be done once, as early as possible in your application. 
 
-If you used to set the settings programatically, also note that transport related settings have been isolated in the `ExporterSettings`. It is still encapsulated in `TracerSettings`.
-
  ### Create custom traces
 
 To create and activate a custom span, use `Tracer.Instance.StartActive()`. If a trace is already active (when created by automatic instrumentation, for example), the span will be part of the current trace. If there is no current trace, a new one will be started.
@@ -102,6 +100,8 @@ Tracer.Configure(settings);
 // All properties on Settings are now read-only 
 // Tracer.Instance.Settings.TraceEnabled = false; // <- DOES NOT COMPILE
 ```
+
+Also note that transport related settings have been isolated in the `ExporterSettings`. It is still encapsulated in `TracerSettings`.
 
 ### ADO.NET integrations can be disabled individually
 
@@ -206,7 +206,9 @@ settings.Enabled = false;
 bool? isEnabled = tracerSettings.Integrations["MyRandomIntegration"].Enabled;
 ```
 
-### Default value of `DD_TRACE_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED` is now `true`
+### Automatic instrumentation changes
+
+#### Default value of `DD_TRACE_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED` is now `true`
 
 Version 1.26.0 added support for the `DD_TRACE_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED` feature flag, which enabled improved span names for ASP.NET and ASP.NET Core automatic instrumentation spans, an additional span for ASP.NET Core requests, and additional tags.
 
@@ -214,11 +216,11 @@ In version 2.0, `DD_TRACE_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED` is **enabled** 
 
 If you do not wish to take advantage of the improved route names, you can disabled the feature by setting the `DD_TRACE_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED` environment variable to `0`.
 
-### Call-site instrumentation has been removed
+#### Call-site instrumentation has been removed
 
 From version 2.0, call-site automatic instrumentation has been removed and replaced with call-target instrumentation. This has been the default mode [since version 1.28.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.28.0). Call-target instrumentation provides performance improvements over call-site instrumentation, but we no longer support instrumenting some custom implementations of `DbCommand`. If you find spans are missing from your traces after upgrading, please raise an issue on GitHub, or contact [support](https://docs.datadoghq.com/help).
 
-### DD_INTEGRATIONS environment variable no longer needed
+#### DD_INTEGRATIONS environment variable no longer needed
 
 The `integrations.json` file is no longer required for instrumentation. You can remove references to this file, for example by deleting the `DD_INTEGRATIONS` environment variable.
 
