@@ -41,18 +41,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // On .NET Framework, we do not yet automatically instrument AspNetCore so instead of
             // having one distributed trace, the result is two separate traces. So expect one more trace
             // when running on .NET Framework
+
+            // We also log inside of the web server handling, so in .NET Core expect one more log line
 #if NETFRAMEWORK
-            var expectedTraceCount = 3;
+            var expectedCorrelatedTraceCount = 3;
+            var expectedCorrelatedSpanCount = 3;
 #else
-            var expectedTraceCount = 2;
+            var expectedCorrelatedTraceCount = 2;
+            var expectedCorrelatedSpanCount = 4;
 #endif
+
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent.Port, aspNetCorePort: 0))
             {
                 var spans = agent.WaitForSpans(1, 2500);
                 spans.Should().HaveCountGreaterOrEqualTo(1);
 
-                ValidateLogCorrelation(spans, _logFiles, expectedTraceCount);
+                ValidateLogCorrelation(spans, _logFiles, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount);
             }
         }
     }

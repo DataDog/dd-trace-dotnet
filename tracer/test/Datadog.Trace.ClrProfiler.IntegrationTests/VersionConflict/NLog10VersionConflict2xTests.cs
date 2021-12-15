@@ -36,6 +36,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
         {
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
 
+            var expectedCorrelatedTraceCount = 1;
+            var expectedCorrelatedSpanCount = 8;
+
             int agentPort = TcpPortProvider.GetOpenPort();
             using (var agent = new MockTracerAgent(agentPort))
             using (RunSampleAndWaitForExit(agent.Port))
@@ -43,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
                 var spans = agent.WaitForSpans(1, 2500);
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
 
-                ValidateLogCorrelation(spans, _nlogPre40LogFileTests, expectedTraceCount: 1);
+                ValidateLogCorrelation(spans, _nlogPre40LogFileTests, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount);
             }
         }
     }

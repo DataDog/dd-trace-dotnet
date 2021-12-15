@@ -37,6 +37,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
 
+            var expectedCorrelatedTraceCount = 1;
+            var expectedCorrelatedSpanCount = 1;
+
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
             {
@@ -44,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
 
                 var logFiles = GetLogFiles(packageVersion, logsInjectionEnabled: true);
-                ValidateLogCorrelation(spans, logFiles, expectedTraceCount: 1, packageVersion);
+                ValidateLogCorrelation(spans, logFiles, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount, packageVersion);
             }
         }
 
@@ -56,6 +59,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetEnvironmentVariable("DD_LOGS_INJECTION", "false");
 
+            var expectedCorrelatedTraceCount = 0;
+            var expectedCorrelatedSpanCount = 0;
+
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
             {
@@ -63,7 +69,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
 
                 var logFiles = GetLogFiles(packageVersion, logsInjectionEnabled: false);
-                ValidateLogCorrelation(spans, logFiles, expectedTraceCount: 0, packageVersion, disableLogCorrelation: true);
+                ValidateLogCorrelation(spans, logFiles, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount, packageVersion, disableLogCorrelation: true);
             }
         }
 

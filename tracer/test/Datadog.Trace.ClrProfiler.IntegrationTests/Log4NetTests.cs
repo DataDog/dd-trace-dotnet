@@ -57,6 +57,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
 
+            var expectedCorrelatedTraceCount = 1;
+            var expectedCorrelatedSpanCount = 1;
+
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
             {
@@ -66,15 +69,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NETFRAMEWORK
                 if (!string.IsNullOrWhiteSpace(packageVersion) && new Version(packageVersion) >= new Version("2.0.5"))
                 {
-                    ValidateLogCorrelation(spans, _nlog205LogFileTests, expectedTraceCount: 1, packageVersion);
+                    ValidateLogCorrelation(spans, _nlog205LogFileTests, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount, packageVersion);
                 }
                 else
                 {
-                    ValidateLogCorrelation(spans, _nlogPre205LogFileTests, expectedTraceCount: 1, packageVersion);
+                    ValidateLogCorrelation(spans, _nlogPre205LogFileTests, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount, packageVersion);
                 }
 #else
                 // Regardless of package version, for .NET Core just assert against raw log lines
-                ValidateLogCorrelation(spans, _nlogPre205LogFileTests, expectedTraceCount: 1, packageVersion);
+                ValidateLogCorrelation(spans, _nlogPre205LogFileTests, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount, packageVersion);
 #endif
             }
         }
@@ -87,6 +90,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetEnvironmentVariable("DD_LOGS_INJECTION", "false");
 
+            var expectedCorrelatedTraceCount = 0;
+            var expectedCorrelatedSpanCount = 0;
+
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
             {
@@ -96,15 +102,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NETFRAMEWORK
                 if (!string.IsNullOrWhiteSpace(packageVersion) && new Version(packageVersion) >= new Version("2.0.5"))
                 {
-                    ValidateLogCorrelation(spans, _nlog205LogFileTests, expectedTraceCount: 0, packageVersion, disableLogCorrelation: true);
+                    ValidateLogCorrelation(spans, _nlog205LogFileTests, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount, packageVersion, disableLogCorrelation: true);
                 }
                 else
                 {
-                    ValidateLogCorrelation(spans, _nlogPre205LogFileTests, expectedTraceCount: 0, packageVersion, disableLogCorrelation: true);
+                    ValidateLogCorrelation(spans, _nlogPre205LogFileTests, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount, packageVersion, disableLogCorrelation: true);
                 }
 #else
                 // Regardless of package version, for .NET Core just assert against raw log lines
-                ValidateLogCorrelation(spans, _nlogPre205LogFileTests, expectedTraceCount: 0, packageVersion, disableLogCorrelation: true);
+                ValidateLogCorrelation(spans, _nlogPre205LogFileTests, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount, packageVersion, disableLogCorrelation: true);
 #endif
             }
         }
