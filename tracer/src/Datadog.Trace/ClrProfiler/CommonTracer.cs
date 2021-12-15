@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.Logging;
-
 namespace Datadog.Trace.ClrProfiler
 {
     /// <summary>
@@ -13,44 +11,19 @@ namespace Datadog.Trace.ClrProfiler
     /// </summary>
     internal abstract class CommonTracer : ICommonTracer
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CommonTracer));
-
-        public void LockSamplingPriority()
+        public int? GetSamplingPriority()
         {
-            var traceContext = Tracer.Instance.InternalActiveScope?.Span.Context?.TraceContext;
-
-            if (traceContext != null)
-            {
-                traceContext.LockSamplingPriority(notifyDistributedTracer: false);
-            }
+            return (int?)Tracer.Instance.InternalActiveScope?.Span.Context?.TraceContext?.SamplingPriority;
         }
 
-        public int? TrySetSamplingPriority(int? samplingPriority)
+        public void SetSamplingPriority(int? samplingPriority)
         {
             var traceContext = Tracer.Instance.InternalActiveScope?.Span.Context?.TraceContext;
 
-            // If there is no trace context, when a new span is propagated the sampling priority will automatically be locked
-            // because it will be considered as a distributed trace
             if (traceContext != null)
             {
-                if (traceContext.IsSamplingPriorityLocked())
-                {
-                    var currentSamplingPriority = traceContext.SamplingPriority;
-
-                    if (currentSamplingPriority != null)
-                    {
-                        return (int)currentSamplingPriority.Value;
-                    }
-
-                    Log.Warning("SamplingPriority is locked without value");
-                }
-                else
-                {
-                    traceContext.SetSamplingPriority((SamplingPriority?)samplingPriority, notifyDistributedTracer: false);
-                }
+                traceContext.SetSamplingPriority((SamplingPriority?)samplingPriority, notifyDistributedTracer: false);
             }
-
-            return samplingPriority;
         }
     }
 }

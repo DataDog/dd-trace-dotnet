@@ -147,10 +147,28 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
             manualInnerSpan.Name.Should().Be("Child");
 
             // Make sure there is no extra root span
-            spans.Where(s => s.ParentId == null).Should().HaveCount(parentTrace ? 1 : 2);
+            var rootTraces = spans.Where(s => s.ParentId == null).ToList();
 
-            // The sampling priority should be UserKeep for all spans
-            spans.Should().OnlyContain(s => VerifySpan(s, parentTrace));
+            rootTraces.Should().HaveCount(parentTrace ? 1 : 2);
+
+            // One HttpClient span should be UserKeep, the other UserReject
+            var httpSpans = spans.Where(s => s.Name == "http.request");
+            httpSpans.Should()
+                .HaveCount(2)
+                .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == (double)SamplingPriority.UserKeep)
+                .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == (double)SamplingPriority.UserReject);
+
+            // Check that the sampling priority got propagated to the target service
+            var targetSpans = spans.Where(s => s.Name == "aspnet.request" && s.ParentId != null);
+            targetSpans.Should()
+                .HaveCount(2)
+                .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == (double)SamplingPriority.UserKeep)
+                .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == (double)SamplingPriority.UserReject);
+
+            // The sampling priority for the root trace should be UserReject
+            // Depending on the parentTrace argument, the root trace is either the manual one or the automatic one
+            var rootTrace = parentTrace ? rootTraces.Single() : rootTraces.First(s => s.Name == "Manual");
+            rootTrace.Metrics[Metrics.SamplingPriority].Should().Be((double)SamplingPriority.UserReject);
         }
 
         [SkippableFact]
