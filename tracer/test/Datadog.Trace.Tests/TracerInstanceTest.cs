@@ -72,7 +72,10 @@ namespace Datadog.Trace.Tests
             {
                 var oldSettings = new TracerSettings
                 {
-                    AgentUri = new Uri($"http://127.0.0.1:{agent.Port}"),
+                    Exporter = new ExporterSettings()
+                    {
+                        AgentUri = new Uri($"http://127.0.0.1:{agent.Port}"),
+                    },
                     TracerMetricsEnabled = false,
                     StartupDiagnosticLogEnabled = false,
                     GlobalTags = new Dictionary<string, string> { { "test-tag", "original-value" } },
@@ -83,7 +86,10 @@ namespace Datadog.Trace.Tests
 
                 var newSettings = new TracerSettings
                 {
-                    AgentUri = new Uri($"http://127.0.0.1:{agent.Port}"),
+                    Exporter = new ExporterSettings()
+                    {
+                        AgentUri = new Uri($"http://127.0.0.1:{agent.Port}"),
+                    },
                     TracerMetricsEnabled = false,
                     StartupDiagnosticLogEnabled = false,
                     GlobalTags = new Dictionary<string, string> { { "test-tag", "new-value" } },

@@ -1,4 +1,4 @@
-﻿// <copyright file="TracerManagerFactory.cs" company="Datadog">
+// <copyright file="TracerManagerFactory.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -127,8 +127,8 @@ namespace Datadog.Trace
 
         protected virtual IAgentWriter GetAgentWriter(ImmutableTracerSettings settings, IDogStatsd statsd, ISampler sampler)
         {
-            var apiRequestFactory = TransportStrategy.Get(settings);
-            var api = new Api(settings.AgentUri, apiRequestFactory, statsd, rates => sampler.SetDefaultSampleRates(rates), settings.PartialFlushEnabled);
+            var apiRequestFactory = TransportStrategy.Get(settings.Exporter);
+            var api = new Api(settings.Exporter.AgentUri, apiRequestFactory, statsd, rates => sampler.SetDefaultSampleRates(rates), settings.PartialFlushEnabled);
             return new AgentWriter(api, statsd, maxBufferSize: settings.TraceBufferSize);
         }
 
@@ -170,7 +170,7 @@ namespace Datadog.Trace
                 {
                     statsd.Configure(new StatsdConfig
                     {
-                        StatsdServerName = settings.AgentUri.DnsSafeHost,
+                        StatsdServerName = settings.Exporter.AgentUri.DnsSafeHost,
                         StatsdPort = port,
                         ConstantTags = constantTags.ToArray()
                     });
