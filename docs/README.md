@@ -57,7 +57,7 @@ Microsoft provides [evaluation developer VMs](https://developer.microsoft.com/en
 This repository uses [Nuke](https://nuke.build/) for build automation. To see a list of possible targets run:
 
 ```cmd
-.\build.cmd --help
+.\tracer\build.cmd --help
 ```
 
 For example:
