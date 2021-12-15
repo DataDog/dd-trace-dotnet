@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -95,6 +96,20 @@ namespace Datadog.Trace.Tests.DistributedTracer
             }
 
             automaticTracer.GetDistributedTrace().Should().BeNull();
+        }
+
+        [Fact]
+        public void RuntimeId()
+        {
+            var automaticTracer = new AutomaticTracer();
+
+            var runtimeId = automaticTracer.GetAutomaticRuntimeId();
+
+            Guid.TryParse(runtimeId, out _).Should().BeTrue();
+
+            automaticTracer.GetAutomaticRuntimeId().Should().Be(runtimeId, "runtime id should remain the same");
+
+            ((IDistributedTracer)automaticTracer).GetRuntimeId().Should().Be(runtimeId, "distributed tracer API should return the same runtime id");
         }
     }
 }
