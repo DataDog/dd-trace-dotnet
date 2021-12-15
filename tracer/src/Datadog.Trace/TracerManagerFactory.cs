@@ -1,4 +1,4 @@
-﻿// <copyright file="TracerManagerFactory.cs" company="Datadog">
+// <copyright file="TracerManagerFactory.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using Datadog.Trace.Agent;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
@@ -68,7 +69,7 @@ namespace Datadog.Trace
             agentWriter ??= GetAgentWriter(settings, statsd, sampler);
             scopeManager ??= new AsyncLocalScopeManager();
 
-            if (settings.RuntimeMetricsEnabled)
+            if (settings.RuntimeMetricsEnabled && !DistributedTracer.Instance.IsChildTracer)
             {
                 runtimeMetrics ??= new RuntimeMetricsWriter(statsd ?? CreateDogStatsdClient(settings, defaultServiceName, settings.DogStatsdPort), TimeSpan.FromSeconds(10));
             }

@@ -349,12 +349,6 @@ namespace Datadog.Trace.Configuration
         public bool TracerMetricsEnabled { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether runtime metrics
-        /// are enabled and sent to DogStatsd.
-        /// </summary>
-        public bool RuntimeMetricsEnabled { get; set; }
-
-        /// <summary>
         /// Gets or sets a value indicating whether the use
         /// of System.Diagnostics.DiagnosticSource is enabled.
         /// Default is <c>true</c>.
@@ -409,6 +403,12 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets a value indicating whether the diagnostic log at startup is enabled
         /// </summary>
         public bool StartupDiagnosticLogEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether runtime metrics
+        /// are enabled and sent to DogStatsd.
+        /// </summary>
+        internal bool RuntimeMetricsEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets the comma separated list of url patterns to skip tracing.
