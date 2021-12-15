@@ -24,21 +24,22 @@ namespace Datadog.Trace.Util.Http
             var headersDic = new Dictionary<string, string[]>(request.Headers.Keys.Count);
             foreach (var k in request.Headers.Keys)
             {
-                if (!k.Equals("cookie", System.StringComparison.OrdinalIgnoreCase))
+                var currentKey = k ?? string.Empty;
+                if (!currentKey.Equals("cookie", System.StringComparison.OrdinalIgnoreCase))
                 {
-                    var key = k.ToLowerInvariant();
+                    currentKey = currentKey.ToLowerInvariant();
 #if NETCOREAPP
-                    if (!headersDic.TryAdd(key, request.Headers[key]))
+                    if (!headersDic.TryAdd(currentKey, request.Headers[currentKey]))
                     {
 #else
-                    if (!headersDic.ContainsKey(key))
+                    if (!headersDic.ContainsKey(currentKey))
                     {
-                        headersDic.Add(key, request.Headers[key]);
+                        headersDic.Add(currentKey, request.Headers[currentKey]);
                     }
                     else
                     {
 #endif
-                        Log.Warning("Header {key} couldn't be added as argument to the waf", key);
+                        Log.Warning("Header {key} couldn't be added as argument to the waf", currentKey);
                     }
                 }
             }
@@ -47,10 +48,11 @@ namespace Datadog.Trace.Util.Http
             for (var i = 0; i < request.Cookies.Count; i++)
             {
                 var cookie = request.Cookies.ElementAt(i);
-                var keyExists = cookiesDic.TryGetValue(cookie.Key, out var value);
+                var currentKey = cookie.Key ?? string.Empty;
+                var keyExists = cookiesDic.TryGetValue(currentKey, out var value);
                 if (!keyExists)
                 {
-                    cookiesDic.Add(cookie.Key, new List<string> { cookie.Value ?? string.Empty });
+                    cookiesDic.Add(currentKey, new List<string> { cookie.Value ?? string.Empty });
                 }
                 else
                 {
@@ -61,18 +63,20 @@ namespace Datadog.Trace.Util.Http
             var queryStringDic = new Dictionary<string, string[]>(request.Query.Count);
             foreach (var kvp in request.Query)
             {
+                var currentKey = kvp.Key ?? string.Empty;
+
 #if NETCOREAPP
-                if (!queryStringDic.TryAdd(kvp.Key, kvp.Value))
+                if (!queryStringDic.TryAdd(currentKey, kvp.Value))
                 {
 #else
-                if (!queryStringDic.ContainsKey(kvp.Key))
+                if (!queryStringDic.ContainsKey(currentKey))
                 {
-                    queryStringDic.Add(kvp.Key, kvp.Value);
+                    queryStringDic.Add(currentKey, kvp.Value);
                 }
                 else
                 {
 #endif
-                    Log.Warning("Query string with {key} couldn't be added as argument to the waf", kvp.Key);
+                    Log.Warning("Query string with {key} couldn't be added as argument to the waf", currentKey);
                 }
             }
 

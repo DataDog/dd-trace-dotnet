@@ -23,16 +23,17 @@ namespace Datadog.Trace.Util.Http
             var headerKeys = request.Headers.Keys;
             foreach (string k in headerKeys)
             {
-                if (!k.Equals("cookie", System.StringComparison.OrdinalIgnoreCase))
+                var currentKey = k ?? string.Empty;
+                if (!currentKey.Equals("cookie", System.StringComparison.OrdinalIgnoreCase))
                 {
-                    var key = k.ToLowerInvariant();
-                    if (!headersDic.ContainsKey(key))
+                    currentKey = currentKey.ToLowerInvariant();
+                    if (!headersDic.ContainsKey(currentKey))
                     {
-                        headersDic.Add(key, request.Headers.GetValues(key));
+                        headersDic.Add(currentKey, request.Headers.GetValues(currentKey));
                     }
                     else
                     {
-                        Log.Warning("Header {key} couldn't be added as argument to the waf", key);
+                        Log.Warning("Header {key} couldn't be added as argument to the waf", currentKey);
                     }
                 }
             }
@@ -55,14 +56,15 @@ namespace Datadog.Trace.Util.Http
             var queryDic = new Dictionary<string, string[]>(request.QueryString.AllKeys.Length);
             foreach (var k in request.QueryString.AllKeys)
             {
-                var values = request.QueryString.GetValues(k);
-                if (!queryDic.ContainsKey(k))
+                var currentKey = k ?? string.Empty;
+                var values = request.QueryString.GetValues(currentKey);
+                if (!queryDic.ContainsKey(currentKey))
                 {
-                    queryDic.Add(k, values);
+                    queryDic.Add(currentKey, values);
                 }
                 else
                 {
-                    Log.Warning("Query string {key} couldn't be added as argument to the waf", k);
+                    Log.Warning("Query string {key} couldn't be added as argument to the waf", currentKey);
                 }
             }
 
