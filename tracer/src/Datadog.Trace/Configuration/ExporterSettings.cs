@@ -104,7 +104,7 @@ namespace Datadog.Trace.Configuration
 
             // Agent port is set to zero in places like AAS where it's needed to prevent port conflict
             // The agent will fail to start if it can not bind a port
-            if ((dogStatsdPort ?? 0) == 0)
+            if (dogStatsdPort == 0)
             {
                 MetricsPipeName = source?.GetString(ConfigurationKeys.MetricsPipeName);
 
@@ -137,7 +137,7 @@ namespace Datadog.Trace.Configuration
 
             // Agent port is set to zero in places like AAS where it's needed to prevent port conflict
             // The agent will fail to start if it can not bind a port
-            var hasExplicitTcpConfig = (agentPort ?? 0) != 0 && agentHost != null;
+            var hasExplicitTcpConfig = agentPort != 0 && agentHost != null;
 
             if (hasExplicitTcpConfig)
             {
