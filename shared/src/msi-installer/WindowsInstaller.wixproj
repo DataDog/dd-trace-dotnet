@@ -17,7 +17,7 @@
     <IntermediateOutputPath>obj\$(Configuration)\$(Platform)\</IntermediateOutputPath>
     <SuppressPdbOutput>True</SuppressPdbOutput>
     <DefineSolutionProperties>false</DefineSolutionProperties>
-    <OutputName>datadog-dotnet-apm-1.28.6-$(Platform)-profiler-beta</OutputName>
+    <OutputName>datadog-dotnet-apm-1.31.0-$(Platform)-profiler-beta</OutputName>
     <OutputName Condition=" '$(BetaMsiSuffix)' != '' ">$(OutputName)-$(BetaMsiSuffix)</OutputName>
     <MonitoringHomeDirectory Condition="'$(MonitoringHomeDirectory)' == ''">$(MSBuildThisFileDirectory)..\..\bin\monitoring-home</MonitoringHomeDirectory>
     <TracerHomeDirectory Condition="'$(TracerHomeDirectory)' == ''">$(MSBuildThisFileDirectory)..\bin\windows-tracer-home</TracerHomeDirectory>
