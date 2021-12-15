@@ -8,7 +8,7 @@ namespace Datadog.Trace.Configuration
     /// <summary>
     /// Available types of transports.
     /// </summary>
-    public enum TraceTransportType
+    public enum TracesTransportType
     {
         /// <summary>
         /// Default transport.

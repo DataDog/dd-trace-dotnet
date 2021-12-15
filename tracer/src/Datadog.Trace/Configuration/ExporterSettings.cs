@@ -51,7 +51,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets or sets the transport used to send traces to the Agent.
         /// </summary>
-        public TraceTransportType TraceTransport { get; set; }
+        public TracesTransportType TracesTransport { get; set; }
 
         /// <summary>
         /// Gets or sets the transport used to connect to the DogStatsD.
@@ -123,7 +123,7 @@ namespace Datadog.Trace.Configuration
 
         private void ConfigureTraceTransport(IConfigurationSource source, bool isWindows)
         {
-            TraceTransportType? traceTransport = null;
+            TracesTransportType? traceTransport = null;
 
             var agentHost = source?.GetString(ConfigurationKeys.AgentHost) ??
                             source?.GetString("DD_TRACE_AGENT_URL") ??
@@ -142,7 +142,7 @@ namespace Datadog.Trace.Configuration
             if (hasExplicitTcpConfig)
             {
                 // If there is any explicit configuration for TCP, prioritize it
-                traceTransport = TraceTransportType.Default;
+                traceTransport = TracesTransportType.Default;
             }
             else if (isWindows)
             {
@@ -151,7 +151,7 @@ namespace Datadog.Trace.Configuration
 
                 if (TracesPipeName != null)
                 {
-                    traceTransport = TraceTransportType.WindowsNamedPipe;
+                    traceTransport = TracesTransportType.WindowsNamedPipe;
                 }
 
                 TracesPipeTimeoutMs = source?.GetInt32(ConfigurationKeys.TracesPipeTimeoutMs)
@@ -182,7 +182,7 @@ namespace Datadog.Trace.Configuration
                 AgentUri = builder.Uri;
             }
 
-            TraceTransport = traceTransport ?? TraceTransportType.Default;
+            TracesTransport = traceTransport ?? TracesTransportType.Default;
         }
     }
 }

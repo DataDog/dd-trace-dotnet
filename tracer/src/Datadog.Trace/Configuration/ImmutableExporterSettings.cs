@@ -29,7 +29,7 @@ namespace Datadog.Trace.Configuration
         /// <param name="settings">The tracer settings to use to populate the immutable tracer settings</param>
         public ImmutableExporterSettings(ExporterSettings settings)
         {
-            TraceTransport = settings.TraceTransport;
+            TraceTransport = settings.TracesTransport;
             AgentUri = settings.AgentUri;
             TracesPipeName = settings.TracesPipeName;
             TracesPipeTimeoutMs = settings.TracesPipeTimeoutMs;
@@ -39,7 +39,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets the transport used to send traces to the Agent.
         /// </summary>
-        public TraceTransportType TraceTransport { get; }
+        public TracesTransportType TraceTransport { get; }
 
         /// <summary>
         /// Gets the Uri where the Tracer can connect to the Agent.

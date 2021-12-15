@@ -21,13 +21,13 @@ namespace Datadog.Trace.Agent
 
             switch (strategy)
             {
-                case TraceTransportType.CustomTcpProvider:
+                case TracesTransportType.CustomTcpProvider:
                     Log.Information("Using {FactoryType} for trace transport.", nameof(TcpStreamFactory));
                     return new HttpStreamRequestFactory(new TcpStreamFactory(settings.AgentUri.Host, settings.AgentUri.Port), new DatadogHttpClient());
-                case TraceTransportType.WindowsNamedPipe:
+                case TracesTransportType.WindowsNamedPipe:
                     Log.Information<string, string, int>("Using {FactoryType} for trace transport, with pipe name {PipeName} and timeout {Timeout}ms.", nameof(NamedPipeClientStreamFactory), settings.TracesPipeName, settings.TracesPipeTimeoutMs);
                     return new HttpStreamRequestFactory(new NamedPipeClientStreamFactory(settings.TracesPipeName, settings.TracesPipeTimeoutMs), new DatadogHttpClient());
-                case TraceTransportType.Default:
+                case TracesTransportType.Default:
                 default:
                     // Defer decision to Api logic
                     return null;

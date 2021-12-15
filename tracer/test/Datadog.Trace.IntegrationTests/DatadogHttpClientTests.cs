@@ -35,7 +35,7 @@ namespace Datadog.Trace.IntegrationTests
                     Exporter = new ExporterSettings()
                     {
                         AgentUri = new Uri($"http://localhost:{agent.Port}"),
-                        TraceTransport = TraceTransportType.CustomTcpProvider,
+                        TracesTransport = TracesTransportType.CustomTcpProvider,
                     }
                 };
                 var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
