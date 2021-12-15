@@ -69,7 +69,6 @@ namespace Datadog.Trace.Configuration
         public const string TracerMetricsEnabled = "DD_TRACE_METRICS_ENABLED";
         public const string TracesPipeName = "DD_TRACE_PIPE_NAME";
         public const string TracesPipeTimeoutMs = "DD_TRACE_PIPE_TIMEOUT_MS";
-        public const string TracesTransport = "DD_TRACE_TRANSPORT";
         public static class Integrations
         {
             [System.Obsolete("App Analytics has been replaced by Tracing without Limits. For more information s" +
@@ -86,6 +85,19 @@ namespace Datadog.Trace.Configuration
         public EnvironmentConfigurationSource() { }
         public override string GetString(string key) { }
     }
+    public class ExporterSettings
+    {
+        public const string DefaultAgentHost = "localhost";
+        public const int DefaultAgentPort = 8126;
+        public ExporterSettings() { }
+        public ExporterSettings(Datadog.Trace.Configuration.IConfigurationSource source) { }
+        public System.Uri AgentUri { get; set; }
+        public int DogStatsdPort { get; set; }
+        public string MetricsPipeName { get; set; }
+        public string TracesPipeName { get; set; }
+        public int TracesPipeTimeoutMs { get; set; }
+        public Datadog.Trace.Configuration.TracesTransportType TracesTransport { get; set; }
+    }
     public class GlobalSettings
     {
         public bool DebugEnabled { get; }
@@ -101,6 +113,16 @@ namespace Datadog.Trace.Configuration
         double? GetDouble(string key);
         int? GetInt32(string key);
         string GetString(string key);
+    }
+    public class ImmutableExporterSettings
+    {
+        public ImmutableExporterSettings(Datadog.Trace.Configuration.ExporterSettings settings) { }
+        public ImmutableExporterSettings(Datadog.Trace.Configuration.IConfigurationSource source) { }
+        public System.Uri AgentUri { get; }
+        public string MetricsPipeName { get; }
+        public Datadog.Trace.Configuration.TracesTransportType TraceTransport { get; }
+        public string TracesPipeName { get; }
+        public int TracesPipeTimeoutMs { get; }
     }
     public class ImmutableIntegrationSettings
     {
@@ -123,6 +145,7 @@ namespace Datadog.Trace.Configuration
         public string CustomSamplingRules { get; }
         public int DogStatsdPort { get; }
         public string Environment { get; }
+        public Datadog.Trace.Configuration.ImmutableExporterSettings Exporter { get; }
         public double? GlobalSamplingRate { get; }
         public System.Collections.Generic.IReadOnlyDictionary<string, string> GlobalTags { get; }
         public System.Collections.Generic.IReadOnlyDictionary<string, string> HeaderTags { get; }
@@ -138,18 +161,7 @@ namespace Datadog.Trace.Configuration
         public bool StartupDiagnosticLogEnabled { get; }
         public bool TraceEnabled { get; }
         public bool TracerMetricsEnabled { get; }
-        public Datadog.Trace.Configuration.ImmutableExporterSettings Exporter { get; }
         public static Datadog.Trace.Configuration.ImmutableTracerSettings FromDefaultSources() { }
-    }
-    public class ImmutableExporterSettings
-    {
-        public ImmutableExporterSettings(Datadog.Trace.Configuration.IConfigurationSource source) { }
-        public ImmutableExporterSettings(Datadog.Trace.Configuration.ExporterSettings settings) { }
-        public System.Uri AgentUri { get; }
-        public string MetricsPipeName { get; }
-        public Datadog.Trace.Configuration.TraceTransportType TraceTransport { get; }
-        public string TracesPipeName { get; }
-        public int TracesPipeTimeoutMs { get; }
     }
     public class IntegrationSettings
     {
@@ -189,12 +201,6 @@ namespace Datadog.Trace.Configuration
         public static System.Collections.Generic.IDictionary<string, string> ParseCustomKeyValues(string data) { }
         public static System.Collections.Generic.IDictionary<string, string> ParseCustomKeyValues(string data, bool allowOptionalMappings) { }
     }
-    public enum TraceTransportType
-    {
-        Default = 0,
-        CustomTcpProvider = 1,
-        WindowsNamedPipe = 2,
-    }
     public class TracerSettings
     {
         public TracerSettings() { }
@@ -206,6 +212,7 @@ namespace Datadog.Trace.Configuration
         public bool DiagnosticSourceEnabled { get; set; }
         public System.Collections.Generic.HashSet<string> DisabledIntegrationNames { get; set; }
         public string Environment { get; set; }
+        public Datadog.Trace.Configuration.ExporterSettings Exporter { get; set; }
         public double? GlobalSamplingRate { get; set; }
         public System.Collections.Generic.IDictionary<string, string> GlobalTags { get; set; }
         public System.Collections.Generic.IDictionary<string, string> HeaderTags { get; set; }
@@ -221,7 +228,6 @@ namespace Datadog.Trace.Configuration
         public bool StartupDiagnosticLogEnabled { get; set; }
         public bool TraceEnabled { get; set; }
         public bool TracerMetricsEnabled { get; set; }
-        public Datadog.Trace.Configuration.ExporterSettings Exporter { get; set; }
         public Datadog.Trace.Configuration.ImmutableTracerSettings Build() { }
         public void SetHttpClientErrorStatusCodes(System.Collections.Generic.IEnumerable<int> statusCodes) { }
         public void SetHttpServerErrorStatusCodes(System.Collections.Generic.IEnumerable<int> statusCodes) { }
@@ -229,18 +235,11 @@ namespace Datadog.Trace.Configuration
         public static Datadog.Trace.Configuration.CompositeConfigurationSource CreateDefaultConfigurationSource() { }
         public static Datadog.Trace.Configuration.TracerSettings FromDefaultSources() { }
     }
-    public class ExporterSettings
+    public enum TracesTransportType
     {
-        public const string DefaultAgentHost = "localhost";
-        public const int DefaultAgentPort = 8126;
-        public ExporterSettings() { }
-        public ExporterSettings(Datadog.Trace.Configuration.IConfigurationSource source) { }
-        public System.Uri AgentUri { get; set; }
-        public int DogStatsdPort { get; set; }
-        public string MetricsPipeName { get; set; }
-        public Datadog.Trace.Configuration.TraceTransportType TraceTransport { get; set; }
-        public string TracesPipeName { get; set; }
-        public int TracesPipeTimeoutMs { get; set; }
+        Default = 0,
+        CustomTcpProvider = 1,
+        WindowsNamedPipe = 2,
     }
 }
 namespace Datadog.Trace
