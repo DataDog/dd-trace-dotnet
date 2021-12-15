@@ -65,7 +65,7 @@ This section describes some of the most important breaking changes. For full det
 
 ### Updates for supported .NET versions
 
-Version 2.0 of _Datadog.Trace_ added support for .NET Core 6.0 and raised the minimum supported version of .NET Framework from .NET Framework 4.5 to .NET Framework 4.6.1. If you are currently targeting version < 4.6.1, we suggest you upgrade [in line with Microsoft's guidance](https://docs.microsoft.com/en-us/lifecycle/products/microsoft-net-framework).
+Version 2.0 of _Datadog.Trace_ added support for .NET 6.0 and raised the minimum supported version of .NET Framework from .NET Framework 4.5 to .NET Framework 4.6.1. If you are currently targeting version < 4.6.1, we suggest you upgrade [in line with Microsoft's guidance](https://docs.microsoft.com/en-us/lifecycle/products/microsoft-net-framework).
 
 For full details of supported versions, see [our documentation on .NET Framework compatibility requirements](https://docs.datadoghq.com/tracing/setup_overview/compatibility_requirements/dotnet-framework) and [.NET/.NET Core compatibility requirements](https://docs.datadoghq.com/tracing/setup_overview/compatibility_requirements/dotnet-core).
 
@@ -108,7 +108,7 @@ Tracer.Configure(settings);
 In version 1.x, you could disable automatic instrumentation of all ADO.NET integrations using the `AdoNet` integration ID. From version 2.0, you can now also disable specific integrations using the following integration IDs:
 
 * `MySql`
-* `Npgsql` (PostreSQL)
+* `Npgsql` (PostgreSQL)
 * `Oracle`
 * `SqlClient` (SQL Server)
 * `Sqlite`
@@ -122,7 +122,7 @@ using Datadog.Trace;
 
 var settings = TracerSettings.FromDefaultSources();
 
-settings.AdoNetExcludedTypes.Add("MySql");      // <- Delete this line
+// settings.AdoNetExcludedTypes.Add("MySql");      // <- Delete this line
 settings.Integrations["MySql"].Enabled = false; // <- Add this line
 ```
 
@@ -145,12 +145,12 @@ settings.Integrations["ElasticsearchNet"].Enabled = false;  // <- Add this line
 
 The following deprecated APIs have been removed.
 
-* `TracerSettings.DebugEnabled`: Enable debug mode by setting the `DD_TRACE_DEBUG` environment variable to `1`
+* `TracerSettings.DebugEnabled` has been removed. Set the `DD_TRACE_DEBUG` environment variable to `1` to enable debug mode.
 * `Tags.ForceDrop` and `Tags.ForceKeep` have been removed. Use `Tags.ManualDrop` and `Tags.ManualKeep` respectively instead.
 * `SpanTypes` associated with automatic instrumentation spans, such as `MongoDb` and `Redis` have been removed.
-* `Tags` associated with automatic instrumentation spans, such as `AmqpCommand` and `CosmosDbContainer` have been removed.
+* `Tags` associated with automatic instrumentation spans, such as `AmqpCommand` and `CosmosDbContainer`, have been removed.
 * `Tracer.Create()` has been removed. Use `Tracer.Configure()` instead.
-* `TracerSettings.AdoNetExcludedTypes` has been removed. Use `TracerSettings.Integrations` to disable automatic instrumentation for ADO.NET integrations in the same way as other integrations.
+* `TracerSettings.AdoNetExcludedTypes` has been removed. Use `TracerSettings.Integrations` to disable automatic instrumentation for ADO.NET integrations.
 * Various internal APIs that were not intended for public consumption have been removed.
 
 In addition, some settings have been marked obsolete:
@@ -218,9 +218,9 @@ If you do not wish to take advantage of the improved route names, you can disabl
 
 From version 2.0, call-site automatic instrumentation has been removed and replaced with call-target instrumentation. This has been the default mode [since version 1.28.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.28.0). Call-target instrumentation provides performance improvements over call-site instrumentation, but we no longer support instrumenting some custom implementations of `DbCommand`. If you find spans are missing from your traces after upgrading, please raise an issue on GitHub, or contact [support](https://docs.datadoghq.com/help).
 
-### Integrations.json has been removed
+### DD_INTEGRATIONS environment variable no longer needed
 
-The _integrations.json_ file is no required for instrumentation. You can remove references to this file, for example by deleting the `DD_INTEGRATIONS` environment variable.
+The `integrations.json` file is no longer required for instrumentation. You can remove references to this file, for example by deleting the `DD_INTEGRATIONS` environment variable.
 
 ## Get in touch
 
