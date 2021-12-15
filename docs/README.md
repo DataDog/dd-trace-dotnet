@@ -57,23 +57,23 @@ Microsoft provides [evaluation developer VMs](https://developer.microsoft.com/en
 This repository uses [Nuke](https://nuke.build/) for build automation. To see a list of possible targets run:
 
 ```cmd
-.\build.cmd --help
+.\tracer\build.cmd --help
 ```
 
 For example:
 
 ```powershell
 # Clean and build the main tracer project
-.\build.cmd Clean BuildTracerHome
+.\tracer\build.cmd Clean BuildTracerHome
 
 # Build and run managed and native unit tests. Requires BuildTracerHome to have previously been run
-.\build.cmd BuildAndRunManagedUnitTests BuildAndRunNativeUnitTests 
+.\tracer\build.cmd BuildAndRunManagedUnitTests BuildAndRunNativeUnitTests 
 
 # Build NuGet packages and MSIs. Requires BuildTracerHome to have previously been run
-.\build.cmd PackageTracerHome 
+.\tracer\build.cmd PackageTracerHome 
 
 # Build and run integration tests. Requires BuildTracerHome to have previously been run
-.\build.cmd BuildAndRunWindowsIntegrationTests
+.\tracer\build.cmd BuildAndRunWindowsIntegrationTests
 ```
 
 ## Linux
@@ -82,13 +82,13 @@ The recommended approach for Linux is to build using Docker. You can use this ap
 
 ```bash
 # Clean and build the main tracer project
-./build_in_docker.sh Clean BuildTracerHome
+./tracer/build_in_docker.sh Clean BuildTracerHome
 
 # Build and run managed unit tests. Requires BuildTracerHome to have previously been run
-./build_in_docker.sh BuildAndRunManagedUnitTests 
+./tracer/build_in_docker.sh BuildAndRunManagedUnitTests 
 
 # Build and run integration tests. Requires BuildTracerHome to have previously been run
-./build_in_docker.sh BuildAndRunLinuxIntegrationTests
+./tracer/build_in_docker.sh BuildAndRunLinuxIntegrationTests
 ```
 
 ## Further Reading
