@@ -66,11 +66,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
             mdc.Set(CorrelationIdentifier.VersionKey, tracer.Settings.ServiceVersion ?? string.Empty);
             mdc.Set(CorrelationIdentifier.EnvKey, tracer.Settings.Environment ?? string.Empty);
 
-            if (tracer.DistributedSpanContext is { } spanContext)
+            var spanContext = tracer.DistributedSpanContext;
+            if (spanContext is not null
+                && spanContext.TryGetValue(HttpHeaderNames.TraceId, out string traceId)
+                && spanContext.TryGetValue(HttpHeaderNames.ParentId, out string spanId))
             {
                 removeSpanId = true;
-                mdc.Set(CorrelationIdentifier.TraceIdKey, spanContext[HttpHeaderNames.TraceId]);
-                mdc.Set(CorrelationIdentifier.SpanIdKey, spanContext[HttpHeaderNames.ParentId]);
+                mdc.Set(CorrelationIdentifier.TraceIdKey, traceId);
+                mdc.Set(CorrelationIdentifier.SpanIdKey, spanId);
             }
 
             return removeSpanId;
@@ -87,10 +90,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
             array[1] = new KeyValuePair<string, object>(CorrelationIdentifier.VersionKey, tracer.Settings.ServiceVersion ?? string.Empty);
             array[2] = new KeyValuePair<string, object>(CorrelationIdentifier.EnvKey, tracer.Settings.Environment ?? string.Empty);
 
-            if (spanContext is not null)
+            if (spanContext is not null
+                && spanContext.TryGetValue(HttpHeaderNames.TraceId, out string traceId)
+                && spanContext.TryGetValue(HttpHeaderNames.ParentId, out string spanId))
             {
-                array[3] = new KeyValuePair<string, object>(CorrelationIdentifier.TraceIdKey, spanContext[HttpHeaderNames.TraceId]);
-                array[4] = new KeyValuePair<string, object>(CorrelationIdentifier.SpanIdKey, spanContext[HttpHeaderNames.ParentId]);
+                array[3] = new KeyValuePair<string, object>(CorrelationIdentifier.TraceIdKey, traceId);
+                array[4] = new KeyValuePair<string, object>(CorrelationIdentifier.SpanIdKey, spanId);
             }
 
             var state = mdlc.SetScoped(array);

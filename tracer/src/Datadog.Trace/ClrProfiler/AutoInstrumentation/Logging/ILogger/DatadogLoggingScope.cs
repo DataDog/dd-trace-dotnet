@@ -58,7 +58,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
         public override string ToString()
         {
             var spanContext = _tracer.DistributedSpanContext;
-            if (spanContext is null)
+            if (spanContext is null
+                || !spanContext.TryGetValue(HttpHeaderNames.TraceId, out string traceId)
+                || !spanContext.TryGetValue(HttpHeaderNames.ParentId, out string spanId))
             {
                 return _cachedFormat;
             }
@@ -67,8 +69,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
                 CultureInfo.InvariantCulture,
                 "{0}, dd_trace_id:\"{1}\", dd_span_id:\"{2}\"",
                 _cachedFormat,
-                spanContext[HttpHeaderNames.TraceId],
-                spanContext[HttpHeaderNames.ParentId]);
+                traceId,
+                spanId);
         }
 
         public IEnumerator<KeyValuePair<string, object>> GetEnumerator()
@@ -78,10 +80,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
             yield return new KeyValuePair<string, object>("dd_env", _env);
             yield return new KeyValuePair<string, object>("dd_version", _version);
 
-            if (spanContext is not null)
+            if (spanContext is not null
+                && spanContext.TryGetValue(HttpHeaderNames.TraceId, out string traceId)
+                && spanContext.TryGetValue(HttpHeaderNames.ParentId, out string spanId))
             {
-                yield return new KeyValuePair<string, object>("dd_trace_id", spanContext[HttpHeaderNames.TraceId]);
-                yield return new KeyValuePair<string, object>("dd_span_id", spanContext[HttpHeaderNames.ParentId]);
+                yield return new KeyValuePair<string, object>("dd_trace_id", traceId);
+                yield return new KeyValuePair<string, object>("dd_span_id", spanId);
             }
         }
 

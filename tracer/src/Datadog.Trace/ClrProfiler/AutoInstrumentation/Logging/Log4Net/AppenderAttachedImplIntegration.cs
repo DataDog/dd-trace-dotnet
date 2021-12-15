@@ -46,10 +46,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
                 loggingEvent.Properties[CorrelationIdentifier.EnvKey] = tracer.Settings.Environment ?? string.Empty;
 
                 var spanContext = tracer.DistributedSpanContext;
-                if (spanContext is not null)
+                if (spanContext is not null
+                    && spanContext.TryGetValue(HttpHeaderNames.TraceId, out string traceId)
+                    && spanContext.TryGetValue(HttpHeaderNames.ParentId, out string spanId))
                 {
-                    loggingEvent.Properties[CorrelationIdentifier.TraceIdKey] = spanContext[HttpHeaderNames.TraceId];
-                    loggingEvent.Properties[CorrelationIdentifier.SpanIdKey] = spanContext[HttpHeaderNames.ParentId];
+                    loggingEvent.Properties[CorrelationIdentifier.TraceIdKey] = traceId;
+                    loggingEvent.Properties[CorrelationIdentifier.SpanIdKey] = spanId;
                 }
             }
 

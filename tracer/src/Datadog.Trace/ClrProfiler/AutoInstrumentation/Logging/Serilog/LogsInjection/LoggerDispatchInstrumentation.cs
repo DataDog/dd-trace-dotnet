@@ -57,10 +57,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInje
                 AddPropertyIfAbsent(dict, CorrelationIdentifier.SerilogEnvKey, tracer.Settings.Environment);
 
                 var spanContext = tracer.DistributedSpanContext;
-                if (spanContext is not null)
+                if (spanContext is not null
+                    && spanContext.TryGetValue(HttpHeaderNames.TraceId, out string traceId)
+                    && spanContext.TryGetValue(HttpHeaderNames.ParentId, out string spanId))
                 {
-                    AddPropertyIfAbsent(dict, CorrelationIdentifier.SerilogTraceIdKey, spanContext[HttpHeaderNames.TraceId]);
-                    AddPropertyIfAbsent(dict, CorrelationIdentifier.SerilogSpanIdKey, spanContext[HttpHeaderNames.ParentId]);
+                    AddPropertyIfAbsent(dict, CorrelationIdentifier.SerilogTraceIdKey, traceId);
+                    AddPropertyIfAbsent(dict, CorrelationIdentifier.SerilogSpanIdKey, spanId);
                 }
             }
 
