@@ -103,17 +103,17 @@ namespace Datadog.Trace
 
             var traceId = ParseUInt64(carrier, getter, HttpHeaderNames.TraceId);
 
-            if (traceId == 0)
+            if (traceId is null or 0)
             {
                 // a valid traceId is required to use distributed tracing
                 return null;
             }
 
-            var parentId = ParseUInt64(carrier, getter, HttpHeaderNames.ParentId);
-            var samplingPriority = ParseInt32(carrier, getter, HttpHeaderNames.SamplingPriority);
+            var parentId = ParseUInt64(carrier, getter, HttpHeaderNames.ParentId) ?? 0;
+            var samplingPriority = (SamplingPriority?)ParseInt32(carrier, getter, HttpHeaderNames.SamplingPriority);
             var origin = ParseString(carrier, getter, HttpHeaderNames.Origin);
 
-            return new SpanContext(traceId, parentId, (SamplingPriority?)samplingPriority, serviceName: null, origin);
+            return new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin);
         }
 
         public IEnumerable<KeyValuePair<string, string?>> ExtractHeaderTags<T>(T headers, IEnumerable<KeyValuePair<string, string?>> headerToTagMap, string defaultTagPrefix)
@@ -218,7 +218,7 @@ namespace Datadog.Trace
             return new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin);
         }
 
-        private ulong ParseUInt64<T>(T carrier, Func<T, string, IEnumerable<string?>> getter, string headerName)
+        private ulong? ParseUInt64<T>(T carrier, Func<T, string, IEnumerable<string?>> getter, string headerName)
         {
             var headerValues = getter(carrier, headerName);
             bool hasValue = false;
@@ -238,7 +238,7 @@ namespace Datadog.Trace
                 _log.Warning("Could not parse {HeaderName} headers: {HeaderValues}", headerName, string.Join(",", headerValues));
             }
 
-            return 0;
+            return null;
         }
 
         private int? ParseInt32<T>(T carrier, Func<T, string, IEnumerable<string?>> getter, string headerName)
@@ -267,7 +267,7 @@ namespace Datadog.Trace
                     string.Join(",", headerValues));
             }
 
-            return default;
+            return null;
         }
 
         private string? ParseString<T>(T headers, string headerName)
