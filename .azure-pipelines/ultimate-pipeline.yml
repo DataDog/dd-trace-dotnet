@@ -266,7 +266,7 @@ stages:
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [build]
+      jobs: [check_changes]
 
   - job: check_changes
     dependsOn: []
