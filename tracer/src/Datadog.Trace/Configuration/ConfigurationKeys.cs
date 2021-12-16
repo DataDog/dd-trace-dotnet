@@ -10,7 +10,7 @@ namespace Datadog.Trace.Configuration
     /// <summary>
     /// String constants for standard Datadog configuration keys.
     /// </summary>
-    public static partial class ConfigurationKeys
+    internal static partial class ConfigurationKeys
     {
         /// <summary>
         /// Configuration key for the path to the configuration file.

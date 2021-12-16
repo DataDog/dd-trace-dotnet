@@ -8,7 +8,7 @@ namespace Datadog.Trace.Configuration
     /// <summary>
     /// String constants for standard Datadog configuration keys.
     /// </summary>
-    public static partial class ConfigurationKeys
+    internal static partial class ConfigurationKeys
     {
         /// <summary>
         /// Configuration key for the Agent host where the Tracer can send traces.
