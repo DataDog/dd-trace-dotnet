@@ -156,12 +156,6 @@ namespace Datadog.Trace.Configuration
         public bool TracerMetricsEnabled { get; }
 
         /// <summary>
-        /// Gets a value indicating whether runtime metrics
-        /// are enabled and sent to DogStatsd.
-        /// </summary>
-        public bool RuntimeMetricsEnabled { get; }
-
-        /// <summary>
         /// Gets a value indicating whether a span context should be created on exiting a successful Kafka
         /// Consumer.Consume() call, and closed on entering Consumer.Consume().
         /// </summary>
