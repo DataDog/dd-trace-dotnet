@@ -100,7 +100,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("LoadFromGAC", "True")]
         [Theory]
         [InlineData("?test&[$slice]")]
-        public Task TestSecurity(string url = null)
+        public Task TestSecurity(string url = DefaultAttackUrl)
         {
             // if blocking is enabled, request stops before reaching asp net mvc integrations intercepting before action methods, so no more spans are generated
             // NOTE: by integrating the latest version of the WAF, blocking was disabled, as it does not support blocking yet

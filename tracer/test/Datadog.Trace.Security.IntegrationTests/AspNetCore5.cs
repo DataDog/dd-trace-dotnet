@@ -33,7 +33,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         [InlineData(true, false, HttpStatusCode.OK, "?test&[$slice]")]
         [Trait("RunOnWindows", "True")]
         [Trait("Category", "ArmUnsupported")]
-        public async Task TestSecurity(bool enableSecurity, bool enableBlocking, HttpStatusCode expectedStatusCode, string url = null)
+        public async Task TestSecurity(bool enableSecurity, bool enableBlocking, HttpStatusCode expectedStatusCode, string url = DefaultAttackUrl)
         {
             var agent = await RunOnSelfHosted(enableSecurity, enableBlocking);
             await TestBlockedRequestAsync(agent, enableSecurity, expectedStatusCode, 5, new Action<TestHelpers.MockTracerAgent.Span>[]
@@ -54,7 +54,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                         Assert.Equal(kvp.Value, tagValue);
                     }
                  },
-            });
+            }, url);
         }
     }
 }

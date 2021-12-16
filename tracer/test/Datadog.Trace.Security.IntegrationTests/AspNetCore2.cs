@@ -30,7 +30,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         [InlineData(true, false, HttpStatusCode.OK, "?test&[$slice]")]
         [Trait("RunOnWindows", "True")]
         [Trait("Category", "ArmUnsupported")]
-        public async Task TestSecurity(bool enableSecurity, bool enableBlocking, HttpStatusCode expectedStatusCode, string url = null)
+        public async Task TestSecurity(bool enableSecurity, bool enableBlocking, HttpStatusCode expectedStatusCode, string url = DefaultAttackUrl)
         {
             var agent = await RunOnSelfHosted(enableSecurity, enableBlocking);
             await TestBlockedRequestAsync(agent, enableSecurity, expectedStatusCode, expectedSpans: 5, url: url, assertOnSpans: new Action<TestHelpers.MockTracerAgent.Span>[]

@@ -27,6 +27,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         private int _httpPort;
         private Process _process;
         private MockTracerAgent _agent;
+        protected const string DefaultAttackUrl = "/Health/?arg=[$slice]";
 
         public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath, string samplesDir = null)
             : base(sampleName, samplesDir ?? "test/test-applications/security", outputHelper)
@@ -81,7 +82,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             _agent?.Dispose();
         }
 
-        public async Task TestBlockedRequestAsync(MockTracerAgent agent, bool enableSecurity, HttpStatusCode expectedStatusCode, int expectedSpans, IEnumerable<Action<MockTracerAgent.Span>> assertOnSpans, string url = "/Health/?arg=[$slice]")
+        public async Task TestBlockedRequestAsync(MockTracerAgent agent, bool enableSecurity, HttpStatusCode expectedStatusCode, int expectedSpans, IEnumerable<Action<MockTracerAgent.Span>> assertOnSpans, string url)
         {
             Func<Task<(HttpStatusCode StatusCode, string ResponseText)>> attack = () => SubmitRequest(url);
             var resultRequests = await Task.WhenAll(attack(), attack(), attack(), attack(), attack());
