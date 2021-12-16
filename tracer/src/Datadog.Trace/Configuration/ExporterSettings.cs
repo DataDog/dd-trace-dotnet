@@ -49,17 +49,6 @@ namespace Datadog.Trace.Configuration
         }
 
         /// <summary>
-        /// Gets or sets the transport used to send traces to the Agent.
-        /// </summary>
-        public TracesTransportType TracesTransport { get; set; }
-
-        /// <summary>
-        /// Gets or sets the transport used to connect to the DogStatsD.
-        /// Default is <c>TransportStrategy.Tcp</c>.
-        /// </summary>
-        internal TransportType MetricsTransport { get; set; }
-
-        /// <summary>
         /// Gets or sets the Uri where the Tracer can connect to the Agent.
         /// Default is <c>"http://localhost:8126"</c>.
         /// </summary>
@@ -95,6 +84,17 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DogStatsdPort"/>
         public int DogStatsdPort { get; set; }
+
+        /// <summary>
+        /// Gets or sets the transport used to send traces to the Agent.
+        /// </summary>
+        internal TracesTransportType TracesTransport { get; set; }
+
+        /// <summary>
+        /// Gets or sets the transport used to connect to the DogStatsD.
+        /// Default is <c>TransportStrategy.Tcp</c>.
+        /// </summary>
+        internal TransportType MetricsTransport { get; set; }
 
         private void ConfigureMetricsTransport(IConfigurationSource source, bool isWindows)
         {

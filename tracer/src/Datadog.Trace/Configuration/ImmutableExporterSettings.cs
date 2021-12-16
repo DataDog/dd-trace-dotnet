@@ -29,11 +29,13 @@ namespace Datadog.Trace.Configuration
         /// <param name="settings">The tracer settings to use to populate the immutable tracer settings</param>
         public ImmutableExporterSettings(ExporterSettings settings)
         {
-            TraceTransport = settings.TracesTransport;
             AgentUri = settings.AgentUri;
+            TraceTransport = settings.TracesTransport;
             TracesPipeName = settings.TracesPipeName;
             TracesPipeTimeoutMs = settings.TracesPipeTimeoutMs;
+            MetricsTransport = settings.MetricsTransport;
             MetricsPipeName = settings.MetricsPipeName;
+            DogStatsdPort = settings.DogStatsdPort;
         }
 
         /// <summary>
@@ -70,5 +72,23 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.MetricsPipeName"/>
         public string MetricsPipeName { get; }
+
+        /// <summary>
+        /// Gets the port where the DogStatsd server is listening for connections.
+        /// Default is <c>8125</c>.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.DogStatsdPort"/>
+        public int DogStatsdPort { get; }
+
+        /// <summary>
+        /// Gets the transport used to send traces to the Agent.
+        /// </summary>
+        internal TracesTransportType TracesTransport { get; }
+
+        /// <summary>
+        /// Gets the transport used to connect to the DogStatsD.
+        /// Default is <c>TransportStrategy.Tcp</c>.
+        /// </summary>
+        internal Vendors.StatsdClient.Transport.TransportType MetricsTransport { get; }
     }
 }

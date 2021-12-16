@@ -152,13 +152,6 @@ namespace Datadog.Trace.Configuration
         public IReadOnlyDictionary<string, string> HeaderTags { get; }
 
         /// <summary>
-        /// Gets the port where the DogStatsd server is listening for connections.
-        /// Default is <c>8125</c>.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.DogStatsdPort"/>
-        public int DogStatsdPort { get; }
-
-        /// <summary>
         /// Gets a value indicating whether internal metrics
         /// are enabled and sent to DogStatsd.
         /// </summary>

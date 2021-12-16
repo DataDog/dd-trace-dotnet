@@ -63,7 +63,7 @@ namespace Datadog.Trace
                                      UnknownServiceName;
 
             statsd = settings.TracerMetricsEnabled
-                         ? (statsd ?? CreateDogStatsdClient(settings, defaultServiceName, settings.DogStatsdPort))
+                         ? (statsd ?? CreateDogStatsdClient(settings, defaultServiceName, settings.Exporter.DogStatsdPort))
                          : null;
             sampler ??= GetSampler(settings);
             agentWriter ??= GetAgentWriter(settings, statsd, sampler);
@@ -71,7 +71,7 @@ namespace Datadog.Trace
 
             if (settings.RuntimeMetricsEnabled && !DistributedTracer.Instance.IsChildTracer)
             {
-                runtimeMetrics ??= new RuntimeMetricsWriter(statsd ?? CreateDogStatsdClient(settings, defaultServiceName, settings.DogStatsdPort), TimeSpan.FromSeconds(10));
+                runtimeMetrics ??= new RuntimeMetricsWriter(statsd ?? CreateDogStatsdClient(settings, defaultServiceName, settings.Exporter.DogStatsdPort), TimeSpan.FromSeconds(10));
             }
 
             if (settings.LogsInjectionEnabled)
