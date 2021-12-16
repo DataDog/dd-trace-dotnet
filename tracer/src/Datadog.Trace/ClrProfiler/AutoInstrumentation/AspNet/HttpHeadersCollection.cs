@@ -17,10 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
         public HttpHeadersCollection(IRequestHeaders headers)
         {
-            if (headers is null)
-            {
-                ThrowHelper.ThrowArgumentNullException(nameof(headers));
-            }
+            ThrowHelper.ThrowArgumentNullExceptionIfNull(headers);
 
             _headers = headers;
         }

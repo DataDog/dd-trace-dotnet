@@ -24,10 +24,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         public DiagnosticManager(IEnumerable<DiagnosticObserver> diagnosticSubscribers)
         {
-            if (diagnosticSubscribers == null)
-            {
-                ThrowHelper.ThrowArgumentNullException(nameof(diagnosticSubscribers));
-            }
+            ThrowHelper.ThrowArgumentNullExceptionIfNull(diagnosticSubscribers);
 
             _diagnosticObservers = diagnosticSubscribers.Where(x => x.IsSubscriberEnabled());
         }

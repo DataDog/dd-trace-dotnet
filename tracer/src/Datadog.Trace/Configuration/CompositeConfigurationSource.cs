@@ -25,7 +25,7 @@ namespace Datadog.Trace.Configuration
         /// <param name="source">The configuration source to add.</param>
         public void Add(IConfigurationSource source)
         {
-            if (source == null) { ThrowHelper.ThrowArgumentNullException(nameof(source)); }
+            ThrowHelper.ThrowArgumentNullExceptionIfNull(source);
 
             _sources.Add(source);
         }
@@ -37,7 +37,7 @@ namespace Datadog.Trace.Configuration
         /// <param name="item">The configuration source to insert.</param>
         public void Insert(int index, IConfigurationSource item)
         {
-            if (item == null) { ThrowHelper.ThrowArgumentNullException(nameof(item)); }
+            ThrowHelper.ThrowArgumentNullExceptionIfNull(item);
 
             _sources.Insert(index, item);
         }

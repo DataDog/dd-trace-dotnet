@@ -293,15 +293,8 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
             public PropertyFetcherCacheKey(Type type1, Type type2, Type type3, string name)
             {
-                if (type1 is null)
-                {
-                    ThrowHelper.ThrowArgumentNullException(nameof(type1));
-                }
-
-                if (name is null)
-                {
-                    ThrowHelper.ThrowArgumentNullException(nameof(name));
-                }
+                ThrowHelper.ThrowArgumentNullExceptionIfNull(type1);
+                ThrowHelper.ThrowArgumentNullExceptionIfNull(name);
 
                 Type1 = type1;
                 Type2 = type2;

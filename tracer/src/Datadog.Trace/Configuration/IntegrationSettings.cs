@@ -20,10 +20,7 @@ namespace Datadog.Trace.Configuration
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
         public IntegrationSettings(string integrationName, IConfigurationSource source)
         {
-            if (integrationName is null)
-            {
-                ThrowHelper.ThrowArgumentNullException(nameof(integrationName));
-            }
+            ThrowHelper.ThrowArgumentNullExceptionIfNull(integrationName);
 
             IntegrationName = integrationName;
 

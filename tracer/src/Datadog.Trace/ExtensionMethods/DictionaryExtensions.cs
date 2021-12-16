@@ -15,10 +15,7 @@ namespace Datadog.Trace.ExtensionMethods
     {
         public static TValue GetValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key)
         {
-            if (dictionary == null)
-            {
-                ThrowHelper.ThrowArgumentNullException(nameof(dictionary));
-            }
+            ThrowHelper.ThrowArgumentNullExceptionIfNull(dictionary);
 
             return dictionary.TryGetValue(key, out var value)
                        ? value
@@ -27,10 +24,7 @@ namespace Datadog.Trace.ExtensionMethods
 
         public static TValue GetValueOrDefault<TValue>(this IDictionary dictionary, object key)
         {
-            if (dictionary == null)
-            {
-                ThrowHelper.ThrowArgumentNullException(nameof(dictionary));
-            }
+            ThrowHelper.ThrowArgumentNullExceptionIfNull(dictionary);
 
             return dictionary.TryGetValue(key, out TValue value)
                        ? value
@@ -39,10 +33,7 @@ namespace Datadog.Trace.ExtensionMethods
 
         public static bool TryGetValue<TValue>(this IDictionary dictionary, object key, out TValue value)
         {
-            if (dictionary == null)
-            {
-                ThrowHelper.ThrowArgumentNullException(nameof(dictionary));
-            }
+            ThrowHelper.ThrowArgumentNullExceptionIfNull(dictionary);
 
             object valueObj;
 

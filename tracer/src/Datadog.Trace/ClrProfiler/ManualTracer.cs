@@ -19,10 +19,7 @@ namespace Datadog.Trace.ClrProfiler
 
         internal ManualTracer(IAutomaticTracer parent)
         {
-            if (parent is null)
-            {
-                ThrowHelper.ThrowArgumentNullException(nameof(parent));
-            }
+            ThrowHelper.ThrowArgumentNullExceptionIfNull(parent);
 
             _parent = parent;
             _parent.Register(this);

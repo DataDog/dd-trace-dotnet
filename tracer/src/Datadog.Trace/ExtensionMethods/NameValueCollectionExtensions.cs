@@ -22,10 +22,7 @@ namespace Datadog.Trace.ExtensionMethods
         /// <returns>An object that implements <see cref="IHeadersCollection"/>.</returns>
         public static NameValueHeadersCollection Wrap(this NameValueCollection collection)
         {
-            if (collection == null)
-            {
-                ThrowHelper.ThrowArgumentNullException(nameof(collection));
-            }
+            ThrowHelper.ThrowArgumentNullExceptionIfNull(collection);
 
             return new NameValueHeadersCollection(collection);
         }

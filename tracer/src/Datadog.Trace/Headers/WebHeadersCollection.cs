@@ -19,10 +19,7 @@ namespace Datadog.Trace.Headers
 
         public WebHeadersCollection(WebHeaderCollection headers)
         {
-            if (headers is null)
-            {
-                ThrowHelper.ThrowArgumentNullException(nameof(headers));
-            }
+            ThrowHelper.ThrowArgumentNullExceptionIfNull(headers);
 
             _headers = headers;
         }

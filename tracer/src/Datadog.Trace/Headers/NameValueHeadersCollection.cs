@@ -17,10 +17,7 @@ namespace Datadog.Trace.Headers
 
         public NameValueHeadersCollection(NameValueCollection headers)
         {
-            if (headers is null)
-            {
-                ThrowHelper.ThrowArgumentNullException(nameof(headers));
-            }
+            ThrowHelper.ThrowArgumentNullExceptionIfNull(headers);
 
             _headers = headers;
         }
