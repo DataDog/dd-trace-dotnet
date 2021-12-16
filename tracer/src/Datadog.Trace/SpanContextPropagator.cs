@@ -119,10 +119,10 @@ namespace Datadog.Trace
             }
 
             var parentId = ParseUInt64(headers, HttpHeaderNames.ParentId);
-            var samplingPriority = ParseSamplingPriority(headers, HttpHeaderNames.SamplingPriority);
+            var samplingPriority = ParseInt32(headers, HttpHeaderNames.SamplingPriority);
             var origin = ParseString(headers, HttpHeaderNames.Origin);
 
-            return new SpanContext(traceId, parentId, samplingPriority, null, origin);
+            return new SpanContext(traceId, parentId, (SamplingPriority?)samplingPriority, null, origin);
         }
 
         /// <summary>
@@ -146,10 +146,10 @@ namespace Datadog.Trace
             }
 
             var parentId = ParseUInt64(carrier, getter, HttpHeaderNames.ParentId);
-            var samplingPriority = ParseSamplingPriority(carrier, getter, HttpHeaderNames.SamplingPriority);
+            var samplingPriority = ParseInt32(carrier, getter, HttpHeaderNames.SamplingPriority);
             var origin = ParseString(carrier, getter, HttpHeaderNames.Origin);
 
-            return new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin);
+            return new SpanContext(traceId, parentId, (SamplingPriority?)samplingPriority, serviceName: null, origin);
         }
 
         public IEnumerable<KeyValuePair<string, string?>> ExtractHeaderTags<T>(T headers, IEnumerable<KeyValuePair<string, string?>> headerToTagMap, string defaultTagPrefix)
@@ -302,7 +302,7 @@ namespace Datadog.Trace
             return 0;
         }
 
-        private SamplingPriority? ParseSamplingPriority<T>(T headers, string headerName)
+        private int? ParseInt32<T>(T headers, string headerName)
             where T : IHeadersCollection
         {
             var headerValues = headers.GetValues(headerName);
@@ -315,7 +315,7 @@ namespace Datadog.Trace
                     // note this int value may not be defined in the enum,
                     // but we should pass it along without validation
                     // for forward compatibility
-                    return (SamplingPriority)result;
+                    return result;
                 }
 
                 hasValue = true;
@@ -332,7 +332,7 @@ namespace Datadog.Trace
             return default;
         }
 
-        private SamplingPriority? ParseSamplingPriority<T>(T carrier, Func<T, string, IEnumerable<string?>> getter, string headerName)
+        private int? ParseInt32<T>(T carrier, Func<T, string, IEnumerable<string?>> getter, string headerName)
         {
             var headerValues = getter(carrier, headerName);
             bool hasValue = false;
@@ -344,7 +344,7 @@ namespace Datadog.Trace
                     // note this int value may not be defined in the enum,
                     // but we should pass it along without validation
                     // for forward compatibility
-                    return (SamplingPriority)result;
+                    return result;
                 }
 
                 hasValue = true;
