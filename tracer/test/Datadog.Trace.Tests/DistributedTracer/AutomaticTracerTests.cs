@@ -111,5 +111,12 @@ namespace Datadog.Trace.Tests.DistributedTracer
 
             ((IDistributedTracer)automaticTracer).GetRuntimeId().Should().Be(runtimeId, "distributed tracer API should return the same runtime id");
         }
+
+        [Fact]
+        public void IsChildTracer()
+        {
+            var automaticTracer = new AutomaticTracer();
+            ((IDistributedTracer)automaticTracer).IsChildTracer.Should().BeFalse();
+        }
     }
 }
