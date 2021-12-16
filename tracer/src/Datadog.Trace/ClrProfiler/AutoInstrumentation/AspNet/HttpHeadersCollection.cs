@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 {
@@ -17,7 +18,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
         public HttpHeadersCollection(IRequestHeaders headers)
         {
-            _headers = headers ?? throw new ArgumentNullException(nameof(headers));
+            if (headers is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(headers));
+            }
+
+            _headers = headers;
         }
 
         public IEnumerable<string> GetValues(string name)

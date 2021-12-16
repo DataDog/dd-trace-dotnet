@@ -13,6 +13,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace
@@ -142,7 +143,7 @@ namespace Datadog.Trace
                     // Kept for safety reasons
                     if (_instance is { TracerManager: ILockedTracer })
                     {
-                        throw new InvalidOperationException("The current tracer instance cannot be replaced.");
+                        ThrowHelper.ThrowInvalidOperationException("The current tracer instance cannot be replaced.");
                     }
 
                     _instance = value;

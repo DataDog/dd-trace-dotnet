@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Headers
 {
@@ -18,7 +19,12 @@ namespace Datadog.Trace.Headers
 
         public WebHeadersCollection(WebHeaderCollection headers)
         {
-            _headers = headers ?? throw new ArgumentNullException(nameof(headers));
+            if (headers is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(headers));
+            }
+
+            _headers = headers;
         }
 
         public IEnumerable<string> GetValues(string name)

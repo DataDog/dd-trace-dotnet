@@ -9,6 +9,7 @@ using System.Net;
 using Datadog.Trace.ClrProfiler.Emit;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 {
@@ -186,7 +187,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 
             if (genericArgs.Length == 0)
             {
-                throw new ArgumentException($"Expected generics to determine TaskResult from {wireProtocolType.AssemblyQualifiedName}");
+                ThrowHelper.ThrowArgumentException($"Expected generics to determine TaskResult from {wireProtocolType.AssemblyQualifiedName}");
             }
 
             return genericArgs;

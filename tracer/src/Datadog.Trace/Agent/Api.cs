@@ -219,7 +219,7 @@ namespace Datadog.Trace.Agent
                         {
                             var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(responseContent);
 
-                            _updateSampleRates(apiResponse?.RateByService);
+                            _updateSampleRates(apiResponse.RateByService);
 
                             _cachedResponse = responseContent;
                         }
@@ -260,7 +260,7 @@ namespace Datadog.Trace.Agent
             return false;
         }
 
-        internal class ApiResponse
+        internal struct ApiResponse
         {
             [JsonProperty("rate_by_service")]
             public Dictionary<string, float> RateByService { get; set; }

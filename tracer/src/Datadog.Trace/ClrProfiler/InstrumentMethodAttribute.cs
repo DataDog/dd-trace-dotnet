@@ -5,6 +5,7 @@
 
 using System;
 using System.ComponentModel;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler
 {
@@ -32,7 +33,8 @@ namespace Datadog.Trace.ClrProfiler
                     case 1:
                         return AssemblyNames[0];
                     default:
-                        throw new NotSupportedException("Multiple assemblies are not supported using this property. Use AssemblyNames property instead.");
+                        ThrowHelper.ThrowNotSupportedException("Multiple assemblies are not supported using this property. Use AssemblyNames property instead.");
+                        return null;
                 }
             }
             set => AssemblyNames = new[] { value };

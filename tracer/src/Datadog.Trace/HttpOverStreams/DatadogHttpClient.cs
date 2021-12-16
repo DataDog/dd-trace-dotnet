@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.HttpOverStreams.HttpContent;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.HttpOverStreams
 {
@@ -79,7 +80,7 @@ namespace Datadog.Trace.HttpOverStreams
                 var bytesRead = await responseStream.ReadAsync(chArray, offset: 0, count: 1).ConfigureAwait(false);
                 if (bytesRead == 0)
                 {
-                    throw new InvalidOperationException($"Unexpected end of stream at position {streamPosition}");
+                    ThrowHelper.ThrowInvalidOperationException($"Unexpected end of stream at position {streamPosition}");
                 }
 
                 currentChar = Encoding.ASCII.GetChars(chArray)[0];
@@ -91,7 +92,7 @@ namespace Datadog.Trace.HttpOverStreams
                 var requiredBytes = requiredStreamPosition - streamPosition;
                 if (requiredBytes < 0)
                 {
-                    throw new ArgumentOutOfRangeException(nameof(requiredStreamPosition), "StreamPosition already exceeds requiredStreamPosition");
+                    ThrowHelper.ThrowArgumentOutOfRangeException("StreamPosition already exceeds requiredStreamPosition", nameof(requiredStreamPosition));
                 }
 
                 var bytesRemaining = requiredBytes;
@@ -102,7 +103,7 @@ namespace Datadog.Trace.HttpOverStreams
                     lastBytesRead = await responseStream.ReadAsync(chArray, offset: 0, count: bytesToRead).ConfigureAwait(false);
                     if (lastBytesRead == 0)
                     {
-                        throw new InvalidOperationException($"Unexpected end of stream at position {streamPosition}");
+                        ThrowHelper.ThrowInvalidOperationException($"Unexpected end of stream at position {streamPosition}");
                     }
 
                     bytesRemaining -= lastBytesRead;
@@ -146,7 +147,7 @@ namespace Datadog.Trace.HttpOverStreams
 
                     if (!currentChar.Equals(DatadogHttpValues.LineFeed))
                     {
-                        throw new Exception($"Unexpected character {currentChar} in headers: CR must be followed by LF");
+                        ThrowHelper.ThrowException($"Unexpected character {currentChar} in headers: CR must be followed by LF");
                     }
 
                     return true;
@@ -170,7 +171,7 @@ namespace Datadog.Trace.HttpOverStreams
 
             if (!int.TryParse(potentialStatusCode, out var statusCode))
             {
-                throw new DatadogHttpRequestException("Invalid response, can't parse status code. Line was:" + potentialStatusCode);
+                DatadogHttpRequestException.Throw("Invalid response, can't parse status code. Line was:" + potentialStatusCode);
             }
 
             // Skip to reason

@@ -6,6 +6,7 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.HttpOverStreams.HttpContent
 {
@@ -29,7 +30,7 @@ namespace Datadog.Trace.HttpOverStreams.HttpContent
         {
             if (_buffer.Count > buffer.Length)
             {
-                throw new ArgumentOutOfRangeException(
+                ThrowHelper.ThrowArgumentOutOfRangeException(
                     nameof(buffer),
                     $"Buffer of size {buffer.Length} is not large enough to hold content of size {_buffer.Count}");
             }

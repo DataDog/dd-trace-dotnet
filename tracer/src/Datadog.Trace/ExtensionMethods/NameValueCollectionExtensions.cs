@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Specialized;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ExtensionMethods
 {
@@ -23,7 +24,7 @@ namespace Datadog.Trace.ExtensionMethods
         {
             if (collection == null)
             {
-                throw new ArgumentNullException(nameof(collection));
+                ThrowHelper.ThrowArgumentNullException(nameof(collection));
             }
 
             return new NameValueHeadersCollection(collection);

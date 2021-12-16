@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.Emit
 {
@@ -71,8 +72,8 @@ namespace Datadog.Trace.ClrProfiler.Emit
             Type delegateType = typeof(TDelegate);
             Type[] genericTypeArguments = delegateType.GenericTypeArguments;
 
-            Type[] parameterTypes;
-            Type returnType;
+            Type[] parameterTypes = null;
+            Type returnType = null;
 
             if (delegateType.Name.StartsWith("Func`"))
             {
@@ -90,7 +91,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
             }
             else
             {
-                throw new Exception($"Only Func<> or Action<> are supported in {nameof(CreateMethodCallDelegate)}.");
+                ThrowHelper.ThrowException($"Only Func<> or Action<> are supported in {nameof(CreateMethodCallDelegate)}.");
             }
 
             // find any method that matches by name and parameter types
@@ -213,7 +214,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
             }
             else
             {
-                throw new NotSupportedException($"OpCode {callOpCode} not supported when calling a method.");
+                ThrowHelper.ThrowNotSupportedException($"OpCode {callOpCode} not supported when calling a method.");
             }
 
             if (methodInfo.ReturnType.IsValueType && !returnType.IsValueType)
@@ -222,11 +223,11 @@ namespace Datadog.Trace.ClrProfiler.Emit
             }
             else if (methodInfo.ReturnType.IsValueType && returnType.IsValueType && methodInfo.ReturnType != returnType)
             {
-                throw new ArgumentException($"Cannot convert the target method's return type {methodInfo.ReturnType.FullName} (valuetype) to the delegate method's return type {returnType.FullName} (valuetype)");
+                ThrowHelper.ThrowArgumentException($"Cannot convert the target method's return type {methodInfo.ReturnType.FullName} (valuetype) to the delegate method's return type {returnType.FullName} (valuetype)");
             }
             else if (!methodInfo.ReturnType.IsValueType && returnType.IsValueType)
             {
-                throw new ArgumentException($"Cannot reliably convert the target method's return type {methodInfo.ReturnType.FullName} (reference type) to the delegate method's return type {returnType.FullName} (value type)");
+                ThrowHelper.ThrowArgumentException($"Cannot reliably convert the target method's return type {methodInfo.ReturnType.FullName} (reference type) to the delegate method's return type {returnType.FullName} (value type)");
             }
             else if (!methodInfo.ReturnType.IsValueType && !returnType.IsValueType && methodInfo.ReturnType != returnType)
             {

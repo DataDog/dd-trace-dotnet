@@ -10,6 +10,7 @@ using System.Globalization;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace
 {
@@ -40,9 +41,9 @@ namespace Datadog.Trace
         public void Inject<T>(SpanContext context, T headers)
             where T : IHeadersCollection
         {
-            if (context == null) { throw new ArgumentNullException(nameof(context)); }
+            if (context == null) { ThrowHelper.ThrowArgumentNullException(nameof(context)); }
 
-            if (headers == null) { throw new ArgumentNullException(nameof(headers)); }
+            if (headers == null) { ThrowHelper.ThrowArgumentNullException(nameof(headers)); }
 
             headers.Set(HttpHeaderNames.TraceId, context.TraceId.ToString(InvariantCulture));
             headers.Set(HttpHeaderNames.ParentId, context.SpanId.ToString(InvariantCulture));
@@ -73,11 +74,11 @@ namespace Datadog.Trace
         /// <typeparam name="T">Type of header collection</typeparam>
         public void Inject<T>(SpanContext context, T carrier, Action<T, string, string> setter)
         {
-            if (context == null) { throw new ArgumentNullException(nameof(context)); }
+            if (context == null) { ThrowHelper.ThrowArgumentNullException(nameof(context)); }
 
-            if (carrier == null) { throw new ArgumentNullException(nameof(carrier)); }
+            if (carrier == null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
 
-            if (setter == null) { throw new ArgumentNullException(nameof(setter)); }
+            if (setter == null) { ThrowHelper.ThrowArgumentNullException(nameof(setter)); }
 
             setter(carrier, HttpHeaderNames.TraceId, context.TraceId.ToString(InvariantCulture));
             setter(carrier, HttpHeaderNames.ParentId, context.SpanId.ToString(InvariantCulture));
@@ -107,7 +108,7 @@ namespace Datadog.Trace
         {
             if (headers == null)
             {
-                throw new ArgumentNullException(nameof(headers));
+                ThrowHelper.ThrowArgumentNullException(nameof(headers));
             }
 
             var traceId = ParseUInt64(headers, HttpHeaderNames.TraceId);
@@ -134,9 +135,9 @@ namespace Datadog.Trace
         /// <returns>A new <see cref="SpanContext"/> that contains the values obtained from <paramref name="carrier"/>.</returns>
         public SpanContext Extract<T>(T carrier, Func<T, string, IEnumerable<string>> getter)
         {
-            if (carrier == null) { throw new ArgumentNullException(nameof(carrier)); }
+            if (carrier == null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
 
-            if (getter == null) { throw new ArgumentNullException(nameof(getter)); }
+            if (getter == null) { ThrowHelper.ThrowArgumentNullException(nameof(getter)); }
 
             var traceId = ParseUInt64(carrier, getter, HttpHeaderNames.TraceId);
 
