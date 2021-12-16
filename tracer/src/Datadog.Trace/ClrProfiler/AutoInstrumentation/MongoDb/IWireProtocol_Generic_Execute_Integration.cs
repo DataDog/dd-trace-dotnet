@@ -43,8 +43,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
         /// <param name="connection">The MongoDB connection</param>
         /// <param name="cancellationToken">The cancellation token</param>
         /// <typeparam name="TTarget">Type of the target</typeparam>
+        /// <typeparam name="TConnection">Type of the connection</typeparam>
         /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, object connection, CancellationToken cancellationToken)
+        internal static CallTargetState OnMethodBegin<TTarget, TConnection>(TTarget instance, TConnection connection, CancellationToken cancellationToken)
+            where TConnection : IConnection
         {
             var scope = MongoDbIntegration.CreateScope(instance, connection);
 
