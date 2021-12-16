@@ -22,6 +22,8 @@ namespace Datadog.Trace.ClrProfiler
             _parent.Register(this);
         }
 
+        bool IDistributedTracer.IsChildTracer => true;
+
         IScope IDistributedTracer.GetActiveScope()
         {
             var activeTrace = _parent.GetDistributedTrace();
@@ -81,5 +83,7 @@ namespace Datadog.Trace.ClrProfiler
         {
             _parent.SetSamplingPriority((int?)samplingPriority);
         }
+
+        string IDistributedTracer.GetRuntimeId() => _parent.GetAutomaticRuntimeId();
     }
 }

@@ -59,6 +59,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
             var rootSpan = spans.Single(s => s.ParentId == null);
 
             rootSpan.Name.Should().Be("aspnet.request");
+            rootSpan.Tags.Should().ContainKey(Tags.RuntimeId);
+
+            var runtimeId = rootSpan.Tags[Tags.RuntimeId];
+            Guid.TryParse(runtimeId, out _).Should().BeTrue();
+
+            spans.Where(s => s.Name == "aspnet.request")
+                 .Should()
+                 .OnlyContain(s => s.Tags[Tags.RuntimeId] == runtimeId);
 
             var mvcSpan = spans.Single(s => s.ParentId == rootSpan.SpanId);
 
@@ -79,11 +87,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
 
             automaticOuterSpan.TraceId.Should().Be(rootSpan.TraceId);
             automaticOuterSpan.Name.Should().Be("Automatic-Outer");
+            automaticOuterSpan.Tags[Tags.RuntimeId].Should().Be(runtimeId);
 
             var httpSpan = spans.Single(s => s.ParentId == automaticOuterSpan.SpanId);
 
             httpSpan.TraceId.Should().Be(rootSpan.TraceId);
             httpSpan.Name.Should().Be("http.request");
+            httpSpan.Tags[Tags.RuntimeId].Should().Be(runtimeId);
         }
 
         [SkippableTheory]

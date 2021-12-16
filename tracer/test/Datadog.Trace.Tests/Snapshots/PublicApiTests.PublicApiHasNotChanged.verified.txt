@@ -155,7 +155,6 @@ namespace Datadog.Trace.Configuration
         public int MaxTracesSubmittedPerSecond { get; }
         public bool PartialFlushEnabled { get; }
         public int PartialFlushMinSpans { get; }
-        public bool RuntimeMetricsEnabled { get; }
         public string ServiceName { get; }
         public string ServiceVersion { get; }
         public bool StartupDiagnosticLogEnabled { get; }
@@ -222,7 +221,6 @@ namespace Datadog.Trace.Configuration
         public int MaxTracesSubmittedPerSecond { get; set; }
         public bool PartialFlushEnabled { get; set; }
         public int PartialFlushMinSpans { get; set; }
-        public bool RuntimeMetricsEnabled { get; set; }
         public string ServiceName { get; set; }
         public string ServiceVersion { get; set; }
         public bool StartupDiagnosticLogEnabled { get; set; }

@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using Datadog.Trace.Agent;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
@@ -68,7 +69,7 @@ namespace Datadog.Trace
             agentWriter ??= GetAgentWriter(settings, statsd, sampler);
             scopeManager ??= new AsyncLocalScopeManager();
 
-            if (settings.RuntimeMetricsEnabled)
+            if (settings.RuntimeMetricsEnabled && !DistributedTracer.Instance.IsChildTracer)
             {
                 runtimeMetrics ??= new RuntimeMetricsWriter(statsd ?? CreateDogStatsdClient(settings, defaultServiceName, settings.DogStatsdPort), TimeSpan.FromSeconds(10));
             }

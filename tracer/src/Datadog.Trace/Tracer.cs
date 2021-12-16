@@ -24,8 +24,6 @@ namespace Datadog.Trace
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Tracer));
 
-        private static string _runtimeId;
-
         /// <summary>
         /// The number of Tracer instances that have been created and not yet destroyed.
         /// This is used in the heartbeat metrics to estimate the number of
@@ -202,7 +200,7 @@ namespace Datadog.Trace
         /// </summary>
         ISampler IDatadogTracer.Sampler => TracerManager.Sampler;
 
-        internal static string RuntimeId => LazyInitializer.EnsureInitialized(ref _runtimeId, () => Guid.NewGuid().ToString());
+        internal static string RuntimeId => DistributedTracer.Instance.GetRuntimeId();
 
         internal static int LiveTracerCount => _liveTracerCount;
 
