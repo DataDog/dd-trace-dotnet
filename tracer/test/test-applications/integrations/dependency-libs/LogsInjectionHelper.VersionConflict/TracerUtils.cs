@@ -61,14 +61,8 @@ namespace LogsInjectionHelper.VersionConflict
             object instance = instanceGetMethod.Invoke(null, new object[] {});
 
             // Invoke 'public Scope StartActive(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false, bool finishOnClose = true)'
-            var startActive = tracerType.GetMethod("StartActive");
-            object parent = null;
-            string serviceName = null;
-            DateTimeOffset? startTime = null;
-            bool ignoreActiveScope = false;
-            bool finishOnClose = true;
-
-            return (IDisposable)startActive.Invoke(instance, new[] { operationName, parent, serviceName, startTime, ignoreActiveScope, finishOnClose });
+            var startActive = tracerType.GetMethod("StartActive", new Type[] { typeof(string) });
+            return (IDisposable)startActive.Invoke(instance, new[] { operationName });
         }
     }
 }

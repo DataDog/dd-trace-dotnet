@@ -354,7 +354,7 @@ namespace Datadog.Trace
                 traceContext = new TraceContext(this) { SamplingPriority = DistributedTracer.Instance.GetSamplingPriority() };
             }
 
-            var finalServiceName = serviceName ?? parent?.ServiceName ?? DefaultServiceName;
+            var finalServiceName = serviceName ?? DefaultServiceName;
             var spanContext = new SpanContext(parent, traceContext, finalServiceName, traceId: traceId, spanId: spanId);
 
             return spanContext;
