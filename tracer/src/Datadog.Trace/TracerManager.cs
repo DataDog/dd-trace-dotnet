@@ -15,6 +15,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;
 
@@ -353,7 +354,7 @@ namespace Datadog.Trace
         {
             if (_instance is ILockedTracer)
             {
-                throw new InvalidOperationException("The current tracer instance cannot be replaced.");
+                ThrowHelper.ThrowInvalidOperationException("The current tracer instance cannot be replaced.");
             }
 
             var newManager = factory.CreateTracerManager(settings, _instance);

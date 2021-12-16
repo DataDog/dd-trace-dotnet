@@ -203,17 +203,20 @@ namespace Datadog.Trace.Agent
 
         private async Task FlushBuffersTaskLoopAsync()
         {
+            Task[] tasks = new Task[3];
+            tasks[0] = _serializationTask;
+            tasks[1] = _forceFlush.Task;
+
             while (true)
             {
-                await Task.WhenAny(
-                        Task.Delay(TimeSpan.FromSeconds(1)),
-                        _serializationTask,
-                        _forceFlush.Task)
-                    .ConfigureAwait(false);
+                tasks[2] = Task.Delay(TimeSpan.FromSeconds(1));
+                await Task.WhenAny(tasks).ConfigureAwait(false);
+                tasks[2] = null;
 
                 if (_forceFlush.Task.IsCompleted)
                 {
                     _forceFlush = new TaskCompletionSource<bool>(TaskOptions);
+                    tasks[1] = _forceFlush.Task;
                 }
 
                 await FlushBuffers().ConfigureAwait(false);

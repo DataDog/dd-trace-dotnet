@@ -10,6 +10,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.Configuration
@@ -287,7 +288,7 @@ namespace Datadog.Trace.Configuration
             {
                 if (value <= 0)
                 {
-                    throw new ArgumentException("The value must be strictly greater than 0", nameof(PartialFlushMinSpans));
+                    ThrowHelper.ThrowArgumentException("The value must be strictly greater than 0", nameof(PartialFlushMinSpans));
                 }
 
                 _partialFlushMinSpans = value;
