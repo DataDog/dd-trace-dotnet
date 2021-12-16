@@ -16,6 +16,7 @@ using Xunit.Sdk;
 namespace Datadog.Trace.Tests.PlatformHelpers
 {
     [CollectionDefinition(nameof(AzureAppServicesMetadataTests), DisableParallelization = true)]
+    [Collection(nameof(AzureAppServicesMetadataTests))]
     [AzureAppServicesRestorer]
     public class AzureAppServicesMetadataTests
     {

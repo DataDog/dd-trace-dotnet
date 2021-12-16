@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.ClrProfiler;
 using FluentAssertions;
 using Moq;
@@ -50,6 +51,26 @@ namespace Datadog.Trace.Tests.DistributedTracer
             ((IDistributedTracer)manualTracer).SetSamplingPriority(SamplingPriority.UserKeep);
 
             automaticTracer.Verify(t => t.SetSamplingPriority((int?)SamplingPriority.UserKeep), Times.Once());
+        }
+
+        [Fact]
+        public void RuntimeId()
+        {
+            var expectedRuntimeId = Guid.NewGuid().ToString();
+
+            var automaticTracer = new Mock<IAutomaticTracer>();
+            automaticTracer.Setup(t => t.GetAutomaticRuntimeId()).Returns(expectedRuntimeId);
+
+            var manualTracer = new ManualTracer(automaticTracer.Object);
+
+            ((IDistributedTracer)manualTracer).GetRuntimeId().Should().Be(expectedRuntimeId);
+        }
+
+        [Fact]
+        public void IsChildTracer()
+        {
+            var manualTracer = new ManualTracer(Mock.Of<IAutomaticTracer>());
+            ((IDistributedTracer)manualTracer).IsChildTracer.Should().BeTrue();
         }
     }
 }

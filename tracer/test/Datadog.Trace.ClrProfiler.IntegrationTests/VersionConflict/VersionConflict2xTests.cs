@@ -82,6 +82,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
 
                 outputLines[0].Should().Be($"{firstHttpSpan.TraceId}/{firstHttpSpan.SpanId}/2");
                 outputLines[1].Should().Be($"{secondHttpSpan.TraceId}/{secondHttpSpan.SpanId}/-1");
+
+                rootSpan.Tags.Should().ContainKey(Tags.RuntimeId);
+
+                var runtimeId = rootSpan.Tags[Tags.RuntimeId];
+                Guid.TryParse(runtimeId, out _).Should().BeTrue();
+
+                httpSpans.Should().OnlyContain(
+                    s => s.Tags[Tags.RuntimeId] == runtimeId,
+                    "runtime id should be synchronized across versions of the tracer");
             }
         }
     }

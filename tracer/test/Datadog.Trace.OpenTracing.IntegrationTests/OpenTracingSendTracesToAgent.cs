@@ -22,7 +22,10 @@ namespace Datadog.Trace.OpenTracing.IntegrationTests
             {
                 var settings = new TracerSettings
                 {
-                    AgentUri = new Uri($"http://127.0.0.1:{agent.Port}"),
+                    Exporter = new ExporterSettings()
+                    {
+                        AgentUri = new Uri($"http://127.0.0.1:{agent.Port}"),
+                    },
                     TracerMetricsEnabled = false,
                 };
 
@@ -49,7 +52,10 @@ namespace Datadog.Trace.OpenTracing.IntegrationTests
             {
                 var settings = new TracerSettings
                 {
-                    AgentUri = new Uri($"http://127.0.0.1:{agent.Port}"),
+                    Exporter = new ExporterSettings()
+                    {
+                        AgentUri = new Uri($"http://127.0.0.1:{agent.Port}"),
+                    },
                     TracerMetricsEnabled = false,
                 };
 
@@ -78,7 +84,10 @@ namespace Datadog.Trace.OpenTracing.IntegrationTests
             {
                 var settings = new TracerSettings
                 {
-                    AgentUri = new Uri($"http://127.0.0.1:{agent.Port}"),
+                    Exporter = new ExporterSettings()
+                    {
+                        AgentUri = new Uri($"http://127.0.0.1:{agent.Port}"),
+                    },
                     TracerMetricsEnabled = false,
                 };
 

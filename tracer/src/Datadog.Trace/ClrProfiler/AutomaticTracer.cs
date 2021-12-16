@@ -16,7 +16,11 @@ namespace Datadog.Trace.ClrProfiler
         private static readonly AsyncLocal<IReadOnlyDictionary<string, string>> DistributedTrace = new();
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AutomaticTracer));
 
+        private static string _runtimeId;
+
         private ICommonTracer _child;
+
+        bool IDistributedTracer.IsChildTracer => false;
 
         IReadOnlyDictionary<string, string> IDistributedTracer.GetSpanContextRaw()
         {
@@ -72,6 +76,8 @@ namespace Datadog.Trace.ClrProfiler
             _child?.SetSamplingPriority((int?)samplingPriority);
         }
 
+        string IDistributedTracer.GetRuntimeId() => GetAutomaticRuntimeId();
+
         public object GetAutomaticActiveScope()
         {
             return Tracer.Instance.InternalActiveScope;
@@ -111,5 +117,7 @@ namespace Datadog.Trace.ClrProfiler
             Log.Information("Registering {child} as child tracer", manualTracer.GetType());
             _child = manualTracer.DuckCast<ICommonTracer>();
         }
+
+        public string GetAutomaticRuntimeId() => LazyInitializer.EnsureInitialized(ref _runtimeId, () => Guid.NewGuid().ToString());
     }
 }
