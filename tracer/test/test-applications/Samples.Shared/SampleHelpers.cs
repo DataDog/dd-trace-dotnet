@@ -37,7 +37,7 @@ namespace Samples
 
         public static void RunShutDownTasks(object caller)
         {
-            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            var assemblies = System.AppDomain.CurrentDomain.GetAssemblies();
 
             foreach (var assembly in assemblies)
             {
