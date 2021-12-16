@@ -261,6 +261,37 @@ stages:
       displayName: Upload working directory after the build
       artifact: build-macos-working-directory
 
+- stage: check_changes
+  dependsOn: []
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [build]
+
+  - job: check_changes
+    dependsOn: []
+    pool:
+      vmImage: ubuntu-18.04   
+
+    steps:
+    - powershell: |
+        $changes = $(git diff HEAD HEAD~ --name-only).Split(' ')
+        Write-Output "Total changed $($changes.Length) files"
+
+        $profilerChangePath = "profiler/src"
+        $debuggerChangePath = "tracer/src/Datadog.Trace.ClrProfiler.Native/Debugger"
+
+        $isProfilerChanged = $false
+        $isProfilerChanged = foreach ($change in $changes) {if ($change -like "*$profilerChangePath*") { $true; break; }}
+        Write-Output "Profiler changed - $isProfilerChanged"
+        Write-Host "##vso[task.setvariable variable=IsNativeChanged;isOutput=true]$isProfilerChanged"
+
+        $isDebuggerChanged = $false
+        $isDebuggerChanged = foreach ($change in $changes) {if ($change -like "*$debuggerChangePath*") { $true; break; }}
+        Write-Output "Debugger changed - $isDebuggerChanged"
+        Write-Host "##vso[task.setvariable variable=IsNativeChanged;isOutput=true]$isDebuggerChanged"
+      name: check_changes_step
+
 - stage: package_windows
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: build_windows
@@ -842,8 +873,8 @@ stages:
             command: "CheckBuildLogsForErrors"
 
 - stage: exploration_tests_windows
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), eq(variables['runExplorationTests'], 'True'))
-  dependsOn: build_windows
+  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), or(eq(dependencies.Build.outputs['check_changes.check_changes_step.isProfilerChanged'], 'True'), eq(dependencies.Build.outputs['check_changes.check_changes_step.isDebuggerChanged'], 'True')))
+  dependsOn: [build_windows, check_changes]
 
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -856,7 +887,18 @@ stages:
     steps:
       - bash: |
           matrix="{"
-          for explorationTestUseCase in "debugger" "continuousProfiler"; do
+
+          printenv
+          declare -a explorationTestUseCases=()
+          if [ $isDebuggerChanged ]; then 
+            explorationTestUseCases+=("debugger")
+          fi
+
+          if [ $isProfilerChanged ]; then 
+            explorationTestUseCases+=("continuousProfiler")
+          fi
+
+          for explorationTestUseCase in ${explorationTestUseCases[@]}; do
             for explorationTestName in "eshoponweb" "protobuf" "cake" "swashbuckle" "paket" ; do
               name="${explorationTestUseCase//./_}_${explorationTestName}"
               matrix="${matrix} '${name}':"
@@ -903,8 +945,8 @@ stages:
       displayName: Check logs for errors
 
 - stage: exploration_tests_linux
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_linux]
+  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), or(eq(dependencies.Build.outputs['check_changes.check_changes_step.isProfilerChanged'], 'True'), eq(dependencies.Build.outputs['check_changes.check_changes_step.isDebuggerChanged'], 'True')))
+  dependsOn: [build_linux, check_changes]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -920,6 +962,16 @@ stages:
       - bash: |
           matrix="{"
 
+          printenv
+          declare -a explorationTestUseCases=()
+          if [ $isDebuggerChanged ]; then 
+            explorationTestUseCases+=("debugger")
+          fi
+
+          if [ $isProfilerChanged ]; then 
+            explorationTestUseCases+=("continuousProfiler")
+          fi
+
           add_to_matrix () {
             name="${baseImage//./_}_${publishTargetFramework//./_}_${explorationTestUseCase//./_}_${explorationTestName}"
             matrix="${matrix} '${name}':"
@@ -930,7 +982,7 @@ stages:
           }
 
           for baseImage in "debian" "alpine" ; do
-            for explorationTestUseCase in "debugger" "continuousProfiler" ; do
+            for explorationTestUseCase in ${explorationTestUseCases[@]} ; do
 
               publishTargetFramework="netcoreapp2.1"
               for explorationTestName in "eshoponweb" "protobuf" ; do
