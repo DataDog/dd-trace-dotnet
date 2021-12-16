@@ -36,7 +36,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         public async Task TestSecurity(bool enableSecurity, bool enableBlocking, HttpStatusCode expectedStatusCode, string url = DefaultAttackUrl)
         {
             var agent = await RunOnSelfHosted(enableSecurity, enableBlocking);
-            await TestBlockedRequestAsync(agent, enableSecurity, expectedStatusCode, 5, new Action<TestHelpers.MockTracerAgent.Span>[]
+            await TestBlockedRequestAsync(agent, enableSecurity, expectedStatusCode, 5, url: url, assertOnSpans: new Action<TestHelpers.MockTracerAgent.Span>[]
             {
                  s => Assert.Equal("aspnet_core.request", s.Name),
                  s  => Assert.Equal("Samples.AspNetCore5", s.Service),
@@ -54,7 +54,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                         Assert.Equal(kvp.Value, tagValue);
                     }
                  },
-            }, url);
+            });
         }
     }
 }
