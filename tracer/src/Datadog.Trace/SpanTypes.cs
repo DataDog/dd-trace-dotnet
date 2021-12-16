@@ -53,7 +53,7 @@ namespace Datadog.Trace
         public const string Custom = "custom";
 
         /// <summary>
-        /// The span type for a Test instegration.
+        /// The span type for a Test integration.
         /// </summary>
         public const string Test = "test";
 
