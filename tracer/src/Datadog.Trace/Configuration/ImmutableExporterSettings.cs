@@ -31,7 +31,7 @@ namespace Datadog.Trace.Configuration
         {
             AgentUri = settings.AgentUri;
 
-            TraceTransport = settings.TracesTransport;
+            TracesTransport = settings.TracesTransport;
             TracesPipeName = settings.TracesPipeName;
             TracesPipeTimeoutMs = settings.TracesPipeTimeoutMs;
 
@@ -42,11 +42,6 @@ namespace Datadog.Trace.Configuration
             PartialFlushEnabled = settings.PartialFlushEnabled;
             PartialFlushMinSpans = settings.PartialFlushMinSpans;
         }
-
-        /// <summary>
-        /// Gets the transport used to send traces to the Agent.
-        /// </summary>
-        public TracesTransportType TraceTransport { get; }
 
         /// <summary>
         /// Gets the Uri where the Tracer can connect to the Agent.
