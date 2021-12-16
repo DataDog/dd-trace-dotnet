@@ -938,9 +938,8 @@ stages:
               done
 
               publishTargetFramework="netcoreapp3.1"
-              for explorationTestName in "cake" "paket" ; do
-                add_to_matrix
-              done
+              explorationTestName="cake"
+              add_to_matrix
 
               publishTargetFramework="net5.0"
               explorationTestName="cake"

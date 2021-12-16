@@ -335,7 +335,7 @@ class ExplorationTestDescription
                 IsGitShallowCloneSupported = true,
                 PathToUnitTestProject = "tests/Paket.Tests",
                 TestsToIgnore = new[] { "Loading assembly metadata works" },
-                SupportedFrameworks = new[] { TargetFramework.NET461, TargetFramework.NETCOREAPP3_1 },
+                SupportedFrameworks = new[] { TargetFramework.NET461 },
             },
             ExplorationTestName.ilspy => new ExplorationTestDescription()
             {
