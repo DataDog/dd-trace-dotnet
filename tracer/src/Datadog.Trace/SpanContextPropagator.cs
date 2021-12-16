@@ -23,13 +23,13 @@ namespace Datadog.Trace
 
         private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SpanContextPropagator>();
-        private static readonly ConcurrentDictionary<Key, string> DefaultTagMappingCache = new ConcurrentDictionary<Key, string>();
+        private static readonly ConcurrentDictionary<Key, string> DefaultTagMappingCache = new();
 
         private SpanContextPropagator()
         {
         }
 
-        public static SpanContextPropagator Instance { get; } = new SpanContextPropagator();
+        public static SpanContextPropagator Instance { get; } = new();
 
         /// <summary>
         /// Propagates the specified context by adding new headers to a <see cref="IHeadersCollection"/>.
@@ -42,7 +42,6 @@ namespace Datadog.Trace
             where T : IHeadersCollection
         {
             if (context == null) { ThrowHelper.ThrowArgumentNullException(nameof(context)); }
-
             if (headers == null) { ThrowHelper.ThrowArgumentNullException(nameof(headers)); }
 
             headers.Set(HttpHeaderNames.TraceId, context.TraceId.ToString(InvariantCulture));
@@ -75,9 +74,7 @@ namespace Datadog.Trace
         public void Inject<T>(SpanContext context, T carrier, Action<T, string, string> setter)
         {
             if (context == null) { ThrowHelper.ThrowArgumentNullException(nameof(context)); }
-
             if (carrier == null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
-
             if (setter == null) { ThrowHelper.ThrowArgumentNullException(nameof(setter)); }
 
             setter(carrier, HttpHeaderNames.TraceId, context.TraceId.ToString(InvariantCulture));
@@ -136,7 +133,6 @@ namespace Datadog.Trace
         public SpanContext Extract<T>(T carrier, Func<T, string, IEnumerable<string>> getter)
         {
             if (carrier == null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
-
             if (getter == null) { ThrowHelper.ThrowArgumentNullException(nameof(getter)); }
 
             var traceId = ParseUInt64(carrier, getter, HttpHeaderNames.TraceId);
@@ -151,7 +147,7 @@ namespace Datadog.Trace
             var samplingPriority = ParseSamplingPriority(carrier, getter, HttpHeaderNames.SamplingPriority);
             var origin = ParseString(carrier, getter, HttpHeaderNames.Origin);
 
-            return new SpanContext(traceId, parentId, samplingPriority, null, origin);
+            return new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin);
         }
 
         public IEnumerable<KeyValuePair<string, string>> ExtractHeaderTags<T>(T headers, IEnumerable<KeyValuePair<string, string>> headerToTagMap, string defaultTagPrefix)
@@ -255,7 +251,7 @@ namespace Datadog.Trace
 
             serializedSpanContext.TryGetValue(HttpHeaderNames.Origin, out var origin);
 
-            return new SpanContext(traceId, parentId, samplingPriority, null, origin);
+            return new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin);
         }
 
         private static ulong ParseUInt64<T>(T headers, string headerName)
@@ -286,7 +282,6 @@ namespace Datadog.Trace
         private static ulong ParseUInt64<T>(T carrier, Func<T, string, IEnumerable<string>> getter, string headerName)
         {
             var headerValues = getter(carrier, headerName);
-
             bool hasValue = false;
 
             foreach (string headerValue in headerValues)
@@ -311,7 +306,6 @@ namespace Datadog.Trace
             where T : IHeadersCollection
         {
             var headerValues = headers.GetValues(headerName);
-
             bool hasValue = false;
 
             foreach (string headerValue in headerValues)
@@ -341,7 +335,6 @@ namespace Datadog.Trace
         private static SamplingPriority? ParseSamplingPriority<T>(T carrier, Func<T, string, IEnumerable<string>> getter, string headerName)
         {
             var headerValues = getter(carrier, headerName);
-
             bool hasValue = false;
 
             foreach (string headerValue in headerValues)
@@ -399,7 +392,7 @@ namespace Datadog.Trace
             return null;
         }
 
-        private struct Key : IEquatable<Key>
+        private readonly struct Key : IEquatable<Key>
         {
             public readonly string HeaderName;
             public readonly string TagPrefix;
