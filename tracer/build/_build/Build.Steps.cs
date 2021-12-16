@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -264,13 +265,21 @@ partial class Build
     Target DownloadLibDdwaf => _ => _
         .Unlisted()
         .After(CreateRequiredDirectories)
-        .Executes(() =>
+        .Executes(async () =>
         {
-            var wc = new WebClient();
             var libDdwafUri = new Uri($"https://www.nuget.org/api/v2/package/libddwaf/{LibDdwafVersion}");
             var libDdwafZip = TempDirectory / "libddwaf.zip";
 
-            wc.DownloadFile(libDdwafUri, libDdwafZip);
+            using (var client = new HttpClient())
+            {
+                var response = await client.GetAsync(libDdwafUri);
+
+                response.EnsureSuccessStatusCode();
+
+                await using var file = File.Create(libDdwafZip);
+                await using var stream = await response.Content.ReadAsStreamAsync();
+                await stream.CopyToAsync(file);
+            }
 
             Console.WriteLine($"{libDdwafZip} downloaded. Extracting to {LibDdwafDirectory}...");
 

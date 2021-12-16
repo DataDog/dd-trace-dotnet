@@ -44,9 +44,6 @@ namespace Datadog.Trace
 
             if (headers == null) { throw new ArgumentNullException(nameof(headers)); }
 
-            // lock sampling priority when span propagates.
-            context.TraceContext?.LockSamplingPriority();
-
             headers.Set(HttpHeaderNames.TraceId, context.TraceId.ToString(InvariantCulture));
             headers.Set(HttpHeaderNames.ParentId, context.SpanId.ToString(InvariantCulture));
 
@@ -81,9 +78,6 @@ namespace Datadog.Trace
             if (carrier == null) { throw new ArgumentNullException(nameof(carrier)); }
 
             if (setter == null) { throw new ArgumentNullException(nameof(setter)); }
-
-            // lock sampling priority when span propagates.
-            context.TraceContext?.LockSamplingPriority();
 
             setter(carrier, HttpHeaderNames.TraceId, context.TraceId.ToString(InvariantCulture));
             setter(carrier, HttpHeaderNames.ParentId, context.SpanId.ToString(InvariantCulture));

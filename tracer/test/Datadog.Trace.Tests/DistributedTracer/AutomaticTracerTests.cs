@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -58,40 +59,24 @@ namespace Datadog.Trace.Tests.DistributedTracer
         }
 
         [Fact]
-        public void LockSamplingPriority()
+        public void SetSamplingPriority_NoChild()
+        {
+            var automaticTracer = new AutomaticTracer();
+
+            ((IDistributedTracer)automaticTracer).SetSamplingPriority(SamplingPriority.UserKeep);
+        }
+
+        [Fact]
+        public void SetSamplingPriority()
         {
             var manualTracer = new Mock<ICommonTracer>();
 
             var automaticTracer = new AutomaticTracer();
             automaticTracer.Register(manualTracer.Object);
 
-            ((IDistributedTracer)automaticTracer).LockSamplingPriority();
+            ((IDistributedTracer)automaticTracer).SetSamplingPriority(SamplingPriority.UserKeep);
 
-            manualTracer.Verify(t => t.LockSamplingPriority(), Times.Once);
-        }
-
-        [Fact]
-        public void TrySetSamplingPriority_NoChild()
-        {
-            var automaticTracer = new AutomaticTracer();
-
-            var samplingPriority = ((IDistributedTracer)automaticTracer).TrySetSamplingPriority(SamplingPriority.UserKeep);
-
-            samplingPriority.Should().Be(SamplingPriority.UserKeep, "TrySetSamplingPriority should be pass-through when there is no child");
-        }
-
-        [Fact]
-        public void TrySetSamplingPriority()
-        {
-            var manualTracer = new Mock<ICommonTracer>();
-            manualTracer.Setup(t => t.TrySetSamplingPriority(It.IsAny<int?>())).Returns((int?)SamplingPriority.UserReject);
-
-            var automaticTracer = new AutomaticTracer();
-            automaticTracer.Register(manualTracer.Object);
-
-            var samplingPriority = ((IDistributedTracer)automaticTracer).TrySetSamplingPriority(SamplingPriority.UserKeep);
-
-            samplingPriority.Should().Be(SamplingPriority.UserReject, "TrySetSamplingPriority should return the value given by the child");
+            manualTracer.Verify(t => t.SetSamplingPriority((int?)SamplingPriority.UserKeep), Times.Once);
         }
 
         [Fact]
@@ -111,6 +96,27 @@ namespace Datadog.Trace.Tests.DistributedTracer
             }
 
             automaticTracer.GetDistributedTrace().Should().BeNull();
+        }
+
+        [Fact]
+        public void RuntimeId()
+        {
+            var automaticTracer = new AutomaticTracer();
+
+            var runtimeId = automaticTracer.GetAutomaticRuntimeId();
+
+            Guid.TryParse(runtimeId, out _).Should().BeTrue();
+
+            automaticTracer.GetAutomaticRuntimeId().Should().Be(runtimeId, "runtime id should remain the same");
+
+            ((IDistributedTracer)automaticTracer).GetRuntimeId().Should().Be(runtimeId, "distributed tracer API should return the same runtime id");
+        }
+
+        [Fact]
+        public void IsChildTracer()
+        {
+            var automaticTracer = new AutomaticTracer();
+            ((IDistributedTracer)automaticTracer).IsChildTracer.Should().BeFalse();
         }
     }
 }

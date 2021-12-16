@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Linq;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -29,6 +30,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
             {
                 var spans = agent.WaitForSpans(expectedSpanCount);
 
+                foreach (var span in spans)
+                {
+                    var samplingPriority = string.Empty;
+
+                    if (span.Metrics.ContainsKey(Metrics.SamplingPriority))
+                    {
+                        samplingPriority = span.Metrics[Metrics.SamplingPriority].ToString();
+                    }
+
+                    Output.WriteLine($"{span.Name} - {span.TraceId} - {span.SpanId} - {span.ParentId} - {span.Resource} - {samplingPriority}");
+                }
+
                 spans.Should().HaveCount(expectedSpanCount);
 
                 // Check that no trace is orphaned
@@ -36,13 +49,48 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
 
                 rootSpan.Name.Should().Be("Manual");
                 rootSpan.Metrics.Should().ContainKey(Metrics.SamplingPriority);
-                rootSpan.Metrics[Metrics.SamplingPriority].Should().Be((double)SamplingPriority.UserKeep);
+                rootSpan.Metrics[Metrics.SamplingPriority].Should().Be((double)SamplingPriority.UserReject);
 
                 var httpSpans = spans.Where(s => s.Name == "http.request").ToList();
 
-                httpSpans.Should().HaveCount(2);
+                // There is a difference in behavior between .NET Framework and .NET Core
+                // This happens because the version of the nuget is higher than the version of the automatic tracer
+                // When that's the case, only the nuget tracer is loaded, and we're not actually in a version conflict situation.
+                // When version 2.1 of the tracer ships, we can go back to the test and add a case using nuget 2.0,
+                // which will actually test the version conflict behavior.
+
+#if NETCOREAPP
+                httpSpans.Should()
+                    .HaveCount(2)
+                    .And.OnlyContain(s => s.ParentId == rootSpan.SpanId && s.TraceId == rootSpan.TraceId)
+                    .And.OnlyContain(s => !s.Metrics.ContainsKey(Metrics.SamplingPriority));
+#else
+                httpSpans.Should()
+                    .HaveCount(2)
+                    .And.OnlyContain(s => s.ParentId == rootSpan.SpanId && s.TraceId == rootSpan.TraceId)
+                    .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == (double)SamplingPriority.UserKeep)
+                    .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == (double)SamplingPriority.UserReject);
+#endif
+
+                // Check the headers of the outbound http requests
+                var outputLines = processResult.StandardOutput.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+
+                outputLines.Should().HaveCount(2);
+
+                var firstHttpSpan = httpSpans.Single(s => s.Resource.EndsWith("/a"));
+                var secondHttpSpan = httpSpans.Single(s => s.Resource.EndsWith("/b"));
+
+                outputLines[0].Should().Be($"{firstHttpSpan.TraceId}/{firstHttpSpan.SpanId}/2");
+                outputLines[1].Should().Be($"{secondHttpSpan.TraceId}/{secondHttpSpan.SpanId}/-1");
+
+                rootSpan.Tags.Should().ContainKey(Tags.RuntimeId);
+
+                var runtimeId = rootSpan.Tags[Tags.RuntimeId];
+                Guid.TryParse(runtimeId, out _).Should().BeTrue();
+
                 httpSpans.Should().OnlyContain(
-                    s => !s.Metrics.ContainsKey(Metrics.SamplingPriority) || s.Metrics[Metrics.SamplingPriority] == (double)SamplingPriority.UserKeep);
+                    s => s.Tags[Tags.RuntimeId] == runtimeId,
+                    "runtime id should be synchronized across versions of the tracer");
             }
         }
     }
