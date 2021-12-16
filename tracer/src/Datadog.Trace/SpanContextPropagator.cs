@@ -39,11 +39,11 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="context">A <see cref="SpanContext"/> value that will be propagated into <paramref name="headers"/>.</param>
         /// <param name="headers">A <see cref="IHeadersCollection"/> to add new headers to.</param>
-        /// <typeparam name="T">Type of header collection</typeparam>
-        public void Inject<T>(SpanContext context, T headers)
-            where T : IHeadersCollection
+        /// <typeparam name="TCarrier">Type of header collection</typeparam>
+        public void Inject<TCarrier>(SpanContext context, TCarrier headers)
+            where TCarrier : IHeadersCollection
         {
-            Inject(context, headers, DelegateCache<T>.Setter);
+            Inject(context, headers, DelegateCache<TCarrier>.Setter);
         }
 
         /// <summary>
@@ -53,8 +53,8 @@ namespace Datadog.Trace
         /// <param name="context">A <see cref="SpanContext"/> value that will be propagated into <paramref name="carrier"/>.</param>
         /// <param name="carrier">The headers to add to.</param>
         /// <param name="setter">The action that can set a header in the carrier.</param>
-        /// <typeparam name="T">Type of header collection</typeparam>
-        public void Inject<T>(SpanContext context, T carrier, Action<T, string, string?> setter)
+        /// <typeparam name="TCarrier">Type of header collection</typeparam>
+        public void Inject<TCarrier>(SpanContext context, TCarrier carrier, Action<TCarrier, string, string?> setter)
         {
             if (context == null) { ThrowHelper.ThrowArgumentNullException(nameof(context)); }
             if (carrier == null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
@@ -81,12 +81,12 @@ namespace Datadog.Trace
         /// Extracts a <see cref="SpanContext"/> from the values found in the specified headers.
         /// </summary>
         /// <param name="headers">The headers that contain the values to be extracted.</param>
-        /// <typeparam name="T">Type of header collection</typeparam>
+        /// <typeparam name="TCarrier">Type of header collection</typeparam>
         /// <returns>A new <see cref="SpanContext"/> that contains the values obtained from <paramref name="headers"/>.</returns>
-        public SpanContext? Extract<T>(T headers)
-            where T : IHeadersCollection
+        public SpanContext? Extract<TCarrier>(TCarrier headers)
+            where TCarrier : IHeadersCollection
         {
-            return Extract(headers, DelegateCache<T>.Getter);
+            return Extract(headers, DelegateCache<TCarrier>.Getter);
         }
 
         /// <summary>
@@ -94,9 +94,9 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="carrier">The headers that contain the values to be extracted.</param>
         /// <param name="getter">The function that can extract a list of values for a given header name.</param>
-        /// <typeparam name="T">Type of header collection</typeparam>
+        /// <typeparam name="TCarrier">Type of header collection</typeparam>
         /// <returns>A new <see cref="SpanContext"/> that contains the values obtained from <paramref name="carrier"/>.</returns>
-        public SpanContext? Extract<T>(T carrier, Func<T, string, IEnumerable<string?>> getter)
+        public SpanContext? Extract<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter)
         {
             if (carrier == null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
             if (getter == null) { ThrowHelper.ThrowArgumentNullException(nameof(getter)); }
@@ -218,7 +218,7 @@ namespace Datadog.Trace
             return new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin);
         }
 
-        private ulong? ParseUInt64<T>(T carrier, Func<T, string, IEnumerable<string?>> getter, string headerName)
+        private ulong? ParseUInt64<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string headerName)
         {
             var headerValues = getter(carrier, headerName);
             bool hasValue = false;
@@ -241,7 +241,7 @@ namespace Datadog.Trace
             return null;
         }
 
-        private int? ParseInt32<T>(T carrier, Func<T, string, IEnumerable<string?>> getter, string headerName)
+        private int? ParseInt32<TTCarrier>(TTCarrier carrier, Func<TTCarrier, string, IEnumerable<string?>> getter, string headerName)
         {
             var headerValues = getter(carrier, headerName);
             bool hasValue = false;
@@ -270,8 +270,8 @@ namespace Datadog.Trace
             return null;
         }
 
-        private string? ParseString<T>(T headers, string headerName)
-            where T : IHeadersCollection
+        private string? ParseString<TCarrier>(TCarrier headers, string headerName)
+            where TCarrier : IHeadersCollection
         {
             var headerValues = headers.GetValues(headerName);
 
@@ -286,7 +286,7 @@ namespace Datadog.Trace
             return null;
         }
 
-        private string? ParseString<T>(T carrier, Func<T, string, IEnumerable<string?>> getter, string headerName)
+        private string? ParseString<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string headerName)
         {
             var headerValues = getter(carrier, headerName);
 
