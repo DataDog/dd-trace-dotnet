@@ -275,7 +275,7 @@ stages:
 
     steps:
     - powershell: |
-        $changes = $(git diff HEAD HEAD~ --name-only).Split(' ')
+        $changes = $(git diff --name-only HEAD..origin/master).Split(' ')
         Write-Output "Total changed $($changes.Length) files"
 
         $profilerChangePath = "profiler/src"
