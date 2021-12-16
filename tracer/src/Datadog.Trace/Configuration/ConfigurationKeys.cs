@@ -274,18 +274,6 @@ namespace Datadog.Trace.Configuration
         public const string HttpClientErrorStatusCodes = "DD_HTTP_CLIENT_ERROR_STATUSES";
 
         /// <summary>
-        /// Configuration key to enable sending partial traces to the agent
-        /// </summary>
-        /// <seealso cref="TracerSettings.PartialFlushEnabled"/>
-        public const string PartialFlushEnabled = "DD_TRACE_PARTIAL_FLUSH_ENABLED";
-
-        /// <summary>
-        /// Configuration key to set the minimum number of closed spans in a trace before it's partially flushed
-        /// </summary>
-        /// <seealso cref="TracerSettings.PartialFlushMinSpans"/>
-        public const string PartialFlushMinSpans = "DD_TRACE_PARTIAL_FLUSH_MIN_SPANS";
-
-        /// <summary>
         /// Configuration key to enable or disable the creation of a span context on exiting a successful Kafka
         /// Consumer.Consume() call, and closing the scope on entering Consumer.Consume().
         /// Default value is <c>true</c> (enabled).
