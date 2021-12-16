@@ -22,12 +22,12 @@ namespace Datadog.Trace.Security.IntegrationTests
 {
     public class AspNetBase : TestHelper
     {
+        protected const string DefaultAttackUrl = "/Health/?arg=[$slice]";
         private readonly HttpClient _httpClient;
         private readonly string _shutdownPath;
         private int _httpPort;
         private Process _process;
         private MockTracerAgent _agent;
-        protected const string DefaultAttackUrl = "/Health/?arg=[$slice]";
 
         public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath, string samplesDir = null)
             : base(sampleName, samplesDir ?? "test/test-applications/security", outputHelper)
