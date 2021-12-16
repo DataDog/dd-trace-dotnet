@@ -281,16 +281,15 @@ stages:
         $profilerChangePath = "profiler/src"
         $debuggerChangePath = "tracer/src/Datadog.Trace.ClrProfiler.Native/Debugger"
 
-        # $isProfilerChanged = $false
         $isProfilerChanged = $true
         foreach ($change in $changes) {if ($change -like "*$profilerChangePath*") { $isProfilerChanged = $true; break; }}
         Write-Output "Profiler changed - $isProfilerChanged"
-        Write-Host "##vso[task.setvariable variable=IsNativeChanged;isOutput=true]$isProfilerChanged"
+        Write-Host "##vso[task.setvariable variable=IsProfilerChanged;isOutput=true]$isProfilerChanged"
 
-        # $isDebuggerChanged = $false
+        $isDebuggerChanged = $false
         foreach ($change in $changes) {if ($change -like "*$debuggerChangePath*") { $isDebuggerChanged = $true; break; }}
         Write-Output "Debugger changed - $isDebuggerChanged"
-        Write-Host "##vso[task.setvariable variable=IsNativeChanged;isOutput=true]$isDebuggerChanged"
+        Write-Host "##vso[task.setvariable variable=IsDebuggerChanged;isOutput=true]$isDebuggerChanged"
       name: check_changes_step
 
 - stage: package_windows
@@ -874,7 +873,7 @@ stages:
             command: "CheckBuildLogsForErrors"
 
 - stage: exploration_tests_windows
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), or(eq(dependencies.check_changes.outputs['check_changes_job.check_changes_step.isProfilerChanged'], 'True'), eq(dependencies.check_changes.outputs['check_changes_job.check_changes_step.isDebuggerChanged'], 'True')))
+  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), or(eq(dependencies.check_changes.outputs['check_changes_job.check_changes_step.IsProfilerChanged'], 'True'), eq(dependencies.check_changes.outputs['check_changes_job.check_changes_step.IsDebuggerChanged'], 'True')))
   dependsOn: [build_windows, check_changes]
 
   jobs:
@@ -946,7 +945,7 @@ stages:
       displayName: Check logs for errors
 
 - stage: exploration_tests_linux
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), or(eq(dependencies.check_changes.outputs['check_changes_job.check_changes_step.isProfilerChanged'], 'True'), eq(dependencies.check_changes.outputs['check_changes_job.check_changes_step.isDebuggerChanged'], 'True')))
+  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), or(eq(dependencies.check_changes.outputs['check_changes_job.check_changes_step.IsProfilerChanged'], 'True'), eq(dependencies.check_changes.outputs['check_changes_job.check_changes_step.IsDebuggerChanged'], 'True')))
   dependsOn: [build_linux, check_changes]
   jobs:
   - template: steps/update-github-status-jobs.yml
