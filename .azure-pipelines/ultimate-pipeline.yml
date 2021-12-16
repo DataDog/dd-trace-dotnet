@@ -288,7 +288,6 @@ stages:
         Write-Host "##vso[task.setvariable variable=IsNativeChanged;isOutput=true]$isProfilerChanged"
 
         # $isDebuggerChanged = $false
-        $isDebuggerChanged = $false
         foreach ($change in $changes) {if ($change -like "*$debuggerChangePath*") { $isDebuggerChanged = $true; break; }}
         Write-Output "Debugger changed - $isDebuggerChanged"
         Write-Host "##vso[task.setvariable variable=IsNativeChanged;isOutput=true]$isDebuggerChanged"
