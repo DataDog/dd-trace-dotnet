@@ -43,26 +43,7 @@ namespace Datadog.Trace
         public void Inject<T>(SpanContext context, T headers)
             where T : IHeadersCollection
         {
-            if (context == null) { ThrowHelper.ThrowArgumentNullException(nameof(context)); }
-            if (headers == null) { ThrowHelper.ThrowArgumentNullException(nameof(headers)); }
-
-            headers.Set(HttpHeaderNames.TraceId, context.TraceId.ToString(_invariantCulture));
-            headers.Set(HttpHeaderNames.ParentId, context.SpanId.ToString(_invariantCulture));
-
-            // avoid writing origin header if not set, keeping the previous behavior.
-            if (context.Origin != null)
-            {
-                headers.Set(HttpHeaderNames.Origin, context.Origin);
-            }
-
-            var samplingPriority = (int?)(context.TraceContext?.SamplingPriority ?? context.SamplingPriority);
-
-            if (samplingPriority != null)
-            {
-                headers.Set(
-                    HttpHeaderNames.SamplingPriority,
-                    samplingPriority.Value.ToString(_invariantCulture));
-            }
+            Inject(context, headers, DelegateCache<T>.Setter);
         }
 
         /// <summary>
@@ -105,24 +86,7 @@ namespace Datadog.Trace
         public SpanContext? Extract<T>(T headers)
             where T : IHeadersCollection
         {
-            if (headers == null)
-            {
-                ThrowHelper.ThrowArgumentNullException(nameof(headers));
-            }
-
-            var traceId = ParseUInt64(headers, HttpHeaderNames.TraceId);
-
-            if (traceId == 0)
-            {
-                // a valid traceId is required to use distributed tracing
-                return null;
-            }
-
-            var parentId = ParseUInt64(headers, HttpHeaderNames.ParentId);
-            var samplingPriority = ParseInt32(headers, HttpHeaderNames.SamplingPriority);
-            var origin = ParseString(headers, HttpHeaderNames.Origin);
-
-            return new SpanContext(traceId, parentId, (SamplingPriority?)samplingPriority, null, origin);
+            return Extract(headers, DelegateCache<T>.Getter);
         }
 
         /// <summary>
@@ -254,31 +218,6 @@ namespace Datadog.Trace
             return new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin);
         }
 
-        private ulong ParseUInt64<T>(T headers, string headerName)
-            where T : IHeadersCollection
-        {
-            var headerValues = headers.GetValues(headerName);
-
-            bool hasValue = false;
-
-            foreach (string? headerValue in headerValues)
-            {
-                if (ulong.TryParse(headerValue, NumberStyles, _invariantCulture, out var result))
-                {
-                    return result;
-                }
-
-                hasValue = true;
-            }
-
-            if (hasValue)
-            {
-                _log.Warning("Could not parse {HeaderName} headers: {HeaderValues}", headerName, string.Join(",", headerValues));
-            }
-
-            return 0;
-        }
-
         private ulong ParseUInt64<T>(T carrier, Func<T, string, IEnumerable<string?>> getter, string headerName)
         {
             var headerValues = getter(carrier, headerName);
@@ -300,36 +239,6 @@ namespace Datadog.Trace
             }
 
             return 0;
-        }
-
-        private int? ParseInt32<T>(T headers, string headerName)
-            where T : IHeadersCollection
-        {
-            var headerValues = headers.GetValues(headerName);
-            bool hasValue = false;
-
-            foreach (string? headerValue in headerValues)
-            {
-                if (int.TryParse(headerValue, out var result))
-                {
-                    // note this int value may not be defined in the enum,
-                    // but we should pass it along without validation
-                    // for forward compatibility
-                    return result;
-                }
-
-                hasValue = true;
-            }
-
-            if (hasValue)
-            {
-                _log.Warning(
-                    "Could not parse {HeaderName} headers: {HeaderValues}",
-                    headerName,
-                    string.Join(",", headerValues));
-            }
-
-            return default;
         }
 
         private int? ParseInt32<T>(T carrier, Func<T, string, IEnumerable<string?>> getter, string headerName)
@@ -435,6 +344,13 @@ namespace Datadog.Trace
                 return HeaderName == other.HeaderName &&
                        TagPrefix == other.TagPrefix;
             }
+        }
+
+        private static class DelegateCache<THeaders>
+            where THeaders : IHeadersCollection
+        {
+            public static readonly Func<THeaders, string, IEnumerable<string?>> Getter = (headers, name) => headers.GetValues(name);
+            public static readonly Action<THeaders, string, string?> Setter = (headers, name, value) => headers.Set(name, value);
         }
     }
 }
