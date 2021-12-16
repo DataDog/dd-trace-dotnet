@@ -13,6 +13,8 @@ namespace Datadog.Trace.Configuration
     /// </summary>
     public class ExporterSettings
     {
+        private int _partialFlushMinSpans;
+
         /// <summary>
         /// The default host value for <see cref="AgentUri"/>.
         /// </summary>
@@ -46,6 +48,17 @@ namespace Datadog.Trace.Configuration
             var isWindows = FrameworkDescription.Instance.OSPlatform == OSPlatform.Windows;
             ConfigureTraceTransport(source, isWindows);
             ConfigureMetricsTransport(source, isWindows);
+
+            PartialFlushEnabled = source?.GetBool(ConfigurationKeys.PartialFlushEnabled)
+                // default value
+                ?? false;
+
+            var partialFlushMinSpans = source?.GetInt32(ConfigurationKeys.PartialFlushMinSpans);
+
+            if ((partialFlushMinSpans ?? 0) <= 0)
+            {
+                PartialFlushMinSpans = 500;
+            }
         }
 
         /// <summary>
@@ -84,6 +97,28 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DogStatsdPort"/>
         public int DogStatsdPort { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether partial flush is enabled
+        /// </summary>
+        public bool PartialFlushEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets the minimum number of closed spans in a trace before it's partially flushed
+        /// </summary>
+        public int PartialFlushMinSpans
+        {
+            get => _partialFlushMinSpans;
+            set
+            {
+                if (value <= 0)
+                {
+                    throw new ArgumentException("The value must be strictly greater than 0", nameof(PartialFlushMinSpans));
+                }
+
+                _partialFlushMinSpans = value;
+            }
+        }
 
         /// <summary>
         /// Gets or sets the transport used to send traces to the Agent.

@@ -30,12 +30,17 @@ namespace Datadog.Trace.Configuration
         public ImmutableExporterSettings(ExporterSettings settings)
         {
             AgentUri = settings.AgentUri;
+
             TraceTransport = settings.TracesTransport;
             TracesPipeName = settings.TracesPipeName;
             TracesPipeTimeoutMs = settings.TracesPipeTimeoutMs;
+
             MetricsTransport = settings.MetricsTransport;
             MetricsPipeName = settings.MetricsPipeName;
             DogStatsdPort = settings.DogStatsdPort;
+
+            PartialFlushEnabled = settings.PartialFlushEnabled;
+            PartialFlushMinSpans = settings.PartialFlushMinSpans;
         }
 
         /// <summary>
@@ -79,6 +84,16 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DogStatsdPort"/>
         public int DogStatsdPort { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether partial flush is enabled
+        /// </summary>
+        public bool PartialFlushEnabled { get; }
+
+        /// <summary>
+        /// Gets the minimum number of closed spans in a trace before it's partially flushed
+        /// </summary>
+        public int PartialFlushMinSpans { get; }
 
         /// <summary>
         /// Gets the transport used to send traces to the Agent.
