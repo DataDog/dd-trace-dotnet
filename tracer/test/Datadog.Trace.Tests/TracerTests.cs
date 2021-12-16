@@ -171,12 +171,13 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void StartActive_SetParentServiceName_ChildServiceNameIsSet()
+        public void StartActive_SetParentServiceName_ChildServiceNameIsDefaultServiceName()
         {
             var parent = _tracer.StartActive("Parent", serviceName: "MyAwesomeService");
             var child = _tracer.StartActive("Child");
 
-            Assert.Equal("MyAwesomeService", child.Span.ServiceName);
+            Assert.NotEqual("MyAwesomeService", child.Span.ServiceName);
+            Assert.Equal(_tracer.DefaultServiceName, child.Span.ServiceName);
         }
 
         [Fact]
