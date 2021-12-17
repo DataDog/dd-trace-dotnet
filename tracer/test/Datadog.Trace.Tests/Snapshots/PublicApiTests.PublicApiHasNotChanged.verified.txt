@@ -302,7 +302,8 @@ namespace Datadog.Trace
         public static Datadog.Trace.Tracer Instance { get; set; }
         protected override void Finalize() { }
         public System.Threading.Tasks.Task ForceFlushAsync() { }
-        public Datadog.Trace.IScope StartActive(string operationName, Datadog.Trace.ISpanContext parent = null, string serviceName = null, System.DateTimeOffset? startTime = default, bool ignoreActiveScope = false, bool finishOnClose = true) { }
+        public Datadog.Trace.IScope StartActive(string operationName) { }
+        public Datadog.Trace.IScope StartActive(string operationName, Datadog.Trace.SpanCreationSettings settings) { }
         public static void Configure(Datadog.Trace.Configuration.TracerSettings settings) { }
     }
 }

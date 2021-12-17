@@ -38,7 +38,7 @@ namespace Samples.MongoDB
             };
 
 
-            using (var mainScope = Tracer.Instance.StartActive("Main()", serviceName: "Samples.MongoDB"))
+            using (var mainScope = Tracer.Instance.StartActive("Main()"))
             {
                 var connectionString = $"mongodb://{Host()}:27017";
                 var client = new MongoClient(connectionString);
@@ -59,7 +59,7 @@ namespace Samples.MongoDB
         {
             var allFilter = new BsonDocument();
 
-            using (var syncScope = Tracer.Instance.StartActive("sync-calls", serviceName: "Samples.MongoDB"))
+            using (var syncScope = Tracer.Instance.StartActive("sync-calls"))
             {
 #if MONGODB_2_2
                 collection.DeleteMany(allFilter);
@@ -100,7 +100,7 @@ namespace Samples.MongoDB
         {
             var allFilter = new BsonDocument();
 
-            using (var asyncScope = Tracer.Instance.StartActive("async-calls", serviceName: "Samples.MongoDB"))
+            using (var asyncScope = Tracer.Instance.StartActive("async-calls"))
             {
                 await collection.DeleteManyAsync(allFilter);
                 await collection.InsertOneAsync(newDocument);
@@ -122,14 +122,14 @@ namespace Samples.MongoDB
 
         public static void WireProtocolExecuteIntegrationTest(MongoClient client)
         {
-            using (var syncScope = Tracer.Instance.StartActive("sync-calls-execute", serviceName: "Samples.MongoDB"))
+            using (var syncScope = Tracer.Instance.StartActive("sync-calls-execute"))
             {
                 var server = client.Cluster.SelectServer(new ServerSelector(), CancellationToken.None);
                 var channel = server.GetChannel(CancellationToken.None);
                 channel.KillCursors(new long[] { 0, 1, 2 }, new global::MongoDB.Driver.Core.WireProtocol.Messages.Encoders.MessageEncoderSettings(), CancellationToken.None);
             }
 
-            using (var asyncScope = Tracer.Instance.StartActive("async-calls-execute", serviceName: "Samples.MongoDB"))
+            using (var asyncScope = Tracer.Instance.StartActive("async-calls-execute"))
             {
                 var server = client.Cluster.SelectServer(new ServerSelector(), CancellationToken.None);
                 var channel = server.GetChannel(CancellationToken.None);

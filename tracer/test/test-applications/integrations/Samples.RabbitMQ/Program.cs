@@ -191,7 +191,7 @@ namespace Samples.RabbitMQ
                 var consumer = new EventingBasicConsumer(channel);
                 consumer.Received += (model, ea) =>
                 {
-                    using (Tracer.Instance.StartActive("consumer.Received event", serviceName: "Samples.RabbitMQ"))
+                    using (Tracer.Instance.StartActive("consumer.Received event"))
                     {
 #if RABBITMQ_6_0
                         var body = ea.Body.ToArray();
