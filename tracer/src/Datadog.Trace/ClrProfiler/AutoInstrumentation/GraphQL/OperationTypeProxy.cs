@@ -3,13 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
 {
     /// <summary>
@@ -18,9 +11,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
     /// to be decorated with the correct operation. Since the original type is public,
     /// we not expect changes between minor versions of the GraphQL library.
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public enum OperationTypeProxy
+    internal enum OperationTypeProxy
     {
         /// <summary>
         /// A query operation.

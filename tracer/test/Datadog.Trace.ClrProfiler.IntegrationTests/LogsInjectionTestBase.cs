@@ -94,6 +94,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public void ValidateLogCorrelation(
             IReadOnlyCollection<MockTracerAgent.Span> spans,
             IEnumerable<LogFileTest> logFileTestCases,
+            int expectedCorrelatedTraceCount,
+            int expectedCorrelatedSpanCount,
             string packageVersion = "",
             bool disableLogCorrelation = false,
             Func<string, bool> additionalInjectedLogFilter = null)
@@ -149,6 +151,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var traceIdRegex = string.Format(test.RegexFormat, traceIdProperty, @"("")?(\d\d+)(?(1)\1|)"); // Match a string of digits or string of digits surrounded by double quotes. See https://stackoverflow.com/a/3569031
                 var spanIdRegex = string.Format(test.RegexFormat, spanIdProperty, @"("")?(\d\d+)(?(1)\1|)"); // Match a string of digits or string of digits surrounded by double quotes. See https://stackoverflow.com/a/3569031
 
+                HashSet<string> traceIdSet = new();
+                HashSet<string> spanIdSet = new();
                 foreach (var log in tracedLogs)
                 {
                     switch (test.TracedLogTypes)
@@ -160,6 +164,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                .And.MatchRegex(serviceRegex)
                                .And.MatchRegex(traceIdRegex)
                                .And.MatchRegex(spanIdRegex);
+
+                            var logTraceId = Regex.Match(log, traceIdRegex).Groups[2].Value;
+                            traceIdSet.Add(logTraceId);
+
+                            var logSpanId = Regex.Match(log, spanIdRegex).Groups[2].Value;
+                            spanIdSet.Add(logSpanId);
                             break;
                         case TracedLogTypes.NotCorrelated:
                             log.Should()
@@ -173,6 +183,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                             throw new InvalidOperationException("Unknown TracedLogType: " + test.TracedLogTypes);
                     }
                 }
+
+                traceIdSet.Should().HaveCount(expectedCorrelatedTraceCount);
+                spanIdSet.Should().HaveCount(expectedCorrelatedSpanCount);
 
                 // If logs are correlated, expect all SpanIDs in the traced logs to be represented in span list
                 if (test.TracedLogTypes == TracedLogTypes.Correlated)

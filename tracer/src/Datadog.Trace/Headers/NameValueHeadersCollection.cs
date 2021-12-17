@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Headers
 {
@@ -16,7 +17,12 @@ namespace Datadog.Trace.Headers
 
         public NameValueHeadersCollection(NameValueCollection headers)
         {
-            _headers = headers ?? throw new ArgumentNullException(nameof(headers));
+            if (headers is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(headers));
+            }
+
+            _headers = headers;
         }
 
         public IEnumerable<string> GetValues(string name)

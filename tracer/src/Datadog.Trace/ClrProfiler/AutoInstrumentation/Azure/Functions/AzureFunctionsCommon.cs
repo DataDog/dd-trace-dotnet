@@ -5,7 +5,6 @@
 
 #if !NETFRAMEWORK
 using System;
-using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;

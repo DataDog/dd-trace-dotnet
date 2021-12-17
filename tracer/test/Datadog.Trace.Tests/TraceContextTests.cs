@@ -46,8 +46,11 @@ namespace Datadog.Trace.Tests
 
             tracer.Setup(t => t.Settings).Returns(new Trace.Configuration.TracerSettings
             {
-                PartialFlushEnabled = partialFlush,
-                PartialFlushMinSpans = 5
+                Exporter = new Trace.Configuration.ExporterSettings()
+                {
+                    PartialFlushEnabled = partialFlush,
+                    PartialFlushMinSpans = 5
+                }
             }.Build());
 
             var traceContext = new TraceContext(tracer.Object);
@@ -123,8 +126,11 @@ namespace Datadog.Trace.Tests
 
             tracer.Setup(t => t.Settings).Returns(new Trace.Configuration.TracerSettings
             {
-                PartialFlushEnabled = true,
-                PartialFlushMinSpans = partialFlushThreshold
+                Exporter = new Trace.Configuration.ExporterSettings()
+                {
+                    PartialFlushEnabled = true,
+                    PartialFlushMinSpans = partialFlushThreshold
+                }
             }.Build());
 
             ArraySegment<Span>? spans = null;
@@ -173,8 +179,11 @@ namespace Datadog.Trace.Tests
 
             tracer.Setup(t => t.Settings).Returns(new Trace.Configuration.TracerSettings
             {
-                PartialFlushEnabled = true,
-                PartialFlushMinSpans = partialFlushThreshold
+                Exporter = new Trace.Configuration.ExporterSettings()
+                {
+                    PartialFlushEnabled = true,
+                    PartialFlushMinSpans = partialFlushThreshold
+                }
             }.Build());
 
             ArraySegment<Span>? spans = null;

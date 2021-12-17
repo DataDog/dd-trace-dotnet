@@ -1,4 +1,4 @@
-﻿// <copyright file="DiagnosticContextHelper.cs" company="Datadog">
+// <copyright file="DiagnosticContextHelper.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,11 +7,14 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjection
 {
     internal static class DiagnosticContextHelper
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DiagnosticContextHelper));
+
         public static MappedDiagnosticsLogicalContextSetterProxy GetMdlcProxy(Assembly nlogAssembly)
         {
             var mdlcType = nlogAssembly.GetType("NLog.MappedDiagnosticsLogicalContext");
@@ -63,11 +66,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
             mdc.Set(CorrelationIdentifier.VersionKey, tracer.Settings.ServiceVersion ?? string.Empty);
             mdc.Set(CorrelationIdentifier.EnvKey, tracer.Settings.Environment ?? string.Empty);
 
-            if (tracer.ActiveScope?.Span is { } span)
+            var spanContext = tracer.DistributedSpanContext;
+            if (spanContext is not null
+                && spanContext.TryGetValue(HttpHeaderNames.TraceId, out string traceId)
+                && spanContext.TryGetValue(HttpHeaderNames.ParentId, out string spanId))
             {
                 removeSpanId = true;
-                mdc.Set(CorrelationIdentifier.TraceIdKey, span.TraceId.ToString());
-                mdc.Set(CorrelationIdentifier.SpanIdKey, span.SpanId.ToString());
+                mdc.Set(CorrelationIdentifier.TraceIdKey, traceId);
+                mdc.Set(CorrelationIdentifier.SpanIdKey, spanId);
             }
 
             return removeSpanId;
@@ -75,8 +81,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
 
         public static IDisposable SetMdlcState(MappedDiagnosticsLogicalContextSetterProxy mdlc, Tracer tracer)
         {
-            var span = tracer.ActiveScope?.Span;
-            var array = span is null
+            var spanContext = tracer.DistributedSpanContext;
+            var array = spanContext is null
                             ? new KeyValuePair<string, object>[3]
                             : new KeyValuePair<string, object>[5];
 
@@ -84,10 +90,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
             array[1] = new KeyValuePair<string, object>(CorrelationIdentifier.VersionKey, tracer.Settings.ServiceVersion ?? string.Empty);
             array[2] = new KeyValuePair<string, object>(CorrelationIdentifier.EnvKey, tracer.Settings.Environment ?? string.Empty);
 
-            if (span is not null)
+            if (spanContext is not null
+                && spanContext.TryGetValue(HttpHeaderNames.TraceId, out string traceId)
+                && spanContext.TryGetValue(HttpHeaderNames.ParentId, out string spanId))
             {
-                array[3] = new KeyValuePair<string, object>(CorrelationIdentifier.TraceIdKey, span.TraceId);
-                array[4] = new KeyValuePair<string, object>(CorrelationIdentifier.SpanIdKey, span.SpanId);
+                array[3] = new KeyValuePair<string, object>(CorrelationIdentifier.TraceIdKey, traceId);
+                array[4] = new KeyValuePair<string, object>(CorrelationIdentifier.SpanIdKey, spanId);
             }
 
             var state = mdlc.SetScoped(array);
@@ -126,6 +134,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
                 }
 
                 // Something is very awry, but don't throw, just don't inject logs
+                Log.Warning("Failed to create proxies for both MDLC and MDC using TMarker={TMarker}, TMarker.Assembly={Assembly}. No automatic logs injection will occur for this assembly.", typeof(TMarker), nlogAssembly);
             }
 
             public static MappedDiagnosticsLogicalContextSetterProxy Mdlc { get; }

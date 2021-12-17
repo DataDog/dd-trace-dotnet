@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler
 {
@@ -18,7 +19,12 @@ namespace Datadog.Trace.ClrProfiler
 
         internal ManualTracer(IAutomaticTracer parent)
         {
-            _parent = parent ?? throw new ArgumentNullException(nameof(parent));
+            if (parent is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(parent));
+            }
+
+            _parent = parent;
             _parent.Register(this);
         }
 

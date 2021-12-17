@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Configuration
 {
@@ -19,7 +20,12 @@ namespace Datadog.Trace.Configuration
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
         public IntegrationSettings(string integrationName, IConfigurationSource source)
         {
-            IntegrationName = integrationName ?? throw new ArgumentNullException(nameof(integrationName));
+            if (integrationName is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(integrationName));
+            }
+
+            IntegrationName = integrationName;
 
             if (source == null)
             {

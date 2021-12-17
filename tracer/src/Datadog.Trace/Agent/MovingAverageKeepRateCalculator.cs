@@ -1,13 +1,13 @@
-﻿// <copyright file="MovingAverageKeepRateCalculator.cs" company="Datadog">
+// <copyright file="MovingAverageKeepRateCalculator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent
 {
@@ -42,7 +42,7 @@ namespace Datadog.Trace.Agent
         {
             if (windowSize < 0 || windowSize > 100)
             {
-                throw new ArgumentOutOfRangeException(nameof(windowSize), windowSize, "Must be a value between 1 and 100");
+                ThrowHelper.ThrowArgumentOutOfRangeException(nameof(windowSize), windowSize, "Must be a value between 1 and 100");
             }
 
             _windowSize = windowSize;
@@ -67,7 +67,7 @@ namespace Datadog.Trace.Agent
         {
             if (count < 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(count));
+                ThrowHelper.ThrowArgumentOutOfRangeException(nameof(count));
             }
 
             Interlocked.Add(ref _latestKeeps, count);
@@ -80,7 +80,7 @@ namespace Datadog.Trace.Agent
         {
             if (count < 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(count));
+                ThrowHelper.ThrowArgumentOutOfRangeException(nameof(count));
             }
 
             Interlocked.Add(ref _latestDrops, count);

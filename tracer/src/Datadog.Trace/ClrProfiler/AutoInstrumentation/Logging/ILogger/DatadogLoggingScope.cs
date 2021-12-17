@@ -48,8 +48,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
                     0 => new KeyValuePair<string, object>("dd_service", _service),
                     1 => new KeyValuePair<string, object>("dd_env", _env),
                     2 => new KeyValuePair<string, object>("dd_version", _version),
-                    3 => new KeyValuePair<string, object>("dd_trace_id", (_tracer.ActiveScope?.Span.TraceId ?? 0).ToString()),
-                    4 => new KeyValuePair<string, object>("dd_span_id", (_tracer.ActiveScope?.Span.SpanId ?? 0).ToString()),
+                    3 => new KeyValuePair<string, object>("dd_trace_id", _tracer.DistributedSpanContext?[HttpHeaderNames.TraceId] ?? "0"),
+                    4 => new KeyValuePair<string, object>("dd_span_id", _tracer.DistributedSpanContext?[HttpHeaderNames.ParentId] ?? "0"),
                     _ => throw new ArgumentOutOfRangeException(nameof(index))
                 };
             }
@@ -57,8 +57,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
 
         public override string ToString()
         {
-            var span = _tracer.ActiveScope?.Span;
-            if (span is null)
+            var spanContext = _tracer.DistributedSpanContext;
+            if (spanContext is null
+                || !spanContext.TryGetValue(HttpHeaderNames.TraceId, out string traceId)
+                || !spanContext.TryGetValue(HttpHeaderNames.ParentId, out string spanId))
             {
                 return _cachedFormat;
             }
@@ -67,21 +69,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
                 CultureInfo.InvariantCulture,
                 "{0}, dd_trace_id:\"{1}\", dd_span_id:\"{2}\"",
                 _cachedFormat,
-                span.TraceId,
-                span.SpanId);
+                traceId,
+                spanId);
         }
 
         public IEnumerator<KeyValuePair<string, object>> GetEnumerator()
         {
-            var span = _tracer.ActiveScope?.Span;
+            var spanContext = _tracer.DistributedSpanContext;
             yield return new KeyValuePair<string, object>("dd_service", _service);
             yield return new KeyValuePair<string, object>("dd_env", _env);
             yield return new KeyValuePair<string, object>("dd_version", _version);
 
-            if (span is not null)
+            if (spanContext is not null
+                && spanContext.TryGetValue(HttpHeaderNames.TraceId, out string traceId)
+                && spanContext.TryGetValue(HttpHeaderNames.ParentId, out string spanId))
             {
-                yield return new KeyValuePair<string, object>("dd_trace_id", span.TraceId.ToString());
-                yield return new KeyValuePair<string, object>("dd_span_id", span.SpanId.ToString());
+                yield return new KeyValuePair<string, object>("dd_trace_id", traceId);
+                yield return new KeyValuePair<string, object>("dd_span_id", spanId);
             }
         }
 

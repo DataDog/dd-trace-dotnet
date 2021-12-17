@@ -1132,6 +1132,12 @@ partial class Build
                     var project = Solution.GetProject(path);
                     return project?.Name switch
                     {
+                        "LogsInjection.Log4Net.VersionConflict.2x" => Framework != TargetFramework.NETCOREAPP2_1,
+                        "LogsInjection.NLog.VersionConflict.2x" => Framework != TargetFramework.NETCOREAPP2_1,
+                        "LogsInjection.NLog10.VersionConflict.2x" => Framework == TargetFramework.NET461,
+                        "LogsInjection.NLog20.VersionConflict.2x" => Framework == TargetFramework.NET461,
+                        "LogsInjection.Serilog.VersionConflict.2x" => Framework != TargetFramework.NETCOREAPP2_1,
+                        "LogsInjection.Serilog14.VersionConflict.2x" => Framework == TargetFramework.NET461,
                         "Samples.AspNetCoreMvc21" => Framework == TargetFramework.NETCOREAPP2_1,
                         "Samples.AspNetCoreMvc30" => Framework == TargetFramework.NETCOREAPP3_0,
                         "Samples.AspNetCoreMvc31" => Framework == TargetFramework.NETCOREAPP3_1,

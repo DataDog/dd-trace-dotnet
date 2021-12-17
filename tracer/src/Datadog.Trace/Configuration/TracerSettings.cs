@@ -10,6 +10,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.Configuration
@@ -19,8 +20,6 @@ namespace Datadog.Trace.Configuration
     /// </summary>
     public class TracerSettings
     {
-        private int _partialFlushMinSpans;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="TracerSettings"/> class with default values.
         /// </summary>
@@ -144,17 +143,6 @@ namespace Datadog.Trace.Configuration
             RouteTemplateResourceNamesEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled)
                                                    ?? true;
 
-            PartialFlushEnabled = source?.GetBool(ConfigurationKeys.PartialFlushEnabled)
-                // default value
-                ?? false;
-
-            var partialFlushMinSpans = source?.GetInt32(ConfigurationKeys.PartialFlushMinSpans);
-
-            if ((partialFlushMinSpans ?? 0) <= 0)
-            {
-                PartialFlushMinSpans = 500;
-            }
-
             KafkaCreateConsumerScopeEnabled = source?.GetBool(ConfigurationKeys.KafkaCreateConsumerScopeEnabled)
                                            ?? true; // default
 
@@ -270,28 +258,6 @@ namespace Datadog.Trace.Configuration
         {
             get => GlobalSettings.Source.DiagnosticSourceEnabled;
             set { }
-        }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether partial flush is enabled
-        /// </summary>
-        public bool PartialFlushEnabled { get; set; }
-
-        /// <summary>
-        /// Gets or sets the minimum number of closed spans in a trace before it's partially flushed
-        /// </summary>
-        public int PartialFlushMinSpans
-        {
-            get => _partialFlushMinSpans;
-            set
-            {
-                if (value <= 0)
-                {
-                    throw new ArgumentException("The value must be strictly greater than 0", nameof(PartialFlushMinSpans));
-                }
-
-                _partialFlushMinSpans = value;
-            }
         }
 
         /// <summary>

@@ -4,16 +4,13 @@
 // </copyright>
 
 using System.Collections;
-using System.ComponentModel;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
 {
     /// <summary>
     /// log4net.Core.LoggingEvent interface for ducktyping
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface ILoggingEvent
+    internal interface ILoggingEvent
     {
         /// <summary>
         /// Gets the properties of the logging event

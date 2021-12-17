@@ -6,7 +6,6 @@
 #if !NETFRAMEWORK
 using System;
 using System.ComponentModel;
-using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Microsoft.AspNetCore.Http;
 
@@ -35,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
         /// <param name="httpContext">First argument</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget>(TTarget instance, HttpContext httpContext)
+        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, HttpContext httpContext)
         {
             return AzureFunctionsCommon.OnFunctionMiddlewareBegin(instance, httpContext);
         }
@@ -50,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
+        internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
         {
             state.Scope?.DisposeWithException(exception);
             return returnValue;

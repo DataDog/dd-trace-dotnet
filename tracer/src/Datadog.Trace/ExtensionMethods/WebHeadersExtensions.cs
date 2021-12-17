@@ -8,6 +8,7 @@
 using System;
 using System.Net;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ExtensionMethods
 {
@@ -25,7 +26,7 @@ namespace Datadog.Trace.ExtensionMethods
         {
             if (headers == null)
             {
-                throw new ArgumentNullException(nameof(headers));
+                ThrowHelper.ThrowArgumentNullException(nameof(headers));
             }
 
             return new WebHeadersCollection(headers);

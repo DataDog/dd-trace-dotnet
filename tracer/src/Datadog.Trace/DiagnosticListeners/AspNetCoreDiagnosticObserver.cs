@@ -9,9 +9,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Transport.Http;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
@@ -20,7 +18,6 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
-using Datadog.Trace.Util.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Routing;
@@ -815,28 +812,28 @@ namespace Datadog.Trace.DiagnosticListeners
         }
 
         [DuckCopy]
-        public struct HttpRequestInStartStruct
+        internal struct HttpRequestInStartStruct
         {
             [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
             public HttpContext HttpContext;
         }
 
         [DuckCopy]
-        public struct HttpRequestInStopStruct
+        internal struct HttpRequestInStopStruct
         {
             [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
             public HttpContext HttpContext;
         }
 
         [DuckCopy]
-        public struct UnhandledExceptionStruct
+        internal struct UnhandledExceptionStruct
         {
             [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
             public Exception Exception;
         }
 
         [DuckCopy]
-        public struct BeforeActionStruct
+        internal struct BeforeActionStruct
         {
             [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
             public HttpContext HttpContext;
@@ -849,14 +846,14 @@ namespace Datadog.Trace.DiagnosticListeners
         }
 
         [DuckCopy]
-        public struct BadHttpRequestExceptionStruct
+        internal struct BadHttpRequestExceptionStruct
         {
             [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase | BindingFlags.NonPublic)]
             public int StatusCode;
         }
 
         [DuckCopy]
-        public struct HttpRequestInEndpointMatchedStruct
+        internal struct HttpRequestInEndpointMatchedStruct
         {
             [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
             public HttpContext HttpContext;
@@ -867,13 +864,13 @@ namespace Datadog.Trace.DiagnosticListeners
         /// </summary>
         /// <seealso cref="EndpointFeatureProxy"/>
         [DuckCopy]
-        public struct EndpointFeatureStruct
+        internal struct EndpointFeatureStruct
         {
             public RouteEndpoint Endpoint;
         }
 
         [DuckCopy]
-        public struct HttpRequestStruct
+        internal struct HttpRequestStruct
         {
             public string Method;
             public RouteValueDictionary RouteValues;
@@ -884,7 +881,7 @@ namespace Datadog.Trace.DiagnosticListeners
         /// Proxy for https://github1s.com/dotnet/aspnetcore/blob/v3.0.3/src/Http/Routing/src/Patterns/RoutePatternPathSegment.cs
         /// </summary>
         [DuckCopy]
-        public struct RoutePatternPathSegmentStruct
+        internal struct RoutePatternPathSegmentStruct
         {
             public IEnumerable Parts;
         }
@@ -894,7 +891,7 @@ namespace Datadog.Trace.DiagnosticListeners
         /// and https://github1s.com/dotnet/aspnetcore/blob/v3.0.3/src/Http/Routing/src/Patterns/RoutePatternSeparatorPart.cs
         /// </summary>
         [DuckCopy]
-        public struct RoutePatternContentPartStruct
+        internal struct RoutePatternContentPartStruct
         {
             public string Content;
         }
@@ -903,7 +900,7 @@ namespace Datadog.Trace.DiagnosticListeners
         /// Proxy for https://github1s.com/dotnet/aspnetcore/blob/v3.0.3/src/Http/Routing/src/Patterns/RoutePatternParameterPart.cs
         /// </summary>
         [DuckCopy]
-        public struct RoutePatternParameterPartStruct
+        internal struct RoutePatternParameterPartStruct
         {
             public string Name;
             public bool IsOptional;

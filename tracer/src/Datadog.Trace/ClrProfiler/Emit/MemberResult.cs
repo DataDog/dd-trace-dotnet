@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.Emit
 {
@@ -24,10 +25,18 @@ namespace Datadog.Trace.ClrProfiler.Emit
             HasValue = true;
         }
 
-        public T Value =>
-            HasValue
-                ? _value
-                : throw new InvalidOperationException("Reflected member not found.");
+        public T Value
+        {
+            get
+            {
+                if (!HasValue)
+                {
+                    ThrowHelper.ThrowInvalidOperationException("Reflected member not found.");
+                }
+
+                return _value;
+            }
+        }
 
         public T GetValueOrDefault()
         {

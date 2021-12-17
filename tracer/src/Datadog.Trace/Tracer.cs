@@ -13,6 +13,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace
@@ -140,7 +141,7 @@ namespace Datadog.Trace
                     // Kept for safety reasons
                     if (_instance is { TracerManager: ILockedTracer })
                     {
-                        throw new InvalidOperationException("The current tracer instance cannot be replaced.");
+                        ThrowHelper.ThrowInvalidOperationException("The current tracer instance cannot be replaced.");
                     }
 
                     _instance = value;
@@ -232,13 +233,28 @@ namespace Datadog.Trace
         }
 
         /// <inheritdoc cref="ITracer" />
-        IScope ITracer.StartActive(string operationName)
+        IScope ITracer.StartActive(string operationName) => StartActive(operationName);
+
+        /// <inheritdoc cref="ITracer" />
+        IScope ITracer.StartActive(string operationName, SpanCreationSettings settings) => StartActive(operationName, settings);
+
+        /// <summary>
+        /// This creates a new span with the given parameters and makes it active.
+        /// </summary>
+        /// <param name="operationName">The span's operation name</param>
+        /// <returns>A scope wrapping the newly created span</returns>
+        public IScope StartActive(string operationName)
         {
             return StartActive(operationName, parent: null, serviceName: null, startTime: null, ignoreActiveScope: false, finishOnClose: true);
         }
 
-        /// <inheritdoc cref="ITracer" />
-        IScope ITracer.StartActive(string operationName, SpanCreationSettings settings)
+        /// <summary>
+        /// This creates a new span with the given parameters and makes it active.
+        /// </summary>
+        /// <param name="operationName">The span's operation name</param>
+        /// <param name="settings">Settings for the new <see cref="IScope"/></param>
+        /// <returns>A scope wrapping the newly created span</returns>
+        public IScope StartActive(string operationName, SpanCreationSettings settings)
         {
             return StartActive(operationName, settings.Parent, serviceName: null, settings.StartTime, ignoreActiveScope: false, finishOnClose: settings.FinishOnClose ?? true);
         }
@@ -253,7 +269,7 @@ namespace Datadog.Trace
         /// <param name="ignoreActiveScope">If set the span will not be a child of the currently active span</param>
         /// <param name="finishOnClose">If set to false, closing the returned scope will not close the enclosed span </param>
         /// <returns>A scope wrapping the newly created span</returns>
-        public IScope StartActive(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false, bool finishOnClose = true)
+        internal Scope StartActive(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool ignoreActiveScope = false, bool finishOnClose = true)
         {
             var span = StartSpan(operationName, parent: parent, serviceName: serviceName, startTime: startTime, ignoreActiveScope: ignoreActiveScope);
             return TracerManager.ScopeManager.Activate(span, finishOnClose);
@@ -339,7 +355,7 @@ namespace Datadog.Trace
                 traceContext = new TraceContext(this) { SamplingPriority = DistributedTracer.Instance.GetSamplingPriority() };
             }
 
-            var finalServiceName = serviceName ?? parent?.ServiceName ?? DefaultServiceName;
+            var finalServiceName = serviceName ?? DefaultServiceName;
             var spanContext = new SpanContext(parent, traceContext, finalServiceName, traceId: traceId, spanId: spanId);
 
             return spanContext;

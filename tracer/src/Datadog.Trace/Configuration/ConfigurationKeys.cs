@@ -10,7 +10,7 @@ namespace Datadog.Trace.Configuration
     /// <summary>
     /// String constants for standard Datadog configuration keys.
     /// </summary>
-    public static partial class ConfigurationKeys
+    internal static partial class ConfigurationKeys
     {
         /// <summary>
         /// Configuration key for the path to the configuration file.
@@ -272,18 +272,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="TracerSettings.HttpClientErrorStatusCodes"/>
         public const string HttpClientErrorStatusCodes = "DD_HTTP_CLIENT_ERROR_STATUSES";
-
-        /// <summary>
-        /// Configuration key to enable sending partial traces to the agent
-        /// </summary>
-        /// <seealso cref="TracerSettings.PartialFlushEnabled"/>
-        public const string PartialFlushEnabled = "DD_TRACE_PARTIAL_FLUSH_ENABLED";
-
-        /// <summary>
-        /// Configuration key to set the minimum number of closed spans in a trace before it's partially flushed
-        /// </summary>
-        /// <seealso cref="TracerSettings.PartialFlushMinSpans"/>
-        public const string PartialFlushMinSpans = "DD_TRACE_PARTIAL_FLUSH_MIN_SPANS";
 
         /// <summary>
         /// Configuration key to enable or disable the creation of a span context on exiting a successful Kafka

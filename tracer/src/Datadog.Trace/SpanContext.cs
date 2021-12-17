@@ -150,7 +150,8 @@ namespace Datadog.Trace
                     return value;
                 }
 
-                throw new KeyNotFoundException($"Key not found: {key}");
+                ThrowHelper.ThrowKeyNotFoundException($"Key not found: {key}");
+                return default;
             }
         }
 

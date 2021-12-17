@@ -1,4 +1,4 @@
-﻿// <copyright file="SerilogLogPropertyHelper.cs" company="Datadog">
+// <copyright file="SerilogLogPropertyHelper.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,7 +6,6 @@
 using System;
 using System.Reflection.Emit;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInjection
 {
@@ -23,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInje
             var scalarValueConstructor = scalarValueType.GetConstructor(new[] { typeof(object) });
 
             DynamicMethod createLogEventPropertyMethod = new DynamicMethod(
-                $"SerilogLogPropertyHelper",
+                "SerilogLogPropertyHelper",
                 returnType: scalarValueType,
                 parameterTypes: new Type[] { typeof(string) },
                 typeof(DuckType).Module,

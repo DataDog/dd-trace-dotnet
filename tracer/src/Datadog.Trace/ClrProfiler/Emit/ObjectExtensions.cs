@@ -293,10 +293,20 @@ namespace Datadog.Trace.ClrProfiler.Emit
 
             public PropertyFetcherCacheKey(Type type1, Type type2, Type type3, string name)
             {
-                Type1 = type1 ?? throw new ArgumentNullException(nameof(type1));
+                if (type1 is null)
+                {
+                    ThrowHelper.ThrowArgumentNullException(nameof(type1));
+                }
+
+                if (name is null)
+                {
+                    ThrowHelper.ThrowArgumentNullException(nameof(name));
+                }
+
+                Type1 = type1;
                 Type2 = type2;
                 Type3 = type3;
-                Name = name ?? throw new ArgumentNullException(nameof(name));
+                Name = name;
             }
 
             public bool Equals(PropertyFetcherCacheKey other)

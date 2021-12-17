@@ -5,6 +5,7 @@
 
 using System;
 using System.Threading;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.MessagePack.Formatters;
 
@@ -28,7 +29,7 @@ namespace Datadog.Trace.Agent
         {
             if (maxBufferSize < HeaderSize)
             {
-                throw new ArgumentException(nameof(maxBufferSize), $"Buffer size should be at least {HeaderSize}");
+                ThrowHelper.ThrowArgumentException($"Buffer size should be at least {HeaderSize}", nameof(maxBufferSize));
             }
 
             _maxBufferSize = maxBufferSize;
@@ -45,7 +46,7 @@ namespace Datadog.Trace.Agent
                 if (!_locked)
                 {
                     // Sanity check - headers are written when the buffer is locked
-                    throw new InvalidOperationException("Data was extracted from the buffer without locking");
+                    ThrowHelper.ThrowInvalidOperationException("Data was extracted from the buffer without locking");
                 }
 
                 return new ArraySegment<byte>(_buffer, 0, _offset);

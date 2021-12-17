@@ -4,7 +4,6 @@
 // </copyright>
 
 using System.Collections;
-using System.ComponentModel;
 using System.Reflection;
 using Datadog.Trace.DuckTyping;
 
@@ -14,9 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
     /// System.Web.Http.HttpConfiguration
     /// </summary>
     [DuckCopy]
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public struct HttpConfigurationStruct
+    internal struct HttpConfigurationStruct
     {
         /// <summary>
         /// Gets the MessageHandlers collection

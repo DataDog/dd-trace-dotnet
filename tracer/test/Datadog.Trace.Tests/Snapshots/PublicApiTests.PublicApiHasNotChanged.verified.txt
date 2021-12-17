@@ -14,72 +14,6 @@ namespace Datadog.Trace.Configuration
         public string GetString(string key) { }
         public void Insert(int index, Datadog.Trace.Configuration.IConfigurationSource item) { }
     }
-    public static class ConfigurationKeys
-    {
-        public const string AgentHost = "DD_AGENT_HOST";
-        public const string AgentPort = "DD_TRACE_AGENT_PORT";
-        public const string AgentUri = "DD_TRACE_AGENT_URL";
-        public const string ApiKey = "DD_API_KEY";
-        public const string AppSecBlockingEnabled = "DD_APPSEC_BLOCKING_ENABLED";
-        public const string AppSecCustomIpHeader = "DD_APPSEC_IPHEADER";
-        public const string AppSecEnabled = "DD_APPSEC_ENABLED";
-        public const string AppSecExtraHeaders = "DD_APPSEC_EXTRA_HEADERS";
-        public const string AppSecRules = "DD_APPSEC_RULES";
-        public const string BufferSize = "DD_TRACE_BUFFER_SIZE";
-        public const string CIVisibilityEnabled = "DD_CIVISIBILITY_ENABLED";
-        public const string ConfigurationFileName = "DD_TRACE_CONFIG_FILE";
-        public const string CustomSamplingRules = "DD_TRACE_SAMPLING_RULES";
-        public const string DebugEnabled = "DD_TRACE_DEBUG";
-        public const string DiagnosticSourceEnabled = "DD_DIAGNOSTIC_SOURCE_ENABLED";
-        public const string DisabledIntegrations = "DD_DISABLED_INTEGRATIONS";
-        public const string DogStatsDArgs = "DD_DOGSTATSD_ARGS";
-        public const string DogStatsDPath = "DD_DOGSTATSD_PATH";
-        public const string DogStatsdPort = "DD_DOGSTATSD_PORT";
-        public const string Environment = "DD_ENV";
-        [System.Obsolete("App Analytics has been replaced by Tracing without Limits. For more information s" +
-            "ee https://docs.datadoghq.com/tracing/legacy_app_analytics/")]
-        public const string GlobalAnalyticsEnabled = "DD_TRACE_ANALYTICS_ENABLED";
-        public const string GlobalSamplingRate = "DD_TRACE_SAMPLE_RATE";
-        public const string GlobalTags = "DD_TAGS";
-        public const string HeaderTags = "DD_TRACE_HEADER_TAGS";
-        public const string HttpClientErrorStatusCodes = "DD_HTTP_CLIENT_ERROR_STATUSES";
-        public const string HttpClientExcludedUrlSubstrings = "DD_TRACE_HTTP_CLIENT_EXCLUDED_URL_SUBSTRINGS";
-        public const string HttpServerErrorStatusCodes = "DD_HTTP_SERVER_ERROR_STATUSES";
-        public const string KafkaCreateConsumerScopeEnabled = "DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED";
-        public const string LogDirectory = "DD_TRACE_LOG_DIRECTORY";
-        public const string LogRateLimit = "DD_TRACE_LOGGING_RATE";
-        public const string LogsInjectionEnabled = "DD_LOGS_INJECTION";
-        public const string MaxLogFileSize = "DD_MAX_LOGFILE_SIZE";
-        public const string MaxTracesSubmittedPerSecond = "DD_MAX_TRACES_PER_SECOND";
-        public const string MetricsPipeName = "DD_DOGSTATSD_PIPE_NAME";
-        public const string PartialFlushEnabled = "DD_TRACE_PARTIAL_FLUSH_ENABLED";
-        public const string PartialFlushMinSpans = "DD_TRACE_PARTIAL_FLUSH_MIN_SPANS";
-        [System.Obsolete("DD_TRACE_LOG_PATH is deprecated. Use DD_TRACE_LOG_DIRECTORY instead")]
-        public const string ProfilerLogPath = "DD_TRACE_LOG_PATH";
-        public const string RuntimeMetricsEnabled = "DD_RUNTIME_METRICS_ENABLED";
-        public const string SerializationBatchInterval = "DD_TRACE_BATCH_INTERVAL";
-        public const string ServiceName = "DD_SERVICE";
-        public const string ServiceNameMappings = "DD_TRACE_SERVICE_MAPPING";
-        public const string ServiceVersion = "DD_VERSION";
-        public const string StartupDiagnosticLogEnabled = "DD_TRACE_STARTUP_LOGS";
-        public const string TraceAgentArgs = "DD_TRACE_AGENT_ARGS";
-        public const string TraceAgentPath = "DD_TRACE_AGENT_PATH";
-        public const string TraceAgentPortKey = "DD_APM_RECEIVER_PORT";
-        public const string TraceEnabled = "DD_TRACE_ENABLED";
-        public const string TracerMetricsEnabled = "DD_TRACE_METRICS_ENABLED";
-        public const string TracesPipeName = "DD_TRACE_PIPE_NAME";
-        public const string TracesPipeTimeoutMs = "DD_TRACE_PIPE_TIMEOUT_MS";
-        public static class Integrations
-        {
-            [System.Obsolete("App Analytics has been replaced by Tracing without Limits. For more information s" +
-                "ee https://docs.datadoghq.com/tracing/legacy_app_analytics/")]
-            public const string AnalyticsEnabled = "DD_TRACE_{0}_ANALYTICS_ENABLED";
-            [System.Obsolete("App Analytics has been replaced by Tracing without Limits. For more information s" +
-                "ee https://docs.datadoghq.com/tracing/legacy_app_analytics/")]
-            public const string AnalyticsSampleRate = "DD_TRACE_{0}_ANALYTICS_SAMPLE_RATE";
-            public const string Enabled = "DD_TRACE_{0}_ENABLED";
-        }
-    }
     public class EnvironmentConfigurationSource : Datadog.Trace.Configuration.StringConfigurationSource
     {
         public EnvironmentConfigurationSource() { }
@@ -94,9 +28,10 @@ namespace Datadog.Trace.Configuration
         public System.Uri AgentUri { get; set; }
         public int DogStatsdPort { get; set; }
         public string MetricsPipeName { get; set; }
+        public bool PartialFlushEnabled { get; set; }
+        public int PartialFlushMinSpans { get; set; }
         public string TracesPipeName { get; set; }
         public int TracesPipeTimeoutMs { get; set; }
-        public Datadog.Trace.Configuration.TracesTransportType TracesTransport { get; set; }
     }
     public class GlobalSettings
     {
@@ -119,8 +54,10 @@ namespace Datadog.Trace.Configuration
         public ImmutableExporterSettings(Datadog.Trace.Configuration.ExporterSettings settings) { }
         public ImmutableExporterSettings(Datadog.Trace.Configuration.IConfigurationSource source) { }
         public System.Uri AgentUri { get; }
+        public int DogStatsdPort { get; }
         public string MetricsPipeName { get; }
-        public Datadog.Trace.Configuration.TracesTransportType TraceTransport { get; }
+        public bool PartialFlushEnabled { get; }
+        public int PartialFlushMinSpans { get; }
         public string TracesPipeName { get; }
         public int TracesPipeTimeoutMs { get; }
     }
@@ -143,7 +80,6 @@ namespace Datadog.Trace.Configuration
             "ee https://docs.datadoghq.com/tracing/legacy_app_analytics/")]
         public bool AnalyticsEnabled { get; }
         public string CustomSamplingRules { get; }
-        public int DogStatsdPort { get; }
         public string Environment { get; }
         public Datadog.Trace.Configuration.ImmutableExporterSettings Exporter { get; }
         public double? GlobalSamplingRate { get; }
@@ -153,8 +89,6 @@ namespace Datadog.Trace.Configuration
         public bool KafkaCreateConsumerScopeEnabled { get; }
         public bool LogsInjectionEnabled { get; }
         public int MaxTracesSubmittedPerSecond { get; }
-        public bool PartialFlushEnabled { get; }
-        public int PartialFlushMinSpans { get; }
         public string ServiceName { get; }
         public string ServiceVersion { get; }
         public bool StartupDiagnosticLogEnabled { get; }
@@ -219,8 +153,6 @@ namespace Datadog.Trace.Configuration
         public bool KafkaCreateConsumerScopeEnabled { get; set; }
         public bool LogsInjectionEnabled { get; set; }
         public int MaxTracesSubmittedPerSecond { get; set; }
-        public bool PartialFlushEnabled { get; set; }
-        public int PartialFlushMinSpans { get; set; }
         public string ServiceName { get; set; }
         public string ServiceVersion { get; set; }
         public bool StartupDiagnosticLogEnabled { get; set; }
@@ -232,12 +164,6 @@ namespace Datadog.Trace.Configuration
         public void SetServiceNameMappings(System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, string>> mappings) { }
         public static Datadog.Trace.Configuration.CompositeConfigurationSource CreateDefaultConfigurationSource() { }
         public static Datadog.Trace.Configuration.TracerSettings FromDefaultSources() { }
-    }
-    public enum TracesTransportType
-    {
-        Default = 0,
-        CustomTcpProvider = 1,
-        WindowsNamedPipe = 2,
     }
 }
 namespace Datadog.Trace
@@ -376,7 +302,8 @@ namespace Datadog.Trace
         public static Datadog.Trace.Tracer Instance { get; set; }
         protected override void Finalize() { }
         public System.Threading.Tasks.Task ForceFlushAsync() { }
-        public Datadog.Trace.IScope StartActive(string operationName, Datadog.Trace.ISpanContext parent = null, string serviceName = null, System.DateTimeOffset? startTime = default, bool ignoreActiveScope = false, bool finishOnClose = true) { }
+        public Datadog.Trace.IScope StartActive(string operationName) { }
+        public Datadog.Trace.IScope StartActive(string operationName, Datadog.Trace.SpanCreationSettings settings) { }
         public static void Configure(Datadog.Trace.Configuration.TracerSettings settings) { }
     }
 }
