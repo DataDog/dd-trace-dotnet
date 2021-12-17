@@ -1,16 +1,16 @@
 ﻿# dd-trace-dotnet/tracer
 
-This folder contains the sources of the Datadog .NET APM tracer. It automatically instruments supported libraries out-of-the-box and also supports manual instrumentation to instrument your own code.
+This folder contains the sources of the Datadog .NET APM Tracer. It automatically instruments supported libraries out-of-the-box and also supports custom instrumentation to instrument your own code.
 
 ## Installation and usage
 
 ### Getting Started
 
-Configure the Datadog agent for APM [as described in our documentation](https://docs.datadoghq.com/tracing/setup_overview/setup/dotnet-core#configure-the-datadog-agent-for-apm). For automatic instrumentation, install and enable the tracer [as described in our documentation](https://docs.datadoghq.com/tracing/setup_overview/setup/dotnet-core/?tab=windows#install-the-tracer).
+Configure the Datadog Agent for APM [as described in our documentation](https://docs.datadoghq.com/tracing/setup_overview/setup/dotnet-core#configure-the-datadog-agent-for-apm). For automatic instrumentation, install and enable the .NET Tracer [as described in our documentation](https://docs.datadoghq.com/tracing/setup_overview/setup/dotnet-core/?tab=windows#install-the-tracer).
 
 ### Custom instrumentation
 
-The Datadog .NET APM tracer allows you to manually instrument your application (in addition to automatic instrumentation). To use it, please follow [the nuget package documentation](https://github.com/DataDog/dd-trace-dotnet/tree/master/docs/Datadog.Trace/README.md)
+The Datadog .NET APM Tracer allows you to manually instrument your application (in addition to automatic instrumentation). To use it, please follow [the NuGet package documentation](https://github.com/DataDog/dd-trace-dotnet/tree/master/docs/Datadog.Trace/README.md)
 
 ## Development
 
@@ -80,9 +80,9 @@ The recommended approach for Linux is to build using Docker. You can use this ap
 ./build_in_docker.sh BuildAndRunLinuxIntegrationTests
 ```
 
-### MacOs
+### macOS
 
-You can use Rider and CLion to develop on MacOS. Building and testing can be done through the following Nuke targets:
+You can use Rider and CLion to develop on macOS. Building and testing can be done through the following Nuke targets:
 
 ```bash
 # Clean and build the main tracer project
