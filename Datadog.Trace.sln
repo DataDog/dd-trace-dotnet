@@ -432,11 +432,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.VersionConflict.1x"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.VersionConflict.2x", "tracer\test\test-applications\integrations\Samples.VersionConflict.2x\Samples.VersionConflict.2x.csproj", "{3BC38BE0-B6FF-4B05-BC63-3614A5CF9393}"
 EndProject
-<<<<<<< HEAD
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IBM.Data.DB2.DBCommand", "tracer\test\test-applications\regression\IBM.Data.DB2.DBCommand\IBM.Data.DB2.DBCommand.csproj", "{E961D189-3EF9-4D79-95A1-78D825B73B01}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Devart.Data.DBCommand", "tracer\test\test-applications\regression\Devart.Data.DBCommand\Devart.Data.DBCommand.csproj", "{24834112-8C25-4A3D-BDD3-0ACEC825FF2C}"
-=======
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LogsInjectionHelper.VersionConflict", "tracer\test\test-applications\integrations\dependency-libs\LogsInjectionHelper.VersionConflict\LogsInjectionHelper.VersionConflict.csproj", "{E9D55D41-B161-492F-9EC7-FF2F2231A587}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LogsInjection.Serilog.VersionConflict.2x", "tracer\test\test-applications\integrations\LogsInjection.Serilog.VersionConflict.2x\LogsInjection.Serilog.VersionConflict.2x.csproj", "{268B6D05-B6D5-4D20-B2B1-0B9422A92D73}"
@@ -452,7 +451,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LogsInjection.NLog10.VersionConflict.2x", "tracer\test\test-applications\integrations\LogsInjection.NLog10.VersionConflict.2x\LogsInjection.NLog10.VersionConflict.2x.csproj", "{D00DDBDA-66F5-490D-8C1C-16CC5E142170}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LogsInjection.ILogger.VersionConflict.2x", "tracer\test\test-applications\integrations\LogsInjection.ILogger.VersionConflict.2x\LogsInjection.ILogger.VersionConflict.2x.csproj", "{238F67DB-1E48-447C-B1B8-BDC692103791}"
->>>>>>> master
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
