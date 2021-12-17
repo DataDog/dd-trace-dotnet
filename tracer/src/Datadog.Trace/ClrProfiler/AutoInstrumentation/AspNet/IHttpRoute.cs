@@ -3,19 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.ComponentModel;
-
 #if NETFRAMEWORK
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 {
     /// <summary>
     /// IHttpRoute proxy for ducktyping
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface IHttpRoute
+    internal interface IHttpRoute
     {
         string RouteTemplate { get; }
     }

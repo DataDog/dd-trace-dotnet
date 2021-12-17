@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
@@ -43,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
         /// <param name="testsFailed">Tests failed</param>
         /// <param name="testsSkipped">Tests skipped</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>(TTarget instance, TArg1 testCases, TArg2 testAssembly, TArg3 executionTime, TArg4 testsRun, TArg5 testsFailed, TArg6 testsSkipped)
+        internal static CallTargetState OnMethodBegin<TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>(TTarget instance, TArg1 testCases, TArg2 testAssembly, TArg3 executionTime, TArg4 testsRun, TArg5 testsFailed, TArg6 testsSkipped)
         {
             Common.FlushSpans(XUnitIntegration.IntegrationId);
             return CallTargetState.GetDefault();

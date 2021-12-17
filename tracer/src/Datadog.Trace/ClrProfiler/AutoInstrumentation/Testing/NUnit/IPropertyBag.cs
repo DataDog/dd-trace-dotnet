@@ -5,16 +5,13 @@
 
 using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 {
     /// <summary>
     /// DuckTyping interface for NUnit.Framework.Interfaces.IPropertyBag
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface IPropertyBag
+    internal interface IPropertyBag
     {
         /// <summary>
         /// Gets a collection containing all the keys in the property set

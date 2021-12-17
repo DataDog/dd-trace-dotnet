@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Text;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;

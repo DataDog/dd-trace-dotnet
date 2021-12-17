@@ -8,12 +8,9 @@ using System;
 using System.ComponentModel;
 using System.Web;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Transport.Http;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Util;
-using Datadog.Trace.Util.Http;
 using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
@@ -53,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         /// <param name="callback">Async callback</param>
         /// <param name="state">The state of the method</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext controllerContext, string actionName, AsyncCallback callback, object state)
+        internal static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext controllerContext, string actionName, AsyncCallback callback, object state)
         {
             Scope scope = null;
 

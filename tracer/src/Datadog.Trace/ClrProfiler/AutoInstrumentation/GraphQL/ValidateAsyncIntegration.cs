@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
         /// <param name="userContext">The user context</param>
         /// <param name="inputs">The input variables</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget, TSchema, TDocument, TRules, TUserContext, TInputs>(TTarget instance, string originalQuery, TSchema schema, TDocument document, TRules rules, TUserContext userContext, TInputs inputs)
+        internal static CallTargetState OnMethodBegin<TTarget, TSchema, TDocument, TRules, TUserContext, TInputs>(TTarget instance, string originalQuery, TSchema schema, TDocument document, TRules rules, TUserContext userContext, TInputs inputs)
             where TDocument : IDocument
         {
             return new CallTargetState(GraphQLCommon.CreateScopeFromValidate(Tracer.Instance, document));
@@ -60,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        public static TValidationResult OnAsyncMethodEnd<TTarget, TValidationResult>(TTarget instance, TValidationResult validationResult, Exception exception, CallTargetState state)
+        internal static TValidationResult OnAsyncMethodEnd<TTarget, TValidationResult>(TTarget instance, TValidationResult validationResult, Exception exception, CallTargetState state)
             where TValidationResult : IValidationResult
         {
             var scope = state.Scope;

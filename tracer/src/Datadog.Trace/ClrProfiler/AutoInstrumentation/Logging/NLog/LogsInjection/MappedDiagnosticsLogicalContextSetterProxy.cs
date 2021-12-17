@@ -1,20 +1,17 @@
-﻿// <copyright file="MappedDiagnosticsLogicalContextSetterProxy.cs" company="Datadog">
+// <copyright file="MappedDiagnosticsLogicalContextSetterProxy.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjection
 {
     /// <summary>
     /// Duck type for MappedDiagnosticsLogicalContext in NLog 4.6+
     /// </summary>
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    [Browsable(false)]
-    public class MappedDiagnosticsLogicalContextSetterProxy
+    internal class MappedDiagnosticsLogicalContextSetterProxy
     {
         /// <summary>
         /// Updates the current logical context with multiple items in single operation

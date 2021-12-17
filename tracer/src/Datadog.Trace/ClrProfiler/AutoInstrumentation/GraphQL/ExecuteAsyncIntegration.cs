@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
         /// <param name="context">The execution context of the GraphQL operation.</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext context)
+        internal static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext context)
             where TContext : IExecutionContext
         {
             return new CallTargetState(scope: GraphQLCommon.CreateScopeFromExecuteAsync(Tracer.Instance, context), state: context);
@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        public static TExecutionResult OnAsyncMethodEnd<TTarget, TExecutionResult>(TTarget instance, TExecutionResult executionResult, Exception exception, CallTargetState state)
+        internal static TExecutionResult OnAsyncMethodEnd<TTarget, TExecutionResult>(TTarget instance, TExecutionResult executionResult, Exception exception, CallTargetState state)
         {
             Scope scope = state.Scope;
             if (state.Scope is null)

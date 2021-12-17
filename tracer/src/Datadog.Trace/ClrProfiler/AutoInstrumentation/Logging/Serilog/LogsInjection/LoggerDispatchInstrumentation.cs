@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Collections;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -45,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInje
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
         /// <param name="loggingEvent">The logging event</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget, TLogEvent>(TTarget instance, TLogEvent loggingEvent)
+        internal static CallTargetState OnMethodBegin<TTarget, TLogEvent>(TTarget instance, TLogEvent loggingEvent)
         {
             var tracer = Tracer.Instance;
 

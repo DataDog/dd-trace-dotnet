@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
@@ -46,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         /// <param name="basicProperties">The message properties.</param>
         /// <param name="body">The message body.</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget, TBasicProperties, TBody>(TTarget instance, string exchange, string routingKey, bool mandatory, TBasicProperties basicProperties, TBody body)
+        internal static CallTargetState OnMethodBegin<TTarget, TBasicProperties, TBody>(TTarget instance, string exchange, string routingKey, bool mandatory, TBasicProperties basicProperties, TBody body)
             where TBasicProperties : IBasicProperties, IDuckType
             where TBody : IBody, IDuckType // Versions < 6.0.0: TBody is byte[] // Versions >= 6.0.0: TBody is ReadOnlyMemory<byte>
         {
@@ -91,7 +90,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A default CallTargetReturn to satisfy the CallTarget contract</returns>
-        public static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, CallTargetState state)
+        internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, CallTargetState state)
         {
             state.Scope.DisposeWithException(exception);
             return CallTargetReturn.GetDefault();

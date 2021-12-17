@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         /// <param name="context">The exception context value</param>
         /// <param name="cancellationToken">CancellationToken value</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget, TExceptionHandler, TExceptionContext>(TTarget instance, TExceptionHandler handler, TExceptionContext context, CancellationToken cancellationToken)
+        internal static CallTargetState OnMethodBegin<TTarget, TExceptionHandler, TExceptionContext>(TTarget instance, TExceptionHandler handler, TExceptionContext context, CancellationToken cancellationToken)
             where TExceptionContext : IExceptionContext
         {
             var scope = Tracer.Instance.ActiveScope;
