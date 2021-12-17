@@ -22,6 +22,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 {
     public class AspNetBase : TestHelper
     {
+        protected const string DefaultAttackUrl = "/Health/?arg=[$slice]";
         private readonly HttpClient _httpClient;
         private readonly string _shutdownPath;
         private int _httpPort;
@@ -81,13 +82,13 @@ namespace Datadog.Trace.Security.IntegrationTests
             _agent?.Dispose();
         }
 
-        public async Task TestBlockedRequestAsync(MockTracerAgent agent, bool enableSecurity, HttpStatusCode expectedStatusCode, int expectedSpans, IEnumerable<Action<MockTracerAgent.Span>> assertOnSpans)
+        public async Task TestBlockedRequestAsync(MockTracerAgent agent, bool enableSecurity, HttpStatusCode expectedStatusCode, int expectedSpans, IEnumerable<Action<MockTracerAgent.Span>> assertOnSpans, string url)
         {
-            Func<Task<(HttpStatusCode StatusCode, string ResponseText)>> attack = () => SubmitRequest("/Health/?arg=[$slice]");
+            Func<Task<(HttpStatusCode StatusCode, string ResponseText)>> attack = () => SubmitRequest(url);
             var resultRequests = await Task.WhenAll(attack(), attack(), attack(), attack(), attack());
             agent.SpanFilters.Add(s => s.Tags["http.url"].IndexOf("Health", StringComparison.InvariantCultureIgnoreCase) > 0);
             var spans = agent.WaitForSpans(expectedSpans);
-            Assert.Equal(expectedSpans, spans.Count());
+            Assert.Equal(expectedSpans, spans.Count);
 
             var expectedAppSecEvents = enableSecurity ? 5 : 0;
             var actualAppSecEvents = 0;
