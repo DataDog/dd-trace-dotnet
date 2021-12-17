@@ -1,4 +1,4 @@
-# Datadadog APM .Net client libraries
+# Datadog APM .NET Client Libraries
 
 This repository contains the sources for the client-side components of the Datadog product suite for Application Telemetry Collection and Application Performance Monitoring for .NET Applications.
 
