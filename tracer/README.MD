@@ -24,7 +24,6 @@ You can develop the tracer on various environments.
   - Workloads
     - Desktop development with C++
     - .NET desktop development
-    - .NET Core cross-platform development
     - Optional: ASP.NET and web development (to build samples)
   - Individual components
     - .NET Framework 4.7 targeting pack

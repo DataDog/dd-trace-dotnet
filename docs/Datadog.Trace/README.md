@@ -223,13 +223,14 @@ using (var scope = Tracer.Instance.StartActive("my-operation"))
 }
 
 // No longer compiles (most parameters removed)
-using (var scope = Tracer.Instance.StartActive("my-operation", serviceName: "my-service", ...))
+using (var scope = Tracer.Instance.StartActive("my-operation", parent: spanContext, serviceName: "my-service", ...))
 {
     // ...
 }
 
 // Correct usage
-using (var scope = Tracer.Instance.StartActive("my-operation"))
+var spanCreationSettings = new SpanCreationSettings() { Parent = spanContext };
+using (var scope = Tracer.Instance.StartActive("my-operation", spanCreationSettings))
 {
     scope.Span.ServiceName = "my-service";
     // ...
