@@ -4,16 +4,13 @@
 // </copyright>
 
 using System;
-using System.ComponentModel;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 {
     /// <summary>
     /// System.Web.Http.ExceptionHandling.ExceptionContext interface for ducktyping
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface IExceptionContext
+    internal interface IExceptionContext
     {
         /// <summary>
         /// Gets the exception

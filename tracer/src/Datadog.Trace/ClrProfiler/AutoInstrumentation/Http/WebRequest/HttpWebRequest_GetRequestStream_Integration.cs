@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
         /// <typeparam name="TTarget">Type of the target</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
+        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         {
             if (instance is HttpWebRequest request && WebRequestCommon.IsTracingEnabled(request))
             {

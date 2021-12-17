@@ -6,16 +6,13 @@
 #if !NETFRAMEWORK
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 {
     /// <summary>
     /// For duck typing
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface IFunctionInstance
+    internal interface IFunctionInstance
     {
         /// <summary>
         /// Gets Function unique id

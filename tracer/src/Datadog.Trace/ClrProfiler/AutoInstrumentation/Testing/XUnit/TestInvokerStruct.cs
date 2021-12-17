@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.ComponentModel;
 using System.Reflection;
 using Datadog.Trace.DuckTyping;
 
@@ -14,9 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
     /// TestInvoker`1 structure
     /// </summary>
     [DuckCopy]
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public struct TestInvokerStruct
+    internal struct TestInvokerStruct
     {
         /// <summary>
         /// Test class Type

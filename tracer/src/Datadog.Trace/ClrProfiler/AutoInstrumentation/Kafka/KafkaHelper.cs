@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 

@@ -63,7 +63,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         /// <typeparam name="TOperation">Type of the operation</typeparam>
         /// <typeparam name="TCancellationToken">Type of the cancellationToken</typeparam>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget, TOperation, TCancellationToken>(TTarget instance, TOperation operation, TCancellationToken cancellationToken)
+        internal static CallTargetState OnMethodBegin<TTarget, TOperation, TCancellationToken>(TTarget instance, TOperation operation, TCancellationToken cancellationToken)
         {
             return CouchbaseCommon.CommonOnMethodBeginV3(operation);
         }
@@ -78,7 +78,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        public static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
+        internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
         {
             return CouchbaseCommon.CommonOnMethodEnd(returnValue, exception, state);
         }

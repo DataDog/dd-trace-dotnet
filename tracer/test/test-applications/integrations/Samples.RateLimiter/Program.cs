@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Threading;
 using Datadog.Trace;
+using Datadog.Trace.Configuration;
 
 namespace Samples.RateLimiter
 {
