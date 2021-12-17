@@ -6,10 +6,8 @@
 #if NETFRAMEWORK
 using System;
 using System.ComponentModel;
-using System.Reflection;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.ClrProfiler.Emit;
-using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
 {
@@ -39,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         /// <param name="callback">Callback argument</param>
         /// <param name="state">State argument</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget>(TTarget instance, object instanceArg, object[] inputs, AsyncCallback callback, object state)
+        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, object instanceArg, object[] inputs, AsyncCallback callback, object state)
         {
             // TODO Just use the OperationContext.Current object to get the span information
             // context.IncomingMessageHeaders contains:

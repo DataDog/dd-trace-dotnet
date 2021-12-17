@@ -6,7 +6,6 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
 {
@@ -37,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
         /// <param name="messageQueueTransaction">Message queue transaction can be null</param>
         /// <param name="messageQueueTransactionType">Message queue transaction type can be null</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TMessageQueue>(TMessageQueue instance, object message, object messageQueueTransaction, MessageQueueTransactionType messageQueueTransactionType)
+        internal static CallTargetState OnMethodBegin<TMessageQueue>(TMessageQueue instance, object message, object messageQueueTransaction, MessageQueueTransactionType messageQueueTransactionType)
             where TMessageQueue : IMessageQueue
         {
             var scope = MsmqCommon.CreateScope(Tracer.Instance, Command, SpanKinds.Producer, instance, messageQueueTransaction != null || messageQueueTransactionType != MessageQueueTransactionType.None);
@@ -52,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>CallTargetReturn</returns>
-        public static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, ref CallTargetState state)
+        internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, ref CallTargetState state)
         {
             state.Scope.DisposeWithException(exception);
             return CallTargetReturn.GetDefault();

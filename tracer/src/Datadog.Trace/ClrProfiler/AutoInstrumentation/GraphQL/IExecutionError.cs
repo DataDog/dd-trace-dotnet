@@ -4,16 +4,13 @@
 // </copyright>
 
 using System.Collections;
-using System.ComponentModel;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
 {
     /// <summary>
     /// GraphQL.ExecutionError interface for ducktyping
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface IExecutionError
+    internal interface IExecutionError
     {
         /// <summary>
         /// Gets a code for the error

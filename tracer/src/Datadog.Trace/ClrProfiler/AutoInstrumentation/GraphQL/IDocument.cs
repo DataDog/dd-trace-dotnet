@@ -3,21 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
 {
     /// <summary>
     /// GraphQL.Language.AST.Document interface for ducktyping
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface IDocument
+    internal interface IDocument
     {
         /// <summary>
         /// Gets the original query from the document

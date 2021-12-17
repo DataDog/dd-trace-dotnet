@@ -4,6 +4,9 @@
 // </copyright>
 
 using System;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.HttpOverStreams
 {
@@ -12,6 +15,14 @@ namespace Datadog.Trace.HttpOverStreams
         public DatadogHttpRequestException(string message)
             : base(message)
         {
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        [DebuggerHidden]
+        [DoesNotReturn]
+        public static void Throw(string message)
+        {
+            throw new DatadogHttpRequestException(message);
         }
     }
 }

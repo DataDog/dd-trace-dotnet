@@ -3,16 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.ComponentModel;
-
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
 {
     /// <summary>
     /// Unit test outcomes
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public enum UnitTestOutcome : int
+    internal enum UnitTestOutcome : int
     {
         /// <summary>
         /// Test was executed, but there were issues.

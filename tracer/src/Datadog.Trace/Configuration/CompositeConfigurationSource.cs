@@ -8,6 +8,7 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Configuration
 {
@@ -24,7 +25,7 @@ namespace Datadog.Trace.Configuration
         /// <param name="source">The configuration source to add.</param>
         public void Add(IConfigurationSource source)
         {
-            if (source == null) { throw new ArgumentNullException(nameof(source)); }
+            if (source == null) { ThrowHelper.ThrowArgumentNullException(nameof(source)); }
 
             _sources.Add(source);
         }
@@ -36,7 +37,7 @@ namespace Datadog.Trace.Configuration
         /// <param name="item">The configuration source to insert.</param>
         public void Insert(int index, IConfigurationSource item)
         {
-            if (item == null) { throw new ArgumentNullException(nameof(item)); }
+            if (item == null) { ThrowHelper.ThrowArgumentNullException(nameof(item)); }
 
             _sources.Insert(index, item);
         }

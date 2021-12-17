@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.ComponentModel;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
@@ -13,9 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
     /// TestResult ducktype struct
     /// </summary>
     [DuckCopy]
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public struct TestResultStruct
+    internal struct TestResultStruct
     {
         /// <summary>
         /// Gets the outcome enum

@@ -4,8 +4,6 @@
 // </copyright>
 
 using System;
-using System.Text;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 

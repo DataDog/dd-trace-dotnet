@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.Emit
 {
@@ -23,8 +24,8 @@ namespace Datadog.Trace.ClrProfiler.Emit
             Type delegateType = typeof(TDelegate);
             Type[] genericTypeArguments = delegateType.GenericTypeArguments;
 
-            Type[] parameterTypes;
-            Type returnType;
+            Type[] parameterTypes = null;
+            Type returnType = null;
 
             if (delegateType.Name.StartsWith("Func`"))
             {
@@ -42,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.Emit
             }
             else
             {
-                throw new Exception($"Only Func<> or Action<> are supported in {nameof(DelegateMetadata)}.");
+                ThrowHelper.ThrowException($"Only Func<> or Action<> are supported in {nameof(DelegateMetadata)}.");
             }
 
             return new DelegateMetadata()

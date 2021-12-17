@@ -3,10 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#pragma warning disable SA1600 // Elements should be documented
-#pragma warning disable 1591
-
-using System.ComponentModel;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
@@ -14,9 +10,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
     /// <summary>
     /// ValueTuple returned by DocumentValidator in GraphQL4
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface IValidationResultTuple
+    internal interface IValidationResultTuple
     {
         [DuckField]
         public IValidationResult Item1 { get; }

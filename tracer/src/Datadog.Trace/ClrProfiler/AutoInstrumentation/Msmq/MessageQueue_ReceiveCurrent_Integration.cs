@@ -4,16 +4,8 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
 {
@@ -48,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
         /// <param name="messageQueueTransaction">transaction</param>
         /// <param name="messageQueueTransactionType">type of transaction</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TMessageQueue>(TMessageQueue instance, TimeSpan timeout, int action, object cursorHandle, object messagePropertyFilter, object messageQueueTransaction, MessageQueueTransactionType messageQueueTransactionType)
+        internal static CallTargetState OnMethodBegin<TMessageQueue>(TMessageQueue instance, TimeSpan timeout, int action, object cursorHandle, object messagePropertyFilter, object messageQueueTransaction, MessageQueueTransactionType messageQueueTransactionType)
             where TMessageQueue : IMessageQueue
         {
             var scope = MsmqCommon.CreateScope(Tracer.Instance, action != 0 ? CommandPeek : CommandReceive, SpanKinds.Consumer, instance);
@@ -65,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>CallTargetReturn</returns>
-        public static CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult messageResult, Exception exception, ref CallTargetState state)
+        internal static CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult messageResult, Exception exception, ref CallTargetState state)
         {
             state.Scope.DisposeWithException(exception);
             return new CallTargetReturn<TResult>(messageResult);

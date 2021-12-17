@@ -6,7 +6,6 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
 {
@@ -55,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         /// <typeparam name="TOperation">Type of the operation</typeparam>
         /// <typeparam name="TConnection">Type of the connection</typeparam>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget, TOperation, TConnection>(TTarget instance, TOperation operation, TConnection connection)
+        internal static CallTargetState OnMethodBegin<TTarget, TOperation, TConnection>(TTarget instance, TOperation operation, TConnection connection)
         {
             return CouchbaseCommon.CommonOnMethodBegin(operation);
         }
@@ -70,7 +69,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        public static CallTargetReturn<TOperationResult> OnMethodEnd<TTarget, TOperationResult>(TTarget instance, TOperationResult result, Exception exception, ref CallTargetState state)
+        internal static CallTargetReturn<TOperationResult> OnMethodEnd<TTarget, TOperationResult>(TTarget instance, TOperationResult result, Exception exception, ref CallTargetState state)
         {
             return CouchbaseCommon.CommonOnMethodEndSync(result, exception, ref state);
         }

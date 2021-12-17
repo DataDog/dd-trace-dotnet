@@ -4,9 +4,7 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjection
@@ -20,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
         MethodName = "Write",
         ReturnTypeName = ClrNames.Void,
         ParameterTypeNames = new[] { ClrNames.Type, "NLog.Internal.TargetWithFilterChain", "NLog.LogEventInfo", "NLog.LogFactory" },
-        MinimumVersion = "2.1.0",
+        MinimumVersion = "1.0.0.505",
         MaximumVersion = "4.*.*",
         IntegrationName = "NLog")]
     [Browsable(false)]
@@ -40,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
         /// <param name="logEvent">The logging event instance</param>
         /// <param name="factory">The LogFactory instance</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget, TTargets, TLogEventInfo, TLogFactory>(TTarget instance, Type loggerType, TTargets targetsForLevel, TLogEventInfo logEvent, TLogFactory factory)
+        internal static CallTargetState OnMethodBegin<TTarget, TTargets, TLogEventInfo, TLogFactory>(TTarget instance, Type loggerType, TTargets targetsForLevel, TLogEventInfo logEvent, TLogFactory factory)
         {
             var tracer = Tracer.Instance;
 
@@ -70,7 +68,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        public static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, CallTargetState state)
+        internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, CallTargetState state)
         {
             if (state.State is IDisposable disposable)
             {

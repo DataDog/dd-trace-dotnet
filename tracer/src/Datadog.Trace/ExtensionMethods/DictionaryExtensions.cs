@@ -7,6 +7,7 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ExtensionMethods
 {
@@ -16,7 +17,7 @@ namespace Datadog.Trace.ExtensionMethods
         {
             if (dictionary == null)
             {
-                throw new ArgumentNullException(nameof(dictionary));
+                ThrowHelper.ThrowArgumentNullException(nameof(dictionary));
             }
 
             return dictionary.TryGetValue(key, out var value)
@@ -28,7 +29,7 @@ namespace Datadog.Trace.ExtensionMethods
         {
             if (dictionary == null)
             {
-                throw new ArgumentNullException(nameof(dictionary));
+                ThrowHelper.ThrowArgumentNullException(nameof(dictionary));
             }
 
             return dictionary.TryGetValue(key, out TValue value)
@@ -40,7 +41,7 @@ namespace Datadog.Trace.ExtensionMethods
         {
             if (dictionary == null)
             {
-                throw new ArgumentNullException(nameof(dictionary));
+                ThrowHelper.ThrowArgumentNullException(nameof(dictionary));
             }
 
             object valueObj;

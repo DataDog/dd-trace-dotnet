@@ -4,7 +4,6 @@
 // </copyright>
 
 using System.Collections.Generic;
-using System.ComponentModel;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
@@ -13,9 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
     /// TestCase structure
     /// </summary>
     [DuckCopy]
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public struct TestCaseStruct
+    internal struct TestCaseStruct
     {
         /// <summary>
         /// Display name

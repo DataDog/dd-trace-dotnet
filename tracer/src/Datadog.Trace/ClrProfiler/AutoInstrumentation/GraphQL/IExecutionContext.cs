@@ -3,16 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.ComponentModel;
-
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
 {
     /// <summary>
     /// GraphQL.Execution.ExecutionContext interface for ducktyping
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface IExecutionContext
+    internal interface IExecutionContext
     {
         /// <summary>
         /// Gets the document associated with the execution context

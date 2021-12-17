@@ -63,7 +63,7 @@ namespace Datadog.Trace
                                      UnknownServiceName;
 
             statsd = settings.TracerMetricsEnabled
-                         ? (statsd ?? CreateDogStatsdClient(settings, defaultServiceName, settings.DogStatsdPort))
+                         ? (statsd ?? CreateDogStatsdClient(settings, defaultServiceName, settings.Exporter.DogStatsdPort))
                          : null;
             sampler ??= GetSampler(settings);
             agentWriter ??= GetAgentWriter(settings, statsd, sampler);
@@ -71,7 +71,7 @@ namespace Datadog.Trace
 
             if (settings.RuntimeMetricsEnabled && !DistributedTracer.Instance.IsChildTracer)
             {
-                runtimeMetrics ??= new RuntimeMetricsWriter(statsd ?? CreateDogStatsdClient(settings, defaultServiceName, settings.DogStatsdPort), TimeSpan.FromSeconds(10));
+                runtimeMetrics ??= new RuntimeMetricsWriter(statsd ?? CreateDogStatsdClient(settings, defaultServiceName, settings.Exporter.DogStatsdPort), TimeSpan.FromSeconds(10));
             }
 
             if (settings.LogsInjectionEnabled)
@@ -129,7 +129,7 @@ namespace Datadog.Trace
         protected virtual IAgentWriter GetAgentWriter(ImmutableTracerSettings settings, IDogStatsd statsd, ISampler sampler)
         {
             var apiRequestFactory = TransportStrategy.Get(settings.Exporter);
-            var api = new Api(settings.Exporter.AgentUri, apiRequestFactory, statsd, rates => sampler.SetDefaultSampleRates(rates), settings.PartialFlushEnabled);
+            var api = new Api(settings.Exporter.AgentUri, apiRequestFactory, statsd, rates => sampler.SetDefaultSampleRates(rates), settings.Exporter.PartialFlushEnabled);
             return new AgentWriter(api, statsd, maxBufferSize: settings.TraceBufferSize);
         }
 

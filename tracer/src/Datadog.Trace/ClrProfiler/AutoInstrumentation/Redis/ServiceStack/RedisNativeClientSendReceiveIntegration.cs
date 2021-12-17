@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack
         /// <param name="completePipelineFn">Complete pipeline function instance</param>
         /// <param name="sendWithoutRead">Send without read boolean</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget, TFunc, TAction>(TTarget instance, byte[][] cmdWithBinaryArgs, TFunc fn, TAction completePipelineFn, bool sendWithoutRead)
+        internal static CallTargetState OnMethodBegin<TTarget, TFunc, TAction>(TTarget instance, byte[][] cmdWithBinaryArgs, TFunc fn, TAction completePipelineFn, bool sendWithoutRead)
             where TTarget : IRedisNativeClient
         {
             Scope scope = RedisHelper.CreateScope(Tracer.Instance, IntegrationId, instance.Host ?? string.Empty, instance.Port.ToString(CultureInfo.InvariantCulture), GetRawCommand(cmdWithBinaryArgs));
@@ -66,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        public static CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, ref CallTargetState state)
+        internal static CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, ref CallTargetState state)
         {
             state.Scope.DisposeWithException(exception);
             return new CallTargetReturn<TResponse>(response);

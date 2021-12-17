@@ -55,7 +55,6 @@ namespace PluginApplication
 #if NETFRAMEWORK
                     logAction("Calling the PluginApplication.Program in a separate AppDomain");
                     AppDomainProxy.Call(applicationAppDomain, "PluginApplication", "PluginApplication.Program", "Invoke", null);
-                    logAction("Returned from the PluginApplication.Program call");
 #else
                     logAction("Skipping the cross-AppDomain call on .NET Core");
 #endif

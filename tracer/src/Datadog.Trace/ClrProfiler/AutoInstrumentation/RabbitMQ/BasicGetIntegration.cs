@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         /// <param name="queue">The queue name of the message</param>
         /// <param name="autoAck">The original autoAck argument</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget>(TTarget instance, string queue, bool autoAck)
+        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, string queue, bool autoAck)
         {
             return new CallTargetState(scope: null, state: queue, startTime: DateTimeOffset.UtcNow);
         }
@@ -55,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A default CallTargetReturn to satisfy the CallTarget contract</returns>
-        public static CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult basicGetResult, Exception exception, ref CallTargetState state)
+        internal static CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult basicGetResult, Exception exception, ref CallTargetState state)
             where TResult : IBasicGetResult, IDuckType
         {
             string queue = (string)state.State;

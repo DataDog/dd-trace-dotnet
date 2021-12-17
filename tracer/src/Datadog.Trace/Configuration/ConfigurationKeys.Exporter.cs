@@ -8,7 +8,7 @@ namespace Datadog.Trace.Configuration
     /// <summary>
     /// String constants for standard Datadog configuration keys.
     /// </summary>
-    public static partial class ConfigurationKeys
+    internal static partial class ConfigurationKeys
     {
         /// <summary>
         /// Configuration key for the Agent host where the Tracer can send traces.
@@ -66,6 +66,19 @@ namespace Datadog.Trace.Configuration
         /// Configuration key for the DogStatsd port where the Tracer can send metrics.
         /// Default value is 8125.
         /// </summary>
+        /// <seealso cref="ExporterSettings.DogStatsdPort"/>
         public const string DogStatsdPort = "DD_DOGSTATSD_PORT";
+
+        /// <summary>
+        /// Configuration key to enable sending partial traces to the agent
+        /// </summary>
+        /// <seealso cref="ExporterSettings.PartialFlushEnabled"/>
+        public const string PartialFlushEnabled = "DD_TRACE_PARTIAL_FLUSH_ENABLED";
+
+        /// <summary>
+        /// Configuration key to set the minimum number of closed spans in a trace before it's partially flushed
+        /// </summary>
+        /// <seealso cref="ExporterSettings.PartialFlushMinSpans"/>
+        public const string PartialFlushMinSpans = "DD_TRACE_PARTIAL_FLUSH_MIN_SPANS";
     }
 }

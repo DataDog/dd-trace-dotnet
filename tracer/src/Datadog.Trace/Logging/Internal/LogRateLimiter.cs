@@ -20,7 +20,7 @@ namespace Datadog.Trace.Logging
         {
             if (secondsBetweenLogs < 1)
             {
-                throw new ArgumentException("Must have positive number of seconds between logs", nameof(secondsBetweenLogs));
+                ThrowHelper.ThrowArgumentException("Must have positive number of seconds between logs", nameof(secondsBetweenLogs));
             }
 
             _secondsBetweenLogs = secondsBetweenLogs;

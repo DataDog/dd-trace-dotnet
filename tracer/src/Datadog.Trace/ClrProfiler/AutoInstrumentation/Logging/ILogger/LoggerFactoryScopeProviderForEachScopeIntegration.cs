@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
         /// <param name="callback">The callback to be invoked per scope</param>
         /// <param name="state">The state to pass to the callback</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget, TAction, TState>(TTarget instance, TAction callback, TState state)
+        internal static CallTargetState OnMethodBegin<TTarget, TAction, TState>(TTarget instance, TAction callback, TState state)
         {
             LoggerIntegrationCommon.AddScope(Tracer.Instance, callback, state);
             return new CallTargetState(scope: null, state: null);
@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        public static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, ref CallTargetState state)
+        internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, ref CallTargetState state)
         {
             return CallTargetReturn.GetDefault();
         }

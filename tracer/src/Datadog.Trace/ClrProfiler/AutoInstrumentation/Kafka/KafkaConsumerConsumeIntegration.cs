@@ -7,7 +7,6 @@ using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 {
@@ -34,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
         /// <param name="millisecondsTimeout">The maximum period of time the call may block.</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget>(TTarget instance, int millisecondsTimeout)
+        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, int millisecondsTimeout)
         {
             // If we are already in a consumer scope, close it, and start a new one on method exit.
             KafkaHelper.CloseConsumerScope(Tracer.Instance);
@@ -51,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        public static CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, ref CallTargetState state)
+        internal static CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, ref CallTargetState state)
             where TResponse : IConsumeResult, IDuckType
         {
             IConsumeResult consumeResult = response.Instance is not null ? response : null;

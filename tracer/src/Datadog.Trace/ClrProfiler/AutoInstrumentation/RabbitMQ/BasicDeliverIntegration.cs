@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         /// <param name="basicProperties">The message properties.</param>
         /// <param name="body">The message body.</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget, TBasicProperties, TBody>(TTarget instance, string consumerTag, ulong deliveryTag, bool redelivered, string exchange, string routingKey, TBasicProperties basicProperties, TBody body)
+        internal static CallTargetState OnMethodBegin<TTarget, TBasicProperties, TBody>(TTarget instance, string consumerTag, ulong deliveryTag, bool redelivered, string exchange, string routingKey, TBasicProperties basicProperties, TBody body)
             where TBasicProperties : IBasicProperties
             where TBody : IBody // ReadOnlyMemory<byte> body in 6.0.0
         {
@@ -81,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A default CallTargetReturn to satisfy the CallTarget contract</returns>
-        public static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, ref CallTargetState state)
+        internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, ref CallTargetState state)
         {
             state.Scope.DisposeWithException(exception);
             return CallTargetReturn.GetDefault();

@@ -6,9 +6,6 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
 {
@@ -35,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
         /// <typeparam name="TMessageQueue">Message queue</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TMessageQueue>(TMessageQueue instance)
+        internal static CallTargetState OnMethodBegin<TMessageQueue>(TMessageQueue instance)
             where TMessageQueue : IMessageQueue
         {
             var scope = MsmqCommon.CreateScope(Tracer.Instance, Command, SpanKinds.Client, instance);
@@ -50,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>CallTargetReturn</returns>
-        public static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, ref CallTargetState state)
+        internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, ref CallTargetState state)
         {
             state.Scope.DisposeWithException(exception);
             return CallTargetReturn.GetDefault();

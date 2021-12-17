@@ -4,16 +4,13 @@
 // </copyright>
 
 using System.Collections.Generic;
-using System.ComponentModel;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
 {
     /// <summary>
     /// RequestHeaders interface for ducktyping
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface IRequestHeaders
+    internal interface IRequestHeaders
     {
         /// <summary>
         /// Try get values from the headers

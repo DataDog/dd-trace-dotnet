@@ -17,7 +17,7 @@ namespace Datadog.Trace.Agent
 
         public static IApiRequestFactory Get(ImmutableExporterSettings settings)
         {
-            var strategy = settings.TraceTransport;
+            var strategy = settings.TracesTransport;
 
             switch (strategy)
             {

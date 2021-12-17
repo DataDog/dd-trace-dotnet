@@ -3,10 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
 {
@@ -16,7 +16,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
 
         public HttpHeadersCollection(IRequestHeaders headers)
         {
-            _headers = headers ?? throw new ArgumentNullException(nameof(headers));
+            if (headers is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(headers));
+            }
+
+            _headers = headers;
         }
 
         public IEnumerable<string> GetValues(string name)

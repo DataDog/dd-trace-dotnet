@@ -11,6 +11,7 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.HttpOverStreams.HttpContent;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Agent.Transports
@@ -87,7 +88,7 @@ namespace Datadog.Trace.Agent.Transports
                 var contentLength = response.Content.Length;
                 if (!contentLength.HasValue)
                 {
-                    throw new Exception("Content-Length is required but was not provided");
+                    ThrowHelper.ThrowException("Content-Length is required but was not provided");
                 }
 
                 // buffer the entire contents for now

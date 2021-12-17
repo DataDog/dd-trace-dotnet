@@ -1,10 +1,9 @@
-﻿// <copyright file="ITimestamp.cs" company="Datadog">
+// <copyright file="ITimestamp.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
-using System.ComponentModel;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 {
@@ -12,9 +11,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
     /// Timestamp struct for duck-typing
     /// Requires boxing, but necessary as we need to duck-type <see cref="Type"/> too
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface ITimestamp
+    internal interface ITimestamp
     {
         /// <summary>
         /// Gets the timestamp type

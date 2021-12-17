@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         /// <param name="methods">The methods to be invoked</param>
         /// <param name="setHostingEnvironmentCultures">The function to set the environment culture</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget, TCollection, TFunc>(TTarget instance, TCollection methods, TFunc setHostingEnvironmentCultures)
+        internal static CallTargetState OnMethodBegin<TTarget, TCollection, TFunc>(TTarget instance, TCollection methods, TFunc setHostingEnvironmentCultures)
         {
             if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
             {

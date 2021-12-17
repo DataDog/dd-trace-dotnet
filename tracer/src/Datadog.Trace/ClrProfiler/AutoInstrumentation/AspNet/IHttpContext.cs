@@ -4,7 +4,6 @@
 // </copyright>
 
 using System.Collections;
-using System.ComponentModel;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
@@ -13,9 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
     /// System.Web.HttpContext interface for ducktyping
     /// </summary>
     [DuckCopy]
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public struct IHttpContext
+    internal struct IHttpContext
     {
         /// <summary>
         /// Gets the items dictionary

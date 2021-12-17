@@ -38,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         /// <param name="routingKey">The original routingKey argument.</param>
         /// <param name="arguments">The original arguments setting</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget>(TTarget instance, string queue, string exchange, string routingKey, IDictionary<string, object> arguments)
+        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, string queue, string exchange, string routingKey, IDictionary<string, object> arguments)
         {
             return new CallTargetState(RabbitMQIntegration.CreateScope(Tracer.Instance, out _, Command, SpanKinds.Client, queue: queue, exchange: exchange, routingKey: routingKey));
         }
@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A default CallTargetReturn to satisfy the CallTarget contract</returns>
-        public static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, ref CallTargetState state)
+        internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, ref CallTargetState state)
         {
             state.Scope.DisposeWithException(exception);
             return CallTargetReturn.GetDefault();

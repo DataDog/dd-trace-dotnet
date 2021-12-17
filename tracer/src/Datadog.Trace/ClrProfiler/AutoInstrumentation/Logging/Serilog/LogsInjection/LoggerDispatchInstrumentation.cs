@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Collections;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -45,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInje
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
         /// <param name="loggingEvent">The logging event</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget, TLogEvent>(TTarget instance, TLogEvent loggingEvent)
+        internal static CallTargetState OnMethodBegin<TTarget, TLogEvent>(TTarget instance, TLogEvent loggingEvent)
         {
             var tracer = Tracer.Instance;
 
@@ -56,11 +55,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInje
                 AddPropertyIfAbsent(dict, CorrelationIdentifier.SerilogVersionKey, tracer.Settings.ServiceVersion);
                 AddPropertyIfAbsent(dict, CorrelationIdentifier.SerilogEnvKey, tracer.Settings.Environment);
 
-                var span = tracer.ActiveScope?.Span;
-                if (span is not null)
+                var spanContext = tracer.DistributedSpanContext;
+                if (spanContext is not null
+                    && spanContext.TryGetValue(HttpHeaderNames.TraceId, out string traceId)
+                    && spanContext.TryGetValue(HttpHeaderNames.ParentId, out string spanId))
                 {
-                    AddPropertyIfAbsent(dict, CorrelationIdentifier.SerilogTraceIdKey, span.TraceId.ToString());
-                    AddPropertyIfAbsent(dict, CorrelationIdentifier.SerilogSpanIdKey, span.SpanId.ToString());
+                    AddPropertyIfAbsent(dict, CorrelationIdentifier.SerilogTraceIdKey, traceId);
+                    AddPropertyIfAbsent(dict, CorrelationIdentifier.SerilogSpanIdKey, spanId);
                 }
             }
 

@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
         /// <param name="callback">The AsyncCallback delegate</param>
         /// <param name="state">An object containing state information for this asynchronous request</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget>(TTarget instance, AsyncCallback callback, object state)
+        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, AsyncCallback callback, object state)
         {
             if (instance is HttpWebRequest request && WebRequestCommon.IsTracingEnabled(request))
             {
