@@ -2,7 +2,7 @@
 
 This package contains the Datadog .NET APM tracer for configuring custom instrumentation.
 
-> If you are only using automatic tracing, **you do not need this package**. Please [read our documentation](https://docs.datadoghq.com/tracing/setup/dotnet) for details on how to install the tracer for automatic instrumentation.
+> If you are only using automatic instrumentation, **you do not need this package**. Please [read our documentation](https://docs.datadoghq.com/tracing/setup/dotnet) for details on how to install the tracer for automatic instrumentation.
 
 ## Getting Started
 
@@ -57,7 +57,7 @@ You can view the [notes for the latest release on GitHub](https://github.com/Dat
 
 ## Upgrading from 1.x to 2.0
 
-.NET Tracer 2.0 introduces a number of breaking changes to the API which allow various performance improvements, add new features, and deprecate problematic ways of using the package. Most of these changes do not require any changes to your code, but some patterns are no longer supported or recommended.
+.NET Tracer 2.0 introduces several breaking changes to the API which allow various performance improvements, add new features, and deprecate problematic ways of using the package. Most of these changes do not require any changes to your code, but some patterns are no longer supported or recommended.
 
 This section describes some of the most important breaking changes. For full details see [the release notes on GitHub](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.0.0).
 
