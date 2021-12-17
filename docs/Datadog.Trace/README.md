@@ -105,7 +105,7 @@ Tracer.Configure(settings);
 
 Exporter-related settings were grouped into the `TracerSettings.Exporter` property.
 
-csharp
+```csharp
 using Datadog.Trace;
 
 var settings = TracerSettings.FromDefaultSources();
