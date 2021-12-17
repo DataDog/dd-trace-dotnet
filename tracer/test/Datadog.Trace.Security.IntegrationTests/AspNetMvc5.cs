@@ -6,9 +6,7 @@
 #if NET461
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
@@ -99,7 +97,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [Trait("LoadFromGAC", "True")]
         [Theory]
-        [InlineData("/Health/test&[$slice]")]
+        [InlineData("/Health/?test&[$slice]")]
         [InlineData]
         public Task TestSecurity(string url = DefaultAttackUrl)
         {
