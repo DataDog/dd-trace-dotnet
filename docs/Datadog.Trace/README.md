@@ -13,7 +13,7 @@ This package contains the Datadog .NET APM tracer for configuring custom instrum
 
 ### Configuring Datadog in code
 
-There are multiple ways to configure your application, for example using Environment variables, _web.config_, or _datadog.json_, [as described in our documentation](https://docs.datadoghq.com/tracing/setup_overview/setup/dotnet-core/#configuration). This NuGet package also allows you to configure settings in code.
+There are multiple ways to configure your application: using environment variables, a `web.config` file, or a `datadog.json` file, [as described in our documentation](https://docs.datadoghq.com/tracing/setup_overview/setup/dotnet-core/#configuration). This NuGet package also allows you to configure settings in code.
 
 To override configuration settings, create an instance of `TracerSettings`, and pass it to the static `Tracer.Configure()` method:
 
@@ -45,7 +45,7 @@ To create and activate a custom span, use `Tracer.Instance.StartActive()`. If a 
 using Datadog.Trace;
 
 // Start a new span
-using (var scope = Tracer.Instance.StartActive("custom-operation")
+using (var scope = Tracer.Instance.StartActive("custom-operation"))
 {
     // Do something
 }
@@ -57,19 +57,19 @@ You can view the [notes for the latest release on GitHub](https://github.com/Dat
 
 ## Upgrading from 1.x to 2.0
 
-Version 2.0 of this package introduced a number of breaking changes to the API which allowed various performance improvements, added new features, and deprecated problematic ways of using the package. Most of these changes will not require any changes to your code, but some patterns are no longer supported or recommended.
+.NET Tracer 2.0 introduces a number of breaking changes to the API which allow various performance improvements, add new features, and deprecate problematic ways of using the package. Most of these changes do not require any changes to your code, but some patterns are no longer supported or recommended.
 
 This section describes some of the most important breaking changes. For full details see [the release notes on GitHub](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.0.0).
 
-### Updates for supported .NET versions
+### Supported .NET versions
 
-Version 2.0 of _Datadog.Trace_ added support for .NET 6.0 and raised the minimum supported version of .NET Framework from .NET Framework 4.5 to .NET Framework 4.6.1. If you are currently targeting version < 4.6.1, we suggest you upgrade [in line with Microsoft's guidance](https://docs.microsoft.com/en-us/lifecycle/products/microsoft-net-framework).
+.NET Tracer 2.0 adds support for .NET 6.0 and raises the minimum supported version of .NET Framework from .NET Framework 4.5 to .NET Framework 4.6.1. If you are currently targeting version < 4.6.1, we suggest you upgrade [in line with Microsoft's guidance](https://docs.microsoft.com/en-us/lifecycle/products/microsoft-net-framework).
 
 For full details of supported versions, see [our documentation on .NET Framework compatibility requirements](https://docs.datadoghq.com/tracing/setup_overview/compatibility_requirements/dotnet-framework) and [.NET/.NET Core compatibility requirements](https://docs.datadoghq.com/tracing/setup_overview/compatibility_requirements/dotnet-core).
 
 ### Singleton Tracer instances
 
-In version 1.x, you could create new `Tracer` instances with different settings for each instance, using `new Tracer()`. From version 2.0 this constructor is marked `[Obsolete]`, and it is no longer possible to create `Tracer` instances with different settings. This was done to avoid multiple problematic patterns that were hard for users to detect.
+In version 1.x, you could create new `Tracer` instances with different settings for each instance, using `new Tracer()`. In version 2.0 this constructor is marked `[Obsolete]` and it is no longer possible to create `Tracer` instances with different settings. This was done to avoid multiple problematic patterns that were hard for users to detect.
 
 Update your code to the following:
 
@@ -85,9 +85,9 @@ Tracer.Configure(settings);          // <- Add this line
 
 ### TracerSettings are immutable
 
-In version 1.x the `TracerSettings` object passed to a `Tracer` instance could be subsequently modified. Depending on the changes, these may or may not have been respected. In version 2.0, an `ImmutableTracerSettings` object is created when the `Tracer` instance is configured. Subsequent changes to the `TracerSettings` instance will not be observed by `Tracer`.
+In version 1.x the `TracerSettings` object passed to a `Tracer` instance could be modified later. Depending on the changes, the tracer may or may respect them. In version 2.0, an `ImmutableTracerSettings` object is created when the `Tracer` instance is configured. Subsequent changes to the `TracerSettings` instance will not be observed by `Tracer`.
 
-This change should not generally require changes to your code, but the type of `Tracer.Settings` is now an `ImmutableTracerSettings` instance, not a `TracerSettings` instance.
+This change should not require changes to your code, but the property `Tracer.Settings` now returns `ImmutableTracerSettings`, not `TracerSettings`.
 
 ```csharp
 using Datadog.Trace;
@@ -97,15 +97,24 @@ settings.TraceEnabled = false;   // TracerSettings are mutable
 
 Tracer.Configure(settings);
 
-// All properties on Settings are now read-only 
+// All properties on Tracer.Settings are now read-only 
 // Tracer.Instance.Settings.TraceEnabled = false; // <- DOES NOT COMPILE
 ```
 
-Also note that transport related settings have been isolated in the `ExporterSettings`. It is still encapsulated in `TracerSettings`.
+### Exporter settings
 
-### ADO.NET integrations can be disabled individually
+Exporter-related settings were grouped into the `TracerSettings.Exporter` property.
 
-In version 1.x, you could disable automatic instrumentation of all ADO.NET integrations using the `AdoNet` integration ID. From version 2.0, you can now also disable specific integrations using the following integration IDs:
+csharp
+using Datadog.Trace;
+
+var settings = TracerSettings.FromDefaultSources();
+// settings.AgentUri = "http://localhost:8126";        // <- Delete this line
+settings.Exporter.AgentUri = "http://localhost:8126";  // <- Add this line
+
+### Configure ADO.NET integrations individually
+
+In version 1.x, you could configure automatic instrumentation of all ADO.NET integrations using the `AdoNet` integration ID. In version 2.0, you can now also disable specific integrations using the following integration IDs:
 
 * `MySql`
 * `Npgsql` (PostgreSQL)
@@ -128,7 +137,7 @@ settings.Integrations["MySql"].Enabled = false; // <- Add this line
 
 ### `ElasticsearchNet5` integration ID has been removed
 
-In version 1.x, the integration ID for `Elasticsearch.Net` in version 5.x was `ElasticsearchNet5`, and for version 6.x+ was `ElasticsearchNet`. From version 2.0, support for the ID `ElasticsearchNet5` has been removed, and instead `ElasticsearchNet` now can be used for all versions of `Elasticsearch.Net`.
+In version 1.x, the integration ID for version 5.x of `Elasticsearch.Net` was `ElasticsearchNet5`, and the integration ID for version 6.x+ was `ElasticsearchNet`. In version 2.0, `ElasticsearchNet5` has been removed. Use `ElasticsearchNet` for all versions of `Elasticsearch.Net`.
 
 Replace usages of `ElasticsearchNet5` with `ElasticsearchNet`
 
@@ -143,48 +152,48 @@ settings.Integrations["ElasticsearchNet"].Enabled = false;  // <- Add this line
 
 ### Obsolete APIs have been removed
 
-The following deprecated APIs have been removed.
+The following deprecated APIs were removed.
 
-* `TracerSettings.DebugEnabled` has been removed. Set the `DD_TRACE_DEBUG` environment variable to `1` to enable debug mode.
-* `Tags.ForceDrop` and `Tags.ForceKeep` have been removed. Use `Tags.ManualDrop` and `Tags.ManualKeep` respectively instead.
-* `SpanTypes` associated with automatic instrumentation spans, such as `MongoDb` and `Redis` have been removed.
-* `Tags` associated with automatic instrumentation spans, such as `AmqpCommand` and `CosmosDbContainer`, have been removed.
-* `Tracer.Create()` has been removed. Use `Tracer.Configure()` instead.
-* `TracerSettings.AdoNetExcludedTypes` has been removed. Use `TracerSettings.Integrations` to disable automatic instrumentation for ADO.NET integrations.
-* Various internal APIs that were not intended for public consumption have been removed.
+* `TracerSettings.DebugEnabled` was removed. Set the `DD_TRACE_DEBUG` environment variable to `1` to enable debug mode.
+* `Tags.ForceDrop` and `Tags.ForceKeep` were removed. Use `Tags.ManualDrop` and `Tags.ManualKeep` respectively instead.
+* `SpanTypes` associated with automatic instrumentation spans, such as `MongoDb` and `Redis`, were removed.
+* `Tags` associated with automatic instrumentation spans, such as `AmqpCommand` and `CosmosDbContainer`, were removed.
+* `Tracer.Create()` was removed. Use `Tracer.Configure()` instead.
+* `TracerSettings.AdoNetExcludedTypes` was removed. Use `TracerSettings.Integrations` to configure ADO.NET automatic instrumentation.
+* Various internal APIs not intended for public consumption were removed.
 
-In addition, some settings have been marked obsolete:
+In addition, some settings were marked obsolete in 2.0:
 
 * Environment variables `DD_TRACE_ANALYTICS_ENABLED`, `DD_TRACE_{0}_ANALYTICS_ENABLED`, and `DD_TRACE_{0}_ANALYTICS_SAMPLE_RATE` for controlling App Analytics are obsolete. App Analytics has been replaced with Tracing Without Limits. See [our documentation for details](https://docs.datadoghq.com/tracing/legacy_app_analytics/).
-* Setting `TracerSettings.AnalyticsEnabled` has similarly been marked obsolete.
+* `TracerSettings.AnalyticsEnabled`, `IntegrationSettings.AnalyticsEnabled`, and `IntegrationSettings.AnalyticsSampleRate` were marked obsolete.
 * Environment variable `DD_TRACE_LOG_PATH` is deprecated. Use `DD_TRACE_LOG_DIRECTORY` instead.
 
-### Introduction of ISpan and IScope
+### Introduction of `ISpan` and `IScope`
 
-In version 2.0 the public `Scope` and `Span` classes have been made internal. We now expose `IScope` and `ISpan` instead. The `Tracer` API has been updated accordingly. In most cases, this should not require any changes to your code, but if you are currently using explicit types (instead of inferred types), then you will need to replace usages of `Scope` with `IScope` and `Span` with `ISpan`:
+Version 2.0 makes the public `Scope` and `Span` classes internal. Instead, we now expose public `IScope` and `ISpan` interfaces and the `Tracer` API was updated accordingly. If you are currently using explicit types (instead of interring types with `var`), replace usages of `Scope` with `IScope` and `Span` with `ISpan`:
 
 ```csharp
 using Datadog.Trace;
 
 // No changes required here
-using (var scope = Tracer.Instance.StartActive("my-operation")
+using (var scope = Tracer.Instance.StartActive("my-operation"))
 {
 }
 
 // No Longer compiles (incorrect usage of Scope)
-using (Scope scope = Tracer.Instance.StartActive("my-operation")
+using (Scope scope = Tracer.Instance.StartActive("my-operation"))
 {
 }
 
 // Correct usage with explicit type
-using (IScope scope = Tracer.Instance.StartActive("my-operation")
+using (IScope scope = Tracer.Instance.StartActive("my-operation"))
 {
 }
 ```
 
 ### Simplification of the tracer interface
 
-In addition to returning `IScope`, the `Tracer.StartActive` method has been simplified to provide a `SpanCreationSettings`. In addition, we have removed the possibility to override the service name.
+In addition to returning `IScope`, the `Tracer.StartActive` method was simplified by replacing several parameters with a single `SpanCreationSettings`. We also have remove the possibility to override the service name from `Tracer.StartActive`. Instead, set `Span.ServiceName` after creating the span.
 
 
 ### Incorrect integration names are ignored
@@ -208,7 +217,7 @@ bool? isEnabled = tracerSettings.Integrations["MyRandomIntegration"].Enabled;
 
 ### Automatic instrumentation changes
 
-#### Default value of `DD_TRACE_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED` is now `true`
+#### Default value of feature flag `DD_TRACE_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED` is now `true`
 
 Version 1.26.0 added support for the `DD_TRACE_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED` feature flag, which enabled improved span names for ASP.NET and ASP.NET Core automatic instrumentation spans, an additional span for ASP.NET Core requests, and additional tags.
 
@@ -216,11 +225,11 @@ In version 2.0, `DD_TRACE_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED` is **enabled** 
 
 If you do not wish to take advantage of the improved route names, you can disabled the feature by setting the `DD_TRACE_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED` environment variable to `0`.
 
-#### Call-site instrumentation has been removed
+#### Call-site instrumentation removed
 
-From version 2.0, call-site automatic instrumentation has been removed and replaced with call-target instrumentation. This has been the default mode [since version 1.28.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.28.0). Call-target instrumentation provides performance improvements over call-site instrumentation, but we no longer support instrumenting some custom implementations of `DbCommand`. If you find spans are missing from your traces after upgrading, please raise an issue on GitHub, or contact [support](https://docs.datadoghq.com/help).
+Call-site automatic instrumentation was removed in .NET Tracer 2.0 and replaced with call-target instrumentation. This was the default mode [since version 1.28.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.28.0). Call-target instrumentation provides performance and reliability improvements over call-site instrumentation, but it does not support instrumenting custom implementations of `DbCommand` for now. If you find spans are missing from your traces after upgrading, please raise an issue on GitHub, or contact [support](https://docs.datadoghq.com/help).
 
-#### DD_INTEGRATIONS environment variable no longer needed
+#### `DD_INTEGRATIONS` environment variable no longer needed
 
 The `integrations.json` file is no longer required for instrumentation. You can remove references to this file, for example by deleting the `DD_INTEGRATIONS` environment variable.
 
