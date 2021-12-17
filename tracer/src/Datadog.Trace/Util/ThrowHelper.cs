@@ -23,7 +23,7 @@ namespace Datadog.Trace.Util
         /// <summary>Throws an <see cref="ArgumentNullException"/> if <paramref name="argument"/> is null.</summary>
         /// <param name="argument">The reference type argument to validate as non-null.</param>
         /// <param name="paramName">The name of the parameter with which <paramref name="argument"/> corresponds.</param>
-        public static void ThrowArgumentNullExceptionIfNull<T>(T? argument, [CallerArgumentExpression("argument")] string? paramName = null)
+        public static void ThrowArgumentNullExceptionIfNull(object? argument, [CallerArgumentExpression("argument")] string? paramName = null)
         {
             if (argument is null)
             {
