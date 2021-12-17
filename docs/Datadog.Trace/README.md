@@ -171,7 +171,7 @@ In addition, some settings were marked obsolete in 2.0:
 
 ### Introduction of `ISpan` and `IScope`
 
-Version 2.0 makes the public `Scope` and `Span` classes internal. Instead, we now expose public `IScope` and `ISpan` interfaces and the `Tracer` API was updated accordingly. If you are currently using explicit types (instead of interring types with `var`), replace usages of `Scope` with `IScope` and `Span` with `ISpan`:
+Version 2.0 makes the public `Scope` and `Span` classes internal. Instead, we now expose public `IScope` and `ISpan` interfaces and the `Tracer` API was updated accordingly. If you are currently using explicit types (instead of inferring types with `var`), replace usages of `Scope` with `IScope` and `Span` with `ISpan`:
 
 ```csharp
 using Datadog.Trace;
