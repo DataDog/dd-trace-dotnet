@@ -3532,7 +3532,8 @@
       "id": "nfd-000-001",
       "name": "Detect common directory discovery scans",
       "tags": {
-        "type": "security_scanner"
+        "type": "security_scanner",
+        "category": "attack_attempt"
       },
       "conditions": [
         {
@@ -3765,7 +3766,8 @@
       "id": "nfd-000-002",
       "name": "Detect failed attempt to fetch readme files",
       "tags": {
-        "type": "security_scanner"
+        "type": "security_scanner",
+        "category": "attack_attempt"
       },
       "conditions": [
         {
@@ -3803,7 +3805,8 @@
       "id": "nfd-000-003",
       "name": "Detect failed attempt to fetch Java EE resource files",
       "tags": {
-        "type": "security_scanner"
+        "type": "security_scanner",
+        "category": "attack_attempt"
       },
       "conditions": [
         {
@@ -3841,7 +3844,8 @@
       "id": "nfd-000-004",
       "name": "Detect failed attempt to fetch code files",
       "tags": {
-        "type": "security_scanner"
+        "type": "security_scanner",
+        "category": "attack_attempt"
       },
       "conditions": [
         {
@@ -3879,7 +3883,8 @@
       "id": "nfd-000-005",
       "name": "Detect failed attempt to fetch source code archives",
       "tags": {
-        "type": "security_scanner"
+        "type": "security_scanner",
+        "category": "attack_attempt"
       },
       "conditions": [
         {
@@ -3917,7 +3922,8 @@
       "id": "nfd-000-006",
       "name": "Detect failed attempt to fetch sensitive files",
       "tags": {
-        "type": "security_scanner"
+        "type": "security_scanner",
+        "category": "attack_attempt"
       },
       "conditions": [
         {
@@ -3955,7 +3961,8 @@
       "id": "nfd-000-007",
       "name": "Detect failed attempt to fetch archives",
       "tags": {
-        "type": "security_scanner"
+        "type": "security_scanner",
+        "category": "attack_attempt"
       },
       "conditions": [
         {
@@ -3993,7 +4000,8 @@
       "id": "nfd-000-008",
       "name": "Detect failed attempt to trigger incorrect application behavior",
       "tags": {
-        "type": "security_scanner"
+        "type": "security_scanner",
+        "category": "attack_attempt"
       },
       "conditions": [
         {
@@ -4031,7 +4039,8 @@
       "id": "nfd-000-009",
       "name": "Detect failed attempt to leak the structure of the application",
       "tags": {
-        "type": "security_scanner"
+        "type": "security_scanner",
+        "category": "attack_attempt"
       },
       "conditions": [
         {
