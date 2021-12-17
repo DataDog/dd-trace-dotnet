@@ -54,7 +54,7 @@ namespace Datadog.Trace
         /// <param name="carrier">The headers to add to.</param>
         /// <param name="setter">The action that can set a header in the carrier.</param>
         /// <typeparam name="TCarrier">Type of header collection</typeparam>
-        public void Inject<TCarrier>(SpanContext context, TCarrier carrier, Action<TCarrier, string, string?> setter)
+        public void Inject<TCarrier>(SpanContext context, TCarrier carrier, Action<TCarrier, string, string> setter)
         {
             if (context == null) { ThrowHelper.ThrowArgumentNullException(nameof(context)); }
             if (carrier == null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
@@ -73,7 +73,7 @@ namespace Datadog.Trace
 
             if (samplingPriority != null)
             {
-                setter(carrier, HttpHeaderNames.SamplingPriority, samplingPriority?.ToString(_invariantCulture));
+                setter(carrier, HttpHeaderNames.SamplingPriority, samplingPriority.Value.ToString(_invariantCulture));
             }
         }
 
