@@ -20,7 +20,7 @@ partial class Build
         {
             List<string> projects = new();
             projects.Add(SharedDirectory.GlobFiles("**/Datadog.AutoInstrumentation.ManagedLoader.csproj").Single());
-            projects.Add(ProfilerDirectory.GlobFiles("**/Datadog.AutoInstrumentation.Profiler.Managed.csproj").Single());
+            projects.Add(ProfilerDirectory.GlobFiles("**/Datadog.Profiler.Managed.csproj").Single());
 
             // Build the shared managed loader
             DotNetBuild(s => s
@@ -41,7 +41,7 @@ partial class Build
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
-            var project = ProfilerDirectory.GlobFiles("**/Datadog.AutoInstrumentation.Profiler.Native.Windows.vcxproj").Single();
+            var project = ProfilerDirectory.GlobFiles("**/Datadog.Profiler.Native.Windows.vcxproj").Single();
 
             // run: msbuild /property:Configuration=${{matrix.configuration}} /property:Platform=${{matrix.platform}}  dd-continuous-profiler-dotnet\src\ProfilerEngine\Datadog.AutoInstrumentation.Profiler.Native.Windows\Datadog.AutoInstrumentation.Profiler.Native.Windows.WithTests.proj
             // If we're building for x64, build for x86 too
