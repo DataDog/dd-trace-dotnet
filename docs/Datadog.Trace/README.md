@@ -193,7 +193,7 @@ using (IScope scope = Tracer.Instance.StartActive("my-operation"))
 
 ### Simplification of the tracer interface
 
-In addition to returning `IScope`, the `Tracer.StartActive` method was simplified by replacing several parameters with a single `SpanCreationSettings`. We also have remove the possibility to override the service name from `Tracer.StartActive`. Instead, set `Span.ServiceName` after creating the span.
+In addition to returning `IScope`, the `Tracer.StartActive` method was simplified by replacing several parameters with a single `SpanCreationSettings`. We have also removed the possibility to override the service name from `Tracer.StartActive`. Instead, set `Span.ServiceName` after creating the span.
 
 
 ### Incorrect integration names are ignored
