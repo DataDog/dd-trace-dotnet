@@ -311,10 +311,10 @@ namespace Datadog.Trace
                     writer.WriteValue(instanceSettings.RouteTemplateResourceNamesEnabled);
 
                     writer.WritePropertyName("partialflush_enabled");
-                    writer.WriteValue(instanceSettings.PartialFlushEnabled);
+                    writer.WriteValue(instanceSettings.Exporter.PartialFlushEnabled);
 
                     writer.WritePropertyName("partialflush_minspans");
-                    writer.WriteValue(instanceSettings.PartialFlushMinSpans);
+                    writer.WriteValue(instanceSettings.Exporter.PartialFlushMinSpans);
 
                     writer.WritePropertyName("runtime_id");
                     writer.WriteValue(Tracer.RuntimeId);

@@ -51,8 +51,6 @@ namespace Datadog.Trace.Configuration
             HeaderTags = new ReadOnlyDictionary<string, string>(settings.HeaderTags);
             TracerMetricsEnabled = settings.TracerMetricsEnabled;
             RuntimeMetricsEnabled = settings.RuntimeMetricsEnabled;
-            PartialFlushEnabled = settings.PartialFlushEnabled;
-            PartialFlushMinSpans = settings.PartialFlushMinSpans;
             KafkaCreateConsumerScopeEnabled = settings.KafkaCreateConsumerScopeEnabled;
             StartupDiagnosticLogEnabled = settings.StartupDiagnosticLogEnabled;
             HttpClientExcludedUrlSubstrings = settings.HttpClientExcludedUrlSubstrings;
@@ -152,27 +150,10 @@ namespace Datadog.Trace.Configuration
         public IReadOnlyDictionary<string, string> HeaderTags { get; }
 
         /// <summary>
-        /// Gets the port where the DogStatsd server is listening for connections.
-        /// Default is <c>8125</c>.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.DogStatsdPort"/>
-        public int DogStatsdPort { get; }
-
-        /// <summary>
         /// Gets a value indicating whether internal metrics
         /// are enabled and sent to DogStatsd.
         /// </summary>
         public bool TracerMetricsEnabled { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether partial flush is enabled
-        /// </summary>
-        public bool PartialFlushEnabled { get; }
-
-        /// <summary>
-        /// Gets the minimum number of closed spans in a trace before it's partially flushed
-        /// </summary>
-        public int PartialFlushMinSpans { get; }
 
         /// <summary>
         /// Gets a value indicating whether a span context should be created on exiting a successful Kafka

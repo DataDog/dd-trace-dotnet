@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Threading;
 using Datadog.Trace;
-using Datadog.Trace.Configuration;
 
 namespace Samples.RateLimiter
 {
@@ -20,7 +19,7 @@ namespace Samples.RateLimiter
         {
             var numberOfSeconds = 5;
             var maxMilliseconds = numberOfSeconds * 1000;
-            var configuredLimitPerSecond = int.Parse(Environment.GetEnvironmentVariables()[ConfigurationKeys.MaxTracesSubmittedPerSecond].ToString());
+            var configuredLimitPerSecond = int.Parse(Environment.GetEnvironmentVariables()["DD_MAX_TRACES_PER_SECOND"].ToString());
 
             Console.WriteLine($"Ready to run for {numberOfSeconds} seconds.");
             Console.WriteLine($"Configured rate limit of {configuredLimitPerSecond}");
