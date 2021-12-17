@@ -63,7 +63,6 @@ namespace Datadog.Trace
             setter(carrier, HttpHeaderNames.TraceId, context.TraceId.ToString(_invariantCulture));
             setter(carrier, HttpHeaderNames.ParentId, context.SpanId.ToString(_invariantCulture));
 
-            // avoid writing origin header if not set, keeping the previous behavior.
             if (context.Origin != null)
             {
                 setter(carrier, HttpHeaderNames.Origin, context.Origin);
