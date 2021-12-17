@@ -100,6 +100,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("LoadFromGAC", "True")]
         [Theory]
         [InlineData("/Health/test&[$slice]")]
+        [InlineData]
         public Task TestSecurity(string url = DefaultAttackUrl)
         {
             // if blocking is enabled, request stops before reaching asp net mvc integrations intercepting before action methods, so no more spans are generated
