@@ -38,11 +38,6 @@ namespace Datadog.Trace
 
         private readonly TracerManager _tracerManager;
 
-        static Tracer()
-        {
-            TracingProcessManager.Initialize();
-        }
-
         /// <summary>
         /// Initializes a new instance of the <see cref="Tracer"/> class with default settings. Replaces the
         /// settings for all tracers in the application with the default settings.

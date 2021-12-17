@@ -60,7 +60,7 @@ namespace Datadog.Trace
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(TraceAgentMetadata.ProcessPath))
+                if (string.IsNullOrWhiteSpace(TraceAgentMetadata.ProcessPath) && string.IsNullOrWhiteSpace(DogStatsDMetadata.ProcessPath))
                 {
                     return;
                 }

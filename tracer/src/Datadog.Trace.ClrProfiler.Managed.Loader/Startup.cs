@@ -32,12 +32,33 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 StartupLogger.Log(ex, "Unable to register a callback to the CurrentDomain.AssemblyResolve event.");
             }
 
-            TryLoadManagedAssembly();
+            var runInAas = ReadBooleanEnvironmentVariable("DD_AZURE_APP_SERVICES", false);
+            if (!runInAas)
+            {
+                TryInvokeManagedMethod("Datadog.Trace.ClrProfiler.Instrumentation", "Initialize");
+                return;
+            }
+
+            // In AAS, the loader can be used to load the tracer, the traceagent only (if only custom tracing is enabled),
+            // dogstatsd or all of them.
+            var traceAgentPath = ReadEnvironmentVariable("DD_TRACE_AGENT_PATH");
+            var dogstatsdPath = ReadEnvironmentVariable("DD_DOGSTATSD_PATH");
+
+            if (traceAgentPath is not null || dogstatsdPath is not null)
+            {
+                TryInvokeManagedMethod("Datadog.Trace.TracingProcessManager", "Initialize");
+            }
+
+            var automaticTraceEnabled = ReadBooleanEnvironmentVariable("DD_TRACE_ENABLED", true);
+            if (automaticTraceEnabled)
+            {
+                TryInvokeManagedMethod("Datadog.Trace.ClrProfiler.Instrumentation", "Initialize");
+            }
         }
 
         internal static string ManagedProfilerDirectory { get; }
 
-        private static void TryLoadManagedAssembly()
+        private static void TryInvokeManagedMethod(string typeName, string methodName)
         {
             try
             {
@@ -46,14 +67,14 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 if (assembly != null)
                 {
                     // call method Datadog.Trace.ClrProfiler.Instrumentation.Initialize()
-                    var type = assembly.GetType("Datadog.Trace.ClrProfiler.Instrumentation", throwOnError: false);
-                    var method = type?.GetRuntimeMethod("Initialize", parameters: Type.EmptyTypes);
+                    var type = assembly.GetType(typeName, throwOnError: false);
+                    var method = type?.GetRuntimeMethod(methodName, parameters: Type.EmptyTypes);
                     method?.Invoke(obj: null, parameters: null);
                 }
             }
             catch (Exception ex)
             {
-                StartupLogger.Log(ex, "Error when loading managed assemblies.");
+                StartupLogger.Log(ex, "Error when invoking managed method: {0}.{1}", typeName, methodName);
             }
         }
 
@@ -69,6 +90,17 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             }
 
             return null;
+        }
+
+        private static bool ReadBooleanEnvironmentVariable(string key, bool defaultValue)
+        {
+            var value = ReadEnvironmentVariable(key);
+            return value switch
+            {
+                null => defaultValue,
+                "1" or "true" or "True" => true,
+                _ => false
+            };
         }
     }
 }
