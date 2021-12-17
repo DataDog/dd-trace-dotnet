@@ -1,10 +1,10 @@
 ﻿# dd-trace-dotnet/tracer
 
-This folder contains the sources of the Datadog .NET APM Tracer. It automatically instruments supported libraries out-of-the-box and also supports custom instrumentation to instrument your own code.
+This folder contains the source code for the Datadog .NET APM Tracer. The .NET Tracer automatically instruments supported libraries out-of-the-box and also supports custom instrumentation to instrument your own code.
 
 ## Installation and usage
 
-### Getting Started
+### Getting started
 
 Configure the Datadog Agent for APM [as described in our documentation](https://docs.datadoghq.com/tracing/setup_overview/setup/dotnet-core#configure-the-datadog-agent-for-apm). For automatic instrumentation, install and enable the .NET Tracer [as described in our documentation](https://docs.datadoghq.com/tracing/setup_overview/setup/dotnet-core/?tab=windows#install-the-tracer).
 
