@@ -111,6 +111,7 @@ using Datadog.Trace;
 var settings = TracerSettings.FromDefaultSources();
 // settings.AgentUri = "http://localhost:8126";        // <- Delete this line
 settings.Exporter.AgentUri = "http://localhost:8126";  // <- Add this line
+```
 
 ### Configure ADO.NET integrations individually
 
