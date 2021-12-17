@@ -22,7 +22,6 @@ partial class Build
         {
             var project = ProfilerDirectory.GlobFiles("**/Datadog.Profiler.Native.Windows.vcxproj").Single();
 
-            // run: msbuild /property:Configuration=${{matrix.configuration}} /property:Platform=${{matrix.platform}}  dd-continuous-profiler-dotnet\src\ProfilerEngine\Datadog.AutoInstrumentation.Profiler.Native.Windows\Datadog.AutoInstrumentation.Profiler.Native.Windows.WithTests.proj
             // If we're building for x64, build for x86 too
             var platforms =
                 Equals(TargetPlatform, MSBuildTargetPlatform.x64)
