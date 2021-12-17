@@ -21,18 +21,19 @@ namespace Datadog.Trace.Util.Http
         {
             var headersDic = new Dictionary<string, string[]>(request.Headers.Keys.Count);
             var headerKeys = request.Headers.Keys;
-            foreach (string k in headerKeys)
+            foreach (string originalKey in headerKeys)
             {
-                if (!k.Equals("cookie", System.StringComparison.OrdinalIgnoreCase))
+                var keyForDictionary = originalKey ?? string.Empty;
+                if (!keyForDictionary.Equals("cookie", System.StringComparison.OrdinalIgnoreCase))
                 {
-                    var key = k.ToLowerInvariant();
-                    if (!headersDic.ContainsKey(key))
+                    keyForDictionary = keyForDictionary.ToLowerInvariant();
+                    if (!headersDic.ContainsKey(keyForDictionary))
                     {
-                        headersDic.Add(key, request.Headers.GetValues(key));
+                        headersDic.Add(keyForDictionary, request.Headers.GetValues(originalKey));
                     }
                     else
                     {
-                        Log.Warning("Header {key} couldn't be added as argument to the waf", key);
+                        Log.Warning("Header {key} couldn't be added as argument to the waf", keyForDictionary);
                     }
                 }
             }
@@ -41,6 +42,7 @@ namespace Datadog.Trace.Util.Http
             for (var i = 0; i < request.Cookies.Count; i++)
             {
                 var cookie = request.Cookies[i];
+                var keyForDictionary = cookie.Name ?? string.Empty;
                 var keyExists = cookiesDic.TryGetValue(cookie.Name, out var value);
                 if (!keyExists)
                 {
@@ -53,20 +55,21 @@ namespace Datadog.Trace.Util.Http
             }
 
             var queryDic = new Dictionary<string, string[]>(request.QueryString.AllKeys.Length);
-            foreach (var k in request.QueryString.AllKeys)
+            foreach (var originalKey in request.QueryString.AllKeys)
             {
-                var values = request.QueryString.GetValues(k);
-                if (!queryDic.ContainsKey(k))
+                var values = request.QueryString.GetValues(originalKey);
+                var keyForDictionary = originalKey ?? string.Empty;
+                if (!queryDic.ContainsKey(keyForDictionary))
                 {
-                    queryDic.Add(k, values);
+                    queryDic.Add(keyForDictionary, values);
                 }
                 else
                 {
-                    Log.Warning("Query string {key} couldn't be added as argument to the waf", k);
+                    Log.Warning("Query string {key} couldn't be added as argument to the waf", keyForDictionary);
                 }
             }
 
-            var dict = new Dictionary<string, object>
+            var dict = new Dictionary<string, object>(capacity: 5)
             {
                 {
                     AddressesConstants.RequestMethod, request.HttpMethod
