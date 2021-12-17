@@ -39,6 +39,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         /// <param name="currentOperationContext">OperationContext instance</param>
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TRequestContext, TOperationContext>(TTarget instance, TRequestContext request, TOperationContext currentOperationContext)
+            where TRequestContext : IRequestContext
         {
             if (Tracer.Instance.Settings.DelayWcfInstrumentationEnabled)
             {
