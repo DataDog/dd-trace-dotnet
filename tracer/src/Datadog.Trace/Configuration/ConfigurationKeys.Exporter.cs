@@ -94,5 +94,15 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ExporterSettings.MetricsUnixDomainSocketPath"/>
         public const string MetricsUnixDomainSocketPath = "DD_DOGSTATSD_SOCKET";
+        
+        /// <summary>
+        /// Used to force the loader to start the tracer agent (in case automatic instrumentation is disabled)
+        /// </summary>
+        public const string AasEnableCustomTracing = "DD_AAS_ENABLE_CUSTOM_TRACING";
+
+        /// <summary>
+        /// Used to force the loader to start dogstatsd (in case automatic instrumentation is disabled)
+        /// </summary>
+        public const string AasEnableCustomMetrics = "DD_AAS_ENABLE_CUSTOM_METRICS";
     }
 }

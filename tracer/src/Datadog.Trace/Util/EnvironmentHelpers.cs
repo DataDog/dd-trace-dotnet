@@ -91,5 +91,22 @@ namespace Datadog.Trace.Util
 
             return new Dictionary<object, object>();
         }
+
+        /// <summary>
+        /// Safe wrapper around Environment.GetEnvironmentVariable
+        /// </summary>
+        /// <param name="key">Name of the environment variable to fetch</param>
+        /// <param name="defaultValue">Value to return in case of error</param>
+        /// <returns>The value of the environment variable, or the default value if an error occured</returns>
+        public static bool GetBooleanEnvironmentVariable(string key, bool defaultValue)
+        {
+            var value = GetEnvironmentVariable(key);
+            return value switch
+            {
+                null => defaultValue,
+                "1" or "true" or "True" or "TRUE" => true,
+                _ => false
+            };
+        }
     }
 }

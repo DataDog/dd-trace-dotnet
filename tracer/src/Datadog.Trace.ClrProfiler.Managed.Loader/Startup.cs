@@ -14,6 +14,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     public partial class Startup
     {
         private const string AssemblyName = "Datadog.Trace, Version=2.1.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
+        private const string AzureAppServicesKey = "DD_AZURE_APP_SERVICES";
+        private const string AasCustomTracingKey = "DD_AAS_ENABLE_CUSTOM_TRACING";
+        private const string AasCustomMetricsKey = "DD_AAS_ENABLE_CUSTOM_METRICS";
+        private const string TraceEnabledKey = "DD_TRACE_ENABLED";
 
         /// <summary>
         /// Initializes static members of the <see cref="Startup"/> class.
@@ -32,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 StartupLogger.Log(ex, "Unable to register a callback to the CurrentDomain.AssemblyResolve event.");
             }
 
-            var runInAas = ReadBooleanEnvironmentVariable("DD_AZURE_APP_SERVICES", false);
+            var runInAas = ReadBooleanEnvironmentVariable(AzureAppServicesKey, false);
             if (!runInAas)
             {
                 TryInvokeManagedMethod("Datadog.Trace.ClrProfiler.Instrumentation", "Initialize");
@@ -41,17 +45,19 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
             // In AAS, the loader can be used to load the tracer, the traceagent only (if only custom tracing is enabled),
             // dogstatsd or all of them.
-            var traceAgentPath = ReadEnvironmentVariable("DD_TRACE_AGENT_PATH");
-            var dogstatsdPath = ReadEnvironmentVariable("DD_DOGSTATSD_PATH");
+            var customTracingEnabled = ReadBooleanEnvironmentVariable(AasCustomTracingKey, false);
+            var needsDogStatsD = ReadBooleanEnvironmentVariable(AasCustomMetricsKey, false);
+            var automaticTraceEnabled = ReadBooleanEnvironmentVariable(TraceEnabledKey, true);
 
-            if (traceAgentPath is not null || dogstatsdPath is not null)
+            if (automaticTraceEnabled || customTracingEnabled || needsDogStatsD)
             {
-                TryInvokeManagedMethod("Datadog.Trace.TracingProcessManager", "Initialize");
+                StartupLogger.Log("Invoking managed method to start external processes.");
+                TryInvokeManagedMethod("Datadog.Trace.AgentProcessManager", "Initialize");
             }
 
-            var automaticTraceEnabled = ReadBooleanEnvironmentVariable("DD_TRACE_ENABLED", true);
             if (automaticTraceEnabled)
             {
+                StartupLogger.Log("Invoking managed tracer.");
                 TryInvokeManagedMethod("Datadog.Trace.ClrProfiler.Instrumentation", "Initialize");
             }
         }
@@ -98,7 +104,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             return value switch
             {
                 null => defaultValue,
-                "1" or "true" or "True" => true,
+                "1" or "true" or "True" or "TRUE" => true,
                 _ => false
             };
         }
