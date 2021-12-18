@@ -203,7 +203,8 @@ namespace Datadog.Trace.Tests
         {
             const ulong remoteParentSpanId = 1234567890123456789;
             SpanContext remoteParentSpanCtx = new SpanContext(traceId: null, spanId: remoteParentSpanId);
-            Scope scope = (Scope)_tracer.StartActive(operationName: "Operation Galactic Storm", parent: remoteParentSpanCtx);
+            var spanCreationSettings = new SpanCreationSettings() { Parent = remoteParentSpanCtx };
+            Scope scope = (Scope)_tracer.StartActive(operationName: "Operation Galactic Storm", spanCreationSettings);
             var span = scope.Span;
             using (scope)
             {
@@ -263,8 +264,9 @@ namespace Datadog.Trace.Tests
         {
             const ulong remoteParentSpanId = 1234567890123456789;
             SpanContext remoteParentSpanCtx = new SpanContext(traceId: null, spanId: remoteParentSpanId);
+            var spanCreationSettings = new SpanCreationSettings() { Parent = remoteParentSpanCtx };
 
-            using (Scope scope1 = (Scope)_tracer.StartActive(operationName: "Operation Root", parent: remoteParentSpanCtx))
+            using (Scope scope1 = (Scope)_tracer.StartActive(operationName: "Operation Root", spanCreationSettings))
             using (Span span2 = _tracer.StartSpan(operationName: "Operation Middle 1"))
             using (Scope scope3 = (Scope)_tracer.StartActive(operationName: "Operation Middle 2"))
             using (Span span4 = _tracer.StartSpan(operationName: "Operation Leaf"))

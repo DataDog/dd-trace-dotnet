@@ -34,8 +34,9 @@ namespace Datadog.Trace.Tests
 
             var distributedTraceContext = new SpanContext(traceId, parentSpanId);
             var secondTracer = TracerHelper.Create();
+            var spanCreationSettings = new SpanCreationSettings() { Parent = distributedTraceContext };
 
-            using (var scope = secondTracer.StartActive("manual.trace", parent: distributedTraceContext))
+            using (var scope = secondTracer.StartActive("manual.trace", spanCreationSettings))
             {
                 scope.Span.SetTag(Tags.SamplingPriority, samplingPriorityText);
                 Assert.True(scope.Span.TraceId == traceId, "Trace ID must match the parent trace.");
