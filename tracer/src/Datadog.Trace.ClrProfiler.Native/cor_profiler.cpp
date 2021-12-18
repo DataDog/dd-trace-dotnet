@@ -1233,7 +1233,7 @@ HRESULT CorProfiler::RewriteForDistributedTracing(const ModuleMetadata& module_m
                                               managed_profiler_assembly_property.pcbPublicKey));
         Logger::Info("pcbPublicKey: ");
         const auto ppbPublicKey = (BYTE*) managed_profiler_assembly_property.ppbPublicKey;
-        for (auto i = 0; i < managed_profiler_assembly_property.pcbPublicKey; i++)
+        for (ULONG i = 0; i < managed_profiler_assembly_property.pcbPublicKey; i++)
         {
             Logger::Info(" -> ", (int) ppbPublicKey[i]);
         }
