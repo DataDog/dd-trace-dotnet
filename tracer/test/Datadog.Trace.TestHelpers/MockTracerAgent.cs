@@ -153,7 +153,7 @@ namespace Datadog.Trace.TestHelpers
                        .Where(s => SpanFilters.All(shouldReturn => shouldReturn(s)) && s.Start > minimumOffset)
                        .ToImmutableList();
 
-                if (relevantSpans.Count(s => operationName == null || s.OperationName == operationName) >= count)
+                if (relevantSpans.Count(s => operationName == null || s.Name == operationName) >= count)
                 {
                     break;
                 }
@@ -182,7 +182,7 @@ namespace Datadog.Trace.TestHelpers
             {
                 relevantSpans =
                     relevantSpans
-                       .Where(s => operationName == null || s.OperationName == operationName)
+                       .Where(s => operationName == null || s.Name == operationName)
                        .ToImmutableList();
             }
 

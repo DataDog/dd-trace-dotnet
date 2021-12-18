@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
 
             foreach (var span in spans)
             {
-                Output.WriteLine($"Name:{span.OperationName} - TraceId:{span.TraceId} - SpanID:{span.SpanId} - ParentId:{span.ParentId} - Resource:{span.ResourceName}");
+                Output.WriteLine($"Name:{span.Name} - TraceId:{span.TraceId} - SpanID:{span.SpanId} - ParentId:{span.ParentId} - Resource:{span.Resource}");
             }
 
             spans.Should().HaveCount(expectedSpans);
@@ -57,41 +57,41 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
             // Using Single to make sure there is no orphaned span
             var rootSpan = spans.Single(s => s.ParentId == null);
 
-            rootSpan.OperationName.Should().Be("aspnet.request");
+            rootSpan.Name.Should().Be("aspnet.request");
             rootSpan.Tags.Should().ContainKey(Tags.RuntimeId);
 
             var runtimeId = rootSpan.Tags[Tags.RuntimeId];
             Guid.TryParse(runtimeId, out _).Should().BeTrue();
 
-            spans.Where(s => s.OperationName == "aspnet.request")
+            spans.Where(s => s.Name == "aspnet.request")
                  .Should()
                  .OnlyContain(s => s.Tags[Tags.RuntimeId] == runtimeId);
 
             var mvcSpan = spans.Single(s => s.ParentId == rootSpan.SpanId);
 
             mvcSpan.TraceId.Should().Be(rootSpan.TraceId);
-            mvcSpan.OperationName.Should().Be("aspnet-mvc.request");
+            mvcSpan.Name.Should().Be("aspnet-mvc.request");
 
             var manualSpan = spans.Single(s => s.ParentId == mvcSpan.SpanId);
 
             manualSpan.TraceId.Should().Be(rootSpan.TraceId);
-            manualSpan.OperationName.Should().Be("Manual");
+            manualSpan.Name.Should().Be("Manual");
 
             var manualInnerSpan = spans.Single(s => s.ParentId == manualSpan.SpanId);
 
             manualInnerSpan.TraceId.Should().Be(rootSpan.TraceId);
-            manualInnerSpan.OperationName.Should().Be("Manual-Inner");
+            manualInnerSpan.Name.Should().Be("Manual-Inner");
 
             var automaticOuterSpan = spans.Single(s => s.ParentId == manualInnerSpan.SpanId);
 
             automaticOuterSpan.TraceId.Should().Be(rootSpan.TraceId);
-            automaticOuterSpan.OperationName.Should().Be("Automatic-Outer");
+            automaticOuterSpan.Name.Should().Be("Automatic-Outer");
             automaticOuterSpan.Tags[Tags.RuntimeId].Should().Be(runtimeId);
 
             var httpSpan = spans.Single(s => s.ParentId == automaticOuterSpan.SpanId);
 
             httpSpan.TraceId.Should().Be(rootSpan.TraceId);
-            httpSpan.OperationName.Should().Be("http.request");
+            httpSpan.Name.Should().Be("http.request");
             httpSpan.Tags[Tags.RuntimeId].Should().Be(runtimeId);
         }
 
@@ -118,22 +118,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
                     samplingPriority = span.Metrics[Metrics.SamplingPriority].ToString();
                 }
 
-                Output.WriteLine($"{span.OperationName} - {span.TraceId} - {span.SpanId} - {span.ParentId} - {span.ResourceName} - {samplingPriority}");
+                Output.WriteLine($"{span.Name} - {span.TraceId} - {span.SpanId} - {span.ParentId} - {span.Resource} - {samplingPriority}");
             }
 
             // Validate the correct hierarchy of spans
-            var rootSpan = spans.Single(s => s.ParentId == null && s.OperationName == "aspnet.request");
+            var rootSpan = spans.Single(s => s.ParentId == null && s.Name == "aspnet.request");
             var mvcSpan = spans.Single(s => s.ParentId == rootSpan.SpanId);
             mvcSpan.TraceId.Should().Be(rootSpan.TraceId);
-            mvcSpan.OperationName.Should().Be("aspnet-mvc.request");
+            mvcSpan.Name.Should().Be("aspnet-mvc.request");
 
             // The manual span will be in the same trace when parentTrace=true,
             // or the start of a new trace when parentTrace=false
-            var manualSpan = spans.Single(s => s.OperationName == "Manual");
+            var manualSpan = spans.Single(s => s.Name == "Manual");
             var secondTraceId = parentTrace ? rootSpan.TraceId : manualSpan.TraceId;
 
             manualSpan.TraceId.Should().Be(secondTraceId);
-            manualSpan.OperationName.Should().Be("Manual");
+            manualSpan.Name.Should().Be("Manual");
 
             var nestedSpans = spans.Where(s => s.ParentId == manualSpan.SpanId).ToArray();
             nestedSpans.Should()
@@ -149,14 +149,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
             rootTraces.Should().HaveCount(parentTrace ? 1 : 2);
 
             // One HttpClient span should be UserKeep, the other UserReject
-            var httpSpans = spans.Where(s => s.OperationName == "http.request");
+            var httpSpans = spans.Where(s => s.Name == "http.request");
             httpSpans.Should()
                 .HaveCount(2)
                 .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == (double)SamplingPriority.UserKeep)
                 .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == (double)SamplingPriority.UserReject);
 
             // Check that the sampling priority got propagated to the target service
-            var targetSpans = spans.Where(s => s.OperationName == "aspnet.request" && s.ParentId != null);
+            var targetSpans = spans.Where(s => s.Name == "aspnet.request" && s.ParentId != null);
             targetSpans.Should()
                 .HaveCount(2)
                 .And.ContainSingle(s => s.Metrics[Metrics.SamplingPriority] == (double)SamplingPriority.UserKeep)
@@ -164,7 +164,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
 
             // The sampling priority for the root trace should be UserReject
             // Depending on the parentTrace argument, the root trace is either the manual one or the automatic one
-            var rootTrace = parentTrace ? rootTraces.Single() : rootTraces.First(s => s.OperationName == "Manual");
+            var rootTrace = parentTrace ? rootTraces.Single() : rootTraces.First(s => s.Name == "Manual");
             rootTrace.Metrics[Metrics.SamplingPriority].Should().Be((double)SamplingPriority.UserReject);
         }
 
@@ -190,11 +190,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
 
             spans.Should().HaveCount(expectedSpans);
 
-            var mvcSpan = spans.Single(s => s.OperationName == "aspnet-mvc.request");
+            var mvcSpan = spans.Single(s => s.Name == "aspnet-mvc.request");
 
             mvcSpan.Tags.Should().Contain(new KeyValuePair<string, string>("Test", "OK"));
 
-            var rootSpan = spans.Single(s => s.OperationName == "aspnet.request");
+            var rootSpan = spans.Single(s => s.Name == "aspnet.request");
 
             rootSpan.Metrics.Should().Contain(new KeyValuePair<string, double>(Metrics.SamplingPriority, (double)SamplingPriority.UserKeep));
 
@@ -202,9 +202,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
 
             result.Should().NotBeNull();
 
-            result["OperationName"].Value<string>().Should().Be(mvcSpan.OperationName);
-            result["ResourceName"].Value<string>().Should().Be(mvcSpan.ResourceName);
-            result["ServiceName"].Value<string>().Should().Be(mvcSpan.ServiceName);
+            result["OperationName"].Value<string>().Should().Be(mvcSpan.Name);
+            result["ResourceName"].Value<string>().Should().Be(mvcSpan.Resource);
+            result["ServiceName"].Value<string>().Should().Be(mvcSpan.Service);
         }
 
         private static bool VerifySpan(MockSpan span, bool parentTrace)
@@ -217,7 +217,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
             if (!parentTrace)
             {
                 // The root asp.net trace has an automatic priority
-                if (span.OperationName == "aspnet.request" && span.ResourceName == "GET /home/sampling")
+                if (span.Name == "aspnet.request" && span.Resource == "GET /home/sampling")
                 {
                     return span.Metrics[Metrics.SamplingPriority] == 1;
                 }

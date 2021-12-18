@@ -55,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                     foreach (var targetSpan in spans)
                     {
                         // check the name
-                        Assert.Equal("xunit.test", targetSpan.OperationName);
+                        Assert.Equal("xunit.test", targetSpan.Name);
 
                         // check the CIEnvironmentValues decoration.
                         CheckCIEnvironmentValuesDecoration(targetSpan);
@@ -173,9 +173,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 Console.Write($" {i++}) ");
                 Console.Write($"TraceId={span.TraceId}, ");
                 Console.Write($"SpanId={span.SpanId}, ");
-                Console.Write($"Service={span.ServiceName}, ");
-                Console.Write($"Name={span.OperationName}, ");
-                Console.Write($"Resource={span.ResourceName}, ");
+                Console.Write($"Service={span.Service}, ");
+                Console.Write($"Name={span.Name}, ");
+                Console.Write($"Resource={span.Resource}, ");
                 Console.Write($"Type={span.Type}, ");
                 Console.Write($"Error={span.Error}");
                 Console.WriteLine();

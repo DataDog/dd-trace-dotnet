@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 // note: ignore the INFO command because it's timing is unpredictable (on Linux?)
                 var spans = agent.WaitForSpans(11)
-                                 .Where(s => s.Type == "redis" && s.ResourceName != "INFO" && s.ResourceName != "ROLE" && s.ResourceName != "QUIT")
+                                 .Where(s => s.Type == "redis" && s.Resource != "INFO" && s.Resource != "ROLE" && s.Resource != "QUIT")
                                  .OrderBy(s => s.Start)
                                  .ToList();
 
@@ -41,8 +41,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    Assert.Equal("redis.command", span.OperationName);
-                    Assert.Equal("Samples.ServiceStack.Redis-redis", span.ServiceName);
+                    Assert.Equal("redis.command", span.Name);
+                    Assert.Equal("Samples.ServiceStack.Redis-redis", span.Service);
                     Assert.Equal(SpanTypes.Redis, span.Type);
                     Assert.Equal(host, DictionaryExtensions.GetValueOrDefault(span.Tags, "out.host"));
                     Assert.Equal(port, DictionaryExtensions.GetValueOrDefault(span.Tags, "out.port"));
@@ -77,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     var e2 = expected[i].Item2;
 
                     var a1 = i < spans.Count
-                                 ? spans[i].ResourceName
+                                 ? spans[i].Resource
                                  : string.Empty;
                     var a2 = i < spans.Count
                                  ? DictionaryExtensions.GetValueOrDefault(spans[i].Tags, "redis.raw_command")

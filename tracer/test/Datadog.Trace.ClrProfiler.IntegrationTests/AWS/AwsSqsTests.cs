@@ -140,9 +140,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             {
                 var span = new AwsSqsSpan
                            {
-                               OperationName = "sqs.request",
-                               ResourceName = $"SQS.{operationName}",
-                               ServiceName = "Samples.AWS.SQS-aws-sqs",
+                               Name = "sqs.request",
+                               Resource = $"SQS.{operationName}",
+                               Service = "Samples.AWS.SQS-aws-sqs",
                                Tags = new()
                                       {
                                           { "component", "aws-sdk" },

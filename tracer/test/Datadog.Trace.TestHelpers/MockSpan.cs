@@ -20,13 +20,13 @@ namespace Datadog.Trace.TestHelpers
         public ulong SpanId { get; set; }
 
         [Key("name")]
-        public string OperationName { get; set; }
+        public string Name { get; set; }
 
         [Key("resource")]
-        public string ResourceName { get; set; }
+        public string Resource { get; set; }
 
         [Key("service")]
-        public string ServiceName { get; set; }
+        public string Service { get; set; }
 
         [Key("type")]
         public string Type { get; set; }
@@ -51,7 +51,7 @@ namespace Datadog.Trace.TestHelpers
 
         public override string ToString()
         {
-            return $"{nameof(TraceId)}: {TraceId}, {nameof(SpanId)}: {SpanId}, {nameof(OperationName)}: {OperationName}, {nameof(ResourceName)}: {ResourceName}, {nameof(ServiceName)}: {ServiceName}";
+            return $"{nameof(TraceId)}: {TraceId}, {nameof(SpanId)}: {SpanId}, {nameof(Name)}: {Name}, {nameof(Resource)}: {Resource}, {nameof(Service)}: {Service}";
         }
     }
 }

@@ -26,9 +26,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // Expectations for all spans regardless of type should go here
             RegisterDelegateExpectation(ExpectBasicSpanDataExists);
 
-            RegisterCustomExpectation(nameof(OperationName), actual: s => s.OperationName, expected: OperationName);
-            RegisterCustomExpectation(nameof(ServiceName), actual: s => s.ServiceName, expected: ServiceName);
-            RegisterCustomExpectation(nameof(ResourceName), actual: s => s.ResourceName.TrimEnd(), expected: ResourceName);
+            RegisterCustomExpectation(nameof(OperationName), actual: s => s.Name, expected: OperationName);
+            RegisterCustomExpectation(nameof(ServiceName), actual: s => s.Service, expected: ServiceName);
+            RegisterCustomExpectation(nameof(ResourceName), actual: s => s.Resource.TrimEnd(), expected: ResourceName);
             RegisterCustomExpectation(nameof(Type), actual: s => s.Type, expected: Type);
 
             RegisterTagExpectation(
@@ -75,8 +75,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         /// <returns>Whether the span qualifies for this expectation.</returns>
         public virtual bool Matches(MockSpan span)
         {
-            return span.ServiceName == ServiceName
-                && span.OperationName == OperationName
+            return span.Service == ServiceName
+                && span.Name == OperationName
                 && span.Type == Type;
         }
 
@@ -193,7 +193,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private IEnumerable<string> ExpectBasicSpanDataExists(MockSpan span)
         {
-            if (string.IsNullOrWhiteSpace(span.ResourceName))
+            if (string.IsNullOrWhiteSpace(span.Resource))
             {
                 yield return "Resource must be set.";
             }
@@ -203,12 +203,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 yield return "Type must be set.";
             }
 
-            if (string.IsNullOrWhiteSpace(span.OperationName))
+            if (string.IsNullOrWhiteSpace(span.Name))
             {
                 yield return "Name must be set.";
             }
 
-            if (string.IsNullOrWhiteSpace(span.ServiceName))
+            if (string.IsNullOrWhiteSpace(span.Service))
             {
                 yield return "Service must be set.";
             }

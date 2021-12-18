@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
                         samplingPriority = span.Metrics[Metrics.SamplingPriority].ToString();
                     }
 
-                    Output.WriteLine($"{span.OperationName} - {span.TraceId} - {span.SpanId} - {span.ParentId} - {span.ResourceName} - {samplingPriority}");
+                    Output.WriteLine($"{span.Name} - {span.TraceId} - {span.SpanId} - {span.ParentId} - {span.Resource} - {samplingPriority}");
                 }
 
                 spans.Should().HaveCount(expectedSpanCount);
@@ -47,11 +47,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
                 // Check that no trace is orphaned
                 var rootSpan = spans.Single(s => s.ParentId == null);
 
-                rootSpan.OperationName.Should().Be("Manual");
+                rootSpan.Name.Should().Be("Manual");
                 rootSpan.Metrics.Should().ContainKey(Metrics.SamplingPriority);
                 rootSpan.Metrics[Metrics.SamplingPriority].Should().Be((double)SamplingPriority.UserReject);
 
-                var httpSpans = spans.Where(s => s.OperationName == "http.request").ToList();
+                var httpSpans = spans.Where(s => s.Name == "http.request").ToList();
 
                 // There is a difference in behavior between .NET Framework and .NET Core
                 // This happens because the version of the nuget is higher than the version of the automatic tracer
@@ -77,8 +77,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
 
                 outputLines.Should().HaveCount(2);
 
-                var firstHttpSpan = httpSpans.Single(s => s.ResourceName.EndsWith("/a"));
-                var secondHttpSpan = httpSpans.Single(s => s.ResourceName.EndsWith("/b"));
+                var firstHttpSpan = httpSpans.Single(s => s.Resource.EndsWith("/a"));
+                var secondHttpSpan = httpSpans.Single(s => s.Resource.EndsWith("/b"));
 
                 outputLines[0].Should().Be($"{firstHttpSpan.TraceId}/{firstHttpSpan.SpanId}/2");
                 outputLines[1].Should().Be($"{secondHttpSpan.TraceId}/{secondHttpSpan.SpanId}/-1");

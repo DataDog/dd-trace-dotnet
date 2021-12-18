@@ -417,14 +417,14 @@ namespace Datadog.Trace.TestHelpers
                 Assert.True(spans.Count == 2, $"expected two span, saw {spans.Count}");
             }
 
-            var aspnetSpan = spans.FirstOrDefault(s => s.OperationName == "aspnet.request");
-            var innerSpan = spans.FirstOrDefault(s => s.OperationName == expectedOperationName);
+            var aspnetSpan = spans.FirstOrDefault(s => s.Name == "aspnet.request");
+            var innerSpan = spans.FirstOrDefault(s => s.Name == expectedOperationName);
 
             Assert.NotNull(aspnetSpan);
-            Assert.Equal(expectedAspNetResourceName, aspnetSpan.ResourceName);
+            Assert.Equal(expectedAspNetResourceName, aspnetSpan.Resource);
 
             Assert.NotNull(innerSpan);
-            Assert.Equal(expectedResourceName, innerSpan.ResourceName);
+            Assert.Equal(expectedResourceName, innerSpan.Resource);
 
             foreach (var span in spans)
             {
@@ -494,7 +494,7 @@ namespace Datadog.Trace.TestHelpers
             var span = spans[0];
 
             // base properties
-            Assert.Equal(expectedResourceName, span.ResourceName);
+            Assert.Equal(expectedResourceName, span.Resource);
             Assert.Equal(expectedSpanType, span.Type);
 
             // errors

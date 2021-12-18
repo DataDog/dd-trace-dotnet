@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNet
 
             spans.Should().HaveCount(2);
 
-            var customSpan = spans.First(s => s.OperationName == "HttpHandler");
+            var customSpan = spans.First(s => s.Name == "HttpHandler");
 
             customSpan.ParentId.Should().NotBeNull("traces should be correlated");
         }

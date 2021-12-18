@@ -42,8 +42,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    Assert.Equal("couchbase.query", span.OperationName);
-                    Assert.Equal("Samples.Couchbase-couchbase", span.ServiceName);
+                    Assert.Equal("couchbase.query", span.Name);
+                    Assert.Equal("Samples.Couchbase-couchbase", span.Service);
                     Assert.Equal("db", span.Type);
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
                 }
@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     "Get", "Set", "Get", "Add", "Replace", "Delete"
                 };
 
-                ValidateSpans(spans, (span) => span.ResourceName, expected);
+                ValidateSpans(spans, (span) => span.Resource, expected);
             }
         }
     }

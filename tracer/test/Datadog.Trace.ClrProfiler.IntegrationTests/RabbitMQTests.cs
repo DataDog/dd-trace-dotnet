@@ -56,8 +56,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var spans = agent.WaitForSpans(expectedSpanCount); // Do not filter on operation name because they will vary depending on instrumented method
                 Assert.True(spans.Count >= expectedSpanCount, $"Expecting at least {expectedSpanCount} spans, only received {spans.Count}");
 
-                var rabbitmqSpans = spans.Where(span => string.Equals(span.ServiceName, ExpectedServiceName, StringComparison.OrdinalIgnoreCase));
-                var manualSpans = spans.Where(span => !string.Equals(span.ServiceName, ExpectedServiceName, StringComparison.OrdinalIgnoreCase));
+                var rabbitmqSpans = spans.Where(span => string.Equals(span.Service, ExpectedServiceName, StringComparison.OrdinalIgnoreCase));
+                var manualSpans = spans.Where(span => !string.Equals(span.Service, ExpectedServiceName, StringComparison.OrdinalIgnoreCase));
 
                 foreach (var span in rabbitmqSpans)
                 {
@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     Assert.Equal("RabbitMQ", span.Tags[Tags.InstrumentationName]);
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
                     Assert.NotNull(span.Tags[Tags.AmqpCommand]);
-                    Assert.Equal("amqp.command", span.OperationName);
+                    Assert.Equal("amqp.command", span.Name);
 
                     var command = span.Tags[Tags.AmqpCommand];
 
@@ -83,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                             // Enforce that the resource name has the following structure: "basic.publish [<default>|{actual exchangeName}] -> [<all>|<generated>|{actual routingKey}]"
                             string regexPattern = @"basic\.publish (?<exchangeName>\S*) -> (?<routingKey>\S*)";
-                            var match = Regex.Match(span.ResourceName, regexPattern);
+                            var match = Regex.Match(span.Resource, regexPattern);
                             Assert.True(match.Success);
 
                             var exchangeName = match.Groups["exchangeName"].Value;
@@ -123,7 +123,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                             // Enforce that the resource name has the following structure: "basic.get [<generated>|{actual queueName}]"
                             string regexPattern = @"basic\.get (?<queueName>\S*)";
-                            var match = Regex.Match(span.ResourceName, regexPattern);
+                            var match = Regex.Match(span.Resource, regexPattern);
                             Assert.True(match.Success);
 
                             var queueName = match.Groups["queueName"].Value;
@@ -154,7 +154,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                             // Enforce that the resource name has the following structure: "basic.deliver [<generated>|{actual queueName}]"
                             string regexPattern = @"basic\.deliver (?<queueName>\S*)";
-                            var match = Regex.Match(span.ResourceName, regexPattern);
+                            var match = Regex.Match(span.Resource, regexPattern);
                             // Assert.True(match.Success); // Enable once we can get the queue name included
 
                             var queueName = match.Groups["queueName"].Value;
@@ -168,7 +168,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     else
                     {
                         Assert.Equal(SpanKinds.Client, span.Tags[Tags.SpanKind]);
-                        Assert.Equal(command, span.ResourceName);
+                        Assert.Equal(command, span.Resource);
 
                         if (string.Equals(command, "exchange.declare", StringComparison.OrdinalIgnoreCase))
                         {
@@ -196,7 +196,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in manualSpans)
                 {
-                    Assert.Equal("Samples.RabbitMQ", span.ServiceName);
+                    Assert.Equal("Samples.RabbitMQ", span.Service);
                     Assert.Equal("1.0.0", span.Tags[Tags.Version]);
                 }
             }

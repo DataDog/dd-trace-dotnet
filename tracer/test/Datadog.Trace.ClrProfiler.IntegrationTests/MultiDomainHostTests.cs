@@ -118,18 +118,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    Assert.Equal(expectedOperationName, span.OperationName);
+                    Assert.Equal(expectedOperationName, span.Name);
                     Assert.Equal(SpanTypes.Http, span.Type);
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
 
                     // Register the service to our service<->span map
-                    if (!actualMap.TryGetValue(span.ServiceName, out int newCount))
+                    if (!actualMap.TryGetValue(span.Service, out int newCount))
                     {
                         newCount = 0;
                     }
 
                     newCount++;
-                    actualMap[span.ServiceName] = newCount;
+                    actualMap[span.Service] = newCount;
                 }
 
                 Assert.Equal(expectedMap, actualMap);
