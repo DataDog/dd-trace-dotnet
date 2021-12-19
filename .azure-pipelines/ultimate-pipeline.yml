@@ -891,7 +891,6 @@ stages:
       - bash: |
           matrix="{"
 
-          printenv
           declare -a explorationTestUseCases=()
           if [ $ISDEBUGGERCHANGED == "True" ]; then 
             explorationTestUseCases+=("debugger")
