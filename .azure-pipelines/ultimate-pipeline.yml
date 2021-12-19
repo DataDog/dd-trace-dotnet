@@ -894,11 +894,11 @@ stages:
 
           printenv
           declare -a explorationTestUseCases=()
-          if [ $isDebuggerChanged ]; then 
+          if [ $ISDEBUGGERCHANGED ]; then 
             explorationTestUseCases+=("debugger")
           fi
 
-          if [ $isProfilerChanged ]; then 
+          if [ $ISPROFILERCHANGED ]; then 
             explorationTestUseCases+=("continuousProfiler")
           fi
 
@@ -967,11 +967,11 @@ stages:
 
           printenv
           declare -a explorationTestUseCases=()
-          if [ $isDebuggerChanged ]; then 
+          if [ $ISDEBUGGERCHANGED ]; then 
             explorationTestUseCases+=("debugger")
           fi
 
-          if [ $isProfilerChanged ]; then 
+          if [ $ISPROFILERCHANGED ]; then 
             explorationTestUseCases+=("continuousProfiler")
           fi
 
