@@ -882,11 +882,12 @@ stages:
       jobs: [ExplorationTest]
 
   - job: generator
+    variables:
+      isProfilerChanged: $[stageDependencies.check_changes.check_changes_job.outputs['check_changes_step.IsProfilerChanged']]
+      isDebuggerChanged: $[stageDependencies.check_changes.check_changes_job.outputs['check_changes_step.IsDebuggerChanged']]
     pool:
       vmImage: ubuntu-18.04
-    variables:
-      isProfilerChanged: $(dependencies.check_changes).outputs['check_changes_job.check_changes_step.IsProfilerChanged']
-      IsDebuggerChanged: $(dependencies.check_changes).outputs['check_changes_job.check_changes_step.IsDebuggerChanged']
+
     steps:
       - bash: |
           matrix="{"
@@ -954,15 +955,12 @@ stages:
     parameters:
       jobs: [Test]
 
-            # for publishTargetFramework in "netcoreapp2.1" "netcoreapp3.1" "net5.0" "net6.0" ; do
-                # for explorationTestName in "eshoponweb" "cake" ; do
-
   - job: generator
+    variables:
+      isProfilerChanged: $[stageDependencies.check_changes.check_changes_job.outputs['check_changes_step.IsProfilerChanged']]
+      isDebuggerChanged: $[stageDependencies.check_changes.check_changes_job.outputs['check_changes_step.IsDebuggerChanged']]
     pool:
       vmImage: ubuntu-18.04
-    variables:
-      isProfilerChanged: $(dependencies.check_changes).outputs['check_changes_job.check_changes_step.IsProfilerChanged']
-      IsDebuggerChanged: $(dependencies.check_changes).outputs['check_changes_job.check_changes_step.IsDebuggerChanged']
     steps:
       - bash: |
           matrix="{"
