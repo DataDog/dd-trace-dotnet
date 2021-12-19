@@ -275,21 +275,20 @@ stages:
 
     steps:
     - powershell: |
-        $changes = $(git diff --name-only HEAD..origin/master).Split(' ')
+        $changes = $(git diff --name-only (git merge-base origin/master HEAD)).Split(' ')
         Write-Output "Total changed $($changes.Length) files"
 
-        $profilerChangePath = "profiler/src"
-        $debuggerChangePath = "tracer/src/Datadog.Trace.ClrProfiler.Native/Debugger"
+        function CheckChanges {
+          param ($variableName, $changeFilter)
+          
+          $isChanged = $false
+          foreach ($change in $changes) {if ($change -like "*$changeFilter*") { $isChanged = $true; break; }}
+          Write-Output "$variableName - $isChanged"
+          Write-Host "##vso[task.setvariable variable=$variableName;isOutput=true]$isChanged"
+        }
 
-        $isProfilerChanged = $true
-        foreach ($change in $changes) {if ($change -like "*$profilerChangePath*") { $isProfilerChanged = $true; break; }}
-        Write-Output "Profiler changed - $isProfilerChanged"
-        Write-Host "##vso[task.setvariable variable=IsProfilerChanged;isOutput=true]$isProfilerChanged"
-
-        $isDebuggerChanged = $false
-        foreach ($change in $changes) {if ($change -like "*$debuggerChangePath*") { $isDebuggerChanged = $true; break; }}
-        Write-Output "Debugger changed - $isDebuggerChanged"
-        Write-Host "##vso[task.setvariable variable=IsDebuggerChanged;isOutput=true]$isDebuggerChanged"
+        CheckChanges -variableName "IsProfilerChanged" -changeFilter "profiler/src"
+        CheckChanges -variableName "IsDebuggerChanged" -changeFilter "tracer/src"
       name: check_changes_step
 
 - stage: package_windows
