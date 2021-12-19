@@ -966,11 +966,11 @@ stages:
           matrix="{"
 
           declare -a explorationTestUseCases=()
-          if [ $ISDEBUGGERCHANGED  == "True"]; then 
+          if [ $ISDEBUGGERCHANGED == "True" ]; then 
             explorationTestUseCases+=("debugger")
           fi
 
-          if [ $ISPROFILERCHANGED  == "True"]; then 
+          if [ $ISPROFILERCHANGED == "True" ]; then 
             explorationTestUseCases+=("continuousProfiler")
           fi
 
