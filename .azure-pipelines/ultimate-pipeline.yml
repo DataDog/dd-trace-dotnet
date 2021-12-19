@@ -873,7 +873,7 @@ stages:
             command: "CheckBuildLogsForErrors"
 
 - stage: exploration_tests_windows
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), or(eq(dependencies.check_changes.outputs['check_changes_job.check_changes_step.IsProfilerChanged'], 'True'), eq(dependencies.check_changes.outputs['check_changes_job.check_changes_step.IsDebuggerChanged'], 'True')))
+  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), or(eq(dependencies.check_changes.outputs['check_changes_job.check_changes_step.IsProfilerChanged'],"True"), eq(dependencies.check_changes.outputs['check_changes_job.check_changes_step.IsDebuggerChanged'], 'True')))
   dependsOn: [build_windows, check_changes]
 
   jobs:
@@ -884,6 +884,9 @@ stages:
   - job: generator
     pool:
       vmImage: ubuntu-18.04
+    variables:
+      isProfilerChanged: $(dependencies.check_changes).outputs['check_changes_job.check_changes_step.IsProfilerChanged']
+      IsDebuggerChanged: $(dependencies.check_changes).outputs['check_changes_job.check_changes_step.IsDebuggerChanged']
     steps:
       - bash: |
           matrix="{"
@@ -928,7 +931,6 @@ stages:
         includeX86: true
     - template: steps/restore-working-directory.yml
 
-
     - script: tracer\build.cmd SetupExplorationTests -ExplorationTestUseCase $(explorationTestUseCase) -ExplorationTestName $(explorationTestName)
       displayName: RunExplorationTest
 
@@ -958,6 +960,9 @@ stages:
   - job: generator
     pool:
       vmImage: ubuntu-18.04
+    variables:
+      isProfilerChanged: $(dependencies.check_changes).outputs['check_changes_job.check_changes_step.IsProfilerChanged']
+      IsDebuggerChanged: $(dependencies.check_changes).outputs['check_changes_job.check_changes_step.IsDebuggerChanged']
     steps:
       - bash: |
           matrix="{"
