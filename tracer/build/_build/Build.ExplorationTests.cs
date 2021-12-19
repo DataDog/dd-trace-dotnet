@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Amazon.SimpleSystemsManagement.Model;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.Tools.DotNet;
@@ -86,7 +85,7 @@ partial class Build
     {
         if (Framework != null && !testDescription.IsFrameworkSupported(Framework))
         {
-            throw new InvalidActivationException($"This framework '{Framework}' is not listed in the project's target frameworks of {testDescription.Name}");
+            throw new InvalidOperationException($"This framework '{Framework}' is not listed in the project's target frameworks of {testDescription.Name}");
         }
 
         var depth = testDescription.IsGitShallowCloneSupported ? "--depth 1" : "";
@@ -181,7 +180,7 @@ partial class Build
 
         if (Framework != null && !testDescription.IsFrameworkSupported(Framework))
         {
-            throw new InvalidActivationException($"This framework '{Framework}' is not listed in the project's target frameworks of {testDescription.Name}");
+            throw new InvalidOperationException($"This framework '{Framework}' is not listed in the project's target frameworks of {testDescription.Name}");
         }
 
         DotNetTest(
