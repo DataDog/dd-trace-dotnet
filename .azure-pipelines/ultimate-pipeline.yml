@@ -873,7 +873,7 @@ stages:
             command: "CheckBuildLogsForErrors"
 
 - stage: exploration_tests_windows
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), or(eq(dependencies.check_changes.outputs['check_changes_job.check_changes_step.IsProfilerChanged'],"True"), eq(dependencies.check_changes.outputs['check_changes_job.check_changes_step.IsDebuggerChanged'], 'True')))
+  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), or(eq(dependencies.check_changes.outputs['check_changes_job.check_changes_step.IsProfilerChanged'],'True'), eq(dependencies.check_changes.outputs['check_changes_job.check_changes_step.IsDebuggerChanged'], 'True')))
   dependsOn: [build_windows, check_changes]
 
   jobs:
