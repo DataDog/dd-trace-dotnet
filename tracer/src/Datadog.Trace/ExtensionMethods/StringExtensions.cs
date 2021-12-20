@@ -171,5 +171,37 @@ namespace Datadog.Trace.ExtensionMethods
             normalizedTagName = sb.ToString();
             return true;
         }
+
+        /// <summary>
+        /// Compact whitespaces in a string
+        /// </summary>
+        /// <param name="value">String instance</param>
+        /// <returns>Whitespace compacted string instance</returns>
+        public static string CompactWhiteSpace(this string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return value;
+            }
+
+            var sb = StringBuilderCache.Acquire(value.Length);
+            for (var i = 0; i < value.Length; i++)
+            {
+                var nextWhiteSpace = value.IndexOf(' ', i);
+                if (nextWhiteSpace != -1)
+                {
+                    var count = nextWhiteSpace - i;
+                    sb.Append(value, i, count > 0 ? count + 1 : count);
+                    i = nextWhiteSpace;
+                }
+                else
+                {
+                    sb.Append(value, i, value.Length - i);
+                    i = value.Length;
+                }
+            }
+
+            return StringBuilderCache.GetStringAndRelease(sb);
+        }
     }
 }
