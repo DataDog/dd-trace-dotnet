@@ -22,9 +22,6 @@ namespace Benchmarks.Trace
         private static readonly Logger Logger;
         private static readonly Tracer LogInjectionTracer;
 
-        [Params(1, 10, 100)]
-        public static int N { get; set; }
-
         static SerilogBenchmark()
         {
             LogProvider.SetCurrentLogProvider(new NoOpSerilogLogProvider());
@@ -56,7 +53,7 @@ namespace Benchmarks.Trace
             {
                 using (LogInjectionTracer.StartActive("Child"))
                 {
-                    for (int i = 0; i < N; i++)
+                    for (int i = 0; i < 10; i++)
                     {
                         var logEvent = new LogEvent(
                             DateTimeOffset.Now,
