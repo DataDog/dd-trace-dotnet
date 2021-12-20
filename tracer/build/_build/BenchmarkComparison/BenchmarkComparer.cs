@@ -1,4 +1,4 @@
-﻿// <copyright file="BenchmarkComparer.cs" company="Datadog">
+// <copyright file="BenchmarkComparer.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -75,9 +75,20 @@ namespace BenchmarkComparison
                    })
                   .ToList();
 
-            static string GetName(Benchmark benchmark) => benchmark.DisplayInfo.Contains("Toolchain=net472")
-                                                       ? $"{benchmark.FullName}-net472"
-                                                       : $"{benchmark.FullName}-netcoreapp3.1";
+
+            static string GetName(Benchmark benchmark)
+            {
+                var name = benchmark.FullName;
+
+                if (!string.IsNullOrEmpty(benchmark.Parameters))
+                {
+                    name += $"-{benchmark.Parameters}";
+                }
+
+                name += $"-{(benchmark.DisplayInfo.Contains("Toolchain=net472") ? "net472" : "netcoreapp3.1")}";
+
+                return name;
+            }
 
             static T GetValueOrDefault<T>(Dictionary<string, T> dict, string key)
                 => dict.TryGetValue(key, out var value) ? value : default;
