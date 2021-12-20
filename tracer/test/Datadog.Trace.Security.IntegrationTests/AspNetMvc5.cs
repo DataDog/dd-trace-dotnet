@@ -6,9 +6,7 @@
 #if NET461
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
@@ -98,12 +96,14 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("LoadFromGAC", "True")]
-        [Fact]
-        public Task TestSecurity()
+        [Theory]
+        [InlineData("/Health/?test&[$slice]")]
+        [InlineData]
+        public Task TestSecurity(string url = DefaultAttackUrl)
         {
             // if blocking is enabled, request stops before reaching asp net mvc integrations intercepting before action methods, so no more spans are generated
             // NOTE: by integrating the latest version of the WAF, blocking was disabled, as it does not support blocking yet
-            return TestBlockedRequestAsync(_iisFixture.Agent, _enableSecurity, _enableSecurity && _blockingEnabled ? HttpStatusCode.OK : HttpStatusCode.OK, _enableSecurity && _blockingEnabled ? 10 : 10, new Action<TestHelpers.MockTracerAgent.Span>[]
+            return TestBlockedRequestAsync(_iisFixture.Agent, _enableSecurity, _enableSecurity && _blockingEnabled ? HttpStatusCode.OK : HttpStatusCode.OK, _enableSecurity && _blockingEnabled ? 10 : 10, url: url, assertOnSpans: new Action<TestHelpers.MockTracerAgent.Span>[]
              {
                  s => Assert.Matches("aspnet(-mvc)?.request", s.Name),
                  s => Assert.Equal("sample", s.Service),

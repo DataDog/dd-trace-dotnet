@@ -1,5 +1,38 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
+## [Release 2.0.1](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.0.1)
+
+## Changes
+* Add README for Datadog.Trace NuGet package (#2069)
+* Re-implement NLog logs injection (#2096)
+* Remove LockSamplingPriority (#2150)
+* Re-implement Serilog logs injection (#2152)
+* Reset the AsyncLocal DistributedValue when starting an automatic instrumentation continuation (#2156)
+* [Redo] Fix logs injection to work correctly when there's a version mismatch (#2161)
+* Revert "Disable version conflict fix (#2155)" (#2162)
+* Isolate transport settings (#2166)
+* Fix parser null ref and upgrade rule-set (#2167)
+* [AppSec] Handle null keys when reading headers, cookies and query strings (#2171)
+* Synchronize runtime id across versions of the tracer (#2172)
+* Fix build paths in README (#2175)
+* Minor improvements (#2177)
+* Include missing properties on Exporter Settings (#2179)
+* [AppSec] Update rules file 1.2.4 (#2190)
+* [2.0] Simplify Tracer.StartActive overloads to match ITracer.StartActive overloads (#2176)
+* Changes types visibility (#2185)
+
+## Fixes
+* [2.0] - Skip loader injection on profiler managed loader (#2196)
+
+## Build / Test
+* [appsec] throughput tests (#2160)
+* Rename profiler projects (#2187)
+* Modify tests to use Tracer.StartActive(string, SpanCreationSettings) (#2191)
+* Fix warnings in Nuke (#2174)
+* * Properly disable parallelization in AzureAppServicesMetadataTests (#2173)
+
+[Changes since 1.31.0](https://github.com/DataDog/dd-trace-dotnet/compare/v1.31.0...v2.0.1)
+
 ## [Release 2.0.0-prerelease](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.0.0-prerelease)
 
 ## Changes
