@@ -77,6 +77,7 @@ const WSTRING skip_assemblies[]{WStr("mscorlib"),
                                 WStr("Microsoft.AspNetCore.Razor.Language"),
                                 WStr("Microsoft.AspNetCore.Mvc.RazorPages"),
                                 WStr("Anonymously Hosted DynamicMethods Assembly"),
+                                WStr("Datadog.AutoInstrumentation.ManagedLoader"),
                                 WStr("ISymWrapper")};
 
 const WSTRING mscorlib_assemblyName = WStr("mscorlib");
