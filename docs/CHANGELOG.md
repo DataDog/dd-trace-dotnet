@@ -17,19 +17,19 @@
 * Fix build paths in README (#2175)
 * Minor improvements (#2177)
 * Include missing properties on Exporter Settings (#2179)
-* Update rules file 1.2.4 (#2190)
-
-## Fixes
-* Properly disable parallelization in AzureAppServicesMetadataTests (#2173)
-* Fix warnings in Nuke (#2174)
+* [AppSec] Update rules file 1.2.4 (#2190)
 * [2.0] Simplify Tracer.StartActive overloads to match ITracer.StartActive overloads (#2176)
 * Changes types visibility (#2185)
+
+## Fixes
 * [2.0] - Skip loader injection on profiler managed loader (#2196)
 
 ## Build / Test
 * [appsec] throughput tests (#2160)
 * Rename profiler projects (#2187)
 * Modify tests to use Tracer.StartActive(string, SpanCreationSettings) (#2191)
+* Fix warnings in Nuke (#2174)
+* * Properly disable parallelization in AzureAppServicesMetadataTests (#2173)
 
 [Changes since 1.31.0](https://github.com/DataDog/dd-trace-dotnet/compare/v1.31.0...v2.0.1)
 
