@@ -5,9 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.AppSec
@@ -22,7 +19,8 @@ namespace Datadog.Trace.AppSec
             Rules = source?.GetString(ConfigurationKeys.AppSecRules);
             CustomIpHeader = source?.GetString(ConfigurationKeys.AppSecCustomIpHeader);
             var extraHeaders = source?.GetString(ConfigurationKeys.AppSecExtraHeaders);
-            ExtraHeaders = !string.IsNullOrEmpty(extraHeaders) ? extraHeaders.Split(',') : new string[0];
+            ExtraHeaders = !string.IsNullOrEmpty(extraHeaders) ? extraHeaders.Split(',') : Array.Empty<string>();
+            KeepTraces = source?.GetBool(ConfigurationKeys.AppSecKeepTraces) ?? true;
         }
 
         public bool Enabled { get; set; }
@@ -37,6 +35,8 @@ namespace Datadog.Trace.AppSec
         public bool BlockingEnabled { get; }
 
         public string Rules { get; }
+
+        public bool KeepTraces { get; }
 
         public static SecuritySettings FromDefaultSources()
         {
