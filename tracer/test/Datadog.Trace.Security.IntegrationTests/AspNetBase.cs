@@ -4,25 +4,24 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.AppSec.EventModel;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
+    [UsesVerify]
     public class AspNetBase : TestHelper
     {
         protected const string DefaultAttackUrl = "/Health/?arg=[$slice]";
+        private readonly string _testName;
         private readonly HttpClient _httpClient;
         private readonly string _shutdownPath;
         private int _httpPort;
@@ -32,6 +31,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath, string samplesDir = null)
             : base(sampleName, samplesDir ?? "test/test-applications/security", outputHelper)
         {
+            _testName = "Security." + sampleName;
             _httpClient = new HttpClient();
             _shutdownPath = shutdownPath;
 
@@ -82,7 +82,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             _agent?.Dispose();
         }
 
-        public async Task TestBlockedRequestAsync(MockTracerAgent agent, bool enableSecurity, HttpStatusCode expectedStatusCode, int expectedSpans, IEnumerable<Action<MockTracerAgent.Span>> assertOnSpans, string url)
+        public async Task TestBlockedRequestAsync(MockTracerAgent agent, bool enableSecurity, bool enableBlocking, HttpStatusCode expectedStatusCode, int expectedSpans, string url)
         {
             Func<Task<(HttpStatusCode StatusCode, string ResponseText)>> attack = () => SubmitRequest(url);
             var resultRequests = await Task.WhenAll(attack(), attack(), attack(), attack(), attack());
@@ -90,58 +90,18 @@ namespace Datadog.Trace.Security.IntegrationTests
             var spans = agent.WaitForSpans(expectedSpans);
             Assert.Equal(expectedSpans, spans.Count);
 
-            var expectedAppSecEvents = enableSecurity ? 5 : 0;
-            var actualAppSecEvents = 0;
+            var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
 
-            var spanIds = spans.Select(s => s.SpanId);
+            var settings =
+                UseShortParameters() ?
+                    VerifyHelper.GetSpanVerifierSettings(sanitisedUrl) :
+                    VerifyHelper.GetSpanVerifierSettings(enableSecurity, enableBlocking, (int)expectedStatusCode, sanitisedUrl);
 
-            foreach (var span in spans)
-            {
-                // not all tags will have security events, only the route ones
-                var gotTag = span.Tags.TryGetValue(Tags.AppSecJson, out var json);
-                if (gotTag)
-                {
-                    actualAppSecEvents++;
-
-                    // we only really care about these asserts if we're on an appsec span
-                    foreach (var assert in assertOnSpans)
-                    {
-                        assert(span);
-                    }
-
-                    var jsonObj = JsonConvert.DeserializeObject<AppSecJson>(json);
-
-                    var item = jsonObj.Triggers.FirstOrDefault();
-                    Assert.NotNull(item);
-
-                    var attackEvent = item;
-                    var shouldBlock = expectedStatusCode == HttpStatusCode.Forbidden;
-                    Assert.Equal("Finds basic MongoDB SQL injection attempts", attackEvent.Rule.Name);
-
-                    // presences of json tag implies span should carry other security tags
-                    var securityTags = new Dictionary<string, string>()
-                    {
-                        { "appsec.event", "true" },
-                        { "_dd.origin", "appsec" },
-                        { "http.useragent", "Mistake Not..." },
-                        { "actor.ip", "86.242.244.246" },
-                        { "http.request.headers.host", $"localhost:{_httpPort}" },
-                        { "http.request.headers.x-forwarded", "86.242.244.246" },
-                        { "http.request.headers.user-agent", "Mistake Not..." },
-                    };
-                    foreach (var kvp in securityTags)
-                    {
-                        Assert.True(span.Tags.TryGetValue(kvp.Key, out var tagValue), $"The tag {kvp.Key} was not found");
-                        Assert.Equal(kvp.Value, tagValue);
-                    }
-                }
-            }
-
-            // asserts on request status code
-            Assert.All(resultRequests, r => Assert.Equal(r.StatusCode, expectedStatusCode));
-
-            // asserts on the security events
-            Assert.Equal(expectedAppSecEvents, actualAppSecEvents);
+            // Overriding the type name here as we have multiple test classes in the file
+            // Ensures that we get nice file nesting in Solution Explorer
+            await Verifier.Verify(spans, settings)
+                          .UseMethodName("_")
+                          .UseTypeName(GetTestName());
         }
 
         protected void SetHttpPort(int httpPort)
@@ -155,6 +115,16 @@ namespace Datadog.Trace.Security.IntegrationTests
             var response = await _httpClient.GetAsync(url);
             var responseText = await response.Content.ReadAsStringAsync();
             return (response.StatusCode, responseText);
+        }
+
+        protected virtual string GetTestName()
+        {
+            return _testName;
+        }
+
+        protected virtual bool UseShortParameters()
+        {
+            return false;
         }
 
         private async Task StartSample(int traceAgentPort, string arguments, int? aspNetCorePort = null, string packageVersion = "", int? statsdPort = null, string framework = "", string path = "/Home", bool enableSecurity = true, bool enableBlocking = true)

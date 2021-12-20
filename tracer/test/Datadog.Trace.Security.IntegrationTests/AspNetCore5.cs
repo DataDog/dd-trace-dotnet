@@ -5,7 +5,7 @@
 
 // The conditions looks weird, but it seems like _OR_GREATER is not supported yet in all environments
 // We can trim all the additional conditions when this is fixed
-#if NETCOREAPP3_0 || NETCOREAPP3_1 || NET5_0
+#if NETCOREAPP3_0 || NETCOREAPP3_1 || NET5_0 || NET6_0
 
 using System;
 using System.Collections.Generic;
@@ -36,25 +36,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         public async Task TestSecurity(bool enableSecurity, bool enableBlocking, HttpStatusCode expectedStatusCode, string url = DefaultAttackUrl)
         {
             var agent = await RunOnSelfHosted(enableSecurity, enableBlocking);
-            await TestBlockedRequestAsync(agent, enableSecurity, expectedStatusCode, 5, url: url, assertOnSpans: new Action<TestHelpers.MockTracerAgent.Span>[]
-            {
-                 s => Assert.Equal("aspnet_core.request", s.Name),
-                 s  => Assert.Equal("Samples.AspNetCore5", s.Service),
-                 s  =>  Assert.Equal("web", s.Type),
-                 s =>
-                 {
-                    var securityTags = new Dictionary<string, string>
-                    {
-                        { "network.client.ip", "127.0.0.1" },
-                        { "http.response.headers.content-type", "text/plain; charset=utf-8" },
-                    };
-                    foreach (var kvp in securityTags)
-                    {
-                        Assert.True(s.Tags.TryGetValue(kvp.Key, out var tagValue), $"The tag {kvp.Key} was not found");
-                        Assert.Equal(kvp.Value, tagValue);
-                    }
-                 },
-            });
+            await TestBlockedRequestAsync(agent, enableSecurity, enableBlocking, expectedStatusCode, 5, url: url);
         }
     }
 }
