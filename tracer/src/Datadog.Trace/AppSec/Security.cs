@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -38,7 +37,6 @@ namespace Datadog.Trace.AppSec
         private readonly IWaf _waf;
         private readonly InstrumentationGateway _instrumentationGateway;
         private readonly SecuritySettings _settings;
-        private readonly ConcurrentDictionary<Guid, Action> toExecute = new();
 
         static Security()
         {
@@ -92,7 +90,7 @@ namespace Datadog.Trace.AppSec
                 _settings.Enabled = _settings.Enabled && AreArchitectureAndOsSupported();
                 if (_settings.Enabled)
                 {
-                    _waf = waf ?? Waf.Waf.Initialize(_settings.Rules);
+                    _waf = waf ?? Waf.Waf.Create(_settings.Rules);
                     if (_waf != null)
                     {
                         _instrumentationGateway.InstrumentationGatewayEvent += InstrumentationGatewayInstrumentationGatewayEvent;
@@ -179,9 +177,9 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        private static void AddHeaderTags(Span span, IHeadersCollection headers, Dictionary<string, string> headersToCollect)
+        private static void AddHeaderTags(Span span, IHeadersCollection headers, Dictionary<string, string> headersToCollect, string prefix)
         {
-            var tags = SpanContextPropagator.Instance.ExtractHeaderTags(headers, headersToCollect, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+            var tags = SpanContextPropagator.Instance.ExtractHeaderTags(headers, headersToCollect, defaultTagPrefix: prefix);
             foreach (var tag in tags)
             {
                 span.SetTag(tag.Key, tag.Value);
@@ -229,14 +227,14 @@ namespace Datadog.Trace.AppSec
             span.SetTag(Tags.ActorIp, ipInfo.IpAddress);
 
             var headers = transport.GetRequestHeaders();
-            AddHeaderTags(span, headers, RequestHeaders);
+            AddHeaderTags(span, headers, RequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
 
             transport.OnCompleted(() =>
             {
                 TryAddEndPoint(span);
 
                 var headers = transport.GetResponseHeaders();
-                AddHeaderTags(span, headers, ResponseHeaders);
+                AddHeaderTags(span, headers, ResponseHeaders, SpanContextPropagator.HttpResponseHeadersTagPrefix);
             });
         }
 

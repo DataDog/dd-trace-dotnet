@@ -22,6 +22,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 {
     public class AspNetBase : TestHelper
     {
+        protected const string DefaultAttackUrl = "/Health/?arg=[$slice]";
         private readonly HttpClient _httpClient;
         private readonly string _shutdownPath;
         private int _httpPort;
@@ -33,6 +34,10 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             _httpClient = new HttpClient();
             _shutdownPath = shutdownPath;
+
+            // adding these header so we can later assert it was collect properly
+            _httpClient.DefaultRequestHeaders.Add("X-FORWARDED", "86.242.244.246");
+            _httpClient.DefaultRequestHeaders.Add("user-agent", "Mistake Not...");
         }
 
         public async Task<MockTracerAgent> RunOnSelfHosted(bool enableSecurity, bool enableBlocking)
@@ -77,13 +82,13 @@ namespace Datadog.Trace.Security.IntegrationTests
             _agent?.Dispose();
         }
 
-        public async Task TestBlockedRequestAsync(MockTracerAgent agent, bool enableSecurity, HttpStatusCode expectedStatusCode, int expectedSpans, IEnumerable<Action<MockTracerAgent.Span>> assertOnSpans)
+        public async Task TestBlockedRequestAsync(MockTracerAgent agent, bool enableSecurity, HttpStatusCode expectedStatusCode, int expectedSpans, IEnumerable<Action<MockTracerAgent.Span>> assertOnSpans, string url)
         {
-            Func<Task<(HttpStatusCode StatusCode, string ResponseText)>> attack = () => SubmitRequest("/Health/?arg=[$slice]");
+            Func<Task<(HttpStatusCode StatusCode, string ResponseText)>> attack = () => SubmitRequest(url);
             var resultRequests = await Task.WhenAll(attack(), attack(), attack(), attack(), attack());
             agent.SpanFilters.Add(s => s.Tags["http.url"].IndexOf("Health", StringComparison.InvariantCultureIgnoreCase) > 0);
             var spans = agent.WaitForSpans(expectedSpans);
-            Assert.Equal(expectedSpans, spans.Count());
+            Assert.Equal(expectedSpans, spans.Count);
 
             var expectedAppSecEvents = enableSecurity ? 5 : 0;
             var actualAppSecEvents = 0;
@@ -92,16 +97,17 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             foreach (var span in spans)
             {
-                foreach (var assert in assertOnSpans)
-                {
-                    assert(span);
-                }
-
                 // not all tags will have security events, only the route ones
                 var gotTag = span.Tags.TryGetValue(Tags.AppSecJson, out var json);
                 if (gotTag)
                 {
                     actualAppSecEvents++;
+
+                    // we only really care about these asserts if we're on an appsec span
+                    foreach (var assert in assertOnSpans)
+                    {
+                        assert(span);
+                    }
 
                     var jsonObj = JsonConvert.DeserializeObject<AppSecJson>(json);
 
@@ -111,6 +117,23 @@ namespace Datadog.Trace.Security.IntegrationTests
                     var attackEvent = item;
                     var shouldBlock = expectedStatusCode == HttpStatusCode.Forbidden;
                     Assert.Equal("Finds basic MongoDB SQL injection attempts", attackEvent.Rule.Name);
+
+                    // presences of json tag implies span should carry other security tags
+                    var securityTags = new Dictionary<string, string>()
+                    {
+                        { "appsec.event", "true" },
+                        { "_dd.origin", "appsec" },
+                        { "http.useragent", "Mistake Not..." },
+                        { "actor.ip", "86.242.244.246" },
+                        { "http.request.headers.host", $"localhost:{_httpPort}" },
+                        { "http.request.headers.x-forwarded", "86.242.244.246" },
+                        { "http.request.headers.user-agent", "Mistake Not..." },
+                    };
+                    foreach (var kvp in securityTags)
+                    {
+                        Assert.True(span.Tags.TryGetValue(kvp.Key, out var tagValue), $"The tag {kvp.Key} was not found");
+                        Assert.Equal(kvp.Value, tagValue);
+                    }
                 }
             }
 
