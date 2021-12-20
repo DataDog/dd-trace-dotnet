@@ -21,18 +21,6 @@ namespace Datadog.Trace.Configuration
     public class TracerSettings
     {
         /// <summary>
-        /// The default host value for <see cref="AgentUri"/>.
-        /// </summary>
-        public const string DefaultAgentHost = "localhost";
-
-        /// <summary>
-        /// The default port value for <see cref="AgentUri"/>.
-        /// </summary>
-        public const int DefaultAgentPort = 8126;
-
-        private int _partialFlushMinSpans;
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="TracerSettings"/> class with default values.
         /// </summary>
         public TracerSettings()
@@ -72,45 +60,7 @@ namespace Datadog.Trace.Configuration
 
             Integrations = new IntegrationSettingsCollection(source);
 
-            var agentHost = source?.GetString(ConfigurationKeys.AgentHost) ??
-                            // backwards compatibility for names used in the past
-                            source?.GetString("DD_TRACE_AGENT_HOSTNAME") ??
-                            source?.GetString("DATADOG_TRACE_AGENT_HOSTNAME") ??
-                            // default value
-                            DefaultAgentHost;
-
-            var agentPort = source?.GetInt32(ConfigurationKeys.AgentPort) ??
-                            // backwards compatibility for names used in the past
-                            source?.GetInt32("DATADOG_TRACE_AGENT_PORT") ??
-                            // default value
-                            DefaultAgentPort;
-
-            var agentUri = source?.GetString(ConfigurationKeys.AgentUri) ??
-                           // default value
-                           $"http://{agentHost}:{agentPort}";
-
-            AgentUri = new Uri(agentUri);
-
-            TracesPipeName = source?.GetString(ConfigurationKeys.TracesPipeName);
-
-            TracesPipeTimeoutMs = source?.GetInt32(ConfigurationKeys.TracesPipeTimeoutMs)
-#if DEBUG
-            ?? 20_000;
-#else
-            ?? 500;
-#endif
-
-            TracesTransport = source?.GetString(ConfigurationKeys.TracesTransport);
-
-            if (string.Equals(AgentUri.Host, "localhost", StringComparison.OrdinalIgnoreCase))
-            {
-                // Replace localhost with 127.0.0.1 to avoid DNS resolution.
-                // When ipv6 is enabled, localhost is first resolved to ::1, which fails
-                // because the trace agent is only bound to ipv4.
-                // This causes delays when sending traces.
-                var builder = new UriBuilder(agentUri) { Host = "127.0.0.1" };
-                AgentUri = builder.Uri;
-            }
+            Exporter = new ExporterSettings(source);
 
 #pragma warning disable 618 // App analytics is deprecated, but still used
             AnalyticsEnabled = source?.GetBool(ConfigurationKeys.GlobalAnalyticsEnabled) ??
@@ -148,10 +98,6 @@ namespace Datadog.Trace.Configuration
                                       ?.ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
 
             ServiceNameMappings = new ServiceNames(serviceNameMappings);
-
-            DogStatsdPort = source?.GetInt32(ConfigurationKeys.DogStatsdPort) ??
-                            // default value
-                            8125;
 
             TracerMetricsEnabled = source?.GetBool(ConfigurationKeys.TracerMetricsEnabled) ??
                                    // default value
@@ -197,17 +143,6 @@ namespace Datadog.Trace.Configuration
             RouteTemplateResourceNamesEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled)
                                                    ?? true;
 
-            PartialFlushEnabled = source?.GetBool(ConfigurationKeys.PartialFlushEnabled)
-                // default value
-                ?? false;
-
-            var partialFlushMinSpans = source?.GetInt32(ConfigurationKeys.PartialFlushMinSpans);
-
-            if ((partialFlushMinSpans ?? 0) <= 0)
-            {
-                PartialFlushMinSpans = 500;
-            }
-
             KafkaCreateConsumerScopeEnabled = source?.GetBool(ConfigurationKeys.KafkaCreateConsumerScopeEnabled)
                                            ?? true; // default
 
@@ -247,41 +182,9 @@ namespace Datadog.Trace.Configuration
         public HashSet<string> DisabledIntegrationNames { get; set; }
 
         /// <summary>
-        /// Gets or sets the Uri where the Tracer can connect to the Agent.
-        /// Default is <c>"http://localhost:8126"</c>.
+        /// Gets or sets the transport settings that dictate how the tracer connects to the agent.
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.AgentUri"/>
-        /// <seealso cref="ConfigurationKeys.AgentHost"/>
-        /// <seealso cref="ConfigurationKeys.AgentPort"/>
-        public Uri AgentUri { get; set; }
-
-        /// <summary>
-        /// Gets or sets the key used to determine the transport for sending traces.
-        /// Default is <c>null</c>, which will use the default path decided in <see cref="Agent.Api"/>.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.TracesTransport"/>
-        public string TracesTransport { get; set; }
-
-        /// <summary>
-        /// Gets or sets the windows pipe name where the Tracer can connect to the Agent.
-        /// Default is <c>null</c>.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.TracesPipeName"/>
-        public string TracesPipeName { get; set; }
-
-        /// <summary>
-        /// Gets or sets the timeout in milliseconds for the windows named pipe requests.
-        /// Default is <c>100</c>.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.TracesPipeTimeoutMs"/>
-        public int TracesPipeTimeoutMs { get; set; }
-
-        /// <summary>
-        /// Gets or sets the windows pipe name where the Tracer can send stats.
-        /// Default is <c>null</c>.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.MetricsPipeName"/>
-        public string MetricsPipeName { get; set; }
+        public ExporterSettings Exporter { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether default Analytics are enabled.
@@ -336,23 +239,10 @@ namespace Datadog.Trace.Configuration
         public IDictionary<string, string> HeaderTags { get; set; }
 
         /// <summary>
-        /// Gets or sets the port where the DogStatsd server is listening for connections.
-        /// Default is <c>8125</c>.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.DogStatsdPort"/>
-        public int DogStatsdPort { get; set; }
-
-        /// <summary>
         /// Gets or sets a value indicating whether internal metrics
         /// are enabled and sent to DogStatsd.
         /// </summary>
         public bool TracerMetricsEnabled { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether runtime metrics
-        /// are enabled and sent to DogStatsd.
-        /// </summary>
-        public bool RuntimeMetricsEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether the use
@@ -368,28 +258,6 @@ namespace Datadog.Trace.Configuration
         {
             get => GlobalSettings.Source.DiagnosticSourceEnabled;
             set { }
-        }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether partial flush is enabled
-        /// </summary>
-        public bool PartialFlushEnabled { get; set; }
-
-        /// <summary>
-        /// Gets or sets the minimum number of closed spans in a trace before it's partially flushed
-        /// </summary>
-        public int PartialFlushMinSpans
-        {
-            get => _partialFlushMinSpans;
-            set
-            {
-                if (value <= 0)
-                {
-                    throw new ArgumentException("The value must be strictly greater than 0", nameof(PartialFlushMinSpans));
-                }
-
-                _partialFlushMinSpans = value;
-            }
         }
 
         /// <summary>
@@ -409,6 +277,12 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets a value indicating whether the diagnostic log at startup is enabled
         /// </summary>
         public bool StartupDiagnosticLogEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether runtime metrics
+        /// are enabled and sent to DogStatsd.
+        /// </summary>
+        internal bool RuntimeMetricsEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets the comma separated list of url patterns to skip tracing.

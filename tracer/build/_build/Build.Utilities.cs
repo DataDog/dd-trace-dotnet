@@ -189,7 +189,7 @@ partial class Build
     Target UpdateIntegrationDefinitions => _ => _
        .Description("Update the integration definitions file")
        .DependsOn(Clean, Restore, CreateRequiredDirectories, CompileManagedSrc, PublishManagedProfiler) // We load the dlls from the output, so need to do a clean build
-       .Executes(async () =>
+       .Executes(() =>
         {
             var assemblies = TracerHomeDirectory
                             .GlobFiles("**/Datadog.Trace.dll")

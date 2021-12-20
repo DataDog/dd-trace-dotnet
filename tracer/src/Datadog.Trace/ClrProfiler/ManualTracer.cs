@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler
 {
@@ -18,9 +19,16 @@ namespace Datadog.Trace.ClrProfiler
 
         internal ManualTracer(IAutomaticTracer parent)
         {
-            _parent = parent ?? throw new ArgumentNullException(nameof(parent));
+            if (parent is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(parent));
+            }
+
+            _parent = parent;
             _parent.Register(this);
         }
+
+        bool IDistributedTracer.IsChildTracer => true;
 
         IScope IDistributedTracer.GetActiveScope()
         {
@@ -56,6 +64,7 @@ namespace Datadog.Trace.ClrProfiler
         SpanContext IDistributedTracer.GetSpanContext()
         {
             var values = _parent.GetDistributedTrace();
+
             if (values is SpanContext spanContext)
             {
                 return spanContext;
@@ -71,14 +80,16 @@ namespace Datadog.Trace.ClrProfiler
             _parent.SetDistributedTrace(value);
         }
 
-        void IDistributedTracer.LockSamplingPriority()
+        SamplingPriority? IDistributedTracer.GetSamplingPriority()
         {
-            _parent.LockSamplingPriority();
+            return (SamplingPriority?)_parent.GetSamplingPriority();
         }
 
-        SamplingPriority? IDistributedTracer.TrySetSamplingPriority(SamplingPriority? samplingPriority)
+        void IDistributedTracer.SetSamplingPriority(SamplingPriority? samplingPriority)
         {
-            return (SamplingPriority?)_parent.TrySetSamplingPriority((int?)samplingPriority);
+            _parent.SetSamplingPriority((int?)samplingPriority);
         }
+
+        string IDistributedTracer.GetRuntimeId() => _parent.GetAutomaticRuntimeId();
     }
 }

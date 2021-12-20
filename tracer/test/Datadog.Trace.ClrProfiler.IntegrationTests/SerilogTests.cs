@@ -14,35 +14,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class SerilogTests : LogsInjectionTestBase
     {
-        private readonly LogFileTest[] _log200FileTests =
-            {
-                new LogFileTest()
-                {
-                    FileName = "log-textFile.log",
-                    RegexFormat = @"{0}: {1}",
-                    UnTracedLogTypes = UnTracedLogTypes.EmptyProperties,
-                    PropertiesUseSerilogNaming = true
-                },
-                new LogFileTest()
-                {
-                    FileName = "log-jsonFile.log",
-                    RegexFormat = @"""{0}"":{1}",
-                    UnTracedLogTypes = UnTracedLogTypes.None,
-                    PropertiesUseSerilogNaming = true
-                }
-            };
-
-        private readonly LogFileTest[] _logPre200FileTests =
-        {
+        private readonly LogFileTest _txtFile =
             new LogFileTest()
             {
                 FileName = "log-textFile.log",
                 RegexFormat = @"{0}: {1}",
-                TracedLogTypes = TracedLogTypes.NotCorrelated,
                 UnTracedLogTypes = UnTracedLogTypes.EmptyProperties,
                 PropertiesUseSerilogNaming = true
-            }
-        };
+            };
 
         public SerilogTests(ITestOutputHelper output)
             : base(output, "LogsInjection.Serilog")
@@ -58,21 +37,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
 
+            var expectedCorrelatedTraceCount = 1;
+            var expectedCorrelatedSpanCount = 1;
+
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
             {
                 var spans = agent.WaitForSpans(1, 2500);
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
 
-                if (PackageSupportsLogsInjection(packageVersion))
-                {
-                    ValidateLogCorrelation(spans, _log200FileTests, packageVersion);
-                }
-                else
-                {
-                    // We do not expect logs injection for Serilog versions < 2.0.0 so filter out all logs
-                    ValidateLogCorrelation(spans, _logPre200FileTests, packageVersion);
-                }
+                var logFiles = GetLogFiles(packageVersion, logsInjectionEnabled: true);
+                ValidateLogCorrelation(spans, logFiles, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount, packageVersion);
             }
         }
 
@@ -84,31 +59,48 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetEnvironmentVariable("DD_LOGS_INJECTION", "false");
 
+            var expectedCorrelatedTraceCount = 0;
+            var expectedCorrelatedSpanCount = 0;
+
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
             {
                 var spans = agent.WaitForSpans(1, 2500);
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
 
-                if (PackageSupportsLogsInjection(packageVersion))
-                {
-                    ValidateLogCorrelation(spans, _log200FileTests, packageVersion, disableLogCorrelation: true);
-                }
-                else
-                {
-                    // We do not expect logs injection for Serilog versions < 2.0.0 so filter out all logs
-                    ValidateLogCorrelation(spans, _logPre200FileTests, packageVersion, disableLogCorrelation: true);
-                }
+                var logFiles = GetLogFiles(packageVersion, logsInjectionEnabled: false);
+                ValidateLogCorrelation(spans, logFiles, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount, packageVersion, disableLogCorrelation: true);
             }
         }
 
-        private static bool PackageSupportsLogsInjection(string packageVersion)
+        private LogFileTest[] GetLogFiles(string packageVersion, bool logsInjectionEnabled)
+        {
+            var isPost200 =
 #if NETCOREAPP
-            // enabled in default version for .NET Core
-            => string.IsNullOrWhiteSpace(packageVersion) || new Version(packageVersion) >= new Version("2.0.0");
+                // enabled in default version for .NET Core
+                string.IsNullOrWhiteSpace(packageVersion) || new Version(packageVersion) >= new Version("2.0.0");
 #else
-            // disabled dor default version in .NET Framework
-            => !string.IsNullOrWhiteSpace(packageVersion) && new Version(packageVersion) >= new Version("2.0.0");
+                !string.IsNullOrWhiteSpace(packageVersion) && new Version(packageVersion) >= new Version("2.0.0");
 #endif
+            if (!isPost200)
+            {
+                // no json file, always the same format
+                return new[] { _txtFile };
+            }
+
+            var unTracedLogFormat = logsInjectionEnabled
+                                        ? UnTracedLogTypes.EnvServiceTracingPropertiesOnly
+                                        : UnTracedLogTypes.None;
+
+            var jsonFile =  new LogFileTest()
+            {
+                FileName = "log-jsonFile.log",
+                RegexFormat = @"""{0}"":{1}",
+                UnTracedLogTypes = unTracedLogFormat,
+                PropertiesUseSerilogNaming = true
+            };
+
+            return new[] { _txtFile, jsonFile };
+        }
     }
 }

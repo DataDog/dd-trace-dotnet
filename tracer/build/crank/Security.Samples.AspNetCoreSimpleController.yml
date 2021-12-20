@@ -19,6 +19,22 @@ jobs:
       - Microsoft.AspNetCore.Http.Connections
 
 scenarios:
+  appsec_baseline:
+    application:
+      job: server
+      environmentVariables:
+        COR_ENABLE_PROFILING: 1
+        CORECLR_ENABLE_PROFILING: 1
+        DD_APPSEC_ENABLED: false
+        DD_APPSEC_KEEP_TRACES: false
+    load:
+      job: bombardier
+      variables:
+        warmup: 30
+        duration: 240
+        serverPort: 5000
+        path: /hello
+
   appsec_noattack:
     application:
       job: server
@@ -27,6 +43,7 @@ scenarios:
         CORECLR_ENABLE_PROFILING: 1
         DD_APPSEC_ENABLED: true
         DD_APPSEC_BLOCKING_ENABLED: true
+        DD_APPSEC_KEEP_TRACES: false
     load:
       job: bombardier
       variables:
@@ -43,6 +60,7 @@ scenarios:
         CORECLR_ENABLE_PROFILING: 1
         DD_APPSEC_ENABLED: true
         DD_APPSEC_BLOCKING_ENABLED: false
+        DD_APPSEC_KEEP_TRACES: false
     load:
       job: bombardier
       variables:
@@ -50,20 +68,3 @@ scenarios:
         duration: 240
         serverPort: 5000
         path: /hello?arg=[$slice]
-
-  appsec_attack_blocking:
-    application:
-      job: server
-      environmentVariables:
-        COR_ENABLE_PROFILING: 1
-        CORECLR_ENABLE_PROFILING: 1
-        DD_APPSEC_ENABLED: true
-        DD_APPSEC_BLOCKING_ENABLED: true
-    load:
-      job: bombardier
-      variables:
-        warmup: 30
-        duration: 240
-        serverPort: 5000
-        path: /hello?arg=[$slice]
-

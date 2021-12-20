@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.ComponentModel;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
@@ -12,9 +11,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
     /// <summary>
     /// HttpRequestMessage interface for ducktyping
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface IHttpRequestMessage : IDuckType
+    internal interface IHttpRequestMessage : IDuckType
     {
         /// <summary>
         /// Gets the Http Method

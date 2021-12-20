@@ -3,18 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.ComponentModel;
-
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-#pragma warning disable SA1602 // Enumeration items should be documented
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
 {
     /// <summary>
     /// Couchbase OperationCode copy
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public enum OperationCode : byte
+    internal enum OperationCode : byte
     {
         Get = 0x00,
         Set = 0x01,

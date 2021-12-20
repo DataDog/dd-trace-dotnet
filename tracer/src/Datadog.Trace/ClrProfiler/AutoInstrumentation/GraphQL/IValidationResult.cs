@@ -3,16 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.ComponentModel;
-
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
 {
     /// <summary>
     /// GraphQL.Validation.IValidationResult interface for ducktyping
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface IValidationResult
+    internal interface IValidationResult
     {
         /// <summary>
         /// Gets the execution errors

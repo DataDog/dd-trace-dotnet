@@ -13,23 +13,21 @@ namespace Datadog.Trace.Agent
 {
     internal static class TransportStrategy
     {
-        public const string DatadogTcp = "DATADOG-TCP";
-        public const string DatadogNamedPipes = "DATADOG-NAMED-PIPES";
-
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Tracer>();
 
-        public static IApiRequestFactory Get(ImmutableTracerSettings settings)
+        public static IApiRequestFactory Get(ImmutableExporterSettings settings)
         {
-            var strategy = settings.TracesTransport?.ToUpperInvariant();
+            var strategy = settings.TracesTransport;
 
             switch (strategy)
             {
-                case DatadogTcp:
+                case TracesTransportType.CustomTcpProvider:
                     Log.Information("Using {FactoryType} for trace transport.", nameof(TcpStreamFactory));
                     return new HttpStreamRequestFactory(new TcpStreamFactory(settings.AgentUri.Host, settings.AgentUri.Port), new DatadogHttpClient());
-                case DatadogNamedPipes:
+                case TracesTransportType.WindowsNamedPipe:
                     Log.Information<string, string, int>("Using {FactoryType} for trace transport, with pipe name {PipeName} and timeout {Timeout}ms.", nameof(NamedPipeClientStreamFactory), settings.TracesPipeName, settings.TracesPipeTimeoutMs);
                     return new HttpStreamRequestFactory(new NamedPipeClientStreamFactory(settings.TracesPipeName, settings.TracesPipeTimeoutMs), new DatadogHttpClient());
+                case TracesTransportType.Default:
                 default:
                     // Defer decision to Api logic
                     return null;

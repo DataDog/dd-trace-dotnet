@@ -6,6 +6,7 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.HttpOverStreams.HttpContent
 {
@@ -30,12 +31,12 @@ namespace Datadog.Trace.HttpOverStreams.HttpContent
         {
             if (!Length.HasValue)
             {
-                throw new InvalidOperationException("Unable to CopyToAsync with buffer when content Length is unknown");
+                ThrowHelper.ThrowInvalidOperationException("Unable to CopyToAsync with buffer when content Length is unknown");
             }
 
             if (Length > buffer.Length)
             {
-                throw new ArgumentException($"Provided buffer was smaller {buffer.Length} than the content length {Length}");
+                ThrowHelper.ThrowArgumentException($"Provided buffer was smaller {buffer.Length} than the content length {Length}");
             }
 
             var length = 0;

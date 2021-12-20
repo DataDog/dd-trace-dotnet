@@ -209,7 +209,9 @@ namespace Datadog.Trace.AppSec
         private void Report(ITransport transport, Span span, WafMatch[] results, bool blocked)
         {
             span.SetTag(Tags.AppSecEvent, "true");
-            span.SetTraceSamplingPriority(SamplingPriority.UserKeep);
+            var samplingPirority = _settings.KeepTraces
+                ? SamplingPriority.UserKeep : SamplingPriority.AutoReject;
+            span.SetTraceSamplingPriority(samplingPirority);
 
             LogMatchesIfDebugEnabled(results, blocked);
 

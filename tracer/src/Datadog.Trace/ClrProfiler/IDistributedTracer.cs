@@ -9,6 +9,8 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal interface IDistributedTracer
     {
+        bool IsChildTracer { get; }
+
         IReadOnlyDictionary<string, string> GetSpanContextRaw();
 
         SpanContext GetSpanContext();
@@ -17,8 +19,10 @@ namespace Datadog.Trace.ClrProfiler
 
         void SetSpanContext(IReadOnlyDictionary<string, string> value);
 
-        void LockSamplingPriority();
+        SamplingPriority? GetSamplingPriority();
 
-        SamplingPriority? TrySetSamplingPriority(SamplingPriority? samplingPriority);
+        void SetSamplingPriority(SamplingPriority? samplingPriority);
+
+        string GetRuntimeId();
     }
 }

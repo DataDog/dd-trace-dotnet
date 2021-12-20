@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.DiagnosticListeners
@@ -25,7 +26,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             if (diagnosticSubscribers == null)
             {
-                throw new ArgumentNullException(nameof(diagnosticSubscribers));
+                ThrowHelper.ThrowArgumentNullException(nameof(diagnosticSubscribers));
             }
 
             _diagnosticObservers = diagnosticSubscribers.Where(x => x.IsSubscriberEnabled());

@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.ComponentModel;
 using System.Net;
 using Datadog.Trace.DuckTyping;
 
@@ -13,9 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
     /// Ducktyping of Couchbase.IO.Operations.IOperation and generic implementations
     /// </summary>
     [DuckCopy]
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public struct OperationStruct
+    internal struct OperationStruct
     {
         /// <summary>
         /// Gets the Operation Code

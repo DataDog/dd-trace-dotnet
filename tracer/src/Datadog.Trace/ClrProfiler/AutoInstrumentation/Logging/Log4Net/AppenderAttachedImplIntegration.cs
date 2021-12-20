@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
         /// <param name="loggingEvent">The logging event</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget, TLoggingEvent>(TTarget instance, TLoggingEvent loggingEvent)
+        internal static CallTargetState OnMethodBegin<TTarget, TLoggingEvent>(TTarget instance, TLoggingEvent loggingEvent)
             where TLoggingEvent : ILoggingEvent
         {
             var tracer = Tracer.Instance;
@@ -45,11 +45,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
                 loggingEvent.Properties[CorrelationIdentifier.VersionKey] = tracer.Settings.ServiceVersion ?? string.Empty;
                 loggingEvent.Properties[CorrelationIdentifier.EnvKey] = tracer.Settings.Environment ?? string.Empty;
 
-                var span = tracer.ActiveScope?.Span;
-                if (span is not null)
+                var spanContext = tracer.DistributedSpanContext;
+                if (spanContext is not null
+                    && spanContext.TryGetValue(HttpHeaderNames.TraceId, out string traceId)
+                    && spanContext.TryGetValue(HttpHeaderNames.ParentId, out string spanId))
                 {
-                    loggingEvent.Properties[CorrelationIdentifier.TraceIdKey] = span.TraceId;
-                    loggingEvent.Properties[CorrelationIdentifier.SpanIdKey] = span.SpanId;
+                    loggingEvent.Properties[CorrelationIdentifier.TraceIdKey] = traceId;
+                    loggingEvent.Properties[CorrelationIdentifier.SpanIdKey] = spanId;
                 }
             }
 
@@ -66,7 +68,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        public static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
+        internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
         {
             return new CallTargetReturn<TReturn>(returnValue);
         }

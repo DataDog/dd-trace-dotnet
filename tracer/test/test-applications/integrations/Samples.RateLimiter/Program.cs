@@ -20,10 +20,14 @@ namespace Samples.RateLimiter
         {
             var numberOfSeconds = 5;
             var maxMilliseconds = numberOfSeconds * 1000;
-            var configuredLimitPerSecond = int.Parse(Environment.GetEnvironmentVariables()[ConfigurationKeys.MaxTracesSubmittedPerSecond].ToString());
+            var configuredLimitPerSecond = int.Parse(Environment.GetEnvironmentVariables()["DD_MAX_TRACES_PER_SECOND"].ToString());
 
             Console.WriteLine($"Ready to run for {numberOfSeconds} seconds.");
             Console.WriteLine($"Configured rate limit of {configuredLimitPerSecond}");
+
+            var settings = TracerSettings.FromDefaultSources();
+            settings.ServiceName = ServiceDogWalker;
+            Tracer.Configure(settings);
 
             PrepKeys(ServiceDogWalker, RootWalkOperation, configuredLimitPerSecond * numberOfSeconds);
 
@@ -68,11 +72,11 @@ namespace Samples.RateLimiter
 
             IScope root;
 
-            using (root = Tracer.Instance.StartActive(operationName: operationName, serviceName: serviceName))
+            using (root = Tracer.Instance.StartActive(operationName: operationName))
             {
                 Thread.Sleep(3);
 
-                using (var sub = Tracer.Instance.StartActive(operationName: "sub", serviceName: serviceName))
+                using (var sub = Tracer.Instance.StartActive(operationName: "sub"))
                 {
                     Thread.Sleep(2);
                 }

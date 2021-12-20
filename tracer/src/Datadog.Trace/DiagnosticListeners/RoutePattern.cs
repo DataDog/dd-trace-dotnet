@@ -1,10 +1,9 @@
-﻿// <copyright file="RoutePattern.cs" company="Datadog">
+// <copyright file="RoutePattern.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System.Collections;
-using System.ComponentModel;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.DiagnosticListeners
@@ -12,10 +11,8 @@ namespace Datadog.Trace.DiagnosticListeners
     /// <summary>
     /// RoutePattern for duck typing
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
     [DuckCopy]
-    public struct RoutePattern
+    internal struct RoutePattern
     {
         /// <summary>
         /// Gets the list of IReadOnlyList&lt;RoutePatternPathSegment&gt;

@@ -3,17 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.ComponentModel;
-
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 {
     /// <summary>
     /// The FailureSite enum indicates the stage of a test
     /// in which an error or failure occurred.
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public enum FailureSite
+    internal enum FailureSite
     {
         /// <summary>
         /// Failure in the test itself

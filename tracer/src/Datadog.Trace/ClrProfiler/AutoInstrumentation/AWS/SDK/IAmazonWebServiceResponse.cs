@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.ComponentModel;
 using System.Net;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
@@ -11,9 +10,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
     /// <summary>
     /// AmazonWebServiceResponse interface for ducktyping
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface IAmazonWebServiceResponse
+    internal interface IAmazonWebServiceResponse
     {
         /// <summary>
         /// Gets the length of the content

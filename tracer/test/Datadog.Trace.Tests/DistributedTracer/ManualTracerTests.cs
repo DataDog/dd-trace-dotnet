@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.ClrProfiler;
 using FluentAssertions;
 using Moq;
@@ -41,27 +42,35 @@ namespace Datadog.Trace.Tests.DistributedTracer
         }
 
         [Fact]
-        public void LockSamplingPriority()
+        public void SetSamplingPriority()
         {
             var automaticTracer = new Mock<IAutomaticTracer>();
+
             var manualTracer = new ManualTracer(automaticTracer.Object);
 
-            ((IDistributedTracer)manualTracer).LockSamplingPriority();
+            ((IDistributedTracer)manualTracer).SetSamplingPriority(SamplingPriority.UserKeep);
 
-            automaticTracer.Verify(t => t.LockSamplingPriority(), Times.Once);
+            automaticTracer.Verify(t => t.SetSamplingPriority((int?)SamplingPriority.UserKeep), Times.Once());
         }
 
         [Fact]
-        public void TrySetSamplingPriority()
+        public void RuntimeId()
         {
+            var expectedRuntimeId = Guid.NewGuid().ToString();
+
             var automaticTracer = new Mock<IAutomaticTracer>();
-            automaticTracer.Setup(t => t.TrySetSamplingPriority(It.IsAny<int?>())).Returns((int?)SamplingPriority.UserReject);
+            automaticTracer.Setup(t => t.GetAutomaticRuntimeId()).Returns(expectedRuntimeId);
 
             var manualTracer = new ManualTracer(automaticTracer.Object);
 
-            var samplingPriority = ((IDistributedTracer)manualTracer).TrySetSamplingPriority(SamplingPriority.UserKeep);
+            ((IDistributedTracer)manualTracer).GetRuntimeId().Should().Be(expectedRuntimeId);
+        }
 
-            samplingPriority.Should().Be(SamplingPriority.UserReject, "TrySetSamplingPriority should return the value given by the parent");
+        [Fact]
+        public void IsChildTracer()
+        {
+            var manualTracer = new ManualTracer(Mock.Of<IAutomaticTracer>());
+            ((IDistributedTracer)manualTracer).IsChildTracer.Should().BeTrue();
         }
     }
 }

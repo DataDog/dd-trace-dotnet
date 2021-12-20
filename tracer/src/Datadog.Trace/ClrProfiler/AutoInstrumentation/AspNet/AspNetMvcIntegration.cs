@@ -6,10 +6,7 @@
 #if NETFRAMEWORK
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Web.Routing;
 using Datadog.Trace.AspNet;
 using Datadog.Trace.Configuration;
@@ -23,9 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
     /// <summary>
     /// The ASP.NET MVC integration.
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public static class AspNetMvcIntegration
+    internal static class AspNetMvcIntegration
     {
         internal const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetMvcIntegration";
 

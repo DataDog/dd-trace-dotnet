@@ -4,7 +4,6 @@
 // </copyright>
 
 #if NETFRAMEWORK
-using System.ComponentModel;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
@@ -13,9 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
     /// Http method struct copy target for ducktyping
     /// </summary>
     [DuckCopy]
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public struct HttpMethodStruct
+    internal struct HttpMethodStruct
     {
         /// <summary>
         /// Gets the http method in string

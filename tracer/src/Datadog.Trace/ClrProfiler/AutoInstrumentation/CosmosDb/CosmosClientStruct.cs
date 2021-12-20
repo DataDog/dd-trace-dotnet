@@ -4,12 +4,7 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
@@ -18,9 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
     /// Microsoft.Azure.Cosmos.CosmosClient
     /// </summary>
     [DuckCopy]
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public struct CosmosClientStruct
+    internal struct CosmosClientStruct
     {
         /// <summary>
         /// Gets the endpoint Uri for the Azure Cosmos DB service.

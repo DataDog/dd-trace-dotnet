@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.ComponentModel;
 using System.Reflection;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
@@ -11,9 +10,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
     /// <summary>
     /// DuckTyping interface for NUnit.Framework.Interfaces.IMethodInfo
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface IMethodInfo
+    internal interface IMethodInfo
     {
         /// <summary>
         /// Gets the MethodInfo for this method.

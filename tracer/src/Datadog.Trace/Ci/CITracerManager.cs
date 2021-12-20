@@ -19,7 +19,7 @@ namespace Datadog.Trace.Ci
             {
                 new Trace.TraceProcessors.NormalizerTraceProcessor(),
                 new Trace.TraceProcessors.TruncatorTraceProcessor(),
-                new TraceProcessors.OriginTagTraceProcessor(settings.PartialFlushEnabled),
+                new TraceProcessors.OriginTagTraceProcessor(settings.Exporter.PartialFlushEnabled),
             })
         {
         }

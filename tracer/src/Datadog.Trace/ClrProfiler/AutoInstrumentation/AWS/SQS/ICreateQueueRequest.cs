@@ -4,16 +4,13 @@
 // </copyright>
 
 using System.Collections.Generic;
-using System.ComponentModel;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 {
     /// <summary>
     /// CreateQueueRequest interface for ducktyping
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface ICreateQueueRequest
+    internal interface ICreateQueueRequest
     {
         /// <summary>
         /// Gets the name of the queue

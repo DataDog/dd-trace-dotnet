@@ -150,7 +150,8 @@ namespace Datadog.Trace
                     return value;
                 }
 
-                throw new KeyNotFoundException($"Key not found: {key}");
+                ThrowHelper.ThrowKeyNotFoundException($"Key not found: {key}");
+                return default;
             }
         }
 
@@ -199,7 +200,7 @@ namespace Datadog.Trace
                     return true;
 
                 case HttpHeaderNames.SamplingPriority:
-                    var samplingPriority = SamplingPriority ?? TraceContext?.SamplingPriority;
+                    var samplingPriority = SamplingPriority;
 
                     value = samplingPriority != null ? ((int)samplingPriority.Value).ToString() : null;
                     return true;

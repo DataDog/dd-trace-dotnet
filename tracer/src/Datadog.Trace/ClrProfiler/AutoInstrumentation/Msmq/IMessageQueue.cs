@@ -3,17 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.ComponentModel;
-
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
 {
     /// <summary>
     /// message queue proxy
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface IMessageQueue
+    internal interface IMessageQueue
     {
         /// <summary>
         ///     Gets a value indicating whether the queue accepts only transactions.

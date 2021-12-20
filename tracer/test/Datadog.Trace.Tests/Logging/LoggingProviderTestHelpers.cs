@@ -33,8 +33,9 @@ namespace Datadog.Trace.Tests.Logging
 
         internal static void LogInSpanWithServiceName(Tracer tracer, ILog logger, Func<string, object, bool, IDisposable> openMappedContext, string service, out IScope scope)
         {
-            using (scope = tracer.StartActive("span", serviceName: service))
+            using (scope = tracer.StartActive("span"))
             {
+                scope.Span.ServiceName = service;
                 using (var mappedContext = openMappedContext(CustomPropertyName, CustomPropertyValue, false))
                 {
                     logger.Log(LogLevel.Info, () => $"{LogPrefix}Entered single scope with a different service name.");
