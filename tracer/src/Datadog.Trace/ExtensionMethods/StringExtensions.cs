@@ -174,6 +174,7 @@ namespace Datadog.Trace.ExtensionMethods
 
         /// <summary>
         /// Compact whitespaces in a string
+        /// https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/obfuscate/obfuscate.go#L118-L146
         /// </summary>
         /// <param name="value">String instance</param>
         /// <returns>Whitespace compacted string instance</returns>
@@ -199,6 +200,38 @@ namespace Datadog.Trace.ExtensionMethods
                     sb.Append(value, i, value.Length - i);
                     i = value.Length;
                 }
+            }
+
+            return StringBuilderCache.GetStringAndRelease(sb);
+        }
+
+        /// <summary>
+        /// Replaces digits with ?
+        /// https://github.com/DataDog/datadog-agent/blob/0454961e636342c9fbab9e561e6346ae804679a9/pkg/trace/obfuscate/obfuscate.go#L148-L167
+        /// </summary>
+        /// <param name="value">String instance</param>
+        /// <returns>Filtered string instance</returns>
+        public static string ReplaceDigits(this string value)
+        {
+            bool scanningDigit = false;
+            var sb = StringBuilderCache.Acquire(value.Length);
+
+            for (var i = 0; i < value.Length; i++)
+            {
+                if (char.IsDigit(value[i]))
+                {
+                    if (scanningDigit)
+                    {
+                        continue;
+                    }
+
+                    scanningDigit = true;
+                    sb.Append('?');
+                    continue;
+                }
+
+                scanningDigit = false;
+                sb.Append(value[i]);
             }
 
             return StringBuilderCache.GetStringAndRelease(sb);
