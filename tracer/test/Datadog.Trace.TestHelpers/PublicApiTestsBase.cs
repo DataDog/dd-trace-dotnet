@@ -10,6 +10,8 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Versioning;
+using System.Text;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using PublicApiGenerator;
 using Xunit;
@@ -51,6 +53,26 @@ namespace Datadog.Trace.Tests
             publicApi.Should().Be(expected, "Public API should match the verified API. Update verified snapshot when the public API changes as appropriate");
         }
 
+        [Fact]
+        public void AssemblyReferencesHaveNotChanged()
+        {
+            StringBuilder sb = new();
+            foreach (var referencedAssembly in _assembly.GetReferencedAssemblies())
+            {
+                if (!referencedAssembly.Name.Contains("Datadog.Trace"))
+                {
+                    sb.AppendLine(referencedAssembly.FullName);
+                }
+            }
+
+            // we will have a different list of referenced assemblies for net4x vs netcore vs netstandard
+            var referencedAssemblyOutput = sb.ToString();
+            string frameworkName = EnvironmentTools.GetTracerTargetFrameworkDirectory();
+            var expected = GetExpected(referencedAssemblyOutput, frameworkName);
+
+            referencedAssemblyOutput.Should().Be(expected, "Assembly references should match the verified list of assembly references. Update the verified snapshot when the assembly references change");
+        }
+
         [Theory]
         [InlineData(typeof(Hidden), true)]
         [InlineData(typeof(NotHidden1), false)]
@@ -82,12 +104,13 @@ namespace Datadog.Trace.Tests
             return true;
         }
 
-        private string GetExpected(string publicApi, [CallerMemberName] string methodName = null)
+        private string GetExpected(string publicApi, string targetFramework = null, [CallerMemberName] string methodName = null)
         {
             // poor-man's VerifyTests.Verify, because Verify has incompatible dependencies with ASP.NET Core
             var snapshotDirectory = Path.Combine(Directory.GetParent(_filePath).FullName, "Snapshots");
-            var receivedPath = Path.Combine(snapshotDirectory, $"PublicApiTests.{methodName}.received.txt");
-            var verifiedPath = Path.Combine(snapshotDirectory, $"PublicApiTests.{methodName}.verified.txt");
+            var intermediatePath = targetFramework == null ? methodName : $"{methodName}.{targetFramework}";
+            var receivedPath = Path.Combine(snapshotDirectory, $"PublicApiTests.{intermediatePath}.received.txt");
+            var verifiedPath = Path.Combine(snapshotDirectory, $"PublicApiTests.{intermediatePath}.verified.txt");
 
             File.WriteAllText(receivedPath, publicApi);
             return File.Exists(verifiedPath) ? File.ReadAllText(verifiedPath) : string.Empty;

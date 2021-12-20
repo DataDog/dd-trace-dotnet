@@ -1,0 +1,2 @@
+netstandard, Version=2.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51
+OpenTracing, Version=0.12.1.0, Culture=neutral, PublicKeyToken=61503406977abdaf
