@@ -39,7 +39,7 @@ namespace Samples.AzureFunctions.AllTriggers
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = "simple")] HttpRequest req,
             ILogger log)
         {
-            await Task.CompletedTask; // Unnecessary, but allows compiler to not raise CS1998: This async method lacks 'await'
+            await Task.Yield();
             log.LogInformation("C# HTTP trigger function processed a request.");
             return new OkObjectResult("This HTTP triggered function executed successfully. ");
         }
