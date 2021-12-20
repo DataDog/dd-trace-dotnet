@@ -4,8 +4,6 @@
 // </copyright>
 
 using System;
-using System.Text;
-using System.Text.RegularExpressions;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ExtensionMethods
@@ -87,15 +85,16 @@ namespace Datadog.Trace.ExtensionMethods
         ///    - Underscores
         ///    - Minuses
         ///    - Colons
-        ///    - Periods
         ///    - Slashes
         ///
+        /// 4. Optionally, periods can be replaced by underscores.
         /// Note: This method will trim leading/trailing whitespace before checking the requirements.
         /// </summary>
         /// <param name="value">Input string to convert into tag name</param>
+        /// <param name="normalizePeriods">True if we replace dots by underscores</param>
         /// <param name="normalizedTagName">If the method returns true, the normalized tag name</param>
         /// <returns>Returns whether the conversion was successful</returns>
-        public static bool TryConvertToNormalizedTagName(this string value, out string normalizedTagName)
+        public static bool TryConvertToNormalizedTagName(this string value, bool normalizePeriods, out string normalizedTagName)
         {
             if (string.IsNullOrWhiteSpace(value))
             {
@@ -103,7 +102,7 @@ namespace Datadog.Trace.ExtensionMethods
                 return false;
             }
 
-            string trimmedValue = value.Trim();
+            var trimmedValue = value.Trim();
             if (!char.IsLetter(trimmedValue[0]) || trimmedValue.Length > 200)
             {
                 normalizedTagName = null;
@@ -113,56 +112,13 @@ namespace Datadog.Trace.ExtensionMethods
             var sb = StringBuilderCache.Acquire(trimmedValue.Length);
             sb.Append(trimmedValue.ToLowerInvariant());
 
-            for (int x = 0; x < sb.Length; x++)
+            for (var x = 0; x < sb.Length; x++)
             {
                 switch (sb[x])
                 {
-                    case (>= 'a' and <= 'z') or (>= '0' and <= '9') or '_' or ':' or '/' or '-' or '.':
-                        continue;
-                    default:
-                        sb[x] = '_';
-                        break;
-                }
-            }
-
-            normalizedTagName = StringBuilderCache.GetStringAndRelease(sb);
-            return true;
-        }
-
-        /// <summary>
-        /// Attempts to convert the input to a valid tag name following the rules
-        /// described in <see cref="TryConvertToNormalizedTagName(string, out string)"/>
-        ///
-        /// Additionally, the resulting tag name replaces any periods with underscores so that
-        /// the tag does not create any further object nesting.
-        /// </summary>
-        /// <param name="value">Input string to convert into tag name</param>
-        /// <param name="normalizedTagName">If the method returns true, the normalized header tag name</param>
-        /// <returns>Returns whether the conversion was successful</returns>
-        public static bool TryConvertToNormalizedHeaderTagName(this string value, out string normalizedTagName)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                normalizedTagName = null;
-                return false;
-            }
-
-            string trimmedValue = value.Trim();
-            if (!char.IsLetter(trimmedValue[0]) || trimmedValue.Length > 200)
-            {
-                normalizedTagName = null;
-                return false;
-            }
-
-            var sb = StringBuilderCache.Acquire(trimmedValue.Length);
-            sb.Append(trimmedValue.ToLowerInvariant());
-
-            for (int x = 0; x < sb.Length; x++)
-            {
-                switch (sb[x])
-                {
-                    // Notice that the '.' does not match, differing from TryConvertToNormalizedTagName
                     case (>= 'a' and <= 'z') or (>= '0' and <= '9') or '_' or ':' or '/' or '-':
+                        continue;
+                    case '.' when !normalizePeriods:
                         continue;
                     default:
                         sb[x] = '_';
