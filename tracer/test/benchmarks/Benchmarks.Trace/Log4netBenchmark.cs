@@ -1,7 +1,9 @@
 using System.IO;
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using log4net.Appender;
 using log4net.Core;
@@ -66,22 +68,9 @@ namespace Benchmarks.Trace
         {
             protected override void Append(LoggingEvent loggingEvent)
             {
-                var tracer = Tracer.Instance;
-
-                if (tracer.Settings.LogsInjectionEnabled &&
-                    !loggingEvent.Properties.Contains(CorrelationIdentifier.ServiceKey))
-                {
-                    loggingEvent.Properties[CorrelationIdentifier.ServiceKey] = tracer.DefaultServiceName ?? string.Empty;
-                    loggingEvent.Properties[CorrelationIdentifier.VersionKey] = tracer.Settings.ServiceVersion ?? string.Empty;
-                    loggingEvent.Properties[CorrelationIdentifier.EnvKey] = tracer.Settings.Environment ?? string.Empty;
-
-                    var span = tracer.ActiveScope?.Span;
-                    if (span is not null)
-                    {
-                        loggingEvent.Properties[CorrelationIdentifier.TraceIdKey] = span.TraceId.ToString();
-                        loggingEvent.Properties[CorrelationIdentifier.SpanIdKey] = span.SpanId.ToString();
-                    }
-                }
+                var proxy = loggingEvent.DuckCast<ILoggingEvent>();
+                // First argument isn't used, so can be anything
+                AppenderAttachedImplIntegration.OnMethodBegin(loggingEvent, proxy);
 
                 base.Append(loggingEvent);
             }
