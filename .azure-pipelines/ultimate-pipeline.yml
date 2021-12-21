@@ -872,7 +872,7 @@ stages:
             command: "CheckBuildLogsForErrors"
 
 - stage: exploration_tests_windows
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), or(eq(variables['runExplorationTests'], 'False'), eq(stageDependencies.check_changes.outputs['check_changes_job.check_changes_step.IsProfilerChanged'],'True'), eq(stageDependencies.check_changes.outputs['check_changes_job.check_changes_step.IsDebuggerChanged'], 'True')))
+  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), or(eq(stageDependencies.check_changes.outputs['check_changes_job.check_changes_step.IsProfilerChanged'],'True'), eq(stageDependencies.check_changes.outputs['check_changes_job.check_changes_step.IsDebuggerChanged'], 'True')))
   dependsOn: [build_windows, check_changes]
 
   jobs:
@@ -946,7 +946,7 @@ stages:
       displayName: Check logs for errors
 
 - stage: exploration_tests_linux
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), or(eq(variables['runExplorationTests'], 'False'), eq(stageDependencies.check_changes.outputs['check_changes_job.check_changes_step.IsProfilerChanged'],'True'), eq(stageDependencies.check_changes.outputs['check_changes_job.check_changes_step.IsDebuggerChanged'], 'True')))
+  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), or(eq(stageDependencies.check_changes.outputs['check_changes_job.check_changes_step.IsProfilerChanged'],'True'), eq(stageDependencies.check_changes.outputs['check_changes_job.check_changes_step.IsDebuggerChanged'], 'True')))
   dependsOn: [build_linux, check_changes]
   jobs:
   - template: steps/update-github-status-jobs.yml
