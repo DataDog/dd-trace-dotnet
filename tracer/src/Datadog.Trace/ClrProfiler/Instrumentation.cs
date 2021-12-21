@@ -91,7 +91,31 @@ namespace Datadog.Trace.ClrProfiler
                 }
 
                 Log.Information<int>("The profiler has been initialized with {count} definitions.", payload.Definitions.Length);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, ex.Message);
+            }
 
+            try
+            {
+                Log.Debug("Sending CallTarget derived integration definitions to native library.");
+                var payload = InstrumentationDefinitions.GetDerivedDefinitions();
+                NativeMethods.AddDerivedInstrumentations(payload.DefinitionsId, payload.Definitions);
+                foreach (var def in payload.Definitions)
+                {
+                    def.Dispose();
+                }
+
+                Log.Information<int>("The profiler has been initialized with {count} derived definitions.", payload.Definitions.Length);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, ex.Message);
+            }
+
+            try
+            {
                 var asm = typeof(Instrumentation).Assembly;
                 Log.Information($"[Assembly metadata] Location: {asm.Location}, CodeBase: {asm.CodeBase}, GAC: {asm.GlobalAssemblyCache}, HostContext: {asm.HostContext}, SecurityRuleSet: {asm.SecurityRuleSet}");
             }

@@ -302,19 +302,21 @@ struct IntegrationDefinition
 {
     const MethodReference target_method;
     const TypeReference integration_type;
+    const bool is_derived = false;
 
     IntegrationDefinition()
     {
     }
 
-    IntegrationDefinition(MethodReference target_method, TypeReference integration_type) :
-        target_method(target_method), integration_type(integration_type)
+    IntegrationDefinition(MethodReference target_method, TypeReference integration_type, bool isDerived) :
+        target_method(target_method), integration_type(integration_type), is_derived(isDerived)
     {
     }
 
     inline bool operator==(const IntegrationDefinition& other) const
     {
-        return target_method == other.target_method && integration_type == other.integration_type;
+        return target_method == other.target_method && integration_type == other.integration_type &&
+               is_derived == other.is_derived;
     }
 };
 

@@ -35,6 +35,8 @@ namespace PrepareRelease
 
         public string WrapperType { get; init; }
 
+        public IntegrationType IntegrationType { get; init; }
+
         protected bool Equals(CallTargetDefinitionSource other) =>
             IntegrationName == other.IntegrationName &&
             TargetAssembly == other.TargetAssembly &&
@@ -49,6 +51,7 @@ namespace PrepareRelease
             TargetMaximumPatch == other.TargetMaximumPatch &&
             WrapperAssembly == other.WrapperAssembly &&
             WrapperType == other.WrapperType &&
+            IntegrationType == other.IntegrationType &&
             string.Join(',', TargetSignatureTypes ?? Array.Empty<string>()) == string.Join(',', other.TargetSignatureTypes ?? Array.Empty<string>());
 
         public override bool Equals(object obj)
@@ -86,6 +89,7 @@ namespace PrepareRelease
             hash.Add(TargetMaximumPatch);
             hash.Add(WrapperAssembly);
             hash.Add(WrapperType);
+            hash.Add(IntegrationType);
             return hash.ToHashCode();
         }
     }
