@@ -120,7 +120,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
                 return string.Empty;
             }
 
-            var builder = new StringBuilder();
+            var builder = Util.StringBuilderCache.Acquire(Util.StringBuilderCache.MaxBuilderSize);
 
             try
             {
@@ -179,7 +179,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
                 return "errors: []";
             }
 
-            return builder.ToString();
+            return Util.StringBuilderCache.GetStringAndRelease(builder);
         }
     }
 }

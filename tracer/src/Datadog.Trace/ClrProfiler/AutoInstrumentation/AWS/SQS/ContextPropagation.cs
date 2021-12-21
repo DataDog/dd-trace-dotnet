@@ -15,13 +15,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         private static void Inject<TMessageRequest>(SpanContext context, IDictionary messageAttributes)
         {
             // Consolidate headers into one JSON object with <header_name>:<value>
-            StringBuilder sb = new();
+            var sb = Util.StringBuilderCache.Acquire(Util.StringBuilderCache.MaxBuilderSize);
             sb.Append('{');
             SpanContextPropagator.Instance.Inject(context, sb, ((carrier, key, value) => carrier.AppendFormat("\"{0}\":\"{1}\",", key, value)));
             sb.Remove(startIndex: sb.Length - 1, length: 1); // Remove trailing comma
             sb.Append('}');
 
-            var resultString = sb.ToString();
+            var resultString = Util.StringBuilderCache.GetStringAndRelease(sb);
             messageAttributes[SqsKey] = CachedMessageHeadersHelper<TMessageRequest>.CreateMessageAttributeValue(resultString);
         }
 
