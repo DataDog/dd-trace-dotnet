@@ -57,7 +57,7 @@ namespace Datadog.Trace.Tests
         public void AssemblyReferencesHaveNotChanged()
         {
             StringBuilder sb = new();
-            foreach (var referencedAssembly in _assembly.GetReferencedAssemblies())
+            foreach (var referencedAssembly in _assembly.GetReferencedAssemblies().OrderBy(asm => asm.FullName))
             {
                 if (!referencedAssembly.Name.Contains("Datadog.Trace"))
                 {
