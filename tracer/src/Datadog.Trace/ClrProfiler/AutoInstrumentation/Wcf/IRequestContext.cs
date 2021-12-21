@@ -3,20 +3,16 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.ComponentModel;
-
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
 {
     /// <summary>
     /// System.ServiceModel.Channels.RequestContext interface for duck-typing
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface IRequestContext
+    internal interface IRequestContext
     {
         /// <summary>
         /// Gets the request message
         /// </summary>
-        public IMessage RequestMessage { get; }
+        IMessage RequestMessage { get; }
     }
 }

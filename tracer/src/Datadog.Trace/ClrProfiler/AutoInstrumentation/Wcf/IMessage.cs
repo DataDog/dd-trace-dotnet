@@ -4,25 +4,22 @@
 // </copyright>
 
 using System.Collections.Generic;
-using System.ComponentModel;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
 {
     /// <summary>
     /// System.ServiceModel.Channels.Message interface for duck-typing
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface IMessage
+    internal interface IMessage
     {
         /// <summary>
         /// Gets the properties dictionary
         /// </summary>
-        public IDictionary<string, object> Properties { get; }
+        IDictionary<string, object> Properties { get; }
 
         /// <summary>
         /// Gets the message headers object
         /// </summary>
-        public IMessageHeaders Headers { get; }
+        IMessageHeaders Headers { get; }
     }
 }

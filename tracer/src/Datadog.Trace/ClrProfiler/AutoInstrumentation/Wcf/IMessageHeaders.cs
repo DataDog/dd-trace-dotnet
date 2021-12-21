@@ -4,25 +4,22 @@
 // </copyright>
 
 using System;
-using System.ComponentModel;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
 {
     /// <summary>
     /// System.ServiceModel.Channels.MessageHeaders interface for duck-typing
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface IMessageHeaders
+    internal interface IMessageHeaders
     {
         /// <summary>
         /// Gets the Action header
         /// </summary>
-        public string Action { get; }
+        string Action { get; }
 
         /// <summary>
         /// Gets the To header
         /// </summary>
-        public Uri To { get; }
+        Uri To { get; }
     }
 }
