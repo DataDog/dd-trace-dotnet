@@ -288,7 +288,7 @@ stages:
         }
 
         CheckChanges -variableName "IsProfilerChanged" -changeFilter "profiler/src"
-        CheckChanges -variableName "IsDebuggerChanged" -changeFilter "tracer/src"
+        CheckChanges -variableName "IsDebuggerChanged" -changeFilter "tracer/src/Datadog.Trace.ClrProfiler.Native/Debugger"
       name: check_changes_step
 
 - stage: package_windows

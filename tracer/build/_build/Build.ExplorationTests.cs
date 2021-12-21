@@ -73,7 +73,7 @@ partial class Build
         }
         else
         {
-            Logger.Info($"Exploration test name is not provided. Running all.");
+            Logger.Info($"Exploration test name is not provided. Running all of them.");
 
             foreach (var testDescription in ExplorationTestDescription.GetAllExplorationTestDescriptions())
             {
@@ -81,11 +81,11 @@ partial class Build
             }
         }
     }
-    void GitCloneBuild(ExplorationTestDescription testDescription)
+    void GitCloneAndBuild(ExplorationTestDescription testDescription)
     {
         if (Framework != null && !testDescription.IsFrameworkSupported(Framework))
         {
-            throw new InvalidOperationException($"This framework '{Framework}' is not listed in the project's target frameworks of {testDescription.Name}");
+            throw new InvalidOperationException($"The framework '{Framework}' is not listed in the project's target frameworks of {testDescription.Name}");
         }
 
         var depth = testDescription.IsGitShallowCloneSupported ? "--depth 1" : "";
@@ -174,13 +174,13 @@ partial class Build
         }
     }
 
-    void GitRunUnitTest(ExplorationTestDescription testDescription, Dictionary<string, string> envVariables)
+    void RunUnitTest(ExplorationTestDescription testDescription, Dictionary<string, string> envVariables)
     {
         Logger.Info($"Running exploration test {testDescription.Name}.");
 
         if (Framework != null && !testDescription.IsFrameworkSupported(Framework))
         {
-            throw new InvalidOperationException($"This framework '{Framework}' is not listed in the project's target frameworks of {testDescription.Name}");
+            throw new InvalidOperationException($"The framework '{Framework}' is not listed in the project's target frameworks of {testDescription.Name}");
         }
 
         DotNetTest(
