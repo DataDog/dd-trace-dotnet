@@ -34,8 +34,6 @@ namespace Datadog.Trace.Tests
             _filePath = filePath;
         }
 
-        protected string AssemblyReferenceSnapshotPlatform { get; set; }
-
         [Fact]
         public void PublicApiHasNotChanged()
         {
@@ -70,7 +68,7 @@ namespace Datadog.Trace.Tests
             // we will have a different list of referenced assemblies for net4x vs netcore vs netstandard
             var referencedAssemblyOutput = sb.ToString();
             string frameworkName = EnvironmentTools.GetTracerTargetFrameworkDirectory();
-            var expected = GetExpected(referencedAssemblyOutput, frameworkName, AssemblyReferenceSnapshotPlatform);
+            var expected = GetExpected(referencedAssemblyOutput, frameworkName);
 
             referencedAssemblyOutput.Should().Be(expected, "Assembly references should match the verified list of assembly references. Update the verified snapshot when the assembly references change");
         }
@@ -106,14 +104,11 @@ namespace Datadog.Trace.Tests
             return true;
         }
 
-        private string GetExpected(string publicApi, string targetFramework = null, string platformName = null, [CallerMemberName] string methodName = null)
+        private string GetExpected(string publicApi, string targetFramework = null, [CallerMemberName] string methodName = null)
         {
             // poor-man's VerifyTests.Verify, because Verify has incompatible dependencies with ASP.NET Core
             var snapshotDirectory = Path.Combine(Directory.GetParent(_filePath).FullName, "Snapshots");
-
             var intermediatePath = targetFramework == null ? methodName : $"{methodName}.{targetFramework}";
-            intermediatePath = platformName == null ? intermediatePath : $"{intermediatePath}.{platformName}";
-
             var receivedPath = Path.Combine(snapshotDirectory, $"PublicApiTests.{intermediatePath}.received.txt");
             var verifiedPath = Path.Combine(snapshotDirectory, $"PublicApiTests.{intermediatePath}.verified.txt");
 

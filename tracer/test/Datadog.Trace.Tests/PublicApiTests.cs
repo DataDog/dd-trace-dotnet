@@ -5,7 +5,6 @@
 
 using System;
 using System.Reflection;
-using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
 
@@ -16,13 +15,6 @@ namespace Datadog.Trace.Tests
         public PublicApiTests()
             : base(typeof(Tracer).Assembly)
         {
-            // When building Datadog.Trace for netcoreapp3.1, there are differences based on build platform.
-            // Specifically, non-Windows builds add an additional netstandard2.0 assembly reference
-            string frameworkName = EnvironmentTools.GetTracerTargetFrameworkDirectory();
-            if (frameworkName == "netcoreapp3.1")
-            {
-                AssemblyReferenceSnapshotPlatform = EnvironmentTools.IsWindows() ? "Windows" : "NonWindows";
-            }
         }
 
 #if NETFRAMEWORK
