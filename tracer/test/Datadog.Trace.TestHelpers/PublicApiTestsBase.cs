@@ -59,7 +59,11 @@ namespace Datadog.Trace.Tests
             StringBuilder sb = new();
             foreach (var referencedAssembly in _assembly.GetReferencedAssemblies().OrderBy(asm => asm.FullName))
             {
-                if (!referencedAssembly.Name.Contains("Datadog.Trace"))
+                // Exclusions
+                // Datadog.Trace: This dependency is fine and the version will change over time
+                // netstandard: This dependency is fine and there's a discrepancy between local builds and CI builds containing/not containing a reference to it
+                if (!referencedAssembly.Name.StartsWith("Datadog.Trace")
+                    && !referencedAssembly.Name.Equals("netstandard"))
                 {
                     sb.AppendLine(referencedAssembly.FullName);
                 }
