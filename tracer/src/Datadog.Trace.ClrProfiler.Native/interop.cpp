@@ -38,6 +38,11 @@ EXTERN_C VOID STDAPICALLTYPE EnableCallTargetStateByRef()
     return trace::profiler->EnableCallTargetStateByRef();
 }
 
+EXTERN_C VOID STDAPICALLTYPE AddDerivedInstrumentations(WCHAR* id, trace::CallTargetDefinition* items, int size)
+{
+    return trace::profiler->AddDerivedInstrumentations(id, items, size);
+}
+
 #ifndef _WIN32
 EXTERN_C void *dddlopen (const char *__file, int __mode)
 {

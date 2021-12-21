@@ -267,7 +267,7 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdTo
                 const auto baseType = GetTypeInfo(metadata_import, type_token);
                 return {baseType.id,        baseType.name,        token,
                         token_type,         baseType.extend_from, baseType.valueType,
-                        baseType.isGeneric, baseType.parent_type};
+                        baseType.isGeneric, baseType.parent_type, baseType.scopeToken};
             }
         }
         break;
@@ -295,7 +295,7 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdTo
     }
 
     return {token,       type_name_string, mdTypeSpecNil,  token_type,
-            extendsInfo, type_valueType,   type_isGeneric, parentTypeInfo};
+            extendsInfo, type_valueType,   type_isGeneric, parentTypeInfo, parent_token};
 }
 
 mdAssemblyRef FindAssemblyRef(const ComPtr<IMetaDataAssemblyImport>& assembly_import, const WSTRING& assembly_name)

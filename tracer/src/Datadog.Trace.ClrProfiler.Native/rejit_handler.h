@@ -134,6 +134,12 @@ private:
     void RequestRejitForInlinersInModule(ModuleID moduleId);
     void RequestRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef);
 
+    void ProcessTypeDefForRejit(const IntegrationDefinition& integration, ComPtr<IMetaDataImport2>& metadataImport,
+                                ComPtr<IMetaDataEmit2>& metadataEmit, ComPtr<IMetaDataAssemblyImport>& assemblyImport,
+                                ComPtr<IMetaDataAssemblyEmit>& assemblyEmit, const ModuleInfo& moduleInfo,
+                                const mdTypeDef typeDef, std::vector<ModuleID>& vtModules,
+                                std::vector<mdMethodDef>& vtMethodDefs);
+
 public:
     RejitHandler(ICorProfilerInfo7* pInfo,
                  std::function<HRESULT(RejitHandlerModule*, RejitHandlerModuleMethod*)> rewriteCallback);

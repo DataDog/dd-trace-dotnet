@@ -130,5 +130,34 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
             }
         }
+
+        [SkippableFact]
+        public void MethodAbstract()
+        {
+            int agentPort = TcpPortProvider.GetOpenPort();
+
+            using (new MockTracerAgent(agentPort))
+            using (var processResult = RunSampleAndWaitForExit(agentPort, arguments: "abstract"))
+            {
+                int beginMethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({0}\\)").Count;
+                int begin1MethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({1}\\)").Count;
+                int endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod\\(").Count;
+
+                string[] typeNames = new string[]
+                {
+                    ".VoidMethod",
+                    ".OtherMethod",
+                };
+
+                Assert.Equal(1, beginMethodCount);
+                Assert.Equal(4, begin1MethodCount);
+                Assert.Equal(5, endMethodCount);
+
+                foreach (var typeName in typeNames)
+                {
+                    Assert.Contains(typeName, processResult.StandardOutput);
+                }
+            }
+        }
     }
 }

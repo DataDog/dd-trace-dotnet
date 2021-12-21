@@ -39,12 +39,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
         internal class CommandExecuteNonQueryAttribute : AdoNetClientInstrumentMethodAttribute
         {
-            public CommandExecuteNonQueryAttribute(Type adoNetClientDataType)
+            public CommandExecuteNonQueryAttribute(Type adoNetClientDataType, IntegrationType integrationType = IntegrationType.Default)
                 : base(adoNetClientDataType)
             {
                 MethodName = AdoNetConstants.MethodNames.ExecuteNonQuery;
                 ReturnTypeName = ClrNames.Int32;
                 CallTargetType = typeof(CommandExecuteNonQueryIntegration);
+                CallTargetIntegrationType = integrationType;
             }
         }
 
@@ -144,13 +145,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
         internal class CommandExecuteDbDataReaderWithBehaviorAttribute : AdoNetClientInstrumentMethodAttribute
         {
-            public CommandExecuteDbDataReaderWithBehaviorAttribute(Type adoNetClientDataType)
+            public CommandExecuteDbDataReaderWithBehaviorAttribute(Type adoNetClientDataType, IntegrationType integrationType = IntegrationType.Default)
                 : base(adoNetClientDataType)
             {
                 MethodName = AdoNetConstants.MethodNames.ExecuteDbDataReader;
                 ReturnTypeName = AdoNetConstants.TypeNames.DbDataReaderType;
                 ParameterTypeNames = new[] { AdoNetConstants.TypeNames.CommandBehavior };
                 CallTargetType = typeof(CommandExecuteReaderWithBehaviorIntegration);
+                CallTargetIntegrationType = integrationType;
             }
         }
 
@@ -168,12 +170,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
         internal class CommandExecuteScalarAttribute : AdoNetClientInstrumentMethodAttribute
         {
-            public CommandExecuteScalarAttribute(Type adoNetClientDataType)
+            public CommandExecuteScalarAttribute(Type adoNetClientDataType, IntegrationType integrationType = IntegrationType.Default)
                 : base(adoNetClientDataType)
             {
                 MethodName = AdoNetConstants.MethodNames.ExecuteScalar;
                 ReturnTypeName = ClrNames.Object;
                 CallTargetType = typeof(CommandExecuteScalarIntegration);
+                CallTargetIntegrationType = integrationType;
             }
         }
 

@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -36,6 +37,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         protected int MaxTestRunMilliseconds { get; }
 
         protected bool AssumeSuccessOnTimeout { get; set; }
+
+        protected IImmutableList<MockTracerAgent.Span> Spans { get; private set; } = ImmutableList<MockTracerAgent.Span>.Empty;
 
         protected void SetEnvironmentVariable(string key, string value)
         {
@@ -139,6 +142,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 
                     result = new ProcessResult(process, standardOutput, standardError, exitCode);
                 }
+
+                Spans = agent.Spans;
             }
 
 #if NETCOREAPP2_1

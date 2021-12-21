@@ -120,12 +120,33 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         }
 
         [Fact]
-        internal void TryGetIntegrationDetails_FailsForUnknownCommandType()
+        internal void TryGetIntegrationDetails_FailsForKnownCommandType()
         {
-            bool result = DbScopeFactory.TryGetIntegrationDetails("UnknownCommand", out var actualIntegrationId, out var actualDbType);
+            bool result = DbScopeFactory.TryGetIntegrationDetails("InterceptableDbCommand", out var actualIntegrationId, out var actualDbType);
             Assert.False(result);
             Assert.False(actualIntegrationId.HasValue);
             Assert.Null(actualDbType);
+
+            bool result2 = DbScopeFactory.TryGetIntegrationDetails("ProfiledDbCommand", out var actualIntegrationId2, out var actualDbType2);
+            Assert.False(result2);
+            Assert.False(actualIntegrationId2.HasValue);
+            Assert.Null(actualDbType2);
+        }
+
+        [Theory]
+        [InlineData("System.Data.SqlClient.SqlCommand", "SqlClient", "sql-server")]
+        [InlineData("MySql.Data.MySqlClient.MySqlCommand", "MySql", "mysql")]
+        [InlineData("Npgsql.NpgsqlCommand", "Npgsql", "postgres")]
+        [InlineData("ProfiledDbCommand", null, null)]
+        [InlineData("ExampleCommand", "AdoNet", "example")]
+        [InlineData("Example", "AdoNet", "example")]
+        [InlineData("Command", "AdoNet", "command")]
+        [InlineData("Custom.DB.Command", "AdoNet", "db")]
+        internal void TryGetIntegrationDetails_CustomCommandType(string commandTypeFullName, string integrationId, string expectedDbType)
+        {
+            DbScopeFactory.TryGetIntegrationDetails(commandTypeFullName, out var actualIntegrationId, out var actualDbType);
+            Assert.Equal(integrationId, actualIntegrationId?.ToString());
+            Assert.Equal(expectedDbType, actualDbType);
         }
 
         private static Tracer CreateTracerWithIntegrationEnabled(string integrationName, bool enabled)

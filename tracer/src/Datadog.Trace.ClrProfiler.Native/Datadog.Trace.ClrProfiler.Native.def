@@ -8,3 +8,4 @@ EXPORTS
     InitializeProfiler
     EnableByRefInstrumentation
     EnableCallTargetStateByRef
+    AddDerivedInstrumentations
