@@ -84,6 +84,7 @@ variables:
   Verify_DisableClipboard: true
   DiffEngine_Disabled: true
   OriginalCommitId: $[coalesce(variables['System.PullRequest.SourceCommitId'], variables['Build.SourceVersion'])]
+  NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY: true
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
@@ -593,17 +594,19 @@ stages:
     - script: tracer\build.cmd BuildWindowsIntegrationTests -Framework $(framework)
       displayName: BuildWindowsIntegrationTests
 
-    - task: DockerCompose@0
-      displayName: docker-compose build IIS containers
-      inputs:
-        containerregistrytype: Container Registry
-        dockerComposeCommand: build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS
-
-    - task: DockerCompose@0
-      displayName: docker-compose start IIS containers
-      inputs:
-        containerregistrytype: Container Registry
-        dockerComposeCommand: up -d IntegrationTests.IIS
+    - powershell: |
+        $Iterations = 5
+        do {
+            Try{
+              docker-compose build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS
+              docker-compose up -d IntegrationTests.IIS
+              $Iterations = 0
+          } catch { 
+            echo "Retrying... "
+            Start-Sleep -s 1
+            $Iterations = $Iterations - 1 }
+        } while ($Iterations -gt 0)
+      displayName: docker-compose start IntegrationTests.IIS
 
     - script: tracer\build.cmd RunWindowsIisIntegrationTests -Framework $(framework) --code-coverage
       displayName: RunWindowsIisIntegrationTests
@@ -701,19 +704,17 @@ stages:
         baseImage: $(baseImage)
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework)"
 
-    - task: DockerCompose@0
-      displayName: docker-compose build IntegrationTests
+    - script: |
+        # retry up to 5 times to pull the docker images
+        for i in 1 2 3 4 5; do 
+          docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests && \
+          docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies && \
+          break || sleep 5; 
+        done
       env:
         baseImage: $(baseImage)
-      inputs:
-        containerregistrytype: Container Registry
-        dockerComposeCommand: build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests
-
-    - task: DockerCompose@0
-      displayName: docker-compose start dependencies
-      inputs:
-        containerregistrytype: Container Registry
-        dockerComposeCommand: run --rm StartDependencies
+        framework: $(publishTargetFramework)
+      displayName: docker-compose build IntegrationTests and run StartDependencies
 
     - task: DockerCompose@0
       displayName: docker-compose run IntegrationTests
@@ -723,6 +724,7 @@ stages:
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
         dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) IntegrationTests
+        projectName: ddtrace_$(Build.BuildNumber)
 
     - task: DockerCompose@0
       displayName: docker-compose stop services
@@ -792,19 +794,17 @@ stages:
             baseImage: $(baseImage)
             command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework)"
 
-        - task: DockerCompose@0
-          displayName: docker-compose build IntegrationTests
-          inputs:
-            containerregistrytype: Container Registry
-            dockerComposeCommand: build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests.ARM64
-            projectName: ddtrace_$(Build.BuildNumber)
-
-        - task: DockerCompose@0
-          displayName: docker-compose start dependencies
-          inputs:
-            containerregistrytype: Container Registry
-            dockerComposeCommand: run --rm StartDependencies.ARM64
-            projectName: ddtrace_$(Build.BuildNumber)
+        - script: |
+            # retry up to 5 times to pull the docker images
+            for i in 1 2 3 4 5; do 
+              docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests.ARM64 && \
+              docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies.ARM64 && \
+              break || sleep 1; 
+            done
+          env:
+            baseImage: $(baseImage)
+            framework: $(publishTargetFramework)
+          displayName: docker-compose build IntegrationTests and run StartDependencies
 
         - task: DockerCompose@0
           displayName: docker-compose run IntegrationTests
