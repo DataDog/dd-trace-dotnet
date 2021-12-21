@@ -318,5 +318,23 @@ namespace Datadog.Trace.Tests.Configuration
             var actualValue = settingGetter(settings);
             Assert.Equal(expectedValue, actualValue);
         }
+
+        [Theory]
+        [InlineData(true, "tag_1")]
+        [InlineData(false, "tag.1")]
+        public void TestHeaderTagsNormalization(bool replacePeriodsInHeaderTags, string expectedHeader)
+        {
+            var expectedValue = new Dictionary<string, string> { { "header", expectedHeader } };
+            var collection = new NameValueCollection
+            {
+                { ConfigurationKeys.FeatureFlags.ReplacePeriodsInHeaderTags, replacePeriodsInHeaderTags.ToString() },
+                { ConfigurationKeys.HeaderTags, "header:tag.1" },
+            };
+
+            IConfigurationSource source = new NameValueConfigurationSource(collection);
+            var settings = new TracerSettings(source);
+
+            Assert.Equal(expectedValue, settings.HeaderTags);
+        }
     }
 }

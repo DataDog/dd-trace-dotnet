@@ -349,6 +349,13 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <seealso cref="TracerSettings.DelayWcfInstrumentationEnabled"/>
             public const string DelayWcfInstrumentationEnabled = "DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED";
+
+            /// <summary>
+            /// Enables a fix around header tags normalization:
+            /// We used to normalize periods even if a tag was provided for a header, whereas we should not.
+            /// This flag defaults to false and is here for retrocompatibility only
+            /// </summary>
+            public const string ReplacePeriodsInHeaderTags = "DD_TRACE_REPLACE_HEADER_TAG_PERIODS_ENABLED";
         }
     }
 }

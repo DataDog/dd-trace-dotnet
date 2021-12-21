@@ -90,8 +90,9 @@ namespace Datadog.Trace.Configuration
                          // default value (empty)
                          new Dictionary<string, string>();
 
-            // Filter out tags with empty keys or empty values, and trim whitespace
-            HeaderTags = InitializeHeaderTags(inputHeaderTags);
+            var replacePeriodsInHeaderTags = source?.GetBool(ConfigurationKeys.FeatureFlags.ReplacePeriodsInHeaderTags) ?? false;
+            // Filter out tags with empty keys or empty values, and trim whitespaces
+            HeaderTags = InitializeHeaderTags(inputHeaderTags, replacePeriodsInHeaderTags);
 
             var serviceNameMappings = source?.GetDictionary(ConfigurationKeys.ServiceNameMappings)
                                       ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
@@ -383,7 +384,7 @@ namespace Datadog.Trace.Configuration
             return new ImmutableTracerSettings(this);
         }
 
-        private static IDictionary<string, string> InitializeHeaderTags(IDictionary<string, string> configurationDictionary)
+        private static IDictionary<string, string> InitializeHeaderTags(IDictionary<string, string> configurationDictionary, bool replacePeriodsInHeaderTags)
         {
             var headerTags = new Dictionary<string, string>();
 
@@ -401,10 +402,15 @@ namespace Datadog.Trace.Configuration
                 {
                     headerTags.Add(headerName.Trim(), string.Empty);
                 }
-                else if (providedTagName.TryConvertToNormalizedTagName(normalizePeriods: false, out var normalizedTagName))
+                else if (!replacePeriodsInHeaderTags && providedTagName.TryConvertToNormalizedTagName(normalizePeriods: false, out var normalizedTagName))
                 {
                     // If the user has provided a tag name, then we don't normalize periods in the provided tag name
                     headerTags.Add(headerName.Trim(), normalizedTagName);
+                }
+                else if (replacePeriodsInHeaderTags && providedTagName.TryConvertToNormalizedTagName(normalizePeriods: true, out var normalizedTagNameNoPeriods))
+                {
+                    // Back to the previous behaviour if the flag is set
+                    headerTags.Add(headerName.Trim(), normalizedTagNameNoPeriods);
                 }
             }
 
