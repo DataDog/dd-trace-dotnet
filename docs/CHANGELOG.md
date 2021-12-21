@@ -1,5 +1,13 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
+## [Release 1.31.1](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.31.1)
+
+## Changes
+* [AppSec] Move bug fixes to v1.x branch (#2194)
+* [1.x] Fix profiler build 1.x (#2199)
+
+[Changes since 2.0.1](https://github.com/DataDog/dd-trace-dotnet/compare/v2.0.1...v1.31.1)
+
 ## [Release 1.31.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v1.31.0)
 
 ## Changes
