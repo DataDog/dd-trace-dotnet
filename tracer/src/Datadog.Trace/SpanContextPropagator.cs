@@ -240,7 +240,7 @@ namespace Datadog.Trace
             return null;
         }
 
-        private int? ParseInt32<TTCarrier>(TTCarrier carrier, Func<TTCarrier, string, IEnumerable<string?>> getter, string headerName)
+        private int? ParseInt32<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string headerName)
         {
             var headerValues = getter(carrier, headerName);
             bool hasValue = false;
