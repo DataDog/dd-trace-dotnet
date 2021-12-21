@@ -320,14 +320,14 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData(true, "tag_1")]
-        [InlineData(false, "tag.1")]
-        public void TestHeaderTagsNormalization(bool replacePeriodsInHeaderTags, string expectedHeader)
+        [InlineData(false, "tag_1")]
+        [InlineData(true, "tag.1")]
+        public void TestHeaderTagsNormalization(bool headerTagsNormalizationFixEnabled, string expectedHeader)
         {
             var expectedValue = new Dictionary<string, string> { { "header", expectedHeader } };
             var collection = new NameValueCollection
             {
-                { ConfigurationKeys.FeatureFlags.ReplacePeriodsInHeaderTags, replacePeriodsInHeaderTags.ToString() },
+                { ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled, headerTagsNormalizationFixEnabled.ToString() },
                 { ConfigurationKeys.HeaderTags, "header:tag.1" },
             };
 
