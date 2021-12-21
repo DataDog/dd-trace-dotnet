@@ -80,9 +80,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
                 // the name of the first element in the command BsonDocument will be the operation type (insert, delete, find, etc)
                 // and its value is the collection name
                 var firstElement = protocolWithCommand.Command.GetElement(0);
-                string operationName = firstElement?.Name;
+                string operationName = firstElement.Name;
 
-                collectionName = firstElement?.Value?.ToString();
+                collectionName = firstElement.Value?.ToString();
                 query = protocolWithCommand.Command.ToString();
                 resourceName = $"{operationName ?? "operation"} {databaseName ?? "database"}";
             }

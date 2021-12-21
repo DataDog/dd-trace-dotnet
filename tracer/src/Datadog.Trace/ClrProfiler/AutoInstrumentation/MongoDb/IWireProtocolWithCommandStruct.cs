@@ -17,6 +17,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
         /// Gets the command object passed into the wire protocol
         /// </summary>
         [DuckField(Name = "_command")]
-        public IBsonDocument Command;
+        public BsonDocumentProxy Command;
     }
 }
