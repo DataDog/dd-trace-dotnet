@@ -31,17 +31,17 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             {
                 if (_invokeDelegate is null)
                 {
-                    _invokeDelegate = (TTarget instance, Exception exception, ref CallTargetState state) => CallTargetReturn.GetDefault();
+                    _invokeDelegate = (TTarget instance, Exception exception, in CallTargetState state) => CallTargetReturn.GetDefault();
                 }
             }
         }
 
-        internal delegate CallTargetReturn InvokeDelegate(TTarget instance, Exception exception, ref CallTargetState state);
+        internal delegate CallTargetReturn InvokeDelegate(TTarget instance, Exception exception, in CallTargetState state);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static CallTargetReturn Invoke(TTarget instance, Exception exception, ref CallTargetState state)
+        internal static CallTargetReturn Invoke(TTarget instance, Exception exception, in CallTargetState state)
         {
-            return _invokeDelegate(instance, exception, ref state);
+            return _invokeDelegate(instance, exception, in state);
         }
     }
 }

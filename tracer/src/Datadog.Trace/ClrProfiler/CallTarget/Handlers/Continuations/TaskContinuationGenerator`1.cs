@@ -25,9 +25,9 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
             }
         }
 
-        internal delegate TResult ContinuationMethodDelegate(TTarget target, TResult returnValue, Exception exception, ref CallTargetState state);
+        internal delegate TResult ContinuationMethodDelegate(TTarget target, TResult returnValue, Exception exception, in CallTargetState state);
 
-        public override TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, ref CallTargetState state)
+        public override TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
             if (_continuation == null)
             {
@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 
             if (exception != null || returnValue == null)
             {
-                _continuation(instance, default, exception, ref state);
+                _continuation(instance, default, exception, in state);
                 return returnValue;
             }
 
@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 
             if (previousTask.Status == TaskStatus.RanToCompletion)
             {
-                return ToTReturn(Task.FromResult(_continuation(instance, previousTask.Result, default, ref state)));
+                return ToTReturn(Task.FromResult(_continuation(instance, previousTask.Result, default, in state)));
             }
 
             return ToTReturn(ContinuationAction(previousTask, instance, state));
@@ -87,7 +87,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                 // *
                 // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
                 // *
-                continuationResult = _continuation(target, taskResult, exception, ref state);
+                continuationResult = _continuation(target, taskResult, exception, in state);
             }
             catch (Exception ex)
             {

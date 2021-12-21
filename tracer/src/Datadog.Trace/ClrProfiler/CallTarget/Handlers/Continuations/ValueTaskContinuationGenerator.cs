@@ -24,9 +24,9 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
             }
         }
 
-        internal delegate object ContinuationMethodDelegate(TTarget target, object returnValue, Exception exception, ref CallTargetState state);
+        internal delegate object ContinuationMethodDelegate(TTarget target, object returnValue, Exception exception, in CallTargetState state);
 
-        public override TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, ref CallTargetState state)
+        public override TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
             if (_continuation is null)
             {
@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 
             if (exception != null)
             {
-                _continuation(instance, default, exception, ref state);
+                _continuation(instance, default, exception, in state);
                 return returnValue;
             }
 
@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                         // *
                         // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
                         // *
-                        _continuation(instance, default, ex, ref state);
+                        _continuation(instance, default, ex, in state);
                     }
                     catch (Exception contEx)
                     {
@@ -71,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
                     // *
                     // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
                     // *
-                    _continuation(instance, default, default, ref state);
+                    _continuation(instance, default, default, in state);
                 }
                 catch (Exception contEx)
                 {

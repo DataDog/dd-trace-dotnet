@@ -10,7 +10,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations
 {
     internal class ContinuationGenerator<TTarget, TReturn>
     {
-        public virtual TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, ref CallTargetState state)
+        public virtual TReturn SetContinuation(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
             return returnValue;
         }

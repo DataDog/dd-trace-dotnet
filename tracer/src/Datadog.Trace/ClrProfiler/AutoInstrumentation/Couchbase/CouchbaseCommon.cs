@@ -95,12 +95,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
             }
         }
 
-        internal static CallTargetReturn<TOperationResult> CommonOnMethodEndSync<TOperationResult>(TOperationResult tResult, Exception exception, ref CallTargetState state)
+        internal static CallTargetReturn<TOperationResult> CommonOnMethodEndSync<TOperationResult>(TOperationResult tResult, Exception exception, in CallTargetState state)
         {
-            return new CallTargetReturn<TOperationResult>(CommonOnMethodEnd(tResult, exception, ref state));
+            return new CallTargetReturn<TOperationResult>(CommonOnMethodEnd(tResult, exception, in state));
         }
 
-        internal static TOperationResult CommonOnMethodEnd<TOperationResult>(TOperationResult tResult, Exception exception, ref CallTargetState state)
+        internal static TOperationResult CommonOnMethodEnd<TOperationResult>(TOperationResult tResult, Exception exception, in CallTargetState state)
         {
             if (state.Scope == null || tResult == null)
             {

@@ -500,7 +500,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         {
             if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
-                return EndMethodHandler<TIntegration, TTarget>.Invoke(instance, exception, ref state);
+                return EndMethodHandler<TIntegration, TTarget>.Invoke(instance, exception, in state);
             }
 
             return CallTargetReturn.GetDefault();
@@ -522,7 +522,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         {
             if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
-                return EndMethodHandler<TIntegration, TTarget, TReturn>.Invoke(instance, returnValue, exception, ref state);
+                return EndMethodHandler<TIntegration, TTarget, TReturn>.Invoke(instance, returnValue, exception, in state);
             }
 
             return new CallTargetReturn<TReturn>(returnValue);
@@ -538,11 +538,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <param name="state">CallTarget state</param>
         /// <returns>CallTarget return structure</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static CallTargetReturn EndMethod<TIntegration, TTarget>(TTarget instance, Exception exception, ref CallTargetState state)
+        public static CallTargetReturn EndMethod<TIntegration, TTarget>(TTarget instance, Exception exception, in CallTargetState state)
         {
             if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
-                return EndMethodHandler<TIntegration, TTarget>.Invoke(instance, exception, ref state);
+                return EndMethodHandler<TIntegration, TTarget>.Invoke(instance, exception, in state);
             }
 
             return CallTargetReturn.GetDefault();
@@ -560,11 +560,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
         /// <param name="state">CallTarget state</param>
         /// <returns>CallTarget return structure</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static CallTargetReturn<TReturn> EndMethod<TIntegration, TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, ref CallTargetState state)
+        public static CallTargetReturn<TReturn> EndMethod<TIntegration, TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
             if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
-                return EndMethodHandler<TIntegration, TTarget, TReturn>.Invoke(instance, returnValue, exception, ref state);
+                return EndMethodHandler<TIntegration, TTarget, TReturn>.Invoke(instance, returnValue, exception, in state);
             }
 
             return new CallTargetReturn<TReturn>(returnValue);
