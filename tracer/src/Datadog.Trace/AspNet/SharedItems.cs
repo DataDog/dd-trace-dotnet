@@ -7,16 +7,14 @@
 
 using System.Collections.Generic;
 using System.Web;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.AspNet
 {
     internal static class SharedItems
     {
         public const string HttpContextPropagatedResourceNameKey = "__Datadog.Trace.ClrProfiler.Managed.AspNetMvcIntegration-aspnet.resourcename";
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SharedItems));
 
-        internal static void PushItem<T>(HttpContext context, string key, T item)
+        internal static void PushScope(HttpContext context, string key, Scope item)
         {
             if (context == null)
             {
@@ -29,36 +27,32 @@ namespace Datadog.Trace.AspNet
             {
                 context.Items[key] = item;
             }
-            else if (existingItem is Stack<T> stack)
+            else if (existingItem is Stack<Scope> stack)
             {
                 stack.Push(item);
             }
-            else if (existingItem is T previousScope)
+            else if (existingItem is Scope previousScope)
             {
-                var newStack = new Stack<T>();
+                var newStack = new Stack<Scope>();
                 newStack.Push(previousScope);
                 newStack.Push(item);
                 context.Items[key] = newStack;
             }
-            else
-            {
-                Log.Warning("Trying to push an item in HttpContext.Items but a previous object of unhandled type is already stored there");
-            }
         }
 
-        internal static T TryPopItem<T>(HttpContext context, string key)
+        internal static Scope TryPopScope(HttpContext context, string key)
         {
             var item = context?.Items[key];
-            if (item is T storedScope)
+            if (item is Scope storedScope)
             {
                 return storedScope;
             }
-            else if (item is Stack<T> stack && stack.Count > 0)
+            else if (item is Stack<Scope> stack && stack.Count > 0)
             {
                 return stack.Pop();
             }
 
-            return default(T);
+            return default(Scope);
         }
     }
 }

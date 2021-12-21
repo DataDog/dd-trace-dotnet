@@ -55,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
             try
             {
-                scope = SharedItems.TryPopItem<Scope>(httpContext, AspNetMvcIntegration.HttpContextKey);
+                scope = SharedItems.TryPopScope(httpContext, AspNetMvcIntegration.HttpContextKey);
             }
             catch (Exception ex)
             {

@@ -2,7 +2,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_2,
-    Name: aspnet-mvc.request,
+    Name: aspnet-mvc.request.child-action,
     Resource: GET /datadog,
     Service: sample,
     Type: web,

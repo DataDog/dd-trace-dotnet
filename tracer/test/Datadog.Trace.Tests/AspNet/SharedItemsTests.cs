@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.AspNet
             var context = CreateContext();
 
             // Assert
-            Assert.Null(SharedItems.TryPopItem<Scope>(context, key));
+            Assert.Null(SharedItems.TryPopScope(context, key));
         }
 
         [Fact]
@@ -33,10 +33,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.AspNet
             var context = CreateContext();
 
             // Act
-            SharedItems.PushItem(context, key, scope);
+            SharedItems.PushScope(context, key, scope);
 
             // Assert
-            Assert.Equal(scope, SharedItems.TryPopItem<Scope>(context, key));
+            Assert.Equal(scope, SharedItems.TryPopScope(context, key));
         }
 
         [Fact]
@@ -49,14 +49,14 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.AspNet
             var scope3 = new Scope(scope2, null, null, false);
             var context = CreateContext();
             // Act
-            SharedItems.PushItem(context, key, scope1);
-            SharedItems.PushItem(context, key, scope2);
-            SharedItems.PushItem(context, key, scope3);
+            SharedItems.PushScope(context, key, scope1);
+            SharedItems.PushScope(context, key, scope2);
+            SharedItems.PushScope(context, key, scope3);
 
             // Assert
-            Assert.Equal(scope3, SharedItems.TryPopItem<Scope>(context, key));
-            Assert.Equal(scope2, SharedItems.TryPopItem<Scope>(context, key));
-            Assert.Equal(scope1, SharedItems.TryPopItem<Scope>(context, key));
+            Assert.Equal(scope3, SharedItems.TryPopScope(context, key));
+            Assert.Equal(scope2, SharedItems.TryPopScope(context, key));
+            Assert.Equal(scope1, SharedItems.TryPopScope(context, key));
         }
 
         private HttpContext CreateContext()
