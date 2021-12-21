@@ -18,8 +18,6 @@ namespace Benchmarks.Trace
 
         static Log4netBenchmark()
         {
-            LogProvider.SetCurrentLogProvider(new NoOpLog4NetLogProvider());
-
             var logInjectionSettings = new TracerSettings
             {
                 StartupDiagnosticLogEnabled = false,
