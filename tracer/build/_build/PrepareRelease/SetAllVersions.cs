@@ -166,6 +166,10 @@ namespace PrepareRelease
                 "src/WindowsInstaller/WindowsInstaller.wixproj",
                 WixProjReplace);
 
+            SynchronizeVersion(
+                "../shared/src/msi-installer/WindowsInstaller.wixproj",
+                WixProjReplace);
+
             Console.WriteLine($"Completed synchronizing versions to {VersionString()}");
         }
 
