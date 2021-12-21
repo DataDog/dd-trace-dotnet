@@ -69,7 +69,7 @@ partial class Build
             Logger.Info($"Provided exploration test name is {ExplorationTestName}.");
 
             var testDescription = ExplorationTestDescription.GetExplorationTestDescription(ExplorationTestName.Value);
-            GitCloneBuild(testDescription);
+            GitCloneAndBuild(testDescription);
         }
         else
         {
@@ -77,10 +77,11 @@ partial class Build
 
             foreach (var testDescription in ExplorationTestDescription.GetAllExplorationTestDescriptions())
             {
-                GitCloneBuild(testDescription);
+                GitCloneAndBuild(testDescription);
             }
         }
     }
+
     void GitCloneAndBuild(ExplorationTestDescription testDescription)
     {
         if (Framework != null && !testDescription.IsFrameworkSupported(Framework))
@@ -161,7 +162,7 @@ partial class Build
             Logger.Info($"Provided exploration test name is {ExplorationTestName}.");
             
             var testDescription = ExplorationTestDescription.GetExplorationTestDescription(ExplorationTestName.Value);
-            GitRunUnitTest(testDescription, envVariables);
+            RunUnitTest(testDescription, envVariables);
         }
         else
         {
@@ -169,7 +170,7 @@ partial class Build
 
             foreach (var testDescription in ExplorationTestDescription.GetAllExplorationTestDescriptions())
             {
-                GitRunUnitTest(testDescription, envVariables);
+                RunUnitTest(testDescription, envVariables);
             }
         }
     }
