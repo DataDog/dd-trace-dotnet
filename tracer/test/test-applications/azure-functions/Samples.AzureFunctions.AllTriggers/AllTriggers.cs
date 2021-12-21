@@ -39,6 +39,7 @@ namespace Samples.AzureFunctions.AllTriggers
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = "simple")] HttpRequest req,
             ILogger log)
         {
+            await Task.Yield();
             log.LogInformation("C# HTTP trigger function processed a request.");
             return new OkObjectResult("This HTTP triggered function executed successfully. ");
         }
