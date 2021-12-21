@@ -1013,10 +1013,6 @@ stages:
     strategy:
       matrix: $[ dependencies.generator.outputs['mtrx.values'] ]
 
-    variables:
-      TestAllPackageVersions: true
-      IncludeMinorPackageVersions:  $[or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.perform_comprehensive_testing, 'true'))]
-
     pool:
       vmImage: ubuntu-18.04
 
