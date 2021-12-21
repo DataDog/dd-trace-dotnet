@@ -5,10 +5,10 @@
 // Based on https://github.com/dotnet/performance/blob/ef497aa104ae7abe709c71fbb137230bf5be25e9/src/tools/ResultsComparer
 // using System.Collections.Generic;
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using ByteSizeLib;
-using Perfolizer.Mathematics.Multimodality;
 using Perfolizer.Mathematics.SignificanceTesting;
 using Perfolizer.Mathematics.Thresholds;
 
@@ -18,23 +18,17 @@ namespace BenchmarkComparison
     {
         public static readonly Threshold SignificantResultThreshold = Threshold.Create(ThresholdUnit.Ratio, 0.10);
         public static readonly Threshold NoiseThreshold = Threshold.Create(ThresholdUnit.Nanoseconds, 0.3);
-        public static readonly double AllocationThresholdPercent = 0.5;//%
+        public static readonly decimal AllocationThresholdPercent = new(value: 0.5);//%
 
         public static List<MatchedSummary> MatchAndCompareResults(
             IEnumerable<BdnResult> baseResults,
-            IEnumerable<BdnResult> diffResults,
-            IEnumerable<BdnRunSummary> baseSummary,
-            IEnumerable<BdnRunSummary> diffSummary)
+            IEnumerable<BdnResult> diffResults)
         {
             var baseResultsByFilename = baseResults.ToDictionary(x => x.FileName, x => x);
             var diffResultsByFilename = diffResults.ToDictionary(x => x.FileName, x => x);
-            var baseSummaryByFilename = baseSummary.ToDictionary(x => x.FileName, x => x);
-            var diffSummaryByFilename = diffSummary.ToDictionary(x => x.FileName, x => x);
 
             var keys = baseResultsByFilename.Keys
                                             .Concat(diffResultsByFilename.Keys)
-                                            .Concat(baseSummaryByFilename.Keys)
-                                            .Concat(diffSummaryByFilename.Keys)
                                             .Distinct()
                                             .OrderBy(x => x);
 
@@ -43,14 +37,12 @@ namespace BenchmarkComparison
                    {
                        var baseResult = GetValueOrDefault(baseResultsByFilename, key);
                        var diffResult = GetValueOrDefault(diffResultsByFilename, key);
-                       var baseSummary = GetValueOrDefault(baseSummaryByFilename, key);
-                       var diffSummary = GetValueOrDefault(diffSummaryByFilename, key);
 
-                       if (baseResult is null || diffResult is null || baseSummary is null || diffSummary is null)
+                       if (baseResult is null || diffResult is null)
                        {
                            return new MatchedSummary(key,
-                                                     baseSummary?.Results ?? new List<BdnBenchmarkSummary>(),
-                                                     diffSummary?.Results ?? new List<BdnBenchmarkSummary>(),
+                                                     baseResult?.Benchmarks ?? new List<Benchmark>(),
+                                                     diffResult?.Benchmarks ?? new List<Benchmark>(),
                                                      new List<BenchmarkComparison>(),
                                                      new List<AllocationComparison>());
                        }
@@ -59,37 +51,27 @@ namespace BenchmarkComparison
                        var diffBenchmarksByName = diffResult.Benchmarks.ToDictionary(GetName, x => x);
 
                        var benchmarkKeys = baseBenchmarksByName.Keys.Concat(diffBenchmarksByName.Keys).Distinct();
-                       var benchmarkComparisons = benchmarkKeys
-                                        .Select(id =>
-                                         {
-                                             var baseBenchmark = GetValueOrDefault(baseBenchmarksByName, id);
-                                             var diffBenchmark = GetValueOrDefault(diffBenchmarksByName, id);
 
-                                             return new BenchmarkComparison(id, baseBenchmark, diffBenchmark, EquivalenceTestConclusion.Unknown);
-                                         })
-                                        .Compare(SignificantResultThreshold, NoiseThreshold)
-                                        .ToList();
+                       var matchedBenchmarks = benchmarkKeys
+                                              .Select(id =>
+                                               {
+                                                   var baseBenchmark = GetValueOrDefault(baseBenchmarksByName, id);
+                                                   var diffBenchmark = GetValueOrDefault(diffBenchmarksByName, id);
 
-                       var baseSummariesByName = baseSummary.Results
-                                                           .ToDictionary(b => $"{b.Method}-{b.Toolchain}", x => x);
+                                                   return (Id: id, Base: baseBenchmark, Diff: diffBenchmark);
+                                               })
+                                              .ToList();
+                       var benchmarkComparisons = matchedBenchmarks
+                                                 .Select(x => new BenchmarkComparison(x.Id, x.Base, x.Diff, EquivalenceTestConclusion.Unknown))
+                                                 .Compare(SignificantResultThreshold, NoiseThreshold)
+                                                 .ToList();
 
-                       var diffSummariesByName = diffSummary.Results
-                                                           .ToDictionary(b => $"{b.Method}-{b.Toolchain}", x => x);
-                       var summaryKeys = baseSummariesByName.Keys.Concat(diffSummariesByName.Keys).Distinct();
-
-                       var allocationComparisons = summaryKeys
-                                                  .Select(id =>
-                                                   {
-
-                                                       var baseBenchmark = GetValueOrDefault(baseSummariesByName, id);
-                                                       var diffBenchmark = GetValueOrDefault(diffSummariesByName, id);
-
-                                                       return new AllocationComparison(id, baseBenchmark, diffBenchmark, AllocationConclusion.Unknown);
-                                                   })
+                       var allocationComparisons = matchedBenchmarks
+                                                  .Select(x => new AllocationComparison(x.Id, x.Base, x.Diff, AllocationConclusion.Unknown))
                                                   .CompareAllocations(AllocationThresholdPercent)
                                                   .ToList();
 
-                       return new MatchedSummary(key, baseSummary.Results, diffSummary.Results, benchmarkComparisons, allocationComparisons);
+                       return new MatchedSummary(key, baseResult.Benchmarks, diffResult.Benchmarks, benchmarkComparisons, allocationComparisons);
                    })
                   .ToList();
 
@@ -131,21 +113,24 @@ namespace BenchmarkComparison
 
         private static IEnumerable<AllocationComparison> CompareAllocations(
             this IEnumerable<AllocationComparison> results,
-            double thresholdPercent)
+            decimal thresholdPercent)
         {
             foreach (var result in results)
             {
-                if (!ByteSize.TryParse(result.BaseResult.Allocated, out var baseBytes)
-                 || !ByteSize.TryParse(result.DiffResult.Allocated, out var diffBytes))
+                var baseBytes = result.BaseResult.Memory?.BytesAllocatedPerOperation;
+                var diffBytes = result.DiffResult.Memory?.BytesAllocatedPerOperation;
+                if (baseBytes is null || diffBytes is null)
                 {
                     yield return result with { Conclusion = AllocationConclusion.Unknown };
                     continue;
                 }
 
                 var zero = ByteSize.FromBytes(0);
-                var difference = diffBytes - baseBytes;
+                var difference = diffBytes.Value - baseBytes.Value;
                 // handle divide by zero
-                var percentageDifference = difference == zero ? 0 : baseBytes.Bytes / difference.Bytes;
+                var percentageDifference = difference == 0
+                                               ? decimal.Zero
+                                               : Convert.ToDecimal(baseBytes) / Convert.ToDecimal(difference);
 
                 var conclusion = percentageDifference switch
                 {

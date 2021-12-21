@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using ByteSizeLib;
 using Perfolizer.Mathematics.Multimodality;
 using Perfolizer.Mathematics.SignificanceTesting;
@@ -62,17 +63,17 @@ Benchmarks for {newBranchMarkdown} compared to {oldBranchMarkdown}:
 
                 sb.AppendLine(
                     @"
-|  Branch |                      Method |     Toolchain |     Mean |    Error |  StdDev |  Gen 0 | Gen 1 | Gen 2 | Allocated |
+|  Branch |                      Method |     Toolchain |     Mean | StdError |  StdDev |  Gen 0 | Gen 1 | Gen 2 | Allocated |
 |---------|---------------------------- |-------------- |---------:|---------:|--------:|-------:|------:|------:|----------:|");
 
-                TryWriteSummaryRow(sb, oldBranchMarkdown, summary.BaseSummary);
-                TryWriteSummaryRow(sb, newBranchMarkdown, summary.DiffSummary);
+                TryWriteSummaryRow(sb, oldBranchMarkdown, summary.BaseResults);
+                TryWriteSummaryRow(sb, newBranchMarkdown, summary.DiffResults);
 
                 sb.AppendLine("</details>")
                   .AppendLine();
             }
 
-            static void TryWriteSummaryRow(StringBuilder sb1, string branchMarkdown, List<BdnBenchmarkSummary> summaries)
+            static void TryWriteSummaryRow(StringBuilder sb1, string branchMarkdown, List<Benchmark> summaries)
             {
                 if (summaries is null || !summaries.Any())
                 {
@@ -81,7 +82,19 @@ Benchmarks for {newBranchMarkdown} compared to {oldBranchMarkdown}:
 
                 foreach (var run in summaries)
                 {
-                    sb1.AppendLine($@"|{branchMarkdown}|`{run.Method}`|{run.Toolchain}|{NoBr(run.Mean)}|{NoBr(run.Error)}|{NoBr(run.StdDev)}|{run.Gen0}| {run.Gen1}|{run.Gen2}|{NoBr(run.Allocated)}|");
+                    var memory = run.Memory;
+                    var allocated = ByteSize.FromBytes(memory.BytesAllocatedPerOperation).ToString();
+                    var gen0 = memory.Gen0Collections/(memory.TotalOperations / 1000.0);
+                    var gen1 = memory.Gen1Collections/(memory.TotalOperations / 1000.0);
+                    var gen2 = memory.Gen2Collections/(memory.TotalOperations / 1000.0);
+                    var stdDev = FormatNanoSeconds(run.Statistics.StandardDeviation);
+                    var mean = FormatNanoSeconds(run.Statistics.Mean);
+                    // Error = half of 99.9% confidence interval - not available in JSON results
+                    // so we use std error of the mean instead
+                    var stdError = FormatNanoSeconds(run.Statistics.StandardError);
+                    var toolchainMatch = Regex.Match(run.DisplayInfo, ".*Toolchain=(.+?),.*");
+                    var toolchain = toolchainMatch.Success ? toolchainMatch.Groups[1].Value : "Unknown";
+                    sb1.AppendLine($@"|{branchMarkdown}|`{run.Method}`|{toolchain}|{NoBr(mean)}|{NoBr(stdError)}|{NoBr(stdDev)}|{gen0}| {gen1}|{gen2}|{NoBr(allocated)}|");
                 }
             }
 
@@ -206,15 +219,15 @@ Allocation changes below **{BenchmarkComparer.AllocationThresholdPercent:N1}%** 
                       .Select(
                            result =>
                            {
-                               var baseSize = ByteSize.Parse(result.BaseResult.Allocated);
-                               var diffSize = ByteSize.Parse(result.DiffResult.Allocated);
+                               var baseSize = result.BaseResult.Memory.BytesAllocatedPerOperation;
+                               var diffSize = result.DiffResult.Memory.BytesAllocatedPerOperation;
                                return new
                                {
                                    Id = result.Id,
-                                   BaseAllocation = result.BaseResult.Allocated,
-                                   DiffAllocation = result.DiffResult.Allocated,
+                                   BaseAllocation = ByteSize.FromBytes(baseSize),
+                                   DiffAllocation = ByteSize.FromBytes(diffSize),
                                    Change = (diffSize - baseSize).ToString(),
-                                   PercentChange = (diffSize - baseSize).Bytes / baseSize.Bytes,
+                                   PercentChange = (diffSize - baseSize) / baseSize,
                                };
                            })
                       .OrderByDescending(result => result.PercentChange)
@@ -285,5 +298,14 @@ Allocation changes below **{BenchmarkComparer.AllocationThresholdPercent:N1}%** 
             => conclusion == EquivalenceTestConclusion.Faster
                    ? baseResult.Statistics.Median / diffResult.Statistics.Median
                    : diffResult.Statistics.Median / baseResult.Statistics.Median;
+
+        private static string FormatNanoSeconds(double value)
+            => value switch
+            {
+                < 1_000 => $"{value:G3}ns",
+                >= 1_000 and < 1_000_000 => $"{value / 1_000:G3}μs",
+                >= 1_000_000 and < 1_000_000_000 => $"{value / 1_000_000:G3}ms",
+                _ => $"{Math.Round(value / 1_000_000_000, 1)}s",
+            };
     }
 }
