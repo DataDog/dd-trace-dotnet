@@ -15,5 +15,11 @@ namespace Samples.AspNetMvc5.Areas.Datadog.Controllers
         {
             return "WOOF";
         }
+
+        [ChildActionOnly]
+        public ActionResult HelloFromChild(string name)
+        {
+            return Content("Hello " + name);
+        }
     }
 }
