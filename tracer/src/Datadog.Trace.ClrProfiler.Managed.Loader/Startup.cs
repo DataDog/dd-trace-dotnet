@@ -72,7 +72,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
                 if (assembly != null)
                 {
-                    // call method Datadog.Trace.ClrProfiler.Instrumentation.Initialize()
                     var type = assembly.GetType(typeName, throwOnError: false);
                     var method = type?.GetRuntimeMethod(methodName, parameters: Type.EmptyTypes);
                     method?.Invoke(obj: null, parameters: null);
@@ -103,9 +102,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             var value = ReadEnvironmentVariable(key);
             return value switch
             {
-                null => defaultValue,
                 "1" or "true" or "True" or "TRUE" => true,
-                _ => false
+                "0" or "false" or "False" or "FALSE" => false,
+                _ => defaultValue
             };
         }
     }

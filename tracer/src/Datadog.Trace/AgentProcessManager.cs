@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Util;
@@ -65,32 +66,36 @@ namespace Datadog.Trace
                     return;
                 }
 
-                var customTracingEnabled = EnvironmentHelpers.GetBooleanEnvironmentVariable(ConfigurationKeys.AasEnableCustomTracing, false);
-                var needsDogStatsD = EnvironmentHelpers.GetBooleanEnvironmentVariable(ConfigurationKeys.AasEnableCustomMetrics, false);
-                var automaticTraceEnabled = EnvironmentHelpers.GetBooleanEnvironmentVariable(ConfigurationKeys.TraceEnabled, true);
+                var customTracingEnabled = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.AasEnableCustomTracing, string.Empty).ToBoolean() ?? false;
+                var needsDogStatsD = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.AasEnableCustomMetrics, string.Empty).ToBoolean() ?? false;
+                var automaticTraceEnabled = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceEnabled, string.Empty).ToBoolean() ?? true;
 
-                EnvironmentHelpers.GetBooleanEnvironmentVariable(ConfigurationKeys.AasEnableCustomTracing, false);
-
-                if ((customTracingEnabled || automaticTraceEnabled) && string.IsNullOrWhiteSpace(TraceAgentMetadata.ProcessPath))
+                if (customTracingEnabled || automaticTraceEnabled)
                 {
-                    Log.Warning("Requested to start the Trace Agent but the process path hasn't been supplied in environment.");
-                }
-                else if (!Directory.Exists(TraceAgentMetadata.DirectoryPath))
-                {
-                    Log.Warning("Directory for trace agent does not exist: {Directory}", TraceAgentMetadata.DirectoryPath);
+                    if (string.IsNullOrWhiteSpace(TraceAgentMetadata.ProcessPath))
+                    {
+                        Log.Warning("Requested to start the Trace Agent but the process path hasn't been supplied in environment.");
+                    }
+                    else if (!Directory.Exists(TraceAgentMetadata.DirectoryPath))
+                    {
+                        Log.Warning("Directory for trace agent does not exist: {Directory}. The process won't be started.", TraceAgentMetadata.DirectoryPath);
+                    }
                 }
                 else
                 {
                     Processes.Add(TraceAgentMetadata);
                 }
 
-                if ((needsDogStatsD || automaticTraceEnabled) && string.IsNullOrWhiteSpace(DogStatsDMetadata.ProcessPath))
+                if (needsDogStatsD || automaticTraceEnabled)
                 {
-                    Log.Warning("Requested to start dogstatsd but the process path hasn't been supplied in environment.");
-                }
-                else if (!Directory.Exists(DogStatsDMetadata.DirectoryPath))
-                {
-                    Log.Warning("Directory for dogstatsd does not exist: {Directory}", DogStatsDMetadata.DirectoryPath);
+                    if (string.IsNullOrWhiteSpace(DogStatsDMetadata.ProcessPath))
+                    {
+                        Log.Warning("Requested to start dogstatsd but the process path hasn't been supplied in environment.");
+                    }
+                    else if (!Directory.Exists(DogStatsDMetadata.DirectoryPath))
+                    {
+                        Log.Warning("Directory for dogstatsd does not exist: {Directory}. The process won't be started.", TraceAgentMetadata.DirectoryPath);
+                    }
                 }
                 else
                 {
