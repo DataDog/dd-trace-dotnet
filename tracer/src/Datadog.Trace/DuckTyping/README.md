@@ -371,7 +371,9 @@ In summary:
 
 <details>
 <summary>Best practices benchmarks</summary>
-
+        
+[Benchmark Code](../../../test/benchmarks/Benchmarks.Trace/DuckTyping/DuckTypeMethodCallComparisonBenchmark.cs)
+        
 ``` ini
 BenchmarkDotNet=v0.12.1, OS=Windows 10.0.22000
 AMD Ryzen 9 5950X, 1 CPU, 32 logical and 16 physical cores
