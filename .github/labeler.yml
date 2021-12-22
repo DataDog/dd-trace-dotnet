@@ -59,12 +59,13 @@ area:tools:
 - tracer/src/Datadog.Trace.Tools.*/**/*
 - tracer/test/Datadog.Trace.Tools.Analyzers.Tests/**/*
 
-# if any file is in tracer/src/Datadog.Trace, excluding racer/src/Datadog.Trace/ClrProfiler
 area:tracer:
-# the following line make the action fail with "Error: glob pattern string required"
+# This should be: if any modified file is in tracer/src/Datadog.Trace, excluding files in tracer/src/Datadog.Trace/ClrProfiler.
+# However, the following line makes the action fail with "Error: glob pattern string required"
+# even though it _should_ work:
 # - any: ['tracer/src/Datadog.Trace/**/*', '!tracer/src/Datadog.Trace/ClrProfiler/**/*']
-# so use this for now:
-- 'tracer/src/Datadog.Trace/**/*'
+# so don't exclude `tracer/src/Datadog.Trace/ClrProfiler` for now
+- tracer/src/Datadog.Trace/**/*
 - tracer/test/Datadog.Trace.Tests/**/*
 - tracer/test/Datadog.Trace.IntegrationTests/**/*
 
