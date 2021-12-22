@@ -94,7 +94,9 @@ Benchmarks for {newBranchMarkdown} compared to {oldBranchMarkdown}:
                     var stdError = FormatNanoSeconds(run.Statistics.StandardError);
                     var toolchainMatch = Regex.Match(run.DisplayInfo, ".*Toolchain=(.+?),.*");
                     var toolchain = toolchainMatch.Success ? toolchainMatch.Groups[1].Value : "Unknown";
-                    sb1.AppendLine($@"|{branchMarkdown}|`{run.Method}`|{toolchain}|{NoBr(mean)}|{NoBr(stdError)}|{NoBr(stdDev)}|{gen0}| {gen1}|{gen2}|{NoBr(allocated)}|");
+
+                    var name = string.IsNullOrEmpty(run.Parameters) ? run.Method : $"{run.Method}({run.Parameters})";
+                    sb1.AppendLine($@"|{branchMarkdown}|`{name}`|{toolchain}|{NoBr(mean)}|{NoBr(stdError)}|{NoBr(stdDev)}|{gen0:G3}| {gen1:G3}|{gen2:G3}|{NoBr(allocated)}|");
                 }
             }
 
@@ -224,10 +226,10 @@ Allocation changes below **{BenchmarkComparer.AllocationThresholdPercent:N1}%** 
                                return new
                                {
                                    Id = result.Id,
-                                   BaseAllocation = ByteSize.FromBytes(baseSize),
-                                   DiffAllocation = ByteSize.FromBytes(diffSize),
-                                   Change = (diffSize - baseSize).ToString(),
-                                   PercentChange = (diffSize - baseSize) / baseSize,
+                                   BaseAllocation = ByteSize.FromBytes(baseSize).ToString(),
+                                   DiffAllocation = ByteSize.FromBytes(diffSize).ToString(),
+                                   Change = ByteSize.FromBytes(diffSize - baseSize).ToString(),
+                                   PercentChange = (diffSize - baseSize) / (double)baseSize,
                                };
                            })
                       .OrderByDescending(result => result.PercentChange)

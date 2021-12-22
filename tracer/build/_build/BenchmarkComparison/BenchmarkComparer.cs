@@ -18,7 +18,7 @@ namespace BenchmarkComparison
     {
         public static readonly Threshold SignificantResultThreshold = Threshold.Create(ThresholdUnit.Ratio, 0.10);
         public static readonly Threshold NoiseThreshold = Threshold.Create(ThresholdUnit.Nanoseconds, 0.3);
-        public static readonly decimal AllocationThresholdPercent = new(value: 0.5);//%
+        public static readonly decimal AllocationThresholdPercent = 0.5M; //%
 
         public static List<MatchedSummary> MatchAndCompareResults(
             IEnumerable<BdnResult> baseResults,
