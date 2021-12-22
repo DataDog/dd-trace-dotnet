@@ -115,7 +115,7 @@ partial class Build
     Target RunExplorationTests
         => _ => _
                .Description("Run exploration tests.")
-               .Requires(() => ExplorationTestUseCase != null)
+               .Requires(() => ExplorationTestUseCase)
                .After(Clean, BuildTracerHome, SetUpExplorationTests)
                .Executes(() =>
                 {
