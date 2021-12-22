@@ -117,8 +117,8 @@ namespace BenchmarkComparison
         {
             foreach (var result in results)
             {
-                var baseBytes = result.BaseResult.Memory?.BytesAllocatedPerOperation;
-                var diffBytes = result.DiffResult.Memory?.BytesAllocatedPerOperation;
+                var baseBytes = result.BaseResult?.Memory.BytesAllocatedPerOperation;
+                var diffBytes = result.DiffResult?.Memory.BytesAllocatedPerOperation;
                 if (baseBytes is null || diffBytes is null)
                 {
                     yield return result with { Conclusion = AllocationConclusion.Unknown };
