@@ -8,7 +8,7 @@ using System.ComponentModel;
 using System.Web.Routing;
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
+namespace Datadog.Trace.ClrProfiler.Integrations.AspNet
 {
     /// <summary>
     /// ControllerContext struct copy target for ducktyping

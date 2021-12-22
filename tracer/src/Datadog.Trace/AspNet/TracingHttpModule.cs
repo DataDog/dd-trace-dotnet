@@ -11,11 +11,14 @@ using System.ComponentModel;
 using System.Linq;
 using System.Web;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Transport.Http;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Http;
 
 namespace Datadog.Trace.AspNet
 {
