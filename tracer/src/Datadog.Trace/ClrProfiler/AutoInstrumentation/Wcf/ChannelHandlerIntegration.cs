@@ -7,6 +7,7 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
 {
@@ -39,8 +40,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         /// <param name="currentOperationContext">OperationContext instance</param>
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TRequestContext, TOperationContext>(TTarget instance, TRequestContext request, TOperationContext currentOperationContext)
+            where TRequestContext : IRequestContext, IDuckType
         {
-            if (Tracer.Instance.Settings.DelayWcfInstrumentationEnabled)
+            if (Tracer.Instance.Settings.DelayWcfInstrumentationEnabled || request.Instance is null)
             {
                 return CallTargetState.GetDefault();
             }

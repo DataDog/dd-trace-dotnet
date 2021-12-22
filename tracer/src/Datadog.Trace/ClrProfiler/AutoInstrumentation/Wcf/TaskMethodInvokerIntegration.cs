@@ -7,7 +7,8 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.ClrProfiler.Emit;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
 {
@@ -49,8 +50,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 return CallTargetState.GetDefault();
             }
 
-            var requestContext = WcfCommon.GetCurrentOperationContext()?.GetProperty<object>("RequestContext").GetValueOrDefault();
-            return new CallTargetState(WcfCommon.CreateScope(requestContext));
+            var operationContext = WcfCommon.GetCurrentOperationContext();
+            if (operationContext != null && operationContext.TryDuckCast<IOperationContextStruct>(out var operationContextProxy))
+            {
+                return new CallTargetState(WcfCommon.CreateScope(operationContextProxy.RequestContext));
+            }
+            else
+            {
+                return CallTargetState.GetDefault();
+            }
         }
 
         /// <summary>
