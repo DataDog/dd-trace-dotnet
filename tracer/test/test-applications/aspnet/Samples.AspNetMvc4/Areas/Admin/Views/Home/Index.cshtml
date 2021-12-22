@@ -12,6 +12,7 @@
 </head>
 <body>
     <h1>Admin Home page</h1>
+    <p>@Html.Action("HelloFromChild", new { name = "Foo" })</p>
     <ul>
         @foreach (var pair in Model)
         {

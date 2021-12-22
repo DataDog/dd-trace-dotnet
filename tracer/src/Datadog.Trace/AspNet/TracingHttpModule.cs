@@ -11,14 +11,11 @@ using System.ComponentModel;
 using System.Linq;
 using System.Web;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Transport.Http;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
-using Datadog.Trace.Util.Http;
 
 namespace Datadog.Trace.AspNet
 {
@@ -73,7 +70,6 @@ namespace Datadog.Trace.AspNet
         private void OnBeginRequest(object sender, EventArgs eventArgs)
         {
             Scope scope = null;
-
             try
             {
                 var tracer = Tracer.Instance;
@@ -171,8 +167,8 @@ namespace Datadog.Trace.AspNet
 
                         scope.Span.SetHttpStatusCode(app.Context.Response.StatusCode, isServer: true);
 
-                        if (app.Context.Items[SharedConstants.HttpContextPropagatedResourceNameKey] is string resourceName
-                            && !string.IsNullOrEmpty(resourceName))
+                        if (app.Context.Items[SharedItems.HttpContextPropagatedResourceNameKey] is string resourceName
+                             && !string.IsNullOrEmpty(resourceName))
                         {
                             scope.Span.ResourceName = resourceName;
                         }

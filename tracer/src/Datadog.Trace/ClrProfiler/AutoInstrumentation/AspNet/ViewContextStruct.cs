@@ -1,15 +1,14 @@
-// <copyright file="ControllerContextStruct.cs" company="Datadog">
+// <copyright file="ViewContextStruct.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 #if NETFRAMEWORK
 using System.ComponentModel;
-using System.Web;
 using System.Web.Routing;
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.Integrations.AspNet
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 {
     /// <summary>
     /// ControllerContext struct copy target for ducktyping
@@ -17,22 +16,12 @@ namespace Datadog.Trace.ClrProfiler.Integrations.AspNet
     [DuckCopy]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public struct ControllerContextStruct
+    public struct ViewContextStruct
     {
-        /// <summary>
-        /// Gets the HttpContext
-        /// </summary>
-        public HttpContextBase HttpContext;
-
         /// <summary>
         /// Gets the RouteData
         /// </summary>
         public RouteData RouteData;
-
-        /// <summary>
-        /// Gets the ParentActionViewContext
-        /// </summary>
-        public ViewContextStruct ParentActionViewContext;
     }
 }
 #endif

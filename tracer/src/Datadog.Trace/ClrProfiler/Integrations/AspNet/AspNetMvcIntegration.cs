@@ -35,6 +35,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
     {
         internal const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetMvcIntegration";
         private const string OperationName = "aspnet-mvc.request";
+        private const string ChildActionOperationName = "aspnet-mvc.request.child-action";
         private const string MinimumVersion = "4";
         private const string MaximumVersion = "5";
         private const string AssemblyName = "System.Web.Mvc";
@@ -78,6 +79,15 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     Route route = routeData?.Route as Route;
                     RouteValueDictionary routeValues = routeData?.Values;
                     bool wasAttributeRouted = false;
+
+                    bool isChildAction = controllerContext.ParentActionViewContext.RouteData?.Values["controller"] is not null;
+
+                    if (isChildAction && newResourceNamesEnabled)
+                    {
+                        // For child actions, we want to stick to what was requested in the http request.
+                        // And the child action being a child, then we have already computed the resourcename.
+                        resourceName = httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] as string;
+                    }
 
                     if (route == null && routeData?.Route.GetType().FullName == RouteCollectionRouteTypeName)
                     {
@@ -170,7 +180,7 @@ namespace Datadog.Trace.ClrProfiler.Integrations
                     }
 
                     var tags = new AspNetTags();
-                    scope = Tracer.Instance.StartActiveWithTags(OperationName, propagatedContext, tags: tags);
+                    scope = Tracer.Instance.StartActiveWithTags(isChildAction ? ChildActionOperationName : OperationName, propagatedContext, tags: tags);
                     span = scope.Span;
 
                     span.DecorateWebServerSpan(
@@ -188,10 +198,10 @@ namespace Datadog.Trace.ClrProfiler.Integrations
 
                     tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
 
-                    if (newResourceNamesEnabled)
+                    if (newResourceNamesEnabled && string.IsNullOrEmpty(httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] as string))
                     {
                         // set the resource name in the HttpContext so TracingHttpModule can update root span
-                        httpContext.Items[SharedConstants.HttpContextPropagatedResourceNameKey] = resourceName;
+                        httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] = resourceName;
                     }
                 }
             }

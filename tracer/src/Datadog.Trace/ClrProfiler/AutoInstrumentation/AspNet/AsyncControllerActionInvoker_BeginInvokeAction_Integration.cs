@@ -9,6 +9,7 @@ using System.ComponentModel;
 using System.Web;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Transport.Http;
+using Datadog.Trace.AspNet;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.ClrProfiler.Integrations;
 using Datadog.Trace.ClrProfiler.Integrations.AspNet;
@@ -65,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 {
                     var duckedControllerContext = controllerContext.DuckCast<ControllerContextStruct>();
                     scope = AspNetMvcIntegration.CreateScope(duckedControllerContext);
-                    HttpContext.Current.Items[AspNetMvcIntegration.HttpContextKey] = scope;
+                    SharedItems.PushScope(HttpContext.Current, AspNetMvcIntegration.HttpContextKey, scope);
 
                     var security = Security.Instance;
                     if (security.Settings.Enabled)
