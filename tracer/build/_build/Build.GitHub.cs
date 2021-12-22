@@ -710,7 +710,7 @@ partial class Build
 
         var zipPath = outputDirectory / $"{artifact.Name}.zip";
 
-        Console.WriteLine($"Found artifacts. Downloading to {zipPath}...");
+        Console.WriteLine($"Found artifacts. Downloading from {artifact.Resource.DownloadUrl} to {zipPath}...");
 
         // buildHttpClient.GetArtifactContentZipAsync doesn't seem to work
         var temporary = new HttpClient();
