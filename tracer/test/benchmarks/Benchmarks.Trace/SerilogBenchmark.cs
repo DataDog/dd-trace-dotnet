@@ -5,7 +5,6 @@ using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInjection;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Serilog;
 using Serilog.Core;
@@ -21,9 +20,7 @@ namespace Benchmarks.Trace
     {
         private static readonly Logger Logger;
         private static readonly Tracer LogInjectionTracer;
-
-        [Params(1, 10, 100)]
-        public static int N { get; set; }
+        private static readonly LogEvent LogEvent;
 
         static SerilogBenchmark()
         {
@@ -45,6 +42,13 @@ namespace Benchmarks.Trace
                 .Enrich.FromLogContext()
                 .WriteTo.Sink(new NullSink(formatter))
                 .CreateLogger();
+
+            LogEvent = new LogEvent(
+                DateTimeOffset.Now,
+                LogEventLevel.Information,
+                exception: null,
+                new MessageTemplate("Hello", Enumerable.Empty<MessageTemplateToken>()),
+                properties: Enumerable.Empty<LogEventProperty>());
         }
 
         [Benchmark]
@@ -54,40 +58,10 @@ namespace Benchmarks.Trace
             {
                 using (LogInjectionTracer.StartActive("Child"))
                 {
-                    for (int i = 0; i < N; i++)
-                    {
-                        var logEvent = new LogEvent(
-                            DateTimeOffset.Now,
-                            LogEventLevel.Information,
-                            exception: null,
-                            new MessageTemplate("Hello", Enumerable.Empty<MessageTemplateToken>()),
-                            properties: Enumerable.Empty<LogEventProperty>());
+                    // equivalent of auto-instrumentation
+                    LoggerDispatchInstrumentation.OnMethodBegin(Logger, LogEvent);
 
-                        // equivalent of auto-instrumentation
-                        var tracer = LogInjectionTracer;
-                        var dict = logEvent.DuckCast<LogEventProxy>().Properties;
-                        AddPropertyIfAbsent(dict, CorrelationIdentifier.SerilogServiceKey, tracer.DefaultServiceName);
-                        AddPropertyIfAbsent(dict, CorrelationIdentifier.SerilogVersionKey, tracer.Settings.ServiceVersion);
-                        AddPropertyIfAbsent(dict, CorrelationIdentifier.SerilogEnvKey, tracer.Settings.Environment);
-
-                        var span = tracer.ActiveScope?.Span;
-                        if (span is not null)
-                        {
-                            AddPropertyIfAbsent(dict, CorrelationIdentifier.SerilogTraceIdKey, span.TraceId.ToString());
-                            AddPropertyIfAbsent(dict, CorrelationIdentifier.SerilogSpanIdKey, span.SpanId.ToString());
-                        }
-
-                        Logger.Write(logEvent);
-                    }
-                }
-            }
-
-            static void AddPropertyIfAbsent(IDictionary dict, string key, string value)
-            {
-                if (!dict.Contains(key))
-                {
-                    var property = SerilogLogPropertyHelper<LogEventProperty>.CreateScalarValue(value ?? string.Empty);
-                    dict.Add(key, property);
+                    Logger.Write(LogEvent);
                 }
             }
         }
