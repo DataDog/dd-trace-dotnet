@@ -892,6 +892,10 @@ partial class Build
                 {
                     _ when exclude.Contains(project.Path) => false,
                     _ when project.Path.ToString().Contains("Samples.OracleMDA") => false,
+                    _ when project.Path.ToString().Contains("Core") => false,
+                    _ when project.Path.ToString().Contains("Graph") => false,
+                    _ when project.Path.ToString().Contains("Sql") => false,
+                    _ when project.Path.ToString().Contains("NetFramework20") => false,
                     _ when !string.IsNullOrWhiteSpace(SampleName) => project.Path.ToString().Contains(SampleName),
                     (_, var targets) when targets is not null => targets.Contains(Framework),
                     _ => true,
@@ -1309,6 +1313,24 @@ partial class Build
             {
                 MoveLogsToBuildData();
                 CopyMemoryDumps();
+            }
+        });
+
+    Target UpdateSnapshots => _ => _
+        .Description("Updates verified snapshots files with received ones")
+        .Executes(() =>
+        {
+            Logger.Info($"Snaps");
+
+            var snapshotsDirectory = Path.Combine(TestsDirectory, "snapshots");
+            var directory = new DirectoryInfo(snapshotsDirectory);
+            var files = directory.GetFiles("*.received*");
+
+            foreach (var file in files)
+            {
+                var source = file.FullName;
+                var dest = file.FullName.Replace("received", "verified");
+                file.MoveTo(dest, true);
             }
         });
 
