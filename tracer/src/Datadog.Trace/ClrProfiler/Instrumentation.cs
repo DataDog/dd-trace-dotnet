@@ -82,6 +82,17 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
+                Log.Debug("Enabling calltarget state by ref.");
+                NativeMethods.EnableCallTargetStateByRef();
+                Log.Information("CallTarget State ByRef enabled.");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "CallTarget state ByRef cannot be enabled: ");
+            }
+
+            try
+            {
                 Log.Debug("Sending CallTarget integration definitions to native library.");
                 var payload = InstrumentationDefinitions.GetAllDefinitions();
                 NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);

@@ -804,8 +804,10 @@ HRESULT CallTargetTokens::WriteBeginMethodWithArgumentsArray(void* rewriterWrapp
  * PUBLIC
  **/
 
-CallTargetTokens::CallTargetTokens(ModuleMetadata* module_metadata_ptr, const bool enableByRefInstrumentation) :
-    enable_by_ref_instrumentation(enableByRefInstrumentation)
+CallTargetTokens::CallTargetTokens(ModuleMetadata* module_metadata_ptr, const bool enableByRefInstrumentation,
+                                   const bool enableCallTargetStateByRef) :
+    enable_by_ref_instrumentation(enableByRefInstrumentation),
+    enable_calltarget_state_by_ref(enableCallTargetStateByRef)
 {
     this->module_metadata_ptr = module_metadata_ptr;
     for (int i = 0; i < FASTPATH_COUNT; i++)
@@ -1050,6 +1052,11 @@ HRESULT CallTargetTokens::WriteEndVoidReturnMemberRef(void* rewriterWrapperPtr, 
         auto callTargetStateSize = CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
 
         auto signatureLength = 8 + callTargetReturnVoidSize + exTypeRefSize + callTargetStateSize;
+        if (enable_calltarget_state_by_ref)
+        {
+            signatureLength++;
+        }
+
         COR_SIGNATURE signature[signatureBufferSize];
         unsigned offset = 0;
 
@@ -1067,6 +1074,11 @@ HRESULT CallTargetTokens::WriteEndVoidReturnMemberRef(void* rewriterWrapperPtr, 
         signature[offset++] = ELEMENT_TYPE_CLASS;
         memcpy(&signature[offset], &exTypeRefBuffer, exTypeRefSize);
         offset += exTypeRefSize;
+
+        if (enable_calltarget_state_by_ref)
+        {
+            signature[offset++] = ELEMENT_TYPE_BYREF;
+        }
 
         signature[offset++] = ELEMENT_TYPE_VALUETYPE;
         memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
@@ -1154,6 +1166,11 @@ HRESULT CallTargetTokens::WriteEndReturnMemberRef(void* rewriterWrapperPtr, mdTy
     auto callTargetStateSize = CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
 
     auto signatureLength = 14 + callTargetReturnTypeRefSize + exTypeRefSize + callTargetStateSize;
+    if (enable_calltarget_state_by_ref)
+    {
+        signatureLength++;
+    }
+
     COR_SIGNATURE signature[signatureBufferSize];
     unsigned offset = 0;
 
@@ -1179,6 +1196,10 @@ HRESULT CallTargetTokens::WriteEndReturnMemberRef(void* rewriterWrapperPtr, mdTy
     memcpy(&signature[offset], &exTypeRefBuffer, exTypeRefSize);
     offset += exTypeRefSize;
 
+    if (enable_calltarget_state_by_ref)
+    {
+        signature[offset++] = ELEMENT_TYPE_BYREF;
+    }
     signature[offset++] = ELEMENT_TYPE_VALUETYPE;
     memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
     offset += callTargetStateSize;

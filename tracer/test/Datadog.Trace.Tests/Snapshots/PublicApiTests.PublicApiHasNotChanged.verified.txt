@@ -314,35 +314,3 @@ namespace Datadog.Trace.ExtensionMethods
         public static void SetTraceSamplingPriority(this Datadog.Trace.ISpan span, Datadog.Trace.SamplingPriority samplingPriority) { }
     }
 }
-namespace Datadog.Trace.Logging
-{
-    public interface ILogProvider
-    {
-        Datadog.Trace.Logging.Logger GetLogger(string name);
-        System.IDisposable OpenMappedContext(string key, object value, bool destructure = false);
-        System.IDisposable OpenNestedContext(string message);
-    }
-    public enum LogLevel
-    {
-        Trace = 0,
-        Debug = 1,
-        Info = 2,
-        Warn = 3,
-        Error = 4,
-        Fatal = 5,
-    }
-    public static class LogProvider
-    {
-        public static bool IsDisabled { get; set; }
-        public static void SetCurrentLogProvider(Datadog.Trace.Logging.ILogProvider logProvider) { }
-    }
-    public delegate bool Logger(Datadog.Trace.Logging.LogLevel logLevel, System.Func<string> messageFunc, System.Exception exception = null, params object[] formatParameters);
-}
-namespace Datadog.Trace.Logging.LogProviders
-{
-    public class LibLogException : System.Exception
-    {
-        public LibLogException(string message) { }
-        public LibLogException(string message, System.Exception inner) { }
-    }
-}

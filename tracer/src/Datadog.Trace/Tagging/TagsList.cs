@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Tagging
@@ -193,7 +194,7 @@ namespace Datadog.Trace.Tagging
 
         public override string ToString()
         {
-            var sb = new StringBuilder();
+            var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
 
             var tags = Tags;
 
@@ -241,7 +242,7 @@ namespace Datadog.Trace.Tagging
                 }
             }
 
-            return sb.ToString();
+            return StringBuilderCache.GetStringAndRelease(sb);
         }
 
         protected virtual IProperty<string>[] GetAdditionalTags() => Array.Empty<IProperty<string>>();
