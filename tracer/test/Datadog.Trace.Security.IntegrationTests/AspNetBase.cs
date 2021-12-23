@@ -52,7 +52,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             }
 
             await StartSample(
-                _agent.Port,
+                _agent,
                 arguments: null,
                 aspNetCorePort: _httpPort,
                 enableSecurity: enableSecurity,
@@ -124,11 +124,10 @@ namespace Datadog.Trace.Security.IntegrationTests
         }
 
         private async Task StartSample(
-            int traceAgentPort,
+            MockTracerAgent agent,
             string arguments,
             int? aspNetCorePort = null,
             string packageVersion = "",
-            int? statsdPort = null,
             string framework = "",
             string path = "/Home",
             bool enableSecurity = true,
@@ -154,9 +153,8 @@ namespace Datadog.Trace.Security.IntegrationTests
             _process = ProfilerHelper.StartProcessWithProfiler(
                 executable,
                 EnvironmentHelper,
+                agent,
                 args,
-                traceAgentPort: traceAgentPort,
-                statsdPort: statsdPort,
                 aspNetCorePort: aspNetCorePort.GetValueOrDefault(5000),
                 enableSecurity: enableSecurity,
                 enableBlocking: enableBlocking,

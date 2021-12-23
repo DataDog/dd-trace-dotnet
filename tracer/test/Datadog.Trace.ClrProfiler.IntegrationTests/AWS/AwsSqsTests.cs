@@ -120,7 +120,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
         public void SubmitsTraces(string packageVersion)
         {
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
+            using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
                 var spans = agent.WaitForSpans(_expectedSpans.Count, operationName: "sqs.request");
                 spans.Should().HaveCountGreaterOrEqualTo(_expectedSpans.Count);

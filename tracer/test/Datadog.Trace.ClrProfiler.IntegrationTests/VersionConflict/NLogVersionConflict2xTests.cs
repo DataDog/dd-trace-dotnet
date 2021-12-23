@@ -48,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
 
             int agentPort = TcpPortProvider.GetOpenPort();
             using (var agent = new MockTracerAgent(agentPort))
-            using (RunSampleAndWaitForExit(agent.Port))
+            using (RunSampleAndWaitForExit(agent))
             {
                 var spans = agent.WaitForSpans(1, 2500);
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");

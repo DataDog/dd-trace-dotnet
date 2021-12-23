@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public void SubmitsTraces(string packageVersion)
         {
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent.Port, arguments: $"{TestPrefix}", packageVersion: packageVersion))
+            using (RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
             {
                 // note: ignore the INFO command because it's timing is unpredictable (on Linux?)
                 var spans = agent.WaitForSpans(11)

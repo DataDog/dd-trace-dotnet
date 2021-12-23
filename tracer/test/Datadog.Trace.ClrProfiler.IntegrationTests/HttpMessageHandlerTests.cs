@@ -46,7 +46,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(IntegrationConfig))]
         public void HttpClient_SubmitsTraces(InstrumentationOptions instrumentation, bool enableSocketsHandler)
         {
-            EnvironmentHelper.EnableUnixDomainSockets();
             ConfigureInstrumentation(instrumentation, enableSocketsHandler);
 
             var expectedAsyncCount = CalculateExpectedAsyncSpans(instrumentation);
@@ -61,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
 
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"Port={httpPort}"))
+            using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
             {
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
                 Assert.Equal(expectedSpanCount, spans.Count);
@@ -101,7 +100,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             int httpPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"TracingDisabled Port={httpPort}"))
+            using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"TracingDisabled Port={httpPort}"))
             {
                 var spans = agent.WaitForSpans(1, 2000, operationName: expectedOperationName);
                 Assert.Equal(0, spans.Count);

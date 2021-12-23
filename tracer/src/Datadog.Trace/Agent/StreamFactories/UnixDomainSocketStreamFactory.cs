@@ -37,7 +37,7 @@ namespace Datadog.Trace.Agent.StreamFactories
                 // When closing, wait 2 seconds to send data.
                 socket.LingerState = new LingerOption(true, 2);
                 socket.Connect(_endPoint);
-                return new NetworkStream(socket, true);
+                return new NetworkStream(socket, ownsSocket: true);
             }
             catch (Exception ex)
             {

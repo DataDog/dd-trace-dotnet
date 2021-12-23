@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             if (!Environment.Is64BitProcess)
             {
                 using var agent = EnvironmentHelper.GetMockAgent();
-                using var processResult = RunSampleAndWaitForExit(agent.Port, arguments: $"{TestPrefix}");
+                using var processResult = RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}");
             }
         }
 
@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             var expectedSpanCount = 14;
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent.Port, arguments: $"{TestPrefix}", packageVersion: packageVersion))
+            using (RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}", packageVersion: packageVersion))
             {
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: ExpectedOperationName);
                 spans.Count.Should().BeGreaterOrEqualTo(expectedSpanCount, $"Expecting at least {expectedSpanCount} spans, only received {spans.Count}");

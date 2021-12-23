@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var agent = new MockTracerAgent(agentPort, useStatsd: true);
             Output.WriteLine($"Assigning port {agent.StatsdPort} for the statsdPort.");
 
-            using var processResult = RunSampleAndWaitForExit(agent.Port, agent.StatsdPort);
+            using var processResult = RunSampleAndWaitForExit(agent);
             var requests = agent.StatsdRequests;
 
             // Check if we receive 2 kinds of metrics:
@@ -62,7 +62,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("DD_RUNTIME_METRICS_ENABLED", "0");
             using var agent = EnvironmentHelper.GetMockAgent(useStatsD: true);
 
-            using var processResult = RunSampleAndWaitForExit(agent.Port, agent.StatsdPort);
+            using var processResult = RunSampleAndWaitForExit(agent);
             var requests = agent.StatsdRequests;
 
             Assert.True(requests.Count == 0, "Received metrics despite being disabled. Metrics received: " + string.Join("\n", requests));

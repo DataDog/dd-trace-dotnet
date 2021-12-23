@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public void SubmitsTraces(string packageVersion)
         {
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
+            using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
                 var expected = new List<string>();
 
@@ -157,7 +157,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             string packageVersion = PackageVersions.ElasticSearch6.First()[0] as string;
             SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.ElasticsearchNet)}_ENABLED", "false");
             using var agent = EnvironmentHelper.GetMockAgent();
-            using var process = RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion);
+            using var process = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
             var spans = agent.WaitForSpans(1).Where(s => s.Type == "elasticsearch").ToList();
 
             Assert.Empty(spans);

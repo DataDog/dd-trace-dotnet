@@ -62,9 +62,8 @@ namespace Datadog.Trace.Configuration
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
         public ExporterSettings(IConfigurationSource source)
         {
-            var isWindows = FrameworkDescription.Instance.OSPlatform == OSPlatform.Windows;
-            ConfigureTraceTransport(source, isWindows);
-            ConfigureMetricsTransport(source, isWindows);
+            ConfigureTraceTransport(source);
+            ConfigureMetricsTransport(source);
 
             PartialFlushEnabled = source?.GetBool(ConfigurationKeys.PartialFlushEnabled)
                 // default value
@@ -160,25 +159,26 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         internal TransportType MetricsTransport { get; set; }
 
-        private void ConfigureMetricsTransport(IConfigurationSource source, bool isWindows)
+        private void ConfigureMetricsTransport(IConfigurationSource source)
         {
             TransportType? metricsTransport = null;
 
             var dogStatsdPort = source?.GetInt32(ConfigurationKeys.DogStatsdPort);
+
+            MetricsPipeName = source?.GetString(ConfigurationKeys.MetricsPipeName);
 
             // Agent port is set to zero in places like AAS where it's needed to prevent port conflict.
             // The agent will fail to start if it can not bind a port.
             // If the dogstatsd port isn't explicitly configured, check for pipes or sockets.
             if (dogStatsdPort == 0 || dogStatsdPort == null)
             {
-                MetricsPipeName = source?.GetString(ConfigurationKeys.MetricsPipeName);
-
-                if (MetricsPipeName != null)
+                if (!string.IsNullOrWhiteSpace(MetricsPipeName))
                 {
                     metricsTransport = TransportType.NamedPipe;
                 }
-                else if (!isWindows)
+                else
                 {
+                    // Check for UDS
                     var metricsUnixDomainSocketPath = source?.GetString(ConfigurationKeys.MetricsUnixDomainSocketPath);
                     if (metricsUnixDomainSocketPath != null)
                     {
@@ -203,7 +203,7 @@ namespace Datadog.Trace.Configuration
             MetricsTransport = metricsTransport ?? TransportType.UDP;
         }
 
-        private void ConfigureTraceTransport(IConfigurationSource source, bool isWindows)
+        private void ConfigureTraceTransport(IConfigurationSource source)
         {
             TracesTransportType? traceTransport = null;
 
@@ -216,6 +216,8 @@ namespace Datadog.Trace.Configuration
             var agentPort = source?.GetInt32(ConfigurationKeys.AgentPort) ??
                             // backwards compatibility for names used in the past
                             source?.GetInt32("DATADOG_TRACE_AGENT_PORT");
+
+            TracesPipeName = source?.GetString(ConfigurationKeys.TracesPipeName);
 
             // Agent port is set to zero in places like AAS where it's needed to prevent port conflict
             // The agent will fail to start if it can not bind a port
@@ -235,15 +237,9 @@ namespace Datadog.Trace.Configuration
                     hasExplicitTcpConfig = true;
                 }
             }
-            else if (isWindows)
+            else if (!string.IsNullOrWhiteSpace(TracesPipeName))
             {
-                // Check for explicit windows named pipe config
-                TracesPipeName = source?.GetString(ConfigurationKeys.TracesPipeName);
-
-                if (TracesPipeName != null)
-                {
-                    traceTransport = TracesTransportType.WindowsNamedPipe;
-                }
+                traceTransport = TracesTransportType.WindowsNamedPipe;
 
                 TracesPipeTimeoutMs = source?.GetInt32(ConfigurationKeys.TracesPipeTimeoutMs)
 #if DEBUG
@@ -254,6 +250,7 @@ namespace Datadog.Trace.Configuration
             }
             else
             {
+                // Check for UDS
                 if (isConventionBasedSocket)
                 {
                     traceTransport = TracesTransportType.UnixDomainSocket;

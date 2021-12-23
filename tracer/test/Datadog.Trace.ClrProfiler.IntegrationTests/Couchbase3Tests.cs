@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public void SubmitTraces(string packageVersion)
         {
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
+            using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
                 var spans = agent.WaitForSpans(9, 500)
                                  .Where(s => s.Type == "db")

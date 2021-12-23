@@ -98,7 +98,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
 
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent.Port, framework: targetFramework))
+            using (RunSampleAndWaitForExit(agent, framework: targetFramework))
             {
             }
         }
@@ -111,7 +111,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var actualMap = new Dictionary<string, int>();
 
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent.Port, framework: targetFramework))
+            using (RunSampleAndWaitForExit(agent, framework: targetFramework))
             {
                 var spans = agent.WaitForSpans(expectedSpanCount);
                 Assert.True(spans.Count >= expectedSpanCount, $"Expected at least {expectedSpanCount} span, only received {spans.Count}");

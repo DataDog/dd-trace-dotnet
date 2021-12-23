@@ -68,10 +68,6 @@ namespace Datadog.Trace.TestHelpers
 
         public TestTransports TransportType { get; set; } = TestTransports.Tcp;
 
-        public string TraceAlternateTransportPath { get; private set; }
-
-        public string StatsAlternateTransportPath { get; private set; }
-
         public bool DebugModeEnabled { get; set; }
 
         public Dictionary<string, string> CustomEnvironmentVariables { get; set; } = new Dictionary<string, string>();
@@ -185,9 +181,8 @@ namespace Datadog.Trace.TestHelpers
         }
 
         public void SetEnvironmentVariables(
-            int agentPort,
+            MockTracerAgent agent,
             int aspNetCorePort,
-            int? statsdPort,
             StringDictionary environmentVariables,
             string processToProfile = null,
             bool enableSecurity = false,
@@ -223,14 +218,6 @@ namespace Datadog.Trace.TestHelpers
             // for ASP.NET Core sample apps, set the server's port
             environmentVariables["ASPNETCORE_URLS"] = $"http://127.0.0.1:{aspNetCorePort}/";
 
-            environmentVariables["DD_TRACE_AGENT_HOSTNAME"] = "127.0.0.1";
-            environmentVariables["DD_TRACE_AGENT_PORT"] = agentPort.ToString();
-
-            if (statsdPort != null)
-            {
-                environmentVariables["DD_DOGSTATSD_PORT"] = statsdPort.Value.ToString();
-            }
-
             if (enableSecurity)
             {
                 environmentVariables[ConfigurationKeys.AppSecEnabled] = enableSecurity.ToString();
@@ -265,22 +252,37 @@ namespace Datadog.Trace.TestHelpers
                 "ServiceHub.IdentityHost.exe;ServiceHub.VSDetouredHost.exe;ServiceHub.SettingsHost.exe;ServiceHub.Host.CLR.x86.exe;" +
                 "ServiceHub.RoslynCodeAnalysisService32.exe;MSBuild.exe;ServiceHub.ThreadedWaitDialog.exe";
 
+            ConfigureTransportVariables(environmentVariables, agent);
+
             foreach (var key in CustomEnvironmentVariables.Keys)
             {
                 environmentVariables[key] = CustomEnvironmentVariables[key];
             }
-
-            ClearTcpConfigForExplicitTransports(environmentVariables);
         }
 
-        public void ClearTcpConfigForExplicitTransports(StringDictionary environmentVariables)
+        public void ConfigureTransportVariables(StringDictionary environmentVariables, MockTracerAgent agent)
         {
-            if (TransportType == TestTransports.Uds || TransportType == TestTransports.WindowsNamedPipe)
+            if (TransportType == TestTransports.Uds)
             {
-                environmentVariables.Remove("DD_TRACE_AGENT_HOSTNAME");
-                environmentVariables.Remove("DD_TRACE_AGENT_PORT");
-                environmentVariables.Remove("DD_DOGSTATSD_PORT");
-                environmentVariables.Remove("DD_AGENT_HOST");
+                string apmKey = "DD_APM_RECEIVER_SOCKET";
+                string dsdKey = "DD_DOGSTATSD_SOCKET";
+
+                environmentVariables.Add(apmKey, agent.TracesUdsPath);
+                environmentVariables.Add(dsdKey, agent.StatsUdsPath);
+            }
+            else if (TransportType == TestTransports.WindowsNamedPipe)
+            {
+                throw new NotImplementedException("The MockTracerAgent does not yet support Windows Named Pipes");
+            }
+            else if (TransportType == TestTransports.Tcp)
+            {
+                environmentVariables["DD_TRACE_AGENT_HOSTNAME"] = "127.0.0.1";
+                environmentVariables["DD_TRACE_AGENT_PORT"] = agent.Port.ToString();
+
+                if (agent.StatsdPort != default(int))
+                {
+                    environmentVariables["DD_DOGSTATSD_PORT"] = agent.StatsdPort.ToString();
+                }
             }
         }
 
@@ -453,30 +455,33 @@ namespace Datadog.Trace.TestHelpers
 
         public void EnabledWindowsNamedPipes(string tracePipeName = null, string statsPipeName = null)
         {
-            TraceAlternateTransportPath = tracePipeName ?? Path.GetRandomFileName();
-            StatsAlternateTransportPath = statsPipeName ?? Path.GetRandomFileName();
-            CustomEnvironmentVariables.Add("DD_TRACE_PIPE_NAME", TraceAlternateTransportPath);
-            CustomEnvironmentVariables.Add("DD_DOGSTATSD_PIPE_NAME", StatsAlternateTransportPath);
             TransportType = TestTransports.WindowsNamedPipe;
+            throw new NotImplementedException("The MockTracerAgent does not yet support Windows Named Pipes");
         }
 
-        public void EnableUnixDomainSockets(string traceUdsName = null, string statsUdsName = null)
+        public void EnableUnixDomainSockets()
         {
-            TraceAlternateTransportPath = traceUdsName ?? Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-            StatsAlternateTransportPath = statsUdsName ?? Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-            CustomEnvironmentVariables.Add("DD_APM_RECEIVER_SOCKET", TraceAlternateTransportPath);
-            CustomEnvironmentVariables.Add("DD_DOGSTATSD_SOCKET", StatsAlternateTransportPath);
+#if NETCOREAPP3_1_OR_GREATER
             TransportType = TestTransports.Uds;
+#else
+            // Unsupported
+            TransportType = TestTransports.Tcp;
+#endif
         }
 
         public MockTracerAgent GetMockAgent(bool useStatsD = false)
         {
             MockTracerAgent agent = null;
+
+            EnableUnixDomainSockets();
+
 #if NETCOREAPP
             // Decide between transports
             if (TransportType == TestTransports.Uds)
             {
-                agent = new MockTracerAgent(traceUdsName: TraceAlternateTransportPath, statsUdsName: StatsAlternateTransportPath);
+                var traceAlternateTransportPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+                var statsAlternateTransportPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+                agent = new MockTracerAgent(traceUdsName: traceAlternateTransportPath, statsUdsName: statsAlternateTransportPath);
             }
             else if (TransportType == TestTransports.WindowsNamedPipe)
             {

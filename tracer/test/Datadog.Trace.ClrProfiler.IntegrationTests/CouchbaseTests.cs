@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public void SubmitTraces(string packageVersion)
         {
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent.Port, packageVersion: packageVersion))
+            using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
                 var spans = agent.WaitForSpans(13, 500);
                 Assert.True(spans.Count >= 13, $"Expecting at least 13 spans, only received {spans.Count}");

@@ -66,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent.Port, aspNetCorePort: 0))
+            using (RunSampleAndWaitForExit(agent, aspNetCorePort: 0))
             {
                 var spans = agent.WaitForSpans(1, 2500);
                 spans.Should().HaveCountGreaterOrEqualTo(1);
