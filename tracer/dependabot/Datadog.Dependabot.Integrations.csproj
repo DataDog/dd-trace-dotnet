@@ -118,8 +118,8 @@
 
     <!-- Integration: MySqlConnector -->
     <!-- Assembly: MySqlConnector -->
-    <!-- Latest package https://www.nuget.org/packages/MySqlConnector/2.1.1 -->
-    <PackageReference Include="MySqlConnector" Version="2.1.1" />
+    <!-- Latest package https://www.nuget.org/packages/MySqlConnector/2.1.2 -->
+    <PackageReference Include="MySqlConnector" Version="2.1.2" />
 
     <!-- Integration: NLog -->
     <!-- Assembly: NLog -->
