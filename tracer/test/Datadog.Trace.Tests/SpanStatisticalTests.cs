@@ -16,8 +16,7 @@ namespace Datadog.Trace.Tests
 {
     public class SpanStatisticalTests
     {
-        private static readonly object _populationLock = new object();
-        private static readonly ConcurrentDictionary<ulong, ulong> _generatedIds = new ConcurrentDictionary<ulong, ulong>();
+        private static readonly Dictionary<ulong, ulong> _generatedIds = new Dictionary<ulong, ulong>();
 
         /// <summary>
         /// The max value of the Ids we create should be a 63 bit unsigned number
@@ -34,6 +33,32 @@ namespace Datadog.Trace.Tests
 
         public SpanStatisticalTests(ITestOutputHelper output)
         {
+            void BlastOff()
+            {
+                if (_generatedIds.Keys.Count > 0)
+                {
+                    return;
+                }
+
+                _output.WriteLine($"Starting key generation.");
+                var stopwatch = Stopwatch.StartNew();
+
+                // populate the dictionary for all tests
+                for (ulong i = 0; i < _numberOfIdsToGenerate; i++)
+                {
+                    var id = GenerateId();
+
+                    _generatedIds.TryGetValue(id, out var hitCount);
+
+                    hitCount++;
+
+                    _generatedIds[id] = hitCount;
+                }
+
+                stopwatch.Stop();
+                _output.WriteLine($"It took {stopwatch.ElapsedMilliseconds / 1000d} seconds to generate {_numberOfIdsToGenerate} keys.");
+            }
+
             _output = output;
             BlastOff();
         }
@@ -143,32 +168,6 @@ namespace Datadog.Trace.Tests
             var maximumVariance = 0.05m;
             _output.WriteLine($"The maximum variance in all buckets is {variance}.");
             Assert.True(maximumVariance >= variance, $"The variance between buckets should be less than {maximumVariance}, but it is {variance}.");
-        }
-
-        private void BlastOff()
-        {
-            lock (_populationLock)
-            {
-                if (_generatedIds.Keys.Count > 0)
-                {
-                    return;
-                }
-
-                _output.WriteLine($"Starting key generation.");
-                var stopwatch = new Stopwatch();
-                stopwatch.Start();
-                // populate the dictionary for all tests
-                Parallel.For(0L, (long)_numberOfIdsToGenerate, i =>
-                {
-                    var id = GenerateId();
-                    _generatedIds.AddOrUpdate(
-                        key: id,
-                        addValue: 1,
-                        updateValueFactory: (key, oldValue) => oldValue++);
-                });
-                stopwatch.Stop();
-                _output.WriteLine($"It took {stopwatch.ElapsedMilliseconds / 1000d} seconds to generate {_numberOfIdsToGenerate} keys.");
-            }
         }
 
         private ulong GenerateId()
