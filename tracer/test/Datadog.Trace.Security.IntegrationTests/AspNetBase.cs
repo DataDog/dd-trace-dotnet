@@ -32,7 +32,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath, string samplesDir = null, string testName = null)
             : base(sampleName, samplesDir ?? "test/test-applications/security", outputHelper)
         {
-            _testName = "Security." + testName ?? sampleName;
+            _testName = "Security." + (testName ?? sampleName);
             _httpClient = new HttpClient();
             _shutdownPath = shutdownPath;
 
