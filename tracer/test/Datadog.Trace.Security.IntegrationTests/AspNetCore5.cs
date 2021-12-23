@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Datadog.Trace.IntegrationTestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -36,7 +37,11 @@ namespace Datadog.Trace.Security.IntegrationTests
         public async Task TestSecurity(bool enableSecurity, bool enableBlocking, HttpStatusCode expectedStatusCode, string url = DefaultAttackUrl)
         {
             var agent = await RunOnSelfHosted(enableSecurity, enableBlocking);
-            await TestBlockedRequestAsync(agent, enableSecurity, enableBlocking, expectedStatusCode, 5, url: url);
+
+            var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+            var settings = VerifyHelper.GetSpanVerifierSettings(enableSecurity, enableBlocking, (int)expectedStatusCode, sanitisedUrl);
+
+            await TestBlockedRequestAsync(agent, url, 5, settings);
         }
     }
 }

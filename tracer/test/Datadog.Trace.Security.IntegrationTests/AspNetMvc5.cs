@@ -104,17 +104,15 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             // if blocking is enabled, request stops before reaching asp net mvc integrations intercepting before action methods, so no more spans are generated
             // NOTE: by integrating the latest version of the WAF, blocking was disabled, as it does not support blocking yet
-            return TestBlockedRequestAsync(_iisFixture.Agent, _enableSecurity, _blockingEnabled, HttpStatusCode.OK, _enableSecurity && _blockingEnabled ? 10 : 10, url: url);
+            var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedUrl);
+
+            return TestBlockedRequestAsync(_iisFixture.Agent, url, 10, settings);
         }
 
         protected override string GetTestName()
         {
             return _testName;
-        }
-
-        protected override bool UseShortParameters()
-        {
-            return true;
         }
     }
 }

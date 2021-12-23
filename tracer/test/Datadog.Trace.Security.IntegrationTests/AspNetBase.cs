@@ -11,6 +11,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
+using VerifyTests;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -28,10 +29,10 @@ namespace Datadog.Trace.Security.IntegrationTests
         private Process _process;
         private MockTracerAgent _agent;
 
-        public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath, string samplesDir = null)
+        public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath, string samplesDir = null, string testName = null)
             : base(sampleName, samplesDir ?? "test/test-applications/security", outputHelper)
         {
-            _testName = "Security." + sampleName;
+            _testName = "Security." + testName ?? sampleName;
             _httpClient = new HttpClient();
             _shutdownPath = shutdownPath;
 
@@ -40,7 +41,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             _httpClient.DefaultRequestHeaders.Add("user-agent", "Mistake Not...");
         }
 
-        public async Task<MockTracerAgent> RunOnSelfHosted(bool enableSecurity, bool enableBlocking)
+        public async Task<MockTracerAgent> RunOnSelfHosted(bool enableSecurity, bool enableBlocking, string externalRulesFile = null)
         {
             if (_agent == null)
             {
@@ -50,7 +51,14 @@ namespace Datadog.Trace.Security.IntegrationTests
                 _agent = new MockTracerAgent(agentPort);
             }
 
-            await StartSample(_agent.Port, arguments: null, aspNetCorePort: _httpPort, enableSecurity: enableSecurity, enableBlocking: enableBlocking);
+            await StartSample(
+                _agent.Port,
+                arguments: null,
+                aspNetCorePort: _httpPort,
+                enableSecurity: enableSecurity,
+                enableBlocking: enableBlocking,
+                externalRulesFile: externalRulesFile);
+
             return _agent;
         }
 
@@ -82,20 +90,13 @@ namespace Datadog.Trace.Security.IntegrationTests
             _agent?.Dispose();
         }
 
-        public async Task TestBlockedRequestAsync(MockTracerAgent agent, bool enableSecurity, bool enableBlocking, HttpStatusCode expectedStatusCode, int expectedSpans, string url)
+        public async Task TestBlockedRequestAsync(MockTracerAgent agent, string url, int expectedSpans, VerifySettings settings)
         {
             Func<Task<(HttpStatusCode StatusCode, string ResponseText)>> attack = () => SubmitRequest(url);
             var resultRequests = await Task.WhenAll(attack(), attack(), attack(), attack(), attack());
             agent.SpanFilters.Add(s => s.Tags.ContainsKey("http.url") && s.Tags["http.url"].IndexOf("Health", StringComparison.InvariantCultureIgnoreCase) > 0);
             var spans = agent.WaitForSpans(expectedSpans);
             Assert.Equal(expectedSpans, spans.Count);
-
-            var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-
-            var settings =
-                UseShortParameters() ?
-                    VerifyHelper.GetSpanVerifierSettings(sanitisedUrl) :
-                    VerifyHelper.GetSpanVerifierSettings(enableSecurity, enableBlocking, (int)expectedStatusCode, sanitisedUrl);
 
             // Overriding the type name here as we have multiple test classes in the file
             // Ensures that we get nice file nesting in Solution Explorer
@@ -122,12 +123,17 @@ namespace Datadog.Trace.Security.IntegrationTests
             return _testName;
         }
 
-        protected virtual bool UseShortParameters()
-        {
-            return false;
-        }
-
-        private async Task StartSample(int traceAgentPort, string arguments, int? aspNetCorePort = null, string packageVersion = "", int? statsdPort = null, string framework = "", string path = "/Home", bool enableSecurity = true, bool enableBlocking = true)
+        private async Task StartSample(
+            int traceAgentPort,
+            string arguments,
+            int? aspNetCorePort = null,
+            string packageVersion = "",
+            int? statsdPort = null,
+            string framework = "",
+            string path = "/Home",
+            bool enableSecurity = true,
+            bool enableBlocking = true,
+            string externalRulesFile = null)
         {
             var sampleAppPath = EnvironmentHelper.GetSampleApplicationPath(packageVersion, framework);
             // get path to sample app that the profiler will attach to
@@ -154,7 +160,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 aspNetCorePort: aspNetCorePort.GetValueOrDefault(5000),
                 enableSecurity: enableSecurity,
                 enableBlocking: enableBlocking,
-                callTargetEnabled: true);
+                externalRulesFile: externalRulesFile);
 
             // then wait server ready
             var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
