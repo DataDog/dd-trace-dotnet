@@ -238,12 +238,12 @@ public enum ExplorationTestUseCase
 
 public enum ExplorationTestName
 {
-    eShopOnWeb, protobuf, cake, swashbuckle, paket, ilspy
+    eShopOnWeb, protobuf, cake, swashbuckle, paket, /*ilspy*/
 }
 
 class ExplorationTestDescription
 {
-    public string Name { get; set; }
+    public ExplorationTestName Name { get; set; }
 
     public string GitRepositoryUrl { get; set; }
     public string GitRepositoryTag { get; set; }
@@ -292,7 +292,7 @@ class ExplorationTestDescription
         {
             ExplorationTestName.eShopOnWeb => new ExplorationTestDescription()
             {
-                Name = "eShopOnWeb",
+                Name = ExplorationTestName.eShopOnWeb,
                 GitRepositoryUrl = "https://github.com/dotnet-architecture/eShopOnWeb.git",
                 GitRepositoryTag = "netcore2.1",
                 IsGitShallowCloneSupported = true,
@@ -301,7 +301,7 @@ class ExplorationTestDescription
             },
             ExplorationTestName.protobuf => new ExplorationTestDescription()
             {
-                Name = "protobuf",
+                Name = ExplorationTestName.protobuf,
                 GitRepositoryUrl = "https://github.com/protocolbuffers/protobuf.git",
                 GitRepositoryTag = "v3.19.1",
                 IsGitShallowCloneSupported = true,
@@ -311,7 +311,7 @@ class ExplorationTestDescription
             },
             ExplorationTestName.cake => new ExplorationTestDescription()
             {
-                Name = "cake",
+                Name = ExplorationTestName.cake,
                 GitRepositoryUrl = "https://github.com/cake-build/cake.git",
                 GitRepositoryTag = "v1.3.0",
                 IsGitShallowCloneSupported = true,
@@ -320,7 +320,7 @@ class ExplorationTestDescription
             },
             ExplorationTestName.swashbuckle => new ExplorationTestDescription()
             {
-                Name = "Swashbuckle.AspNetCore",
+                Name = ExplorationTestName.swashbuckle,
                 GitRepositoryUrl = "https://github.com/domaindrivendev/Swashbuckle.AspNetCore.git",
                 GitRepositoryTag = "v6.2.3",
                 IsGitShallowCloneSupported = true,
@@ -329,7 +329,7 @@ class ExplorationTestDescription
             },
             ExplorationTestName.paket => new ExplorationTestDescription()
             {
-                Name = "Paket",
+                Name = ExplorationTestName.paket,
                 GitRepositoryUrl = "https://github.com/fsprojects/Paket.git",
                 GitRepositoryTag = "6.2.1",
                 IsGitShallowCloneSupported = true,
@@ -337,17 +337,17 @@ class ExplorationTestDescription
                 TestsToIgnore = new[] { "Loading assembly metadata works" },
                 SupportedFrameworks = new[] { TargetFramework.NET461 },
             },
-            ExplorationTestName.ilspy => new ExplorationTestDescription()
-            {
-                Name = "ILSpy",
-                GitRepositoryUrl = "https://github.com/icsharpcode/ILSpy.git",
-                GitRepositoryTag = "v7.1",
-                IsGitSubmodulesRequired = true,
-                PathToUnitTestProject = "ICSharpCode.Decompiler.Tests",
-                IsTestedByVSTest = true,
-                TestsToIgnore = new[] { "UseMc", "_net45", "ImplicitConversions", "ExplicitConversions", "ICSharpCode_Decompiler", "NewtonsoftJson_pcl_debug", "NRefactory_CSharp", "Random_TestCase_1", "AsyncForeach", "AsyncStreams", "AsyncUsing", "CS9_ExtensionGetEnumerator", "IndexRangeTest", "InterfaceTests", "UsingVariables" },
-                SupportedFrameworks = new[] { TargetFramework.NET461 },
-            },
+            //ExplorationTestName.ilspy => new ExplorationTestDescription()
+            //{
+            //    Name = ExplorationTestName.ilspy,
+            //    GitRepositoryUrl = "https://github.com/icsharpcode/ILSpy.git",
+            //    GitRepositoryTag = "v7.1",
+            //    IsGitSubmodulesRequired = true,
+            //    PathToUnitTestProject = "ICSharpCode.Decompiler.Tests",
+            //    IsTestedByVSTest = true,
+            //    TestsToIgnore = new[] { "UseMc", "_net45", "ImplicitConversions", "ExplicitConversions", "ICSharpCode_Decompiler", "NewtonsoftJson_pcl_debug", "NRefactory_CSharp", "Random_TestCase_1", "AsyncForeach", "AsyncStreams", "AsyncUsing", "CS9_ExtensionGetEnumerator", "IndexRangeTest", "InterfaceTests", "UsingVariables" },
+            //    SupportedFrameworks = new[] { TargetFramework.NET461 },
+            //},
             _ => throw new ArgumentOutOfRangeException(nameof(name), name, null)
         };
 

@@ -104,6 +104,33 @@ resources:
 
 # Stages
 stages:
+- stage: generate_strategies
+  dependsOn: []
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [generate_strategies_job]
+
+  - job: generate_strategies_job
+    dependsOn: []
+    pool:
+      vmImage: windows-2019 
+
+    steps:
+    - task: UseDotNet@2
+      displayName: install latest dotnet core sdk
+      inputs:
+        packageType: sdk
+        version: 6.x
+        includePreviewVersions: true
+
+    - powershell: |
+        tracer/build.ps1 GenerateStrategies -GenerateStrategiesTarget "integration_tests_windows_strategy,integration_tests_windows_iis_strategy"
+        tracer/build.ps1 GenerateStrategies -GenerateStrategiesTarget "integration_tests_linux_strategy"
+        tracer/build.ps1 GenerateStrategies -GenerateStrategiesTarget "exploration_tests_windows_strategy,exploration_tests_linux_strategy" -GenerateConditionVariableFilter "isDebuggerChanged|tracer/src/Datadog.Trace.ClrProfiler.Native/Debugger;isProfilerChanged|profiler/src"
+      displayName: Generate Strategies
+      name: generate_strategies_step
+
 - stage: build_windows
   dependsOn: []
   jobs:
@@ -260,36 +287,6 @@ stages:
     - publish: $(System.DefaultWorkingDirectory)
       displayName: Upload working directory after the build
       artifact: build-macos-working-directory
-
-- stage: check_changes
-  dependsOn: []
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [check_changes_job]
-
-  - job: check_changes_job
-    dependsOn: []
-    pool:
-      vmImage: ubuntu-18.04   
-
-    steps:
-    - powershell: |
-        $changes = $(git diff --name-only (git merge-base origin/master HEAD)).Split(' ')
-        Write-Output "Total changed $($changes.Length) files"
-
-        function CheckChanges {
-          param ($variableName, $changeFilter)
-          
-          $isChanged = $false
-          foreach ($change in $changes) {if ($change -like "*$changeFilter*") { $isChanged = $true; break; }}
-          Write-Output "$variableName - $isChanged"
-          Write-Host "##vso[task.setvariable variable=$variableName;isOutput=true]$isChanged"
-        }
-
-        CheckChanges -variableName "IsProfilerChanged" -changeFilter "profiler/src"
-        CheckChanges -variableName "IsDebuggerChanged" -changeFilter "tracer/src/Datadog.Trace.ClrProfiler.Native/Debugger"
-      name: check_changes_step
 
 - stage: package_windows
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
@@ -493,40 +490,19 @@ stages:
 
 - stage: integration_tests_windows
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: build_windows
+  dependsOn: [build_windows, generate_strategies]
 
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
       jobs: [Win]
 
-  - job: generator
-    pool:
-      vmImage: ubuntu-18.04
-    steps:
-    - checkout: none
-    - bash: |
-        matrix="{"
-        for framework in "net461" "netcoreapp2.1" "netcoreapp3.0" "netcoreapp3.1" "net5.0" "net6.0"; do
-          for platform in "x64" "x86"; do
-            name="${platform}_${framework//./_}"
-            if [ $target == "BuildAndRunWindowsIntegrationTests" ]; then cosmos=true; else cosmos=false; fi
-            matrix="${matrix} '${name}':"
-            matrix="${matrix} { 'framework': '${framework}', "
-            matrix="${matrix} 'targetPlatform': '${platform}' },"
-          done
-        done
-        matrix="${matrix::-1} }"
-        echo "##vso[task.setVariable variable=values;isOutput=true]${matrix}"
-      name: mtrx
-
   - job: Win
-    dependsOn: generator
     pool:
       vmImage: windows-2019
     timeoutInMinutes: 100
     strategy:
-      matrix: $[ dependencies.generator.outputs['mtrx.values'] ]
+      matrix: $[stageDependencies.generate_strategies.generate_strategies_job.outputs['generate_strategies_step.integration_tests_windows_strategy'] ]
 
     steps:
     - template: steps/install-dotnet-sdks.yml
@@ -569,39 +545,17 @@ stages:
 
 - stage: integration_tests_windows_iis
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_windows, package_windows]
+  dependsOn: [build_windows, package_windows, generate_strategies]
 
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
       jobs: [IIS]
 
-  - job: generator
-    pool:
-      vmImage: ubuntu-18.04
-    steps:
-      - checkout: none
-      - bash: |
-          matrix="{"
-          for framework in "net461" "netcoreapp2.1" "netcoreapp3.0" "netcoreapp3.1" "net5.0" "net6.0"; do
-            for platform in "x64" "x86"; do
-              name="${framework//./_}_${platform}"
-              if [ $platform == "x86" ]; then enable32bit=true; else enable32bit=false; fi
-              matrix="${matrix} '${name}':"
-              matrix="${matrix} { 'framework': '${framework}', "
-              matrix="${matrix} 'targetPlatform': '${platform}', "
-              matrix="${matrix} 'enable32bit': ${enable32bit} },"
-            done
-          done
-          matrix="${matrix::-1} }"
-          echo "##vso[task.setVariable variable=values;isOutput=true]${matrix}"
-        name: mtrx
-
   - job: IIS
     timeoutInMinutes: 100
-    dependsOn: generator
     strategy:
-      matrix: $[ dependencies.generator.outputs['mtrx.values'] ]
+      matrix: $[stageDependencies.generate_strategies.generate_strategies_job.outputs['generate_strategies_step.integration_tests_windows_iis_strategy'] ]
     pool:
       vmImage: windows-2019
     variables:
@@ -666,7 +620,7 @@ stages:
 
 - stage: integration_tests_linux
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_linux]
+  dependsOn: [build_linux, generate_strategies]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -674,37 +628,7 @@ stages:
 
   - job: Test
     strategy:
-      matrix:
-        debian_netcoreapp2_1:
-          publishTargetFramework: netcoreapp2.1
-          baseImage: debian
-        debian_netcoreapp3_0:
-          publishTargetFramework: netcoreapp3.0
-          baseImage: debian
-        debian_netcoreapp3_1:
-          publishTargetFramework: netcoreapp3.1
-          baseImage: debian
-        debian_net5_0:
-          publishTargetFramework: net5.0
-          baseImage: debian
-        debian_net6_0:
-          publishTargetFramework: net6.0
-          baseImage: debian
-        alpine_netcoreapp2_1:
-          publishTargetFramework: netcoreapp2.1
-          baseImage: alpine
-        alpine_netcoreapp3_0:
-          publishTargetFramework: netcoreapp3.0
-          baseImage: alpine
-        alpine_netcoreapp3_1:
-          publishTargetFramework: netcoreapp3.1
-          baseImage: alpine
-        alpine_net5_0:
-          publishTargetFramework: net5.0
-          baseImage: alpine
-        alpine_net6_0:
-          publishTargetFramework: net6.0
-          baseImage: alpine
+      matrix: $[stageDependencies.generate_strategies.generate_strategies_job.outputs['generate_strategies_step.integration_tests_linux_strategy']]
 
     variables:
       TestAllPackageVersions: true
@@ -877,54 +801,21 @@ stages:
       succeeded(), 
       eq(variables['isScheduledBuild'], 'False'), 
       or(
-        eq(stageDependencies.check_changes.outputs['check_changes_job.check_changes_step.IsProfilerChanged'],'True'), 
-        eq(stageDependencies.check_changes.outputs['check_changes_job.check_changes_step.IsDebuggerChanged'], 'True')
+        eq(stageDependencies.generate_strategies.generate_strategies_job.outputs['generate_strategies_step.IsProfilerChanged'],'True'), 
+        eq(stageDependencies.generate_strategies.generate_strategies_job.outputs['generate_strategies_step.IsDebuggerChanged'], 'True')
       )
     )
-  dependsOn: [build_windows, check_changes]
+  dependsOn: [build_windows, generate_strategies]
 
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
       jobs: [ExplorationTest]
 
-  - job: generator
-    variables:
-      ISDEBUGGERCHANGED: $[stageDependencies.check_changes.check_changes_job.outputs['check_changes_step.IsDebuggerChanged']]
-      ISPROFILERCHANGED: $[stageDependencies.check_changes.check_changes_job.outputs['check_changes_step.IsProfilerChanged']]
-    pool:
-      vmImage: ubuntu-18.04
-
-    steps:
-      - bash: |
-          matrix="{"
-
-          declare -a explorationTestUseCases=()
-          if [ $ISDEBUGGERCHANGED == "True" ]; then 
-            explorationTestUseCases+=("debugger")
-          fi
-
-          if [ $ISPROFILERCHANGED == "True" ]; then 
-            explorationTestUseCases+=("continuousProfiler")
-          fi
-
-          for explorationTestUseCase in ${explorationTestUseCases[@]}; do
-            for explorationTestName in "eshoponweb" "protobuf" "cake" "swashbuckle" "paket" ; do
-              name="${explorationTestUseCase//./_}_${explorationTestName}"
-              matrix="${matrix} '${name}':"
-              matrix="${matrix} { 'explorationTestUseCase': '${explorationTestUseCase}', "
-              matrix="${matrix} 'explorationTestName': '${explorationTestName}' },"
-            done
-          done
-          matrix="${matrix::-1} }"
-          echo "##vso[task.setVariable variable=values;isOutput=true]${matrix}"
-        name: mtrx
-
   - job: ExplorationTest
     timeoutInMinutes: 100
-    dependsOn: generator
     strategy:
-      matrix: $[ dependencies.generator.outputs['mtrx.values'] ]
+      matrix: $[ stageDependencies.generate_strategies.generate_strategies_job.outputs['generate_strategies_step.exploration_tests_windows_strategy'] ]
     pool:
       vmImage: windows-2019
 
@@ -959,75 +850,19 @@ stages:
       succeeded(),
       eq(variables['isScheduledBuild'], 'False'),
       or(
-        eq(stageDependencies.check_changes.outputs['check_changes_job.check_changes_step.IsProfilerChanged'], 'True'),
-        eq(stageDependencies.check_changes.outputs['check_changes_job.check_changes_step.IsDebuggerChanged'], 'True')
+        eq(stageDependencies.generate_strategies.generate_strategies_job.outputs['generate_strategies_step.IsProfilerChanged'], 'True'),
+        eq(stageDependencies.generate_strategies.generate_strategies_job.outputs['generate_strategies_step.IsDebuggerChanged'], 'True')
       )
     )
-  dependsOn: [build_linux, check_changes]
+  dependsOn: [build_linux, generate_strategies]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
       jobs: [Test]
 
-  - job: generator
-    variables:
-      ISDEBUGGERCHANGED: $[stageDependencies.check_changes.check_changes_job.outputs['check_changes_step.IsDebuggerChanged']]
-      ISPROFILERCHANGED: $[stageDependencies.check_changes.check_changes_job.outputs['check_changes_step.IsProfilerChanged']]
-    pool:
-      vmImage: ubuntu-18.04
-    steps:
-      - bash: |
-          matrix="{"
-
-          declare -a explorationTestUseCases=()
-          if [ $ISDEBUGGERCHANGED == "True" ]; then 
-            explorationTestUseCases+=("debugger")
-          fi
-
-          if [ $ISPROFILERCHANGED == "True" ]; then 
-            explorationTestUseCases+=("continuousProfiler")
-          fi
-
-          add_to_matrix () {
-            name="${baseImage//./_}_${publishTargetFramework//./_}_${explorationTestUseCase//./_}_${explorationTestName}"
-            matrix="${matrix} '${name}':"
-            matrix="${matrix} { 'baseImage': '${baseImage}', "
-            matrix="${matrix} 'publishTargetFramework': '${publishTargetFramework}', "
-            matrix="${matrix} 'explorationTestUseCase': '${explorationTestUseCase}', "
-            matrix="${matrix} 'explorationTestName': '${explorationTestName}' },"
-          }
-
-          for baseImage in "debian" "alpine" ; do
-            for explorationTestUseCase in ${explorationTestUseCases[@]} ; do
-
-              publishTargetFramework="netcoreapp2.1"
-              for explorationTestName in "eshoponweb" "protobuf" ; do
-                add_to_matrix
-              done
-
-              publishTargetFramework="netcoreapp3.1"
-              explorationTestName="cake"
-              add_to_matrix
-
-              publishTargetFramework="net5.0"
-              explorationTestName="cake"
-              add_to_matrix
-
-              publishTargetFramework="net6.0"
-              for explorationTestName in  "cake" "swashbuckle"; do
-                add_to_matrix
-              done
-            done
-          done
-          matrix="${matrix::-1} }"
-          echo "##vso[task.setVariable variable=values;isOutput=true]${matrix}"
-        name: mtrx
-
-
   - job: Test
-    dependsOn: generator
     strategy:
-      matrix: $[ dependencies.generator.outputs['mtrx.values'] ]
+      matrix: $[ stageDependencies.generate_strategies.generate_strategies_job.outputs['generate_strategies_step.exploration_tests_linux_strategy'] ]
 
     pool:
       vmImage: ubuntu-18.04
