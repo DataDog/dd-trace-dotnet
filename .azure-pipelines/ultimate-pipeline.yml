@@ -1635,7 +1635,7 @@ stages:
             --build-arg INSTALL_CMD="$(installCmd)" \
             --tag dd-trace-dotnet/$(dockerTag)-smoke-test \
             --file "$(System.DefaultWorkingDirectory)/tracer/build/_build/docker/smoke.dockerfile" \
-            "$(smokeTestAppDir)"
+            "$(smokeTestAppDir)" && \
           break || sleep 1; 
         done
       displayName: Build $(dockerTag) Docker image
@@ -1705,7 +1705,7 @@ stages:
                 --build-arg INSTALL_CMD="$(installCmd)" \
                 --tag dd-trace-dotnet/$(dockerTag)-smoke-test \
                 --file "$(System.DefaultWorkingDirectory)/tracer/build/_build/docker/smoke.dockerfile" \
-                "$(smokeTestAppDir)"
+                "$(smokeTestAppDir)" && \
               break || sleep 1;
             done
           displayName: Build $(dockerTag) Docker image
