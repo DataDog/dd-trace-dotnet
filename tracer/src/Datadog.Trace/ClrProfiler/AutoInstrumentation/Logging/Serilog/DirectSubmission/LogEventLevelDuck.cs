@@ -3,16 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.ComponentModel;
-
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission
 {
     /// <summary>
     /// Duck type for LogEventLevel
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public enum LogEventLevelDuck
+    internal enum LogEventLevelDuck
     {
         /// <summary>
         /// Anything and everything you might want to know about

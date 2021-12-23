@@ -4,18 +4,15 @@
 // </copyright>
 
 using System.Collections;
-using System.Collections.Generic;
-using System.ComponentModel;
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission
 {
     /// <summary>
     /// Duck typing for LoggerConfiguration
+    /// Interface, as used in instrumentation constraint
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface ILoggerConfiguration
+    internal interface ILoggerConfiguration
     {
         /// <summary>
         /// Gets the

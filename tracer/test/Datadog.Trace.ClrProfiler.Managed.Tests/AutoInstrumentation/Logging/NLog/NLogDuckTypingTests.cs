@@ -29,8 +29,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.NL
         public void CanDuckTypeLoggingConfigurationInModernNlog()
         {
             var instance = new LoggingConfiguration();
-            instance.DuckCast<LoggingConfigurationProxy>();
-            instance.TryDuckCast(out LoggingConfigurationProxy duck).Should().BeTrue();
+            instance.DuckCast<ILoggingConfigurationProxy>();
+            instance.TryDuckCast(out ILoggingConfigurationProxy duck).Should().BeTrue();
             duck.Should().NotBeNull();
             duck.ConfiguredNamedTargets.Should().BeEmpty();
         }
@@ -46,11 +46,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.NL
                 formatProvider: null,
                 parameters: new object[] { 123 });
 
-            var duck = instance.DuckCast<LogEventInfoProxy>();
+            var duck = instance.DuckCast<ILogEventInfoProxy>();
             duck.Should().NotBeNull();
             duck.Level.Should().NotBeNull();
             duck.Level.Ordinal.Should().Be(LogLevel.Fatal.Ordinal);
-            duck.LoggerName.Should().Be(instance.LoggerName);
             duck.FormattedMessage.Should().Be(instance.FormattedMessage);
             duck.Exception.Should().Be(instance.Exception);
             duck.HasProperties.Should().BeTrue();
@@ -61,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.NL
                 message: "Some message");
 
             instanceWithoutProperties.HasProperties.Should().BeFalse();
-            var duckWithoutProperties = instanceWithoutProperties.DuckCast<LogEventInfoProxy>();
+            var duckWithoutProperties = instanceWithoutProperties.DuckCast<ILogEventInfoProxy>();
 
             duckWithoutProperties.HasProperties.Should().BeFalse();
 
@@ -131,10 +130,10 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.NL
             typedProxy.WriteAsyncLogEvent(logInfo); // should not throw
 
 #if NLOG_45
-            var proxyOfProxy = proxy.DuckCast<TargetWithContextBaseProxy>();
+            var proxyOfProxy = proxy.DuckCast<ITargetWithContextBaseProxy>();
             proxyOfProxy.Should().NotBeNull();
 
-            var results = proxyOfProxy.GetAllProperties(logInfo.LogEvent.DuckCast<LogEventInfoProxy>());
+            var results = proxyOfProxy.GetAllProperties(logInfo.LogEvent.DuckCast<ILogEventInfoProxy>());
             results.Should().NotBeNull();
 
             target.SetBaseProxy(proxyOfProxy);

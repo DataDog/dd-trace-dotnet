@@ -13,7 +13,7 @@ using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.Formatting
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission.Formatting
 {
     internal static class SerilogLogFormatter
     {

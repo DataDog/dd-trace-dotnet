@@ -4,19 +4,16 @@
 // </copyright>
 
 using System.Collections;
-using System.ComponentModel;
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.Formatting
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission.Formatting
 {
     /// <summary>
     /// Duck type for ScalarValue
     /// https://github.dev/serilog/serilog/blob/5e93d5045585095ebcb71ef340d6accd61f01670/src/Serilog/Events/ScalarValue.cs
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
     [DuckCopy]
-    public struct StructureValueDuck
+    internal struct StructureValueDuck
     {
         /// <summary>
         /// Gets the properties associated with the structure

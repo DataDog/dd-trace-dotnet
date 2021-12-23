@@ -9,7 +9,6 @@ using System.Reflection;
 using System.Reflection.Emit;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Logging.DirectSubmission;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission
 {

@@ -5,17 +5,14 @@
 
 using System;
 using System.Collections;
-using System.ComponentModel;
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission
 {
     /// <summary>
     /// Duck type for LogEvent
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface ILogEvent : IDuckType
+    internal interface ILogEvent : IDuckType
     {
         /// <summary>
         /// Gets the time at which the event occurred.
@@ -30,10 +27,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog
         /// <summary>
         /// Gets the message template describing the event.
         /// </summary>
-        public IMessageTemplate MessageTemplate { get; }
+        public MessageTemplateProxy MessageTemplate { get; }
 
         /// <summary>
-        /// Gets properties associated with the event, including those presented in <see cref="ILogEvent.MessageTemplate"/>.
+        /// Gets properties associated with the event, including those presented in <see cref="MessageTemplate"/>.
         /// </summary>
         public IEnumerable Properties { get; }
 

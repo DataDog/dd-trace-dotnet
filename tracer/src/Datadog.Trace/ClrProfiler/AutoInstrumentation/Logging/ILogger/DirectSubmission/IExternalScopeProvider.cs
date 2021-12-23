@@ -11,9 +11,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
     /// <summary>
     /// A duck type for Microsoft.Extensions.Logging.IExternalScopeProvider
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface IExternalScopeProvider
+    internal interface IExternalScopeProvider
     {
         /// <summary>
         /// Adds scope object to the list

@@ -5,7 +5,6 @@
 #nullable enable
 
 using System;
-using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSubmission.Formatting;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -17,9 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
     /// <summary>
     /// An implementation of ILogger for use with direct log submission
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public class DirectSubmissionLogger
+    internal class DirectSubmissionLogger
     {
         private readonly string _name;
         private readonly IExternalScopeProvider? _scopeProvider;

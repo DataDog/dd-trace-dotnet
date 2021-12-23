@@ -5,11 +5,11 @@
 #nullable enable
 
 using System.Text;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.Formatting;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission.Formatting;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission
 {
     internal class SerilogDatadogLogEvent : DatadogLogEvent
     {

@@ -17,9 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
     /// <summary>
     /// Duck type for ILoggerProvider
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public class DirectSubmissionLoggerProvider
+    internal class DirectSubmissionLoggerProvider
     {
         private readonly ConcurrentDictionary<string, DirectSubmissionLogger> _loggers = new();
         private readonly IDatadogSink _sink;

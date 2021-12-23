@@ -13,10 +13,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
 {
     internal class Log4NetDatadogLogEvent : DatadogLogEvent
     {
-        private readonly LoggingEventDuckBase _logEvent;
+        private readonly ILoggingEventDuckBase _logEvent;
         private readonly DateTime _timestamp;
 
-        public Log4NetDatadogLogEvent(LoggingEventDuckBase logEvent, DateTime timestamp)
+        public Log4NetDatadogLogEvent(ILoggingEventDuckBase logEvent, DateTime timestamp)
         {
             _logEvent = logEvent;
             _timestamp = timestamp;

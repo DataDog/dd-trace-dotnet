@@ -4,7 +4,6 @@
 // </copyright>
 
 using System.Collections;
-using System.ComponentModel;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies
 {
@@ -13,9 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
     /// Mapped Diagnostics Context - a thread-local structure that keeps a dictionary
     /// of strings and provides methods to output them in layouts.
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public struct MappedDiagnosticsContextLegacyProxy
+    internal struct MappedDiagnosticsContextLegacyProxy
     {
         /// <summary>
         /// Gets the thread local dictionary for the type

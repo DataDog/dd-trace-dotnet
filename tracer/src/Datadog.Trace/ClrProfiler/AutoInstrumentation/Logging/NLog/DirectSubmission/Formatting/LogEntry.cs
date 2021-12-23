@@ -12,7 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
     internal readonly struct LogEntry
     {
         public LogEntry(
-            LogEventInfoProxyBase logEventInfo,
+            ILogEventInfoProxyBase logEventInfo,
             IDictionary<string, object?>? properties,
             IDictionary<object, object>? fallbackProperties)
         {
@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             FallbackProperties = fallbackProperties;
         }
 
-        public LogEventInfoProxyBase LogEventInfo { get; }
+        public ILogEventInfoProxyBase LogEventInfo { get; }
 
         public IDictionary<string, object?>? Properties { get; }
 

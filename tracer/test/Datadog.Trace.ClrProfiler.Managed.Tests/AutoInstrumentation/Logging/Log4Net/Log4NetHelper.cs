@@ -18,14 +18,14 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.Lo
         public static DirectSubmissionLog4NetAppender GetAppender(IDatadogSink sink, DirectSubmissionLogLevel level)
             => new(sink, level);
 
-        public static LoggingEventDuck DuckCastLogEvent(LoggingEvent logEvent)
-            => logEvent.DuckCast<LoggingEventDuck>();
+        public static ILoggingEventDuck DuckCastLogEvent(LoggingEvent logEvent)
+            => logEvent.DuckCast<ILoggingEventDuck>();
 #else
         public static DirectSubmissionLog4NetLegacyAppender GetAppender(IDatadogSink sink, DirectSubmissionLogLevel level)
             => new(sink, level);
 
-        public static LoggingEventLegacyDuck DuckCastLogEvent(LoggingEvent logEvent)
-            => logEvent.DuckCast<LoggingEventLegacyDuck>();
+        public static ILoggingEventLegacyDuck DuckCastLogEvent(LoggingEvent logEvent)
+            => logEvent.DuckCast<ILoggingEventLegacyDuck>();
 #endif
 
         internal class TestSink : IDatadogSink

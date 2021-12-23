@@ -4,7 +4,6 @@
 // </copyright>
 #nullable enable
 
-using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Formatting;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies;
 using Datadog.Trace.DuckTyping;
@@ -17,14 +16,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
     /// <summary>
     /// NLog Target that sends logs directly to Datadog
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public class DirectSubmissionNLogTarget
+    internal class DirectSubmissionNLogTarget
     {
         private readonly IDatadogSink _sink;
         private readonly int _minimumLevel;
         private readonly LogFormatter? _formatter;
-        private TargetWithContextBaseProxy? _baseProxy;
+        private ITargetWithContextBaseProxy? _baseProxy;
 
         internal DirectSubmissionNLogTarget(IDatadogSink sink, DirectSubmissionLogLevel minimumLevel)
             : this(sink, minimumLevel, formatter: null)
@@ -47,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
         /// </summary>
         /// <param name="logEventInfo">Logging event to be written out</param>
         [DuckReverseMethod(ParameterTypeNames = new[] { "NLog.LogEventInfo, NLog" })]
-        public void Write(LogEventInfoProxy? logEventInfo)
+        public void Write(ILogEventInfoProxy? logEventInfo)
         {
             if (logEventInfo is null)
             {
@@ -73,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             _sink.EnqueueLog(new NLogDatadogLogEvent(serializedLog));
         }
 
-        internal void SetBaseProxy(TargetWithContextBaseProxy baseProxy)
+        internal void SetBaseProxy(ITargetWithContextBaseProxy baseProxy)
         {
             _baseProxy = baseProxy;
             _baseProxy.IncludeEventProperties = true;

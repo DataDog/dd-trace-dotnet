@@ -4,10 +4,8 @@
 // </copyright>
 #nullable enable
 
-using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
 
@@ -16,9 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
     /// <summary>
     /// Duck type for IAppender
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public class DirectSubmissionLog4NetAppender
+    internal class DirectSubmissionLog4NetAppender
     {
         private static DirectSubmissionLog4NetAppender _instance = null!;
 
@@ -56,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
         /// </summary>
         /// <param name="logEvent">The logging event</param>
         [DuckReverseMethod(ParameterTypeNames = new[] { "log4net.Core.LoggingEvent, log4net " })]
-        public void DoAppend(LoggingEventDuck? logEvent)
+        public void DoAppend(ILoggingEventDuck? logEvent)
         {
             if (logEvent is null)
             {

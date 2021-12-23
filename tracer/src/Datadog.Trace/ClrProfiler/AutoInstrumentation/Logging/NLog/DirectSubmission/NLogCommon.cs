@@ -176,7 +176,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
         {
             // Could also do the duck cast in the method signature, but this avoids the allocation in the instrumentation
             // if not enabled.
-            var loggingConfigurationProxy = loggingConfiguration.DuckCast<LoggingConfigurationProxy>();
+            var loggingConfigurationProxy = loggingConfiguration.DuckCast<ILoggingConfigurationProxy>();
             if (loggingConfigurationProxy.ConfiguredNamedTargets is not null)
             {
                 foreach (var target in loggingConfigurationProxy.ConfiguredNamedTargets)
@@ -201,7 +201,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
         {
             // Could also do the duck cast in the method signature, but this avoids the allocation in the instrumentation
             // if not enabled.
-            var loggingConfigurationProxy = loggingConfiguration.DuckCast<LoggingConfigurationLegacyProxy>();
+            var loggingConfigurationProxy = loggingConfiguration.DuckCast<ILoggingConfigurationLegacyProxy>();
             if (loggingConfigurationProxy.ConfiguredNamedTargets is not null)
             {
                 foreach (var target in loggingConfigurationProxy.ConfiguredNamedTargets)
@@ -224,7 +224,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
         // internal for testing
         internal static void AddDatadogTargetNLogPre43(object loggingConfiguration, object targetProxy)
         {
-            var loggingConfigurationProxy = loggingConfiguration.DuckCast<LoggingConfigurationPre43Proxy>();
+            var loggingConfigurationProxy = loggingConfiguration.DuckCast<ILoggingConfigurationPre43Proxy>();
 
             if (loggingConfigurationProxy.ConfiguredNamedTargets is not null)
             {
@@ -249,7 +249,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
 
             // Have to create a logging rule the hard way
             var instance = _createLoggingRuleFunc();
-            var ruleProxy = instance.DuckCast<LoggingRuleProxy>();
+            var ruleProxy = instance.DuckCast<ILoggingRuleProxy>();
 
             ruleProxy.LoggerNamePattern = "**";
             ruleProxy.Targets.Add(targetProxy);
@@ -269,7 +269,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
         {
             // create a new instance of DirectSubmissionNLogTarget
             var reverseProxy = target.DuckImplement(_targetType);
-            var targetProxy = reverseProxy.DuckCast<TargetWithContextBaseProxy>();
+            var targetProxy = reverseProxy.DuckCast<ITargetWithContextBaseProxy>();
             target.SetBaseProxy(targetProxy);
             // theoretically this should be called per logging configuration
             // but we don't need to so hack in the call here
@@ -286,7 +286,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
                 target.SetGetContextPropertiesFunc(GetContextProperties);
             }
 
-            var targetProxy = reverseProxy.DuckCast<TargetProxy>();
+            var targetProxy = reverseProxy.DuckCast<ITargetProxy>();
             // theoretically this should be called per logging configuration
             // but we don't need to so hack in the call here
             targetProxy.Initialize(null);

@@ -10,7 +10,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission
 {
     /// <summary>
     /// LoggerConfiguration.CreateLogger() calltarget instrumentation
@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog
         /// <typeparam name="TTarget">Type of the target</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
+        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
             where TTarget : ILoggerConfiguration, IDuckType
         {
             if (TracerManager.Instance.DirectLogSubmission.Settings.IsIntegrationEnabled(IntegrationId.Serilog))

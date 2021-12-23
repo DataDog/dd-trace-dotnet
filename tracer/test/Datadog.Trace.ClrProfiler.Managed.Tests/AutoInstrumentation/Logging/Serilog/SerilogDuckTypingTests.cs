@@ -7,7 +7,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.Formatting;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission.Formatting;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Vendors.Serilog;
@@ -26,8 +27,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.Se
         [Fact]
         public void CanDuckTypeMessageTemplate()
         {
-            var instance = new MessageTemplate("Some text", Enumerable.Empty<MessageTemplateToken>());
-            instance.TryDuckCast(out IMessageTemplate duck).Should().BeTrue();
+            var instance = new Vendors.Serilog.Events.MessageTemplate("Some text", Enumerable.Empty<MessageTemplateToken>());
+            instance.TryDuckCast(out MessageTemplateProxy duck).Should().BeTrue();
             duck.Should().NotBeNull();
             duck.Text.Should().Be(instance.Text);
         }
@@ -39,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.Se
                 DateTimeOffset.UtcNow,
                 LogEventLevel.Error,
                 new Exception(),
-                new MessageTemplate("Some text", Enumerable.Empty<MessageTemplateToken>()),
+                new Vendors.Serilog.Events.MessageTemplate("Some text", Enumerable.Empty<MessageTemplateToken>()),
                 new[] { new LogEventProperty("SomeProp", new ScalarValue(123)) });
 
             instance.TryDuckCast(out ILogEvent duck).Should().BeTrue();
@@ -198,7 +199,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.Se
                       .ContainInOrder(values);
         }
 
-        public class TestSerilogSink
+        internal class TestSerilogSink
         {
             public List<string> Logs { get; } = new();
 

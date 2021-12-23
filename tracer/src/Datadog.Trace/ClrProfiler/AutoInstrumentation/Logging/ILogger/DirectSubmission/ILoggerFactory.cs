@@ -12,9 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
     /// <summary>
     /// Duck type for ILogLevel
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public interface ILoggerFactory : IDuckType
+    internal interface ILoggerFactory : IDuckType
     {
         /// <summary>
         /// Used to add the ILoggerProvider

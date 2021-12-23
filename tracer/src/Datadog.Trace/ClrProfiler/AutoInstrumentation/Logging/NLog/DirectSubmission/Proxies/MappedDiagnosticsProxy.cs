@@ -4,7 +4,6 @@
 // </copyright>
 
 using System.Collections.Generic;
-using System.ComponentModel;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies
 {
@@ -14,11 +13,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
     /// of strings and provides methods to output them in layouts.  Allows for maintaining state across
     /// asynchronous tasks and call contexts.
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
 #pragma warning disable SA1400
 #pragma warning disable SA1302
-    public interface MappedDiagnosticsProxy
+    internal interface MappedDiagnosticsProxy
 #pragma warning restore SA1302
 #pragma warning restore SA1400
     {

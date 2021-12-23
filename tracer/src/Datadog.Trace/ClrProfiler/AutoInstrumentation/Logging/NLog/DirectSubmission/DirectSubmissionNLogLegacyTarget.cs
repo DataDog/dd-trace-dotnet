@@ -6,7 +6,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Formatting;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies;
 using Datadog.Trace.DuckTyping;
@@ -19,9 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
     /// <summary>
     /// NLog Target that sends logs directly to Datadog for NLog &lt;4.5
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public class DirectSubmissionNLogLegacyTarget
+    internal class DirectSubmissionNLogLegacyTarget
     {
         private readonly IDatadogSink _sink;
         private readonly int _minimumLevel;
@@ -49,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
         /// </summary>
         /// <param name="logEventInfo">Logging event to be written out</param>
         [DuckReverseMethod(ParameterTypeNames = new[] { "NLog.LogEventInfo, NLog" })]
-        public void Write(LogEventInfoLegacyProxy? logEventInfo)
+        public void Write(ILogEventInfoLegacyProxy? logEventInfo)
         {
             if (logEventInfo is null)
             {
@@ -62,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             }
 
             var contextProperties = _getProperties?.Invoke();
-            var eventProperties = logEventInfo.HasProperties ? logEventInfo.Properties : null;
+            var eventProperties = logEventInfo.Properties is { Count: > 0 } props ? props : null;
 
             // We render the event to a string immediately as we need to capture the properties
             // This is more expensive from a CPU perspective, but is necessary as the properties

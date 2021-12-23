@@ -8,6 +8,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;

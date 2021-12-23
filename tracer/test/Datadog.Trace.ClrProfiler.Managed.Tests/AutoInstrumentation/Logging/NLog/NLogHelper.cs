@@ -21,8 +21,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.NL
         public static DirectSubmissionNLogTarget CreateTarget(IDatadogSink sink, DirectSubmissionLogLevel minimumLevel)
             => new(sink, minimumLevel, SettingsHelper.GetFormatter());
 
-        public static LogEventInfoProxy GetLogEventProxy(LogEventInfo logEvent)
-            => logEvent.DuckCast<LogEventInfoProxy>();
+        public static ILogEventInfoProxy GetLogEventProxy(LogEventInfo logEvent)
+            => logEvent.DuckCast<ILogEventInfoProxy>();
 
         public static void AddTargetToConfig(LoggingConfiguration config, object targetProxy)
             => NLogCommon<LoggingConfiguration>.AddDatadogTargetNLog45(config, targetProxy);

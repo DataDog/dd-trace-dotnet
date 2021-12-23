@@ -4,19 +4,16 @@
 // </copyright>
 #nullable enable
 
-using System.ComponentModel;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission
 {
     /// <summary>
     /// Serilog Sink
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public class DirectSubmissionSerilogSink
+    internal class DirectSubmissionSerilogSink
     {
         private readonly IDatadogSink _sink;
         private readonly int _minimumLevel;

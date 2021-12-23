@@ -159,7 +159,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
         /// <summary>
         /// Duck type for ILoggerProvider
         /// </summary>
-        public class TestLoggerProvider
+        internal class TestLoggerProvider
         {
             public TestLogger Logger { get; } = new();
 
@@ -193,7 +193,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
             }
         }
 
-        public class TestLogger
+        internal class TestLogger
         {
             public List<string> Logs { get; } = new();
 

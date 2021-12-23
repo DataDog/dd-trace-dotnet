@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
 {
     internal class Log4NetLogFormatter
     {
-        public static void FormatLogEvent(LogFormatter logFormatter, StringBuilder sb, LoggingEventDuckBase logEntry, DateTime timestamp)
+        public static void FormatLogEvent(LogFormatter logFormatter, StringBuilder sb, ILoggingEventDuckBase logEntry, DateTime timestamp)
         {
             logFormatter.FormatLog(
                 sb,
@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
                 RenderProperties);
         }
 
-        private static LogPropertyRenderingDetails RenderProperties(JsonTextWriter writer, LoggingEventDuckBase logEntry)
+        private static LogPropertyRenderingDetails RenderProperties(JsonTextWriter writer, ILoggingEventDuckBase logEntry)
         {
             var haveSource = false;
             var haveService = false;

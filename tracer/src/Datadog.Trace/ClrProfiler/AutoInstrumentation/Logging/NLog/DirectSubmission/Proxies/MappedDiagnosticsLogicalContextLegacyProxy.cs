@@ -4,7 +4,6 @@
 // </copyright>
 
 using System.Collections;
-using System.ComponentModel;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies
 {
@@ -14,9 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
     /// of strings and provides methods to output them in layouts.  Allows for maintaining state across
     /// asynchronous tasks and call contexts.
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public struct MappedDiagnosticsLogicalContextLegacyProxy
+    internal struct MappedDiagnosticsLogicalContextLegacyProxy
     {
         /// <summary>
         /// Gets the async  local dictionary for the type

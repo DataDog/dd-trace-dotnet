@@ -3,18 +3,15 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.ComponentModel;
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.Formatting
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission.Formatting
 {
     /// <summary>
     /// Duck type for KeyValuePair&lt;object, LogEventPropertyValue&gt;
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
     [DuckCopy]
-    public struct KeyValuePairStringStruct
+    internal struct KeyValuePairStringStruct
     {
         /// <summary>
         /// Gets the key
