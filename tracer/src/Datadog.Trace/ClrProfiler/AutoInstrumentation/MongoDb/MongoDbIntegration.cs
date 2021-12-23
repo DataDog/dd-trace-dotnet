@@ -49,7 +49,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 
             string collectionName = null;
             string query = null;
-            string operationName = null;
+            string resourceName = null;
+            string databaseName = null;
+
+            if (wireProtocol.TryDuckCast<IWireProtocolWithDatabaseNamespaceStruct>(out var protocolWithDatabaseNamespace))
+            {
+                databaseName = protocolWithDatabaseNamespace.DatabaseNamespace.DatabaseName;
+            }
 
             if (wireProtocol.TryDuckCast<IWireProtocolWithCommandStruct>(out var protocolWithCommand)
                 && protocolWithCommand.Command != null)
@@ -57,7 +63,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
                 // the name of the first element in the command BsonDocument will be the operation type (insert, delete, find, etc)
                 // and its value is the collection name
                 var firstElement = protocolWithCommand.Command.GetElement(0);
-                operationName = firstElement.Name;
+                string operationName = firstElement.Name;
 
                 if (operationName == "isMaster" || operationName == "hello")
                 {
@@ -66,13 +72,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 
                 collectionName = firstElement.Value?.ToString();
                 query = protocolWithCommand.Command.ToString();
-            }
-
-            string databaseName = null;
-
-            if (wireProtocol.TryDuckCast<IWireProtocolWithDatabaseNamespaceStruct>(out var protocolWithDatabaseNamespace))
-            {
-                databaseName = protocolWithDatabaseNamespace.DatabaseNamespace.DatabaseName;
+                resourceName = $"{operationName ?? "operation"} {databaseName ?? "database"}";
             }
 
             string host = null;
@@ -99,7 +99,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
                 scope = tracer.StartActiveInternal(OperationName, serviceName: serviceName, tags: tags);
                 var span = scope.Span;
                 span.Type = SpanTypes.MongoDb;
-                span.ResourceName = $"{operationName ?? "operation"} {databaseName ?? "database"}";
+                span.ResourceName = resourceName;
                 tags.DbName = databaseName;
                 tags.Query = query;
                 tags.Collection = collectionName;
