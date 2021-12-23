@@ -142,7 +142,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             if (packageVersion is null or "")
             {
 #if NETFRAMEWORK
-                packageVersion = "1.0.0.505";
+                packageVersion = "2.1.0";
 #else
                 packageVersion = "4.5.0";
 #endif
