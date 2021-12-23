@@ -1626,14 +1626,18 @@ stages:
         path: $(smokeTestAppDir)/artifacts
 
     - script: |
-        docker build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
-          --build-arg RUNTIME_IMAGE=$(runtimeImage) \
-          --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
-          --build-arg INSTALL_CMD="$(installCmd)" \
-          --tag dd-trace-dotnet/$(dockerTag)-smoke-test \
-          --file "$(System.DefaultWorkingDirectory)/tracer/build/_build/docker/smoke.dockerfile" \
-          "$(smokeTestAppDir)"
+        # retry up to 5 times to build the docker images
+        for i in 1 2 3 4 5; do 
+          docker build \
+            --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+            --build-arg RUNTIME_IMAGE=$(runtimeImage) \
+            --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+            --build-arg INSTALL_CMD="$(installCmd)" \
+            --tag dd-trace-dotnet/$(dockerTag)-smoke-test \
+            --file "$(System.DefaultWorkingDirectory)/tracer/build/_build/docker/smoke.dockerfile" \
+            "$(smokeTestAppDir)" && \
+          break || sleep 1; 
+        done
       displayName: Build $(dockerTag) Docker image
 
     - script: docker run --rm dd-trace-dotnet/$(dockerTag)-smoke-test
@@ -1692,14 +1696,18 @@ stages:
             path: $(smokeTestAppDir)/artifacts
 
         - script: |
-            docker build \
-              --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
-              --build-arg RUNTIME_IMAGE=$(runtimeImage) \
-              --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
-              --build-arg INSTALL_CMD="$(installCmd)" \
-              --tag dd-trace-dotnet/$(dockerTag)-smoke-test \
-              --file "$(System.DefaultWorkingDirectory)/tracer/build/_build/docker/smoke.dockerfile" \
-              "$(smokeTestAppDir)"
+            # retry up to 5 times to build the docker images
+            for i in 1 2 3 4 5; do 
+              docker build \
+                --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+                --build-arg RUNTIME_IMAGE=$(runtimeImage) \
+                --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+                --build-arg INSTALL_CMD="$(installCmd)" \
+                --tag dd-trace-dotnet/$(dockerTag)-smoke-test \
+                --file "$(System.DefaultWorkingDirectory)/tracer/build/_build/docker/smoke.dockerfile" \
+                "$(smokeTestAppDir)" && \
+              break || sleep 1;
+            done
           displayName: Build $(dockerTag) Docker image
 
         - script: docker run --rm dd-trace-dotnet/$(dockerTag)-smoke-test
