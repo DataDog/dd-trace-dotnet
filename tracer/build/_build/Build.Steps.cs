@@ -1332,8 +1332,7 @@ partial class Build
                 }
                 var trimmedName = fileName.Substring(0, fileName.Length - suffixLength);
                 var dest = Path.Combine(directory.FullName, $"{trimmedName}verified{Path.GetExtension(source)}");
-                Logger.Info(dest);
-                file.MoveTo(dest, true);
+                file.MoveTo(dest, overwrite: true);
             }
         });
 
