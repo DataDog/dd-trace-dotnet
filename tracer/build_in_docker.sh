@@ -20,6 +20,6 @@ docker run -it --rm \
     --env tracerHome=/project/tracer/bin/tracer-home \
     --env artifacts=/project/tracer/bin/artifacts \
     -p 5003:5003 \
-    -v /Users/maxime.david/ddlogs:/var/log/datadog/dotnet \
+    -v /ddlogs:/var/log/datadog/dotnet \
     $IMAGE_NAME \
     dotnet /build/bin/Debug/_build.dll "$@"
