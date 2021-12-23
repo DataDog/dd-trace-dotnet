@@ -3,7 +3,7 @@
     TraceId: Id_1,
     SpanId: Id_2,
     Name: aspnet-mvc.request,
-    Resource: GET /home,
+    Resource: GET /home/index,
     Service: sample,
     Type: web,
     ParentId: Id_3,
@@ -25,7 +25,7 @@
     TraceId: Id_1,
     SpanId: Id_3,
     Name: aspnet.request,
-    Resource: GET /home,
+    Resource: GET /home/index,
     Service: sample,
     Type: web,
     Tags: {
