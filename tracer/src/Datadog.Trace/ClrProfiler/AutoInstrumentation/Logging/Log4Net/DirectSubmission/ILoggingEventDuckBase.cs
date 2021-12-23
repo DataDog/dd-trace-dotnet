@@ -34,9 +34,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
         public string RenderedMessage { get; }
 
         /// <summary>
-        /// Gets the exception object used to initialize this event
+        /// Gets the exception associated with the event
         /// </summary>
-        public Exception ExceptionObject { get; }
+        public string GetExceptionString();
 
         /// <summary>
         /// Get all the composite properties in this event

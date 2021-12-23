@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
                 logEntry.RenderedMessage,
                 eventId: null,
                 logEntry.Level.ToStandardLevelString(),
-                logEntry.ExceptionObject,
+                exception: null, // We can't pass the exception here, as it might be null if the event has been serialized
                 RenderProperties);
         }
 
@@ -37,6 +37,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
             var haveTags = false;
             var haveEnv = false;
             var haveVersion = false;
+
+            var exception = logEntry.GetExceptionString();
+            if (!string.IsNullOrEmpty(exception))
+            {
+                writer.WritePropertyName("@x", escape: false);
+                writer.WriteValue(exception);
+            }
 
             var properties = logEntry.GetProperties();
             foreach (var keyObj in properties.Keys)
