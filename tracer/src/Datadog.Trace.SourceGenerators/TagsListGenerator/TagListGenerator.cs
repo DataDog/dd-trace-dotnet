@@ -220,6 +220,13 @@ namespace Datadog.Trace.SourceGenerators.TagsListGenerator
                                 hasMisconfiguredInput = true;
                                 break;
                             }
+
+                            if (key == "_dd.origin")
+                            {
+                                reportDiagnostic(InvalidUseOfOriginDiagnostic.Create(attributeData.ApplicationSyntaxReference?.GetSyntax()));
+                                hasMisconfiguredInput = true;
+                                break;
+                            }
                         }
 
                         if (hasMisconfiguredInput)

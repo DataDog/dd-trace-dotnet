@@ -137,11 +137,10 @@ internal sealed class MetricAttribute : System.Attribute
             }
         }
 
-        protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset, out bool isOriginWritten)
+        protected override int WriteAdditionalTags(ref byte[] bytes, ref int offset)
         {
             var count = 0;
             ");
-                    string? originProperty = null;
                     for (int i = 0; i < tagList.TagProperties.Count; i++)
                     {
                         var property = tagList.TagProperties[i];
@@ -158,25 +157,10 @@ internal sealed class MetricAttribute : System.Attribute
             }
 
             ");
-                        if (property.TagValue == "_dd.origin")
-                        {
-                            originProperty = property.PropertyName;
-                        }
                     }
 
                     sb.Append(
-                        @"count += base.WriteAdditionalTags(ref bytes, ref offset, out var isOriginWrittenInBase);
-            isOriginWritten = isOriginWrittenInBase");
-
-                    if (originProperty is not null)
-                    {
-                        sb.Append(@" || ")
-                          .Append(originProperty)
-                          .Append(@" is not null");
-                    }
-
-                    sb.Append(@";
-            return count;
+                        @"return count + base.WriteAdditionalTags(ref bytes, ref offset);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)

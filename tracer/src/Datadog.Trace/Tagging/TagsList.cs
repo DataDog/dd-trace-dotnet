@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -110,8 +109,6 @@ namespace Datadog.Trace.Tagging
 
             var tags = Tags;
 
-            bool isOriginWritten = false;
-
             if (tags != null)
             {
                 lock (tags)
@@ -125,8 +122,7 @@ namespace Datadog.Trace.Tagging
                 }
             }
 
-            count += WriteAdditionalTags(ref bytes, ref offset, out var originWasWritten);
-            isOriginWritten |= originWasWritten;
+            count += WriteAdditionalTags(ref bytes, ref offset);
 
             if (span.IsTopLevel)
             {
@@ -136,7 +132,7 @@ namespace Datadog.Trace.Tagging
             }
 
             string origin = span.Context.Origin;
-            if (!isOriginWritten && !string.IsNullOrEmpty(origin))
+            if (!string.IsNullOrEmpty(origin))
             {
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _originBytes);
@@ -152,9 +148,8 @@ namespace Datadog.Trace.Tagging
             return offset - originalOffset;
         }
 
-        protected virtual int WriteAdditionalTags(ref byte[] bytes, ref int offset, out bool isOriginWritten)
+        protected virtual int WriteAdditionalTags(ref byte[] bytes, ref int offset)
         {
-            isOriginWritten = false;
             return 0;
         }
 
