@@ -21,6 +21,12 @@ namespace Samples.AspNetMvc4.Areas.Admin.Controllers
             return View(values);
         }
 
+        [ChildActionOnly]
+        public ActionResult HelloFromChild(string name)
+        {
+            return Content("Hello " + name);
+        }
+
         private string GetRouteValueOrDefault(string key)
         {
             return RouteData.Values.TryGetValue(key, out var value)

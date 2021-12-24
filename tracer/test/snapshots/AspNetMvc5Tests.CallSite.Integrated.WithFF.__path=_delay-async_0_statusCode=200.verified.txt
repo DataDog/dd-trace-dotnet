@@ -25,7 +25,7 @@
     TraceId: Id_1,
     SpanId: Id_3,
     Name: aspnet.request,
-    Resource: GET /delay-async/?,
+    Resource: GET /delay-async/{seconds},
     Service: sample,
     Type: web,
     Tags: {

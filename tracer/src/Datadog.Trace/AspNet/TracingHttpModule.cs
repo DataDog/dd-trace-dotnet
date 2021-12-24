@@ -73,7 +73,6 @@ namespace Datadog.Trace.AspNet
         private void OnBeginRequest(object sender, EventArgs eventArgs)
         {
             Scope scope = null;
-
             try
             {
                 var tracer = Tracer.Instance;
@@ -171,8 +170,8 @@ namespace Datadog.Trace.AspNet
 
                         scope.Span.SetHttpStatusCode(app.Context.Response.StatusCode, isServer: true);
 
-                        if (app.Context.Items[SharedConstants.HttpContextPropagatedResourceNameKey] is string resourceName
-                            && !string.IsNullOrEmpty(resourceName))
+                        if (app.Context.Items[SharedItems.HttpContextPropagatedResourceNameKey] is string resourceName
+                             && !string.IsNullOrEmpty(resourceName))
                         {
                             scope.Span.ResourceName = resourceName;
                         }

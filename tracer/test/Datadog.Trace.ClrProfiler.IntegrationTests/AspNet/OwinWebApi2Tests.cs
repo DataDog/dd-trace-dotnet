@@ -80,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             _output = output;
             _testName = nameof(OwinWebApi2Tests)
                       + (enableCallTarget ? ".CallSite" : ".CallTarget")
-                      + (enableRouteTemplateResourceNames ? ".NoFF" : ".WithFF");
+                      + (enableRouteTemplateResourceNames ? ".WithFF" : ".NoFF");
         }
 
         public static TheoryData<string, int, int> Data() => new()

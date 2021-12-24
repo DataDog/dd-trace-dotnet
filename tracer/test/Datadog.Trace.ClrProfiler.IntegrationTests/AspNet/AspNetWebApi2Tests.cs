@@ -112,7 +112,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             _testName = nameof(AspNetWebApi2Tests)
                       + (enableCallTarget ? ".CallSite" : ".CallTarget")
                       + (classicMode ? ".Classic" : ".Integrated")
-                      + (enableRouteTemplateResourceNames ? ".NoFF" : ".WithFF");
+                      + (enableRouteTemplateResourceNames ? ".WithFF" : ".NoFF");
         }
 
         public static TheoryData<string, int, int> Data() => new()

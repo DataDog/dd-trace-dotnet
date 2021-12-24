@@ -27,7 +27,7 @@
     TraceId: Id_1,
     SpanId: Id_3,
     Name: aspnet.request,
-    Resource: GET /statuscode/{value},
+    Resource: GET /statuscode/?,
     Service: sample,
     Type: web,
     Error: 1,
