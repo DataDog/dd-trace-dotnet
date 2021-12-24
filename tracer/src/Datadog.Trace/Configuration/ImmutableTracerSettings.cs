@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Configuration
@@ -61,6 +62,10 @@ namespace Datadog.Trace.Configuration
             TraceBatchInterval = settings.TraceBatchInterval;
             RouteTemplateResourceNamesEnabled = settings.RouteTemplateResourceNamesEnabled;
             DelayWcfInstrumentationEnabled = settings.DelayWcfInstrumentationEnabled;
+
+            // TODO: Should we load the API key in a normal way? We don't for AAS?
+            var apiKey = System.Environment.GetEnvironmentVariable(ConfigurationKeys.ApiKey);
+            LogSubmissionSettings = ImmutableDirectLogSubmissionSettings.Create(settings.LogSubmissionSettings, apiKey);
 
             // we cached the static instance here, because is being used in the hotpath
             // by IsIntegrationEnabled method (called from all integrations)
@@ -211,6 +216,8 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled"/>
         internal bool RouteTemplateResourceNamesEnabled { get; }
+
+        internal ImmutableDirectLogSubmissionSettings LogSubmissionSettings { get; }
 
         /// <summary>
         /// Gets a value indicating whether to enable the updated WCF instrumentation that delays execution
