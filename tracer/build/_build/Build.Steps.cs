@@ -1312,6 +1312,30 @@ partial class Build
             }
         });
 
+    Target UpdateSnapshots => _ => _
+        .Description("Updates verified snapshots files with received ones")
+        .Executes(() =>
+        {
+            var snapshotsDirectory = Path.Combine(TestsDirectory, "snapshots");
+            var directory = new DirectoryInfo(snapshotsDirectory);
+            var files = directory.GetFiles("*.received*");
+
+            var suffixLength = "received".Length;
+            foreach (var file in files)
+            {
+                var source = file.FullName;
+                var fileName = Path.GetFileNameWithoutExtension(source);
+                if (!fileName.EndsWith("received"))
+                {
+                    Logger.Warn($"Skipping file '{source}' as filename did not end with 'received'");
+                    continue;
+                }
+                var trimmedName = fileName.Substring(0, fileName.Length - suffixLength);
+                var dest = Path.Combine(directory.FullName, $"{trimmedName}verified{Path.GetExtension(source)}");
+                file.MoveTo(dest, overwrite: true);
+            }
+        });
+
     Target CheckBuildLogsForErrors => _ => _
        .Unlisted()
        .Description("Reads the logs from build_data and checks for error lines")
