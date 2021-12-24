@@ -1,7 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Log4NetVersion Condition="'$(Log4NetVersion)' == '' AND $(TargetFramework.StartsWith('net4'))">1.2.11</Log4NetVersion>
+    <Log4NetVersion Condition="'$(Log4NetVersion)' == '' AND !$(TargetFramework.StartsWith('net4'))">2.0.12</Log4NetVersion>
+    <DefineConstants Condition="'$(Log4NetVersion)'&gt;='2.0.0'">$(DefineConstants);LOG4NET_2</DefineConstants>
+  </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Confluent.Kafka" Version="1.4.3" />
+    <PackageReference Include="log4net" Version="$(Log4NetVersion)" />
 
     <PackageReference Include="coverlet.collector" Version="3.0.4-preview.32">
       <PrivateAssets>all</PrivateAssets>
