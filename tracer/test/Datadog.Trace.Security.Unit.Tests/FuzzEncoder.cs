@@ -25,6 +25,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         private readonly Faker faker = new("en");
 
         [Fact]
+        [Trait("Category", "ArmUnsupported")]
         public void LetsFuzz()
         {
             // if we don't throw any exceptions and generate a valid object the the test is successful
