@@ -1,29 +1,31 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace;
-using Datadog.Trace.TestHelpers;
 
 namespace Samples.Telemetry
 {
     internal static class Program
     {
-        private static string Url;
-        private static Task _listenerTask;
-        private static HttpListener _listener;
+        private const string ResponseContent = "PONG";
+        private static readonly Encoding Utf8 = Encoding.UTF8;
 
         public static async Task Main(string[] args)
         {
+
             string port = args.FirstOrDefault(arg => arg.StartsWith("Port="))?.Split('=')[1] ?? "9000";
             Console.WriteLine($"Port {port}");
 
-            using (_listener = StartHttpListenerWithPortResilience(port))
+            using (var server = WebServer.Start(port, out var url))
             {
-                _listenerTask = Task.Run(HandleHttpRequests);
+                server.RequestHandler = HandleHttpRequests;
+
                 Console.WriteLine();
-                Console.WriteLine($"Starting HTTP listener at {Url}");
+                Console.WriteLine($"Starting HTTP listener at {url}");
 
                 // send async http requests using HttpClient
                 Console.WriteLine();
@@ -32,82 +34,41 @@ namespace Samples.Telemetry
                 {
                     using (Tracer.Instance.StartActive("GetAsync"))
                     {
-                        await client.GetAsync(Url);
+                        await client.GetAsync(url);
                         Console.WriteLine("Received response for client.GetAsync(String)");
                     }
                 }
+
                 Console.WriteLine();
                 Console.WriteLine("Stopping HTTP listener.");
-                _listener.Stop();
-                _listenerTask.Wait();
             }
 
+            // Force process to end, otherwise the background listener thread lives forever in .NET Core.
+            // Apparently listener.GetContext() doesn't throw an exception if listener.Stop() is called,
+            // like it does in .NET Framework.
             Environment.Exit(0);
         }
 
-        public static HttpListener StartHttpListenerWithPortResilience(string port, int retries = 5)
+        private static void HandleHttpRequests(HttpListenerContext context)
         {
-            // try up to 5 consecutive ports before giving up
-            while (true)
+            Console.WriteLine("[HttpListener] received request");
+
+            // read request content and headers
+            using (var reader = new StreamReader(context.Request.InputStream, context.Request.ContentEncoding))
             {
-                Url = $"http://localhost:{port}/Samples.HttpMessageHandler/";
-
-                // seems like we can't reuse a listener if it fails to start,
-                // so create a new listener each time we retry
-                var listener = new HttpListener();
-                listener.Prefixes.Add(Url);
-
-                try
-                {
-                    listener.Start();
-                    return listener;
-                }
-                catch (HttpListenerException) when (retries > 0)
-                {
-                    // only catch the exception if there are retries left
-                    port = TcpPortProvider.GetOpenPort().ToString();
-                    retries--;
-                }
-
-                // always close listener if exception is thrown,
-                // whether it was caught or not
-                listener.Close();
+                string requestContent = reader.ReadToEnd();
+                Console.WriteLine($"[HttpListener] request content: {requestContent}");
             }
-        }
 
-        private static async Task HandleHttpRequests()
-        {
-            while (_listener.IsListening)
-            {
-                try
-                {
-                    var context = await _listener.GetContextAsync();
+            // write response content
+            byte[] responseBytes = Utf8.GetBytes(ResponseContent);
+            context.Response.ContentEncoding = Utf8;
+            context.Response.ContentLength64 = responseBytes.Length;
 
-                    Console.WriteLine("[HttpListener] received request");
+            context.Response.OutputStream.Write(responseBytes, 0, responseBytes.Length);
 
-                    // write response content
-                    context.Response.StatusCode = 200;
-                    context.Response.Close();
-                }
-                catch (HttpListenerException)
-                {
-                    // _listener was probably stopped,
-                    // ignore to let the loop end and the method return
-                }
-                catch (ObjectDisposedException)
-                {
-                    // the response has been already disposed.
-                }
-                catch (InvalidOperationException)
-                {
-                    // this can occur when setting Response.ContentLength64, with the framework claiming that the response has already been submitted
-                    // for now ignore, and we'll see if this introduces downstream issues
-                }
-                catch (Exception) when (!_listener.IsListening)
-                {
-                    // ignore to let the loop end and the method return
-                }
-            }
+            // we must close the response
+            context.Response.Close();
         }
     }
 }
