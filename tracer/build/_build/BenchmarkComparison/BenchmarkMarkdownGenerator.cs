@@ -163,7 +163,7 @@ The following thresholds were used for comparing the benchmark speeds:
 * Mann–Whitney U test with statistical test for significance of **5%**
 * Only results indicating a difference greater than **{BenchmarkComparer.SignificantResultThreshold}** and **{BenchmarkComparer.NoiseThreshold}** are considered.
 
-Allocation changes below **{BenchmarkComparer.AllocationThresholdPercent:N1}%** are ignored.
+Allocation changes below **{BenchmarkComparer.AllocationThresholdRatio*100:N1}%** are ignored.
 ");
 
         }
