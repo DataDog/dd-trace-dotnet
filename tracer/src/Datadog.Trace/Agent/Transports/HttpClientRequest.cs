@@ -43,7 +43,7 @@ namespace Datadog.Trace.Agent.Transports
                 using (JsonWriter writer = new JsonTextWriter(sw) { CloseOutput = true })
                 {
                     serializer.Serialize(writer, events);
-                    content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                    content.Headers.ContentType = new MediaTypeHeaderValue(MimeTypes.Json);
                     _request.Content = content;
                     await writer.FlushAsync().ConfigureAwait(false);
                     memoryStream.Seek(0, SeekOrigin.Begin);

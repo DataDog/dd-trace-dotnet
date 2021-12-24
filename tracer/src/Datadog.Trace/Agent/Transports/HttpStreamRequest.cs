@@ -55,7 +55,7 @@ namespace Datadog.Trace.Agent.Transports
                 await memoryStream.FlushAsync().ConfigureAwait(false);
                 memoryStream.Seek(0, SeekOrigin.Begin);
                 var buffer = memoryStream.GetBuffer();
-                var result = await PostSegmentAsync(new ArraySegment<byte>(buffer, 0, (int)memoryStream.Length), "application/json").ConfigureAwait(false);
+                var result = await PostSegmentAsync(new ArraySegment<byte>(buffer, 0, (int)memoryStream.Length), MimeTypes.Json).ConfigureAwait(false);
                 var response = result.Item1;
                 var request = result.Item2;
                 if (response.StatusCode != 200 && response.StatusCode != 202)

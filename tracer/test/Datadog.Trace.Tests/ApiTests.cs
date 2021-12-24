@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -25,7 +26,7 @@ namespace Datadog.Trace.Tests
             responseMock.Setup(x => x.StatusCode).Returns(200);
 
             var requestMock = new Mock<IApiRequest>();
-            requestMock.Setup(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), "application/msgpack")).ReturnsAsync(responseMock.Object);
+            requestMock.Setup(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), MimeTypes.MsgPack)).ReturnsAsync(responseMock.Object);
 
             var factoryMock = new Mock<IApiRequestFactory>();
             factoryMock.Setup(x => x.Create(It.IsAny<Uri>())).Returns(requestMock.Object);
@@ -34,7 +35,7 @@ namespace Datadog.Trace.Tests
 
             await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1);
 
-            requestMock.Verify(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), "application/msgpack"), Times.Once());
+            requestMock.Verify(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), MimeTypes.MsgPack), Times.Once());
         }
 
         [Fact]
@@ -44,7 +45,7 @@ namespace Datadog.Trace.Tests
             responseMock.Setup(x => x.StatusCode).Returns(500);
 
             var requestMock = new Mock<IApiRequest>();
-            requestMock.Setup(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), "application/msgpack")).ReturnsAsync(responseMock.Object);
+            requestMock.Setup(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), MimeTypes.MsgPack)).ReturnsAsync(responseMock.Object);
 
             var factoryMock = new Mock<IApiRequestFactory>();
             factoryMock.Setup(x => x.Create(It.IsAny<Uri>())).Returns(requestMock.Object);
@@ -53,7 +54,7 @@ namespace Datadog.Trace.Tests
 
             await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1);
 
-            requestMock.Verify(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), "application/msgpack"), Times.Exactly(5));
+            requestMock.Verify(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), MimeTypes.MsgPack), Times.Exactly(5));
         }
 
         [Fact]
@@ -66,7 +67,7 @@ namespace Datadog.Trace.Tests
             responseMock.Setup(x => x.GetHeader(AgentHttpHeaderNames.AgentVersion)).Returns(agentVersion);
 
             var requestMock = new Mock<IApiRequest>();
-            requestMock.Setup(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), "application/msgpack")).ReturnsAsync(responseMock.Object);
+            requestMock.Setup(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), MimeTypes.MsgPack)).ReturnsAsync(responseMock.Object);
 
             var factoryMock = new Mock<IApiRequestFactory>();
             factoryMock.Setup(x => x.Create(It.IsAny<Uri>())).Returns(requestMock.Object);

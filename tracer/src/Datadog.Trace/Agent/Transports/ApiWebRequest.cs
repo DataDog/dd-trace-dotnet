@@ -61,7 +61,7 @@ namespace Datadog.Trace.Agent.Transports
         public async Task<IApiResponse> PostAsJsonAsync(IEvent events, JsonSerializer serializer)
         {
             _request.Method = "POST";
-            _request.ContentType = "application/json";
+            _request.ContentType = MimeTypes.Json;
 
             using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
             {
