@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
@@ -8,6 +8,10 @@
     <Content Include="..\..\src\Datadog.Trace\AppSec\Waf\rule-set.json">
       <Link>rule-set.json</Link>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Bogus" Version="34.0.1" />
   </ItemGroup>
 
 </Project>
