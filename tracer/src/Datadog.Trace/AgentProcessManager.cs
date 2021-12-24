@@ -66,9 +66,9 @@ namespace Datadog.Trace
                     return;
                 }
 
-                var customTracingEnabled = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.AasEnableCustomTracing, string.Empty).ToBoolean() ?? false;
-                var needsDogStatsD = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.AasEnableCustomMetrics, string.Empty).ToBoolean() ?? false;
-                var automaticTraceEnabled = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceEnabled, string.Empty).ToBoolean() ?? true;
+                var customTracingEnabled = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.AasEnableCustomTracing, string.Empty)?.ToBoolean() ?? false;
+                var needsDogStatsD = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.AasEnableCustomMetrics, string.Empty)?.ToBoolean() ?? false;
+                var automaticTraceEnabled = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.TraceEnabled, string.Empty)?.ToBoolean() ?? true;
 
                 if (customTracingEnabled || automaticTraceEnabled)
                 {
@@ -80,10 +80,10 @@ namespace Datadog.Trace
                     {
                         Log.Warning("Directory for trace agent does not exist: {Directory}. The process won't be started.", TraceAgentMetadata.DirectoryPath);
                     }
-                }
-                else
-                {
-                    Processes.Add(TraceAgentMetadata);
+                    else
+                    {
+                        Processes.Add(TraceAgentMetadata);
+                    }
                 }
 
                 if (needsDogStatsD || automaticTraceEnabled)
@@ -94,17 +94,17 @@ namespace Datadog.Trace
                     }
                     else if (!Directory.Exists(DogStatsDMetadata.DirectoryPath))
                     {
-                        Log.Warning("Directory for dogstatsd does not exist: {Directory}. The process won't be started.", TraceAgentMetadata.DirectoryPath);
+                        Log.Warning("Directory for dogstatsd does not exist: {Directory}. The process won't be started.", DogStatsDMetadata.DirectoryPath);
                     }
-                }
-                else
-                {
-                    Processes.Add(DogStatsDMetadata);
+                    else
+                    {
+                        Processes.Add(DogStatsDMetadata);
+                    }
                 }
 
                 if (Processes.Count > 0)
                 {
-                    Log.Debug("Starting child processes from process {ProcessName}, AppDomain {AppDomain}.", DomainMetadata.Instance.ProcessName, DomainMetadata.Instance.AppDomainName);
+                    Log.Debug("Starting {Count} child processes from process {ProcessName}, AppDomain {AppDomain}.", Processes.Count, DomainMetadata.Instance.ProcessName, DomainMetadata.Instance.AppDomainName);
                     StartProcesses();
                 }
             }

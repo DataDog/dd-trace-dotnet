@@ -48,10 +48,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     // check if tracing is completely disabled.
     if (IsTracingDisabled())
     {
-        if (IsAzureAppServices())
+        if (IsAzureAppServices() && (NeedsAgentInAAS() || NeedsDogstatsdInAAS()))
         {
             // In AAS, the profiler is used to load other processes, so we bypass this check. If the tracer is disabled, the managed loader won't initialize instrumentation
-            Logger::Info("DATADOG TRACER DIAGNOSTICS - Ignoring that profiler is disabled as we're in AAS context");
+            Logger::Info("DATADOG TRACER DIAGNOSTICS - In AAS, automatic tracing is disabled but keeping the profiler up to start child processes.");
         }
         else
         {

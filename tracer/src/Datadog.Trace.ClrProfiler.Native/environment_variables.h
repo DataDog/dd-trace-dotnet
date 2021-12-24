@@ -75,6 +75,14 @@ namespace environment
     // of Azure App Services
     const WSTRING azure_app_services = WStr("DD_AZURE_APP_SERVICES");
 
+    // In AAS, Indicates whether the customer will need the trace agent even thoug
+    // automatic tracing is disabled
+    const WSTRING aas_needs_agent = WStr("DD_AAS_ENABLE_CUSTOM_TRACING");
+
+    // In AAS, Indicates whether the customer will need dogstatsd even thoug
+    // automatic tracing is disabled
+    const WSTRING aas_needs_dogstatsd = WStr("DD_AAS_ENABLE_CUSTOM_METRICS");
+
     // The app_pool_id in the context of azure app services
     const WSTRING azure_app_services_app_pool_id = WStr("APP_POOL_ID");
 
