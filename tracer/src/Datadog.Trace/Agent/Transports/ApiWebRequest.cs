@@ -36,13 +36,13 @@ namespace Datadog.Trace.Agent.Transports
             _request.Headers.Add(name, value);
         }
 
-        public async Task<IApiResponse> PostAsync(ArraySegment<byte> traces, string contentType)
+        public async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType)
         {
             _request.Method = "POST";
             _request.ContentType = contentType;
             using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
             {
-                await requestStream.WriteAsync(traces.Array, traces.Offset, traces.Count).ConfigureAwait(false);
+                await requestStream.WriteAsync(bytes.Array, bytes.Offset, bytes.Count).ConfigureAwait(false);
             }
 
             try
