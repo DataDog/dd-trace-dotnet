@@ -18,7 +18,7 @@ namespace BenchmarkComparison
     {
         public static readonly Threshold SignificantResultThreshold = Threshold.Create(ThresholdUnit.Ratio, 0.10);
         public static readonly Threshold NoiseThreshold = Threshold.Create(ThresholdUnit.Nanoseconds, 0.3);
-        public static readonly decimal AllocationThresholdPercent = 0.5M; //%
+        public static readonly decimal AllocationThresholdRatio = 0.005M; //0.5%
 
         public static List<MatchedSummary> MatchAndCompareResults(
             IEnumerable<BdnResult> baseResults,
@@ -68,7 +68,7 @@ namespace BenchmarkComparison
 
                        var allocationComparisons = matchedBenchmarks
                                                   .Select(x => new AllocationComparison(x.Id, x.Base, x.Diff, AllocationConclusion.Unknown))
-                                                  .CompareAllocations(AllocationThresholdPercent)
+                                                  .CompareAllocations(AllocationThresholdRatio)
                                                   .ToList();
 
                        return new MatchedSummary(key, baseResult.Benchmarks, diffResult.Benchmarks, benchmarkComparisons, allocationComparisons);
@@ -113,7 +113,7 @@ namespace BenchmarkComparison
 
         private static IEnumerable<AllocationComparison> CompareAllocations(
             this IEnumerable<AllocationComparison> results,
-            decimal thresholdPercent)
+            decimal thresholdRatio)
         {
             foreach (var result in results)
             {
@@ -125,17 +125,19 @@ namespace BenchmarkComparison
                     continue;
                 }
 
-                var zero = ByteSize.FromBytes(0);
                 var difference = diffBytes.Value - baseBytes.Value;
                 // handle divide by zero
-                var percentageDifference = difference == 0
-                                               ? decimal.Zero
-                                               : Convert.ToDecimal(baseBytes) / Convert.ToDecimal(difference);
-
-                var conclusion = percentageDifference switch
+                var differenceRatio = (baseBytes, difference) switch
                 {
-                    var x when x < -thresholdPercent => AllocationConclusion.FewerAllocations,
-                    var y when y > thresholdPercent => AllocationConclusion.MoreAllocations,
+                    (_, 0) => 0M,
+                    (0, _) => 100M,
+                    _ => Convert.ToDecimal(difference) / Convert.ToDecimal(baseBytes),
+                };
+
+                var conclusion = differenceRatio switch
+                {
+                    var x when x < -thresholdRatio => AllocationConclusion.FewerAllocations,
+                    var y when y > thresholdRatio => AllocationConclusion.MoreAllocations,
                     _ => AllocationConclusion.Same
                 };
 
