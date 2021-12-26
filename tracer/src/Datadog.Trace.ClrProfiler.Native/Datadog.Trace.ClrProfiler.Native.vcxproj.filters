@@ -1,0 +1,94 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="calltarget_tokens.cpp" />
+    <ClCompile Include="class_factory.cpp" />
+    <ClCompile Include="clr_helpers.cpp" />
+    <ClCompile Include="cor_profiler_base.cpp" />
+    <ClCompile Include="cor_profiler.cpp" />
+    <ClCompile Include="il_rewriter.cpp" />
+    <ClCompile Include="il_rewriter_wrapper.cpp" />
+    <ClCompile Include="integration.cpp" />
+    <ClCompile Include="lib\spdlog\src\spdlog.cpp" />
+    <ClCompile Include="metadata_builder.cpp" />
+    <ClCompile Include="miniutf.cpp" />
+    <ClCompile Include="rejit_handler.cpp" />
+    <ClCompile Include="string.cpp" />
+    <ClCompile Include="util.cpp" />
+    <ClCompile Include="livedebugger_tokens.cpp">
+      <Filter>Debugger</Filter>
+    </ClCompile>
+    <ClCompile Include="rejit_work_offloader.cpp" />
+    <ClCompile Include="rejit_preprocessor.cpp" />
+    <ClCompile Include="debugger_rejit_preprocessor.cpp">
+      <Filter>Debugger</Filter>
+    </ClCompile>
+    <ClCompile Include="method_rewriter.cpp" />
+    <ClCompile Include="debugger_method_rewriter.cpp">
+      <Filter>Debugger</Filter>
+    </ClCompile>
+    <ClCompile Include="debugger_rejit_handler_module_method.cpp">
+      <Filter>Debugger</Filter>
+    </ClCompile>
+    <ClCompile Include="debugger_probes_instrumentation_requester.cpp">
+      <Filter>Debugger</Filter>
+    </ClCompile>
+    <ClCompile Include="environment_variables_util.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="calltarget_tokens.h" />
+    <ClInclude Include="class_factory.h" />
+    <ClInclude Include="com_ptr.h" />
+    <ClInclude Include="cor_profiler.h" />
+    <ClInclude Include="cor_profiler_base.h" />
+    <ClInclude Include="dd_profiler_constants.h" />
+    <ClInclude Include="environment_variables.h" />
+    <ClInclude Include="environment_variables_util.h" />
+    <ClInclude Include="il_rewriter.h" />
+    <ClInclude Include="il_rewriter_wrapper.h" />
+    <ClInclude Include="integration.h" />
+    <ClInclude Include="clr_helpers.h" />
+    <ClInclude Include="logger.h" />
+    <ClInclude Include="logger_impl.h" />
+    <ClInclude Include="macros.h" />
+    <ClInclude Include="metadata_builder.h" />
+    <ClInclude Include="miniutf.hpp" />
+    <ClInclude Include="miniutfdata.h" />
+    <ClInclude Include="module_metadata.h" />
+    <ClInclude Include="pal.h" />
+    <ClInclude Include="rejit_handler.h" />
+    <ClInclude Include="stats.h" />
+    <ClInclude Include="string.h" />
+    <ClInclude Include="util.h" />
+    <ClInclude Include="version.h" />
+    <ClInclude Include="livedebugger_tokens.h">
+      <Filter>Debugger</Filter>
+    </ClInclude>
+    <ClInclude Include="debugger_members.h">
+      <Filter>Debugger</Filter>
+    </ClInclude>
+    <ClInclude Include="rejit_work_offloader.h" />
+    <ClInclude Include="rejit_preprocessor.h" />
+    <ClInclude Include="debugger_rejit_preprocessor.h">
+      <Filter>Debugger</Filter>
+    </ClInclude>
+    <ClInclude Include="method_rewriter.h" />
+    <ClInclude Include="debugger_method_rewriter.h">
+      <Filter>Debugger</Filter>
+    </ClInclude>
+    <ClInclude Include="debugger_rejit_handler_module_method.h">
+      <Filter>Debugger</Filter>
+    </ClInclude>
+    <ClInclude Include="debugger_probes_instrumentation_requester.h">
+      <Filter>Debugger</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Debugger">
+      <UniqueIdentifier>{d25368e8-3dac-4ce4-9ea3-8c29ad52c489}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
