@@ -362,6 +362,7 @@ services:
       - explorationTestName=${explorationTestName:-eshoponweb}
       - baseImage=${baseImage:-default}
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
+      
   StartDependencies:
     image: andrewlock/wait-for-dependencies
     depends_on:
