@@ -153,8 +153,7 @@ partial class Build : NukeBuild
                 var baseImages = new[] { "debian", "alpine" };
 
                 var matrix = new Dictionary<string, object>();
-                var frameworks = targetFrameworks;
-                foreach (var framework in frameworks)
+                foreach (var framework in targetFrameworks)
                 {
                     foreach (var baseImage in baseImages)
                     {
