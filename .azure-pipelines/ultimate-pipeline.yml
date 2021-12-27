@@ -104,14 +104,14 @@ resources:
 
 # Stages
 stages:
-- stage: generate_strategies
+- stage: generate_matrices
   dependsOn: []
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [generate_strategies_job]
+      jobs: [generate_matrices_job]
 
-  - job: generate_strategies_job
+  - job: generate_matrices_job
     dependsOn: []
     pool:
       vmImage: windows-2019 
@@ -125,11 +125,11 @@ stages:
         includePreviewVersions: true
 
     - powershell: |
-        tracer/build.ps1 GenerateStrategies -GenerateStrategiesTarget "integration_tests_windows_strategy,integration_tests_windows_iis_strategy"
-        tracer/build.ps1 GenerateStrategies -GenerateStrategiesTarget "integration_tests_linux_strategy"
-        tracer/build.ps1 GenerateStrategies -GenerateStrategiesTarget "exploration_tests_windows_strategy,exploration_tests_linux_strategy" -GenerateConditionVariableFilter "isDebuggerChanged|tracer/src/Datadog.Trace.ClrProfiler.Native/Debugger;isProfilerChanged|profiler/src"
-      displayName: Generate Strategies
-      name: generate_strategies_step
+        tracer/build.ps1 GenerateMatrices -GenerateMatricesTarget "integration_tests_windows_matrix,integration_tests_windows_iis_matrix"
+        tracer/build.ps1 GenerateMatrices -GenerateMatricesTarget "integration_tests_linux_matrix"
+        tracer/build.ps1 GenerateMatrices -GenerateMatricesTarget "exploration_tests_windows_matrix,exploration_tests_linux_matrix" -GenerateConditionVariableFilter "isDebuggerChanged|tracer/src/Datadog.Trace.ClrProfiler.Native/Debugger;isProfilerChanged|profiler/src"
+      displayName: Generate Matrices
+      name: generate_matrices_step
 
 - stage: build_windows
   dependsOn: []
@@ -490,7 +490,7 @@ stages:
 
 - stage: integration_tests_windows
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_windows, generate_strategies]
+  dependsOn: [build_windows, generate_matrices]
 
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -502,7 +502,7 @@ stages:
       vmImage: windows-2019
     timeoutInMinutes: 100
     strategy:
-      matrix: $[stageDependencies.generate_strategies.generate_strategies_job.outputs['generate_strategies_step.integration_tests_windows_strategy'] ]
+      matrix: $[stageDependencies.generate_matrices.generate_matrices_job.outputs['generate_matrices_step.integration_tests_windows_matrix'] ]
 
     steps:
     - template: steps/install-dotnet-sdks.yml
@@ -545,7 +545,7 @@ stages:
 
 - stage: integration_tests_windows_iis
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_windows, package_windows, generate_strategies]
+  dependsOn: [build_windows, package_windows, generate_matrices]
 
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -555,7 +555,7 @@ stages:
   - job: IIS
     timeoutInMinutes: 100
     strategy:
-      matrix: $[stageDependencies.generate_strategies.generate_strategies_job.outputs['generate_strategies_step.integration_tests_windows_iis_strategy'] ]
+      matrix: $[stageDependencies.generate_matrices.generate_matrices_job.outputs['generate_matrices_step.integration_tests_windows_iis_matrix'] ]
     pool:
       vmImage: windows-2019
     variables:
@@ -620,7 +620,7 @@ stages:
 
 - stage: integration_tests_linux
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
-  dependsOn: [build_linux, generate_strategies]
+  dependsOn: [build_linux, generate_matrices]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -628,7 +628,7 @@ stages:
 
   - job: Test
     strategy:
-      matrix: $[stageDependencies.generate_strategies.generate_strategies_job.outputs['generate_strategies_step.integration_tests_linux_strategy']]
+      matrix: $[stageDependencies.generate_matrices.generate_matrices_job.outputs['generate_matrices_step.integration_tests_linux_matrix']]
 
     variables:
       TestAllPackageVersions: true
@@ -801,11 +801,11 @@ stages:
       succeeded(), 
       eq(variables['isScheduledBuild'], 'False'), 
       or(
-        eq(stageDependencies.generate_strategies.generate_strategies_job.outputs['generate_strategies_step.IsProfilerChanged'],'True'), 
-        eq(stageDependencies.generate_strategies.generate_strategies_job.outputs['generate_strategies_step.IsDebuggerChanged'], 'True')
+        eq(stageDependencies.generate_matrices.generate_matrices_job.outputs['generate_matrices_step.IsProfilerChanged'],'True'), 
+        eq(stageDependencies.generate_matrices.generate_matrices_job.outputs['generate_matrices_step.IsDebuggerChanged'], 'True')
       )
     )
-  dependsOn: [build_windows, generate_strategies]
+  dependsOn: [build_windows, generate_matrices]
 
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -815,7 +815,7 @@ stages:
   - job: ExplorationTest
     timeoutInMinutes: 100
     strategy:
-      matrix: $[ stageDependencies.generate_strategies.generate_strategies_job.outputs['generate_strategies_step.exploration_tests_windows_strategy'] ]
+      matrix: $[ stageDependencies.generate_matrices.generate_matrices_job.outputs['generate_matrices_step.exploration_tests_windows_matrix'] ]
     pool:
       vmImage: windows-2019
 
@@ -850,11 +850,11 @@ stages:
       succeeded(),
       eq(variables['isScheduledBuild'], 'False'),
       or(
-        eq(stageDependencies.generate_strategies.generate_strategies_job.outputs['generate_strategies_step.IsProfilerChanged'], 'True'),
-        eq(stageDependencies.generate_strategies.generate_strategies_job.outputs['generate_strategies_step.IsDebuggerChanged'], 'True')
+        eq(stageDependencies.generate_matrices.generate_matrices_job.outputs['generate_matrices_step.IsProfilerChanged'], 'True'),
+        eq(stageDependencies.generate_matrices.generate_matrices_job.outputs['generate_matrices_step.IsDebuggerChanged'], 'True')
       )
     )
-  dependsOn: [build_linux, generate_strategies]
+  dependsOn: [build_linux, generate_matrices]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -862,7 +862,7 @@ stages:
 
   - job: Test
     strategy:
-      matrix: $[ stageDependencies.generate_strategies.generate_strategies_job.outputs['generate_strategies_step.exploration_tests_linux_strategy'] ]
+      matrix: $[ stageDependencies.generate_matrices.generate_matrices_job.outputs['generate_matrices_step.exploration_tests_linux_matrix'] ]
 
     pool:
       vmImage: ubuntu-18.04

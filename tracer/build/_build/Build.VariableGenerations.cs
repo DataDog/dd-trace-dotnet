@@ -11,18 +11,18 @@ using NukeExtensions;
 partial class Build : NukeBuild
 {
 
-    [Parameter("Indicates strategies target. Match the name of generated variable", List = false)]
-    readonly GenerateStrategiesTarget? GenerateStrategiesTarget;
+    [Parameter("Indicates matrices target. Match the name of generated variable", List = false)]
+    readonly GenerateMatricesTarget? GenerateMatricesTarget;
 
     [Parameter("Indicates condition. Must be in the format '{variableName}|[filter1,filter2];{variableName}|[filter1,filter2]'", List = false)]
     readonly string GenerateConditionVariableFilter;
 
-    Target GenerateStrategies
+    Target GenerateMatrices
         => _ =>
         {
             return _
                   .Unlisted()
-                  .Requires(() => GenerateStrategiesTarget)
+                  .Requires(() => GenerateMatricesTarget)
                   .Executes(() =>
                   {
                       if (!CheckChanges())
@@ -31,20 +31,20 @@ partial class Build : NukeBuild
                           return;
                       }
 
-                      var target = GenerateStrategiesTarget ?? global::GenerateStrategiesTarget.none;
-                      if (global::GenerateStrategiesTarget.integration_tests_windows.HasFlag(target))
+                      var target = GenerateMatricesTarget ?? global::GenerateMatricesTarget.none;
+                      if (global::GenerateMatricesTarget.integration_tests_windows_matrices.HasFlag(target))
                       {
-                          GenerateIntegrationTestsWindowsStrategies(target);
+                          GenerateIntegrationTestsWindowsMatrices(target);
                       }
 
-                      if (target.HasFlag(global::GenerateStrategiesTarget.integration_tests_linux_strategy))
+                      if (target.HasFlag(global::GenerateMatricesTarget.integration_tests_linux_matrix))
                       {
-                          GenerateIntegrationTestsLinux();
+                          GenerateIntegrationTestsLinuxMatrix();
                       }
 
-                      if (global::GenerateStrategiesTarget.exploration_tests.HasFlag(target))
+                      if (global::GenerateMatricesTarget.exploration_tests_matrices.HasFlag(target))
                       {
-                          GenerateExplorationTestStrategies(target);
+                          GenerateExplorationTestMatrices(target);
                       }
                   });
 
@@ -94,97 +94,80 @@ partial class Build : NukeBuild
                 }
             }
 
-            void GenerateIntegrationTestsWindowsStrategies(GenerateStrategiesTarget target)
+            void GenerateIntegrationTestsWindowsMatrices(GenerateMatricesTarget target)
             {
-                var targetFrameworks =
-                    typeof(TargetFramework)
-                       .GetFields(ReflectionService.Static)
-                       .Select(x => x.GetValue(null))
-                       .Cast<TargetFramework>()
-                       .Except(new[] { TargetFramework.NETSTANDARD2_0 })
-                       .ToArray();
+                var targetFrameworks = TargetFramework.GetFrameworks(new[] { TargetFramework.NETSTANDARD2_0 });
 
-                if (target.HasFlag(global::GenerateStrategiesTarget.integration_tests_windows_strategy))
+                if (target.HasFlag(global::GenerateMatricesTarget.integration_tests_windows_matrix))
                 {
-                    GenerateIntegrationTestsWindowsStrategy(targetFrameworks);
+                    GenerateIntegrationTestsWindowsMatrix(targetFrameworks);
                 }
 
-                if (target.HasFlag(global::GenerateStrategiesTarget.integration_tests_windows_iis_strategy))
+                if (target.HasFlag(global::GenerateMatricesTarget.integration_tests_windows_iis_matrix))
                 {
-                    GenerateIntegrationTestsWindowsIISStrategy(targetFrameworks);
+                    GenerateIntegrationTestsWindowsIISMatrix(targetFrameworks);
                 }
             }
 
-            void GenerateIntegrationTestsWindowsStrategy(TargetFramework[] targetFrameworks)
+            void GenerateIntegrationTestsWindowsMatrix(TargetFramework[] targetFrameworks)
             {
                 var targetPlatforms = new[] { "x86", "x64" };
-                var strategy = new Dictionary<string, object>();
+                var matrix = new Dictionary<string, object>();
 
                 foreach (var framework in targetFrameworks)
                 {
                     foreach (var targetPlatform in targetPlatforms)
                     {
-                        strategy.Add($"{targetPlatform}_{framework}", new { framework, targetPlatform });
+                        matrix.Add($"{targetPlatform}_{framework}", new { framework, targetPlatform });
                     }
                 }
 
-                Logger.Info($"Integration test windows strategy");
-                Logger.Info(JsonConvert.SerializeObject(strategy, Formatting.Indented));
-                AzurePipelines.Instance.SetVariable("integration_tests_windows_strategy", JsonConvert.SerializeObject(strategy, Formatting.None));
+                Logger.Info($"Integration test windows matrix");
+                Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                AzurePipelines.Instance.SetVariable("integration_tests_windows_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
             }
 
-            void GenerateIntegrationTestsWindowsIISStrategy(TargetFramework[] targetFrameworks)
+            void GenerateIntegrationTestsWindowsIISMatrix(TargetFramework[] targetFrameworks)
             {
                 var targetPlatforms = new[] { "x86", "x64" };
 
-                var strategy = new Dictionary<string, object>();
+                var matrix = new Dictionary<string, object>();
                 foreach (var framework in targetFrameworks)
                 {
                     foreach (var targetPlatform in targetPlatforms)
                     {
                         var enable32bit = targetPlatform == "x86";
-                        strategy.Add($"{targetPlatform}_{framework}", new { framework, targetPlatform, enable32bit });
+                        matrix.Add($"{targetPlatform}_{framework}", new { framework, targetPlatform, enable32bit });
                     }
                 }
 
-                Logger.Info($"Integration test windows IIS strategy");
-                Logger.Info(JsonConvert.SerializeObject(strategy, Formatting.Indented));
-                AzurePipelines.Instance.SetVariable("integration_tests_windows_iis_strategy", JsonConvert.SerializeObject(strategy, Formatting.None));
+                Logger.Info($"Integration test windows IIS matrix");
+                Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                AzurePipelines.Instance.SetVariable("integration_tests_windows_iis_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
             }
 
-            void GenerateIntegrationTestsLinux()
+            void GenerateIntegrationTestsLinuxMatrix()
             {
-                var targetFrameworks =
-                    typeof(TargetFramework)
-                       .GetFields(ReflectionService.Static)
-                       .Select(x => x.GetValue(null))
-                       .Cast<TargetFramework>()
-                       .Except(new[] { TargetFramework.NET461, TargetFramework.NETSTANDARD2_0, })
-                       .ToArray();
+                var targetFrameworks = TargetFramework.GetFrameworks(new[] { TargetFramework.NET461, TargetFramework.NETSTANDARD2_0, });
 
                 var baseImages = new[] { "debian", "alpine" };
 
-                var strategy = new Dictionary<string, object>();
+                var matrix = new Dictionary<string, object>();
                 var frameworks = targetFrameworks;
                 foreach (var framework in frameworks)
                 {
-                    if (framework == TargetFramework.NET461 || framework == TargetFramework.NETSTANDARD2_0)
-                    {
-                        continue;
-                    }
-
                     foreach (var baseImage in baseImages)
                     {
-                        strategy.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage });
+                        matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage });
                     }
                 }
 
-                Logger.Info($"Integration test linux strategy");
-                Logger.Info(JsonConvert.SerializeObject(strategy, Formatting.Indented));
-                AzurePipelines.Instance.SetVariable("integration_tests_linux_strategy", JsonConvert.SerializeObject(strategy, Formatting.None));
+                Logger.Info($"Integration test linux matrix");
+                Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                AzurePipelines.Instance.SetVariable("integration_tests_linux_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
             }
 
-            void GenerateExplorationTestStrategies(GenerateStrategiesTarget target)
+            void GenerateExplorationTestMatrices(GenerateMatricesTarget target)
             {
                 var isDebuggerChanged = bool.Parse(EnvironmentInfo.GetVariable<string>("isDebuggerChanged") ?? "false");
                 var isProfilerChanged = bool.Parse(EnvironmentInfo.GetVariable<string>("isProfilerChanged") ?? "false");
@@ -200,51 +183,44 @@ partial class Build : NukeBuild
                     useCases.Add(global::ExplorationTestUseCase.ContinuousProfiler.ToString());
                 }
 
-                if (target.HasFlag(global::GenerateStrategiesTarget.exploration_tests_windows_strategy))
+                if (target.HasFlag(global::GenerateMatricesTarget.exploration_tests_windows_matrix))
                 {
-                    GenerateExplorationTestsWindowsStrategy(useCases);
+                    GenerateExplorationTestsWindowsMatrix(useCases);
                 }
 
-                if (target.HasFlag(global::GenerateStrategiesTarget.exploration_tests_linux_strategy))
+                if (target.HasFlag(global::GenerateMatricesTarget.exploration_tests_linux_matrix))
                 {
-                    GenerateExplorationTestsLinuxStrategy(useCases);
+                    GenerateExplorationTestsLinuxMatrix(useCases);
                 }
             }
 
-            void GenerateExplorationTestsWindowsStrategy(IEnumerable<string> useCases)
+            void GenerateExplorationTestsWindowsMatrix(IEnumerable<string> useCases)
             {
                 var testDescriptions = ExplorationTestDescription.GetAllExplorationTestDescriptions();
-                var strategy = new Dictionary<string, object>();
+                var matrix = new Dictionary<string, object>();
                 foreach (var explorationTestUseCase in useCases)
                 {
                     foreach (var testDescription in testDescriptions)
                     {
-                        strategy.Add(
+                        matrix.Add(
                             $"{explorationTestUseCase}_{testDescription.Name}",
                             new { explorationTestUseCase, explorationTestName = testDescription.Name });
                     }
                 }
 
-                Logger.Info($"Exploration test windows strategy");
-                Logger.Info(JsonConvert.SerializeObject(strategy, Formatting.Indented));
-                AzurePipelines.Instance.SetVariable("exploration_tests_windows_strategy", JsonConvert.SerializeObject(strategy, Formatting.None));
+                Logger.Info($"Exploration test windows matrix");
+                Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                AzurePipelines.Instance.SetVariable("exploration_tests_windows_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
             }
 
-            void GenerateExplorationTestsLinuxStrategy(IEnumerable<string> useCases)
+            void GenerateExplorationTestsLinuxMatrix(IEnumerable<string> useCases)
             {
                 var testDescriptions = ExplorationTestDescription.GetAllExplorationTestDescriptions();
-
-                var targetFrameworks =
-                    typeof(TargetFramework)
-                       .GetFields(ReflectionService.Static)
-                       .Select(x => x.GetValue(null))
-                       .Cast<TargetFramework>()
-                       .Except(new[] { TargetFramework.NET461, TargetFramework.NETSTANDARD2_0, })
-                       .ToArray();
+                var targetFrameworks = TargetFramework.GetFrameworks(new[] { TargetFramework.NET461, TargetFramework.NETSTANDARD2_0, });
 
                 var baseImages = new[] { "debian", "alpine" };
 
-                var strategy = new Dictionary<string, object>();
+                var matrix = new Dictionary<string, object>();
 
                 foreach (var baseImage in baseImages)
                 {
@@ -256,7 +232,7 @@ partial class Build : NukeBuild
                             {
                                 if (testDescription.IsFrameworkSupported(targetFramework))
                                 {
-                                    strategy.Add(
+                                    matrix.Add(
                                         $"{baseImage}_{targetFramework}_{explorationTestUseCase}_{testDescription.Name}",
                                         new { baseImage, targetFramework, explorationTestUseCase, explorationTestName = testDescription.Name });
                                 }
@@ -266,25 +242,23 @@ partial class Build : NukeBuild
                 }
 
 
-                Logger.Info($"Exploration test linux strategy");
-                Logger.Info(JsonConvert.SerializeObject(strategy, Formatting.Indented));
-                AzurePipelines.Instance.SetVariable("exploration_tests_linux_strategy", JsonConvert.SerializeObject(strategy, Formatting.None));
+                Logger.Info($"Exploration test linux matrix");
+                Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                AzurePipelines.Instance.SetVariable("exploration_tests_linux_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
             }
-
-
         };
 }
 
 [Flags]
-public enum GenerateStrategiesTarget
+public enum GenerateMatricesTarget
 {
     none = 0,
-    integration_tests_windows_strategy = 1 << 0,
-    integration_tests_windows_iis_strategy = 1 << 1,
-    integration_tests_linux_strategy = 1 << 2,
-    exploration_tests_windows_strategy = 1 << 3,
-    exploration_tests_linux_strategy = 1 << 4,
+    integration_tests_windows_matrix = 1 << 0,
+    integration_tests_windows_iis_matrix = 1 << 1,
+    integration_tests_linux_matrix = 1 << 2,
+    exploration_tests_windows_matrix = 1 << 3,
+    exploration_tests_linux_matrix = 1 << 4,
 
-    integration_tests_windows = integration_tests_windows_strategy | integration_tests_windows_iis_strategy,
-    exploration_tests = exploration_tests_windows_strategy | exploration_tests_linux_strategy
+    integration_tests_windows_matrices = integration_tests_windows_matrix | integration_tests_windows_iis_matrix,
+    exploration_tests_matrices = exploration_tests_windows_matrix | exploration_tests_linux_matrix
 }
