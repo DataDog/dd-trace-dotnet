@@ -8,7 +8,6 @@ using System.Net;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 {
@@ -26,8 +25,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 
         private const string OperationName = "mongodb.query";
         private const string ServiceName = "mongodb";
-
-        private const string IWireProtocolGeneric = "MongoDB.Driver.Core.WireProtocol.IWireProtocol`1";
 
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.MongoDb;
 
@@ -50,14 +47,36 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
                 return null;
             }
 
+            string collectionName = null;
+            string query = null;
+            string resourceName = null;
             string databaseName = null;
-            string host = null;
-            string port = null;
 
             if (wireProtocol.TryDuckCast<IWireProtocolWithDatabaseNamespaceStruct>(out var protocolWithDatabaseNamespace))
             {
                 databaseName = protocolWithDatabaseNamespace.DatabaseNamespace.DatabaseName;
             }
+
+            if (wireProtocol.TryDuckCast<IWireProtocolWithCommandStruct>(out var protocolWithCommand)
+                && protocolWithCommand.Command != null)
+            {
+                // the name of the first element in the command BsonDocument will be the operation type (insert, delete, find, etc)
+                // and its value is the collection name
+                var firstElement = protocolWithCommand.Command.GetElement(0);
+                string operationName = firstElement.Name;
+
+                if (operationName == "isMaster" || operationName == "hello")
+                {
+                    return null;
+                }
+
+                collectionName = firstElement.Value?.ToString();
+                query = protocolWithCommand.Command.ToString();
+                resourceName = $"{operationName ?? "operation"} {databaseName ?? "database"}";
+            }
+
+            string host = null;
+            string port = null;
 
             if (connection.EndPoint is IPEndPoint ipEndPoint)
             {
@@ -68,23 +87,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
             {
                 host = dnsEndPoint.Host;
                 port = dnsEndPoint.Port.ToString();
-            }
-
-            string collectionName = null;
-            string query = null;
-            string resourceName = null;
-
-            if (wireProtocol.TryDuckCast<IWireProtocolWithCommandStruct>(out var protocolWithCommand)
-                && protocolWithCommand.Command != null)
-            {
-                // the name of the first element in the command BsonDocument will be the operation type (insert, delete, find, etc)
-                // and its value is the collection name
-                var firstElement = protocolWithCommand.Command.GetElement(0);
-                string operationName = firstElement.Name;
-
-                collectionName = firstElement.Value?.ToString();
-                query = protocolWithCommand.Command.ToString();
-                resourceName = $"{operationName ?? "operation"} {databaseName ?? "database"}";
             }
 
             string serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
