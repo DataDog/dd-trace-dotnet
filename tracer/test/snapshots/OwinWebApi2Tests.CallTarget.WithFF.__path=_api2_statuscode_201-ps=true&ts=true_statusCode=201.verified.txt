@@ -15,6 +15,7 @@
       http.request.headers.host: localhost:00000,
       http.status_code: 201,
       http.url: http://localhost:00000/api2/statuscode/201?ps=true&ts=true,
+      http_useragent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
