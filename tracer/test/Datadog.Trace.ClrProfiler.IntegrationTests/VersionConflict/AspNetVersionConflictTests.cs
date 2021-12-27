@@ -136,25 +136,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
             manualSpan.TraceId.Should().Be(secondTraceId);
             manualSpan.Name.Should().Be("Manual");
 
-            var nestedSpans = spans.Where(s => s.ParentId == manualSpan.SpanId).OrderBy(s => s.Start).ToArray();
-            nestedSpans.Should().HaveCount(3);
+            var nestedSpans = spans.Where(s => s.ParentId == manualSpan.SpanId).ToArray();
+            nestedSpans.Should()
+                       .HaveCount(3)
+                       .And.OnlyContain(s => s.TraceId == secondTraceId);
 
-            // Validate the first http request and its subspans
-            var firstHttpSpan = nestedSpans[0];
-
-            firstHttpSpan.TraceId.Should().Be(secondTraceId);
-            firstHttpSpan.Name.Should().Be("http.request");
-
-            // Validate the second http request and its subspans
-            var secondHttpSpan = nestedSpans[1];
-
-            secondHttpSpan.TraceId.Should().Be(secondTraceId);
-            secondHttpSpan.Name.Should().Be("http.request");
-
-            var manualInnerSpan = nestedSpans[2];
-
-            manualInnerSpan.TraceId.Should().Be(secondTraceId);
-            manualInnerSpan.Name.Should().Be("Child");
+            nestedSpans.Where(s => s.Name == "http.request").Should().HaveCount(2);
+            nestedSpans.Where(s => s.Name == "Child").Should().HaveCount(1);
 
             // Make sure there is no extra root span
             var rootTraces = spans.Where(s => s.ParentId == null).ToList();
