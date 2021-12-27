@@ -20,11 +20,13 @@ namespace Datadog.Trace.Tools.Runner
     {
         private static CancellationTokenSource _tokenSource = new CancellationTokenSource();
 
+        internal static Action<string, string, Dictionary<string, string>> CallbackForTests { get; set; }
+
         private static string RunnerFolder { get; set; }
 
         private static Platform Platform { get; set; }
 
-        private static void Main(string[] args)
+        internal static int Main(string[] args)
         {
             // Initializing
             RunnerFolder = AppContext.BaseDirectory;
@@ -48,8 +50,7 @@ namespace Datadog.Trace.Tools.Runner
             else
             {
                 Console.Error.WriteLine("The current platform is not supported. Supported platforms are: Windows, Linux and MacOS.");
-                Environment.Exit(-1);
-                return;
+                return -1;
             }
 
             // ***
@@ -67,7 +68,7 @@ namespace Datadog.Trace.Tools.Runner
             });
 
             ParserResult<Options> result = parser.ParseArguments<Options>(args);
-            Environment.ExitCode = result.MapResult(ParsedOptions, errors => ParsedErrors(result, errors));
+            return result.MapResult(ParsedOptions, errors => ParsedErrors(result, errors));
         }
 
         private static int ParsedOptions(Options options)
@@ -132,10 +133,18 @@ namespace Datadog.Trace.Tools.Runner
 
                     Console.WriteLine("Running: " + cmdLine);
 
+                    var arguments = args.Length > 1 ? string.Join(' ', args.Skip(1).ToArray()) : null;
+
+                    if (CallbackForTests != null)
+                    {
+                        CallbackForTests(args[0], arguments, profilerEnvironmentVariables);
+                        return 0;
+                    }
+
                     ProcessStartInfo processInfo = Utils.GetProcessStartInfo(args[0], Environment.CurrentDirectory, profilerEnvironmentVariables);
                     if (args.Length > 1)
                     {
-                        processInfo.Arguments = string.Join(' ', args.Skip(1).ToArray());
+                        processInfo.Arguments = arguments;
                     }
 
                     return Utils.RunProcess(processInfo, _tokenSource.Token);
