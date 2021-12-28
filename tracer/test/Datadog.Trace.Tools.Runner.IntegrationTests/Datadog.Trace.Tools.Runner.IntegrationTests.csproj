@@ -18,4 +18,8 @@
     <PackageReference Include="Verify.Xunit" Version="11.12.1" />
   </ItemGroup>
 
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
+    <Compile Remove="*.cs" />
+    <None Include="*.cs" />
+  </ItemGroup>
 </Project>
