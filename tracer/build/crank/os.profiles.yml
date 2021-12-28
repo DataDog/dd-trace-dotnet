@@ -69,11 +69,44 @@ profiles:
           DD_AGENT_HOST: "{{ controllerIp }}"
           DD_TRACE_LOGGING_RATE: 6
           DD_TRACE_DEBUG: 0
+          DD_ENV: throughput-adhoc
         options:
           requiredOperatingSystem: linux
           requiredArchitecture: x64
           buildFiles:
           - "../../bin/tracer-home/**;{{ linuxProfilerPath }}/tracer-home-linux"
+      load:
+        endpoints:
+          - http://{{ controllerIp }}:5985
+
+  linux_profiler_adhoc:
+    variables:
+      serverAddress: "{{ linuxIp }}"
+    jobs:
+      application:
+        endpoints:
+          - "{{ linuxEndpoint }}"
+        environmentVariables:
+          COR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
+          COR_PROFILER_PATH: "{{ linuxProfilerPath }}/monitoring-home-linux/Datadog.AutoInstrumentation.NativeLoader.so"
+          CORECLR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
+          CORECLR_PROFILER_PATH: "{{ linuxProfilerPath }}/monitoring-home-linux/Datadog.AutoInstrumentation.NativeLoader.so"
+          DD_DOTNET_TRACER_HOME: "{{ linuxProfilerPath }}/tracer-home-linux"
+          DD_DOTNET_PROFILER_HOME: "{{ linuxProfilerPath }}/profiler-home-linux"
+          DD_AGENT_HOST: "{{ controllerIp }}"
+          DD_TRACE_LOGGING_RATE: 6
+          DD_TRACE_DEBUG: 0
+          DD_ENV: throughput-adhoc
+          LD_LIBRARY_PATH: "{{ linuxProfilerPath }}/profiler-home-linux"
+          LD_PRELOAD: "{{ linuxProfilerPath }}/profiler-home-linux/Datadog.Linux.ApiWrapper.x64.so"
+        options:
+          requiredOperatingSystem: linux
+          requiredArchitecture: x64
+          buildFiles:
+          - "../../bin/tracer-home/**;{{ linuxProfilerPath }}/tracer-home-linux"
+          - "../../../shared/bin/monitoring-home/Datadog.AutoInstrumentation.NativeLoader.so;{{ linuxProfilerPath }}/monitoring-home-linux"
+          - "./loader.conf;{{ linuxProfilerPath }}/monitoring-home-linux"
+          - "../../../../_build/DDProf-Deploy/**;{{ linuxProfilerPath }}/profiler-home-linux"
       load:
         endpoints:
           - http://{{ controllerIp }}:5985
