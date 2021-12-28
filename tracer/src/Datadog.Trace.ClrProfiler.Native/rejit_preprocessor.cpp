@@ -441,7 +441,7 @@ const std::unique_ptr<RejitHandlerModuleMethod> TracerIntegrationRejitPreprocess
                                                 const FunctionInfo& functionInfo,
                                                 const IntegrationDefinition& integrationDefinition)
 {
-    return std::make_unique<TracerIntegrationRejitHandlerModuleMethod>(methodDef, 
+    return std::make_unique<TracerRejitHandlerModuleMethod>(methodDef, 
                                                                        module,
                                                                        functionInfo,
                                                                        integrationDefinition);

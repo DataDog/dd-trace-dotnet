@@ -5,7 +5,7 @@ namespace trace
 {
 
 //
-// OffloadItem
+// RejitWorkItem
 //
 
 RejitWorkItem::RejitWorkItem() : terminating(true), func(nullptr)
@@ -23,7 +23,7 @@ std::unique_ptr<RejitWorkItem> RejitWorkItem::CreateTerminatingWorkItem()
 }
 
 //
-// Offloader
+// RejitWorkOffloader
 //
 
 RejitWorkOffloader::RejitWorkOffloader(ICorProfilerInfo7* pInfo)

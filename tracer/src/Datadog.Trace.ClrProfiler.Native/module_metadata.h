@@ -11,7 +11,6 @@
 #include "com_ptr.h"
 #include "integration.h"
 #include "string.h"
-#include "livedebugger_tokens.h"
 
 namespace trace
 {
@@ -23,7 +22,6 @@ private:
     std::unique_ptr<std::unordered_map<WSTRING, mdTypeRef>> integration_types = nullptr;
     std::unique_ptr<CallTargetTokens> calltargetTokens = nullptr;
     std::unique_ptr<std::vector<IntegrationDefinition>> integrations = nullptr;
-    std::unique_ptr<LiveDebuggerTokens> livedebuggerTokens = nullptr;
 
 public:
     const ComPtr<IMetaDataImport2> metadata_import{};
@@ -111,15 +109,6 @@ public:
             calltargetTokens = std::make_unique<CallTargetTokens>(this, enable_by_ref_instrumentation, enable_calltarget_state_by_ref);
         }
         return calltargetTokens.get();
-    }
-
-    LiveDebuggerTokens* GetLiveDebuggerTokens()
-    {
-        if (livedebuggerTokens == nullptr)
-        {
-            livedebuggerTokens = std::make_unique<LiveDebuggerTokens>(this, enable_by_ref_instrumentation);
-        }
-        return livedebuggerTokens.get();
     }
 };
 

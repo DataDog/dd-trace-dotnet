@@ -16,7 +16,7 @@ class RejitHandlerModule;
 struct FunctionInfo;
 
 /// <summary>
-/// RejitPreprocessor
+/// Responsible to prepare RejitHandlerModuleMethod and the structures needed for the instrumentation.
 /// </summary>
 template <class RejitRequestDefinition>
 class RejitPreprocessor

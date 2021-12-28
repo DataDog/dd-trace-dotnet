@@ -64,7 +64,7 @@ namespace trace
 /// <returns>Result of the rewriting</returns>
 HRESULT TracerIntegrationMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler)
 {
-    auto tracerMethodHandler = static_cast<TracerIntegrationRejitHandlerModuleMethod*>(methodHandler);
+    auto tracerMethodHandler = static_cast<TracerRejitHandlerModuleMethod*>(methodHandler);
 
     if (tracerMethodHandler->GetIntegrationDefinition() == nullptr)
     {

@@ -59,13 +59,13 @@ public:
 /// <summary>
 /// Rejit handler representation of a method
 /// </summary>
-class TracerIntegrationRejitHandlerModuleMethod : public RejitHandlerModuleMethod
+class TracerRejitHandlerModuleMethod : public RejitHandlerModuleMethod
 {
 private:
     std::unique_ptr<IntegrationDefinition> m_integrationDefinition;
 
 public:
-    TracerIntegrationRejitHandlerModuleMethod(
+    TracerRejitHandlerModuleMethod(
                     mdMethodDef methodDef,
                     RejitHandlerModule* module,
                     const FunctionInfo& functionInfo,

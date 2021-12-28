@@ -15,9 +15,6 @@
     <ClCompile Include="rejit_handler.cpp" />
     <ClCompile Include="string.cpp" />
     <ClCompile Include="util.cpp" />
-    <ClCompile Include="livedebugger_tokens.cpp">
-      <Filter>Debugger</Filter>
-    </ClCompile>
     <ClCompile Include="rejit_work_offloader.cpp" />
     <ClCompile Include="rejit_preprocessor.cpp" />
     <ClCompile Include="debugger_rejit_preprocessor.cpp">
@@ -61,9 +58,6 @@
     <ClInclude Include="string.h" />
     <ClInclude Include="util.h" />
     <ClInclude Include="version.h" />
-    <ClInclude Include="livedebugger_tokens.h">
-      <Filter>Debugger</Filter>
-    </ClInclude>
     <ClInclude Include="debugger_members.h">
       <Filter>Debugger</Filter>
     </ClInclude>

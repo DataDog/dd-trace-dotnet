@@ -195,7 +195,6 @@
     <ClInclude Include="il_rewriter_wrapper.h" />
     <ClInclude Include="integration.h" />
     <ClInclude Include="clr_helpers.h" />
-    <ClInclude Include="livedebugger_tokens.h" />
     <ClInclude Include="debugger_members.h" />
     <ClInclude Include="logger.h" />
     <ClInclude Include="logger_impl.h" />
@@ -229,7 +228,6 @@
     <ClCompile Include="il_rewriter_wrapper.cpp" />
     <ClCompile Include="integration.cpp" />
     <ClCompile Include="lib\spdlog\src\spdlog.cpp" />
-    <ClCompile Include="livedebugger_tokens.cpp" />
     <ClCompile Include="metadata_builder.cpp" />
     <ClCompile Include="method_rewriter.cpp" />
     <ClCompile Include="miniutf.cpp" />
