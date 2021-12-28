@@ -283,12 +283,13 @@ partial class Build : NukeBuild
         .Executes(() =>
         {
             DotNetBuild(x => x
-                .SetProjectFile(Solution.GetProject(Projects.RunnerTool))
+                .SetProjectFile(Solution.GetProject(Projects.Tool))
                 .EnableNoRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
-                .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool"));
+                .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
+                .SetProperty("BuildAsTool", "true"));
         });
 
     Target BuildStandaloneTool => _ => _
@@ -299,7 +300,7 @@ partial class Build : NukeBuild
         {
             var runtimes = new[] {"win-x86", "win-x64", "linux-x64", "linux-musl-x64", "osx-x64", "linux-arm64"};
             DotNetPublish(x => x
-                .SetProject(Solution.GetProject(Projects.StandaloneTool))
+                .SetProject(Solution.GetProject(Projects.Tool))
                 // Have to do a restore currently as we're specifying specific runtime
                 // .EnableNoRestore()
                 .EnableNoDependencies()
@@ -307,6 +308,7 @@ partial class Build : NukeBuild
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
+                .SetProperty("BuildAsTool", "false")
                 .CombineWith(runtimes, (c, runtime) => c
                     .SetRuntime(runtime)));
 
