@@ -1225,6 +1225,7 @@ partial class Build
         .After(CompileManagedTestHelpers)
         .After(CompileSamplesLinux)
         .After(CompileMultiApiPackageVersionSamples)
+        .After(BuildRunnerTool)
         .Requires(() => TracerHomeDirectory != null)
         .Requires(() => Framework)
         .Executes(() =>

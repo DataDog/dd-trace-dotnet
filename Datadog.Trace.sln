@@ -453,6 +453,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.Runner", "tracer\src\Datadog.Trace.Tools.Runner\Datadog.Trace.Tools.Runner.csproj", "{D917DD3B-EF86-4DF9-AC32-D50330A4DEDA}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.Runner.IntegrationTests", "tracer\test\Datadog.Trace.Tools.Runner.IntegrationTests\Datadog.Trace.Tools.Runner.IntegrationTests.csproj", "{C7EC2FF7-C495-4A35-80DF-1F57B61214AC}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1F146D40-8B21-4630-8049-14FA4BBBB217} = {1F146D40-8B21-4630-8049-14FA4BBBB217}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
