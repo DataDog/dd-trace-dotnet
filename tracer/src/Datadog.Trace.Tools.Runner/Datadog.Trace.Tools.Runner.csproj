@@ -16,19 +16,7 @@
   </PropertyGroup>
 
   <Choose>
-    <When Condition="'$(BuildAsTool)' == 'true'">
-      <PropertyGroup>
-        <IsPackable>true</IsPackable>
-        <PackAsTool>true</PackAsTool>
-        <ToolCommandName>dd-trace</ToolCommandName>
-        <PublishRepositoryUrl>true</PublishRepositoryUrl>
-        <EmbedUntrackedSources>true</EmbedUntrackedSources>
-        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <PackageId>dd-trace</PackageId>
-        <OutputPath>bin\$(Configuration)\Tool</OutputPath>
-      </PropertyGroup>
-    </When>
-    <Otherwise>
+    <When Condition="'$(Standalone)' == 'true'">
       <PropertyGroup>
         <OutputPath>bin\$(Configuration)\Console</OutputPath>
         <PublishDir>bin\$(Configuration)\Console\publish\$(RuntimeIdentifier)</PublishDir>
@@ -39,6 +27,18 @@
       </PropertyGroup>
       <PropertyGroup Condition="'$(BuildingInsideVisualStudio)' == ''">
         <PublishSingleFile>true</PublishSingleFile>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <IsPackable>true</IsPackable>
+        <PackAsTool>true</PackAsTool>
+        <ToolCommandName>dd-trace</ToolCommandName>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <PackageId>dd-trace</PackageId>
+        <OutputPath>bin\$(Configuration)\Tool</OutputPath>
       </PropertyGroup>
     </Otherwise>
   </Choose>
