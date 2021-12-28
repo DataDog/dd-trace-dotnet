@@ -58,11 +58,6 @@ private:
     bool enable_calltarget_state_by_ref = false;
     std::unique_ptr<TracerRejitPreprocessor> tracer_integration_preprocessor = nullptr;
 
-    //
-    // Debugger Members
-    //
-    std::unique_ptr<debugger::DebuggerProbesInstrumentationRequester> debugger_instrumentation_requester = nullptr;
-
     // Cor assembly properties
     AssemblyProperty corAssemblyProperty{};
     AssemblyReference* managed_profiler_assembly_reference;

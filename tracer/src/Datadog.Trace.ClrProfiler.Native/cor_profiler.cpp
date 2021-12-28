@@ -174,8 +174,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
                                       : std::make_shared<RejitHandler>(this->info_, work_offloader);
     tracer_integration_preprocessor = std::make_unique<TracerRejitPreprocessor>(rejit_handler, work_offloader);
 
-    debugger_instrumentation_requester = std::make_unique<debugger::DebuggerProbesInstrumentationRequester>(rejit_handler, work_offloader);
-
     DWORD event_mask = COR_PRF_MONITOR_JIT_COMPILATION | COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
                        COR_PRF_MONITOR_MODULE_LOADS | COR_PRF_MONITOR_ASSEMBLY_LOADS | COR_PRF_MONITOR_APPDOMAIN_LOADS |
                        COR_PRF_ENABLE_REJIT;
@@ -652,19 +650,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         {
             const auto numReJITs = tracer_integration_preprocessor->RequestRejitForLoadedModules(std::vector<ModuleID>{module_id}, integration_definitions_);
             Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
-        }
-
-        if (debugger_instrumentation_requester != nullptr)
-        {
-            // We call the function to analyze the module and request the ReJIT of method probes defined in this module.
-            auto probes = debugger_instrumentation_requester->GetProbes();
-            if (!probes.empty())
-            {
-                const auto numReJITs =
-                    debugger_instrumentation_requester->GetPreprocessor()->RequestRejitForLoadedModules(
-                    std::vector<ModuleID>{module_id}, probes);
-                Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
-            }
         }
     }
 
