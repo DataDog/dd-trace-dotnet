@@ -29,13 +29,18 @@ namespace Datadog.Trace.Agent
                     return new HttpStreamRequestFactory(new NamedPipeClientStreamFactory(settings.TracesPipeName, settings.TracesPipeTimeoutMs), new DatadogHttpClient());
 #if NETCOREAPP
                 case TracesTransportType.UnixDomainSocket:
-                    Log.Information<string, string, int>("Using {FactoryType} for trace transport, with pipe name {PipeName} and timeout {Timeout}ms.", nameof(NamedPipeClientStreamFactory), settings.TracesPipeName, settings.TracesPipeTimeoutMs);
+                    Log.Information<string, string, int>("Using {FactoryType} for trace transport, with UDS path {Path} and timeout {Timeout}ms.", nameof(UnixDomainSocketStreamFactory), settings.TracesUnixDomainSocketPath, settings.TracesPipeTimeoutMs);
                     return new HttpStreamRequestFactory(new UnixDomainSocketStreamFactory(settings.TracesUnixDomainSocketPath), new DatadogHttpClient());
 #endif
                 case TracesTransportType.Default:
                 default:
-                    // Defer decision to Api logic
-                    return null;
+#if NETCOREAPP
+                    Log.Information("Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
+                    return new HttpClientRequestFactory();
+#else
+                    Log.Information("Using {FactoryType} for trace transport.", nameof(ApiWebRequestFactory));
+                    return new ApiWebRequestFactory();
+#endif
             }
         }
     }

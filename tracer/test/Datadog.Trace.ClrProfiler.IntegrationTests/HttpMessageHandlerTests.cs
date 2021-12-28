@@ -12,8 +12,6 @@ using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 
-#if NETCOREAPP
-
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [CollectionDefinition(nameof(HttpMessageHandlerTests), DisableParallelization = true)]
@@ -222,4 +220,3 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
     }
 }
-#endif

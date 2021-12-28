@@ -200,7 +200,7 @@ namespace Datadog.Trace.Configuration
                 metricsTransport = TransportType.UDP;
             }
 
-            MetricsTransport = metricsTransport ?? TransportType.UDP;
+            MetricsTransport = metricsTransport.Value;
         }
 
         private void ConfigureTraceTransport(IConfigurationSource source)
@@ -248,7 +248,8 @@ namespace Datadog.Trace.Configuration
                     ?? 500;
 #endif
             }
-            else
+
+            if (traceTransport == null)
             {
                 // Check for UDS
                 if (isConventionBasedSocket)

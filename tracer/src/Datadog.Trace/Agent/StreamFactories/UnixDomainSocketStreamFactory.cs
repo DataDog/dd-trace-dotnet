@@ -41,7 +41,7 @@ namespace Datadog.Trace.Agent.StreamFactories
             }
             catch (Exception ex)
             {
-                Log.Error("There was a problem connecting to the socket: {ex}", ex);
+                Log.Error(ex, "There was a problem connecting to the socket");
                 throw;
             }
         }
