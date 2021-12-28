@@ -427,17 +427,17 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejitForLoadedModu
 
 // TraceIntegrationRejitPreprocessor
 
-const MethodReference& TracerIntegrationRejitPreprocessor::GetTargetMethod(const IntegrationDefinition& integrationDefinition)
+const MethodReference& TracerRejitPreprocessor::GetTargetMethod(const IntegrationDefinition& integrationDefinition)
 {
     return integrationDefinition.target_method;
 }
 
-const bool TracerIntegrationRejitPreprocessor::GetIsDerived(const IntegrationDefinition& integrationDefinition)
+const bool TracerRejitPreprocessor::GetIsDerived(const IntegrationDefinition& integrationDefinition)
 {
     return integrationDefinition.is_derived;
 }
 
-const std::unique_ptr<RejitHandlerModuleMethod> TracerIntegrationRejitPreprocessor::CreateMethod(const mdMethodDef methodDef, RejitHandlerModule* module,
+const std::unique_ptr<RejitHandlerModuleMethod> TracerRejitPreprocessor::CreateMethod(const mdMethodDef methodDef, RejitHandlerModule* module,
                                                 const FunctionInfo& functionInfo,
                                                 const IntegrationDefinition& integrationDefinition)
 {

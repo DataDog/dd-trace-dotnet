@@ -133,7 +133,7 @@ void RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
 }
 
 //
-// TracerIntegrationRejitHandlerModuleMethod
+// TracerRejitHandlerModuleMethod
 //
 
 TracerRejitHandlerModuleMethod::TracerRejitHandlerModuleMethod(
@@ -151,7 +151,7 @@ IntegrationDefinition* TracerRejitHandlerModuleMethod::GetIntegrationDefinition(
 
 MethodRewriter* TracerRejitHandlerModuleMethod::GetMethodRewriter()
 {
-    return TracerIntegrationMethodRewriter::Instance();
+    return TracerMethodRewriter::Instance();
 }
 
 //

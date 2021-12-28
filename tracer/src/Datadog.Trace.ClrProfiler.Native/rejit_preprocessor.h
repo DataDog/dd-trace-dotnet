@@ -16,7 +16,7 @@ class RejitHandlerModule;
 struct FunctionInfo;
 
 /// <summary>
-/// Responsible to prepare RejitHandlerModuleMethod and the structures needed for the instrumentation.
+/// Responsible to determine what are the methods that should be rejitted and prepares the metadata needed in the rewriting process.
 /// </summary>
 template <class RejitRequestDefinition>
 class RejitPreprocessor
@@ -52,9 +52,9 @@ public:
 };
 
 /// <summary>
-/// TracerIntegrationRejitPreprocessor
+/// TracerRejitPreprocessor
 /// </summary>
-class TracerIntegrationRejitPreprocessor : public RejitPreprocessor<IntegrationDefinition>
+class TracerRejitPreprocessor : public RejitPreprocessor<IntegrationDefinition>
 {
 public:
     using RejitPreprocessor::RejitPreprocessor;

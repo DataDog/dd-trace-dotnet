@@ -56,7 +56,7 @@ private:
     std::shared_ptr<RejitHandler> rejit_handler = nullptr;
     bool enable_by_ref_instrumentation = false;
     bool enable_calltarget_state_by_ref = false;
-    std::unique_ptr<TracerIntegrationRejitPreprocessor> tracer_integration_preprocessor = nullptr;
+    std::unique_ptr<TracerRejitPreprocessor> tracer_integration_preprocessor = nullptr;
 
     //
     // Debugger Members
@@ -164,7 +164,7 @@ public:
 
     friend class debugger::DebuggerProbesInstrumentationRequester;
     friend class debugger::DebuggerMethodRewriter;
-    friend class TracerIntegrationMethodRewriter;
+    friend class TracerMethodRewriter;
 };
 
 // Note: Generally you should not have a single, global callback implementation,

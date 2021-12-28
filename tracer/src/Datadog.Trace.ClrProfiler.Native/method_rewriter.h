@@ -17,12 +17,12 @@ public:
 };
 
 
-class TracerIntegrationMethodRewriter : public MethodRewriter, public Singleton<TracerIntegrationMethodRewriter>
+class TracerMethodRewriter : public MethodRewriter, public Singleton<TracerMethodRewriter>
 {
-    friend class Singleton<TracerIntegrationMethodRewriter>;
+    friend class Singleton<TracerMethodRewriter>;
     
 private:
-    TracerIntegrationMethodRewriter(){}
+    TracerMethodRewriter(){}
 
 public:
     virtual HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler) final;

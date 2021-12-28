@@ -172,7 +172,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     
     rejit_handler = info10 != nullptr ? std::make_shared<RejitHandler>(info10, work_offloader)
                                       : std::make_shared<RejitHandler>(this->info_, work_offloader);
-    tracer_integration_preprocessor = std::make_unique<TracerIntegrationRejitPreprocessor>(rejit_handler, work_offloader);
+    tracer_integration_preprocessor = std::make_unique<TracerRejitPreprocessor>(rejit_handler, work_offloader);
 
     debugger_instrumentation_requester = std::make_unique<debugger::DebuggerProbesInstrumentationRequester>(rejit_handler, work_offloader);
 

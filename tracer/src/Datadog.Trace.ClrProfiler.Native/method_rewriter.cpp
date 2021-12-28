@@ -62,7 +62,7 @@ namespace trace
 /// <param name="moduleHandler">Module ReJIT handler representation</param>
 /// <param name="methodHandler">Method ReJIT handler representation</param>
 /// <returns>Result of the rewriting</returns>
-HRESULT TracerIntegrationMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler)
+HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler)
 {
     auto tracerMethodHandler = static_cast<TracerRejitHandlerModuleMethod*>(methodHandler);
 
