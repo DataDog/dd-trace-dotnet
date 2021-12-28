@@ -139,7 +139,7 @@
     <!-- Integration: NUnit3.TestAdapter -->
     <!-- Assembly: NUnit3.TestAdapter -->
     <!-- Latest package https://www.nuget.org/packages/NUnit3TestAdapter/4.1.0 -->
-    <PackageReference Include="NUnit3TestAdapter" Version="4.1.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.2.0" />
 
     <!-- Integration: Oracle.ManagedDataAccess -->
     <!-- Assembly: Oracle.ManagedDataAccess -->
