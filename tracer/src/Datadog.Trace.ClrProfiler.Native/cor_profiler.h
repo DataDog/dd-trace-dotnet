@@ -160,8 +160,6 @@ public:
     void EnableCallTargetStateByRef();
     void AddDerivedInstrumentations(WCHAR* id, CallTargetDefinition* items, int size);
 
-    void InstrumentProbes(WCHAR* id, debugger::DebuggerMethodProbeDefinition* items, int size);
-
     friend class debugger::DebuggerProbesInstrumentationRequester;
     friend class debugger::DebuggerMethodRewriter;
     friend class TracerMethodRewriter;
