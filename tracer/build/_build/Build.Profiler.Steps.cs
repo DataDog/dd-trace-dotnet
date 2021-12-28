@@ -3,9 +3,11 @@ using Nuke.Common.Tools.DotNet;
 using Nuke.Common.IO;
 using System.Linq;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.MSBuild;
 using static Nuke.Common.EnvironmentInfo;
+using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
 
@@ -33,7 +35,8 @@ partial class Build
     Target CompileProfilerNativeSrc => _ => _
         .Unlisted()
         .Description("Compiles the native profiler assets")
-        .DependsOn(CompileProfilerNativeSrcWindows);
+        .DependsOn(CompileProfilerNativeSrcWindows)
+        .DependsOn(CompileProfilerNativeSrcLinux);
 
     Target CompileProfilerNativeSrcWindows => _ => _
         .Unlisted()
@@ -61,4 +64,26 @@ partial class Build
                 .CombineWith(platforms, (m, platform) => m
                     .SetTargetPlatform(platform)));
         });
+    Target CompileProfilerNativeSrcLinux => _ => _
+        .Unlisted()
+        .After(CompileProfilerManagedSrc)
+        .OnlyWhenStatic(() => IsLinux)
+        .Executes(() =>
+        {
+            var buildDirectory = RootDirectory / ".." / "_build" / "cmake";
+            EnsureExistingDirectory(buildDirectory);
+
+            var envVar = new Dictionary<string, string>(new ProcessStartInfo().Environment)
+            {
+                {"CXX", "clang++"},
+                {"CC", "clang"},
+            };
+
+            CMake.Value(
+                environmentVariables: envVar,
+                arguments: "-S ../../dd-continuous-profiler-dotnet",
+                workingDirectory: buildDirectory);
+            Make.Value(workingDirectory: buildDirectory);
+        });
+
 }

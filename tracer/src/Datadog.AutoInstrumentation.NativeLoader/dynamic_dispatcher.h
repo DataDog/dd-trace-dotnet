@@ -3,6 +3,7 @@
 #include <corprof.h>
 #include <functional>
 #include <vector>
+#include <memory>
 
 #include "dynamic_instance.h"
 #include "string.h"
