@@ -4,8 +4,12 @@
     <Platforms>x64;x86</Platforms>
   </PropertyGroup>
 
+  <ItemGroup Condition="!$(TargetFramework.StartsWith('net4'))">
+    <ProjectReference Condition="!$(TargetFramework.StartsWith('net4'))"  Include="..\..\src\Datadog.Trace.Tools.Runner\Datadog.Trace.Tools.Runner.csproj" />
+
+  </ItemGroup>
+
   <ItemGroup>
-    <ProjectReference Condition="$(TargetFramework.StartsWith('net4')) == false" Include="..\..\src\Datadog.Trace.Tools.Runner\Datadog.Trace.Tools.Runner.Tool.csproj" />
     <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
 
     <PackageReference Include="coverlet.collector" Version="3.0.4-preview.32">
