@@ -322,8 +322,6 @@ partial class Build : NukeBuild
         {
             DotNetBuild(x => x
                 .SetProjectFile(Solution.GetProject(Projects.Tool))
-                .EnableNoRestore()
-                .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
