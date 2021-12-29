@@ -16,20 +16,7 @@
   </PropertyGroup>
 
   <Choose>
-    <When Condition="'$(Standalone)' == 'true'">
-      <PropertyGroup>
-        <OutputPath>bin\$(Configuration)\Console</OutputPath>
-        <PublishDir>bin\$(Configuration)\Console\publish\$(RuntimeIdentifier)</PublishDir>
-        <RuntimeIdentifiers>win-x64;win-x86;linux-x64;linux-musl-x64;osx-x64;linux-arm64</RuntimeIdentifiers>
-        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-        <PublishTrimmed>true</PublishTrimmed>
-        <AssemblyName>dd-trace</AssemblyName>
-      </PropertyGroup>
-      <PropertyGroup Condition="'$(BuildingInsideVisualStudio)' == ''">
-        <PublishSingleFile>true</PublishSingleFile>
-      </PropertyGroup>
-    </When>
-    <Otherwise>
+    <When Condition="'$(BuildAsTool)' == 'true'">
       <PropertyGroup>
         <IsPackable>true</IsPackable>
         <PackAsTool>true</PackAsTool>
@@ -39,6 +26,19 @@
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageId>dd-trace</PackageId>
         <OutputPath>bin\$(Configuration)\Tool</OutputPath>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <OutputPath>bin\$(Configuration)\Console</OutputPath>
+        <PublishDir>bin\$(Configuration)\Console\publish\$(RuntimeIdentifier)</PublishDir>
+        <AssemblyName>dd-trace</AssemblyName>
+      </PropertyGroup>
+      <PropertyGroup Condition="'$(SingleFile)' == 'true'">
+        <RuntimeIdentifiers>win-x64;win-x86;linux-x64;linux-musl-x64;osx-x64;linux-arm64</RuntimeIdentifiers>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+        <PublishTrimmed>true</PublishTrimmed>
+        <PublishSingleFile>true</PublishSingleFile>
       </PropertyGroup>
     </Otherwise>
   </Choose>

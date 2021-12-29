@@ -853,7 +853,7 @@ partial class Build
         .After(CompileRegressionSamples)
         .After(CompileFrameworkReproductions)
         .After(PublishIisSamples)
-        .After(BuildRunnerTool)
+        .After(BuildConsoleTool)
         .Requires(() => Framework)
         .Requires(() => TracerHomeDirectory != null)
         .Executes(() =>
@@ -1226,7 +1226,7 @@ partial class Build
         .After(CompileManagedTestHelpers)
         .After(CompileSamplesLinux)
         .After(CompileMultiApiPackageVersionSamples)
-        .After(BuildRunnerTool)
+        .After(BuildConsoleTool)
         .Requires(() => TracerHomeDirectory != null)
         .Requires(() => Framework)
         .Executes(() =>

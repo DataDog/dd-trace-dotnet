@@ -198,7 +198,7 @@ partial class Build : NukeBuild
         .DependsOn(CompileSamples)
         .DependsOn(PublishIisSamples)
         .DependsOn(CompileIntegrationTests)
-        .DependsOn(BuildRunnerTool);
+        .DependsOn(BuildConsoleTool);
 
     Target BuildWindowsRegressionTests => _ => _
         .Unlisted()
@@ -238,7 +238,7 @@ partial class Build : NukeBuild
         .DependsOn(CompileSamplesLinux)
         .DependsOn(CompileMultiApiPackageVersionSamples)
         .DependsOn(CompileLinuxIntegrationTests)
-        .DependsOn(BuildRunnerTool);
+        .DependsOn(BuildConsoleTool);
 
     Target BuildAndRunLinuxIntegrationTests => _ => _
         .Requires(() => !IsWin)
@@ -291,10 +291,32 @@ partial class Build : NukeBuild
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
-                .SetProperty("Standalone", "false"));
+                .SetProperty("BuildAsTool", "true"));
         });
 
     Target BuildStandaloneTool => _ => _
+        // Currently requires manual copying of files into expected locations
+        .Unlisted()
+        .After(CreateDistributionHome)
+        .Executes(() =>
+        {
+            var runtimes = new[] { "win-x86", "win-x64", "linux-x64", "linux-musl-x64", "osx-x64", "linux-arm64" };
+            DotNetPublish(x => x
+                .SetProject(Solution.GetProject(Projects.Tool))
+                // Have to do a restore currently as we're specifying specific runtime
+                // .EnableNoRestore()
+                .EnableNoDependencies()
+                .SetFramework(TargetFramework.NETCOREAPP3_1)
+                .SetConfiguration(BuildConfiguration)
+                .SetNoWarnDotNetCore3()
+                .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
+                .SetProperty("BuildAsTool", "false")
+                .SetProperty("SingleFile", "true")
+                .CombineWith(runtimes, (c, runtime) => c
+                                .SetRuntime(runtime)));
+        });
+
+    Target BuildConsoleTool => _ => _
         // Currently requires manual copying of files into expected locations
         .Unlisted()
         .After(CreateDistributionHome)
@@ -310,10 +332,9 @@ partial class Build : NukeBuild
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
-                .SetProperty("Standalone", "true")
+                .SetProperty("BuildAsTool", "false")
                 .CombineWith(runtimes, (c, runtime) => c
                     .SetRuntime(runtime)));
-
         });
 
     Target RunBenchmarks => _ => _
