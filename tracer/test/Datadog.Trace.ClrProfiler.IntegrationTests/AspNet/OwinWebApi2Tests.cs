@@ -150,7 +150,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         Agent = new MockTracerAgent(initialAgentPort);
                         Agent.SpanFilters.Add(IsNotServerLifeCheck);
                         output.WriteLine($"Starting OWIN sample, agentPort: {Agent.Port}, samplePort: {HttpPort}");
-                        _process = helper.StartSample(Agent.Port, arguments: null, packageVersion: string.Empty, aspNetCorePort: HttpPort);
+                        _process = helper.StartSample(Agent, arguments: null, packageVersion: string.Empty, aspNetCorePort: HttpPort);
                     }
                 }
 
