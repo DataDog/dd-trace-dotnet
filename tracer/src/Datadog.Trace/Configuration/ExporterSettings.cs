@@ -95,8 +95,10 @@ namespace Datadog.Trace.Configuration
 
             if ((partialFlushMinSpans ?? 0) <= 0)
             {
-                PartialFlushMinSpans = 500;
+                partialFlushMinSpans = 500;
             }
+
+            PartialFlushMinSpans = partialFlushMinSpans.Value;
         }
 
         /// <summary>

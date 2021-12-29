@@ -16,6 +16,26 @@ namespace Datadog.Trace.Tests.Configuration
     public class ExporterSettingsTests
     {
         [Fact]
+        public void NoSocketFiles_NoExplicitConfiguration_DefaultsMatchExpectation()
+        {
+            var config = Setup(FileExistsMock());
+            Assert.Equal(expected: TracesTransportType.Default, actual: config.TracesTransport);
+            Assert.Equal(expected: MetricsTransportType.UDP, actual: config.MetricsTransport);
+            Assert.Equal(expected: new Uri($"http://127.0.0.1:8126"), actual: config.AgentUri);
+            Assert.Equal(expected: 8125, actual: config.DogStatsdPort);
+            Assert.False(config.PartialFlushEnabled);
+            Assert.Equal(expected: 500, actual: config.PartialFlushMinSpans);
+        }
+
+        [Fact]
+        public void PartialFlushVariables_Populated()
+        {
+            var config = Setup(FileExistsMock(), "DD_TRACE_PARTIAL_FLUSH_ENABLED:true", "DD_TRACE_PARTIAL_FLUSH_MIN_SPANS:999");
+            Assert.True(config.PartialFlushEnabled);
+            Assert.Equal(expected: 999, actual: config.PartialFlushMinSpans);
+        }
+
+        [Fact]
         public void Traces_SocketFilesExist_NoExplicitConfig_UsesTraceSocket()
         {
             var config = Setup(DefaultSocketFilesExist());
@@ -51,6 +71,14 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Fact]
+        public void Traces_SocketFilesExist_ExplicitUdsConfig_UsesExplicitConfig()
+        {
+            var config = Setup(DefaultSocketFilesExist(), "DD_APM_RECEIVER_SOCKET:somesocket");
+            Assert.Equal(expected: TracesTransportType.UnixDomainSocket, actual: config.TracesTransport);
+            Assert.Equal(expected: "somesocket", actual: config.TracesUnixDomainSocketPath);
+        }
+
+        [Fact]
         public void Traces_SocketFilesExist_ExplicitConfigForAll_UsesDefaultTcp()
         {
             var config = Setup(DefaultSocketFilesExist(), "DD_AGENT_HOST:someotherhost", "DD_TRACE_PIPE_NAME:somepipe", "DD_APM_RECEIVER_SOCKET:somesocket");
@@ -80,6 +108,21 @@ namespace Datadog.Trace.Tests.Configuration
             var config = Setup(DefaultSocketFilesExist(), "DD_DOGSTATSD_PIPE_NAME:somepipe");
             Assert.Equal(expected: MetricsTransportType.NamedPipe, actual: config.MetricsTransport);
             Assert.Equal(expected: "somepipe", actual: config.MetricsPipeName);
+        }
+
+        [Fact]
+        public void Metrics_SocketFilesExist_ExplicitUdsConfig_UsesExplicitConfig()
+        {
+            var config = Setup(DefaultSocketFilesExist(), "DD_DOGSTATSD_SOCKET:somesocket");
+            Assert.Equal(expected: MetricsTransportType.UDS, actual: config.MetricsTransport);
+            Assert.Equal(expected: "somesocket", actual: config.MetricsUnixDomainSocketPath);
+        }
+
+        [Fact]
+        public void Metrics_SocketFilesExist_ExplicitConfigForAll_UsesDefaultTcp()
+        {
+            var config = Setup(DefaultSocketFilesExist(), "DD_AGENT_HOST:someotherhost", "DD_DOGSTATSD_PIPE_NAME:somepipe", "DD_DOGSTATSD_SOCKET:somesocket");
+            Assert.Equal(expected: TracesTransportType.Default, actual: config.TracesTransport);
         }
 
         private ExporterSettings Setup(Func<string, bool> fileExistsMock, params string[] config)
