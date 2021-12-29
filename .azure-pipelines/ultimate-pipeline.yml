@@ -949,9 +949,9 @@ stages:
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [build_runner_tool]
+      jobs: [build_runner_tool_and_standalone]
 
-  - job: build_runner_tool
+  - job: build_runner_tool_and_standalone
 
     pool:
       vmImage: windows-2019
@@ -1017,6 +1017,9 @@ stages:
 
     - script: tracer\build.cmd BuildRunnerTool --skip
       displayName: Build Runner tool
+
+    - script: tracer\build.cmd BuildStandaloneTool --skip
+      displayName: Build Standalone tool
 
     - task: DeleteFiles@1
       displayName: 'Remove unneeded files'
