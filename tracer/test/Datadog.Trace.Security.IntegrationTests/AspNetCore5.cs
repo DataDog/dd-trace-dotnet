@@ -3,16 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-// The conditions looks weird, but it seems like _OR_GREATER is not supported yet in all environments
-// We can trim all the additional conditions when this is fixed
-#if NETCOREAPP3_0 || NETCOREAPP3_1 || NET5_0 || NET6_0
+#if NETCOREAPP3_0_OR_GREATER
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using Datadog.Trace.IntegrationTestHelpers;
+using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 
