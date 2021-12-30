@@ -158,7 +158,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Formatting
 
             using var scope = new AssertionScope();
             HasExpectedValue(log, !hasRenderedSource, $"\"ddsource\":\"{Source}\"");
-            HasExpectedValue(log, !hasRenderedService, $"\"ddservice\":\"{Service}\"");
+            HasExpectedValue(log, !hasRenderedService, $"\"service\":\"{Service}\"");
             HasExpectedValue(log, !hasRenderedHost, $"\"host\":\"{Host}\"");
             HasExpectedValue(log, !hasRenderedTags, $"\"ddtags\":\"Key1:Value1;Key2:Value2\"");
             HasExpectedValue(log, !hasRenderedEnv, $"\"dd_env\":\"{Env}\"");

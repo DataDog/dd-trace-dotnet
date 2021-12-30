@@ -15,7 +15,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
     internal class LogFormatter
     {
         private const string SourcePropertyName = "ddsource";
-        private const string ServicePropertyName = "ddservice";
+        private const string ServicePropertyName = "service";
         private const string HostPropertyName = "host";
         private const string TagsPropertyName = "ddtags";
         private const string EnvPropertyName = "dd_env";

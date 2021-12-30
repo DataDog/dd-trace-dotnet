@@ -209,7 +209,7 @@ namespace Datadog.Trace.TestHelpers
             [JsonExtensionData]
             internal Dictionary<string, JToken> OtherProperties { get; } = new();
 
-            [JsonProperty("ddservice")]
+            [JsonProperty("service")]
             private string Service1
             {
                 set => Service = value;
