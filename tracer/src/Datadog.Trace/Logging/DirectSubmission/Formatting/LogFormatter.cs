@@ -137,6 +137,13 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             writer.WriteValue(Convert.ToString(value, CultureInfo.InvariantCulture));
         }
 
+        internal static JsonTextWriter GetJsonWriter(StringBuilder builder)
+        {
+            var writer = new JsonTextWriter(new StringWriter(builder));
+            writer.Formatting = Vendors.Newtonsoft.Json.Formatting.None;
+            return writer;
+        }
+
         /// <summary>
         /// Format the log, based on <see cref="Datadog.Trace.Vendors.Serilog.Formatting.Json.JsonFormatter"/>
         /// and CompactFormatter
@@ -152,9 +159,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             Exception? exception,
             FormatDelegate<T> renderPropertiesDelegate)
         {
-            var sw = new StringWriter(builder);
-            using var writer = new JsonTextWriter(sw);
-            writer.Formatting = Vendors.Newtonsoft.Json.Formatting.None;
+            using var writer = GetJsonWriter(builder);
 
             // Based on JsonFormatter
             writer.WriteStartObject();
