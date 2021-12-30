@@ -115,7 +115,12 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
                     if (requiredTotalSize > _serializedLogs.Length && requiredTotalSize <= MaxTotalSizeBytes)
                     {
                         // grow the array
-                        var newSize = Math.Min(_serializedLogs.Length * 2, MaxTotalSizeBytes);
+                        var newSize = _serializedLogs.Length;
+                        while (newSize < requiredTotalSize)
+                        {
+                            newSize = Math.Min(newSize * 2, MaxTotalSizeBytes);
+                        }
+
                         var newArray = new byte[newSize];
                         Array.Copy(_serializedLogs, 0, newArray, 0, _serializedLogs.Length);
                         _serializedLogs = newArray;
