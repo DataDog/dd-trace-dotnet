@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
 {
@@ -30,17 +31,17 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
         {
             if (sinkOptions == null)
             {
-                throw new ArgumentNullException(nameof(sinkOptions));
+                ThrowHelper.ThrowArgumentNullException(nameof(sinkOptions));
             }
 
             if (sinkOptions.BatchSizeLimit <= 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(sinkOptions), "The batch size limit must be greater than zero.");
+                ThrowHelper.ThrowArgumentOutOfRangeException(nameof(sinkOptions), "The batch size limit must be greater than zero.");
             }
 
             if (sinkOptions.Period <= TimeSpan.Zero)
             {
-                throw new ArgumentOutOfRangeException(nameof(sinkOptions), "The period must be greater than zero.");
+                ThrowHelper.ThrowArgumentOutOfRangeException(nameof(sinkOptions), "The period must be greater than zero.");
             }
 
             _disableSinkAction = disableSinkAction;
@@ -72,7 +73,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
         {
             if (logEvent == null)
             {
-                throw new ArgumentNullException(nameof(logEvent));
+                ThrowHelper.ThrowArgumentNullException(nameof(logEvent));
             }
 
             if (_processExit.Task.IsCompleted || !_enqueueLogEnabled)

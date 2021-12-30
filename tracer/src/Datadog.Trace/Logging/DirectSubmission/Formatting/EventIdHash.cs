@@ -20,6 +20,7 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Logging.DirectSubmission.Formatting
 {
@@ -39,7 +40,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
         {
             if (messageTemplate == null)
             {
-                throw new ArgumentNullException(nameof(messageTemplate));
+                ThrowHelper.ThrowArgumentNullException(nameof(messageTemplate));
             }
 
             // Jenkins one-at-a-time https://en.wikipedia.org/wiki/Jenkins_hash_function

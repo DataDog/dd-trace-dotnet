@@ -23,6 +23,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
 {
@@ -39,7 +40,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
         {
             if (queueLimit is <= 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(queueLimit), "Queue limit must be positive, or `null` to indicate unbounded.");
+                ThrowHelper.ThrowArgumentOutOfRangeException(nameof(queueLimit), "Queue limit must be positive, or `null` to indicate unbounded.");
             }
 
             _queueLimit = queueLimit ?? Unbounded;
