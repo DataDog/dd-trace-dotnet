@@ -9,12 +9,11 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using Datadog.Trace.TestHelpers;
 using VerifyTests;
 
-namespace Datadog.Trace.ClrProfiler.IntegrationTests
+namespace Datadog.Trace.TestHelpers
 {
-    internal static class VerifyHelper
+    public static class VerifyHelper
     {
         private static readonly Regex LocalhostRegex = new(@"localhost\:\d+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex KeepRateRegex = new(@"_dd.tracer_kr: \d\.\d+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -23,6 +22,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         /// With <see cref="Verify"/>, parameters are used as part of the filename.
         /// This method produces a "sanitised" version to remove problematic values
         /// </summary>
+        /// <param name="path">The path to sanitise</param>
+        /// <returns>The sanitised path</returns>
         public static string SanitisePathsForVerify(string path)
         {
             // TODO: Make this more robust

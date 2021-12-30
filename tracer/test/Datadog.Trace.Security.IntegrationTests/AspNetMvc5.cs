@@ -87,9 +87,10 @@ namespace Datadog.Trace.Security.IntegrationTests
             _enableSecurity = enableSecurity;
             _blockingEnabled = blockingEnabled;
             _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
-            _testName = nameof(AspNetMvc5)
+            _testName = "Security." + nameof(AspNetMvc5)
                      + (classicMode ? ".Classic" : ".Integrated")
-                     + (RuntimeInformation.ProcessArchitecture == Architecture.X64 ? ".X64" : ".X86"); // assume that arm is the same
+                     + ".enableSecurity=" + enableSecurity
+                     + ".blockingEnabled=" + blockingEnabled; // assume that arm is the same
             SetHttpPort(iisFixture.HttpPort);
         }
 
@@ -103,24 +104,15 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             // if blocking is enabled, request stops before reaching asp net mvc integrations intercepting before action methods, so no more spans are generated
             // NOTE: by integrating the latest version of the WAF, blocking was disabled, as it does not support blocking yet
-            return TestBlockedRequestAsync(_iisFixture.Agent, _enableSecurity, _enableSecurity && _blockingEnabled ? HttpStatusCode.OK : HttpStatusCode.OK, _enableSecurity && _blockingEnabled ? 10 : 10, url: url, assertOnSpans: new Action<TestHelpers.MockTracerAgent.Span>[]
-             {
-                 s => Assert.Matches("aspnet(-mvc)?.request", s.Name),
-                 s => Assert.Equal("sample", s.Service),
-                 s => Assert.Equal("web", s.Type),
-                 s =>
-                 {
-                    var securityTags = new Dictionary<string, string>()
-                    {
-                        { "network.client.ip", "::1" },
-                    };
-                    foreach (var kvp in securityTags)
-                    {
-                        Assert.True(s.Tags.TryGetValue(kvp.Key, out var tagValue), $"The tag {kvp.Key} was not found");
-                        Assert.Equal(kvp.Value, tagValue);
-                    }
-                 },
-             });
+            var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedUrl);
+
+            return TestBlockedRequestAsync(_iisFixture.Agent, url, 10, settings);
+        }
+
+        protected override string GetTestName()
+        {
+            return _testName;
         }
     }
 }

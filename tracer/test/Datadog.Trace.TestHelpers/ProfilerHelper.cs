@@ -21,7 +21,7 @@ namespace Datadog.Trace.TestHelpers
             string processToProfile = null,
             bool? enableSecurity = null,
             bool? enableBlocking = null,
-            bool? callTargetEnabled = null)
+            string externalRulesFile = null)
         {
             if (environmentHelper == null)
             {
@@ -33,7 +33,15 @@ namespace Datadog.Trace.TestHelpers
 
             var startInfo = new ProcessStartInfo(executable, $"{arguments ?? string.Empty}");
 
-            environmentHelper.SetEnvironmentVariables(traceAgentPort, aspNetCorePort, statsdPort, startInfo.EnvironmentVariables, processToProfile, enableSecurity.GetValueOrDefault(), enableBlocking.GetValueOrDefault());
+            environmentHelper.SetEnvironmentVariables(
+                traceAgentPort,
+                aspNetCorePort,
+                statsdPort,
+                startInfo.EnvironmentVariables,
+                processToProfile,
+                enableSecurity.GetValueOrDefault(),
+                enableBlocking.GetValueOrDefault(),
+                externalRulesFile);
 
             startInfo.UseShellExecute = false;
             startInfo.CreateNoWindow = true;
