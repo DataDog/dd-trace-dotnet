@@ -104,29 +104,24 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
 
         private async Task FlushBuffersTaskLoopAsync()
         {
-            while (true)
+            while (!_processExit.Task.IsCompleted)
             {
-                if (_processExit.Task.IsCompleted)
-                {
-                    _log.Debug("Terminating Log submission loop");
-                    if (_processExit.Task.Result)
-                    {
-                        var maxShutDownDelay = Task.Delay(20_000);
-                        var finalFlushTask = FlushLogs();
-                        var completed = await Task.WhenAny(finalFlushTask, maxShutDownDelay).ConfigureAwait(false);
-
-                        if (completed != finalFlushTask)
-                        {
-                            _log.Warning("Could not finish flushing all logs before process end");
-                        }
-                    }
-
-                    return;
-                }
-
                 var circuitStatus = await FlushLogs().ConfigureAwait(false);
 
                 await HandleCircuitStatus(circuitStatus).ConfigureAwait(false);
+            }
+
+            _log.Debug("Terminating Log submission loop");
+            if (_processExit.Task.Result)
+            {
+                var maxShutDownDelay = Task.Delay(20_000);
+                var finalFlushTask = FlushLogs();
+                var completed = await Task.WhenAny(finalFlushTask, maxShutDownDelay).ConfigureAwait(false);
+
+                if (completed != finalFlushTask)
+                {
+                    _log.Warning("Could not finish flushing all logs before process end");
+                }
             }
         }
 
