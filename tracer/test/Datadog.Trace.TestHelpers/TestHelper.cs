@@ -31,6 +31,11 @@ namespace Datadog.Trace.TestHelpers
         {
         }
 
+        protected TestHelper(string sampleAppName, string samplePathOverrides, ITestOutputHelper output, bool prependSamplesToAppName)
+            : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper), output, samplePathOverrides, prependSamplesToAppName: false), output)
+        {
+        }
+
         protected TestHelper(string sampleAppName, ITestOutputHelper output)
             : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper), output), output)
         {

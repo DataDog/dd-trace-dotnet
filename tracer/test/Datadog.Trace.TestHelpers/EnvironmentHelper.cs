@@ -272,7 +272,11 @@ namespace Datadog.Trace.TestHelpers
             }
             else if (TransportType == TestTransports.WindowsNamedPipe)
             {
-                throw new NotImplementedException("The MockTracerAgent does not yet support Windows Named Pipes");
+                string apmKey = "DD_TRACE_PIPE_NAME";
+                string dsdKey = "DD_DOGSTATSD_PIPE_NAME";
+
+                environmentVariables.Add(apmKey, agent.TracesUdsPath);
+                environmentVariables.Add(dsdKey, agent.StatsUdsPath);
             }
             else if (TransportType == TestTransports.Tcp)
             {
@@ -453,15 +457,19 @@ namespace Datadog.Trace.TestHelpers
             return $"net{_major}{_minor}{_patch ?? string.Empty}";
         }
 
-        public void EnabledWindowsNamedPipes(string tracePipeName = null, string statsPipeName = null)
+        public void EnableWindowsNamedPipes(string tracePipeName = null, string statsPipeName = null)
         {
             TransportType = TestTransports.WindowsNamedPipe;
-            throw new NotImplementedException("The MockTracerAgent does not yet support Windows Named Pipes");
+        }
+
+        public void EnableDefaultTcp()
+        {
+            TransportType = TestTransports.Tcp;
         }
 
         public void EnableUnixDomainSockets()
         {
-#if NETCOREAPP3_1_OR_GREATER
+#if NETCOREAPP
             TransportType = TestTransports.Uds;
 #else
             // Unsupported
@@ -473,19 +481,19 @@ namespace Datadog.Trace.TestHelpers
         {
             MockTracerAgent agent = null;
 
-            EnableUnixDomainSockets();
+            // EnableUnixDomainSockets();
 
 #if NETCOREAPP
             // Decide between transports
             if (TransportType == TestTransports.Uds)
             {
-                var traceAlternateTransportPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-                var statsAlternateTransportPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-                agent = new MockTracerAgent(traceUdsName: traceAlternateTransportPath, statsUdsName: statsAlternateTransportPath);
+                var tracesUdsPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+                var metricsUdsPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+                agent = new MockTracerAgent(new UnixDomainSocketConfig(tracesUdsPath, metricsUdsPath));
             }
             else if (TransportType == TestTransports.WindowsNamedPipe)
             {
-                throw new NotImplementedException("Windows named pipe mock tracer agent is not yet implemented.");
+                agent = new MockTracerAgent(new WindowsPipesConfig($"trace-{Guid.NewGuid()}", $"metrics-{Guid.NewGuid()}"));
             }
             else
             {

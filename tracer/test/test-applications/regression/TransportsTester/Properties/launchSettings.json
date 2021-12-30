@@ -1,0 +1,31 @@
+{
+  "profiles": {
+    "UnixDomainSocket": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DD_APM_RECEIVER_SOCKET": "%TEMP%\\apm.socket",
+        "DD_DOGSTATSD_SOCKET": "%TEMP%\\dsd.socket",
+        "DD_RUNTIME_METRICS_ENABLED": "true",
+        "DD_TRACE_METRICS_ENABLED": "true"
+      }
+    },
+    "WindowsNamedPipe": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DD_TRACE_PIPE_NAME": "apm.mock.windows.pipe",
+        "DD_DOGSTATSD_PIPE_NAME": "dsd.mock.windows.pipe",
+        "DD_RUNTIME_METRICS_ENABLED": "true",
+        "DD_TRACE_METRICS_ENABLED": "true"
+      }
+    },
+    "Tcp": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DD_TRACE_AGENT_PORT": "11126",
+        "DD_DOGSTATSD_PORT": "11125",
+        "DD_RUNTIME_METRICS_ENABLED": "true",
+        "DD_TRACE_METRICS_ENABLED": "true"
+      }
+    }
+  }
+}

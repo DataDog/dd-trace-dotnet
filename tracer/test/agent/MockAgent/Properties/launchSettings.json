@@ -10,8 +10,8 @@
     "MockAgent.WindowsNamedPipe": {
       "commandName": "Project",
       "environmentVariables": {
-        "DD_TRACE_PIPE_NAME": "%TEMP%\\apm.mock.windows.pipe",
-        "DD_DOGSTATSD_PIPE_NAME": "%TEMP%\\dsd.mock.windows.pipe"
+        "DD_TRACE_PIPE_NAME": "apm.mock.windows.pipe",
+        "DD_DOGSTATSD_PIPE_NAME": "dsd.mock.windows.pipe"
       }
     },
     "MockAgent.Tcp": {

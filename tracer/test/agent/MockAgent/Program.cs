@@ -1,29 +1,18 @@
 // See https://aka.ms/new-console-template for more information
 using CommandLine;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using MockAgent;
 
-var configurationSource = new CompositeConfigurationSource
-{
-    new EnvironmentConfigurationSource(),
-};
-
-var exporterSettings = new ExporterSettings(configurationSource);
-
-// Console.WriteLine($"Available Environment Variables");
-// IDictionary currentEnvVars = Environment.GetEnvironmentVariables();
-// if (currentEnvVars != null)
-// {
-//     foreach (DictionaryEntry item in currentEnvVars)
-//     {
-//         Console.WriteLine($"{item.Key}: {item.Value}");
-//     }
-// }
-
+var showTraces = true;
+var showMetrics = true;
 
 EventHandler<EventArgs<IList<IList<MockTracerAgent.Span>>>> displayTraces = (sender, args) =>
 {
+    if (!showTraces)
+    {
+        return;
+    }
+
     var traces = args.Value;
     foreach (var trace in traces)
     {
@@ -32,6 +21,16 @@ EventHandler<EventArgs<IList<IList<MockTracerAgent.Span>>>> displayTraces = (sen
             Console.WriteLine(span);
         }
     }
+};
+
+EventHandler<EventArgs<string>> displayStats = (sender, args) =>
+{
+    if (!showMetrics)
+    {
+        return;
+    }
+
+    Console.WriteLine($"Stats: {args.Value}");
 };
 
 Parser.Default.ParseArguments<Options>(args)
@@ -43,36 +42,68 @@ Parser.Default.ParseArguments<Options>(args)
            {
                if (o.Tcp || args.Length == 0)
                {
-                   var agent = new MockTracerAgent(port: o.TracesPort, useStatsd: true);
-                   Console.WriteLine($"Listening for traces on TCP: {o.TracesPort}");
-                   Console.WriteLine($"Listening for metrics on UDP port: {o.MetricsPort}");
+                   var agent = new MockTracerAgent(port: o.TracesPort, useStatsd: true, requestedStatsDPort: o.MetricsPort);
+                   Console.WriteLine($"Listening for traces on TCP: {agent.Port}");
+                   Console.WriteLine($"Listening for metrics on UDP port: {agent.StatsdPort}");
                    agent.RequestDeserialized += displayTraces;
+                   agent.MetricsReceived += displayStats;
                    agents.Add(agent);
                }
 
                if (o.UnixDomainSockets || args.Length == 0)
                {
-                   var agent = new MockTracerAgent(traceUdsName: o.TracesUnixDomainSocketPath, statsUdsName: o.MetricsUnixDomainSocketPath);
-                   Console.WriteLine($"Listening for traces on Unix Domain Socket: {o.TracesUnixDomainSocketPath}");
-                   Console.WriteLine($"Listening for metrics on Unix Domain Socket: {o.MetricsUnixDomainSocketPath}");
+                   var agent = new MockTracerAgent(new UnixDomainSocketConfig(o.TracesUnixDomainSocketPath, o.MetricsUnixDomainSocketPath));
+                   Console.WriteLine($"Listening for traces on Unix Domain Socket: {agent.TracesUdsPath}");
+                   Console.WriteLine($"Listening for metrics on Unix Domain Socket: {agent.StatsUdsPath}");
                    agent.RequestDeserialized += displayTraces;
+                   agent.MetricsReceived += displayStats;
                    agents.Add(agent);
                }
 
-               if (o.WindowsNamedPipe)
+               if (o.WindowsNamedPipe) // || args.Length == 0)
                {
-                   // Console.WriteLine($"Listening for traces on Windows Named Pipe: {o.TracesPipeName}");
-                   // Console.WriteLine($"Listening for metrics on Windows Named Pipe: {o.MetricsPipeName}");
-                   throw new NotImplementedException("Mock Agent does not yet support windows named pipes.");
+                   var agent = new MockTracerAgent(new WindowsPipesConfig(o.TracesPipeName, o.MetricsPipeName));
+                   Console.WriteLine($"Listening for traces on Windows Named Pipe: {agent.TracesWindowsPipeName}");
+                   Console.WriteLine($"Listening for metrics on Windows Named Pipe: {agent.StatsWindowsPipeName}");
+                   agent.RequestDeserialized += displayTraces;
+                   agent.MetricsReceived += displayStats;
+                   agents.Add(agent);
                }
 
                var shutdown = false;
 
                while (!shutdown)
                {
-                   Console.WriteLine("Enter Q to exit: ");
+                   Console.WriteLine("Options - Q to exit, T to toggle show traces, M to toggle show metrics. ");
                    var input = Console.ReadKey();
-                   shutdown = input.KeyChar.ToString().ToLowerInvariant().Contains("q");
+                   var entry = input.KeyChar.ToString().ToLowerInvariant();
+                   shutdown = entry.Contains("q");
+
+                   if (entry.Contains("t"))
+                   {
+                       showTraces = !showTraces;
+                       if (showTraces)
+                       {
+                           Console.WriteLine("Showing traces.");
+                       }
+                       else
+                       {
+                           Console.WriteLine("Hiding traces.");
+                       }
+                   }
+
+                   if (entry.Contains("m"))
+                   {
+                       showMetrics = !showMetrics;
+                       if (showMetrics)
+                       {
+                           Console.WriteLine("Showing metrics.");
+                       }
+                       else
+                       {
+                           Console.WriteLine("Hiding metrics.");
+                       }
+                   }
                }
            }
            finally
