@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
         [DuckReverseMethod]
         public DirectSubmissionLogger CreateLogger(string categoryName)
         {
-            return _loggers.GetOrAdd(categoryName, CreateLoggerImplementation);
+            return _loggers.GetOrAdd(categoryName, x => CreateLoggerImplementation(x));
         }
 
         private DirectSubmissionLogger CreateLoggerImplementation(string name)
