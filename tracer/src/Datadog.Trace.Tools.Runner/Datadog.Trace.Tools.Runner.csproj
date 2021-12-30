@@ -30,18 +30,15 @@
     </When>
     <Otherwise>
       <PropertyGroup>
+        <OutputPath>bin\$(Configuration)\Console</OutputPath>
+        <PublishDir>bin\$(Configuration)\Console\publish\$(RuntimeIdentifier)</PublishDir>
         <AssemblyName>dd-trace</AssemblyName>
       </PropertyGroup>
       <PropertyGroup Condition="'$(SingleFile)' == 'true'">
-        <OutputPath>bin\$(Configuration)\Console</OutputPath>
-        <PublishDir>bin\$(Configuration)\Console\publish\$(RuntimeIdentifier)</PublishDir>
         <RuntimeIdentifiers>win-x64;win-x86;linux-x64;linux-musl-x64;osx-x64;linux-arm64</RuntimeIdentifiers>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <PublishTrimmed>true</PublishTrimmed>
         <PublishSingleFile>true</PublishSingleFile>
-      </PropertyGroup>
-      <PropertyGroup Condition="'$(SingleFile)' != 'true'">
-        <Platforms>x64;x86</Platforms>
       </PropertyGroup>
     </Otherwise>
   </Choose>
