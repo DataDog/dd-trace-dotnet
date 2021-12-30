@@ -9,8 +9,8 @@ using Datadog.Trace.DuckTyping;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission.Formatting
 {
     /// <summary>
-    /// Duck type for ScalarValue
-    /// https://github.dev/serilog/serilog/blob/5e93d5045585095ebcb71ef340d6accd61f01670/src/Serilog/Events/ScalarValue.cs
+    /// Duck type for DictionaryValue
+    /// https://github.dev/serilog/serilog/blob/5e93d5045585095ebcb71ef340d6accd61f01670/src/Serilog/Events/DictionaryValue.cs
     /// </summary>
     [DuckCopy]
     internal struct DictionaryValueDuck

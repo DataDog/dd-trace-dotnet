@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
                 eventId: null,
                 GetLogLevelString(logEntry.Level),
                 logEntry.Exception,
-                RenderProperties);
+                (JsonTextWriter w, in LogEntry e) => RenderProperties(w, e));
         }
 
         private static LogPropertyRenderingDetails RenderProperties(JsonTextWriter writer, in LogEntry logEntryWrapper)

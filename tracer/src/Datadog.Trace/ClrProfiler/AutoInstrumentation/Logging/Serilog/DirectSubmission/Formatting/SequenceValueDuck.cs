@@ -9,7 +9,7 @@ using Datadog.Trace.DuckTyping;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission.Formatting
 {
     /// <summary>
-    /// Duck type for ScalarValue
+    /// Duck type for SequenceValue
     /// https://github.com/serilog/serilog/blob/5e93d5045585095ebcb71ef340d6accd61f01670/src/Serilog/Events/SequenceValue.cs
     /// </summary>
     [DuckCopy]

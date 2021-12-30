@@ -23,7 +23,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
         private readonly CircuitBreaker _circuitBreaker;
         private readonly Task _flushTask;
         private readonly Action? _disableSinkAction;
-        private readonly TaskCompletionSource<bool> _processExit = new();
+        private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private volatile bool _enqueueLogEnabled = true;
 
         protected BatchingSink(BatchingSinkOptions sinkOptions, Action? disableSinkAction)

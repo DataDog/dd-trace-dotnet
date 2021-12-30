@@ -16,7 +16,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
 {
     internal class DatadogSink : BatchingSink, IDatadogSink
     {
-        // Maximum size for a single log is 1MB, we slightly on the cautious side
+        // Maximum size for a single log is 1MB, we slightly err on the cautious side
         internal const int MaxMessageSizeBytes = 1000 * 1024;
 
         // Maximum content size per payload is 5MB compressed

@@ -218,7 +218,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
                 writer.WriteValue(_version);
             }
 
-            if (_host is not null && !renderingDetails.HasRenderedSource)
+            if (_host is not null && !renderingDetails.HasRenderedHost)
             {
                 writer.WritePropertyName(HostPropertyName, escape: false);
                 writer.WriteValue(_host);
