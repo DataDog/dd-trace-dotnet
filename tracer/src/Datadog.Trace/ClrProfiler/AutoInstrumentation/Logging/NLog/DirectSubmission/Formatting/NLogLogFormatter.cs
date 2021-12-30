@@ -78,7 +78,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
                 }
             }
 
-            return new LogPropertyRenderingDetails(haveSource, haveService, haveHost, haveTags, haveEnv, haveVersion, messageTemplate: logEntryWrapper.LogEventInfo.Message);
+            return new LogPropertyRenderingDetails(
+                hasRenderedSource: haveSource,
+                hasRenderedService: haveService,
+                hasRenderedHost: haveHost,
+                hasRenderedTags: haveTags,
+                hasRenderedEnv: haveEnv,
+                hasRenderedVersion: haveVersion,
+                messageTemplate: logEntryWrapper.LogEventInfo.Message);
         }
 
         private static string GetLogLevelString(LogLevelProxy logLevel) =>

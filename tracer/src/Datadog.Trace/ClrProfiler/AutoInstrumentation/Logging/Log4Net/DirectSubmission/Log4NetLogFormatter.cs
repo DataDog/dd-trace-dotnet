@@ -79,7 +79,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
             // The message object could be anything, so only generate an eventID if we have a string message
             var messageTemplate = logEntry.MessageObject as string;
 
-            return new LogPropertyRenderingDetails(haveSource, haveService, haveHost, haveTags, haveEnv, haveVersion, messageTemplate);
+            return new LogPropertyRenderingDetails(
+                hasRenderedSource: haveSource,
+                hasRenderedService: haveService,
+                hasRenderedHost: haveHost,
+                hasRenderedTags: haveTags,
+                hasRenderedEnv: haveEnv,
+                hasRenderedVersion: haveVersion,
+                messageTemplate: messageTemplate);
         }
     }
 }

@@ -130,7 +130,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
                 }
             }
 
-            return new LogPropertyRenderingDetails(haveSource, haveService, haveHost, haveTags, haveEnv, haveVersion, messageTemplate);
+            return new LogPropertyRenderingDetails(
+                hasRenderedSource: haveSource,
+                hasRenderedService: haveService,
+                hasRenderedHost: haveHost,
+                hasRenderedTags: haveTags,
+                hasRenderedEnv: haveEnv,
+                hasRenderedVersion: haveVersion,
+                messageTemplate: messageTemplate);
         }
 
         private static string GetLogLevelString(int logLevel) =>

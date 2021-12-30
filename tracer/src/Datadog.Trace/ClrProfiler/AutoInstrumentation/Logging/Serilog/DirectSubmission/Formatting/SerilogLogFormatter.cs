@@ -70,8 +70,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSu
                 FormatLogEventPropertyValue(writer, duckProperty.Value);
             }
 
-            var renderingDetails = new LogPropertyRenderingDetails(haveSource, haveService, haveHost, haveTags, haveEnv, haveVersion, messageTemplate: logEvent.MessageTemplate.Text);
-            return renderingDetails;
+            return new LogPropertyRenderingDetails(
+                hasRenderedSource: haveSource,
+                hasRenderedService: haveService,
+                hasRenderedHost: haveHost,
+                hasRenderedTags: haveTags,
+                hasRenderedEnv: haveEnv,
+                hasRenderedVersion: haveVersion,
+                messageTemplate: logEvent.MessageTemplate.Text);
         }
 
         private static void FormatLogEventPropertyValue(JsonTextWriter writer, object value)
