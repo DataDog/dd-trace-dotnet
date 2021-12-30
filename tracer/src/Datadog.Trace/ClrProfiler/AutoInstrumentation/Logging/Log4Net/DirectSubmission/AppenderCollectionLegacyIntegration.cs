@@ -53,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
             if (!_logWritten)
             {
                 _logWritten = true;
-                Log.Information("Direct log submission via Log4Net enabled");
+                Log.Information("Direct log submission via Log4Net Legacy enabled");
             }
 
             return new CallTargetReturn<TResponse>(updatedResponse);

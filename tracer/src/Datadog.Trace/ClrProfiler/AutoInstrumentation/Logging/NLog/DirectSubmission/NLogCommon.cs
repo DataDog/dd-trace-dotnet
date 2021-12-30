@@ -193,7 +193,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             loggingConfigurationProxy.AddTarget(NLogConstants.DatadogTargetName, targetProxy);
             loggingConfigurationProxy.AddRuleForAllLevels(targetProxy, "**", final: true);
 
-            Log.Information("Direct log submission via NLog enabled");
+            Log.Information("Direct log submission via NLog 4.5+ enabled");
         }
 
         // internal for testing
@@ -218,7 +218,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             loggingConfigurationProxy.AddTarget(NLogConstants.DatadogTargetName, targetProxy);
             loggingConfigurationProxy.AddRuleForAllLevels(targetProxy, "**");
 
-            Log.Information("Direct log submission via NLog enabled");
+            Log.Information("Direct log submission via NLog 4.3-4.5 enabled");
         }
 
         // internal for testing
@@ -261,7 +261,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             ruleProxy.Final = true;
             loggingConfigurationProxy.LoggingRules.Add(instance);
 
-            Log.Information("Direct log submission via NLog enabled");
+            Log.Information("Direct log submission via NLog <4.3 enabled");
         }
 
         // internal for testing
