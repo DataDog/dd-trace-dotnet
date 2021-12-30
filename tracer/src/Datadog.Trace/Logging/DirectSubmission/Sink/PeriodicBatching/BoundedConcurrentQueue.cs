@@ -46,7 +46,8 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
             _queueLimit = queueLimit ?? Unbounded;
         }
 
-        public int Count => _queue.Count;
+        // Internal for testing
+        internal ConcurrentQueue<T> InnerQueue => _queue;
 
         public bool TryDequeue([NotNullWhen(returnValue: true)] out T? item)
         {
@@ -55,20 +56,13 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
                 return _queue.TryDequeue(out item!);
             }
 
-            var result = false;
-            try
-            { }
-            finally
+            if (_queue.TryDequeue(out item!))
             {
-                // prevent state corrupt while aborting
-                if (_queue.TryDequeue(out item!))
-                {
-                    Interlocked.Decrement(ref _counter);
-                    result = true;
-                }
+                Interlocked.Decrement(ref _counter);
+                return true;
             }
 
-            return result;
+            return false;
         }
 
         public bool TryEnqueue(T item)
@@ -79,23 +73,14 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
                 return true;
             }
 
-            var result = true;
-            try
-            { }
-            finally
+            if (Interlocked.Increment(ref _counter) <= _queueLimit)
             {
-                if (Interlocked.Increment(ref _counter) <= _queueLimit)
-                {
-                    _queue.Enqueue(item);
-                }
-                else
-                {
-                    Interlocked.Decrement(ref _counter);
-                    result = false;
-                }
+                _queue.Enqueue(item);
+                return true;
             }
 
-            return result;
+            Interlocked.Decrement(ref _counter);
+            return false;
         }
     }
 }

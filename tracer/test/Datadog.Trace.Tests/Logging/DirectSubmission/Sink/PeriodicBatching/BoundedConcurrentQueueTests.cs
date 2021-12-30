@@ -24,7 +24,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
                 queue.TryEnqueue(i);
             }
 
-            queue.Count.Should().Be(limit);
+            queue.InnerQueue.Count.Should().Be(limit);
         }
 
         [Theory]
