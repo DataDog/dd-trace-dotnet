@@ -198,7 +198,7 @@ partial class Build : NukeBuild
         .DependsOn(CompileSamples)
         .DependsOn(PublishIisSamples)
         .DependsOn(CompileIntegrationTests)
-        .DependsOn(BuildConsoleTool);
+        .DependsOn(BuildRunnerTool);
 
     Target BuildWindowsRegressionTests => _ => _
         .Unlisted()
@@ -238,7 +238,7 @@ partial class Build : NukeBuild
         .DependsOn(CompileSamplesLinux)
         .DependsOn(CompileMultiApiPackageVersionSamples)
         .DependsOn(CompileLinuxIntegrationTests)
-        .DependsOn(BuildConsoleTool);
+        .DependsOn(BuildRunnerTool);
 
     Target BuildAndRunLinuxIntegrationTests => _ => _
         .Requires(() => !IsWin)
@@ -291,7 +291,7 @@ partial class Build : NukeBuild
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
-                .SetProperty("BuildAsTool", "true"));
+                .SetProperty("BuildStandalone", "false"));
         });
 
     Target BuildStandaloneTool => _ => _
@@ -310,30 +310,9 @@ partial class Build : NukeBuild
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
-                .SetProperty("BuildAsTool", "false")
-                .SetProperty("SingleFile", "true")
+                .SetProperty("BuildStandalone", "true")
                 .CombineWith(runtimes, (c, runtime) => c
                                 .SetRuntime(runtime)));
-        });
-
-    Target BuildConsoleTool => _ => _
-        // Currently requires manual copying of files into expected locations
-        .Unlisted()
-        .After(CreateDistributionHome)
-        .Executes(() =>
-        {
-            var runtimes = new[] {"win-x86", "win-x64", "linux-x64", "linux-musl-x64", "osx-x64", "linux-arm64"};
-            DotNetBuild(x => x
-                .SetProjectFile(Solution.GetProject(Projects.Tool))
-                // Have to do a restore currently as we're specifying specific runtime
-                // .EnableNoRestore()
-                .EnableNoDependencies()
-                .SetConfiguration(BuildConfiguration)
-                .SetNoWarnDotNetCore3()
-                .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
-                .SetProperty("BuildAsTool", "false")
-                .CombineWith(runtimes, (c, runtime) => c
-                    .SetRuntime(runtime)));
         });
 
     Target RunBenchmarks => _ => _
