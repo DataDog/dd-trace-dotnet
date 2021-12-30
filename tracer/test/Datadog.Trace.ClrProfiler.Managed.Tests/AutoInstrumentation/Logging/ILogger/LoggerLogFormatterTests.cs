@@ -30,6 +30,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
             var logger = new TestLogger(scopeProvider, formatter, new DateTime(2021, 09, 13, 10, 40, 57));
 
             scopeProvider.Push(new Dictionary<string, object> { { "OtherProperty", 62 } });
+            scopeProvider.Push("Some other value");
 
             logger.Log(
                 LogLevel.Debug,
@@ -37,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
                 "This is a test with a {Value}",
                 123);
 
-            var expected = @"{""@t"":""2021-09-13T10:40:57.0000000Z"",""@m"":""This is a test with a 123"",""@l"":""Debug"",""@x"":""System.InvalidOperationException: Oops, just a test!"",""Value"":123,""OtherProperty"":62,""@i"":""a9a87aee"",""ddsource"":""csharp"",""service"":""MyTestService"",""host"":""some_host""}";
+            var expected = @"{""@t"":""2021-09-13T10:40:57.0000000Z"",""@m"":""This is a test with a 123"",""@l"":""Debug"",""@x"":""System.InvalidOperationException: Oops, just a test!"",""Value"":123,""OtherProperty"":62,""Scopes"":[""Some other value""]""@i"":""a9a87aee"",""ddsource"":""csharp"",""service"":""MyTestService"",""host"":""some_host""}";
 
             logger.Logs.Should().ContainSingle(expected);
         }
@@ -56,7 +57,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
                 { "ddtags", nameof(DoesntAddPropertiesThatAreAlreadyAddedTwice) + ":tag" },
             };
 
-            using (var s = scopeProvider.Push(properties))
+            using (scopeProvider.Push(properties))
+            using (scopeProvider.Push("Another value"))
             {
                 logger.Log(
                     LogLevel.Debug,

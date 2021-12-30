@@ -116,14 +116,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
                     },
                     writerWrapper);
 
-                if (writerWrapper.Values.Count > 0)
+                if (writerWrapper.HasValues && writerWrapper.Values.Count > 0)
                 {
                     writer.WritePropertyName("Scopes", escape: false);
                     writer.WriteStartArray();
 
-                    for (var i = 0; i < writerWrapper.Values.Count; i++)
+                    var values = writerWrapper.Values;
+                    for (var i = 0; i < values.Count; i++)
                     {
-                        LogFormatter.WriteValue(writer, writerWrapper.Values[i]);
+                        LogFormatter.WriteValue(writer, values[i]);
                     }
 
                     writer.WriteEndArray();
@@ -152,16 +153,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
                 _ => DirectSubmissionLogLevelExtensions.Unknown,
             };
 
-        private readonly struct WriterWrapper
+        private class WriterWrapper
         {
-            public readonly JsonWriter Writer;
-            public readonly List<object> Values;
+            private List<object>? _values;
 
             public WriterWrapper(JsonWriter writer)
             {
                 Writer = writer;
-                Values = new List<object>();
             }
+
+            public JsonWriter Writer { get; }
+
+            public List<object> Values
+            {
+                get => _values ??= new List<object>();
+            }
+
+            public bool HasValues => _values is not null;
         }
     }
 }
