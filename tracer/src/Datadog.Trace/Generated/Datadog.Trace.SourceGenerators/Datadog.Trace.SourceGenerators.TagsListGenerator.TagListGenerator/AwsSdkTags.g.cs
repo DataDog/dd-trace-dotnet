@@ -5,6 +5,16 @@ namespace Datadog.Trace.Tagging
 {
     partial class AwsSdkTags
     {
+        private static readonly byte[] _bytesInstrumentationName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
+        private static readonly byte[] _bytesAgentName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aws.agent");
+        private static readonly byte[] _bytesOperation = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aws.operation");
+        private static readonly byte[] _bytesRegion = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aws.region");
+        private static readonly byte[] _bytesRequestId = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aws.requestId");
+        private static readonly byte[] _bytesService = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aws.service");
+        private static readonly byte[] _bytesHttpMethod = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("http.method");
+        private static readonly byte[] _bytesHttpUrl = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("http.url");
+        private static readonly byte[] _bytesHttpStatusCode = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("http.status_code");
+
         public override string? GetTag(string key)
         {
             return key switch
@@ -59,55 +69,55 @@ namespace Datadog.Trace.Tagging
             if (InstrumentationName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "component", InstrumentationName);
+                WriteTag(ref bytes, ref offset, _bytesInstrumentationName, InstrumentationName);
             }
 
             if (AgentName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "aws.agent", AgentName);
+                WriteTag(ref bytes, ref offset, _bytesAgentName, AgentName);
             }
 
             if (Operation != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "aws.operation", Operation);
+                WriteTag(ref bytes, ref offset, _bytesOperation, Operation);
             }
 
             if (Region != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "aws.region", Region);
+                WriteTag(ref bytes, ref offset, _bytesRegion, Region);
             }
 
             if (RequestId != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "aws.requestId", RequestId);
+                WriteTag(ref bytes, ref offset, _bytesRequestId, RequestId);
             }
 
             if (Service != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "aws.service", Service);
+                WriteTag(ref bytes, ref offset, _bytesService, Service);
             }
 
             if (HttpMethod != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "http.method", HttpMethod);
+                WriteTag(ref bytes, ref offset, _bytesHttpMethod, HttpMethod);
             }
 
             if (HttpUrl != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "http.url", HttpUrl);
+                WriteTag(ref bytes, ref offset, _bytesHttpUrl, HttpUrl);
             }
 
             if (HttpStatusCode != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "http.status_code", HttpStatusCode);
+                WriteTag(ref bytes, ref offset, _bytesHttpStatusCode, HttpStatusCode);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset);

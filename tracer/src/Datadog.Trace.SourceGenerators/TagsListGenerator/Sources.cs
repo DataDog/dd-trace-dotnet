@@ -74,10 +74,36 @@ namespace ");
               .Append(
                    @"
     {");
+            if (tagList.MetricProperties is not null)
+            {
+                foreach (var property in tagList.MetricProperties)
+                {
+                    sb.Append(
+                           @"
+        private static readonly byte[] ")
+                      .Append(property.PropertyName)
+                      .Append(@"Bytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes(""")
+                      .Append(property.TagValue)
+                      .Append(@""");");
+                }
+            }
+
             if (tagList.TagProperties is not null)
             {
+                foreach (var property in tagList.TagProperties)
+                {
+                    sb.Append(
+                           @"
+        private static readonly byte[] ")
+                      .Append(property.PropertyName)
+                      .Append(@"Bytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes(""")
+                      .Append(property.TagValue)
+                      .Append(@""");");
+                }
+
                 sb.Append(
                     @"
+
         public override string? GetTag(string key)
         {
             return key switch
@@ -145,9 +171,9 @@ namespace ");
                       .Append(@" != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, """)
-                      .Append(property.TagValue)
-                      .Append(@""", ")
+                WriteTag(ref bytes, ref offset, ")
+                      .Append(property.PropertyName)
+                      .Append(@"Bytes, ")
                       .Append(property.PropertyName)
                       .Append(@");
             }
@@ -188,7 +214,7 @@ namespace ");
 
             if (tagList.MetricProperties is not null)
             {
-                if (tagList.TagProperties is not null)
+                if (tagList.TagProperties is null)
                 {
                     sb.AppendLine();
                 }
@@ -260,9 +286,9 @@ namespace ");
                       .Append(@" != null)
             {
                 count++;
-                WriteMetric(ref bytes, ref offset, """)
-                      .Append(property.TagValue)
-                      .Append(@""", ")
+                WriteMetric(ref bytes, ref offset, ")
+                      .Append(property.PropertyName)
+                      .Append(@"Bytes, ")
                       .Append(property.PropertyName)
                       .Append(@".Value);
             }

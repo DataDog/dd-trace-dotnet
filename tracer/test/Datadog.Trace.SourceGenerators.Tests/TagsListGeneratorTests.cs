@@ -30,6 +30,8 @@ namespace MyTests.TestListNameSpace
 {
     partial class TestList
     {
+        private static readonly byte[] IdBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes(""TestId"");
+
         public override string? GetTag(string key)
         {
             return key switch
@@ -58,7 +60,7 @@ namespace MyTests.TestListNameSpace
             if (Id != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, ""TestId"", Id);
+                WriteTag(ref bytes, ref offset, IdBytes, Id);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset);
@@ -103,6 +105,8 @@ namespace MyTests.TestListNameSpace
 {
     partial class TestList
     {
+        private static readonly byte[] IdBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes(""TestId"");
+
         public override double? GetMetric(string key)
         {
             return key switch
@@ -131,7 +135,7 @@ namespace MyTests.TestListNameSpace
             if (Id != null)
             {
                 count++;
-                WriteMetric(ref bytes, ref offset, ""TestId"", Id.Value);
+                WriteMetric(ref bytes, ref offset, IdBytes, Id.Value);
             }
 
             return count + base.WriteAdditionalMetrics(ref bytes, ref offset);
@@ -179,6 +183,9 @@ namespace MyTests.TestListNameSpace
 {
     partial class TestList
     {
+        private static readonly byte[] IdBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes(""IdTag"");
+        private static readonly byte[] NameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes(""NameTag"");
+
         public override string? GetTag(string key)
         {
             return key switch
@@ -211,13 +218,13 @@ namespace MyTests.TestListNameSpace
             if (Id != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, ""IdTag"", Id);
+                WriteTag(ref bytes, ref offset, IdBytes, Id);
             }
 
             if (Name != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, ""NameTag"", Name);
+                WriteTag(ref bytes, ref offset, NameBytes, Name);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset);
@@ -271,6 +278,9 @@ namespace MyTests.TestListNameSpace
 {
     partial class TestList
     {
+        private static readonly byte[] IdBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes(""IdMetric"");
+        private static readonly byte[] NameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes(""NameMetric"");
+
         public override double? GetMetric(string key)
         {
             return key switch
@@ -303,13 +313,13 @@ namespace MyTests.TestListNameSpace
             if (Id != null)
             {
                 count++;
-                WriteMetric(ref bytes, ref offset, ""IdMetric"", Id.Value);
+                WriteMetric(ref bytes, ref offset, IdBytes, Id.Value);
             }
 
             if (Name != null)
             {
                 count++;
-                WriteMetric(ref bytes, ref offset, ""NameMetric"", Name.Value);
+                WriteMetric(ref bytes, ref offset, NameBytes, Name.Value);
             }
 
             return count + base.WriteAdditionalMetrics(ref bytes, ref offset);
@@ -363,6 +373,9 @@ namespace MyTests.TestListNameSpace
 {
     partial class TestList
     {
+        private static readonly byte[] IdBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes(""IdTag"");
+        private static readonly byte[] NameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes(""NameTag"");
+
         public override string? GetTag(string key)
         {
             return key switch
@@ -389,13 +402,13 @@ namespace MyTests.TestListNameSpace
             if (Id != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, ""IdTag"", Id);
+                WriteTag(ref bytes, ref offset, IdBytes, Id);
             }
 
             if (Name != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, ""NameTag"", Name);
+                WriteTag(ref bytes, ref offset, NameBytes, Name);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset);
@@ -449,6 +462,9 @@ namespace MyTests.TestListNameSpace
 {
     partial class TestList
     {
+        private static readonly byte[] IdBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes(""IdMetric"");
+        private static readonly byte[] NameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes(""NameMetric"");
+
         public override double? GetMetric(string key)
         {
             return key switch
@@ -475,13 +491,13 @@ namespace MyTests.TestListNameSpace
             if (Id != null)
             {
                 count++;
-                WriteMetric(ref bytes, ref offset, ""IdMetric"", Id.Value);
+                WriteMetric(ref bytes, ref offset, IdBytes, Id.Value);
             }
 
             if (Name != null)
             {
                 count++;
-                WriteMetric(ref bytes, ref offset, ""NameMetric"", Name.Value);
+                WriteMetric(ref bytes, ref offset, NameBytes, Name.Value);
             }
 
             return count + base.WriteAdditionalMetrics(ref bytes, ref offset);

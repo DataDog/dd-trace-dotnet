@@ -5,6 +5,12 @@ namespace Datadog.Trace.Tagging
 {
     partial class CommonTags
     {
+        private static readonly byte[] _bytesSamplingPriority = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("_sampling_priority_v1");
+        private static readonly byte[] _bytesSamplingLimitDecision = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("_dd.limit_psr");
+        private static readonly byte[] _bytesTracesKeepRate = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("_dd.tracer_kr");
+        private static readonly byte[] _bytesEnvironment = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("env");
+        private static readonly byte[] _bytesVersion = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("version");
+
         public override string? GetTag(string key)
         {
             return key switch
@@ -37,13 +43,13 @@ namespace Datadog.Trace.Tagging
             if (Environment != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "env", Environment);
+                WriteTag(ref bytes, ref offset, _bytesEnvironment, Environment);
             }
 
             if (Version != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "version", Version);
+                WriteTag(ref bytes, ref offset, _bytesVersion, Version);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset);
@@ -67,7 +73,6 @@ namespace Datadog.Trace.Tagging
 
             base.WriteAdditionalTags(sb);
         }
-
         public override double? GetMetric(string key)
         {
             return key switch
@@ -104,19 +109,19 @@ namespace Datadog.Trace.Tagging
             if (SamplingPriority != null)
             {
                 count++;
-                WriteMetric(ref bytes, ref offset, "_sampling_priority_v1", SamplingPriority.Value);
+                WriteMetric(ref bytes, ref offset, _bytesSamplingPriority, SamplingPriority.Value);
             }
 
             if (SamplingLimitDecision != null)
             {
                 count++;
-                WriteMetric(ref bytes, ref offset, "_dd.limit_psr", SamplingLimitDecision.Value);
+                WriteMetric(ref bytes, ref offset, _bytesSamplingLimitDecision, SamplingLimitDecision.Value);
             }
 
             if (TracesKeepRate != null)
             {
                 count++;
-                WriteMetric(ref bytes, ref offset, "_dd.tracer_kr", TracesKeepRate.Value);
+                WriteMetric(ref bytes, ref offset, _bytesTracesKeepRate, TracesKeepRate.Value);
             }
 
             return count + base.WriteAdditionalMetrics(ref bytes, ref offset);

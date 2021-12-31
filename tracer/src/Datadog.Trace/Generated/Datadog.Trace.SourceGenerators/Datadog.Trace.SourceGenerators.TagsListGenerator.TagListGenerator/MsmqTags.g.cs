@@ -5,6 +5,13 @@ namespace Datadog.Trace.Tagging
 {
     partial class MsmqTags
     {
+        private static readonly byte[] _bytesCommand = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("msmq.command");
+        private static readonly byte[] _bytesSpanKind = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
+        private static readonly byte[] _bytesInstrumentationName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
+        private static readonly byte[] _bytesPath = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("msmq.queue.path");
+        private static readonly byte[] _bytesMessageWithTransaction = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("msmq.message.transactional");
+        private static readonly byte[] _bytesIsTransactionalQueue = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("msmq.queue.transactional");
+
         public override string? GetTag(string key)
         {
             return key switch
@@ -47,37 +54,37 @@ namespace Datadog.Trace.Tagging
             if (Command != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "msmq.command", Command);
+                WriteTag(ref bytes, ref offset, _bytesCommand, Command);
             }
 
             if (SpanKind != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "span.kind", SpanKind);
+                WriteTag(ref bytes, ref offset, _bytesSpanKind, SpanKind);
             }
 
             if (InstrumentationName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "component", InstrumentationName);
+                WriteTag(ref bytes, ref offset, _bytesInstrumentationName, InstrumentationName);
             }
 
             if (Path != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "msmq.queue.path", Path);
+                WriteTag(ref bytes, ref offset, _bytesPath, Path);
             }
 
             if (MessageWithTransaction != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "msmq.message.transactional", MessageWithTransaction);
+                WriteTag(ref bytes, ref offset, _bytesMessageWithTransaction, MessageWithTransaction);
             }
 
             if (IsTransactionalQueue != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "msmq.queue.transactional", IsTransactionalQueue);
+                WriteTag(ref bytes, ref offset, _bytesIsTransactionalQueue, IsTransactionalQueue);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset);

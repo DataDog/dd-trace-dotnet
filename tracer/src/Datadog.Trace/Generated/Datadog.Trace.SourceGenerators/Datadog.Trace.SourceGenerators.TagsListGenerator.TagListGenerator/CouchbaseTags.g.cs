@@ -5,6 +5,14 @@ namespace Datadog.Trace.Tagging
 {
     partial class CouchbaseTags
     {
+        private static readonly byte[] _bytesSpanKind = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
+        private static readonly byte[] _bytesInstrumentationName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
+        private static readonly byte[] _bytesOperationCode = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("couchbase.operation.code");
+        private static readonly byte[] _bytesBucket = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("couchbase.operation.bucket");
+        private static readonly byte[] _bytesKey = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("couchbase.operation.key");
+        private static readonly byte[] _bytesHost = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("out.host");
+        private static readonly byte[] _bytesPort = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("out.port");
+
         public override string? GetTag(string key)
         {
             return key switch
@@ -51,43 +59,43 @@ namespace Datadog.Trace.Tagging
             if (SpanKind != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "span.kind", SpanKind);
+                WriteTag(ref bytes, ref offset, _bytesSpanKind, SpanKind);
             }
 
             if (InstrumentationName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "component", InstrumentationName);
+                WriteTag(ref bytes, ref offset, _bytesInstrumentationName, InstrumentationName);
             }
 
             if (OperationCode != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "couchbase.operation.code", OperationCode);
+                WriteTag(ref bytes, ref offset, _bytesOperationCode, OperationCode);
             }
 
             if (Bucket != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "couchbase.operation.bucket", Bucket);
+                WriteTag(ref bytes, ref offset, _bytesBucket, Bucket);
             }
 
             if (Key != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "couchbase.operation.key", Key);
+                WriteTag(ref bytes, ref offset, _bytesKey, Key);
             }
 
             if (Host != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "out.host", Host);
+                WriteTag(ref bytes, ref offset, _bytesHost, Host);
             }
 
             if (Port != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "out.port", Port);
+                WriteTag(ref bytes, ref offset, _bytesPort, Port);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset);

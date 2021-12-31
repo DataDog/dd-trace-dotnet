@@ -95,6 +95,20 @@ namespace Datadog.Trace.Tagging
             offset += MessagePackBinary.WriteDouble(ref bytes, offset, value);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected static void WriteTag(ref byte[] bytes, ref int offset, byte[] keyBytes, string value)
+        {
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, keyBytes);
+            offset += MessagePackBinary.WriteString(ref bytes, offset, value);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected static void WriteMetric(ref byte[] bytes, ref int offset, byte[] keyBytes, double value)
+        {
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, keyBytes);
+            offset += MessagePackBinary.WriteDouble(ref bytes, offset, value);
+        }
+
         private int WriteTags(ref byte[] bytes, int offset, Span span)
         {
             int originalOffset = offset;

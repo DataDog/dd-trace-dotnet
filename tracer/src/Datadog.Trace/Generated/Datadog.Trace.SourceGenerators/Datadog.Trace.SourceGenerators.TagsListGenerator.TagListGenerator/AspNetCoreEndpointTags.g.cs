@@ -5,6 +5,8 @@ namespace Datadog.Trace.Tagging
 {
     partial class AspNetCoreEndpointTags
     {
+        private static readonly byte[] _bytesAspNetCoreEndpoint = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aspnet_core.endpoint");
+
         public override string? GetTag(string key)
         {
             return key switch
@@ -33,7 +35,7 @@ namespace Datadog.Trace.Tagging
             if (AspNetCoreEndpoint != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "aspnet_core.endpoint", AspNetCoreEndpoint);
+                WriteTag(ref bytes, ref offset, _bytesAspNetCoreEndpoint, AspNetCoreEndpoint);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset);

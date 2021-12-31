@@ -5,6 +5,15 @@ namespace Datadog.Trace.Tagging
 {
     partial class RabbitMQTags
     {
+        private static readonly byte[] _bytesSpanKind = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
+        private static readonly byte[] _bytesInstrumentationName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
+        private static readonly byte[] _bytesCommand = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("amqp.command");
+        private static readonly byte[] _bytesDeliveryMode = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("amqp.delivery_mode");
+        private static readonly byte[] _bytesExchange = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("amqp.exchange");
+        private static readonly byte[] _bytesRoutingKey = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("amqp.routing_key");
+        private static readonly byte[] _bytesMessageSize = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("message.size");
+        private static readonly byte[] _bytesQueue = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("amqp.queue");
+
         public override string? GetTag(string key)
         {
             return key switch
@@ -58,49 +67,49 @@ namespace Datadog.Trace.Tagging
             if (SpanKind != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "span.kind", SpanKind);
+                WriteTag(ref bytes, ref offset, _bytesSpanKind, SpanKind);
             }
 
             if (InstrumentationName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "component", InstrumentationName);
+                WriteTag(ref bytes, ref offset, _bytesInstrumentationName, InstrumentationName);
             }
 
             if (Command != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "amqp.command", Command);
+                WriteTag(ref bytes, ref offset, _bytesCommand, Command);
             }
 
             if (DeliveryMode != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "amqp.delivery_mode", DeliveryMode);
+                WriteTag(ref bytes, ref offset, _bytesDeliveryMode, DeliveryMode);
             }
 
             if (Exchange != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "amqp.exchange", Exchange);
+                WriteTag(ref bytes, ref offset, _bytesExchange, Exchange);
             }
 
             if (RoutingKey != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "amqp.routing_key", RoutingKey);
+                WriteTag(ref bytes, ref offset, _bytesRoutingKey, RoutingKey);
             }
 
             if (MessageSize != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "message.size", MessageSize);
+                WriteTag(ref bytes, ref offset, _bytesMessageSize, MessageSize);
             }
 
             if (Queue != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "amqp.queue", Queue);
+                WriteTag(ref bytes, ref offset, _bytesQueue, Queue);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset);

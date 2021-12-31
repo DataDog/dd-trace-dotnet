@@ -5,6 +5,13 @@ namespace Datadog.Trace.Tagging
 {
     partial class AerospikeTags
     {
+        private static readonly byte[] _bytesSpanKind = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
+        private static readonly byte[] _bytesInstrumentationName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
+        private static readonly byte[] _bytesKey = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aerospike.key");
+        private static readonly byte[] _bytesNamespace = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aerospike.namespace");
+        private static readonly byte[] _bytesSetName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aerospike.setname");
+        private static readonly byte[] _bytesUserKey = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aerospike.userkey");
+
         public override string? GetTag(string key)
         {
             return key switch
@@ -47,37 +54,37 @@ namespace Datadog.Trace.Tagging
             if (SpanKind != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "span.kind", SpanKind);
+                WriteTag(ref bytes, ref offset, _bytesSpanKind, SpanKind);
             }
 
             if (InstrumentationName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "component", InstrumentationName);
+                WriteTag(ref bytes, ref offset, _bytesInstrumentationName, InstrumentationName);
             }
 
             if (Key != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "aerospike.key", Key);
+                WriteTag(ref bytes, ref offset, _bytesKey, Key);
             }
 
             if (Namespace != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "aerospike.namespace", Namespace);
+                WriteTag(ref bytes, ref offset, _bytesNamespace, Namespace);
             }
 
             if (SetName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "aerospike.setname", SetName);
+                WriteTag(ref bytes, ref offset, _bytesSetName, SetName);
             }
 
             if (UserKey != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "aerospike.userkey", UserKey);
+                WriteTag(ref bytes, ref offset, _bytesUserKey, UserKey);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset);

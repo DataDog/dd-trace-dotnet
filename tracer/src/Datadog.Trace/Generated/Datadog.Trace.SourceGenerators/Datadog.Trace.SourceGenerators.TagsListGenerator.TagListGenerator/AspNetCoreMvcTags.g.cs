@@ -5,6 +5,11 @@ namespace Datadog.Trace.Tagging
 {
     partial class AspNetCoreMvcTags
     {
+        private static readonly byte[] _bytesAspNetCoreController = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aspnet_core.controller");
+        private static readonly byte[] _bytesAspNetCoreAction = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aspnet_core.action");
+        private static readonly byte[] _bytesAspNetCoreArea = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aspnet_core.area");
+        private static readonly byte[] _bytesAspNetCorePage = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aspnet_core.page");
+
         public override string? GetTag(string key)
         {
             return key switch
@@ -45,25 +50,25 @@ namespace Datadog.Trace.Tagging
             if (AspNetCoreController != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "aspnet_core.controller", AspNetCoreController);
+                WriteTag(ref bytes, ref offset, _bytesAspNetCoreController, AspNetCoreController);
             }
 
             if (AspNetCoreAction != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "aspnet_core.action", AspNetCoreAction);
+                WriteTag(ref bytes, ref offset, _bytesAspNetCoreAction, AspNetCoreAction);
             }
 
             if (AspNetCoreArea != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "aspnet_core.area", AspNetCoreArea);
+                WriteTag(ref bytes, ref offset, _bytesAspNetCoreArea, AspNetCoreArea);
             }
 
             if (AspNetCorePage != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "aspnet_core.page", AspNetCorePage);
+                WriteTag(ref bytes, ref offset, _bytesAspNetCorePage, AspNetCorePage);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset);

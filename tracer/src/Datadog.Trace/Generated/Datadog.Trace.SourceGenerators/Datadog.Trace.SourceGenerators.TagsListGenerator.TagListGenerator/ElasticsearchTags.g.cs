@@ -5,6 +5,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
 {
     partial class ElasticsearchTags
     {
+        private static readonly byte[] _bytesSpanKind = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
+        private static readonly byte[] _bytesInstrumentationName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
+        private static readonly byte[] _bytesAction = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("elasticsearch.action");
+        private static readonly byte[] _bytesMethod = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("elasticsearch.method");
+        private static readonly byte[] _bytesUrl = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("elasticsearch.url");
+
         public override string? GetTag(string key)
         {
             return key switch
@@ -43,31 +49,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
             if (SpanKind != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "span.kind", SpanKind);
+                WriteTag(ref bytes, ref offset, _bytesSpanKind, SpanKind);
             }
 
             if (InstrumentationName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "component", InstrumentationName);
+                WriteTag(ref bytes, ref offset, _bytesInstrumentationName, InstrumentationName);
             }
 
             if (Action != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "elasticsearch.action", Action);
+                WriteTag(ref bytes, ref offset, _bytesAction, Action);
             }
 
             if (Method != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "elasticsearch.method", Method);
+                WriteTag(ref bytes, ref offset, _bytesMethod, Method);
             }
 
             if (Url != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "elasticsearch.url", Url);
+                WriteTag(ref bytes, ref offset, _bytesUrl, Url);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset);

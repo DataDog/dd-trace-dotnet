@@ -5,6 +5,14 @@ namespace Datadog.Trace.Tagging
 {
     partial class AzureFunctionsTags
     {
+        private static readonly byte[] _bytesSpanKind = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
+        private static readonly byte[] _bytesInstrumentationName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
+        private static readonly byte[] _bytesLanguage = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("language");
+        private static readonly byte[] _bytesShortName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aas.function.name");
+        private static readonly byte[] _bytesFullName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aas.function.method");
+        private static readonly byte[] _bytesBindingSource = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aas.function.binding");
+        private static readonly byte[] _bytesTriggerType = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aas.function.trigger");
+
         public override string? GetTag(string key)
         {
             return key switch
@@ -48,43 +56,43 @@ namespace Datadog.Trace.Tagging
             if (SpanKind != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "span.kind", SpanKind);
+                WriteTag(ref bytes, ref offset, _bytesSpanKind, SpanKind);
             }
 
             if (InstrumentationName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "component", InstrumentationName);
+                WriteTag(ref bytes, ref offset, _bytesInstrumentationName, InstrumentationName);
             }
 
             if (Language != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "language", Language);
+                WriteTag(ref bytes, ref offset, _bytesLanguage, Language);
             }
 
             if (ShortName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "aas.function.name", ShortName);
+                WriteTag(ref bytes, ref offset, _bytesShortName, ShortName);
             }
 
             if (FullName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "aas.function.method", FullName);
+                WriteTag(ref bytes, ref offset, _bytesFullName, FullName);
             }
 
             if (BindingSource != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "aas.function.binding", BindingSource);
+                WriteTag(ref bytes, ref offset, _bytesBindingSource, BindingSource);
             }
 
             if (TriggerType != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "aas.function.trigger", TriggerType);
+                WriteTag(ref bytes, ref offset, _bytesTriggerType, TriggerType);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset);

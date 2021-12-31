@@ -5,6 +5,13 @@ namespace Datadog.Trace.Tagging
 {
     partial class HttpTags
     {
+        private static readonly byte[] _bytesSpanKind = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
+        private static readonly byte[] _bytesInstrumentationName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
+        private static readonly byte[] _bytesHttpMethod = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("http.method");
+        private static readonly byte[] _bytesHttpUrl = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("http.url");
+        private static readonly byte[] _bytesHttpClientHandlerType = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("http-client-handler-type");
+        private static readonly byte[] _bytesHttpStatusCode = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("http.status_code");
+
         public override string? GetTag(string key)
         {
             return key switch
@@ -50,37 +57,37 @@ namespace Datadog.Trace.Tagging
             if (SpanKind != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "span.kind", SpanKind);
+                WriteTag(ref bytes, ref offset, _bytesSpanKind, SpanKind);
             }
 
             if (InstrumentationName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "component", InstrumentationName);
+                WriteTag(ref bytes, ref offset, _bytesInstrumentationName, InstrumentationName);
             }
 
             if (HttpMethod != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "http.method", HttpMethod);
+                WriteTag(ref bytes, ref offset, _bytesHttpMethod, HttpMethod);
             }
 
             if (HttpUrl != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "http.url", HttpUrl);
+                WriteTag(ref bytes, ref offset, _bytesHttpUrl, HttpUrl);
             }
 
             if (HttpClientHandlerType != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "http-client-handler-type", HttpClientHandlerType);
+                WriteTag(ref bytes, ref offset, _bytesHttpClientHandlerType, HttpClientHandlerType);
             }
 
             if (HttpStatusCode != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "http.status_code", HttpStatusCode);
+                WriteTag(ref bytes, ref offset, _bytesHttpStatusCode, HttpStatusCode);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset);

@@ -5,6 +5,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 {
     partial class MongoDbTags
     {
+        private static readonly byte[] _bytesSpanKind = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
+        private static readonly byte[] _bytesInstrumentationName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
+        private static readonly byte[] _bytesDbName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("db.name");
+        private static readonly byte[] _bytesQuery = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("mongodb.query");
+        private static readonly byte[] _bytesCollection = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("mongodb.collection");
+        private static readonly byte[] _bytesHost = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("out.host");
+        private static readonly byte[] _bytesPort = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("out.port");
+
         public override string? GetTag(string key)
         {
             return key switch
@@ -51,43 +59,43 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
             if (SpanKind != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "span.kind", SpanKind);
+                WriteTag(ref bytes, ref offset, _bytesSpanKind, SpanKind);
             }
 
             if (InstrumentationName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "component", InstrumentationName);
+                WriteTag(ref bytes, ref offset, _bytesInstrumentationName, InstrumentationName);
             }
 
             if (DbName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "db.name", DbName);
+                WriteTag(ref bytes, ref offset, _bytesDbName, DbName);
             }
 
             if (Query != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "mongodb.query", Query);
+                WriteTag(ref bytes, ref offset, _bytesQuery, Query);
             }
 
             if (Collection != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "mongodb.collection", Collection);
+                WriteTag(ref bytes, ref offset, _bytesCollection, Collection);
             }
 
             if (Host != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "out.host", Host);
+                WriteTag(ref bytes, ref offset, _bytesHost, Host);
             }
 
             if (Port != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "out.port", Port);
+                WriteTag(ref bytes, ref offset, _bytesPort, Port);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset);

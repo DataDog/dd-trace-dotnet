@@ -5,6 +5,13 @@ namespace Datadog.Trace.Tagging
 {
     partial class SqlTags
     {
+        private static readonly byte[] _bytesSpanKind = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
+        private static readonly byte[] _bytesDbType = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("db.type");
+        private static readonly byte[] _bytesInstrumentationName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
+        private static readonly byte[] _bytesDbName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("db.name");
+        private static readonly byte[] _bytesDbUser = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("db.user");
+        private static readonly byte[] _bytesOutHost = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("out.host");
+
         public override string? GetTag(string key)
         {
             return key switch
@@ -50,37 +57,37 @@ namespace Datadog.Trace.Tagging
             if (SpanKind != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "span.kind", SpanKind);
+                WriteTag(ref bytes, ref offset, _bytesSpanKind, SpanKind);
             }
 
             if (DbType != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "db.type", DbType);
+                WriteTag(ref bytes, ref offset, _bytesDbType, DbType);
             }
 
             if (InstrumentationName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "component", InstrumentationName);
+                WriteTag(ref bytes, ref offset, _bytesInstrumentationName, InstrumentationName);
             }
 
             if (DbName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "db.name", DbName);
+                WriteTag(ref bytes, ref offset, _bytesDbName, DbName);
             }
 
             if (DbUser != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "db.user", DbUser);
+                WriteTag(ref bytes, ref offset, _bytesDbUser, DbUser);
             }
 
             if (OutHost != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "out.host", OutHost);
+                WriteTag(ref bytes, ref offset, _bytesOutHost, OutHost);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset);

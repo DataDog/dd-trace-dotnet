@@ -5,6 +5,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
 {
     partial class GraphQLTags
     {
+        private static readonly byte[] _bytesSpanKind = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
+        private static readonly byte[] _bytesInstrumentationName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
+        private static readonly byte[] _bytesLanguage = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("language");
+        private static readonly byte[] _bytesSource = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("graphql.source");
+        private static readonly byte[] _bytesOperationName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("graphql.operation.name");
+        private static readonly byte[] _bytesOperationType = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("graphql.operation.type");
+
         public override string? GetTag(string key)
         {
             return key switch
@@ -44,37 +51,37 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
             if (SpanKind != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "span.kind", SpanKind);
+                WriteTag(ref bytes, ref offset, _bytesSpanKind, SpanKind);
             }
 
             if (InstrumentationName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "component", InstrumentationName);
+                WriteTag(ref bytes, ref offset, _bytesInstrumentationName, InstrumentationName);
             }
 
             if (Language != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "language", Language);
+                WriteTag(ref bytes, ref offset, _bytesLanguage, Language);
             }
 
             if (Source != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "graphql.source", Source);
+                WriteTag(ref bytes, ref offset, _bytesSource, Source);
             }
 
             if (OperationName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "graphql.operation.name", OperationName);
+                WriteTag(ref bytes, ref offset, _bytesOperationName, OperationName);
             }
 
             if (OperationType != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, "graphql.operation.type", OperationType);
+                WriteTag(ref bytes, ref offset, _bytesOperationType, OperationType);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset);
