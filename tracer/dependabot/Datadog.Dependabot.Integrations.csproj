@@ -89,7 +89,7 @@
     <!-- Integration: log4net -->
     <!-- Assembly: log4net -->
     <!-- Latest package https://www.nuget.org/packages/log4net/2.0.13 -->
-    <PackageReference Include="log4net" Version="2.0.13" />
+    <PackageReference Include="log4net" Version="2.0.14" />
 
     <!-- Integration: MongoDB.Driver.Core -->
     <!-- Assembly: MongoDB.Driver.Core -->
