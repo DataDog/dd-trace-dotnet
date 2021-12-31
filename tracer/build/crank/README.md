@@ -28,7 +28,7 @@ Once the source is built the script can used with the following command line:
 or
 
 ```
-./run-adhoc.sh appsec_baseline linux_profiler_adhoc true
+./tracer/build/crank/run-adhoc.sh appsec_baseline linux_profiler_adhoc true
 ```
 
 1st parameter - name of the test to run
