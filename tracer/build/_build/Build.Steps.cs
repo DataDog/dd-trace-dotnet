@@ -97,6 +97,7 @@ partial class Build
     {
         Solution.GetProject(Projects.TraceIntegrationTests),
         Solution.GetProject(Projects.OpenTracingIntegrationTests),
+        Solution.GetProject(Projects.ToolIntegrationTests)
     };
 
     Project[] ClrProfilerIntegrationTests => new[]
