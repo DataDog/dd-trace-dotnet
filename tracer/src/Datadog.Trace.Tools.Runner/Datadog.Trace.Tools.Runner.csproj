@@ -11,6 +11,7 @@
     <NoWarn>NU5100</NoWarn>
     <RootNamespace>Datadog.Trace.Tools.Runner</RootNamespace>
 
+    <!-- Required for StrongNamer: https://github.com/dsplaisted/strongnamer/issues/61 -->
     <ErrorOnDuplicatePublishOutputFiles>False</ErrorOnDuplicatePublishOutputFiles>
 
     <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp3.0) -->
