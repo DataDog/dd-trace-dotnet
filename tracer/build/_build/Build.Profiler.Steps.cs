@@ -81,7 +81,7 @@ partial class Build
 
             CMake.Value(
                 environmentVariables: envVar,
-                arguments: "-S ../../dd-continuous-profiler-dotnet",
+                arguments: $"-S '{ProfilerDirectory}'",
                 workingDirectory: buildDirectory);
             Make.Value(workingDirectory: buildDirectory);
         });
