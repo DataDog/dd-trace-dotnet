@@ -148,10 +148,7 @@ namespace Datadog.Trace.Tagging
             return offset - originalOffset;
         }
 
-        protected virtual int WriteAdditionalTags(ref byte[] bytes, ref int offset)
-        {
-            return 0;
-        }
+        protected virtual int WriteAdditionalTags(ref byte[] bytes, ref int offset) => 0;
 
         protected virtual int WriteAdditionalMetrics(ref byte[] bytes, ref int offset) => 0;
 
