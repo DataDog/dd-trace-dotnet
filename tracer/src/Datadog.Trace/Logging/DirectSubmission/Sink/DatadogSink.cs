@@ -112,25 +112,31 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
                     }
 
                     var requiredTotalSize = _byteCount + logSize + 1; // + 1 for the separate/suffix
-                    if (requiredTotalSize > _serializedLogs.Length && requiredTotalSize <= MaxTotalSizeBytes)
-                    {
-                        // grow the array
-                        var newSize = _serializedLogs.Length;
-                        while (newSize < requiredTotalSize)
-                        {
-                            newSize = Math.Min(newSize * 2, MaxTotalSizeBytes);
-                        }
-
-                        var newArray = new byte[newSize];
-                        Array.Copy(_serializedLogs, 0, newArray, 0, _serializedLogs.Length);
-                        _serializedLogs = newArray;
-                    }
 
                     if (requiredTotalSize > MaxTotalSizeBytes)
                     {
                         // send what we have, add the log to the subsequent chunk
                         var result = await ReplaceFinalSeparatorAndSendChunk().ConfigureAwait(false);
                         allSucceeded &= result;
+                    }
+                    else if (requiredTotalSize > _serializedLogs.Length)
+                    {
+                        var newSize = _serializedLogs.Length;
+
+                        // Double the size of the array until it's big enough
+                        while (newSize < requiredTotalSize)
+                        {
+                            newSize *= 2;
+                        }
+
+                        if (newSize > MaxTotalSizeBytes)
+                        {
+                            newSize = MaxTotalSizeBytes;
+                        }
+
+                        var newArray = new byte[newSize];
+                        Array.Copy(_serializedLogs, 0, newArray, 0, _serializedLogs.Length);
+                        _serializedLogs = newArray;
                     }
 
                     // add the log to the batch
