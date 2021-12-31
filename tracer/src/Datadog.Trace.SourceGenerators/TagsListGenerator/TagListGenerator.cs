@@ -81,8 +81,13 @@ namespace Datadog.Trace.SourceGenerators.TagsListGenerator
             var tagLists = GetTagLists(compilation, distinctClasses, context.ReportDiagnostic, context.CancellationToken);
             if (tagLists.Count > 0)
             {
-                    var source = Sources.CreateTagsList(tagLists);
-                    context.AddSource("TagsList.g.cs", SourceText.From(source, Encoding.UTF8));
+                var sb = new StringBuilder();
+                foreach (var tagList in tagLists)
+                {
+                    var source = Sources.CreateTagsList(sb, tagList);
+                    context.AddSource($"{tagList.ClassName}.g.cs", SourceText.From(source, Encoding.UTF8));
+                    sb.Clear();
+                }
             }
         }
 
@@ -138,7 +143,7 @@ namespace Datadog.Trace.SourceGenerators.TagsListGenerator
                         AttributeData? metricAttributeData = null;
 
                         bool hasMisconfiguredInput = false;
-                        ImmutableArray<AttributeData>? boundAttributes = propertySymbol?.GetAttributes();
+                        ImmutableArray<AttributeData>? boundAttributes = propertySymbol.GetAttributes();
 
                         if (boundAttributes == null)
                         {
