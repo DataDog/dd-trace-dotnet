@@ -9,7 +9,7 @@ The scripts `run.sh` and `run-appsec.sh` are design to be used at part of the CI
 The script `./run-adhoc.sh` should be run from a Linux dd-trace-dotnot development environment (WSL will do nicely). It can be used
 to run a throughput test with the tracer and / or profiler attached.
 
-Before running the script is run the tracer and profiler, if desired, source must be built. Use the following commands:
+Before running the script, the tracer and profiler (if desired) source must be built. Use the following commands:
 
 ```
 ./tracer/build.sh BuildTracerHome
