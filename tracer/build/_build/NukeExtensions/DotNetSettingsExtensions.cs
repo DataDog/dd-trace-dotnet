@@ -99,9 +99,26 @@ internal static partial class DotNetSettingsExtensions
     {
         var vsRoot = Environment.GetEnvironmentVariable("VSTUDIO_ROOT");
 
-        return settings
-            .When(!string.IsNullOrEmpty(vsRoot),
-                c => c.SetProcessToolPath(Path.Combine(vsRoot, "MSBuild", "Current", "Bin", "MSBuild.exe")));
+        // Workaround until Nuke supports VS 2022
+        string toolPath;
+        try
+        {
+            toolPath = string.IsNullOrEmpty(vsRoot)
+                           ? MSBuildToolPathResolver.Resolve()
+                           : Path.Combine(vsRoot, "MSBuild", "Current", "Bin", "MSBuild.exe");
+        }
+        catch
+        {
+
+            var editions = new[] { "Enterprise", "Professional", "Community", "BuildTools", "Preview" };
+            toolPath = editions
+                      .Select(edition => Path.Combine(
+                                  EnvironmentInfo.SpecialFolder(SpecialFolders.ProgramFiles)!,
+                                  $@"Microsoft Visual Studio\2022\{edition}\MSBuild\Current\Bin\msbuild.exe"))
+                      .First(File.Exists);
+        }
+
+        return settings.SetProcessToolPath(toolPath);
     }
 
     /// <summary>
