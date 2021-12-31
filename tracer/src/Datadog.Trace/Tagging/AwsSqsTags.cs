@@ -3,23 +3,19 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging
 {
-    internal class AwsSqsTags : AwsSdkTags
+    internal partial class AwsSqsTags : AwsSdkTags
     {
-        protected static readonly IProperty<string>[] AwsSqsTagsProperties =
-            AwsSdkTagsProperties.Concat(
-                new Property<AwsSqsTags, string>(Trace.Tags.AwsQueueName, t => t.QueueName, (t, v) => t.QueueName = v),
-                new Property<AwsSqsTags, string>(Trace.Tags.AwsQueueUrl, t => t.QueueUrl, (t, v) => t.QueueUrl = v));
-
+        [Tag(Trace.Tags.AwsQueueName)]
         public string QueueName { get; set; }
 
+        [Tag(Trace.Tags.AwsQueueUrl)]
         public string QueueUrl { get; set; }
 
+        [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Client;
-
-        protected override IProperty<string>[] GetAdditionalTags() => AwsSqsTagsProperties;
     }
 }

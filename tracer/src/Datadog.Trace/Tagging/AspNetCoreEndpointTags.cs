@@ -3,17 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging
 {
-    internal class AspNetCoreEndpointTags : AspNetCoreTags
+    internal partial class AspNetCoreEndpointTags : AspNetCoreTags
     {
-        private static readonly IProperty<string>[] AspNetCoreEndpointTagsProperties =
-            AspNetCoreTagsProperties.Concat(new Property<AspNetCoreEndpointTags, string>(Trace.Tags.AspNetCoreEndpoint, t => t.AspNetCoreEndpoint, (t, v) => t.AspNetCoreEndpoint = v));
-
+        [Tag(Trace.Tags.AspNetCoreEndpoint)]
         public string AspNetCoreEndpoint { get; set; }
-
-        protected override IProperty<string>[] GetAdditionalTags() => AspNetCoreEndpointTagsProperties;
     }
 }

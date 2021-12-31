@@ -3,36 +3,32 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 {
-    internal class MongoDbTags : InstrumentationTags
+    internal partial class MongoDbTags : InstrumentationTags
     {
-        protected static readonly IProperty<string>[] MongoDbTagsProperties =
-            InstrumentationTagsProperties.Concat(
-                new ReadOnlyProperty<MongoDbTags, string>(Trace.Tags.InstrumentationName, t => t.InstrumentationName),
-                new Property<MongoDbTags, string>(Trace.Tags.DbName, t => t.DbName, (t, v) => t.DbName = v),
-                new Property<MongoDbTags, string>(Trace.Tags.MongoDbQuery, t => t.Query, (t, v) => t.Query = v),
-                new Property<MongoDbTags, string>(Trace.Tags.MongoDbCollection, t => t.Collection, (t, v) => t.Collection = v),
-                new Property<MongoDbTags, string>(Trace.Tags.OutHost, t => t.Host, (t, v) => t.Host = v),
-                new Property<MongoDbTags, string>(Trace.Tags.OutPort, t => t.Port, (t, v) => t.Port = v));
-
+        [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Client;
 
+        [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName => MongoDbIntegration.IntegrationName;
 
+        [Tag(Trace.Tags.DbName)]
         public string DbName { get; set; }
 
+        [Tag(Trace.Tags.MongoDbQuery)]
         public string Query { get; set; }
 
+        [Tag(Trace.Tags.MongoDbCollection)]
         public string Collection { get; set; }
 
+        [Tag(Trace.Tags.OutHost)]
         public string Host { get; set; }
 
+        [Tag(Trace.Tags.OutPort)]
         public string Port { get; set; }
-
-        protected override IProperty<string>[] GetAdditionalTags() => MongoDbTagsProperties;
     }
 }

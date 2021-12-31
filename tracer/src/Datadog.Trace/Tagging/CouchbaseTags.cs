@@ -5,35 +5,31 @@
 
 using System.Linq;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging
 {
-    internal class CouchbaseTags : InstrumentationTags
+    internal partial class CouchbaseTags : InstrumentationTags
     {
-        protected static readonly IProperty<string>[] CouchbaseTagsProperties =
-            InstrumentationTagsProperties.Concat(
-                new ReadOnlyProperty<CouchbaseTags, string>(Trace.Tags.InstrumentationName, t => t.InstrumentationName),
-                new Property<CouchbaseTags, string>(Trace.Tags.CouchbaseOperationCode, t => t.OperationCode, (t, v) => t.OperationCode = v),
-                new Property<CouchbaseTags, string>(Trace.Tags.CouchbaseOperationBucket, t => t.Bucket, (t, v) => t.Bucket = v),
-                new Property<CouchbaseTags, string>(Trace.Tags.CouchbaseOperationKey, t => t.Key, (t, v) => t.Key = v),
-                new Property<CouchbaseTags, string>(Trace.Tags.OutHost, t => t.Host, (t, v) => t.Host = v),
-                new Property<CouchbaseTags, string>(Trace.Tags.OutPort, t => t.Port, (t, v) => t.Port = v));
-
+        [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Client;
 
+        [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName => nameof(IntegrationId.Couchbase);
 
+        [Tag(Trace.Tags.CouchbaseOperationCode)]
         public string OperationCode { get; set; }
 
+        [Tag(Trace.Tags.CouchbaseOperationBucket)]
         public string Bucket { get; set; }
 
+        [Tag(Trace.Tags.CouchbaseOperationKey)]
         public string Key { get; set; }
 
+        [Tag(Trace.Tags.OutHost)]
         public string Host { get; set; }
 
+        [Tag(Trace.Tags.OutPort)]
         public string Port { get; set; }
-
-        protected override IProperty<string>[] GetAdditionalTags() => CouchbaseTagsProperties;
     }
 }
