@@ -96,7 +96,7 @@ partial class Build : NukeBuild
 
             void GenerateIntegrationTestsWindowsMatrices(GenerateMatricesTarget target)
             {
-                var targetFrameworks = TargetFramework.GetFrameworks(new[] { TargetFramework.NETSTANDARD2_0 });
+                var targetFrameworks = TargetFramework.GetFrameworks(except: new[] { TargetFramework.NETSTANDARD2_0 });
 
                 if (target.HasFlag(global::GenerateMatricesTarget.integration_tests_windows_matrix))
                 {
@@ -148,7 +148,7 @@ partial class Build : NukeBuild
 
             void GenerateIntegrationTestsLinuxMatrix()
             {
-                var targetFrameworks = TargetFramework.GetFrameworks(new[] { TargetFramework.NET461, TargetFramework.NETSTANDARD2_0, });
+                var targetFrameworks = TargetFramework.GetFrameworks(except: new[] { TargetFramework.NET461, TargetFramework.NETSTANDARD2_0, });
 
                 var baseImages = new[] { "debian", "alpine" };
 
@@ -215,7 +215,7 @@ partial class Build : NukeBuild
             void GenerateExplorationTestsLinuxMatrix(IEnumerable<string> useCases)
             {
                 var testDescriptions = ExplorationTestDescription.GetAllExplorationTestDescriptions();
-                var targetFrameworks = TargetFramework.GetFrameworks(new[] { TargetFramework.NET461, TargetFramework.NETSTANDARD2_0, });
+                var targetFrameworks = TargetFramework.GetFrameworks(except: new[] { TargetFramework.NET461, TargetFramework.NETSTANDARD2_0, });
 
                 var baseImages = new[] { "debian", "alpine" };
 
