@@ -18,7 +18,7 @@ jobs:
       pull-requests: write
 
     steps:
-    - uses: actions/stale@v3
+    - uses: actions/stale@v4.1.0
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         stale-issue-message: 'There has not been activity on this issue for 60 days. It will be closed automatically in 7 days.'
