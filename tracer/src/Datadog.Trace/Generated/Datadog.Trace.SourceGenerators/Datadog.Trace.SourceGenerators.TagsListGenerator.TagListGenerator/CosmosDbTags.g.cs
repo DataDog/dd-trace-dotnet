@@ -5,12 +5,12 @@ namespace Datadog.Trace.Tagging
 {
     partial class CosmosDbTags
     {
-        private static readonly byte[] _bytesSpanKind = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
-        private static readonly byte[] _bytesInstrumentationName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
-        private static readonly byte[] _bytesDbType = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("db.type");
-        private static readonly byte[] _bytesContainerId = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("cosmosdb.container");
-        private static readonly byte[] _bytesDatabaseId = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("db.name");
-        private static readonly byte[] _bytesHost = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("out.host");
+        private static readonly byte[] SpanKindBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
+        private static readonly byte[] InstrumentationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
+        private static readonly byte[] DbTypeBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("db.type");
+        private static readonly byte[] ContainerIdBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("cosmosdb.container");
+        private static readonly byte[] DatabaseIdBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("db.name");
+        private static readonly byte[] HostBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("out.host");
 
         public override string? GetTag(string key)
         {
@@ -54,37 +54,37 @@ namespace Datadog.Trace.Tagging
             if (SpanKind != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesSpanKind, SpanKind);
+                WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind);
             }
 
             if (InstrumentationName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesInstrumentationName, InstrumentationName);
+                WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName);
             }
 
             if (DbType != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesDbType, DbType);
+                WriteTag(ref bytes, ref offset, DbTypeBytes, DbType);
             }
 
             if (ContainerId != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesContainerId, ContainerId);
+                WriteTag(ref bytes, ref offset, ContainerIdBytes, ContainerId);
             }
 
             if (DatabaseId != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesDatabaseId, DatabaseId);
+                WriteTag(ref bytes, ref offset, DatabaseIdBytes, DatabaseId);
             }
 
             if (Host != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesHost, Host);
+                WriteTag(ref bytes, ref offset, HostBytes, Host);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset);

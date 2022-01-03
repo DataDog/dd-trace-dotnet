@@ -5,12 +5,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
 {
     partial class GraphQLTags
     {
-        private static readonly byte[] _bytesSpanKind = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
-        private static readonly byte[] _bytesInstrumentationName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
-        private static readonly byte[] _bytesLanguage = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("language");
-        private static readonly byte[] _bytesSource = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("graphql.source");
-        private static readonly byte[] _bytesOperationName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("graphql.operation.name");
-        private static readonly byte[] _bytesOperationType = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("graphql.operation.type");
+        private static readonly byte[] SpanKindBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
+        private static readonly byte[] InstrumentationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
+        private static readonly byte[] LanguageBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("language");
+        private static readonly byte[] SourceBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("graphql.source");
+        private static readonly byte[] OperationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("graphql.operation.name");
+        private static readonly byte[] OperationTypeBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("graphql.operation.type");
 
         public override string? GetTag(string key)
         {
@@ -51,37 +51,37 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
             if (SpanKind != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesSpanKind, SpanKind);
+                WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind);
             }
 
             if (InstrumentationName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesInstrumentationName, InstrumentationName);
+                WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName);
             }
 
             if (Language != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesLanguage, Language);
+                WriteTag(ref bytes, ref offset, LanguageBytes, Language);
             }
 
             if (Source != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesSource, Source);
+                WriteTag(ref bytes, ref offset, SourceBytes, Source);
             }
 
             if (OperationName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesOperationName, OperationName);
+                WriteTag(ref bytes, ref offset, OperationNameBytes, OperationName);
             }
 
             if (OperationType != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesOperationType, OperationType);
+                WriteTag(ref bytes, ref offset, OperationTypeBytes, OperationType);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset);

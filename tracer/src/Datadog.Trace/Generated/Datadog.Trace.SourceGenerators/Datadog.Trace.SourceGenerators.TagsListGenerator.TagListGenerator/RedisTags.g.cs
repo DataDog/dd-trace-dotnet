@@ -5,11 +5,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
 {
     partial class RedisTags
     {
-        private static readonly byte[] _bytesSpanKind = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
-        private static readonly byte[] _bytesInstrumentationName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
-        private static readonly byte[] _bytesRawCommand = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("redis.raw_command");
-        private static readonly byte[] _bytesHost = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("out.host");
-        private static readonly byte[] _bytesPort = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("out.port");
+        private static readonly byte[] SpanKindBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
+        private static readonly byte[] InstrumentationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
+        private static readonly byte[] RawCommandBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("redis.raw_command");
+        private static readonly byte[] HostBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("out.host");
+        private static readonly byte[] PortBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("out.port");
 
         public override string? GetTag(string key)
         {
@@ -49,31 +49,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
             if (SpanKind != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesSpanKind, SpanKind);
+                WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind);
             }
 
             if (InstrumentationName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesInstrumentationName, InstrumentationName);
+                WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName);
             }
 
             if (RawCommand != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesRawCommand, RawCommand);
+                WriteTag(ref bytes, ref offset, RawCommandBytes, RawCommand);
             }
 
             if (Host != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesHost, Host);
+                WriteTag(ref bytes, ref offset, HostBytes, Host);
             }
 
             if (Port != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesPort, Port);
+                WriteTag(ref bytes, ref offset, PortBytes, Port);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset);

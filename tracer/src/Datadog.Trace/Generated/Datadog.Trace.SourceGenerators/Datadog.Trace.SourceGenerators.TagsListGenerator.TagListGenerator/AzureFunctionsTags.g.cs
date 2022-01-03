@@ -5,13 +5,13 @@ namespace Datadog.Trace.Tagging
 {
     partial class AzureFunctionsTags
     {
-        private static readonly byte[] _bytesSpanKind = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
-        private static readonly byte[] _bytesInstrumentationName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
-        private static readonly byte[] _bytesLanguage = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("language");
-        private static readonly byte[] _bytesShortName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aas.function.name");
-        private static readonly byte[] _bytesFullName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aas.function.method");
-        private static readonly byte[] _bytesBindingSource = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aas.function.binding");
-        private static readonly byte[] _bytesTriggerType = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aas.function.trigger");
+        private static readonly byte[] SpanKindBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
+        private static readonly byte[] InstrumentationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
+        private static readonly byte[] LanguageBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("language");
+        private static readonly byte[] ShortNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aas.function.name");
+        private static readonly byte[] FullNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aas.function.method");
+        private static readonly byte[] BindingSourceBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aas.function.binding");
+        private static readonly byte[] TriggerTypeBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aas.function.trigger");
 
         public override string? GetTag(string key)
         {
@@ -56,43 +56,43 @@ namespace Datadog.Trace.Tagging
             if (SpanKind != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesSpanKind, SpanKind);
+                WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind);
             }
 
             if (InstrumentationName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesInstrumentationName, InstrumentationName);
+                WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName);
             }
 
             if (Language != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesLanguage, Language);
+                WriteTag(ref bytes, ref offset, LanguageBytes, Language);
             }
 
             if (ShortName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesShortName, ShortName);
+                WriteTag(ref bytes, ref offset, ShortNameBytes, ShortName);
             }
 
             if (FullName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesFullName, FullName);
+                WriteTag(ref bytes, ref offset, FullNameBytes, FullName);
             }
 
             if (BindingSource != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesBindingSource, BindingSource);
+                WriteTag(ref bytes, ref offset, BindingSourceBytes, BindingSource);
             }
 
             if (TriggerType != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesTriggerType, TriggerType);
+                WriteTag(ref bytes, ref offset, TriggerTypeBytes, TriggerType);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset);

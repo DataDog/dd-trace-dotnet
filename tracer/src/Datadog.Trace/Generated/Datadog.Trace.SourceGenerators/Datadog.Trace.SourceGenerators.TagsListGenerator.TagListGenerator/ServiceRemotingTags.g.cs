@@ -5,18 +5,18 @@ namespace Datadog.Trace.ServiceFabric
 {
     partial class ServiceRemotingTags
     {
-        private static readonly byte[] _bytesSpanKind = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
-        private static readonly byte[] _bytesApplicationId = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("service-fabric.application-id");
-        private static readonly byte[] _bytesApplicationName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("service-fabric.application-name");
-        private static readonly byte[] _bytesPartitionId = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("service-fabric.partition-id");
-        private static readonly byte[] _bytesNodeId = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("service-fabric.node-id");
-        private static readonly byte[] _bytesNodeName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("service-fabric.node-name");
-        private static readonly byte[] _bytesServiceName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("service-fabric.service-name");
-        private static readonly byte[] _bytesRemotingUri = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("service-fabric.service-remoting.uri");
-        private static readonly byte[] _bytesRemotingMethodName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("service-fabric.service-remoting.method-name");
-        private static readonly byte[] _bytesRemotingMethodId = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("service-fabric.service-remoting.method-id");
-        private static readonly byte[] _bytesRemotingInterfaceId = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("service-fabric.service-remoting.interface-id");
-        private static readonly byte[] _bytesRemotingInvocationId = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("service-fabric.service-remoting.invocation-id");
+        private static readonly byte[] SpanKindBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
+        private static readonly byte[] ApplicationIdBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("service-fabric.application-id");
+        private static readonly byte[] ApplicationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("service-fabric.application-name");
+        private static readonly byte[] PartitionIdBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("service-fabric.partition-id");
+        private static readonly byte[] NodeIdBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("service-fabric.node-id");
+        private static readonly byte[] NodeNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("service-fabric.node-name");
+        private static readonly byte[] ServiceNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("service-fabric.service-name");
+        private static readonly byte[] RemotingUriBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("service-fabric.service-remoting.uri");
+        private static readonly byte[] RemotingMethodNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("service-fabric.service-remoting.method-name");
+        private static readonly byte[] RemotingMethodIdBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("service-fabric.service-remoting.method-id");
+        private static readonly byte[] RemotingInterfaceIdBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("service-fabric.service-remoting.interface-id");
+        private static readonly byte[] RemotingInvocationIdBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("service-fabric.service-remoting.invocation-id");
 
         public override string? GetTag(string key)
         {
@@ -87,73 +87,73 @@ namespace Datadog.Trace.ServiceFabric
             if (SpanKind != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesSpanKind, SpanKind);
+                WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind);
             }
 
             if (ApplicationId != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesApplicationId, ApplicationId);
+                WriteTag(ref bytes, ref offset, ApplicationIdBytes, ApplicationId);
             }
 
             if (ApplicationName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesApplicationName, ApplicationName);
+                WriteTag(ref bytes, ref offset, ApplicationNameBytes, ApplicationName);
             }
 
             if (PartitionId != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesPartitionId, PartitionId);
+                WriteTag(ref bytes, ref offset, PartitionIdBytes, PartitionId);
             }
 
             if (NodeId != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesNodeId, NodeId);
+                WriteTag(ref bytes, ref offset, NodeIdBytes, NodeId);
             }
 
             if (NodeName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesNodeName, NodeName);
+                WriteTag(ref bytes, ref offset, NodeNameBytes, NodeName);
             }
 
             if (ServiceName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesServiceName, ServiceName);
+                WriteTag(ref bytes, ref offset, ServiceNameBytes, ServiceName);
             }
 
             if (RemotingUri != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesRemotingUri, RemotingUri);
+                WriteTag(ref bytes, ref offset, RemotingUriBytes, RemotingUri);
             }
 
             if (RemotingMethodName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesRemotingMethodName, RemotingMethodName);
+                WriteTag(ref bytes, ref offset, RemotingMethodNameBytes, RemotingMethodName);
             }
 
             if (RemotingMethodId != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesRemotingMethodId, RemotingMethodId);
+                WriteTag(ref bytes, ref offset, RemotingMethodIdBytes, RemotingMethodId);
             }
 
             if (RemotingInterfaceId != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesRemotingInterfaceId, RemotingInterfaceId);
+                WriteTag(ref bytes, ref offset, RemotingInterfaceIdBytes, RemotingInterfaceId);
             }
 
             if (RemotingInvocationId != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesRemotingInvocationId, RemotingInvocationId);
+                WriteTag(ref bytes, ref offset, RemotingInvocationIdBytes, RemotingInvocationId);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset);

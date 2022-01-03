@@ -5,10 +5,10 @@ namespace Datadog.Trace.Tagging
 {
     partial class AspNetTags
     {
-        private static readonly byte[] _bytesAspNetRoute = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aspnet.route");
-        private static readonly byte[] _bytesAspNetController = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aspnet.controller");
-        private static readonly byte[] _bytesAspNetAction = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aspnet.action");
-        private static readonly byte[] _bytesAspNetArea = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aspnet.area");
+        private static readonly byte[] AspNetRouteBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aspnet.route");
+        private static readonly byte[] AspNetControllerBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aspnet.controller");
+        private static readonly byte[] AspNetActionBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aspnet.action");
+        private static readonly byte[] AspNetAreaBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aspnet.area");
 
         public override string? GetTag(string key)
         {
@@ -50,25 +50,25 @@ namespace Datadog.Trace.Tagging
             if (AspNetRoute != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesAspNetRoute, AspNetRoute);
+                WriteTag(ref bytes, ref offset, AspNetRouteBytes, AspNetRoute);
             }
 
             if (AspNetController != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesAspNetController, AspNetController);
+                WriteTag(ref bytes, ref offset, AspNetControllerBytes, AspNetController);
             }
 
             if (AspNetAction != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesAspNetAction, AspNetAction);
+                WriteTag(ref bytes, ref offset, AspNetActionBytes, AspNetAction);
             }
 
             if (AspNetArea != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesAspNetArea, AspNetArea);
+                WriteTag(ref bytes, ref offset, AspNetAreaBytes, AspNetArea);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset);

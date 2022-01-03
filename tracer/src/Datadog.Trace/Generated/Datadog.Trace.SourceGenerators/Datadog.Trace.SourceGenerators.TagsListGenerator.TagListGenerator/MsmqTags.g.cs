@@ -5,12 +5,12 @@ namespace Datadog.Trace.Tagging
 {
     partial class MsmqTags
     {
-        private static readonly byte[] _bytesCommand = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("msmq.command");
-        private static readonly byte[] _bytesSpanKind = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
-        private static readonly byte[] _bytesInstrumentationName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
-        private static readonly byte[] _bytesPath = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("msmq.queue.path");
-        private static readonly byte[] _bytesMessageWithTransaction = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("msmq.message.transactional");
-        private static readonly byte[] _bytesIsTransactionalQueue = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("msmq.queue.transactional");
+        private static readonly byte[] CommandBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("msmq.command");
+        private static readonly byte[] SpanKindBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
+        private static readonly byte[] InstrumentationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
+        private static readonly byte[] PathBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("msmq.queue.path");
+        private static readonly byte[] MessageWithTransactionBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("msmq.message.transactional");
+        private static readonly byte[] IsTransactionalQueueBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("msmq.queue.transactional");
 
         public override string? GetTag(string key)
         {
@@ -54,37 +54,37 @@ namespace Datadog.Trace.Tagging
             if (Command != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesCommand, Command);
+                WriteTag(ref bytes, ref offset, CommandBytes, Command);
             }
 
             if (SpanKind != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesSpanKind, SpanKind);
+                WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind);
             }
 
             if (InstrumentationName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesInstrumentationName, InstrumentationName);
+                WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName);
             }
 
             if (Path != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesPath, Path);
+                WriteTag(ref bytes, ref offset, PathBytes, Path);
             }
 
             if (MessageWithTransaction != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesMessageWithTransaction, MessageWithTransaction);
+                WriteTag(ref bytes, ref offset, MessageWithTransactionBytes, MessageWithTransaction);
             }
 
             if (IsTransactionalQueue != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesIsTransactionalQueue, IsTransactionalQueue);
+                WriteTag(ref bytes, ref offset, IsTransactionalQueueBytes, IsTransactionalQueue);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset);

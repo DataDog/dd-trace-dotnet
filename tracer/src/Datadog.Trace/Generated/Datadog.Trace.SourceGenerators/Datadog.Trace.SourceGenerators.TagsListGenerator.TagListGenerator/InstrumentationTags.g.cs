@@ -5,7 +5,7 @@ namespace Datadog.Trace.Tagging
 {
     partial class InstrumentationTags
     {
-        private static readonly byte[] _bytesAnalyticsSampleRate = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("_dd1.sr.eausr");
+        private static readonly byte[] AnalyticsSampleRateBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("_dd1.sr.eausr");
 
         public override double? GetMetric(string key)
         {
@@ -35,7 +35,7 @@ namespace Datadog.Trace.Tagging
             if (AnalyticsSampleRate != null)
             {
                 count++;
-                WriteMetric(ref bytes, ref offset, _bytesAnalyticsSampleRate, AnalyticsSampleRate.Value);
+                WriteMetric(ref bytes, ref offset, AnalyticsSampleRateBytes, AnalyticsSampleRate.Value);
             }
 
             return count + base.WriteAdditionalMetrics(ref bytes, ref offset);

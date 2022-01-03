@@ -5,9 +5,9 @@ namespace Datadog.Trace.Tagging
 {
     partial class AwsSqsTags
     {
-        private static readonly byte[] _bytesQueueName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aws.queue.name");
-        private static readonly byte[] _bytesQueueUrl = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aws.queue.url");
-        private static readonly byte[] _bytesSpanKind = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
+        private static readonly byte[] QueueNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aws.queue.name");
+        private static readonly byte[] QueueUrlBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aws.queue.url");
+        private static readonly byte[] SpanKindBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
 
         public override string? GetTag(string key)
         {
@@ -42,19 +42,19 @@ namespace Datadog.Trace.Tagging
             if (QueueName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesQueueName, QueueName);
+                WriteTag(ref bytes, ref offset, QueueNameBytes, QueueName);
             }
 
             if (QueueUrl != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesQueueUrl, QueueUrl);
+                WriteTag(ref bytes, ref offset, QueueUrlBytes, QueueUrl);
             }
 
             if (SpanKind != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesSpanKind, SpanKind);
+                WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset);

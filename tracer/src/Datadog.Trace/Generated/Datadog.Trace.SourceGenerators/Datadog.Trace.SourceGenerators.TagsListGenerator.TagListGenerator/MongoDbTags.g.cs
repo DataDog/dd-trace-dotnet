@@ -5,13 +5,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 {
     partial class MongoDbTags
     {
-        private static readonly byte[] _bytesSpanKind = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
-        private static readonly byte[] _bytesInstrumentationName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
-        private static readonly byte[] _bytesDbName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("db.name");
-        private static readonly byte[] _bytesQuery = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("mongodb.query");
-        private static readonly byte[] _bytesCollection = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("mongodb.collection");
-        private static readonly byte[] _bytesHost = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("out.host");
-        private static readonly byte[] _bytesPort = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("out.port");
+        private static readonly byte[] SpanKindBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
+        private static readonly byte[] InstrumentationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
+        private static readonly byte[] DbNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("db.name");
+        private static readonly byte[] QueryBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("mongodb.query");
+        private static readonly byte[] CollectionBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("mongodb.collection");
+        private static readonly byte[] HostBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("out.host");
+        private static readonly byte[] PortBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("out.port");
 
         public override string? GetTag(string key)
         {
@@ -59,43 +59,43 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
             if (SpanKind != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesSpanKind, SpanKind);
+                WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind);
             }
 
             if (InstrumentationName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesInstrumentationName, InstrumentationName);
+                WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName);
             }
 
             if (DbName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesDbName, DbName);
+                WriteTag(ref bytes, ref offset, DbNameBytes, DbName);
             }
 
             if (Query != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesQuery, Query);
+                WriteTag(ref bytes, ref offset, QueryBytes, Query);
             }
 
             if (Collection != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesCollection, Collection);
+                WriteTag(ref bytes, ref offset, CollectionBytes, Collection);
             }
 
             if (Host != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesHost, Host);
+                WriteTag(ref bytes, ref offset, HostBytes, Host);
             }
 
             if (Port != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesPort, Port);
+                WriteTag(ref bytes, ref offset, PortBytes, Port);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset);

@@ -5,12 +5,12 @@ namespace Datadog.Trace.Tagging
 {
     partial class KafkaTags
     {
-        private static readonly byte[] _bytesMessageQueueTimeMs = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("message.queue_time_ms");
-        private static readonly byte[] _bytesSpanKind = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
-        private static readonly byte[] _bytesInstrumentationName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
-        private static readonly byte[] _bytesPartition = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("kafka.partition");
-        private static readonly byte[] _bytesOffset = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("kafka.offset");
-        private static readonly byte[] _bytesTombstone = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("kafka.tombstone");
+        private static readonly byte[] MessageQueueTimeMsBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("message.queue_time_ms");
+        private static readonly byte[] SpanKindBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
+        private static readonly byte[] InstrumentationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
+        private static readonly byte[] PartitionBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("kafka.partition");
+        private static readonly byte[] OffsetBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("kafka.offset");
+        private static readonly byte[] TombstoneBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("kafka.tombstone");
 
         public override string? GetTag(string key)
         {
@@ -50,31 +50,31 @@ namespace Datadog.Trace.Tagging
             if (SpanKind != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesSpanKind, SpanKind);
+                WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind);
             }
 
             if (InstrumentationName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesInstrumentationName, InstrumentationName);
+                WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName);
             }
 
             if (Partition != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesPartition, Partition);
+                WriteTag(ref bytes, ref offset, PartitionBytes, Partition);
             }
 
             if (Offset != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesOffset, Offset);
+                WriteTag(ref bytes, ref offset, OffsetBytes, Offset);
             }
 
             if (Tombstone != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesTombstone, Tombstone);
+                WriteTag(ref bytes, ref offset, TombstoneBytes, Tombstone);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset);
@@ -147,7 +147,7 @@ namespace Datadog.Trace.Tagging
             if (MessageQueueTimeMs != null)
             {
                 count++;
-                WriteMetric(ref bytes, ref offset, _bytesMessageQueueTimeMs, MessageQueueTimeMs.Value);
+                WriteMetric(ref bytes, ref offset, MessageQueueTimeMsBytes, MessageQueueTimeMs.Value);
             }
 
             return count + base.WriteAdditionalMetrics(ref bytes, ref offset);

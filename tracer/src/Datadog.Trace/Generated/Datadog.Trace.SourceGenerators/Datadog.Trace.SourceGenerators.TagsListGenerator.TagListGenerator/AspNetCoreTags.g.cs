@@ -5,8 +5,8 @@ namespace Datadog.Trace.Tagging
 {
     partial class AspNetCoreTags
     {
-        private static readonly byte[] _bytesInstrumentationName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
-        private static readonly byte[] _bytesAspNetCoreRoute = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aspnet_core.route");
+        private static readonly byte[] InstrumentationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
+        private static readonly byte[] AspNetCoreRouteBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aspnet_core.route");
 
         public override string? GetTag(string key)
         {
@@ -37,13 +37,13 @@ namespace Datadog.Trace.Tagging
             if (InstrumentationName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesInstrumentationName, InstrumentationName);
+                WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName);
             }
 
             if (AspNetCoreRoute != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesAspNetCoreRoute, AspNetCoreRoute);
+                WriteTag(ref bytes, ref offset, AspNetCoreRouteBytes, AspNetCoreRoute);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset);
