@@ -65,4 +65,15 @@
     <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
 
+  <Target Name="RemoveDuplicate" AfterTargets="ComputeFilesToPublish" BeforeTargets="_HandleFileConflictsForPublish">
+    <!-- Required for StrongNamer: https://github.com/dsplaisted/strongnamer/issues/61 -->
+    <PropertyGroup>
+      <DuplicateFileToRemove>$(BaseIntermediateOutputPath)$(Configuration)\$(TargetFramework)\$(RuntimeIdentifier)\linked\Spectre.Console.dll</DuplicateFileToRemove>
+    </PropertyGroup>
+
+    <Message Text="Removing $(DuplicateFileToRemove) from publish output" Importance="high" />
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="$(DuplicateFileToRemove)" />
+    </ItemGroup>
+  </Target>
 </Project>
