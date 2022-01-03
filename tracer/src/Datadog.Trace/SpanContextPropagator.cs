@@ -26,9 +26,19 @@ namespace Datadog.Trace
         private readonly CultureInfo _invariantCulture = CultureInfo.InvariantCulture;
         private readonly IDatadogLogger _log = DatadogLogging.GetLoggerFor<SpanContextPropagator>();
         private readonly ConcurrentDictionary<Key, string?> _defaultTagMappingCache = new();
+        private readonly Func<IReadOnlyDictionary<string, string?>?, string, IEnumerable<string?>> _readOnlyDictionaryValueGetterDelegate;
 
         private SpanContextPropagator()
         {
+            IEnumerable<string?> ReadOnlyDictionaryValueGetter(IReadOnlyDictionary<string, string?>? carrier, string name)
+            {
+                if (carrier != null && carrier.TryGetValue(name, out var value))
+                {
+                    yield return value;
+                }
+            }
+
+            _readOnlyDictionaryValueGetterDelegate = ReadOnlyDictionaryValueGetter;
         }
 
         public static SpanContextPropagator Instance { get; } = new();
@@ -185,39 +195,7 @@ namespace Datadog.Trace
                 return null;
             }
 
-            ulong traceId = 0;
-
-            if (serializedSpanContext.TryGetValue(HttpHeaderNames.TraceId, out var rawTraceId))
-            {
-                ulong.TryParse(rawTraceId, out traceId);
-            }
-
-            if (traceId == 0)
-            {
-                // a valid traceId is required to use distributed tracing
-                return null;
-            }
-
-            ulong parentId = 0;
-
-            if (serializedSpanContext.TryGetValue(HttpHeaderNames.ParentId, out var rawParentId))
-            {
-                ulong.TryParse(rawParentId, out parentId);
-            }
-
-            SamplingPriority? samplingPriority = null;
-
-            if (serializedSpanContext.TryGetValue(HttpHeaderNames.SamplingPriority, out var rawSamplingPriority))
-            {
-                if (int.TryParse(rawSamplingPriority, out var intSamplingPriority))
-                {
-                    samplingPriority = (SamplingPriority)intSamplingPriority;
-                }
-            }
-
-            serializedSpanContext.TryGetValue(HttpHeaderNames.Origin, out var origin);
-
-            return new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin);
+            return Extract(serializedSpanContext, _readOnlyDictionaryValueGetterDelegate);
         }
 
         private ulong? ParseUInt64<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter, string headerName)
