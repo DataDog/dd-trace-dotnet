@@ -60,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
                 Console.WriteLine(ex);
             }
 
-            return CallTargetState.GetDefault();
+            return new CallTargetState(CreateDummyScope(Tracer.Instance));
         }
 
         /// <summary>
@@ -76,7 +76,29 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
             Console.WriteLine("[from autoinstrumentation] OnMethodEnd");
+            if (state.Scope != null)
+            {
+                    state.Scope.Dispose();
+            }
+
             return new CallTargetReturn<TReturn>(returnValue);
+        }
+
+        internal static Scope CreateDummyScope(Tracer tracer)
+        {
+            Scope scope = null;
+            try
+            {
+                string serviceName = "dummy-service";
+                scope = tracer.StartActiveInternal("dummy-operation-name", serviceName: serviceName, tags: null);
+                scope.Span.Type = SpanTypes.Custom;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error creating or populating scope." + ex);
+            }
+
+            return scope;
         }
     }
 }
