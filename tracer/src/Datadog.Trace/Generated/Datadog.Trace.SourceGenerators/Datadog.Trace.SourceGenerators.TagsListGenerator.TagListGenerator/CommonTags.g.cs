@@ -5,11 +5,11 @@ namespace Datadog.Trace.Tagging
 {
     partial class CommonTags
     {
-        private static readonly byte[] _bytesSamplingPriority = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("_sampling_priority_v1");
-        private static readonly byte[] _bytesSamplingLimitDecision = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("_dd.limit_psr");
-        private static readonly byte[] _bytesTracesKeepRate = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("_dd.tracer_kr");
-        private static readonly byte[] _bytesEnvironment = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("env");
-        private static readonly byte[] _bytesVersion = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("version");
+        private static readonly byte[] SamplingPriorityBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("_sampling_priority_v1");
+        private static readonly byte[] SamplingLimitDecisionBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("_dd.limit_psr");
+        private static readonly byte[] TracesKeepRateBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("_dd.tracer_kr");
+        private static readonly byte[] EnvironmentBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("env");
+        private static readonly byte[] VersionBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("version");
 
         public override string? GetTag(string key)
         {
@@ -43,13 +43,13 @@ namespace Datadog.Trace.Tagging
             if (Environment != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesEnvironment, Environment);
+                WriteTag(ref bytes, ref offset, EnvironmentBytes, Environment);
             }
 
             if (Version != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesVersion, Version);
+                WriteTag(ref bytes, ref offset, VersionBytes, Version);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset);
@@ -109,19 +109,19 @@ namespace Datadog.Trace.Tagging
             if (SamplingPriority != null)
             {
                 count++;
-                WriteMetric(ref bytes, ref offset, _bytesSamplingPriority, SamplingPriority.Value);
+                WriteMetric(ref bytes, ref offset, SamplingPriorityBytes, SamplingPriority.Value);
             }
 
             if (SamplingLimitDecision != null)
             {
                 count++;
-                WriteMetric(ref bytes, ref offset, _bytesSamplingLimitDecision, SamplingLimitDecision.Value);
+                WriteMetric(ref bytes, ref offset, SamplingLimitDecisionBytes, SamplingLimitDecision.Value);
             }
 
             if (TracesKeepRate != null)
             {
                 count++;
-                WriteMetric(ref bytes, ref offset, _bytesTracesKeepRate, TracesKeepRate.Value);
+                WriteMetric(ref bytes, ref offset, TracesKeepRateBytes, TracesKeepRate.Value);
             }
 
             return count + base.WriteAdditionalMetrics(ref bytes, ref offset);

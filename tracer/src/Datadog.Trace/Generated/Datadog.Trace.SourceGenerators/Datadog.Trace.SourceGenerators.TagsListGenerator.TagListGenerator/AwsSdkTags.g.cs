@@ -5,15 +5,15 @@ namespace Datadog.Trace.Tagging
 {
     partial class AwsSdkTags
     {
-        private static readonly byte[] _bytesInstrumentationName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
-        private static readonly byte[] _bytesAgentName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aws.agent");
-        private static readonly byte[] _bytesOperation = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aws.operation");
-        private static readonly byte[] _bytesRegion = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aws.region");
-        private static readonly byte[] _bytesRequestId = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aws.requestId");
-        private static readonly byte[] _bytesService = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aws.service");
-        private static readonly byte[] _bytesHttpMethod = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("http.method");
-        private static readonly byte[] _bytesHttpUrl = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("http.url");
-        private static readonly byte[] _bytesHttpStatusCode = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("http.status_code");
+        private static readonly byte[] InstrumentationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
+        private static readonly byte[] AgentNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aws.agent");
+        private static readonly byte[] OperationBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aws.operation");
+        private static readonly byte[] RegionBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aws.region");
+        private static readonly byte[] RequestIdBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aws.requestId");
+        private static readonly byte[] ServiceBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aws.service");
+        private static readonly byte[] HttpMethodBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("http.method");
+        private static readonly byte[] HttpUrlBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("http.url");
+        private static readonly byte[] HttpStatusCodeBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("http.status_code");
 
         public override string? GetTag(string key)
         {
@@ -69,55 +69,55 @@ namespace Datadog.Trace.Tagging
             if (InstrumentationName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesInstrumentationName, InstrumentationName);
+                WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName);
             }
 
             if (AgentName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesAgentName, AgentName);
+                WriteTag(ref bytes, ref offset, AgentNameBytes, AgentName);
             }
 
             if (Operation != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesOperation, Operation);
+                WriteTag(ref bytes, ref offset, OperationBytes, Operation);
             }
 
             if (Region != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesRegion, Region);
+                WriteTag(ref bytes, ref offset, RegionBytes, Region);
             }
 
             if (RequestId != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesRequestId, RequestId);
+                WriteTag(ref bytes, ref offset, RequestIdBytes, RequestId);
             }
 
             if (Service != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesService, Service);
+                WriteTag(ref bytes, ref offset, ServiceBytes, Service);
             }
 
             if (HttpMethod != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesHttpMethod, HttpMethod);
+                WriteTag(ref bytes, ref offset, HttpMethodBytes, HttpMethod);
             }
 
             if (HttpUrl != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesHttpUrl, HttpUrl);
+                WriteTag(ref bytes, ref offset, HttpUrlBytes, HttpUrl);
             }
 
             if (HttpStatusCode != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesHttpStatusCode, HttpStatusCode);
+                WriteTag(ref bytes, ref offset, HttpStatusCodeBytes, HttpStatusCode);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset);

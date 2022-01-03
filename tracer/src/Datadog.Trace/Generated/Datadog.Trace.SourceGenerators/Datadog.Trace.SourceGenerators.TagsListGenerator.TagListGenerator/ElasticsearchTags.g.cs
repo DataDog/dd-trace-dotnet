@@ -5,11 +5,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
 {
     partial class ElasticsearchTags
     {
-        private static readonly byte[] _bytesSpanKind = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
-        private static readonly byte[] _bytesInstrumentationName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
-        private static readonly byte[] _bytesAction = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("elasticsearch.action");
-        private static readonly byte[] _bytesMethod = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("elasticsearch.method");
-        private static readonly byte[] _bytesUrl = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("elasticsearch.url");
+        private static readonly byte[] SpanKindBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
+        private static readonly byte[] InstrumentationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
+        private static readonly byte[] ActionBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("elasticsearch.action");
+        private static readonly byte[] MethodBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("elasticsearch.method");
+        private static readonly byte[] UrlBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("elasticsearch.url");
 
         public override string? GetTag(string key)
         {
@@ -49,31 +49,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
             if (SpanKind != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesSpanKind, SpanKind);
+                WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind);
             }
 
             if (InstrumentationName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesInstrumentationName, InstrumentationName);
+                WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName);
             }
 
             if (Action != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesAction, Action);
+                WriteTag(ref bytes, ref offset, ActionBytes, Action);
             }
 
             if (Method != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesMethod, Method);
+                WriteTag(ref bytes, ref offset, MethodBytes, Method);
             }
 
             if (Url != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesUrl, Url);
+                WriteTag(ref bytes, ref offset, UrlBytes, Url);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset);

@@ -5,12 +5,12 @@ namespace Datadog.Trace.Tagging
 {
     partial class AerospikeTags
     {
-        private static readonly byte[] _bytesSpanKind = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
-        private static readonly byte[] _bytesInstrumentationName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
-        private static readonly byte[] _bytesKey = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aerospike.key");
-        private static readonly byte[] _bytesNamespace = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aerospike.namespace");
-        private static readonly byte[] _bytesSetName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aerospike.setname");
-        private static readonly byte[] _bytesUserKey = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aerospike.userkey");
+        private static readonly byte[] SpanKindBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
+        private static readonly byte[] InstrumentationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
+        private static readonly byte[] KeyBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aerospike.key");
+        private static readonly byte[] NamespaceBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aerospike.namespace");
+        private static readonly byte[] SetNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aerospike.setname");
+        private static readonly byte[] UserKeyBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aerospike.userkey");
 
         public override string? GetTag(string key)
         {
@@ -54,37 +54,37 @@ namespace Datadog.Trace.Tagging
             if (SpanKind != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesSpanKind, SpanKind);
+                WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind);
             }
 
             if (InstrumentationName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesInstrumentationName, InstrumentationName);
+                WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName);
             }
 
             if (Key != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesKey, Key);
+                WriteTag(ref bytes, ref offset, KeyBytes, Key);
             }
 
             if (Namespace != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesNamespace, Namespace);
+                WriteTag(ref bytes, ref offset, NamespaceBytes, Namespace);
             }
 
             if (SetName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesSetName, SetName);
+                WriteTag(ref bytes, ref offset, SetNameBytes, SetName);
             }
 
             if (UserKey != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesUserKey, UserKey);
+                WriteTag(ref bytes, ref offset, UserKeyBytes, UserKey);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset);

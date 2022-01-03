@@ -5,14 +5,14 @@ namespace Datadog.Trace.Tagging
 {
     partial class RabbitMQTags
     {
-        private static readonly byte[] _bytesSpanKind = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
-        private static readonly byte[] _bytesInstrumentationName = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
-        private static readonly byte[] _bytesCommand = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("amqp.command");
-        private static readonly byte[] _bytesDeliveryMode = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("amqp.delivery_mode");
-        private static readonly byte[] _bytesExchange = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("amqp.exchange");
-        private static readonly byte[] _bytesRoutingKey = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("amqp.routing_key");
-        private static readonly byte[] _bytesMessageSize = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("message.size");
-        private static readonly byte[] _bytesQueue = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("amqp.queue");
+        private static readonly byte[] SpanKindBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
+        private static readonly byte[] InstrumentationNameBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("component");
+        private static readonly byte[] CommandBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("amqp.command");
+        private static readonly byte[] DeliveryModeBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("amqp.delivery_mode");
+        private static readonly byte[] ExchangeBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("amqp.exchange");
+        private static readonly byte[] RoutingKeyBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("amqp.routing_key");
+        private static readonly byte[] MessageSizeBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("message.size");
+        private static readonly byte[] QueueBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("amqp.queue");
 
         public override string? GetTag(string key)
         {
@@ -67,49 +67,49 @@ namespace Datadog.Trace.Tagging
             if (SpanKind != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesSpanKind, SpanKind);
+                WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind);
             }
 
             if (InstrumentationName != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesInstrumentationName, InstrumentationName);
+                WriteTag(ref bytes, ref offset, InstrumentationNameBytes, InstrumentationName);
             }
 
             if (Command != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesCommand, Command);
+                WriteTag(ref bytes, ref offset, CommandBytes, Command);
             }
 
             if (DeliveryMode != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesDeliveryMode, DeliveryMode);
+                WriteTag(ref bytes, ref offset, DeliveryModeBytes, DeliveryMode);
             }
 
             if (Exchange != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesExchange, Exchange);
+                WriteTag(ref bytes, ref offset, ExchangeBytes, Exchange);
             }
 
             if (RoutingKey != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesRoutingKey, RoutingKey);
+                WriteTag(ref bytes, ref offset, RoutingKeyBytes, RoutingKey);
             }
 
             if (MessageSize != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesMessageSize, MessageSize);
+                WriteTag(ref bytes, ref offset, MessageSizeBytes, MessageSize);
             }
 
             if (Queue != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesQueue, Queue);
+                WriteTag(ref bytes, ref offset, QueueBytes, Queue);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset);

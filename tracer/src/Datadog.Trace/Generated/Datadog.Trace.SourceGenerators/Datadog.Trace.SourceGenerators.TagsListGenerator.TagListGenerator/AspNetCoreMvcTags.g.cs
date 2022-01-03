@@ -5,10 +5,10 @@ namespace Datadog.Trace.Tagging
 {
     partial class AspNetCoreMvcTags
     {
-        private static readonly byte[] _bytesAspNetCoreController = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aspnet_core.controller");
-        private static readonly byte[] _bytesAspNetCoreAction = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aspnet_core.action");
-        private static readonly byte[] _bytesAspNetCoreArea = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aspnet_core.area");
-        private static readonly byte[] _bytesAspNetCorePage = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aspnet_core.page");
+        private static readonly byte[] AspNetCoreControllerBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aspnet_core.controller");
+        private static readonly byte[] AspNetCoreActionBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aspnet_core.action");
+        private static readonly byte[] AspNetCoreAreaBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aspnet_core.area");
+        private static readonly byte[] AspNetCorePageBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("aspnet_core.page");
 
         public override string? GetTag(string key)
         {
@@ -50,25 +50,25 @@ namespace Datadog.Trace.Tagging
             if (AspNetCoreController != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesAspNetCoreController, AspNetCoreController);
+                WriteTag(ref bytes, ref offset, AspNetCoreControllerBytes, AspNetCoreController);
             }
 
             if (AspNetCoreAction != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesAspNetCoreAction, AspNetCoreAction);
+                WriteTag(ref bytes, ref offset, AspNetCoreActionBytes, AspNetCoreAction);
             }
 
             if (AspNetCoreArea != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesAspNetCoreArea, AspNetCoreArea);
+                WriteTag(ref bytes, ref offset, AspNetCoreAreaBytes, AspNetCoreArea);
             }
 
             if (AspNetCorePage != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesAspNetCorePage, AspNetCorePage);
+                WriteTag(ref bytes, ref offset, AspNetCorePageBytes, AspNetCorePage);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset);

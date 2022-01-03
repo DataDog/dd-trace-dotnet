@@ -5,12 +5,12 @@ namespace Datadog.Trace.Tagging
 {
     partial class WebTags
     {
-        private static readonly byte[] _bytesSpanKind = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
-        private static readonly byte[] _bytesHttpMethod = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("http.method");
-        private static readonly byte[] _bytesHttpRequestHeadersHost = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("http.request.headers.host");
-        private static readonly byte[] _bytesHttpUrl = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("http.url");
-        private static readonly byte[] _bytesLanguage = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("language");
-        private static readonly byte[] _bytesHttpStatusCode = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("http.status_code");
+        private static readonly byte[] SpanKindBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("span.kind");
+        private static readonly byte[] HttpMethodBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("http.method");
+        private static readonly byte[] HttpRequestHeadersHostBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("http.request.headers.host");
+        private static readonly byte[] HttpUrlBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("http.url");
+        private static readonly byte[] LanguageBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("language");
+        private static readonly byte[] HttpStatusCodeBytes = Datadog.Trace.Vendors.MessagePack.StringEncoding.UTF8.GetBytes("http.status_code");
 
         public override string? GetTag(string key)
         {
@@ -54,37 +54,37 @@ namespace Datadog.Trace.Tagging
             if (SpanKind != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesSpanKind, SpanKind);
+                WriteTag(ref bytes, ref offset, SpanKindBytes, SpanKind);
             }
 
             if (HttpMethod != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesHttpMethod, HttpMethod);
+                WriteTag(ref bytes, ref offset, HttpMethodBytes, HttpMethod);
             }
 
             if (HttpRequestHeadersHost != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesHttpRequestHeadersHost, HttpRequestHeadersHost);
+                WriteTag(ref bytes, ref offset, HttpRequestHeadersHostBytes, HttpRequestHeadersHost);
             }
 
             if (HttpUrl != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesHttpUrl, HttpUrl);
+                WriteTag(ref bytes, ref offset, HttpUrlBytes, HttpUrl);
             }
 
             if (Language != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesLanguage, Language);
+                WriteTag(ref bytes, ref offset, LanguageBytes, Language);
             }
 
             if (HttpStatusCode != null)
             {
                 count++;
-                WriteTag(ref bytes, ref offset, _bytesHttpStatusCode, HttpStatusCode);
+                WriteTag(ref bytes, ref offset, HttpStatusCodeBytes, HttpStatusCode);
             }
 
             return count + base.WriteAdditionalTags(ref bytes, ref offset);
