@@ -132,7 +132,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        private void VerifyProducerSpanProperties(List<MockTracerAgent.Span> producerSpans, string resourceName, int expectedCount)
+        private void VerifyProducerSpanProperties(List<MockSpan> producerSpans, string resourceName, int expectedCount)
         {
             producerSpans.Should()
                          .HaveCount(expectedCount)
@@ -141,7 +141,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                          .And.OnlyContain(x => x.Metrics.ContainsKey(Tags.Measured) && x.Metrics[Tags.Measured] == 1.0);
         }
 
-        private void VerifyConsumerSpanProperties(List<MockTracerAgent.Span> consumerSpans, string resourceName, int expectedCount)
+        private void VerifyConsumerSpanProperties(List<MockSpan> consumerSpans, string resourceName, int expectedCount)
         {
             // HaveCountGreaterOrEqualTo because same message may be consumed by both
             consumerSpans.Should()

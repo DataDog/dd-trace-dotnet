@@ -50,9 +50,9 @@ namespace Datadog.Trace.TestHelpers
 
             settings.ModifySerialization(_ =>
             {
-                _.IgnoreMember<MockTracerAgent.Span>(s => s.Duration);
-                _.IgnoreMember<MockTracerAgent.Span>(s => s.Start);
-                _.MemberConverter<MockTracerAgent.Span, Dictionary<string, string>>(x => x.Tags, ScrubStackTraceForErrors);
+                _.IgnoreMember<MockSpan>(s => s.Duration);
+                _.IgnoreMember<MockSpan>(s => s.Start);
+                _.MemberConverter<MockSpan, Dictionary<string, string>>(x => x.Tags, ScrubStackTraceForErrors);
             });
             settings.AddScrubber(builder => ReplaceRegex(builder, LocalhostRegex, "localhost:00000"));
             settings.AddScrubber(builder => ReplaceRegex(builder, KeepRateRegex, "_dd.tracer_kr: 1.0"));
@@ -74,7 +74,7 @@ namespace Datadog.Trace.TestHelpers
         }
 
         private static Dictionary<string, string> ScrubStackTraceForErrors(
-            MockTracerAgent.Span span, Dictionary<string, string> tags)
+            MockSpan span, Dictionary<string, string> tags)
         {
             return tags
                   .Select(

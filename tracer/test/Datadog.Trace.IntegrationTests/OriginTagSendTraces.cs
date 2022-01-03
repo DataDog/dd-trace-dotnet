@@ -7,8 +7,6 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.TestHelpers;
-using MsgPack;
 using Xunit;
 
 namespace Datadog.Trace.IntegrationTests
@@ -32,10 +30,10 @@ namespace Datadog.Trace.IntegrationTests
             var scope = _tracer.StartActive("Operation");
             scope.Dispose();
 
-            var objects = _testApi.Wait();
-            var spanDictio = objects[0].FirstDictionary();
-            var metaDictio = spanDictio["meta"].AsDictionary();
-            Assert.False(metaDictio.ContainsKey(Tags.Origin));
+            var traces = _testApi.Wait();
+            Assert.NotEmpty(traces);
+            Assert.NotEmpty(traces[0]);
+            Assert.False(traces[0][0].Tags.ContainsKey(Tags.Origin));
         }
 
         [Fact]
@@ -48,11 +46,13 @@ namespace Datadog.Trace.IntegrationTests
                 scope.Span.SetTag(Tags.Origin, originValue);
             }
 
-            var objects = _testApi.Wait();
-            var spanDictio = objects[0].FirstDictionary();
-            var metaDictio = spanDictio["meta"].AsDictionary();
-            Assert.True(metaDictio.ContainsKey(Tags.Origin));
-            Assert.Equal(originValue, metaDictio[Tags.Origin]);
+            var traces = _testApi.Wait();
+            Assert.NotEmpty(traces);
+            Assert.NotEmpty(traces[0]);
+
+            var span = traces[0][0];
+            Assert.True(span.Tags.ContainsKey(Tags.Origin));
+            Assert.Equal(originValue, span.Tags[Tags.Origin]);
         }
 
         [Fact]
@@ -74,14 +74,14 @@ namespace Datadog.Trace.IntegrationTests
                 }
             }
 
-            var objects = _testApi.Wait();
-            var objectsList = objects[0].AsList();
-            foreach (MessagePackObject objValue in objectsList)
+            var traces = _testApi.Wait();
+            Assert.NotEmpty(traces);
+            Assert.NotEmpty(traces[0]);
+
+            foreach (var span in traces[0])
             {
-                var spanDictio = objValue.FirstDictionary();
-                var metaDictio = spanDictio["meta"].AsDictionary();
-                Assert.True(metaDictio.ContainsKey(Tags.Origin));
-                Assert.Equal(originValue, metaDictio[Tags.Origin]);
+                Assert.True(span.Tags.ContainsKey(Tags.Origin));
+                Assert.Equal(originValue, span.Tags[Tags.Origin]);
             }
         }
 
@@ -117,15 +117,15 @@ namespace Datadog.Trace.IntegrationTests
                 }
             }
 
-            var objects = _testApi.Wait();
-            var objectsList = objects[0].AsList();
-            foreach (MessagePackObject objValue in objectsList)
+            var traces = _testApi.Wait();
+            Assert.NotEmpty(traces);
+            Assert.NotEmpty(traces[0]);
+
+            foreach (var span in traces[0])
             {
-                var spanDictio = objValue.FirstDictionary();
-                var metaDictio = spanDictio["meta"].AsDictionary();
-                Assert.True(metaDictio.ContainsKey(Tags.Origin));
-                var value = metaDictio[Tags.Origin];
-                Assert.True(origins.Remove(value.ToString()));
+                Assert.True(span.Tags.ContainsKey(Tags.Origin));
+                var value = span.Tags[Tags.Origin];
+                Assert.True(origins.Remove(value));
             }
         }
     }

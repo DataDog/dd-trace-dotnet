@@ -12,7 +12,6 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Xunit;
 using Xunit.Abstractions;
@@ -208,7 +207,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
             result["ServiceName"].Value<string>().Should().Be(mvcSpan.Service);
         }
 
-        private static bool VerifySpan(MockTracerAgent.Span span, bool parentTrace)
+        private static bool VerifySpan(MockSpan span, bool parentTrace)
         {
             if (!span.Metrics.ContainsKey(Metrics.SamplingPriority))
             {
