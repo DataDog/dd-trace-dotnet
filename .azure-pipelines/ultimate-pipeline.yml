@@ -117,12 +117,7 @@ stages:
       vmImage: windows-2019 
 
     steps:
-    - task: UseDotNet@2
-      displayName: install latest dotnet core sdk
-      inputs:
-        packageType: sdk
-        version: 6.x
-        includePreviewVersions: true
+    - template: steps/install-latest-dotnet-sdk.yml
 
     - powershell: |
         tracer/build.ps1 GenerateMatrices -GenerateMatricesTarget "integration_tests_windows_matrix,integration_tests_windows_iis_matrix"
