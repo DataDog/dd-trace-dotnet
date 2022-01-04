@@ -65,7 +65,7 @@ partial class Build : NukeBuild
                 {
                     foreach (var targetPlatform in targetPlatforms)
                     {
-                        matrix.Add($"{targetPlatform}_{framework}", new { framework, targetPlatform });
+                        matrix.Add($"{targetPlatform}_{framework}", new { framework = framework, targetPlatform = targetPlatform });
                     }
                 }
 
@@ -84,7 +84,7 @@ partial class Build : NukeBuild
                     foreach (var targetPlatform in targetPlatforms)
                     {
                         var enable32bit = targetPlatform == "x86";
-                        matrix.Add($"{targetPlatform}_{framework}", new { framework, targetPlatform, enable32bit });
+                        matrix.Add($"{targetPlatform}_{framework}", new { framework = framework, targetPlatform = targetPlatform, enable32bit = enable32bit });
                     }
                 }
 
@@ -104,7 +104,7 @@ partial class Build : NukeBuild
                 {
                     foreach (var baseImage in baseImages)
                     {
-                        matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage });
+                        matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage });
                     }
                 }
 
@@ -143,7 +143,7 @@ partial class Build : NukeBuild
                     {
                         matrix.Add(
                             $"{explorationTestUseCase}_{testDescription.Name}",
-                            new { explorationTestUseCase, explorationTestName = testDescription.Name });
+                            new { explorationTestUseCase = explorationTestUseCase, explorationTestName = testDescription.Name });
                     }
                 }
 
@@ -173,7 +173,13 @@ partial class Build : NukeBuild
                                 {
                                     matrix.Add(
                                         $"{baseImage}_{targetFramework}_{explorationTestUseCase}_{testDescription.Name}",
-                                        new { baseImage, targetFramework, explorationTestUseCase, explorationTestName = testDescription.Name });
+                                        new
+                                        {
+                                            baseImage = baseImage, 
+                                            targetFramework = targetFramework, 
+                                            explorationTestUseCase = explorationTestUseCase, 
+                                            explorationTestName = testDescription.Name
+                                        });
                                 }
                             }
                         }
@@ -197,7 +203,7 @@ partial class Build : NukeBuild
                 var matrix = new Dictionary<string, object>();
 
                 AddToMatrix(
-                    new (TargetFramework publishFramework, string dockerTag)[]
+                    new (string publishFramework, string runtimeTag)[]
                     {
                 (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
                 (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim"),
@@ -215,7 +221,7 @@ partial class Build : NukeBuild
                 );
 
                 AddToMatrix(
-                    new (TargetFramework publishFramework, string dockerTag)[]
+                    new (string publishFramework, string runtimeTag)[]
                     {
                 (publishFramework: TargetFramework.NET6_0, "34-6.0"),
                 (publishFramework: TargetFramework.NET5_0, "35-5.0"),
@@ -232,8 +238,23 @@ partial class Build : NukeBuild
                     dockerName: "andrewlock/dotnet-fedora"
                 );
 
+                AddToMatrix(
+                    new (string publishFramework, string runtimeTag)[]
+                    {
+                        (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.14"),
+                        (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.14"),
+                        (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.13"),
+                        (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.14"),
+                        (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.13"),
+                        (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-alpine3.12"),
+                    },
+                    installCmd: "tar -C /opt/datadog -xzf ./datadog-dotnet-apm*-musl.tar.gz",
+                    linuxArtifacts: "linux-packages-alpine",
+                    dockerName: "mcr.microsoft.com/dotnet/aspnet"
+                );
+
                 void AddToMatrix(
-                    (TargetFramework publishFramework, string dockerTag)[] images
+                    (string publishFramework, string runtimeTag)[] images
                   , string installCmd
                   , string linuxArtifacts
                   , string dockerName
@@ -241,33 +262,19 @@ partial class Build : NukeBuild
                 {
                     foreach (var image in images)
                     {
+                        var dockerTag = image.runtimeTag.Replace('.', '_');
                         matrix.Add(
-                            image.dockerTag,
+                            dockerTag,
                             new
                             {
                                 installCmd = installCmd,
-                                dockerTag = image.dockerTag,
+                                dockerTag = dockerTag,
                                 publishFramework = image.publishFramework,
                                 linuxArtifacts = linuxArtifacts,
-                                runtimeImage = $"{dockerName}:${image.dockerTag}"
+                                runtimeImage = $"{dockerName}:${image.runtimeTag}"
                             });
                     }
                 }
-
-                AddToMatrix(
-                    new (TargetFramework publishFramework, string dockerTag)[]
-                    {
-                (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.14"),
-                (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.14"),
-                (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.13"),
-                (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.14"),
-                (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.13"),
-                (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-alpine3.12"),
-                    },
-                    installCmd: "tar -C /opt/datadog -xzf ./datadog-dotnet-apm*-musl.tar.gz",
-                    linuxArtifacts: "linux-packages-alpine",
-                    dockerName: "mcr.microsoft.com/dotnet/aspnet"
-                );
 
                 Logger.Info($"Installer smoke tests matrix");
                 Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
@@ -279,7 +286,7 @@ partial class Build : NukeBuild
                 var matrix = new Dictionary<string, object>();
 
                 AddToMatrix(
-                    new (TargetFramework publishFramework, string dockerTag)[]
+                    new (string publishFramework, string runtimeTag)[]
                     {
                 (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
                 (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim"),
@@ -292,7 +299,7 @@ partial class Build : NukeBuild
                 );
 
                 void AddToMatrix(
-                    (TargetFramework publishFramework, string dockerTag)[] images
+                    (string publishFramework, string runtimeTag)[] images
                   , string installCmd
                   , string linuxArtifacts
                   , string dockerName
@@ -300,15 +307,16 @@ partial class Build : NukeBuild
                 {
                     foreach (var image in images)
                     {
+                        var dockerTag = image.runtimeTag.Replace('.', '_');
                         matrix.Add(
-                            image.dockerTag,
+                            dockerTag,
                             new
                             {
                                 installCmd = installCmd,
-                                dockerTag = image.dockerTag,
+                                dockerTag = dockerTag,
                                 publishFramework = image.publishFramework,
                                 linuxArtifacts = linuxArtifacts,
-                                runtimeImage = $"{dockerName}:${image.dockerTag}"
+                                runtimeImage = $"{dockerName}:${image.runtimeTag}"
                             });
                     }
                 }
