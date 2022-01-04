@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public bool IsGraphQLError { get; set; }
 
-        private IEnumerable<string> ExpectErrorMatch(MockTracerAgent.Span span)
+        private IEnumerable<string> ExpectErrorMatch(MockSpan span)
         {
             var error = GetTag(span, Tags.ErrorMsg);
             if (string.IsNullOrEmpty(error))

@@ -1,0 +1,64 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Version>2.0.1</Version>
+    <Title>Datadog APM Auto-instrumentation Runner</Title>
+    <Copyright>Copyright 2020 Datadog, Inc.</Copyright>
+    <Description>Auto-instrumentation dotnet global tool for Datadog APM</Description>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net6.0;net5.0;netcoreapp3.1;netcoreapp3.0;netcoreapp2.2;netcoreapp2.1;</TargetFrameworks>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <NoWarn>NU5100</NoWarn>
+    <RootNamespace>Datadog.Trace.Tools.Runner</RootNamespace>
+
+    <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp3.0) -->
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+  </PropertyGroup>
+
+  <Choose>
+    <When Condition="'$(BuildStandalone)' == 'true'">
+      <PropertyGroup>
+        <OutputPath>bin\$(Configuration)\Console</OutputPath>
+        <PublishDir>bin\$(Configuration)\Console\publish\$(RuntimeIdentifier)</PublishDir>
+        <AssemblyName>dd-trace</AssemblyName>
+        <RuntimeIdentifiers>win-x64;win-x86;linux-x64;linux-musl-x64;osx-x64;linux-arm64</RuntimeIdentifiers>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+        <PublishTrimmed>true</PublishTrimmed>
+        <PublishSingleFile>true</PublishSingleFile>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <IsPackable>true</IsPackable>
+        <PackAsTool>true</PackAsTool>
+        <ToolCommandName>dd-trace</ToolCommandName>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <PackageId>dd-trace</PackageId>
+        <OutputPath>bin\$(Configuration)\Tool</OutputPath>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
+
+  <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.8.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\Datadog.Monitoring.Distribution\home\**\*.*" Pack="true" PackagePath="\home" LinkBase="home">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="..\Datadog.Monitoring.Distribution\home\**\readme.txt" Pack="false">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
+  </ItemGroup>
+
+</Project>

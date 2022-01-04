@@ -118,11 +118,7 @@ namespace PrepareRelease
                 NugetVersionReplace);
 
             SynchronizeVersion(
-                "src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.Standalone.csproj",
-                NugetVersionReplace);
-
-            SynchronizeVersion(
-                "src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.Tool.csproj",
+                "src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.csproj",
                 NugetVersionReplace);
 
             // Fully qualified name updates
@@ -164,6 +160,10 @@ namespace PrepareRelease
             // Deployment updates
             SynchronizeVersion(
                 "src/WindowsInstaller/WindowsInstaller.wixproj",
+                WixProjReplace);
+
+            SynchronizeVersion(
+                "../shared/src/msi-installer/WindowsInstaller.wixproj",
                 WixProjReplace);
 
             Console.WriteLine($"Completed synchronizing versions to {VersionString()}");

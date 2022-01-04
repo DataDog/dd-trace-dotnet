@@ -15,7 +15,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using Datadog.Trace.ExtensionMethods;
-using MessagePack;
+using MessagePack; // use nuget MessagePack to deserialize
 
 namespace Datadog.Trace.TestHelpers
 {
@@ -95,7 +95,7 @@ namespace Datadog.Trace.TestHelpers
 
         public event EventHandler<EventArgs<HttpListenerContext>> RequestReceived;
 
-        public event EventHandler<EventArgs<IList<IList<Span>>>> RequestDeserialized;
+        public event EventHandler<EventArgs<IList<IList<MockSpan>>>> RequestDeserialized;
 
         /// <summary>
         /// Gets the TCP port that this Agent is listening on.
@@ -112,13 +112,13 @@ namespace Datadog.Trace.TestHelpers
         /// <summary>
         /// Gets the filters used to filter out spans we don't want to look at for a test.
         /// </summary>
-        public List<Func<Span, bool>> SpanFilters { get; private set; } = new List<Func<Span, bool>>();
+        public List<Func<MockSpan, bool>> SpanFilters { get; } = new();
 
-        public IImmutableList<Span> Spans { get; private set; } = ImmutableList<Span>.Empty;
+        public IImmutableList<MockSpan> Spans { get; private set; } = ImmutableList<MockSpan>.Empty;
 
         public IImmutableList<NameValueCollection> RequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
 
-        public ConcurrentQueue<string> StatsdRequests { get; } = new ConcurrentQueue<string>();
+        public ConcurrentQueue<string> StatsdRequests { get; } = new();
 
         /// <summary>
         /// Gets or sets a value indicating whether to skip deserialization of traces.
@@ -134,7 +134,7 @@ namespace Datadog.Trace.TestHelpers
         /// <param name="minDateTime">Minimum time to check for spans from</param>
         /// <param name="returnAllOperations">When true, returns every span regardless of operation name</param>
         /// <returns>The list of spans.</returns>
-        public IImmutableList<Span> WaitForSpans(
+        public IImmutableList<MockSpan> WaitForSpans(
             int count,
             int timeoutInMilliseconds = 20000,
             string operationName = null,
@@ -144,14 +144,13 @@ namespace Datadog.Trace.TestHelpers
             var deadline = DateTime.Now.AddMilliseconds(timeoutInMilliseconds);
             var minimumOffset = (minDateTime ?? DateTimeOffset.MinValue).ToUnixTimeNanoseconds();
 
-            IImmutableList<Span> relevantSpans = ImmutableList<Span>.Empty;
+            IImmutableList<MockSpan> relevantSpans = ImmutableList<MockSpan>.Empty;
 
             while (DateTime.Now < deadline)
             {
                 relevantSpans =
                     Spans
-                       .Where(s => SpanFilters.All(shouldReturn => shouldReturn(s)))
-                       .Where(s => s.Start > minimumOffset)
+                       .Where(s => SpanFilters.All(shouldReturn => shouldReturn(s)) && s.Start > minimumOffset)
                        .ToImmutableList();
 
                 if (relevantSpans.Count(s => operationName == null || s.Name == operationName) >= count)
@@ -202,9 +201,9 @@ namespace Datadog.Trace.TestHelpers
             RequestReceived?.Invoke(this, new EventArgs<HttpListenerContext>(context));
         }
 
-        protected virtual void OnRequestDeserialized(IList<IList<Span>> traces)
+        protected virtual void OnRequestDeserialized(IList<IList<MockSpan>> traces)
         {
-            RequestDeserialized?.Invoke(this, new EventArgs<IList<IList<Span>>>(traces));
+            RequestDeserialized?.Invoke(this, new EventArgs<IList<IList<MockSpan>>>(traces));
         }
 
         private void AssertHeader(
@@ -254,7 +253,7 @@ namespace Datadog.Trace.TestHelpers
                     OnRequestReceived(ctx);
                     if (ShouldDeserializeTraces)
                     {
-                        var spans = MessagePackSerializer.Deserialize<IList<IList<Span>>>(ctx.Request.InputStream);
+                        var spans = MessagePackSerializer.Deserialize<IList<IList<MockSpan>>>(ctx.Request.InputStream);
                         OnRequestDeserialized(spans);
 
                         lock (this)
@@ -293,64 +292,6 @@ namespace Datadog.Trace.TestHelpers
                 {
                     // we don't care about any exception when listener is stopped
                 }
-            }
-        }
-
-        [MessagePackObject]
-        [DebuggerDisplay("TraceId={TraceId}, SpanId={SpanId}, Service={Service}, Name={Name}, Resource={Resource}")]
-        public class Span
-        {
-            [Key("trace_id")]
-            public ulong TraceId { get; set; }
-
-            [Key("span_id")]
-            public ulong SpanId { get; set; }
-
-            [Key("name")]
-            public string Name { get; set; }
-
-            [Key("resource")]
-            public string Resource { get; set; }
-
-            [Key("service")]
-            public string Service { get; set; }
-
-            [Key("type")]
-            public string Type { get; set; }
-
-            [Key("start")]
-            public long Start { get; set; }
-
-            [Key("duration")]
-            public long Duration { get; set; }
-
-            [Key("parent_id")]
-            public ulong? ParentId { get; set; }
-
-            [Key("error")]
-            public byte Error { get; set; }
-
-            [Key("meta")]
-            public Dictionary<string, string> Tags { get; set; }
-
-            [Key("metrics")]
-            public Dictionary<string, double> Metrics { get; set; }
-
-            public Span WithTag(string key, string value)
-            {
-                Tags[key] = value;
-                return this;
-            }
-
-            public Span WithMetric(string key, double value)
-            {
-                Metrics[key] = value;
-                return this;
-            }
-
-            public override string ToString()
-            {
-                return $"TraceId={TraceId}, SpanId={SpanId}, Service={Service}, Name={Name}, Resource={Resource}, Type={Type}";
             }
         }
     }

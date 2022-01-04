@@ -708,7 +708,8 @@ void RejitHandler::ProcessTypeDefForRejit(const IntegrationDefinition& integrati
 
             const auto moduleMetadata = new ModuleMetadata(metadataImport, metadataEmit, assemblyImport, assemblyEmit,
                                                            moduleInfo.assembly.name, moduleInfo.assembly.app_domain_id,
-                                                           m_pCorAssemblyProperty, enable_by_ref_instrumentation);
+                                                           m_pCorAssemblyProperty, enable_by_ref_instrumentation,
+                                                           enable_calltarget_state_by_ref);
 
             Logger::Info("ReJIT handler stored metadata for ", moduleInfo.id, " ", moduleInfo.assembly.name,
                          " AppDomain ", moduleInfo.assembly.app_domain_id, " ", moduleInfo.assembly.app_domain_name);
@@ -981,6 +982,11 @@ ULONG RejitHandler::ProcessModuleForRejit(const std::vector<ModuleID>& modules,
 void RejitHandler::SetEnableByRefInstrumentation(bool enableByRefInstrumentation)
 {
     enable_by_ref_instrumentation = enableByRefInstrumentation;
+}
+
+void RejitHandler::SetEnableCallTargetStateByRef(bool enableCallTargetStateByRef)
+{
+    enable_calltarget_state_by_ref = enableCallTargetStateByRef;
 }
 
 } // namespace trace

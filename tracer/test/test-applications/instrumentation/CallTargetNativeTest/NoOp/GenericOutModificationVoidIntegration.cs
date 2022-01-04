@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace CallTargetNativeTest.NoOp
@@ -13,7 +13,7 @@ namespace CallTargetNativeTest.NoOp
             return returnValue;
         }
 
-        public static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, CallTargetState state)
+        public static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
         {
             CallTargetReturn returnValue = CallTargetReturn.GetDefault();
             Console.WriteLine($"ProfilerOK: EndMethod(0)<{typeof(GenericOutModificationVoidIntegration)}, {typeof(TTarget)}>({instance}, {exception?.ToString() ?? "(null)"}, {state})");

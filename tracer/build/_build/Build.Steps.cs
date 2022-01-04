@@ -97,6 +97,7 @@ partial class Build
     {
         Solution.GetProject(Projects.TraceIntegrationTests),
         Solution.GetProject(Projects.OpenTracingIntegrationTests),
+        Solution.GetProject(Projects.ToolIntegrationTests)
     };
 
     Project[] ClrProfilerIntegrationTests => new[]
@@ -559,12 +560,13 @@ partial class Build
         .After(CompileManagedSrc)
         .After(CompileDependencyLibs)
         .After(CompileManagedTestHelpers)
+        .After(BuildRunnerTool)
         .Executes(() =>
         {
             // create junction for each directory
             var directories = TracerDirectory.GlobDirectories(
                 $"src/**/bin/{BuildConfiguration}",
-                $"tools/**/bin/{BuildConfiguration}",
+                $"src/Datadog.Trace.Tools.Runner/obj/{BuildConfiguration}",
                 $"test/Datadog.Trace.TestHelpers/**/bin/{BuildConfiguration}",
                 $"test/test-applications/integrations/dependency-libs/**/bin/{BuildConfiguration}"
             );
@@ -853,6 +855,7 @@ partial class Build
         .After(CompileRegressionSamples)
         .After(CompileFrameworkReproductions)
         .After(PublishIisSamples)
+        .After(BuildRunnerTool)
         .Requires(() => Framework)
         .Requires(() => TracerHomeDirectory != null)
         .Executes(() =>
@@ -1225,6 +1228,7 @@ partial class Build
         .After(CompileManagedTestHelpers)
         .After(CompileSamplesLinux)
         .After(CompileMultiApiPackageVersionSamples)
+        .After(BuildRunnerTool)
         .Requires(() => TracerHomeDirectory != null)
         .Requires(() => Framework)
         .Executes(() =>
@@ -1309,6 +1313,30 @@ partial class Build
             {
                 MoveLogsToBuildData();
                 CopyMemoryDumps();
+            }
+        });
+
+    Target UpdateSnapshots => _ => _
+        .Description("Updates verified snapshots files with received ones")
+        .Executes(() =>
+        {
+            var snapshotsDirectory = Path.Combine(TestsDirectory, "snapshots");
+            var directory = new DirectoryInfo(snapshotsDirectory);
+            var files = directory.GetFiles("*.received*");
+
+            var suffixLength = "received".Length;
+            foreach (var file in files)
+            {
+                var source = file.FullName;
+                var fileName = Path.GetFileNameWithoutExtension(source);
+                if (!fileName.EndsWith("received"))
+                {
+                    Logger.Warn($"Skipping file '{source}' as filename did not end with 'received'");
+                    continue;
+                }
+                var trimmedName = fileName.Substring(0, fileName.Length - suffixLength);
+                var dest = Path.Combine(directory.FullName, $"{trimmedName}verified{Path.GetExtension(source)}");
+                file.MoveTo(dest, overwrite: true);
             }
         });
 
@@ -1552,7 +1580,6 @@ partial class Build
                              .Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.SkipAutoProps=true")
                              .Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura")
                              .Add($"DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.StrongNameKey=\"{strongNameKeyPath}\"")
-                             .Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.ExcludeByFile=\"**/NuGet/**/LibLog/**/*.cs\",")
                              .Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude=\"[*]Datadog.Trace.Vendors.*,[Datadog.Trace]System.*,[Datadog.Trace]Mono.*\",")
                              .Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include=\"[Datadog.Trace.ClrProfiler.*]*,[Datadog.Trace]*,[Datadog.Trace.AspNet]*\""));
     }

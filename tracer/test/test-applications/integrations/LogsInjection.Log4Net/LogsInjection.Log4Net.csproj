@@ -16,7 +16,11 @@
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(ApiVersion)' &gt;= '2.0.5'">
+  <ItemGroup Condition="'$(ApiVersion)' &gt;= '2.0.8'">
+    <PackageReference Include="log4net.Ext.Json" Version="2.0.8.1" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(ApiVersion)' &gt;= '2.0.5' AND '$(ApiVersion)' &lt; '2.0.8'">
     <PackageReference Include="log4net.Ext.Json" Version="1.2.15.14586" />
   </ItemGroup>
 

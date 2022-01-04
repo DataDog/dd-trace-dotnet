@@ -141,8 +141,7 @@ partial class Build
                 "tracer/src/Datadog.Trace.ClrProfiler.Native/version.h",
                 "tracer/src/Datadog.Trace.MSBuild/Datadog.Trace.MSBuild.csproj",
                 "tracer/src/Datadog.Trace.OpenTracing/Datadog.Trace.OpenTracing.csproj",
-                "tracer/src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.Standalone.csproj",
-                "tracer/src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.Tool.csproj",
+                "tracer/src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.csproj",
                 "tracer/src/Datadog.Trace/Datadog.Trace.csproj",
                 "tracer/src/Datadog.Trace/TracerConstants.cs",
                 "tracer/src/WindowsInstaller/WindowsInstaller.wixproj",
@@ -710,7 +709,7 @@ partial class Build
 
         var zipPath = outputDirectory / $"{artifact.Name}.zip";
 
-        Console.WriteLine($"Found artifacts. Downloading to {zipPath}...");
+        Console.WriteLine($"Found artifacts. Downloading from {artifact.Resource.DownloadUrl} to {zipPath}...");
 
         // buildHttpClient.GetArtifactContentZipAsync doesn't seem to work
         var temporary = new HttpClient();

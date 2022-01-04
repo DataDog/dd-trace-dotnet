@@ -15,6 +15,8 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.RuntimeMetrics
 {
+    [CollectionDefinition(nameof(RuntimeEventListenerTests), DisableParallelization = true)]
+    [Collection(nameof(RuntimeEventListenerTests))]
     public class RuntimeEventListenerTests
     {
         [Fact]
@@ -99,14 +101,6 @@ namespace Datadog.Trace.Tests.RuntimeMetrics
 
             // Wait for the counters to be refreshed
             mutex.Wait();
-
-#if NETCOREAPP3_1
-            // Reduce the probability of a crash on .NET Core 3.1.9/3.1.10: https://github.com/dotnet/coreclr/pull/28112/
-            // The crash happens if disposing counters while they're being refreshed.
-            // Since the mutex is set when refreshing the counters, there's a high probability for the disposing to occur concurrently.
-            // The small pause should help de-syncing the two operations.
-            Thread.Sleep(100);
-#endif
 
             statsd.Verify(s => s.Gauge(MetricsNames.AspNetCoreCurrentRequests, 1.0, 1, null), Times.AtLeastOnce);
             statsd.Verify(s => s.Gauge(MetricsNames.AspNetCoreFailedRequests, 2.0, 1, null), Times.AtLeastOnce);

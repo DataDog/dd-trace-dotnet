@@ -13,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
 {
     public static class EquivalencyAssertionOptionsExtensions
     {
-        public static EquivalencyAssertionOptions<MockTracerAgent.Span> ExcludingDefaultSpanProperties(this EquivalencyAssertionOptions<MockTracerAgent.Span> options)
+        public static EquivalencyAssertionOptions<MockSpan> ExcludingDefaultSpanProperties(this EquivalencyAssertionOptions<MockSpan> options)
         {
             return options.Excluding(s => s.TraceId)
                           .Excluding(s => s.SpanId)
@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
                           .Excluding(s => s.ParentId);
         }
 
-        public static EquivalencyAssertionOptions<MockTracerAgent.Span> AssertTagsMatchAndSpecifiedTagsPresent(this EquivalencyAssertionOptions<MockTracerAgent.Span> options, params string[] presentTags)
+        public static EquivalencyAssertionOptions<MockSpan> AssertTagsMatchAndSpecifiedTagsPresent(this EquivalencyAssertionOptions<MockSpan> options, params string[] presentTags)
         {
             return options.Using<Dictionary<string, string>>(ctx =>
             {
@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
             }).When(info => info.SelectedMemberPath.EndsWith("Tags"));
         }
 
-        public static EquivalencyAssertionOptions<MockTracerAgent.Span> AssertMetricsMatchExcludingKeys(this EquivalencyAssertionOptions<MockTracerAgent.Span> options, params string[] excludedKeys)
+        public static EquivalencyAssertionOptions<MockSpan> AssertMetricsMatchExcludingKeys(this EquivalencyAssertionOptions<MockSpan> options, params string[] excludedKeys)
         {
             return options.Using<Dictionary<string, double>>(ctx =>
             {

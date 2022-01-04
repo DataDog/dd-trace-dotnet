@@ -81,7 +81,7 @@ namespace Datadog.Trace
         /// The <see cref="TracerManager"/> created will be scoped specifically to this instance.
         /// </summary>
         internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ISampler sampler, IScopeManager scopeManager, IDogStatsd statsd)
-            : this(TracerManagerFactory.Instance.CreateTracerManager(settings?.Build(), agentWriter, sampler, scopeManager, statsd, runtimeMetrics: null, libLogSubscriber: null))
+            : this(TracerManagerFactory.Instance.CreateTracerManager(settings?.Build(), agentWriter, sampler, scopeManager, statsd, runtimeMetrics: null))
         {
         }
 
@@ -340,7 +340,7 @@ namespace Datadog.Trace
                 parent = DistributedTracer.Instance.GetSpanContext() ?? TracerManager.ScopeManager.Active?.Span?.Context;
             }
 
-            ITraceContext traceContext;
+            TraceContext traceContext;
 
             // try to get the trace context (from local spans) or
             // sampling priority (from propagated spans),

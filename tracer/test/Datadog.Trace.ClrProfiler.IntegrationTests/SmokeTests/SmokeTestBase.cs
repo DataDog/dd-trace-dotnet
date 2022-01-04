@@ -38,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 
         protected bool AssumeSuccessOnTimeout { get; set; }
 
-        protected IImmutableList<MockTracerAgent.Span> Spans { get; private set; } = ImmutableList<MockTracerAgent.Span>.Empty;
+        protected IImmutableList<MockSpan> Spans { get; private set; } = ImmutableList<MockSpan>.Empty;
 
         protected void SetEnvironmentVariable(string key, string value)
         {

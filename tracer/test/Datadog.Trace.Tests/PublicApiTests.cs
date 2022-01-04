@@ -3,6 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+using System.Reflection;
+using FluentAssertions;
+using Xunit;
+
 namespace Datadog.Trace.Tests
 {
     public class PublicApiTests : PublicApiTestsBase
@@ -11,5 +16,14 @@ namespace Datadog.Trace.Tests
             : base(typeof(Tracer).Assembly)
         {
         }
+
+#if NETFRAMEWORK
+        [Fact]
+        public void ExposesTracingHttpModule()
+        {
+            var httpModuleType = Type.GetType("Datadog.Trace.AspNet.TracingHttpModule, Datadog.Trace.AspNet");
+            Assert.NotNull(httpModuleType);
+        }
+#endif
     }
 }

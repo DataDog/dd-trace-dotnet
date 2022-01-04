@@ -38,7 +38,7 @@ namespace Datadog.Trace.Tests.ExtensionMethods
         [InlineData(" original_length_201_with_one_leading_whitespace________________________________________________________________________________________________________________________________________________________", true, "original_length_201_with_one_leading_whitespace________________________________________________________________________________________________________________________________________________________")]
         public void TryConvertToNormalizedTagName(string input, bool expectedConversionSuccess, string expectedTagName)
         {
-            bool actualConversionSuccess = input.TryConvertToNormalizedTagName(out string actualTagName);
+            bool actualConversionSuccess = input.TryConvertToNormalizedTagName(normalizePeriods: false, out string actualTagName);
             Assert.Equal(expectedConversionSuccess, actualConversionSuccess);
 
             if (actualConversionSuccess)
@@ -52,14 +52,14 @@ namespace Datadog.Trace.Tests.ExtensionMethods
         [InlineData("Content-Type", true, "content-type")]
         [InlineData(" Content-Type ", true, "content-type")]
         [InlineData("C!!!ont_____ent----tYp!/!e", true, "c___ont_____ent----typ_/_e")]
-        [InlineData("Some.Header", true, "some_header")] // Note: Differs from TryConvertToNormalizedTagName because '.' characters are replaced with '_'
+        [InlineData("Some.Header", true, "some_header")]
         [InlineData("9invalidtagname", false, null)]
         [InlineData("invalid_length_201_______________________________________________________________________________________________________________________________________________________________________________________", false, null)]
         [InlineData("valid_length_200________________________________________________________________________________________________________________________________________________________________________________________", true, "valid_length_200________________________________________________________________________________________________________________________________________________________________________________________")]
         [InlineData(" original_length_201_with_one_leading_whitespace________________________________________________________________________________________________________________________________________________________", true, "original_length_201_with_one_leading_whitespace________________________________________________________________________________________________________________________________________________________")]
         public void TryConvertToNormalizedHeaderTagName(string input, bool expectedConversionSuccess, string expectedTagName)
         {
-            bool actualConversionSuccess = input.TryConvertToNormalizedHeaderTagName(out string actualTagName);
+            bool actualConversionSuccess = input.TryConvertToNormalizedTagName(normalizePeriods: true, out string actualTagName);
             Assert.Equal(expectedConversionSuccess, actualConversionSuccess);
 
             if (actualConversionSuccess)

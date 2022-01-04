@@ -4,34 +4,35 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.AppSec.EventModel;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using VerifyTests;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
+    [UsesVerify]
     public class AspNetBase : TestHelper
     {
         protected const string DefaultAttackUrl = "/Health/?arg=[$slice]";
+        private readonly string _testName;
         private readonly HttpClient _httpClient;
         private readonly string _shutdownPath;
         private int _httpPort;
         private Process _process;
         private MockTracerAgent _agent;
 
-        public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath, string samplesDir = null)
+        public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath, string samplesDir = null, string testName = null)
             : base(sampleName, samplesDir ?? "test/test-applications/security", outputHelper)
         {
+            _testName = "Security." + (testName ?? sampleName);
             _httpClient = new HttpClient();
             _shutdownPath = shutdownPath;
 
@@ -40,7 +41,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             _httpClient.DefaultRequestHeaders.Add("user-agent", "Mistake Not...");
         }
 
-        public async Task<MockTracerAgent> RunOnSelfHosted(bool enableSecurity, bool enableBlocking)
+        public async Task<MockTracerAgent> RunOnSelfHosted(bool enableSecurity, bool enableBlocking, string externalRulesFile = null)
         {
             if (_agent == null)
             {
@@ -50,7 +51,14 @@ namespace Datadog.Trace.Security.IntegrationTests
                 _agent = new MockTracerAgent(agentPort);
             }
 
-            await StartSample(_agent.Port, arguments: null, aspNetCorePort: _httpPort, enableSecurity: enableSecurity, enableBlocking: enableBlocking);
+            await StartSample(
+                _agent.Port,
+                arguments: null,
+                aspNetCorePort: _httpPort,
+                enableSecurity: enableSecurity,
+                enableBlocking: enableBlocking,
+                externalRulesFile: externalRulesFile);
+
             return _agent;
         }
 
@@ -82,7 +90,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             _agent?.Dispose();
         }
 
-        public async Task TestBlockedRequestAsync(MockTracerAgent agent, bool enableSecurity, HttpStatusCode expectedStatusCode, int expectedSpans, IEnumerable<Action<MockTracerAgent.Span>> assertOnSpans, string url)
+        public async Task TestBlockedRequestAsync(MockTracerAgent agent, string url, int expectedSpans, VerifySettings settings)
         {
             Func<Task<(HttpStatusCode StatusCode, string ResponseText)>> attack = () => SubmitRequest(url);
             var resultRequests = await Task.WhenAll(attack(), attack(), attack(), attack(), attack());
@@ -90,58 +98,11 @@ namespace Datadog.Trace.Security.IntegrationTests
             var spans = agent.WaitForSpans(expectedSpans);
             Assert.Equal(expectedSpans, spans.Count);
 
-            var expectedAppSecEvents = enableSecurity ? 5 : 0;
-            var actualAppSecEvents = 0;
-
-            var spanIds = spans.Select(s => s.SpanId);
-
-            foreach (var span in spans)
-            {
-                // not all tags will have security events, only the route ones
-                var gotTag = span.Tags.TryGetValue(Tags.AppSecJson, out var json);
-                if (gotTag)
-                {
-                    actualAppSecEvents++;
-
-                    // we only really care about these asserts if we're on an appsec span
-                    foreach (var assert in assertOnSpans)
-                    {
-                        assert(span);
-                    }
-
-                    var jsonObj = JsonConvert.DeserializeObject<AppSecJson>(json);
-
-                    var item = jsonObj.Triggers.FirstOrDefault();
-                    Assert.NotNull(item);
-
-                    var attackEvent = item;
-                    var shouldBlock = expectedStatusCode == HttpStatusCode.Forbidden;
-                    Assert.Equal("Finds basic MongoDB SQL injection attempts", attackEvent.Rule.Name);
-
-                    // presences of json tag implies span should carry other security tags
-                    var securityTags = new Dictionary<string, string>()
-                    {
-                        { "appsec.event", "true" },
-                        { "_dd.origin", "appsec" },
-                        { "http.useragent", "Mistake Not..." },
-                        { "actor.ip", "86.242.244.246" },
-                        { "http.request.headers.host", $"localhost:{_httpPort}" },
-                        { "http.request.headers.x-forwarded", "86.242.244.246" },
-                        { "http.request.headers.user-agent", "Mistake Not..." },
-                    };
-                    foreach (var kvp in securityTags)
-                    {
-                        Assert.True(span.Tags.TryGetValue(kvp.Key, out var tagValue), $"The tag {kvp.Key} was not found");
-                        Assert.Equal(kvp.Value, tagValue);
-                    }
-                }
-            }
-
-            // asserts on request status code
-            Assert.All(resultRequests, r => Assert.Equal(r.StatusCode, expectedStatusCode));
-
-            // asserts on the security events
-            Assert.Equal(expectedAppSecEvents, actualAppSecEvents);
+            // Overriding the type name here as we have multiple test classes in the file
+            // Ensures that we get nice file nesting in Solution Explorer
+            await Verifier.Verify(spans, settings)
+                          .UseMethodName("_")
+                          .UseTypeName(GetTestName());
         }
 
         protected void SetHttpPort(int httpPort)
@@ -157,7 +118,22 @@ namespace Datadog.Trace.Security.IntegrationTests
             return (response.StatusCode, responseText);
         }
 
-        private async Task StartSample(int traceAgentPort, string arguments, int? aspNetCorePort = null, string packageVersion = "", int? statsdPort = null, string framework = "", string path = "/Home", bool enableSecurity = true, bool enableBlocking = true)
+        protected virtual string GetTestName()
+        {
+            return _testName;
+        }
+
+        private async Task StartSample(
+            int traceAgentPort,
+            string arguments,
+            int? aspNetCorePort = null,
+            string packageVersion = "",
+            int? statsdPort = null,
+            string framework = "",
+            string path = "/Home",
+            bool enableSecurity = true,
+            bool enableBlocking = true,
+            string externalRulesFile = null)
         {
             var sampleAppPath = EnvironmentHelper.GetSampleApplicationPath(packageVersion, framework);
             // get path to sample app that the profiler will attach to
@@ -184,7 +160,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 aspNetCorePort: aspNetCorePort.GetValueOrDefault(5000),
                 enableSecurity: enableSecurity,
                 enableBlocking: enableBlocking,
-                callTargetEnabled: true);
+                externalRulesFile: externalRulesFile);
 
             // then wait server ready
             var wh = new EventWaitHandle(false, EventResetMode.AutoReset);

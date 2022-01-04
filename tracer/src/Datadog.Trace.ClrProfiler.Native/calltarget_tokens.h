@@ -27,6 +27,7 @@ class CallTargetTokens
 private:
     ModuleMetadata* module_metadata_ptr = nullptr;
     const bool enable_by_ref_instrumentation = false;
+    const bool enable_calltarget_state_by_ref = false;
 
     // CorLib tokens
     mdAssemblyRef corLibAssemblyRef = mdAssemblyRefNil;
@@ -74,7 +75,8 @@ private:
                                                const TypeInfo* currentType, ILInstr** instruction);
 
 public:
-    CallTargetTokens(ModuleMetadata* module_metadata_ptr, const bool enableByRefInstrumentation);
+    CallTargetTokens(ModuleMetadata* module_metadata_ptr, const bool enableByRefInstrumentation,
+                     const bool enableCallTargetStateByRef);
 
     mdTypeRef GetObjectTypeRef();
     mdTypeRef GetExceptionTypeRef();

@@ -6,11 +6,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using CsvHelper;
-using CsvHelper.Configuration;
 using Newtonsoft.Json;
 using Nuke.Common;
 
@@ -19,13 +16,6 @@ namespace BenchmarkComparison
     public static class BenchmarkParser
     {
         private const string FullBdnJsonFileExtension = "full-compressed.json";
-        private const string BdnCsvFileExtension = ".csv";
-
-        public static List<BdnRunSummary> ReadCsvResults(string path)
-        {
-            var files = GetFilesToParse(path, BdnCsvFileExtension);
-            return files.Select(ReadFromCsvFile).ToList();
-        }
 
         public static List<BdnResult> ReadJsonResults(string path)
         {
@@ -44,27 +34,6 @@ namespace BenchmarkComparison
             catch (Exception ex)
             {
                 Logger.Error($"Exception reading benchmarkdotnet json results '{resultFilePath}': {ex}");
-                throw;
-            }
-        }
-
-        private static BdnRunSummary ReadFromCsvFile(string resultFilePath)
-        {
-            try
-            {
-                var config = new CsvConfiguration(CultureInfo.InvariantCulture)
-                {
-                    HasHeaderRecord = true,
-                };
-                using var reader = new StreamReader(resultFilePath);
-                using var csv = new CsvReader(reader, config);
-                var summaries = csv.GetRecords<BdnBenchmarkSummary>().ToList();
-                var name = Path.GetFileName(resultFilePath).Replace("-report.csv", "");
-                return new BdnRunSummary(name, summaries);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Exception reading benchmarkdotnet csv results '{resultFilePath}': {ex}");
                 throw;
             }
         }

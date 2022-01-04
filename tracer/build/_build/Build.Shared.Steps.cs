@@ -20,8 +20,6 @@ partial class Build
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
-            var project = ProfilerDirectory.GlobFiles("**/Datadog.Profiler.Native.Windows.vcxproj").Single();
-
             // If we're building for x64, build for x86 too
             var platforms =
                 Equals(TargetPlatform, MSBuildTargetPlatform.x64)

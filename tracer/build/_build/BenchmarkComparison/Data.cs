@@ -136,8 +136,8 @@ namespace BenchmarkComparison
 
     public record MatchedSummary(
         string BenchmarkName,
-        List<BdnBenchmarkSummary> BaseSummary,
-        List<BdnBenchmarkSummary> DiffSummary,
+        List<Benchmark> BaseResults,
+        List<Benchmark> DiffResults,
         List<BenchmarkComparison> Comparisons,
         List<AllocationComparison> AllocationComparisons)
     {
@@ -196,35 +196,9 @@ namespace BenchmarkComparison
 
     public record AllocationComparison(
         string Id,
-        BdnBenchmarkSummary BaseResult,
-        BdnBenchmarkSummary DiffResult,
+        Benchmark BaseResult,
+        Benchmark DiffResult,
         AllocationConclusion Conclusion);
-
-    public record BdnRunSummary(string FileName, List<BdnBenchmarkSummary> Results);
-
-    public class BdnBenchmarkSummary
-    {
-        public string Method { get; set; }
-        public string Job { get; set; }
-        public string Runtime { get; set; }
-        public string Toolchain { get; set; }
-        public string IterationTime { get; set; }
-        public string Mean { get; set; }
-        public string Error { get; set; }
-        public string StdDev { get; set; }
-        public string Ratio { get; set; }
-
-        [Name("Gen 0")]
-        public string Gen0 { get; set; }
-
-        [Name("Gen 1")]
-        public string Gen1 { get; set; }
-
-        [Name("Gen 2")]
-        public string Gen2 { get; set; }
-
-        public string Allocated { get; set; }
-    }
 
     public enum AllocationConclusion
     {
