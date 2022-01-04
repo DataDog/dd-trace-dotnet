@@ -54,6 +54,8 @@ public:
 
     void RequestRejitForInlinersInModule(ModuleID moduleId);
     virtual MethodRewriter* GetMethodRewriter() = 0;
+
+    virtual ~RejitHandlerModuleMethod() = default;
 };
 
 /// <summary>
