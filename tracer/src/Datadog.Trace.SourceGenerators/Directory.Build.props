@@ -1,19 +1,4 @@
 <Project>
-  <!-- Deliberately not importing parent directory props-->
-
-  <PropertyGroup>
-    <!-- Strong name signature -->
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>../../../Datadog.Trace.snk</AssemblyOriginatorKeyFile>
-    <LangVersion>latest</LangVersion>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <!-- StyleCop -->
-    <Compile Include="../GlobalSuppressions.cs" Link="GlobalSuppressions.src.cs" />
-    <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.*" PrivateAssets="all" />
-    <AdditionalFiles Include="../../stylecop.json" Link="stylecop.json" />
-    <Compile Include="../../GlobalSuppressions.cs" Link="GlobalSuppressions.solution.cs" />
-  </ItemGroup>
-
+  <!-- Deliberately skipping parent directory props, note the "../../" -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../../'))" />
 </Project>
