@@ -125,7 +125,7 @@ namespace Datadog.Trace.TestHelpers
 
         public void Dispose()
         {
-            _listener?.Abort();
+            _listener?.Close();
         }
 
         protected virtual void OnRequestReceived(HttpListenerContext context)
