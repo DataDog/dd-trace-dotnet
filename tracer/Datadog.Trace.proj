@@ -53,6 +53,7 @@
     <ItemGroup>
       <IntegrationTestProjects Include="@(RazorPagesProject)" Condition="!$(TargetFramework.StartsWith('net4'))" />
       <IntegrationTestProjects Include="@(CsharpIntegrationTestProject);@(CsharpIntegrationTestRegressionProject);@(ExcludeExpenseItDemoProject);@(ExcludeLegacyRedisProject)" />
+      <IntegrationTestProjects Remove="test/Datadog.Trace.Tools.Runner.IntegrationTests/Datadog.Trace.Tools.Runner.IntegrationTests.csproj" Condition="$(TargetFramework.StartsWith('net4'))" />
     </ItemGroup>
 
     <MSBuild Targets="Build" Projects="@(IntegrationTestProjects)">

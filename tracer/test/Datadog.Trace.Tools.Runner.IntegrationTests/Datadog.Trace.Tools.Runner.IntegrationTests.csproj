@@ -1,7 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <ItemGroup Condition="!$(TargetFramework.StartsWith('net4'))">
-    <ProjectReference Condition="!$(TargetFramework.StartsWith('net4'))"  Include="..\..\src\Datadog.Trace.Tools.Runner\Datadog.Trace.Tools.Runner.csproj" />
+  <PropertyGroup>
+    <TargetFrameworks>netcoreapp2.1;netcoreapp3.0;netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Datadog.Trace.Tools.Runner\Datadog.Trace.Tools.Runner.csproj" />
 
   </ItemGroup>
 
@@ -18,8 +22,4 @@
     <PackageReference Include="Verify.Xunit" Version="11.12.1" />
   </ItemGroup>
 
-  <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
-    <Compile Remove="*.cs" />
-    <None Include="*.cs" />
-  </ItemGroup>
 </Project>
