@@ -1576,9 +1576,11 @@ stages:
           --tag dd-trace-dotnet/$(dockerTag)-smoke-test \
           --file "$(System.DefaultWorkingDirectory)/tracer/build/_build/docker/smoke.dockerfile" \
           "$(smokeTestAppDir)"
+      failOnStderr: true
       displayName: Build $(dockerTag) Docker image
 
     - script: docker run --rm dd-trace-dotnet/$(dockerTag)-smoke-test
+      failOnStderr: true
       displayName: Test $(dockerTag) Docker image
 
 - stage: installer_smoke_tests_arm64
@@ -1613,7 +1615,9 @@ stages:
               --tag dd-trace-dotnet/$(dockerTag)-smoke-test \
               --file "$(System.DefaultWorkingDirectory)/tracer/build/_build/docker/smoke.dockerfile" \
               "$(smokeTestAppDir)"
+          failOnStderr: true
           displayName: Build $(dockerTag) Docker image
 
         - script: docker run --rm dd-trace-dotnet/$(dockerTag)-smoke-test
+          failOnStderr: true
           displayName: Test $(dockerTag) Docker image

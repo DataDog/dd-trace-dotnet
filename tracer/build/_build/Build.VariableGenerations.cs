@@ -186,7 +186,6 @@ partial class Build : NukeBuild
                     }
                 }
 
-
                 Logger.Info($"Exploration test linux matrix");
                 Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                 AzurePipelines.Instance.SetVariable("exploration_tests_linux_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
@@ -254,10 +253,10 @@ partial class Build : NukeBuild
                 );
 
                 void AddToMatrix(
-                    (string publishFramework, string runtimeTag)[] images
-                  , string installCmd
-                  , string linuxArtifacts
-                  , string dockerName
+                    (string publishFramework, string runtimeTag)[] images, 
+                    string installCmd, 
+                    string linuxArtifacts, 
+                    string dockerName
                 )
                 {
                     foreach (var image in images)
@@ -299,10 +298,10 @@ partial class Build : NukeBuild
                 );
 
                 void AddToMatrix(
-                    (string publishFramework, string runtimeTag)[] images
-                  , string installCmd
-                  , string linuxArtifacts
-                  , string dockerName
+                    (string publishFramework, string runtimeTag)[] images, 
+                    string installCmd, 
+                    string linuxArtifacts, 
+                    string dockerName
                 )
                 {
                     foreach (var image in images)
