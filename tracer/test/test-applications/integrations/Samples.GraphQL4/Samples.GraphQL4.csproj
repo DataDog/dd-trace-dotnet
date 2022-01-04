@@ -2,11 +2,16 @@
 
   <PropertyGroup>
     <TargetFrameworks>netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">4.6.1</ApiVersion>
+
+    <!-- Required to build multiple projects with the same Configuration|Platform, which is needed for the CI library/version matrix -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="GraphQL" Version="4.6.1" />
-    <PackageReference Include="GraphQL.SystemReactive" Version="4.6.1" />
+    <PackageReference Include="GraphQL" Version="$(ApiVersion)" />
+    <PackageReference Include="GraphQL.SystemReactive" Version="$(ApiVersion)" />
     <PackageReference Include="GraphQL.Server.Transports.AspNetCore" Version="5.0.2" />
     <PackageReference Include="GraphQL.Server.Transports.AspNetCore.NewtonsoftJson" Version="5.0.2" />
     <PackageReference Include="GraphQL.Server.Ui.Playground" Version="5.0.2" />
