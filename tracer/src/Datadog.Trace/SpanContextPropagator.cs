@@ -9,6 +9,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
@@ -30,15 +31,7 @@ namespace Datadog.Trace
 
         private SpanContextPropagator()
         {
-            IEnumerable<string?> ReadOnlyDictionaryValueGetter(IReadOnlyDictionary<string, string?>? carrier, string name)
-            {
-                if (carrier != null && carrier.TryGetValue(name, out var value))
-                {
-                    yield return value;
-                }
-            }
-
-            _readOnlyDictionaryValueGetterDelegate = ReadOnlyDictionaryValueGetter;
+            _readOnlyDictionaryValueGetterDelegate = (carrier, name) => carrier != null && carrier.TryGetValue(name, out var value) ? new[] { value } : Enumerable.Empty<string?>();
         }
 
         public static SpanContextPropagator Instance { get; } = new();
