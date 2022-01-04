@@ -13,8 +13,7 @@ using Xunit;
 
 namespace Datadog.Trace.Tools.Runner.IntegrationTests
 {
-    [CollectionDefinition(nameof(LegacyCommandLineArgumentsTests), DisableParallelization = true)]
-    [Collection(nameof(LegacyCommandLineArgumentsTests))]
+    [Collection(nameof(ConsoleTestsCollection))]
     public class LegacyCommandLineArgumentsTests
     {
         [Fact]

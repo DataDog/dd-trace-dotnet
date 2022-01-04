@@ -65,8 +65,8 @@ namespace Datadog.Trace.Tools.Runner
 
             if (options.SetEnvironmentVariables)
             {
-                Console.WriteLine("Setting up the environment variables.");
-                CIConfiguration.SetupCIEnvironmentVariables(profilerEnvironmentVariables);
+                AnsiConsole.WriteLine("Setting up the environment variables.");
+                CIConfiguration.SetupCIEnvironmentVariables(profilerEnvironmentVariables, null);
             }
             else if (!string.IsNullOrEmpty(options.CrankImportFile))
             {
@@ -83,7 +83,7 @@ namespace Datadog.Trace.Tools.Runner
                         return 1;
                     }
 
-                    Console.WriteLine("Running: " + cmdLine);
+                    AnsiConsole.WriteLine("Running: " + cmdLine);
 
                     var arguments = args.Length > 1 ? string.Join(' ', args.Skip(1).ToArray()) : null;
 
