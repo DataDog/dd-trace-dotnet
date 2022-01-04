@@ -1,79 +1,35 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json;
 using Nuke.Common;
 using Nuke.Common.CI.AzurePipelines;
-using Nuke.Common.Execution;
 using Nuke.Common.Tools.Git;
 using NukeExtensions;
 
 partial class Build : NukeBuild
 {
-
-    [Parameter("Indicates matrices target. Match the name of generated variable", List = false)]
-    readonly GenerateMatricesTarget? GenerateMatricesTarget;
-
-    [Parameter("Indicates condition. Must be in the format '{variableName}|[filter1,filter2];{variableName}|[filter1,filter2]'", List = false)]
-    readonly string GenerateConditionVariableFilter;
-
-    Target GenerateMatrices
+    Target GenerateVariables
         => _ =>
         {
             return _
                   .Unlisted()
-                  .Requires(() => GenerateMatricesTarget)
                   .Executes(() =>
-                  {
-                      if (!CheckChanges())
-                      {
-                          Logger.Info($"No changes found.");
-                          return;
-                      }
+                   {
+                       GenerateConditionVariables();
 
-                      var target = GenerateMatricesTarget ?? global::GenerateMatricesTarget.none;
-                      if (global::GenerateMatricesTarget.integration_tests_windows_matrices.HasFlag(target))
-                      {
-                          GenerateIntegrationTestsWindowsMatrices(target);
-                      }
+                       GenerateIntegrationTestsWindowsMatrices();
+                       GenerateIntegrationTestsLinuxMatrix();
+                       GenerateExplorationTestMatrices();
+                       GenerateSmokeTestsMatrices();
+                   });
 
-                      if (target.HasFlag(global::GenerateMatricesTarget.integration_tests_linux_matrix))
-                      {
-                          GenerateIntegrationTestsLinuxMatrix();
-                      }
-
-                      if (global::GenerateMatricesTarget.exploration_tests_matrices.HasFlag(target))
-                      {
-                          GenerateExplorationTestMatrices(target);
-                      }
-                  });
-
-            bool CheckChanges()
+            void GenerateConditionVariables()
             {
-                if (string.IsNullOrWhiteSpace(GenerateConditionVariableFilter))
+                GenerateConditionVariableBasedOnGitChange("isDebuggerChanged", new[] { "tracer/src/Datadog.Trace.ClrProfiler.Native/Debugger" });
+                GenerateConditionVariableBasedOnGitChange("isProfilerChanged", new[] { "profiler/src" });
+
+                void GenerateConditionVariableBasedOnGitChange(string variableName, string[] filters)
                 {
-                    Logger.Info("Filter condition is not provided, assuming true.");
-                    return true;
-                }
-
-                var varFilterConditions = GenerateConditionVariableFilter.Split(';');
-
-                var isChanged = false;
-
-                foreach (var varFilterCondition in varFilterConditions)
-                {
-                    Logger.Info($"Checking changes for {varFilterCondition}");
-                    isChanged = CheckChange(varFilterCondition) || isChanged;
-                }
-
-                return isChanged;
-
-                bool CheckChange(string varFilterCondition)
-                {
-                    var arr = varFilterCondition.Split('|');
-                    var variableName = arr[0];
-                    var filters = arr[1].Split(',');
-
                     var masterCommit = GitTasks.Git("merge-base origin/master HEAD").First().Text;
                     var changedFiles =
                             GitTasks
@@ -89,24 +45,15 @@ partial class Build : NukeBuild
                     var variableValue = isChanged.ToString();
                     EnvironmentInfo.SetVariable(variableName, variableValue);
                     AzurePipelines.Instance.SetVariable(variableName, variableValue);
-
-                    return isChanged;
                 }
             }
 
-            void GenerateIntegrationTestsWindowsMatrices(GenerateMatricesTarget target)
+            void GenerateIntegrationTestsWindowsMatrices()
             {
                 var targetFrameworks = TargetFramework.GetFrameworks(except: new[] { TargetFramework.NETSTANDARD2_0 });
 
-                if (target.HasFlag(global::GenerateMatricesTarget.integration_tests_windows_matrix))
-                {
-                    GenerateIntegrationTestsWindowsMatrix(targetFrameworks);
-                }
-
-                if (target.HasFlag(global::GenerateMatricesTarget.integration_tests_windows_iis_matrix))
-                {
-                    GenerateIntegrationTestsWindowsIISMatrix(targetFrameworks);
-                }
+                GenerateIntegrationTestsWindowsMatrix(targetFrameworks);
+                GenerateIntegrationTestsWindowsIISMatrix(targetFrameworks);
             }
 
             void GenerateIntegrationTestsWindowsMatrix(TargetFramework[] targetFrameworks)
@@ -166,7 +113,7 @@ partial class Build : NukeBuild
                 AzurePipelines.Instance.SetVariable("integration_tests_linux_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
             }
 
-            void GenerateExplorationTestMatrices(GenerateMatricesTarget target)
+            void GenerateExplorationTestMatrices()
             {
                 var isDebuggerChanged = bool.Parse(EnvironmentInfo.GetVariable<string>("isDebuggerChanged") ?? "false");
                 var isProfilerChanged = bool.Parse(EnvironmentInfo.GetVariable<string>("isProfilerChanged") ?? "false");
@@ -182,15 +129,8 @@ partial class Build : NukeBuild
                     useCases.Add(global::ExplorationTestUseCase.ContinuousProfiler.ToString());
                 }
 
-                if (target.HasFlag(global::GenerateMatricesTarget.exploration_tests_windows_matrix))
-                {
-                    GenerateExplorationTestsWindowsMatrix(useCases);
-                }
-
-                if (target.HasFlag(global::GenerateMatricesTarget.exploration_tests_linux_matrix))
-                {
-                    GenerateExplorationTestsLinuxMatrix(useCases);
-                }
+                GenerateExplorationTestsWindowsMatrix(useCases);
+                GenerateExplorationTestsLinuxMatrix(useCases);
             }
 
             void GenerateExplorationTestsWindowsMatrix(IEnumerable<string> useCases)
@@ -245,19 +185,137 @@ partial class Build : NukeBuild
                 Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                 AzurePipelines.Instance.SetVariable("exploration_tests_linux_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
             }
+
+            void GenerateSmokeTestsMatrices()
+            {
+                GenerateSmokeTestsMatrix();
+                GenerateSmokeTestsArm64Matrix();
+            }
+
+            static void GenerateSmokeTestsMatrix()
+            {
+                var matrix = new Dictionary<string, object>();
+
+                AddToMatrix(
+                    new (TargetFramework publishFramework, string dockerTag)[]
+                    {
+                (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
+                (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim"),
+                (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim"),
+                (publishFramework: TargetFramework.NET5_0, "5.0-focal"),
+                (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-bullseye-slim"),
+                (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-buster-slim"),
+                (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-bionic"),
+                (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-bionic"),
+                (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-stretch-slim"),
+                    },
+                    installCmd: "dpkg -i ./datadog-dotnet-apm*_amd64.deb",
+                    linuxArtifacts: "linux-packages-debian",
+                    dockerName: "mcr.microsoft.com/dotnet/aspnet"
+                );
+
+                AddToMatrix(
+                    new (TargetFramework publishFramework, string dockerTag)[]
+                    {
+                (publishFramework: TargetFramework.NET6_0, "34-6.0"),
+                (publishFramework: TargetFramework.NET5_0, "35-5.0"),
+                (publishFramework: TargetFramework.NET5_0, "34-5.0"),
+                (publishFramework: TargetFramework.NET5_0, "33-5.0"),
+                (publishFramework: TargetFramework.NETCOREAPP3_1, "35-3.1"),
+                (publishFramework: TargetFramework.NETCOREAPP3_1, "34-3.1"),
+                (publishFramework: TargetFramework.NETCOREAPP3_1, "33-3.1"),
+                (publishFramework: TargetFramework.NETCOREAPP3_1, "29-3.1"),
+                (publishFramework: TargetFramework.NETCOREAPP2_1, "29-2.1"),
+                    },
+                    installCmd: "rpm -Uvh ./datadog-dotnet-apm*-1.x86_64.rpm",
+                    linuxArtifacts: "linux-packages-debian",
+                    dockerName: "andrewlock/dotnet-fedora"
+                );
+
+                void AddToMatrix(
+                    (TargetFramework publishFramework, string dockerTag)[] images
+                  , string installCmd
+                  , string linuxArtifacts
+                  , string dockerName
+                )
+                {
+                    foreach (var image in images)
+                    {
+                        matrix.Add(
+                            image.dockerTag,
+                            new
+                            {
+                                installCmd = installCmd,
+                                dockerTag = image.dockerTag,
+                                publishFramework = image.publishFramework,
+                                linuxArtifacts = linuxArtifacts,
+                                runtimeImage = $"{dockerName}:${image.dockerTag}"
+                            });
+                    }
+                }
+
+                AddToMatrix(
+                    new (TargetFramework publishFramework, string dockerTag)[]
+                    {
+                (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.14"),
+                (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.14"),
+                (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.13"),
+                (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.14"),
+                (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.13"),
+                (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-alpine3.12"),
+                    },
+                    installCmd: "tar -C /opt/datadog -xzf ./datadog-dotnet-apm*-musl.tar.gz",
+                    linuxArtifacts: "linux-packages-alpine",
+                    dockerName: "mcr.microsoft.com/dotnet/aspnet"
+                );
+
+                Logger.Info($"Installer smoke tests matrix");
+                Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                AzurePipelines.Instance.SetVariable("installer_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+            }
+
+            static void GenerateSmokeTestsArm64Matrix()
+            {
+                var matrix = new Dictionary<string, object>();
+
+                AddToMatrix(
+                    new (TargetFramework publishFramework, string dockerTag)[]
+                    {
+                (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
+                (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim"),
+                (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim"),
+                (publishFramework: TargetFramework.NET5_0, "5.0-focal"),
+                    },
+                    installCmd: "dpkg -i ./datadog-dotnet-apm_*_arm64.deb",
+                    linuxArtifacts: "linux-packages-arm64",
+                    dockerName: "mcr.microsoft.com/dotnet/aspnet"
+                );
+
+                void AddToMatrix(
+                    (TargetFramework publishFramework, string dockerTag)[] images
+                  , string installCmd
+                  , string linuxArtifacts
+                  , string dockerName
+                )
+                {
+                    foreach (var image in images)
+                    {
+                        matrix.Add(
+                            image.dockerTag,
+                            new
+                            {
+                                installCmd = installCmd,
+                                dockerTag = image.dockerTag,
+                                publishFramework = image.publishFramework,
+                                linuxArtifacts = linuxArtifacts,
+                                runtimeImage = $"{dockerName}:${image.dockerTag}"
+                            });
+                    }
+                }
+
+                Logger.Info($"Installer smoke tests matrix");
+                Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                AzurePipelines.Instance.SetVariable("installer_smoke_tests_arm64_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+            }
         };
-}
-
-[Flags]
-public enum GenerateMatricesTarget
-{
-    none = 0,
-    integration_tests_windows_matrix = 1 << 0,
-    integration_tests_windows_iis_matrix = 1 << 1,
-    integration_tests_linux_matrix = 1 << 2,
-    exploration_tests_windows_matrix = 1 << 3,
-    exploration_tests_linux_matrix = 1 << 4,
-
-    integration_tests_windows_matrices = integration_tests_windows_matrix | integration_tests_windows_iis_matrix,
-    exploration_tests_matrices = exploration_tests_windows_matrix | exploration_tests_linux_matrix
 }
