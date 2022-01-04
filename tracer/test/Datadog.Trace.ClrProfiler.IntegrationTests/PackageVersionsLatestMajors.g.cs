@@ -159,6 +159,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
+      public static IEnumerable<object[]> GraphQL =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETCOREAPP3_1
+                new object[] { "4.7.1" },
+#endif
+#if NET5_0
+                new object[] { "4.7.1" },
+#endif
+#if NET6_0
+                new object[] { "4.7.1" },
+#endif
+#endif
+            };
+
       public static IEnumerable<object[]> Npgsql =>
 
             new List<object[]>
