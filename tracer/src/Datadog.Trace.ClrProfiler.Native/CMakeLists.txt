@@ -228,6 +228,14 @@ add_library("Datadog.Trace.ClrProfiler.Native.static" STATIC
         util.cpp
         calltarget_tokens.cpp
         rejit_handler.cpp
+        debugger_method_rewriter.cpp
+        debugger_probes_instrumentation_requester.cpp
+        debugger_rejit_handler_module_method.cpp
+        debugger_rejit_preprocessor.cpp
+        rejit_preprocessor.cpp
+        rejit_work_offloader.cpp
+        environment_variables_util.cpp
+        method_rewriter.cpp
         lib/coreclr/src/pal/prebuilt/idl/corprof_i.cpp
         ${GENERATED_OBJ_FILES}
 )
