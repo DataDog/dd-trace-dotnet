@@ -97,19 +97,13 @@ namespace Datadog.Trace.Telemetry
 
             return _integrationsById
                   .Select(
-                       integration =>
+                       integration => new IntegrationTelemetryData
                        {
-                           var error = integration.Error;
-
-                           return new IntegrationTelemetryData
-                           {
-                               Name = integration.Name,
-                               Enabled = integration.HasGeneratedSpan > 0
-                                      && integration.WasExplicitlyDisabled == 0
-                                      && string.IsNullOrEmpty(error),
-                               AutoEnabled = integration.WasExecuted > 0,
-                               Error = error
-                           };
+                           Name = integration.Name,
+                           Enabled = integration.HasGeneratedSpan > 0
+                                  && integration.WasExplicitlyDisabled == 0,
+                           AutoEnabled = integration.WasExecuted > 0,
+                           Error = integration.Error
                        })
                   .ToList();
         }
