@@ -175,7 +175,7 @@ namespace Datadog.Trace.Tests.Telemetry
             var integration = data.FirstOrDefault(x => x.Name == IntegrationName);
             integration.Should().NotBeNull();
             integration.AutoEnabled.Should().BeTrue();
-            integration.Enabled.Should().BeFalse();
+            integration.Enabled.Should().BeTrue();
             integration.Error.Should().Be(error);
         }
     }
