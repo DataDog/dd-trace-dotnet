@@ -420,7 +420,7 @@ namespace Datadog.Trace
                 var flushTracesTask = _instance?.AgentWriter.FlushAndCloseAsync();
                 _heartbeatTimer?.Dispose();
                 _instance?.DirectLogSubmission?.Dispose();
-                (_instance?.Telemetry as IDisposable)?.Dispose();
+                _instance?.Telemetry?.Dispose();
                 flushTracesTask?.Wait();
             }
             catch (Exception ex)

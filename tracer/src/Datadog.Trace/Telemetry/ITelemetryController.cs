@@ -3,13 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.PlatformHelpers;
 
 namespace Datadog.Trace.Telemetry
 {
-    internal interface ITelemetryController
+    internal interface ITelemetryController : IDisposable
     {
         /// <summary>
         /// Should be called when an integration is first executed (not necessarily successfully)

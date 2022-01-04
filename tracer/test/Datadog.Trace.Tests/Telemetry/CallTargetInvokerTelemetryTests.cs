@@ -119,6 +119,10 @@ namespace Datadog.Trace.Tests.Telemetry
             public void Dispose(bool sendAppClosingTelemetry)
             {
             }
+
+            public void Dispose()
+            {
+            }
         }
     }
 }
