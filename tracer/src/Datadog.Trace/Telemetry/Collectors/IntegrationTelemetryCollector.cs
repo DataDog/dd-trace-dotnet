@@ -46,8 +46,13 @@ namespace Datadog.Trace.Telemetry
         /// </summary>
         public void IntegrationRunning(IntegrationId integrationId)
         {
-            var previousValue = Interlocked.Exchange(ref _integrationsById[(int)integrationId].WasExecuted, 1);
+            ref var value = ref _integrationsById[(int)integrationId];
+            if (value.WasExecuted == 1)
+            {
+                return;
+            }
 
+            var previousValue = Interlocked.Exchange(ref value.WasExecuted, 1);
             if (previousValue == 0)
             {
                 SetHasChanges();
@@ -59,8 +64,14 @@ namespace Datadog.Trace.Telemetry
         /// </summary>
         public void IntegrationGeneratedSpan(IntegrationId integrationId)
         {
-            var previousWasExecuted = Interlocked.Exchange(ref _integrationsById[(int)integrationId].WasExecuted, 1);
-            var previousHasGeneratedSpan = Interlocked.Exchange(ref _integrationsById[(int)integrationId].HasGeneratedSpan, 1);
+            ref var value = ref _integrationsById[(int)integrationId];
+            if (value.WasExecuted == 1 && value.HasGeneratedSpan == 1)
+            {
+                return;
+            }
+
+            var previousWasExecuted = Interlocked.Exchange(ref value.WasExecuted, 1);
+            var previousHasGeneratedSpan = Interlocked.Exchange(ref value.HasGeneratedSpan, 1);
 
             if (previousWasExecuted == 0 || previousHasGeneratedSpan == 0)
             {
@@ -70,8 +81,13 @@ namespace Datadog.Trace.Telemetry
 
         public void IntegrationDisabledDueToError(IntegrationId integrationId, string error)
         {
-            var previousValue = Interlocked.CompareExchange(ref _integrationsById[(int)integrationId].Error, error, null);
+            ref var value = ref _integrationsById[(int)integrationId];
+            if (value.Error is not null)
+            {
+                return;
+            }
 
+            var previousValue = Interlocked.Exchange(ref value.Error, error);
             if (previousValue is null)
             {
                 SetHasChanges();
