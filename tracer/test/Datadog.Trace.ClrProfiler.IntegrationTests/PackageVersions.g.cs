@@ -35,6 +35,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> ElasticSearch5 => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.ElasticSearch5 : PackageVersionsLatestMajors.ElasticSearch5;
 
+        public static IEnumerable<object[]> GraphQL => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.GraphQL : PackageVersionsLatestMajors.GraphQL;
+
         public static IEnumerable<object[]> Npgsql => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Npgsql : PackageVersionsLatestMajors.Npgsql;
 
         public static IEnumerable<object[]> RabbitMQ => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.RabbitMQ : PackageVersionsLatestMajors.RabbitMQ;
