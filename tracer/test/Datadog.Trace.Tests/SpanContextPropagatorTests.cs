@@ -202,7 +202,7 @@ namespace Datadog.Trace.Tests
                            TraceId,
                            SpanId,
                            Origin,
-                           SamplingPriority = null
+                           SamplingPriority = default(SamplingPriority?)
                        });
         }
 
