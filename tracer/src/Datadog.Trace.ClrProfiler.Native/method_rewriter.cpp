@@ -412,7 +412,14 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     }
 
     reWriterWrapper.LoadLocal(exceptionIndex);
-    reWriterWrapper.LoadLocal(callTargetStateIndex);
+    if (corProfiler->enable_calltarget_state_by_ref)
+    {
+        reWriterWrapper.LoadLocalAddress(callTargetStateIndex);
+    }
+    else
+    {
+        reWriterWrapper.LoadLocal(callTargetStateIndex);
+    }
 
     ILInstr* endMethodCallInstr;
     if (isVoid)
