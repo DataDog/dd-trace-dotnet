@@ -138,6 +138,7 @@ namespace Datadog.Trace.Configuration
     {
         public TracerSettings() { }
         public TracerSettings(Datadog.Trace.Configuration.IConfigurationSource source) { }
+        public TracerSettings(bool useDefaultSources) { }
         [System.Obsolete("App Analytics has been replaced by Tracing without Limits. For more information s" +
             "ee https://docs.datadoghq.com/tracing/legacy_app_analytics/")]
         public bool AnalyticsEnabled { get; set; }
