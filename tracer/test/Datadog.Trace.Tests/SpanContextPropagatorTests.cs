@@ -10,22 +10,26 @@ namespace Datadog.Trace.Tests
 {
     public class SpanContextPropagatorTests
     {
+        private const ulong TraceId = 1;
+        private const ulong SpanId = 2;
+        private const SamplingPriority SamplingPriority = Trace.SamplingPriority.UserReject;
+        private const string Origin = "origin";
+
         [Fact]
         public void SpanContextRoundTrip()
         {
-            const ulong expectedTraceId = 1;
-            const ulong expectedSpanId = 2;
-            const SamplingPriority expectedSamplingPriority = SamplingPriority.UserKeep;
-            const string expectedOrigin = "origin";
+            var context = new SpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin);
 
-            var spanContext = new SpanContext(expectedTraceId, expectedSpanId, expectedSamplingPriority, null, expectedOrigin);
+            // use `object` so Should() below works correctly,
+            // otherwise it picks up the IEnumerable<KeyValuePair<string, string>> overload
+            object result = SpanContextPropagator.Instance.Extract(context);
 
-            var result = SpanContextPropagator.Instance.Extract(spanContext);
+            result.Should().NotBeSameAs(context);
+            result.Should().BeEquivalentTo(context);
+        }
 
-            result.TraceId.Should().Be(expectedTraceId);
-            result.SpanId.Should().Be(expectedSpanId);
-            result.SamplingPriority.Should().Be(expectedSamplingPriority);
-            result.Origin.Should().Be(expectedOrigin);
+
+
         }
     }
 }
