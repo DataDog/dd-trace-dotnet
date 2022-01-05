@@ -1094,10 +1094,7 @@ stages:
         artifact: runner-dotnet-tool
         path: $(runnerTool)
 
-    - powershell: |
-        dotnet tool install --tool-path $(runnerTool)/installed --add-source $(runnerTool) dd-trace
-
-    - script: tracer\build.cmd BuildAndRunToolArtifactTests
+    - script: tracer\build.cmd BuildAndRunToolArtifactTests --ToolSource $(runnerTool)
       displayName: Build and Test
 
     - task: PublishTestResults@2

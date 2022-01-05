@@ -74,12 +74,19 @@ namespace Datadog.Trace.Tools.Runner.ArtifactTests
 
         private static string GetRunnerToolTargetFolder()
         {
-            return Path.Combine(
-                EnvironmentTools.GetSolutionDirectory(),
-                "tracer",
-                "bin",
-                "runnerTool",
-                "installed");
+            var folder = Environment.GetEnvironmentVariable("ToolInstallDirectory");
+
+            if (string.IsNullOrEmpty(folder))
+            {
+                folder = Path.Combine(
+                    EnvironmentTools.GetSolutionDirectory(),
+                    "tracer",
+                    "bin",
+                    "runnerTool",
+                    "installed");
+            }
+
+            return folder;
         }
 
         private static AssertionScope StartAssertionScope(ProcessHelper processHelper)
@@ -98,7 +105,11 @@ namespace Datadog.Trace.Tools.Runner.ArtifactTests
             var targetFolder = GetRunnerToolTargetFolder();
             var executable = Path.Combine(targetFolder, "dd-trace.exe");
 
-            var processStart = new ProcessStartInfo(executable, arguments);
+            var processStart = new ProcessStartInfo(executable, arguments)
+            {
+                RedirectStandardError = true,
+                RedirectStandardOutput = true
+            };
 
             foreach (var (key, value) in environmentVariables)
             {

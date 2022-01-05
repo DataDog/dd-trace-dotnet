@@ -75,9 +75,15 @@ partial class Build : NukeBuild
 
     [Parameter("Override the default test filters for integration tests. (Optional)")]
     readonly string Filter;
-    
+
     [Parameter("Enables code coverage")]
     readonly bool CodeCoverage;
+
+    [Parameter("The directory containing the tool .nupkg file")]
+    readonly AbsolutePath ToolSource;
+
+    [Parameter("The directory to install the tool to")]
+    readonly AbsolutePath ToolDestination;
 
     Target Info => _ => _
         .Description("Describes the current configuration")
@@ -97,9 +103,9 @@ partial class Build : NukeBuild
 
     Target Clean => _ => _
         .Description("Cleans all build output")
-        .Executes(()=>
+        .Executes(() =>
         {
-            if(IsWin)
+            if (IsWin)
             {
                 // These are created as part of the CreatePlatformlessSymlinks target and cause havok
                 // when deleting directories otherwise
@@ -245,6 +251,55 @@ partial class Build : NukeBuild
         .Description("Builds and runs the linux integration tests. Requires docker-compose dependencies")
         .DependsOn(BuildLinuxIntegrationTests)
         .DependsOn(RunLinuxIntegrationTests);
+
+    Target BuildToolArtifactTests => _ => _
+       .Description("Builds the tool artifacts tests")
+       .DependsOn(CompileManagedTestHelpers)
+       .Executes(() =>
+       {
+           try
+           {
+               DotNetToolUninstall(s => s
+                   .SetToolInstallationPath(ToolInstallDirectory)
+                   .SetPackageName("dd-trace")
+                   .DisableProcessLogOutput());
+           }
+           catch
+           {
+               // This step is expected to fail if the tool is not already installed
+               Logger.Info("Could not uninstall the dd-trace tool. It's probably not installed.");
+           }
+
+           DotNetToolInstall(s => s
+               .SetToolInstallationPath(ToolInstallDirectory)
+               .SetSources(ToolSourceDirectory)
+               .SetPackageName("dd-trace"));
+
+           DotNetBuild(x => x
+               .SetProjectFile(Solution.GetProject(Projects.ToolArtifactsTests))
+               .EnableNoDependencies()
+               .SetConfiguration(BuildConfiguration)
+               .SetNoWarnDotNetCore3());
+       });
+
+    Target RunToolArtifactTests => _ => _
+        .Description("Runs the tool artifacts tests")
+        .After(BuildToolArtifactTests)
+        .Executes(() =>
+        {
+            DotNetTest(config => config
+                .SetProjectFile(Solution.GetProject(Projects.ToolArtifactsTests))
+                .SetConfiguration(BuildConfiguration)
+                .EnableNoRestore()
+                .EnableNoBuild()
+                .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
+                .SetProcessEnvironmentVariable("ToolInstallDirectory", ToolInstallDirectory));
+        });
+
+    Target BuildAndRunToolArtifactTests => _ => _
+       .Description("Builds and runs the tool artifacts tests")
+       .DependsOn(BuildToolArtifactTests)
+       .DependsOn(RunToolArtifactTests);
 
     Target PackNuGet => _ => _
         .Description("Creates the NuGet packages from the compiled src directory")
