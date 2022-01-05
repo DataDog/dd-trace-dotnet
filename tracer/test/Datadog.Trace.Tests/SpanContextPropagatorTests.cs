@@ -94,7 +94,149 @@ namespace Datadog.Trace.Tests
                        });
         }
 
+        [Fact]
+        public void Extract_EmptyHeadersReturnsNull()
+        {
+            var headers = new Mock<IHeadersCollection>();
 
+            // use `object` so Should() below works correctly,
+            // otherwise it picks up the IEnumerable<KeyValuePair<string, string>> overload
+            object resultContext = SpanContextPropagator.Instance.Extract(headers.Object);
+
+            resultContext.Should().BeNull();
+        }
+
+        [Fact]
+        public void Identity()
+        {
+            var context = new SpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin);
+            var headers = new NameValueHeadersCollection(new NameValueCollection());
+
+            // use `object` so Should() below works correctly,
+            // otherwise it picks up the IEnumerable<KeyValuePair<string, string>> overload
+            SpanContextPropagator.Instance.Inject(context, headers);
+            object result = SpanContextPropagator.Instance.Extract(headers);
+
+            result.Should().NotBeSameAs(context);
+            result.Should().BeEquivalentTo(context);
+        }
+
+        [Theory]
+        [MemberData(nameof(HeadersCollectionTestHelpers.GetInvalidIds), MemberType = typeof(HeadersCollectionTestHelpers))]
+        public void Extract_InvalidTraceId(string traceId)
+        {
+            // replace TraceId setup
+            var headers = CreatePopulatedHeaders();
+            headers.Setup(h => h.GetValues(HttpHeaderNames.TraceId)).Returns(new[] { traceId });
+
+            var result = SpanContextPropagator.Instance.Extract(headers.Object);
+
+            // invalid traceId should return a null context even if other values are set
+            result.Should().BeNull();
+        }
+
+        [Theory]
+        [MemberData(nameof(HeadersCollectionTestHelpers.GetInvalidIds), MemberType = typeof(HeadersCollectionTestHelpers))]
+        public void Extract_InvalidSpanId(string spanId)
+        {
+            // replace ParentId setup
+            var headers = CreatePopulatedHeaders();
+            headers.Setup(h => h.GetValues(HttpHeaderNames.ParentId)).Returns(new[] { spanId });
+
+            // use `object` so Should() below works correctly,
+            // otherwise it picks up the IEnumerable<KeyValuePair<string, string>> overload
+            object result = SpanContextPropagator.Instance.Extract(headers.Object);
+
+            result.Should()
+                  .BeEquivalentTo(
+                       new
+                       {
+                           TraceId,
+                           SpanId = 0,
+                           Origin,
+                           SamplingPriority
+                       });
+        }
+
+        [Theory]
+        [MemberData(nameof(HeadersCollectionTestHelpers.GetInvalidIntegerSamplingPriorities), MemberType = typeof(HeadersCollectionTestHelpers))]
+        public void Extract_InvalidIntegerSamplingPriority(string samplingPriority)
+        {
+            // if the extracted sampling priority is a valid integer, pass it along as-is,
+            // even if we don't recognize its value to allow forward compatibility with newly added values.
+
+            // replace SamplingPriority setup
+            var headers = CreatePopulatedHeaders();
+            headers.Setup(h => h.GetValues(HttpHeaderNames.SamplingPriority)).Returns(new[] { samplingPriority });
+
+            object result = SpanContextPropagator.Instance.Extract(headers.Object);
+
+            result.Should()
+                  .BeEquivalentTo(
+                       new
+                       {
+                           TraceId,
+                           SpanId,
+                           Origin,
+                           SamplingPriority = samplingPriority
+                       });
+        }
+
+        [Theory]
+        [MemberData(nameof(HeadersCollectionTestHelpers.GetInvalidNonIntegerSamplingPriorities), MemberType = typeof(HeadersCollectionTestHelpers))]
+
+        public void Extract_InvalidNonIntegerSamplingPriority(string samplingPriority)
+        {
+            // ignore the extracted sampling priority if it is not a valid integer
+
+            // replace SamplingPriority setup
+            var headers = CreatePopulatedHeaders();
+            headers.Setup(h => h.GetValues(HttpHeaderNames.SamplingPriority)).Returns(new[] { samplingPriority });
+
+            object result = SpanContextPropagator.Instance.Extract(headers.Object);
+
+            result.Should()
+                  .BeEquivalentTo(
+                       new
+                       {
+                           TraceId,
+                           SpanId,
+                           Origin,
+                           SamplingPriority = null
+                       });
+        }
+
+        private static Mock<IHeadersCollection> CreatePopulatedHeaders()
+        {
+            return CreatePopulatedHeaders(TraceId.ToString(), SpanId.ToString());
+        }
+
+        private static Mock<IHeadersCollection> CreatePopulatedHeaders(string traceId, string spanId)
+        {
+            var headers = new Mock<IHeadersCollection>();
+            headers.Setup(h => h.GetValues(HttpHeaderNames.TraceId)).Returns(new[] { traceId });
+            headers.Setup(h => h.GetValues(HttpHeaderNames.ParentId)).Returns(new[] { spanId });
+            headers.Setup(h => h.GetValues(HttpHeaderNames.SamplingPriority)).Returns(new[] { ((int)SamplingPriority).ToString() });
+            headers.Setup(h => h.GetValues(HttpHeaderNames.Origin)).Returns(new[] { Origin });
+            return headers;
+        }
+
+        private static void VerifySetCalls(Mock<IHeadersCollection> headers)
+        {
+            headers.Verify(h => h.Set(HttpHeaderNames.TraceId, TraceId.ToString()), Times.Once());
+            headers.Verify(h => h.Set(HttpHeaderNames.ParentId, SpanId.ToString()), Times.Once());
+            headers.Verify(h => h.Set(HttpHeaderNames.SamplingPriority, ((int)SamplingPriority).ToString()), Times.Once());
+            headers.Verify(h => h.Set(HttpHeaderNames.Origin, Origin), Times.Once());
+            headers.VerifyNoOtherCalls();
+        }
+
+        private static void VerifyGetCalls(Mock<IHeadersCollection> headers)
+        {
+            headers.Verify(h => h.GetValues(HttpHeaderNames.TraceId), Times.Once());
+            headers.Verify(h => h.GetValues(HttpHeaderNames.ParentId), Times.Once());
+            headers.Verify(h => h.GetValues(HttpHeaderNames.SamplingPriority), Times.Once());
+            headers.Verify(h => h.GetValues(HttpHeaderNames.Origin), Times.Once());
+            headers.VerifyNoOtherCalls();
         }
     }
 }
