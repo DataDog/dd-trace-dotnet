@@ -195,67 +195,98 @@ partial class Build : NukeBuild
             {
                 GenerateSmokeTestsMatrix();
                 GenerateSmokeTestsArm64Matrix();
-            }
 
-            static void GenerateSmokeTestsMatrix()
-            {
-                var matrix = new Dictionary<string, object>();
+                void GenerateSmokeTestsMatrix()
+                {
+                    var matrix = new Dictionary<string, object>();
 
-                AddToMatrix(
-                    new (string publishFramework, string runtimeTag)[]
-                    {
-                (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
-                (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim"),
-                (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim"),
-                (publishFramework: TargetFramework.NET5_0, "5.0-focal"),
-                (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-bullseye-slim"),
-                (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-buster-slim"),
-                (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-bionic"),
-                (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-bionic"),
-                (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-stretch-slim"),
-                    },
-                    installCmd: "dpkg -i ./datadog-dotnet-apm*_amd64.deb",
-                    linuxArtifacts: "linux-packages-debian",
-                    dockerName: "mcr.microsoft.com/dotnet/aspnet"
-                );
+                    AddToMatrix(
+                        matrix,
+                        new (string publishFramework, string runtimeTag)[]
+                        {
+                            (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
+                            (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim"),
+                            (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim"),
+                            (publishFramework: TargetFramework.NET5_0, "5.0-focal"),
+                            (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-bullseye-slim"),
+                            (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-buster-slim"),
+                            (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-bionic"),
+                            (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-bionic"),
+                            (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-stretch-slim"),
+                        },
+                        installCmd: "dpkg -i ./datadog-dotnet-apm*_amd64.deb",
+                        linuxArtifacts: "linux-packages-debian",
+                        dockerName: "mcr.microsoft.com/dotnet/aspnet"
+                    );
 
-                AddToMatrix(
-                    new (string publishFramework, string runtimeTag)[]
-                    {
-                (publishFramework: TargetFramework.NET6_0, "34-6.0"),
-                (publishFramework: TargetFramework.NET5_0, "35-5.0"),
-                (publishFramework: TargetFramework.NET5_0, "34-5.0"),
-                (publishFramework: TargetFramework.NET5_0, "33-5.0"),
-                (publishFramework: TargetFramework.NETCOREAPP3_1, "35-3.1"),
-                (publishFramework: TargetFramework.NETCOREAPP3_1, "34-3.1"),
-                (publishFramework: TargetFramework.NETCOREAPP3_1, "33-3.1"),
-                (publishFramework: TargetFramework.NETCOREAPP3_1, "29-3.1"),
-                (publishFramework: TargetFramework.NETCOREAPP2_1, "29-2.1"),
-                    },
-                    installCmd: "rpm -Uvh ./datadog-dotnet-apm*-1.x86_64.rpm",
-                    linuxArtifacts: "linux-packages-debian",
-                    dockerName: "andrewlock/dotnet-fedora"
-                );
+                    AddToMatrix(
+                        matrix,
+                        new (string publishFramework, string runtimeTag)[]
+                        {
+                            (publishFramework: TargetFramework.NET6_0, "34-6.0"),
+                            (publishFramework: TargetFramework.NET5_0, "35-5.0"),
+                            (publishFramework: TargetFramework.NET5_0, "34-5.0"),
+                            (publishFramework: TargetFramework.NET5_0, "33-5.0"),
+                            (publishFramework: TargetFramework.NETCOREAPP3_1, "35-3.1"),
+                            (publishFramework: TargetFramework.NETCOREAPP3_1, "34-3.1"),
+                            (publishFramework: TargetFramework.NETCOREAPP3_1, "33-3.1"),
+                            (publishFramework: TargetFramework.NETCOREAPP3_1, "29-3.1"),
+                            (publishFramework: TargetFramework.NETCOREAPP2_1, "29-2.1"),
+                        },
+                        installCmd: "rpm -Uvh ./datadog-dotnet-apm*-1.x86_64.rpm",
+                        linuxArtifacts: "linux-packages-debian",
+                        dockerName: "andrewlock/dotnet-fedora"
+                    );
 
-                AddToMatrix(
-                    new (string publishFramework, string runtimeTag)[]
-                    {
-                        (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.14"),
-                        (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.14"),
-                        (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.13"),
-                        (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.14"),
-                        (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.13"),
-                        (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-alpine3.12"),
-                    },
-                    installCmd: "tar -C /opt/datadog -xzf ./datadog-dotnet-apm*-musl.tar.gz",
-                    linuxArtifacts: "linux-packages-alpine",
-                    dockerName: "mcr.microsoft.com/dotnet/aspnet"
-                );
+                    AddToMatrix(
+                        matrix,
+                        new (string publishFramework, string runtimeTag)[]
+                        {
+                            (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.14"),
+                            (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.14"),
+                            (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.13"),
+                            (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.14"),
+                            (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.13"),
+                            (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-alpine3.12"),
+                        },
+                        installCmd: "tar -C /opt/datadog -xzf ./datadog-dotnet-apm*-musl.tar.gz",
+                        linuxArtifacts: "linux-packages-alpine",
+                        dockerName: "mcr.microsoft.com/dotnet/aspnet"
+                    );
+
+                    Logger.Info($"Installer smoke tests matrix");
+                    Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                    AzurePipelines.Instance.SetVariable("installer_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+                }
+
+                void GenerateSmokeTestsArm64Matrix()
+                {
+                    var matrix = new Dictionary<string, object>();
+
+                    AddToMatrix(
+                        matrix,
+                        new (string publishFramework, string runtimeTag)[]
+                        {
+                            (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
+                            (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim"),
+                            (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim"),
+                            (publishFramework: TargetFramework.NET5_0, "5.0-focal"),
+                        },
+                        installCmd: "dpkg -i ./datadog-dotnet-apm_*_arm64.deb",
+                        linuxArtifacts: "linux-packages-arm64",
+                        dockerName: "mcr.microsoft.com/dotnet/aspnet"
+                    );
+
+                    Logger.Info($"Installer smoke tests matrix");
+                    Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                    AzurePipelines.Instance.SetVariable("installer_smoke_tests_arm64_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+                }
 
                 void AddToMatrix(
-                    (string publishFramework, string runtimeTag)[] images, 
-                    string installCmd, 
-                    string linuxArtifacts, 
+                    Dictionary<string, object> matrix,
+                    (string publishFramework, string runtimeTag)[] images,
+                    string installCmd,
+                    string linuxArtifacts,
                     string dockerName
                 )
                 {
@@ -270,59 +301,10 @@ partial class Build : NukeBuild
                                 dockerTag = dockerTag,
                                 publishFramework = image.publishFramework,
                                 linuxArtifacts = linuxArtifacts,
-                                runtimeImage = $"{dockerName}:${image.runtimeTag}"
+                                runtimeImage = $"{dockerName}:{image.runtimeTag}"
                             });
                     }
                 }
-
-                Logger.Info($"Installer smoke tests matrix");
-                Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
-                AzurePipelines.Instance.SetVariable("installer_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
-            }
-
-            static void GenerateSmokeTestsArm64Matrix()
-            {
-                var matrix = new Dictionary<string, object>();
-
-                AddToMatrix(
-                    new (string publishFramework, string runtimeTag)[]
-                    {
-                (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
-                (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim"),
-                (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim"),
-                (publishFramework: TargetFramework.NET5_0, "5.0-focal"),
-                    },
-                    installCmd: "dpkg -i ./datadog-dotnet-apm_*_arm64.deb",
-                    linuxArtifacts: "linux-packages-arm64",
-                    dockerName: "mcr.microsoft.com/dotnet/aspnet"
-                );
-
-                void AddToMatrix(
-                    (string publishFramework, string runtimeTag)[] images, 
-                    string installCmd, 
-                    string linuxArtifacts, 
-                    string dockerName
-                )
-                {
-                    foreach (var image in images)
-                    {
-                        var dockerTag = image.runtimeTag.Replace('.', '_');
-                        matrix.Add(
-                            dockerTag,
-                            new
-                            {
-                                installCmd = installCmd,
-                                dockerTag = dockerTag,
-                                publishFramework = image.publishFramework,
-                                linuxArtifacts = linuxArtifacts,
-                                runtimeImage = $"{dockerName}:${image.runtimeTag}"
-                            });
-                    }
-                }
-
-                Logger.Info($"Installer smoke tests matrix");
-                Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
-                AzurePipelines.Instance.SetVariable("installer_smoke_tests_arm64_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
             }
         };
 }

@@ -1580,11 +1580,9 @@ stages:
             "$(smokeTestAppDir)" && \
           break || sleep 1; 
         done
-      failOnStderr: true
       displayName: Build $(dockerTag) Docker image
 
     - script: docker run --rm dd-trace-dotnet/$(dockerTag)-smoke-test
-      failOnStderr: true
       displayName: Test $(dockerTag) Docker image
 
 - stage: installer_smoke_tests_arm64
@@ -1623,9 +1621,7 @@ stages:
                 "$(smokeTestAppDir)" && \
               break || sleep 1;
             done
-          failOnStderr: true
           displayName: Build $(dockerTag) Docker image
 
         - script: docker run --rm dd-trace-dotnet/$(dockerTag)-smoke-test
-          failOnStderr: true
           displayName: Test $(dockerTag) Docker image
