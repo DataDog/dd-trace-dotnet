@@ -19,6 +19,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
     /// </summary>
     internal class DirectSubmissionLoggerProvider
     {
+        private readonly Func<string, DirectSubmissionLogger> _createLoggerFunc;
         private readonly ConcurrentDictionary<string, DirectSubmissionLogger> _loggers = new();
         private readonly IDatadogSink _sink;
         private readonly LogFormatter? _formatter;
@@ -39,6 +40,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
             _sink = sink;
             _formatter = formatter;
             _minimumLogLevel = minimumLogLevel;
+            _createLoggerFunc = CreateLoggerImplementation;
         }
 
         /// <summary>
@@ -49,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
         [DuckReverseMethod]
         public DirectSubmissionLogger CreateLogger(string categoryName)
         {
-            return _loggers.GetOrAdd(categoryName, x => CreateLoggerImplementation(x));
+            return _loggers.GetOrAdd(categoryName, _createLoggerFunc);
         }
 
         private DirectSubmissionLogger CreateLoggerImplementation(string name)
