@@ -3,7 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Headers;
 using FluentAssertions;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests
@@ -28,6 +30,69 @@ namespace Datadog.Trace.Tests
             result.Should().BeEquivalentTo(context);
         }
 
+        [Fact]
+        public void Inject_IHeadersCollection()
+        {
+            var context = new SpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin);
+            var headers = new Mock<IHeadersCollection>();
+
+            SpanContextPropagator.Instance.Inject(context, headers.Object);
+
+            VerifySetCalls(headers);
+        }
+
+        [Fact]
+        public void Inject_CarrierAndDelegate()
+        {
+            var context = new SpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin);
+            var headers = new Mock<IHeadersCollection>();
+
+            SpanContextPropagator.Instance.Inject(context, headers.Object, (carrier, name, value) => carrier.Set(name, value));
+
+            VerifySetCalls(headers);
+        }
+
+        [Fact]
+        public void Extract_IHeadersCollection()
+        {
+            // use `object` so Should() below works correctly,
+            // otherwise it picks up the IEnumerable<KeyValuePair<string, string>> overload
+            var headers = CreatePopulatedHeaders();
+            object result = SpanContextPropagator.Instance.Extract(headers.Object);
+
+            VerifyGetCalls(headers);
+
+            result.Should()
+                  .BeEquivalentTo(
+                       new
+                       {
+                           TraceId,
+                           SpanId,
+                           Origin,
+                           SamplingPriority
+                       });
+        }
+
+        [Fact]
+        public void Extract_CarrierAndDelegate()
+        {
+            // use `object` so Should() below works correctly,
+            // otherwise it picks up the IEnumerable<KeyValuePair<string, string>> overload
+            var headers = CreatePopulatedHeaders();
+            object result = SpanContextPropagator.Instance.Extract(headers.Object, (carrier, name) => carrier.GetValues(name));
+
+            VerifyGetCalls(headers);
+
+            result.Should()
+                  .BeEquivalentTo(
+                       new
+                       {
+                           TraceId,
+                           SpanId,
+                           Origin,
+                           SamplingPriority
+                       });
+        }
 
 
         }
