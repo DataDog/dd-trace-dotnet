@@ -20,6 +20,8 @@ namespace Datadog.Trace.Tests
         private const SamplingPriority SamplingPriority = Trace.SamplingPriority.UserReject;
         private const string Origin = "origin";
 
+        private delegate void Foo(string name, out string value);
+
         public static IEnumerable<object[]> GetInvalidIds()
         {
             yield return new object[] { null };
@@ -83,6 +85,29 @@ namespace Datadog.Trace.Tests
             // use `object` so Should() below works correctly,
             // otherwise it picks up the IEnumerable<KeyValuePair<string, string>> overload
             object result = SpanContextPropagator.Instance.Extract(headers.Object, (carrier, name) => carrier.GetValues(name));
+
+            VerifyGetCalls(headers);
+
+            result.Should()
+                  .BeEquivalentTo(
+                       new
+                       {
+                           TraceId,
+                           SpanId,
+                           Origin,
+                           SamplingPriority
+                       });
+        }
+
+        [Fact]
+        public void Extract_ReadOnlyDictionary()
+        {
+            // using IHeadersCollection for convenience, but carrier could be any type
+            var headers = SetupMockReadOnlyDictionary();
+
+            // use `object` so Should() below works correctly,
+            // otherwise it picks up the IEnumerable<KeyValuePair<string, string>> overload
+            object result = SpanContextPropagator.Instance.Extract(headers.Object);
 
             VerifyGetCalls(headers);
 
@@ -235,7 +260,7 @@ namespace Datadog.Trace.Tests
 
         private static Mock<IHeadersCollection> SetupMockHeadersCollection(string traceId, string spanId)
         {
-            var headers = new Mock<IHeadersCollection>();
+            var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
             headers.Setup(h => h.GetValues(HttpHeaderNames.TraceId)).Returns(new[] { traceId });
             headers.Setup(h => h.GetValues(HttpHeaderNames.ParentId)).Returns(new[] { spanId });
             headers.Setup(h => h.GetValues(HttpHeaderNames.SamplingPriority)).Returns(new[] { ((int)SamplingPriority).ToString() });
@@ -243,21 +268,56 @@ namespace Datadog.Trace.Tests
             return headers;
         }
 
+        private static Mock<IReadOnlyDictionary<string, string>> SetupMockReadOnlyDictionary()
+        {
+            var headers = new Mock<IReadOnlyDictionary<string, string>>();
+
+            var traceId = TraceId.ToString();
+            headers.Setup(h => h.TryGetValue(HttpHeaderNames.TraceId, out traceId)).Returns(true);
+
+            var spanId = SpanId.ToString();
+            headers.Setup(h => h.TryGetValue(HttpHeaderNames.ParentId, out spanId)).Returns(true);
+
+            var samplingPriority = ((int)SamplingPriority).ToString();
+            headers.Setup(h => h.TryGetValue(HttpHeaderNames.SamplingPriority, out samplingPriority)).Returns(true);
+
+            var origin = Origin;
+            headers.Setup(h => h.TryGetValue(HttpHeaderNames.Origin, out origin)).Returns(true);
+
+            return headers;
+        }
+
         private static void VerifySetCalls(Mock<IHeadersCollection> headers)
         {
-            headers.Verify(h => h.Set(HttpHeaderNames.TraceId, TraceId.ToString()), Times.Once());
-            headers.Verify(h => h.Set(HttpHeaderNames.ParentId, SpanId.ToString()), Times.Once());
-            headers.Verify(h => h.Set(HttpHeaderNames.SamplingPriority, ((int)SamplingPriority).ToString()), Times.Once());
-            headers.Verify(h => h.Set(HttpHeaderNames.Origin, Origin), Times.Once());
+            var once = Times.Once();
+
+            headers.Verify(h => h.Set(HttpHeaderNames.TraceId, TraceId.ToString()), once);
+            headers.Verify(h => h.Set(HttpHeaderNames.ParentId, SpanId.ToString()), once);
+            headers.Verify(h => h.Set(HttpHeaderNames.SamplingPriority, ((int)SamplingPriority).ToString()), once);
+            headers.Verify(h => h.Set(HttpHeaderNames.Origin, Origin), once);
             headers.VerifyNoOtherCalls();
         }
 
         private static void VerifyGetCalls(Mock<IHeadersCollection> headers)
         {
-            headers.Verify(h => h.GetValues(HttpHeaderNames.TraceId), Times.Once());
-            headers.Verify(h => h.GetValues(HttpHeaderNames.ParentId), Times.Once());
-            headers.Verify(h => h.GetValues(HttpHeaderNames.SamplingPriority), Times.Once());
-            headers.Verify(h => h.GetValues(HttpHeaderNames.Origin), Times.Once());
+            var once = Times.Once();
+
+            headers.Verify(h => h.GetValues(HttpHeaderNames.TraceId), once);
+            headers.Verify(h => h.GetValues(HttpHeaderNames.ParentId), once);
+            headers.Verify(h => h.GetValues(HttpHeaderNames.SamplingPriority), once);
+            headers.Verify(h => h.GetValues(HttpHeaderNames.Origin), once);
+            headers.VerifyNoOtherCalls();
+        }
+
+        private static void VerifyGetCalls(Mock<IReadOnlyDictionary<string, string>> headers)
+        {
+            var once = Times.Once();
+            string value;
+
+            headers.Verify(h => h.TryGetValue(HttpHeaderNames.TraceId, out value), once);
+            headers.Verify(h => h.TryGetValue(HttpHeaderNames.ParentId, out value), once);
+            headers.Verify(h => h.TryGetValue(HttpHeaderNames.SamplingPriority, out value), once);
+            headers.Verify(h => h.TryGetValue(HttpHeaderNames.Origin, out value), once);
             headers.VerifyNoOtherCalls();
         }
     }
