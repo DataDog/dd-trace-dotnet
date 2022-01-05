@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
@@ -24,19 +23,14 @@ namespace Datadog.Trace.Tests
     {
         private static readonly string TestPrefix = "test.prefix";
 
-        public static IEnumerable<object[]> GetHeaderCollectionImplementations()
+        public static IEnumerable<object[]> GetHeaderCollections()
         {
-            return GetHeaderCollectionFactories().Select(factory => new object[] { factory() });
-        }
-
-        internal static IEnumerable<Func<IHeadersCollection>> GetHeaderCollectionFactories()
-        {
-            yield return () => WebRequest.CreateHttp("http://localhost").Headers.Wrap();
-            yield return () => new NameValueCollection().Wrap();
+            yield return new object[] { WebRequest.CreateHttp("http://localhost").Headers.Wrap() };
+            yield return new object[] { new NameValueCollection().Wrap() };
         }
 
         [Theory]
-        [MemberData(nameof(GetHeaderCollectionImplementations))]
+        [MemberData(nameof(GetHeaderCollections))]
         internal void ExtractHeaderTags_MatchesCaseInsensitiveHeaders(IHeadersCollection headers)
         {
             // Initialize constants
@@ -71,7 +65,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Theory]
-        [MemberData(nameof(GetHeaderCollectionImplementations))]
+        [MemberData(nameof(GetHeaderCollections))]
         internal void ExtractHeaderTags_EmptyHeaders_AddsNoTags(IHeadersCollection headers)
         {
             // Do not add headers
@@ -91,7 +85,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Theory]
-        [MemberData(nameof(GetHeaderCollectionImplementations))]
+        [MemberData(nameof(GetHeaderCollections))]
         internal void ExtractHeaderTags_EmptyHeaderTags_AddsNoTags(IHeadersCollection headers)
         {
             // Add headers
@@ -110,7 +104,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Theory]
-        [MemberData(nameof(GetHeaderCollectionImplementations))]
+        [MemberData(nameof(GetHeaderCollections))]
         internal void ExtractHeaderTags_ForEmptyStringMappings_CreatesNormalizedTagWithPrefix(IHeadersCollection headers)
         {
             string invalidCharacterSequence = "*|&#$%&^`.";
