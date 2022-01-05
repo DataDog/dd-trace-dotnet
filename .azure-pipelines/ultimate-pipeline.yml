@@ -877,7 +877,7 @@ stages:
 
     - template: steps/run-in-docker.yml
       parameters:
-        build: true
+        build: false
         baseImage: $(baseImage)
         command: "SetupExplorationTests -ExplorationTestUseCase $(explorationTestUseCase) --explorationTestName $(explorationTestName) --framework $(publishTargetFramework)"
 
