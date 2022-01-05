@@ -44,6 +44,8 @@ namespace Datadog.Trace.Tests
         public void Inject_CarrierAndDelegate()
         {
             var context = new SpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin);
+
+            // using IHeadersCollection for convenience, but carrier could be any type
             var headers = new Mock<IHeadersCollection>();
 
             SpanContextPropagator.Instance.Inject(context, headers.Object, (carrier, name, value) => carrier.Set(name, value));
@@ -56,7 +58,7 @@ namespace Datadog.Trace.Tests
         {
             // use `object` so Should() below works correctly,
             // otherwise it picks up the IEnumerable<KeyValuePair<string, string>> overload
-            var headers = CreatePopulatedHeaders();
+            var headers = SetupMockHeadersCollection();
             object result = SpanContextPropagator.Instance.Extract(headers.Object);
 
             VerifyGetCalls(headers);
@@ -75,9 +77,11 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void Extract_CarrierAndDelegate()
         {
+            // using IHeadersCollection for convenience, but carrier could be any type
+            var headers = SetupMockHeadersCollection();
+
             // use `object` so Should() below works correctly,
             // otherwise it picks up the IEnumerable<KeyValuePair<string, string>> overload
-            var headers = CreatePopulatedHeaders();
             object result = SpanContextPropagator.Instance.Extract(headers.Object, (carrier, name) => carrier.GetValues(name));
 
             VerifyGetCalls(headers);
@@ -137,8 +141,9 @@ namespace Datadog.Trace.Tests
         [MemberData(nameof(GetInvalidIds))]
         public void Extract_InvalidTraceId(string traceId)
         {
+            var headers = SetupMockHeadersCollection();
+
             // replace TraceId setup
-            var headers = CreatePopulatedHeaders();
             headers.Setup(h => h.GetValues(HttpHeaderNames.TraceId)).Returns(new[] { traceId });
 
             var result = SpanContextPropagator.Instance.Extract(headers.Object);
@@ -151,8 +156,9 @@ namespace Datadog.Trace.Tests
         [MemberData(nameof(GetInvalidIds))]
         public void Extract_InvalidSpanId(string spanId)
         {
+            var headers = SetupMockHeadersCollection();
+
             // replace ParentId setup
-            var headers = CreatePopulatedHeaders();
             headers.Setup(h => h.GetValues(HttpHeaderNames.ParentId)).Returns(new[] { spanId });
 
             // use `object` so Should() below works correctly,
@@ -178,8 +184,9 @@ namespace Datadog.Trace.Tests
             // if the extracted sampling priority is a valid integer, pass it along as-is,
             // even if we don't recognize its value to allow forward compatibility with newly added values.
 
+            var headers = SetupMockHeadersCollection();
+
             // replace SamplingPriority setup
-            var headers = CreatePopulatedHeaders();
             headers.Setup(h => h.GetValues(HttpHeaderNames.SamplingPriority)).Returns(new[] { samplingPriority.ToString(CultureInfo.InvariantCulture) });
 
             object result = SpanContextPropagator.Instance.Extract(headers.Object);
@@ -203,8 +210,9 @@ namespace Datadog.Trace.Tests
         {
             // ignore the extracted sampling priority if it is not a valid integer
 
+            var headers = SetupMockHeadersCollection();
+
             // replace SamplingPriority setup
-            var headers = CreatePopulatedHeaders();
             headers.Setup(h => h.GetValues(HttpHeaderNames.SamplingPriority)).Returns(new[] { samplingPriority });
 
             object result = SpanContextPropagator.Instance.Extract(headers.Object);
@@ -220,12 +228,12 @@ namespace Datadog.Trace.Tests
                        });
         }
 
-        private static Mock<IHeadersCollection> CreatePopulatedHeaders()
+        private static Mock<IHeadersCollection> SetupMockHeadersCollection()
         {
-            return CreatePopulatedHeaders(TraceId.ToString(), SpanId.ToString());
+            return SetupMockHeadersCollection(TraceId.ToString(), SpanId.ToString());
         }
 
-        private static Mock<IHeadersCollection> CreatePopulatedHeaders(string traceId, string spanId)
+        private static Mock<IHeadersCollection> SetupMockHeadersCollection(string traceId, string spanId)
         {
             var headers = new Mock<IHeadersCollection>();
             headers.Setup(h => h.GetValues(HttpHeaderNames.TraceId)).Returns(new[] { traceId });
