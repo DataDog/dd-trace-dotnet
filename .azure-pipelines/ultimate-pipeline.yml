@@ -72,6 +72,7 @@ variables:
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
   artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
   runnerTool: $(System.DefaultWorkingDirectory)/tracer/src/bin/runnerTool
+  runnerStandalone: $(System.DefaultWorkingDirectory)/tracer/src/bin/runnerStandalone
   ddApiKey: $(DD_API_KEY)
   isMainBranch: $[in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main')]
   isMainOrReleaseBranch: $[or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'))]
@@ -1070,14 +1071,21 @@ stages:
         echo "##vso[build.addbuildtag]$(dotnetToolTag)"
       displayName: Add $(dotnetToolTag) build tag
 
-- stage: tool_artifacts_tests
+- stage: tool_artifacts_tests_windows
   dependsOn: [dotnet_tool]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [windows]
+      jobs: [test]
 
-  - job: windows
+  - job: test
+    strategy:
+      matrix:
+        windows-x86:
+          targetPlatform: "x86"
+        windows-x64:
+          targetPlatform: "x64"
+
     pool:
       vmImage: windows-2019
     timeoutInMinutes: 100
@@ -1094,7 +1102,16 @@ stages:
         artifact: runner-dotnet-tool
         path: $(runnerTool)
 
+    - task: DownloadPipelineArtifact@2
+      displayName: Download standalone runner
+      inputs:
+        artifact: runner-standalone-win-$(targetPlatform)
+        path: $(runnerStandalone)
+
     - script: tracer\build.cmd BuildAndRunToolArtifactTests --ToolSource $(runnerTool)
+      displayName: Build and Test
+
+    - script: tracer\build.cmd BuildAndRunToolArtifactTests --ToolSource $(runnerStandalone)
       displayName: Build and Test
 
     - task: PublishTestResults@2
